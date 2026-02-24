@@ -14,6 +14,7 @@ import { Slider } from '@/components/ui/slider';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useGameStore, selectQueue, selectProfiles, selectActiveProfile } from '@/lib/game/store';
 import { sampleSongs, searchSongs, getSongById } from '@/data/songs/songs';
+import { ImportScreen } from '@/components/import/import-screen';
 import { 
   Song, 
   Player, 
@@ -38,12 +39,17 @@ function generateQRCode(data: string): string {
 }
 
 // Screen types
-type Screen = 'home' | 'library' | 'game' | 'party' | 'character' | 'queue' | 'mobile' | 'results' | 'highscores';
+type Screen = 'home' | 'library' | 'game' | 'party' | 'character' | 'queue' | 'mobile' | 'results' | 'highscores' | 'import';
 
 // ===================== MAIN APP =====================
 export default function KaraokeSuccessor() {
   const [screen, setScreen] = useState<Screen>('home');
+  const [importedSongs, setImportedSongs] = useState<Song[]>([]);
   const { gameState, setSong, setDifficulty, setGameMode, addPlayer, updatePlayer, createProfile, profiles, activeProfileId, setActiveProfile, queue, addToQueue, removeFromQueue, highscores, getTopHighscores } = useGameStore();
+  
+  const addImportedSong = (song: Song) => {
+    setImportedSongs(prev => [...prev, song]);
+  };
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white">
@@ -62,6 +68,9 @@ export default function KaraokeSuccessor() {
           <div className="flex items-center gap-2">
             <NavButton active={screen === 'library'} onClick={() => setScreen('library')}>
               <LibraryIcon className="w-5 h-5" /> Library
+            </NavButton>
+            <NavButton active={screen === 'import'} onClick={() => setScreen('import')}>
+              <ImportIcon className="w-5 h-5" /> Import
             </NavButton>
             <NavButton active={screen === 'party'} onClick={() => setScreen('party')}>
               <PartyIcon className="w-5 h-5" /> Party
@@ -94,6 +103,7 @@ export default function KaraokeSuccessor() {
         {screen === 'character' && <CharacterScreen />}
         {screen === 'queue' && <QueueScreen />}
         {screen === 'mobile' && <MobileScreen />}
+        {screen === 'import' && <ImportScreen onImport={(song) => { addImportedSong(song); setScreen('library'); }} onCancel={() => setScreen('home')} />}
         {screen === 'highscores' && <HighscoreScreen />}
         {screen === 'results' && <ResultsScreen onPlayAgain={() => setScreen('library')} onHome={() => setScreen('home')} />}
       </main>
@@ -219,6 +229,16 @@ function TrophyIcon({ className }: { className?: string }) {
       <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
       <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
       <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+    </svg>
+  );
+}
+
+function ImportIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="17 8 12 3 7 8" />
+      <line x1="12" y1="3" x2="12" y2="15" />
     </svg>
   );
 }
