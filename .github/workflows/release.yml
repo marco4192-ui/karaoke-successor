@@ -1,0 +1,258 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+env:
+  NODE_VERSION: '20'
+  BUN_VERSION: 'latest'
+
+jobs:
+  # Build and test the application
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run linter
+        run: bun run lint
+
+      - name: Build Next.js app
+        run: bun run build
+        env:
+          NODE_ENV: production
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: .next/
+          retention-days: 7
+
+  # Build Tauri desktop app for multiple platforms
+  build-desktop:
+    name: Build Desktop (${{ matrix.platform }})
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - platform: macos
+            os: macos-latest
+            target: aarch64-apple-darwin
+          - platform: macos-intel
+            os: macos-latest
+            target: x86_64-apple-darwin
+          - platform: linux
+            os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install dependencies (Ubuntu only)
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev
+
+      - name: Install Node dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.event.inputs.version || github.ref_name }}
+          releaseName: 'Karaoke Successor ${{ github.event.inputs.version || github.ref_name }}'
+          releaseBody: 'See CHANGELOG.md for details'
+          releaseDraft: true
+          prerelease: false
+          target: ${{ matrix.target }}
+          args: --target ${{ matrix.target }}
+
+  # Create GitHub Release
+  create-release:
+    name: Create GitHub Release
+    needs: [build, build-desktop]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=${{ github.event.inputs.version || github.ref_name }}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create release notes
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          cat << EOF > release_notes.md
+          # Karaoke Successor ${VERSION}
+          
+          ## 🎤 The Ultimate Karaoke Experience
+          
+          A modern karaoke game with real-time pitch detection, party modes, and mobile companion app.
+          
+          ## 📦 Downloads
+          
+          | Platform | File |
+          |----------|------|
+          | Windows | \`Karaoke-Successor_*_x64.msi\` |
+          | macOS (Apple Silicon) | \`Karaoke-Successor_*_aarch64.dmg\` |
+          | macOS (Intel) | \`Karaoke-Successor_*_x64.dmg\` |
+          | Linux | \`Karaoke-Successor_*_amd64.AppImage\` |
+          
+          ## ✨ Features
+          
+          ### 🎮 Gameplay
+          - Real-time pitch detection (YIN algorithm)
+          - 3 difficulty levels (Easy, Medium, Hard)
+          - Star Power mode (2x points)
+          - Combo system with bonuses
+          - Golden notes & bonus notes
+          
+          ### 🎵 Song Support
+          - Built-in demo songs
+          - UltraStar format import
+          - Karaoke Mugen format
+          - MIDI Karaoke (.kar)
+          - SingStar format
+          - YouTube video backgrounds
+          
+          ### 🎉 Party Modes
+          - Pass the Mic
+          - Medley Contest
+          - Missing Words
+          - Duel Mode
+          - Blind Karaoke
+          
+          ### 📱 Mobile Companion
+          - Use phone as microphone
+          - Remote control
+          - QR code pairing
+          
+          ### 🏆 Highscores & Achievements
+          - 21 funny ranking titles
+          - 25+ achievements
+          - Performance analytics
+          
+          ### 🎨 Customization
+          - 6 color themes
+          - Keyboard shortcuts
+          - Audio effects (reverb, echo)
+          
+          ## 🚀 Quick Start
+          
+          1. Download and install for your platform
+          2. Allow microphone access
+          3. Select a song and start singing!
+          
+          ## 📱 Mobile App
+          
+          Connect your phone at: \`http://YOUR_IP:3000/mobile\`
+          
+          ## 🔗 Links
+          
+          - **Repository**: https://github.com/marco4192-ui/karaoke-successor
+          - **Issues**: https://github.com/marco4192-ui/karaoke-successor/issues
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Karaoke Successor ${{ steps.version.outputs.version }}
+          body_path: release_notes.md
+          draft: true
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Build Docker image
+  build-docker:
+    name: Build Docker Image
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=${{ github.event.inputs.version || github.ref_name }}
+          echo "version=${VERSION#v}" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
