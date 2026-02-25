@@ -5,9 +5,8 @@ use std::thread;
 use std::time::Duration;
 use std::env;
 use std::path::PathBuf;
-use std::fs;
 
-use tauri::{Manager, Window, sidecar::CommandExt};
+use tauri::{Manager, Window};
 
 static SERVER_STARTED: AtomicBool = AtomicBool::new(false);
 static mut SERVER_PROCESS: Option<Child> = None;
@@ -104,11 +103,9 @@ pub fn run() {
                 if !server_started {
                     println!("Trying system Node.js...");
                     
-                    let node_cmd = if cfg!(windows) { "node" } else { "node" };
-                    
                     // Try bundled server with system node
                     if server_path.exists() {
-                        let result = Command::new(node_cmd)
+                        let result = Command::new("node")
                             .arg(&server_path)
                             .current_dir(server_path.parent().unwrap())
                             .env("PORT", "3000")
@@ -169,7 +166,7 @@ pub fn run() {
             
             Ok(())
         })
-        .on_window_event(|window, event| {
+        .on_window_event(|_window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
                 unsafe {
                     if let Some(ref mut child) = SERVER_PROCESS {
