@@ -20,7 +20,7 @@ fn get_audio_devices() -> Vec<String> {
 
 #[tauri::command]
 fn set_fullscreen(window: Window, fullscreen: bool) {
-    let _ = window.set_fullscreen(Some(fullscreen));
+    let _ = window.set_fullscreen(fullscreen);
 }
 
 #[tauri::command]
