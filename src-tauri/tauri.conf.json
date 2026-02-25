@@ -36,21 +36,31 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "resources": [
+      "server/**/*",
+      "node/**/*"
+    ],
+    "windows": {
+      "wix": {
+        "language": "en-US"
+      },
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["English"],
+        "displayLanguageSelector": false
+      }
+    }
   },
   "plugins": {
     "shell": {
       "open": true,
       "scope": [
         {
-          "name": "bun",
-          "cmd": "bun",
-          "args": true
-        },
-        {
-          "name": "npm", 
-          "cmd": "npm",
-          "args": true
+          "name": "node",
+          "cmd": "",
+          "args": true,
+          "sidecar": true
         }
       ]
     }
