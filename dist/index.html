@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Karaoke Successor</title>
+  <title>Karaoke Successor - Loading...</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -14,6 +14,7 @@
       align-items: center;
       justify-content: center;
       color: white;
+      overflow: hidden;
     }
     .container {
       text-align: center;
@@ -22,83 +23,128 @@
     .logo {
       font-size: 80px;
       margin-bottom: 20px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(0, 255, 255, 0.3);
+      border-top-color: #00ffff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
     }
     h1 {
-      font-size: 2.5rem;
+      font-size: 2rem;
       margin-bottom: 10px;
       background: linear-gradient(90deg, #00ffff, #ff00ff);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
-    .subtitle {
+    .status {
       color: rgba(255,255,255,0.7);
-      margin-bottom: 30px;
+      font-size: 14px;
+      margin-top: 10px;
     }
-    .instructions {
+    .progress-bar {
+      width: 300px;
+      height: 4px;
       background: rgba(255,255,255,0.1);
-      border-radius: 12px;
-      padding: 20px;
+      border-radius: 2px;
+      margin: 20px auto;
+      overflow: hidden;
+    }
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #00ffff, #ff00ff);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+    .error {
+      color: #ff6b6b;
       margin-top: 20px;
+      display: none;
     }
-    code {
-      background: rgba(0,255,255,0.2);
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-family: monospace;
+    .error a {
+      color: #00ffff;
     }
-    .features {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 15px;
-      margin-top: 30px;
-      text-align: left;
-    }
-    .feature {
-      background: rgba(255,255,255,0.05);
-      padding: 15px;
-      border-radius: 8px;
-    }
-    .feature-icon { font-size: 24px; margin-bottom: 5px; }
-    .feature-title { font-weight: bold; margin-bottom: 5px; }
-    .feature-desc { font-size: 12px; opacity: 0.7; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="logo">🎤</div>
     <h1>Karaoke Successor</h1>
-    <p class="subtitle">The Ultimate Karaoke Experience</p>
-    
-    <div class="instructions">
-      <p><strong>🚀 To run the full application:</strong></p>
-      <p style="margin-top:10px">Open terminal and run:</p>
-      <p style="margin-top:10px"><code>bun run dev</code></p>
-      <p style="margin-top:10px">Then open <code>http://localhost:3000</code> in your browser</p>
+    <div class="spinner"></div>
+    <p class="status" id="status">Starting Next.js server...</p>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress"></div>
     </div>
-
-    <div class="features">
-      <div class="feature">
-        <div class="feature-icon">🎵</div>
-        <div class="feature-title">Real-time Pitch Detection</div>
-        <div class="feature-desc">Advanced YIN algorithm for accurate pitch tracking</div>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">🎉</div>
-        <div class="feature-title">Party Modes</div>
-        <div class="feature-desc">Pass the Mic, Duel, Medley & more</div>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">📱</div>
-        <div class="feature-title">Mobile Companion</div>
-        <div class="feature-desc">Use your phone as a microphone</div>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">🏆</div>
-        <div class="feature-title">Highscores</div>
-        <div class="feature-desc">Compete for the top spot</div>
-      </div>
+    <div class="error" id="error">
+      <p>Server failed to start. Make sure you have <a href="https://bun.sh" target="_blank">Bun</a> or Node.js installed.</p>
     </div>
   </div>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const progressEl = document.getElementById('progress');
+    const errorEl = document.getElementById('error');
+    
+    let progress = 0;
+    let attempts = 0;
+    const maxAttempts = 120; // 60 seconds
+    
+    // Simulate progress
+    const progressInterval = setInterval(() => {
+      if (progress < 90) {
+        progress += 0.75;
+        progressEl.style.width = progress + '%';
+      }
+    }, 500);
+    
+    // Check if server is ready
+    function checkServer() {
+      attempts++;
+      
+      fetch('http://localhost:3000', { 
+        method: 'HEAD',
+        mode: 'no-cors'
+      })
+      .then(() => {
+        clearInterval(progressInterval);
+        progressEl.style.width = '100%';
+        statusEl.textContent = 'Server ready! Loading app...';
+        setTimeout(() => {
+          window.location.href = 'http://localhost:3000';
+        }, 500);
+      })
+      .catch(() => {
+        if (attempts >= maxAttempts) {
+          clearInterval(progressInterval);
+          statusEl.style.display = 'none';
+          progressEl.parentElement.style.display = 'none';
+          errorEl.style.display = 'block';
+        } else {
+          // Update status periodically
+          if (attempts % 4 === 0) {
+            statusEl.textContent = 'Starting Next.js server... (' + Math.floor(attempts/2) + 's)';
+          }
+          setTimeout(checkServer, 500);
+        }
+      });
+    }
+    
+    // Start checking after a short delay
+    setTimeout(checkServer, 1000);
+  </script>
 </body>
 </html>

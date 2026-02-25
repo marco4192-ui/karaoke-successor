@@ -20,7 +20,8 @@
         "resizable": true,
         "fullscreen": false,
         "center": true,
-        "decorations": true
+        "decorations": true,
+        "url": "dist/index.html"
       }
     ],
     "security": {
@@ -36,11 +37,25 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "resources": ["dist/**", "package.json", "next.config.ts"],
+    "externalBin": []
   },
   "plugins": {
     "shell": {
-      "open": true
+      "open": true,
+      "scope": [
+        {
+          "name": "bun",
+          "cmd": "bun",
+          "args": true
+        },
+        {
+          "name": "npm", 
+          "cmd": "npm",
+          "args": true
+        }
+      ]
     }
   }
 }
