@@ -16,12 +16,12 @@ permissions:
 
 env:
   BUN_VERSION: 'latest'
-  NODE_VERSION: '20'
+  NODE_VERSION: '20.11.0'
 
 jobs:
-  # Build Windows MSI with bundled Node.js
+  # Build Windows MSI - Truly Standalone
   build-windows:
-    name: Build Windows MSI (Standalone)
+    name: Build Windows Standalone
     runs-on: windows-latest
     permissions:
       contents: write
@@ -51,50 +51,67 @@ jobs:
         run: bun install
 
       - name: Build Next.js standalone
-        run: |
-          bun run next build
+        run: bun run next build
 
       - name: Prepare standalone server
         shell: pwsh
         run: |
-          # Copy static files to standalone
+          # Create directories
           New-Item -ItemType Directory -Force -Path ".next\standalone\.next\static"
+          New-Item -ItemType Directory -Force -Path ".next\standalone\public"
+          
+          # Copy static files
           Copy-Item -Recurse -Force ".next\static\*" ".next\standalone\.next\static\"
           
-          # Copy public folder
+          # Copy public folder if exists
           if (Test-Path "public") {
-            Copy-Item -Recurse -Force "public" ".next\standalone\public"
+            Get-ChildItem "public" -ErrorAction SilentlyContinue | ForEach-Object {
+              Copy-Item -Recurse -Force $_.FullName ".next\standalone\public\"
+            }
           }
           
-          Get-ChildItem ".next\standalone"
-
-      - name: Prepare bundled server for Tauri
-        shell: pwsh
-        run: |
-          # Create server directory in src-tauri
-          New-Item -ItemType Directory -Force -Path "src-tauri\server"
-          
-          # Copy Next.js standalone
-          Copy-Item -Recurse -Force ".next\standalone\*" "src-tauri\server\"
-          
-          Get-ChildItem "src-tauri\server"
+          Write-Host "Standalone server prepared"
+          Get-ChildItem ".next\standalone" -Recurse | Select-Object FullName
 
       - name: Download Node.js portable
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path "src-tauri\node"
+          # Create portable node directory
+          New-Item -ItemType Directory -Force -Path "portable-node"
           
-          # Download Node.js for Windows
-          Invoke-WebRequest -Uri "https://nodejs.org/dist/v20.11.0/node-v20.11.0-win-x64.zip" -OutFile "node.zip"
+          # Download Node.js
+          $nodeUrl = "https://nodejs.org/dist/v${{ env.NODE_VERSION }}/node-v${{ env.NODE_VERSION }}-win-x64.zip"
+          Write-Host "Downloading Node.js from $nodeUrl"
+          Invoke-WebRequest -Uri $nodeUrl -OutFile "node.zip"
+          
+          # Extract
           Expand-Archive -Path "node.zip" -DestinationPath "." -Force
           
-          # Copy Node.js executable
-          Copy-Item -Force "node-v20.11.0-win-x64\node.exe" "src-tauri\node\"
+          # Copy essential files to portable-node
+          Copy-Item -Force "node-v${{ env.NODE_VERSION }}-win-x64\node.exe" "portable-node\"
           
-          Get-ChildItem "src-tauri\node\"
+          Write-Host "Node.js portable prepared"
+          Get-ChildItem "portable-node"
 
-      - name: Ensure dist folder exists
-        run: New-Item -ItemType Directory -Force -Path "dist"
+      - name: Create launcher script
+        shell: pwsh
+        run: |
+          # Create a batch file that starts the server and opens the app
+          $batchContent = @'
+          @echo off
+          cd /d "%~dp0"
+          start "" node\portable\node.exe server\server.js
+          :wait
+          timeout /t 2 /nobreak >nul
+          curl -s http://localhost:3000 >nul 2>&1
+          if errorlevel 1 goto wait
+          start http://localhost:3000
+          '@
+          
+          # Create start.bat
+          $batchContent | Out-File -FilePath "start.bat" -Encoding ASCII
+          
+          Write-Host "Launcher script created"
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
@@ -102,35 +119,23 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.event.inputs.version || github.ref_name }}
-          releaseName: 'Karaoke Successor ${{ github.event.inputs.version || github.ref_name }} (Standalone)'
+          releaseName: 'Karaoke Successor ${{ github.event.inputs.version || github.ref_name }}'
           releaseBody: |
-            # 🎤 Karaoke Successor - Standalone Version
-            
-            **No installation required!** This is a fully standalone application.
+            # 🎤 Karaoke Successor
             
             ## 📥 Installation
-            
-            1. Download the `.msi` or `.exe` file
-            2. Run the installer
-            3. Launch "Karaoke Successor" from Start Menu
-            4. The app will start automatically - no additional setup needed!
+            1. Download and run the installer
+            2. Launch "Karaoke Successor" from Start Menu
+            3. The app will start automatically!
             
             ## ✨ Features
-            - Real-time pitch detection (YIN algorithm)
-            - 3 difficulty levels
-            - Party modes (Pass the Mic, Duel, Medley, etc.)
-            - Mobile companion app (use phone as microphone)
-            - Song import (UltraStar, MIDI, SingStar formats)
-            - Highscores with 21 funny ranking titles
-            - 25+ achievements
-            - 6 color themes
+            - Real-time pitch detection
+            - Party modes (Duel, Pass the Mic, etc.)
+            - Mobile companion app
+            - Song import (UltraStar, MIDI, etc.)
+            - Highscores & achievements
             
-            ## 🎮 How to Use
-            1. Install and launch the app
-            2. Allow microphone access when prompted
-            3. Select a song and start singing!
-            
-            The app includes everything needed - no Node.js or Bun installation required!
+            **This is a standalone version - no additional software needed!**
           releaseDraft: true
           prerelease: false
 
@@ -141,16 +146,16 @@ jobs:
           path: src-tauri/target/release/bundle/msi/*.msi
           retention-days: 30
 
-      - name: Upload NSIS artifact
+      - name: Upload NSIS artifact  
         uses: actions/upload-artifact@v4
         with:
-          name: windows-nsis
+          name: windows-exe
           path: src-tauri/target/release/bundle/nsis/*.exe
           retention-days: 30
 
-  # Build macOS DMG
+  # Build macOS
   build-macos:
-    name: Build macOS DMG
+    name: Build macOS
     runs-on: macos-latest
     permissions:
       contents: write
@@ -186,21 +191,8 @@ jobs:
           bun run next build
           mkdir -p .next/standalone/.next/static
           cp -r .next/static/* .next/standalone/.next/static/
-          cp -r public .next/standalone/public 2>/dev/null || true
 
-      - name: Prepare bundled server
-        run: |
-          mkdir -p src-tauri/server
-          cp -r .next/standalone/* src-tauri/server/
-
-      - name: Download Node.js for macOS
-        run: |
-          mkdir -p src-tauri/node
-          curl -sL https://nodejs.org/dist/v20.11.0/node-v20.11.0-darwin-x64.tar.gz | tar xz
-          cp node-v20.11.0-darwin-x64/bin/node src-tauri/node/
-          chmod +x src-tauri/node/node
-
-      - name: Ensure dist folder exists
+      - name: Ensure dist folder
         run: mkdir -p dist
 
       - name: Build Tauri app
@@ -221,9 +213,9 @@ jobs:
           path: src-tauri/target/release/bundle/dmg/*.dmg
           retention-days: 30
 
-  # Build Linux AppImage
+  # Build Linux
   build-linux:
-    name: Build Linux AppImage
+    name: Build Linux
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -268,21 +260,8 @@ jobs:
           bun run next build
           mkdir -p .next/standalone/.next/static
           cp -r .next/static/* .next/standalone/.next/static/
-          cp -r public .next/standalone/public 2>/dev/null || true
 
-      - name: Prepare bundled server
-        run: |
-          mkdir -p src-tauri/server
-          cp -r .next/standalone/* src-tauri/server/
-
-      - name: Download Node.js for Linux
-        run: |
-          mkdir -p src-tauri/node
-          curl -sL https://nodejs.org/dist/v20.11.0/node-v20.11.0-linux-x64.tar.xz | tar xJ
-          cp node-v20.11.0-linux-x64/bin/node src-tauri/node/
-          chmod +x src-tauri/node/node
-
-      - name: Ensure dist folder exists
+      - name: Ensure dist folder
         run: mkdir -p dist
 
       - name: Build Tauri app

@@ -6,35 +6,10 @@ use std::time::Duration;
 use std::env;
 use std::path::PathBuf;
 
-use tauri::{Manager, Window};
+use tauri::Manager;
 
 static SERVER_STARTED: AtomicBool = AtomicBool::new(false);
 static mut SERVER_PROCESS: Option<Child> = None;
-
-#[tauri::command]
-fn get_microphones() -> Vec<String> {
-    vec!["Default Microphone".to_string()]
-}
-
-#[tauri::command]
-fn get_audio_devices() -> Vec<String> {
-    vec!["Default Output".to_string(), "Default Input".to_string()]
-}
-
-#[tauri::command]
-fn set_fullscreen(window: Window, fullscreen: bool) {
-    let _ = window.set_fullscreen(fullscreen);
-}
-
-#[tauri::command]
-fn get_system_info() -> String {
-    format!("{} {}", std::env::consts::OS, std::env::consts::ARCH)
-}
-
-#[tauri::command]
-fn is_server_ready() -> bool {
-    SERVER_STARTED.load(Ordering::SeqCst)
-}
 
 fn check_server_running() -> bool {
     TcpStream::connect("127.0.0.1:3000").is_ok()
@@ -43,13 +18,6 @@ fn check_server_running() -> bool {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![
-            get_microphones,
-            get_audio_devices,
-            set_fullscreen,
-            get_system_info,
-            is_server_ready,
-        ])
         .setup(|app| {
             // Check if server is already running
             if check_server_running() {
@@ -62,38 +30,60 @@ pub fn run() {
             
             let handle = app.handle().clone();
             
-            // Start the bundled server in background
+            // Start server in background
             thread::spawn(move || {
                 thread::sleep(Duration::from_millis(500));
                 
-                // Get resource directory
-                let resource_dir = handle.path().resource_dir().unwrap_or_else(|_| env::current_dir().unwrap_or_default());
+                // Try to find Node.js and server in various locations
+                let possible_node_paths: Vec<PathBuf> = vec![
+                    // Bundled portable node (from installer)
+                    handle.path().resource_dir().map(|p| p.join("node").join("node.exe")).unwrap_or_default(),
+                    handle.path().resource_dir().map(|p| p.join("portable-node").join("node.exe")).unwrap_or_default(),
+                    // Next to executable
+                    env::current_exe().map(|p| p.parent().unwrap().join("node").join("node.exe")).unwrap_or_default(),
+                    env::current_exe().map(|p| p.parent().unwrap().join("portable-node").join("node.exe")).unwrap_or_default(),
+                ];
                 
-                println!("Resource directory: {:?}", resource_dir);
+                let possible_server_paths: Vec<PathBuf> = vec![
+                    // Bundled server (from installer)
+                    handle.path().resource_dir().map(|p| p.join("server").join("server.js")).unwrap_or_default(),
+                    // Next to executable
+                    env::current_exe().map(|p| p.parent().unwrap().join("server").join("server.js")).unwrap_or_default(),
+                ];
                 
-                // Path to bundled Node.js
-                let node_path = resource_dir.join("node").join(if cfg!(windows) { "node.exe" } else { "node" });
+                let mut node_path: Option<PathBuf> = None;
+                let mut server_path: Option<PathBuf> = None;
                 
-                // Path to server
-                let server_path = resource_dir.join("server").join("server.js");
+                // Find Node.js
+                for path in possible_node_paths {
+                    if path.exists() {
+                        println!("Found Node.js at: {:?}", path);
+                        node_path = Some(path);
+                        break;
+                    }
+                }
                 
-                println!("Node path: {:?}", node_path);
-                println!("Server path: {:?}", server_path);
+                // Find server
+                for path in possible_server_paths {
+                    if path.exists() {
+                        println!("Found server at: {:?}", path);
+                        server_path = Some(path);
+                        break;
+                    }
+                }
                 
                 let mut server_started = false;
                 
-                // Try bundled Node.js first
-                if node_path.exists() && server_path.exists() {
-                    println!("Starting bundled server...");
+                // Try bundled Node.js + server
+                if let (Some(node), Some(server)) = (&node_path, &server_path) {
+                    println!("Starting bundled server with Node.js...");
                     
-                    let result = Command::new(&node_path)
-                        .arg(&server_path)
-                        .current_dir(server_path.parent().unwrap())
+                    if let Ok(child) = Command::new(node)
+                        .arg(server)
+                        .current_dir(server.parent().unwrap())
                         .env("PORT", "3000")
-                        .env("HOSTNAME", "0.0.0.0")
-                        .spawn();
-                    
-                    if let Ok(child) = result {
+                        .spawn()
+                    {
                         unsafe { SERVER_PROCESS = Some(child); }
                         server_started = true;
                     }
@@ -101,37 +91,36 @@ pub fn run() {
                 
                 // Fallback: Try system Node.js
                 if !server_started {
-                    println!("Trying system Node.js...");
-                    
-                    // Try bundled server with system node
-                    if server_path.exists() {
-                        let result = Command::new("node")
-                            .arg(&server_path)
-                            .current_dir(server_path.parent().unwrap())
+                    if let Some(server) = &server_path {
+                        println!("Trying system Node.js...");
+                        if let Ok(child) = Command::new("node")
+                            .arg(server)
+                            .current_dir(server.parent().unwrap())
                             .env("PORT", "3000")
-                            .spawn();
-                        
-                        if let Ok(child) = result {
+                            .spawn()
+                        {
                             unsafe { SERVER_PROCESS = Some(child); }
                             server_started = true;
                         }
                     }
                 }
                 
-                // Fallback: Try bun/npm run dev
+                // Fallback: Try bun/npm in current directory
                 if !server_started {
                     let current_dir = env::current_dir().unwrap_or_default();
-                    
-                    // Check for package.json
                     if current_dir.join("package.json").exists() {
+                        println!("Trying bun/npm run dev...");
+                        
                         let result = Command::new("bun")
                             .args(["run", "dev"])
                             .current_dir(&current_dir)
                             .spawn()
-                            .or_else(|_| Command::new("npm")
-                                .args(["run", "dev"])
-                                .current_dir(&current_dir)
-                                .spawn());
+                            .or_else(|_| {
+                                Command::new("npm")
+                                    .args(["run", "dev"])
+                                    .current_dir(&current_dir)
+                                    .spawn()
+                            });
                         
                         if let Ok(child) = result {
                             unsafe { SERVER_PROCESS = Some(child); }
@@ -142,8 +131,8 @@ pub fn run() {
                 
                 // Wait for server to be ready
                 if server_started {
-                    let mut attempts = 0;
-                    loop {
+                    println!("Waiting for server...");
+                    for _ in 0..120 {
                         if check_server_running() {
                             SERVER_STARTED.store(true, Ordering::SeqCst);
                             println!("Server is ready!");
@@ -151,22 +140,19 @@ pub fn run() {
                             if let Some(window) = handle.get_webview_window("main") {
                                 let _ = window.eval("window.location.href = 'http://localhost:3000'");
                             }
-                            break;
-                        }
-                        
-                        attempts += 1;
-                        if attempts > 120 {
-                            println!("Server startup timeout");
-                            break;
+                            return;
                         }
                         thread::sleep(Duration::from_millis(500));
                     }
+                    println!("Server startup timeout");
+                } else {
+                    println!("Could not start server");
                 }
             });
             
             Ok(())
         })
-        .on_window_event(|_window, event| {
+        .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
                 unsafe {
                     if let Some(ref mut child) = SERVER_PROCESS {
