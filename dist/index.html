@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Karaoke Successor - Loading...</title>
+  <title>Karaoke Successor</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -14,136 +14,176 @@
       align-items: center;
       justify-content: center;
       color: white;
-      overflow: hidden;
     }
-    .container {
-      text-align: center;
-      padding: 40px;
+    .container { text-align: center; padding: 40px; max-width: 600px; }
+    .logo { font-size: 80px; margin-bottom: 20px; }
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #00ffff, #ff00ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
-    .logo {
-      font-size: 80px;
-      margin-bottom: 20px;
-      animation: pulse 2s infinite;
+    .subtitle { color: rgba(255,255,255,0.7); margin-bottom: 30px; }
+    .instructions {
+      background: rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 25px;
+      margin-top: 20px;
+      text-align: left;
     }
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.1); }
+    .instructions h3 { margin-bottom: 15px; color: #00ffff; }
+    .step {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 15px;
     }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    .step-num {
+      background: #00ffff;
+      color: #000;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 12px;
+      flex-shrink: 0;
     }
+    .step-content { flex: 1; }
+    code {
+      background: rgba(0,255,255,0.2);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-family: 'Consolas', monospace;
+      font-size: 14px;
+    }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin-top: 30px;
+      text-align: left;
+    }
+    .feature {
+      background: rgba(255,255,255,0.05);
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .feature-icon { font-size: 24px; margin-bottom: 5px; }
+    .feature-title { font-weight: bold; margin-bottom: 5px; }
+    .feature-desc { font-size: 12px; opacity: 0.7; }
     .spinner {
-      width: 50px;
-      height: 50px;
-      border: 4px solid rgba(0, 255, 255, 0.3);
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(0, 255, 255, 0.3);
       border-top-color: #00ffff;
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin: 20px auto;
     }
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 10px;
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .hidden { display: none; }
+    .btn {
       background: linear-gradient(90deg, #00ffff, #ff00ff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .status {
-      color: rgba(255,255,255,0.7);
-      font-size: 14px;
-      margin-top: 10px;
-    }
-    .progress-bar {
-      width: 300px;
-      height: 4px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 2px;
-      margin: 20px auto;
-      overflow: hidden;
-    }
-    .progress-fill {
-      width: 0%;
-      height: 100%;
-      background: linear-gradient(90deg, #00ffff, #ff00ff);
-      border-radius: 2px;
-      transition: width 0.3s ease;
-    }
-    .error {
-      color: #ff6b6b;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 25px;
+      font-size: 16px;
+      cursor: pointer;
       margin-top: 20px;
-      display: none;
     }
-    .error a {
-      color: #00ffff;
-    }
+    .btn:hover { opacity: 0.9; }
+    .status { color: rgba(255,255,255,0.7); margin: 15px 0; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="logo">🎤</div>
     <h1>Karaoke Successor</h1>
-    <div class="spinner"></div>
-    <p class="status" id="status">Starting Next.js server...</p>
-    <div class="progress-bar">
-      <div class="progress-fill" id="progress"></div>
+    <p class="subtitle">The Ultimate Karaoke Experience</p>
+    
+    <div id="loading">
+      <div class="spinner"></div>
+      <p class="status" id="status">Starting server...</p>
     </div>
-    <div class="error" id="error">
-      <p>Server failed to start. Make sure you have <a href="https://bun.sh" target="_blank">Bun</a> or Node.js installed.</p>
+    
+    <div id="instructions" class="instructions hidden">
+      <h3>🚀 Quick Start</h3>
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <strong>Install Bun</strong> (recommended) or Node.js 18+<br>
+          <a href="https://bun.sh" target="_blank" style="color:#00ffff">https://bun.sh</a>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <strong>Open a terminal</strong> in the project folder and run:<br>
+          <code>bun install && bun run dev</code>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <strong>Click the button below</strong> to open the app!
+        </div>
+      </div>
+      <button class="btn" onclick="window.location.href='http://localhost:3000'">
+        Open Karaoke Successor
+      </button>
+    </div>
+    
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">🎵</div>
+        <div class="feature-title">Pitch Detection</div>
+        <div class="feature-desc">Real-time YIN algorithm</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🎉</div>
+        <div class="feature-title">Party Modes</div>
+        <div class="feature-desc">Duel, Medley, Pass the Mic</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📱</div>
+        <div class="feature-title">Mobile App</div>
+        <div class="feature-desc">Use phone as microphone</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🏆</div>
+        <div class="feature-title">Highscores</div>
+        <div class="feature-desc">21 funny ranking titles</div>
+      </div>
     </div>
   </div>
-
+  
   <script>
-    const statusEl = document.getElementById('status');
-    const progressEl = document.getElementById('progress');
-    const errorEl = document.getElementById('error');
-    
-    let progress = 0;
     let attempts = 0;
-    const maxAttempts = 120; // 60 seconds
+    const maxAttempts = 20;
     
-    // Simulate progress
-    const progressInterval = setInterval(() => {
-      if (progress < 90) {
-        progress += 0.75;
-        progressEl.style.width = progress + '%';
-      }
-    }, 500);
-    
-    // Check if server is ready
     function checkServer() {
-      attempts++;
-      
-      fetch('http://localhost:3000', { 
-        method: 'HEAD',
-        mode: 'no-cors'
-      })
-      .then(() => {
-        clearInterval(progressInterval);
-        progressEl.style.width = '100%';
-        statusEl.textContent = 'Server ready! Loading app...';
-        setTimeout(() => {
+      fetch('http://localhost:3000', { method: 'HEAD', mode: 'no-cors' })
+        .then(() => {
           window.location.href = 'http://localhost:3000';
-        }, 500);
-      })
-      .catch(() => {
-        if (attempts >= maxAttempts) {
-          clearInterval(progressInterval);
-          statusEl.style.display = 'none';
-          progressEl.parentElement.style.display = 'none';
-          errorEl.style.display = 'block';
-        } else {
-          // Update status periodically
-          if (attempts % 4 === 0) {
-            statusEl.textContent = 'Starting Next.js server... (' + Math.floor(attempts/2) + 's)';
+        })
+        .catch(() => {
+          attempts++;
+          if (attempts < maxAttempts) {
+            document.getElementById('status').textContent = 
+              `Starting server... (${Math.floor(attempts/2)}s)`;
+            setTimeout(checkServer, 500);
+          } else {
+            // Show instructions
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('instructions').classList.remove('hidden');
           }
-          setTimeout(checkServer, 500);
-        }
-      });
+        });
     }
     
-    // Start checking after a short delay
     setTimeout(checkServer, 1000);
   </script>
 </body>

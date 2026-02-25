@@ -1,12 +1,15 @@
 use std::net::TcpStream;
+use std::process::{Command, Child};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::Duration;
+use std::env;
+use std::path::PathBuf;
 
 use tauri::{Manager, Window};
-use tauri_plugin_shell::ShellExt;
 
 static SERVER_STARTED: AtomicBool = AtomicBool::new(false);
+static mut SERVER_PROCESS: Option<Child> = None;
 
 #[tauri::command]
 fn get_microphones() -> Vec<String> {
@@ -37,6 +40,19 @@ fn check_server_running() -> bool {
     TcpStream::connect("127.0.0.1:3000").is_ok()
 }
 
+fn get_resource_path(app_handle: &tauri::AppHandle, path: &str) -> PathBuf {
+    // Try resource directory first (for bundled app)
+    if let Ok(resource_dir) = app_handle.path().resource_dir() {
+        let full_path = resource_dir.join(path);
+        if full_path.exists() {
+            return full_path;
+        }
+    }
+    
+    // Fallback to current directory
+    env::current_dir().unwrap_or_default().join(path)
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
@@ -51,59 +67,108 @@ pub fn run() {
             // Check if server is already running
             if check_server_running() {
                 SERVER_STARTED.store(true, Ordering::SeqCst);
+                
+                // Redirect immediately
+                if let Some(window) = app.handle().get_webview_window("main") {
+                    let _ = window.eval("window.location.href = 'http://localhost:3000'");
+                }
                 return Ok(());
             }
             
-            // Start Next.js server in background
-            let shell = app.shell();
-            let current_dir = std::env::current_dir().unwrap_or_default();
-            
-            // Try bun first, then npm
-            let spawn_result = shell
-                .command("bun")
-                .args(["run", "dev"])
-                .current_dir(current_dir.clone())
-                .spawn();
-            
-            if spawn_result.is_err() {
-                // Fallback to npm
-                let _ = shell
-                    .command("npm")
-                    .args(["run", "dev"])
-                    .current_dir(current_dir)
-                    .spawn();
-            }
-            
-            // Wait for server to be ready, then redirect
+            // Get the path to the standalone server
             let handle = app.handle().clone();
+            
+            // Start Next.js standalone server in background
             thread::spawn(move || {
-                let mut attempts = 0;
-                loop {
-                    if check_server_running() {
-                        SERVER_STARTED.store(true, Ordering::SeqCst);
+                // Wait a bit for the window to load
+                thread::sleep(Duration::from_millis(500));
+                
+                // Try to find and start the server
+                let server_paths = vec![
+                    get_resource_path(&handle, "server/server.js"),
+                    get_resource_path(&handle, ".next/standalone/server.js"),
+                ];
+                
+                for server_path in server_paths {
+                    if server_path.exists() {
+                        println!("Found server at: {:?}", server_path);
                         
-                        // Give server a moment to fully initialize
-                        thread::sleep(Duration::from_millis(500));
+                        // Start Node.js server
+                        let result = Command::new("node")
+                            .arg(&server_path)
+                            .current_dir(server_path.parent().unwrap_or(&PathBuf::from(".")))
+                            .spawn();
                         
-                        // Redirect window to Next.js app
-                        if let Some(window) = handle.get_webview_window("main") {
-                            let _ = window.eval("window.location.href = 'http://localhost:3000'");
+                        if let Ok(child) = result {
+                            unsafe { SERVER_PROCESS = Some(child); }
+                            
+                            // Wait for server to be ready
+                            let mut attempts = 0;
+                            loop {
+                                if check_server_running() {
+                                    SERVER_STARTED.store(true, Ordering::SeqCst);
+                                    
+                                    // Redirect window to Next.js app
+                                    if let Some(window) = handle.get_webview_window("main") {
+                                        let _ = window.eval("window.location.href = 'http://localhost:3000'");
+                                    }
+                                    break;
+                                }
+                                
+                                attempts += 1;
+                                if attempts > 60 {
+                                    break;
+                                }
+                                thread::sleep(Duration::from_millis(500));
+                            }
+                            return;
                         }
-                        break;
                     }
+                }
+                
+                // If we get here, server couldn't be started
+                // Try bun/npm as fallback
+                let fallback_result = Command::new("bun")
+                    .args(["run", "dev"])
+                    .spawn()
+                    .or_else(|_| Command::new("npm")
+                        .args(["run", "dev"])
+                        .spawn());
+                
+                if let Ok(child) = fallback_result {
+                    unsafe { SERVER_PROCESS = Some(child); }
                     
-                    attempts += 1;
-                    // Timeout after 60 seconds
-                    if attempts > 120 {
-                        eprintln!("Timeout waiting for Next.js server to start");
-                        break;
+                    let mut attempts = 0;
+                    loop {
+                        if check_server_running() {
+                            SERVER_STARTED.store(true, Ordering::SeqCst);
+                            
+                            if let Some(window) = handle.get_webview_window("main") {
+                                let _ = window.eval("window.location.href = 'http://localhost:3000'");
+                            }
+                            break;
+                        }
+                        
+                        attempts += 1;
+                        if attempts > 120 {
+                            break;
+                        }
+                        thread::sleep(Duration::from_millis(500));
                     }
-                    
-                    thread::sleep(Duration::from_millis(500));
                 }
             });
             
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
+                // Kill the server process when window is closed
+                unsafe {
+                    if let Some(ref mut child) = SERVER_PROCESS {
+                        let _ = child.kill();
+                    }
+                }
+            }
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

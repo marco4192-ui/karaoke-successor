@@ -33,6 +33,11 @@ jobs:
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
+      - name: Setup Node.js (for standalone)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
@@ -44,61 +49,14 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Build Next.js standalone
+        run: |
+          bun run build
+          ls -la .next/standalone/
+
       - name: Ensure dist folder exists
         shell: bash
-        run: |
-          mkdir -p dist
-          if [ ! -f dist/index.html ]; then
-            echo "Creating dist/index.html..."
-            cat > dist/index.html << 'HTMLEOF'
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Karaoke Successor - Loading...</title>
-            <style>
-              * { margin: 0; padding: 0; box-sizing: border-box; }
-              body {
-                font-family: 'Segoe UI', system-ui, sans-serif;
-                background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #2d1b4e 100%);
-                min-height: 100vh;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-              }
-              .container { text-align: center; padding: 40px; }
-              .logo { font-size: 80px; margin-bottom: 20px; animation: pulse 2s infinite; }
-              @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-              @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-              .spinner { width: 50px; height: 50px; border: 4px solid rgba(0, 255, 255, 0.3); border-top-color: #00ffff; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
-              h1 { font-size: 2rem; margin-bottom: 10px; background: linear-gradient(90deg, #00ffff, #ff00ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-              .status { color: rgba(255,255,255,0.7); font-size: 14px; margin-top: 10px; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <div class="logo">🎤</div>
-              <h1>Karaoke Successor</h1>
-              <div class="spinner"></div>
-              <p class="status">Starting server... Please run 'bun run dev' manually if this takes too long.</p>
-            </div>
-            <script>
-              let attempts = 0;
-              function checkServer() {
-                attempts++;
-                fetch('http://localhost:3000', { method: 'HEAD', mode: 'no-cors' })
-                  .then(() => { window.location.href = 'http://localhost:3000'; })
-                  .catch(() => { if (attempts < 120) setTimeout(checkServer, 500); });
-              }
-              setTimeout(checkServer, 1000);
-            </script>
-          </body>
-          </html>
-          HTMLEOF
-          fi
-          ls -la dist/
+        run: mkdir -p dist
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
@@ -115,10 +73,10 @@ jobs:
             ## 📥 Installation
             
             ### Windows
-            1. Download the `.msi` file
+            1. Download the `.msi` or `.exe` file
             2. Run the installer
-            3. Make sure [Bun](https://bun.sh) or Node.js is installed
-            4. Launch "Karaoke Successor" from Start Menu
+            3. Launch "Karaoke Successor" from Start Menu
+            4. If server doesn't start, follow the on-screen instructions
             
             ## ✨ Features
             - Real-time pitch detection (YIN algorithm)
@@ -129,7 +87,7 @@ jobs:
             - Highscores with 21 funny ranking titles
             
             ## ⚠️ Requirements
-            - [Bun](https://bun.sh) or Node.js 18+ must be installed
+            - [Bun](https://bun.sh) or Node.js 18+ recommended for full functionality
           releaseDraft: true
           prerelease: false
 
@@ -139,12 +97,20 @@ jobs:
           name: windows-msi
           path: src-tauri/target/release/bundle/msi/*.msi
           retention-days: 30
-          if-no-files-found: warn
+
+      - name: Upload NSIS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-nsis
+          path: src-tauri/target/release/bundle/nsis/*.exe
+          retention-days: 30
 
   # Build macOS DMG
   build-macos:
     name: Build macOS DMG
     runs-on: macos-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -153,6 +119,11 @@ jobs:
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Setup Node.js (for standalone)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -167,10 +138,13 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Ensure dist folder exists
+      - name: Build Next.js standalone
         run: |
-          mkdir -p dist
-          ls -la dist/
+          bun run build
+          ls -la .next/standalone/
+
+      - name: Ensure dist folder exists
+        run: mkdir -p dist
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
@@ -189,12 +163,13 @@ jobs:
           name: macos-dmg
           path: src-tauri/target/release/bundle/dmg/*.dmg
           retention-days: 30
-          if-no-files-found: warn
 
   # Build Linux AppImage
   build-linux:
     name: Build Linux AppImage
     runs-on: ubuntu-22.04
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -203,6 +178,11 @@ jobs:
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Setup Node.js (for standalone)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -226,10 +206,13 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Ensure dist folder exists
+      - name: Build Next.js standalone
         run: |
-          mkdir -p dist
-          ls -la dist/
+          bun run build
+          ls -la .next/standalone/
+
+      - name: Ensure dist folder exists
+        run: mkdir -p dist
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
@@ -248,4 +231,3 @@ jobs:
           name: linux-appimage
           path: src-tauri/target/release/bundle/appimage/*.AppImage
           retention-days: 30
-          if-no-files-found: warn
