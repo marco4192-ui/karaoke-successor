@@ -52,45 +52,49 @@ jobs:
 
       - name: Build Next.js standalone
         run: |
-          bun run build
-          ls -la .next/standalone/
+          bun run next build
 
-      - name: Prepare bundled server
-        shell: bash
+      - name: Prepare standalone server
+        shell: pwsh
+        run: |
+          # Copy static files to standalone
+          New-Item -ItemType Directory -Force -Path ".next\standalone\.next\static"
+          Copy-Item -Recurse -Force ".next\static\*" ".next\standalone\.next\static\"
+          
+          # Copy public folder
+          if (Test-Path "public") {
+            Copy-Item -Recurse -Force "public" ".next\standalone\public"
+          }
+          
+          Get-ChildItem ".next\standalone"
+
+      - name: Prepare bundled server for Tauri
+        shell: pwsh
         run: |
           # Create server directory in src-tauri
-          mkdir -p src-tauri/server
+          New-Item -ItemType Directory -Force -Path "src-tauri\server"
           
           # Copy Next.js standalone
-          cp -r .next/standalone/* src-tauri/server/
+          Copy-Item -Recurse -Force ".next\standalone\*" "src-tauri\server\"
           
-          # Copy static files
-          cp -r .next/static src-tauri/server/.next/static
-          cp -r public src-tauri/server/public 2>/dev/null || true
-          
-          ls -la src-tauri/server/
+          Get-ChildItem "src-tauri\server"
 
       - name: Download Node.js portable
-        shell: bash
+        shell: pwsh
         run: |
-          mkdir -p src-tauri/node
+          New-Item -ItemType Directory -Force -Path "src-tauri\node"
           
           # Download Node.js for Windows
-          curl -sL https://nodejs.org/dist/v20.11.0/node-v20.11.0-win-x64.zip -o node.zip
-          unzip -o node.zip
+          Invoke-WebRequest -Uri "https://nodejs.org/dist/v20.11.0/node-v20.11.0-win-x64.zip" -OutFile "node.zip"
+          Expand-Archive -Path "node.zip" -DestinationPath "." -Force
           
-          # Copy only essential Node.js files
-          cp node-v20.11.0-win-x64/node.exe src-tauri/node/
+          # Copy Node.js executable
+          Copy-Item -Force "node-v20.11.0-win-x64\node.exe" "src-tauri\node\"
           
-          # Copy minimal Node.js modules (only what's needed to run server.js)
-          mkdir -p src-tauri/node/deps
-          cp -r node-v20.11.0-win-x64/node_modules src-tauri/node/ 2>/dev/null || true
-          
-          ls -la src-tauri/node/
+          Get-ChildItem "src-tauri\node\"
 
       - name: Ensure dist folder exists
-        shell: bash
-        run: mkdir -p dist
+        run: New-Item -ItemType Directory -Force -Path "dist"
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
@@ -144,7 +148,7 @@ jobs:
           path: src-tauri/target/release/bundle/nsis/*.exe
           retention-days: 30
 
-  # Build macOS DMG (simpler approach)
+  # Build macOS DMG
   build-macos:
     name: Build macOS DMG
     runs-on: macos-latest
@@ -179,15 +183,15 @@ jobs:
 
       - name: Build Next.js standalone
         run: |
-          bun run build
-          ls -la .next/standalone/
+          bun run next build
+          mkdir -p .next/standalone/.next/static
+          cp -r .next/static/* .next/standalone/.next/static/
+          cp -r public .next/standalone/public 2>/dev/null || true
 
       - name: Prepare bundled server
         run: |
           mkdir -p src-tauri/server
           cp -r .next/standalone/* src-tauri/server/
-          cp -r .next/static src-tauri/server/.next/static
-          cp -r public src-tauri/server/public 2>/dev/null || true
 
       - name: Download Node.js for macOS
         run: |
@@ -261,15 +265,15 @@ jobs:
 
       - name: Build Next.js standalone
         run: |
-          bun run build
-          ls -la .next/standalone/
+          bun run next build
+          mkdir -p .next/standalone/.next/static
+          cp -r .next/static/* .next/standalone/.next/static/
+          cp -r public .next/standalone/public 2>/dev/null || true
 
       - name: Prepare bundled server
         run: |
           mkdir -p src-tauri/server
           cp -r .next/standalone/* src-tauri/server/
-          cp -r .next/static src-tauri/server/.next/static
-          cp -r public src-tauri/server/public 2>/dev/null || true
 
       - name: Download Node.js for Linux
         run: |
