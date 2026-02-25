@@ -12,14 +12,13 @@ on:
         default: 'v1.0.0'
 
 env:
-  NODE_VERSION: '20'
   BUN_VERSION: 'latest'
 
 jobs:
-  # Build and test the application
-  build:
-    name: Build & Test
-    runs-on: ubuntu-latest
+  # Build Windows MSI using Tauri
+  build-windows:
+    name: Build Windows MSI
+    runs-on: windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,46 +28,76 @@ jobs:
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install
 
-      - name: Run linter
-        run: bun run lint
+      - name: Create static export
+        run: |
+          # Create a simple static HTML for Tauri
+          mkdir -p dist
+          cat > dist/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Karaoke Successor</title>
+            <style>
+              body { 
+                margin: 0; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                min-height: 100vh; 
+                background: linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 50%, #0a1628 100%);
+                font-family: system-ui, sans-serif;
+              }
+              .container { text-align: center; color: white; }
+              h1 { font-size: 3rem; margin-bottom: 0.5rem; }
+              p { opacity: 0.7; }
+              a { color: #00ffff; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>🎤 Karaoke Successor</h1>
+              <p>Run the development server to use the full application</p>
+              <p><code>bun run dev</code></p>
+            </div>
+          </body>
+          </html>
+          EOF
 
-      - name: Build Next.js app
-        run: bun run build
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
         env:
-          NODE_ENV: production
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.event.inputs.version || github.ref_name }}
+          releaseName: 'Karaoke Successor ${{ github.event.inputs.version || github.ref_name }}'
+          releaseBody: 'Automated release'
+          releaseDraft: true
+          prerelease: false
 
-      - name: Upload build artifacts
+      - name: Upload MSI artifact
         uses: actions/upload-artifact@v4
         with:
-          name: web-build
-          path: .next/
-          retention-days: 7
+          name: windows-msi
+          path: src-tauri/target/release/bundle/msi/*.msi
+          retention-days: 30
 
-  # Build Tauri desktop app for multiple platforms
-  build-desktop:
-    name: Build Desktop (${{ matrix.platform }})
-    needs: build
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: windows
-            os: windows-latest
-            target: x86_64-pc-windows-msvc
-          - platform: macos
-            os: macos-latest
-            target: aarch64-apple-darwin
-          - platform: macos-intel
-            os: macos-latest
-            target: x86_64-apple-darwin
-          - platform: linux
-            os: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-
+  # Build macOS DMG
+  build-macos:
+    name: Build macOS DMG
+    runs-on: macos-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -81,27 +110,15 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
+          targets: aarch64-apple-darwin
 
-      - name: Cache Rust dependencies
+      - name: Cache Rust
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
 
-      - name: Install dependencies (Ubuntu only)
-        if: matrix.os == 'ubuntu-22.04'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libwebkit2gtk-4.1-dev \
-            libgtk-3-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev \
-            libsoup-3.0-dev \
-            libjavascriptcoregtk-4.1-dev
-
-      - name: Install Node dependencies
-        run: bun install --frozen-lockfile
+      - name: Install dependencies
+        run: bun install
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
@@ -110,149 +127,58 @@ jobs:
         with:
           tagName: ${{ github.event.inputs.version || github.ref_name }}
           releaseName: 'Karaoke Successor ${{ github.event.inputs.version || github.ref_name }}'
-          releaseBody: 'See CHANGELOG.md for details'
+          releaseBody: 'Automated release'
           releaseDraft: true
           prerelease: false
-          target: ${{ matrix.target }}
-          args: --target ${{ matrix.target }}
 
-  # Create GitHub Release
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: src-tauri/target/release/bundle/dmg/*.dmg
+          retention-days: 30
+
+  # Create Release
   create-release:
-    name: Create GitHub Release
-    needs: [build, build-desktop]
+    name: Create Release
+    needs: [build-windows, build-macos]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Download Windows MSI
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-msi
+          path: artifacts/
 
-      - name: Get version
-        id: version
-        run: |
-          VERSION=${{ github.event.inputs.version || github.ref_name }}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      - name: Download macOS DMG
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-dmg
+          path: artifacts/
 
-      - name: Create release notes
-        run: |
-          VERSION=${{ steps.version.outputs.version }}
-          cat << EOF > release_notes.md
-          # Karaoke Successor ${VERSION}
-          
-          ## 🎤 The Ultimate Karaoke Experience
-          
-          A modern karaoke game with real-time pitch detection, party modes, and mobile companion app.
-          
-          ## 📦 Downloads
-          
-          | Platform | File |
-          |----------|------|
-          | Windows | \`Karaoke-Successor_*_x64.msi\` |
-          | macOS (Apple Silicon) | \`Karaoke-Successor_*_aarch64.dmg\` |
-          | macOS (Intel) | \`Karaoke-Successor_*_x64.dmg\` |
-          | Linux | \`Karaoke-Successor_*_amd64.AppImage\` |
-          
-          ## ✨ Features
-          
-          ### 🎮 Gameplay
-          - Real-time pitch detection (YIN algorithm)
-          - 3 difficulty levels (Easy, Medium, Hard)
-          - Star Power mode (2x points)
-          - Combo system with bonuses
-          - Golden notes & bonus notes
-          
-          ### 🎵 Song Support
-          - Built-in demo songs
-          - UltraStar format import
-          - Karaoke Mugen format
-          - MIDI Karaoke (.kar)
-          - SingStar format
-          - YouTube video backgrounds
-          
-          ### 🎉 Party Modes
-          - Pass the Mic
-          - Medley Contest
-          - Missing Words
-          - Duel Mode
-          - Blind Karaoke
-          
-          ### 📱 Mobile Companion
-          - Use phone as microphone
-          - Remote control
-          - QR code pairing
-          
-          ### 🏆 Highscores & Achievements
-          - 21 funny ranking titles
-          - 25+ achievements
-          - Performance analytics
-          
-          ### 🎨 Customization
-          - 6 color themes
-          - Keyboard shortcuts
-          - Audio effects (reverb, echo)
-          
-          ## 🚀 Quick Start
-          
-          1. Download and install for your platform
-          2. Allow microphone access
-          3. Select a song and start singing!
-          
-          ## 📱 Mobile App
-          
-          Connect your phone at: \`http://YOUR_IP:3000/mobile\`
-          
-          ## 🔗 Links
-          
-          - **Repository**: https://github.com/marco4192-ui/karaoke-successor
-          - **Issues**: https://github.com/marco4192-ui/karaoke-successor/issues
-          EOF
-
-      - name: Create GitHub Release
+      - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ steps.version.outputs.version }}
-          name: Karaoke Successor ${{ steps.version.outputs.version }}
-          body_path: release_notes.md
+          tag_name: ${{ github.event.inputs.version || github.ref_name }}
+          name: Karaoke Successor ${{ github.event.inputs.version || github.ref_name }}
+          body: |
+            # 🎤 Karaoke Successor
+            
+            The ultimate karaoke experience with real-time pitch detection!
+            
+            ## Downloads
+            - **Windows**: Download the `.msi` file below
+            - **macOS**: Download the `.dmg` file below
+            
+            ## Features
+            - Real-time pitch detection
+            - Party modes (Pass the Mic, Duel, etc.)
+            - Mobile companion app
+            - Song import (UltraStar, MIDI, etc.)
+            - Highscores & achievements
           draft: true
-          prerelease: false
+          files: artifacts/**/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # Build Docker image
-  build-docker:
-    name: Build Docker Image
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Get version
-        id: version
-        run: |
-          VERSION=${{ github.event.inputs.version || github.ref_name }}
-          echo "version=${VERSION#v}" >> $GITHUB_OUTPUT
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max

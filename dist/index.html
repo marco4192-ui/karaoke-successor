@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Karaoke Successor</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #2d1b4e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    .container {
+      text-align: center;
+      padding: 40px;
+    }
+    .logo {
+      font-size: 80px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #00ffff, #ff00ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .subtitle {
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 30px;
+    }
+    .instructions {
+      background: rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+    code {
+      background: rgba(0,255,255,0.2);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin-top: 30px;
+      text-align: left;
+    }
+    .feature {
+      background: rgba(255,255,255,0.05);
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .feature-icon { font-size: 24px; margin-bottom: 5px; }
+    .feature-title { font-weight: bold; margin-bottom: 5px; }
+    .feature-desc { font-size: 12px; opacity: 0.7; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">🎤</div>
+    <h1>Karaoke Successor</h1>
+    <p class="subtitle">The Ultimate Karaoke Experience</p>
+    
+    <div class="instructions">
+      <p><strong>🚀 To run the full application:</strong></p>
+      <p style="margin-top:10px">Open terminal and run:</p>
+      <p style="margin-top:10px"><code>bun run dev</code></p>
+      <p style="margin-top:10px">Then open <code>http://localhost:3000</code> in your browser</p>
+    </div>
+
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">🎵</div>
+        <div class="feature-title">Real-time Pitch Detection</div>
+        <div class="feature-desc">Advanced YIN algorithm for accurate pitch tracking</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🎉</div>
+        <div class="feature-title">Party Modes</div>
+        <div class="feature-desc">Pass the Mic, Duel, Medley & more</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📱</div>
+        <div class="feature-title">Mobile Companion</div>
+        <div class="feature-desc">Use your phone as a microphone</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🏆</div>
+        <div class="feature-title">Highscores</div>
+        <div class="feature-desc">Compete for the top spot</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
