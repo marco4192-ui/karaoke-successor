@@ -39,6 +39,62 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Ensure dist folder exists
+        shell: bash
+        run: |
+          mkdir -p dist
+          if [ ! -f dist/index.html ]; then
+            echo "Creating dist/index.html..."
+            cat > dist/index.html << 'HTMLEOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Karaoke Successor - Loading...</title>
+            <style>
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body {
+                font-family: 'Segoe UI', system-ui, sans-serif;
+                background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #2d1b4e 100%);
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+              }
+              .container { text-align: center; padding: 40px; }
+              .logo { font-size: 80px; margin-bottom: 20px; animation: pulse 2s infinite; }
+              @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+              @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+              .spinner { width: 50px; height: 50px; border: 4px solid rgba(0, 255, 255, 0.3); border-top-color: #00ffff; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
+              h1 { font-size: 2rem; margin-bottom: 10px; background: linear-gradient(90deg, #00ffff, #ff00ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+              .status { color: rgba(255,255,255,0.7); font-size: 14px; margin-top: 10px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="logo">🎤</div>
+              <h1>Karaoke Successor</h1>
+              <div class="spinner"></div>
+              <p class="status">Starting server... Please run 'bun run dev' manually if this takes too long.</p>
+            </div>
+            <script>
+              let attempts = 0;
+              function checkServer() {
+                attempts++;
+                fetch('http://localhost:3000', { method: 'HEAD', mode: 'no-cors' })
+                  .then(() => { window.location.href = 'http://localhost:3000'; })
+                  .catch(() => { if (attempts < 120) setTimeout(checkServer, 500); });
+              }
+              setTimeout(checkServer, 1000);
+            </script>
+          </body>
+          </html>
+          HTMLEOF
+          fi
+          ls -la dist/
+
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
@@ -56,8 +112,8 @@ jobs:
             ### Windows
             1. Download the `.msi` file
             2. Run the installer
-            3. Launch "Karaoke Successor" from Start Menu
-            4. The app will automatically start the Next.js server
+            3. Make sure [Bun](https://bun.sh) or Node.js is installed
+            4. Launch "Karaoke Successor" from Start Menu
             
             ## ✨ Features
             - Real-time pitch detection (YIN algorithm)
@@ -65,10 +121,7 @@ jobs:
             - Party modes (Pass the Mic, Duel, Medley, etc.)
             - Mobile companion app (use phone as microphone)
             - Song import (UltraStar, MIDI, SingStar formats)
-            - YouTube video backgrounds
             - Highscores with 21 funny ranking titles
-            - 25+ achievements
-            - 6 color themes
             
             ## ⚠️ Requirements
             - [Bun](https://bun.sh) or Node.js 18+ must be installed
@@ -80,14 +133,6 @@ jobs:
         with:
           name: windows-msi
           path: src-tauri/target/release/bundle/msi/*.msi
-          retention-days: 30
-          if-no-files-found: warn
-
-      - name: Upload NSIS artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-nsis
-          path: src-tauri/target/release/bundle/nsis/*.exe
           retention-days: 30
           if-no-files-found: warn
 
@@ -117,7 +162,12 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Build Tauri app (Universal)
+      - name: Ensure dist folder exists
+        run: |
+          mkdir -p dist
+          ls -la dist/
+
+      - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -133,14 +183,6 @@ jobs:
         with:
           name: macos-dmg
           path: src-tauri/target/release/bundle/dmg/*.dmg
-          retention-days: 30
-          if-no-files-found: warn
-
-      - name: Upload App artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-app
-          path: src-tauri/target/release/bundle/macos/*.app
           retention-days: 30
           if-no-files-found: warn
 
@@ -179,6 +221,11 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Ensure dist folder exists
+        run: |
+          mkdir -p dist
+          ls -la dist/
+
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
@@ -197,64 +244,3 @@ jobs:
           path: src-tauri/target/release/bundle/appimage/*.AppImage
           retention-days: 30
           if-no-files-found: warn
-
-  # Build Docker image for web version
-  build-docker:
-    name: Build Docker Image
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Get version
-        id: version
-        run: |
-          VERSION=${{ github.event.inputs.version || github.ref_name }}
-          echo "version=${VERSION#v}" >> $GITHUB_OUTPUT
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  # Summary
-  summary:
-    name: Build Summary
-    needs: [build-windows, build-macos, build-linux]
-    runs-on: ubuntu-latest
-    if: always()
-    steps:
-      - name: Create summary
-        run: |
-          echo "## 🎉 Release Build Complete!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** ${{ github.event.inputs.version || github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
-          echo "- [Windows MSI](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
-          echo "- [macOS DMG](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
-          echo "- [Linux AppImage](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Docker" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "docker pull ghcr.io/${{ github.repository }}:latest" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
