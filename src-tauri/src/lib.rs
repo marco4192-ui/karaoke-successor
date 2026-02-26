@@ -34,41 +34,53 @@ pub fn run() {
             thread::spawn(move || {
                 thread::sleep(Duration::from_millis(500));
                 
-                // Try to find Node.js and server in various locations
-                let possible_node_paths: Vec<PathBuf> = vec![
-                    // Bundled portable node (from installer)
-                    handle.path().resource_dir().map(|p| p.join("node").join("node.exe")).unwrap_or_default(),
-                    handle.path().resource_dir().map(|p| p.join("portable-node").join("node.exe")).unwrap_or_default(),
-                    // Next to executable
-                    env::current_exe().map(|p| p.parent().unwrap().join("node").join("node.exe")).unwrap_or_default(),
-                    env::current_exe().map(|p| p.parent().unwrap().join("portable-node").join("node.exe")).unwrap_or_default(),
-                ];
-                
-                let possible_server_paths: Vec<PathBuf> = vec![
-                    // Bundled server (from installer)
-                    handle.path().resource_dir().map(|p| p.join("server").join("server.js")).unwrap_or_default(),
-                    // Next to executable
-                    env::current_exe().map(|p| p.parent().unwrap().join("server").join("server.js")).unwrap_or_default(),
-                ];
+                // Get resource directory (where bundled files are)
+                let resource_dir = handle.path().resource_dir();
+                println!("Resource dir: {:?}", resource_dir);
                 
                 let mut node_path: Option<PathBuf> = None;
                 let mut server_path: Option<PathBuf> = None;
                 
-                // Find Node.js
-                for path in possible_node_paths {
-                    if path.exists() {
-                        println!("Found Node.js at: {:?}", path);
-                        node_path = Some(path);
-                        break;
+                // Look for bundled Node.js
+                if let Ok(ref res_dir) = resource_dir {
+                    let bundled_node = res_dir.join("bundled").join("node").join(if cfg!(windows) { "node.exe" } else { "node" });
+                    if bundled_node.exists() {
+                        println!("Found bundled Node.js at: {:?}", bundled_node);
+                        node_path = Some(bundled_node);
                     }
                 }
                 
-                // Find server
-                for path in possible_server_paths {
-                    if path.exists() {
-                        println!("Found server at: {:?}", path);
-                        server_path = Some(path);
-                        break;
+                // Look for bundled server
+                if let Ok(ref res_dir) = resource_dir {
+                    let bundled_server = res_dir.join("bundled").join("server").join("server.js");
+                    if bundled_server.exists() {
+                        println!("Found bundled server at: {:?}", bundled_server);
+                        server_path = Some(bundled_server);
+                    }
+                }
+                
+                // Also check next to executable
+                if node_path.is_none() {
+                    if let Ok(exe_path) = env::current_exe() {
+                        if let Some(exe_dir) = exe_path.parent() {
+                            let node_exe = exe_dir.join("bundled").join("node").join(if cfg!(windows) { "node.exe" } else { "node" });
+                            if node_exe.exists() {
+                                println!("Found Node.js next to exe: {:?}", node_exe);
+                                node_path = Some(node_exe);
+                            }
+                        }
+                    }
+                }
+                
+                if server_path.is_none() {
+                    if let Ok(exe_path) = env::current_exe() {
+                        if let Some(exe_dir) = exe_path.parent() {
+                            let server_exe = exe_dir.join("bundled").join("server").join("server.js");
+                            if server_exe.exists() {
+                                println!("Found server next to exe: {:?}", server_exe);
+                                server_path = Some(server_exe);
+                            }
+                        }
                     }
                 }
                 
@@ -77,22 +89,27 @@ pub fn run() {
                 // Try bundled Node.js + server
                 if let (Some(node), Some(server)) = (&node_path, &server_path) {
                     println!("Starting bundled server with Node.js...");
+                    println!("Node: {:?}", node);
+                    println!("Server: {:?}", server);
                     
                     if let Ok(child) = Command::new(node)
                         .arg(server)
                         .current_dir(server.parent().unwrap())
                         .env("PORT", "3000")
+                        .env("HOSTNAME", "0.0.0.0")
                         .spawn()
                     {
                         unsafe { SERVER_PROCESS = Some(child); }
                         server_started = true;
+                    } else {
+                        println!("Failed to start bundled server");
                     }
                 }
                 
-                // Fallback: Try system Node.js
+                // Fallback: Try system Node.js with bundled server
                 if !server_started {
                     if let Some(server) = &server_path {
-                        println!("Trying system Node.js...");
+                        println!("Trying system Node.js with bundled server...");
                         if let Ok(child) = Command::new("node")
                             .arg(server)
                             .current_dir(server.parent().unwrap())
@@ -132,10 +149,10 @@ pub fn run() {
                 // Wait for server to be ready
                 if server_started {
                     println!("Waiting for server...");
-                    for _ in 0..120 {
+                    for i in 0..120 {
                         if check_server_running() {
                             SERVER_STARTED.store(true, Ordering::SeqCst);
-                            println!("Server is ready!");
+                            println!("Server is ready after {} attempts!", i);
                             
                             if let Some(window) = handle.get_webview_window("main") {
                                 let _ = window.eval("window.location.href = 'http://localhost:3000'");
@@ -144,15 +161,15 @@ pub fn run() {
                         }
                         thread::sleep(Duration::from_millis(500));
                     }
-                    println!("Server startup timeout");
+                    println!("Server startup timeout after 60 seconds");
                 } else {
-                    println!("Could not start server");
+                    println!("Could not start server - no Node.js or bun found");
                 }
             });
             
             Ok(())
         })
-        .on_window_event(|window, event| {
+        .on_window_event(|_window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
                 unsafe {
                     if let Some(ref mut child) = SERVER_PROCESS {

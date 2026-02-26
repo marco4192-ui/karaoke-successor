@@ -37,6 +37,13 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "resources": [
+      "bundled/*",
+      "bundled/server/*",
+      "bundled/server/.next/*",
+      "bundled/server/.next/static/*",
+      "bundled/node/*"
+    ],
     "windows": {
       "wix": {
         "language": "en-US"
