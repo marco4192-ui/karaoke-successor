@@ -121,15 +121,7 @@ jobs:
       - name: Create standalone launcher script
         shell: pwsh
         run: |
-          $launcherScript = @'
-@echo off
-cd /d "%~dp0"
-set PORT=3000
-set HOSTNAME=0.0.0.0
-start "" "..\node\node.exe" "server.js"
-timeout /t 3 /nobreak >nul
-start http://localhost:3000
-'@
+          $launcherScript = "@echo off`ncd /d `"%~dp0`"`nset PORT=3000`nset HOSTNAME=0.0.0.0`nstart `"`" `"..\node\node.exe`" `"server.js`"`ntimeout /t 3 /nobreak >nul`nstart http://localhost:3000"
           Set-Content -Path "src-tauri\bundled\server\start-server.bat" -Value $launcherScript -Encoding ASCII
           Write-Host "Created start-server.bat"
 
