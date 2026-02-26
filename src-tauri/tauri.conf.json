@@ -37,10 +37,6 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": {
-      "../.next/standalone/**": "server/",
-      "../portable-node/**": "node/"
-    },
     "windows": {
       "wix": {
         "language": "en-US"

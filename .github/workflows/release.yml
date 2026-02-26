@@ -58,25 +58,21 @@ jobs:
         run: |
           # Create directories
           New-Item -ItemType Directory -Force -Path ".next\standalone\.next\static"
-          New-Item -ItemType Directory -Force -Path ".next\standalone\public"
           
           # Copy static files
           Copy-Item -Recurse -Force ".next\static\*" ".next\standalone\.next\static\"
           
           # Copy public folder if exists
           if (Test-Path "public") {
-            Get-ChildItem "public" -ErrorAction SilentlyContinue | ForEach-Object {
-              Copy-Item -Recurse -Force $_.FullName ".next\standalone\public\"
-            }
+            Copy-Item -Recurse -Force "public" ".next\standalone\public"
           }
           
           Write-Host "Standalone server prepared"
-          Get-ChildItem ".next\standalone" -Recurse | Select-Object FullName
 
-      - name: Download Node.js portable
+      - name: Download and prepare Node.js portable
         shell: pwsh
         run: |
-          # Create portable node directory
+          # Create portable-node directory at project root
           New-Item -ItemType Directory -Force -Path "portable-node"
           
           # Download Node.js
@@ -87,31 +83,26 @@ jobs:
           # Extract
           Expand-Archive -Path "node.zip" -DestinationPath "." -Force
           
-          # Copy essential files to portable-node
+          # Copy node.exe to portable-node
           Copy-Item -Force "node-v${{ env.NODE_VERSION }}-win-x64\node.exe" "portable-node\"
           
           Write-Host "Node.js portable prepared"
           Get-ChildItem "portable-node"
 
-      - name: Create launcher script
+      - name: Verify files before Tauri build
         shell: pwsh
         run: |
-          # Create a batch file that starts the server and opens the app
-          $batchContent = @'
-          @echo off
-          cd /d "%~dp0"
-          start "" node\portable\node.exe server\server.js
-          :wait
-          timeout /t 2 /nobreak >nul
-          curl -s http://localhost:3000 >nul 2>&1
-          if errorlevel 1 goto wait
-          start http://localhost:3000
-          '@
+          Write-Host "Checking standalone server..."
+          Get-ChildItem ".next\standalone" | Select-Object Name
           
-          # Create start.bat
-          $batchContent | Out-File -FilePath "start.bat" -Encoding ASCII
+          Write-Host "Checking portable-node..."
+          Get-ChildItem "portable-node" | Select-Object Name
           
-          Write-Host "Launcher script created"
+          Write-Host "Checking if server.js exists..."
+          Test-Path ".next\standalone\server.js"
+
+      - name: Ensure dist folder exists
+        run: New-Item -ItemType Directory -Force -Path "dist"
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
@@ -168,11 +159,6 @@ jobs:
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -191,6 +177,10 @@ jobs:
           bun run next build
           mkdir -p .next/standalone/.next/static
           cp -r .next/static/* .next/standalone/.next/static/
+          mkdir -p portable-node
+          curl -sL https://nodejs.org/dist/v${{ env.NODE_VERSION }}/node-v${{ env.NODE_VERSION }}-darwin-x64.tar.gz | tar xz
+          cp node-v${{ env.NODE_VERSION }}-darwin-x64/bin/node portable-node/
+          chmod +x portable-node/node
 
       - name: Ensure dist folder
         run: mkdir -p dist
@@ -228,11 +218,6 @@ jobs:
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
@@ -260,6 +245,10 @@ jobs:
           bun run next build
           mkdir -p .next/standalone/.next/static
           cp -r .next/static/* .next/standalone/.next/static/
+          mkdir -p portable-node
+          curl -sL https://nodejs.org/dist/v${{ env.NODE_VERSION }}/node-v${{ env.NODE_VERSION }}-linux-x64.tar.xz | tar xJ
+          cp node-v${{ env.NODE_VERSION }}-linux-x64/bin/node portable-node/
+          chmod +x portable-node/node
 
       - name: Ensure dist folder
         run: mkdir -p dist
