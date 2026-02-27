@@ -1,7 +1,30 @@
 // UltraStar txt file parser
 // Supports the standard UltraStar song format
+// 
+// Format explanation:
+// - Header: #KEY:VALUE (e.g., #TITLE:, #ARTIST:, #BPM:, #GAP:)
+// - Notes: <type> <startBeat> <duration> <pitch> <lyric>
+//   - : = normal note
+//   - * = golden note (bonus points)
+//   - F = freestyle (optional)
+//   - R = rap note
+//   - G = rap golden
+// - Line breaks: - <beat> (marks end of a lyric line)
+// - End: E
 
 import { Song, Note, LyricLine, Difficulty, midiToFrequency } from '@/types/game';
+
+export interface UltraStarNote {
+  type: ':' | '*' | 'F' | 'R' | 'G';
+  startBeat: number;
+  duration: number;
+  pitch: number; // Relative pitch (0-24 typical range)
+  lyric: string;
+}
+
+export interface UltraStarLineBreak {
+  beat: number;
+}
 
 export interface UltraStarSong {
   title: string;
@@ -12,7 +35,7 @@ export interface UltraStarSong {
   cover?: string;
   background?: string;
   bpm: number;
-  gap: number;
+  gap: number; // Milliseconds before first note
   previewStart?: number;
   previewDuration?: number;
   genre?: string;
@@ -20,15 +43,9 @@ export interface UltraStarSong {
   language?: string;
   edition?: string;
   creator?: string;
+  end?: number; // #END tag - song end time in ms
   notes: UltraStarNote[];
-}
-
-export interface UltraStarNote {
-  type: ':' | '*' | 'F' | 'R' | 'G'; // : = normal, * = golden, F = freestyle, R = rap, G = rap golden
-  startBeat: number;
-  duration: number;
-  pitch: number; // MIDI note
-  lyric: string;
+  lineBreaks: number[]; // Beats where line breaks occur
 }
 
 // Parse UltraStar txt file content
@@ -42,14 +59,10 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
     bpm: 120,
     gap: 0,
     notes: [],
+    lineBreaks: [],
   };
 
-  let lastNoteEnd = 0;
-
   for (const line of lines) {
-    // Skip empty lines
-    if (line.length === 0) continue;
-
     // Parse header attributes (#KEY:VALUE format)
     if (line.startsWith('#')) {
       const match = line.match(/^#(\w+):(.*)$/);
@@ -69,7 +82,7 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
             song.video = value.trim();
             break;
           case 'VIDEOGAP':
-            song.videoGap = parseFloat(value) || 0;
+            song.videoGap = parseFloat(value.replace(',', '.')) || 0;
             break;
           case 'COVER':
             song.cover = value.trim();
@@ -83,6 +96,9 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
             break;
           case 'GAP':
             song.gap = parseInt(value) || 0;
+            break;
+          case 'END':
+            song.end = parseInt(value) || undefined;
             break;
           case 'PREVIEWSTART':
             song.previewStart = parseFloat(value) || 0;
@@ -115,12 +131,21 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
       break;
     }
 
+    // Parse line break: - <beat> [duration] [pitch]
+    // Line breaks mark the end of a lyric line
+    if (line.startsWith('-')) {
+      const match = line.match(/^-\s*(-?\d+)/);
+      if (match) {
+        song.lineBreaks.push(parseInt(match[1]));
+      }
+      continue;
+    }
+
     // Parse note lines
-    // Format: <type> <start> <duration> <pitch> <lyric>
+    // Format: <type> <startBeat> <duration> <pitch> <lyric>
     // Example: : 0 4 12 Hello
     // Types: : = normal, * = golden, F = freestyle, R = rap, G = rap golden
-    // Note: * needs to be escaped in regex, and we use [\:*FGR] character class
-    const noteMatch = line.match(/^([:*FGR])(-?\d+)\s+(\d+)\s+(-?\d+)\s*(.*)$/);
+    const noteMatch = line.match(/^([:*FGR])\s*(-?\d+)\s+(\d+)\s+(-?\d+)\s*(.*)$/);
     if (noteMatch) {
       const [, type, startStr, durationStr, pitchStr, lyric] = noteMatch;
       const start = parseInt(startStr);
@@ -134,8 +159,6 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
         pitch,
         lyric: lyric.trim(),
       });
-
-      lastNoteEnd = start + duration;
     }
   }
 
@@ -150,96 +173,96 @@ export function convertUltraStarToSong(
   coverUrl?: string
 ): Song {
   // Convert beats to milliseconds
-  const beatDuration = 60000 / ultraStar.bpm; // ms per beat
+  // beatDuration = 60000 / BPM (ms per beat)
+  const beatDuration = 60000 / ultraStar.bpm;
   
+  // Base MIDI note offset - UltraStar pitches are relative
+  // Typical range is 0-24, mapping to C3-C5 (MIDI 48-72)
+  // This is the standard UltraStar pitch mapping
+  const MIDI_BASE_OFFSET = 48;
+
+  // Sort notes by start beat
+  const sortedNotes = [...ultraStar.notes].sort((a, b) => a.startBeat - b.startBeat);
+  
+  // Create a set of line break beats for quick lookup
+  const lineBreakBeats = new Set(ultraStar.lineBreaks);
+
   // Group notes into lyric lines
   const lyricLines: LyricLine[] = [];
   let currentLineNotes: Note[] = [];
   let currentLineText = '';
-  let currentLineStart = 0;
-  let lastEndBeat = 0;
 
-  // Sort notes by start beat
-  const sortedNotes = [...ultraStar.notes].sort((a, b) => a.startBeat - b.startBeat);
-
-  // Detect line breaks (gap in beats > threshold means new line)
-  const LINE_BREAK_THRESHOLD = 8; // beats
-  
-  // Base MIDI note offset - UltraStar pitches are relative, typically starting around C3-C4
-  // Common range is 0-24 relative, so we offset by 48 (C3) to get actual MIDI notes
-  const MIDI_BASE_OFFSET = 48;
-
-  for (const note of sortedNotes) {
-    // Check for line break
-    if (lastEndBeat > 0 && (note.startBeat - lastEndBeat) >= LINE_BREAK_THRESHOLD) {
-      // Save current line
-      if (currentLineNotes.length > 0) {
-        const endTime = currentLineNotes[currentLineNotes.length - 1].startTime + 
-                        currentLineNotes[currentLineNotes.length - 1].duration;
-        lyricLines.push({
-          id: `line-${lyricLines.length}`,
-          text: currentLineText.trim(),
-          startTime: currentLineStart,
-          endTime,
-          notes: currentLineNotes,
-        });
-        currentLineNotes = [];
-        currentLineText = '';
-      }
-    }
-
-    // Convert note timing
+  for (let i = 0; i < sortedNotes.length; i++) {
+    const note = sortedNotes[i];
+    const noteEndBeat = note.startBeat + note.duration;
+    
+    // Convert note timing:
+    // startTime = GAP + (startBeat * beatDuration)
+    // This accounts for the delay before lyrics start
     const startTime = ultraStar.gap + (note.startBeat * beatDuration);
     const duration = note.duration * beatDuration;
-    
-    if (currentLineNotes.length === 0) {
-      currentLineStart = startTime;
-    }
 
     const convertedNote: Note = {
       id: `note-${lyricLines.length}-${currentLineNotes.length}`,
-      pitch: note.pitch + MIDI_BASE_OFFSET, // Apply MIDI offset to relative UltraStar pitch
+      pitch: note.pitch + MIDI_BASE_OFFSET,
       frequency: midiToFrequency(note.pitch + MIDI_BASE_OFFSET),
-      startTime,
-      duration,
+      startTime: Math.round(startTime),
+      duration: Math.round(duration),
       lyric: note.lyric,
       isBonus: note.type === 'F', // Freestyle notes are bonus
       isGolden: note.type === '*' || note.type === 'G', // Golden notes
     };
 
     currentLineNotes.push(convertedNote);
-    currentLineText += note.lyric + ' ';
-    lastEndBeat = note.startBeat + note.duration;
+    currentLineText += note.lyric;
+
+    // Check if this note ends a line:
+    // 1. Explicit line break after this note
+    // 2. Or it's the last note
+    const isLineBreak = lineBreakBeats.has(noteEndBeat) || 
+                        (i < sortedNotes.length - 1 && 
+                         sortedNotes[i + 1].startBeat - noteEndBeat >= 8); // Fallback: gap > 8 beats
+
+    if (isLineBreak || i === sortedNotes.length - 1) {
+      if (currentLineNotes.length > 0) {
+        const lineStartTime = currentLineNotes[0].startTime;
+        const lineEndTime = currentLineNotes[currentLineNotes.length - 1].startTime + 
+                           currentLineNotes[currentLineNotes.length - 1].duration;
+        
+        lyricLines.push({
+          id: `line-${lyricLines.length}`,
+          text: currentLineText.trim(),
+          startTime: lineStartTime,
+          endTime: lineEndTime,
+          notes: currentLineNotes,
+        });
+        
+        currentLineNotes = [];
+        currentLineText = '';
+      }
+    }
   }
 
-  // Don't forget the last line
-  if (currentLineNotes.length > 0) {
-    const endTime = currentLineNotes[currentLineNotes.length - 1].startTime + 
-                    currentLineNotes[currentLineNotes.length - 1].duration;
-    lyricLines.push({
-      id: `line-${lyricLines.length}`,
-      text: currentLineText.trim(),
-      startTime: currentLineStart,
-      endTime,
-      notes: currentLineNotes,
-    });
+  // Calculate total duration from #END tag or last note
+  let totalDuration: number;
+  if (ultraStar.end) {
+    totalDuration = ultraStar.end;
+  } else if (lyricLines.length > 0) {
+    totalDuration = Math.max(...lyricLines.map(l => l.endTime)) + 5000; // 5 second buffer
+  } else {
+    totalDuration = 180000; // Default 3 minutes
   }
-
-  // Calculate total duration
-  const totalDuration = lyricLines.length > 0 
-    ? Math.max(...lyricLines.map(l => l.endTime)) + 10000 // Add 10 seconds buffer
-    : 180000;
 
   // Determine difficulty based on note density
   const totalNotes = sortedNotes.length;
   const songDurationMinutes = totalDuration / 60000;
-  const notesPerMinute = totalNotes / songDurationMinutes;
+  const notesPerMinute = songDurationMinutes > 0 ? totalNotes / songDurationMinutes : 0;
   
   let difficulty: Difficulty = 'medium';
   if (notesPerMinute > 40) difficulty = 'hard';
   else if (notesPerMinute < 20) difficulty = 'easy';
 
-  // Calculate rating based on difficulty
+  // Calculate rating based on note density
   const rating = Math.min(5, Math.max(1, Math.ceil(notesPerMinute / 10)));
 
   return {
@@ -293,17 +316,21 @@ export function generateUltraStarTxt(song: Song): string {
   
   // Convert notes to UltraStar format
   const beatDuration = 60000 / song.bpm;
+  const MIDI_BASE_OFFSET = 48;
   
   for (const line of song.lyrics) {
     for (const note of line.notes) {
       const startBeat = Math.round((note.startTime - song.gap) / beatDuration);
       const duration = Math.round(note.duration / beatDuration);
+      const relativePitch = note.pitch - MIDI_BASE_OFFSET;
       const type = note.isGolden ? '*' : note.isBonus ? 'F' : ':';
       
-      lines.push(`${type} ${startBeat} ${duration} ${note.pitch} ${note.lyric}`);
+      lines.push(`${type} ${startBeat} ${duration} ${relativePitch} ${note.lyric}`);
     }
-    // Line break indicator
-    lines.push('- 0 0 0 ');
+    // Line break indicator at the end of each line
+    const lastNote = line.notes[line.notes.length - 1];
+    const lineBreakBeat = Math.round((lastNote.startTime + lastNote.duration - song.gap) / beatDuration);
+    lines.push(`- ${lineBreakBeat}`);
   }
   
   lines.push('E'); // End marker
