@@ -278,7 +278,10 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev \
             libsoup-3.0-dev \
-            libjavascriptcoregtk-4.1-dev
+            libjavascriptcoregtk-4.1-dev \
+            libfuse2 \
+            file \
+            desktop-file-utils
 
       - name: Install dependencies
         run: bun install
@@ -319,10 +322,11 @@ jobs:
           releaseBody: 'Automated release'
           releaseDraft: true
           prerelease: false
+          args: --bundles deb
 
-      - name: Upload AppImage artifact
+      - name: Upload DEB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux-appimage
-          path: src-tauri/target/release/bundle/appimage/*.AppImage
+          name: linux-deb
+          path: src-tauri/target/release/bundle/deb/*.deb
           retention-days: 30
