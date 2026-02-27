@@ -1324,28 +1324,24 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             const timeUntilEnd = noteEnd - gameState.currentTime;
             const isActive = gameState.currentTime >= note.startTime && gameState.currentTime <= noteEnd;
             
-            // Calculate smooth horizontal position
-            // Notes appear from right (100%) and move to left (-20%)
-            // The sing line is at SING_LINE_POSITION (25%)
-            // A note is at sing line when timeUntilNote = 0
-            // Time in seconds = timeUntilNote / 1000
-            // We want notes to travel from right edge to left edge over NOTE_WINDOW duration
+            // Calculate smooth horizontal position (UltraStar/Vocaluxe style)
+            // Notes appear from right (100%+) and move to left
+            // A note is at SING_LINE_POSITION when timeUntilNote = 0
+            // 
+            // When timeUntilNote = NOTE_WINDOW (8s): note at right edge (120%)
+            // When timeUntilNote = 0: note at sing line (SING_LINE_POSITION %)
+            // When timeUntilNote < 0: note continues left past sing line
             
-            // Position: start at 100% when 5s away, reach SING_LINE_POSITION at t=0, continue left
-            const totalTravelDistance = 100 + SING_LINE_POSITION; // From right edge (100%) past sing line to -20%
-            const progress = 1 - (timeUntilEnd / NOTE_WINDOW); // 0 at 5s away, 1 when passed
-            
-            // Smooth linear movement from right to left
-            const x = 100 - (progress * totalTravelDistance);
+            const distanceFromSingLine = (timeUntilNote / NOTE_WINDOW) * (100 - SING_LINE_POSITION + 20);
+            const x = SING_LINE_POSITION + distanceFromSingLine;
             
             // Position based on pitch (vertical) - MIDI range 48-72 (2 octaves)
             // Higher pitch = higher on screen = lower Y value
             const pitchY = 100 - ((note.pitch - 48) / 24) * 100;
             
-            // Note width based on duration (longer notes = wider bars)
-            // 1 second = ~150px, minimum 80px for short notes
-            const noteWidth = Math.max(80, note.duration / 6.5);
-            // Note height represents pitch intensity
+            // Note width based on duration (as percentage of screen)
+            // 1 second should span roughly 15% of screen at our scroll speed
+            const noteWidthPercent = (note.duration / NOTE_WINDOW) * (100 - SING_LINE_POSITION + 20);
             const noteHeight = 36;
             
             return (
@@ -1361,11 +1357,12 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
                 style={{
                   left: `${x}%`,
                   top: `${Math.max(5, Math.min(85, pitchY))}%`,
-                  width: `${noteWidth}px`,
+                  width: `${noteWidthPercent}%`,
                   height: `${noteHeight}px`,
                   transform: 'translateY(-50%)',
                   boxShadow: isActive ? '0 0 20px rgba(34, 211, 238, 0.6)' : 'none',
-                  opacity: x > 100 || x < -30 ? 0 : 1,
+                  opacity: x > 120 || x < -30 ? 0 : 1,
+                  transition: 'opacity 0.3s ease',
                 }}
               />
             );
