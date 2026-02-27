@@ -81,6 +81,9 @@ interface YTPlayer {
   destroy: () => void;
 }
 
+// Global player counter for unique IDs
+let playerCounter = 0;
+
 export function YouTubePlayer({ 
   videoId, 
   videoGap = 0,
@@ -94,6 +97,7 @@ export function YouTubePlayer({
   const playerRef = useRef<YTPlayer | null>(null);
   const [isApiLoaded, setIsApiLoaded] = useState(false);
   const timeUpdateIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const playerIdRef = useRef<string>(`youtube-player-${++playerCounter}`);
   
   // Load YouTube IFrame API
   useEffect(() => {
@@ -101,8 +105,7 @@ export function YouTubePlayer({
     
     // Check if API is already loaded
     if (window.YT && window.YT.Player) {
-      // Use microtask to avoid synchronous setState
-      queueMicrotask(() => setIsApiLoaded(true));
+      setIsApiLoaded(true);
       return;
     }
     
@@ -135,47 +138,78 @@ export function YouTubePlayer({
     };
   }, []);
   
-  // Initialize player when API is loaded
+  // Initialize player when API is loaded and videoId changes
   useEffect(() => {
-    if (!isApiLoaded || !containerRef.current || playerRef.current) return;
+    if (!isApiLoaded || !containerRef.current) return;
+    
+    // Destroy existing player
+    if (playerRef.current) {
+      playerRef.current.destroy();
+      playerRef.current = null;
+    }
+    
+    // Generate new player ID for this video
+    playerIdRef.current = `youtube-player-${++playerCounter}`;
     
     const adjustedStartTime = Math.max(0, (startTime / 1000) - videoGap);
     
-    playerRef.current = new window.YT.Player(`youtube-player-${videoId}`, {
-      videoId,
-      playerVars: {
-        autoplay: 0,
-        controls: 0,
-        disablekb: 1,
-        fs: 0,
-        modestbranding: 1,
-        rel: 0,
-        start: Math.floor(adjustedStartTime),
-        origin: window.location.origin,
-      },
-      events: {
-        onReady: () => {
-          onReady?.();
+    // Small delay to ensure DOM is ready
+    const initTimeout = setTimeout(() => {
+      playerRef.current = new window.YT.Player(playerIdRef.current, {
+        videoId,
+        playerVars: {
+          autoplay: 0,
+          controls: 0,
+          disablekb: 1,
+          fs: 0,
+          modestbranding: 1,
+          rel: 0,
+          start: Math.floor(adjustedStartTime),
+          origin: window.location.origin,
         },
-        onStateChange: (event) => {
-          if (event.data === window.YT.PlayerState.ENDED) {
-            onEnded?.();
-          }
+        events: {
+          onReady: () => {
+            console.log('YouTube player ready');
+            onReady?.();
+          },
+          onStateChange: (event) => {
+            if (event.data === window.YT.PlayerState.ENDED) {
+              onEnded?.();
+            }
+          },
+          onError: (event) => {
+            console.error('YouTube player error:', event.data);
+          },
         },
-      },
-    });
-    
-    // Start time update interval
-    timeUpdateIntervalRef.current = setInterval(() => {
-      if (playerRef.current && onTimeUpdate) {
-        const currentTime = playerRef.current.getCurrentTime();
-        onTimeUpdate((currentTime + videoGap) * 1000); // Apply videoGap and convert to ms
+      });
+      
+      // Start time update interval
+      if (timeUpdateIntervalRef.current) {
+        clearInterval(timeUpdateIntervalRef.current);
       }
+      
+      timeUpdateIntervalRef.current = setInterval(() => {
+        if (playerRef.current && onTimeUpdate) {
+          try {
+            const currentTime = playerRef.current.getCurrentTime();
+            if (typeof currentTime === 'number' && !isNaN(currentTime)) {
+              onTimeUpdate((currentTime + videoGap) * 1000); // Apply videoGap and convert to ms
+            }
+          } catch (e) {
+            // Player not ready yet
+          }
+        }
+      }, 100);
     }, 100);
     
     return () => {
+      clearTimeout(initTimeout);
       if (playerRef.current) {
-        playerRef.current.destroy();
+        try {
+          playerRef.current.destroy();
+        } catch (e) {
+          // Ignore destroy errors
+        }
         playerRef.current = null;
       }
       if (timeUpdateIntervalRef.current) {
@@ -188,30 +222,21 @@ export function YouTubePlayer({
   useEffect(() => {
     if (!playerRef.current) return;
     
-    if (isPlaying) {
-      playerRef.current.playVideo();
-    } else {
-      playerRef.current.pauseVideo();
+    try {
+      if (isPlaying) {
+        playerRef.current.playVideo();
+      } else {
+        playerRef.current.pauseVideo();
+      }
+    } catch (e) {
+      // Player not ready
     }
   }, [isPlaying]);
-  
-  // Method to seek to a specific time
-  const seekTo = useCallback((timeMs: number) => {
-    if (!playerRef.current) return;
-    const adjustedTime = (timeMs / 1000) - videoGap;
-    playerRef.current.seekTo(Math.max(0, adjustedTime), true);
-  }, [videoGap]);
-  
-  // Method to get current time
-  const getCurrentTime = useCallback(() => {
-    if (!playerRef.current) return 0;
-    return (playerRef.current.getCurrentTime() + videoGap) * 1000;
-  }, [videoGap]);
   
   return (
     <div ref={containerRef} className="absolute inset-0 w-full h-full">
       <div 
-        id={`youtube-player-${videoId}`} 
+        id={playerIdRef.current} 
         className="absolute inset-0 w-full h-full"
         style={{ pointerEvents: 'none' }}
       />

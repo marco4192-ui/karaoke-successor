@@ -414,6 +414,8 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
   const [previewSong, setPreviewSong] = useState<Song | null>(null);
   const [previewAudio, setPreviewAudio] = useState<HTMLAudioElement | null>(null);
   const [libraryVersion, setLibraryVersion] = useState(0); // For forcing reload
+  const [songsLoading, setSongsLoading] = useState(false);
+  const [loadedSongs, setLoadedSongs] = useState<Song[]>(() => getAllSongs());
   const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { setDifficulty, gameState, addToQueue, queue, activeProfileId, profiles, setGameMode } = useGameStore();
   
@@ -470,16 +472,15 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
   const activeProfile = profiles.find(p => p.id === activeProfileId);
   const playerQueueCount = queue.filter(item => item.playerId === activeProfileId).length;
 
-  // Reload library handler
+  // Reload library handler - force fresh load from localStorage
   const handleReloadLibrary = useCallback(() => {
-    reloadLibrary();
+    // Call the library function to clear caches
+    const freshSongs = reloadLibrary();
+    // Update local state with new array reference
+    setLoadedSongs([...freshSongs]);
     setLibraryVersion(v => v + 1);
+    setSongsLoading(false);
   }, []);
-
-  // Get all songs (including imported ones)
-  const allSongs = useMemo(() => {
-    return getAllSongs();
-  }, [libraryVersion]);
 
   // Preview handlers
   const handlePreviewStart = useCallback((song: Song) => {
@@ -525,7 +526,7 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
   }, [previewAudio]);
 
   const filteredSongs = useMemo(() => {
-    let songs = allSongs;
+    let songs = loadedSongs;
     
     // Search filter
     if (searchQuery) {
@@ -561,7 +562,7 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
     });
     
     return songs;
-  }, [allSongs, searchQuery, settings]);
+  }, [loadedSongs, searchQuery, settings]);
 
   const handleSongClick = (song: Song) => {
     setSelectedSong(song);
@@ -595,7 +596,7 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
       <div className="mb-8 flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-2">Music Library</h1>
-          <p className="text-white/60">{allSongs.length} songs available</p>
+          <p className="text-white/60">{loadedSongs.length} songs available</p>
         </div>
         <Button 
           onClick={handleReloadLibrary}
@@ -915,10 +916,12 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   
   const gameLoopRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
-  const mediaStartTimeRef = useRef<number>(0); // Track when media actually started
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const song = gameState.currentSong;
+  
+  // Timing synchronization - user adjustable offset (initialized from song)
+  const [timingOffset, setTimingOffset] = useState(0);
   
   // Check if video is YouTube
   const videoBackground = song?.videoBackground;
@@ -1119,14 +1122,14 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     if (!isPlaying || !song) return;
 
     const gameLoop = () => {
-      // Use media's currentTime for accurate sync, fallback to Date.now()
+      // Use media's currentTime for accurate sync
       let elapsed: number;
       
       // For YouTube videos, use tracked time from player
       if (isYouTube && youtubeTime > 0) {
         elapsed = youtubeTime;
       }
-      // For video with embedded audio
+      // For video with embedded audio - video IS the audio source
       else if (song.hasEmbeddedAudio && videoRef.current) {
         elapsed = videoRef.current.currentTime * 1000; // Convert to ms
       }
@@ -1134,12 +1137,15 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       else if (audioRef.current && !audioRef.current.paused) {
         elapsed = audioRef.current.currentTime * 1000; // Convert to ms
       }
-      // Fallback to system time
+      // Fallback to system time (less accurate)
       else {
         elapsed = Date.now() - startTimeRef.current;
       }
       
-      setCurrentTime(elapsed);
+      // Apply user-adjustable timing offset
+      const adjustedTime = elapsed + timingOffset;
+      
+      setCurrentTime(adjustedTime);
       
       // Update volume from pitch detection
       if (pitchResult) {
@@ -1147,11 +1153,11 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         setDetectedPitch(pitchResult.frequency);
         
         // Check for note hits
-        checkNoteHits(elapsed, pitchResult);
+        checkNoteHits(adjustedTime, pitchResult);
       }
       
       // Check if song ended
-      if (elapsed >= song.duration) {
+      if (adjustedTime >= song.duration) {
         endGame();
         generateResults();
         onEnd();
@@ -1168,7 +1174,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [isPlaying, song, pitchResult, setCurrentTime, setDetectedPitch, checkNoteHits, endGame, generateResults, onEnd, isYouTube, youtubeTime]);
+  }, [isPlaying, song, pitchResult, setCurrentTime, setDetectedPitch, checkNoteHits, endGame, generateResults, onEnd, isYouTube, youtubeTime, timingOffset]);
 
   // Get current lyric line
   const currentLine = useMemo(() => {
@@ -1219,6 +1225,44 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
           ← Back
         </Button>
         <div className="flex items-center gap-3">
+          {/* Timing Sync Controls */}
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-white/40">Sync:</span>
+            <button 
+              onClick={() => {
+                const newOffset = timingOffset - 50;
+                setTimingOffset(newOffset);
+                if (song) updateSong(song.id, { timingOffset: newOffset });
+              }}
+              className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-white"
+            >
+              -
+            </button>
+            <span className={`font-mono ${timingOffset !== 0 ? 'text-yellow-400' : 'text-white/60'}`}>
+              {timingOffset > 0 ? '+' : ''}{timingOffset}ms
+            </span>
+            <button 
+              onClick={() => {
+                const newOffset = timingOffset + 50;
+                setTimingOffset(newOffset);
+                if (song) updateSong(song.id, { timingOffset: newOffset });
+              }}
+              className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-white"
+            >
+              +
+            </button>
+            {timingOffset !== 0 && (
+              <button 
+                onClick={() => {
+                  setTimingOffset(0);
+                  if (song) updateSong(song.id, { timingOffset: 0 });
+                }}
+                className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-white/60"
+              >
+                Reset
+              </button>
+            )}
+          </div>
           {/* Mini Score Display */}
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-1.5">
