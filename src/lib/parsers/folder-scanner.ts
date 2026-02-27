@@ -2,7 +2,7 @@
 // Supports nested folder structure with categories
 
 import { Song, Note, LyricLine, midiToFrequency, Difficulty } from '@/types/game';
-import { CachedSong, CachedFolder, LibraryCache, createCachedSong, saveCache, loadCache } from './library-cache';
+import { CachedSong, CachedFolder, LibraryCache, createCachedSong, saveCache, loadCache } from '@/lib/game/library-cache';
 
 export interface ScannedFile {
   name: string;
