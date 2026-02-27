@@ -2,7 +2,7 @@
 // This module handles copying imported files to app data directory
 // so they persist across app restarts
 
-import { save, readTextFile, BaseDirectory, exists, mkdir } from '@tauri-apps/plugin-fs';
+import { writeFile, readTextFile, BaseDirectory, exists, mkdir } from '@tauri-apps/plugin-fs';
 import { convertFileSrc } from '@tauri-apps/api/core';
 
 // Check if running in Tauri
@@ -161,10 +161,9 @@ export async function storeSongFiles(
       const uint8Array = new Uint8Array(arrayBuffer);
       const relativePath = `songs/${songFolder}/${file.name}`;
       
-      // Save using Tauri fs plugin
-      await save(relativePath, { 
+      // Save using Tauri fs plugin (writeFile is the correct function name)
+      await writeFile(relativePath, uint8Array, { 
         baseDir: BaseDirectory.AppData,
-        contents: uint8Array,
       });
       
       return relativePath;
