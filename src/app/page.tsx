@@ -823,45 +823,38 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
 // ===================== LYRIC LINE DISPLAY =====================
 // Shows lyrics with karaoke-style color progression
 function LyricLineDisplay({ line, currentTime, playerColor }: { line: LyricLine; currentTime: number; playerColor: string }) {
-  // Calculate how much of the line has been sung
-  const lineProgress = Math.max(0, Math.min(1, (currentTime - line.startTime) / (line.endTime - line.startTime)));
-  
   // Build the lyrics with progress coloring
   const renderNotes = () => {
     const elements: React.ReactNode[] = [];
-    let sungWidth = 0;
-    let totalWidth = 0;
-    
-    // First pass: calculate total width for percentage-based positioning
-    line.notes.forEach(note => {
-      totalWidth += note.lyric.length;
-    });
-    
-    let currentWidth = 0;
     
     line.notes.forEach((note, idx) => {
+      const noteEnd = note.startTime + note.duration;
       const noteProgress = Math.max(0, Math.min(1, (currentTime - note.startTime) / note.duration));
-      const isSung = currentTime >= note.startTime + note.duration;
-      const isActive = currentTime >= note.startTime && currentTime < note.startTime + note.duration;
+      const isSung = currentTime >= noteEnd;
+      const isActive = currentTime >= note.startTime && currentTime < noteEnd;
       
-      // Calculate position in the line (percentage)
-      const startPercent = (currentWidth / totalWidth) * 100;
-      const widthPercent = (note.lyric.length / totalWidth) * 100;
-      currentWidth += note.lyric.length;
+      // Color transition: white -> player color
+      let textColor = 'text-white/70'; // Default: dimmed white
+      let fontWeight = 'font-normal';
+      
+      if (isSung) {
+        textColor = ''; // Will use player color
+        fontWeight = 'font-bold';
+      } else if (isActive) {
+        textColor = 'text-white';
+        fontWeight = 'font-bold';
+      }
       
       elements.push(
         <span
           key={note.id}
-          className={`relative inline-block transition-all duration-100 ${isActive ? 'scale-110' : ''}`}
-          style={{
-            background: isSung || noteProgress > 0 
-              ? `linear-gradient(to right, ${playerColor} ${noteProgress * 100}%, rgba(255,255,255,0.7) ${noteProgress * 100}%)`
-              : 'rgba(255,255,255,0.7)',
-            WebkitBackgroundClip: 'text',
-            backgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            textShadow: isSung ? `0 0 20px ${playerColor}` : 'none',
-          }}
+          className={`relative inline-block transition-all duration-150 ${fontWeight} ${textColor} ${isActive ? 'scale-105' : ''}`}
+          style={isSung ? { 
+            color: playerColor,
+            textShadow: `0 0 15px ${playerColor}80`
+          } : isActive ? {
+            textShadow: '0 0 10px rgba(255,255,255,0.5)'
+          } : {}}
         >
           {note.lyric}
         </span>
@@ -869,8 +862,7 @@ function LyricLineDisplay({ line, currentTime, playerColor }: { line: LyricLine;
       
       // Add space between words (except last)
       if (idx < line.notes.length - 1) {
-        elements.push(<span key={`space-${idx}`}>&nbsp;</span>);
-        currentWidth += 1;
+        elements.push(<span key={`space-${idx}`} className="text-white/50">&nbsp;</span>);
       }
     });
     
@@ -878,7 +870,7 @@ function LyricLineDisplay({ line, currentTime, playerColor }: { line: LyricLine;
   };
   
   return (
-    <span className="whitespace-nowrap">
+    <span className="whitespace-nowrap text-2xl md:text-3xl">
       {renderNotes()}
     </span>
   );
@@ -1164,7 +1156,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     return (
       <div className="max-w-4xl mx-auto text-center py-20">
         <p className="text-white/60 mb-4">No song selected</p>
-        <Button onClick={onBack}>Back to Library</Button>
+        <Button onClick={onBack} className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white">Back to Library</Button>
       </div>
     );
   }
@@ -1983,7 +1975,7 @@ function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void; onHom
     return (
       <div className="max-w-4xl mx-auto text-center py-20">
         <p className="text-white/60 mb-4">No results available</p>
-        <Button onClick={onHome}>Back to Home</Button>
+        <Button onClick={onHome} className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white">Back to Home</Button>
       </div>
     );
   }
