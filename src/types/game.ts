@@ -2,7 +2,7 @@
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
-export type GameMode = 'standard' | 'pass-the-mic' | 'medley' | 'missing-words' | 'duel' | 'blind';
+export type GameMode = 'standard' | 'pass-the-mic' | 'companion-singalong' | 'medley' | 'missing-words' | 'duel' | 'blind';
 
 export interface Note {
   id: string;

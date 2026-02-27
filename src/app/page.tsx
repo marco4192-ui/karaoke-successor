@@ -668,6 +668,70 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
   );
 }
 
+// ===================== LYRIC LINE DISPLAY =====================
+// Shows lyrics with karaoke-style color progression
+function LyricLineDisplay({ line, currentTime, playerColor }: { line: LyricLine; currentTime: number; playerColor: string }) {
+  // Calculate how much of the line has been sung
+  const lineProgress = Math.max(0, Math.min(1, (currentTime - line.startTime) / (line.endTime - line.startTime)));
+  
+  // Build the lyrics with progress coloring
+  const renderNotes = () => {
+    const elements: React.ReactNode[] = [];
+    let sungWidth = 0;
+    let totalWidth = 0;
+    
+    // First pass: calculate total width for percentage-based positioning
+    line.notes.forEach(note => {
+      totalWidth += note.lyric.length;
+    });
+    
+    let currentWidth = 0;
+    
+    line.notes.forEach((note, idx) => {
+      const noteProgress = Math.max(0, Math.min(1, (currentTime - note.startTime) / note.duration));
+      const isSung = currentTime >= note.startTime + note.duration;
+      const isActive = currentTime >= note.startTime && currentTime < note.startTime + note.duration;
+      
+      // Calculate position in the line (percentage)
+      const startPercent = (currentWidth / totalWidth) * 100;
+      const widthPercent = (note.lyric.length / totalWidth) * 100;
+      currentWidth += note.lyric.length;
+      
+      elements.push(
+        <span
+          key={note.id}
+          className={`relative inline-block transition-all duration-100 ${isActive ? 'scale-110' : ''}`}
+          style={{
+            background: isSung || noteProgress > 0 
+              ? `linear-gradient(to right, ${playerColor} ${noteProgress * 100}%, rgba(255,255,255,0.7) ${noteProgress * 100}%)`
+              : 'rgba(255,255,255,0.7)',
+            WebkitBackgroundClip: 'text',
+            backgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            textShadow: isSung ? `0 0 20px ${playerColor}` : 'none',
+          }}
+        >
+          {note.lyric}
+        </span>
+      );
+      
+      // Add space between words (except last)
+      if (idx < line.notes.length - 1) {
+        elements.push(<span key={`space-${idx}`}>&nbsp;</span>);
+        currentWidth += 1;
+      }
+    });
+    
+    return elements;
+  };
+  
+  return (
+    <span className="whitespace-nowrap">
+      {renderNotes()}
+    </span>
+  );
+}
+
 // ===================== GAME SCREEN =====================
 function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }) {
   const { gameState, setSong, setCurrentTime, setDetectedPitch, updatePlayer, endGame, setResults, setGameMode } = useGameStore();
@@ -678,16 +742,37 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   const [currentNoteIndex, setCurrentNoteIndex] = useState(0);
   const [scoreEvents, setScoreEvents] = useState<Array<{ type: string; points: number; time: number }>>([]);
   const [volume, setVolume] = useState(0);
+  const [mediaLoaded, setMediaLoaded] = useState(false);
   
   const gameLoopRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const song = gameState.currentSong;
+  
+  // Sing line position at 25% from left (like UltraStar/Vocaluxe)
+  const SING_LINE_POSITION = 25; // percentage from left
+  const NOTE_WINDOW = 5000; // 5 seconds of visible notes
+
+  // Initialize media elements on mount
+  useEffect(() => {
+    if (!song) return;
+    
+    // Pre-load media
+    const loadMedia = async () => {
+      setMediaLoaded(false);
+      
+      // Small delay to ensure DOM is ready
+      await new Promise(resolve => setTimeout(resolve, 100));
+      setMediaLoaded(true);
+    };
+    
+    loadMedia();
+  }, [song]);
 
   // Initialize and start game
   useEffect(() => {
-    if (!song) return;
+    if (!song || !mediaLoaded) return;
     
     const initGame = async () => {
       const success = await initialize();
@@ -702,15 +787,29 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
               setIsPlaying(true);
               startTimeRef.current = Date.now();
               
-              // Start audio/video playback
-              if (audioRef.current) {
-                audioRef.current.currentTime = 0;
-                audioRef.current.play().catch(e => console.log('Audio play failed:', e));
-              }
-              if (videoRef.current) {
-                videoRef.current.currentTime = 0;
-                videoRef.current.play().catch(e => console.log('Video play failed:', e));
-              }
+              // Start audio/video playback with user interaction context
+              const playMedia = async () => {
+                try {
+                  // For video with embedded audio
+                  if (song.hasEmbeddedAudio && videoRef.current) {
+                    videoRef.current.currentTime = 0;
+                    await videoRef.current.play();
+                  }
+                  // For separate audio file
+                  else if (audioRef.current) {
+                    audioRef.current.currentTime = 0;
+                    await audioRef.current.play();
+                  }
+                  // Video without audio (background only)
+                  if (videoRef.current && !song.hasEmbeddedAudio) {
+                    videoRef.current.currentTime = 0;
+                    videoRef.current.play().catch(() => {});
+                  }
+                } catch (e) {
+                  console.log('Media playback failed:', e);
+                }
+              };
+              playMedia();
               return 0;
             }
             return prev - 1;
@@ -736,7 +835,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         videoRef.current.currentTime = 0;
       }
     };
-  }, [song, initialize, start, stop]);
+  }, [song, mediaLoaded, initialize, start, stop]);
 
   // Check if player hits notes
   const checkNoteHits = useCallback((currentTime: number, pitch: { frequency: number | null; note: number | null; clarity: number; volume: number }) => {
@@ -889,21 +988,19 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     return null;
   }, [song, gameState.currentTime]);
 
-  // Get upcoming notes
+  // Get upcoming notes - show notes within the visible window
   const visibleNotes = useMemo(() => {
     if (!song) return [];
     const currentTime = gameState.currentTime;
-    const windowEnd = currentTime + 5000; // 5 seconds ahead
+    const windowStart = currentTime - 2000; // 2 seconds behind (for smooth exit)
+    const windowEnd = currentTime + NOTE_WINDOW; // 5 seconds ahead
     
     const notes: Array<Note & { line: LyricLine }> = [];
     for (const line of song.lyrics) {
       for (const note of line.notes) {
         const noteEnd = note.startTime + note.duration;
-        // Show notes that either:
-        // 1. Will start within the window (upcoming)
-        // 2. Are currently active (started but not ended yet)
-        if ((note.startTime >= currentTime && note.startTime <= windowEnd) ||
-            (note.startTime < currentTime && noteEnd > currentTime)) {
+        // Show notes that overlap with our visibility window
+        if (note.startTime <= windowEnd && noteEnd >= windowStart) {
           notes.push({ ...note, line });
         }
       }
@@ -937,8 +1034,8 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         </div>
       </div>
 
-      {/* Hidden Audio Element */}
-      {song.audioUrl && !song.hasEmbeddedAudio && (
+      {/* Audio Element - Always render if audioUrl exists */}
+      {song.audioUrl && (
         <audio 
           ref={audioRef}
           src={song.audioUrl}
@@ -959,7 +1056,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             ref={videoRef}
             src={song.videoBackground}
             className="absolute inset-0 w-full h-full object-cover opacity-50"
-            muted={!song.hasEmbeddedAudio}
+            muted={song.hasEmbeddedAudio ? false : true}
             playsInline
           />
         ) : (
@@ -990,52 +1087,63 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             ))}
           </div>
 
-          {/* Sing Line - Vertical on the left side */}
-          <div className="absolute left-4 top-0 bottom-0 z-20 w-1">
-            <div className="h-full w-full bg-gradient-to-b from-transparent via-cyan-400 to-transparent" />
-            <div className="absolute left-8 top-1/2 transform -translate-y-1/2 text-cyan-400 text-sm font-bold animate-pulse whitespace-nowrap">
-              SING →
+          {/* Sing Line - Vertical marker at 25% from left (like UltraStar/Vocaluxe) */}
+          <div 
+            className="absolute top-0 bottom-0 z-20 w-1 bg-gradient-to-b from-transparent via-cyan-400 to-transparent shadow-lg shadow-cyan-400/50"
+            style={{ left: `${SING_LINE_POSITION}%` }}
+          >
+            <div className="absolute -left-1 top-0 bottom-0 w-0.5 bg-white/20" />
+            <div className="absolute -left-4 top-1/2 transform -translate-y-1/2 text-cyan-400 text-xs font-bold whitespace-nowrap">
+              SING
             </div>
           </div>
 
-          {/* Notes - Moving Right to Left */}
+          {/* Notes - Smoothly Moving Right to Left (UltraStar style) */}
           {visibleNotes.map((note) => {
             const timeUntilNote = note.startTime - gameState.currentTime;
-            const noteProgress = note.startTime + note.duration - gameState.currentTime; // Time remaining in note
-            const isActive = gameState.currentTime >= note.startTime && gameState.currentTime <= note.startTime + note.duration;
+            const noteEnd = note.startTime + note.duration;
+            const timeUntilEnd = noteEnd - gameState.currentTime;
+            const isActive = gameState.currentTime >= note.startTime && gameState.currentTime <= noteEnd;
             
-            // Horizontal position: 
-            // - Upcoming notes come from right (100%) and move to left
-            // - Active notes stay at the sing line (4%)
-            let x: number;
-            if (isActive) {
-              x = 4; // Stay at sing line while active
-            } else if (timeUntilNote <= 0) {
-              x = 4; // Should not happen but fallback
-            } else {
-              x = 100 - (timeUntilNote / 5000) * 100; // Right to left
-            }
+            // Calculate smooth horizontal position
+            // Notes appear from right (100%) and move to left (-20%)
+            // The sing line is at SING_LINE_POSITION (25%)
+            // A note is at sing line when timeUntilNote = 0
+            // Time in seconds = timeUntilNote / 1000
+            // We want notes to travel from right edge to left edge over NOTE_WINDOW duration
+            
+            // Position: start at 100% when 5s away, reach SING_LINE_POSITION at t=0, continue left
+            const totalTravelDistance = 100 + SING_LINE_POSITION; // From right edge (100%) past sing line to -20%
+            const progress = 1 - (timeUntilEnd / NOTE_WINDOW); // 0 at 5s away, 1 when passed
+            
+            // Smooth linear movement from right to left
+            const x = 100 - (progress * totalTravelDistance);
             
             // Position based on pitch (vertical) - MIDI range 48-72 (2 octaves)
-            // Notes with pitch 48-72 map to 100%-0% from top (inverted because higher pitch = higher on screen = lower Y)
+            // Higher pitch = higher on screen = lower Y value
             const pitchY = 100 - ((note.pitch - 48) / 24) * 100;
+            
+            // Note width based on duration (longer notes = wider)
+            const noteWidth = Math.max(60, note.duration / 15);
             
             return (
               <div
                 key={note.id}
-                className={`absolute rounded-xl flex items-center justify-center text-base font-bold text-white transition-all duration-75 ${
+                className={`absolute rounded-lg flex items-center justify-center text-sm font-bold text-white ${
                   note.isGolden 
                     ? 'bg-gradient-to-r from-yellow-400 to-orange-500 shadow-lg shadow-yellow-500/50' 
                     : note.isBonus 
                     ? 'bg-gradient-to-r from-pink-500 to-purple-500' 
                     : 'bg-gradient-to-r from-cyan-500 to-blue-500'
-                } ${isActive ? 'ring-4 ring-white scale-125' : ''}`}
+                } ${isActive ? 'ring-2 ring-white/80 brightness-110' : ''}`}
                 style={{
-                  left: `${Math.max(0, Math.min(90, x))}%`,
+                  left: `${x}%`,
                   top: `${Math.max(5, Math.min(85, pitchY))}%`,
-                  width: `${Math.max(80, note.duration / 25)}px`, // Width based on note duration
-                  height: '52px', 
-                  boxShadow: isActive ? '0 0 40px rgba(34, 211, 238, 0.8)' : 'none',
+                  width: `${noteWidth}px`,
+                  height: '40px',
+                  transform: 'translateY(-50%)',
+                  boxShadow: isActive ? '0 0 20px rgba(34, 211, 238, 0.6)' : 'none',
+                  opacity: x > 100 || x < -30 ? 0 : 1,
                 }}
               >
                 {note.lyric}
@@ -1043,28 +1151,32 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             );
           })}
 
-          {/* Detected Pitch Indicator */}
+          {/* Detected Pitch Indicator - Ball that moves up/down with voice */}
           {pitchResult?.frequency && pitchResult.note && (
             <div
-              className="absolute z-30 w-12 h-12 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 shadow-lg shadow-green-500/50 flex items-center justify-center animate-pulse"
+              className="absolute z-30 w-10 h-10 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 shadow-lg shadow-green-500/50 flex items-center justify-center"
               style={{
-                left: '4%',
+                left: `${SING_LINE_POSITION - 2}%`,
                 top: `${Math.max(5, Math.min(90, 100 - ((pitchResult.note - 48) / 24) * 100))}%`,
                 transform: 'translateY(-50%)',
               }}
             >
-              <MicIcon className="w-6 h-6 text-white" />
+              <MicIcon className="w-5 h-5 text-white" />
             </div>
           )}
         </div>
 
-        {/* Lyrics Display */}
+        {/* Lyrics Display - Karaoke style with color progression */}
         <div className="absolute bottom-0 left-0 right-0 z-20">
           <div className="bg-gradient-to-t from-black/80 to-transparent p-6">
             {currentLine && (
-              <p className="text-3xl font-bold text-center text-white drop-shadow-lg">
-                {currentLine.text}
-              </p>
+              <div className="text-3xl font-bold text-center drop-shadow-lg">
+                <LyricLineDisplay 
+                  line={currentLine} 
+                  currentTime={gameState.currentTime} 
+                  playerColor={PLAYER_COLORS[0]}
+                />
+              </div>
             )}
             {song.lyrics[song.lyrics.findIndex(l => l.id === currentLine?.id) + 1] && (
               <p className="text-lg text-center text-white/50 mt-2">
@@ -1153,6 +1265,14 @@ function PartyScreen({ onSelectMode }: { onSelectMode: (mode: GameMode) => void 
       icon: '🎤',
       players: '2-8',
       color: 'from-cyan-500 to-blue-500',
+    },
+    {
+      mode: 'companion-singalong' as GameMode,
+      title: 'Companion Sing-A-Long',
+      description: 'Your phone randomly lights up - that\'s your cue to sing! No one knows who\'s next until the blink!',
+      icon: '📱',
+      players: '2-8',
+      color: 'from-emerald-500 to-teal-500',
     },
     {
       mode: 'medley' as GameMode,
