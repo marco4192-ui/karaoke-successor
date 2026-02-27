@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useGameStore, selectQueue, selectProfiles, selectActiveProfile } from '@/lib/game/store';
-import { getAllSongs, addSong, addSongs, reloadLibrary } from '@/lib/game/song-library';
+import { getAllSongs, addSong, addSongs, reloadLibrary, getAllSongsAsync } from '@/lib/game/song-library';
 import { ImportScreen } from '@/components/import/import-screen';
 import { YouTubePlayer, extractYouTubeId } from '@/components/game/youtube-player';
 import { 
@@ -414,10 +414,28 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
   const [previewSong, setPreviewSong] = useState<Song | null>(null);
   const [previewAudio, setPreviewAudio] = useState<HTMLAudioElement | null>(null);
   const [libraryVersion, setLibraryVersion] = useState(0); // For forcing reload
-  const [songsLoading, setSongsLoading] = useState(false);
-  const [loadedSongs, setLoadedSongs] = useState<Song[]>(() => getAllSongs());
+  const [songsLoading, setSongsLoading] = useState(true);
+  const [loadedSongs, setLoadedSongs] = useState<Song[]>([]);
   const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { setDifficulty, gameState, addToQueue, queue, activeProfileId, profiles, setGameMode } = useGameStore();
+  
+  // Load songs asynchronously on mount and when library changes
+  useEffect(() => {
+    const loadSongs = async () => {
+      setSongsLoading(true);
+      try {
+        const songs = await getAllSongsAsync();
+        setLoadedSongs(songs);
+      } catch (error) {
+        console.error('Failed to load songs:', error);
+        // Fallback to sync version
+        setLoadedSongs(getAllSongs());
+      } finally {
+        setSongsLoading(false);
+      }
+    };
+    loadSongs();
+  }, [libraryVersion]);
   
   // Song start modal state
   const [startOptions, setStartOptions] = useState<{
@@ -473,13 +491,12 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
   const playerQueueCount = queue.filter(item => item.playerId === activeProfileId).length;
 
   // Reload library handler - force fresh load from localStorage
-  const handleReloadLibrary = useCallback(() => {
-    // Call the library function to clear caches
-    const freshSongs = reloadLibrary();
-    // Update local state with new array reference
-    setLoadedSongs([...freshSongs]);
+  const handleReloadLibrary = useCallback(async () => {
+    setSongsLoading(true);
+    // Clear caches
+    reloadLibrary();
+    // Increment version to trigger useEffect reload
     setLibraryVersion(v => v + 1);
-    setSongsLoading(false);
   }, []);
 
   // Preview handlers
@@ -968,19 +985,24 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
               // Start audio/video playback with user interaction context
               const playMedia = async () => {
                 try {
+                  // Calculate start position from #START tag (in milliseconds)
+                  const startPosition = (song.start || 0) / 1000; // Convert to seconds
+                  
                   // For video with embedded audio
                   if (song.hasEmbeddedAudio && videoRef.current) {
-                    videoRef.current.currentTime = 0;
+                    videoRef.current.currentTime = startPosition;
                     await videoRef.current.play();
                   }
                   // For separate audio file
                   else if (audioRef.current) {
-                    audioRef.current.currentTime = 0;
+                    audioRef.current.currentTime = startPosition;
                     await audioRef.current.play();
                   }
                   // Video without audio (background only)
                   if (videoRef.current && !song.hasEmbeddedAudio) {
-                    videoRef.current.currentTime = 0;
+                    // Apply videoGap: positive = video starts after audio, so skip ahead in video
+                    const videoGapSeconds = (song.videoGap || 0) / 1000;
+                    videoRef.current.currentTime = Math.max(0, startPosition - videoGapSeconds);
                     videoRef.current.play().catch(() => {});
                   }
                 } catch (e) {

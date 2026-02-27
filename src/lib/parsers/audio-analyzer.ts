@@ -161,7 +161,7 @@ export class AudioAnalyzer {
     buffer: Float32Array, 
     sampleRate: number
   ): { frequency: number | null; confidence: number } {
-    const yinThreshold = 0.15;
+    const yinThreshold = 0.15; // Lower threshold for better sensitivity
     const yinBuffer = new Float32Array(Math.floor(buffer.length / 2));
     const yinBufferLength = yinBuffer.length;
 
@@ -184,6 +184,7 @@ export class AudioAnalyzer {
 
     // Find the first tau where the value is below threshold
     let tauEstimate = -1;
+    let minVal = 1;
     for (let tau = 2; tau < yinBufferLength; tau++) {
       if (yinBuffer[tau] < yinThreshold) {
         while (tau + 1 < yinBufferLength && yinBuffer[tau + 1] < yinBuffer[tau]) {
@@ -191,6 +192,10 @@ export class AudioAnalyzer {
         }
         tauEstimate = tau;
         break;
+      }
+      // Track minimum value for confidence
+      if (yinBuffer[tau] < minVal) {
+        minVal = yinBuffer[tau];
       }
     }
 
@@ -216,11 +221,18 @@ export class AudioAnalyzer {
 
     const frequency = sampleRate / betterTau;
     
-    // Calculate confidence
-    const confidence = 1 - yinBuffer[tauEstimate];
+    // Calculate confidence based on how clear the pitch was
+    const confidence = Math.max(0, 1 - yinBuffer[tauEstimate]);
     
-    // Only return valid frequencies (human vocal range)
-    if (frequency < 65 || frequency > 1047) {
+    // Human vocal range: C2 (65Hz) to C6 (1047Hz)
+    // Most karaoke songs use C3 to C5 range
+    // Extended range for low male voices and high female voices
+    if (frequency < 60 || frequency > 1200) {
+      return { frequency: null, confidence: 0 };
+    }
+
+    // Additional check: very low confidence indicates noise or polyphonic audio
+    if (confidence < 0.1) {
       return { frequency: null, confidence: 0 };
     }
 
@@ -243,21 +255,26 @@ export class AudioAnalyzer {
     const notes: AnalyzedNote[] = [];
     let currentNote: { startTime: number; pitch: number; frequency: number; confidenceSum: number; count: number } | null = null;
     
-    const pitchTolerance = 1; // semitones
+    const pitchTolerance = 1; // semitones - be strict for better note detection
+    const minNoteDuration = 80; // minimum note duration in ms
+    const confidenceThreshold = 0.25; // minimum confidence to consider a pitch valid
     
     for (let i = 0; i < pitches.length; i++) {
       const pitch = pitches[i];
       
-      if (pitch.frequency === null || pitch.confidence < 0.3) {
+      if (pitch.frequency === null || pitch.confidence < confidenceThreshold) {
         // Silence or low confidence - end current note
         if (currentNote) {
-          notes.push({
-            startTime: currentNote.startTime,
-            duration: pitch.time - currentNote.startTime,
-            pitch: Math.round(currentNote.pitch / currentNote.count),
-            frequency: currentNote.frequency / currentNote.count,
-            confidence: currentNote.confidenceSum / currentNote.count,
-          });
+          const duration = pitch.time - currentNote.startTime;
+          if (duration >= minNoteDuration) {
+            notes.push({
+              startTime: currentNote.startTime,
+              duration: duration,
+              pitch: Math.round(currentNote.pitch / currentNote.count),
+              frequency: currentNote.frequency / currentNote.count,
+              confidence: currentNote.confidenceSum / currentNote.count,
+            });
+          }
           currentNote = null;
         }
         continue;
@@ -276,23 +293,27 @@ export class AudioAnalyzer {
         };
       } else {
         // Check if this continues the current note
-        const pitchDiff = Math.abs(midiNote - (currentNote.pitch / currentNote.count));
+        const currentAvgPitch = currentNote.pitch / currentNote.count;
+        const pitchDiff = Math.abs(midiNote - currentAvgPitch);
         
         if (pitchDiff <= pitchTolerance) {
-          // Continue note
+          // Continue note - accumulate for averaging
           currentNote.pitch += midiNote;
           currentNote.frequency += pitch.frequency;
           currentNote.confidenceSum += pitch.confidence;
           currentNote.count++;
         } else {
-          // End current note and start new one
-          notes.push({
-            startTime: currentNote.startTime,
-            duration: pitch.time - currentNote.startTime,
-            pitch: Math.round(currentNote.pitch / currentNote.count),
-            frequency: currentNote.frequency / currentNote.count,
-            confidence: currentNote.confidenceSum / currentNote.count,
-          });
+          // Pitch changed - end current note and start new one
+          const duration = pitch.time - currentNote.startTime;
+          if (duration >= minNoteDuration) {
+            notes.push({
+              startTime: currentNote.startTime,
+              duration: duration,
+              pitch: Math.round(currentNote.pitch / currentNote.count),
+              frequency: currentNote.frequency / currentNote.count,
+              confidence: currentNote.confidenceSum / currentNote.count,
+            });
+          }
           
           currentNote = {
             startTime: pitch.time,
@@ -308,54 +329,66 @@ export class AudioAnalyzer {
     // Don't forget the last note
     if (currentNote) {
       const lastTime = pitches.length > 0 ? pitches[pitches.length - 1].time : currentNote.startTime;
-      notes.push({
-        startTime: currentNote.startTime,
-        duration: lastTime - currentNote.startTime,
-        pitch: Math.round(currentNote.pitch / currentNote.count),
-        frequency: currentNote.frequency / currentNote.count,
-        confidence: currentNote.confidenceSum / currentNote.count,
-      });
+      const duration = lastTime - currentNote.startTime;
+      if (duration >= minNoteDuration) {
+        notes.push({
+          startTime: currentNote.startTime,
+          duration: duration,
+          pitch: Math.round(currentNote.pitch / currentNote.count),
+          frequency: currentNote.frequency / currentNote.count,
+          confidence: currentNote.confidenceSum / currentNote.count,
+        });
+      }
     }
     
-    // Filter out very short notes (less than 100ms)
-    return notes.filter(note => note.duration >= 100);
+    return notes;
   }
 
-  // Estimate BPM from notes
+  // Estimate BPM from notes - improved algorithm
   private estimateBPM(notes: AnalyzedNote[]): number {
     if (notes.length < 4) return 120;
     
     // Calculate inter-onset intervals
     const intervals: number[] = [];
     for (let i = 1; i < notes.length; i++) {
-      intervals.push(notes[i].startTime - notes[i - 1].startTime);
-    }
-    
-    // Find most common interval (simple mode)
-    const bucketSize = 50; // 50ms buckets
-    const buckets: Record<number, number> = {};
-    
-    for (const interval of intervals) {
-      const bucket = Math.round(interval / bucketSize) * bucketSize;
-      buckets[bucket] = (buckets[bucket] || 0) + 1;
-    }
-    
-    let maxCount = 0;
-    let mostCommonInterval = 500;
-    
-    for (const [bucket, count] of Object.entries(buckets)) {
-      if (count > maxCount) {
-        maxCount = count as number;
-        mostCommonInterval = parseInt(bucket);
+      const interval = notes[i].startTime - notes[i - 1].startTime;
+      // Only consider reasonable intervals (100ms to 2 seconds)
+      if (interval >= 100 && interval <= 2000) {
+        intervals.push(interval);
       }
     }
     
-    // Convert interval to BPM
-    // A beat interval of 500ms = 120 BPM
-    const bpm = Math.round(60000 / mostCommonInterval);
+    if (intervals.length < 3) return 120;
     
-    // Clamp to reasonable range
-    return Math.max(60, Math.min(200, bpm));
+    // Use histogram approach for BPM estimation
+    // Test common BPM values and see which fits best
+    const commonBPMs = [60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180];
+    let bestBPM = 120;
+    let bestScore = 0;
+    
+    for (const bpm of commonBPMs) {
+      const beatDuration = 60000 / bpm;
+      let score = 0;
+      
+      for (const interval of intervals) {
+        // Check how well the interval aligns with beat divisions
+        const beats = interval / beatDuration;
+        const nearestBeat = Math.round(beats);
+        const error = Math.abs(beats - nearestBeat);
+        
+        // Score based on how close to an integer number of beats
+        if (error < 0.15) {
+          score += 1 - error;
+        }
+      }
+      
+      if (score > bestScore) {
+        bestScore = score;
+        bestBPM = bpm;
+      }
+    }
+    
+    return bestBPM;
   }
 
   // Update progress callback

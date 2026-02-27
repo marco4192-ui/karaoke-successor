@@ -1,6 +1,7 @@
 // Song Library Store - Manages songs with persistent storage
 import { Song } from '@/types/game';
 import { sampleSongs } from '@/data/songs/songs';
+import { isTauri, getPlayableUrl } from '@/lib/tauri-file-storage';
 
 const STORAGE_KEY = 'karaoke-successor-songs';
 const SETTINGS_KEY = 'karaoke-successor-settings';
@@ -294,4 +295,60 @@ export function replaceSong(song: Song): void {
   
   saveCustomSongs(customSongs);
   songCache = null;
+}
+
+// Restore song URLs for Tauri - converts relative paths back to playable URLs
+export async function restoreSongUrls(song: Song): Promise<Song> {
+  if (!isTauri()) {
+    // In browser mode, URLs should already be valid
+    return song;
+  }
+  
+  const restored = { ...song };
+  
+  try {
+    // Restore audio URL
+    if (song.relativeAudioPath) {
+      const url = await getPlayableUrl(song.relativeAudioPath);
+      if (url) restored.audioUrl = url;
+    }
+    
+    // Restore video URL
+    if (song.relativeVideoPath) {
+      const url = await getPlayableUrl(song.relativeVideoPath);
+      if (url) restored.videoBackground = url;
+    }
+    
+    // Restore cover URL
+    if (song.relativeCoverPath) {
+      const url = await getPlayableUrl(song.relativeCoverPath);
+      if (url) restored.coverImage = url;
+    }
+  } catch (error) {
+    console.error('Failed to restore song URLs:', error);
+  }
+  
+  return restored;
+}
+
+// Get all songs asynchronously (with URL restoration for Tauri)
+export async function getAllSongsAsync(): Promise<Song[]> {
+  const songs = getAllSongs();
+  
+  if (!isTauri()) {
+    return songs;
+  }
+  
+  // In Tauri, restore URLs for all songs that have relative paths
+  const restoredSongs = await Promise.all(
+    songs.map(song => {
+      // Only restore if the song has relative paths stored
+      if (song.relativeAudioPath || song.relativeVideoPath || song.relativeCoverPath) {
+        return restoreSongUrls(song);
+      }
+      return song;
+    })
+  );
+  
+  return restoredSongs;
 }

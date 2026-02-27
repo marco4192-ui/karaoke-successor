@@ -41,6 +41,7 @@ export interface Song {
   videoGap?: number; // Offset for video sync (ms)
   audioUrl?: string;
   gap: number; // gap before lyrics start (ms)
+  start?: number; // #START tag - milliseconds to skip at beginning of audio
   hasEmbeddedAudio?: boolean; // video file has audio, no separate audio needed
   lastPlayed?: number;
   dateAdded?: number;

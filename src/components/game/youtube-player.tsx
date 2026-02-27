@@ -21,12 +21,12 @@ export function extractYouTubeId(url: string): string | null {
 
 interface YouTubePlayerProps {
   videoId: string;
-  videoGap?: number; // Offset in seconds (positive = video starts after audio)
+  videoGap?: number; // Offset in MILLISECONDS (positive = video starts AFTER audio)
   onReady?: () => void;
   onTimeUpdate?: (currentTime: number) => void;
   onEnded?: () => void;
   isPlaying?: boolean;
-  startTime?: number; // Start position in seconds
+  startTime?: number; // Start position in milliseconds
 }
 
 declare global {
@@ -151,7 +151,11 @@ export function YouTubePlayer({
     // Generate new player ID for this video
     playerIdRef.current = `youtube-player-${++playerCounter}`;
     
-    const adjustedStartTime = Math.max(0, (startTime / 1000) - videoGap);
+    // videoGap is in milliseconds, convert to seconds for YouTube API
+    // Positive videoGap: video starts AFTER audio, so video needs to skip ahead
+    // Negative videoGap: video starts BEFORE audio, so video starts later relative to audio
+    const videoGapSeconds = videoGap / 1000;
+    const adjustedStartTime = Math.max(0, (startTime / 1000) - videoGapSeconds);
     
     // Small delay to ensure DOM is ready
     const initTimeout = setTimeout(() => {
@@ -193,7 +197,13 @@ export function YouTubePlayer({
           try {
             const currentTime = playerRef.current.getCurrentTime();
             if (typeof currentTime === 'number' && !isNaN(currentTime)) {
-              onTimeUpdate((currentTime + videoGap) * 1000); // Apply videoGap and convert to ms
+              // Convert video time to audio/song time
+              // songTime = videoTime + videoGap
+              // If videoGap > 0: video started after audio, so song time is ahead of video
+              // If videoGap < 0: video started before audio, so song time is behind video
+              const videoGapSeconds = videoGap / 1000;
+              const songTime = (currentTime + videoGapSeconds) * 1000;
+              onTimeUpdate(songTime);
             }
           } catch (e) {
             // Player not ready yet

@@ -36,6 +36,7 @@ export interface UltraStarSong {
   background?: string;
   bpm: number;
   gap: number; // Milliseconds before first note
+  start?: number; // #START tag - milliseconds to skip at beginning of audio
   previewStart?: number;
   previewDuration?: number;
   genre?: string;
@@ -96,6 +97,9 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
             break;
           case 'GAP':
             song.gap = parseInt(value) || 0;
+            break;
+          case 'START':
+            song.start = parseInt(value) || 0;
             break;
           case 'END':
             song.end = parseInt(value) || undefined;
@@ -278,6 +282,7 @@ export function convertUltraStarToSong(
     difficulty,
     rating,
     gap: ultraStar.gap,
+    start: ultraStar.start,
     coverImage: coverUrl || ultraStar.cover,
     videoBackground: videoUrl || ultraStar.video,
     videoGap: ultraStar.videoGap,
