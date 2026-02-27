@@ -280,6 +280,7 @@ export function convertUltraStarToSong(
     gap: ultraStar.gap,
     coverImage: coverUrl || ultraStar.cover,
     videoBackground: videoUrl || ultraStar.video,
+    videoGap: ultraStar.videoGap,
     audioUrl,
     lyrics: lyricLines,
     preview: ultraStar.previewStart ? {

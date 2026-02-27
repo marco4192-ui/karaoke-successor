@@ -14,6 +14,7 @@ import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useGameStore, selectQueue, selectProfiles, selectActiveProfile } from '@/lib/game/store';
 import { getAllSongs, addSong, addSongs, reloadLibrary } from '@/lib/game/song-library';
 import { ImportScreen } from '@/components/import/import-screen';
+import { YouTubePlayer, extractYouTubeId } from '@/components/game/youtube-player';
 import { 
   Song, 
   Player, 
@@ -910,6 +911,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   const [scoreEvents, setScoreEvents] = useState<Array<{ type: string; points: number; time: number }>>([]);
   const [volume, setVolume] = useState(0);
   const [mediaLoaded, setMediaLoaded] = useState(false);
+  const [youtubeTime, setYoutubeTime] = useState(0); // Track YouTube video time
   
   const gameLoopRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
@@ -917,6 +919,11 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const song = gameState.currentSong;
+  
+  // Check if video is YouTube
+  const videoBackground = song?.videoBackground;
+  const youtubeVideoId = videoBackground ? extractYouTubeId(videoBackground) : null;
+  const isYouTube = !!youtubeVideoId;
   
   // Sing line position at 25% from left (like UltraStar/Vocaluxe)
   const SING_LINE_POSITION = 25; // percentage from left
@@ -1115,8 +1122,12 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       // Use media's currentTime for accurate sync, fallback to Date.now()
       let elapsed: number;
       
+      // For YouTube videos, use tracked time from player
+      if (isYouTube && youtubeTime > 0) {
+        elapsed = youtubeTime;
+      }
       // For video with embedded audio
-      if (song.hasEmbeddedAudio && videoRef.current) {
+      else if (song.hasEmbeddedAudio && videoRef.current) {
         elapsed = videoRef.current.currentTime * 1000; // Convert to ms
       }
       // For separate audio file
@@ -1157,7 +1168,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [isPlaying, song, pitchResult, setCurrentTime, setDetectedPitch, checkNoteHits, endGame, generateResults, onEnd]);
+  }, [isPlaying, song, pitchResult, setCurrentTime, setDetectedPitch, checkNoteHits, endGame, generateResults, onEnd, isYouTube, youtubeTime]);
 
   // Get current lyric line
   const currentLine = useMemo(() => {
@@ -1242,7 +1253,21 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       {/* Game Area - Full Screen */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Video Background */}
-        {song.videoBackground ? (
+        {isYouTube && youtubeVideoId ? (
+          <YouTubePlayer
+            videoId={youtubeVideoId}
+            videoGap={song.videoGap || 0}
+            onReady={() => console.log('YouTube ready')}
+            onTimeUpdate={(time) => setYoutubeTime(time)}
+            onEnded={() => {
+              endGame();
+              generateResults();
+              onEnd();
+            }}
+            isPlaying={isPlaying}
+            startTime={0}
+          />
+        ) : song.videoBackground ? (
           <video
             ref={videoRef}
             src={song.videoBackground}

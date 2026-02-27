@@ -37,6 +37,8 @@ export interface Song {
   lyrics: LyricLine[];
   coverImage?: string;
   videoBackground?: string;
+  youtubeUrl?: string; // YouTube video URL
+  videoGap?: number; // Offset for video sync (ms)
   audioUrl?: string;
   gap: number; // gap before lyrics start (ms)
   hasEmbeddedAudio?: boolean; // video file has audio, no separate audio needed
