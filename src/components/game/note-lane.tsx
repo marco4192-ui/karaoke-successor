@@ -12,7 +12,7 @@ interface NoteLaneProps {
   windowHeight?: number;
 }
 
-const NOTE_HEIGHT = 40;
+const NOTE_HEIGHT = 52; // Doubled from 26
 const PITCH_RANGE = 24; // Number of semitones to display
 const BASE_PITCH = 48; // C3 - lowest pitch to display
 
@@ -26,13 +26,11 @@ export function NoteLane({
 }: NoteLaneProps) {
   const settings = DIFFICULTY_SETTINGS[difficulty];
 
-  // Get all notes and calculate positions
+  // Get all notes and calculate positions (Right to Left movement)
   const notesWithPositions = useMemo(() => {
     const notes: Array<{
       note: Note;
       line: LyricLine;
-      y: number;
-      height: number;
       x: number;
       width: number;
       pitchY: number;
@@ -48,26 +46,21 @@ export function NoteLane({
           continue;
         }
 
-        // Calculate vertical position (time-based)
+        // Calculate horizontal position (time-based, right to left)
         const timeOffset = note.startTime - currentTime;
-        const y = windowHeight / 2 - (timeOffset * scrollSpeed) / 1000;
+        const x = (1 - timeOffset / scrollWindow) * 100; // Right (100%) to Left (0%)
 
-        // Calculate height based on duration
-        const height = (note.duration * scrollSpeed) / 1000;
+        // Calculate width based on duration (doubled)
+        const width = Math.max(120, (note.duration / 50) * settings.visualNoteWidth);
 
-        // Calculate horizontal position based on pitch
+        // Calculate vertical position based on pitch
         const pitchOffset = note.pitch - BASE_PITCH;
         const pitchY = windowHeight - ((pitchOffset / PITCH_RANGE) * windowHeight);
-
-        // Calculate width based on duration and difficulty
-        const width = Math.max(60, (note.duration / 100) * settings.visualNoteWidth);
 
         notes.push({
           note,
           line,
-          y,
-          height,
-          x: pitchY - width / 2,
+          x,
           width,
           pitchY,
         });
@@ -96,7 +89,7 @@ export function NoteLane({
   }, [lyrics, currentTime]);
 
   return (
-    <div className="relative w-full h-full overflow-hidden bg-gradient-to-b from-purple-900/20 to-indigo-900/20">
+    <div className="relative w-full h-full overflow-hidden bg-gradient-to-r from-purple-900/20 to-indigo-900/20">
       {/* Pitch grid lines */}
       <div className="absolute inset-0 pointer-events-none">
         {Array.from({ length: PITCH_RANGE + 1 }).map((_, i) => (
@@ -110,45 +103,45 @@ export function NoteLane({
         ))}
       </div>
 
-      {/* Target line */}
+      {/* Target line - Vertical on left side */}
       <div
-        className="absolute left-0 right-0 border-t-2 border-cyan-400/50 z-10"
-        style={{ top: `${(windowHeight - windowHeight / 2) / windowHeight * 100}%` }}
+        className="absolute top-0 bottom-0 w-1 bg-gradient-to-b from-transparent via-cyan-400 to-transparent z-10"
+        style={{ left: '8%' }}
       >
-        <div className="absolute left-2 -top-3 text-xs text-cyan-400 font-bold">
-          SING HERE
+        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xs text-cyan-400 font-bold whitespace-nowrap">
+          SING HERE →
         </div>
       </div>
 
-      {/* Notes */}
-      {notesWithPositions.map(({ note, y, height, pitchY, width }) => {
+      {/* Notes - Moving Right to Left */}
+      {notesWithPositions.map(({ note, x, pitchY, width }) => {
         const isActive = currentTime >= note.startTime && currentTime <= note.startTime + note.duration;
         const isPast = currentTime > note.startTime + note.duration;
 
         return (
           <div
             key={note.id}
-            className={`absolute rounded-lg transition-all duration-75 ${
+            className={`absolute rounded-xl transition-all duration-75 ${
               isPast
                 ? 'opacity-30'
                 : isActive
-                ? 'ring-2 ring-white ring-offset-2 ring-offset-transparent'
+                ? 'ring-4 ring-white ring-offset-2 ring-offset-transparent scale-125'
                 : ''
             } ${note.isGolden ? 'bg-gradient-to-r from-yellow-400 to-orange-500' : note.isBonus ? 'bg-gradient-to-r from-pink-500 to-purple-500' : 'bg-gradient-to-r from-cyan-500 to-blue-500'}`}
             style={{
-              left: `${(pitchY / windowHeight) * 100}%`,
-              top: `${(y / windowHeight) * 100}%`,
-              width: `${(width / windowHeight) * 100}%`,
-              height: `${Math.max(2, height)}px`,
+              left: `${Math.max(0, Math.min(90, x))}%`,
+              top: `${(pitchY / windowHeight) * 100}%`,
+              width: `${width}px`,
+              height: `${NOTE_HEIGHT}px`,
               transform: 'translateY(-50%)',
               boxShadow: isActive
                 ? note.isGolden
-                  ? '0 0 20px rgba(251, 191, 36, 0.5)'
-                  : '0 0 15px rgba(34, 211, 238, 0.5)'
+                  ? '0 0 30px rgba(251, 191, 36, 0.7)'
+                  : '0 0 25px rgba(34, 211, 238, 0.7)'
                 : 'none',
             }}
           >
-            <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white drop-shadow-md truncate px-1">
+            <span className="absolute inset-0 flex items-center justify-center text-base font-bold text-white drop-shadow-md truncate px-2">
               {note.lyric}
             </span>
           </div>
@@ -158,14 +151,16 @@ export function NoteLane({
       {/* Current pitch indicator */}
       {currentPitchY !== null && (
         <div
-          className="absolute left-1/2 transform -translate-x-1/2 z-20"
+          className="absolute z-20"
           style={{
+            left: '4%',
             top: `${(currentPitchY / windowHeight) * 100}%`,
+            transform: 'translateY(-50%)',
           }}
         >
-          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 shadow-lg shadow-green-500/50 animate-pulse flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 shadow-lg shadow-green-500/50 animate-pulse flex items-center justify-center">
             <svg
-              className="w-5 h-5 text-white"
+              className="w-6 h-6 text-white"
               fill="currentColor"
               viewBox="0 0 20 20"
             >

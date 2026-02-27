@@ -272,8 +272,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
           </Button>
           <Button 
             size="lg" 
-            variant="outline" 
-            className="border-white/20 text-white hover:bg-white/10 px-8 py-6 text-lg"
+            className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-400 hover:to-purple-400 text-white px-8 py-6 text-lg border-2 border-pink-400/50"
             onClick={() => onNavigate('party')}
           >
             <PartyIcon className="w-5 h-5 mr-2" /> Party Mode
@@ -577,6 +576,15 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   const gameLoopRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   const song = gameState.currentSong;
+  
+  // Audio playback refs
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const lastPlayedNoteRef = useRef<string>('');
+
+  // Helper to convert MIDI note to frequency
+  const midiToFrequency = (midi: number): number => {
+    return 440 * Math.pow(2, (midi - 69) / 12);
+  };
 
   // Initialize and start game
   useEffect(() => {
@@ -586,6 +594,12 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       const success = await initialize();
       if (success) {
         start();
+        // Initialize audio context for playback
+        try {
+          audioContextRef.current = new AudioContext();
+        } catch (e) {
+          console.log('Audio context not available');
+        }
         // Start countdown
         setCountdown(3);
         const countdownInterval = setInterval(() => {
@@ -608,6 +622,9 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       stop();
       if (gameLoopRef.current) {
         cancelAnimationFrame(gameLoopRef.current);
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
       }
     };
   }, [song, initialize, start, stop]);
@@ -718,6 +735,30 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   useEffect(() => {
     if (!isPlaying || !song) return;
 
+    const playNote = (frequency: number, duration: number) => {
+      if (!audioContextRef.current) return;
+      
+      const ctx = audioContextRef.current;
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.value = frequency;
+      
+      // ADSR envelope for smoother sound
+      const now = ctx.currentTime;
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.15, now + 0.05);
+      gainNode.gain.linearRampToValueAtTime(0.1, now + duration / 1000 - 0.05);
+      gainNode.gain.linearRampToValueAtTime(0, now + duration / 1000);
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      oscillator.start(now);
+      oscillator.stop(now + duration / 1000);
+    };
+
     const gameLoop = () => {
       const elapsed = Date.now() - startTimeRef.current;
       setCurrentTime(elapsed);
@@ -729,6 +770,23 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         
         // Check for note hits
         checkNoteHits(elapsed, pitchResult);
+      }
+      
+      // Play notes as they become active
+      if (audioContextRef.current) {
+        for (const line of song.lyrics) {
+          for (const note of line.notes) {
+            const noteKey = `${note.id}-${note.startTime}`;
+            const timeUntilNote = note.startTime - elapsed;
+            
+            // Play note 500ms before it reaches the sing line
+            if (timeUntilNote <= 500 && timeUntilNote > 450 && lastPlayedNoteRef.current !== noteKey) {
+              lastPlayedNoteRef.current = noteKey;
+              const frequency = midiToFrequency(note.pitch);
+              playNote(frequency, Math.min(note.duration, 500));
+            }
+          }
+        }
       }
       
       // Check if song ended
@@ -836,36 +894,38 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             ))}
           </div>
 
-          {/* Sing Line */}
-          <div className="absolute left-0 right-0 top-1/2 transform -translate-y-1/2 z-20">
-            <div className="h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
-            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-cyan-400 text-sm font-bold animate-pulse">
+          {/* Sing Line - Vertical on the left side */}
+          <div className="absolute left-4 top-0 bottom-0 z-20 w-1">
+            <div className="h-full w-full bg-gradient-to-b from-transparent via-cyan-400 to-transparent" />
+            <div className="absolute left-8 top-1/2 transform -translate-y-1/2 text-cyan-400 text-sm font-bold animate-pulse whitespace-nowrap">
               SING →
             </div>
           </div>
 
-          {/* Notes */}
+          {/* Notes - Moving Right to Left */}
           {visibleNotes.map((note) => {
             const timeUntilNote = note.startTime - gameState.currentTime;
-            const y = 50 - (timeUntilNote / 5000) * 50; // Position based on time
-            const pitchY = ((note.pitch - 48) / 24) * 100; // Position based on pitch
+            // Horizontal position: notes come from right (100%) and move to left (0%)
+            const x = 100 - (timeUntilNote / 5000) * 100; 
+            const pitchY = ((note.pitch - 48) / 24) * 100; // Position based on pitch (vertical)
             const isActive = gameState.currentTime >= note.startTime && gameState.currentTime <= note.startTime + note.duration;
             
             return (
               <div
                 key={note.id}
-                className={`absolute h-6 rounded-lg flex items-center justify-center text-xs font-bold text-white transition-all duration-75 ${
+                className={`absolute rounded-xl flex items-center justify-center text-base font-bold text-white transition-all duration-75 ${
                   note.isGolden 
                     ? 'bg-gradient-to-r from-yellow-400 to-orange-500 shadow-lg shadow-yellow-500/50' 
                     : note.isBonus 
                     ? 'bg-gradient-to-r from-pink-500 to-purple-500' 
                     : 'bg-gradient-to-r from-cyan-500 to-blue-500'
-                } ${isActive ? 'ring-2 ring-white scale-110' : ''}`}
+                } ${isActive ? 'ring-4 ring-white scale-125' : ''}`}
                 style={{
-                  left: `${Math.max(5, Math.min(80, pitchY))}%`,
-                  top: `${Math.max(0, Math.min(90, y))}%`,
-                  width: `${Math.max(40, note.duration / 50)}px`,
-                  boxShadow: isActive ? '0 0 30px rgba(34, 211, 238, 0.7)' : 'none',
+                  left: `${Math.max(0, Math.min(85, x))}%`,
+                  top: `${Math.max(5, Math.min(85, pitchY))}%`,
+                  width: `${Math.max(80, note.duration / 25)}px`, // Doubled from /50 to /25
+                  height: '52px', // Doubled from h-6 (24px) to 52px
+                  boxShadow: isActive ? '0 0 40px rgba(34, 211, 238, 0.8)' : 'none',
                 }}
               >
                 {note.lyric}
@@ -876,14 +936,14 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
           {/* Detected Pitch Indicator */}
           {pitchResult?.frequency && (
             <div
-              className="absolute z-30 w-8 h-8 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 shadow-lg shadow-green-500/50 flex items-center justify-center animate-pulse"
+              className="absolute z-30 w-12 h-12 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 shadow-lg shadow-green-500/50 flex items-center justify-center animate-pulse"
               style={{
-                left: `${Math.max(5, Math.min(80, ((pitchResult.note! - 48) / 24) * 100))}%`,
-                top: '50%',
+                left: '4%',
+                top: `${Math.max(5, Math.min(90, ((pitchResult.note! - 48) / 24) * 100))}%`,
                 transform: 'translateY(-50%)',
               }}
             >
-              <MicIcon className="w-4 h-4 text-white" />
+              <MicIcon className="w-6 h-6 text-white" />
             </div>
           )}
         </div>
