@@ -13,7 +13,7 @@ import { Slider } from '@/components/ui/slider';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useGameStore, selectQueue, selectProfiles, selectActiveProfile } from '@/lib/game/store';
 import { sampleSongs, searchSongs, getSongById } from '@/data/songs/songs';
-import { getAllSongs, addSong, addSongs } from '@/lib/game/song-library';
+import { getAllSongs, addSong, addSongs, reloadLibrary } from '@/lib/game/song-library';
 import { ImportScreen } from '@/components/import/import-screen';
 import { 
   Song, 
@@ -408,6 +408,7 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
   const [showSongModal, setShowSongModal] = useState(false);
   const [previewSong, setPreviewSong] = useState<Song | null>(null);
   const [previewAudio, setPreviewAudio] = useState<HTMLAudioElement | null>(null);
+  const [libraryVersion, setLibraryVersion] = useState(0); // For forcing reload
   const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { setDifficulty, gameState, addToQueue, queue, activeProfileId, profiles, setGameMode } = useGameStore();
   
@@ -464,10 +465,16 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
   const activeProfile = profiles.find(p => p.id === activeProfileId);
   const playerQueueCount = queue.filter(item => item.playerId === activeProfileId).length;
 
+  // Reload library handler
+  const handleReloadLibrary = useCallback(() => {
+    reloadLibrary();
+    setLibraryVersion(v => v + 1);
+  }, []);
+
   // Get all songs (including imported ones)
   const allSongs = useMemo(() => {
     return getAllSongs();
-  }, []);
+  }, [libraryVersion]);
 
   // Preview handlers
   const handlePreviewStart = useCallback((song: Song) => {
@@ -580,9 +587,22 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Music Library</h1>
-        <p className="text-white/60">{allSongs.length} songs available</p>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Music Library</h1>
+          <p className="text-white/60">{allSongs.length} songs available</p>
+        </div>
+        <Button 
+          onClick={handleReloadLibrary}
+          variant="outline"
+          className="border-white/20 text-white hover:bg-white/10 flex items-center gap-2"
+        >
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85.98 6.58 2.58" />
+            <path d="M21 3v6h-6" />
+          </svg>
+          Reload
+        </Button>
       </div>
 
       {/* Search and Filters */}

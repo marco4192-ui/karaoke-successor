@@ -264,3 +264,33 @@ export function clearCustomSongs(): void {
   customSongsCache = [];
   songCache = null;
 }
+
+// Reload library - clear cache and force fresh load
+export function reloadLibrary(): void {
+  songCache = null;
+  customSongsCache = null;
+}
+
+// Check if a song exists in custom songs (for update detection)
+export function songExists(title: string, artist: string): boolean {
+  const customSongs = getCustomSongs();
+  return customSongs.some(s => s.title === title && s.artist === artist);
+}
+
+// Replace a song (for updates)
+export function replaceSong(song: Song): void {
+  let customSongs = getCustomSongs();
+  const index = customSongs.findIndex(s => s.title === song.title && s.artist === song.artist);
+  
+  if (index !== -1) {
+    customSongs[index] = { ...song, id: customSongs[index].id };
+  } else {
+    customSongs.push({
+      ...song,
+      id: song.id || `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    });
+  }
+  
+  saveCustomSongs(customSongs);
+  songCache = null;
+}
