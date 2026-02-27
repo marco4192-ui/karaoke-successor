@@ -97,7 +97,7 @@ export default function KaraokeSuccessor() {
       {/* Main Content */}
       <main className="pt-20 pb-8 px-4 min-h-screen">
         {screen === 'home' && <HomeScreen onNavigate={setScreen} />}
-        {screen === 'library' && <LibraryScreen onSelectSong={(song) => { setSong(song); setScreen('game'); }} />}
+        {screen === 'library' && <LibraryScreen onSelectSong={(song) => { setSong(song); setScreen('game'); }} initialGameMode={gameState.gameMode} />}
         {screen === 'game' && <GameScreen onEnd={() => setScreen('results')} onBack={() => setScreen('library')} />}
         {screen === 'party' && <PartyScreen onSelectMode={(mode) => { setGameMode(mode); setScreen('library'); }} />}
         {screen === 'character' && <CharacterScreen />}
@@ -407,7 +407,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
 }
 
 // ===================== LIBRARY SCREEN =====================
-function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void }) {
+function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong: (song: Song) => void; initialGameMode?: GameMode }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [showSongModal, setShowSongModal] = useState(false);
@@ -437,15 +437,18 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
     loadSongs();
   }, [libraryVersion]);
   
-  // Song start modal state
+  // Song start modal state - use initialGameMode if it's a party mode
+  const isPartyMode = initialGameMode && initialGameMode !== 'standard' && initialGameMode !== 'duel';
   const [startOptions, setStartOptions] = useState<{
     difficulty: Difficulty;
-    mode: 'single' | 'duel';
+    mode: 'single' | 'duel' | GameMode;
     players: string[];
+    partyMode?: GameMode;
   }>({
     difficulty: 'medium',
-    mode: 'single',
+    mode: initialGameMode === 'duel' ? 'duel' : 'single',
     players: [],
+    partyMode: isPartyMode ? initialGameMode : undefined,
   });
   
   // Get library settings from store (persistent)
@@ -493,8 +496,14 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
   // Reload library handler - force fresh load from localStorage
   const handleReloadLibrary = useCallback(async () => {
     setSongsLoading(true);
-    // Clear caches
+    setLoadedSongs([]);
+    
+    // Clear caches in song library
     reloadLibrary();
+    
+    // Small delay to ensure UI updates
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     // Increment version to trigger useEffect reload
     setLibraryVersion(v => v + 1);
   }, []);
@@ -585,8 +594,9 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
     setSelectedSong(song);
     setStartOptions({
       difficulty: song.difficulty,
-      mode: 'single',
+      mode: initialGameMode === 'duel' ? 'duel' : 'single',
       players: activeProfileId ? [activeProfileId] : [],
+      partyMode: isPartyMode ? initialGameMode : undefined,
     });
     setShowSongModal(true);
   };
@@ -595,8 +605,13 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
     if (!selectedSong) return;
     
     setDifficulty(startOptions.difficulty);
-    if (startOptions.mode === 'duel') {
+    // Set the game mode - use party mode if available, otherwise use the selected mode
+    if (startOptions.partyMode) {
+      setGameMode(startOptions.partyMode);
+    } else if (startOptions.mode === 'duel') {
       setGameMode('duel');
+    } else {
+      setGameMode('standard');
     }
     setShowSongModal(false);
     onSelectSong(selectedSong);
@@ -784,30 +799,56 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
               {/* Mode Selection */}
               <div>
                 <label className="text-sm text-white/60 mb-2 block">Mode</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setStartOptions(prev => ({ ...prev, mode: 'single' }))}
-                    className={`py-3 rounded-lg font-medium transition-all ${
-                      startOptions.mode === 'single' 
-                        ? 'bg-cyan-500 text-white' 
-                        : 'bg-white/10 text-white hover:bg-white/20'
-                    }`}
-                  >
-                    <MicIcon className="w-5 h-5 mx-auto mb-1" />
-                    <div className="text-sm">Single</div>
-                  </button>
-                  <button
-                    onClick={() => setStartOptions(prev => ({ ...prev, mode: 'duel' }))}
-                    className={`py-3 rounded-lg font-medium transition-all ${
-                      startOptions.mode === 'duel' 
-                        ? 'bg-purple-500 text-white' 
-                        : 'bg-white/10 text-white hover:bg-white/20'
-                    }`}
-                  >
-                    <span className="text-lg">⚔️</span>
-                    <div className="text-sm">Duel</div>
-                  </button>
-                </div>
+                {startOptions.partyMode ? (
+                  // Show party mode info
+                  <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg p-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">
+                        {startOptions.partyMode === 'pass-the-mic' ? '🎤' :
+                         startOptions.partyMode === 'companion-singalong' ? '📱' :
+                         startOptions.partyMode === 'medley' ? '🎵' :
+                         startOptions.partyMode === 'missing-words' ? '📝' :
+                         startOptions.partyMode === 'blind' ? '🙈' : '🎮'}
+                      </span>
+                      <div>
+                        <div className="font-bold text-white">
+                          {startOptions.partyMode === 'pass-the-mic' ? 'Pass the Mic' :
+                           startOptions.partyMode === 'companion-singalong' ? 'Companion Sing-A-Long' :
+                           startOptions.partyMode === 'medley' ? 'Medley Contest' :
+                           startOptions.partyMode === 'missing-words' ? 'Missing Words' :
+                           startOptions.partyMode === 'blind' ? 'Blind Karaoke' : startOptions.partyMode}
+                        </div>
+                        <div className="text-xs text-white/60">Party Mode Active</div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  // Regular single/duel selection
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setStartOptions(prev => ({ ...prev, mode: 'single' }))}
+                      className={`py-3 rounded-lg font-medium transition-all ${
+                        startOptions.mode === 'single' 
+                          ? 'bg-cyan-500 text-white' 
+                          : 'bg-white/10 text-white hover:bg-white/20'
+                      }`}
+                    >
+                      <MicIcon className="w-5 h-5 mx-auto mb-1" />
+                      <div className="text-sm">Single</div>
+                    </button>
+                    <button
+                      onClick={() => setStartOptions(prev => ({ ...prev, mode: 'duel' }))}
+                      className={`py-3 rounded-lg font-medium transition-all ${
+                        startOptions.mode === 'duel' 
+                          ? 'bg-purple-500 text-white' 
+                          : 'bg-white/10 text-white hover:bg-white/20'
+                      }`}
+                    >
+                      <span className="text-lg">⚔️</span>
+                      <div className="text-sm">Duel</div>
+                    </button>
+                  </div>
+                )}
               </div>
               
               {/* Player Selection (for Duel mode) */}
@@ -965,12 +1006,13 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   // Sing line position at 25% from left (like UltraStar/Vocaluxe)
   const SING_LINE_POSITION = 25; // percentage from left
   
-  // Calculate note window based on BPM - faster songs need faster scrolling
-  // At 120 BPM, show 4 beats (2 seconds) of upcoming notes
-  // At 240 BPM, show 8 beats (2 seconds) - same visual distance, faster scroll
-  const beatDuration = song.bpm ? 60000 / song.bpm : 500; // ms per beat
-  const BEATS_TO_SHOW = 8; // Show 8 beats ahead
-  const NOTE_WINDOW = beatDuration * BEATS_TO_SHOW; // Dynamic based on BPM
+  // Fixed time window for note display (in milliseconds)
+  // This ensures consistent scrolling speed regardless of BPM
+  // 4 seconds = 4000ms window for upcoming notes
+  const NOTE_WINDOW = 4000; // Fixed 4 second window
+  
+  // Calculate beat duration for other timing purposes
+  const beatDuration = song?.bpm ? 60000 / song.bpm : 500; // ms per beat
   
   // Calculate pitch range dynamically from song notes
   // This ensures all notes are visible within the display area
@@ -995,6 +1037,12 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       pitchRange: Math.max(12, paddedMax - paddedMin) // At least 1 octave
     };
   }, [song]);
+
+  // Vertical pitch display constants (percentage of screen)
+  // Leave 8% padding at top (for header) and 15% at bottom (for lyrics)
+  const VISIBLE_TOP = 8; // percentage from top
+  const VISIBLE_BOTTOM = 85; // percentage from bottom
+  const VISIBLE_RANGE = VISIBLE_BOTTOM - VISIBLE_TOP;
 
   // Initialize media elements on mount
   useEffect(() => {
@@ -1189,6 +1237,9 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   // Game loop
   useEffect(() => {
     if (!isPlaying || !song) return;
+    
+    // Get the start position from #START tag (in milliseconds)
+    const startPositionMs = song.start || 0;
 
     const gameLoop = () => {
       // Use media's currentTime for accurate sync
@@ -1199,16 +1250,17 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         elapsed = youtubeTime;
       }
       // For video with embedded audio - video IS the audio source
-      else if (song.hasEmbeddedAudio && videoRef.current) {
+      else if (song.hasEmbeddedAudio && videoRef.current && !videoRef.current.paused) {
         elapsed = videoRef.current.currentTime * 1000; // Convert to ms
       }
-      // For separate audio file
-      else if (audioRef.current && !audioRef.current.paused) {
+      // For separate audio file - only use if audio is playing
+      else if (audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2) {
         elapsed = audioRef.current.currentTime * 1000; // Convert to ms
       }
-      // Fallback to system time (less accurate)
+      // Fallback to system time (less accurate) - account for start position
       else {
-        elapsed = Date.now() - startTimeRef.current;
+        // Add start position to fallback time so notes are in correct position
+        elapsed = (Date.now() - startTimeRef.current) + startPositionMs;
       }
       
       // Apply user-adjustable timing offset
@@ -1261,8 +1313,8 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   const visibleNotes = useMemo(() => {
     if (!song) return [];
     const currentTime = gameState.currentTime;
-    const windowStart = currentTime - beatDuration * 2; // 2 beats behind (for smooth exit)
-    const windowEnd = currentTime + NOTE_WINDOW; // Dynamic window ahead
+    const windowStart = currentTime - 1000; // 1 second behind (for smooth exit)
+    const windowEnd = currentTime + NOTE_WINDOW; // 4 seconds ahead
     
     const notes: Array<Note & { line: LyricLine }> = [];
     for (const line of song.lyrics) {
@@ -1275,7 +1327,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       }
     }
     return notes;
-  }, [song, gameState.currentTime, NOTE_WINDOW, beatDuration]);
+  }, [song, gameState.currentTime, NOTE_WINDOW]);
 
   if (!song) {
     return (
@@ -1450,10 +1502,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             
             // Position based on pitch (vertical) - use dynamic range from song
             // Higher pitch = higher on screen = lower Y value
-            // Leave 8% padding at top (for header) and 15% at bottom (for lyrics)
-            const VISIBLE_TOP = 8; // percentage from top
-            const VISIBLE_BOTTOM = 85; // percentage from bottom
-            const VISIBLE_RANGE = VISIBLE_BOTTOM - VISIBLE_TOP;
             const pitchY = VISIBLE_TOP + VISIBLE_RANGE - ((note.pitch - pitchStats.minPitch) / pitchStats.pitchRange) * VISIBLE_RANGE;
             
             // Note width based on duration (as percentage of screen)
