@@ -14,6 +14,7 @@ import { Slider } from '@/components/ui/slider';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useGameStore, selectQueue, selectProfiles, selectActiveProfile } from '@/lib/game/store';
 import { sampleSongs, searchSongs, getSongById } from '@/data/songs/songs';
+import { getAllSongs, addSong, addSongs } from '@/lib/game/song-library';
 import { ImportScreen } from '@/components/import/import-screen';
 import { 
   Song, 
@@ -404,23 +405,89 @@ function HomeScreen({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
 // ===================== LIBRARY SCREEN =====================
 function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterDifficulty, setFilterDifficulty] = useState<Difficulty | 'all'>('all');
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const { setDifficulty, gameState, addToQueue, queue, activeProfileId, profiles } = useGameStore();
+  
+  // Get library settings from store (persistent)
+  const [settings, setSettings] = useState<{
+    sortBy: 'title' | 'artist' | 'difficulty' | 'rating' | 'dateAdded';
+    sortOrder: 'asc' | 'desc';
+    filterDifficulty: Difficulty | 'all';
+  }>(() => {
+    // Initialize from localStorage
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('karaoke-library-settings');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {}
+      }
+    }
+    return {
+      sortBy: 'title' as const,
+      sortOrder: 'asc' as const,
+      filterDifficulty: 'all' as const,
+    };
+  });
+  
+  // Save settings when changed
+  useEffect(() => {
+    localStorage.setItem('karaoke-library-settings', JSON.stringify(settings));
+  }, [settings]);
   
   const activeProfile = profiles.find(p => p.id === activeProfileId);
   const playerQueueCount = queue.filter(item => item.playerId === activeProfileId).length;
 
+  // Get all songs (including imported ones)
+  const allSongs = useMemo(() => {
+    return getAllSongs();
+  }, []);
+
   const filteredSongs = useMemo(() => {
-    let songs = sampleSongs;
+    let songs = allSongs;
+    
+    // Search filter
     if (searchQuery) {
-      songs = searchSongs(searchQuery);
+      const lowerQuery = searchQuery.toLowerCase();
+      songs = songs.filter(s => 
+        s.title.toLowerCase().includes(lowerQuery) ||
+        s.artist.toLowerCase().includes(lowerQuery) ||
+        s.genre?.toLowerCase().includes(lowerQuery) ||
+        s.album?.toLowerCase().includes(lowerQuery)
+      );
     }
-    if (filterDifficulty !== 'all') {
-      songs = songs.filter(s => s.difficulty === filterDifficulty);
+    
+    // Difficulty filter
+    if (settings.filterDifficulty !== 'all') {
+      songs = songs.filter(s => s.difficulty === settings.filterDifficulty);
     }
+    
+    // Sort
+    songs = [...songs].sort((a, b) => {
+      let comparison = 0;
+      switch (settings.sortBy) {
+        case 'title':
+          comparison = a.title.localeCompare(b.title);
+          break;
+        case 'artist':
+          comparison = a.artist.localeCompare(b.artist);
+          break;
+        case 'difficulty':
+          const diffOrder = { easy: 1, medium: 2, hard: 3 };
+          comparison = diffOrder[a.difficulty] - diffOrder[b.difficulty];
+          break;
+        case 'rating':
+          comparison = (b.rating || 0) - (a.rating || 0);
+          break;
+        case 'dateAdded':
+          comparison = (b.dateAdded || 0) - (a.dateAdded || 0);
+          break;
+      }
+      return settings.sortOrder === 'asc' ? comparison : -comparison;
+    });
+    
     return songs;
-  }, [searchQuery, filterDifficulty]);
+  }, [allSongs, searchQuery, settings]);
 
   const handlePlayNow = (song: Song) => {
     setDifficulty(song.difficulty);
@@ -437,7 +504,7 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
     <div className="max-w-6xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Music Library</h1>
-        <p className="text-white/60">Choose from {sampleSongs.length} songs to sing</p>
+        <p className="text-white/60">{allSongs.length} songs available ({allSongs.length - sampleSongs.length} imported)</p>
       </div>
 
       {/* Search and Filters */}
@@ -455,14 +522,34 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
           </svg>
         </div>
         
+        {/* Sort dropdown */}
+        <select
+          value={`${settings.sortBy}-${settings.sortOrder}`}
+          onChange={(e) => {
+            const [sortBy, sortOrder] = e.target.value.split('-') as [typeof settings.sortBy, typeof settings.sortOrder];
+            setSettings(prev => ({ ...prev, sortBy, sortOrder }));
+          }}
+          className="bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white"
+        >
+          <option value="title-asc">Title (A-Z)</option>
+          <option value="title-desc">Title (Z-A)</option>
+          <option value="artist-asc">Artist (A-Z)</option>
+          <option value="artist-desc">Artist (Z-A)</option>
+          <option value="difficulty-asc">Difficulty (Easy → Hard)</option>
+          <option value="difficulty-desc">Difficulty (Hard → Easy)</option>
+          <option value="rating-desc">Rating (Highest)</option>
+          <option value="dateAdded-desc">Recently Added</option>
+        </select>
+        
+        {/* Difficulty filter */}
         <div className="flex gap-2">
           {(['all', 'easy', 'medium', 'hard'] as const).map((diff) => (
             <Button
               key={diff}
-              variant={filterDifficulty === diff ? 'default' : 'outline'}
+              variant={settings.filterDifficulty === diff ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setFilterDifficulty(diff)}
-              className={filterDifficulty === diff ? 'bg-cyan-500 hover:bg-cyan-400' : 'border-white/20 text-white hover:bg-white/10'}
+              onClick={() => setSettings(prev => ({ ...prev, filterDifficulty: diff }))}
+              className={settings.filterDifficulty === diff ? 'bg-cyan-500 hover:bg-cyan-400' : 'border-white/20 text-white hover:bg-white/10'}
             >
               {diff.charAt(0).toUpperCase() + diff.slice(1)}
             </Button>
@@ -471,56 +558,70 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
       </div>
 
       {/* Song Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {filteredSongs.map((song) => (
-          <Card 
-            key={song.id}
-            className="bg-white/5 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all cursor-pointer group"
-            onClick={() => setSelectedSong(song)}
-          >
-            <div className="relative aspect-square bg-gradient-to-br from-purple-600 to-blue-600 overflow-hidden">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <MusicIcon className="w-16 h-16 text-white/30" />
-              </div>
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                <Button 
-                  size="sm" 
-                  className="bg-cyan-500 hover:bg-cyan-400"
-                  onClick={(e) => { e.stopPropagation(); handlePlayNow(song); }}
-                >
-                  <PlayIcon className="w-4 h-4 mr-1" /> Play
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="border-white/20 text-white hover:bg-white/20"
-                  onClick={(e) => { e.stopPropagation(); handleAddToQueue(song); }}
-                  disabled={!activeProfileId || playerQueueCount >= 3}
-                >
-                  <QueueIcon className="w-4 h-4 mr-1" /> Queue
-                </Button>
-              </div>
-              <div className="absolute top-2 right-2">
-                <Badge className={`${song.difficulty === 'easy' ? 'bg-green-500' : song.difficulty === 'medium' ? 'bg-yellow-500' : 'bg-red-500'}`}>
-                  {song.difficulty}
-                </Badge>
-              </div>
-            </div>
-            <CardContent className="p-4">
-              <h3 className="font-semibold text-white truncate">{song.title}</h3>
-              <p className="text-sm text-white/60 truncate">{song.artist}</p>
-              <div className="flex items-center gap-2 mt-2">
-                <div className="flex">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <StarIcon key={star} className={`w-4 h-4 ${star <= song.rating ? 'text-yellow-400' : 'text-white/20'}`} filled={star <= song.rating} />
-                  ))}
+      {filteredSongs.length === 0 ? (
+        <div className="text-center py-20">
+          <p className="text-white/60 mb-4">No songs found</p>
+          <p className="text-white/40 text-sm">Try a different search or import some songs</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredSongs.map((song) => (
+            <Card 
+              key={song.id}
+              className="bg-white/5 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all cursor-pointer group"
+              onClick={() => setSelectedSong(song)}
+            >
+              <div className="relative aspect-square bg-gradient-to-br from-purple-600 to-blue-600 overflow-hidden">
+                {song.coverImage ? (
+                  <img src={song.coverImage} alt={song.title} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <MusicIcon className="w-16 h-16 text-white/30" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  <Button 
+                    size="sm" 
+                    className="bg-cyan-500 hover:bg-cyan-400"
+                    onClick={(e) => { e.stopPropagation(); handlePlayNow(song); }}
+                  >
+                    <PlayIcon className="w-4 h-4 mr-1" /> Play
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="border-white/20 text-white hover:bg-white/20"
+                    onClick={(e) => { e.stopPropagation(); handleAddToQueue(song); }}
+                    disabled={!activeProfileId || playerQueueCount >= 3}
+                  >
+                    <QueueIcon className="w-4 h-4 mr-1" /> Queue
+                  </Button>
                 </div>
-                <span className="text-xs text-white/40">{Math.floor(song.duration / 60000)}:{String(Math.floor((song.duration % 60000) / 1000)).padStart(2, '0')}</span>
+                <div className="absolute top-2 right-2 flex gap-1">
+                  {song.hasEmbeddedAudio && (
+                    <Badge className="bg-purple-500 text-xs">Video</Badge>
+                  )}
+                  <Badge className={`${song.difficulty === 'easy' ? 'bg-green-500' : song.difficulty === 'medium' ? 'bg-yellow-500' : 'bg-red-500'}`}>
+                    {song.difficulty}
+                  </Badge>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              <CardContent className="p-4">
+                <h3 className="font-semibold text-white truncate">{song.title}</h3>
+                <p className="text-sm text-white/60 truncate">{song.artist}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="flex">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <StarIcon key={star} className={`w-4 h-4 ${star <= song.rating ? 'text-yellow-400' : 'text-white/20'}`} filled={star <= song.rating} />
+                    ))}
+                  </div>
+                  <span className="text-xs text-white/40">{Math.floor(song.duration / 60000)}:{String(Math.floor((song.duration % 60000) / 1000)).padStart(2, '0')}</span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Song Detail Modal */}
       {selectedSong && (
@@ -530,13 +631,17 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
               <DialogTitle>{selectedSong.title}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <div className="aspect-video bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
-                <MusicIcon className="w-20 h-20 text-white/30" />
+              <div className="aspect-video bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg overflow-hidden flex items-center justify-center">
+                {selectedSong.coverImage ? (
+                  <img src={selectedSong.coverImage} alt={selectedSong.title} className="w-full h-full object-cover" />
+                ) : (
+                  <MusicIcon className="w-20 h-20 text-white/30" />
+                )}
               </div>
               <div className="space-y-2">
                 <p><span className="text-white/60">Artist:</span> {selectedSong.artist}</p>
-                <p><span className="text-white/60">Album:</span> {selectedSong.album}</p>
-                <p><span className="text-white/60">Genre:</span> {selectedSong.genre}</p>
+                {selectedSong.album && <p><span className="text-white/60">Album:</span> {selectedSong.album}</p>}
+                {selectedSong.genre && <p><span className="text-white/60">Genre:</span> {selectedSong.genre}</p>}
                 <p><span className="text-white/60">Duration:</span> {Math.floor(selectedSong.duration / 60000)}:{String(Math.floor((selectedSong.duration % 60000) / 1000)).padStart(2, '0')}</p>
                 <p><span className="text-white/60">BPM:</span> {selectedSong.bpm}</p>
                 <div className="flex items-center gap-2">
@@ -545,6 +650,7 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
                     {selectedSong.difficulty}
                   </Badge>
                 </div>
+                <p><span className="text-white/60">Notes:</span> {selectedSong.lyrics.reduce((acc, l) => acc + l.notes.length, 0)}</p>
               </div>
               <div className="flex gap-2">
                 <Button className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500" onClick={() => handlePlayNow(selectedSong)}>
@@ -576,15 +682,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   const gameLoopRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   const song = gameState.currentSong;
-  
-  // Audio playback refs
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const lastPlayedNoteRef = useRef<string>('');
-
-  // Helper to convert MIDI note to frequency
-  const midiToFrequency = (midi: number): number => {
-    return 440 * Math.pow(2, (midi - 69) / 12);
-  };
 
   // Initialize and start game
   useEffect(() => {
@@ -594,12 +691,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       const success = await initialize();
       if (success) {
         start();
-        // Initialize audio context for playback
-        try {
-          audioContextRef.current = new AudioContext();
-        } catch (e) {
-          console.log('Audio context not available');
-        }
         // Start countdown
         setCountdown(3);
         const countdownInterval = setInterval(() => {
@@ -622,9 +713,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       stop();
       if (gameLoopRef.current) {
         cancelAnimationFrame(gameLoopRef.current);
-      }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
       }
     };
   }, [song, initialize, start, stop]);
@@ -735,30 +823,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   useEffect(() => {
     if (!isPlaying || !song) return;
 
-    const playNote = (frequency: number, duration: number) => {
-      if (!audioContextRef.current) return;
-      
-      const ctx = audioContextRef.current;
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      
-      oscillator.type = 'sine';
-      oscillator.frequency.value = frequency;
-      
-      // ADSR envelope for smoother sound
-      const now = ctx.currentTime;
-      gainNode.gain.setValueAtTime(0, now);
-      gainNode.gain.linearRampToValueAtTime(0.15, now + 0.05);
-      gainNode.gain.linearRampToValueAtTime(0.1, now + duration / 1000 - 0.05);
-      gainNode.gain.linearRampToValueAtTime(0, now + duration / 1000);
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      
-      oscillator.start(now);
-      oscillator.stop(now + duration / 1000);
-    };
-
     const gameLoop = () => {
       const elapsed = Date.now() - startTimeRef.current;
       setCurrentTime(elapsed);
@@ -770,23 +834,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         
         // Check for note hits
         checkNoteHits(elapsed, pitchResult);
-      }
-      
-      // Play notes as they become active
-      if (audioContextRef.current) {
-        for (const line of song.lyrics) {
-          for (const note of line.notes) {
-            const noteKey = `${note.id}-${note.startTime}`;
-            const timeUntilNote = note.startTime - elapsed;
-            
-            // Play note 500ms before it reaches the sing line
-            if (timeUntilNote <= 500 && timeUntilNote > 450 && lastPlayedNoteRef.current !== noteKey) {
-              lastPlayedNoteRef.current = noteKey;
-              const frequency = midiToFrequency(note.pitch);
-              playNote(frequency, Math.min(note.duration, 500));
-            }
-          }
-        }
       }
       
       // Check if song ended

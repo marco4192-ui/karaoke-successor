@@ -39,6 +39,9 @@ export interface Song {
   videoBackground?: string;
   audioUrl?: string;
   gap: number; // gap before lyrics start (ms)
+  hasEmbeddedAudio?: boolean; // video file has audio, no separate audio needed
+  lastPlayed?: number;
+  dateAdded?: number;
   preview?: {
     startTime: number;
     duration: number;
