@@ -165,25 +165,25 @@ export interface PartyGameState {
 
 export const DIFFICULTY_SETTINGS = {
   easy: {
-    pitchTolerance: 2, // semitones
+    pitchTolerance: 2, // +/- 2 semitones tolerance
     timingTolerance: 200, // ms
     noteScoreMultiplier: 1,
     comboMultiplier: 1.5,
     visualNoteWidth: 1.3,
   },
   medium: {
-    pitchTolerance: 1,
-    timingTolerance: 100,
-    noteScoreMultiplier: 1.5,
+    pitchTolerance: 1, // +/- 1 semitone tolerance
+    timingTolerance: 150, // ms
+    noteScoreMultiplier: 1.25,
     comboMultiplier: 2,
     visualNoteWidth: 1,
   },
   hard: {
-    pitchTolerance: 0.5,
-    timingTolerance: 50,
-    noteScoreMultiplier: 2,
-    comboMultiplier: 3,
-    visualNoteWidth: 0.7,
+    pitchTolerance: 0.5, // Very precise - must hit exact pitch
+    timingTolerance: 100, // ms
+    noteScoreMultiplier: 1.5,
+    comboMultiplier: 2.5,
+    visualNoteWidth: 0.8,
   },
 } as const;
 

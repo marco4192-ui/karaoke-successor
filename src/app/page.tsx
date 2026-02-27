@@ -406,7 +406,22 @@ function HomeScreen({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
 function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
-  const { setDifficulty, gameState, addToQueue, queue, activeProfileId, profiles } = useGameStore();
+  const [showSongModal, setShowSongModal] = useState(false);
+  const [previewSong, setPreviewSong] = useState<Song | null>(null);
+  const [previewAudio, setPreviewAudio] = useState<HTMLAudioElement | null>(null);
+  const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { setDifficulty, gameState, addToQueue, queue, activeProfileId, profiles, setGameMode } = useGameStore();
+  
+  // Song start modal state
+  const [startOptions, setStartOptions] = useState<{
+    difficulty: Difficulty;
+    mode: 'single' | 'duel';
+    players: string[];
+  }>({
+    difficulty: 'medium',
+    mode: 'single',
+    players: [],
+  });
   
   // Get library settings from store (persistent)
   const [settings, setSettings] = useState<{
@@ -414,7 +429,6 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
     sortOrder: 'asc' | 'desc';
     filterDifficulty: Difficulty | 'all';
   }>(() => {
-    // Initialize from localStorage
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('karaoke-library-settings');
       if (saved) {
@@ -435,6 +449,19 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
     localStorage.setItem('karaoke-library-settings', JSON.stringify(settings));
   }, [settings]);
   
+  // Cleanup preview audio on unmount
+  useEffect(() => {
+    return () => {
+      if (previewAudio) {
+        previewAudio.pause();
+        previewAudio.src = '';
+      }
+      if (previewTimeoutRef.current) {
+        clearTimeout(previewTimeoutRef.current);
+      }
+    };
+  }, [previewAudio]);
+  
   const activeProfile = profiles.find(p => p.id === activeProfileId);
   const playerQueueCount = queue.filter(item => item.playerId === activeProfileId).length;
 
@@ -442,6 +469,49 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
   const allSongs = useMemo(() => {
     return getAllSongs();
   }, []);
+
+  // Preview handlers
+  const handlePreviewStart = useCallback((song: Song) => {
+    if (!song.audioUrl) return;
+    
+    // Clear any existing timeout
+    if (previewTimeoutRef.current) {
+      clearTimeout(previewTimeoutRef.current);
+    }
+    
+    // Delay before starting preview
+    previewTimeoutRef.current = setTimeout(() => {
+      // Stop any existing preview
+      if (previewAudio) {
+        previewAudio.pause();
+      }
+      
+      // Create new audio for preview
+      const audio = new Audio();
+      audio.volume = 0.3;
+      
+      // Start from preview time if available
+      if (song.preview) {
+        audio.currentTime = song.preview.startTime / 1000;
+      }
+      
+      audio.src = song.audioUrl;
+      audio.play().catch(() => {});
+      
+      setPreviewAudio(audio);
+      setPreviewSong(song);
+    }, 500); // 500ms delay before preview starts
+  }, [previewAudio]);
+  
+  const handlePreviewStop = useCallback(() => {
+    if (previewTimeoutRef.current) {
+      clearTimeout(previewTimeoutRef.current);
+    }
+    if (previewAudio) {
+      previewAudio.pause();
+    }
+    setPreviewSong(null);
+  }, [previewAudio]);
 
   const filteredSongs = useMemo(() => {
     let songs = allSongs;
@@ -472,13 +542,6 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
         case 'artist':
           comparison = a.artist.localeCompare(b.artist);
           break;
-        case 'difficulty':
-          const diffOrder = { easy: 1, medium: 2, hard: 3 };
-          comparison = diffOrder[a.difficulty] - diffOrder[b.difficulty];
-          break;
-        case 'rating':
-          comparison = (b.rating || 0) - (a.rating || 0);
-          break;
         case 'dateAdded':
           comparison = (b.dateAdded || 0) - (a.dateAdded || 0);
           break;
@@ -489,9 +552,25 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
     return songs;
   }, [allSongs, searchQuery, settings]);
 
-  const handlePlayNow = (song: Song) => {
-    setDifficulty(song.difficulty);
-    onSelectSong(song);
+  const handleSongClick = (song: Song) => {
+    setSelectedSong(song);
+    setStartOptions({
+      difficulty: song.difficulty,
+      mode: 'single',
+      players: activeProfileId ? [activeProfileId] : [],
+    });
+    setShowSongModal(true);
+  };
+
+  const handleStartGame = () => {
+    if (!selectedSong) return;
+    
+    setDifficulty(startOptions.difficulty);
+    if (startOptions.mode === 'duel') {
+      setGameMode('duel');
+    }
+    setShowSongModal(false);
+    onSelectSong(selectedSong);
   };
 
   const handleAddToQueue = (song: Song) => {
@@ -504,7 +583,7 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
     <div className="max-w-6xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Music Library</h1>
-        <p className="text-white/60">{allSongs.length} songs available ({allSongs.length - sampleSongs.length} imported)</p>
+        <p className="text-white/60">{allSongs.length} songs available</p>
       </div>
 
       {/* Search and Filters */}
@@ -535,26 +614,8 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
           <option value="title-desc">Title (Z-A)</option>
           <option value="artist-asc">Artist (A-Z)</option>
           <option value="artist-desc">Artist (Z-A)</option>
-          <option value="difficulty-asc">Difficulty (Easy → Hard)</option>
-          <option value="difficulty-desc">Difficulty (Hard → Easy)</option>
-          <option value="rating-desc">Rating (Highest)</option>
           <option value="dateAdded-desc">Recently Added</option>
         </select>
-        
-        {/* Difficulty filter */}
-        <div className="flex gap-2">
-          {(['all', 'easy', 'medium', 'hard'] as const).map((diff) => (
-            <Button
-              key={diff}
-              variant={settings.filterDifficulty === diff ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSettings(prev => ({ ...prev, filterDifficulty: diff }))}
-              className={settings.filterDifficulty === diff ? 'bg-cyan-500 hover:bg-cyan-400' : 'border-white/20 text-white hover:bg-white/10'}
-            >
-              {diff.charAt(0).toUpperCase() + diff.slice(1)}
-            </Button>
-          ))}
-        </div>
       </div>
 
       {/* Song Grid */}
@@ -564,14 +625,17 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
           <p className="text-white/40 text-sm">Try a different search or import some songs</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {filteredSongs.map((song) => (
-            <Card 
+            <div 
               key={song.id}
-              className="bg-white/5 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all cursor-pointer group"
-              onClick={() => setSelectedSong(song)}
+              className="bg-white/5 rounded-xl overflow-hidden border border-white/10 hover:border-cyan-500/50 transition-all cursor-pointer group"
+              onClick={() => handleSongClick(song)}
+              onMouseEnter={() => handlePreviewStart(song)}
+              onMouseLeave={handlePreviewStop}
             >
-              <div className="relative aspect-square bg-gradient-to-br from-purple-600 to-blue-600 overflow-hidden">
+              {/* Cover Image */}
+              <div className="relative aspect-square bg-gradient-to-br from-purple-600/50 to-blue-600/50 overflow-hidden">
                 {song.coverImage ? (
                   <img src={song.coverImage} alt={song.title} className="w-full h-full object-cover" />
                 ) : (
@@ -579,87 +643,175 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
                     <MusicIcon className="w-16 h-16 text-white/30" />
                   </div>
                 )}
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                  <Button 
-                    size="sm" 
-                    className="bg-cyan-500 hover:bg-cyan-400"
-                    onClick={(e) => { e.stopPropagation(); handlePlayNow(song); }}
-                  >
-                    <PlayIcon className="w-4 h-4 mr-1" /> Play
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="border-white/20 text-white hover:bg-white/20"
-                    onClick={(e) => { e.stopPropagation(); handleAddToQueue(song); }}
-                    disabled={!activeProfileId || playerQueueCount >= 3}
-                  >
-                    <QueueIcon className="w-4 h-4 mr-1" /> Queue
-                  </Button>
+                
+                {/* Play indicator on hover */}
+                <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity ${previewSong?.id === song.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                  <div className="w-14 h-14 rounded-full bg-cyan-500/80 flex items-center justify-center">
+                    <PlayIcon className="w-7 h-7 text-white ml-1" />
+                  </div>
                 </div>
+                
+                {/* Badges */}
                 <div className="absolute top-2 right-2 flex gap-1">
                   {song.hasEmbeddedAudio && (
-                    <Badge className="bg-purple-500 text-xs">Video</Badge>
+                    <Badge className="bg-purple-500/80 text-xs">Video</Badge>
                   )}
-                  <Badge className={`${song.difficulty === 'easy' ? 'bg-green-500' : song.difficulty === 'medium' ? 'bg-yellow-500' : 'bg-red-500'}`}>
-                    {song.difficulty}
+                </div>
+                
+                {/* Duration */}
+                <div className="absolute bottom-2 right-2">
+                  <Badge className="bg-black/60 text-xs">
+                    {Math.floor(song.duration / 60000)}:{String(Math.floor((song.duration % 60000) / 1000)).padStart(2, '0')}
                   </Badge>
                 </div>
               </div>
-              <CardContent className="p-4">
-                <h3 className="font-semibold text-white truncate">{song.title}</h3>
-                <p className="text-sm text-white/60 truncate">{song.artist}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <div className="flex">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <StarIcon key={star} className={`w-4 h-4 ${star <= song.rating ? 'text-yellow-400' : 'text-white/20'}`} filled={star <= song.rating} />
-                    ))}
-                  </div>
-                  <span className="text-xs text-white/40">{Math.floor(song.duration / 60000)}:{String(Math.floor((song.duration % 60000) / 1000)).padStart(2, '0')}</span>
-                </div>
-              </CardContent>
-            </Card>
+              
+              {/* Song Info */}
+              <div className="p-3">
+                <h3 className="font-semibold text-white truncate text-sm">{song.title}</h3>
+                <p className="text-xs text-white/60 truncate">{song.artist}</p>
+              </div>
+            </div>
           ))}
         </div>
       )}
 
-      {/* Song Detail Modal */}
-      {selectedSong && (
-        <Dialog open={!!selectedSong} onOpenChange={() => setSelectedSong(null)}>
-          <DialogContent className="bg-gray-900 border-white/10 text-white max-w-lg">
+      {/* Song Start Modal */}
+      {showSongModal && selectedSong && (
+        <Dialog open={showSongModal} onOpenChange={setShowSongModal}>
+          <DialogContent className="bg-gray-900 border-white/10 text-white max-w-md">
             <DialogHeader>
-              <DialogTitle>{selectedSong.title}</DialogTitle>
+              <DialogTitle className="text-xl">{selectedSong.title}</DialogTitle>
+              <p className="text-white/60">{selectedSong.artist}</p>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="aspect-video bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg overflow-hidden flex items-center justify-center">
+            
+            <div className="space-y-6 py-4">
+              {/* Cover Preview */}
+              <div className="aspect-video rounded-lg overflow-hidden bg-gradient-to-br from-purple-600/30 to-blue-600/30">
                 {selectedSong.coverImage ? (
                   <img src={selectedSong.coverImage} alt={selectedSong.title} className="w-full h-full object-cover" />
                 ) : (
-                  <MusicIcon className="w-20 h-20 text-white/30" />
+                  <div className="w-full h-full flex items-center justify-center">
+                    <MusicIcon className="w-16 h-16 text-white/30" />
+                  </div>
                 )}
               </div>
-              <div className="space-y-2">
-                <p><span className="text-white/60">Artist:</span> {selectedSong.artist}</p>
-                {selectedSong.album && <p><span className="text-white/60">Album:</span> {selectedSong.album}</p>}
-                {selectedSong.genre && <p><span className="text-white/60">Genre:</span> {selectedSong.genre}</p>}
-                <p><span className="text-white/60">Duration:</span> {Math.floor(selectedSong.duration / 60000)}:{String(Math.floor((selectedSong.duration % 60000) / 1000)).padStart(2, '0')}</p>
-                <p><span className="text-white/60">BPM:</span> {selectedSong.bpm}</p>
-                <div className="flex items-center gap-2">
-                  <span className="text-white/60">Difficulty:</span>
-                  <Badge className={`${selectedSong.difficulty === 'easy' ? 'bg-green-500' : selectedSong.difficulty === 'medium' ? 'bg-yellow-500' : 'bg-red-500'}`}>
-                    {selectedSong.difficulty}
-                  </Badge>
+              
+              {/* Difficulty Selection */}
+              <div>
+                <label className="text-sm text-white/60 mb-2 block">Difficulty</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['easy', 'medium', 'hard'] as const).map((diff) => (
+                    <button
+                      key={diff}
+                      onClick={() => setStartOptions(prev => ({ ...prev, difficulty: diff }))}
+                      className={`py-3 rounded-lg font-medium transition-all ${
+                        startOptions.difficulty === diff 
+                          ? diff === 'easy' ? 'bg-green-500 text-white' 
+                            : diff === 'medium' ? 'bg-yellow-500 text-black'
+                            : 'bg-red-500 text-white'
+                          : 'bg-white/10 text-white hover:bg-white/20'
+                      }`}
+                    >
+                      <div className="text-sm font-bold">{diff.charAt(0).toUpperCase() + diff.slice(1)}</div>
+                      <div className="text-xs opacity-70">
+                        {diff === 'easy' ? '±2 Tones' : diff === 'medium' ? '±1 Tone' : 'Exact'}
+                      </div>
+                    </button>
+                  ))}
                 </div>
-                <p><span className="text-white/60">Notes:</span> {selectedSong.lyrics.reduce((acc, l) => acc + l.notes.length, 0)}</p>
               </div>
-              <div className="flex gap-2">
-                <Button className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500" onClick={() => handlePlayNow(selectedSong)}>
-                  <PlayIcon className="w-4 h-4 mr-2" /> Play Now
-                </Button>
-                <Button variant="outline" className="border-white/20 text-white" onClick={() => handleAddToQueue(selectedSong)} disabled={!activeProfileId || playerQueueCount >= 3}>
-                  Add to Queue
-                </Button>
+              
+              {/* Mode Selection */}
+              <div>
+                <label className="text-sm text-white/60 mb-2 block">Mode</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setStartOptions(prev => ({ ...prev, mode: 'single' }))}
+                    className={`py-3 rounded-lg font-medium transition-all ${
+                      startOptions.mode === 'single' 
+                        ? 'bg-cyan-500 text-white' 
+                        : 'bg-white/10 text-white hover:bg-white/20'
+                    }`}
+                  >
+                    <MicIcon className="w-5 h-5 mx-auto mb-1" />
+                    <div className="text-sm">Single</div>
+                  </button>
+                  <button
+                    onClick={() => setStartOptions(prev => ({ ...prev, mode: 'duel' }))}
+                    className={`py-3 rounded-lg font-medium transition-all ${
+                      startOptions.mode === 'duel' 
+                        ? 'bg-purple-500 text-white' 
+                        : 'bg-white/10 text-white hover:bg-white/20'
+                    }`}
+                  >
+                    <span className="text-lg">⚔️</span>
+                    <div className="text-sm">Duel</div>
+                  </button>
+                </div>
               </div>
+              
+              {/* Player Selection (for Duel mode) */}
+              {startOptions.mode === 'duel' && profiles.length >= 2 && (
+                <div>
+                  <label className="text-sm text-white/60 mb-2 block">Select 2 Players</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {profiles.slice(0, 4).map((profile) => (
+                      <button
+                        key={profile.id}
+                        onClick={() => {
+                          const players = startOptions.players.includes(profile.id)
+                            ? startOptions.players.filter(id => id !== profile.id)
+                            : startOptions.players.length < 2
+                              ? [...startOptions.players, profile.id]
+                              : startOptions.players;
+                          setStartOptions(prev => ({ ...prev, players }));
+                        }}
+                        className={`flex items-center gap-2 p-2 rounded-lg transition-all ${
+                          startOptions.players.includes(profile.id) 
+                            ? 'bg-cyan-500 text-white' 
+                            : 'bg-white/10 text-white hover:bg-white/20'
+                        }`}
+                      >
+                        <div 
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                          style={{ backgroundColor: profile.color }}
+                        >
+                          {profile.avatar ? (
+                            <img src={profile.avatar} alt={profile.name} className="w-full h-full rounded-full object-cover" />
+                          ) : (
+                            profile.name[0]
+                          )}
+                        </div>
+                        <span className="text-sm truncate">{profile.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Song Info */}
+              <div className="text-xs text-white/40 space-y-1">
+                <p>BPM: {selectedSong.bpm} | Duration: {Math.floor(selectedSong.duration / 60000)}:{String(Math.floor((selectedSong.duration % 60000) / 1000)).padStart(2, '0')}</p>
+                {selectedSong.genre && <p>Genre: {selectedSong.genre}</p>}
+              </div>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowSongModal(false)}
+                className="flex-1 border-white/20 text-white hover:bg-white/10"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleStartGame}
+                className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400"
+              >
+                <PlayIcon className="w-4 h-4 mr-2" /> Start
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
