@@ -214,7 +214,8 @@ export function convertUltraStarToSong(
     };
 
     currentLineNotes.push(convertedNote);
-    currentLineText += note.lyric;
+    // Add space between words for readable display
+    currentLineText += (currentLineText ? ' ' : '') + note.lyric;
 
     // Check if this note ends a line:
     // 1. Explicit line break after this note

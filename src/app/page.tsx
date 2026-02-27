@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -890,13 +889,14 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   
   const gameLoopRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
+  const mediaStartTimeRef = useRef<number>(0); // Track when media actually started
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const song = gameState.currentSong;
   
   // Sing line position at 25% from left (like UltraStar/Vocaluxe)
   const SING_LINE_POSITION = 25; // percentage from left
-  const NOTE_WINDOW = 5000; // 5 seconds of visible notes
+  const NOTE_WINDOW = 8000; // 8 seconds of visible notes (slower movement)
 
   // Initialize media elements on mount
   useEffect(() => {
@@ -1088,7 +1088,22 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     if (!isPlaying || !song) return;
 
     const gameLoop = () => {
-      const elapsed = Date.now() - startTimeRef.current;
+      // Use media's currentTime for accurate sync, fallback to Date.now()
+      let elapsed: number;
+      
+      // For video with embedded audio
+      if (song.hasEmbeddedAudio && videoRef.current) {
+        elapsed = videoRef.current.currentTime * 1000; // Convert to ms
+      }
+      // For separate audio file
+      else if (audioRef.current && !audioRef.current.paused) {
+        elapsed = audioRef.current.currentTime * 1000; // Convert to ms
+      }
+      // Fallback to system time
+      else {
+        elapsed = Date.now() - startTimeRef.current;
+      }
+      
       setCurrentTime(elapsed);
       
       // Update volume from pitch detection
@@ -1162,18 +1177,26 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   }
 
   return (
-    <div className="w-full h-full flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-2 px-4">
-        <Button variant="ghost" onClick={onBack} className="text-white/60 hover:text-white">
+    <div className="fixed inset-0 z-40 flex flex-col bg-black">
+      {/* Header Overlay */}
+      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2 bg-gradient-to-b from-black/70 to-transparent">
+        <Button variant="ghost" onClick={onBack} className="text-white/80 hover:text-white hover:bg-white/10">
           ← Back
         </Button>
-        <div className="flex items-center gap-4">
-          <Badge variant="outline" className="border-white/20 text-white">
+        <div className="flex items-center gap-3">
+          {/* Mini Score Display */}
+          <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-1.5">
+              <span className="text-cyan-400 font-bold">{gameState.players[0]?.score?.toLocaleString() || 0}</span>
+              <span className="text-white/40">pts</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-purple-400 font-bold">{gameState.players[0]?.combo || 0}x</span>
+              <span className="text-white/40">combo</span>
+            </div>
+          </div>
+          <Badge variant="outline" className="border-white/20 text-white/80">
             {gameState.difficulty.toUpperCase()}
-          </Badge>
-          <Badge variant="outline" className="border-white/20 text-white">
-            {gameState.gameMode.toUpperCase()}
           </Badge>
         </div>
       </div>
@@ -1192,19 +1215,19 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         />
       )}
 
-      {/* Game Area - Full Width */}
-      <div className="flex-1 relative bg-gradient-to-b from-gray-800/50 to-purple-900/30 rounded-2xl overflow-hidden border border-white/10" style={{ minHeight: '500px' }}>
+      {/* Game Area - Full Screen */}
+      <div className="absolute inset-0 overflow-hidden">
         {/* Video Background */}
         {song.videoBackground ? (
           <video
             ref={videoRef}
             src={song.videoBackground}
-            className="absolute inset-0 w-full h-full object-cover opacity-50"
+            className="absolute inset-0 w-full h-full object-cover"
             muted={song.hasEmbeddedAudio ? false : true}
             playsInline
           />
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-blue-600/20 to-pink-600/20">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-gray-900 to-blue-900">
             <div className="absolute inset-0 flex items-center justify-center opacity-10">
               <MusicIcon className="w-64 h-64" />
             </div>
@@ -1213,10 +1236,13 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
 
         {/* Countdown */}
         {countdown > 0 && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-30">
-            <div className="text-9xl font-black text-white animate-pulse">{countdown}</div>
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-30">
+            <div className="text-9xl font-black text-white animate-pulse drop-shadow-2xl">{countdown}</div>
           </div>
         )}
+
+        {/* Dark Overlay for better note visibility */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50 z-5" />
 
         {/* Note Highway */}
         <div className="absolute inset-0 z-10">
@@ -1267,31 +1293,32 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             // Higher pitch = higher on screen = lower Y value
             const pitchY = 100 - ((note.pitch - 48) / 24) * 100;
             
-            // Note width based on duration (longer notes = wider)
-            const noteWidth = Math.max(60, note.duration / 15);
+            // Note width based on duration (longer notes = wider bars)
+            // 1 second = ~150px, minimum 80px for short notes
+            const noteWidth = Math.max(80, note.duration / 6.5);
+            // Note height represents pitch intensity
+            const noteHeight = 36;
             
             return (
               <div
                 key={note.id}
-                className={`absolute rounded-lg flex items-center justify-center text-sm font-bold text-white ${
+                className={`absolute rounded-md ${
                   note.isGolden 
                     ? 'bg-gradient-to-r from-yellow-400 to-orange-500 shadow-lg shadow-yellow-500/50' 
                     : note.isBonus 
                     ? 'bg-gradient-to-r from-pink-500 to-purple-500' 
                     : 'bg-gradient-to-r from-cyan-500 to-blue-500'
-                } ${isActive ? 'ring-2 ring-white/80 brightness-110' : ''}`}
+                } ${isActive ? 'ring-2 ring-white/80 brightness-125' : ''}`}
                 style={{
                   left: `${x}%`,
                   top: `${Math.max(5, Math.min(85, pitchY))}%`,
                   width: `${noteWidth}px`,
-                  height: '40px',
+                  height: `${noteHeight}px`,
                   transform: 'translateY(-50%)',
                   boxShadow: isActive ? '0 0 20px rgba(34, 211, 238, 0.6)' : 'none',
                   opacity: x > 100 || x < -30 ? 0 : 1,
                 }}
-              >
-                {note.lyric}
-              </div>
+              />
             );
           })}
 
@@ -1322,65 +1349,47 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
                 />
               </div>
             )}
-            {song.lyrics[song.lyrics.findIndex(l => l.id === currentLine?.id) + 1] && (
-              <p className="text-lg text-center text-white/50 mt-2">
-                {song.lyrics[song.lyrics.findIndex(l => l.id === currentLine?.id) + 1]?.text}
-              </p>
-            )}
+            {(() => {
+              const nextLineIndex = song.lyrics.findIndex(l => l.id === currentLine?.id) + 1;
+              const nextLine = song.lyrics[nextLineIndex];
+              if (!nextLine) return null;
+              // Join notes with spaces for proper display
+              const nextLineText = nextLine.notes.map(n => n.lyric).join(' ');
+              return (
+                <p className="text-lg text-center text-white/50 mt-2">
+                  {nextLineText}
+                </p>
+              );
+            })()}
           </div>
         </div>
 
         {/* Volume Meter */}
-        <div className="absolute top-4 right-4 z-20">
-          <div className="w-4 h-32 bg-white/10 rounded-full overflow-hidden">
+        <div className="absolute top-16 right-4 z-20">
+          <div className="w-3 h-24 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm">
             <div 
               className="w-full bg-gradient-to-t from-green-500 via-yellow-500 to-red-500 transition-all duration-75"
               style={{ height: `${volume * 100}%`, marginTop: `${(1 - volume) * 100}%` }}
             />
           </div>
         </div>
-      </div>
-
-      {/* Score Display */}
-      <div className="mt-4 grid grid-cols-4 gap-4">
-        <Card className="bg-white/5 border-white/10">
-          <CardContent className="pt-4">
-            <div className="text-sm text-white/60">Score</div>
-            <div className="text-3xl font-bold text-cyan-400">
-              {gameState.players[0]?.score?.toLocaleString() || 0}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-white/5 border-white/10">
-          <CardContent className="pt-4">
-            <div className="text-sm text-white/60">Combo</div>
-            <div className="text-3xl font-bold text-purple-400">
-              {gameState.players[0]?.combo || 0}x
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-white/5 border-white/10">
-          <CardContent className="pt-4">
-            <div className="text-sm text-white/60">Notes Hit</div>
-            <div className="text-3xl font-bold text-green-400">
-              {gameState.players[0]?.notesHit || 0}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-white/5 border-white/10">
-          <CardContent className="pt-4">
-            <div className="text-sm text-white/60">Progress</div>
-            <div className="text-xl font-bold text-white">
-              {Math.floor(gameState.currentTime / 60000)}:{String(Math.floor((gameState.currentTime % 60000) / 1000)).padStart(2, '0')}
-              <span className="text-white/40"> / {Math.floor(song.duration / 60000)}:{String(Math.floor((song.duration % 60000) / 1000)).padStart(2, '0')}</span>
-            </div>
-            <Progress value={(gameState.currentTime / song.duration) * 100} className="mt-2 h-1" />
-          </CardContent>
-        </Card>
+        
+        {/* Progress Bar - Full Width Bottom */}
+        <div className="absolute bottom-0 left-0 right-0 z-20 h-1 bg-white/10">
+          <div 
+            className="h-full bg-gradient-to-r from-cyan-500 to-purple-500"
+            style={{ width: `${(gameState.currentTime / song.duration) * 100}%` }}
+          />
+        </div>
+        
+        {/* Time Display */}
+        <div className="absolute bottom-2 right-4 z-20 text-white/60 text-sm font-mono">
+          {Math.floor(gameState.currentTime / 60000)}:{String(Math.floor((gameState.currentTime % 60000) / 1000)).padStart(2, '0')} / {Math.floor(song.duration / 60000)}:{String(Math.floor((song.duration % 60000) / 1000)).padStart(2, '0')}
+        </div>
       </div>
 
       {/* Score Events */}
-      <div className="fixed bottom-4 right-4 flex flex-col-reverse gap-2 z-50">
+      <div className="fixed bottom-20 right-4 flex flex-col-reverse gap-2 z-50">
         {scoreEvents.slice(-5).map((event, i) => (
           <div
             key={i}
