@@ -613,62 +613,77 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
       <div className="mb-8 flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-2">Music Library</h1>
-          <p className="text-white/60">{loadedSongs.length} songs available</p>
+          <p className="text-white/60">
+            {songsLoading ? 'Loading songs...' : `${loadedSongs.length} songs available`}
+          </p>
         </div>
         <Button 
           onClick={handleReloadLibrary}
           variant="outline"
+          disabled={songsLoading}
           className="border-white/20 text-white hover:bg-white/10 flex items-center gap-2"
         >
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg className={`w-4 h-4 ${songsLoading ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85.98 6.58 2.58" />
             <path d="M21 3v6h-6" />
           </svg>
-          Reload
+          {songsLoading ? 'Loading...' : 'Reload'}
         </Button>
       </div>
 
-      {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Input
-            placeholder="Search songs, artists, or genres..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-white/5 border-white/10 text-white placeholder:text-white/40 pr-10"
-          />
-          <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
+      {/* Loading indicator */}
+      {songsLoading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full mr-3" />
+          <span className="text-white/60">Loading songs...</span>
         </div>
-        
-        {/* Sort dropdown */}
-        <select
-          value={`${settings.sortBy}-${settings.sortOrder}`}
-          onChange={(e) => {
-            const [sortBy, sortOrder] = e.target.value.split('-') as [typeof settings.sortBy, typeof settings.sortOrder];
-            setSettings(prev => ({ ...prev, sortBy, sortOrder }));
-          }}
-          className="bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white"
-        >
-          <option value="title-asc">Title (A-Z)</option>
-          <option value="title-desc">Title (Z-A)</option>
-          <option value="artist-asc">Artist (A-Z)</option>
-          <option value="artist-desc">Artist (Z-A)</option>
-          <option value="dateAdded-desc">Recently Added</option>
-        </select>
-      </div>
+      )}
+
+      {/* Search and Filters - hide while loading */}
+      {!songsLoading && (
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <Input
+              placeholder="Search songs, artists, or genres..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-white/5 border-white/10 text-white placeholder:text-white/40 pr-10"
+            />
+            <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+          </div>
+          
+          {/* Sort dropdown */}
+          <select
+            value={`${settings.sortBy}-${settings.sortOrder}`}
+            onChange={(e) => {
+              const [sortBy, sortOrder] = e.target.value.split('-') as [typeof settings.sortBy, typeof settings.sortOrder];
+              setSettings(prev => ({ ...prev, sortBy, sortOrder }));
+            }}
+            className="bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white"
+          >
+            <option value="title-asc">Title (A-Z)</option>
+            <option value="title-desc">Title (Z-A)</option>
+            <option value="artist-asc">Artist (A-Z)</option>
+            <option value="artist-desc">Artist (Z-A)</option>
+            <option value="dateAdded-desc">Recently Added</option>
+          </select>
+        </div>
+      )}
 
       {/* Song Grid */}
-      {filteredSongs.length === 0 ? (
-        <div className="text-center py-20">
-          <p className="text-white/60 mb-4">No songs found</p>
-          <p className="text-white/40 text-sm">Try a different search or import some songs</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {filteredSongs.map((song) => (
+      {!songsLoading && (
+        <>
+          {filteredSongs.length === 0 ? (
+            <div className="text-center py-20">
+              <p className="text-white/60 mb-4">No songs found</p>
+              <p className="text-white/40 text-sm">Try a different search or import some songs</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {filteredSongs.map((song) => (
             <div 
               key={song.id}
               className="bg-white/5 rounded-xl overflow-hidden border border-white/10 hover:border-cyan-500/50 transition-all cursor-pointer group"
@@ -715,7 +730,9 @@ function LibraryScreen({ onSelectSong }: { onSelectSong: (song: Song) => void })
               </div>
             </div>
           ))}
-        </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Song Start Modal */}
@@ -947,7 +964,37 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   
   // Sing line position at 25% from left (like UltraStar/Vocaluxe)
   const SING_LINE_POSITION = 25; // percentage from left
-  const NOTE_WINDOW = 8000; // 8 seconds of visible notes (slower movement)
+  
+  // Calculate note window based on BPM - faster songs need faster scrolling
+  // At 120 BPM, show 4 beats (2 seconds) of upcoming notes
+  // At 240 BPM, show 8 beats (2 seconds) - same visual distance, faster scroll
+  const beatDuration = song.bpm ? 60000 / song.bpm : 500; // ms per beat
+  const BEATS_TO_SHOW = 8; // Show 8 beats ahead
+  const NOTE_WINDOW = beatDuration * BEATS_TO_SHOW; // Dynamic based on BPM
+  
+  // Calculate pitch range dynamically from song notes
+  // This ensures all notes are visible within the display area
+  const pitchStats = useMemo(() => {
+    if (!song || song.lyrics.length === 0) {
+      return { minPitch: 48, maxPitch: 72, pitchRange: 24 };
+    }
+    let minPitch = Infinity;
+    let maxPitch = -Infinity;
+    for (const line of song.lyrics) {
+      for (const note of line.notes) {
+        minPitch = Math.min(minPitch, note.pitch);
+        maxPitch = Math.max(maxPitch, note.pitch);
+      }
+    }
+    // Add padding (2 semitones on each side)
+    const paddedMin = Math.max(0, minPitch - 2);
+    const paddedMax = Math.min(127, maxPitch + 2);
+    return { 
+      minPitch: paddedMin, 
+      maxPitch: paddedMax, 
+      pitchRange: Math.max(12, paddedMax - paddedMin) // At least 1 octave
+    };
+  }, [song]);
 
   // Initialize media elements on mount
   useEffect(() => {
@@ -1214,8 +1261,8 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   const visibleNotes = useMemo(() => {
     if (!song) return [];
     const currentTime = gameState.currentTime;
-    const windowStart = currentTime - 2000; // 2 seconds behind (for smooth exit)
-    const windowEnd = currentTime + NOTE_WINDOW; // 5 seconds ahead
+    const windowStart = currentTime - beatDuration * 2; // 2 beats behind (for smooth exit)
+    const windowEnd = currentTime + NOTE_WINDOW; // Dynamic window ahead
     
     const notes: Array<Note & { line: LyricLine }> = [];
     for (const line of song.lyrics) {
@@ -1228,7 +1275,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       }
     }
     return notes;
-  }, [song, gameState.currentTime]);
+  }, [song, gameState.currentTime, NOTE_WINDOW, beatDuration]);
 
   if (!song) {
     return (
@@ -1401,14 +1448,18 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             const distanceFromSingLine = (timeUntilNote / NOTE_WINDOW) * (100 - SING_LINE_POSITION + 20);
             const x = SING_LINE_POSITION + distanceFromSingLine;
             
-            // Position based on pitch (vertical) - MIDI range 48-72 (2 octaves)
+            // Position based on pitch (vertical) - use dynamic range from song
             // Higher pitch = higher on screen = lower Y value
-            const pitchY = 100 - ((note.pitch - 48) / 24) * 100;
+            // Leave 8% padding at top (for header) and 15% at bottom (for lyrics)
+            const VISIBLE_TOP = 8; // percentage from top
+            const VISIBLE_BOTTOM = 85; // percentage from bottom
+            const VISIBLE_RANGE = VISIBLE_BOTTOM - VISIBLE_TOP;
+            const pitchY = VISIBLE_TOP + VISIBLE_RANGE - ((note.pitch - pitchStats.minPitch) / pitchStats.pitchRange) * VISIBLE_RANGE;
             
             // Note width based on duration (as percentage of screen)
-            // 1 second should span roughly 15% of screen at our scroll speed
+            // Scaled to the dynamic NOTE_WINDOW
             const noteWidthPercent = (note.duration / NOTE_WINDOW) * (100 - SING_LINE_POSITION + 20);
-            const noteHeight = 36;
+            const noteHeight = 32;
             
             return (
               <div
@@ -1422,13 +1473,12 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
                 } ${isActive ? 'ring-2 ring-white/80 brightness-125' : ''}`}
                 style={{
                   left: `${x}%`,
-                  top: `${Math.max(5, Math.min(85, pitchY))}%`,
+                  top: `${pitchY}%`,
                   width: `${noteWidthPercent}%`,
                   height: `${noteHeight}px`,
                   transform: 'translateY(-50%)',
                   boxShadow: isActive ? '0 0 20px rgba(34, 211, 238, 0.6)' : 'none',
                   opacity: x > 120 || x < -30 ? 0 : 1,
-                  transition: 'opacity 0.3s ease',
                 }}
               />
             );
@@ -1440,7 +1490,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
               className="absolute z-30 w-10 h-10 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 shadow-lg shadow-green-500/50 flex items-center justify-center"
               style={{
                 left: `${SING_LINE_POSITION - 2}%`,
-                top: `${Math.max(5, Math.min(90, 100 - ((pitchResult.note - 48) / 24) * 100))}%`,
+                top: `${VISIBLE_TOP + VISIBLE_RANGE - ((pitchResult.note - pitchStats.minPitch) / pitchStats.pitchRange) * VISIBLE_RANGE}%`,
                 transform: 'translateY(-50%)',
               }}
             >
