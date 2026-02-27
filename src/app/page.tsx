@@ -12,7 +12,6 @@ import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useGameStore, selectQueue, selectProfiles, selectActiveProfile } from '@/lib/game/store';
-import { sampleSongs, searchSongs, getSongById } from '@/data/songs/songs';
 import { getAllSongs, addSong, addSongs, reloadLibrary } from '@/lib/game/song-library';
 import { ImportScreen } from '@/components/import/import-screen';
 import { 
@@ -247,6 +246,11 @@ function ImportIcon({ className }: { className?: string }) {
 function HomeScreen({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
   const { profiles, activeProfileId, setActiveProfile } = useGameStore();
   
+  // Get song count from library
+  const songCount = useMemo(() => {
+    return getAllSongs().length;
+  }, []);
+  
   return (
     <div className="max-w-6xl mx-auto">
       {/* Hero Section */}
@@ -284,7 +288,7 @@ function HomeScreen({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
         <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
           <CardContent className="pt-6">
-            <div className="text-3xl font-bold text-cyan-400">{sampleSongs.length}</div>
+            <div className="text-3xl font-bold text-cyan-400">{songCount}</div>
             <div className="text-white/60 text-sm">Songs Available</div>
           </CardContent>
         </Card>

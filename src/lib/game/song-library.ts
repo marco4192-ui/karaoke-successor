@@ -265,10 +265,11 @@ export function clearCustomSongs(): void {
   songCache = null;
 }
 
-// Reload library - clear cache and force fresh load
-export function reloadLibrary(): void {
+// Reload library - clear cache and force fresh load from localStorage
+export function reloadLibrary(): Song[] {
   songCache = null;
   customSongsCache = null;
+  return getAllSongs();
 }
 
 // Check if a song exists in custom songs (for update detection)
