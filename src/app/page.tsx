@@ -681,6 +681,8 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   
   const gameLoopRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const song = gameState.currentSong;
 
   // Initialize and start game
@@ -699,6 +701,16 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
               clearInterval(countdownInterval);
               setIsPlaying(true);
               startTimeRef.current = Date.now();
+              
+              // Start audio/video playback
+              if (audioRef.current) {
+                audioRef.current.currentTime = 0;
+                audioRef.current.play().catch(e => console.log('Audio play failed:', e));
+              }
+              if (videoRef.current) {
+                videoRef.current.currentTime = 0;
+                videoRef.current.play().catch(e => console.log('Video play failed:', e));
+              }
               return 0;
             }
             return prev - 1;
@@ -713,6 +725,15 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       stop();
       if (gameLoopRef.current) {
         cancelAnimationFrame(gameLoopRef.current);
+      }
+      // Stop audio/video on cleanup
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
       }
     };
   }, [song, initialize, start, stop]);
@@ -872,13 +893,17 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   const visibleNotes = useMemo(() => {
     if (!song) return [];
     const currentTime = gameState.currentTime;
-    const windowStart = currentTime;
     const windowEnd = currentTime + 5000; // 5 seconds ahead
     
     const notes: Array<Note & { line: LyricLine }> = [];
     for (const line of song.lyrics) {
       for (const note of line.notes) {
-        if (note.startTime >= windowStart && note.startTime <= windowEnd) {
+        const noteEnd = note.startTime + note.duration;
+        // Show notes that either:
+        // 1. Will start within the window (upcoming)
+        // 2. Are currently active (started but not ended yet)
+        if ((note.startTime >= currentTime && note.startTime <= windowEnd) ||
+            (note.startTime < currentTime && noteEnd > currentTime)) {
           notes.push({ ...note, line });
         }
       }
@@ -896,9 +921,9 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-2 px-4">
         <Button variant="ghost" onClick={onBack} className="text-white/60 hover:text-white">
           ← Back
         </Button>
@@ -912,14 +937,38 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         </div>
       </div>
 
-      {/* Game Area */}
-      <div className="relative bg-gradient-to-b from-gray-800/50 to-purple-900/30 rounded-2xl overflow-hidden border border-white/10" style={{ height: '500px' }}>
-        {/* Video Background Placeholder */}
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-blue-600/20 to-pink-600/20">
-          <div className="absolute inset-0 flex items-center justify-center opacity-10">
-            <MusicIcon className="w-64 h-64" />
+      {/* Hidden Audio Element */}
+      {song.audioUrl && !song.hasEmbeddedAudio && (
+        <audio 
+          ref={audioRef}
+          src={song.audioUrl}
+          className="hidden"
+          onEnded={() => {
+            endGame();
+            generateResults();
+            onEnd();
+          }}
+        />
+      )}
+
+      {/* Game Area - Full Width */}
+      <div className="flex-1 relative bg-gradient-to-b from-gray-800/50 to-purple-900/30 rounded-2xl overflow-hidden border border-white/10" style={{ minHeight: '500px' }}>
+        {/* Video Background */}
+        {song.videoBackground ? (
+          <video
+            ref={videoRef}
+            src={song.videoBackground}
+            className="absolute inset-0 w-full h-full object-cover opacity-50"
+            muted={!song.hasEmbeddedAudio}
+            playsInline
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-blue-600/20 to-pink-600/20">
+            <div className="absolute inset-0 flex items-center justify-center opacity-10">
+              <MusicIcon className="w-64 h-64" />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Countdown */}
         {countdown > 0 && (
@@ -952,10 +1001,24 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
           {/* Notes - Moving Right to Left */}
           {visibleNotes.map((note) => {
             const timeUntilNote = note.startTime - gameState.currentTime;
-            // Horizontal position: notes come from right (100%) and move to left (0%)
-            const x = 100 - (timeUntilNote / 5000) * 100; 
-            const pitchY = ((note.pitch - 48) / 24) * 100; // Position based on pitch (vertical)
+            const noteProgress = note.startTime + note.duration - gameState.currentTime; // Time remaining in note
             const isActive = gameState.currentTime >= note.startTime && gameState.currentTime <= note.startTime + note.duration;
+            
+            // Horizontal position: 
+            // - Upcoming notes come from right (100%) and move to left
+            // - Active notes stay at the sing line (4%)
+            let x: number;
+            if (isActive) {
+              x = 4; // Stay at sing line while active
+            } else if (timeUntilNote <= 0) {
+              x = 4; // Should not happen but fallback
+            } else {
+              x = 100 - (timeUntilNote / 5000) * 100; // Right to left
+            }
+            
+            // Position based on pitch (vertical) - MIDI range 48-72 (2 octaves)
+            // Notes with pitch 48-72 map to 100%-0% from top (inverted because higher pitch = higher on screen = lower Y)
+            const pitchY = 100 - ((note.pitch - 48) / 24) * 100;
             
             return (
               <div
@@ -968,10 +1031,10 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
                     : 'bg-gradient-to-r from-cyan-500 to-blue-500'
                 } ${isActive ? 'ring-4 ring-white scale-125' : ''}`}
                 style={{
-                  left: `${Math.max(0, Math.min(85, x))}%`,
+                  left: `${Math.max(0, Math.min(90, x))}%`,
                   top: `${Math.max(5, Math.min(85, pitchY))}%`,
-                  width: `${Math.max(80, note.duration / 25)}px`, // Doubled from /50 to /25
-                  height: '52px', // Doubled from h-6 (24px) to 52px
+                  width: `${Math.max(80, note.duration / 25)}px`, // Width based on note duration
+                  height: '52px', 
                   boxShadow: isActive ? '0 0 40px rgba(34, 211, 238, 0.8)' : 'none',
                 }}
               >
@@ -981,12 +1044,12 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
           })}
 
           {/* Detected Pitch Indicator */}
-          {pitchResult?.frequency && (
+          {pitchResult?.frequency && pitchResult.note && (
             <div
               className="absolute z-30 w-12 h-12 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 shadow-lg shadow-green-500/50 flex items-center justify-center animate-pulse"
               style={{
                 left: '4%',
-                top: `${Math.max(5, Math.min(90, ((pitchResult.note! - 48) / 24) * 100))}%`,
+                top: `${Math.max(5, Math.min(90, 100 - ((pitchResult.note - 48) / 24) * 100))}%`,
                 transform: 'translateY(-50%)',
               }}
             >

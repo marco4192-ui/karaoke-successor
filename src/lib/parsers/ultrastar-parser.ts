@@ -118,7 +118,9 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
     // Parse note lines
     // Format: <type> <start> <duration> <pitch> <lyric>
     // Example: : 0 4 12 Hello
-    const noteMatch = line.match(/^([:F*RGe])(-?\d+)\s+(\d+)\s+(-?\d+)\s*(.*)$/);
+    // Types: : = normal, * = golden, F = freestyle, R = rap, G = rap golden
+    // Note: * needs to be escaped in regex, and we use [\:*FGR] character class
+    const noteMatch = line.match(/^([:*FGR])(-?\d+)\s+(\d+)\s+(-?\d+)\s*(.*)$/);
     if (noteMatch) {
       const [, type, startStr, durationStr, pitchStr, lyric] = noteMatch;
       const start = parseInt(startStr);
@@ -162,6 +164,10 @@ export function convertUltraStarToSong(
 
   // Detect line breaks (gap in beats > threshold means new line)
   const LINE_BREAK_THRESHOLD = 8; // beats
+  
+  // Base MIDI note offset - UltraStar pitches are relative, typically starting around C3-C4
+  // Common range is 0-24 relative, so we offset by 48 (C3) to get actual MIDI notes
+  const MIDI_BASE_OFFSET = 48;
 
   for (const note of sortedNotes) {
     // Check for line break
@@ -192,8 +198,8 @@ export function convertUltraStarToSong(
 
     const convertedNote: Note = {
       id: `note-${lyricLines.length}-${currentLineNotes.length}`,
-      pitch: note.pitch,
-      frequency: midiToFrequency(note.pitch),
+      pitch: note.pitch + MIDI_BASE_OFFSET, // Apply MIDI offset to relative UltraStar pitch
+      frequency: midiToFrequency(note.pitch + MIDI_BASE_OFFSET),
       startTime,
       duration,
       lyric: note.lyric,
