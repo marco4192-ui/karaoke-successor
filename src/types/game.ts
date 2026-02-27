@@ -44,6 +44,11 @@ export interface Song {
   hasEmbeddedAudio?: boolean; // video file has audio, no separate audio needed
   lastPlayed?: number;
   dateAdded?: number;
+  storageFolder?: string; // Tauri: folder name in app data for persistent storage
+  relativeAudioPath?: string; // Tauri: relative path to audio file
+  relativeVideoPath?: string; // Tauri: relative path to video file
+  relativeCoverPath?: string; // Tauri: relative path to cover image
+  timingOffset?: number; // User-adjusted timing sync offset (ms)
   preview?: {
     startTime: number;
     duration: number;

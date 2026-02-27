@@ -78,6 +78,8 @@ fn get_server_cwd(server_path: &PathBuf) -> PathBuf {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             // Check if server is already running
             if check_server_running() {
