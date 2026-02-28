@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useGameStore, selectQueue, selectProfiles, selectActiveProfile } from '@/lib/game/store';
-import { getAllSongs, addSong, addSongs, reloadLibrary, getAllSongsAsync } from '@/lib/game/song-library';
+import { getAllSongs, addSong, addSongs, reloadLibrary, getAllSongsAsync, updateSong } from '@/lib/game/song-library';
 import { ImportScreen } from '@/components/import/import-screen';
 import { YouTubePlayer, extractYouTubeId } from '@/components/game/youtube-player';
 import { 
@@ -533,7 +533,7 @@ function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong: (song:
         audio.currentTime = song.preview.startTime / 1000;
       }
       
-      audio.src = song.audioUrl;
+      audio.src = song.audioUrl!; // Non-null assertion: we already checked above
       audio.play().catch(() => {});
       
       setPreviewAudio(audio);
@@ -1006,12 +1006,8 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   // Sing line position at 25% from left (like UltraStar/Vocaluxe)
   const SING_LINE_POSITION = 25; // percentage from left
   
-  // Fixed time window for note display (in milliseconds)
-  // This ensures consistent scrolling speed regardless of BPM
-  // 4 seconds = 4000ms window for upcoming notes
-  const NOTE_WINDOW = 4000; // Fixed 4 second window
-  
-  // Calculate beat duration for other timing purposes
+  // Calculate beat duration (milliseconds per beat)
+  // This is the basis for all timing in UltraStar/Vocaluxe
   const beatDuration = song?.bpm ? 60000 / song.bpm : 500; // ms per beat
   
   // Calculate pitch range dynamically from song notes
@@ -1234,50 +1230,42 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     });
   }, [gameState.players, song, setResults]);
 
-  // Game loop
+  // Game loop - SIMPLIFIED: Use audio.currentTime as MASTER CLOCK
   useEffect(() => {
     if (!isPlaying || !song) return;
-    
-    // Get the start position from #START tag (in milliseconds)
-    const startPositionMs = song.start || 0;
 
     const gameLoop = () => {
-      // Use media's currentTime for accurate sync
-      let elapsed: number;
+      // MASTER CLOCK: Get time directly from audio/video element
+      // This is the most accurate source of timing
+      let masterTime = 0;
       
-      // For YouTube videos, use tracked time from player
+      // Priority 1: YouTube player time
       if (isYouTube && youtubeTime > 0) {
-        elapsed = youtubeTime;
+        masterTime = youtubeTime;
       }
-      // For video with embedded audio - video IS the audio source
-      else if (song.hasEmbeddedAudio && videoRef.current && !videoRef.current.paused) {
-        elapsed = videoRef.current.currentTime * 1000; // Convert to ms
+      // Priority 2: Video with embedded audio
+      else if (song.hasEmbeddedAudio && videoRef.current) {
+        masterTime = videoRef.current.currentTime * 1000;
       }
-      // For separate audio file - only use if audio is playing
-      else if (audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2) {
-        elapsed = audioRef.current.currentTime * 1000; // Convert to ms
-      }
-      // Fallback to system time (less accurate) - account for start position
-      else {
-        // Add start position to fallback time so notes are in correct position
-        elapsed = (Date.now() - startTimeRef.current) + startPositionMs;
+      // Priority 3: Separate audio file
+      else if (audioRef.current) {
+        masterTime = audioRef.current.currentTime * 1000;
       }
       
-      // Apply user-adjustable timing offset
-      const adjustedTime = elapsed + timingOffset;
+      // Apply user timing offset
+      const adjustedTime = masterTime + timingOffset;
       
+      // Update game state with current time
       setCurrentTime(adjustedTime);
       
-      // Update volume from pitch detection
+      // Handle pitch detection
       if (pitchResult) {
         setVolume(pitchResult.volume);
         setDetectedPitch(pitchResult.frequency);
-        
-        // Check for note hits
         checkNoteHits(adjustedTime, pitchResult);
       }
       
-      // Check if song ended
+      // Check for song end
       if (adjustedTime >= song.duration) {
         endGame();
         generateResults();
@@ -1295,7 +1283,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [isPlaying, song, pitchResult, setCurrentTime, setDetectedPitch, checkNoteHits, endGame, generateResults, onEnd, isYouTube, youtubeTime, timingOffset]);
+  }, [isPlaying, song, pitchResult, youtubeTime, timingOffset, isYouTube, setCurrentTime, setVolume, setDetectedPitch, checkNoteHits, endGame, generateResults, onEnd]);
 
   // Get current lyric line
   const currentLine = useMemo(() => {
@@ -1309,12 +1297,15 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     return null;
   }, [song, gameState.currentTime]);
 
-  // Get upcoming notes - show notes within the visible window
+  // Get upcoming notes - show notes within visible beat window
   const visibleNotes = useMemo(() => {
-    if (!song) return [];
+    if (!song || beatDuration <= 0) return [];
     const currentTime = gameState.currentTime;
-    const windowStart = currentTime - 1000; // 1 second behind (for smooth exit)
-    const windowEnd = currentTime + NOTE_WINDOW; // 4 seconds ahead
+    // Show notes from 4 beats behind to 12 beats ahead
+    const BEATS_BEHIND = 4;
+    const BEATS_AHEAD = 12;
+    const windowStart = currentTime - (BEATS_BEHIND * beatDuration);
+    const windowEnd = currentTime + (BEATS_AHEAD * beatDuration);
     
     const notes: Array<Note & { line: LyricLine }> = [];
     for (const line of song.lyrics) {
@@ -1327,7 +1318,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       }
     }
     return notes;
-  }, [song, gameState.currentTime, NOTE_WINDOW]);
+  }, [song, gameState.currentTime, beatDuration]);
 
   if (!song) {
     return (
@@ -1482,31 +1473,30 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             </div>
           </div>
 
-          {/* Notes - Smoothly Moving Right to Left (UltraStar style) */}
+          {/* Notes - Beat-based positioning like UltraStar/Vocaluxe */}
           {visibleNotes.map((note) => {
             const timeUntilNote = note.startTime - gameState.currentTime;
             const noteEnd = note.startTime + note.duration;
-            const timeUntilEnd = noteEnd - gameState.currentTime;
             const isActive = gameState.currentTime >= note.startTime && gameState.currentTime <= noteEnd;
             
-            // Calculate smooth horizontal position (UltraStar/Vocaluxe style)
-            // Notes appear from right (100%+) and move to left
-            // A note is at SING_LINE_POSITION when timeUntilNote = 0
-            // 
-            // When timeUntilNote = NOTE_WINDOW (8s): note at right edge (120%)
-            // When timeUntilNote = 0: note at sing line (SING_LINE_POSITION %)
-            // When timeUntilNote < 0: note continues left past sing line
+            // BEAT-BASED POSITIONING (UltraStar/Vocaluxe style)
+            // Notes scroll based on beats, not milliseconds
+            // This ensures consistent visual distance per beat regardless of BPM
+            const beatsUntilNote = timeUntilNote / beatDuration;
+            const BEATS_VISIBLE = 12; // Show 12 beats ahead
+            const pixelsPerBeat = (100 - SING_LINE_POSITION + 20) / BEATS_VISIBLE;
             
-            const distanceFromSingLine = (timeUntilNote / NOTE_WINDOW) * (100 - SING_LINE_POSITION + 20);
+            // Note position: at sing line when beatsUntilNote = 0
+            const distanceFromSingLine = beatsUntilNote * pixelsPerBeat;
             const x = SING_LINE_POSITION + distanceFromSingLine;
             
             // Position based on pitch (vertical) - use dynamic range from song
             // Higher pitch = higher on screen = lower Y value
             const pitchY = VISIBLE_TOP + VISIBLE_RANGE - ((note.pitch - pitchStats.minPitch) / pitchStats.pitchRange) * VISIBLE_RANGE;
             
-            // Note width based on duration (as percentage of screen)
-            // Scaled to the dynamic NOTE_WINDOW
-            const noteWidthPercent = (note.duration / NOTE_WINDOW) * (100 - SING_LINE_POSITION + 20);
+            // Note width based on duration in beats
+            const noteDurationBeats = note.duration / beatDuration;
+            const noteWidthPercent = noteDurationBeats * pixelsPerBeat;
             const noteHeight = 32;
             
             return (

@@ -54,6 +54,10 @@ export interface Song {
     startTime: number;
     duration: number;
   };
+  // IndexedDB media IDs for browser persistence
+  audioMediaId?: string;
+  videoMediaId?: string;
+  coverMediaId?: string;
 }
 
 export interface Player {

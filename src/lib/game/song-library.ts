@@ -2,6 +2,16 @@
 import { Song } from '@/types/game';
 import { sampleSongs } from '@/data/songs/songs';
 import { isTauri, getPlayableUrl } from '@/lib/tauri-file-storage';
+import { 
+  initDB, 
+  storeMedia, 
+  getMediaUrl, 
+  storeSong, 
+  getAllStoredSongs, 
+  deleteSong as deleteStoredSong,
+  StoredSong,
+  isIndexedDBAvailable
+} from '@/lib/song-storage';
 
 const STORAGE_KEY = 'karaoke-successor-songs';
 const SETTINGS_KEY = 'karaoke-successor-settings';
@@ -28,6 +38,20 @@ const defaultSettings: LibrarySettings = {
 // In-memory song cache
 let songCache: Song[] | null = null;
 let customSongsCache: Song[] | null = null;
+let dbInitialized = false;
+
+// Initialize IndexedDB on module load
+async function ensureDB(): Promise<boolean> {
+  if (dbInitialized) return true;
+  try {
+    await initDB();
+    dbInitialized = true;
+    return true;
+  } catch (e) {
+    console.error('Failed to initialize IndexedDB:', e);
+    return false;
+  }
+}
 
 // Get all songs (sample + custom)
 export function getAllSongs(): Song[] {
@@ -68,6 +92,7 @@ export function addSong(song: Song): void {
     const newSong = {
       ...song,
       id: song.id || `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      dateAdded: Date.now(),
     };
     customSongs.push(newSong);
     saveCustomSongs(customSongs);
@@ -75,6 +100,82 @@ export function addSong(song: Song): void {
     // Update cache
     songCache = null; // Clear cache to force refresh
   }
+}
+
+// Add a song with media files (persists to IndexedDB)
+export async function addSongWithMedia(
+  songData: Omit<Song, 'id' | 'dateAdded'>,
+  files: {
+    audio?: File;
+    video?: File;
+    cover?: File;
+  }
+): Promise<Song> {
+  const songId = `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  
+  // Store media files in IndexedDB
+  let audioMediaId: string | undefined;
+  let videoMediaId: string | undefined;
+  let coverMediaId: string | undefined;
+  
+  if (isIndexedDBAvailable()) {
+    await ensureDB();
+    
+    if (files.audio) {
+      audioMediaId = await storeMedia(files.audio, 'audio');
+    }
+    if (files.video) {
+      videoMediaId = await storeMedia(files.video, 'video');
+    }
+    if (files.cover) {
+      coverMediaId = await storeMedia(files.cover, 'cover');
+    }
+    
+    // Store song metadata in IndexedDB
+    const storedSong: StoredSong = {
+      id: songId,
+      title: songData.title,
+      artist: songData.artist,
+      album: songData.album,
+      year: songData.year,
+      genre: songData.genre,
+      duration: songData.duration,
+      bpm: songData.bpm,
+      difficulty: songData.difficulty,
+      rating: songData.rating,
+      gap: songData.gap,
+      start: songData.start,
+      videoGap: songData.videoGap,
+      lyrics: songData.lyrics,
+      preview: songData.preview,
+      dateAdded: Date.now(),
+      audioMediaId,
+      videoMediaId,
+      coverMediaId,
+      hasEmbeddedAudio: songData.hasEmbeddedAudio,
+    };
+    
+    await storeSong(storedSong);
+  }
+  
+  // Create song with blob URLs for immediate use
+  const song: Song = {
+    ...songData,
+    id: songId,
+    dateAdded: Date.now(),
+    audioUrl: files.audio ? URL.createObjectURL(files.audio) : songData.audioUrl,
+    videoBackground: files.video ? URL.createObjectURL(files.video) : songData.videoBackground,
+    coverImage: files.cover ? URL.createObjectURL(files.cover) : songData.coverImage,
+    // Store media IDs for later restoration
+    audioMediaId,
+    videoMediaId,
+    coverMediaId,
+  };
+  
+  // Also save to localStorage for backwards compatibility
+  addSong(song);
+  
+  return song;
 }
 
 // Add multiple songs
@@ -297,53 +398,115 @@ export function replaceSong(song: Song): void {
   songCache = null;
 }
 
-// Restore song URLs for Tauri - converts relative paths back to playable URLs
+// Restore song URLs for browser - loads from IndexedDB
 export async function restoreSongUrls(song: Song): Promise<Song> {
-  if (!isTauri()) {
-    // In browser mode, URLs should already be valid
-    return song;
+  // In Tauri, use the file system
+  if (isTauri()) {
+    const restored = { ...song };
+    
+    try {
+      // Restore audio URL
+      if (song.relativeAudioPath) {
+        const url = await getPlayableUrl(song.relativeAudioPath);
+        if (url) restored.audioUrl = url;
+      }
+      
+      // Restore video URL
+      if (song.relativeVideoPath) {
+        const url = await getPlayableUrl(song.relativeVideoPath);
+        if (url) restored.videoBackground = url;
+      }
+      
+      // Restore cover URL
+      if (song.relativeCoverPath) {
+        const url = await getPlayableUrl(song.relativeCoverPath);
+        if (url) restored.coverImage = url;
+      }
+    } catch (error) {
+      console.error('Failed to restore song URLs:', error);
+    }
+    
+    return restored;
   }
   
+  // In browser, restore from IndexedDB using media IDs
   const restored = { ...song };
   
-  try {
-    // Restore audio URL
-    if (song.relativeAudioPath) {
-      const url = await getPlayableUrl(song.relativeAudioPath);
-      if (url) restored.audioUrl = url;
-    }
+  // Check if song has media IDs stored
+  const songWithMedia = song as Song & { 
+    audioMediaId?: string; 
+    videoMediaId?: string; 
+    coverMediaId?: string;
+  };
+  
+  if (isIndexedDBAvailable()) {
+    await ensureDB();
     
-    // Restore video URL
-    if (song.relativeVideoPath) {
-      const url = await getPlayableUrl(song.relativeVideoPath);
-      if (url) restored.videoBackground = url;
+    try {
+      // Restore audio URL from IndexedDB
+      if (songWithMedia.audioMediaId) {
+        const url = await getMediaUrl(songWithMedia.audioMediaId);
+        if (url) {
+          restored.audioUrl = url;
+          // Revoke old blob URL if it exists and is a blob
+          if (song.audioUrl?.startsWith('blob:')) {
+            URL.revokeObjectURL(song.audioUrl);
+          }
+        }
+      }
+      
+      // Restore video URL from IndexedDB
+      if (songWithMedia.videoMediaId) {
+        const url = await getMediaUrl(songWithMedia.videoMediaId);
+        if (url) {
+          restored.videoBackground = url;
+          if (song.videoBackground?.startsWith('blob:')) {
+            URL.revokeObjectURL(song.videoBackground);
+          }
+        }
+      }
+      
+      // Restore cover URL from IndexedDB
+      if (songWithMedia.coverMediaId) {
+        const url = await getMediaUrl(songWithMedia.coverMediaId);
+        if (url) {
+          restored.coverImage = url;
+          if (song.coverImage?.startsWith('blob:')) {
+            URL.revokeObjectURL(song.coverImage);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to restore song media from IndexedDB:', error);
     }
-    
-    // Restore cover URL
-    if (song.relativeCoverPath) {
-      const url = await getPlayableUrl(song.relativeCoverPath);
-      if (url) restored.coverImage = url;
-    }
-  } catch (error) {
-    console.error('Failed to restore song URLs:', error);
   }
   
   return restored;
 }
 
-// Get all songs asynchronously (with URL restoration for Tauri)
+// Get all songs asynchronously (with URL restoration)
 export async function getAllSongsAsync(): Promise<Song[]> {
   const songs = getAllSongs();
   
-  if (!isTauri()) {
-    return songs;
-  }
-  
-  // In Tauri, restore URLs for all songs that have relative paths
+  // Restore URLs for all songs that have media stored
   const restoredSongs = await Promise.all(
-    songs.map(song => {
-      // Only restore if the song has relative paths stored
-      if (song.relativeAudioPath || song.relativeVideoPath || song.relativeCoverPath) {
+    songs.map(async (song) => {
+      const songWithMedia = song as Song & { 
+        audioMediaId?: string; 
+        videoMediaId?: string; 
+        coverMediaId?: string;
+        relativeAudioPath?: string;
+        relativeVideoPath?: string;
+        relativeCoverPath?: string;
+      };
+      
+      // Only restore if the song has media IDs or relative paths stored
+      if (songWithMedia.audioMediaId || 
+          songWithMedia.videoMediaId || 
+          songWithMedia.coverMediaId ||
+          songWithMedia.relativeAudioPath ||
+          songWithMedia.relativeVideoPath ||
+          songWithMedia.relativeCoverPath) {
         return restoreSongUrls(song);
       }
       return song;
