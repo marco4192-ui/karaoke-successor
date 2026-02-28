@@ -995,7 +995,10 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const song = gameState.currentSong;
   
-  // Timing synchronization - user adjustable offset (initialized from song)
+  // Timing synchronization - using Web Audio API for precision
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const masterClockRef = useRef<number>(0); // Master time in milliseconds
+  const lastSyncTimeRef = useRef<number>(0); // Last sync with audio element
   const [timingOffset, setTimingOffset] = useState(0);
   
   // Check if video is YouTube
@@ -1230,30 +1233,60 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     });
   }, [gameState.players, song, setResults]);
 
-  // Game loop - SIMPLIFIED: Use audio.currentTime as MASTER CLOCK
+  // Game loop - HYBRID APPROACH: performance.now() + audio sync
+  // This provides smooth animation while staying accurate to audio
   useEffect(() => {
     if (!isPlaying || !song) return;
 
-    const gameLoop = () => {
-      // MASTER CLOCK: Get time directly from audio/video element
-      // This is the most accurate source of timing
-      let masterTime = 0;
-      
+    // Initialize master clock
+    const initialTime = song.start || 0; // Respect #START tag
+    let baseAudioTime = initialTime; // Audio position at sync point
+    let basePerfTime = performance.now(); // Performance time at sync point
+    let lastAudioPosition = initialTime;
+    
+    // Get current time from the best available source
+    const getAudioTime = (): number => {
       // Priority 1: YouTube player time
       if (isYouTube && youtubeTime > 0) {
-        masterTime = youtubeTime;
+        return youtubeTime;
       }
       // Priority 2: Video with embedded audio
-      else if (song.hasEmbeddedAudio && videoRef.current) {
-        masterTime = videoRef.current.currentTime * 1000;
+      if (song.hasEmbeddedAudio && videoRef.current) {
+        return videoRef.current.currentTime * 1000;
       }
       // Priority 3: Separate audio file
-      else if (audioRef.current) {
-        masterTime = audioRef.current.currentTime * 1000;
+      if (audioRef.current) {
+        return audioRef.current.currentTime * 1000;
+      }
+      return 0;
+    };
+
+    const gameLoop = (timestamp: number) => {
+      // Calculate elapsed time since last sync using performance.now()
+      // This gives us smooth animation even if audio.currentTime has jitter
+      const elapsedSinceSync = timestamp - basePerfTime;
+      
+      // Get current audio position for sync verification
+      const currentAudioTime = getAudioTime();
+      
+      // Resync every 200ms or if drift is detected (> 100ms)
+      const timeSinceLastSync = timestamp - lastSyncTimeRef.current;
+      const expectedTime = baseAudioTime + elapsedSinceSync;
+      const drift = Math.abs(currentAudioTime - expectedTime);
+      
+      if (timeSinceLastSync > 200 || drift > 100) {
+        // Resync with audio
+        baseAudioTime = currentAudioTime;
+        basePerfTime = timestamp;
+        lastSyncTimeRef.current = timestamp;
+        masterClockRef.current = currentAudioTime;
+      } else {
+        // Use interpolated time for smooth animation
+        masterClockRef.current = baseAudioTime + elapsedSinceSync;
       }
       
       // Apply user timing offset
-      const adjustedTime = masterTime + timingOffset;
+      const adjustedTime = masterClockRef.current + timingOffset;
       
       // Update game state with current time
       setCurrentTime(adjustedTime);
@@ -1276,6 +1309,8 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       gameLoopRef.current = requestAnimationFrame(gameLoop);
     };
     
+    // Initialize sync time
+    lastSyncTimeRef.current = performance.now();
     gameLoopRef.current = requestAnimationFrame(gameLoop);
     
     return () => {

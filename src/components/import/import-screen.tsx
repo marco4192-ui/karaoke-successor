@@ -16,7 +16,7 @@ import {
   isFileSystemAccessSupported,
   ScannedSong 
 } from '@/lib/parsers/folder-scanner';
-import { addSong, addSongs } from '@/lib/game/song-library';
+import { addSong, addSongs, addSongWithMedia } from '@/lib/game/song-library';
 import { Song } from '@/types/game';
 
 interface ImportScreenProps {
@@ -217,7 +217,7 @@ export function ImportScreen({ onImport, onCancel }: ImportScreenProps) {
     setIsProcessing(false);
   };
 
-  // Import selected scanned songs
+  // Import selected scanned songs - uses IndexedDB for persistence
   const importSelectedScanned = async () => {
     if (selectedScanned.size === 0) {
       setError('No songs selected');
@@ -236,7 +236,26 @@ export function ImportScreen({ onImport, onCancel }: ImportScreenProps) {
       
       try {
         const song = await convertScannedSongToSong(scanned);
-        songsToImport.push(song);
+        
+        // Store with media in IndexedDB if files are available
+        if (scanned.audioFile || scanned.videoFile) {
+          try {
+            const savedSong = await addSongWithMedia(song, {
+              audio: scanned.audioFile,
+              video: scanned.videoFile,
+              cover: scanned.coverFile,
+            });
+            songsToImport.push(savedSong);
+          } catch (dbErr) {
+            // Fallback to regular addSong
+            console.warn('IndexedDB save failed for', scanned.title, dbErr);
+            addSong(song);
+            songsToImport.push(song);
+          }
+        } else {
+          addSong(song);
+          songsToImport.push(song);
+        }
         
         setProgress({ 
           stage: 'processing', 
@@ -246,11 +265,6 @@ export function ImportScreen({ onImport, onCancel }: ImportScreenProps) {
       } catch (err) {
         setScanErrors(prev => [...prev, `Failed to import ${scanned.title}: ${(err as Error).message}`]);
       }
-    }
-    
-    // Add all songs to library
-    if (songsToImport.length > 0) {
-      addSongs(songsToImport);
     }
     
     setProgress({ 
@@ -270,13 +284,30 @@ export function ImportScreen({ onImport, onCancel }: ImportScreenProps) {
     }
   };
 
-  // Confirm import for single song
-  const confirmImport = () => {
+  // Confirm import for single song - uses IndexedDB for persistence
+  const confirmImport = async () => {
     if (previewSong) {
-      // Add to song library
-      addSong(previewSong);
-      // Also call the callback
-      onImport(previewSong);
+      setIsProcessing(true);
+      setProgress({ stage: 'loading', progress: 0, message: 'Saving song...' });
+      
+      try {
+        // Use addSongWithMedia to persist files in IndexedDB
+        const savedSong = await addSongWithMedia(previewSong, {
+          audio: audioFile || undefined,
+          video: videoFile || undefined,
+          cover: undefined, // Cover not currently handled
+        });
+        
+        setProgress({ stage: 'complete', progress: 100, message: 'Song saved!' });
+        onImport(savedSong);
+      } catch (err) {
+        // Fallback to regular addSong if IndexedDB fails
+        console.error('IndexedDB save failed, falling back to localStorage:', err);
+        addSong(previewSong);
+        onImport(previewSong);
+      }
+      
+      setIsProcessing(false);
     }
   };
 
