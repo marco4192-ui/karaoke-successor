@@ -1320,17 +1320,43 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     };
   }, [isPlaying, song, pitchResult, youtubeTime, timingOffset, isYouTube, setCurrentTime, setVolume, setDetectedPitch, checkNoteHits, endGame, generateResults, onEnd]);
 
-  // Get current lyric line
-  const currentLine = useMemo(() => {
-    if (!song) return null;
+  // Get current and upcoming lyric lines
+  // Lyrics should appear WHEN notes become visible on screen, not when they reach the sing line
+  // This gives the singer time to read ahead
+  const { currentLine, nextLine } = useMemo(() => {
+    if (!song) return { currentLine: null, nextLine: null };
     const currentTime = gameState.currentTime;
-    for (const line of song.lyrics) {
-      if (currentTime >= line.startTime && currentTime <= line.endTime) {
-        return line;
+    
+    // Calculate how early to show lyrics (same as note visibility window)
+    // Notes are visible 12 beats ahead, so show lyrics that early too
+    const LYRIC_ADVANCE_TIME = beatDuration * 12; // Show lyrics 12 beats before first note
+    
+    // Find current/upcoming lines
+    let activeLine = null;
+    let upcomingLine = null;
+    
+    for (let i = 0; i < song.lyrics.length; i++) {
+      const line = song.lyrics[i];
+      const lineEnd = line.endTime;
+      const lineStartWithAdvance = line.startTime - LYRIC_ADVANCE_TIME;
+      
+      // Current line: show from (startTime - advance) to endTime
+      if (currentTime >= lineStartWithAdvance && currentTime <= lineEnd) {
+        activeLine = line;
+        // Next line is the one after current
+        if (i + 1 < song.lyrics.length) {
+          upcomingLine = song.lyrics[i + 1];
+        }
+      }
+      // If no active line found yet, check for upcoming line
+      else if (!activeLine && currentTime < lineStartWithAdvance) {
+        upcomingLine = line;
+        break;
       }
     }
-    return null;
-  }, [song, gameState.currentTime]);
+    
+    return { currentLine: activeLine, nextLine: upcomingLine };
+  }, [song, gameState.currentTime, beatDuration]);
 
   // Get upcoming notes - show notes within visible beat window
   const visibleNotes = useMemo(() => {
@@ -1584,18 +1610,11 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
                 />
               </div>
             )}
-            {(() => {
-              const nextLineIndex = song.lyrics.findIndex(l => l.id === currentLine?.id) + 1;
-              const nextLine = song.lyrics[nextLineIndex];
-              if (!nextLine) return null;
-              // Join notes with spaces for proper display
-              const nextLineText = nextLine.notes.map(n => n.lyric).join(' ');
-              return (
-                <p className="text-lg text-center text-white/50 mt-2">
-                  {nextLineText}
-                </p>
-              );
-            })()}
+            {nextLine && (
+              <p className="text-lg text-center text-white/50 mt-2">
+                {nextLine.notes.map(n => n.lyric).join(' ')}
+              </p>
+            )}
           </div>
         </div>
 
