@@ -1290,42 +1290,37 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   }, [isPlaying, song, pitchResult, youtubeTime, timingOffset, isYouTube, setCurrentTime, setVolume, setDetectedPitch, checkNoteHits, endGame, generateResults, onEnd]);
 
   // Get current and upcoming lyric lines
-  // Lyrics should appear WHEN notes become visible on screen, not when they reach the sing line
-  // This gives the singer time to read ahead
+  // Show lyrics exactly when the first note of the line appears
   const { currentLine, nextLine } = useMemo(() => {
     if (!song) return { currentLine: null, nextLine: null };
     const currentTime = gameState.currentTime;
     
-    // Calculate how early to show lyrics (same as note visibility window)
-    // Notes are visible 12 beats ahead, so show lyrics that early too
-    const LYRIC_ADVANCE_TIME = beatDuration * 12; // Show lyrics 12 beats before first note
-    
-    // Find current/upcoming lines
+    // Find current line - show when the FIRST note of the line is at the sing line
+    // and hide after the LAST note of the line has passed
     let activeLine = null;
     let upcomingLine = null;
     
     for (let i = 0; i < song.lyrics.length; i++) {
       const line = song.lyrics[i];
-      const lineEnd = line.endTime;
-      const lineStartWithAdvance = line.startTime - LYRIC_ADVANCE_TIME;
+      const lineStart = line.startTime; // First note start time
+      const lineEnd = line.endTime; // Last note end time
       
-      // Current line: show from (startTime - advance) to endTime
-      if (currentTime >= lineStartWithAdvance && currentTime <= lineEnd) {
+      // Current line: show from first note start to last note end
+      if (currentTime >= lineStart && currentTime <= lineEnd + 1000) { // +1s buffer at end
         activeLine = line;
-        // Next line is the one after current
         if (i + 1 < song.lyrics.length) {
           upcomingLine = song.lyrics[i + 1];
         }
       }
-      // If no active line found yet, check for upcoming line
-      else if (!activeLine && currentTime < lineStartWithAdvance) {
+      // Upcoming line: next line that hasn't started yet
+      else if (!activeLine && currentTime < lineStart) {
         upcomingLine = line;
         break;
       }
     }
     
     return { currentLine: activeLine, nextLine: upcomingLine };
-  }, [song, gameState.currentTime, beatDuration]);
+  }, [song, gameState.currentTime]);
 
   // Get upcoming notes - show notes within visible beat window
   const visibleNotes = useMemo(() => {
@@ -1366,21 +1361,31 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         <Button variant="ghost" onClick={onBack} className="text-white/80 hover:text-white hover:bg-white/10">
           ← Back
         </Button>
-        <div className="flex items-center gap-3">
-          {/* Timing Sync Controls */}
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-white/40">Sync:</span>
+        <div className="flex items-center gap-4">
+          {/* PROMINENT Timing Sync Controls */}
+          <div className="flex items-center gap-2 bg-black/40 rounded-lg px-3 py-2">
+            <span className="text-white/60 text-sm">🎵 Sync:</span>
+            <button 
+              onClick={() => {
+                const newOffset = timingOffset - 100;
+                setTimingOffset(newOffset);
+                if (song) updateSong(song.id, { timingOffset: newOffset });
+              }}
+              className="px-3 py-1.5 bg-red-500/30 hover:bg-red-500/50 rounded text-white text-sm font-medium"
+            >
+              -100ms
+            </button>
             <button 
               onClick={() => {
                 const newOffset = timingOffset - 50;
                 setTimingOffset(newOffset);
                 if (song) updateSong(song.id, { timingOffset: newOffset });
               }}
-              className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-white"
+              className="px-2 py-1.5 bg-white/10 hover:bg-white/20 rounded text-white text-sm"
             >
-              -
+              -50
             </button>
-            <span className={`font-mono ${timingOffset !== 0 ? 'text-yellow-400' : 'text-white/60'}`}>
+            <span className={`font-mono text-lg min-w-[70px] text-center ${timingOffset !== 0 ? 'text-yellow-400 font-bold' : 'text-white/80'}`}>
               {timingOffset > 0 ? '+' : ''}{timingOffset}ms
             </span>
             <button 
@@ -1389,9 +1394,19 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
                 setTimingOffset(newOffset);
                 if (song) updateSong(song.id, { timingOffset: newOffset });
               }}
-              className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-white"
+              className="px-2 py-1.5 bg-white/10 hover:bg-white/20 rounded text-white text-sm"
             >
-              +
+              +50
+            </button>
+            <button 
+              onClick={() => {
+                const newOffset = timingOffset + 100;
+                setTimingOffset(newOffset);
+                if (song) updateSong(song.id, { timingOffset: newOffset });
+              }}
+              className="px-3 py-1.5 bg-green-500/30 hover:bg-green-500/50 rounded text-white text-sm font-medium"
+            >
+              +100ms
             </button>
             {timingOffset !== 0 && (
               <button 
@@ -1936,9 +1951,47 @@ function QueueScreen() {
 function MobileScreen() {
   const [roomCode, setRoomCode] = useState('KARAOKE-' + Math.random().toString(36).substr(2, 6).toUpperCase());
   const [isConnected, setIsConnected] = useState(false);
+  const [localIP, setLocalIP] = useState<string | null>(null);
   
+  // Detect local IP address for mobile connection
+  useEffect(() => {
+    const detectLocalIP = async () => {
+      try {
+        // Use WebRTC to detect local IP
+        const pc = new RTCPeerConnection({ iceServers: [] });
+        pc.createDataChannel('');
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        
+        return new Promise<string>((resolve) => {
+          pc.onicecandidate = (event) => {
+            if (event?.candidate) {
+              const match = event.candidate.candidate.match(/(\d+\.\d+\.\d+\.\d+)/);
+              if (match) {
+                pc.close();
+                resolve(match[1]);
+              }
+            }
+          };
+          // Timeout after 3 seconds
+          setTimeout(() => {
+            pc.close();
+            resolve('');
+          }, 3000);
+        });
+      } catch {
+        return '';
+      }
+    };
+    
+    detectLocalIP().then(ip => {
+      if (ip) setLocalIP(ip);
+    });
+  }, []);
+  
+  // Use local IP if available, otherwise fall back to hostname
   const connectionUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}?mobile=${roomCode}` 
+    ? `http://${localIP || window.location.hostname}:3000?mobile=${roomCode}` 
     : '';
   
   return (
