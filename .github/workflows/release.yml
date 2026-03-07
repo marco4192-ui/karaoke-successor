@@ -1,0 +1,332 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+env:
+  BUN_VERSION: 'latest'
+  NODE_VERSION: '20.11.0'
+
+jobs:
+  # Build Windows MSI - Truly Standalone
+  build-windows:
+    name: Build Windows Standalone
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build Next.js standalone
+        run: |
+          bun run next build
+          if (-not (Test-Path ".next\standalone")) {
+            Write-Error "Standalone build failed!"
+            exit 1
+          }
+          Write-Host "Standalone build successful!"
+          Get-ChildItem ".next\standalone" -Recurse | Where-Object { -not $_.PSIsContainer } | Measure-Object | Select-Object -ExpandProperty Count
+
+      - name: Download Node.js portable
+        shell: pwsh
+        run: |
+          Write-Host "Downloading Node.js v${{ env.NODE_VERSION }}..."
+          $nodeUrl = "https://nodejs.org/dist/v${{ env.NODE_VERSION }}/node-v${{ env.NODE_VERSION }}-win-x64.zip"
+          Invoke-WebRequest -Uri $nodeUrl -OutFile "node.zip"
+          Expand-Archive -Path "node.zip" -DestinationPath "." -Force
+          Write-Host "Node.js downloaded and extracted"
+
+      - name: Prepare bundled files for Tauri
+        shell: pwsh
+        run: |
+          Write-Host "Creating bundled directories..."
+          New-Item -ItemType Directory -Force -Path "src-tauri\bundled\server"
+          New-Item -ItemType Directory -Force -Path "src-tauri\bundled\node"
+
+          # Copy entire Node.js runtime (needed for all dependencies)
+          Write-Host "Copying Node.js runtime..."
+          Copy-Item -Recurse -Force "node-v${{ env.NODE_VERSION }}-win-x64\*" "src-tauri\bundled\node\"
+
+          # Copy Next.js standalone server
+          Write-Host "Copying Next.js standalone server..."
+          Copy-Item -Recurse -Force ".next\standalone\*" "src-tauri\bundled\server\"
+
+          # Copy static files
+          Write-Host "Copying static files..."
+          New-Item -ItemType Directory -Force -Path "src-tauri\bundled\server\.next\static"
+          Copy-Item -Recurse -Force ".next\static\*" "src-tauri\bundled\server\.next\static\"
+
+          # Copy public folder
+          Write-Host "Copying public folder..."
+          if (Test-Path "public") {
+            Copy-Item -Recurse -Force "public" "src-tauri\bundled\server\"
+          }
+
+          # Copy node_modules needed for standalone
+          Write-Host "Checking for additional dependencies..."
+          if (Test-Path "node_modules") {
+            # Copy essential packages that might be needed
+            $essentialPackages = @("next", "react", "react-dom")
+            foreach ($pkg in $essentialPackages) {
+              if ((Test-Path "node_modules\$pkg") -and -not (Test-Path "src-tauri\bundled\server\node_modules\$pkg")) {
+                New-Item -ItemType Directory -Force -Path "src-tauri\bundled\server\node_modules\$pkg" | Out-Null
+                Copy-Item -Recurse -Force "node_modules\$pkg\*" "src-tauri\bundled\server\node_modules\$pkg\"
+              }
+            }
+          }
+
+          # List all bundled files
+          Write-Host "`n=== Bundled files summary ==="
+          Get-ChildItem "src-tauri\bundled" -Recurse | Where-Object { -not $_.PSIsContainer } | Group-Object Directory | ForEach-Object {
+            Write-Host "$($_.Name): $($_.Count) files"
+          }
+
+          $totalFiles = (Get-ChildItem "src-tauri\bundled" -Recurse | Where-Object { -not $_.PSIsContainer }).Count
+          $totalSize = (Get-ChildItem "src-tauri\bundled" -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB
+          Write-Host "`nTotal: $totalFiles files, $([math]::Round($totalSize, 2)) MB"
+
+      - name: Create standalone launcher script
+        shell: pwsh
+        run: |
+          $launcherScript = "@echo off`ncd /d `"%~dp0`"`nset PORT=3000`nset HOSTNAME=0.0.0.0`nstart `"`" `"..\node\node.exe`" `"server.js`"`ntimeout /t 3 /nobreak >nul`nstart http://localhost:3000"
+          Set-Content -Path "src-tauri\bundled\server\start-server.bat" -Value $launcherScript -Encoding ASCII
+          Write-Host "Created start-server.bat"
+
+      - name: Ensure dist folder
+        run: New-Item -ItemType Directory -Force -Path "dist"
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.event.inputs.version || github.ref_name }}
+          releaseName: 'Karaoke Successor ${{ github.event.inputs.version || github.ref_name }}'
+          releaseBody: |
+            # 🎤 Karaoke Successor - Standalone
+            
+            **Fully standalone - no Node.js or Bun installation required!**
+            
+            ## 📥 Installation
+            1. Download the `.exe` installer
+            2. Run the installer
+            3. Launch "Karaoke Successor" from Start Menu
+            4. Enjoy! 🎤
+            
+            ## ✨ Features
+            - Real-time pitch detection (YIN algorithm)
+            - 3 difficulty levels
+            - Party modes (Pass the Mic, Duel, Medley, etc.)
+            - Mobile companion app (use phone as microphone)
+            - Song import (UltraStar, MIDI, SingStar formats)
+            - Highscores with 21 funny ranking titles
+            - 25+ achievements
+            - 6 color themes
+            
+            ## 🖥️ System Requirements
+            - Windows 10/11 (64-bit)
+            - 4GB RAM minimum
+            - Microphone (optional, for singing)
+          releaseDraft: true
+          prerelease: false
+
+      - name: Upload NSIS installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: src-tauri/target/release/bundle/nsis/*.exe
+          retention-days: 30
+
+  # Build macOS
+  build-macos:
+    name: Build macOS
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin, x86_64-apple-darwin
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build Next.js standalone
+        run: bun run next build
+
+      - name: Download Node.js portable (macOS)
+        run: |
+          # Download for both architectures
+          curl -sL https://nodejs.org/dist/v${{ env.NODE_VERSION }}/node-v${{ env.NODE_VERSION }}-darwin-x64.tar.gz | tar xz
+          mv node-v${{ env.NODE_VERSION }}-darwin-x64 node-darwin-x64
+          
+          curl -sL https://nodejs.org/dist/v${{ env.NODE_VERSION }}/node-v${{ env.NODE_VERSION }}-darwin-arm64.tar.gz | tar xz
+          mv node-v${{ env.NODE_VERSION }}-darwin-arm64 node-darwin-arm64
+
+      - name: Prepare bundled files
+        run: |
+          mkdir -p src-tauri/bundled/server
+          mkdir -p src-tauri/bundled/node
+          
+          # Copy Next.js standalone
+          cp -r .next/standalone/* src-tauri/bundled/server/
+          mkdir -p src-tauri/bundled/server/.next/static
+          cp -r .next/static/* src-tauri/bundled/server/.next/static/
+          cp -r public src-tauri/bundled/server/ 2>/dev/null || true
+          
+          # Copy Node.js (use x64 as default, arm64 will be selected at runtime)
+          cp -r node-darwin-x64/* src-tauri/bundled/node/
+          chmod +x src-tauri/bundled/node/bin/node
+
+      - name: Ensure dist folder
+        run: mkdir -p dist
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.event.inputs.version || github.ref_name }}
+          releaseName: 'Karaoke Successor ${{ github.event.inputs.version || github.ref_name }}'
+          releaseBody: 'Automated release'
+          releaseDraft: true
+          prerelease: false
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: src-tauri/target/release/bundle/dmg/*.dmg
+          retention-days: 30
+
+  # Build Linux
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            libfuse2 \
+            file \
+            desktop-file-utils
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build Next.js standalone
+        run: bun run next build
+
+      - name: Download Node.js portable (Linux)
+        run: |
+          curl -sL https://nodejs.org/dist/v${{ env.NODE_VERSION }}/node-v${{ env.NODE_VERSION }}-linux-x64.tar.xz | tar xJ
+          mv node-v${{ env.NODE_VERSION }}-linux-x64 node-linux-x64
+
+      - name: Prepare bundled files
+        run: |
+          mkdir -p src-tauri/bundled/server
+          mkdir -p src-tauri/bundled/node
+          
+          # Copy Next.js standalone
+          cp -r .next/standalone/* src-tauri/bundled/server/
+          mkdir -p src-tauri/bundled/server/.next/static
+          cp -r .next/static/* src-tauri/bundled/server/.next/static/
+          cp -r public src-tauri/bundled/server/ 2>/dev/null || true
+          
+          # Copy Node.js
+          cp -r node-linux-x64/* src-tauri/bundled/node/
+          chmod +x src-tauri/bundled/node/bin/node
+
+      - name: Ensure dist folder
+        run: mkdir -p dist
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.event.inputs.version || github.ref_name }}
+          releaseName: 'Karaoke Successor ${{ github.event.inputs.version || github.ref_name }}'
+          releaseBody: 'Automated release'
+          releaseDraft: true
+          prerelease: false
+          args: --bundles deb
+
+      - name: Upload DEB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-deb
+          path: src-tauri/target/release/bundle/deb/*.deb
+          retention-days: 30
