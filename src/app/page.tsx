@@ -13,7 +13,7 @@ import { Slider } from '@/components/ui/slider';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useGlobalKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useGameStore, selectQueue, selectProfiles, selectActiveProfile } from '@/lib/game/store';
-import { getAllSongs, addSong, addSongs, reloadLibrary, getAllSongsAsync, updateSong, clearCustomSongs } from '@/lib/game/song-library';
+import { getAllSongs, addSong, addSongs, reloadLibrary, getAllSongsAsync, updateSong, clearCustomSongs, restoreSongMediaUrls } from '@/lib/game/song-library';
 import { ImportScreen } from '@/components/import/import-screen';
 import { YouTubePlayer, extractYouTubeId } from '@/components/game/youtube-player';
 import { ScoreCard } from '@/components/social/score-card';
@@ -2076,9 +2076,20 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   useEffect(() => {
     if (!song) return;
     
-    // Pre-load media
+    // Pre-load media and restore URLs from IndexedDB if needed
     const loadMedia = async () => {
       setMediaLoaded(false);
+      
+      // Restore media URLs from IndexedDB if the song has storedMedia flag
+      const restoredSong = await restoreSongMediaUrls(song);
+      
+      // If URLs were restored, update the song in the store
+      if (restoredSong.audioUrl !== song.audioUrl || 
+          restoredSong.videoBackground !== song.videoBackground ||
+          restoredSong.coverImage !== song.coverImage) {
+        setSong(restoredSong);
+        console.log('[GameScreen] Restored media URLs from IndexedDB');
+      }
       
       // Small delay to ensure DOM is ready
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -2086,7 +2097,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     };
     
     loadMedia();
-  }, [song]);
+  }, [song?.id]); // Only re-run if song ID changes, not on every song object reference change
 
   // Initialize and start game - FIXED: proper countdown with visible numbers
   useEffect(() => {
@@ -7087,12 +7098,22 @@ function JukeboxScreen({ onBack }: { onBack: () => void }) {
   const [volume, setVolume] = useState(0.7);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hidePlaylist, setHidePlaylist] = useState(false); // Toggle to hide playlist in fullscreen
+  const [songsLoaded, setSongsLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // Load songs
-  const songs = useMemo(() => getAllSongs(), []);
+  // Load songs asynchronously with media URL restoration
+  const [songs, setSongs] = useState<Song[]>([]);
+  
+  useEffect(() => {
+    const loadSongs = async () => {
+      const loadedSongs = await getAllSongsAsync();
+      setSongs(loadedSongs);
+      setSongsLoaded(true);
+    };
+    loadSongs();
+  }, []);
   
   // Get unique genres and artists
   const genres = useMemo(() => {

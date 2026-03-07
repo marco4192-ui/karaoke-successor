@@ -425,3 +425,32 @@ export async function getAllSongsAsync(): Promise<Song[]> {
   
   return restoredSongs;
 }
+
+/**
+ * Restore media URLs for a single song from IndexedDB
+ * Use this before starting a game to ensure media is available
+ */
+export async function restoreSongMediaUrls(song: Song): Promise<Song> {
+  // If in Tauri, use the Tauri-specific restoration
+  if (isTauri()) {
+    return restoreSongUrls(song);
+  }
+  
+  // In browser mode, restore from IndexedDB if storedMedia flag is set
+  if (song.storedMedia) {
+    try {
+      const mediaUrls = await getSongMediaUrls(song.id);
+      return {
+        ...song,
+        audioUrl: mediaUrls.audioUrl || song.audioUrl,
+        videoBackground: mediaUrls.videoUrl || song.videoBackground,
+        coverImage: mediaUrls.coverUrl || song.coverImage
+      };
+    } catch (error) {
+      console.error(`[SongLibrary] Failed to restore media for song ${song.id}:`, error);
+      return song;
+    }
+  }
+  
+  return song;
+}

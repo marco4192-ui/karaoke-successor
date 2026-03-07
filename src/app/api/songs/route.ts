@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getAllSongs } from '@/lib/game/song-library';
+import { getAllSongsAsync } from '@/lib/game/song-library';
 
 export async function GET() {
   try {
-    const songs = getAllSongs();
+    const songs = await getAllSongsAsync();
     
     // Return simplified song data for mobile client
     const simplifiedSongs = songs.map(song => ({
