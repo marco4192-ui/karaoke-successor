@@ -1875,8 +1875,8 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   // Audio effects state
   const [audioEffects, setAudioEffects] = useState<AudioEffectsEngine | null>(null);
   const [showAudioEffects, setShowAudioEffects] = useState(false);
-  const [reverbAmount, setReverbAmount] = useState(0.3);
-  const [echoAmount, setEchoAmount] = useState(0.3);
+  const [reverbAmount, setReverbAmount] = useState(0); // Default to 0%
+  const [echoAmount, setEchoAmount] = useState(0); // Default to 0%
   
   // Duel mode state
   const [duelMatch, setDuelMatch] = useState<DuelMatch | null>(null);
@@ -1940,6 +1940,19 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     // Update on song change and play state change
     updateGameState();
   }, [song, isPlaying, gameState.currentTime]);
+  
+  // Load audio effects settings from localStorage on mount
+  useEffect(() => {
+    const savedReverb = localStorage.getItem('karaoke-reverb-amount');
+    if (savedReverb !== null) {
+      setReverbAmount(parseFloat(savedReverb));
+    }
+    
+    const savedEcho = localStorage.getItem('karaoke-echo-amount');
+    if (savedEcho !== null) {
+      setEchoAmount(parseFloat(savedEcho));
+    }
+  }, []);
   
   // Initialize audio effects when microphone is active
   useEffect(() => {
@@ -2822,6 +2835,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
                   onChange={(e) => {
                     const val = parseInt(e.target.value) / 100;
                     setReverbAmount(val);
+                    localStorage.setItem('karaoke-reverb-amount', val.toString());
                     audioEffects?.setReverb(val);
                   }}
                   className="w-full accent-purple-500" />
@@ -2832,6 +2846,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
                   onChange={(e) => {
                     const val = parseInt(e.target.value) / 100;
                     setEchoAmount(val);
+                    localStorage.setItem('karaoke-echo-amount', val.toString());
                     audioEffects?.setDelay(val * 0.5, val * 0.5);
                   }}
                   className="w-full accent-cyan-500" />
@@ -3894,17 +3909,42 @@ function MobileClientView() {
         const data = await response.json();
         setSongs(data.songs || []);
       } else {
-        // Fallback: try to get songs from localStorage
-        const savedSongs = localStorage.getItem('karaoke-songs');
+        // Fallback: try to get songs from localStorage (using correct key)
+        const savedSongs = localStorage.getItem('karaoke-successor-custom-songs');
         if (savedSongs) {
-          setSongs(JSON.parse(savedSongs));
+          const parsed = JSON.parse(savedSongs);
+          // Transform to MobileSong format
+          const mobileSongs = parsed.map((s: { id: string; title: string; artist: string; duration?: number; genre?: string; language?: string; coverImage?: string }) => ({
+            id: s.id,
+            title: s.title,
+            artist: s.artist,
+            duration: s.duration,
+            genre: s.genre,
+            language: s.language,
+            coverImage: s.coverImage,
+          }));
+          setSongs(mobileSongs);
         }
       }
     } catch {
       // Use any cached songs
-      const savedSongs = localStorage.getItem('karaoke-songs');
+      const savedSongs = localStorage.getItem('karaoke-successor-custom-songs');
       if (savedSongs) {
-        setSongs(JSON.parse(savedSongs));
+        try {
+          const parsed = JSON.parse(savedSongs);
+          const mobileSongs = parsed.map((s: { id: string; title: string; artist: string; duration?: number; genre?: string; language?: string; coverImage?: string }) => ({
+            id: s.id,
+            title: s.title,
+            artist: s.artist,
+            duration: s.duration,
+            genre: s.genre,
+            language: s.language,
+            coverImage: s.coverImage,
+          }));
+          setSongs(mobileSongs);
+        } catch {
+          // Invalid JSON, ignore
+        }
       }
     }
     setSongsLoading(false);
@@ -4610,9 +4650,20 @@ function MobileClientView() {
 // ===================== MOBILE SCREEN =====================
 function MobileScreen() {
   const [localIP, setLocalIP] = useState<string>('');
-  const [connectedClients, setConnectedClients] = useState<Array<{ id: string; name: string; hasPitch: boolean }>>([]);
+  const [connectedClients, setConnectedClients] = useState<Array<{ 
+    id: string; 
+    name: string; 
+    hasPitch: boolean;
+    profile?: {
+      id: string;
+      name: string;
+      avatar?: string;
+      color: string;
+    };
+  }>>([]);
   const [isPolling, setIsPolling] = useState(false);
   const [ipDetectionAttempts, setIpDetectionAttempts] = useState(0);
+  const { createProfile, updateProfile, profiles } = useGameStore();
   
   // Get local IP address via WebRTC - FIXED: Store detected IP, don't fallback to localhost
   useEffect(() => {
@@ -4726,6 +4777,25 @@ function MobileScreen() {
     setIpDetectionAttempts(prev => prev + 1);
   };
   
+  // Add profile from mobile client to main app
+  const handleAddProfileFromMobile = (clientProfile: { id: string; name: string; avatar?: string; color: string }) => {
+    // Check if profile already exists
+    const existingProfile = profiles.find(p => p.name.toLowerCase() === clientProfile.name.toLowerCase());
+    if (existingProfile) {
+      // Update existing profile
+      updateProfile(existingProfile.id, {
+        avatar: clientProfile.avatar,
+        color: clientProfile.color,
+      });
+    } else {
+      // Create new profile
+      const newProfile = createProfile(clientProfile.name, clientProfile.avatar);
+      updateProfile(newProfile.id, {
+        color: clientProfile.color,
+      });
+    }
+  };
+  
   // Build connection URL with local IP
   const connectionUrl = localIP 
     ? `http://${localIP}:3000?mobile=1`
@@ -4830,11 +4900,18 @@ function MobileScreen() {
               <div className="space-y-3">
                 {connectedClients.map((client) => (
                   <div key={client.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center">
-                      <MicIcon className="w-5 h-5 text-white" />
+                    <div 
+                      className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden"
+                      style={{ backgroundColor: client.profile?.color || '#06B6D4' }}
+                    >
+                      {client.profile?.avatar ? (
+                        <img src={client.profile.avatar} alt={client.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-white font-bold">{client.name[0]?.toUpperCase() || '?'}</span>
+                      )}
                     </div>
                     <div className="flex-1">
-                      <p className="font-medium">{client.name}</p>
+                      <p className="font-medium">{client.profile?.name || client.name}</p>
                       <p className="text-xs text-white/40">{client.id.slice(0, 20)}...</p>
                     </div>
                     {client.hasPitch && (
@@ -4842,6 +4919,15 @@ function MobileScreen() {
                         <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                         <span className="text-xs">Active</span>
                       </div>
+                    )}
+                    {client.profile && !profiles.find(p => p.name.toLowerCase() === client.profile?.name?.toLowerCase()) && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleAddProfileFromMobile(client.profile!)}
+                        className="bg-cyan-500 hover:bg-cyan-400 text-xs"
+                      >
+                        Add to Profiles
+                      </Button>
                     )}
                   </div>
                 ))}
@@ -5797,9 +5883,15 @@ function SettingsScreen() {
   const [defaultDifficulty, setDefaultDifficulty] = useState<Difficulty>('medium');
   const [showPitchGuide, setShowPitchGuide] = useState(true);
   const [currentThemeId, setCurrentThemeId] = useState<string>('neon-nights');
+  const [lyricsStyle, setLyricsStyle] = useState<string>('classic');
+  const [backgroundVideo, setBackgroundVideo] = useState(true);
+  const [isClient, setIsClient] = useState(false);
   
   // Load settings on mount
   useEffect(() => {
+    // Mark as client-side
+    setIsClient(true);
+    
     const savedFolder = localStorage.getItem('karaoke-songs-folder') || '';
     setSongsFolder(savedFolder);
     setSongCount(getAllSongs().length);
@@ -5824,6 +5916,14 @@ function SettingsScreen() {
     
     const storedTheme = getStoredTheme();
     if (storedTheme) setCurrentThemeId(storedTheme.id);
+    
+    // Load lyrics style
+    const savedLyricsStyle = localStorage.getItem('karaoke-lyrics-style');
+    if (savedLyricsStyle) setLyricsStyle(savedLyricsStyle);
+    
+    // Load background video setting
+    const savedBgVideo = localStorage.getItem('karaoke-bg-video');
+    if (savedBgVideo !== null) setBackgroundVideo(savedBgVideo !== 'false');
   }, []);
   
   // Save songs folder and reload library
@@ -6245,11 +6345,12 @@ function SettingsScreen() {
                       key={style.id}
                       type="button"
                       onClick={() => {
+                        setLyricsStyle(style.id);
                         localStorage.setItem('karaoke-lyrics-style', style.id);
                         forceUpdate(n => n + 1);
                       }}
                       className={`px-3 py-2 rounded-lg border-2 transition-all text-sm cursor-pointer ${
-                        (typeof window !== 'undefined' && localStorage.getItem('karaoke-lyrics-style') === style.id)
+                        lyricsStyle === style.id
                           ? 'border-purple-500 bg-purple-500/20 text-purple-300'
                           : 'border-white/10 bg-white/5 hover:border-white/30 text-white'
                       }`}
@@ -6269,18 +6370,19 @@ function SettingsScreen() {
                 <button
                   type="button"
                   onClick={() => {
-                    const current = localStorage.getItem('karaoke-bg-video') !== 'false';
-                    localStorage.setItem('karaoke-bg-video', (!current).toString());
+                    const newValue = !backgroundVideo;
+                    setBackgroundVideo(newValue);
+                    localStorage.setItem('karaoke-bg-video', newValue.toString());
                     forceUpdate(n => n + 1);
                   }}
                   className={`relative w-14 h-7 rounded-full transition-colors cursor-pointer ${
-                    (typeof window !== 'undefined' && localStorage.getItem('karaoke-bg-video') !== 'false') 
+                    backgroundVideo 
                       ? 'bg-cyan-500' 
                       : 'bg-white/20'
                   }`}
                 >
                   <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${
-                    (typeof window !== 'undefined' && localStorage.getItem('karaoke-bg-video') !== 'false') 
+                    backgroundVideo 
                       ? 'left-8' 
                       : 'left-1'
                   }`} />

@@ -52,14 +52,40 @@ export function getCustomSongs(): Song[] {
     const stored = localStorage.getItem(CUSTOM_SONGS_KEY);
     if (stored) {
       const songs = JSON.parse(stored);
-      console.log(`[SongLibrary] Loaded ${songs.length} custom songs from localStorage`);
-      customSongsCache = songs;
+      // Validate that it's an array
+      if (!Array.isArray(songs)) {
+        console.error('[SongLibrary] Invalid songs data - not an array, resetting');
+        localStorage.removeItem(CUSTOM_SONGS_KEY);
+        return [];
+      }
+      // Validate each song has required fields
+      const validSongs = songs.filter((s: unknown) => {
+        if (typeof s !== 'object' || s === null) return false;
+        const song = s as Partial<Song>;
+        return song.id && song.title && song.artist;
+      });
+      
+      if (validSongs.length !== songs.length) {
+        console.warn(`[SongLibrary] Filtered out ${songs.length - validSongs.length} invalid songs`);
+        // Save the filtered valid songs
+        saveCustomSongs(validSongs);
+      }
+      
+      console.log(`[SongLibrary] Loaded ${validSongs.length} custom songs from localStorage`);
+      customSongsCache = validSongs;
       return customSongsCache || [];
     } else {
       console.log('[SongLibrary] No custom songs found in localStorage');
     }
   } catch (e) {
     console.error('[SongLibrary] Failed to load custom songs:', e);
+    // Try to recover by clearing corrupted data
+    try {
+      localStorage.removeItem(CUSTOM_SONGS_KEY);
+      console.log('[SongLibrary] Cleared corrupted songs data');
+    } catch {
+      // Ignore cleanup errors
+    }
   }
   return [];
 }

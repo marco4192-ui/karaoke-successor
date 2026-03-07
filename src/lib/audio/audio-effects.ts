@@ -10,9 +10,15 @@ export class AudioEffectsEngine {
   private gainNode: GainNode | null = null;
   private analyserNode: AnalyserNode | null = null;
   
+  // Wet/dry mix nodes
+  private reverbGainNode: GainNode | null = null;
+  private dryGainNode: GainNode | null = null;
+  private delayGainNode: GainNode | null = null;
+  private feedbackNode: GainNode | null = null;
+  
   // Effect parameters
-  private reverbAmount: number = 0.3;
-  private delayTime: number = 0.3;
+  private reverbAmount: number = 0;
+  private delayTime: number = 0;
   private delayFeedback: number = 0.4;
   private masterVolume: number = 1.0;
   
@@ -41,33 +47,38 @@ export class AudioEffectsEngine {
     this.delayNode.delayTime.value = this.delayTime;
     
     // Create feedback for delay
-    const feedbackNode = this.audioContext.createGain();
-    feedbackNode.gain.value = this.delayFeedback;
+    this.feedbackNode = this.audioContext.createGain();
+    this.feedbackNode.gain.value = this.delayFeedback;
     
     // Wet/dry mix for reverb
-    const reverbGain = this.audioContext.createGain();
-    reverbGain.gain.value = this.reverbAmount;
-    const dryGain = this.audioContext.createGain();
-    dryGain.gain.value = 1 - this.reverbAmount;
+    this.reverbGainNode = this.audioContext.createGain();
+    this.reverbGainNode.gain.value = this.reverbAmount;
+    this.dryGainNode = this.audioContext.createGain();
+    this.dryGainNode.gain.value = 1 - this.reverbAmount;
+    
+    // Delay output gain
+    this.delayGainNode = this.audioContext.createGain();
+    this.delayGainNode.gain.value = 0;
     
     // Connect the effect chain
     // Input -> Analyser (for visualization)
     this.inputNode.connect(this.analyserNode);
     
     // Dry path
-    this.inputNode.connect(dryGain);
-    dryGain.connect(this.gainNode);
+    this.inputNode.connect(this.dryGainNode);
+    this.dryGainNode.connect(this.gainNode);
     
     // Reverb path
     this.inputNode.connect(this.reverbNode);
-    this.reverbNode.connect(reverbGain);
-    reverbGain.connect(this.gainNode);
+    this.reverbNode.connect(this.reverbGainNode);
+    this.reverbGainNode.connect(this.gainNode);
     
     // Delay/Echo path with feedback
     this.inputNode.connect(this.delayNode);
-    this.delayNode.connect(feedbackNode);
-    feedbackNode.connect(this.delayNode);
-    this.delayNode.connect(this.gainNode);
+    this.delayNode.connect(this.feedbackNode);
+    this.feedbackNode.connect(this.delayNode);
+    this.delayNode.connect(this.delayGainNode);
+    this.delayGainNode.connect(this.gainNode);
     
     // Output to speakers
     this.gainNode.connect(this.audioContext.destination);
@@ -97,13 +108,30 @@ export class AudioEffectsEngine {
 
   setReverb(amount: number): void {
     this.reverbAmount = Math.max(0, Math.min(1, amount));
+    // Apply to gain nodes in real-time
+    if (this.reverbGainNode) {
+      this.reverbGainNode.gain.value = this.reverbAmount;
+    }
+    if (this.dryGainNode) {
+      this.dryGainNode.gain.value = 1 - this.reverbAmount * 0.5; // Keep some dry signal
+    }
   }
 
   setDelay(time: number, feedback: number): void {
-    if (this.delayNode) {
-      this.delayNode.delayTime.value = Math.max(0, Math.min(2, time));
-    }
+    this.delayTime = Math.max(0, Math.min(2, time));
     this.delayFeedback = Math.max(0, Math.min(0.9, feedback));
+    
+    // Apply to delay node in real-time
+    if (this.delayNode) {
+      this.delayNode.delayTime.value = this.delayTime;
+    }
+    if (this.feedbackNode) {
+      this.feedbackNode.gain.value = this.delayFeedback;
+    }
+    if (this.delayGainNode) {
+      // Map time to output gain (more time = more audible echo)
+      this.delayGainNode.gain.value = this.delayTime > 0 ? Math.min(0.7, this.delayTime) : 0;
+    }
   }
 
   setVolume(volume: number): void {
