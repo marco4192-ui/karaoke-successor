@@ -4791,31 +4791,20 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
           </div>
         )}
         
-        {/* Ad Overlay - Shows when YouTube ad is playing */}
+        {/* Ad Indicator - Small non-blocking indicator when YouTube ad is playing */}
         {isAdPlaying && (
-          <div className="absolute inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-40">
-            <div className="text-center p-8 max-w-md">
-              <div className="animate-pulse mb-4">
-                <svg className="w-20 h-20 mx-auto text-yellow-400" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                </svg>
-              </div>
-              <h3 className="text-3xl font-bold text-white mb-3">Advertisement</h3>
-              <p className="text-white/70 mb-6 text-lg">
-                The game will resume automatically after the ad...
-              </p>
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40">
+            <div className="bg-black/80 backdrop-blur-sm px-6 py-3 rounded-full border border-yellow-500/50 flex items-center gap-3">
+              <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" />
+              <span className="text-yellow-400 font-medium">Werbung läuft</span>
+              <span className="text-white/60">-</span>
+              <span className="text-white/80">Spiel pausiert</span>
               {adCountdown > 0 && (
-                <div className="text-5xl font-bold text-cyan-400 mb-4">
-                  {adCountdown}s
-                </div>
+                <>
+                  <span className="text-white/60">-</span>
+                  <span className="text-cyan-400 font-bold">{adCountdown}s</span>
+                </>
               )}
-              <div className="mt-4 text-sm text-white/50">
-                Please wait or skip the ad on YouTube
-              </div>
-              <div className="mt-6 flex items-center justify-center gap-2">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                <span className="text-red-400 text-sm">Game Paused</span>
-              </div>
             </div>
           </div>
         )}
