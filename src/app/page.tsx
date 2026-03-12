@@ -2914,10 +2914,10 @@ function LyricLineDisplay({
   
   // Show ALL notes of the complete line - no sliding window
   // UltraStar format: trailing space in lyric = word boundary, no space = syllable
-  // IMPORTANT: Use inline-block spans to preserve exact spacing from txt file
-  // IMPORTANT: Hyphens in lyrics should be rendered with special styling for line breaks
+  // NEW APPROACH: Render each note's lyric EXACTLY as stored, including all spaces and hyphens
+  // Use CSS to preserve whitespace at the span level
   return (
-    <span className="text-2xl md:text-3xl font-bold text-center inline" style={{ whiteSpace: 'pre-wrap' }}>
+    <span className="text-2xl md:text-3xl font-bold text-center" style={{ whiteSpace: 'pre' }}>
       {line.notes.map((note, idx) => {
         // Use startTime as noteId to match checkNoteHits (startTime is unique per note)
         const noteId = note.id || `note-${note.startTime}`;
@@ -2971,21 +2971,32 @@ function LyricLineDisplay({
           }
         }
         
-        // Render the lyric text exactly as stored (spaces preserved by whiteSpace: 'pre-wrap')
-        // Handle hyphenated syllables: if lyric ends with hyphen, it's a syllable break
-        let displayLyric = note.lyric || '';
+        // Get the exact lyric text - render ALL characters including spaces, hyphens, etc.
+        // The lyric field contains the EXACT text from the txt file
+        const lyricText = note.lyric || '';
         
-        // Preserve trailing spaces - they indicate word boundaries
-        // Also handle the case where spaces might have been trimmed
+        // Check if this note is only hyphens (force new line after it)
+        const isHyphenOnly = /^[-]+$/.test(lyricText.trim());
+        
+        // Render each character individually to preserve exact spacing
+        // This ensures spaces, hyphens, and all characters are displayed correctly
         return (
-          <span key={noteId} style={{ display: 'inline' }}>
+          <React.Fragment key={noteId}>
             <span 
-              className={`inline ${fontClass} ${finalTextClass} transition-all duration-100`}
-              style={{ ...finalShadowStyle, ...fillClipStyle, display: 'inline' }}
+              className={`${fontClass} ${finalTextClass} transition-all duration-100`}
+              style={{ ...finalShadowStyle, ...fillClipStyle }}
             >
-              {displayLyric}
+              {lyricText.split('').map((char, charIdx) => {
+                // Render each character with preserved spacing
+                // Use \u00A0 for spaces to ensure they're visible
+                if (char === ' ') {
+                  return <span key={charIdx}>&nbsp;</span>;
+                }
+                return <span key={charIdx}>{char}</span>;
+              })}
             </span>
-          </span>
+            {isHyphenOnly && <br />}
+          </React.Fragment>
         );
       })}
     </span>
@@ -3629,8 +3640,52 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     const loadMedia = async () => {
       setMediaLoaded(false);
       
-      // Small delay to ensure DOM is ready
+      // Wait for DOM to be ready and media elements to be rendered
       await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Wait for audio element to be ready if we have an audio URL
+      if (song.audioUrl && audioRef.current) {
+        // Set up a promise that resolves when audio is ready or times out
+        const audioReady = new Promise<void>((resolve) => {
+          const audio = audioRef.current;
+          if (!audio) {
+            resolve();
+            return;
+          }
+          
+          // If already ready, resolve immediately
+          if (audio.readyState >= 2) {
+            resolve();
+            return;
+          }
+          
+          const onCanPlay = () => {
+            audio.removeEventListener('canplay', onCanPlay);
+            audio.removeEventListener('error', onError);
+            resolve();
+          };
+          
+          const onError = () => {
+            audio.removeEventListener('canplay', onCanPlay);
+            audio.removeEventListener('error', onError);
+            console.warn('[GameScreen] Audio load error, continuing anyway');
+            resolve();
+          };
+          
+          audio.addEventListener('canplay', onCanPlay);
+          audio.addEventListener('error', onError);
+          
+          // Timeout after 3 seconds
+          setTimeout(() => {
+            audio.removeEventListener('canplay', onCanPlay);
+            audio.removeEventListener('error', onError);
+            resolve();
+          }, 3000);
+        });
+        
+        await audioReady;
+      }
+      
       setMediaLoaded(true);
     };
     
@@ -3706,6 +3761,46 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
                     throw new Error('Audio source is empty');
                   }
                   
+                  // Wait for audio to be ready (readyState >= 2 means HAVE_CURRENT_DATA)
+                  const waitForAudioReady = async (maxWaitMs = 5000) => {
+                    const audio = audioRef.current;
+                    if (!audio) return false;
+                    
+                    if (audio.readyState >= 2) {
+                      console.log('[GameScreen] Audio already ready, readyState:', audio.readyState);
+                      return true;
+                    }
+                    
+                    console.log('[GameScreen] Waiting for audio to be ready, current readyState:', audio.readyState);
+                    
+                    return new Promise<boolean>((resolve) => {
+                      const onCanPlay = () => {
+                        console.log('[GameScreen] Audio ready, readyState:', audio.readyState);
+                        audio.removeEventListener('canplay', onCanPlay);
+                        audio.removeEventListener('error', onError);
+                        resolve(true);
+                      };
+                      
+                      const onError = (e: Event) => {
+                        console.error('[GameScreen] Audio load error during wait:', e);
+                        audio.removeEventListener('canplay', onCanPlay);
+                        audio.removeEventListener('error', onError);
+                        resolve(false);
+                      };
+                      
+                      audio.addEventListener('canplay', onCanPlay);
+                      audio.addEventListener('error', onError);
+                      
+                      // Timeout
+                      setTimeout(() => {
+                        console.log('[GameScreen] Audio ready wait timed out, continuing anyway');
+                        audio.removeEventListener('canplay', onCanPlay);
+                        audio.removeEventListener('error', onError);
+                        resolve(audio.readyState >= 2);
+                      }, maxWaitMs);
+                    });
+                  };
+                  
                   // Validate blob URL by checking if we can load it
                   if (audioSrc.startsWith('blob:')) {
                     console.log('[GameScreen] Validating blob URL:', audioSrc.substring(0, 50));
@@ -3729,11 +3824,16 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
                       if (mediaUrls.audioUrl) {
                         console.log('[GameScreen] Reloaded audio URL from IndexedDB');
                         audioRef.current.src = mediaUrls.audioUrl;
+                        // Wait for the new source to load
+                        await waitForAudioReady(3000);
                       } else {
                         throw new Error('Could not reload media from IndexedDB');
                       }
                     }
                   }
+                  
+                  // Wait for audio to be ready before playing
+                  await waitForAudioReady();
                   
                   audioRef.current.currentTime = startPosition;
                   await audioRef.current.play();
@@ -5446,6 +5546,54 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
 // ===================== PARTY SCREEN =====================
 function PartyScreen({ onSelectMode }: { onSelectMode: (mode: GameMode) => void }) {
   const partyGames = [
+    {
+      mode: 'pass-the-mic' as GameMode,
+      title: 'Pass the Mic',
+      description: 'Take turns singing parts of a song. When the music stops, the next singer takes over!',
+      icon: '🎤',
+      players: '2-8',
+      color: 'from-cyan-500 to-blue-500',
+    },
+    {
+      mode: 'medley' as GameMode,
+      title: 'Medley Contest',
+      description: 'Sing short snippets of multiple songs in a row. How many can you nail?',
+      icon: '🎵',
+      players: '1-4',
+      color: 'from-purple-500 to-pink-500',
+    },
+    {
+      mode: 'missing-words' as GameMode,
+      title: 'Missing Words',
+      description: 'Some lyrics disappear! Can you sing the right words at the right time?',
+      icon: '📝',
+      players: '1-4',
+      color: 'from-orange-500 to-red-500',
+    },
+    {
+      mode: 'blind' as GameMode,
+      title: 'Blind Karaoke',
+      description: 'Lyrics disappear for certain sections. Can you remember the words?',
+      icon: '🙈',
+      players: '1-4',
+      color: 'from-green-500 to-teal-500',
+    },
+    {
+      mode: 'duet' as GameMode,
+      title: 'Duet Mode',
+      description: 'Two players sing together! Split-screen with separate note tracks for each vocalist.',
+      icon: '🎭',
+      players: '2',
+      color: 'from-cyan-500 to-pink-500',
+    },
+    {
+      mode: 'duel' as GameMode,
+      title: 'Duel Mode',
+      description: 'Two players sing the same song side by side. Who will score higher?',
+      icon: '⚔️',
+      players: '2',
+      color: 'from-yellow-500 to-orange-500',
+    },
     {
       mode: 'tournament' as GameMode,
       title: 'Tournament Mode',
@@ -10414,6 +10562,118 @@ function AIAssetsGenerator() {
   );
 }
 
+// ===================== STANDALONE EDITOR =====================
+function StandaloneEditor() {
+  const [selectedSong, setSelectedSong] = useState<Song | null>(null);
+  const songs = getAllSongs();
+  
+  // Create a default empty song for new songs
+  const createEmptySong = (): Song => ({
+    id: `new-song-${Date.now()}`,
+    title: 'New Song',
+    artist: 'Unknown Artist',
+    duration: 180000,
+    bpm: 120,
+    difficulty: 'medium',
+    rating: 3,
+    gap: 0,
+    lyrics: [],
+    audioUrl: '',
+  });
+  
+  const handleSave = useCallback((song: Song) => {
+    // Save the song to the library
+    addSong(song);
+    alert(`Song "${song.title}" saved successfully!`);
+    setSelectedSong(null);
+  }, []);
+  
+  if (selectedSong) {
+    return (
+      <div className="h-[calc(100vh-10rem)] bg-slate-950 rounded-xl overflow-hidden">
+        <KaraokeEditor
+          song={selectedSong}
+          onSave={handleSave}
+          onCancel={() => setSelectedSong(null)}
+        />
+      </div>
+    );
+  }
+  
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Karaoke Editor</h2>
+          <p className="text-white/60">Create or edit karaoke songs</p>
+        </div>
+        <Button
+          onClick={() => setSelectedSong(createEmptySong())}
+          className="bg-gradient-to-r from-cyan-500 to-purple-500"
+        >
+          <PlusIcon className="w-4 h-4 mr-2" />
+          New Song
+        </Button>
+      </div>
+      
+      <Card className="bg-white/5 border-white/10">
+        <CardHeader>
+          <CardTitle>Edit Existing Song</CardTitle>
+          <CardDescription>Select a song from your library to edit</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {songs.length === 0 ? (
+            <div className="text-center py-8 text-white/40">
+              <MusicIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>No songs in library. Import some songs first!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
+              {songs.map((song) => (
+                <button
+                  key={song.id}
+                  onClick={() => setSelectedSong(song)}
+                  className="flex items-center gap-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors text-left"
+                >
+                  {song.coverImage ? (
+                    <img src={song.coverImage} alt={song.title} className="w-12 h-12 rounded object-cover" />
+                  ) : (
+                    <div className="w-12 h-12 rounded bg-gradient-to-br from-cyan-500/30 to-purple-500/30 flex items-center justify-center">
+                      <MusicIcon className="w-6 h-6 text-white/50" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium truncate">{song.title}</div>
+                    <div className="text-sm text-white/50 truncate">{song.artist}</div>
+                  </div>
+                  <EditIcon className="w-4 h-4 text-white/30" />
+                </button>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      
+      <Card className="bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border-cyan-500/20">
+        <CardContent className="py-4">
+          <div className="flex items-start gap-3">
+            <InfoIcon className="w-5 h-5 text-cyan-400 mt-0.5" />
+            <div className="text-sm text-white/70">
+              <p className="font-medium text-white mb-1">Editor Tips</p>
+              <ul className="list-disc list-inside space-y-1 text-white/60">
+                <li>Shift+Click on the timeline to add new notes</li>
+                <li>Use keyboard shortcuts: Space (play/pause), Delete (remove note)</li>
+                <li>Ctrl+S to save, Ctrl+Z to undo</li>
+                <li>Golden notes give bonus points, Bonus notes are optional</li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // ===================== SETTINGS SCREEN =====================
 function SettingsScreen() {
   const { t, language, setLanguage, translations } = useTranslation();
@@ -11392,7 +11652,7 @@ function SettingsScreen() {
       {/* Editor Tab - Direct Editor Display */}
       {activeTab === 'editor' && (
         <div className="w-full">
-          <KaraokeEditor />
+          <StandaloneEditor />
         </div>
       )}
       
@@ -12937,7 +13197,7 @@ function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (song: Son
           onClick={() => setActiveTab('modes')}
           className={activeTab === 'modes' ? 'bg-gradient-to-r from-cyan-500 to-purple-500' : 'border-white/20'}
         >
-          🎮 Party Modes
+          🎮 Challenge Modes
         </Button>
         <Button
           variant={activeTab === 'leaderboard' ? 'default' : 'outline'}
@@ -13013,85 +13273,81 @@ function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (song: Son
         </Card>
       )}
 
-      {/* Party Modes Tab */}
+      {/* Challenge Modes Tab */}
       {activeTab === 'modes' && (
         <div className="space-y-6">
           <Card className="bg-white/5 border-white/10">
             <CardHeader>
               <CardTitle>🎮 Challenge Modes</CardTitle>
-              <CardDescription>Special game modes with unique challenges</CardDescription>
+              <CardDescription>Special game modes with unique modifiers for extra XP rewards</CardDescription>
             </CardHeader>
           </Card>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[
-              {
-                mode: 'pass-the-mic' as GameMode,
-                title: 'Pass the Mic',
-                description: 'Take turns singing parts of a song. When the music stops, the next singer takes over!',
-                icon: '🎤',
-                players: '2-8',
-                color: 'from-cyan-500 to-blue-500',
-              },
-              {
-                mode: 'medley' as GameMode,
-                title: 'Medley Contest',
-                description: 'Sing short snippets of multiple songs in a row. How many can you nail?',
-                icon: '🎵',
-                players: '1-4',
-                color: 'from-purple-500 to-pink-500',
-              },
-              {
-                mode: 'missing-words' as GameMode,
-                title: 'Missing Words',
-                description: 'Some lyrics disappear! Can you sing the right words at the right time?',
-                icon: '📝',
-                players: '1-4',
-                color: 'from-orange-500 to-red-500',
-              },
-              {
-                mode: 'blind' as GameMode,
-                title: 'Blind Karaoke',
-                description: 'Lyrics disappear for certain sections. Can you remember the words?',
-                icon: '🙈',
-                players: '1-4',
-                color: 'from-green-500 to-teal-500',
-              },
-              {
-                mode: 'duet' as GameMode,
-                title: 'Duet Mode',
-                description: 'Two players sing together! Split-screen with separate note tracks for each vocalist.',
-                icon: '🎭',
-                players: '2',
-                color: 'from-cyan-500 to-pink-500',
-              },
-              {
-                mode: 'duel' as GameMode,
-                title: 'Duel Mode',
-                description: 'Two players sing the same song side by side. Who will score higher?',
-                icon: '⚔️',
-                players: '2',
-                color: 'from-yellow-500 to-orange-500',
-              },
-            ].map((game) => (
-              <Card
-                key={game.mode}
-                className={`bg-gradient-to-br ${game.color} border-0 cursor-pointer hover:scale-[1.02] transition-transform`}
-                onClick={() => {
-                  // Navigate to library with this game mode
-                  window.dispatchEvent(new CustomEvent('navigate', { detail: 'library' }));
-                }}
-              >
-                <CardContent className="pt-6">
-                  <div className="text-4xl mb-3">{game.icon}</div>
-                  <h3 className="text-xl font-bold mb-1">{game.title}</h3>
-                  <p className="text-sm text-white/80 mb-3">{game.description}</p>
-                  <Badge variant="outline" className="border-white/30 text-white">
-                    {game.players} players
-                  </Badge>
-                </CardContent>
-              </Card>
-            ))}
+            {CHALLENGE_MODES.map((mode) => {
+              const colorMap: Record<string, string> = {
+                'blind-audition': 'from-green-500 to-teal-500',
+                'no-guide': 'from-cyan-500 to-blue-500',
+                'speed-demon': 'from-yellow-500 to-orange-500',
+                'perfectionist': 'from-purple-500 to-pink-500',
+                'golden-hunter': 'from-amber-500 to-yellow-500',
+                'memory-lane': 'from-orange-500 to-red-500',
+                'pitch-shift': 'from-indigo-500 to-purple-500',
+                'ultimate': 'from-red-600 to-orange-600',
+              };
+              
+              return (
+                <Card
+                  key={mode.id}
+                  className={`bg-gradient-to-br ${colorMap[mode.id] || 'from-slate-500 to-slate-600'} border-0 cursor-pointer hover:scale-[1.02] transition-transform relative`}
+                  onClick={() => {
+                    // Set the challenge mode and navigate to library
+                    localStorage.setItem('karaoke-challenge-mode', mode.id);
+                    const songs = getAllSongs();
+                    if (songs.length > 0) {
+                      const randomSong = songs[Math.floor(Math.random() * songs.length)];
+                      onPlayChallenge(randomSong);
+                    }
+                  }}
+                >
+                  <CardContent className="pt-6">
+                    {mode.difficulty === 'extreme' && (
+                      <div className="absolute top-2 right-2 bg-red-500/90 text-white text-xs font-bold px-2 py-1 rounded-full">
+                        🔥 EXTREME
+                      </div>
+                    )}
+                    <div className="text-4xl mb-3">{mode.icon}</div>
+                    <h3 className="text-xl font-bold mb-1">{mode.name}</h3>
+                    <p className="text-sm text-white/80 mb-3">{mode.description}</p>
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {mode.modifiers.map((mod, i) => (
+                        <Badge key={i} variant="outline" className="border-white/30 text-white text-xs">
+                          {mod.description}
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className="border-white/30 text-white">
+                        {mode.difficulty === 'extreme' ? '🔴' : mode.difficulty === 'hard' ? '🟠' : '🟢'} {mode.difficulty}
+                      </Badge>
+                      <Badge variant="outline" className="border-yellow-500/50 text-yellow-400">
+                        +{mode.xpReward} XP
+                      </Badge>
+                    </div>
+                    {mode.requirements && mode.requirements.length > 0 && (
+                      <div className="mt-3 text-xs text-white/60">
+                        🔓 Requires: {mode.requirements.map(r => 
+                          r.type === 'min_level' ? `Level ${r.value}` : 
+                          r.type === 'min_songs' ? `${r.value} songs` : 
+                          r.type === 'achievement' ? 'Achievement' : 
+                          r.type === 'rank' ? 'Rank' : ''
+                        ).join(', ')}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       )}
