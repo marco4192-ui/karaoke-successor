@@ -13495,10 +13495,321 @@ function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (song: Son
 }
 
 // ===================== EDITOR SCREEN =====================
+// Common genres and languages for quick selection
+const COMMON_GENRES = [
+  'Pop', 'Rock', 'Hip-Hop', 'R&B', 'Country', 'Electronic', 'Dance',
+  'Jazz', 'Blues', 'Soul', 'Funk', 'Reggae', 'Latin', 'Metal',
+  'Punk', 'Indie', 'Folk', 'Classical', 'Soundtrack', 'Musical',
+  'Schlager', 'Deutsch-Pop', 'Volksmusik', 'K-Pop', 'J-Pop'
+];
+
+const COMMON_LANGUAGES = [
+  { code: 'en', name: 'Englisch' },
+  { code: 'de', name: 'Deutsch' },
+  { code: 'es', name: 'Spanisch' },
+  { code: 'fr', name: 'Französisch' },
+  { code: 'it', name: 'Italienisch' },
+  { code: 'pt', name: 'Portugiesisch' },
+  { code: 'ja', name: 'Japanisch' },
+  { code: 'ko', name: 'Koreanisch' },
+  { code: 'zh', name: 'Chinesisch' },
+  { code: 'ru', name: 'Russisch' },
+  { code: 'nl', name: 'Niederländisch' },
+  { code: 'pl', name: 'Polnisch' },
+  { code: 'tr', name: 'Türkisch' },
+  { code: 'ar', name: 'Arabisch' },
+  { code: 'sv', name: 'Schwedisch' },
+  { code: 'la', name: 'Latein' },
+];
+
+// Genre/Language Editor Component
+function GenreLanguageEditor({ 
+  song, 
+  onUpdate 
+}: { 
+  song: Song; 
+  onUpdate: (updates: Partial<Song>) => void;
+}) {
+  const [showGenreDropdown, setShowGenreDropdown] = useState(false);
+  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const [customGenre, setCustomGenre] = useState(song.genre || '');
+  const [customLanguage, setCustomLanguage] = useState(song.language || '');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+
+  const handleGenreSelect = (genre: string) => {
+    setCustomGenre(genre);
+    onUpdate({ genre });
+    setShowGenreDropdown(false);
+  };
+
+  const handleLanguageSelect = (code: string) => {
+    setCustomLanguage(code);
+    onUpdate({ language: code });
+    setShowLanguageDropdown(false);
+  };
+
+  const handleCustomGenreChange = (value: string) => {
+    setCustomGenre(value);
+    onUpdate({ genre: value });
+  };
+
+  const handleCustomLanguageChange = (value: string) => {
+    setCustomLanguage(value);
+    onUpdate({ language: value });
+  };
+
+  const handleSaveToTxt = async () => {
+    setIsSaving(true);
+    setSaveMessage(null);
+    
+    try {
+      // Update the song in the library
+      const updatedSong = { 
+        ...song, 
+        genre: customGenre || undefined,
+        language: customLanguage || undefined 
+      };
+      updateSong(song.id, updatedSong);
+      
+      // Generate new txt content with genre/language
+      const { generateUltraStarTxt } = await import('@/lib/parsers/ultrastar-parser');
+      const txtContent = generateUltraStarTxt(updatedSong);
+      
+      // In browser environment, download the file
+      // In Tauri environment, save to the original file location
+      if (typeof window !== 'undefined' && (window as any).__TAURI__) {
+        try {
+          const { save } = await import('@tauri-apps/plugin-dialog');
+          const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+          
+          const filePath = await save({
+            defaultPath: `${song.title} - ${song.artist}.txt`,
+            filters: [{ name: 'UltraStar TXT', extensions: ['txt'] }],
+          });
+          
+          if (filePath) {
+            await writeTextFile(filePath, txtContent);
+            setSaveMessage('✅ Datei gespeichert!');
+          }
+        } catch (e) {
+          console.error('Tauri save error:', e);
+          // Fallback to download
+          downloadTxtFile(txtContent, song);
+        }
+      } else {
+        // Browser: download the file
+        downloadTxtFile(txtContent, song);
+        setSaveMessage('✅ Datei heruntergeladen!');
+      }
+      
+      setTimeout(() => setSaveMessage(null), 3000);
+    } catch (error) {
+      console.error('Save error:', error);
+      setSaveMessage('❌ Fehler beim Speichern');
+      setTimeout(() => setSaveMessage(null), 3000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const downloadTxtFile = (content: string, song: Song) => {
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${song.title} - ${song.artist}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <Card className="bg-white/5 border-white/10">
+      <CardHeader>
+        <CardTitle className="text-lg flex items-center gap-2">
+          🏷️ Metadaten ergänzen
+        </CardTitle>
+        <CardDescription>
+          Genre und Sprache für diesen Song hinzufügen
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Genre Section */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-white/80">Genre</label>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Button
+                onClick={() => setShowGenreDropdown(!showGenreDropdown)}
+                variant="outline"
+                className="w-full justify-between border-white/20 text-white"
+              >
+                <span className="flex items-center gap-2">
+                  🎸 {customGenre || 'Genre auswählen...'}
+                </span>
+                <svg className={`w-4 h-4 transition-transform ${showGenreDropdown ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </Button>
+              {showGenreDropdown && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-gray-900 border border-white/20 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
+                  <div className="p-2 grid grid-cols-2 gap-1">
+                    {COMMON_GENRES.map(genre => (
+                      <button
+                        key={genre}
+                        onClick={() => handleGenreSelect(genre)}
+                        className={`px-3 py-2 text-sm rounded-lg text-left transition-colors ${
+                          customGenre === genre 
+                            ? 'bg-cyan-500 text-white' 
+                            : 'hover:bg-white/10 text-white/80'
+                        }`}
+                      >
+                        {genre}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          <Input
+            placeholder="Oder eigenes Genre eingeben..."
+            value={customGenre}
+            onChange={(e) => handleCustomGenreChange(e.target.value)}
+            className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+          />
+        </div>
+
+        {/* Language Section */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-white/80">Sprache</label>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Button
+                onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+                variant="outline"
+                className="w-full justify-between border-white/20 text-white"
+              >
+                <span className="flex items-center gap-2">
+                  🌐 {COMMON_LANGUAGES.find(l => l.code === customLanguage)?.name || customLanguage || 'Sprache auswählen...'}
+                </span>
+                <svg className={`w-4 h-4 transition-transform ${showLanguageDropdown ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </Button>
+              {showLanguageDropdown && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-gray-900 border border-white/20 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
+                  <div className="p-2">
+                    {COMMON_LANGUAGES.map(lang => (
+                      <button
+                        key={lang.code}
+                        onClick={() => handleLanguageSelect(lang.code)}
+                        className={`w-full px-3 py-2 text-sm rounded-lg text-left transition-colors ${
+                          customLanguage === lang.code 
+                            ? 'bg-purple-500 text-white' 
+                            : 'hover:bg-white/10 text-white/80'
+                        }`}
+                      >
+                        {lang.name} ({lang.code})
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          <Input
+            placeholder="Oder eigenen Sprachcode eingeben (z.B. 'en', 'de')..."
+            value={customLanguage}
+            onChange={(e) => handleCustomLanguageChange(e.target.value)}
+            className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+          />
+        </div>
+
+        {/* Current Status */}
+        <div className="flex gap-4 text-sm">
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${song.genre ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+            {song.genre ? '✅' : '❌'} Genre: {song.genre || 'nicht gesetzt'}
+          </div>
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${song.language ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+            {song.language ? '✅' : '❌'} Sprache: {song.language || 'nicht gesetzt'}
+          </div>
+        </div>
+
+        {/* Save Button */}
+        <div className="pt-2">
+          <Button
+            onClick={handleSaveToTxt}
+            disabled={isSaving || (!customGenre && !customLanguage)}
+            className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 disabled:opacity-50"
+          >
+            {isSaving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                Speichere...
+              </>
+            ) : (
+              <>
+                💾 Änderungen in TXT-Datei speichern
+              </>
+            )}
+          </Button>
+          {saveMessage && (
+            <p className={`text-center mt-2 text-sm ${saveMessage.startsWith('✅') ? 'text-green-400' : 'text-red-400'}`}>
+              {saveMessage}
+            </p>
+          )}
+          <p className="text-xs text-white/40 text-center mt-2">
+            Fügt #GENRE: und #LANGUAGE: Tags in die TXT-Datei ein
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function EditorScreen({ onBack }: { onBack: () => void }) {
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [songs] = useState<Song[]>(() => getAllSongs());
   const { setSong } = useGameStore();
+  const [filterMode, setFilterMode] = useState<'all' | 'no-genre' | 'no-language' | 'incomplete'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter songs based on filter mode and search
+  const filteredSongs = useMemo(() => {
+    let filtered = songs;
+    
+    // Apply filter mode
+    switch (filterMode) {
+      case 'no-genre':
+        filtered = filtered.filter(s => !s.genre);
+        break;
+      case 'no-language':
+        filtered = filtered.filter(s => !s.language);
+        break;
+      case 'incomplete':
+        filtered = filtered.filter(s => !s.genre || !s.language);
+        break;
+    }
+    
+    // Apply search
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(s => 
+        s.title.toLowerCase().includes(query) ||
+        s.artist.toLowerCase().includes(query)
+      );
+    }
+    
+    return filtered;
+  }, [songs, filterMode, searchQuery]);
+
+  // Count songs without genre/language
+  const songsWithoutGenre = songs.filter(s => !s.genre).length;
+  const songsWithoutLanguage = songs.filter(s => !s.language).length;
+  const incompleteSongs = songs.filter(s => !s.genre || !s.language).length;
 
   const handleSelectSong = (song: Song) => {
     setSelectedSong(song);
@@ -13507,6 +13818,12 @@ function EditorScreen({ onBack }: { onBack: () => void }) {
   const handleSave = (updatedSong: Song) => {
     updateSong(updatedSong.id, updatedSong);
     setSelectedSong(null);
+  };
+
+  const handleSongMetadataUpdate = (updates: Partial<Song>) => {
+    if (selectedSong) {
+      setSelectedSong({ ...selectedSong, ...updates } as Song);
+    }
   };
 
   return (
@@ -13523,13 +13840,67 @@ function EditorScreen({ onBack }: { onBack: () => void }) {
             </Button>
           </div>
 
+          {/* Filter Section */}
+          <Card className="bg-white/5 border-white/10">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                🔍 Songs filtern
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Search */}
+              <Input
+                placeholder="Songs suchen..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+              />
+              
+              {/* Filter Buttons */}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  onClick={() => setFilterMode('all')}
+                  variant={filterMode === 'all' ? 'default' : 'outline'}
+                  className={filterMode === 'all' ? 'bg-cyan-500' : 'border-white/20 text-white'}
+                  size="sm"
+                >
+                  Alle ({songs.length})
+                </Button>
+                <Button
+                  onClick={() => setFilterMode('no-genre')}
+                  variant={filterMode === 'no-genre' ? 'default' : 'outline'}
+                  className={filterMode === 'no-genre' ? 'bg-orange-500' : 'border-white/20 text-white'}
+                  size="sm"
+                >
+                  🎸 Kein Genre ({songsWithoutGenre})
+                </Button>
+                <Button
+                  onClick={() => setFilterMode('no-language')}
+                  variant={filterMode === 'no-language' ? 'default' : 'outline'}
+                  className={filterMode === 'no-language' ? 'bg-purple-500' : 'border-white/20 text-white'}
+                  size="sm"
+                >
+                  🌐 Keine Sprache ({songsWithoutLanguage})
+                </Button>
+                <Button
+                  onClick={() => setFilterMode('incomplete')}
+                  variant={filterMode === 'incomplete' ? 'default' : 'outline'}
+                  className={filterMode === 'incomplete' ? 'bg-red-500' : 'border-white/20 text-white'}
+                  size="sm"
+                >
+                  ⚠️ Unvollständig ({incompleteSongs})
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="bg-white/5 border-white/10">
             <CardHeader>
-              <CardTitle>Song auswählen</CardTitle>
+              <CardTitle>Song auswählen ({filteredSongs.length} Songs)</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {songs.map(song => (
+                {filteredSongs.map(song => (
                   <button
                     key={song.id}
                     onClick={() => handleSelectSong(song)}
@@ -13548,19 +13919,25 @@ function EditorScreen({ onBack }: { onBack: () => void }) {
                         <p className="text-sm text-white/60 truncate">{song.artist}</p>
                       </div>
                     </div>
-                    <div className="flex gap-2 mt-3">
+                    <div className="flex flex-wrap gap-2 mt-3">
                       <Badge variant="outline" className="text-xs">{song.bpm} BPM</Badge>
                       <Badge variant="outline" className="text-xs">{song.lyrics.reduce((a, l) => a + l.notes.length, 0)} Notes</Badge>
+                      {!song.genre && (
+                        <Badge variant="outline" className="text-xs border-orange-500/50 text-orange-400">Kein Genre</Badge>
+                      )}
+                      {!song.language && (
+                        <Badge variant="outline" className="text-xs border-purple-500/50 text-purple-400">Keine Sprache</Badge>
+                      )}
                     </div>
                   </button>
                 ))}
               </div>
 
-              {songs.length === 0 && (
+              {filteredSongs.length === 0 && (
                 <div className="text-center py-12 text-white/40">
                   <div className="text-4xl mb-2">📝</div>
-                  <p>Keine Songs vorhanden</p>
-                  <p className="text-sm">Importiere Songs über die Bibliothek</p>
+                  <p>Keine Songs gefunden</p>
+                  <p className="text-sm">Versuche andere Filterkriterien</p>
                 </div>
               )}
             </CardContent>
@@ -13577,8 +13954,15 @@ function EditorScreen({ onBack }: { onBack: () => void }) {
             />
           </div>
 
-          {/* AI Assistant Panel - Compact sidebar */}
-          <div className="w-72 flex-shrink-0 overflow-y-auto border-l border-white/10">
+          {/* Right Sidebar - AI Assistant + Genre/Language Editor */}
+          <div className="w-80 flex-shrink-0 overflow-y-auto border-l border-white/10 p-4 space-y-4">
+            {/* Genre/Language Editor */}
+            <GenreLanguageEditor 
+              song={selectedSong}
+              onUpdate={handleSongMetadataUpdate}
+            />
+            
+            {/* AI Assistant Panel */}
             <AIAssistantPanel
               song={selectedSong}
               onSongUpdate={(updates) => setSelectedSong({ ...selectedSong, ...updates } as Song)}
