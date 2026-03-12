@@ -67,7 +67,7 @@ jobs:
           targets: x86_64-pc-windows-msvc
 
       - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v3
+        uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
           key: ${{ runner.os }}-rust-${{ hashFiles('**/Cargo.lock') }}
@@ -221,7 +221,7 @@ jobs:
           targets: aarch64-apple-darwin, x86_64-apple-darwin
 
       - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v3
+        uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
           key: ${{ runner.os }}-rust-${{ hashFiles('**/Cargo.lock') }}
@@ -343,7 +343,7 @@ jobs:
           targets: x86_64-unknown-linux-gnu
 
       - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v3
+        uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
           key: ${{ runner.os }}-rust-${{ hashFiles('**/Cargo.lock') }}
