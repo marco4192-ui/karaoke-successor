@@ -71,11 +71,13 @@ let gameState: {
   isPlaying: boolean;
   currentTime: number;
   songEnded: boolean;
+  isAdPlaying: boolean;
 } = {
   currentSong: null,
   isPlaying: false,
   currentTime: 0,
   songEnded: false,
+  isAdPlaying: false,
 };
 
 // Queue for song requests from mobile clients
@@ -718,6 +720,38 @@ export async function POST(request: NextRequest) {
           success: true, 
           message: 'Command queued',
           command: newCommand,
+        });
+
+      case 'setAdPlaying':
+        // Set ad playing state (from main app)
+        const adPayload = payload as { isAdPlaying: boolean };
+        gameState.isAdPlaying = adPayload.isAdPlaying;
+        console.log('[Mobile API] Ad state updated:', adPayload.isAdPlaying);
+        return Response.json({ success: true, isAdPlaying: gameState.isAdPlaying });
+
+      case 'skipAd':
+        // Request to skip ad (from mobile client)
+        // This will be picked up by the main app polling for commands
+        if (!clientId || !mobileClients.has(clientId)) {
+          return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
+        }
+        
+        const skipAdClient = mobileClients.get(clientId)!;
+        
+        // Add skip command to pending queue
+        const skipCommand: RemoteCommand = {
+          type: 'skip',
+          timestamp: Date.now(),
+          fromClientId: clientId,
+          fromClientName: skipAdClient.profile?.name || skipAdClient.name,
+        };
+        
+        remoteControlState.pendingCommands.push(skipCommand);
+        console.log('[Mobile API] Skip ad command queued from:', skipAdClient.profile?.name || skipAdClient.name);
+        
+        return Response.json({ 
+          success: true, 
+          message: 'Skip ad command sent',
         });
 
       case 'heartbeat':

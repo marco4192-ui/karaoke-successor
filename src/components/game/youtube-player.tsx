@@ -29,6 +29,7 @@ interface YouTubePlayerProps {
   onAdEnd?: () => void;
   isPlaying?: boolean;
   startTime?: number; // Start position in milliseconds
+  interactive?: boolean; // Allow user interaction with the player
 }
 
 declare global {
@@ -97,7 +98,8 @@ export function YouTubePlayer({
   onAdStart,
   onAdEnd,
   isPlaying = true,
-  startTime = 0
+  startTime = 0,
+  interactive = false
 }: YouTubePlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YTPlayer | null>(null);
@@ -349,7 +351,7 @@ export function YouTubePlayer({
       <div 
         id={playerIdRef.current} 
         className="absolute inset-0 w-full h-full"
-        style={{ pointerEvents: 'none' }}
+        style={{ pointerEvents: interactive ? 'auto' : 'none' }}
       />
     </div>
   );

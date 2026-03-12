@@ -3336,8 +3336,23 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
                 setIsPlaying(true);
                 break;
                 
-              case 'next':
               case 'skip':
+                // If ad is playing, try to skip the ad
+                if (isAdPlaying) {
+                  console.log('[GameScreen] Skip ad command received from mobile');
+                  // Make the video player clickable so user can tap the skip button
+                  // The YouTube iframe doesn't support programmatic skip, so we show a message
+                  // The ad indicator already shows, and the video is visible
+                  // Just show a toast to guide the user
+                  alert('Werbung überspringen: Klicke auf das Video, um den "Skip Ad" Button zu drücken!');
+                } else {
+                  // End current song and go to results
+                  stop();
+                  onEnd();
+                }
+                break;
+                
+              case 'next':
                 // End current song and go to results
                 stop();
                 onEnd();
@@ -3451,6 +3466,16 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     if (isPlaying) {
       setIsPlaying(false);
     }
+    
+    // Sync ad state to mobile clients
+    fetch('/api/mobile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'setAdPlaying',
+        payload: { isAdPlaying: true },
+      }),
+    }).catch(() => {});
   }, [isPlaying]);
   
   const handleAdEnd = useCallback(() => {
@@ -3460,6 +3485,16 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     
     // Resume the game
     setIsPlaying(true);
+    
+    // Sync ad state to mobile clients
+    fetch('/api/mobile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'setAdPlaying',
+        payload: { isAdPlaying: false },
+      }),
+    }).catch(() => {});
   }, []);
   
   // Ad countdown effect
@@ -4689,6 +4724,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             onAdEnd={handleAdEnd}
             isPlaying={isPlaying}
             startTime={0}
+            interactive={isAdPlaying}
           />
         ) : /* Hidden YouTube for audio only (video disabled but using YouTube audio) */
         !showBackgroundVideo && isYouTube && youtubeVideoId && useYouTubeAudio ? (
@@ -7170,7 +7206,8 @@ function MobileClientView() {
     isPlaying: boolean;
     songEnded: boolean;
     queueLength: number;
-  }>({ currentSong: null, isPlaying: false, songEnded: false, queueLength: 0 });
+    isAdPlaying: boolean;
+  }>({ currentSong: null, isPlaying: false, songEnded: false, queueLength: 0, isAdPlaying: false });
   const [currentView, setCurrentView] = useState<MobileView>('home');
   
   // Profile state
@@ -7245,6 +7282,7 @@ function MobileClientView() {
               isPlaying: reconnectData.gameState.isPlaying,
               songEnded: reconnectData.gameState.songEnded || false,
               queueLength: reconnectData.gameState.queueLength || 0,
+              isAdPlaying: reconnectData.gameState.isAdPlaying || false,
             });
           }
           return; // Successfully reconnected
@@ -7270,6 +7308,7 @@ function MobileClientView() {
             isPlaying: data.gameState.isPlaying,
             songEnded: data.gameState.songEnded || false,
             queueLength: data.gameState.queueLength || 0,
+            isAdPlaying: data.gameState.isAdPlaying || false,
           });
         }
         
@@ -7735,6 +7774,7 @@ function MobileClientView() {
             isPlaying: data.gameState.isPlaying,
             songEnded: newSongEnded,
             queueLength: data.gameState.queueLength || 0,
+            isAdPlaying: data.gameState.isAdPlaying || false,
           });
           
           // Stop microphone when song ends
@@ -7995,6 +8035,42 @@ function MobileClientView() {
           {/* Microphone View */}
           {currentView === 'mic' && (
             <div className="p-4">
+              {/* Ad Playing Banner */}
+              {gameState.isAdPlaying && (
+                <Card className="bg-gradient-to-r from-orange-500/30 to-red-500/30 border-orange-500/50 mb-4">
+                  <CardContent className="py-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-3 h-3 bg-orange-500 rounded-full animate-pulse" />
+                        <div>
+                          <p className="font-bold text-orange-300">Werbung läuft</p>
+                          <p className="text-sm text-white/70">Spiel pausiert</p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={async () => {
+                          try {
+                            await fetch('/api/mobile', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                type: 'skipAd',
+                                clientId: clientId,
+                              }),
+                            });
+                          } catch (error) {
+                            console.error('Skip ad failed:', error);
+                          }
+                        }}
+                        className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white font-bold px-6 py-3"
+                      >
+                        ⏭️ Werbung überspringen
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
               <Card className="bg-white/10 border-white/20">
                 <CardContent className="py-8">
                   <div className="flex flex-col items-center">
