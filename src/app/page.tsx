@@ -2515,58 +2515,6 @@ function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong: (song:
                 <p>BPM: {selectedSong.bpm} | Duration: {Math.floor(selectedSong.duration / 60000)}:{String(Math.floor((selectedSong.duration % 60000) / 1000)).padStart(2, '0')}</p>
                 {selectedSong.genre && <p>Genre: {selectedSong.genre}</p>}
               </div>
-              
-              {/* Custom YouTube Background Video */}
-              <div className="mt-4 p-3 bg-white/5 rounded-lg border border-white/10">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-white/80 flex items-center gap-2">
-                    <svg className="w-4 h-4 text-red-500" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
-                    </svg>
-                    Background Video (Optional)
-                  </label>
-                  {customYoutubeId && (
-                    <button
-                      onClick={() => setCustomYoutubeId(null)}
-                      className="text-xs text-red-400 hover:text-red-300"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Paste YouTube URL..."
-                    value={customYoutubeUrl}
-                    onChange={(e) => setCustomYoutubeUrl(e.target.value)}
-                    className="flex-1 bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-cyan-500/50"
-                  />
-                  <button
-                    onClick={() => {
-                      const id = extractYouTubeId(customYoutubeUrl);
-                      if (id) {
-                        setCustomYoutubeId(id);
-                      }
-                    }}
-                    disabled={!extractYouTubeId(customYoutubeUrl)}
-                    className="px-3 py-2 bg-red-600 hover:bg-red-500 disabled:bg-white/10 disabled:text-white/40 text-white text-sm rounded transition-colors"
-                  >
-                    Set
-                  </button>
-                </div>
-                {customYoutubeId && (
-                  <p className="text-xs text-green-400 mt-2 flex items-center gap-1">
-                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    Video set! Will play as background during singing.
-                  </p>
-                )}
-                <p className="text-xs text-white/40 mt-2">
-                  Add a YouTube music video to play in the background while you sing.
-                </p>
-              </div>
 
               {/* Local Highscore Preview */}
               {(() => {
@@ -5499,63 +5447,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
 function PartyScreen({ onSelectMode }: { onSelectMode: (mode: GameMode) => void }) {
   const partyGames = [
     {
-      mode: 'pass-the-mic' as GameMode,
-      title: 'Pass the Mic',
-      description: 'Take turns singing parts of a song. When the music stops, the next singer takes over!',
-      icon: '🎤',
-      players: '2-8',
-      color: 'from-cyan-500 to-blue-500',
-    },
-    {
-      mode: 'companion-singalong' as GameMode,
-      title: 'Companion Sing-A-Long',
-      description: 'Your phone randomly lights up - that\'s your cue to sing! No one knows who\'s next until the blink!',
-      icon: '📱',
-      players: '2-8',
-      color: 'from-emerald-500 to-teal-500',
-    },
-    {
-      mode: 'medley' as GameMode,
-      title: 'Medley Contest',
-      description: 'Sing short snippets of multiple songs in a row. How many can you nail?',
-      icon: '🎵',
-      players: '1-4',
-      color: 'from-purple-500 to-pink-500',
-    },
-    {
-      mode: 'missing-words' as GameMode,
-      title: 'Missing Words',
-      description: 'Some lyrics disappear! Can you sing the right words at the right time?',
-      icon: '📝',
-      players: '1-4',
-      color: 'from-orange-500 to-red-500',
-    },
-    {
-      mode: 'duet' as GameMode,
-      title: 'Duet Mode',
-      description: 'Two players sing together! Split-screen with separate note tracks for each vocalist.',
-      icon: '🎭',
-      players: '2',
-      color: 'from-cyan-500 to-pink-500',
-      isNew: true,
-    },
-    {
-      mode: 'duel' as GameMode,
-      title: 'Duel Mode',
-      description: 'Two players sing the same song side by side. Who will score higher?',
-      icon: '⚔️',
-      players: '2',
-      color: 'from-yellow-500 to-orange-500',
-    },
-    {
-      mode: 'blind' as GameMode,
-      title: 'Blind Karaoke',
-      description: 'Lyrics disappear for certain sections. Can you remember the words?',
-      icon: '🙈',
-      players: '1-4',
-      color: 'from-green-500 to-teal-500',
-    },
-    {
       mode: 'tournament' as GameMode,
       title: 'Tournament Mode',
       description: 'Single elimination bracket! 4-32 players compete in Sudden-Death matches. Who will be champion?',
@@ -5615,46 +5506,6 @@ function PartyScreen({ onSelectMode }: { onSelectMode: (mode: GameMode) => void 
             </CardContent>
           </Card>
         ))}
-      </div>
-      
-      {/* Challenge Modes Section */}
-      <div className="mt-12 mb-8">
-        <h2 className="text-2xl font-bold mb-2">🎯 Challenge Modes</h2>
-        <p className="text-white/60 mb-6">Special modifiers for extra XP rewards!</p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {CHALLENGE_MODES.map((challenge) => (
-            <Card 
-              key={challenge.id}
-              className={`bg-white/5 border-white/10 cursor-pointer hover:bg-white/10 transition-all relative ${
-                challenge.difficulty === 'extreme' ? 'border-red-500/30' :
-                challenge.difficulty === 'hard' ? 'border-orange-500/30' :
-                challenge.difficulty === 'medium' ? 'border-yellow-500/30' : 'border-green-500/30'
-              }`}
-              onClick={() => {
-                // Store challenge mode and go to library
-                localStorage.setItem('karaoke-challenge-mode', challenge.id);
-                onSelectMode('single');
-              }}
-            >
-              <CardContent className="pt-4 pb-4">
-                <div className="text-3xl mb-2">{challenge.icon}</div>
-                <h4 className="font-bold text-white mb-1">{challenge.name}</h4>
-                <p className="text-xs text-white/60 mb-3 line-clamp-2">{challenge.description}</p>
-                <div className="flex items-center justify-between">
-                  <Badge variant="outline" className={`text-xs ${
-                    challenge.difficulty === 'extreme' ? 'border-red-500 text-red-400' :
-                    challenge.difficulty === 'hard' ? 'border-orange-500 text-orange-400' :
-                    challenge.difficulty === 'medium' ? 'border-yellow-500 text-yellow-400' : 'border-green-500 text-green-400'
-                  }`}>
-                    {challenge.difficulty.toUpperCase()}
-                  </Badge>
-                  <span className="text-cyan-400 font-bold text-sm">+{challenge.xpReward} XP</span>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
       </div>
     </div>
   );
@@ -10937,61 +10788,6 @@ function SettingsScreen() {
       {/* Library Tab */}
       {activeTab === 'library' && (
         <div className="space-y-6">
-          {/* Songs Folder */}
-          <Card className="bg-white/5 border-white/10">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FolderIcon className="w-5 h-5 text-cyan-400" />
-                {tx('settings.songsFolder')}
-              </CardTitle>
-              <CardDescription>
-                {tx('settings.songsFolderDesc')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-2">
-                <Input
-                  id="songs-folder"
-                  name="songs-folder"
-                  placeholder="/path/to/your/songs"
-                  value={songsFolder}
-                  onChange={(e) => setSongsFolder(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white flex-1"
-                />
-                <Button 
-                  onClick={handleBrowseFolder}
-                  variant="outline"
-                  className="border-white/20 text-white hover:bg-white/10"
-                >
-                  <FolderIcon className="w-4 h-4 mr-2" /> {tx('settings.browse')}
-                </Button>
-                <Button 
-                  onClick={handleSaveFolder}
-                  className="bg-cyan-500 hover:bg-cyan-400"
-                >
-                  {tx('settings.save')}
-                </Button>
-              </div>
-              <p className="text-xs text-white/40 mt-2">
-                This folder path is used for relative song file references. Click "Save" to apply and reload the library.
-              </p>
-              {/* Folder Save Success Message */}
-              {folderSaveComplete && (
-                <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-3 flex items-center gap-2 mt-3">
-                  <svg className="w-5 h-5 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M20 6L9 17l-5-5" />
-                  </svg>
-                  <span className="text-green-400 text-sm">Folder saved! Library reloaded with {songCount} songs.</span>
-                </div>
-              )}
-              {!isTauriDetected && (
-                <p className="text-xs text-yellow-400/80 mt-2">
-                  ⚠️ Folder picker requires the desktop app. In browser, use the Import tab to add songs.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-          
           {/* Library Stats */}
           <Card className="bg-white/5 border-white/10">
             <CardHeader>
@@ -11200,217 +10996,6 @@ function SettingsScreen() {
             </CardContent>
           </Card>
 
-          {/* Theme Settings */}
-          <Card className="bg-white/5 border-white/10">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <PaletteIcon className="w-5 h-5 text-purple-400" />
-                {tx('settings.themeSettings')}
-              </CardTitle>
-              <CardDescription>{tx('settings.themeSettingsDesc')}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Theme Presets from themes.ts */}
-              <div>
-                <label className="text-sm text-white/60 mb-3 block">{tx('settings.colorTheme')}</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {THEMES.map((theme) => (
-                    <button
-                      key={theme.id}
-                      type="button"
-                      onClick={() => handleThemeChange(theme)}
-                      className={`p-3 rounded-xl border-2 transition-all hover:scale-105 cursor-pointer ${
-                        currentThemeId === theme.id
-                          ? 'border-cyan-500 bg-cyan-500/10 ring-2 ring-cyan-500/50' 
-                          : 'border-white/10 bg-white/5 hover:border-white/30'
-                      }`}
-                    >
-                      <div 
-                        className="w-full h-8 rounded-lg mb-2"
-                        style={{ background: `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.secondary})` }}
-                      />
-                      <span className="text-sm font-medium text-white">{theme.name}</span>
-                      <p className="text-xs text-white/40 truncate">{theme.description}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Lyrics Style */}
-              <div>
-                <label className="text-sm text-white/60 mb-2 block">{tx('settings.lyricsStyle')}</label>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                  {[
-                    { id: 'classic', name: 'Classic' },
-                    { id: 'concert', name: 'Concert' },
-                    { id: 'retro', name: 'Retro' },
-                    { id: 'neon', name: 'Neon' },
-                    { id: 'minimal', name: 'Minimal' },
-                  ].map((style) => (
-                    <button
-                      key={style.id}
-                      type="button"
-                      onClick={() => {
-                        setLyricsStyle(style.id);
-                        setHasChanges(true);
-                      }}
-                      className={`px-3 py-2 rounded-lg border-2 transition-all text-sm cursor-pointer ${
-                        lyricsStyle === style.id
-                          ? 'border-purple-500 bg-purple-500/20 text-purple-300'
-                          : 'border-white/10 bg-white/5 hover:border-white/30 text-white'
-                      }`}
-                    >
-                      {style.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Note Display Style */}
-              <div>
-                <label className="text-sm text-white/60 mb-2 block">Noten-Darstellung</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {[
-                    { id: 'classic', name: 'Klassisch', icon: '➡️', desc: 'UltraStar-Stil' },
-                    { id: 'fill-level', name: 'Füllstand', icon: '📊', desc: 'Lücken bei Fehlern' },
-                    { id: 'color-feedback', name: 'Farb-Feedback', icon: '🎨', desc: 'Farbe nach Treffgenauigkeit' },
-                    { id: 'glow-intensity', name: 'Glow-Intensität', icon: '✨', desc: 'Helligkeit zeigt Qualität' },
-                  ].map((style) => (
-                    <button
-                      key={style.id}
-                      type="button"
-                      onClick={() => {
-                        setNoteDisplayStyle(style.id);
-                        localStorage.setItem('karaoke-note-style', style.id);
-                        window.dispatchEvent(new CustomEvent('settingsChange', { detail: { noteDisplayStyle: style.id } }));
-                        setHasChanges(true);
-                      }}
-                      className={`p-3 rounded-lg border-2 transition-all text-sm cursor-pointer flex flex-col items-center gap-1 ${
-                        noteDisplayStyle === style.id
-                          ? 'border-cyan-500 bg-cyan-500/20 text-cyan-300'
-                          : 'border-white/10 bg-white/5 hover:border-white/30 text-white'
-                      }`}
-                    >
-                      <span className="text-lg">{style.icon}</span>
-                      <span className="font-medium">{style.name}</span>
-                      <span className="text-xs text-white/50">{style.desc}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Background Video Toggle */}
-              <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                <div>
-                  <h4 className="font-medium">{tx('settings.backgroundVideo')}</h4>
-                  <p className="text-sm text-white/60">{tx('settings.backgroundVideoDesc')}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBgVideo(!bgVideo);
-                    localStorage.setItem('karaoke-bg-video', String(!bgVideo));
-                    window.dispatchEvent(new CustomEvent('settingsChange'));
-                    setHasChanges(true);
-                  }}
-                  className={`relative w-14 h-7 rounded-full transition-colors cursor-pointer ${
-                    bgVideo 
-                      ? 'bg-cyan-500' 
-                      : 'bg-white/20'
-                  }`}
-                >
-                  <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${
-                    bgVideo 
-                      ? 'left-8' 
-                      : 'left-1'
-                  }`} />
-                </button>
-              </div>
-              
-              {/* Animated Background Toggle (for low-performance systems) */}
-              <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                <div>
-                  <h4 className="font-medium">Animated Background</h4>
-                  <p className="text-sm text-white/60">Use animated backgrounds instead of videos. Recommended for low-performance systems. Also shows music-reactive effects when no video/background image is available.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newValue = !useAnimatedBg;
-                    setUseAnimatedBg(newValue);
-                    localStorage.setItem('karaoke-animated-bg', String(newValue));
-                    window.dispatchEvent(new CustomEvent('settingsChange', { detail: { useAnimatedBackground: newValue } }));
-                    setHasChanges(true);
-                  }}
-                  className={`relative w-14 h-7 rounded-full transition-colors cursor-pointer ${
-                    useAnimatedBg 
-                      ? 'bg-purple-500' 
-                      : 'bg-white/20'
-                  }`}
-                >
-                  <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${
-                    useAnimatedBg 
-                      ? 'left-8' 
-                      : 'left-1'
-                  }`} />
-                </button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/5 border-white/10">
-            <CardHeader>
-              <CardTitle>{tx('settings.audioSettings')}</CardTitle>
-              <CardDescription>{tx('settings.audioSettingsDesc')}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Preview Volume */}
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <label className="text-sm font-medium">{tx('settings.previewVolume')}</label>
-                  <span className="text-sm text-cyan-400">{previewVolume}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={previewVolume}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value);
-                    setPreviewVolume(val);
-                    setHasChanges(true);
-                  }}
-                  className="w-full accent-cyan-500 h-2 rounded-lg appearance-none bg-white/10 cursor-pointer"
-                />
-                <p className="text-xs text-white/40">{tx('settings.previewVolumeDesc')}</p>
-              </div>
-              
-              {/* Microphone Sensitivity */}
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <label className="text-sm font-medium">{tx('settings.micSensitivity')}</label>
-                  <span className="text-sm text-cyan-400">{micSensitivity}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={micSensitivity}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value);
-                    setMicSensitivity(val);
-                    setHasChanges(true);
-                  }}
-                  className="w-full accent-cyan-500 h-2 rounded-lg appearance-none bg-white/10 cursor-pointer"
-                />
-                <p className="text-xs text-white/40">{tx('settings.micSensitivityDesc')}</p>
-              </div>
-              
-              {/* Microphone Selection */}
-              <MicrophoneSettingsSection />
-            </CardContent>
-          </Card>
-          
           <Card className="bg-white/5 border-white/10">
             <CardHeader>
               <CardTitle>{tx('settings.gameSettings')}</CardTitle>
@@ -11511,6 +11096,108 @@ function SettingsScreen() {
       {/* Graphic / Sound Tab */}
       {activeTab === 'graphicsound' && (
         <div className="space-y-6">
+          {/* Theme Settings */}
+          <Card className="bg-white/5 border-white/10">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <PaletteIcon className="w-5 h-5 text-purple-400" />
+                {tx('settings.themeSettings')}
+              </CardTitle>
+              <CardDescription>{tx('settings.themeSettingsDesc')}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Theme Presets from themes.ts */}
+              <div>
+                <label className="text-sm text-white/60 mb-3 block">{tx('settings.colorTheme')}</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {THEMES.map((theme) => (
+                    <button
+                      key={theme.id}
+                      type="button"
+                      onClick={() => handleThemeChange(theme)}
+                      className={`p-3 rounded-xl border-2 transition-all hover:scale-105 cursor-pointer ${
+                        currentThemeId === theme.id
+                          ? 'border-cyan-500 bg-cyan-500/10 ring-2 ring-cyan-500/50'
+                          : 'border-white/10 bg-white/5 hover:border-white/30'
+                      }`}
+                    >
+                      <div
+                        className="w-full h-8 rounded-lg mb-2"
+                        style={{ background: `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.secondary})` }}
+                      />
+                      <span className="text-sm font-medium text-white">{theme.name}</span>
+                      <p className="text-xs text-white/40 truncate">{theme.description}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Lyrics Style */}
+              <div>
+                <label className="text-sm text-white/60 mb-2 block">{tx('settings.lyricsStyle')}</label>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  {[
+                    { id: 'classic', name: 'Classic' },
+                    { id: 'concert', name: 'Concert' },
+                    { id: 'retro', name: 'Retro' },
+                    { id: 'neon', name: 'Neon' },
+                    { id: 'minimal', name: 'Minimal' },
+                  ].map((style) => (
+                    <button
+                      key={style.id}
+                      type="button"
+                      onClick={() => {
+                        setLyricsStyle(style.id);
+                        localStorage.setItem('karaoke-lyrics-style', style.id);
+                        setHasChanges(true);
+                      }}
+                      className={`px-3 py-2 rounded-lg border-2 transition-all text-sm cursor-pointer ${
+                        lyricsStyle === style.id
+                          ? 'border-purple-500 bg-purple-500/20 text-purple-300'
+                          : 'border-white/10 bg-white/5 hover:border-white/30 text-white'
+                      }`}
+                    >
+                      {style.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Note Display Style */}
+              <div>
+                <label className="text-sm text-white/60 mb-2 block">Noten-Darstellung</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { id: 'classic', name: 'Klassisch', icon: '➡️', desc: 'UltraStar-Stil' },
+                    { id: 'fill-level', name: 'Füllstand', icon: '📊', desc: 'Lücken bei Fehlern' },
+                    { id: 'color-feedback', name: 'Farb-Feedback', icon: '🎨', desc: 'Farbe nach Treffgenauigkeit' },
+                    { id: 'glow-intensity', name: 'Glow-Intensität', icon: '✨', desc: 'Helligkeit zeigt Qualität' },
+                  ].map((style) => (
+                    <button
+                      key={style.id}
+                      type="button"
+                      onClick={() => {
+                        setNoteDisplayStyle(style.id);
+                        localStorage.setItem('karaoke-note-style', style.id);
+                        window.dispatchEvent(new CustomEvent('settingsChange', { detail: { noteDisplayStyle: style.id } }));
+                        setHasChanges(true);
+                      }}
+                      className={`p-3 rounded-lg border-2 transition-all text-sm cursor-pointer flex flex-col items-center gap-1 ${
+                        noteDisplayStyle === style.id
+                          ? 'border-cyan-500 bg-cyan-500/20 text-cyan-300'
+                          : 'border-white/10 bg-white/5 hover:border-white/30 text-white'
+                      }`}
+                    >
+                      <span className="text-lg">{style.icon}</span>
+                      <span className="font-medium">{style.name}</span>
+                      <span className="text-xs text-white/50">{style.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Video Settings */}
           <Card className="bg-white/5 border-white/10">
             <CardHeader>
@@ -11542,7 +11229,7 @@ function SettingsScreen() {
                   <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${bgVideo ? 'left-8' : 'left-1'}`} />
                 </button>
               </div>
-              
+
               {/* Animated Background Toggle */}
               <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
                 <div>
@@ -11567,7 +11254,7 @@ function SettingsScreen() {
               </div>
             </CardContent>
           </Card>
-          
+
           {/* Audio Settings */}
           <Card className="bg-white/5 border-white/10">
             <CardHeader>
@@ -11659,8 +11346,8 @@ function SettingsScreen() {
       {activeTab === 'microphone' && (
         <div className="space-y-6">
           <MicrophoneSettingsSection />
-          
-          {/* Mobile Connection Info */}
+
+          {/* Mobile Device as Microphone - Direct Display */}
           <Card className="bg-white/5 border-white/10">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -11670,68 +11357,18 @@ function SettingsScreen() {
               <CardDescription>Use your smartphone as a wireless microphone</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <p className="text-sm text-white/70">
-                  Connect your mobile device to use it as a wireless microphone. This allows you to sing without being tethered to the computer.
-                </p>
-                <div className="flex gap-3">
-                  <Button 
-                    onClick={() => window.location.href = window.location.pathname + '?screen=mobile'}
-                    className="bg-gradient-to-r from-cyan-500 to-purple-500"
-                  >
-                    <PhoneIcon className="w-4 h-4 mr-2" /> Open Mobile Setup
-                  </Button>
-                </div>
-                <p className="text-xs text-white/40 mt-2">
-                  💡 Tip: Scan the QR code from the Mobile screen in the main menu to connect your device.
-                </p>
+              <div className="w-full">
+                <MobileScreen />
               </div>
             </CardContent>
           </Card>
         </div>
       )}
       
-      {/* Editor Tab */}
+      {/* Editor Tab - Direct Editor Display */}
       {activeTab === 'editor' && (
-        <div className="space-y-6">
-          <Card className="bg-white/5 border-white/10">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <EditIcon className="w-5 h-5 text-cyan-400" />
-                Karaoke Editor Settings
-              </CardTitle>
-              <CardDescription>Configure the karaoke editor for creating and editing songs</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-white/70">
-                The Karaoke Editor allows you to create new songs or edit existing ones. You can:
-              </p>
-              <ul className="text-sm text-white/60 space-y-2">
-                <li className="flex items-center gap-2">
-                  <span className="text-cyan-400">•</span>
-                  Import audio files and create note tracks
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-cyan-400">•</span>
-                  Edit lyrics and timing with precision
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-cyan-400">•</span>
-                  Use AI assistance for automatic lyric sync
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-cyan-400">•</span>
-                  Export songs in UltraStar format
-                </li>
-              </ul>
-              <Button 
-                onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'editor' }))}
-                className="bg-gradient-to-r from-cyan-500 to-purple-500 mt-4"
-              >
-                <EditIcon className="w-4 h-4 mr-2" /> Open Editor
-              </Button>
-            </CardContent>
-          </Card>
+        <div className="w-full">
+          <KaraokeEditor />
         </div>
       )}
       
@@ -11827,53 +11464,6 @@ function SettingsScreen() {
             </CardContent>
           </Card>
 
-          {/* PWA Install - Only show in browser mode (not Tauri) */}
-          {!isTauriDetected && (
-            <div className="mt-4 p-4 bg-white/5 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">Install App</h4>
-                  <p className="text-sm text-white/60">Install for offline access</p>
-                </div>
-                {pwaInstalled ? (
-                  <div className="flex items-center gap-2 text-green-400">
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M20 6L9 17l-5-5" />
-                    </svg>
-                    <span className="text-sm font-medium">Installed</span>
-                  </div>
-                ) : pwaInstallAvailable ? (
-                  <Button
-                    variant="outline"
-                    onClick={async () => {
-                      const result = await promptPWAInstall();
-                      setPwaInstallMessage(result.message);
-                      if (result.success) {
-                        setPwaInstalled(true);
-                        setPwaInstallAvailable(false);
-                      }
-                    }}
-                    className="border-green-500/50 text-green-400 hover:bg-green-500/20"
-                  >
-                    📲 Install
-                  </Button>
-                ) : (
-                  <div className="text-right">
-                    <p className="text-xs text-white/40 mb-1">Installation via browser menu</p>
-                    <p className="text-xs text-cyan-400">
-                      Use "Add to Home Screen" or "Install App" from your browser's menu
-                    </p>
-                  </div>
-                )}
-              </div>
-              {pwaInstallMessage && (
-                <p className={`text-xs mt-2 ${pwaInstalled ? 'text-green-400' : 'text-yellow-400'}`}>
-                  {pwaInstallMessage}
-                </p>
-              )}
-            </div>
-          )}
-          
           {/* Tauri Desktop App Info - Show in Tauri mode */}
           {isTauriDetected && (
             <div className="mt-4 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
@@ -13094,60 +12684,7 @@ function JukeboxScreen({ onBack }: { onBack: () => void }) {
             </CardContent>
           </Card>
           
-          {/* Custom YouTube Background Video */}
-          <Card className="bg-white/5 border-white/10">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-red-500" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
-                </svg>
-                Background Video (Optional)
-              </CardTitle>
-              <CardDescription>Add a YouTube video to play in the background</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Paste YouTube URL..."
-                  value={customYoutubeUrl}
-                  onChange={(e) => setCustomYoutubeUrl(e.target.value)}
-                  className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-cyan-500/50"
-                />
-                <button
-                  onClick={() => {
-                    const id = extractYouTubeId(customYoutubeUrl);
-                    if (id) {
-                      setCustomYoutubeId(id);
-                    }
-                  }}
-                  disabled={!extractYouTubeId(customYoutubeUrl)}
-                  className="px-4 py-3 bg-red-600 hover:bg-red-500 disabled:bg-white/10 disabled:text-white/40 text-white rounded-lg transition-colors"
-                >
-                  Set
-                </button>
-              </div>
-              {customYoutubeId && (
-                <div className="mt-3 flex items-center justify-between">
-                  <p className="text-sm text-green-400 flex items-center gap-1">
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    Video set! Will play during Jukebox.
-                  </p>
-                  <button
-                    onClick={() => {
-                      setCustomYoutubeId(null);
-                      setCustomYoutubeUrl('');
-                    }}
-                    className="text-xs text-red-400 hover:text-red-300"
-                  >
-                    Clear
-                  </button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+
           
           {/* Start Button */}
           <Button
@@ -13279,7 +12816,7 @@ function AchievementsScreen() {
 // ===================== DAILY CHALLENGE SCREEN =====================
 function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (song: Song) => void }) {
   const { profiles, activeProfileId } = useGameStore();
-  const [activeTab, setActiveTab] = useState<'challenge' | 'leaderboard' | 'badges'>('challenge');
+  const [activeTab, setActiveTab] = useState<'challenge' | 'modes' | 'leaderboard' | 'badges'>('challenge');
   
   // Get challenge and stats from new system
   const challenge = getDailyChallenge();
@@ -13372,6 +12909,13 @@ function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (song: Son
           🎯 Challenge
         </Button>
         <Button
+          variant={activeTab === 'modes' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('modes')}
+          className={activeTab === 'modes' ? 'bg-gradient-to-r from-cyan-500 to-purple-500' : 'border-white/20'}
+        >
+          🎮 Party Modes
+        </Button>
+        <Button
           variant={activeTab === 'leaderboard' ? 'default' : 'outline'}
           onClick={() => setActiveTab('leaderboard')}
           className={activeTab === 'leaderboard' ? 'bg-gradient-to-r from-cyan-500 to-purple-500' : 'border-white/20'}
@@ -13444,7 +12988,90 @@ function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (song: Son
           </CardContent>
         </Card>
       )}
-      
+
+      {/* Party Modes Tab */}
+      {activeTab === 'modes' && (
+        <div className="space-y-6">
+          <Card className="bg-white/5 border-white/10">
+            <CardHeader>
+              <CardTitle>🎮 Challenge Modes</CardTitle>
+              <CardDescription>Special game modes with unique challenges</CardDescription>
+            </CardHeader>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              {
+                mode: 'pass-the-mic' as GameMode,
+                title: 'Pass the Mic',
+                description: 'Take turns singing parts of a song. When the music stops, the next singer takes over!',
+                icon: '🎤',
+                players: '2-8',
+                color: 'from-cyan-500 to-blue-500',
+              },
+              {
+                mode: 'medley' as GameMode,
+                title: 'Medley Contest',
+                description: 'Sing short snippets of multiple songs in a row. How many can you nail?',
+                icon: '🎵',
+                players: '1-4',
+                color: 'from-purple-500 to-pink-500',
+              },
+              {
+                mode: 'missing-words' as GameMode,
+                title: 'Missing Words',
+                description: 'Some lyrics disappear! Can you sing the right words at the right time?',
+                icon: '📝',
+                players: '1-4',
+                color: 'from-orange-500 to-red-500',
+              },
+              {
+                mode: 'blind' as GameMode,
+                title: 'Blind Karaoke',
+                description: 'Lyrics disappear for certain sections. Can you remember the words?',
+                icon: '🙈',
+                players: '1-4',
+                color: 'from-green-500 to-teal-500',
+              },
+              {
+                mode: 'duet' as GameMode,
+                title: 'Duet Mode',
+                description: 'Two players sing together! Split-screen with separate note tracks for each vocalist.',
+                icon: '🎭',
+                players: '2',
+                color: 'from-cyan-500 to-pink-500',
+              },
+              {
+                mode: 'duel' as GameMode,
+                title: 'Duel Mode',
+                description: 'Two players sing the same song side by side. Who will score higher?',
+                icon: '⚔️',
+                players: '2',
+                color: 'from-yellow-500 to-orange-500',
+              },
+            ].map((game) => (
+              <Card
+                key={game.mode}
+                className={`bg-gradient-to-br ${game.color} border-0 cursor-pointer hover:scale-[1.02] transition-transform`}
+                onClick={() => {
+                  // Navigate to library with this game mode
+                  window.dispatchEvent(new CustomEvent('navigate', { detail: 'library' }));
+                }}
+              >
+                <CardContent className="pt-6">
+                  <div className="text-4xl mb-3">{game.icon}</div>
+                  <h3 className="text-xl font-bold mb-1">{game.title}</h3>
+                  <p className="text-sm text-white/80 mb-3">{game.description}</p>
+                  <Badge variant="outline" className="border-white/30 text-white">
+                    {game.players} players
+                  </Badge>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Leaderboard Tab */}
       {activeTab === 'leaderboard' && (
         <Card className="bg-white/5 border-white/10">

@@ -263,22 +263,62 @@ export function convertUltraStarToSong(
     const startTime = ultraStar.gap + (note.startBeat * beatDuration);
     const duration = note.duration * beatDuration;
 
+    // Determine if we need to add a space between notes
+    // In UltraStar format, trailing space indicates word boundary
+    // But some txt files don't follow this properly, so we add heuristics
+    let lyricWithSpacing = note.lyric;
+    
+    // Check if this note should have a trailing space (word boundary)
+    // A note ends a word if:
+    // 1. It already has a trailing space (proper format)
+    // 2. The next note starts a new word (starts with uppercase or after a gap)
+    // 3. There's a line break after this note
+    
+    const hasNextNote = i < sortedNotes.length - 1;
+    const nextNote = hasNextNote ? sortedNotes[i + 1] : null;
+    const isLineBreakAfter = lineBreakBeats.has(noteEndBeat);
+    
+    // Determine if this is the end of a word
+    let isWordEnd = false;
+    
+    // Check trailing space in original lyric
+    if (note.lyric.endsWith(' ')) {
+      isWordEnd = true;
+    }
+    // Check if next note starts with uppercase (new word)
+    else if (nextNote && /^[A-ZÄÖÜ]/.test(nextNote.lyric)) {
+      isWordEnd = true;
+    }
+    // Check if there's a significant gap before next note (> 2 beats usually means new word)
+    else if (nextNote && (nextNote.startBeat - noteEndBeat) > 2) {
+      isWordEnd = true;
+    }
+    // Line break means end of line/word
+    else if (isLineBreakAfter) {
+      isWordEnd = true;
+    }
+    
+    // If word ends and lyric doesn't already have trailing space, add one
+    // Only add space if the lyric doesn't end with punctuation or hyphen
+    if (isWordEnd && !note.lyric.endsWith(' ') && !/[.,!?;:\-']$/.test(note.lyric)) {
+      lyricWithSpacing = note.lyric + ' ';
+    }
+
     const convertedNote: Note = {
       id: `note-${lyricLines.length}-${currentLineNotes.length}`,
       pitch: note.pitch + MIDI_BASE_OFFSET,
       frequency: midiToFrequency(note.pitch + MIDI_BASE_OFFSET),
       startTime: Math.round(startTime),
       duration: Math.round(duration),
-      lyric: note.lyric,
+      lyric: lyricWithSpacing,
       isBonus: note.type === 'F', // Freestyle notes are bonus
       isGolden: note.type === '*' || note.type === 'G', // Golden notes
       player: note.player, // Preserve player assignment for duet mode
     };
 
     currentLineNotes.push(convertedNote);
-    // Build line text - preserve trailing spaces from lyric (indicates word boundary)
-    // No trailing space = syllable, so don't add space
-    currentLineText += note.lyric;
+    // Build line text - now includes proper spacing
+    currentLineText += lyricWithSpacing;
     
     // Track line player (first note's player, or 'both' if mixed)
     if (currentLinePlayer === undefined) {
@@ -302,7 +342,7 @@ export function convertUltraStarToSong(
         
         lyricLines.push({
           id: `line-${lyricLines.length}`,
-          text: currentLineText.trim(), // Trim for display, but notes have original spacing
+          text: currentLineText.trim(), // Trim for display
           startTime: lineStartTime,
           endTime: lineEndTime,
           notes: currentLineNotes,
