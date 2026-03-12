@@ -2978,10 +2978,10 @@ function LyricLineDisplay({
         // Preserve trailing spaces - they indicate word boundaries
         // Also handle the case where spaces might have been trimmed
         return (
-          <span key={noteId} className="inline-block" style={{ marginRight: 0 }}>
+          <span key={noteId} style={{ display: 'inline' }}>
             <span 
-              className={`inline-block ${fontClass} ${finalTextClass} transition-all duration-100`}
-              style={{ ...finalShadowStyle, ...fillClipStyle, display: 'inline-block' }}
+              className={`inline ${fontClass} ${finalTextClass} transition-all duration-100`}
+              style={{ ...finalShadowStyle, ...fillClipStyle, display: 'inline' }}
             >
               {displayLyric}
             </span>
@@ -10105,6 +10105,7 @@ function AIAssetsGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedAssets, setGeneratedAssets] = useState<Array<{ type: string; data: string; filename: string }>>([]);
   const [error, setError] = useState<string | null>(null);
+  const [showConfigInfo, setShowConfigInfo] = useState(false);
 
   // Preset prompts for common assets
   const imagePresets = [
@@ -10193,7 +10194,14 @@ function AIAssetsGenerator() {
         }]);
       }
     } catch (err: any) {
-      setError(err.message || 'Generation failed');
+      // Check for common authentication/configuration errors
+      const errorMsg = err.message || 'Generation failed';
+      if (errorMsg.includes('X-Token') || errorMsg.includes('401') || errorMsg.includes('config')) {
+        setError('AI API authentication required. Please check your API configuration.');
+        setShowConfigInfo(true);
+      } else {
+        setError(errorMsg);
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -10309,8 +10317,21 @@ function AIAssetsGenerator() {
           )}
 
           {error && (
-            <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm">
-              {error}
+            <div className="space-y-3">
+              <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm">
+                {error}
+              </div>
+              {showConfigInfo && (
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-sm">
+                  <p className="text-yellow-400 font-medium mb-2">⚠️ Configuration Required</p>
+                  <p className="text-white/70 mb-2">
+                    The AI Asset Generator requires API authentication. This feature uses external AI services.
+                  </p>
+                  <p className="text-white/50 text-xs">
+                    Note: AI features are optional and the karaoke app works fully without them.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -10382,6 +10403,9 @@ function AIAssetsGenerator() {
                 <li>Include style keywords like "gaming", "neon", "vector"</li>
                 <li>Audio supports multiple voices and languages</li>
               </ul>
+              <p className="mt-3 text-yellow-400/80 text-xs">
+                ⚠️ Note: This feature requires API authentication. The karaoke app works fully without AI features.
+              </p>
             </div>
           </div>
         </CardContent>
