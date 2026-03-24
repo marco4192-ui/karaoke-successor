@@ -46,6 +46,7 @@ export interface UltraStarSong {
   bpm: number;
   gap: number; // Milliseconds before first note
   start?: number; // #START tag - milliseconds to skip at beginning of audio
+  end?: number; // #END tag - song end time in ms
   previewStart?: number;
   previewDuration?: number;
   genre?: string;
@@ -53,7 +54,10 @@ export interface UltraStarSong {
   language?: string;
   edition?: string;
   creator?: string;
-  end?: number; // #END tag - song end time in ms
+  version?: string; // #VERSION: - format version
+  medleyStartBeat?: number; // #MEDLEYSTARTBEAT:
+  medleyEndBeat?: number; // #MEDLEYENDBEAT:
+  tags?: string; // #TAGS:
   notes: UltraStarNote[];
   lineBreaks: number[]; // Beats where line breaks occur
   // Duet mode support
@@ -169,6 +173,18 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
             } else {
               song.duetPlayerNames[1] = value.trim();
             }
+            break;
+          case 'VERSION':
+            song.version = value.trim();
+            break;
+          case 'MEDLEYSTARTBEAT':
+            song.medleyStartBeat = parseInt(value) || undefined;
+            break;
+          case 'MEDLEYENDBEAT':
+            song.medleyEndBeat = parseInt(value) || undefined;
+            break;
+          case 'TAGS':
+            song.tags = value.trim();
             break;
         }
       }
@@ -468,6 +484,7 @@ export function convertUltraStarToSong(
     rating,
     gap: ultraStar.gap,
     start: ultraStar.start,
+    end: ultraStar.end,
     coverImage: coverUrl || ultraStar.cover,
     backgroundImage: ultraStar.background,
     videoBackground,
@@ -484,81 +501,132 @@ export function convertUltraStarToSong(
     // Duet mode properties
     isDuet: ultraStar.isDuet,
     duetPlayerNames: ultraStar.duetPlayerNames,
+    // UltraStar TXT Metadata
+    version: ultraStar.version,
+    creator: ultraStar.creator,
+    mp3File: ultraStar.mp3,
+    coverFile: ultraStar.cover,
+    backgroundFile: ultraStar.background,
+    videoFile: ultraStar.video && !ultraStar.youtubeUrl ? ultraStar.video : undefined,
+    previewStart: ultraStar.previewStart,
+    previewDuration: ultraStar.previewDuration,
+    medleyStartBeat: ultraStar.medleyStartBeat,
+    medleyEndBeat: ultraStar.medleyEndBeat,
+    tags: ultraStar.tags,
   };
 }
 
 // Generate UltraStar txt content from Song (for export)
 export function generateUltraStarTxt(song: Song): string {
   const lines: string[] = [];
-  
+
   // Header - Basic Info
+  // VERSION (optional)
+  if (song.version) {
+    lines.push(`#VERSION:${song.version}`);
+  }
+
   lines.push(`#TITLE:${song.title}`);
   lines.push(`#ARTIST:${song.artist}`);
-  lines.push(`#MP3:song.mp3`);
-  lines.push(`#BPM:${song.bpm.toFixed(2)}`);
-  lines.push(`#GAP:${song.gap}`);
-  
-  // Optional: Start offset
-  if (song.start && song.start > 0) {
-    lines.push(`#START:${song.start}`);
+
+  // MP3 file (use stored value or default)
+  lines.push(`#MP3:${song.mp3File || 'song.mp3'}`);
+
+  // Cover image file
+  if (song.coverFile) {
+    lines.push(`#COVER:${song.coverFile}`);
   }
-  
-  // Video
+
+  // Background image file
+  if (song.backgroundFile) {
+    lines.push(`#BACKGROUND:${song.backgroundFile}`);
+  }
+
+  // Video (file or URL)
   if (song.youtubeUrl) {
     lines.push(`#VIDEO:${song.youtubeUrl}`);
+  } else if (song.videoFile) {
+    lines.push(`#VIDEO:${song.videoFile}`);
   } else if (song.videoBackground) {
-    lines.push(`#VIDEO:video.mp4`);
+    lines.push(`#VIDEO:${song.videoBackground}`);
   }
-  
+
   // Video Gap
   if (song.videoGap !== undefined && song.videoGap !== 0) {
     lines.push(`#VIDEOGAP:${song.videoGap}`);
   }
-  
-  // Cover
-  if (song.coverImage) {
-    lines.push(`#COVER:cover.jpg`);
+
+  // BPM and GAP (required)
+  lines.push(`#BPM:${song.bpm.toFixed(2)}`);
+  lines.push(`#GAP:${song.gap}`);
+
+  // Start offset
+  if (song.start && song.start > 0) {
+    lines.push(`#START:${song.start}`);
   }
-  
-  // Background
-  if (song.backgroundImage) {
-    lines.push(`#BACKGROUND:background.jpg`);
+
+  // End time
+  if (song.end && song.end > 0) {
+    lines.push(`#END:${song.end}`);
   }
-  
-  // Edition / Album
-  if (song.album) {
-    lines.push(`#EDITION:${song.album}`);
+
+  // Preview settings
+  if (song.previewStart !== undefined && song.previewStart > 0) {
+    lines.push(`#PREVIEWSTART:${song.previewStart}`);
+  } else if (song.preview) {
+    lines.push(`#PREVIEWSTART:${Math.round(song.preview.startTime / 1000)}`);
   }
-  
+
+  if (song.previewDuration !== undefined && song.previewDuration > 0) {
+    lines.push(`#PREVIEWDURATION:${song.previewDuration}`);
+  } else if (song.preview?.duration) {
+    lines.push(`#PREVIEWDURATION:${Math.round(song.preview.duration / 1000)}`);
+  }
+
+  // Medley settings
+  if (song.medleyStartBeat !== undefined) {
+    lines.push(`#MEDLEYSTARTBEAT:${song.medleyStartBeat}`);
+  }
+  if (song.medleyEndBeat !== undefined) {
+    lines.push(`#MEDLEYENDBEAT:${song.medleyEndBeat}`);
+  }
+
   // Genre
   if (song.genre) {
     lines.push(`#GENRE:${song.genre}`);
   }
-  
+
   // Language
   if (song.language) {
     lines.push(`#LANGUAGE:${song.language}`);
   }
-  
+
   // Year
   if (song.year) {
     lines.push(`#YEAR:${song.year}`);
   }
-  
-  // Preview settings
-  if (song.preview) {
-    lines.push(`#PREVIEWSTART:${Math.round(song.preview.startTime / 1000)}`);
-    if (song.preview.duration) {
-      lines.push(`#PREVIEWDURATION:${Math.round(song.preview.duration / 1000)}`);
-    }
+
+  // Edition / Album
+  if (song.album) {
+    lines.push(`#EDITION:${song.album}`);
   }
-  
+
+  // Creator
+  if (song.creator) {
+    lines.push(`#CREATOR:${song.creator}`);
+  }
+
+  // Tags
+  if (song.tags) {
+    lines.push(`#TAGS:${song.tags}`);
+  }
+
   // Duet mode player names
   if (song.isDuet && song.duetPlayerNames) {
     lines.push(`#P1:${song.duetPlayerNames[0]}`);
     lines.push(`#P2:${song.duetPlayerNames[1]}`);
   }
-  
+
   lines.push(''); // Empty line before notes
   
   // Convert notes to UltraStar format using the correct formula

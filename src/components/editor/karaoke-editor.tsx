@@ -613,17 +613,21 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
           />
         </main>
 
-        {/* Right Panel - Tabs (Note Properties + Song Info) */}
+        {/* Right Panel - Tabs (Note Properties + Song Info + Metadata) */}
         <aside className="w-72 bg-slate-900 border-l border-slate-700 flex flex-col overflow-hidden flex-shrink-0">
           <Tabs defaultValue="note" className="flex flex-col h-full">
-            <TabsList className="grid w-full grid-cols-2 bg-slate-800 border-b border-slate-700 rounded-none h-10">
+            <TabsList className="grid w-full grid-cols-3 bg-slate-800 border-b border-slate-700 rounded-none h-10">
               <TabsTrigger value="note" className="text-xs data-[state=active]:bg-slate-700">
                 <Music className="w-3 h-3 mr-1" />
                 Note
               </TabsTrigger>
               <TabsTrigger value="info" className="text-xs data-[state=active]:bg-slate-700">
                 <FileText className="w-3 h-3 mr-1" />
-                Song Info
+                Info
+              </TabsTrigger>
+              <TabsTrigger value="metadata" className="text-xs data-[state=active]:bg-slate-700">
+                <Settings className="w-3 h-3 mr-1" />
+                Meta
               </TabsTrigger>
             </TabsList>
 
@@ -1061,6 +1065,256 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
                     {currentSong.relativeTxtPath && (
                       <div>Datei: <span className="text-slate-300">{currentSong.relativeTxtPath}</span></div>
                     )}
+                  </div>
+                </div>
+              </ScrollArea>
+            </TabsContent>
+
+            {/* Metadata Tab - UltraStar TXT Header Fields */}
+            <TabsContent value="metadata" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
+              <ScrollArea className="h-full">
+                <div className="p-4 space-y-4">
+                  <div className="text-xs text-slate-400 mb-2">
+                    UltraStar TXT Metadaten - werden direkt in die Datei gespeichert
+                  </div>
+
+                  {/* VERSION */}
+                  <div className="space-y-2">
+                    <Label htmlFor="meta-version" className="text-slate-400 text-xs">#VERSION:</Label>
+                    <Input
+                      id="meta-version"
+                      value={currentSong.version || ''}
+                      onChange={(e) => {
+                        setCurrentSong(prev => ({ ...prev, version: e.target.value || undefined }));
+                        setHasUnsavedChanges(true);
+                      }}
+                      placeholder="z.B. 1.0.0"
+                      className="bg-slate-800 border-slate-600 h-8"
+                    />
+                  </div>
+
+                  {/* CREATOR */}
+                  <div className="space-y-2">
+                    <Label htmlFor="meta-creator" className="text-slate-400 text-xs">#CREATOR:</Label>
+                    <Input
+                      id="meta-creator"
+                      value={currentSong.creator || ''}
+                      onChange={(e) => {
+                        setCurrentSong(prev => ({ ...prev, creator: e.target.value || undefined }));
+                        setHasUnsavedChanges(true);
+                      }}
+                      placeholder="Ersteller der TXT-Datei"
+                      className="bg-slate-800 border-slate-600 h-8"
+                    />
+                  </div>
+
+                  <Separator className="bg-slate-700" />
+
+                  {/* MP3 File */}
+                  <div className="space-y-2">
+                    <Label htmlFor="meta-mp3" className="text-slate-400 text-xs">#MP3:</Label>
+                    <Input
+                      id="meta-mp3"
+                      value={currentSong.mp3File || ''}
+                      onChange={(e) => {
+                        setCurrentSong(prev => ({ ...prev, mp3File: e.target.value || undefined }));
+                        setHasUnsavedChanges(true);
+                      }}
+                      placeholder="song.mp3"
+                      className="bg-slate-800 border-slate-600 h-8"
+                    />
+                  </div>
+
+                  {/* COVER File */}
+                  <div className="space-y-2">
+                    <Label htmlFor="meta-cover" className="text-slate-400 text-xs">#COVER:</Label>
+                    <Input
+                      id="meta-cover"
+                      value={currentSong.coverFile || ''}
+                      onChange={(e) => {
+                        setCurrentSong(prev => ({ ...prev, coverFile: e.target.value || undefined }));
+                        setHasUnsavedChanges(true);
+                      }}
+                      placeholder="cover.jpg"
+                      className="bg-slate-800 border-slate-600 h-8"
+                    />
+                  </div>
+
+                  {/* BACKGROUND File */}
+                  <div className="space-y-2">
+                    <Label htmlFor="meta-background" className="text-slate-400 text-xs">#BACKGROUND:</Label>
+                    <Input
+                      id="meta-background"
+                      value={currentSong.backgroundFile || ''}
+                      onChange={(e) => {
+                        setCurrentSong(prev => ({ ...prev, backgroundFile: e.target.value || undefined }));
+                        setHasUnsavedChanges(true);
+                      }}
+                      placeholder="background.jpg"
+                      className="bg-slate-800 border-slate-600 h-8"
+                    />
+                  </div>
+
+                  {/* VIDEO File */}
+                  <div className="space-y-2">
+                    <Label htmlFor="meta-video" className="text-slate-400 text-xs">#VIDEO:</Label>
+                    <Input
+                      id="meta-video"
+                      value={currentSong.videoFile || currentSong.youtubeUrl || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const isUrl = value.startsWith('http://') || value.startsWith('https://');
+                        setCurrentSong(prev => ({
+                          ...prev,
+                          videoFile: isUrl ? undefined : value || undefined,
+                          youtubeUrl: isUrl ? value : undefined,
+                        }));
+                        setHasUnsavedChanges(true);
+                      }}
+                      placeholder="video.mp4 oder YouTube URL"
+                      className="bg-slate-800 border-slate-600 h-8"
+                    />
+                  </div>
+
+                  <Separator className="bg-slate-700" />
+
+                  {/* PREVIEWSTART */}
+                  <div className="space-y-2">
+                    <Label htmlFor="meta-previewstart" className="text-slate-400 text-xs">#PREVIEWSTART: (Sekunden)</Label>
+                    <Input
+                      id="meta-previewstart"
+                      type="number"
+                      value={currentSong.previewStart ?? ''}
+                      onChange={(e) => {
+                        setCurrentSong(prev => ({ ...prev, previewStart: parseFloat(e.target.value) || undefined }));
+                        setHasUnsavedChanges(true);
+                      }}
+                      placeholder="z.B. 30"
+                      className="bg-slate-800 border-slate-600 h-8"
+                    />
+                  </div>
+
+                  {/* PREVIEWDURATION */}
+                  <div className="space-y-2">
+                    <Label htmlFor="meta-previewduration" className="text-slate-400 text-xs">#PREVIEWDURATION: (Sekunden)</Label>
+                    <Input
+                      id="meta-previewduration"
+                      type="number"
+                      value={currentSong.previewDuration ?? ''}
+                      onChange={(e) => {
+                        setCurrentSong(prev => ({ ...prev, previewDuration: parseFloat(e.target.value) || undefined }));
+                        setHasUnsavedChanges(true);
+                      }}
+                      placeholder="z.B. 15"
+                      className="bg-slate-800 border-slate-600 h-8"
+                    />
+                  </div>
+
+                  <Separator className="bg-slate-700" />
+
+                  {/* MEDLEYSTARTBEAT */}
+                  <div className="space-y-2">
+                    <Label htmlFor="meta-medleystart" className="text-slate-400 text-xs">#MEDLEYSTARTBEAT:</Label>
+                    <Input
+                      id="meta-medleystart"
+                      type="number"
+                      value={currentSong.medleyStartBeat ?? ''}
+                      onChange={(e) => {
+                        setCurrentSong(prev => ({ ...prev, medleyStartBeat: parseInt(e.target.value) || undefined }));
+                        setHasUnsavedChanges(true);
+                      }}
+                      placeholder="Beat-Nummer"
+                      className="bg-slate-800 border-slate-600 h-8"
+                    />
+                  </div>
+
+                  {/* MEDLEYENDBEAT */}
+                  <div className="space-y-2">
+                    <Label htmlFor="meta-medleyend" className="text-slate-400 text-xs">#MEDLEYENDBEAT:</Label>
+                    <Input
+                      id="meta-medleyend"
+                      type="number"
+                      value={currentSong.medleyEndBeat ?? ''}
+                      onChange={(e) => {
+                        setCurrentSong(prev => ({ ...prev, medleyEndBeat: parseInt(e.target.value) || undefined }));
+                        setHasUnsavedChanges(true);
+                      }}
+                      placeholder="Beat-Nummer"
+                      className="bg-slate-800 border-slate-600 h-8"
+                    />
+                  </div>
+
+                  <Separator className="bg-slate-700" />
+
+                  {/* END */}
+                  <div className="space-y-2">
+                    <Label htmlFor="meta-end" className="text-slate-400 text-xs">#END: (Millisekunden)</Label>
+                    <Input
+                      id="meta-end"
+                      type="number"
+                      value={currentSong.end ?? ''}
+                      onChange={(e) => {
+                        setCurrentSong(prev => ({ ...prev, end: parseInt(e.target.value) || undefined }));
+                        setHasUnsavedChanges(true);
+                      }}
+                      placeholder="Song-Ende in ms"
+                      className="bg-slate-800 border-slate-600 h-8"
+                    />
+                  </div>
+
+                  {/* TAGS */}
+                  <div className="space-y-2">
+                    <Label htmlFor="meta-tags" className="text-slate-400 text-xs">#TAGS:</Label>
+                    <Input
+                      id="meta-tags"
+                      value={currentSong.tags || ''}
+                      onChange={(e) => {
+                        setCurrentSong(prev => ({ ...prev, tags: e.target.value || undefined }));
+                        setHasUnsavedChanges(true);
+                      }}
+                      placeholder="tag1, tag2, tag3"
+                      className="bg-slate-800 border-slate-600 h-8"
+                    />
+                    <p className="text-xs text-slate-500">Kommagetrennte Tags</p>
+                  </div>
+
+                  <Separator className="bg-slate-700" />
+
+                  {/* P1 / P2 Names for Duet */}
+                  <div className="space-y-2">
+                    <Label htmlFor="meta-p1" className="text-slate-400 text-xs">#P1: (Duet Spieler 1)</Label>
+                    <Input
+                      id="meta-p1"
+                      value={currentSong.duetPlayerNames?.[0] || ''}
+                      onChange={(e) => {
+                        setCurrentSong(prev => ({
+                          ...prev,
+                          isDuet: true,
+                          duetPlayerNames: [e.target.value, prev.duetPlayerNames?.[1] || 'Player 2']
+                        }));
+                        setHasUnsavedChanges(true);
+                      }}
+                      placeholder="Spieler 1 Name"
+                      className="bg-slate-800 border-slate-600 h-8"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="meta-p2" className="text-slate-400 text-xs">#P2: (Duet Spieler 2)</Label>
+                    <Input
+                      id="meta-p2"
+                      value={currentSong.duetPlayerNames?.[1] || ''}
+                      onChange={(e) => {
+                        setCurrentSong(prev => ({
+                          ...prev,
+                          isDuet: true,
+                          duetPlayerNames: [prev.duetPlayerNames?.[0] || 'Player 1', e.target.value]
+                        }));
+                        setHasUnsavedChanges(true);
+                      }}
+                      placeholder="Spieler 2 Name"
+                      className="bg-slate-800 border-slate-600 h-8"
+                    />
                   </div>
                 </div>
               </ScrollArea>

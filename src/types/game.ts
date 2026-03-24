@@ -51,6 +51,7 @@ export interface Song {
   audioUrl?: string;
   gap: number; // gap before lyrics start (ms)
   start?: number; // #START tag - milliseconds to skip at beginning of audio
+  end?: number; // #END tag - song end time in ms
   hasEmbeddedAudio?: boolean; // video file has audio, no separate audio needed
   lastPlayed?: number;
   dateAdded?: number;
@@ -73,6 +74,18 @@ export interface Song {
   isDuet?: boolean; // True if this is a duet song
   duetPlayerNames?: [string, string]; // Optional names for P1/P2 (e.g., ["Artist", "Featuring"])
   duetPlayerColors?: [string, string]; // Optional colors for P1/P2
+  // UltraStar TXT Metadata (editable in editor)
+  version?: string; // #VERSION: - format version
+  creator?: string; // #CREATOR: - who created the txt file
+  mp3File?: string; // #MP3: - audio file name
+  coverFile?: string; // #COVER: - cover image file name
+  backgroundFile?: string; // #BACKGROUND: - background image file name
+  videoFile?: string; // #VIDEO: - video file name (non-URL)
+  previewStart?: number; // #PREVIEWSTART: - preview start time in seconds
+  previewDuration?: number; // #PREVIEWDURATION: - preview duration in seconds
+  medleyStartBeat?: number; // #MEDLEYSTARTBEAT: - medley start beat
+  medleyEndBeat?: number; // #MEDLEYENDBEAT: - medley end beat
+  tags?: string; // #TAGS: - comma-separated tags
 }
 
 export interface Player {
