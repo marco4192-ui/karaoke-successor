@@ -1869,8 +1869,8 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
                   P1
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xl font-bold text-cyan-400 leading-tight">{gameState.players[0]?.score?.toLocaleString() || 0}</span>
-                  <span className="text-xs text-cyan-300/60 leading-tight">{gameState.players[0]?.combo || 0}x</span>
+                  <span className="text-xl font-bold text-cyan-400 leading-tight" suppressHydrationWarning>{gameState.players[0]?.score?.toLocaleString() ?? 0}</span>
+                  <span className="text-xs text-cyan-300/60 leading-tight" suppressHydrationWarning>{gameState.players[0]?.combo ?? 0}x</span>
                 </div>
               </div>
               
@@ -1882,8 +1882,8 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
               {/* P2 Score - Right */}
               <div className="relative flex items-center gap-3 px-4 py-1">
                 <div className="flex flex-col items-end">
-                  <span className="text-xl font-bold text-pink-400 leading-tight">{p2State.score.toLocaleString()}</span>
-                  <span className="text-xs text-pink-300/60 leading-tight">{p2State.combo}x</span>
+                  <span className="text-xl font-bold text-pink-400 leading-tight" suppressHydrationWarning>{p2State?.score?.toLocaleString?.() ?? 0}</span>
+                  <span className="text-xs text-pink-300/60 leading-tight" suppressHydrationWarning>{p2State?.combo ?? 0}x</span>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-pink-500 flex items-center justify-center text-xs font-bold text-white shadow-lg">
                   P2
