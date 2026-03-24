@@ -41,7 +41,10 @@ import { YouTubePlayer, extractYouTubeId } from '@/components/game/youtube-playe
 import { CHALLENGE_MODES, getExtendedStats, ExtendedPlayerStats } from '@/lib/game/player-progression';
 import { createDuelMatch, DuelMatch } from '@/lib/game/multiplayer';
 import { LiveStreamingPanel } from '@/components/streaming/live-streaming';
-import { getStarPowerChargeFromNote, STAR_POWER_CONFIG } from '@/lib/game/star-power';
+import { 
+  getStarPowerChargeFromNote, 
+  STAR_POWER_CONFIG
+} from '@/lib/game/star-power';
 import { LyricLineDisplay } from '@/components/game/lyric-line-display';
 import { MusicIcon, PlayIcon, MicIcon, SettingsIcon, PauseIcon, SkipForwardIcon, RewindIcon, VolumeIcon } from '@/components/icons';
 import {
@@ -668,6 +671,51 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   useEffect(() => {
     setDuelMatch(duelMatchValue);
   }, [duelMatchValue]);
+  
+  // ===================== STAR POWER ACTIVATION =====================
+  // Handle Star Power activation via keyboard (Space) or button click
+  const handleActivateStarPower = useCallback(() => {
+    const player = gameState.players[0];
+    if (!player) return;
+    
+    // Check if we can activate (meter >= threshold and not already active)
+    const canActivate = (
+      player.starPower >= STAR_POWER_CONFIG.activationThreshold &&
+      !player.isStarPowerActive
+    );
+    
+    if (canActivate) {
+      updatePlayer(player.id, {
+        isStarPowerActive: true,
+      });
+      
+      // Show visual feedback
+      toast({
+        title: '⭐ STAR POWER ACTIVATED!',
+        description: '2x points for 10 seconds!',
+      });
+    }
+  }, [gameState.players, updatePlayer]);
+  
+  // Keyboard shortcut for Star Power (Space key)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Don't trigger if typing in input fields
+      const target = event.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+      
+      // Space key activates Star Power
+      if (event.key === ' ' || event.code === 'Space') {
+        event.preventDefault();
+        handleActivateStarPower();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleActivateStarPower]);
   
   // Custom YouTube video for background (can be set by user)
   const [customYoutubeUrl, setCustomYoutubeUrl] = useState('');
@@ -1534,9 +1582,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
 
       {/* Star Power Bar */}
       <div className="absolute top-20 left-4 z-20 w-64">
-        <StarPowerBar onActivate={() => {
-          // Star power activation logic
-        }} />
+        <StarPowerBar onActivate={handleActivateStarPower} />
       </div>
 
       {/* Audio Element - For songs with separate audio file */}
