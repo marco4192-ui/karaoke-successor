@@ -1,0 +1,2365 @@
+'use client';
+
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Slider } from '@/components/ui/slider';
+import { usePitchDetector } from '@/hooks/use-pitch-detector';
+import { useNoteScoring } from '@/hooks/use-note-scoring';
+import { useGameSettings } from '@/hooks/use-game-settings';
+import { useGameStore } from '@/lib/game/store';
+import { getAllSongs, reloadLibrary } from '@/lib/game/song-library';
+import { Song, Difficulty, LyricLine, Note, DIFFICULTY_SETTINGS, PLAYER_COLORS } from '@/types/game';
+import { PRACTICE_MODE_DEFAULTS, PracticeModeConfig } from '@/lib/game/practice-mode';
+import { StarPowerBar, PerformanceDisplay } from '@/components/game/game-enhancements';
+import { NoteLane } from '@/components/game/note-lane';
+import { ScoreDisplay } from '@/components/game/score-display';
+import { AudioEffectsEngine } from '@/lib/audio/audio-effects';
+import { MusicReactiveBackground, AnimatedGradientBackground } from '@/components/game/music-reactive-background';
+import { toast } from '@/hooks/use-toast';
+import { 
+  getDailyChallenge, 
+  getPlayerDailyStats, 
+  getXPLevel, 
+  getTimeUntilReset, 
+  isChallengeCompletedToday,
+  XP_REWARDS,
+  DAILY_BADGES,
+} from '@/lib/game/daily-challenge';
+import { 
+  WebcamBackground, 
+  WebcamQuickControls,
+  WebcamBackgroundConfig,
+  DEFAULT_WEBCAM_CONFIG,
+  loadWebcamConfig,
+  saveWebcamConfig,
+} from '@/components/game/webcam-background';
+import { YouTubePlayer, extractYouTubeId } from '@/components/game/youtube-player';
+import { CHALLENGE_MODES, getExtendedStats, ExtendedPlayerStats } from '@/lib/game/player-progression';
+import { createDuelMatch, DuelMatch } from '@/lib/game/multiplayer';
+import { LiveStreamingPanel } from '@/components/streaming/live-streaming';
+import { getStarPowerChargeFromNote, STAR_POWER_CONFIG } from '@/lib/game/star-power';
+import { LyricLineDisplay } from '@/components/game/lyric-line-display';
+import { MusicIcon, PlayIcon, MicIcon, SettingsIcon, PauseIcon, SkipForwardIcon, RewindIcon, VolumeIcon } from '@/components/icons';
+import {
+  calculateScoringMetadata,
+} from '@/lib/game/scoring';
+import {
+  getNoteShapeClasses,
+  NoteShapeStyle,
+} from '@/lib/game/note-utils';
+import { ScoreEventsDisplay } from '@/components/game/score-events-display';
+import { PitchGraphDisplay } from '@/components/game/pitch-graph-display';
+import { BackgroundVideo } from '@/components/game/background-video';
+import { DuelScorecard } from '@/components/game/duel-scorecard';
+import { PracticePanel } from '@/components/game/practice-panel';
+import { AudioEffectsPanel } from '@/components/game/audio-effects-panel';
+import { ProminentScoreDisplay } from '@/components/game/prominent-score-display';
+import { 
+  ParticleSystem, 
+  useParticleEmitter, 
+  AnimatedBackground as VisualAnimatedBackground,
+  VoiceVisualizer,
+  ComboFireEffect,
+  StarPowerEffect,
+  useSongEnergy
+} from '@/components/game/visual-effects';
+import { SpectrogramDisplay } from '@/components/game/spectrogram-display';
+
+// ===================== HOME SCREEN =====================
+// HomeScreen has been moved to /src/components/screens/home-screen.tsx
+
+// ===================== GAME SCREEN =====================
+function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }) {
+  const { gameState, setSong, setCurrentTime, setDetectedPitch, updatePlayer, endGame, setResults, setGameMode, addPlayer, createProfile, profiles, setMissingWordsIndices, setBlindSection } = useGameStore();
+  const { isInitialized, isListening, pitchResult, initialize, start, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
+  
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [countdown, setCountdown] = useState(3);
+  const [currentNoteIndex, setCurrentNoteIndex] = useState(0);
+  const [volume, setVolume] = useState(0);
+  const [mediaLoaded, setMediaLoaded] = useState(false);
+  const [youtubeTime, setYoutubeTime] = useState(0); // Track YouTube video time
+
+  // Settings from localStorage - managed via useGameSettings hook
+  const {
+    showBackgroundVideo,
+    showPitchGuide,
+    useAnimatedBackground,
+    noteDisplayStyle,
+    noteShapeStyle,
+  } = useGameSettings();
+  
+  // Practice mode state
+  const [practiceMode, setPracticeMode] = useState<PracticeModeConfig>(PRACTICE_MODE_DEFAULTS);
+  const [showPracticeControls, setShowPracticeControls] = useState(false);
+  
+  // Challenge mode state - read from localStorage when game starts
+  const [activeChallenge, setActiveChallenge] = useState<typeof CHALLENGE_MODES[0] | null>(() => {
+    if (typeof window !== 'undefined') {
+      const savedChallengeId = localStorage.getItem('karaoke-challenge-mode');
+      if (savedChallengeId) {
+        const challenge = CHALLENGE_MODES.find(c => c.id === savedChallengeId);
+        if (challenge) {
+          localStorage.removeItem('karaoke-challenge-mode'); // Clear after reading
+          return challenge;
+        }
+      }
+    }
+    return null;
+  });
+  
+  // Mobile client state
+  const [mobilePitch, setMobilePitch] = useState<{ frequency: number | null; note: number | null; volume: number } | null>(null);
+  const [hasMobileClient, setHasMobileClient] = useState(false);
+  
+  // Audio effects state - defaults to 0% (off)
+  const [audioEffects, setAudioEffects] = useState<AudioEffectsEngine | null>(null);
+  const audioEffectsRef = useRef<AudioEffectsEngine | null>(null);
+  const [showAudioEffects, setShowAudioEffects] = useState(false);
+  const [reverbAmount, setReverbAmount] = useState(0);
+  const [echoAmount, setEchoAmount] = useState(0);
+  
+  // Duel mode state
+  const [duelMatch, setDuelMatch] = useState<DuelMatch | null>(null);
+  const [player2Pitch, setPlayer2Pitch] = useState<number | null>(null);
+  const [player2Score, setPlayer2Score] = useState(0);
+  
+  // Webcam background state - SEPARATE camera for filming singers
+  // Initialize with defaults to avoid hydration mismatch
+  const [webcamConfig, setWebcamConfig] = useState<WebcamBackgroundConfig>({ ...DEFAULT_WEBCAM_CONFIG });
+  
+  // Live streaming state
+  const [showStreamPanel, setShowStreamPanel] = useState(false);
+  const [isLiveStreaming, setIsLiveStreaming] = useState(false);
+  
+  // Player progression state (XP, Level, Rank)
+  const [playerStats, setPlayerStats] = useState<ExtendedPlayerStats | null>(null);
+  
+  // Current song reference - must be defined before useEffects that use it
+  const song = gameState.currentSong;
+  
+  // State for song with restored URLs (if needed)
+  const [restoredSong, setRestoredSong] = useState<Song | null>(null);
+  
+  // On-demand URL restoration for Tauri - ensure media URLs are valid
+  useEffect(() => {
+    if (!song) {
+      setRestoredSong(null);
+      return;
+    }
+    
+    // Check if URLs need to be restored (Tauri songs with relative paths but no URLs)
+    const needsUrlRestore = typeof window !== 'undefined' && '__TAURI__' in window &&
+      (song.relativeAudioPath || song.relativeVideoPath || song.relativeCoverPath) &&
+      (!song.audioUrl && !song.videoBackground);
+    
+    if (needsUrlRestore) {
+      console.log('[GameScreen] Restoring URLs for song:', song.title);
+      import('@/lib/game/song-library').then(({ restoreSongUrls }) => {
+        restoreSongUrls(song).then(restored => {
+          console.log('[GameScreen] URLs restored:', {
+            audioUrl: !!restored.audioUrl,
+            videoBackground: !!restored.videoBackground,
+            coverImage: !!restored.coverImage
+          });
+          setRestoredSong(restored);
+        }).catch(err => {
+          console.error('[GameScreen] Error restoring URLs:', err);
+          setRestoredSong(song);
+        });
+      }).catch(err => {
+        console.error('[GameScreen] Error importing restoreSongUrls:', err);
+        setRestoredSong(song);
+      });
+    } else {
+      setRestoredSong(song);
+    }
+  }, [song?.id, song?.audioUrl, song?.videoBackground, song?.relativeAudioPath, song?.relativeVideoPath]);
+  
+  // Use restored song if available, otherwise use original song
+  const effectiveSongBase = restoredSong || song;
+  
+  // On-demand lyrics loading - load lyrics from IndexedDB if storedTxt flag is set
+  const [loadedLyrics, setLoadedLyrics] = useState<LyricLine[]>([]);
+  const [lyricsLoadError, setLyricsLoadError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    console.log('[GameScreen] Lyrics loading effect triggered', {
+      songId: song?.id,
+      storedTxt: song?.storedTxt,
+      lyricsLength: song?.lyrics?.length || 0
+    });
+    
+    if (song?.storedTxt && (!song.lyrics || song.lyrics.length === 0)) {
+      // Load lyrics on-demand from IndexedDB
+      console.log('[GameScreen] Loading lyrics from IndexedDB for song:', song.id);
+      setLyricsLoadError(null);
+      
+      import('@/lib/game/song-library').then(({ loadSongLyrics }) => {
+        loadSongLyrics(song).then(lyrics => {
+          console.log('[GameScreen] Lyrics loaded, length:', lyrics.length);
+          if (lyrics.length > 0) {
+            setLoadedLyrics(lyrics);
+            setLyricsLoadError(null);
+          } else {
+            setLyricsLoadError('Failed to load lyrics from IndexedDB - empty result');
+          }
+        }).catch(err => {
+          console.error('[GameScreen] Error loading lyrics:', err);
+          setLyricsLoadError(`Error loading lyrics: ${err.message}`);
+        });
+      }).catch(err => {
+        console.error('[GameScreen] Error importing song-library:', err);
+        setLyricsLoadError(`Error importing module: ${err.message}`);
+      });
+    } else {
+      setLoadedLyrics([]);
+      setLyricsLoadError(null);
+    }
+  }, [song?.id, song?.storedTxt, song?.lyrics]);
+  
+  // Use loaded lyrics if available, otherwise use song's lyrics
+  // Uses effectiveSongBase which has restored URLs
+  const effectiveSong = useMemo(() => {
+    console.log('[GameScreen] Computing effectiveSong', {
+      hasSong: !!effectiveSongBase,
+      loadedLyricsLength: loadedLyrics.length,
+      songLyricsLength: effectiveSongBase?.lyrics?.length || 0,
+      lyricsLoadError
+    });
+    
+    if (!effectiveSongBase) return null;
+    if (loadedLyrics.length > 0) {
+      return { ...effectiveSongBase, lyrics: loadedLyrics };
+    }
+    return effectiveSongBase;
+  }, [effectiveSongBase, loadedLyrics, lyricsLoadError]);
+  
+  // Load player stats after mount
+  useEffect(() => {
+    const stats = getExtendedStats();
+    setPlayerStats(stats);
+  }, []);
+  
+  // BLIND KARAOKE MODE: Set blind sections based on time
+  useEffect(() => {
+    if (gameState.gameMode === 'blind' && song && gameState.status === 'playing') {
+      // In blind mode, alternate between visible and blind sections
+      // Each section is about 10-15 seconds
+      const sectionDuration = 12000; // 12 seconds per section
+      const blindChance = 0.4; // 40% chance of being blind
+      const currentTime = gameState.currentTime;
+      
+      const sectionIndex = Math.floor(currentTime / sectionDuration);
+      const isBlind = (sectionIndex % 2 === 1) || (Math.random() < blindChance && sectionIndex > 0);
+      
+      setBlindSection(isBlind);
+    }
+  }, [gameState.gameMode, song, gameState.status, gameState.currentTime, setBlindSection]);
+  
+  // SAFETY: Ensure at least one player exists before game starts
+  // This prevents "Cannot read properties of undefined (reading '0')" errors
+  useEffect(() => {
+    if (gameState.players.length === 0 && song) {
+      // Try to use existing profile or create a default player
+      if (profiles.length > 0) {
+        // Use the first active profile
+        const activeProfile = profiles.find(p => p.isActive !== false) || profiles[0];
+        addPlayer(activeProfile);
+      } else {
+        // Create a default player profile
+        const defaultProfile = createProfile('Player 1');
+        addPlayer(defaultProfile);
+      }
+    }
+  }, [song, gameState.players.length, profiles, addPlayer, createProfile]);
+  
+  // Load webcam config from localStorage after mount
+  useEffect(() => {
+    const savedConfig = loadWebcamConfig();
+    setWebcamConfig(savedConfig);
+  }, []);
+  
+  // Update webcam config and save to localStorage
+  const updateWebcamConfig = useCallback((updates: Partial<WebcamBackgroundConfig>) => {
+    setWebcamConfig(prev => {
+      const newConfig = { ...prev, ...updates };
+      saveWebcamConfig(newConfig);
+      return newConfig;
+    });
+  }, []);
+  
+  // Duet mode state - P2 volume (other P2 state is managed by useNoteScoring hook)
+  const [p2Volume, setP2Volume] = useState(0);
+
+  // Keep legacy refs for backward compatibility
+  const processedNotesRef = useRef<Set<string>>(new Set());
+  const processedP2NotesRef = useRef<Set<string>>(new Set());
+  
+  const gameLoopRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number>(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isMountedRef = useRef(true);
+  
+  // Visual Effects - Particle system for score feedback
+  const { 
+    particles, 
+    emitPerfectHit, 
+    emitGoldenNote, 
+    emitComboFirework, 
+    emitConfetti 
+  } = useParticleEmitter();
+  
+  // Song energy for visual effects intensity
+  const songEnergy = useSongEnergy(audioRef.current);
+  
+  // Check if this is a duet song (either marked as duet or gameMode is 'duet')
+  const isDuetMode = song?.isDuet || gameState.gameMode === 'duet' || gameState.gameMode === 'duel';
+
+  // =====================================================
+  // PRE-COMPUTE ALL TIMING DATA ONCE WHEN SONG LOADS
+  // MUST be defined BEFORE useNoteScoring hook!
+  // Uses effectiveSong which has lyrics loaded on-demand from IndexedDB
+  // =====================================================
+  const timingData = useMemo(() => {
+    if (!effectiveSong || effectiveSong.lyrics.length === 0) return null;
+    
+    // Create flat array of all notes with their line reference
+    const allNotes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
+    // Separate arrays for duet mode
+    const p1Notes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
+    const p2Notes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
+    
+    effectiveSong.lyrics.forEach((line, lineIndex) => {
+      line.notes.forEach(note => {
+        const noteWithLine = {
+          ...note,
+          lineIndex,
+          line
+        };
+        allNotes.push(noteWithLine);
+        
+        // For duet mode, separate notes by player
+        if (isDuetMode) {
+          if (note.player === 'P1') {
+            p1Notes.push(noteWithLine);
+          } else if (note.player === 'P2') {
+            p2Notes.push(noteWithLine);
+          } else {
+            // Notes without player assignment go to both players (or just P1 in single mode)
+            p1Notes.push(noteWithLine);
+            p2Notes.push(noteWithLine);
+          }
+        }
+      });
+    });
+    
+    // Sort by start time for efficient searching
+    allNotes.sort((a, b) => a.startTime - b.startTime);
+    p1Notes.sort((a, b) => a.startTime - b.startTime);
+    p2Notes.sort((a, b) => a.startTime - b.startTime);
+    
+    // Create time-sorted lines for binary search
+    const sortedLines = [...effectiveSong.lyrics].sort((a, b) => a.startTime - b.startTime);
+    
+    // Separate lines by player for duet mode
+    const hasExplicitPlayerMarkers = sortedLines.some(line => line.player === 'P1' || line.player === 'P2');
+    
+    const p1Lines = sortedLines.filter(line => {
+      if (hasExplicitPlayerMarkers) {
+        return line.player === 'P1' || line.player === 'both';
+      }
+      return true;
+    });
+    
+    const p2Lines = sortedLines.filter(line => {
+      if (hasExplicitPlayerMarkers) {
+        return line.player === 'P2' || line.player === 'both';
+      }
+      return true;
+    });
+    
+    // Calculate beat duration for scoring
+    const beatDurationMs = effectiveSong.bpm ? 15000 / effectiveSong.bpm : 500;
+    
+    // Calculate scoring metadata for duration-based scoring
+    const scoringMetadata = calculateScoringMetadata(allNotes, beatDurationMs);
+    const p1ScoringMetadata = calculateScoringMetadata(p1Notes, beatDurationMs);
+    const p2ScoringMetadata = calculateScoringMetadata(p2Notes, beatDurationMs);
+    
+    return {
+      allNotes,
+      sortedLines,
+      noteCount: allNotes.length,
+      lineCount: sortedLines.length,
+      p1Notes,
+      p2Notes,
+      p1Lines,
+      p2Lines,
+      p1NoteCount: p1Notes.length,
+      p2NoteCount: p2Notes.length,
+      scoringMetadata,
+      p1ScoringMetadata,
+      p2ScoringMetadata,
+      beatDuration: beatDurationMs,
+    };
+  }, [effectiveSong, isDuetMode]);
+  
+  // Calculate beat duration - MUST be defined BEFORE useNoteScoring hook!
+  const beatDuration = timingData?.beatDuration || (song?.bpm ? 15000 / song.bpm : 500);
+
+  // Note scoring hook - handles all scoring logic
+  const {
+    scoreEvents,
+    p1ScoreEvents,
+    p2ScoreEvents,
+    notePerformance,
+    p2State,
+    p2DetectedPitch,
+    setP2DetectedPitch,
+    checkNoteHits,
+    checkP2NoteHits,
+    resetScoring,
+  } = useNoteScoring({
+    song,
+    difficulty: gameState.difficulty,
+    players: gameState.players,
+    timingData,
+    isDuetMode,
+    beatDuration,
+    updatePlayer,
+    onPerfectHit: emitPerfectHit,
+    onGoldenNote: emitGoldenNote,
+    onComboMilestone: (combo, x, y) => emitComboFirework(x, y, combo),
+  });
+
+  // Timing synchronization - user adjustable offset (initialized from song)
+  const [timingOffset, setTimingOffset] = useState(0);
+  
+  // Poll for mobile pitch data
+  useEffect(() => {
+    if (!song) return;
+    
+    const pollMobilePitch = async () => {
+      try {
+        const response = await fetch('/api/mobile?action=getpitch');
+        const data = await response.json();
+        if (data.success && data.pitch) {
+          setMobilePitch(data.pitch.data);
+          setHasMobileClient(true);
+        }
+      } catch {
+        // Ignore polling errors
+      }
+    };
+    
+    const pollInterval = setInterval(pollMobilePitch, 50); // Poll every 50ms for real-time sync
+    
+    return () => clearInterval(pollInterval);
+  }, [song]);
+  
+  // Use mobile pitch for P2 in duet/duel mode
+  useEffect(() => {
+    if (isDuetMode && mobilePitch?.frequency) {
+      setP2DetectedPitch(mobilePitch.frequency);
+      setP2Volume(mobilePitch.volume || 0);
+    } else if (isDuetMode && !mobilePitch?.frequency) {
+      setP2DetectedPitch(null);
+      setP2Volume(0);
+    }
+  }, [isDuetMode, mobilePitch, setP2DetectedPitch, setP2Volume]);
+  
+  // Update game state for mobile clients to see
+  useEffect(() => {
+    if (!song) return;
+    
+    const updateGameState = async () => {
+      try {
+        await fetch('/api/mobile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'gamestate',
+            payload: {
+              currentSong: { id: song.id, title: song.title, artist: song.artist },
+              isPlaying: isPlaying,
+              currentTime: gameState.currentTime,
+            },
+          }),
+        });
+      } catch {
+        // Ignore sync errors
+      }
+    };
+    
+    // Update on song change and play state change
+    updateGameState();
+  }, [song, isPlaying, gameState.currentTime]);
+  
+  // Initialize audio effects when microphone is active
+  useEffect(() => {
+    if (isPlaying && !audioEffectsRef.current) {
+      const initAudioEffects = async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const engine = new AudioEffectsEngine();
+          await engine.initialize(stream);
+          audioEffectsRef.current = engine;
+          setAudioEffects(engine);
+        } catch (error) {
+          console.error('Failed to initialize audio effects:', error);
+        }
+      };
+      initAudioEffects();
+    }
+
+    return () => {
+      if (audioEffectsRef.current) {
+        audioEffectsRef.current.disconnect();
+        audioEffectsRef.current = null;
+      }
+    };
+  }, [isPlaying]);
+  
+  // ===================== REMOTE CONTROL POLLING =====================
+  // Poll for remote commands from mobile companions
+  useEffect(() => {
+    const pollRemoteCommands = async () => {
+      try {
+        const response = await fetch('/api/mobile?action=getcommands');
+        const data = await response.json();
+        
+        if (data.success && data.commands && data.commands.length > 0) {
+          // Process each command
+          for (const cmd of data.commands) {
+            switch (cmd.type) {
+              case 'play':
+                if (audioRef.current && audioRef.current.paused) {
+                  audioRef.current.play().catch(() => {});
+                }
+                if (videoRef.current && videoRef.current.paused) {
+                  videoRef.current.play().catch(() => {});
+                }
+                setIsPlaying(true);
+                break;
+                
+              case 'pause':
+                if (audioRef.current) {
+                  audioRef.current.pause();
+                }
+                if (videoRef.current) {
+                  videoRef.current.pause();
+                }
+                setIsPlaying(false);
+                break;
+                
+              case 'stop':
+                if (audioRef.current) {
+                  audioRef.current.pause();
+                  audioRef.current.currentTime = 0;
+                }
+                if (videoRef.current) {
+                  videoRef.current.pause();
+                  videoRef.current.currentTime = 0;
+                }
+                setIsPlaying(false);
+                stop();
+                onBack();
+                break;
+                
+              case 'restart':
+                if (audioRef.current) {
+                  audioRef.current.currentTime = 0;
+                  audioRef.current.play().catch(() => {});
+                }
+                if (videoRef.current) {
+                  videoRef.current.currentTime = 0;
+                  videoRef.current.play().catch(() => {});
+                }
+                setIsPlaying(true);
+                break;
+                
+              case 'skip':
+                // If ad is playing, try to skip the ad
+                if (isAdPlaying) {
+                  // Make the video player clickable so user can tap the skip button
+                  // The YouTube iframe doesn't support programmatic skip, so we show a message
+                  // The ad indicator already shows, and the video is visible
+                  // Just show a toast to guide the user
+                  toast({
+                    title: '⏭️ Werbung überspringen',
+                    description: 'Klicke auf das Video, um den "Skip Ad" Button zu drücken!',
+                  });
+                } else {
+                  // End current song and go to results
+                  stop();
+                  onEnd();
+                }
+                break;
+                
+              case 'next':
+                // End current song and go to results
+                stop();
+                onEnd();
+                break;
+                
+              case 'previous':
+                // Restart song
+                if (audioRef.current) {
+                  audioRef.current.currentTime = 0;
+                }
+                if (videoRef.current) {
+                  videoRef.current.currentTime = 0;
+                }
+                break;
+                
+              case 'home':
+                stop();
+                onBack();
+                break;
+                
+              case 'library':
+              case 'queue':
+              case 'settings':
+                // Navigate to other screens
+                stop();
+                onBack();
+                break;
+                
+              case 'volume':
+                const volumeData = cmd.data as { direction?: string };
+                if (audioRef.current) {
+                  const currentVolume = audioRef.current.volume;
+                  if (volumeData?.direction === 'up') {
+                    audioRef.current.volume = Math.min(1, currentVolume + 0.1);
+                  } else if (volumeData?.direction === 'down') {
+                    audioRef.current.volume = Math.max(0, currentVolume - 0.1);
+                  }
+                }
+                break;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[GameScreen] Error polling remote commands:', error);
+      }
+    };
+    
+    // Poll every 500ms - always, not just when playing
+    const interval = setInterval(pollRemoteCommands, 500);
+    return () => clearInterval(interval);
+  }, [isPlaying, stop, onBack, onEnd]);
+  
+  // Initialize duel mode - use useMemo to avoid setState in effect
+  const duelMatchValue = useMemo(() => {
+    if (gameState.gameMode === 'duel' && song && gameState.players.length >= 2) {
+      return createDuelMatch(song, gameState.players[0], gameState.players[1]);
+    }
+    return null;
+  }, [gameState.gameMode, song, gameState.players]);
+  
+  // Update duelMatch state when the computed value changes
+  useEffect(() => {
+    setDuelMatch(duelMatchValue);
+  }, [duelMatchValue]);
+  
+  // Custom YouTube video for background (can be set by user)
+  const [customYoutubeUrl, setCustomYoutubeUrl] = useState('');
+  const [customYoutubeId, setCustomYoutubeId] = useState<string | null>(null);
+  const [showYoutubeInput, setShowYoutubeInput] = useState(false);
+  const [isAdPlaying, setIsAdPlaying] = useState(false);
+  const [adCountdown, setAdCountdown] = useState(0);
+  
+  // Check if song has YouTube URL (from #VIDEO: tag with URL)
+  // Priority: custom YouTube > song.youtubeUrl > videoBackground if URL
+  const songYoutubeUrl = song?.youtubeUrl;
+  const videoBackground = song?.videoBackground;
+  const songYoutubeId = songYoutubeUrl ? extractYouTubeId(songYoutubeUrl) : 
+                       (videoBackground && (videoBackground.startsWith('http://') || videoBackground.startsWith('https://')) ? 
+                        extractYouTubeId(videoBackground) : null);
+  // Use custom YouTube ID if set, otherwise use song's YouTube ID
+  const youtubeVideoId = customYoutubeId || songYoutubeId;
+  const isYouTube = !!youtubeVideoId;
+  
+  // Determine if we should use YouTube audio (no separate audio file)
+  const useYouTubeAudio = isYouTube && !song?.audioUrl;
+  
+  // Handle custom YouTube URL input
+  const handleYoutubeUrlSubmit = useCallback((url: string) => {
+    const extractedId = extractYouTubeId(url);
+    if (extractedId) {
+      setCustomYoutubeId(extractedId);
+      setCustomYoutubeUrl(url);
+      setShowYoutubeInput(false);
+    }
+  }, []);
+  
+  // Clear custom YouTube video
+  const clearCustomYoutube = useCallback(() => {
+    setCustomYoutubeId(null);
+    setCustomYoutubeUrl('');
+  }, []);
+  
+  // Handle ad detection callbacks
+  const handleAdStart = useCallback(() => {
+    setIsAdPlaying(true);
+    setAdCountdown(30); // Max 30 seconds for ad
+    
+    // Pause the game if playing
+    if (isPlaying) {
+      setIsPlaying(false);
+    }
+    
+    // Sync ad state to mobile clients
+    fetch('/api/mobile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'setAdPlaying',
+        payload: { isAdPlaying: true },
+      }),
+    }).catch(() => {});
+  }, [isPlaying]);
+  
+  const handleAdEnd = useCallback(() => {
+    setIsAdPlaying(false);
+    setAdCountdown(0);
+    
+    // Resume the game
+    setIsPlaying(true);
+    
+    // Sync ad state to mobile clients
+    fetch('/api/mobile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'setAdPlaying',
+        payload: { isAdPlaying: false },
+      }),
+    }).catch(() => {});
+  }, []);
+  
+  // Ad countdown effect
+  useEffect(() => {
+    if (isAdPlaying && adCountdown > 0) {
+      const timer = setTimeout(() => {
+        setAdCountdown(prev => prev - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isAdPlaying, adCountdown]);
+  
+  // Sing line position at 25% from left (like UltraStar/Vocaluxe)
+  const SING_LINE_POSITION = 25; // percentage from left
+  
+  // Fixed time window for note display (in milliseconds)
+  // This ensures consistent scrolling speed regardless of BPM
+  // 4 seconds = 4000ms window for upcoming notes
+  const NOTE_WINDOW = 4000; // Fixed 4 second window
+  
+  // NOTE: timingData and beatDuration are now defined EARLIER in the file (before useNoteScoring hook)
+  
+  // Calculate pitch range dynamically from pre-computed notes
+  // This ensures all notes are visible within the display area
+  const pitchStats = useMemo(() => {
+    if (!timingData || timingData.allNotes.length === 0) {
+      return { minPitch: 48, maxPitch: 72, pitchRange: 24 };
+    }
+    
+    let minPitch = Infinity;
+    let maxPitch = -Infinity;
+    
+    for (const note of timingData.allNotes) {
+      minPitch = Math.min(minPitch, note.pitch);
+      maxPitch = Math.max(maxPitch, note.pitch);
+    }
+    
+    // Add padding (2 semitones on each side)
+    const paddedMin = Math.max(0, minPitch - 2);
+    const paddedMax = Math.min(127, maxPitch + 2);
+    return { 
+      minPitch: paddedMin, 
+      maxPitch: paddedMax, 
+      pitchRange: Math.max(12, paddedMax - paddedMin) // At least 1 octave
+    };
+  }, [timingData]);
+  
+  // Calculate pitch range for P1 specifically (for duet mode)
+  const p1PitchStats = useMemo(() => {
+    if (!timingData || !timingData.p1Notes || timingData.p1Notes.length === 0) {
+      return pitchStats;
+    }
+    
+    let minPitch = Infinity;
+    let maxPitch = -Infinity;
+    
+    for (const note of timingData.p1Notes) {
+      minPitch = Math.min(minPitch, note.pitch);
+      maxPitch = Math.max(maxPitch, note.pitch);
+    }
+    
+    const paddedMin = Math.max(0, minPitch - 2);
+    const paddedMax = Math.min(127, maxPitch + 2);
+    return { 
+      minPitch: paddedMin, 
+      maxPitch: paddedMax, 
+      pitchRange: Math.max(12, paddedMax - paddedMin)
+    };
+  }, [timingData, pitchStats]);
+  
+  // Calculate pitch range for P2 specifically (for duet mode)
+  const p2PitchStats = useMemo(() => {
+    if (!timingData || !timingData.p2Notes || timingData.p2Notes.length === 0) {
+      return pitchStats;
+    }
+    
+    let minPitch = Infinity;
+    let maxPitch = -Infinity;
+    
+    for (const note of timingData.p2Notes) {
+      minPitch = Math.min(minPitch, note.pitch);
+      maxPitch = Math.max(maxPitch, note.pitch);
+    }
+    
+    const paddedMin = Math.max(0, minPitch - 2);
+    const paddedMax = Math.min(127, maxPitch + 2);
+    return { 
+      minPitch: paddedMin, 
+      maxPitch: paddedMax, 
+      pitchRange: Math.max(12, paddedMax - paddedMin)
+    };
+  }, [timingData, pitchStats]);
+
+  // MISSING WORDS MODE: Generate random hidden word indices when game starts
+  useEffect(() => {
+    if (gameState.gameMode === 'missing-words' && song && timingData && gameState.status === 'playing') {
+      // Generate random indices for words to hide (about 20-30% of words)
+      const totalNotes = timingData.allNotes.length;
+      const hideCount = Math.floor(totalNotes * 0.25); // 25% of words
+      const allIndices = Array.from({ length: totalNotes }, (_, i) => i);
+      
+      // Shuffle and pick random indices
+      const shuffled = allIndices.sort(() => Math.random() - 0.5);
+      const indicesToHide = shuffled.slice(0, hideCount);
+      
+      setMissingWordsIndices(indicesToHide);
+    }
+  }, [gameState.gameMode, song, timingData, gameState.status, setMissingWordsIndices]);
+
+  // Vertical pitch display constants (percentage of screen)
+  // Leave 8% padding at top (for header) and 15% at bottom (for lyrics)
+  const VISIBLE_TOP = 8; // percentage from top
+  const VISIBLE_BOTTOM = 85; // percentage from bottom
+  const VISIBLE_RANGE = VISIBLE_BOTTOM - VISIBLE_TOP;
+
+  // Track media loading state with refs for reliability
+  const audioLoadedRef = useRef(false);
+  const videoLoadedRef = useRef(false);
+  const mediaCheckIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Initialize media elements on mount
+  useEffect(() => {
+    if (!song) return;
+    
+    // Reset media loaded state
+    setMediaLoaded(false);
+    audioLoadedRef.current = false;
+    videoLoadedRef.current = false;
+    
+    // Pre-load media with proper waiting
+    const loadMedia = async () => {
+      // For songs with audioUrl, wait for audio element to be ready
+      if (song.audioUrl) {
+        // Wait for audio to be canplay with a reasonable timeout
+        const maxWait = 5000; // 5 seconds max
+        const startTime = Date.now();
+        
+        while (!audioLoadedRef.current && Date.now() - startTime < maxWait) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        
+        if (audioLoadedRef.current) {
+          // Audio loaded successfully
+        } else {
+          console.warn('[GameScreen] Audio load timeout, proceeding anyway');
+        }
+      }
+      
+      // For songs with embedded audio (video), wait for video element
+      if (song.hasEmbeddedAudio && song.videoBackground && !song.audioUrl) {
+        const maxWait = 5000;
+        const startTime = Date.now();
+        
+        while (!videoLoadedRef.current && Date.now() - startTime < maxWait) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        
+        if (videoLoadedRef.current) {
+          // Video loaded successfully
+        } else {
+          console.warn('[GameScreen] Video load timeout, proceeding anyway');
+        }
+      }
+      
+      // For YouTube videos, just need a small delay for iframe to initialize
+      if (song.youtubeUrl) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      setMediaLoaded(true);
+    };
+    
+    loadMedia();
+    
+    return () => {
+      if (mediaCheckIntervalRef.current) {
+        clearInterval(mediaCheckIntervalRef.current);
+      }
+    };
+  }, [song]);
+
+  // Initialize and start game - FIXED: proper countdown with visible numbers
+  useEffect(() => {
+    if (!song || !mediaLoaded) return;
+
+    isMountedRef.current = true;
+
+    const initGame = async () => {
+      const success = await initialize();
+      if (!isMountedRef.current) return; // Check if still mounted after async
+
+      if (success) {
+        // Set pitch detector to current difficulty
+        setPitchDifficulty(gameState.difficulty);
+
+        start();
+
+        // Reset processed notes tracking for new game
+        processedNotesRef.current.clear();
+        processedP2NotesRef.current.clear();
+        // Reset scoring state (note progress tracking is handled by the hook)
+        resetScoring();
+
+        // Start countdown from 3
+        setCountdown(3);
+
+        // Use a ref to track countdown value for proper timing
+        let currentCount = 3;
+
+        countdownIntervalRef.current = setInterval(() => {
+          if (!isMountedRef.current) {
+            // Component unmounted, clear interval
+            if (countdownIntervalRef.current) {
+              clearInterval(countdownIntervalRef.current);
+              countdownIntervalRef.current = null;
+            }
+            return;
+          }
+
+          currentCount -= 1;
+
+          if (currentCount <= 0) {
+            // Clear interval first
+            if (countdownIntervalRef.current) {
+              clearInterval(countdownIntervalRef.current);
+              countdownIntervalRef.current = null;
+            }
+
+            // Set countdown to 0 to hide it
+            setCountdown(0);
+
+            // Start playing - do this OUTSIDE of setState to avoid batching issues
+            setIsPlaying(true);
+            startTimeRef.current = Date.now();
+            
+            // Start audio/video playback with user interaction context
+            const playMedia = async () => {
+              try {
+                // Calculate start position from #START tag (in milliseconds)
+                const startPosition = (song.start || 0) / 1000; // Convert to seconds
+                
+                // Get fresh media URLs from IndexedDB if storedMedia flag is set
+                // This ensures we always have valid blob URLs
+                let currentAudioUrl = song.audioUrl;
+                let currentVideoUrl = song.videoBackground;
+                
+                if (song.storedMedia) {
+                  try {
+                    const { getSongMediaUrls } = await import('@/lib/db/media-db');
+                    const mediaUrls = await getSongMediaUrls(song.id);
+                    if (mediaUrls.audioUrl) currentAudioUrl = mediaUrls.audioUrl;
+                    if (mediaUrls.videoUrl) currentVideoUrl = mediaUrls.videoUrl;
+                  } catch (e) {
+                    console.error('[GameScreen] Failed to load media from IndexedDB:', e);
+                  }
+                }
+                
+                // PRIORITY 1: Separate audio file (most common case)
+                if (audioRef.current && currentAudioUrl) {
+                  audioRef.current.src = currentAudioUrl;
+                  audioRef.current.currentTime = startPosition;
+                  await audioRef.current.play();
+                }
+                
+                // PRIORITY 2: Video with embedded audio (video IS the audio source)
+                // Only use this if there's NO separate audioUrl
+                else if (song.hasEmbeddedAudio && videoRef.current && currentVideoUrl && !currentAudioUrl) {
+                  videoRef.current.src = currentVideoUrl;
+                  videoRef.current.currentTime = startPosition;
+                  
+                  // Browser autoplay policy workaround:
+                  // 1. First try unmuted playback (will work if we have user interaction context)
+                  // 2. If that fails, start muted and then unmute after playback begins
+                  try {
+                    videoRef.current.muted = false;
+                    await videoRef.current.play();
+                  } catch (autoplayError) {
+                    // Start muted, then unmute
+                    videoRef.current.muted = true;
+                    await videoRef.current.play();
+                    // Wait a brief moment then unmute
+                    setTimeout(() => {
+                      if (videoRef.current) {
+                        videoRef.current.muted = false;
+                      }
+                    }, 100);
+                  }
+                }
+                
+                // PRIORITY 3: YouTube video (no separate audio, use YouTube as source)
+                // When song has YouTube URL but no separate audio file, we rely on YouTube for audio
+                // The YouTubePlayer component is rendered in JSX and controlled by isPlaying prop
+                // No additional action needed here - just log for debugging
+                else if (isYouTube && youtubeVideoId) {
+                  console.log('[GameScreen] Starting YouTube playback for video:', youtubeVideoId);
+                  // YouTube player is rendered in JSX and controlled by isPlaying prop
+                  // Time sync is handled by onTimeUpdate callback from YouTubePlayer
+                  // The player will start automatically when isPlaying becomes true
+                }
+                
+                // BACKGROUND VIDEO (muted, synced with audio)
+                // This is for videos that should play in background while audio plays
+                if (videoRef.current && song.videoBackground && !song.hasEmbeddedAudio) {
+                  // Validate background video blob URL
+                  const videoSrc = videoRef.current.src;
+                  if (videoSrc && videoSrc.startsWith('blob:')) {
+                    try {
+                      const response = await fetch(videoSrc);
+                      if (!response.ok) throw new Error('Background video blob invalid');
+                      const blob = await response.blob();
+                      if (blob.size === 0) throw new Error('Background video blob empty');
+                    } catch (fetchError) {
+                      console.error('[GameScreen] Background video blob validation failed:', fetchError);
+                      const { getSongMediaUrls } = await import('@/lib/db/media-db');
+                      const mediaUrls = await getSongMediaUrls(song.id);
+                      if (mediaUrls.videoUrl) {
+                        videoRef.current.src = mediaUrls.videoUrl;
+                      }
+                    }
+                  }
+                  
+                  // Apply videoGap: positive = video starts after audio, so skip ahead in video
+                  const videoGapSeconds = (song.videoGap || 0) / 1000;
+                  videoRef.current.currentTime = Math.max(0, startPosition - videoGapSeconds);
+                  videoRef.current.muted = true; // Background video is always muted
+                  videoRef.current.play().catch(() => {});
+                }
+              } catch (error) {
+                console.error('[GameScreen] Media playback failed:', error);
+                // Try fallback: just start with system time
+                setIsPlaying(true);
+              }
+            };
+            playMedia();
+          } else {
+            // Update countdown state - this will show 2, then 1
+            setCountdown(currentCount);
+          }
+        }, 1000);
+      }
+    };
+
+    initGame();
+
+    return () => {
+      // Mark component as unmounted
+      isMountedRef.current = false;
+
+      // Clear countdown interval if still running
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+      stop();
+      if (gameLoopRef.current) {
+        cancelAnimationFrame(gameLoopRef.current);
+      }
+      // Stop audio/video on cleanup - DON'T clear src, just pause
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
+      // Reset states
+      setIsPlaying(false);
+      setCountdown(3);
+    };
+  }, [song, mediaLoaded, initialize, start, stop]);
+
+  // Generate results at end
+  const generateResults = useCallback(() => {
+    const activePlayer = gameState.players[0];
+    if (!activePlayer || !song) return;
+    
+    const totalNotes = song.lyrics.reduce((acc, line) => acc + line.notes.length, 0);
+    const accuracy = totalNotes > 0 ? (activePlayer.notesHit / totalNotes) * 100 : 0;
+    
+    let rating: 'perfect' | 'excellent' | 'good' | 'okay' | 'poor';
+    if (accuracy >= 95) rating = 'perfect';
+    else if (accuracy >= 85) rating = 'excellent';
+    else if (accuracy >= 70) rating = 'good';
+    else if (accuracy >= 50) rating = 'okay';
+    else rating = 'poor';
+    
+    const results = {
+      songId: song.id,
+      players: [{
+        playerId: activePlayer.id,
+        score: activePlayer.score,
+        notesHit: activePlayer.notesHit,
+        notesMissed: activePlayer.notesMissed,
+        accuracy,
+        maxCombo: activePlayer.maxCombo,
+        rating,
+      }],
+      playedAt: Date.now(),
+      duration: song.duration,
+    };
+    
+    setResults(results);
+    
+    // Send results to mobile clients for social features
+    fetch('/api/mobile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'results',
+        payload: {
+          songId: song.id,
+          songTitle: song.title,
+          songArtist: song.artist,
+          score: activePlayer.score,
+          accuracy,
+          maxCombo: activePlayer.maxCombo,
+          rating,
+          playedAt: Date.now(),
+        },
+      }),
+    }).catch(() => {});
+  }, [gameState.players, song, setResults]);
+  
+  // End game and cleanup - stops all audio/microphone
+  const endGameAndCleanup = useCallback(() => {
+    // Stop pitch detection (microphone)
+    stop();
+    
+    // Stop audio effects
+    if (audioEffects) {
+      audioEffects.disconnect();
+      setAudioEffects(null);
+    }
+    
+    // Stop audio element
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    
+    // Stop video element
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+    
+    // Set playing to false
+    setIsPlaying(false);
+    
+    // End game state and generate results
+    endGame();
+    generateResults();
+    
+    // Notify mobile clients that song ended
+    if (song) {
+      fetch('/api/mobile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'gamestate',
+          payload: {
+            currentSong: { id: song.id, title: song.title, artist: song.artist },
+            isPlaying: false,
+            currentTime: 0,
+            songEnded: true,
+          },
+        }),
+      }).catch(() => {});
+    }
+    
+    onEnd();
+  }, [stop, audioEffects, endGame, generateResults, onEnd, song]);
+  
+  // CRITICAL: Cleanup on unmount - stop microphone when leaving GameScreen
+  useEffect(() => {
+    return () => {
+      // Stop pitch detection (microphone) when component unmounts
+      stop();
+      
+      // Stop audio effects
+      if (audioEffects) {
+        audioEffects.disconnect();
+      }
+      
+      // Stop audio element
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+      
+      // Stop video element
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
+      
+      // Cancel any pending animation frames
+      if (gameLoopRef.current) {
+        cancelAnimationFrame(gameLoopRef.current);
+      }
+    };
+  }, [stop, audioEffects]);
+
+  // Game loop
+  useEffect(() => {
+    if (!isPlaying || !song) return;
+    
+    // Get the start position from #START tag (in milliseconds)
+    const startPositionMs = song.start || 0;
+
+    const gameLoop = () => {
+      // Use media's currentTime for accurate sync
+      let elapsed: number;
+      
+      // For YouTube videos, use tracked time from player
+      if (isYouTube && youtubeTime > 0) {
+        elapsed = youtubeTime;
+      }
+      // PRIORITY: Use audio element time if available (most reliable for scoring)
+      else if (audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2) {
+        elapsed = audioRef.current.currentTime * 1000; // Convert to ms
+      }
+      // For video with embedded audio (when no separate audio file)
+      else if (song.hasEmbeddedAudio && videoRef.current && !videoRef.current.paused) {
+        elapsed = videoRef.current.currentTime * 1000; // Convert to ms
+      }
+      // Fallback to system time (less accurate) - account for start position
+      else {
+        // Add start position to fallback time so notes are in correct position
+        elapsed = (Date.now() - startTimeRef.current) + startPositionMs;
+      }
+      
+      // Apply user-adjustable timing offset
+      const adjustedTime = elapsed + timingOffset;
+      
+      setCurrentTime(adjustedTime);
+      
+      // Update volume from pitch detection
+      if (pitchResult) {
+        setVolume(pitchResult.volume);
+        setDetectedPitch(pitchResult.frequency);
+        
+        // Check for note hits for P1
+        checkNoteHits(adjustedTime, pitchResult);
+      }
+      
+      // In duet mode, check P2 note hits ONLY if P2 has a separate microphone signal
+      // P2 should only get points when singing into their own microphone
+      // Currently, p2DetectedPitch comes from a separate pitch detection or remains null
+      if (isDuetMode && p2DetectedPitch !== null) {
+        // P2 has a separate pitch signal (from second microphone)
+        const p2PitchResult = {
+          frequency: p2DetectedPitch,
+          note: Math.round(12 * (Math.log2(p2DetectedPitch / 440)) + 69),
+          clarity: pitchResult?.clarity || 0,
+          volume: p2Volume
+        };
+        checkP2NoteHits(adjustedTime, p2PitchResult);
+      } else if (isDuetMode) {
+        // No separate P2 microphone - P2 doesn't get points
+        // Reset P2 volume when no P2 microphone is active
+        setP2Volume(0);
+      }
+      
+      // Check if song ended
+      if (adjustedTime >= song.duration) {
+        endGameAndCleanup();
+        return;
+      }
+      
+      gameLoopRef.current = requestAnimationFrame(gameLoop);
+    };
+    
+    gameLoopRef.current = requestAnimationFrame(gameLoop);
+    
+    return () => {
+      if (gameLoopRef.current) {
+        cancelAnimationFrame(gameLoopRef.current);
+      }
+    };
+  }, [isPlaying, song, pitchResult, setCurrentTime, setDetectedPitch, checkNoteHits, checkP2NoteHits, endGameAndCleanup, isYouTube, youtubeTime, timingOffset, isDuetMode, p2DetectedPitch, p2Volume, setP2Volume]);
+
+  // Get upcoming notes - OPTIMIZED with pre-computed data
+  const visibleNotes = useMemo(() => {
+    if (!timingData) return [];
+    const currentTime = gameState.currentTime;
+    const windowStart = currentTime - 1000;
+    const windowEnd = currentTime + NOTE_WINDOW;
+    
+    // Use the the pre-sorted notes array for efficient filtering
+    const notes = timingData.allNotes;
+    const result: Array<Note & { line: LyricLine }> = [];
+    
+    // Binary search to find starting point
+    let startIdx = 0;
+    let endIdx = notes.length - 1;
+    let midIdx: number;
+    
+    // Find first note that could be visible
+    while (startIdx <= endIdx) {
+      midIdx = Math.floor((startIdx + endIdx) / 2);
+      if (notes[midIdx].startTime < windowStart) {
+        startIdx = midIdx + 1;
+      } else {
+        endIdx = midIdx - 1;
+      }
+    }
+    
+    // Collect visible notes from starting point
+    for (let i = startIdx; i < notes.length; i++) {
+      const note = notes[i];
+      const noteEnd = note.startTime + note.duration;
+      
+      if (note.startTime > windowEnd) break; // No more visible notes
+      if (noteEnd >= windowStart) {
+        result.push({ ...note, line: note.line });
+      }
+    }
+    
+    return result;
+  }, [gameState.currentTime, timingData, NOTE_WINDOW]);
+  
+  // Get upcoming notes for P1 (duet mode)
+  const p1VisibleNotes = useMemo(() => {
+    if (!timingData || !timingData.p1Notes) return [];
+    const currentTime = gameState.currentTime;
+    const windowStart = currentTime - 1000;
+    const windowEnd = currentTime + NOTE_WINDOW;
+    
+    const notes = timingData.p1Notes;
+    const result: Array<Note & { line: LyricLine }> = [];
+    
+    let startIdx = 0;
+    let endIdx = notes.length - 1;
+    let midIdx: number;
+    
+    while (startIdx <= endIdx) {
+      midIdx = Math.floor((startIdx + endIdx) / 2);
+      if (notes[midIdx].startTime < windowStart) {
+        startIdx = midIdx + 1;
+      } else {
+        endIdx = midIdx - 1;
+      }
+    }
+    
+    for (let i = startIdx; i < notes.length; i++) {
+      const note = notes[i];
+      const noteEnd = note.startTime + note.duration;
+      
+      if (note.startTime > windowEnd) break;
+      if (noteEnd >= windowStart) {
+        result.push({ ...note, line: note.line });
+      }
+    }
+    
+    return result;
+  }, [gameState.currentTime, timingData, NOTE_WINDOW]);
+  
+  // Get upcoming notes for P2 (duet mode)
+  const p2VisibleNotes = useMemo(() => {
+    if (!timingData || !timingData.p2Notes) return [];
+    const currentTime = gameState.currentTime;
+    const windowStart = currentTime - 1000;
+    const windowEnd = currentTime + NOTE_WINDOW;
+    
+    const notes = timingData.p2Notes;
+    const result: Array<Note & { line: LyricLine }> = [];
+    
+    let startIdx = 0;
+    let endIdx = notes.length - 1;
+    let midIdx: number;
+    
+    while (startIdx <= endIdx) {
+      midIdx = Math.floor((startIdx + endIdx) / 2);
+      if (notes[midIdx].startTime < windowStart) {
+        startIdx = midIdx + 1;
+      } else {
+        endIdx = midIdx - 1;
+      }
+    }
+    
+    for (let i = startIdx; i < notes.length; i++) {
+      const note = notes[i];
+      const noteEnd = note.startTime + note.duration;
+      
+      if (note.startTime > windowEnd) break;
+      if (noteEnd >= windowStart) {
+        result.push({ ...note, line: note.line });
+      }
+    }
+    
+    return result;
+  }, [gameState.currentTime, timingData, NOTE_WINDOW]);
+
+  if (!song) {
+    return (
+      <div className="max-w-4xl mx-auto text-center py-20">
+        <p className="text-white/60 mb-4">No song selected</p>
+        <Button onClick={onBack} className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white">Back to Library</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-40 flex flex-col bg-black">
+      {/* Header Overlay */}
+      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2 bg-gradient-to-b from-black/70 to-transparent">
+        {/* Left: Back Button */}
+        <Button variant="ghost" onClick={() => {
+          // Cleanup before leaving - stop microphone and all media
+          stop();
+          if (audioEffects) {
+            audioEffects.disconnect();
+          }
+          if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+          }
+          if (videoRef.current) {
+            videoRef.current.pause();
+            videoRef.current.currentTime = 0;
+          }
+          setIsPlaying(false);
+          onBack();
+        }} className="text-white/80 hover:text-white hover:bg-white/10">
+          ← Back
+        </Button>
+        
+        {/* Center: Webcam & Stream Controls */}
+        <div className="flex items-center gap-3">
+          <WebcamQuickControls 
+            config={webcamConfig} 
+            onConfigChange={updateWebcamConfig}
+          />
+          <Button
+            onClick={() => setShowStreamPanel(!showStreamPanel)}
+            className={`${isLiveStreaming ? 'bg-red-500 animate-pulse' : 'bg-purple-600 hover:bg-purple-500'} text-white`}
+            size="sm"
+          >
+            {isLiveStreaming ? '🔴 LIVE' : '🎥 Stream'}
+          </Button>
+        </div>
+        
+        {/* Right: Score, Difficulty & Challenge */}
+        <div className="flex items-center gap-3">
+          {/* Mini Score Display - Only for Single Player */}
+          {!isDuetMode && (
+            <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-1.5">
+                <span className="text-cyan-400 font-bold">{gameState.players[0]?.score?.toLocaleString() || 0}</span>
+                <span className="text-white/40">pts</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-purple-400 font-bold">{gameState.players[0]?.combo || 0}x</span>
+                <span className="text-white/40">combo</span>
+              </div>
+            </div>
+          )}
+          <Badge variant="outline" className="border-white/20 text-white/80">
+            {gameState.difficulty.toUpperCase()}
+          </Badge>
+          
+          {/* Active Challenge Mode Indicator */}
+          {activeChallenge && (
+            <Badge 
+              className={`px-3 py-1 text-sm font-bold ${
+                activeChallenge.difficulty === 'extreme' ? 'bg-red-500/30 text-red-300 border border-red-500/50' :
+                activeChallenge.difficulty === 'hard' ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50' :
+                activeChallenge.difficulty === 'medium' ? 'bg-yellow-500/30 text-yellow-300 border border-yellow-500/50' : 
+                'bg-green-500/30 text-green-300 border border-green-500/50'
+              }`}
+            >
+              {activeChallenge.icon} {activeChallenge.name} (+{activeChallenge.xpReward} XP)
+            </Badge>
+          )}
+        </div>
+      </div>
+      
+      {/* Live Streaming Panel */}
+      {showStreamPanel && (
+        <div className="absolute top-16 right-4 z-30 w-80">
+          <LiveStreamingPanel 
+            onStreamStart={() => setIsLiveStreaming(true)}
+            onStreamEnd={() => setIsLiveStreaming(false)}
+          />
+        </div>
+      )}
+
+      {/* Star Power Bar */}
+      <div className="absolute top-20 left-4 z-20 w-64">
+        <StarPowerBar onActivate={() => {
+          // Star power activation logic
+        }} />
+      </div>
+
+      {/* Audio Element - For songs with separate audio file */}
+      {/* ALWAYS render audio element if audioUrl exists - this is the primary audio source */}
+      {/* Sound priority: 1) Music file (audioUrl) > 2) YouTube audio > 3) Local video audio */}
+      {song.audioUrl && (
+        <audio 
+          ref={audioRef}
+          src={song.audioUrl}
+          className="hidden"
+          onEnded={endGameAndCleanup}
+          onError={(e) => {
+            const audio = e.currentTarget;
+            console.error('[GameScreen] Audio element error:', {
+              error: audio.error,
+              networkState: audio.networkState,
+              readyState: audio.readyState,
+              src: audio.src?.substring(0, 50)
+            });
+          }}
+          onCanPlay={() => {
+            audioLoadedRef.current = true;
+          }}
+          onLoadStart={() => {}}
+          preload="auto"
+        />
+      )}
+
+      {/* Hidden Video Element for embedded audio (when video has audio but we don't show it) */}
+      {/* Case 1: Local video with embedded audio, video disabled */}
+      {song.hasEmbeddedAudio && song.videoBackground && !showBackgroundVideo && !isYouTube && !song.audioUrl && (
+        <video
+          ref={videoRef}
+          src={song.videoBackground}
+          className="hidden"
+          muted={false}
+          playsInline
+          onEnded={endGameAndCleanup}
+          preload="auto"
+        />
+      )}
+
+      {/* Game Area - Full Screen */}
+      <div className="absolute inset-0 overflow-hidden">
+        {/* Video Background */}
+        {/* YouTube Video - plays with audio when no separate audio file exists */}
+        {/* When showBackgroundVideo is true: show video AND play audio from YouTube if no audioUrl */}
+        {/* When showBackgroundVideo is false but useYouTubeAudio: still play audio from hidden YouTube */}
+        {showBackgroundVideo && isYouTube && youtubeVideoId ? (
+          <YouTubePlayer
+            videoId={youtubeVideoId}
+            videoGap={song.videoGap || 0}
+            onReady={() => {}}
+            onTimeUpdate={(time) => setYoutubeTime(time)}
+            onEnded={endGameAndCleanup}
+            onAdStart={handleAdStart}
+            onAdEnd={handleAdEnd}
+            isPlaying={isPlaying}
+            startTime={0}
+            interactive={isAdPlaying}
+          />
+        ) : /* Hidden YouTube for audio only (video disabled but using YouTube audio) */
+        !showBackgroundVideo && isYouTube && youtubeVideoId && useYouTubeAudio ? (
+          /* Hidden YouTube player - we need to play it but not show it */
+          <div className="hidden">
+            <YouTubePlayer
+              videoId={youtubeVideoId}
+              videoGap={song.videoGap || 0}
+              onReady={() => {}}
+              onTimeUpdate={(time) => setYoutubeTime(time)}
+              onEnded={endGameAndCleanup}
+              onAdStart={handleAdStart}
+              onAdEnd={handleAdEnd}
+              isPlaying={isPlaying}
+              startTime={0}
+            />
+          </div>
+        ) : /* Local video file - separate audio (video muted, audio plays separately) */
+        showBackgroundVideo && song.videoBackground && !song.hasEmbeddedAudio && !isYouTube ? (
+          <video
+            key={`video-bg-${song.id}`}
+            ref={videoRef}
+            src={song.videoBackground}
+            className="absolute inset-0 w-full h-full object-cover"
+            muted={true}
+            playsInline
+            autoPlay={false}
+            preload="auto"
+            onEnded={endGameAndCleanup}
+          />
+        ) : /* Video with embedded audio - visible AND plays audio */
+        showBackgroundVideo && song.videoBackground && song.hasEmbeddedAudio && !isYouTube ? (
+          <video
+            key={`video-embedded-${song.id}`}
+            ref={videoRef}
+            src={song.videoBackground}
+            className="absolute inset-0 w-full h-full object-cover"
+            muted={false}
+            playsInline
+            autoPlay={false}
+            preload="auto"
+            onEnded={endGameAndCleanup}
+            onLoadedMetadata={() => {}}
+            onCanPlay={() => {
+              videoLoadedRef.current = true;
+            }}
+          />
+        ) : /* Background image from #BACKGROUND: or #COVER: tag */
+        showBackgroundVideo && !useAnimatedBackground && (song.backgroundImage || song.coverImage) ? (
+          <div 
+            className="absolute inset-0 w-full h-full bg-cover bg-center"
+            style={{
+              backgroundImage: `url(${song.backgroundImage || song.coverImage})`,
+            }}
+          >
+            {/* Dark overlay for better note visibility */}
+            <div className="absolute inset-0 bg-black/40" />
+          </div>
+        ) : /* Visual effects animated background with disco lights and particles */
+        useAnimatedBackground ? (
+          <VisualAnimatedBackground 
+            hasVideo={false}
+            hasBackgroundImage={!!song.backgroundImage || !!song.coverImage}
+            backgroundImage={song.backgroundImage || song.coverImage}
+            songEnergy={songEnergy}
+            isPlaying={isPlaying}
+          />
+        ) : /* Music-reactive animated background */
+        (
+          <MusicReactiveBackground 
+            volume={volume} 
+            isPlaying={isPlaying} 
+            bpm={song.bpm}
+            intensity={1}
+          />
+        )}
+
+        {/* Webcam Background - SEPARATE camera for filming singers */}
+        <WebcamBackground 
+          config={webcamConfig} 
+          onConfigChange={updateWebcamConfig}
+        />
+
+        {/* Countdown */}
+        {countdown > 0 && (
+          <div key={countdown} className="absolute inset-0 flex items-center justify-center bg-black/60 z-30">
+            <div 
+              className="text-9xl font-black text-white drop-shadow-2xl"
+              style={{
+                animation: 'countdownPop 0.3s ease-out'
+              }}
+            >
+              {countdown}
+            </div>
+          </div>
+        )}
+        
+        {/* Ad Indicator - Small non-blocking indicator when YouTube ad is playing */}
+        {isAdPlaying && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40">
+            <div className="bg-black/80 backdrop-blur-sm px-6 py-3 rounded-full border border-yellow-500/50 flex items-center gap-3">
+              <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" />
+              <span className="text-yellow-400 font-medium">Werbung läuft</span>
+              <span className="text-white/60">-</span>
+              <span className="text-white/80">Spiel pausiert</span>
+              {adCountdown > 0 && (
+                <>
+                  <span className="text-white/60">-</span>
+                  <span className="text-cyan-400 font-bold">{adCountdown}s</span>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Dark Overlay for better note visibility */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50 z-5" />
+
+        {/* Duet Mode Split-Screen Note Highway with Center Score Bar */}
+        {isDuetMode ? (
+          <div className="absolute inset-0 z-10 flex flex-col">
+            {/* ===== PLAYER 1 (TOP HALF - CYAN) - 46% ===== */}
+            <div className="relative overflow-hidden" style={{ height: '46%' }}>
+              {/* P1 Background Gradient */}
+              <div className="absolute inset-0 bg-gradient-to-b from-cyan-900/20 to-transparent pointer-events-none" />
+              
+              {/* P1 Pitch Lines */}
+              <div className="absolute inset-0">
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute w-full border-t border-cyan-500/10"
+                    style={{ top: `${(i / 6) * 100}%` }}
+                  />
+                ))}
+              </div>
+
+              {/* P1 Sing Line */}
+              <div 
+                className="absolute top-0 bottom-0 z-20 w-1 bg-gradient-to-b from-transparent via-cyan-400 to-transparent shadow-lg shadow-cyan-400/50"
+                style={{ left: `${SING_LINE_POSITION}%` }}
+              >
+                <div className="absolute -left-1 top-0 bottom-0 w-0.5 bg-cyan-500/30" />
+              </div>
+
+              {/* P1 Pitch constants - defined at component scope for use in Pitch Indicator */}
+              {/* P1 Notes */}
+              {(() => {
+                // Constants for half-screen pitch calculation - used by both notes and pitch indicator
+                const halfVisibleRange = 42;
+                const halfVisibleTop = 8;
+
+                // Get note shape classes from theme
+                const noteShape = getNoteShapeClasses(noteShapeStyle);
+
+                return <>
+                  {p1VisibleNotes.map((note) => {
+                    const timeUntilNote = note.startTime - gameState.currentTime;
+                    const noteEnd = note.startTime + note.duration;
+                    const isActive = gameState.currentTime >= note.startTime && gameState.currentTime <= noteEnd;
+
+                    const distanceFromSingLine = (timeUntilNote / NOTE_WINDOW) * (100 - SING_LINE_POSITION + 20);
+                    const x = SING_LINE_POSITION + distanceFromSingLine;
+
+                    const pitchY = halfVisibleTop + halfVisibleRange - ((note.pitch - p1PitchStats.minPitch) / p1PitchStats.pitchRange) * halfVisibleRange;
+
+                    const noteWidthPercent = (note.duration / NOTE_WINDOW) * (100 - SING_LINE_POSITION + 20);
+                    const noteHeight = 24;
+
+                    return (
+                      <div
+                        key={note.id}
+                        className={`absolute ${noteShape.baseClass} ${
+                          note.isGolden
+                            ? 'bg-gradient-to-r from-yellow-400 to-orange-500 shadow-lg shadow-yellow-500/50'
+                            : note.isBonus
+                            ? 'bg-gradient-to-r from-cyan-400 to-teal-500'
+                            : 'bg-gradient-to-r from-cyan-400 to-blue-500'
+                        } ${isActive ? noteShape.activeClass : ''}`}
+                        style={{
+                          left: `${x}%`,
+                          top: `${pitchY}%`,
+                          width: `${noteWidthPercent}%`,
+                          height: `${noteHeight}px`,
+                          transform: 'translateY(-50%)',
+                          boxShadow: isActive ? '0 0 15px rgba(34, 211, 238, 0.8)' : 'none',
+                          opacity: x > 120 || x < -30 ? 0 : 1,
+                          ...noteShape.style,
+                        }}
+                      />
+                    );
+                  })}
+
+                  {/* P1 Pitch Indicator */}
+                  {pitchResult?.frequency && pitchResult.note && (
+                    <div
+                      className="absolute z-30 w-8 h-8 rounded-full bg-gradient-to-r from-cyan-400 to-cyan-600 shadow-lg shadow-cyan-500/70 flex items-center justify-center ring-2 ring-cyan-300"
+                      style={{
+                        left: `${SING_LINE_POSITION - 1.5}%`,
+                        top: `${halfVisibleTop + halfVisibleRange - ((pitchResult.note - p1PitchStats.minPitch) / p1PitchStats.pitchRange) * halfVisibleRange}%`,
+                        transform: 'translateY(-50%)',
+                      }}
+                    >
+                      <MicIcon className="w-4 h-4 text-white" />
+                    </div>
+                  )}
+                </>;
+              })()}
+
+              {/* P1 Player Label */}
+              <div className="absolute top-2 left-4 z-20 bg-black/50 backdrop-blur-sm rounded-lg px-2 py-1 border border-cyan-500/30">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-cyan-500 flex items-center justify-center text-xs font-bold text-white">
+                    P1
+                  </div>
+                  <span className="text-xs text-cyan-300">{song?.duetPlayerNames?.[0] || 'Player 1'}</span>
+                </div>
+              </div>
+
+              {/* P1 Lyrics Display - At bottom of P1 area */}
+              {(() => {
+                const currentTime = gameState.currentTime;
+                if (!timingData || !timingData.p1Lines) return null;
+                
+                const PREVIEW_TIME = 2000;
+                let displayLine = timingData.p1Lines.find(line =>
+                  currentTime >= line.startTime && currentTime <= line.endTime
+                );
+                
+                if (!displayLine) {
+                  for (const line of timingData.p1Lines) {
+                    if (currentTime >= line.startTime - PREVIEW_TIME && currentTime < line.startTime) {
+                      displayLine = line;
+                      break;
+                    }
+                  }
+                }
+                
+                if (!displayLine) return null;
+                
+                const lineText = displayLine.notes.map(n => n.lyric).join('');
+                
+                return (
+                  <div className="absolute bottom-2 left-0 right-0 z-20 bg-gradient-to-t from-black/60 to-transparent py-1.5 px-4">
+                    <div className="text-lg md:text-xl font-bold text-center">
+                      <LyricLineDisplay
+                        line={displayLine}
+                        currentTime={currentTime}
+                        playerColor="#22d3ee"
+                        noteDisplayStyle={noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
+                        notePerformance={notePerformance}
+                        gameMode={gameState.gameMode}
+                        missingWordsIndices={gameState.missingWordsIndices}
+                        isBlindSection={gameState.isBlindSection}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* ===== CENTER SCORE BAR with VS Badge - 8% ===== */}
+            <div className="relative flex items-center justify-center z-30" style={{ height: '8%' }}>
+              {/* Background gradient for the score bar */}
+              <div className="absolute inset-0 bg-black/90 backdrop-blur-md border-y-2 border-white/10" />
+              
+              {/* P1 Score - Left */}
+              <div className="relative flex items-center gap-3 px-4 py-1">
+                <div className="w-8 h-8 rounded-full bg-cyan-500 flex items-center justify-center text-xs font-bold text-white shadow-lg">
+                  P1
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xl font-bold text-cyan-400 leading-tight">{gameState.players[0]?.score?.toLocaleString() || 0}</span>
+                  <span className="text-xs text-cyan-300/60 leading-tight">{gameState.players[0]?.combo || 0}x</span>
+                </div>
+              </div>
+              
+              {/* VS Badge */}
+              <div className="relative mx-4 bg-gradient-to-r from-cyan-500 via-white to-pink-500 text-black font-black px-6 py-1.5 rounded-xl text-lg shadow-lg ring-2 ring-white/30">
+                VS
+              </div>
+              
+              {/* P2 Score - Right */}
+              <div className="relative flex items-center gap-3 px-4 py-1">
+                <div className="flex flex-col items-end">
+                  <span className="text-xl font-bold text-pink-400 leading-tight">{p2State.score.toLocaleString()}</span>
+                  <span className="text-xs text-pink-300/60 leading-tight">{p2State.combo}x</span>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-pink-500 flex items-center justify-center text-xs font-bold text-white shadow-lg">
+                  P2
+                </div>
+              </div>
+            </div>
+
+            {/* ===== PLAYER 2 (BOTTOM HALF - PINK) - 46% ===== */}
+            <div className="relative overflow-hidden" style={{ height: '46%' }}>
+              {/* P2 Background Gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-pink-900/20 to-transparent pointer-events-none" />
+              
+              {/* P2 Pitch Lines */}
+              <div className="absolute inset-0">
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute w-full border-t border-pink-500/10"
+                    style={{ top: `${(i / 6) * 100}%` }}
+                  />
+                ))}
+              </div>
+
+              {/* P2 Sing Line */}
+              <div 
+                className="absolute top-0 bottom-0 z-20 w-1 bg-gradient-to-b from-transparent via-pink-400 to-transparent shadow-lg shadow-pink-400/50"
+                style={{ left: `${SING_LINE_POSITION}%` }}
+              >
+                <div className="absolute -left-1 top-0 bottom-0 w-0.5 bg-pink-500/30" />
+              </div>
+
+              {/* P2 Notes */}
+              {(() => {
+                // Constants for half-screen pitch calculation - used by both notes and pitch indicator
+                const halfVisibleRange = 42;
+                const halfVisibleTop = 8;
+
+                // Get note shape classes from theme
+                const noteShape = getNoteShapeClasses(noteShapeStyle);
+
+                return <>
+                  {p2VisibleNotes.map((note) => {
+                    const timeUntilNote = note.startTime - gameState.currentTime;
+                    const noteEnd = note.startTime + note.duration;
+                    const isActive = gameState.currentTime >= note.startTime && gameState.currentTime <= noteEnd;
+
+                    const distanceFromSingLine = (timeUntilNote / NOTE_WINDOW) * (100 - SING_LINE_POSITION + 20);
+                    const x = SING_LINE_POSITION + distanceFromSingLine;
+
+                    const pitchY = halfVisibleTop + halfVisibleRange - ((note.pitch - p2PitchStats.minPitch) / p2PitchStats.pitchRange) * halfVisibleRange;
+
+                    const noteWidthPercent = (note.duration / NOTE_WINDOW) * (100 - SING_LINE_POSITION + 20);
+                    const noteHeight = 24;
+
+                    return (
+                      <div
+                        key={`p2-${note.id}`}
+                        className={`absolute ${noteShape.baseClass} ${
+                          note.isGolden
+                            ? 'bg-gradient-to-r from-yellow-400 to-orange-500 shadow-lg shadow-yellow-500/50'
+                            : note.isBonus
+                            ? 'bg-gradient-to-r from-pink-400 to-rose-500'
+                            : 'bg-gradient-to-r from-pink-500 to-purple-500'
+                        } ${isActive ? noteShape.activeClass : ''}`}
+                        style={{
+                          left: `${x}%`,
+                          top: `${pitchY}%`,
+                          width: `${noteWidthPercent}%`,
+                          height: `${noteHeight}px`,
+                          transform: 'translateY(-50%)',
+                          boxShadow: isActive ? '0 0 15px rgba(236, 72, 153, 0.8)' : 'none',
+                          opacity: x > 120 || x < -30 ? 0 : 1,
+                          ...noteShape.style,
+                        }}
+                      />
+                    );
+                  })}
+
+                  {/* P2 Pitch Indicator */}
+                  {p2DetectedPitch && pitchResult?.note && (
+                    <div
+                      className="absolute z-30 w-8 h-8 rounded-full bg-gradient-to-r from-pink-400 to-pink-600 shadow-lg shadow-pink-500/70 flex items-center justify-center ring-2 ring-pink-300"
+                      style={{
+                        left: `${SING_LINE_POSITION - 1.5}%`,
+                        top: `${halfVisibleTop + halfVisibleRange - ((pitchResult.note - p2PitchStats.minPitch) / p2PitchStats.pitchRange) * halfVisibleRange}%`,
+                        transform: 'translateY(-50%)',
+                      }}
+                    >
+                      <MicIcon className="w-4 h-4 text-white" />
+                    </div>
+                  )}
+                </>;
+              })()}
+
+              {/* P2 Player Label */}
+              <div className="absolute top-2 left-4 z-20 bg-black/50 backdrop-blur-sm rounded-lg px-2 py-1 border border-pink-500/30">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center text-xs font-bold text-white">
+                    P2
+                  </div>
+                  <span className="text-xs text-pink-300">{song?.duetPlayerNames?.[1] || 'Player 2'}</span>
+                </div>
+              </div>
+
+              {/* P2 Lyrics Display - At bottom of P2 area */}
+              {(() => {
+                const currentTime = gameState.currentTime;
+                if (!timingData || !timingData.p2Lines) return null;
+                
+                const PREVIEW_TIME = 2000;
+                let displayLine = timingData.p2Lines.find(line =>
+                  currentTime >= line.startTime && currentTime <= line.endTime
+                );
+                
+                if (!displayLine) {
+                  for (const line of timingData.p2Lines) {
+                    if (currentTime >= line.startTime - PREVIEW_TIME && currentTime < line.startTime) {
+                      displayLine = line;
+                      break;
+                    }
+                  }
+                }
+                
+                if (!displayLine) return null;
+                
+                return (
+                  <div className="absolute bottom-2 left-0 right-0 z-20 bg-gradient-to-t from-black/60 to-transparent py-1.5 px-4">
+                    <div className="text-lg md:text-xl font-bold text-center">
+                      <LyricLineDisplay
+                        line={displayLine}
+                        currentTime={currentTime}
+                        playerColor="#ec4899"
+                        noteDisplayStyle={noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
+                        notePerformance={notePerformance}
+                        gameMode={gameState.gameMode}
+                        missingWordsIndices={gameState.missingWordsIndices}
+                        isBlindSection={gameState.isBlindSection}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        ) : (
+          /* ===== SINGLE PLAYER NOTE HIGHWAY (ORIGINAL) ===== */
+          <div className="absolute inset-0 z-10">
+            {/* Pitch Lines */}
+            <div className="absolute inset-0">
+              {Array.from({ length: 13 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute w-full border-t border-white/5"
+                  style={{ top: `${(i / 12) * 100}%` }}
+                />
+              ))}
+            </div>
+
+            {/* Sing Line - Vertical marker at 25% from left (like UltraStar/Vocaluxe) */}
+            <div 
+              className="absolute top-0 bottom-0 z-20 w-1 bg-gradient-to-b from-transparent via-cyan-400 to-transparent shadow-lg shadow-cyan-400/50"
+              style={{ left: `${SING_LINE_POSITION}%` }}
+            >
+              <div className="absolute -left-1 top-0 bottom-0 w-0.5 bg-white/20" />
+              <div className="absolute -left-4 top-1/2 transform -translate-y-1/2 text-cyan-400 text-xs font-bold whitespace-nowrap">
+                SING
+              </div>
+            </div>
+
+            {/* Notes - Smoothly Moving Right to Left (UltraStar style) */}
+            {visibleNotes.map((note) => {
+              const timeUntilNote = note.startTime - gameState.currentTime;
+              const noteEnd = note.startTime + note.duration;
+              const timeUntilEnd = noteEnd - gameState.currentTime;
+              const isActive = gameState.currentTime >= note.startTime && gameState.currentTime <= noteEnd;
+
+              const distanceFromSingLine = (timeUntilNote / NOTE_WINDOW) * (100 - SING_LINE_POSITION + 20);
+              const x = SING_LINE_POSITION + distanceFromSingLine;
+
+              const pitchY = VISIBLE_TOP + VISIBLE_RANGE - ((note.pitch - pitchStats.minPitch) / pitchStats.pitchRange) * VISIBLE_RANGE;
+
+              const noteWidthPercent = (note.duration / NOTE_WINDOW) * (100 - SING_LINE_POSITION + 20);
+              const noteHeight = 32;
+
+              // Get note shape classes from theme
+              const noteShape = getNoteShapeClasses(noteShapeStyle);
+
+              return (
+                <div
+                  key={note.id}
+                  className={`absolute ${noteShape.baseClass} ${
+                    note.isGolden
+                      ? 'bg-gradient-to-r from-yellow-400 to-orange-500 shadow-lg shadow-yellow-500/50'
+                      : note.isBonus
+                      ? 'bg-gradient-to-r from-pink-500 to-purple-500'
+                      : 'bg-gradient-to-r from-cyan-500 to-blue-500'
+                  } ${isActive ? noteShape.activeClass : ''}`}
+                  style={{
+                    left: `${x}%`,
+                    top: `${pitchY}%`,
+                    width: `${noteWidthPercent}%`,
+                    height: `${noteHeight}px`,
+                    transform: 'translateY(-50%)',
+                    boxShadow: isActive ? '0 0 20px rgba(34, 211, 238, 0.6)' : 'none',
+                    opacity: x > 120 || x < -30 ? 0 : 1,
+                    ...noteShape.style,
+                  }}
+                />
+              );
+            })}
+
+            {/* Detected Pitch Indicator - Ball that moves up/down with voice */}
+            {pitchResult?.frequency && pitchResult.note && (
+              <div
+                className="absolute z-30 w-10 h-10 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 shadow-lg shadow-green-500/50 flex items-center justify-center"
+                style={{
+                  left: `${SING_LINE_POSITION - 2}%`,
+                  top: `${VISIBLE_TOP + VISIBLE_RANGE - ((pitchResult.note - pitchStats.minPitch) / pitchStats.pitchRange) * VISIBLE_RANGE}%`,
+                  transform: 'translateY(-50%)',
+                }}
+              >
+                <MicIcon className="w-5 h-5 text-white" />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Lyrics Display - Karaoke style with color progression */}
+        <div className="absolute bottom-0 left-0 right-0 z-20">
+          <div className="bg-gradient-to-t from-black/80 to-transparent p-6">
+            {/* Current Line - Show 2 seconds before it starts */}
+            {(() => {
+              // Find current or upcoming line (show 2000ms before start)
+              const PREVIEW_TIME = 2000; // Show lyrics 2 seconds before singing
+              const currentTime = gameState.currentTime;
+
+              // First try to find the currently singing line
+              let displayLine = timingData?.sortedLines.find(line =>
+                currentTime >= line.startTime && currentTime <= line.endTime
+              );
+
+              // If no active line, find the next upcoming line within preview window
+              if (!displayLine && timingData) {
+                for (const line of timingData.sortedLines) {
+                  if (currentTime >= line.startTime - PREVIEW_TIME && currentTime < line.startTime) {
+                    displayLine = line;
+                    break;
+                  }
+                }
+              }
+
+              if (!displayLine) return null;
+
+              // Calculate time until singing starts (for flying animation)
+              const timeUntilSing = displayLine.startTime - currentTime;
+              const isSinging = currentTime >= displayLine.startTime;
+
+              // Flying animation: starts 2 seconds before, lands when singing starts
+              const flyProgress = Math.max(0, Math.min(1, 1 - (timeUntilSing / PREVIEW_TIME)));
+              const isFlying = !isSinging && timeUntilSing > 0 && timeUntilSing < PREVIEW_TIME;
+
+              // Get the first word of the line for the marker target
+              const firstNote = displayLine.notes[0];
+              const firstWord = firstNote?.lyric?.trim() || '';
+
+              return (
+                <div className="text-2xl md:text-3xl font-bold text-center drop-shadow-lg relative w-full">
+                  {/* Flying Line Indicator - Moves from left edge to first word */}
+                  {isFlying && (
+                    <div
+                      className="absolute top-1/2 flex items-center pointer-events-none"
+                      style={{
+                        // Start from left edge of container (5%), end just before the centered text (45%)
+                        // The text is centered, so we fly to the position just before the text starts
+                        left: `${5 + flyProgress * 40}%`,
+                        transform: 'translateY(-50%)',
+                        opacity: 0.5 + flyProgress * 0.5,
+                        zIndex: 100,
+                      }}
+                    >
+                      <div
+                        className="rounded-full flex items-center justify-center"
+                        style={{
+                          width: `${12 + flyProgress * 8}px`,
+                          height: `${12 + flyProgress * 8}px`,
+                          background: 'radial-gradient(circle, rgba(34, 211, 238, 1) 0%, rgba(34, 211, 238, 0.7) 50%, transparent 100%)',
+                          boxShadow: `0 0 ${20 + flyProgress * 40}px rgba(34, 211, 238, ${0.6 + flyProgress * 0.4})`,
+                          animation: 'pulse 0.4s ease-in-out infinite',
+                        }}
+                      />
+                      {/* Arrow pointing to the text */}
+                      <svg
+                        className="text-cyan-400"
+                        style={{
+                          width: `${16 + flyProgress * 8}px`,
+                          height: `${16 + flyProgress * 8}px`,
+                          marginLeft: '4px',
+                          filter: `drop-shadow(0 0 ${10 + flyProgress * 15}px rgba(34, 211, 238, 0.9))`,
+                        }}
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                      {/* Show the first word as a label during flight */}
+                      <span
+                        className="ml-2 text-cyan-400 font-bold"
+                        style={{
+                          fontSize: `${14 + flyProgress * 6}px`,
+                          textShadow: `0 0 ${10 + flyProgress * 10}px rgba(34, 211, 238, 0.9)`,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {firstWord}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Pulsing indicator during singing - directly before the text */}
+                  {isSinging && (
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                      <div
+                        className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse"
+                        style={{ boxShadow: '0 0 15px rgba(34, 211, 238, 0.8)' }}
+                      />
+                    </div>
+                  )}
+
+                  <LyricLineDisplay
+                    line={displayLine}
+                    currentTime={currentTime}
+                    playerColor={PLAYER_COLORS[0]}
+                    noteDisplayStyle={noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
+                    notePerformance={notePerformance}
+                    gameMode={gameState.gameMode}
+                    missingWordsIndices={gameState.missingWordsIndices}
+                    isBlindSection={gameState.isBlindSection}
+                  />
+                </div>
+              );
+            })()}
+            
+            {/* Next Line Preview */}
+            {(() => {
+              const currentTime = gameState.currentTime;
+              if (!timingData) return null;
+              
+              // Find the line after the current/upcoming one
+              let currentLineIndex = -1;
+              for (let i = 0; i < timingData.sortedLines.length; i++) {
+                const line = timingData.sortedLines[i];
+                if (currentTime >= line.startTime - 2000 && currentTime <= line.endTime) {
+                  currentLineIndex = i;
+                  break;
+                }
+              }
+              
+              const nextLine = currentLineIndex >= 0 ? timingData.sortedLines[currentLineIndex + 1] : null;
+              if (!nextLine) return null;
+              
+              // Join notes WITHOUT extra spaces (UltraStar format already has trailing spaces)
+              const nextLineText = nextLine.notes.map(n => n.lyric).join('');
+              return (
+                <p className="text-base md:text-lg text-center text-white/40 mt-3" style={{ whiteSpace: 'pre-wrap' }}>
+                  {nextLineText}
+                </p>
+              );
+            })()}
+          </div>
+        </div>
+
+        {/* Volume Meter */}
+        <div className="absolute top-16 right-4 z-20">
+          <div className="w-3 h-24 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm">
+            <div 
+              className="w-full bg-gradient-to-t from-green-500 via-yellow-500 to-red-500 transition-all duration-75"
+              style={{ height: `${volume * 100}%`, marginTop: `${(1 - volume) * 100}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Audio Effects Button */}
+        <button
+          onClick={() => setShowAudioEffects(!showAudioEffects)}
+          className="fixed bottom-24 right-4 z-30 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
+          title="Audio Effects"
+        >
+          🎛️
+        </button>
+
+        {/* Audio Effects Panel */}
+        {showAudioEffects && (
+          <div className="fixed bottom-40 right-4 z-30 w-72 bg-gray-800/95 rounded-xl p-4 border border-white/20">
+            <h4 className="font-semibold mb-3">Audio Effects</h4>
+            <div className="space-y-3">
+              <div>
+                <span className="text-xs text-white/60">Reverb: {Math.round(reverbAmount * 100)}%</span>
+                <input type="range" min="0" max="100" value={reverbAmount * 100}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) / 100;
+                    setReverbAmount(val);
+                    audioEffects?.setReverb(val);
+                  }}
+                  className="w-full accent-purple-500" />
+              </div>
+              <div>
+                <span className="text-xs text-white/60">Echo: {Math.round(echoAmount * 100)}%</span>
+                <input type="range" min="0" max="100" value={echoAmount * 100}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) / 100;
+                    setEchoAmount(val);
+                    audioEffects?.setDelay(val * 0.5, val * 0.5);
+                  }}
+                  className="w-full accent-cyan-500" />
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Progress Bar - Full Width Bottom */}
+        <div className="absolute bottom-0 left-0 right-0 z-20 h-1 bg-white/10">
+          <div 
+            className="h-full bg-gradient-to-r from-cyan-500 to-purple-500"
+            style={{ width: `${(gameState.currentTime / song.duration) * 100}%` }}
+          />
+        </div>
+        
+        {/* Time Display */}
+        <div className="absolute bottom-2 right-4 z-20 text-white/60 text-sm font-mono">
+          {Math.floor(gameState.currentTime / 60000)}:{String(Math.floor((gameState.currentTime % 60000) / 1000)).padStart(2, '0')} / {Math.floor(song.duration / 60000)}:{String(Math.floor((song.duration % 60000) / 1000)).padStart(2, '0')}
+        </div>
+      </div>
+
+      <PracticePanel
+        practiceMode={practiceMode}
+        showControls={showPracticeControls}
+        onToggleControls={() => setShowPracticeControls(!showPracticeControls)}
+        onPracticeModeChange={(config) => setPracticeMode(p => ({ ...p, ...config }))}
+      />
+
+      <ScoreEventsDisplay events={scoreEvents} maxVisible={5} />
+      
+      {/* Particle System for visual effects */}
+      <ParticleSystem particles={particles} />
+      
+      {/* Spectrogram Display - Audio visualization */}
+      {showPitchGuide && isPlaying && (
+        <SpectrogramDisplay
+          audioElement={audioRef.current}
+          isActive={isPlaying && !!audioRef.current}
+          mode="bars"
+          position={{ x: 50, y: 92 }}
+          size={{ width: 200, height: 40 }}
+          colorScheme="neon"
+          numBars={24}
+        />
+      )}
+      
+      {/* Combo Fire Effect */}
+      {gameState.players[0]?.combo && gameState.players[0].combo >= 5 && (
+        <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+          <ComboFireEffect combo={gameState.players[0].combo} isLarge={gameState.players[0].combo >= 20} />
+        </div>
+      )}
+      
+      {/* Star Power Visual Effect */}
+      <StarPowerEffect 
+        isActive={gameState.players[0]?.isStarPowerActive || false} 
+        charge={gameState.players[0]?.starPower || 0} 
+      />
+      
+      {/* Prominent Score Display - Only for Single Player Mode */}
+      {!isDuetMode && <ProminentScoreDisplay player={gameState.players[0]} />}
+    </div>
+  );
+}
+
+
+export { GameScreen, LyricLineDisplay };

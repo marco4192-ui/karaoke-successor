@@ -1,0 +1,220 @@
+// IndexedDB storage for media files (audio, video, cover, txt)
+// This allows persistent storage of imported song media
+// IMPORTANT: TXT files are stored here to avoid bloating localStorage with lyrics data
+
+const DB_NAME = 'karaoke-successor-media';
+const DB_VERSION = 2; // Bumped for txt support
+const STORE_NAME = 'media';
+
+export interface MediaRecord {
+  id: string; // songId + type (e.g., "song-123-audio")
+  songId: string;
+  type: 'audio' | 'video' | 'cover' | 'txt';
+  data: Blob;
+  createdAt: number;
+}
+
+let dbInstance: IDBDatabase | null = null;
+
+// Initialize the database
+export async function initMediaDB(): Promise<IDBDatabase> {
+  if (dbInstance) return dbInstance;
+  
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    
+    request.onerror = () => {
+      console.error('[MediaDB] Failed to open database:', request.error);
+      reject(request.error);
+    };
+    
+    request.onsuccess = () => {
+      dbInstance = request.result;
+      resolve(dbInstance);
+    };
+    
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+        store.createIndex('songId', 'songId', { unique: false });
+        store.createIndex('type', 'type', { unique: false });
+      }
+    };
+  });
+}
+
+// Store media blob
+// IMPORTANT: Always converts File/Blob to a new Blob to ensure data persistence
+// In Tauri/WebView, File objects may be references that don't persist
+export async function storeMedia(
+  songId: string, 
+  type: 'audio' | 'video' | 'cover' | 'txt', 
+  data: Blob
+): Promise<void> {
+  console.log('[MediaDB] storeMedia called:', { songId, type, size: data.size, dataType: data.type });
+  
+  if (data.size === 0) {
+    console.warn('[MediaDB] Attempting to store empty blob for', type);
+    return;
+  }
+  
+  const db = await initMediaDB();
+  
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    
+    // For non-txt files, read the content and create a new Blob to ensure persistence
+    // This is important in Tauri where File objects may be filesystem references
+    const storeData = async () => {
+      try {
+        let blobToStore: Blob;
+        
+        if (type === 'txt') {
+          // TXT is already converted to Blob in folder-scanner
+          blobToStore = data;
+        } else {
+          // For audio/video/cover, read as ArrayBuffer and create new Blob
+          const arrayBuffer = await data.arrayBuffer();
+          blobToStore = new Blob([arrayBuffer], { type: data.type || 'application/octet-stream' });
+        }
+        
+        const record: MediaRecord = {
+          id: `${songId}-${type}`,
+          songId,
+          type,
+          data: blobToStore,
+          createdAt: Date.now()
+        };
+        
+        const request = store.put(record);
+        
+        request.onsuccess = () => {
+          console.log('[MediaDB] Successfully stored', type, 'for song', songId, ', size:', blobToStore.size);
+          resolve();
+        };
+        request.onerror = () => {
+          console.error('[MediaDB] Failed to store', type, ':', request.error);
+          reject(request.error);
+        };
+      } catch (err) {
+        console.error('[MediaDB] Error processing data for', type, ':', err);
+        reject(err);
+      }
+    };
+    
+    storeData();
+  });
+}
+
+// Get media blob
+export async function getMedia(
+  songId: string, 
+  type: 'audio' | 'video' | 'cover' | 'txt'
+): Promise<Blob | null> {
+  console.log('[MediaDB] getMedia called:', { songId, type });
+  const db = await initMediaDB();
+  
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORE_NAME], 'readonly');
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.get(`${songId}-${type}`);
+    
+    request.onsuccess = () => {
+      if (request.result) {
+        const blob = request.result.data;
+        console.log('[MediaDB] Found', type, 'for song', songId, ', size:', blob.size);
+        if (blob.size === 0) {
+          console.warn('[MediaDB] Retrieved blob is empty for', type);
+        }
+        resolve(blob);
+      } else {
+        console.warn('[MediaDB] No', type, 'found for song', songId);
+        resolve(null);
+      }
+    };
+    
+    request.onerror = () => {
+      console.error('[MediaDB] Failed to get', type, ':', request.error);
+      reject(request.error);
+    };
+  });
+}
+
+// Get all media URLs for a song
+export async function getSongMediaUrls(songId: string): Promise<{
+  audioUrl?: string;
+  videoUrl?: string;
+  coverUrl?: string;
+  txtUrl?: string;
+}> {
+  const [audio, video, cover, txt] = await Promise.all([
+    getMedia(songId, 'audio'),
+    getMedia(songId, 'video'),
+    getMedia(songId, 'cover'),
+    getMedia(songId, 'txt')
+  ]);
+  
+  return {
+    audioUrl: audio && audio.size > 0 ? URL.createObjectURL(audio) : undefined,
+    videoUrl: video && video.size > 0 ? URL.createObjectURL(video) : undefined,
+    coverUrl: cover && cover.size > 0 ? URL.createObjectURL(cover) : undefined,
+    txtUrl: txt && txt.size > 0 ? URL.createObjectURL(txt) : undefined
+  };
+}
+
+// Get TXT file content as text
+export async function getTxtContent(songId: string): Promise<string | null> {
+  const blob = await getMedia(songId, 'txt');
+  if (!blob || blob.size === 0) return null;
+  
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(blob);
+  });
+}
+
+// Delete all media for a song
+export async function deleteSongMedia(songId: string): Promise<void> {
+  const db = await initMediaDB();
+  
+  const types: ('audio' | 'video' | 'cover' | 'txt')[] = ['audio', 'video', 'cover', 'txt'];
+  
+  for (const type of types) {
+    await new Promise<void>((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.delete(`${songId}-${type}`);
+      
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+}
+
+// Check if media exists for a song
+export async function hasMedia(
+  songId: string, 
+  type: 'audio' | 'video' | 'cover' | 'txt'
+): Promise<boolean> {
+  const media = await getMedia(songId, type);
+  return media !== null;
+}
+
+// Clear all media (for debugging)
+export async function clearAllMedia(): Promise<void> {
+  const db = await initMediaDB();
+  
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.clear();
+    
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
