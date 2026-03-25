@@ -71,6 +71,8 @@ import {
   useSongEnergy
 } from '@/components/game/visual-effects';
 import { SpectrogramDisplay } from '@/components/game/spectrogram-display';
+import { DuetNoteHighway, PlayerScoringState } from '@/components/game/duet-note-highway';
+import { SinglePlayerNoteHighway } from '@/components/game/single-player-highway';
 
 // ===================== HOME SCREEN =====================
 // HomeScreen has been moved to /src/components/screens/home-screen.tsx
