@@ -1585,6 +1585,25 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         <StarPowerBar onActivate={handleActivateStarPower} />
       </div>
 
+      {/* Pitch Graph Display - Shows real-time pitch visualization */}
+      {isPlaying && showPitchGuide && (
+        <div className="absolute top-44 left-4 z-20 w-64">
+          <PitchGraphDisplay
+            currentPitch={pitchResult?.note ?? null}
+            targetPitch={null}
+            currentTime={gameState.currentTime}
+            isPlaying={isPlaying}
+            accuracy={undefined}
+            width={280}
+            height={80}
+            colorScheme="neon"
+            showTargetLine={false}
+            minPitch={pitchStats.minPitch}
+            maxPitch={pitchStats.maxPitch}
+          />
+        </div>
+      )}
+
       {/* Audio Element - For songs with separate audio file */}
       {/* ALWAYS render audio element if audioUrl exists - this is the primary audio source */}
       {/* Sound priority: 1) Music file (audioUrl) > 2) YouTube audio > 3) Local video audio */}
