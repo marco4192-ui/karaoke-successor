@@ -45,6 +45,8 @@ import {
 } from '@/lib/game/scoring';
 import {
   NoteShapeStyle,
+  calculatePitchStats,
+  PitchStats,
 } from '@/lib/game/note-utils';
 import { ScoreEventsDisplay } from '@/components/game/score-events-display';
 import { PitchGraphDisplay } from '@/components/game/pitch-graph-display';
@@ -651,74 +653,21 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   // NOTE: timingData and beatDuration are now defined EARLIER in the file (before useNoteScoring hook)
   
   // Calculate pitch range dynamically from pre-computed notes
-  // This ensures all notes are visible within the display area
-  const pitchStats = useMemo(() => {
-    if (!timingData || timingData.allNotes.length === 0) {
-      return { minPitch: 48, maxPitch: 72, pitchRange: 24 };
-    }
-    
-    let minPitch = Infinity;
-    let maxPitch = -Infinity;
-    
-    for (const note of timingData.allNotes) {
-      minPitch = Math.min(minPitch, note.pitch);
-      maxPitch = Math.max(maxPitch, note.pitch);
-    }
-    
-    // Add padding (2 semitones on each side)
-    const paddedMin = Math.max(0, minPitch - 2);
-    const paddedMax = Math.min(127, maxPitch + 2);
-    return { 
-      minPitch: paddedMin, 
-      maxPitch: paddedMax, 
-      pitchRange: Math.max(12, paddedMax - paddedMin) // At least 1 octave
-    };
+  // Uses utility function for consistent pitch range calculation
+  const pitchStats = useMemo<PitchStats>(() => {
+    return calculatePitchStats(timingData?.allNotes);
   }, [timingData]);
   
   // Calculate pitch range for P1 specifically (for duet mode)
-  const p1PitchStats = useMemo(() => {
-    if (!timingData || !timingData.p1Notes || timingData.p1Notes.length === 0) {
-      return pitchStats;
-    }
-    
-    let minPitch = Infinity;
-    let maxPitch = -Infinity;
-    
-    for (const note of timingData.p1Notes) {
-      minPitch = Math.min(minPitch, note.pitch);
-      maxPitch = Math.max(maxPitch, note.pitch);
-    }
-    
-    const paddedMin = Math.max(0, minPitch - 2);
-    const paddedMax = Math.min(127, maxPitch + 2);
-    return { 
-      minPitch: paddedMin, 
-      maxPitch: paddedMax, 
-      pitchRange: Math.max(12, paddedMax - paddedMin)
-    };
+  const p1PitchStats = useMemo<PitchStats>(() => {
+    const stats = calculatePitchStats(timingData?.p1Notes);
+    return stats === calculatePitchStats(null) ? pitchStats : stats;
   }, [timingData, pitchStats]);
   
   // Calculate pitch range for P2 specifically (for duet mode)
-  const p2PitchStats = useMemo(() => {
-    if (!timingData || !timingData.p2Notes || timingData.p2Notes.length === 0) {
-      return pitchStats;
-    }
-    
-    let minPitch = Infinity;
-    let maxPitch = -Infinity;
-    
-    for (const note of timingData.p2Notes) {
-      minPitch = Math.min(minPitch, note.pitch);
-      maxPitch = Math.max(maxPitch, note.pitch);
-    }
-    
-    const paddedMin = Math.max(0, minPitch - 2);
-    const paddedMax = Math.min(127, maxPitch + 2);
-    return { 
-      minPitch: paddedMin, 
-      maxPitch: paddedMax, 
-      pitchRange: Math.max(12, paddedMax - paddedMin)
-    };
+  const p2PitchStats = useMemo<PitchStats>(() => {
+    const stats = calculatePitchStats(timingData?.p2Notes);
+    return stats === calculatePitchStats(null) ? pitchStats : stats;
   }, [timingData, pitchStats]);
 
   // MISSING WORDS MODE: Generate random hidden word indices when game starts

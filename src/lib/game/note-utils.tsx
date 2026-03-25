@@ -202,3 +202,56 @@ export interface NotePositionData {
   isGolden: boolean;
   isBonus: boolean;
 }
+
+/**
+ * Pitch statistics for display range calculation
+ */
+export interface PitchStats {
+  minPitch: number;
+  maxPitch: number;
+  pitchRange: number;
+}
+
+/**
+ * Default pitch stats (fallback when no notes available)
+ */
+export const DEFAULT_PITCH_STATS: PitchStats = {
+  minPitch: 48,
+  maxPitch: 72,
+  pitchRange: 24,
+};
+
+/**
+ * Calculate pitch range statistics from an array of notes
+ * Used to determine the vertical display range for note highway
+ * 
+ * @param notes - Array of notes with pitch property
+ * @param padding - Semitones to add as padding (default: 2)
+ * @returns PitchStats with minPitch, maxPitch, and pitchRange
+ */
+export function calculatePitchStats(
+  notes: Array<{ pitch: number }> | null | undefined,
+  padding: number = 2
+): PitchStats {
+  if (!notes || notes.length === 0) {
+    return DEFAULT_PITCH_STATS;
+  }
+  
+  let minPitch = Infinity;
+  let maxPitch = -Infinity;
+  
+  for (const note of notes) {
+    minPitch = Math.min(minPitch, note.pitch);
+    maxPitch = Math.max(maxPitch, note.pitch);
+  }
+  
+  // Add padding and clamp to valid MIDI range (0-127)
+  const paddedMin = Math.max(0, minPitch - padding);
+  const paddedMax = Math.min(127, maxPitch + padding);
+  
+  return {
+    minPitch: paddedMin,
+    maxPitch: paddedMax,
+    pitchRange: Math.max(12, paddedMax - paddedMin), // At least 1 octave
+  };
+}
