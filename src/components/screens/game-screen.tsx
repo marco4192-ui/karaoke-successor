@@ -1808,86 +1808,20 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             noteDisplayStyle={noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
           />
         ) : (
-          /* ===== SINGLE PLAYER NOTE HIGHWAY (ORIGINAL) ===== */
-          <div className="absolute inset-0 z-10">
-            {/* Pitch Lines */}
-            <div className="absolute inset-0">
-              {Array.from({ length: 13 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="absolute w-full border-t border-white/5"
-                  style={{ top: `${(i / 12) * 100}%` }}
-                />
-              ))}
-            </div>
-
-            {/* Sing Line - Vertical marker at 25% from left (like UltraStar/Vocaluxe) */}
-            <div 
-              className="absolute top-0 bottom-0 z-20 w-1 bg-gradient-to-b from-transparent via-cyan-400 to-transparent shadow-lg shadow-cyan-400/50"
-              style={{ left: `${SING_LINE_POSITION}%` }}
-            >
-              <div className="absolute -left-1 top-0 bottom-0 w-0.5 bg-white/20" />
-              <div className="absolute -left-4 top-1/2 transform -translate-y-1/2 text-cyan-400 text-xs font-bold whitespace-nowrap">
-                SING
-              </div>
-            </div>
-
-            {/* Notes - Smoothly Moving Right to Left (UltraStar style) */}
-            {visibleNotes.map((note) => {
-              const timeUntilNote = note.startTime - gameState.currentTime;
-              const noteEnd = note.startTime + note.duration;
-              const timeUntilEnd = noteEnd - gameState.currentTime;
-              const isActive = gameState.currentTime >= note.startTime && gameState.currentTime <= noteEnd;
-
-              const distanceFromSingLine = (timeUntilNote / NOTE_WINDOW) * (100 - SING_LINE_POSITION + 20);
-              const x = SING_LINE_POSITION + distanceFromSingLine;
-
-              const pitchY = VISIBLE_TOP + VISIBLE_RANGE - ((note.pitch - pitchStats.minPitch) / pitchStats.pitchRange) * VISIBLE_RANGE;
-
-              const noteWidthPercent = (note.duration / NOTE_WINDOW) * (100 - SING_LINE_POSITION + 20);
-              const noteHeight = 32;
-
-              // Get note shape classes from theme
-              const noteShape = getNoteShapeClasses(noteShapeStyle);
-
-              return (
-                <div
-                  key={note.id}
-                  className={`absolute ${noteShape.baseClass} ${
-                    note.isGolden
-                      ? 'bg-gradient-to-r from-yellow-400 to-orange-500 shadow-lg shadow-yellow-500/50'
-                      : note.isBonus
-                      ? 'bg-gradient-to-r from-pink-500 to-purple-500'
-                      : 'bg-gradient-to-r from-cyan-500 to-blue-500'
-                  } ${isActive ? noteShape.activeClass : ''}`}
-                  style={{
-                    left: `${x}%`,
-                    top: `${pitchY}%`,
-                    width: `${noteWidthPercent}%`,
-                    height: `${noteHeight}px`,
-                    transform: 'translateY(-50%)',
-                    boxShadow: isActive ? '0 0 20px rgba(34, 211, 238, 0.6)' : 'none',
-                    opacity: x > 120 || x < -30 ? 0 : 1,
-                    ...noteShape.style,
-                  }}
-                />
-              );
-            })}
-
-            {/* Detected Pitch Indicator - Ball that moves up/down with voice */}
-            {pitchResult?.frequency && pitchResult.note && (
-              <div
-                className="absolute z-30 w-10 h-10 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 shadow-lg shadow-green-500/50 flex items-center justify-center"
-                style={{
-                  left: `${SING_LINE_POSITION - 2}%`,
-                  top: `${VISIBLE_TOP + VISIBLE_RANGE - ((pitchResult.note - pitchStats.minPitch) / pitchStats.pitchRange) * VISIBLE_RANGE}%`,
-                  transform: 'translateY(-50%)',
-                }}
-              >
-                <MicIcon className="w-5 h-5 text-white" />
-              </div>
-            )}
-          </div>
+          /* ===== SINGLE PLAYER NOTE HIGHWAY ===== */
+          <NoteHighway
+            visibleNotes={visibleNotes}
+            currentTime={gameState.currentTime}
+            pitchStats={pitchStats}
+            detectedPitch={pitchResult?.note ?? null}
+            noteShapeStyle={noteShapeStyle}
+            singLinePosition={SING_LINE_POSITION}
+            noteWindow={NOTE_WINDOW}
+            playerColor={PLAYER_COLORS[0]}
+            showPlayerLabel={false}
+            visibleTop={VISIBLE_TOP}
+            visibleRange={VISIBLE_RANGE}
+          />
         )}
 
         {/* Lyrics Display - Karaoke style with color progression */}
