@@ -2,23 +2,17 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useNoteScoring } from '@/hooks/use-note-scoring';
 import { useGameSettings } from '@/hooks/use-game-settings';
 import { useGameStore } from '@/lib/game/store';
-import { getAllSongs, reloadLibrary } from '@/lib/game/song-library';
 import { Song, Difficulty, LyricLine, Note, DIFFICULTY_SETTINGS, PLAYER_COLORS } from '@/types/game';
 import { PRACTICE_MODE_DEFAULTS, PracticeModeConfig } from '@/lib/game/practice-mode';
 import { StarPowerBar, PerformanceDisplay } from '@/components/game/game-enhancements';
-import { NoteLane } from '@/components/game/note-lane';
-import { ScoreDisplay } from '@/components/game/score-display';
 import { AudioEffectsEngine } from '@/lib/audio/audio-effects';
-import { MusicReactiveBackground, AnimatedGradientBackground } from '@/components/game/music-reactive-background';
+import { MusicReactiveBackground } from '@/components/game/music-reactive-background';
 import { toast } from '@/hooks/use-toast';
 import { 
   getDailyChallenge, 
@@ -46,12 +40,11 @@ import {
   STAR_POWER_CONFIG
 } from '@/lib/game/star-power';
 import { LyricLineDisplay } from '@/components/game/lyric-line-display';
-import { MusicIcon, PlayIcon, MicIcon, SettingsIcon, PauseIcon, SkipForwardIcon, RewindIcon, VolumeIcon } from '@/components/icons';
+import { MusicIcon, PlayIcon, SettingsIcon, PauseIcon, SkipForwardIcon, RewindIcon, VolumeIcon } from '@/components/icons';
 import {
   calculateScoringMetadata,
 } from '@/lib/game/scoring';
 import {
-  getNoteShapeClasses,
   NoteShapeStyle,
 } from '@/lib/game/note-utils';
 import { ScoreEventsDisplay } from '@/components/game/score-events-display';
@@ -61,18 +54,17 @@ import { DuelScorecard } from '@/components/game/duel-scorecard';
 import { PracticePanel } from '@/components/game/practice-panel';
 import { AudioEffectsPanel } from '@/components/game/audio-effects-panel';
 import { ProminentScoreDisplay } from '@/components/game/prominent-score-display';
-import { 
-  ParticleSystem, 
-  useParticleEmitter, 
+import {
+  ParticleSystem,
+  useParticleEmitter,
   AnimatedBackground as VisualAnimatedBackground,
-  VoiceVisualizer,
   ComboFireEffect,
   StarPowerEffect,
   useSongEnergy
 } from '@/components/game/visual-effects';
 import { SpectrogramDisplay } from '@/components/game/spectrogram-display';
-import { DuetNoteHighway, PlayerScoringState } from '@/components/game/duet-note-highway';
-import { SinglePlayerNoteHighway } from '@/components/game/single-player-highway';
+import { DuetNoteHighway } from '@/components/game/duet-note-highway';
+import { NoteHighway } from '@/components/game/note-highway';
 
 // ===================== HOME SCREEN =====================
 // HomeScreen has been moved to /src/components/screens/home-screen.tsx
@@ -84,7 +76,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   
   const [isPlaying, setIsPlaying] = useState(false);
   const [countdown, setCountdown] = useState(3);
-  const [currentNoteIndex, setCurrentNoteIndex] = useState(0);
   const [volume, setVolume] = useState(0);
   const [mediaLoaded, setMediaLoaded] = useState(false);
   const [youtubeTime, setYoutubeTime] = useState(0); // Track YouTube video time
@@ -300,10 +291,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   
   // Duet mode state - P2 volume (other P2 state is managed by useNoteScoring hook)
   const [p2Volume, setP2Volume] = useState(0);
-
-  // Keep legacy refs for backward compatibility
-  const processedNotesRef = useRef<Set<string>>(new Set());
-  const processedP2NotesRef = useRef<Set<string>>(new Set());
   
   const gameLoopRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
@@ -990,9 +977,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
 
         start();
 
-        // Reset processed notes tracking for new game
-        processedNotesRef.current.clear();
-        processedP2NotesRef.current.clear();
         // Reset scoring state (note progress tracking is handled by the hook)
         resetScoring();
 
