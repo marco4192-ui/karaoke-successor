@@ -66,6 +66,7 @@ import { SpectrogramDisplay } from '@/components/game/spectrogram-display';
 import { DuetNoteHighway } from '@/components/game/duet-note-highway';
 import { NoteHighway } from '@/components/game/note-highway';
 import { SinglePlayerLyrics } from '@/components/game/single-player-lyrics';
+import { useRemoteControl } from '@/hooks/use-remote-control';
 
 // ===================== HOME SCREEN =====================
 // HomeScreen has been moved to /src/components/screens/home-screen.tsx
@@ -522,132 +523,16 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   
   // ===================== REMOTE CONTROL POLLING =====================
   // Poll for remote commands from mobile companions
-  useEffect(() => {
-    const pollRemoteCommands = async () => {
-      try {
-        const response = await fetch('/api/mobile?action=getcommands');
-        const data = await response.json();
-        
-        if (data.success && data.commands && data.commands.length > 0) {
-          // Process each command
-          for (const cmd of data.commands) {
-            switch (cmd.type) {
-              case 'play':
-                if (audioRef.current && audioRef.current.paused) {
-                  audioRef.current.play().catch(() => {});
-                }
-                if (videoRef.current && videoRef.current.paused) {
-                  videoRef.current.play().catch(() => {});
-                }
-                setIsPlaying(true);
-                break;
-                
-              case 'pause':
-                if (audioRef.current) {
-                  audioRef.current.pause();
-                }
-                if (videoRef.current) {
-                  videoRef.current.pause();
-                }
-                setIsPlaying(false);
-                break;
-                
-              case 'stop':
-                if (audioRef.current) {
-                  audioRef.current.pause();
-                  audioRef.current.currentTime = 0;
-                }
-                if (videoRef.current) {
-                  videoRef.current.pause();
-                  videoRef.current.currentTime = 0;
-                }
-                setIsPlaying(false);
-                stop();
-                onBack();
-                break;
-                
-              case 'restart':
-                if (audioRef.current) {
-                  audioRef.current.currentTime = 0;
-                  audioRef.current.play().catch(() => {});
-                }
-                if (videoRef.current) {
-                  videoRef.current.currentTime = 0;
-                  videoRef.current.play().catch(() => {});
-                }
-                setIsPlaying(true);
-                break;
-                
-              case 'skip':
-                // If ad is playing, try to skip the ad
-                if (isAdPlaying) {
-                  // Make the video player clickable so user can tap the skip button
-                  // The YouTube iframe doesn't support programmatic skip, so we show a message
-                  // The ad indicator already shows, and the video is visible
-                  // Just show a toast to guide the user
-                  toast({
-                    title: '⏭️ Werbung überspringen',
-                    description: 'Klicke auf das Video, um den "Skip Ad" Button zu drücken!',
-                  });
-                } else {
-                  // End current song and go to results
-                  stop();
-                  onEnd();
-                }
-                break;
-                
-              case 'next':
-                // End current song and go to results
-                stop();
-                onEnd();
-                break;
-                
-              case 'previous':
-                // Restart song
-                if (audioRef.current) {
-                  audioRef.current.currentTime = 0;
-                }
-                if (videoRef.current) {
-                  videoRef.current.currentTime = 0;
-                }
-                break;
-                
-              case 'home':
-                stop();
-                onBack();
-                break;
-                
-              case 'library':
-              case 'queue':
-              case 'settings':
-                // Navigate to other screens
-                stop();
-                onBack();
-                break;
-                
-              case 'volume':
-                const volumeData = cmd.data as { direction?: string };
-                if (audioRef.current) {
-                  const currentVolume = audioRef.current.volume;
-                  if (volumeData?.direction === 'up') {
-                    audioRef.current.volume = Math.min(1, currentVolume + 0.1);
-                  } else if (volumeData?.direction === 'down') {
-                    audioRef.current.volume = Math.max(0, currentVolume - 0.1);
-                  }
-                }
-                break;
-            }
-          }
-        }
-      } catch (error) {
-        console.error('[GameScreen] Error polling remote commands:', error);
-      }
-    };
-    
-    // Poll every 500ms - always, not just when playing
-    const interval = setInterval(pollRemoteCommands, 500);
-    return () => clearInterval(interval);
-  }, [isPlaying, stop, onBack, onEnd]);
+  useRemoteControl({
+    audioRef,
+    videoRef,
+    isPlaying,
+    setIsPlaying,
+    isAdPlaying,
+    stop,
+    onBack,
+    onEnd,
+  });
   
   // Initialize duel mode - use useMemo to avoid setState in effect
   const duelMatchValue = useMemo(() => {
