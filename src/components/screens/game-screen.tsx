@@ -65,6 +65,7 @@ import {
 import { SpectrogramDisplay } from '@/components/game/spectrogram-display';
 import { DuetNoteHighway } from '@/components/game/duet-note-highway';
 import { NoteHighway } from '@/components/game/note-highway';
+import { SinglePlayerLyrics } from '@/components/game/single-player-lyrics';
 
 // ===================== HOME SCREEN =====================
 // HomeScreen has been moved to /src/components/screens/home-screen.tsx
@@ -1808,149 +1809,19 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
           />
         )}
 
-        {/* Lyrics Display - Karaoke style with color progression */}
-        <div className="absolute bottom-0 left-0 right-0 z-20">
-          <div className="bg-gradient-to-t from-black/80 to-transparent p-6">
-            {/* Current Line - Show 2 seconds before it starts */}
-            {(() => {
-              // Find current or upcoming line (show 2000ms before start)
-              const PREVIEW_TIME = 2000; // Show lyrics 2 seconds before singing
-              const currentTime = gameState.currentTime;
-
-              // First try to find the currently singing line
-              let displayLine = timingData?.sortedLines.find(line =>
-                currentTime >= line.startTime && currentTime <= line.endTime
-              );
-
-              // If no active line, find the next upcoming line within preview window
-              if (!displayLine && timingData) {
-                for (const line of timingData.sortedLines) {
-                  if (currentTime >= line.startTime - PREVIEW_TIME && currentTime < line.startTime) {
-                    displayLine = line;
-                    break;
-                  }
-                }
-              }
-
-              if (!displayLine) return null;
-
-              // Calculate time until singing starts (for flying animation)
-              const timeUntilSing = displayLine.startTime - currentTime;
-              const isSinging = currentTime >= displayLine.startTime;
-
-              // Flying animation: starts 2 seconds before, lands when singing starts
-              const flyProgress = Math.max(0, Math.min(1, 1 - (timeUntilSing / PREVIEW_TIME)));
-              const isFlying = !isSinging && timeUntilSing > 0 && timeUntilSing < PREVIEW_TIME;
-
-              // Get the first word of the line for the marker target
-              const firstNote = displayLine.notes[0];
-              const firstWord = firstNote?.lyric?.trim() || '';
-
-              return (
-                <div className="text-2xl md:text-3xl font-bold text-center drop-shadow-lg relative w-full">
-                  {/* Flying Line Indicator - Moves from left edge to first word */}
-                  {isFlying && (
-                    <div
-                      className="absolute top-1/2 flex items-center pointer-events-none"
-                      style={{
-                        // Start from left edge of container (5%), end just before the centered text (45%)
-                        // The text is centered, so we fly to the position just before the text starts
-                        left: `${5 + flyProgress * 40}%`,
-                        transform: 'translateY(-50%)',
-                        opacity: 0.5 + flyProgress * 0.5,
-                        zIndex: 100,
-                      }}
-                    >
-                      <div
-                        className="rounded-full flex items-center justify-center"
-                        style={{
-                          width: `${12 + flyProgress * 8}px`,
-                          height: `${12 + flyProgress * 8}px`,
-                          background: 'radial-gradient(circle, rgba(34, 211, 238, 1) 0%, rgba(34, 211, 238, 0.7) 50%, transparent 100%)',
-                          boxShadow: `0 0 ${20 + flyProgress * 40}px rgba(34, 211, 238, ${0.6 + flyProgress * 0.4})`,
-                          animation: 'pulse 0.4s ease-in-out infinite',
-                        }}
-                      />
-                      {/* Arrow pointing to the text */}
-                      <svg
-                        className="text-cyan-400"
-                        style={{
-                          width: `${16 + flyProgress * 8}px`,
-                          height: `${16 + flyProgress * 8}px`,
-                          marginLeft: '4px',
-                          filter: `drop-shadow(0 0 ${10 + flyProgress * 15}px rgba(34, 211, 238, 0.9))`,
-                        }}
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                      {/* Show the first word as a label during flight */}
-                      <span
-                        className="ml-2 text-cyan-400 font-bold"
-                        style={{
-                          fontSize: `${14 + flyProgress * 6}px`,
-                          textShadow: `0 0 ${10 + flyProgress * 10}px rgba(34, 211, 238, 0.9)`,
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {firstWord}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Pulsing indicator during singing - directly before the text */}
-                  {isSinging && (
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                      <div
-                        className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse"
-                        style={{ boxShadow: '0 0 15px rgba(34, 211, 238, 0.8)' }}
-                      />
-                    </div>
-                  )}
-
-                  <LyricLineDisplay
-                    line={displayLine}
-                    currentTime={currentTime}
-                    playerColor={PLAYER_COLORS[0]}
-                    noteDisplayStyle={noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
-                    notePerformance={notePerformance}
-                    gameMode={gameState.gameMode}
-                    missingWordsIndices={gameState.missingWordsIndices}
-                    isBlindSection={gameState.isBlindSection}
-                  />
-                </div>
-              );
-            })()}
-            
-            {/* Next Line Preview */}
-            {(() => {
-              const currentTime = gameState.currentTime;
-              if (!timingData) return null;
-              
-              // Find the line after the current/upcoming one
-              let currentLineIndex = -1;
-              for (let i = 0; i < timingData.sortedLines.length; i++) {
-                const line = timingData.sortedLines[i];
-                if (currentTime >= line.startTime - 2000 && currentTime <= line.endTime) {
-                  currentLineIndex = i;
-                  break;
-                }
-              }
-              
-              const nextLine = currentLineIndex >= 0 ? timingData.sortedLines[currentLineIndex + 1] : null;
-              if (!nextLine) return null;
-              
-              // Join notes WITHOUT extra spaces (UltraStar format already has trailing spaces)
-              const nextLineText = nextLine.notes.map(n => n.lyric).join('');
-              return (
-                <p className="text-base md:text-lg text-center text-white/40 mt-3" style={{ whiteSpace: 'pre-wrap' }}>
-                  {nextLineText}
-                </p>
-              );
-            })()}
-          </div>
-        </div>
+        {/* Lyrics Display - Using SinglePlayerLyrics component for single player mode */}
+        {!isDuetMode && timingData && (
+          <SinglePlayerLyrics
+            sortedLines={timingData.sortedLines}
+            currentTime={gameState.currentTime}
+            playerColor={PLAYER_COLORS[0]}
+            noteDisplayStyle={noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
+            notePerformance={notePerformance}
+            gameMode={gameState.gameMode}
+            missingWordsIndices={gameState.missingWordsIndices}
+            isBlindSection={gameState.isBlindSection}
+          />
+        )}
 
         {/* Volume Meter */}
         <div className="absolute top-16 right-4 z-20">
