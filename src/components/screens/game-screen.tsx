@@ -13,7 +13,6 @@ import { PRACTICE_MODE_DEFAULTS, PracticeModeConfig } from '@/lib/game/practice-
 import { StarPowerBar, PerformanceDisplay } from '@/components/game/game-enhancements';
 import { AudioEffectsEngine } from '@/lib/audio/audio-effects';
 import { MusicReactiveBackground } from '@/components/game/music-reactive-background';
-import { toast } from '@/hooks/use-toast';
 import { 
   getDailyChallenge, 
   getPlayerDailyStats, 
@@ -67,6 +66,7 @@ import { DuetNoteHighway } from '@/components/game/duet-note-highway';
 import { NoteHighway } from '@/components/game/note-highway';
 import { SinglePlayerLyrics } from '@/components/game/single-player-lyrics';
 import { useRemoteControl } from '@/hooks/use-remote-control';
+import { useStarPower } from '@/hooks/use-star-power';
 
 // ===================== HOME SCREEN =====================
 // HomeScreen has been moved to /src/components/screens/home-screen.tsx
@@ -548,49 +548,11 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   }, [duelMatchValue]);
   
   // ===================== STAR POWER ACTIVATION =====================
-  // Handle Star Power activation via keyboard (Space) or button click
-  const handleActivateStarPower = useCallback(() => {
-    const player = gameState.players[0];
-    if (!player) return;
-    
-    // Check if we can activate (meter >= threshold and not already active)
-    const canActivate = (
-      player.starPower >= STAR_POWER_CONFIG.activationThreshold &&
-      !player.isStarPowerActive
-    );
-    
-    if (canActivate) {
-      updatePlayer(player.id, {
-        isStarPowerActive: true,
-      });
-      
-      // Show visual feedback
-      toast({
-        title: '⭐ STAR POWER ACTIVATED!',
-        description: '2x points for 10 seconds!',
-      });
-    }
-  }, [gameState.players, updatePlayer]);
-  
-  // Keyboard shortcut for Star Power (Space key)
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Don't trigger if typing in input fields
-      const target = event.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-        return;
-      }
-      
-      // Space key activates Star Power
-      if (event.key === ' ' || event.code === 'Space') {
-        event.preventDefault();
-        handleActivateStarPower();
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleActivateStarPower]);
+  // Use custom hook for Star Power activation (keyboard + button)
+  const { activateStarPower } = useStarPower({
+    player: gameState.players[0],
+    updatePlayer,
+  });
   
   // Custom YouTube video for background (can be set by user)
   const [customYoutubeUrl, setCustomYoutubeUrl] = useState('');
