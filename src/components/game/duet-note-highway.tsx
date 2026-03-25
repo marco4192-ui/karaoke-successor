@@ -183,6 +183,12 @@ function PlayerLyrics({
   );
 }
 
+// ===================== CONSTANTS FOR HALF-SCREEN =====================
+
+// Half-screen constants for duet mode
+const HALF_VISIBLE_TOP = 8;
+const HALF_VISIBLE_RANGE = 42;
+
 // ===================== MAIN COMPONENT =====================
 
 export function DuetNoteHighway({
@@ -224,6 +230,8 @@ export function DuetNoteHighway({
           showPlayerLabel={true}
           playerName={p1PlayerName}
           playerNumber={1}
+          visibleTop={HALF_VISIBLE_TOP}
+          visibleRange={HALF_VISIBLE_RANGE}
         />
 
         {/* P1 Lyrics Display */}
@@ -256,6 +264,8 @@ export function DuetNoteHighway({
           showPlayerLabel={true}
           playerName={p2PlayerName}
           playerNumber={2}
+          visibleTop={HALF_VISIBLE_TOP}
+          visibleRange={HALF_VISIBLE_RANGE}
         />
 
         {/* P2 Lyrics Display */}

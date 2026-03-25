@@ -41,6 +41,10 @@ export interface NoteHighwayProps {
   playerName?: string;
   /** Player number for label */
   playerNumber?: number;
+  /** Visible top percentage (for half-screen in duet mode) */
+  visibleTop?: number;
+  /** Visible range percentage (for half-screen in duet mode) */
+  visibleRange?: number;
   /** Additional CSS class names */
   className?: string;
 }
@@ -67,12 +71,12 @@ function PitchGrid({ count = 7, color = 'cyan' }: { count?: number; color?: stri
 /**
  * Vertical sing line indicator
  */
-function SingLine({ 
-  position, 
-  color = 'cyan' 
-}: { 
-  position: number; 
-  color?: 'cyan' | 'pink' 
+function SingLine({
+  position,
+  color = 'cyan'
+}: {
+  position: number;
+  color?: 'cyan' | 'pink'
 }) {
   const colorClasses = {
     cyan: 'from-transparent via-cyan-400 to-transparent shadow-cyan-400/50',
@@ -99,7 +103,10 @@ function NoteBlock({
   singLinePosition,
   noteWindow,
   noteShape,
+  visibleTop,
+  visibleRange,
   noteWidthExtra = 20,
+  color = 'cyan',
 }: {
   note: NoteWithLine;
   currentTime: number;
@@ -107,7 +114,10 @@ function NoteBlock({
   singLinePosition: number;
   noteWindow: number;
   noteShape: ReturnType<typeof getNoteShapeClasses>;
+  visibleTop: number;
+  visibleRange: number;
   noteWidthExtra?: number;
+  color?: 'cyan' | 'pink';
 }) {
   const timeUntilNote = note.startTime - currentTime;
   const noteEnd = note.startTime + note.duration;
@@ -118,9 +128,7 @@ function NoteBlock({
   const x = singLinePosition + distanceFromSingLine;
 
   // Calculate vertical position based on pitch
-  const VISIBLE_TOP = 8;
-  const VISIBLE_RANGE = 77;
-  const pitchY = VISIBLE_TOP + VISIBLE_RANGE - ((note.pitch - pitchStats.minPitch) / pitchStats.pitchRange) * VISIBLE_RANGE;
+  const pitchY = visibleTop + visibleRange - ((note.pitch - pitchStats.minPitch) / pitchStats.pitchRange) * visibleRange;
 
   // Calculate note dimensions
   const noteWidthPercent = (note.duration / noteWindow) * (100 - singLinePosition + noteWidthExtra);
@@ -129,16 +137,22 @@ function NoteBlock({
   // Skip notes that are too far off-screen
   if (x > 120 || x < -30) return null;
 
-  // Determine note styling based on type
+  // Determine note styling based on type and player color
   const getBackgroundClasses = () => {
     if (note.isGolden) {
       return 'bg-gradient-to-r from-yellow-400 to-orange-500 shadow-lg shadow-yellow-500/50';
     }
     if (note.isBonus) {
-      return 'bg-gradient-to-r from-cyan-400 to-teal-500';
+      return color === 'cyan'
+        ? 'bg-gradient-to-r from-cyan-400 to-teal-500'
+        : 'bg-gradient-to-r from-pink-400 to-rose-500';
     }
-    return 'bg-gradient-to-r from-cyan-400 to-blue-500';
+    return color === 'cyan'
+      ? 'bg-gradient-to-r from-cyan-400 to-blue-500'
+      : 'bg-gradient-to-r from-pink-500 to-purple-500';
   };
+
+  const glowColor = color === 'cyan' ? 'rgba(34, 211, 238, 0.8)' : 'rgba(236, 72, 153, 0.8)';
 
   return (
     <div
@@ -150,7 +164,8 @@ function NoteBlock({
         width: `${noteWidthPercent}%`,
         height: `${noteHeight}px`,
         transform: 'translateY(-50%)',
-        boxShadow: isActive ? '0 0 15px rgba(34, 211, 238, 0.8)' : 'none',
+        boxShadow: isActive ? `0 0 15px ${glowColor}` : 'none',
+        opacity: x > 120 || x < -30 ? 0 : 1,
         ...noteShape.style,
       }}
     />
@@ -164,18 +179,20 @@ function PitchIndicator({
   detectedPitch,
   pitchStats,
   singLinePosition,
+  visibleTop,
+  visibleRange,
   color = 'cyan',
 }: {
   detectedPitch: number | null;
   pitchStats: PitchStats;
   singLinePosition: number;
+  visibleTop: number;
+  visibleRange: number;
   color?: 'cyan' | 'pink';
 }) {
   if (!detectedPitch) return null;
 
-  const VISIBLE_TOP = 8;
-  const VISIBLE_RANGE = 77;
-  const pitchY = VISIBLE_TOP + VISIBLE_RANGE - ((detectedPitch - pitchStats.minPitch) / pitchStats.pitchRange) * VISIBLE_RANGE;
+  const pitchY = visibleTop + visibleRange - ((detectedPitch - pitchStats.minPitch) / pitchStats.pitchRange) * visibleRange;
 
   const colorClasses = {
     cyan: 'from-cyan-400 to-cyan-600 shadow-cyan-500/70 ring-cyan-300',
@@ -238,6 +255,8 @@ export function NoteHighway({
   showPlayerLabel = false,
   playerName = 'Player 1',
   playerNumber = 1,
+  visibleTop = 8,
+  visibleRange = 77,
   className = '',
 }: NoteHighwayProps) {
   // Get note shape classes from style
@@ -267,6 +286,9 @@ export function NoteHighway({
           singLinePosition={singLinePosition}
           noteWindow={noteWindow}
           noteShape={noteShape}
+          visibleTop={visibleTop}
+          visibleRange={visibleRange}
+          color={colorScheme}
         />
       ))}
 
@@ -275,6 +297,8 @@ export function NoteHighway({
         detectedPitch={detectedPitch}
         pitchStats={pitchStats}
         singLinePosition={singLinePosition}
+        visibleTop={visibleTop}
+        visibleRange={visibleRange}
         color={colorScheme}
       />
 
