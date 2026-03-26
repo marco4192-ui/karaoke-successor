@@ -1341,3 +1341,64 @@ The original implementation stored complete lyrics (all notes with timing, pitch
 - No more "Quota exceeded" errors for large libraries
 - IndexedDB handles large binary files (audio, video, txt) efficiently
 
+
+---
+## Task ID: 17 - Console Statements Logging Refactor
+### Agent: Main Agent
+### Task: Replace console statements with structured logger utility
+
+### Work Log:
+- Replaced console.error/log/warn statements with structured logger in:
+  - user-profile-screen.tsx (5 statements)
+  - youtube-background-player.tsx (5 statements)
+  - assets/generate/route.ts (5 statements)
+  - song-identify/route.ts (4 statements)
+  - lyrics-suggestions/route.ts (4 statements)
+  - editor/save-to-file.ts (4 statements)
+  - db/user-db.ts (3 statements)
+  - microphone-manager.ts (3 statements)
+  - pitch-detector.ts (2 statements)
+- Fixed React hooks dependency issues in battle-royale-screen.tsx:
+  - Converted currentSong from state to derived useMemo
+  - Moved handleRoundEnd definition before useEffect that uses it
+- All console statements now use context prefixes for better debugging
+
+### Commits:
+- 30c56cc: refactor: replace console statements with logger utility
+- e044599: refactor: replace more console statements with logger utility
+
+### Stage Summary:
+- Reduced console statements by ~25 across codebase
+- Improved debugging with structured logging
+- All builds passing, pushed to GitHub
+
+---
+## Task ID: 18 - Library Screen Hooks Extraction
+### Agent: Main Agent
+### Task: Extract reusable hooks from library-screen.tsx (1893 lines)
+
+### Work Log:
+- Created useLibrarySettings hook for:
+  - Sort/filter/group preferences
+  - localStorage persistence
+  - View mode management
+- Created useLibraryPreview hook for:
+  - Audio preview management
+  - Video preview control
+  - Cleanup on unmount
+- Created useLibraryPlaylists hook for:
+  - Playlist CRUD operations
+  - Favorites management
+  - Playlist state management
+
+### Files Created:
+- src/hooks/use-library-settings.ts (130 lines)
+- src/hooks/use-library-preview.ts (125 lines)
+- src/hooks/use-library-playlists.ts (179 lines)
+
+### Commit: 0a2291d
+
+### Stage Summary:
+- Hooks extracted and ready for integration
+- Reduces library-screen.tsx complexity when integrated
+- All builds passing, pushed to GitHub
