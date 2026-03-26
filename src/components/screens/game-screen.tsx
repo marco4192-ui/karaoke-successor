@@ -517,6 +517,11 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     };
   }, [isPlaying]);
   
+  // ===================== AD STATE =====================
+  // Ad state must be declared before useRemoteControl uses it
+  const [isAdPlaying, setIsAdPlaying] = useState(false);
+  const [adCountdown, setAdCountdown] = useState(0);
+  
   // ===================== REMOTE CONTROL POLLING =====================
   // Poll for remote commands from mobile companions
   useRemoteControl({
@@ -554,8 +559,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   const [customYoutubeUrl, setCustomYoutubeUrl] = useState('');
   const [customYoutubeId, setCustomYoutubeId] = useState<string | null>(null);
   const [showYoutubeInput, setShowYoutubeInput] = useState(false);
-  const [isAdPlaying, setIsAdPlaying] = useState(false);
-  const [adCountdown, setAdCountdown] = useState(0);
   
   // Check if song has YouTube URL (from #VIDEO: tag with URL)
   // Priority: custom YouTube > song.youtubeUrl > videoBackground if URL
@@ -1331,7 +1334,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
 
       {/* Star Power Bar */}
       <div className="absolute top-20 left-4 z-20 w-64">
-        <StarPowerBar onActivate={handleActivateStarPower} />
+        <StarPowerBar onActivate={activateStarPower} />
       </div>
 
       {/* Pitch Graph Display - Shows real-time pitch visualization */}
@@ -1547,7 +1550,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             singLinePosition={SING_LINE_POSITION}
             noteWindow={NOTE_WINDOW}
             notePerformance={notePerformance}
-            gameMode={gameState.gameMode}
+            gameMode={gameState.gameMode as 'standard' | 'pass-the-mic' | 'companion-singalong' | 'medley' | 'missing-words' | 'duel' | 'blind' | 'tournament' | 'battle-royale' | 'duet' | 'online'}
             missingWordsIndices={gameState.missingWordsIndices}
             isBlindSection={gameState.isBlindSection}
             p1PlayerName={song?.duetPlayerNames?.[0] || 'Player 1'}
@@ -1579,7 +1582,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             playerColor={PLAYER_COLORS[0]}
             noteDisplayStyle={noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
             notePerformance={notePerformance}
-            gameMode={gameState.gameMode}
+            gameMode={gameState.gameMode as 'standard' | 'pass-the-mic' | 'companion-singalong' | 'medley' | 'missing-words' | 'duel' | 'blind' | 'tournament' | 'battle-royale' | 'duet' | 'online'}
             missingWordsIndices={gameState.missingWordsIndices}
             isBlindSection={gameState.isBlindSection}
           />

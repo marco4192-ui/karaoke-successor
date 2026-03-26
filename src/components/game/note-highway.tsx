@@ -8,7 +8,6 @@ import { MicIcon } from '@/components/icons';
 // ===================== TYPES =====================
 
 export interface NoteWithLine extends Note {
-  lineIndex: number;
   line: LyricLine;
 }
 

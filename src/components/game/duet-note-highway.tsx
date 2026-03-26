@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import { Note, LyricLine, Player } from '@/types/game';
 import { NoteHighway, NoteWithLine, PitchStats } from './note-highway';
-import { LyricLineDisplay } from './lyric-line-display';
+import { LyricLineDisplay, GameModeType } from './lyric-line-display';
 import { NoteShapeStyle } from '@/lib/game/note-utils';
 
 // ===================== TYPES =====================
@@ -50,7 +50,7 @@ export interface DuetNoteHighwayProps {
   /** Note performance for lyrics display */
   notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
   /** Game mode */
-  gameMode?: string;
+  gameMode?: GameModeType;
   /** Missing words indices for missing-words mode */
   missingWordsIndices?: number[];
   /** Is blind section for blind mode */
@@ -136,7 +136,7 @@ function PlayerLyrics({
   playerColor: string;
   noteDisplayStyle?: 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity';
   notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
-  gameMode?: string;
+  gameMode?: GameModeType;
   missingWordsIndices?: number[];
   isBlindSection?: boolean;
 }) {

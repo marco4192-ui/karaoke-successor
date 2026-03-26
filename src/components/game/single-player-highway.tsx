@@ -4,6 +4,7 @@ import React from 'react';
 import { Note, LyricLine } from '@/types/game';
 import { NoteHighway, NoteWithLine, PitchStats } from './note-highway';
 import { SinglePlayerLyrics } from './single-player-lyrics';
+import { GameModeType } from './lyric-line-display';
 import { NoteShapeStyle } from '@/lib/game/note-utils';
 import { MicIcon } from '@/components/icons';
 
@@ -38,7 +39,7 @@ export interface SinglePlayerNoteHighwayProps {
   /** Note performance for visual feedback */
   notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
   /** Game mode */
-  gameMode?: string;
+  gameMode?: GameModeType;
   /** Missing words indices for missing-words mode */
   missingWordsIndices?: number[];
   /** Is blind section for blind mode */

@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { LyricLine } from '@/types/game';
-import { LyricLineDisplay } from './lyric-line-display';
+import { LyricLineDisplay, GameModeType } from './lyric-line-display';
 
 // ===================== TYPES =====================
 
@@ -18,7 +18,7 @@ export interface SinglePlayerLyricsProps {
   /** Note performance for visual feedback */
   notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
   /** Game mode */
-  gameMode?: string;
+  gameMode?: GameModeType;
   /** Missing words indices for missing-words mode */
   missingWordsIndices?: number[];
   /** Is blind section for blind mode */
