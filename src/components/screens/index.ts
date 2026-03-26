@@ -11,7 +11,11 @@ export { DailyChallengeScreen } from './daily-challenge-screen';
 export { JukeboxScreen } from './jukebox-screen';
 export { MobileScreen } from './mobile-screen';
 export { MobileClientView } from './mobile-client-view';
-export { ResultsScreen, ScoreVisualization, SongHighscoreModal, getCountryFlag } from './results-screen';
+export { ResultsScreen, getCountryFlag } from './results-screen';
 export { LibraryScreen } from './library-screen';
-export { SettingsScreen, AIAssetsGenerator, EditorSettingsView, MobileDeviceMicrophoneSection } from './settings-screen';
+export { SettingsScreen, AIAssetsGenerator, EditorSettingsView } from './settings-screen';
 export { GameScreen, LyricLineDisplay } from './game-screen';
+
+// Re-export from other component directories
+export { ScoreVisualization, SongHighscoreModal } from '@/components/results';
+export { MobileDeviceMicrophoneSection } from '@/components/settings/mobile-device-microphone-section';

@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { cn } from '@/lib/utils';
-import type { Song, Note, LyricLine, DuetPlayer, Difficulty } from '@/types/game';
+import type { Song, Note, LyricLine, DuetPlayer } from '@/types/game';
 import { Timeline } from './timeline/timeline';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -28,19 +27,15 @@ import {
   Settings
 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { NOTE_NAMES } from '@/types/game';
-import { saveSongToTxt, canSaveToOriginal, SaveResult } from '@/lib/editor/save-to-file';
+import { saveSongToTxt, SaveResult } from '@/lib/editor/save-to-file';
 import { logger } from '@/lib/logger';
+import { useEditorHistory } from '@/hooks/use-editor-history';
+import { useEditorKeyboardShortcuts } from '@/hooks/use-editor-keyboard-shortcuts';
 
 interface KaraokeEditorProps {
   song: Song;
   onSave: (song: Song) => void;
   onCancel: () => void;
-}
-
-// History state for undo/redo
-interface HistoryState {
-  lyrics: LyricLine[];
 }
 
 export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEditorProps) {
@@ -49,8 +44,6 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   const [selectedNoteId, setSelectedNoteId] = useState<string | undefined>();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [history, setHistory] = useState<HistoryState[]>([{ lyrics: initialSong.lyrics }]);
-  const [historyIndex, setHistoryIndex] = useState(0);
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | undefined>();
   
   // Save state
@@ -61,6 +54,15 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   // Refs
   const audioRef = useRef<HTMLAudioElement>(null);
   const animationFrameRef = useRef<number | null>(null);
+
+  // History management hook
+  const {
+    pushHistory,
+    undo: undoHistory,
+    redo: redoHistory,
+    canUndo,
+    canRedo,
+  } = useEditorHistory({ initialLyrics: initialSong.lyrics });
 
   // Get all notes from all lines
   const allNotes = useMemo(() => {
@@ -121,40 +123,31 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     }
   }, [currentTime, isPlaying]);
 
-  // History management
-  const pushHistory = useCallback((newLyrics: LyricLine[]) => {
-    setHistory(prev => {
-      const newHistory = prev.slice(0, historyIndex + 1);
-      newHistory.push({ lyrics: JSON.parse(JSON.stringify(newLyrics)) });
-      // Limit history to 50 entries
-      if (newHistory.length > 50) {
-        newHistory.shift();
-      }
-      return newHistory;
-    });
-    setHistoryIndex(prev => Math.min(prev + 1, 49));
+  // History management - wrapped functions
+  const handlePushHistory = useCallback((newLyrics: LyricLine[]) => {
+    pushHistory(newLyrics);
     setHasUnsavedChanges(true);
-  }, [historyIndex]);
+  }, [pushHistory]);
 
   const undo = useCallback(() => {
-    if (historyIndex > 0) {
-      setHistoryIndex(prev => prev - 1);
+    const previousLyrics = undoHistory();
+    if (previousLyrics) {
       setCurrentSong(prev => ({
         ...prev,
-        lyrics: JSON.parse(JSON.stringify(history[historyIndex - 1].lyrics))
+        lyrics: previousLyrics
       }));
     }
-  }, [historyIndex, history]);
+  }, [undoHistory]);
 
   const redo = useCallback(() => {
-    if (historyIndex < history.length - 1) {
-      setHistoryIndex(prev => prev + 1);
+    const nextLyrics = redoHistory();
+    if (nextLyrics) {
       setCurrentSong(prev => ({
         ...prev,
-        lyrics: JSON.parse(JSON.stringify(history[historyIndex + 1].lyrics))
+        lyrics: nextLyrics
       }));
     }
-  }, [historyIndex, history]);
+  }, [redoHistory]);
 
   // Handlers
   const handlePlayPause = useCallback(() => {
@@ -177,10 +170,10 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
           note.id === noteId ? { ...note, ...updates } : note
         )
       }));
-      pushHistory(newLyrics);
+      handlePushHistory(newLyrics);
       return { ...prev, lyrics: newLyrics };
     });
-  }, [pushHistory]);
+  }, [handlePushHistory]);
 
   const handleNoteDelete = useCallback((noteId: string) => {
     setCurrentSong(prev => {
@@ -188,11 +181,11 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
         ...line,
         notes: line.notes.filter(note => note.id !== noteId)
       })).filter(line => line.notes.length > 0);
-      pushHistory(newLyrics);
+      handlePushHistory(newLyrics);
       return { ...prev, lyrics: newLyrics };
     });
     setSelectedNoteId(undefined);
-  }, [pushHistory]);
+  }, [handlePushHistory]);
 
   const handleNoteAdd = useCallback((startTime: number, pitch: number) => {
     const newNote: Note = {
@@ -232,12 +225,12 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
         newLyrics = [...prev.lyrics, newLine].sort((a, b) => a.startTime - b.startTime);
       }
 
-      pushHistory(newLyrics);
+      handlePushHistory(newLyrics);
       return { ...prev, lyrics: newLyrics };
     });
     
     setSelectedNoteId(newNote.id);
-  }, [pushHistory]);
+  }, [handlePushHistory]);
 
   const handleLyricChange = useCallback((noteId: string, newLyric: string) => {
     setCurrentSong(prev => {
@@ -248,10 +241,10 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
         ),
         text: line.notes.map(n => n.lyric).join(' ')
       }));
-      pushHistory(newLyrics);
+      handlePushHistory(newLyrics);
       return { ...prev, lyrics: newLyrics };
     });
-  }, [pushHistory]);
+  }, [handlePushHistory]);
 
   const handleSave = useCallback(async () => {
     setIsSaving(true);
@@ -279,74 +272,29 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     }
   }, [currentSong, onSave]);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if typing in input
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return;
-      }
+  // Copy/Paste handlers
+  const handleCopy = useCallback((note: Note) => {
+    navigator.clipboard.writeText(JSON.stringify(note));
+  }, []);
 
-      // Space: Play/Pause
-      if (e.code === 'Space') {
-        e.preventDefault();
-        handlePlayPause();
-      }
+  const handlePaste = useCallback((note: Note, time: number) => {
+    handleNoteAdd(time, note.pitch);
+  }, [handleNoteAdd]);
 
-      // Delete: Delete selected note
-      if (e.code === 'Delete' || e.code === 'Backspace') {
-        if (selectedNoteId) {
-          e.preventDefault();
-          handleNoteDelete(selectedNoteId);
-        }
-      }
-
-      // Ctrl+S: Save
-      if ((e.ctrlKey || e.metaKey) && e.code === 'KeyS') {
-        e.preventDefault();
-        handleSave();
-      }
-
-      // Ctrl+Z: Undo
-      if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ' && !e.shiftKey) {
-        e.preventDefault();
-        undo();
-      }
-
-      // Ctrl+Shift+Z or Ctrl+Y: Redo
-      if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyY' || (e.code === 'KeyZ' && e.shiftKey))) {
-        e.preventDefault();
-        redo();
-      }
-
-      // Ctrl+C: Copy selected note
-      if ((e.ctrlKey || e.metaKey) && e.code === 'KeyC' && selectedNote) {
-        e.preventDefault();
-        navigator.clipboard.writeText(JSON.stringify(selectedNote));
-      }
-
-      // Ctrl+V: Paste note
-      if ((e.ctrlKey || e.metaKey) && e.code === 'KeyV') {
-        e.preventDefault();
-        navigator.clipboard.readText().then(text => {
-          try {
-            const copiedNote = JSON.parse(text) as Note;
-            handleNoteAdd(currentTime, copiedNote.pitch);
-          } catch {
-            // Invalid clipboard data
-          }
-        });
-      }
-
-      // Escape: Deselect
-      if (e.code === 'Escape') {
-        setSelectedNoteId(undefined);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handlePlayPause, selectedNoteId, handleNoteDelete, handleSave, undo, redo, selectedNote, handleNoteAdd, currentTime]);
+  // Keyboard shortcuts hook
+  useEditorKeyboardShortcuts({
+    onPlayPause: handlePlayPause,
+    onDelete: handleNoteDelete,
+    onSave: handleSave,
+    onUndo: undo,
+    onRedo: redo,
+    onCopy: handleCopy,
+    onPaste: handlePaste,
+    onDeselect: () => setSelectedNoteId(undefined),
+    selectedNoteId,
+    selectedNote,
+    currentTime,
+  });
 
   // Update note property handlers
   const updateSelectedNote = useCallback((updates: Partial<Note>) => {
@@ -398,7 +346,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
             variant="ghost"
             size="sm"
             onClick={undo}
-            disabled={historyIndex === 0}
+            disabled={!canUndo}
             className="text-slate-400 hover:text-white"
           >
             <Undo className="w-4 h-4 mr-1" />
@@ -408,7 +356,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
             variant="ghost"
             size="sm"
             onClick={redo}
-            disabled={historyIndex === history.length - 1}
+            disabled={!canRedo}
             className="text-slate-400 hover:text-white"
           >
             <Redo className="w-4 h-4 mr-1" />
