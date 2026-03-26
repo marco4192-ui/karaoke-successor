@@ -69,6 +69,7 @@ import { NoteHighway } from '@/components/game/note-highway';
 import { SinglePlayerLyrics } from '@/components/game/single-player-lyrics';
 import { useRemoteControl } from '@/hooks/use-remote-control';
 import { useStarPower } from '@/hooks/use-star-power';
+import { useGameMedia } from '@/hooks/use-game-media';
 import { apiClient } from '@/lib/api-client';
 import { logger } from '@/lib/logger';
 
@@ -83,7 +84,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   const [isPlaying, setIsPlaying] = useState(false);
   const [countdown, setCountdown] = useState(3);
   const [volume, setVolume] = useState(0);
-  const [mediaLoaded, setMediaLoaded] = useState(false);
   const [youtubeTime, setYoutubeTime] = useState(0); // Track YouTube video time
 
   // Settings from localStorage - managed via useGameSettings hook
@@ -150,6 +150,40 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   
   // Current song reference - must be defined before useEffects that use it
   const song = gameState.currentSong;
+  
+  // ===================== GAME MEDIA HOOK =====================
+  // Use the useGameMedia hook for media management (audio/video refs, YouTube, ads)
+  const {
+    mediaLoaded,
+    isYouTube,
+    youtubeVideoId,
+    useYouTubeAudio,
+    isAdPlaying,
+    adCountdown,
+    audioRef,
+    videoRef,
+    handleAdStart,
+    handleAdEnd,
+    startMediaPlayback,
+    stopMedia,
+  } = useGameMedia({
+    song,
+    isPlaying,
+    onAdStart: () => {
+      // Pause the game if playing
+      if (isPlaying) {
+        setIsPlaying(false);
+      }
+      // Sync ad state to mobile clients
+      apiClient.mobileSetAdPlaying(true).catch(() => {});
+    },
+    onAdEnd: () => {
+      // Resume the game
+      setIsPlaying(true);
+      // Sync ad state to mobile clients
+      apiClient.mobileSetAdPlaying(false).catch(() => {});
+    },
+  });
   
   // State for song with restored URLs (if needed)
   const [restoredSong, setRestoredSong] = useState<Song | null>(null);
@@ -307,8 +341,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   
   const gameLoopRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isMountedRef = useRef(true);
   
@@ -524,11 +556,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     };
   }, [isPlaying]);
   
-  // ===================== AD STATE =====================
-  // Ad state must be declared before useRemoteControl uses it
-  const [isAdPlaying, setIsAdPlaying] = useState(false);
-  const [adCountdown, setAdCountdown] = useState(0);
-  
   // ===================== REMOTE CONTROL POLLING =====================
   // Poll for remote commands from mobile companions
   useRemoteControl({
@@ -561,76 +588,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     player: gameState.players[0],
     updatePlayer,
   });
-  
-  // Custom YouTube video for background (can be set by user)
-  const [customYoutubeUrl, setCustomYoutubeUrl] = useState('');
-  const [customYoutubeId, setCustomYoutubeId] = useState<string | null>(null);
-  const [showYoutubeInput, setShowYoutubeInput] = useState(false);
-  
-  // Check if song has YouTube URL (from #VIDEO: tag with URL)
-  // Priority: custom YouTube > song.youtubeUrl > videoBackground if URL
-  const songYoutubeUrl = song?.youtubeUrl;
-  const videoBackground = song?.videoBackground;
-  const songYoutubeId = songYoutubeUrl ? extractYouTubeId(songYoutubeUrl) : 
-                       (videoBackground && (videoBackground.startsWith('http://') || videoBackground.startsWith('https://')) ? 
-                        extractYouTubeId(videoBackground) : null);
-  // Use custom YouTube ID if set, otherwise use song's YouTube ID
-  const youtubeVideoId = customYoutubeId || songYoutubeId;
-  const isYouTube = !!youtubeVideoId;
-  
-  // Determine if we should use YouTube audio (no separate audio file)
-  const useYouTubeAudio = isYouTube && !song?.audioUrl;
-  
-  // Handle custom YouTube URL input
-  const handleYoutubeUrlSubmit = useCallback((url: string) => {
-    const extractedId = extractYouTubeId(url);
-    if (extractedId) {
-      setCustomYoutubeId(extractedId);
-      setCustomYoutubeUrl(url);
-      setShowYoutubeInput(false);
-    }
-  }, []);
-  
-  // Clear custom YouTube video
-  const clearCustomYoutube = useCallback(() => {
-    setCustomYoutubeId(null);
-    setCustomYoutubeUrl('');
-  }, []);
-  
-  // Handle ad detection callbacks
-  const handleAdStart = useCallback(() => {
-    setIsAdPlaying(true);
-    setAdCountdown(30); // Max 30 seconds for ad
-    
-    // Pause the game if playing
-    if (isPlaying) {
-      setIsPlaying(false);
-    }
-    
-    // Sync ad state to mobile clients
-    apiClient.mobileSetAdPlaying(true).catch(() => {});
-  }, [isPlaying]);
-  
-  const handleAdEnd = useCallback(() => {
-    setIsAdPlaying(false);
-    setAdCountdown(0);
-    
-    // Resume the game
-    setIsPlaying(true);
-    
-    // Sync ad state to mobile clients
-    apiClient.mobileSetAdPlaying(false).catch(() => {});
-  }, []);
-  
-  // Ad countdown effect
-  useEffect(() => {
-    if (isAdPlaying && adCountdown > 0) {
-      const timer = setTimeout(() => {
-        setAdCountdown(prev => prev - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [isAdPlaying, adCountdown]);
   
   // Sing line position at 25% from left (like UltraStar/Vocaluxe)
   const SING_LINE_POSITION = 25; // percentage from left
@@ -685,68 +642,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   // Track media loading state with refs for reliability
   const audioLoadedRef = useRef(false);
   const videoLoadedRef = useRef(false);
-  const mediaCheckIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Initialize media elements on mount
-  useEffect(() => {
-    if (!song) return;
-    
-    // Reset media loaded state
-    setMediaLoaded(false);
-    audioLoadedRef.current = false;
-    videoLoadedRef.current = false;
-    
-    // Pre-load media with proper waiting
-    const loadMedia = async () => {
-      // For songs with audioUrl, wait for audio element to be ready
-      if (song.audioUrl) {
-        // Wait for audio to be canplay with a reasonable timeout
-        const maxWait = 5000; // 5 seconds max
-        const startTime = Date.now();
-        
-        while (!audioLoadedRef.current && Date.now() - startTime < maxWait) {
-          await new Promise(resolve => setTimeout(resolve, 50));
-        }
-        
-        if (audioLoadedRef.current) {
-          // Audio loaded successfully
-        } else {
-          logger.warn('[GameScreen]', 'Audio load timeout, proceeding anyway');
-        }
-      }
-      
-      // For songs with embedded audio (video), wait for video element
-      if (song.hasEmbeddedAudio && song.videoBackground && !song.audioUrl) {
-        const maxWait = 5000;
-        const startTime = Date.now();
-        
-        while (!videoLoadedRef.current && Date.now() - startTime < maxWait) {
-          await new Promise(resolve => setTimeout(resolve, 50));
-        }
-        
-        if (videoLoadedRef.current) {
-          // Video loaded successfully
-        } else {
-          logger.warn('[GameScreen]', 'Video load timeout, proceeding anyway');
-        }
-      }
-      
-      // For YouTube videos, just need a small delay for iframe to initialize
-      if (song.youtubeUrl) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-      
-      setMediaLoaded(true);
-    };
-    
-    loadMedia();
-    
-    return () => {
-      if (mediaCheckIntervalRef.current) {
-        clearInterval(mediaCheckIntervalRef.current);
-      }
-    };
-  }, [song]);
 
   // Initialize and start game - FIXED: proper countdown with visible numbers
   useEffect(() => {
