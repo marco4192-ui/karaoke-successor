@@ -3,6 +3,7 @@
 // Each microphone has its own individual extended settings
 
 import { storage, STORAGE_KEYS } from '@/lib/storage';
+import { logger } from '@/lib/logger';
 
 export interface MicrophoneDevice {
   deviceId: string;
@@ -179,7 +180,7 @@ class MicrophoneInstance {
 
       return true;
     } catch (error) {
-      console.error('Failed to connect microphone:', error);
+      logger.error('[MicrophoneManager]', 'Failed to connect microphone:', error);
       return false;
     }
   }
@@ -341,7 +342,7 @@ export class MultiMicrophoneManager {
 
       return this.devices;
     } catch (error) {
-      console.error('Failed to get microphone list:', error);
+      logger.error('[MicrophoneManager]', 'Failed to get microphone list:', error);
       return [];
     }
   }
@@ -369,7 +370,7 @@ export class MultiMicrophoneManager {
   async assignMicrophone(deviceId: string, customName?: string): Promise<AssignedMicrophone | null> {
     // Check if we can add more mics
     if (!this.canAddMicrophone()) {
-      console.warn(`Maximum of ${MAX_MICROPHONES} microphones already assigned.`);
+      logger.warn('[MicrophoneManager]', `Maximum of ${MAX_MICROPHONES} microphones already assigned.`);
       return null;
     }
 

@@ -1,4 +1,5 @@
 import { PitchDetectionResult, frequencyToMidi, Difficulty, DIFFICULTY_SETTINGS } from '@/types/game';
+import { logger } from '@/lib/logger';
 
 // Karaoke-optimized pitch detection settings
 export interface PitchDetectorConfig {
@@ -117,14 +118,14 @@ export class PitchDetector {
 
       return true;
     } catch (error) {
-      console.error('Failed to initialize pitch detector:', error);
+      logger.error('[PitchDetector]', 'Failed to initialize pitch detector:', error);
       return false;
     }
   }
 
   start(callback: (result: PitchDetectionResult) => void): void {
     if (!this.analyser || !this.buffer) {
-      console.error('Pitch detector not initialized');
+      logger.error('[PitchDetector]', 'Pitch detector not initialized');
       return;
     }
 
