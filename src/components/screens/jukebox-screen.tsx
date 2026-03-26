@@ -7,25 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { getAllSongsAsync } from '@/lib/game/song-library';
 import { YouTubePlayer, extractYouTubeId } from '@/components/game/youtube-player';
 import { Song } from '@/types/game';
-
-// ===================== ICONS =====================
-function PlayIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M8 5v14l11-7z" />
-    </svg>
-  );
-}
-
-function MusicIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M9 18V5l12-2v13" />
-      <circle cx="6" cy="18" r="3" />
-      <circle cx="18" cy="16" r="3" />
-    </svg>
-  );
-}
+import { PlayIcon, MusicIcon } from '@/components/icons';
 
 // ===================== JUKEBOX SCREEN =====================
 export function JukeboxScreen() {
