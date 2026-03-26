@@ -7,9 +7,9 @@ import { Slider } from '@/components/ui/slider';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useNoteScoring } from '@/hooks/use-note-scoring';
 import { useGameSettings } from '@/hooks/use-game-settings';
+import { usePracticeMode } from '@/hooks/use-practice-mode';
 import { useGameStore } from '@/lib/game/store';
 import { Song, Difficulty, LyricLine, Note, DIFFICULTY_SETTINGS, PLAYER_COLORS } from '@/types/game';
-import { PRACTICE_MODE_DEFAULTS, PracticeModeConfig } from '@/lib/game/practice-mode';
 import { StarPowerBar, PerformanceDisplay } from '@/components/game/game-enhancements';
 import { AudioEffectsEngine } from '@/lib/audio/audio-effects';
 import { MusicReactiveBackground } from '@/components/game/music-reactive-background';
@@ -95,9 +95,16 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     noteShapeStyle,
   } = useGameSettings();
   
-  // Practice mode state
-  const [practiceMode, setPracticeMode] = useState<PracticeModeConfig>(PRACTICE_MODE_DEFAULTS);
-  const [showPracticeControls, setShowPracticeControls] = useState(false);
+  // Practice mode state - using custom hook
+  const {
+    practiceMode,
+    showPracticeControls,
+    setPracticeMode,
+    setShowPracticeControls,
+  } = usePracticeMode({
+    isPlaying,
+    currentTime: gameState.currentTime,
+  });
   
   // Challenge mode state - read from localStorage when game starts
   const [activeChallenge, setActiveChallenge] = useState<typeof CHALLENGE_MODES[0] | null>(() => {
