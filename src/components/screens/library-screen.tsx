@@ -21,7 +21,7 @@ import {
   Playlist
 } from '@/lib/playlist-manager';
 import { extractYouTubeId } from '@/components/game/youtube-player';
-import { SongHighscoreModal } from './results-screen';
+import { SongHighscoreModal } from '@/components/results';
 import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
 import { logger } from '@/lib/logger';
 // Icons - imported from central icons file
