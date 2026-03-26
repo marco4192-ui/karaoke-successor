@@ -1,16 +1,14 @@
 /**
- * useFolderScan Hook
- * Manages folder scanning and song importing functionality
- * Extracted from settings-screen.tsx for better code organization
+ * Hook for scanning and importing songs from a folder
  */
 
 import { useState, useCallback } from 'react';
-import { Song } from '@/types/game';
+import type { Song } from '@/types/game';
 import { 
-  getAllSongs, 
-  reloadLibrary, 
   clearCustomSongs, 
-  addSongs 
+  addSongs, 
+  reloadLibrary, 
+  getAllSongs 
 } from '@/lib/game/song-library';
 import { logger } from '@/lib/logger';
 
@@ -20,43 +18,48 @@ export interface ScanProgress {
   count: number;
 }
 
-export interface UseFolderScanReturn {
-  songsFolder: string;
-  setSongsFolder: (folder: string) => void;
-  songCount: number;
-  setSongCount: (count: number) => void;
-  isScanning: boolean;
-  scanProgress: ScanProgress | null;
-  isTauriDetected: boolean;
-  folderSaveComplete: boolean;
-  
-  // Actions
-  handleSaveFolder: () => Promise<void>;
-  performFolderScan: (folderPath: string) => Promise<void>;
-  handleBrowseFolder: () => Promise<void>;
+export interface ScannedSong {
+  title: string;
+  artist: string;
+  bpm?: number;
+  gap?: number;
+  genre?: string;
+  language?: string;
+  year?: number;
+  folderPath?: string;
+  relativeTxtPath?: string;
+  relativeAudioPath?: string;
+  relativeVideoPath?: string;
+  relativeCoverPath?: string;
+  previewStart?: number;
+  previewDuration?: number;
+  lyrics?: any[];
 }
 
-/**
- * Hook for managing folder scanning and song importing
- */
-export function useFolderScan(): UseFolderScanReturn {
-  const [songsFolder, setSongsFolder] = useState<string>('');
-  const [songCount, setSongCount] = useState(0);
+export interface ScanResult {
+  songs: ScannedSong[];
+  errors: string[];
+}
+
+export interface UseFolderScanOptions {
+  onScanComplete?: (count: number) => void;
+}
+
+export interface UseFolderScanReturn {
+  isScanning: boolean;
+  scanProgress: ScanProgress | null;
+  performFolderScan: (folderPath: string) => Promise<void>;
+  songCount: number;
+  setSongCount: (count: number) => void;
+}
+
+export function useFolderScan(options: UseFolderScanOptions = {}): UseFolderScanReturn {
+  const { onScanComplete } = options;
+  
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState<ScanProgress | null>(null);
-  const [isTauriDetected, setIsTauriDetected] = useState(false);
-  const [folderSaveComplete, setFolderSaveComplete] = useState(false);
-  
-  // Check if running in Tauri on mount
-  useState(() => {
-    if (typeof window !== 'undefined' && (window as any).__TAURI__) {
-      setIsTauriDetected(true);
-    }
-  });
-  
-  /**
-   * Perform folder scan and import songs
-   */
+  const [songCount, setSongCount] = useState(0);
+
   const performFolderScan = useCallback(async (folderPath: string) => {
     setIsScanning(true);
     setScanProgress({ stage: 'scanning', message: 'Scanning folder...', count: 0 });
@@ -66,7 +69,11 @@ export function useFolderScan(): UseFolderScanReturn {
       const { scanSongsFolderTauri, isTauri } = await import('@/lib/tauri-file-storage');
       
       if (!isTauri()) {
-        alert('Folder scanning is only available in the desktop app.');
+        setScanProgress({ 
+          stage: 'error', 
+          message: 'Folder scanning is only available in the desktop app.', 
+          count: 0 
+        });
         setIsScanning(false);
         return;
       }
@@ -84,7 +91,7 @@ export function useFolderScan(): UseFolderScanReturn {
         // Clear existing songs first
         clearCustomSongs();
         
-        // Convert scanned songs to Song formats
+        // Convert scanned songs to Song format
         const { storeMedia } = await import('@/lib/db/media-db');
         const { getSongMediaUrl } = await import('@/lib/tauri-file-storage');
         
@@ -108,12 +115,11 @@ export function useFolderScan(): UseFolderScanReturn {
                   storedTxt = true;
                 }
               } catch (e) {
-                logger.warn('[Settings]', 'Could not cache TXT for', scanned.title);
+                logger.warn('[FolderScan]', 'Could not cache TXT for', scanned.title);
               }
             }
             
             // CRITICAL: Create blob URLs for media files NOW
-            // These URLs are needed for immediate playback
             let audioUrl: string | undefined = undefined;
             let videoBackground: string | undefined = undefined;
             let coverImage: string | undefined = undefined;
@@ -122,9 +128,9 @@ export function useFolderScan(): UseFolderScanReturn {
             if (scanned.relativeAudioPath) {
               try {
                 audioUrl = await getSongMediaUrl(scanned.relativeAudioPath, folderPath) || undefined;
-                logger.info('[Import]', `Created audio URL for ${scanned.title}:`, audioUrl ? 'success' : 'failed');
+                logger.info('[FolderScan]', `Created audio URL for ${scanned.title}:`, audioUrl ? 'success' : 'failed');
               } catch (e) {
-                logger.warn('[Import]', `Failed to create audio URL for ${scanned.title}:`, e);
+                logger.warn('[FolderScan]', `Failed to create audio URL for ${scanned.title}:`, e);
               }
             }
             
@@ -132,9 +138,9 @@ export function useFolderScan(): UseFolderScanReturn {
             if (scanned.relativeVideoPath) {
               try {
                 videoBackground = await getSongMediaUrl(scanned.relativeVideoPath, folderPath) || undefined;
-                logger.info('[Import]', `Created video URL for ${scanned.title}:`, videoBackground ? 'success' : 'failed');
+                logger.info('[FolderScan]', `Created video URL for ${scanned.title}:`, videoBackground ? 'success' : 'failed');
               } catch (e) {
-                logger.warn('[Import]', `Failed to create video URL for ${scanned.title}:`, e);
+                logger.warn('[FolderScan]', `Failed to create video URL for ${scanned.title}:`, e);
               }
             }
             
@@ -142,9 +148,9 @@ export function useFolderScan(): UseFolderScanReturn {
             if (scanned.relativeCoverPath) {
               try {
                 coverImage = await getSongMediaUrl(scanned.relativeCoverPath, folderPath) || undefined;
-                logger.info('[Import]', `Created cover URL for ${scanned.title}:`, coverImage ? 'success' : 'failed');
+                logger.info('[FolderScan]', `Created cover URL for ${scanned.title}:`, coverImage ? 'success' : 'failed');
               } catch (e) {
-                logger.warn('[Import]', `Failed to create cover URL for ${scanned.title}:`, e);
+                logger.warn('[FolderScan]', `Failed to create cover URL for ${scanned.title}:`, e);
               }
             }
             
@@ -158,13 +164,12 @@ export function useFolderScan(): UseFolderScanReturn {
               difficulty: 'medium',
               rating: 3,
               gap: scanned.gap,
-              baseFolder: folderPath, // Store the base folder path for loading media
+              baseFolder: folderPath,
               folderPath: scanned.folderPath,
               relativeTxtPath: scanned.relativeTxtPath,
               relativeAudioPath: scanned.relativeAudioPath,
               relativeVideoPath: scanned.relativeVideoPath,
               relativeCoverPath: scanned.relativeCoverPath,
-              // CRITICAL: Set the media URLs
               audioUrl,
               videoBackground,
               coverImage,
@@ -175,7 +180,6 @@ export function useFolderScan(): UseFolderScanReturn {
                 startTime: scanned.previewStart * 1000,
                 duration: (scanned.previewDuration || 15) * 1000,
               } : undefined,
-              // CRITICAL: Use lyrics from scanner if available
               lyrics: scanned.lyrics || [],
               storedTxt,
               storedMedia: false,
@@ -192,7 +196,7 @@ export function useFolderScan(): UseFolderScanReturn {
               count: imported 
             });
           } catch (e) {
-            logger.error('[Import]', 'Failed to import song:', scanned.title, e);
+            logger.error('[FolderScan]', 'Failed to import song:', scanned.title, e);
           }
         }
         
@@ -203,13 +207,18 @@ export function useFolderScan(): UseFolderScanReturn {
         
         // Reload library
         reloadLibrary();
-        setSongCount(getAllSongs().length);
-        setFolderSaveComplete(true);
+        const newCount = getAllSongs().length;
+        setSongCount(newCount);
+        
         setScanProgress({ 
           stage: 'complete', 
           message: `Successfully imported ${imported} songs!`, 
           count: imported 
         });
+        
+        if (onScanComplete) {
+          onScanComplete(imported);
+        }
       } else {
         setScanProgress({ 
           stage: 'complete', 
@@ -220,11 +229,11 @@ export function useFolderScan(): UseFolderScanReturn {
       
       // Show errors if any
       if (result.errors.length > 0) {
-        logger.warn('[Import]', 'Scan errors:', result.errors);
+        logger.warn('[FolderScan]', 'Scan errors:', result.errors);
       }
       
     } catch (error) {
-      logger.error('[Import]', 'Folder scan failed:', error);
+      logger.error('[FolderScan]', 'Folder scan failed:', error);
       setScanProgress({ 
         stage: 'error', 
         message: `Scan failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 
@@ -233,77 +242,18 @@ export function useFolderScan(): UseFolderScanReturn {
     }
     
     setIsScanning(false);
+    
+    // Clear progress after delay
     setTimeout(() => {
-      setFolderSaveComplete(false);
       setScanProgress(null);
     }, 5000);
-  }, []);
-  
-  /**
-   * Save songs folder and reload library
-   */
-  const handleSaveFolder = useCallback(async () => {
-    if (!songsFolder.trim()) {
-      alert('Please enter a folder path first.');
-      return;
-    }
-    
-    localStorage.setItem('karaoke-songs-folder', songsFolder);
-    
-    // Run the Tauri folder scan
-    await performFolderScan(songsFolder);
-  }, [songsFolder, performFolderScan]);
-  
-  /**
-   * Browse folder (using Tauri dialog if available)
-   */
-  const handleBrowseFolder = useCallback(async () => {
-    // Check if running in Tauri
-    if (typeof window !== 'undefined' && (window as any).__TAURI__) {
-      try {
-        const { open } = await import('@tauri-apps/plugin-dialog');
-        const selected = await open({
-          directory: true,
-          multiple: false,
-          title: 'Select Songs Folder'
-        });
-        if (selected && typeof selected === 'string') {
-          setSongsFolder(selected);
-          localStorage.setItem('karaoke-songs-folder', selected);
-          
-          // Perform the actual scan
-          await performFolderScan(selected);
-        }
-      } catch (e) {
-        alert('Could not open folder picker. Please enter the path manually.');
-      }
-    } else {
-      // Browser mode - show instructions
-      alert(
-        'Folder picker is only available in the desktop app.\n\n' +
-        'In browser mode, please:\n' +
-        '1. Enter the full path to your songs folder\n' +
-        '2. Click "Save" to apply\n\n' +
-        'Note: Browser security restricts direct file system access. ' +
-        'Use the Import tab to add songs manually.'
-      );
-    }
-  }, [performFolderScan]);
-  
+  }, [onScanComplete]);
+
   return {
-    songsFolder,
-    setSongsFolder,
-    songCount,
-    setSongCount,
     isScanning,
     scanProgress,
-    isTauriDetected,
-    folderSaveComplete,
-    
-    handleSaveFolder,
     performFolderScan,
-    handleBrowseFolder,
+    songCount,
+    setSongCount,
   };
 }
-
-export default useFolderScan;
