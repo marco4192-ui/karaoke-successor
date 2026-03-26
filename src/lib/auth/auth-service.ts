@@ -3,6 +3,7 @@
 
 import { getUserDatabase, ExtendedPlayerProfile, generateSyncCode, generateRoomCode, UserSession } from '@/lib/db/user-db';
 import { PlayerProfile, PLAYER_COLORS } from '@/types/game';
+import { logger } from '@/lib/logger';
 
 // Auth state
 export interface AuthState {
@@ -58,7 +59,7 @@ class AuthService {
             session,
             lastActiveAt: Date.now(),
           };
-          console.log('[Auth] Restored session for:', profile.name);
+          logger.info('[Auth]', 'Restored session for:', profile.name);
         }
       }
       
@@ -70,7 +71,7 @@ class AuthService {
       this.initialized = true;
       this.emit('login', this.state.profile);
     } catch (error) {
-      console.error('[Auth] Initialization failed:', error);
+      logger.error('[Auth]', 'Initialization failed:', error);
       // Create emergency guest profile
       await this.createGuestProfile();
       this.initialized = true;
@@ -96,7 +97,7 @@ class AuthService {
       lastActiveAt: Date.now(),
     };
     
-    console.log('[Auth] Created guest profile:', profile.name);
+    logger.info('[Auth]', 'Created guest profile:', profile.name);
     this.emit('login', profile);
     
     return profile;
@@ -304,7 +305,7 @@ class AuthService {
       this.emit('profile-update', this.state.profile);
       return true;
     } catch (error) {
-      console.error('[Auth] Import failed:', error);
+      logger.error('[Auth]', 'Import failed:', error);
       return false;
     }
   }
@@ -323,7 +324,7 @@ class AuthService {
       try {
         callback(event, data);
       } catch (error) {
-        console.error('[Auth] Event listener error:', error);
+        logger.error('[Auth]', 'Event listener error:', error);
       }
     });
   }

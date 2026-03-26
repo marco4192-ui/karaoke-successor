@@ -2,6 +2,8 @@
 // Provides a consistent API for localStorage operations with type safety
 // This is especially important for Tauri apps where localStorage may behave differently
 
+import { logger } from '@/lib/logger';
+
 /**
  * Storage keys used throughout the application
  * Centralized for easier management and to prevent typos
@@ -144,7 +146,7 @@ export const storage = {
       if (typeof window === 'undefined') return;
       localStorage.setItem(key, String(value));
     } catch (error) {
-      console.error(`[Storage] Failed to set ${key}:`, error);
+      logger.error('[Storage]', `Failed to set ${key}:`, error);
     }
   },
 
@@ -158,7 +160,7 @@ export const storage = {
       if (typeof window === 'undefined') return;
       localStorage.setItem(key, JSON.stringify(value));
     } catch (error) {
-      console.error(`[Storage] Failed to set JSON ${key}:`, error);
+      logger.error('[Storage]', `Failed to set JSON ${key}:`, error);
     }
   },
 
@@ -171,7 +173,7 @@ export const storage = {
       if (typeof window === 'undefined') return;
       localStorage.removeItem(key);
     } catch (error) {
-      console.error(`[Storage] Failed to remove ${key}:`, error);
+      logger.error('[Storage]', `Failed to remove ${key}:`, error);
     }
   },
 
@@ -183,7 +185,7 @@ export const storage = {
       if (typeof window === 'undefined') return;
       localStorage.clear();
     } catch (error) {
-      console.error('[Storage] Failed to clear:', error);
+      logger.error('[Storage]', 'Failed to clear:', error);
     }
   },
 
@@ -211,7 +213,7 @@ export const storage = {
       const keys = Object.keys(localStorage).filter(k => k.startsWith(prefix));
       keys.forEach(k => localStorage.removeItem(k));
     } catch (error) {
-      console.error(`[Storage] Failed to remove by prefix ${prefix}:`, error);
+      logger.error('[Storage]', `Failed to remove by prefix ${prefix}:`, error);
     }
   },
 };

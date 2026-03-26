@@ -1,5 +1,6 @@
 // PWA Manifest and Service Worker Configuration
 import { isTauri } from '@/lib/tauri-file-storage';
+import { logger } from '@/lib/logger';
 
 export const PWA_MANIFEST = {
   name: 'Karaoke Successor',
@@ -63,7 +64,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
 
   // Skip service worker in Tauri (not needed for desktop apps)
   if (isTauri()) {
-    console.log('Skipping Service Worker registration in Tauri mode');
+    logger.info('[PWA]', 'Skipping Service Worker registration in Tauri mode');
     return null;
   }
 
@@ -72,7 +73,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
       scope: '/',
     });
 
-    console.log('Service Worker registered:', registration.scope);
+    logger.info('[PWA]', 'Service Worker registered:', registration.scope);
 
     // Check for updates
     registration.addEventListener('updatefound', () => {
@@ -81,7 +82,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
             // New version available
-            console.log('New version available! Refresh to update.');
+            logger.info('[PWA]', 'New version available! Refresh to update.');
           }
         });
       }
@@ -89,7 +90,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
 
     return registration;
   } catch (error) {
-    console.error('Service Worker registration failed:', error);
+    logger.error('[PWA]', 'Service Worker registration failed:', error);
     return null;
   }
 }
@@ -122,7 +123,7 @@ let installListeners: Array<(available: boolean) => void> = [];
 if (typeof window !== 'undefined' && !isTauri()) {
   // Capture the event as early as possible
   window.addEventListener('beforeinstallprompt', (e) => {
-    console.log('[PWA] beforeinstallprompt event captured!');
+    logger.info('[PWA]', 'beforeinstallprompt event captured!');
     e.preventDefault();
     deferredPrompt = e as BeforeInstallPromptEvent;
     // Notify all listeners that install is now available
@@ -131,7 +132,7 @@ if (typeof window !== 'undefined' && !isTauri()) {
 
   // Also listen for app installed event
   window.addEventListener('appinstalled', () => {
-    console.log('[PWA] App was installed');
+    logger.info('[PWA]', 'App was installed');
     deferredPrompt = null;
     installListeners.forEach(listener => listener(false));
   });
@@ -168,10 +169,10 @@ export function isTauriMode(): boolean {
 export function initPWAInstall(): void {
   if (typeof window === 'undefined') return;
   if (isTauri()) {
-    console.log('[PWA] Running in Tauri mode - PWA install not applicable');
+    logger.info('[PWA]', 'Running in Tauri mode - PWA install not applicable');
     return;
   }
-  console.log('[PWA] Install initialized, deferredPrompt available:', deferredPrompt !== null);
+  logger.info('[PWA]', 'Install initialized, deferredPrompt available:', deferredPrompt !== null);
 }
 
 // Prompt the user to install the PWA
@@ -192,10 +193,10 @@ export async function promptPWAInstall(): Promise<{ success: boolean; message: s
   }
   
   try {
-    console.log('[PWA] Prompting user for install...');
+    logger.info('[PWA]', 'Prompting user for install...');
     await deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    console.log('[PWA] User choice:', outcome);
+    logger.info('[PWA]', 'User choice:', outcome);
     
     if (outcome === 'accepted') {
       deferredPrompt = null;
@@ -204,7 +205,7 @@ export async function promptPWAInstall(): Promise<{ success: boolean; message: s
       return { success: false, message: 'Installation was cancelled.' };
     }
   } catch (error) {
-    console.error('[PWA] Install prompt failed:', error);
+    logger.error('[PWA]', 'Install prompt failed:', error);
     return { 
       success: false, 
       message: 'Installation failed. Please try using "Add to Home Screen" from your browser menu.' 
@@ -236,7 +237,7 @@ export async function cacheSong(song: { id: string; audioUrl?: string; videoUrl?
     await cache.addAll(urls);
     return true;
   } catch (error) {
-    console.error('Failed to cache song:', error);
+    logger.error('[PWA]', 'Failed to cache song:', error);
     return false;
   }
 }

@@ -32,6 +32,7 @@ import { AIAssetsGeneratorTab } from '@/components/settings/ai-assets-generator-
 import { EditorSettingsTab } from '@/components/settings/editor-settings-tab';
 import { LibrarySettingsTab } from '@/components/settings/library-settings-tab';
 import { MicrophoneSettingsPanel } from '@/components/settings/microphone-settings-panel';
+import { logger } from '@/lib/logger';
 
 // Icons
 function MusicIcon({ className }: { className?: string }) {
@@ -383,7 +384,7 @@ function SettingsScreen() {
                   storedTxt = true;
                 }
               } catch (e) {
-                console.warn('Could not cache TXT for', scanned.title);
+                logger.warn('[Settings]', 'Could not cache TXT for', scanned.title);
               }
             }
             
@@ -397,9 +398,9 @@ function SettingsScreen() {
             if (scanned.relativeAudioPath) {
               try {
                 audioUrl = await getSongMediaUrl(scanned.relativeAudioPath, folderPath) || undefined;
-                console.log(`[Import] Created audio URL for ${scanned.title}:`, audioUrl ? 'success' : 'failed');
+                logger.info('[Import]', `Created audio URL for ${scanned.title}:`, audioUrl ? 'success' : 'failed');
               } catch (e) {
-                console.warn(`[Import] Failed to create audio URL for ${scanned.title}:`, e);
+                logger.warn('[Import]', `Failed to create audio URL for ${scanned.title}:`, e);
               }
             }
             
@@ -407,9 +408,9 @@ function SettingsScreen() {
             if (scanned.relativeVideoPath) {
               try {
                 videoBackground = await getSongMediaUrl(scanned.relativeVideoPath, folderPath) || undefined;
-                console.log(`[Import] Created video URL for ${scanned.title}:`, videoBackground ? 'success' : 'failed');
+                logger.info('[Import]', `Created video URL for ${scanned.title}:`, videoBackground ? 'success' : 'failed');
               } catch (e) {
-                console.warn(`[Import] Failed to create video URL for ${scanned.title}:`, e);
+                logger.warn('[Import]', `Failed to create video URL for ${scanned.title}:`, e);
               }
             }
             
@@ -417,9 +418,9 @@ function SettingsScreen() {
             if (scanned.relativeCoverPath) {
               try {
                 coverImage = await getSongMediaUrl(scanned.relativeCoverPath, folderPath) || undefined;
-                console.log(`[Import] Created cover URL for ${scanned.title}:`, coverImage ? 'success' : 'failed');
+                logger.info('[Import]', `Created cover URL for ${scanned.title}:`, coverImage ? 'success' : 'failed');
               } catch (e) {
-                console.warn(`[Import] Failed to create cover URL for ${scanned.title}:`, e);
+                logger.warn('[Import]', `Failed to create cover URL for ${scanned.title}:`, e);
               }
             }
             
@@ -467,7 +468,7 @@ function SettingsScreen() {
               count: imported 
             });
           } catch (e) {
-            console.error('Failed to import song:', scanned.title, e);
+            logger.error('[Import]', 'Failed to import song:', scanned.title, e);
           }
         }
         
@@ -495,11 +496,11 @@ function SettingsScreen() {
       
       // Show errors if any
       if (result.errors.length > 0) {
-        console.warn('Scan errors:', result.errors);
+        logger.warn('[Import]', 'Scan errors:', result.errors);
       }
       
     } catch (error) {
-      console.error('Folder scan failed:', error);
+      logger.error('[Import]', 'Folder scan failed:', error);
       setScanProgress({ 
         stage: 'error', 
         message: `Scan failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 
@@ -607,7 +608,7 @@ function SettingsScreen() {
       setFolderSaveComplete(true);
       setTimeout(() => setFolderSaveComplete(false), 2000);
     } catch (error) {
-      console.error('Failed to save settings:', error);
+      logger.error('[Settings]', 'Failed to save settings:', error);
     }
   };
   
@@ -646,7 +647,7 @@ function SettingsScreen() {
       // Hide success message after 3 seconds
       setTimeout(() => setResetComplete(false), 3000);
     } catch (error) {
-      console.error('Failed to reset library:', error);
+      logger.error('[Settings]', 'Failed to reset library:', error);
     } finally {
       setIsResetting(false);
     }
@@ -672,7 +673,7 @@ function SettingsScreen() {
       // Reload the page to reset state
       window.location.reload();
     } catch (error) {
-      console.error('Failed to clear data:', error);
+      logger.error('[Settings]', 'Failed to clear data:', error);
       setIsResetting(false);
     }
   };

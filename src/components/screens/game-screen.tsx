@@ -70,6 +70,7 @@ import { SinglePlayerLyrics } from '@/components/game/single-player-lyrics';
 import { useRemoteControl } from '@/hooks/use-remote-control';
 import { useStarPower } from '@/hooks/use-star-power';
 import { apiClient } from '@/lib/api-client';
+import { logger } from '@/lib/logger';
 
 // ===================== HOME SCREEN =====================
 // HomeScreen has been moved to /src/components/screens/home-screen.tsx
@@ -159,21 +160,21 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       (!song.audioUrl && !song.videoBackground);
     
     if (needsUrlRestore) {
-      console.log('[GameScreen] Restoring URLs for song:', song.title);
+      logger.info('[GameScreen]', 'Restoring URLs for song:', song.title);
       import('@/lib/game/song-library').then(({ restoreSongUrls }) => {
         restoreSongUrls(song).then(restored => {
-          console.log('[GameScreen] URLs restored:', {
+          logger.info('[GameScreen]', 'URLs restored:', {
             audioUrl: !!restored.audioUrl,
             videoBackground: !!restored.videoBackground,
             coverImage: !!restored.coverImage
           });
           setRestoredSong(restored);
         }).catch(err => {
-          console.error('[GameScreen] Error restoring URLs:', err);
+          logger.error('[GameScreen]', 'Error restoring URLs:', err);
           setRestoredSong(song);
         });
       }).catch(err => {
-        console.error('[GameScreen] Error importing restoreSongUrls:', err);
+        logger.error('[GameScreen]', 'Error importing restoreSongUrls:', err);
         setRestoredSong(song);
       });
     } else {
@@ -189,7 +190,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   const [lyricsLoadError, setLyricsLoadError] = useState<string | null>(null);
   
   useEffect(() => {
-    console.log('[GameScreen] Lyrics loading effect triggered', {
+    logger.debug('[GameScreen]', 'Lyrics loading effect triggered', {
       songId: song?.id,
       storedTxt: song?.storedTxt,
       lyricsLength: song?.lyrics?.length || 0
@@ -197,12 +198,12 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     
     if (song?.storedTxt && (!song.lyrics || song.lyrics.length === 0)) {
       // Load lyrics on-demand from IndexedDB
-      console.log('[GameScreen] Loading lyrics from IndexedDB for song:', song.id);
+      logger.info('[GameScreen]', 'Loading lyrics from IndexedDB for song:', song.id);
       setLyricsLoadError(null);
       
       import('@/lib/game/song-library').then(({ loadSongLyrics }) => {
         loadSongLyrics(song).then(lyrics => {
-          console.log('[GameScreen] Lyrics loaded, length:', lyrics.length);
+          logger.info('[GameScreen]', 'Lyrics loaded, length:', lyrics.length);
           if (lyrics.length > 0) {
             setLoadedLyrics(lyrics);
             setLyricsLoadError(null);
@@ -210,11 +211,11 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             setLyricsLoadError('Failed to load lyrics from IndexedDB - empty result');
           }
         }).catch(err => {
-          console.error('[GameScreen] Error loading lyrics:', err);
+          logger.error('[GameScreen]', 'Error loading lyrics:', err);
           setLyricsLoadError(`Error loading lyrics: ${err.message}`);
         });
       }).catch(err => {
-        console.error('[GameScreen] Error importing song-library:', err);
+        logger.error('[GameScreen]', 'Error importing song-library:', err);
         setLyricsLoadError(`Error importing module: ${err.message}`);
       });
     } else {
@@ -226,7 +227,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   // Use loaded lyrics if available, otherwise use song's lyrics
   // Uses effectiveSongBase which has restored URLs
   const effectiveSong = useMemo(() => {
-    console.log('[GameScreen] Computing effectiveSong', {
+    logger.debug('[GameScreen]', 'Computing effectiveSong', {
       hasSong: !!effectiveSongBase,
       loadedLyricsLength: loadedLyrics.length,
       songLyricsLength: effectiveSongBase?.lyrics?.length || 0,
@@ -502,7 +503,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
           audioEffectsRef.current = engine;
           setAudioEffects(engine);
         } catch (error) {
-          console.error('Failed to initialize audio effects:', error);
+          logger.error('[GameScreen]', 'Failed to initialize audio effects:', error);
         }
       };
       initAudioEffects();
@@ -700,7 +701,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         if (audioLoadedRef.current) {
           // Audio loaded successfully
         } else {
-          console.warn('[GameScreen] Audio load timeout, proceeding anyway');
+          logger.warn('[GameScreen]', 'Audio load timeout, proceeding anyway');
         }
       }
       
@@ -716,7 +717,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         if (videoLoadedRef.current) {
           // Video loaded successfully
         } else {
-          console.warn('[GameScreen] Video load timeout, proceeding anyway');
+          logger.warn('[GameScreen]', 'Video load timeout, proceeding anyway');
         }
       }
       
@@ -806,7 +807,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
                     if (mediaUrls.audioUrl) currentAudioUrl = mediaUrls.audioUrl;
                     if (mediaUrls.videoUrl) currentVideoUrl = mediaUrls.videoUrl;
                   } catch (e) {
-                    console.error('[GameScreen] Failed to load media from IndexedDB:', e);
+                    logger.error('[GameScreen]', 'Failed to load media from IndexedDB:', e);
                   }
                 }
                 
@@ -847,7 +848,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
                 // The YouTubePlayer component is rendered in JSX and controlled by isPlaying prop
                 // No additional action needed here - just log for debugging
                 else if (isYouTube && youtubeVideoId) {
-                  console.log('[GameScreen] Starting YouTube playback for video:', youtubeVideoId);
+                  logger.info('[GameScreen]', 'Starting YouTube playback for video:', youtubeVideoId);
                   // YouTube player is rendered in JSX and controlled by isPlaying prop
                   // Time sync is handled by onTimeUpdate callback from YouTubePlayer
                   // The player will start automatically when isPlaying becomes true
@@ -865,7 +866,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
                       const blob = await response.blob();
                       if (blob.size === 0) throw new Error('Background video blob empty');
                     } catch (fetchError) {
-                      console.error('[GameScreen] Background video blob validation failed:', fetchError);
+                      logger.error('[GameScreen]', 'Background video blob validation failed:', fetchError);
                       const { getSongMediaUrls } = await import('@/lib/db/media-db');
                       const mediaUrls = await getSongMediaUrls(song.id);
                       if (mediaUrls.videoUrl) {
@@ -881,7 +882,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
                   videoRef.current.play().catch(() => {});
                 }
               } catch (error) {
-                console.error('[GameScreen] Media playback failed:', error);
+                logger.error('[GameScreen]', 'Media playback failed:', error);
                 // Try fallback: just start with system time
                 setIsPlaying(true);
               }
@@ -1363,7 +1364,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
           onEnded={endGameAndCleanup}
           onError={(e) => {
             const audio = e.currentTarget;
-            console.error('[GameScreen] Audio element error:', {
+            logger.error('[GameScreen]', 'Audio element error:', {
               error: audio.error,
               networkState: audio.networkState,
               readyState: audio.readyState,

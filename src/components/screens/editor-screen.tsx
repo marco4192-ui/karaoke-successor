@@ -10,6 +10,7 @@ import { getAllSongs, updateSong, getSongByIdWithLyrics } from '@/lib/game/song-
 import { KaraokeEditor } from '@/components/editor/karaoke-editor';
 import { Song } from '@/types/game';
 import { saveSongToTxt } from '@/lib/editor/save-to-file';
+import { logger } from '@/lib/logger';
 
 // Common genres and languages for quick selection
 const COMMON_GENRES = [
@@ -99,7 +100,7 @@ function GenreLanguageEditor({
       
       setTimeout(() => setSaveMessage(null), 3000);
     } catch (error) {
-      console.error('Save error:', error);
+      logger.error('[EditorScreen]', 'Save error:', error);
       setSaveMessage('❌ Fehler beim Speichern');
       setTimeout(() => setSaveMessage(null), 3000);
     } finally {
@@ -297,26 +298,26 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
 
   // Handle song selection - load lyrics from IndexedDB if needed
   const handleSelectSong = async (song: Song) => {
-    console.log('[EditorScreen] Selecting song:', song.id, song.title);
-    console.log('[EditorScreen] Song has lyrics:', song.lyrics?.length || 0);
-    console.log('[EditorScreen] Song storedTxt:', song.storedTxt);
+    logger.debug('[EditorScreen]', 'Selecting song:', song.id, song.title);
+    logger.debug('[EditorScreen]', 'Song has lyrics:', song.lyrics?.length || 0);
+    logger.debug('[EditorScreen]', 'Song storedTxt:', song.storedTxt);
     
     // If song has no lyrics but has storedTxt, load from IndexedDB
     if ((!song.lyrics || song.lyrics.length === 0) && song.storedTxt) {
       setIsLoadingLyrics(true);
-      console.log('[EditorScreen] Loading lyrics from IndexedDB...');
+      logger.info('[EditorScreen]', 'Loading lyrics from IndexedDB...');
       
       try {
         const songWithLyrics = await getSongByIdWithLyrics(song.id);
         if (songWithLyrics) {
-          console.log('[EditorScreen] Lyrics loaded, lines:', songWithLyrics.lyrics?.length || 0);
+          logger.info('[EditorScreen]', 'Lyrics loaded, lines:', songWithLyrics.lyrics?.length || 0);
           setSelectedSong(songWithLyrics);
         } else {
-          console.warn('[EditorScreen] Failed to load song with lyrics');
+          logger.warn('[EditorScreen]', 'Failed to load song with lyrics');
           setSelectedSong(song);
         }
       } catch (error) {
-        console.error('[EditorScreen] Error loading lyrics:', error);
+        logger.error('[EditorScreen]', 'Error loading lyrics:', error);
         setSelectedSong(song);
       } finally {
         setIsLoadingLyrics(false);

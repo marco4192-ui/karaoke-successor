@@ -3,6 +3,7 @@
 
 import { getUserDatabase, generateRoomCode, MultiplayerRoom } from '@/lib/db/user-db';
 import { GameMode, PLAYER_COLORS } from '@/types/game';
+import { logger } from '@/lib/logger';
 
 // Room player info
 export interface RoomPlayer {
@@ -89,7 +90,7 @@ class RoomService {
     this.currentRoom = room;
     this.startHeartbeat();
     
-    console.log('[RoomService] Created room:', room.code);
+    logger.info('[RoomService]', 'Created room:', room.code);
     this.emit('room-created', room);
 
     return room;
@@ -110,7 +111,7 @@ class RoomService {
     if (room) {
       this.currentRoom = room;
       this.startHeartbeat();
-      console.log('[RoomService] Joined room:', room.code);
+      logger.info('[RoomService]', 'Joined room:', room.code);
       this.emit('room-joined', room);
     }
 
@@ -180,7 +181,7 @@ class RoomService {
     };
 
     await db.updateRoom(this.currentRoom);
-    console.log('[RoomService] Updated room config');
+    logger.info('[RoomService]', 'Updated room config');
   }
 
   /**
@@ -215,7 +216,7 @@ class RoomService {
     const db = getUserDatabase();
     await db.updateRoom(this.currentRoom);
     
-    console.log('[RoomService] Game started:', songTitle);
+    logger.info('[RoomService]', 'Game started:', songTitle);
     this.emit('game-started', this.currentRoom);
   }
 
@@ -230,7 +231,7 @@ class RoomService {
     const db = getUserDatabase();
     await db.updateRoom(this.currentRoom);
     
-    console.log('[RoomService] Game ended');
+    logger.info('[RoomService]', 'Game ended');
     this.emit('game-ended', this.currentRoom);
   }
 
@@ -339,7 +340,7 @@ class RoomService {
     const deleted = await db.cleanupExpiredRooms();
     
     if (deleted > 0) {
-      console.log('[RoomService] Cleaned up', deleted, 'expired rooms');
+      logger.info('[RoomService]', 'Cleaned up', deleted, 'expired rooms');
     }
     
     return deleted;
@@ -379,7 +380,7 @@ class RoomService {
       try {
         callback(event, data);
       } catch (error) {
-        console.error('[RoomService] Event listener error:', error);
+        logger.error('[RoomService]', 'Event listener error:', error);
       }
     });
   }

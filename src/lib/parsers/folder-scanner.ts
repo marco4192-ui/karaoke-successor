@@ -4,6 +4,7 @@
 import { Song, Note, LyricLine, midiToFrequency, Difficulty } from '@/types/game';
 import { CachedSong, CachedFolder, LibraryCache, createCachedSong, saveCache, loadCache } from '@/lib/game/library-cache';
 import { storeMedia } from '@/lib/db/media-db';
+import { logger } from '@/lib/logger';
 
 export interface ScannedFile {
   name: string;
@@ -428,13 +429,13 @@ export async function convertScannedSongToSong(scanned: ScannedSong): Promise<So
     try {
       duration = await getAudioDuration(scanned.audioFile);
     } catch (e) {
-      console.error('Failed to get audio duration:', e);
+      logger.error('[FolderScanner]', 'Failed to get audio duration:', e);
     }
   } else if (scanned.videoFile) {
     try {
       duration = await getVideoDuration(scanned.videoFile);
     } catch (e) {
-      console.error('Failed to get video duration:', e);
+      logger.error('[FolderScanner]', 'Failed to get video duration:', e);
     }
   }
 
@@ -468,13 +469,13 @@ export async function convertScannedSongToSong(scanned: ScannedSong): Promise<So
       if (txtContent && txtContent.length > 0) {
         const txtBlob = new Blob([txtContent], { type: 'text/plain' });
         await storeMedia(songId, 'txt', txtBlob);
-        console.log(`[FolderScanner] Cached TXT content (${txtContent.length} chars) for song ${songId}`);
+        logger.info('[FolderScanner]', `Cached TXT content (${txtContent.length} chars) for song ${songId}`);
         storedTxt = true;
       } else {
-        console.warn(`[FolderScanner] TXT file is empty for song ${songId}`);
+        logger.warn('[FolderScanner]', `TXT file is empty for song ${songId}`);
       }
     } catch (txtErr) {
-      console.error(`[FolderScanner] Failed to cache TXT for ${songId}:`, txtErr);
+      logger.error('[FolderScanner]', `Failed to cache TXT for ${songId}:`, txtErr);
     }
   }
 

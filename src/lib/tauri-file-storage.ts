@@ -5,6 +5,7 @@
 import { writeFile, readTextFile, BaseDirectory, exists, mkdir, readDir, readFile } from '@tauri-apps/plugin-fs';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { LyricLine, Note, midiToFrequency } from '@/types/game';
+import { logger } from '@/lib/logger';
 
 // Check if running in Tauri
 export function isTauri(): boolean {
@@ -108,14 +109,14 @@ export async function scanSongsFolderTauri(folderPath: string): Promise<TauriSca
     return result;
   }
 
-  console.log('[TauriScanner] Starting scan of folder:', folderPath);
+  logger.info('[TauriScanner]', 'Starting scan of folder:', folderPath);
 
   try {
     // Collect ALL files first, then group by folder
     const allFiles = await collectAllFiles(folderPath, folderPath);
     result.scannedFiles = allFiles.length;
     
-    console.log(`[TauriScanner] Found ${allFiles.length} files`);
+    logger.info('[TauriScanner]', `Found ${allFiles.length} files`);
     
     // Group files by their parent folder
     const folderMap = new Map<string, Map<string, { path: string; name: string }>>();
@@ -137,7 +138,7 @@ export async function scanSongsFolderTauri(folderPath: string): Promise<TauriSca
       folderFiles.set(file.name, { path: relativePath, name: file.name });
     }
     
-    console.log(`[TauriScanner] Found ${folderMap.size} folders with files`);
+    logger.info('[TauriScanner]', `Found ${folderMap.size} folders with files`);
     
     // Process each folder
     for (const [folderPath, files] of folderMap) {
@@ -147,9 +148,9 @@ export async function scanSongsFolderTauri(folderPath: string): Promise<TauriSca
       }
     }
     
-    console.log(`[TauriScanner] Scan complete: ${result.songs.length} songs found`);
+    logger.info('[TauriScanner]', `Scan complete: ${result.songs.length} songs found`);
   } catch (error) {
-    console.error('[TauriScanner] Scan failed:', error);
+    logger.error('[TauriScanner]', 'Scan failed:', error);
     result.errors.push(`Scan failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 
@@ -193,7 +194,7 @@ async function collectAllFiles(
       }
     }
   } catch (error) {
-    console.warn('[TauriScanner] Could not read directory:', currentPath, error);
+    logger.warn('[TauriScanner]', 'Could not read directory:', currentPath, error);
   }
   
   return files;
@@ -239,7 +240,7 @@ async function processFolder(
     const fullPath = `${baseFolder}/${txtFile.path}`;
     txtContent = await readTextFile(fullPath);
   } catch (e) {
-    console.warn('[TauriScanner] Could not read TXT:', txtFile.path);
+    logger.warn('[TauriScanner]', 'Could not read TXT:', txtFile.path);
     return null;
   }
   
@@ -283,7 +284,7 @@ async function processFolder(
     }
   }
 
-  console.log(`[TauriScanner] Created song: ${artist} - ${title} (audio: ${!!audioFile}, video: ${!!videoFile})`);
+  logger.info('[TauriScanner]', `Created song: ${artist} - ${title} (audio: ${!!audioFile}, video: ${!!videoFile})`);
 
   // Parse lyrics from TXT content
   const lyrics = parseLyricsFromTxt(txtContent, bpm, gap);
@@ -470,7 +471,7 @@ export async function copyFileToAppData(
     });
     return result;
   } catch (error) {
-    console.error('Failed to copy file to app data:', error);
+    logger.error('[TauriFS]', 'Failed to copy file to app data:', error);
     return null;
   }
 }
@@ -483,7 +484,7 @@ export async function getAppDataPath(): Promise<string | null> {
   try {
     return await tauri.invoke<string>('get_app_data_path');
   } catch (error) {
-    console.error('Failed to get app data path:', error);
+    logger.error('[TauriFS]', 'Failed to get app data path:', error);
     return null;
   }
 }
@@ -495,7 +496,7 @@ export async function fileExistsInAppData(relativePath: string): Promise<boolean
   try {
     return await exists(relativePath, { baseDir: BaseDirectory.AppData });
   } catch (error) {
-    console.error('Failed to check file existence:', error);
+    logger.error('[TauriFS]', 'Failed to check file existence:', error);
     return false;
   }
 }
@@ -510,7 +511,7 @@ export async function getFileUrl(relativePath: string): Promise<string | null> {
       relativePath,
     });
   } catch (error) {
-    console.error('Failed to get file URL:', error);
+    logger.error('[TauriFS]', 'Failed to get file URL:', error);
     return null;
   }
 }
@@ -525,7 +526,7 @@ export async function readFileAsBase64(relativePath: string): Promise<string | n
       relativePath,
     });
   } catch (error) {
-    console.error('Failed to read file as base64:', error);
+    logger.error('[TauriFS]', 'Failed to read file as base64:', error);
     return null;
   }
 }
@@ -538,7 +539,7 @@ export async function listImportedSongs(): Promise<string[]> {
   try {
     return await tauri.invoke<string[]>('list_imported_songs');
   } catch (error) {
-    console.error('Failed to list imported songs:', error);
+    logger.error('[TauriFS]', 'Failed to list imported songs:', error);
     return [];
   }
 }
@@ -621,7 +622,7 @@ export async function storeSongFiles(
       result.coverPath = await saveFile(files.cover, 'cover');
     }
   } catch (error) {
-    console.error('Failed to store song files:', error);
+    logger.error('[TauriFS]', 'Failed to store song files:', error);
   }
 
   return result;
@@ -654,7 +655,7 @@ export async function getPlayableUrl(relativePath: string): Promise<string> {
       }
     }
   } catch (error) {
-    console.error('Failed to get playable URL:', error);
+    logger.error('[TauriFS]', 'Failed to get playable URL:', error);
   }
 
   // Fallback: return the relative path
@@ -683,28 +684,28 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
     if (!songsFolder) {
       // No base folder available - try using the path as absolute path
       if (relativePath.startsWith('/') || relativePath.match(/^[A-Za-z]:\\/)) {
-        console.log('[TauriFS] Using absolute path directly:', relativePath);
+        logger.info('[TauriFS]', 'Using absolute path directly:', relativePath);
         return await loadFileAsBlobUrl(relativePath);
       }
-      console.warn('[TauriFS] No songs folder configured and path is not absolute');
+      logger.warn('[TauriFS]', 'No songs folder configured and path is not absolute');
       return null;
     }
     
     // Construct full path
     const fullPath = `${songsFolder}/${relativePath}`;
-    console.log('[TauriFS] Loading media from:', fullPath);
+    logger.info('[TauriFS]', 'Loading media from:', fullPath);
     
     // Check cache first
     const cachedUrl = blobUrlCache.get(fullPath);
     if (cachedUrl) {
-      console.log('[TauriFS] Using cached blob URL for:', fullPath);
+      logger.debug('[TauriFS]', 'Using cached blob URL for:', fullPath);
       return cachedUrl;
     }
     
     // Load file and create blob URL
     return await loadFileAsBlobUrl(fullPath);
   } catch (error) {
-    console.error('[TauriFS] Failed to get song media URL:', error);
+    logger.error('[TauriFS]', 'Failed to get song media URL:', error);
     return null;
   }
 }
@@ -727,10 +728,10 @@ async function loadFileAsBlobUrl(fullPath: string): Promise<string | null> {
     // Cache the URL
     blobUrlCache.set(fullPath, blobUrl);
     
-    console.log('[TauriFS] Created blob URL for:', fullPath, 'MIME:', mimeType, 'Size:', fileData.length);
+    logger.info('[TauriFS]', 'Created blob URL for:', fullPath, 'MIME:', mimeType, 'Size:', fileData.length);
     return blobUrl;
   } catch (error) {
-    console.error('[TauriFS] Failed to load file as blob:', fullPath, error);
+    logger.error('[TauriFS]', 'Failed to load file as blob:', fullPath, error);
     return null;
   }
 }
@@ -741,7 +742,7 @@ export function clearBlobUrlCache(): void {
     URL.revokeObjectURL(url);
   }
   blobUrlCache.clear();
-  console.log('[TauriFS] Blob URL cache cleared');
+  logger.info('[TauriFS]', 'Blob URL cache cleared');
 }
 
 // Read stored file content as text (for txt files)
@@ -756,7 +757,7 @@ export async function readStoredTextFile(relativePath: string): Promise<string |
       baseDir: BaseDirectory.AppData 
     });
   } catch (error) {
-    console.error('Failed to read text file:', error);
+    logger.error('[TauriFS]', 'Failed to read text file:', error);
     return null;
   }
 }

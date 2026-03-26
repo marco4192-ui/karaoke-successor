@@ -2,6 +2,8 @@
 // This allows persistent storage of imported song media
 // IMPORTANT: TXT files are stored here to avoid bloating localStorage with lyrics data
 
+import { logger } from '@/lib/logger';
+
 const DB_NAME = 'karaoke-successor-media';
 const DB_VERSION = 2; // Bumped for txt support
 const STORE_NAME = 'media';
@@ -24,7 +26,7 @@ export async function initMediaDB(): Promise<IDBDatabase> {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     
     request.onerror = () => {
-      console.error('[MediaDB] Failed to open database:', request.error);
+      logger.error('[MediaDB]', 'Failed to open database:', request.error);
       reject(request.error);
     };
     
@@ -53,10 +55,10 @@ export async function storeMedia(
   type: 'audio' | 'video' | 'cover' | 'txt', 
   data: Blob
 ): Promise<void> {
-  console.log('[MediaDB] storeMedia called:', { songId, type, size: data.size, dataType: data.type });
+  logger.debug('[MediaDB]', 'storeMedia called:', { songId, type, size: data.size, dataType: data.type });
   
   if (data.size === 0) {
-    console.warn('[MediaDB] Attempting to store empty blob for', type);
+    logger.warn('[MediaDB]', 'Attempting to store empty blob for', type);
     return;
   }
   
@@ -92,15 +94,15 @@ export async function storeMedia(
         const request = store.put(record);
         
         request.onsuccess = () => {
-          console.log('[MediaDB] Successfully stored', type, 'for song', songId, ', size:', blobToStore.size);
+          logger.info('[MediaDB]', 'Successfully stored', type, 'for song', songId, ', size:', blobToStore.size);
           resolve();
         };
         request.onerror = () => {
-          console.error('[MediaDB] Failed to store', type, ':', request.error);
+          logger.error('[MediaDB]', 'Failed to store', type, ':', request.error);
           reject(request.error);
         };
       } catch (err) {
-        console.error('[MediaDB] Error processing data for', type, ':', err);
+        logger.error('[MediaDB]', 'Error processing data for', type, ':', err);
         reject(err);
       }
     };
@@ -114,7 +116,7 @@ export async function getMedia(
   songId: string, 
   type: 'audio' | 'video' | 'cover' | 'txt'
 ): Promise<Blob | null> {
-  console.log('[MediaDB] getMedia called:', { songId, type });
+  logger.debug('[MediaDB]', 'getMedia called:', { songId, type });
   const db = await initMediaDB();
   
   return new Promise((resolve, reject) => {
@@ -125,19 +127,19 @@ export async function getMedia(
     request.onsuccess = () => {
       if (request.result) {
         const blob = request.result.data;
-        console.log('[MediaDB] Found', type, 'for song', songId, ', size:', blob.size);
+        logger.info('[MediaDB]', 'Found', type, 'for song', songId, ', size:', blob.size);
         if (blob.size === 0) {
-          console.warn('[MediaDB] Retrieved blob is empty for', type);
+          logger.warn('[MediaDB]', 'Retrieved blob is empty for', type);
         }
         resolve(blob);
       } else {
-        console.warn('[MediaDB] No', type, 'found for song', songId);
+        logger.warn('[MediaDB]', 'No', type, 'found for song', songId);
         resolve(null);
       }
     };
     
     request.onerror = () => {
-      console.error('[MediaDB] Failed to get', type, ':', request.error);
+      logger.error('[MediaDB]', 'Failed to get', type, ':', request.error);
       reject(request.error);
     };
   });

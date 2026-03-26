@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { MultiplayerRoom } from '@/lib/db/user-db';
+import { logger } from '@/lib/logger';
 
 // WebSocket message types
 export type WSMessageType =
@@ -101,7 +102,7 @@ export function useWebSocket(options: WSOptions = {}): UseWebSocketReturn {
     } else {
       // Queue message for when connected
       state.messageQueue.push({ type, payload });
-      console.log('[WebSocket] Queued message:', type);
+      logger.debug('[WebSocket]', 'Queued message:', type);
     }
   }, []);
 
@@ -127,7 +128,7 @@ export function useWebSocket(options: WSOptions = {}): UseWebSocketReturn {
     }
 
     if (!finalOptions.url) {
-      console.warn('[WebSocket] No URL provided');
+      logger.warn('[WebSocket]', 'No URL provided');
       return;
     }
 
@@ -137,12 +138,12 @@ export function useWebSocket(options: WSOptions = {}): UseWebSocketReturn {
 
     try {
       const wsUrl = finalOptions.url;
-      console.log('[WebSocket] Connecting to:', wsUrl);
+      logger.info('[WebSocket]', 'Connecting to:', wsUrl);
       
       state.socket = new WebSocket(wsUrl);
 
       state.socket.onopen = () => {
-        console.log('[WebSocket] Connected');
+        logger.info('[WebSocket]', 'Connected');
         setIsConnected(true);
         setIsConnecting(false);
         state.isConnecting = false;
@@ -191,12 +192,12 @@ export function useWebSocket(options: WSOptions = {}): UseWebSocketReturn {
             allListeners.forEach(callback => callback(message));
           }
         } catch (err) {
-          console.error('[WebSocket] Failed to parse message:', err);
+          logger.error('[WebSocket]', 'Failed to parse message:', err);
         }
       };
 
       state.socket.onerror = () => {
-        console.error('[WebSocket] Error');
+        logger.error('[WebSocket]', 'Error');
         setError({
           code: 'CONNECTION_ERROR',
           message: 'Failed to connect to server',
@@ -206,7 +207,7 @@ export function useWebSocket(options: WSOptions = {}): UseWebSocketReturn {
       };
 
       state.socket.onclose = () => {
-        console.log('[WebSocket] Disconnected');
+        logger.info('[WebSocket]', 'Disconnected');
         setIsConnected(false);
         setIsConnecting(false);
         state.isConnecting = false;
@@ -219,7 +220,7 @@ export function useWebSocket(options: WSOptions = {}): UseWebSocketReturn {
         });
       };
     } catch (err) {
-      console.error('[WebSocket] Failed to create connection:', err);
+      logger.error('[WebSocket]', 'Failed to create connection:', err);
       setIsConnecting(false);
       state.isConnecting = false;
       setError({

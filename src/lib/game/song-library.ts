@@ -4,6 +4,7 @@ import { sampleSongs } from '@/data/songs/songs';
 import { isTauri, getPlayableUrl, getSongMediaUrl } from '@/lib/tauri-file-storage';
 import { getSongMediaUrls, storeMedia, hasMedia, getTxtContent } from '@/lib/db/media-db';
 import { storage, STORAGE_KEYS } from '@/lib/storage';
+import { logger } from '@/lib/logger';
 
 export interface LibrarySettings {
   sortBy: 'title' | 'artist' | 'difficulty' | 'rating' | 'lastPlayed' | 'dateAdded';
@@ -159,7 +160,7 @@ function saveCustomSongs(songs: Song[]): void {
     storage.setJSON(STORAGE_KEYS.CUSTOM_SONGS, minimalSongs);
     customSongsCache = minimalSongs;
   } catch (e) {
-    console.error('[SongLibrary] Failed to save custom songs:', e);
+    logger.error('[SongLibrary]', 'Failed to save custom songs:', e);
     // Try even more minimal save
     try {
       const ultraMinimalSongs = songs.map(s => ({
@@ -189,7 +190,7 @@ function saveCustomSongs(songs: Song[]): void {
       }));
       storage.setJSON(STORAGE_KEYS.CUSTOM_SONGS, ultraMinimalSongs);
     } catch (e2) {
-      console.error('[SongLibrary] Failed to save even ultra-minimal data:', e2);
+      logger.error('[SongLibrary]', 'Failed to save even ultra-minimal data:', e2);
     }
   }
 }
@@ -293,30 +294,30 @@ export async function getSongByIdWithLyrics(id: string): Promise<Song | undefine
   let restoredSong = song;
   if (isTauri() && (song.relativeAudioPath || song.relativeVideoPath || song.relativeCoverPath)) {
     if (!song.audioUrl && !song.videoBackground && !song.coverImage) {
-      console.log('[SongLibrary] getSongByIdWithLyrics: Restoring URLs for Tauri song:', id);
+      logger.info('[SongLibrary]', 'getSongByIdWithLyrics: Restoring URLs for Tauri song:', id);
       restoredSong = await restoreSongUrls(song);
     }
   }
   
   // If lyrics are already loaded, return the song as-is
   if (restoredSong.lyrics && restoredSong.lyrics.length > 0) {
-    console.log('[SongLibrary] getSongByIdWithLyrics: Lyrics already loaded for', id);
+    logger.info('[SongLibrary]', 'getSongByIdWithLyrics: Lyrics already loaded for', id);
     return restoredSong;
   }
   
   // If TXT is stored in IndexedDB, load lyrics
   if (restoredSong.storedTxt) {
-    console.log('[SongLibrary] getSongByIdWithLyrics: Loading lyrics from IndexedDB for', id);
+    logger.info('[SongLibrary]', 'getSongByIdWithLyrics: Loading lyrics from IndexedDB for', id);
     const lyrics = await loadSongLyrics(restoredSong);
     if (lyrics.length > 0) {
-      console.log('[SongLibrary] getSongByIdWithLyrics: Loaded', lyrics.length, 'lyric lines');
+      logger.info('[SongLibrary]', 'getSongByIdWithLyrics: Loaded', lyrics.length, 'lyric lines');
       return { ...restoredSong, lyrics };
     } else {
-      console.warn('[SongLibrary] getSongByIdWithLyrics: Failed to load lyrics from IndexedDB');
+      logger.warn('[SongLibrary]', 'getSongByIdWithLyrics: Failed to load lyrics from IndexedDB');
     }
   }
   
-  console.warn('[SongLibrary] getSongByIdWithLyrics: No lyrics available for song', id);
+  logger.warn('[SongLibrary]', 'getSongByIdWithLyrics: No lyrics available for song', id);
   return restoredSong;
 }
 
@@ -357,7 +358,7 @@ export function importSongsFromBackup(json: string): number {
     addSongs(songs);
     return songs.length;
   } catch (e) {
-    console.error('Failed to import songs:', e);
+    logger.error('[SongLibrary]', 'Failed to import songs:', e);
     return 0;
   }
 }
@@ -417,7 +418,7 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
   const baseFolder = song.baseFolder || storage.get(STORAGE_KEYS.SONGS_FOLDER) || undefined;
   
   if (!baseFolder) {
-    console.warn('[SongLibrary] No base folder available for song:', song.title);
+    logger.warn('[SongLibrary]', 'No base folder available for song:', song.title);
     return song;
   }
   
@@ -427,9 +428,9 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
       const url = await getSongMediaUrl(song.relativeAudioPath, baseFolder);
       if (url) {
         restored.audioUrl = url;
-        console.log('[SongLibrary] Restored audio URL for', song.title);
+        logger.info('[SongLibrary]', 'Restored audio URL for', song.title);
       } else {
-        console.warn('[SongLibrary] Failed to restore audio URL for', song.title);
+        logger.warn('[SongLibrary]', 'Failed to restore audio URL for', song.title);
       }
     }
     
@@ -438,9 +439,9 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
       const url = await getSongMediaUrl(song.relativeVideoPath, baseFolder);
       if (url) {
         restored.videoBackground = url;
-        console.log('[SongLibrary] Restored video URL for', song.title);
+        logger.info('[SongLibrary]', 'Restored video URL for', song.title);
       } else {
-        console.warn('[SongLibrary] Failed to restore video URL for', song.title);
+        logger.warn('[SongLibrary]', 'Failed to restore video URL for', song.title);
       }
     }
     
@@ -449,13 +450,13 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
       const url = await getSongMediaUrl(song.relativeCoverPath, baseFolder);
       if (url) {
         restored.coverImage = url;
-        console.log('[SongLibrary] Restored cover URL for', song.title);
+        logger.info('[SongLibrary]', 'Restored cover URL for', song.title);
       } else {
-        console.warn('[SongLibrary] Failed to restore cover URL for', song.title);
+        logger.warn('[SongLibrary]', 'Failed to restore cover URL for', song.title);
       }
     }
   } catch (error) {
-    console.error('Failed to restore song URLs:', error);
+    logger.error('[SongLibrary]', 'Failed to restore song URLs:', error);
   }
   
   return restored;
@@ -492,7 +493,7 @@ export async function getAllSongsAsync(): Promise<Song[]> {
             coverImage: mediaUrls.coverUrl || song.coverImage
           };
         } catch (error) {
-          console.error(`Failed to restore media for song ${song.id}:`, error);
+          logger.error('[SongLibrary]', `Failed to restore media for song ${song.id}:`, error);
           return song;
         }
       }
@@ -506,40 +507,40 @@ export async function getAllSongsAsync(): Promise<Song[]> {
 // Load lyrics on-demand from IndexedDB
 // This is used when a song is played and the lyrics weren't stored in localStorage
 export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
-  console.log('[SongLibrary] loadSongLyrics called for song:', song.id, song.title);
-  console.log('[SongLibrary] song.lyrics length:', song.lyrics?.length || 0);
-  console.log('[SongLibrary] song.storedTxt:', song.storedTxt);
-  console.log('[SongLibrary] song.relativeTxtPath:', song.relativeTxtPath);
-  console.log('[SongLibrary] song.gap:', song.gap, 'song.bpm:', song.bpm);
+  logger.debug('[SongLibrary]', 'loadSongLyrics called for song:', song.id, song.title);
+  logger.debug('[SongLibrary]', 'song.lyrics length:', song.lyrics?.length || 0);
+  logger.debug('[SongLibrary]', 'song.storedTxt:', song.storedTxt);
+  logger.debug('[SongLibrary]', 'song.relativeTxtPath:', song.relativeTxtPath);
+  logger.debug('[SongLibrary]', 'song.gap:', song.gap, 'song.bpm:', song.bpm);
   
   // If lyrics are already loaded, return them
   if (song.lyrics && song.lyrics.length > 0) {
-    console.log('[SongLibrary] Lyrics already loaded, returning them');
+    logger.debug('[SongLibrary]', 'Lyrics already loaded, returning them');
     return song.lyrics;
   }
   
   // Strategy 1: Load from IndexedDB if storedTxt flag is set
   if (song.storedTxt) {
     try {
-      console.log('[SongLibrary] Attempting to load TXT from IndexedDB for song:', song.id);
+      logger.debug('[SongLibrary]', 'Attempting to load TXT from IndexedDB for song:', song.id);
       const txtContent = await getTxtContent(song.id);
-      console.log('[SongLibrary] TXT content loaded from IndexedDB, length:', txtContent?.length || 0);
+      logger.debug('[SongLibrary]', 'TXT content loaded from IndexedDB, length:', txtContent?.length || 0);
       if (txtContent && txtContent.length > 0) {
         const parsedLyrics = parseUltraStarTxtContent(txtContent, song.gap || 0, song.bpm || 120);
-        console.log('[SongLibrary] Parsed lyrics, lines:', parsedLyrics.length);
+        logger.info('[SongLibrary]', 'Parsed lyrics, lines:', parsedLyrics.length);
         return parsedLyrics;
       } else {
-        console.warn('[SongLibrary] TXT content is null or empty for song:', song.id);
+        logger.warn('[SongLibrary]', 'TXT content is null or empty for song:', song.id);
       }
     } catch (error) {
-      console.error('[SongLibrary] Failed to load lyrics from IndexedDB:', error);
+      logger.error('[SongLibrary]', 'Failed to load lyrics from IndexedDB:', error);
     }
   }
   
   // Strategy 2: Load directly from file system in Tauri (if relativeTxtPath is set)
   if (song.relativeTxtPath && typeof window !== 'undefined' && '__TAURI__' in window) {
     try {
-      console.log('[SongLibrary] Attempting to load TXT from file system:', song.relativeTxtPath);
+      logger.debug('[SongLibrary]', 'Attempting to load TXT from file system:', song.relativeTxtPath);
       const { readTextFile } = await import('@tauri-apps/plugin-fs');
       
       // Use song.baseFolder as primary source, fallback to storage
@@ -547,25 +548,25 @@ export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
       
       if (songsFolder) {
         const filePath = `${songsFolder}/${song.relativeTxtPath}`;
-        console.log('[SongLibrary] Loading from path:', filePath);
+        logger.debug('[SongLibrary]', 'Loading from path:', filePath);
         
         const txtContent = await readTextFile(filePath);
-        console.log('[SongLibrary] TXT content loaded from file system, length:', txtContent?.length || 0);
+        logger.info('[SongLibrary]', 'TXT content loaded from file system, length:', txtContent?.length || 0);
         
         if (txtContent && txtContent.length > 0) {
           const parsedLyrics = parseUltraStarTxtContent(txtContent, song.gap || 0, song.bpm || 120);
-          console.log('[SongLibrary] Parsed lyrics from file, lines:', parsedLyrics.length);
+          logger.info('[SongLibrary]', 'Parsed lyrics from file, lines:', parsedLyrics.length);
           return parsedLyrics;
         }
       } else {
-        console.warn('[SongLibrary] No songs folder available for loading TXT');
+        logger.warn('[SongLibrary]', 'No songs folder available for loading TXT');
       }
     } catch (error) {
-      console.error('[SongLibrary] Failed to load lyrics from file system:', error);
+      logger.error('[SongLibrary]', 'Failed to load lyrics from file system:', error);
     }
   }
   
-  console.warn('[SongLibrary] Could not load lyrics for song:', song.id);
+  logger.warn('[SongLibrary]', 'Could not load lyrics for song:', song.id);
   return [];
 }
 
