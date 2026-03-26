@@ -35,6 +35,9 @@ import {
   TrophyIcon,
   QueueIcon,
 } from '@/components/icons';
+// Hooks
+import { useLibrarySettings, LibraryViewMode, LibraryGroupBy } from '@/hooks/use-library-settings';
+import { useLibraryPreview } from '@/hooks/use-library-preview';
 
 // ===================== CREATE PLAYLIST FORM =====================
 function CreatePlaylistForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
@@ -89,9 +92,6 @@ function CreatePlaylistForm({ onClose, onSuccess }: { onClose: () => void; onSuc
 }
 
 // ===================== LIBRARY SCREEN =====================
-// View modes for the library
-type LibraryViewMode = 'grid' | 'folder' | 'playlists';
-type LibraryGroupBy = 'none' | 'artist' | 'title' | 'genre' | 'language' | 'folder';
 
 // Song Card Component
 function SongCard({ 
@@ -313,26 +313,43 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
   const [showSongModal, setShowSongModal] = useState(false);
   const [showHighscoreModal, setShowHighscoreModal] = useState(false);
   const [highscoreSong, setHighscoreSong] = useState<Song | null>(null);
-  const [previewSong, setPreviewSong] = useState<Song | null>(null);
-  const [previewAudio, setPreviewAudio] = useState<HTMLAudioElement | null>(null);
   const [libraryVersion, setLibraryVersion] = useState(0);
   const [songsLoading, setSongsLoading] = useState(true);
   const [loadedSongs, setLoadedSongs] = useState<Song[]>([]);
   // Custom YouTube background video state
   const [customYoutubeUrl, setCustomYoutubeUrl] = useState('');
   const [customYoutubeId, setCustomYoutubeId] = useState<string | null>(null);
-  const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const previewVideoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
+  
+  // Use custom hooks for preview and settings management
+  const {
+    previewSong,
+    previewAudio,
+    startPreviewDelayed,
+    stopPreview,
+    cancelPreview,
+    registerVideoRef,
+  } = useLibraryPreview();
+  
+  const {
+    settings,
+    viewState,
+    updateSettings,
+    setViewMode,
+    navigateToFolder,
+    exitFolder,
+    setFilterGenre,
+    setFilterLanguage,
+    setFilterDuet,
+    setGroupBy,
+  } = useLibrarySettings();
+  
+  // Extract view state
+  const { viewMode, groupBy, currentFolder, folderBreadcrumb } = viewState;
+  
   const { setDifficulty, gameState, addToQueue, queue, activeProfileId, profiles, setGameMode, highscores, setActiveProfile, addPlayer } = useGameStore();
   
   // Get global difficulty from store for initialization
   const storeDifficulty = gameState.difficulty;
-  
-  // New view mode state
-  const [viewMode, setViewMode] = useState<LibraryViewMode>('grid');
-  const [groupBy, setGroupBy] = useState<LibraryGroupBy>('none');
-  const [currentFolder, setCurrentFolder] = useState<string | null>(null);
-  const [folderBreadcrumb, setFolderBreadcrumb] = useState<string[]>([]);
   
   // Playlist state
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
@@ -411,39 +428,6 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
     }
   }, [storeDifficulty]);
   
-  // Get library settings from store (persistent) - initialize with defaults to avoid hydration mismatch
-  const [settings, setSettings] = useState<{
-    sortBy: 'title' | 'artist' | 'difficulty' | 'rating' | 'dateAdded';
-    sortOrder: 'asc' | 'desc';
-    filterDifficulty: Difficulty | 'all';
-    filterGenre: string;
-    filterLanguage: string;
-    filterDuet: boolean;
-  }>({
-    sortBy: 'title' as const,
-    sortOrder: 'asc' as const,
-    filterDifficulty: 'all' as const,
-    filterGenre: 'all',
-    filterLanguage: 'all',
-    filterDuet: false,
-  });
-
-  // Load settings from localStorage after mount
-  useEffect(() => {
-    const saved = localStorage.getItem('karaoke-library-settings');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setSettings(prev => ({ ...prev, ...parsed }));
-      } catch (e) {}
-    }
-  }, []);
-  
-  // Save settings when changed
-  useEffect(() => {
-    localStorage.setItem('karaoke-library-settings', JSON.stringify(settings));
-  }, [settings]);
-  
   // Listen for difficulty changes from settings
   useEffect(() => {
     const handleDifficultyChange = () => {
@@ -463,95 +447,47 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
     };
   }, []);
   
-  // Cleanup preview audio on unmount
-  useEffect(() => {
-    return () => {
-      if (previewAudio) {
-        previewAudio.pause();
-        previewAudio.src = '';
-      }
-      if (previewTimeoutRef.current) {
-        clearTimeout(previewTimeoutRef.current);
-      }
-    };
-  }, [previewAudio]);
-  
   const activeProfile = profiles.find(p => p.id === activeProfileId);
   const playerQueueCount = queue.filter(item => item.playerId === activeProfileId).length;
 
-  // Preview handlers
+  // Local refs for video preview (not provided by hook)
+  const previewVideoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
+
+  // Preview handlers - use hook functions with video enhancement
   const handlePreviewStart = useCallback((song: Song) => {
     // Allow preview even without audioUrl if there's video
     if (!song.audioUrl && !song.videoBackground && !song.youtubeUrl) return;
     
-    // Clear any existing timeout
-    if (previewTimeoutRef.current) {
-      clearTimeout(previewTimeoutRef.current);
-    }
+    // Use hook's delayed preview for audio
+    startPreviewDelayed(song, 500);
     
-    // Delay before starting preview
-    previewTimeoutRef.current = setTimeout(() => {
-      // Stop any existing preview
-      if (previewAudio) {
-        previewAudio.pause();
-      }
-      
-      // Stop all existing videos first
-      previewVideoRefs.current.forEach((video) => {
-        video.pause();
-        video.currentTime = 0;
-      });
-      
-      // Create new audio for preview (if audio exists)
-      if (song.audioUrl) {
-        const audio = new Audio();
-        audio.volume = 0.3;
-        
-        // Start from preview time if available
-        if (song.preview) {
-          audio.currentTime = song.preview.startTime / 1000;
-        }
-        
-        audio.src = song.audioUrl;
-        audio.play().catch(() => {});
-        
-        setPreviewAudio(audio);
-      }
-      
-      // Start video preview (if local video exists)
-      if (song.videoBackground) {
+    // Handle video preview separately (not in hook)
+    if (song.videoBackground) {
+      setTimeout(() => {
         const videoEl = previewVideoRefs.current.get(song.id);
         if (videoEl) {
-          // Set start time from preview if available
           if (song.preview) {
             videoEl.currentTime = song.preview.startTime / 1000;
           }
-          // For videos with embedded audio, unmute the video
           if (song.hasEmbeddedAudio && !song.audioUrl) {
             videoEl.muted = false;
           }
           videoEl.play().catch(() => {});
         }
-      }
-      
-      setPreviewSong(song);
-    }, 500); // 500ms delay before preview starts
-  }, [previewAudio]);
+      }, 500);
+    }
+  }, [startPreviewDelayed]);
   
   const handlePreviewStop = useCallback(() => {
-    if (previewTimeoutRef.current) {
-      clearTimeout(previewTimeoutRef.current);
-    }
-    if (previewAudio) {
-      previewAudio.pause();
-    }
-    // Stop all preview videos
+    // Use hook's stop function
+    stopPreview();
+    
+    // Stop all local video previews
     previewVideoRefs.current.forEach((video) => {
       video.pause();
       video.currentTime = 0;
     });
-    setPreviewSong(null);
-  }, [previewAudio]);
+  }, [stopPreview]);
 
   const filteredSongs = useMemo(() => {
     let songs = loadedSongs;
@@ -694,22 +630,26 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
   
   // Handle folder navigation
   const handleOpenFolder = (folder: string) => {
-    setCurrentFolder(folder);
-    setFolderBreadcrumb(prev => [...prev, folder]);
+    navigateToFolder(folder, [...folderBreadcrumb, folder]);
   };
   
   const handleBackFolder = () => {
-    setFolderBreadcrumb(prev => prev.slice(0, -1));
-    setCurrentFolder(folderBreadcrumb.length > 1 ? folderBreadcrumb[folderBreadcrumb.length - 2] : null);
+    const newBreadcrumb = folderBreadcrumb.slice(0, -1);
+    navigateToFolder(
+      newBreadcrumb.length > 0 ? newBreadcrumb[newBreadcrumb.length - 1] : '',
+      newBreadcrumb
+    );
+    if (newBreadcrumb.length === 0) {
+      exitFolder();
+    }
   };
   
   const handleBreadcrumbClick = (index: number) => {
     if (index === -1) {
-      setCurrentFolder(null);
-      setFolderBreadcrumb([]);
+      exitFolder();
     } else {
-      setCurrentFolder(folderBreadcrumb[index]);
-      setFolderBreadcrumb(folderBreadcrumb.slice(0, index + 1));
+      const newBreadcrumb = folderBreadcrumb.slice(0, index + 1);
+      navigateToFolder(folderBreadcrumb[index], newBreadcrumb);
     }
   };
 
@@ -862,7 +802,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
               value={`${settings.sortBy}-${settings.sortOrder}`}
               onChange={(e) => {
                 const [sortBy, sortOrder] = e.target.value.split('-') as [typeof settings.sortBy, typeof settings.sortOrder];
-                setSettings(prev => ({ ...prev, sortBy, sortOrder }));
+                updateSettings({ sortBy, sortOrder });
               }}
               className="bg-gray-800 border border-white/20 rounded-md px-3 py-2 text-white appearance-none cursor-pointer hover:border-cyan-500/50 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
               style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', backgroundSize: '16px', paddingRight: '32px' }}
@@ -882,7 +822,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
               <span className="text-white/40 text-sm">🎸 Genre:</span>
               <select
                 value={settings.filterGenre || 'all'}
-                onChange={(e) => setSettings(prev => ({ ...prev, filterGenre: e.target.value }))}
+                onChange={(e) => setFilterGenre(e.target.value)}
                 className="bg-gray-800 border border-white/20 rounded-md px-3 py-1.5 text-white text-sm appearance-none cursor-pointer hover:border-purple-500/50 focus:border-purple-500 focus:outline-none"
                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center', backgroundSize: '14px', paddingRight: '28px' }}
               >
@@ -897,7 +837,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
               <span className="text-white/40 text-sm">🌍 Language:</span>
               <select
                 value={settings.filterLanguage || 'all'}
-                onChange={(e) => setSettings(prev => ({ ...prev, filterLanguage: e.target.value }))}
+                onChange={(e) => setFilterLanguage(e.target.value)}
                 className="bg-gray-800 border border-white/20 rounded-md px-3 py-1.5 text-white text-sm appearance-none cursor-pointer hover:border-cyan-500/50 focus:border-cyan-500 focus:outline-none"
                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center', backgroundSize: '14px', paddingRight: '28px' }}
               >
@@ -909,7 +849,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
             
             {/* Duet Filter Toggle - in same row as other filters */}
             <button
-              onClick={() => setSettings(prev => ({ ...prev, filterDuet: !prev.filterDuet }))}
+              onClick={() => setFilterDuet(!settings.filterDuet)}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                 settings.filterDuet 
                   ? 'bg-pink-500/30 text-pink-300 border border-pink-500/50' 
@@ -923,7 +863,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
             {/* Active Filters Display */}
             {(settings.filterGenre !== 'all' || settings.filterLanguage !== 'all' || settings.filterDuet) && (
               <button
-                onClick={() => setSettings(prev => ({ ...prev, filterGenre: 'all', filterLanguage: 'all', filterDuet: false }))}
+                onClick={() => updateSettings({ filterGenre: 'all', filterLanguage: 'all', filterDuet: false })}
                 className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
               >
                 ✕ Clear filters
@@ -936,7 +876,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
             {/* View Mode Toggle */}
             <div className="flex bg-white/5 rounded-lg p-1">
               <button
-                onClick={() => { setViewMode('grid'); setGroupBy('none'); setCurrentFolder(null); setFolderBreadcrumb([]); setSelectedPlaylist(null); }}
+                onClick={() => { setViewMode('grid'); setGroupBy('none'); setSelectedPlaylist(null); }}
                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
                   viewMode === 'grid' && groupBy === 'none' ? 'bg-cyan-500 text-white' : 'text-white/60 hover:text-white'
                 }`}
@@ -985,8 +925,6 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
                   onClick={() => {
                     setViewMode('folder');
                     setGroupBy(option.value as LibraryGroupBy);
-                    setCurrentFolder(null);
-                    setFolderBreadcrumb([]);
                   }}
                   className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
                     groupBy === option.value && viewMode === 'folder' 

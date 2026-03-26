@@ -9,7 +9,7 @@ import { storage } from '@/lib/storage';
 export type LibrarySortBy = 'title' | 'artist' | 'difficulty' | 'rating' | 'dateAdded';
 export type LibrarySortOrder = 'asc' | 'desc';
 export type LibraryViewMode = 'grid' | 'folder' | 'playlists';
-export type LibraryGroupBy = 'none' | 'artist' | 'genre' | 'language' | 'folder';
+export type LibraryGroupBy = 'none' | 'artist' | 'title' | 'genre' | 'language' | 'folder';
 
 export interface LibrarySettings {
   sortBy: LibrarySortBy;
@@ -53,12 +53,12 @@ export function useLibrarySettings() {
   // Load settings from localStorage on mount
   useEffect(() => {
     try {
-      const savedSettings = storage.get<LibrarySettings>(STORAGE_KEY);
+      const savedSettings = storage.getJSON<LibrarySettings>(STORAGE_KEY);
       if (savedSettings) {
         setSettings(prev => ({ ...prev, ...savedSettings }));
       }
 
-      const savedViewState = storage.get<LibraryViewState>(VIEW_STATE_KEY);
+      const savedViewState = storage.getJSON<LibraryViewState>(VIEW_STATE_KEY);
       if (savedViewState) {
         setViewState(prev => ({ ...prev, ...savedViewState }));
       }
@@ -69,12 +69,12 @@ export function useLibrarySettings() {
 
   // Save settings when changed
   useEffect(() => {
-    storage.set(STORAGE_KEY, settings);
+    storage.setJSON(STORAGE_KEY, settings);
   }, [settings]);
 
   // Save view state when changed
   useEffect(() => {
-    storage.set(VIEW_STATE_KEY, viewState);
+    storage.setJSON(VIEW_STATE_KEY, viewState);
   }, [viewState]);
 
   const updateSettings = useCallback((updates: Partial<LibrarySettings>) => {
