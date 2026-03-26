@@ -2,6 +2,7 @@
 // XP, Levels, Ranks, Titles, and Extended Statistics
 
 import { Achievement } from '@/types/game';
+import { storage, STORAGE_KEYS } from '@/lib/storage';
 
 // ===================== RANKS & TITLES =====================
 
@@ -435,25 +436,16 @@ export function getRarityColor(rarity: Title['rarity']): string {
 const EXTENDED_STATS_KEY = 'karaoke_extended_stats';
 
 export function getExtendedStats(): ExtendedPlayerStats {
-  if (typeof window === 'undefined') {
-    return getDefaultStats();
-  }
-  
-  const stored = localStorage.getItem(EXTENDED_STATS_KEY);
+  const stored = storage.getJSON<ExtendedPlayerStats>(STORAGE_KEYS.EXTENDED_STATS);
   if (stored) {
-    try {
-      return { ...getDefaultStats(), ...JSON.parse(stored) };
-    } catch {
-      return getDefaultStats();
-    }
+    return { ...getDefaultStats(), ...stored };
   }
   
   return getDefaultStats();
 }
 
 export function saveExtendedStats(stats: ExtendedPlayerStats): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(EXTENDED_STATS_KEY, JSON.stringify(stats));
+  storage.setJSON(STORAGE_KEYS.EXTENDED_STATS, stats);
 }
 
 export function getDefaultStats(): ExtendedPlayerStats {

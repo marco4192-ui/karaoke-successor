@@ -3,10 +3,7 @@ import { Song, LyricLine, Note, midiToFrequency } from '@/types/game';
 import { sampleSongs } from '@/data/songs/songs';
 import { isTauri, getPlayableUrl, getSongMediaUrl } from '@/lib/tauri-file-storage';
 import { getSongMediaUrls, storeMedia, hasMedia, getTxtContent } from '@/lib/db/media-db';
-
-const STORAGE_KEY = 'karaoke-successor-songs';
-const SETTINGS_KEY = 'karaoke-successor-settings';
-const CUSTOM_SONGS_KEY = 'karaoke-successor-custom-songs';
+import { storage, STORAGE_KEYS } from '@/lib/storage';
 
 export interface LibrarySettings {
   sortBy: 'title' | 'artist' | 'difficulty' | 'rating' | 'lastPlayed' | 'dateAdded';
@@ -48,36 +45,28 @@ export function getCustomSongs(): Song[] {
     return [];
   }
   
-  try {
-    const stored = localStorage.getItem(CUSTOM_SONGS_KEY);
-    if (stored) {
-      let songs = JSON.parse(stored);
-      
-      // MIGRATION: Fix songs with hasEmbeddedAudio but incorrectly set audioUrl
-      // If hasEmbeddedAudio is true and audioUrl is set, clear audioUrl
-      // This was a bug in earlier versions where the video URL was incorrectly
-      // assigned to audioUrl for videos with embedded audio
-      let needsSave = false;
-      songs = songs.map((song: Song) => {
-        if (song.hasEmbeddedAudio && song.audioUrl) {
-          needsSave = true;
-          return { ...song, audioUrl: undefined };
-        }
-        return song;
-      });
-      
-      if (needsSave) {
-        try {
-          localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(songs));
-        } catch (e) {
-          console.error('[SongLibrary] Failed to save migrated songs:', e);
-        }
+  const stored = storage.getJSON<Song[]>(STORAGE_KEYS.CUSTOM_SONGS);
+  if (stored) {
+    let songs = stored;
+    
+    // MIGRATION: Fix songs with hasEmbeddedAudio but incorrectly set audioUrl
+    // If hasEmbeddedAudio is true and audioUrl is set, clear audioUrl
+    // This was a bug in earlier versions where the video URL was incorrectly
+    // assigned to audioUrl for videos with embedded audio
+    let needsSave = false;
+    songs = songs.map((song: Song) => {
+      if (song.hasEmbeddedAudio && song.audioUrl) {
+        needsSave = true;
+        return { ...song, audioUrl: undefined };
       }
-      customSongsCache = songs;
-      return customSongsCache || [];
+      return song;
+    });
+    
+    if (needsSave) {
+      storage.setJSON(STORAGE_KEYS.CUSTOM_SONGS, songs);
     }
-  } catch (e) {
-    console.error('[SongLibrary] Failed to load custom songs:', e);
+    customSongsCache = songs;
+    return customSongsCache || [];
   }
   return [];
 }
@@ -139,13 +128,13 @@ export function removeSong(songId: string): void {
   songCache = null;
 }
 
-// Save custom songs to localStorage
+// Save custom songs to storage
 // IMPORTANT: We store relative paths, not blob URLs
 // Audio/Video/Cover are loaded from filesystem using relative paths
 // TXT content is cached in IndexedDB for fast lyrics loading
 function saveCustomSongs(songs: Song[]): void {
   try {
-    // Create minimal versions for localStorage
+    // Create minimal versions for storage
     const minimalSongs = songs.map(s => {
       return {
         ...s,
@@ -167,7 +156,7 @@ function saveCustomSongs(songs: Song[]): void {
         relativeTxtPath: s.relativeTxtPath,
       };
     });
-    localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(minimalSongs));
+    storage.setJSON(STORAGE_KEYS.CUSTOM_SONGS, minimalSongs);
     customSongsCache = minimalSongs;
   } catch (e) {
     console.error('[SongLibrary] Failed to save custom songs:', e);
@@ -198,7 +187,7 @@ function saveCustomSongs(songs: Song[]): void {
         hasEmbeddedAudio: s.hasEmbeddedAudio,
         lyrics: [],
       }));
-      localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(ultraMinimalSongs));
+      storage.setJSON(STORAGE_KEYS.CUSTOM_SONGS, ultraMinimalSongs);
     } catch (e2) {
       console.error('[SongLibrary] Failed to save even ultra-minimal data:', e2);
     }
@@ -207,26 +196,18 @@ function saveCustomSongs(songs: Song[]): void {
 
 // Get library settings
 export function getLibrarySettings(): LibrarySettings {
-  try {
-    const stored = localStorage.getItem(SETTINGS_KEY);
-    if (stored) {
-      return { ...defaultSettings, ...JSON.parse(stored) };
-    }
-  } catch (e) {
-    console.error('Failed to load library settings:', e);
+  const stored = storage.getJSON<LibrarySettings>(STORAGE_KEYS.LIBRARY_SETTINGS);
+  if (stored) {
+    return { ...defaultSettings, ...stored };
   }
   return defaultSettings;
 }
 
 // Save library settings
 export function saveLibrarySettings(settings: Partial<LibrarySettings>): void {
-  try {
-    const current = getLibrarySettings();
-    const updated = { ...current, ...settings };
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
-  } catch (e) {
-    console.error('Failed to save library settings:', e);
-  }
+  const current = getLibrarySettings();
+  const updated = { ...current, ...settings };
+  storage.setJSON(STORAGE_KEYS.LIBRARY_SETTINGS, updated);
 }
 
 // Sort songs
@@ -383,12 +364,12 @@ export function importSongsFromBackup(json: string): number {
 
 // Clear all custom songs
 export function clearCustomSongs(): void {
-  localStorage.removeItem(CUSTOM_SONGS_KEY);
+  storage.remove(STORAGE_KEYS.CUSTOM_SONGS);
   customSongsCache = [];
   songCache = null;
 }
 
-// Reload library - clear cache and force fresh load from localStorage
+// Reload library - clear cache and force fresh load from storage
 export function reloadLibrary(): Song[] {
   songCache = null;
   customSongsCache = null;
@@ -421,7 +402,7 @@ export function replaceSong(song: Song): void {
 
 // Restore song URLs for Tauri - converts relative paths back to playable URLs
 // IMPORTANT: Uses getSongMediaUrl which reads from the songs folder
-// Falls back to song.baseFolder if localStorage 'karaoke-songs-folder' is not set
+// Falls back to song.baseFolder if storage 'karaoke-songs-folder' is not set
 export async function restoreSongUrls(song: Song): Promise<Song> {
   if (!isTauri()) {
     // In browser mode, URLs should already be valid
@@ -432,8 +413,8 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
   
   // Determine the base folder to use:
   // 1. Priority: song's own baseFolder (stored when scanned)
-  // 2. Fallback: localStorage 'karaoke-songs-folder'
-  const baseFolder = song.baseFolder || localStorage.getItem('karaoke-songs-folder') || undefined;
+  // 2. Fallback: storage 'karaoke-songs-folder'
+  const baseFolder = song.baseFolder || storage.get(STORAGE_KEYS.SONGS_FOLDER) || undefined;
   
   if (!baseFolder) {
     console.warn('[SongLibrary] No base folder available for song:', song.title);
@@ -561,8 +542,8 @@ export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
       console.log('[SongLibrary] Attempting to load TXT from file system:', song.relativeTxtPath);
       const { readTextFile } = await import('@tauri-apps/plugin-fs');
       
-      // Use song.baseFolder as primary source, fallback to localStorage
-      const songsFolder = song.baseFolder || localStorage.getItem('karaoke-songs-folder');
+      // Use song.baseFolder as primary source, fallback to storage
+      const songsFolder = song.baseFolder || storage.get(STORAGE_KEYS.SONGS_FOLDER);
       
       if (songsFolder) {
         const filePath = `${songsFolder}/${song.relativeTxtPath}`;

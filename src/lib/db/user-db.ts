@@ -2,6 +2,7 @@
 // Supports: Guest mode (local only), Optional cloud sync, Multiplayer room codes
 
 import { PlayerProfile, HighscoreEntry, Achievement, PlayerStats, Difficulty, GameMode, PLAYER_COLORS, getRankTitle } from '@/types/game';
+import { storage, STORAGE_KEYS } from '@/lib/storage';
 
 const DB_NAME = 'karaoke-user-db';
 const DB_VERSION = 1;
@@ -70,10 +71,10 @@ export interface UserSession {
 
 // Generate unique device ID
 function getDeviceId(): string {
-  let deviceId = localStorage.getItem('karaoke-device-id');
+  let deviceId = storage.get(STORAGE_KEYS.DEVICE_ID);
   if (!deviceId) {
     deviceId = `device-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    localStorage.setItem('karaoke-device-id', deviceId);
+    storage.set(STORAGE_KEYS.DEVICE_ID, deviceId);
   }
   return deviceId;
 }

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { storage, STORAGE_KEYS } from '@/lib/storage';
 
 // ===================== Webcam Background Types =====================
 
@@ -60,33 +61,16 @@ export const DEFAULT_WEBCAM_CONFIG: WebcamBackgroundConfig = {
   zIndex: 5,
 };
 
-// LocalStorage key for webcam config
-const WEBCAM_CONFIG_KEY = 'karaoke-webcam-config';
-
-// Save webcam config to localStorage
+// Save webcam config to storage
 export function saveWebcamConfig(config: WebcamBackgroundConfig): void {
-  try {
-    localStorage.setItem(WEBCAM_CONFIG_KEY, JSON.stringify(config));
-  } catch (e) {
-    console.error('Failed to save webcam config:', e);
-  }
+  storage.setJSON(STORAGE_KEYS.WEBCAM_CONFIG, config);
 }
 
-// Load webcam config from localStorage
+// Load webcam config from storage
 export function loadWebcamConfig(): WebcamBackgroundConfig {
-  // Check if running in browser (not SSR)
-  if (typeof window === 'undefined') {
-    return { ...DEFAULT_WEBCAM_CONFIG };
-  }
-  
-  try {
-    const saved = localStorage.getItem(WEBCAM_CONFIG_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return { ...DEFAULT_WEBCAM_CONFIG, ...parsed };
-    }
-  } catch (e) {
-    console.error('Failed to load webcam config:', e);
+  const saved = storage.getJSON<WebcamBackgroundConfig>(STORAGE_KEYS.WEBCAM_CONFIG);
+  if (saved) {
+    return { ...DEFAULT_WEBCAM_CONFIG, ...saved };
   }
   return { ...DEFAULT_WEBCAM_CONFIG };
 }

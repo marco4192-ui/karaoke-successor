@@ -1,6 +1,8 @@
 // Daily Challenge Leaderboard System
 // Global rankings, XP system, and streak rewards
 
+import { storage, STORAGE_KEYS } from '@/lib/storage';
+
 export interface DailyChallengeEntry {
   playerId: string;
   playerName: string;
@@ -124,15 +126,9 @@ export function getDailyChallenge(): DailyChallengeData {
   const targets = { score: 80000, accuracy: 85, combo: 50, songs: 3, perfect_notes: 20 };
   
   // Try to load existing leaderboard
-  if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem(`${DAILY_LEADERBOARD_KEY}_${today}`);
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch {
-        // Fall through to create new
-      }
-    }
+  const stored = storage.getJSON<DailyChallengeData>(`${STORAGE_KEYS.DAILY_LEADERBOARD}_${today}`);
+  if (stored) {
+    return stored;
   }
   
   return {
@@ -147,31 +143,14 @@ export function getDailyChallenge(): DailyChallengeData {
 
 // Save leaderboard
 export function saveDailyChallenge(data: DailyChallengeData): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(`${DAILY_LEADERBOARD_KEY}_${data.date}`, JSON.stringify(data));
+  storage.setJSON(`${STORAGE_KEYS.DAILY_LEADERBOARD}_${data.date}`, data);
 }
 
 // Get player's daily stats
 export function getPlayerDailyStats(): PlayerDailyStats {
-  if (typeof window === 'undefined') {
-    return {
-      currentStreak: 0,
-      longestStreak: 0,
-      totalCompleted: 0,
-      totalXP: 0,
-      lastCompletedDate: null,
-      badges: [],
-      weeklyProgress: [0, 0, 0, 0, 0, 0, 0],
-    };
-  }
-
-  const stored = localStorage.getItem(PLAYER_DAILY_STATS_KEY);
+  const stored = storage.getJSON<PlayerDailyStats>(STORAGE_KEYS.PLAYER_DAILY_STATS);
   if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch {
-      // Fall through to defaults
-    }
+    return stored;
   }
 
   return {
@@ -187,8 +166,7 @@ export function getPlayerDailyStats(): PlayerDailyStats {
 
 // Save player's daily stats
 export function savePlayerDailyStats(stats: PlayerDailyStats): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(PLAYER_DAILY_STATS_KEY, JSON.stringify(stats));
+  storage.setJSON(STORAGE_KEYS.PLAYER_DAILY_STATS, stats);
 }
 
 // Submit a challenge result
@@ -364,25 +342,20 @@ export function submitChallengeResult(
 
 // Check if challenge is completed
 export function isChallengeCompletedToday(): boolean {
-  if (typeof window === 'undefined') return false;
-  
-  const stored = localStorage.getItem(DAILY_CHALLENGE_KEY);
+  const stored = storage.getJSON<{ date: string; completed: boolean }>(STORAGE_KEYS.DAILY_CHALLENGE);
   if (stored) {
-    const data = JSON.parse(stored);
-    return data.date === new Date().toDateString() && data.completed;
+    return stored.date === new Date().toDateString() && stored.completed;
   }
   return false;
 }
 
 // Mark challenge as completed (simple version without submission)
 export function markChallengeCompleted(): void {
-  if (typeof window === 'undefined') return;
-  
-  localStorage.setItem(DAILY_CHALLENGE_KEY, JSON.stringify({
+  storage.setJSON(STORAGE_KEYS.DAILY_CHALLENGE, {
     date: new Date().toDateString(),
     completed: true,
     streak: getPlayerDailyStats().currentStreak,
-  }));
+  });
 }
 
 // Get XP level info

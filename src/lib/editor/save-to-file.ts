@@ -4,6 +4,7 @@
 
 import { Song } from '@/types/game';
 import { generateUltraStarTxt } from '@/lib/parsers/ultrastar-parser';
+import { storage, STORAGE_KEYS } from '@/lib/storage';
 
 export interface SaveResult {
   success: boolean;
@@ -18,8 +19,8 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
     // Generate txt content
     const txtContent = generateUltraStarTxt(song);
     
-    // Get the songs folder from localStorage
-    const songsFolder = localStorage.getItem('karaoke-songs-folder');
+    // Get the songs folder from storage
+    const songsFolder = storage.get(STORAGE_KEYS.SONGS_FOLDER);
     
     if (!songsFolder) {
       return { 
@@ -88,6 +89,6 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
 // Check if song can be saved to original location
 export function canSaveToOriginal(song: Song): boolean {
   // Check if we have the original path info or songs folder
-  const songsFolder = localStorage.getItem('karaoke-songs-folder');
+  const songsFolder = storage.get(STORAGE_KEYS.SONGS_FOLDER);
   return !!(song.relativeTxtPath || (song.folderPath && songsFolder));
 }

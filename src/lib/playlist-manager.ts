@@ -1,11 +1,9 @@
 // Playlist Manager - CRUD operations for user playlists
 import { Playlist, PlaylistFolder, PlaylistExport, SYSTEM_PLAYLISTS, DEFAULT_PLAYLIST_SETTINGS, Song } from '@/types/game';
+import { storage, STORAGE_KEYS } from '@/lib/storage';
 
 // Re-export types for convenience
 export type { Playlist, PlaylistFolder, PlaylistExport } from '@/types/game';
-
-const STORAGE_KEY = 'karaoke-playlists';
-const FOLDERS_KEY = 'karaoke-playlist-folders';
 
 // Generate unique ID
 function generateId(): string {
@@ -14,13 +12,9 @@ function generateId(): string {
 
 // Get all playlists from storage
 export function getPlaylists(): Playlist[] {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch (e) {
-    console.error('Failed to load playlists:', e);
+  const stored = storage.getJSON<Playlist[]>(STORAGE_KEYS.PLAYLISTS);
+  if (stored) {
+    return stored;
   }
   
   // Return default playlists if none exist
@@ -63,11 +57,7 @@ function getDefaultPlaylists(): Playlist[] {
 
 // Save playlists to storage
 function savePlaylists(playlists: Playlist[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(playlists));
-  } catch (e) {
-    console.error('Failed to save playlists:', e);
-  }
+  storage.setJSON(STORAGE_KEYS.PLAYLISTS, playlists);
 }
 
 // Create a new playlist
@@ -358,23 +348,12 @@ export function incrementPlaylistPlayCount(playlistId: string): void {
 // ============ FOLDER MANAGEMENT ============
 
 export function getFolders(): PlaylistFolder[] {
-  try {
-    const stored = localStorage.getItem(FOLDERS_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch (e) {
-    console.error('Failed to load folders:', e);
-  }
-  return [];
+  const stored = storage.getJSON<PlaylistFolder[]>(STORAGE_KEYS.PLAYLIST_FOLDERS);
+  return stored || [];
 }
 
 function saveFolders(folders: PlaylistFolder[]): void {
-  try {
-    localStorage.setItem(FOLDERS_KEY, JSON.stringify(folders));
-  } catch (e) {
-    console.error('Failed to save folders:', e);
-  }
+  storage.setJSON(STORAGE_KEYS.PLAYLIST_FOLDERS, folders);
 }
 
 export function createFolder(name: string): PlaylistFolder {
@@ -447,7 +426,7 @@ export function renameFolder(id: string, name: string): boolean {
 
 // Initialize playlists (call on app start)
 export function initializePlaylists(): void {
-  const stored = localStorage.getItem(STORAGE_KEY);
+  const stored = storage.get(STORAGE_KEYS.PLAYLISTS);
   if (!stored) {
     // Create default playlists
     savePlaylists(getDefaultPlaylists());

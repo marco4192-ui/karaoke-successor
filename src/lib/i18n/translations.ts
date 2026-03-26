@@ -3,6 +3,7 @@
 // Allows both function call t('key') and object access t.settings.title
 
 import { useState, useEffect, useCallback } from 'react';
+import { storage, STORAGE_KEYS } from '@/lib/storage';
 
 export type Language = 'en' | 'de' | 'es' | 'fr' | 'it' | 'pt' | 'ja' | 'ko' | 'zh' | 'ru' | 'nl' | 'pl' | 'sv' | 'no' | 'da' | 'fi';
 
@@ -980,21 +981,19 @@ export function createTranslationObject(language: Language): Record<string, unkn
   return createNestedObject(merged);
 }
 
-// Get stored language from localStorage
+// Get stored language from storage
 export function getStoredLanguage(): Language {
   if (typeof window === 'undefined') return 'en';
-  const stored = localStorage.getItem('karaoke-language');
+  const stored = storage.get(STORAGE_KEYS.LANGUAGE);
   if (stored && (translations as Record<string, unknown>)[stored]) {
     return stored as Language;
   }
   return 'en';
 }
 
-// Store language in localStorage
+// Store language in storage
 export function setStoredLanguage(language: Language): void {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('karaoke-language', language);
-  }
+  storage.set(STORAGE_KEYS.LANGUAGE, language);
 }
 
 // React hook for translations (for client components)

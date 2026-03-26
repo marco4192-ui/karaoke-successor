@@ -2,6 +2,8 @@
 // Supports USB mics, SingStar mics, 3.5mm jack mics, Bluetooth audio
 // Each microphone has its own individual extended settings
 
+import { storage, STORAGE_KEYS } from '@/lib/storage';
+
 export interface MicrophoneDevice {
   deviceId: string;
   label: string;
@@ -660,56 +662,56 @@ export class MultiMicrophoneManager {
     });
   }
 
-  // Save config to localStorage
+  // Save config to storage
   private saveConfig(): void {
-    try {
-      const config = {
-        version: 2, // Version for future migrations
-        assignedMics: Array.from(this.assignedMics.values()).map(m => ({
-          deviceId: m.deviceId,
-          deviceName: m.deviceName,
-          customName: m.customName,
-          playerIndex: m.playerIndex,
-          config: m.config,
-        })),
-      };
-      localStorage.setItem('karaoke-multi-mic-config', JSON.stringify(config));
-    } catch (e) {
-      console.warn('Failed to save multi-mic config:', e);
-    }
+    const config = {
+      version: 2, // Version for future migrations
+      assignedMics: Array.from(this.assignedMics.values()).map(m => ({
+        deviceId: m.deviceId,
+        deviceName: m.deviceName,
+        customName: m.customName,
+        playerIndex: m.playerIndex,
+        config: m.config,
+      })),
+    };
+    storage.setJSON(STORAGE_KEYS.MULTI_MIC_CONFIG, config);
   }
 
-  // Load config from localStorage
+  // Load config from storage
   private loadConfig(): void {
-    try {
-      const saved = localStorage.getItem('karaoke-multi-mic-config');
-      if (saved) {
-        const config = JSON.parse(saved);
-        
-        // Migration from old format
-        if (config.assignedMics && Array.isArray(config.assignedMics)) {
-          config.assignedMics.forEach((mic: { config?: { latency?: string; }; playerIndex?: number }) => {
-            // Migrate latency values
-            if (mic.config?.latency) {
-              if (mic.config.latency === 'low') {
-                mic.config.latency = 'interactive';
-              } else if (mic.config.latency === 'normal') {
-                mic.config.latency = 'balanced';
-              } else if (mic.config.latency === 'high') {
-                mic.config.latency = 'playback';
-              }
+    const config = storage.getJSON<{
+      version: number;
+      assignedMics: Array<{
+        deviceId: string;
+        deviceName: string;
+        customName: string;
+        playerIndex: number;
+        config: ExtendedMicConfig;
+      }>;
+    }>(STORAGE_KEYS.MULTI_MIC_CONFIG);
+    
+    if (config) {
+      // Migration from old format
+      if (config.assignedMics && Array.isArray(config.assignedMics)) {
+        config.assignedMics.forEach((mic) => {
+          // Migrate latency values
+          if (mic.config?.latency) {
+            if (mic.config.latency === 'low') {
+              mic.config.latency = 'interactive';
+            } else if (mic.config.latency === 'normal') {
+              mic.config.latency = 'balanced';
+            } else if (mic.config.latency === 'high') {
+              mic.config.latency = 'playback';
             }
-            // Ensure playerIndex
-            if (mic.playerIndex === undefined) {
-              mic.playerIndex = 0;
-            }
-          });
-        }
-        // Note: We don't restore mic instances on load, just the config
-        // The UI will need to re-request microphone permissions and reconnect
+          }
+          // Ensure playerIndex
+          if (mic.playerIndex === undefined) {
+            mic.playerIndex = 0;
+          }
+        });
       }
-    } catch (e) {
-      console.warn('Failed to load multi-mic config:', e);
+      // Note: We don't restore mic instances on load, just the config
+      // The UI will need to re-request microphone permissions and reconnect
     }
   }
 
@@ -888,33 +890,23 @@ export class MicrophoneManager {
   }
 
   private saveConfig(): void {
-    try {
-      localStorage.setItem('karaoke-mic-config', JSON.stringify(this.config));
-    } catch (e) {
-      console.warn('Failed to save mic config:', e);
-    }
+    storage.setJSON(STORAGE_KEYS.MIC_CONFIG, this.config);
   }
 
   private loadConfig(): void {
-    try {
-      const saved = localStorage.getItem('karaoke-mic-config');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-
-        // Migration: Convert old latency values to new valid values
-        if (parsed.latency === 'low') {
-          parsed.latency = 'interactive';
-        } else if (parsed.latency === 'normal') {
-          parsed.latency = 'balanced';
-        } else if (parsed.latency === 'high') {
-          parsed.latency = 'playback';
-        }
-
-        this.config = { ...DEFAULT_CONFIG, ...parsed };
-        this.saveConfig();
+    const saved = storage.getJSON<MicrophoneConfig>(STORAGE_KEYS.MIC_CONFIG);
+    if (saved) {
+      // Migration: Convert old latency values to new valid values
+      if (saved.latency === 'low') {
+        saved.latency = 'interactive';
+      } else if (saved.latency === 'normal') {
+        saved.latency = 'balanced';
+      } else if (saved.latency === 'high') {
+        saved.latency = 'playback';
       }
-    } catch (e) {
-      console.warn('Failed to load mic config:', e);
+
+      this.config = { ...DEFAULT_CONFIG, ...saved };
+      this.saveConfig();
     }
   }
 

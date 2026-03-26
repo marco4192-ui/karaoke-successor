@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getStoredTheme } from '@/lib/game/themes';
 import type { NoteShapeStyle } from '@/lib/game/note-utils';
+import { storage, STORAGE_KEYS } from '@/lib/storage';
 
 export interface GameSettings {
   showBackgroundVideo: boolean;
@@ -28,11 +29,11 @@ export function useGameSettings(): GameSettings & {
 
   // Load initial settings and listen for changes
   useEffect(() => {
-    // Load initial values from localStorage
-    setShowBackgroundVideo(localStorage.getItem('karaoke-bg-video') !== 'false');
-    setShowPitchGuide(localStorage.getItem('karaoke-show-pitch-guide') !== 'false');
-    setNoteDisplayStyle(localStorage.getItem('karaoke-note-style') || 'classic');
-    setUseAnimatedBackground(localStorage.getItem('karaoke-animated-bg') === 'true');
+    // Load initial values from storage
+    setShowBackgroundVideo(storage.getBool(STORAGE_KEYS.BG_VIDEO, true));
+    setShowPitchGuide(storage.getBool(STORAGE_KEYS.SHOW_PITCH_GUIDE, true));
+    setNoteDisplayStyle(storage.get(STORAGE_KEYS.NOTE_STYLE) || 'classic');
+    setUseAnimatedBackground(storage.getBool(STORAGE_KEYS.ANIMATED_BG, false));
 
     // Load note shape style from current theme
     const storedTheme = getStoredTheme();
@@ -54,11 +55,11 @@ export function useGameSettings(): GameSettings & {
           setUseAnimatedBackground(detail.useAnimatedBackground);
         }
       }
-      // Always refresh from localStorage
-      setShowBackgroundVideo(localStorage.getItem('karaoke-bg-video') !== 'false');
-      setShowPitchGuide(localStorage.getItem('karaoke-show-pitch-guide') !== 'false');
-      setNoteDisplayStyle(localStorage.getItem('karaoke-note-style') || 'classic');
-      setUseAnimatedBackground(localStorage.getItem('karaoke-animated-bg') === 'true');
+      // Always refresh from storage
+      setShowBackgroundVideo(storage.getBool(STORAGE_KEYS.BG_VIDEO, true));
+      setShowPitchGuide(storage.getBool(STORAGE_KEYS.SHOW_PITCH_GUIDE, true));
+      setNoteDisplayStyle(storage.get(STORAGE_KEYS.NOTE_STYLE) || 'classic');
+      setUseAnimatedBackground(storage.getBool(STORAGE_KEYS.ANIMATED_BG, false));
 
       // Refresh note shape style from theme
       const theme = getStoredTheme();
