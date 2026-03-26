@@ -3,6 +3,7 @@
 
 import { PlayerProfile, HighscoreEntry, Achievement, PlayerStats, Difficulty, GameMode, PLAYER_COLORS, getRankTitle } from '@/types/game';
 import { storage, STORAGE_KEYS } from '@/lib/storage';
+import { logger } from '@/lib/logger';
 
 const DB_NAME = 'karaoke-user-db';
 const DB_VERSION = 1;
@@ -111,19 +112,19 @@ class UserDatabase {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onerror = () => {
-        console.error('[UserDB] Failed to open database:', request.error);
+        logger.error('[UserDB]', 'Failed to open database:', request.error);
         reject(request.error);
       };
 
       request.onsuccess = () => {
         this.db = request.result;
-        console.log('[UserDB] Database opened successfully');
+        logger.debug('[UserDB]', 'Database opened successfully');
         resolve(this.db);
       };
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
-        console.log('[UserDB] Upgrading database schema...');
+        logger.debug('[UserDB]', 'Upgrading database schema...');
 
         // Profiles store
         if (!db.objectStoreNames.contains(STORES.PROFILES)) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ZAI from 'z-ai-web-dev-sdk';
+import { logger } from '@/lib/logger';
 
 // TypeScript types for lyrics suggestions
 interface LyricSuggestion {
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<LyricsSug
     try {
       zai = await ZAI.create();
     } catch (initError) {
-      console.error('[LyricsSuggestions] Failed to initialize ZAI SDK:', initError);
+      logger.error('[LyricsSuggestions]', 'Failed to initialize ZAI SDK:', initError);
       return NextResponse.json(
         { success: false, error: 'AI service unavailable' },
         { status: 503 }
@@ -109,7 +110,7 @@ Return ONLY the JSON object.`,
           detectedLanguage = parsed.language || 'en';
         }
       } catch {
-        console.error('[LyricsSuggestions] Failed to parse response:', analysisResponse);
+        logger.error('[LyricsSuggestions]', 'Failed to parse response:', analysisResponse);
       }
 
       // Validate suggestions
@@ -129,14 +130,14 @@ Return ONLY the JSON object.`,
         detectedLanguage,
       });
     } catch (llmError) {
-      console.error('[LyricsSuggestions] LLM error:', llmError);
+      logger.error('[LyricsSuggestions]', 'LLM error:', llmError);
       return NextResponse.json(
         { success: false, error: 'AI processing failed' },
         { status: 503 }
       );
     }
   } catch (error) {
-    console.error('[LyricsSuggestions] Error:', error);
+    logger.error('[LyricsSuggestions]', 'Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return NextResponse.json(
       { success: false, error: errorMessage },

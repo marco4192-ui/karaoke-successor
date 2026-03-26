@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ZAI from 'z-ai-web-dev-sdk';
+import { logger } from '@/lib/logger';
 
 // TypeScript types for song identification
 interface SongIdentifyRequest {
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<SongIdent
     try {
       zai = await ZAI.create();
     } catch (initError) {
-      console.error('[SongIdentify] Failed to initialize ZAI SDK:', initError);
+      logger.error('[SongIdentify]', 'Failed to initialize ZAI SDK:', initError);
       return NextResponse.json(
         { success: false, error: 'AI service unavailable' },
         { status: 503 }
@@ -112,7 +113,7 @@ Extract the song metadata and return ONLY the JSON object.`,
         }
         metadata = JSON.parse(jsonMatch[0]) as SongMetadata;
       } catch {
-        console.error('[SongIdentify] Failed to parse LLM response:', responseContent);
+        logger.error('[SongIdentify]', 'Failed to parse LLM response:', responseContent);
         return NextResponse.json(
           { success: false, error: 'Failed to parse metadata response' },
           { status: 500 }
@@ -149,14 +150,14 @@ Extract the song metadata and return ONLY the JSON object.`,
         },
       });
     } catch (llmError) {
-      console.error('[SongIdentify] LLM error:', llmError);
+      logger.error('[SongIdentify]', 'LLM error:', llmError);
       return NextResponse.json(
         { success: false, error: 'AI processing failed' },
         { status: 503 }
       );
     }
   } catch (error) {
-    console.error('[SongIdentify] Error:', error);
+    logger.error('[SongIdentify]', 'Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return NextResponse.json(
       { success: false, error: errorMessage },

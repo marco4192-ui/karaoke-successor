@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readFile, access } from 'fs/promises';
 import { constants } from 'fs';
 import path from 'path';
+import { logger } from '@/lib/logger';
 
 // API Configuration interface
 interface AIConfig {
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('Image API error:', response.status, errorText);
+          logger.error('[AssetAPI]', 'Image API error:', response.status, errorText);
           return NextResponse.json({ 
             error: `API error (${response.status}): ${errorText}`,
             needsConfig: response.status === 401
@@ -113,7 +114,7 @@ export async function POST(request: NextRequest) {
         });
       } catch (fetchError) {
         const message = fetchError instanceof Error ? fetchError.message : 'Unknown error';
-        console.error('Image fetch error:', fetchError);
+        logger.error('[AssetAPI]', 'Image fetch error:', fetchError);
         return NextResponse.json({ 
           error: `Connection failed: ${message}. Check if API URL is correct.`
         }, { status: 503 });
@@ -140,7 +141,7 @@ export async function POST(request: NextRequest) {
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('TTS API error:', response.status, errorText);
+          logger.error('[AssetAPI]', 'TTS API error:', response.status, errorText);
           return NextResponse.json({ 
             error: `API error (${response.status}): ${errorText}`,
             needsConfig: response.status === 401
@@ -158,7 +159,7 @@ export async function POST(request: NextRequest) {
         });
       } catch (fetchError) {
         const message = fetchError instanceof Error ? fetchError.message : 'Unknown error';
-        console.error('TTS fetch error:', fetchError);
+        logger.error('[AssetAPI]', 'TTS fetch error:', fetchError);
         return NextResponse.json({ 
           error: `Connection failed: ${message}. Check if API URL is correct.`
         }, { status: 503 });
@@ -168,7 +169,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid type. Use "image" or "audio"' }, { status: 400 });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Asset generation error:', error);
+    logger.error('[AssetAPI]', 'Asset generation error:', error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

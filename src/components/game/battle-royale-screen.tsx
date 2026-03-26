@@ -419,7 +419,12 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame }: B
   const { isInitialized: pitchInitialized, isListening, pitchResult, initialize: initPitch, start: startPitch, stop: stopPitch } = usePitchDetector();
   
   // Game state
-  const [currentSong, setCurrentSong] = useState<Song | null>(null);
+  // Derive currentSong directly from currentRound and songs
+  const currentSong = useMemo(() => {
+    if (!currentRound?.songId) return null;
+    return songs.find(s => s.id === currentRound.songId) || null;
+  }, [currentRound?.songId, songs]);
+  
   const [mediaLoaded, setMediaLoaded] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [roundTimeLeft, setRoundTimeLeft] = useState(currentRound?.duration || 0);
@@ -452,16 +457,6 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame }: B
     
     return { allNotes, beatDuration: beatDurationMs, scoringMetadata };
   }, [currentSong]);
-
-  // Get current song from the round
-  useEffect(() => {
-    if (currentRound?.songId) {
-      const song = songs.find(s => s.id === currentRound.songId);
-      if (song) {
-        setCurrentSong(song);
-      }
-    }
-  }, [currentRound?.songId, songs]);
 
   // Load media when song changes
   useEffect(() => {
@@ -502,42 +497,9 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame }: B
     
     loadMedia();
   }, [currentSong]);
-
-  // Initialize pitch detection and start game loop when playing
-  useEffect(() => {
-    if (game.status === 'playing' && mediaLoaded && currentSong) {
-      // Initialize pitch detection
-      const initGame = async () => {
-        if (!pitchInitialized) {
-          await initPitch();
-        }
-        startPitch();
-        
-        // Start audio/video playback
-        if (audioRef.current && currentSong.audioUrl) {
-          audioRef.current.play().catch(e => console.error('Audio play error:', e));
-        }
-        if (videoRef.current && currentSong.videoBackground) {
-          videoRef.current.play().catch(e => console.error('Video play error:', e));
-        }
-        
-        // Start game loop for simultaneous scoring
-        startGameLoop();
-      };
-      
-      initGame();
-      
-      return () => {
-        stopPitch();
-        if (gameLoopRef.current) {
-          cancelAnimationFrame(gameLoopRef.current);
-        }
-      };
-    }
-  }, [game.status, mediaLoaded, currentSong, pitchInitialized, initPitch, startPitch, stopPitch]);
   
   // Game loop for simultaneous scoring (Champions League - all players scored at once)
-  const startGameLoop = () => {
+  const startGameLoop = useCallback(() => {
     const TICK_INTERVAL = 100; // 100ms between scoring evaluations
     let lastTickTime = performance.now();
     
@@ -601,7 +563,40 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame }: B
     };
     
     gameLoopRef.current = requestAnimationFrame(gameLoop);
-  };
+  }, [game, pitchResult, timingData, currentSong, currentTime, activePlayers, difficulty, onUpdateGame]);
+
+  // Initialize pitch detection and start game loop when playing
+  useEffect(() => {
+    if (game.status === 'playing' && mediaLoaded && currentSong) {
+      // Initialize pitch detection
+      const initGame = async () => {
+        if (!pitchInitialized) {
+          await initPitch();
+        }
+        startPitch();
+        
+        // Start audio/video playback
+        if (audioRef.current && currentSong.audioUrl) {
+          audioRef.current.play().catch(e => console.error('Audio play error:', e));
+        }
+        if (videoRef.current && currentSong.videoBackground) {
+          videoRef.current.play().catch(e => console.error('Video play error:', e));
+        }
+        
+        // Start game loop for simultaneous scoring
+        startGameLoop();
+      };
+      
+      initGame();
+      
+      return () => {
+        stopPitch();
+        if (gameLoopRef.current) {
+          cancelAnimationFrame(gameLoopRef.current);
+        }
+      };
+    }
+  }, [game.status, mediaLoaded, currentSong, pitchInitialized, initPitch, startPitch, stopPitch, startGameLoop]);
 
   // Get random song for the round
   const getRandomSong = useCallback((): Song | null => {
@@ -609,27 +604,6 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame }: B
     return songs[Math.floor(Math.random() * songs.length)];
   }, [songs]);
   
-  // Update time when round changes - AUTO ELIMINATION when time runs out
-  useEffect(() => {
-    if (game.status === 'playing' && currentRound) {
-      queueMicrotask(() => setRoundTimeLeft(currentRound.duration));
-      
-      const interval = setInterval(() => {
-        setRoundTimeLeft(prev => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            // AUTO ELIMINATION - trigger when time runs out
-            handleRoundEnd();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      return () => clearInterval(interval);
-    }
-  }, [game.status, currentRound?.duration]);
-
   // Handle round end - eliminates lowest scoring player
   const handleRoundEnd = useCallback(() => {
     // Stop media
@@ -660,6 +634,27 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame }: B
       onUpdateGame(nextGame);
     }, 4000); // 4 seconds to show elimination animation
   }, [activePlayers.length, game, onUpdateGame, stopPitch]);
+  
+  // Update time when round changes - AUTO ELIMINATION when time runs out
+  useEffect(() => {
+    if (game.status === 'playing' && currentRound) {
+      queueMicrotask(() => setRoundTimeLeft(currentRound.duration));
+      
+      const interval = setInterval(() => {
+        setRoundTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            // AUTO ELIMINATION - trigger when time runs out
+            handleRoundEnd();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [game.status, currentRound?.duration, handleRoundEnd]);
 
   // Start next round
   const handleStartRound = () => {

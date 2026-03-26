@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import type { YTPlayer } from '@/types/youtube';
 import { extractYouTubeId } from './youtube-player';
+import { logger } from '@/lib/logger';
 
 interface YouTubeBackgroundPlayerProps {
   videoId: string;
@@ -142,7 +143,7 @@ export function YouTubeBackgroundPlayer({
         },
         events: {
           onReady: (event) => {
-            console.log('[YouTube] Player ready');
+            logger.debug('[YouTube]', 'Player ready');
             if (muted) {
               event.target.mute();
             }
@@ -153,7 +154,7 @@ export function YouTubeBackgroundPlayer({
             const prevState = lastStateRef.current;
             lastStateRef.current = state;
             
-            console.log('[YouTube] State changed:', {
+            logger.debug('[YouTube]', 'State changed:', {
               state,
               prevState,
               stateName: state === -1 ? 'UNSTARTED' : 
@@ -172,12 +173,12 @@ export function YouTubeBackgroundPlayer({
               const isAdPlaying = detectAd(player);
               
               if (isAdPlaying && !adDetectedRef.current) {
-                console.log('[YouTube] Ad detected!');
+                logger.info('[YouTube]', 'Ad detected!');
                 adDetectedRef.current = true;
                 wasPlayingBeforeAdRef.current = true;
                 onAdStart?.();
               } else if (!isAdPlaying && adDetectedRef.current) {
-                console.log('[YouTube] Ad ended, resuming');
+                logger.info('[YouTube]', 'Ad ended, resuming');
                 adDetectedRef.current = false;
                 onAdEnd?.();
               }
@@ -188,7 +189,7 @@ export function YouTubeBackgroundPlayer({
             }
           },
           onError: (event) => {
-            console.error('[YouTube] Player error:', event.data);
+            logger.error('[YouTube]', 'Player error:', event.data);
           },
         },
       });

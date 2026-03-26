@@ -22,6 +22,7 @@ import { getRoomService } from '@/lib/multiplayer/room-service';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { PLAYER_COLORS, getRankTitle, PlayerStats } from '@/types/game';
 import { createEmptyPerformanceStats, getPerformanceGrade } from '@/lib/game/performance-analytics';
+import { logger } from '@/lib/logger';
 
 // Icons
 function UserIcon({ className }: { className?: string }) {
@@ -129,7 +130,7 @@ export function UserProfileScreen({
       const allProfiles = await db.getAllProfiles();
       setProfiles(allProfiles);
     } catch (error) {
-      console.error('Failed to load profiles:', error);
+      logger.error('[UserProfile]', 'Failed to load profiles:', error);
     } finally {
       setIsLoading(false);
     }
@@ -165,7 +166,7 @@ export function UserProfileScreen({
         onSetActiveProfile(profile.id);
       }
     } catch (error) {
-      console.error('Failed to create profile:', error);
+      logger.error('[UserProfile]', 'Failed to create profile:', error);
     }
   };
 
@@ -192,7 +193,7 @@ export function UserProfileScreen({
         }
       }
     } catch (error) {
-      console.error('Failed to update profile:', error);
+      logger.error('[UserProfile]', 'Failed to update profile:', error);
     }
   };
 
@@ -215,7 +216,7 @@ export function UserProfileScreen({
         }
       }
     } catch (error) {
-      console.error('Failed to delete profile:', error);
+      logger.error('[UserProfile]', 'Failed to delete profile:', error);
     }
   };
 
@@ -237,7 +238,7 @@ export function UserProfileScreen({
         alert('Invalid sync code. Please check and try again.');
       }
     } catch (error) {
-      console.error('Failed to sync profiles:', error);
+      logger.error('[UserProfile]', 'Failed to sync profiles:', error);
       alert('Failed to sync profiles. Please try again.');
     }
   };

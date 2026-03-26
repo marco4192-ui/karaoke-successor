@@ -5,6 +5,7 @@
 import { Song } from '@/types/game';
 import { generateUltraStarTxt } from '@/lib/parsers/ultrastar-parser';
 import { storage, STORAGE_KEYS } from '@/lib/storage';
+import { logger } from '@/lib/logger';
 
 export interface SaveResult {
   success: boolean;
@@ -45,7 +46,7 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
     }
     // Fallback: Ask user where to save
     else {
-      console.warn('[SaveToFile] No path info available, asking user...');
+      logger.warn('[SaveToFile]', 'No path info available, asking user...');
       const { save } = await import('@tauri-apps/plugin-dialog');
       const userPath = await save({
         defaultPath: `${song.title} - ${song.artist}.txt`,
@@ -65,7 +66,7 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
       const fileExists = await exists(filePath!);
       
       if (!fileExists) {
-        console.warn('[SaveToFile] Original file does not exist:', filePath);
+        logger.warn('[SaveToFile]', 'Original file does not exist:', filePath);
         // File doesn't exist - this might be a new file, that's OK
       }
     }
@@ -74,11 +75,11 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
     const { writeTextFile } = await import('@tauri-apps/plugin-fs');
     await writeTextFile(filePath!, txtContent);
     
-    console.log(`[SaveToFile] Successfully saved to: ${filePath}`);
+    logger.info('[SaveToFile]', 'Successfully saved to:', filePath!);
     return { success: true, message: 'Datei gespeichert!', path: filePath! };
     
   } catch (error) {
-    console.error('[SaveToFile] Error saving song:', error);
+    logger.error('[SaveToFile]', 'Error saving song:', error);
     return {
       success: false,
       message: `Fehler beim Speichern: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`,

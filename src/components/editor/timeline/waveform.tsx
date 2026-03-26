@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useCallback } from 'react';
+import { logger } from '@/lib/logger';
 
 interface WaveformProps {
   audioUrl?: string;
@@ -153,7 +154,7 @@ export function Waveform({
         drawWaveform(audioBuffer, canvas);
       }
     } catch (error) {
-      console.error('Failed to load audio for waveform:', error);
+      logger.error('[Waveform]', 'Failed to load audio for waveform:', error);
     }
   }, [drawWaveform]);
 

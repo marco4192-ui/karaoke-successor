@@ -36,6 +36,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { midiToNoteName, NOTE_NAMES } from '@/types/game';
 import { saveSongToTxt, canSaveToOriginal, SaveResult } from '@/lib/editor/save-to-file';
+import { logger } from '@/lib/logger';
 
 interface KaraokeEditorProps {
   song: Song;
@@ -274,7 +275,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
       // Clear message after 5 seconds
       setTimeout(() => setSaveResult(null), 5000);
     } catch (error) {
-      console.error('Save error:', error);
+      logger.error('[KaraokeEditor]', 'Save error:', error);
       setSaveResult({
         success: false,
         message: `Fehler: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`,
