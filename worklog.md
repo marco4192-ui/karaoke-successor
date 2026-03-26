@@ -1515,3 +1515,63 @@ The original implementation stored complete lyrics (all notes with timing, pitch
 - Reduction: ~64% complete
 
 All builds passing, pushed to GitHub.
+
+---
+## Task ID: 15 - Mobile Client View Refactoring
+### Agent: Main Agent
+### Task: Refactor mobile-client-view.tsx to reduce file size and improve code organization
+
+### Work Done:
+
+#### 1. Created useMobileMicrophone Hook
+- **File**: `/src/hooks/use-mobile-microphone.ts`
+- Extracted microphone/pitch detection logic from main component
+- Uses existing `PitchDetector` class instead of duplicate YIN implementation
+- Handles microphone lifecycle (start/stop/cleanup)
+- Returns: `isListening`, `currentPitch`, `startMicrophone`, `stopMicrophone`, `error`
+
+#### 2. Created Mobile View Components
+All components extracted to `/src/components/mobile/`:
+
+- **MobileHomeView**: Home screen with quick actions and queue preview
+- **MobileMicView**: Microphone/sing view with pitch display
+- **MobileSongsView**: Song browser with search functionality  
+- **MobileQueueView**: Queue management with slot indicators
+- **MobileResultsView**: Game results with social sharing
+- **MobileJukeboxView**: Jukebox wishlist view
+- **MobileProfileView**: Profile editing view
+
+#### 3. Refactored mobile-client-view.tsx
+- **Before**: 1316 lines
+- **After**: 769 lines
+- **Reduction**: 547 lines (-42%)
+- Removed duplicate YIN pitch detection algorithm (~50 lines)
+- Separated UI views into dedicated components
+- Cleaner state management and imports
+
+### Technical Improvements:
+- Reuses existing `PitchDetector` class from `/src/lib/audio/pitch-detector.ts`
+- Consistent component naming convention (Mobile*View)
+- Better separation of concerns
+- Improved code reusability
+
+### Files Changed:
+- Modified: `/src/components/screens/mobile-client-view.tsx`
+- Created: `/src/hooks/use-mobile-microphone.ts`
+- Created: `/src/components/mobile/index.ts`
+- Created: `/src/components/mobile/mobile-home-view.tsx`
+- Created: `/src/components/mobile/mobile-mic-view.tsx`
+- Created: `/src/components/mobile/mobile-songs-view.tsx`
+- Created: `/src/components/mobile/mobile-queue-view.tsx`
+- Created: `/src/components/mobile/mobile-results-view.tsx`
+- Created: `/src/components/mobile/mobile-jukebox-view.tsx`
+- Created: `/src/components/mobile/mobile-profile-view.tsx`
+
+### Commit: 7d944fe
+- Pushed to GitHub: https://github.com/marco4192-ui/karaoke-successor
+
+### Stage Summary:
+- Successfully reduced mobile-client-view.tsx by 42%
+- Created reusable mobile view components
+- Extracted microphone logic into dedicated hook
+- Improved code organization and maintainability
