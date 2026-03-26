@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { apiClient } from '@/lib/api-client';
 import { useMobileMicrophone } from '@/hooks/use-mobile-microphone';
+import { useMobileConnection, MobileGameState } from '@/hooks/use-mobile-connection';
+import { useMobileProfile, MobileProfile } from '@/hooks/use-mobile-profile';
 import {
   MobileHomeView,
   MobileMicView,
@@ -20,14 +22,6 @@ import {
 
 // ===================== TYPES =====================
 type MobileView = 'home' | 'profile' | 'songs' | 'queue' | 'mic' | 'results' | 'jukebox' | 'remote';
-
-interface MobileProfile {
-  id: string;
-  name: string;
-  avatar?: string;
-  color: string;
-  createdAt: number;
-}
 
 interface MobileSong {
   id: string;
@@ -68,26 +62,8 @@ interface JukeboxWishlistItem {
 
 // ===================== MOBILE CLIENT VIEW =====================
 export function MobileClientView() {
-  // Connection state
-  const [clientId, setClientId] = useState<string | null>(null);
-  const [connectionCode, setConnectionCode] = useState<string>('');
-  const [isConnected, setIsConnected] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [gameState, setGameState] = useState<{
-    currentSong: { title: string; artist: string } | null;
-    isPlaying: boolean;
-    songEnded: boolean;
-    queueLength: number;
-    isAdPlaying: boolean;
-  }>({ currentSong: null, isPlaying: false, songEnded: false, queueLength: 0, isAdPlaying: false });
   const [currentView, setCurrentView] = useState<MobileView>('home');
-
-  // Profile state
-  const [profile, setProfile] = useState<MobileProfile | null>(null);
-  const [profileName, setProfileName] = useState('');
-  const [profileColor, setProfileColor] = useState('#06B6D4');
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-
+  
   // Song library state
   const [songs, setSongs] = useState<MobileSong[]>([]);
   const [songSearch, setSongSearch] = useState('');
@@ -106,7 +82,41 @@ export function MobileClientView() {
 
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Connection hook
+  const {
+    clientId,
+    connectionCode,
+    isConnected,
+    error,
+    gameState,
+    connect,
+  } = useMobileConnection({
+    onGameEnd: () => {
+      loadGameResults();
+      loadQueue();
+    },
+  });
+
+  // Profile hook
+  const {
+    profile,
+    profileName,
+    profileColor,
+    avatarPreview,
+    profileColors,
+    setProfileName,
+    setProfileColor,
+    createProfile,
+    saveProfile,
+    handlePhotoUpload,
+    loadSavedProfile,
+  } = useMobileProfile({
+    clientId,
+    onConnectionCodeUpdate: (code) => {
+      // Connection code is managed by the connection hook
+    },
+  });
 
   // Microphone hook
   const {
@@ -120,145 +130,6 @@ export function MobileClientView() {
     isPlaying: gameState.isPlaying,
     songEnded: gameState.songEnded,
   });
-
-  // Available profile colors
-  const profileColors = [
-    '#06B6D4',
-    '#8B5CF6',
-    '#EC4899',
-    '#F59E0B',
-    '#10B981',
-    '#EF4444',
-    '#3B82F6',
-    '#F97316',
-  ];
-
-  // Connect to the server
-  const connect = useCallback(async () => {
-    try {
-      const savedConnectionCode = localStorage.getItem('karaoke-connection-code');
-      const savedProfile = localStorage.getItem('karaoke-mobile-profile');
-
-      if (savedConnectionCode && savedProfile) {
-        const reconnectData = await apiClient.mobileReconnect(savedConnectionCode);
-
-        if (reconnectData.success) {
-          setClientId(reconnectData.clientId as string);
-          setConnectionCode(savedConnectionCode);
-          setIsConnected(true);
-          if (reconnectData.profile) {
-            const profileData = reconnectData.profile as MobileProfile;
-            setProfile(profileData);
-            setProfileName(profileData.name);
-            setProfileColor(profileData.color);
-            setAvatarPreview(profileData.avatar || null);
-          }
-          if (reconnectData.gameState) {
-            const gs = reconnectData.gameState as typeof gameState;
-            setGameState({
-              currentSong: gs.currentSong,
-              isPlaying: gs.isPlaying,
-              songEnded: gs.songEnded || false,
-              queueLength: gs.queueLength || 0,
-              isAdPlaying: gs.isAdPlaying || false,
-            });
-          }
-          return;
-        }
-      }
-
-      // Fresh connection
-      const data = await apiClient.mobileConnect();
-      if (data.success) {
-        const newClientId = data.clientId as string;
-        const newConnectionCode = data.connectionCode as string;
-        setClientId(newClientId);
-        setConnectionCode(newConnectionCode);
-        setIsConnected(true);
-        localStorage.setItem('karaoke-connection-code', newConnectionCode);
-
-        if (data.gameState) {
-          const gs = data.gameState as typeof gameState;
-          setGameState({
-            currentSong: gs.currentSong,
-            isPlaying: gs.isPlaying,
-            songEnded: gs.songEnded || false,
-            queueLength: gs.queueLength || 0,
-            isAdPlaying: gs.isAdPlaying || false,
-          });
-        }
-
-        if (savedProfile) {
-          const parsed = JSON.parse(savedProfile);
-          setProfile(parsed);
-          setProfileName(parsed.name);
-          setProfileColor(parsed.color);
-          setAvatarPreview(parsed.avatar || null);
-          try {
-            const syncData = await apiClient.mobileProfile(newClientId, parsed);
-            if (syncData.connectionCode) {
-              setConnectionCode(syncData.connectionCode as string);
-              localStorage.setItem('karaoke-connection-code', syncData.connectionCode as string);
-            }
-          } catch {
-            // Ignore sync errors
-          }
-        }
-      } else {
-        setError('Failed to connect to server');
-      }
-    } catch {
-      setError('Connection failed - is the server running?');
-    }
-  }, []);
-
-  // Sync profile to server
-  const syncProfile = useCallback(
-    async (profileData: MobileProfile) => {
-      if (!clientId) return;
-      try {
-        const data = await apiClient.mobileProfile(clientId, profileData);
-        if (data.connectionCode) {
-          setConnectionCode(data.connectionCode as string);
-          localStorage.setItem('karaoke-connection-code', data.connectionCode as string);
-        }
-      } catch {
-        // Ignore sync errors
-      }
-    },
-    [clientId]
-  );
-
-  // Create profile
-  const handleCreateProfile = useCallback(() => {
-    if (!profileName.trim()) return;
-
-    const newProfile: MobileProfile = {
-      id: `profile-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-      name: profileName.trim(),
-      avatar: avatarPreview || undefined,
-      color: profileColor,
-      createdAt: Date.now(),
-    };
-
-    setProfile(newProfile);
-    localStorage.setItem('karaoke-mobile-profile', JSON.stringify(newProfile));
-    syncProfile(newProfile);
-    setCurrentView('home');
-  }, [profileName, avatarPreview, profileColor, syncProfile]);
-
-  // Handle photo upload
-  const handlePhotoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      setAvatarPreview(base64);
-    };
-    reader.readAsDataURL(file);
-  }, []);
 
   // Load songs from main app
   const loadSongs = useCallback(async () => {
@@ -401,87 +272,10 @@ export function MobileClientView() {
     }
   }, []);
 
-  // Save profile changes
-  const handleSaveProfile = useCallback(
-    (updated: MobileProfile) => {
-      setProfile(updated);
-      localStorage.setItem('karaoke-mobile-profile', JSON.stringify(updated));
-      syncProfile(updated);
-    },
-    [syncProfile]
-  );
-
-  // Cleanup on unmount
+  // Load saved profile on mount
   useEffect(() => {
-    return () => {
-      if (clientId) {
-        apiClient.mobileDisconnect(clientId).catch(() => {});
-      }
-      if (heartbeatIntervalRef.current) {
-        clearInterval(heartbeatIntervalRef.current);
-      }
-    };
-  }, [clientId]);
-
-  // Auto-connect on mount
-  useEffect(() => {
-    queueMicrotask(() => connect());
-  }, [connect]);
-
-  // Heartbeat to keep connection alive
-  useEffect(() => {
-    if (!isConnected || !clientId) return;
-
-    const sendHeartbeat = async () => {
-      try {
-        await apiClient.mobileHeartbeat(clientId);
-      } catch {
-        // Ignore heartbeat errors
-      }
-    };
-
-    heartbeatIntervalRef.current = setInterval(sendHeartbeat, 30000);
-
-    return () => {
-      if (heartbeatIntervalRef.current) {
-        clearInterval(heartbeatIntervalRef.current);
-      }
-    };
-  }, [isConnected, clientId]);
-
-  // Sync game state periodically
-  useEffect(() => {
-    if (!isConnected) return;
-
-    const syncInterval = setInterval(async () => {
-      try {
-        const data = await apiClient.mobileGetGameState();
-        if (data.success && data.gameState) {
-          const gs = data.gameState as typeof gameState;
-          const prevSongEnded = gameState.songEnded;
-          const newSongEnded = gs.songEnded || false;
-
-          setGameState({
-            currentSong: gs.currentSong,
-            isPlaying: gs.isPlaying,
-            songEnded: newSongEnded,
-            queueLength: gs.queueLength || 0,
-            isAdPlaying: gs.isAdPlaying || false,
-          });
-
-          // Load game results when song ends
-          if (newSongEnded && !prevSongEnded) {
-            loadGameResults();
-            loadQueue();
-          }
-        }
-      } catch {
-        // Ignore sync errors
-      }
-    }, 1000);
-
-    return () => clearInterval(syncInterval);
-  }, [isConnected, gameState.songEnded, loadGameResults, loadQueue]);
+    loadSavedProfile();
+  }, [loadSavedProfile]);
 
   // Load songs when viewing songs tab
   useEffect(() => {
@@ -627,7 +421,7 @@ export function MobileClientView() {
 
               {/* Create Button */}
               <Button
-                onClick={handleCreateProfile}
+                onClick={createProfile}
                 disabled={!profileName.trim()}
                 className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 disabled:opacity-50"
               >
@@ -704,7 +498,7 @@ export function MobileClientView() {
               onNameChange={setProfileName}
               onColorChange={setProfileColor}
               onPhotoUpload={handlePhotoUpload}
-              onSave={handleSaveProfile}
+              onSave={saveProfile}
             />
           )}
         </div>
