@@ -18,6 +18,7 @@ import {
 import { addSong, addSongs, getAllSongs, reloadLibrary, clearCustomSongs } from '@/lib/game/song-library';
 import { storeMedia } from '@/lib/db/media-db';
 import { Song } from '@/types/game';
+import { logger } from '@/lib/logger';
 
 // Duplicate detection result
 interface DuplicateInfo {
@@ -181,7 +182,7 @@ export function ImportScreen({ onImport, onCancel }: ImportScreenProps) {
             const txtBlob = new Blob([txtContent], { type: 'text/plain' });
             await storeMedia(song.id, 'txt', txtBlob);
             song.storedTxt = true;
-            console.log('[Import] Cached TXT content in IndexedDB');
+            logger.info('[Import]', 'Cached TXT content in IndexedDB');
           }
         }
         
@@ -204,10 +205,10 @@ export function ImportScreen({ onImport, onCancel }: ImportScreenProps) {
           if (storedPaths.videoPath) song.relativeVideoPath = storedPaths.videoPath;
           if (storedPaths.txtPath) song.relativeTxtPath = storedPaths.txtPath;
           
-          console.log('[Import] Stored files in AppData:', storedPaths);
+          logger.info('[Import]', 'Stored files in AppData:', storedPaths);
         }
       } catch (mediaErr) {
-        console.warn('[Import] Failed to store media:', mediaErr);
+        logger.warn('[Import]', 'Failed to store media:', mediaErr);
       }
       
       setPreviewSong(song);
