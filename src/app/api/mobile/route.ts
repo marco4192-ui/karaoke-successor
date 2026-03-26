@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 // ===================== TYPES =====================
 interface MobileClient {
@@ -728,7 +729,7 @@ export async function POST(request: NextRequest) {
         // Set ad playing state (from main app)
         const adPayload = payload as { isAdPlaying: boolean };
         gameState.isAdPlaying = adPayload.isAdPlaying;
-        console.log('[Mobile API] Ad state updated:', adPayload.isAdPlaying);
+        logger.debug('[Mobile API]', 'Ad state updated:', adPayload.isAdPlaying);
         return Response.json({ success: true, isAdPlaying: gameState.isAdPlaying });
 
       case 'skipAd':
@@ -749,7 +750,7 @@ export async function POST(request: NextRequest) {
         };
         
         remoteControlState.pendingCommands.push(skipCommand);
-        console.log('[Mobile API] Skip ad command queued from:', skipAdClient.profile?.name || skipAdClient.name);
+        logger.debug('[Mobile API]', 'Skip ad command queued from:', skipAdClient.profile?.name || skipAdClient.name);
         
         return Response.json({ 
           success: true, 
@@ -770,7 +771,7 @@ export async function POST(request: NextRequest) {
         return Response.json({ success: false, message: 'Unknown message type' }, { status: 400 });
     }
   } catch (error) {
-    console.error('Mobile API error:', error);
+    logger.error('[Mobile API]', 'Error:', error);
     return Response.json({ 
       success: false, 
       message: 'Invalid request body' 

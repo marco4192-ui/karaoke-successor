@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, readFile, access, unlink } from 'fs/promises';
 import { constants } from 'fs';
 import path from 'path';
+import { logger } from '@/lib/logger';
 
 // Config file path - check multiple locations
 const getConfigPaths = () => {
@@ -56,7 +57,7 @@ export async function GET() {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Error reading config:', error);
+    logger.error('[API config]', 'Error reading config:', error);
     return NextResponse.json({
       success: false,
       error: message
@@ -108,7 +109,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Error saving config:', error);
+    logger.error('[API config]', 'Error saving config:', error);
     return NextResponse.json({
       success: false,
       error: message
@@ -167,7 +168,7 @@ export async function PUT(request: NextRequest) {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Error testing connection:', error);
+    logger.error('[API config]', 'Error testing connection:', error);
     return NextResponse.json({
       success: false,
       error: message

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ZAI from 'z-ai-web-dev-sdk';
+import { logger } from '@/lib/logger';
 
 // TypeScript types for cover generation
 interface CoverGenerateRequest {
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<CoverGene
     try {
       zai = await ZAI.create();
     } catch (initError) {
-      console.error('[CoverGenerate] Failed to initialize ZAI SDK:', initError);
+      logger.error('[CoverGenerate]', 'Failed to initialize ZAI SDK:', initError);
       return NextResponse.json(
         { success: false, error: 'AI service unavailable' },
         { status: 503 }
@@ -115,14 +116,14 @@ Design requirements:
         image: base64Image,
       });
     } catch (imageError) {
-      console.error('[CoverGenerate] Image generation error:', imageError);
+      logger.error('[CoverGenerate]', 'Image generation error:', imageError);
       return NextResponse.json(
         { success: false, error: 'Image generation failed' },
         { status: 503 }
       );
     }
   } catch (error) {
-    console.error('[CoverGenerate] Error:', error);
+    logger.error('[CoverGenerate]', 'Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return NextResponse.json(
       { success: false, error: errorMessage },

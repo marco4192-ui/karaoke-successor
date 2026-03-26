@@ -8,6 +8,7 @@ import {
   PitchDetectionResult 
 } from '@/lib/audio/pitch-detector';
 import { Difficulty } from '@/types/game';
+import { logger } from '@/lib/logger';
 
 export interface PlayerPitchConfig {
   playerId: string;
@@ -150,7 +151,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
 
       return false;
     } catch (error) {
-      console.error('[useMultiPitchDetector] Initialization failed:', error);
+      logger.error('[useMultiPitchDetector]', 'Initialization failed:', error);
       return false;
     }
   }, [isInitialized, players, difficulty, autoStart]);
@@ -160,7 +161,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
    */
   const start = useCallback(() => {
     if (!managerRef.current || !isInitialized) {
-      console.error('[useMultiPitchDetector] Not initialized');
+      logger.error('[useMultiPitchDetector]', 'Not initialized');
       return;
     }
 
@@ -184,7 +185,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
    */
   const addPlayer = useCallback(async (config: PlayerPitchConfig): Promise<boolean> => {
     if (!managerRef.current) {
-      console.error('[useMultiPitchDetector] Manager not initialized');
+      logger.error('[useMultiPitchDetector]', 'Manager not initialized');
       return false;
     }
 

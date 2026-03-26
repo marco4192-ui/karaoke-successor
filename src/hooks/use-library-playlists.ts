@@ -15,6 +15,7 @@ import {
   initializePlaylists,
   Playlist,
 } from '@/lib/playlist-manager';
+import { logger } from '@/lib/logger';
 
 export interface UseLibraryPlaylistsReturn {
   playlists: Playlist[];
@@ -72,7 +73,7 @@ export function useLibraryPlaylists(): UseLibraryPlaylistsReturn {
       refreshPlaylists();
       return playlist;
     } catch (error) {
-      console.error('Failed to create playlist:', error);
+      logger.error('[useLibraryPlaylists]', 'Failed to create playlist:', error);
       return null;
     }
   }, [refreshPlaylists]);
@@ -88,7 +89,7 @@ export function useLibraryPlaylists(): UseLibraryPlaylistsReturn {
         setSelectedPlaylist(null);
       }
     } catch (error) {
-      console.error('Failed to delete playlist:', error);
+      logger.error('[useLibraryPlaylists]', 'Failed to delete playlist:', error);
     }
   }, [selectedPlaylist, refreshPlaylists]);
 
@@ -108,7 +109,7 @@ export function useLibraryPlaylists(): UseLibraryPlaylistsReturn {
       }
       return success;
     } catch (error) {
-      console.error('Failed to add to playlist:', error);
+      logger.error('[useLibraryPlaylists]', 'Failed to add to playlist:', error);
       return false;
     }
   }, [songToAddToPlaylist, selectedPlaylist, refreshPlaylists]);
@@ -124,7 +125,7 @@ export function useLibraryPlaylists(): UseLibraryPlaylistsReturn {
         setSelectedPlaylist(getPlaylistById(playlistId) || null);
       }
     } catch (error) {
-      console.error('Failed to remove from playlist:', error);
+      logger.error('[useLibraryPlaylists]', 'Failed to remove from playlist:', error);
     }
   }, [selectedPlaylist, refreshPlaylists]);
 
@@ -135,7 +136,7 @@ export function useLibraryPlaylists(): UseLibraryPlaylistsReturn {
       refreshPlaylists();
       return isNowFavorite;
     } catch (error) {
-      console.error('Failed to toggle favorite:', error);
+      logger.error('[useLibraryPlaylists]', 'Failed to toggle favorite:', error);
       return false;
     }
   }, [refreshPlaylists]);
