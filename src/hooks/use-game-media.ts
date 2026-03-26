@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { extractYouTubeId } from '@/components/game/youtube-player';
 import type { Song } from '@/types/game';
+import { logger } from '@/lib/logger';
 
 export interface UseGameMediaOptions {
   song: Song | null;
@@ -153,7 +154,7 @@ export function useGameMedia({
           if (mediaUrls.audioUrl) currentAudioUrl = mediaUrls.audioUrl;
           if (mediaUrls.videoUrl) currentVideoUrl = mediaUrls.videoUrl;
         } catch (e) {
-          console.error('[useGameMedia] Failed to load media from IndexedDB:', e);
+          logger.error('[useGameMedia]', 'Failed to load media from IndexedDB:', e);
         }
       }
 
@@ -196,7 +197,7 @@ export function useGameMedia({
         videoRef.current.play().catch(() => { });
       }
     } catch (error) {
-      console.error('[useGameMedia] Media playback failed:', error);
+      logger.error('[useGameMedia]', 'Media playback failed:', error);
     }
   }, [song, isYouTube, youtubeVideoId]);
 

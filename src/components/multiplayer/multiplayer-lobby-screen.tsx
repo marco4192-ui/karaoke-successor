@@ -20,6 +20,7 @@ import {
 import { getRoomService, RoomPlayer } from '@/lib/multiplayer/room-service';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { PLAYER_COLORS, GameMode, Song } from '@/types/game';
+import { logger } from '@/lib/logger';
 
 // Icons
 function UsersIcon({ className }: { className?: string }) {
@@ -171,9 +172,9 @@ export function MultiplayerLobbyScreen({
       });
 
       setCurrentRoom(room);
-      console.log('[Lobby] Created room:', room.code);
+      logger.debug('[Lobby]', 'Created room:', room.code);
     } catch (err) {
-      console.error('[Lobby] Failed to create room:', err);
+      logger.error('[Lobby]', 'Failed to create room:', err);
       setError('Failed to create room. Please try again.');
     } finally {
       setIsCreating(false);
@@ -198,12 +199,12 @@ export function MultiplayerLobbyScreen({
 
       if (room) {
         setCurrentRoom(room);
-        console.log('[Lobby] Joined room:', room.code);
+        logger.debug('[Lobby]', 'Joined room:', room.code);
       } else {
         setError('Room not found or expired. Please check the code and try again.');
       }
     } catch (err) {
-      console.error('[Lobby] Failed to join room:', err);
+      logger.error('[Lobby]', 'Failed to join room:', err);
       setError('Failed to join room. Please try again.');
     } finally {
       setIsJoining(false);
