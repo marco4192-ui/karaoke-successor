@@ -70,6 +70,7 @@ import { SinglePlayerLyrics } from '@/components/game/single-player-lyrics';
 import { useRemoteControl } from '@/hooks/use-remote-control';
 import { useStarPower } from '@/hooks/use-star-power';
 import { useGameMedia } from '@/hooks/use-game-media';
+import { useGameSong } from '@/hooks/use-game-song';
 import { apiClient } from '@/lib/api-client';
 import { logger } from '@/lib/logger';
 
@@ -184,104 +185,16 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       apiClient.mobileSetAdPlaying(false).catch(() => {});
     },
   });
-  
-  // State for song with restored URLs (if needed)
-  const [restoredSong, setRestoredSong] = useState<Song | null>(null);
-  
-  // On-demand URL restoration for Tauri - ensure media URLs are valid
-  useEffect(() => {
-    if (!song) {
-      setRestoredSong(null);
-      return;
-    }
-    
-    // Check if URLs need to be restored (Tauri songs with relative paths but no URLs)
-    const needsUrlRestore = typeof window !== 'undefined' && '__TAURI__' in window &&
-      (song.relativeAudioPath || song.relativeVideoPath || song.relativeCoverPath) &&
-      (!song.audioUrl && !song.videoBackground);
-    
-    if (needsUrlRestore) {
-      logger.info('[GameScreen]', 'Restoring URLs for song:', song.title);
-      import('@/lib/game/song-library').then(({ restoreSongUrls }) => {
-        restoreSongUrls(song).then(restored => {
-          logger.info('[GameScreen]', 'URLs restored:', {
-            audioUrl: !!restored.audioUrl,
-            videoBackground: !!restored.videoBackground,
-            coverImage: !!restored.coverImage
-          });
-          setRestoredSong(restored);
-        }).catch(err => {
-          logger.error('[GameScreen]', 'Error restoring URLs:', err);
-          setRestoredSong(song);
-        });
-      }).catch(err => {
-        logger.error('[GameScreen]', 'Error importing restoreSongUrls:', err);
-        setRestoredSong(song);
-      });
-    } else {
-      setRestoredSong(song);
-    }
-  }, [song?.id, song?.audioUrl, song?.videoBackground, song?.relativeAudioPath, song?.relativeVideoPath]);
-  
-  // Use restored song if available, otherwise use original song
-  const effectiveSongBase = restoredSong || song;
-  
-  // On-demand lyrics loading - load lyrics from IndexedDB if storedTxt flag is set
-  const [loadedLyrics, setLoadedLyrics] = useState<LyricLine[]>([]);
-  const [lyricsLoadError, setLyricsLoadError] = useState<string | null>(null);
-  
-  useEffect(() => {
-    logger.debug('[GameScreen]', 'Lyrics loading effect triggered', {
-      songId: song?.id,
-      storedTxt: song?.storedTxt,
-      lyricsLength: song?.lyrics?.length || 0
-    });
-    
-    if (song?.storedTxt && (!song.lyrics || song.lyrics.length === 0)) {
-      // Load lyrics on-demand from IndexedDB
-      logger.info('[GameScreen]', 'Loading lyrics from IndexedDB for song:', song.id);
-      setLyricsLoadError(null);
-      
-      import('@/lib/game/song-library').then(({ loadSongLyrics }) => {
-        loadSongLyrics(song).then(lyrics => {
-          logger.info('[GameScreen]', 'Lyrics loaded, length:', lyrics.length);
-          if (lyrics.length > 0) {
-            setLoadedLyrics(lyrics);
-            setLyricsLoadError(null);
-          } else {
-            setLyricsLoadError('Failed to load lyrics from IndexedDB - empty result');
-          }
-        }).catch(err => {
-          logger.error('[GameScreen]', 'Error loading lyrics:', err);
-          setLyricsLoadError(`Error loading lyrics: ${err.message}`);
-        });
-      }).catch(err => {
-        logger.error('[GameScreen]', 'Error importing song-library:', err);
-        setLyricsLoadError(`Error importing module: ${err.message}`);
-      });
-    } else {
-      setLoadedLyrics([]);
-      setLyricsLoadError(null);
-    }
-  }, [song?.id, song?.storedTxt, song?.lyrics]);
-  
-  // Use loaded lyrics if available, otherwise use song's lyrics
-  // Uses effectiveSongBase which has restored URLs
-  const effectiveSong = useMemo(() => {
-    logger.debug('[GameScreen]', 'Computing effectiveSong', {
-      hasSong: !!effectiveSongBase,
-      loadedLyricsLength: loadedLyrics.length,
-      songLyricsLength: effectiveSongBase?.lyrics?.length || 0,
-      lyricsLoadError
-    });
-    
-    if (!effectiveSongBase) return null;
-    if (loadedLyrics.length > 0) {
-      return { ...effectiveSongBase, lyrics: loadedLyrics };
-    }
-    return effectiveSongBase;
-  }, [effectiveSongBase, loadedLyrics, lyricsLoadError]);
-  
+
+  // ===================== GAME SONG HOOK =====================
+  // Use the useGameSong hook for song data management (URL restoration, lyrics loading)
+  const {
+    effectiveSong,
+    lyricsLoadError,
+    isRestoringUrls,
+    isLoadingLyrics,
+  } = useGameSong({ song });
+
   // Load player stats after mount
   useEffect(() => {
     const stats = getExtendedStats();
