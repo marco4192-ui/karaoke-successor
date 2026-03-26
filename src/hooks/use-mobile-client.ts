@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { Song } from '@/types/game';
+import { apiClient } from '@/lib/api-client';
 
 export interface UseMobileClientOptions {
   song: Song | null;
@@ -36,10 +37,9 @@ export function useMobileClient({
 
     const pollMobilePitch = async () => {
       try {
-        const response = await fetch('/api/mobile?action=getpitch');
-        const data = await response.json();
+        const data = await apiClient.mobileGetPitch();
         if (data.success && data.pitch) {
-          setMobilePitch(data.pitch.data);
+          setMobilePitch((data.pitch as { data: MobilePitchData }).data);
           setHasMobileClient(true);
         }
       } catch {
@@ -57,17 +57,10 @@ export function useMobileClient({
     if (!song) return;
 
     try {
-      await fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'gamestate',
-          payload: {
-            currentSong: { id: song.id, title: song.title, artist: song.artist },
-            isPlaying,
-            currentTime,
-          },
-        }),
+      await apiClient.mobileGameState({
+        currentSong: { id: song.id, title: song.title, artist: song.artist },
+        isPlaying,
+        currentTime,
       });
     } catch {
       // Ignore sync errors
@@ -82,14 +75,7 @@ export function useMobileClient({
   // Send ad state to mobile clients
   const sendAdState = useCallback(async (isAdPlaying: boolean) => {
     try {
-      await fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'setAdPlaying',
-          payload: { isAdPlaying },
-        }),
-      });
+      await apiClient.mobileSetAdPlaying(isAdPlaying);
     } catch {
       // Ignore errors
     }

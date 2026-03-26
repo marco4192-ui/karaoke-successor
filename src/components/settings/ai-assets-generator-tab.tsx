@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { apiClient } from '@/lib/api-client';
 
 // Icons
 function SettingsIcon({ className }: { className?: string }) {
@@ -68,11 +69,10 @@ export function AIAssetsGeneratorTab() {
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        const response = await fetch('/api/config');
-        const data = await response.json();
+        const data = await apiClient.getConfig();
         if (data.success && data.config) {
-          setApiBaseUrl(data.config.baseUrl?.replace('/v1', '') || '');
-          setHasApiKey(data.config.hasApiKey || false);
+          setApiBaseUrl((data.config as { baseUrl?: string }).baseUrl?.replace('/v1', '') || '');
+          setHasApiKey((data.config as { hasApiKey?: boolean }).hasApiKey || false);
         }
       } catch (err) {
         console.error('Failed to load config:', err);
@@ -88,15 +88,10 @@ export function AIAssetsGeneratorTab() {
     setConfigSaving(true);
     setConfigMessage(null);
     try {
-      const response = await fetch('/api/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          baseUrl: apiBaseUrl,
-          apiKey: apiKey,
-        }),
+      const data = await apiClient.saveConfig({
+        baseUrl: apiBaseUrl,
+        apiKey: apiKey,
       });
-      const data = await response.json();
       if (data.success) {
         setHasApiKey(!!apiKey);
         setApiKey(''); // Clear input for security
@@ -125,27 +120,21 @@ export function AIAssetsGeneratorTab() {
           return;
         }
 
-        const response = await fetch('/api/assets/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'image',
-            prompt: prompt,
-            filename: `generated-${Date.now()}.png`,
-            size: '1024x1024'
-          })
+        const data = await apiClient.generateAsset({
+          type: 'image',
+          prompt: prompt,
+          filename: `generated-${Date.now()}.png`,
+          size: '1024x1024'
         });
-
-        const data = await response.json();
         
-        if (!response.ok || !data.success) {
+        if (!data.success) {
           throw new Error(data.error || 'Failed to generate image');
         }
 
         setGeneratedAssets(prev => [...prev, { 
           type: 'image', 
-          data: data.image, 
-          filename: data.filename 
+          data: data.image as string, 
+          filename: data.filename as string
         }]);
       } else {
         if (!text.trim()) {
@@ -154,26 +143,20 @@ export function AIAssetsGeneratorTab() {
           return;
         }
 
-        const response = await fetch('/api/assets/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'audio',
-            text: text,
-            filename: `audio-${Date.now()}.wav`
-          })
+        const data = await apiClient.generateAsset({
+          type: 'audio',
+          text: text,
+          filename: `audio-${Date.now()}.wav`
         });
-
-        const data = await response.json();
         
-        if (!response.ok || !data.success) {
+        if (!data.success) {
           throw new Error(data.error || 'Failed to generate audio');
         }
 
         setGeneratedAssets(prev => [...prev, { 
           type: 'audio', 
-          data: data.audio, 
-          filename: data.filename 
+          data: data.audio as string, 
+          filename: data.filename as string
         }]);
       }
     } catch (err: unknown) {
@@ -267,12 +250,7 @@ export function AIAssetsGeneratorTab() {
                 variant="outline"
                 onClick={async () => {
                   try {
-                    const response = await fetch('/api/config', {
-                      method: 'PUT',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ baseUrl: apiBaseUrl, apiKey }),
-                    });
-                    const data = await response.json();
+                    const data = await apiClient.testConfig({ baseUrl: apiBaseUrl, apiKey });
                     if (data.success) {
                       setConfigMessage({ type: 'success', text: '✅ Connection successful!' });
                     } else {

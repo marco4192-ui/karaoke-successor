@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { apiClient } from '@/lib/api-client';
 
 type MobileMode = 'mic' | 'remote' | 'library';
 
@@ -129,11 +130,10 @@ export default function MobilePage() {
   // Connect to server
   const connect = useCallback(async () => {
     try {
-      const res = await fetch('/api/mobile?action=connect');
-      const data = await res.json();
+      const data = await apiClient.mobileConnect();
       if (data.success) {
-        setClientId(data.clientId);
-        setConnectionCode(data.connectionCode);
+        setClientId(data.clientId as string);
+        setConnectionCode(data.connectionCode as string);
         setIsConnected(true);
         setError(null);
       }
@@ -146,10 +146,9 @@ export default function MobilePage() {
   const fetchLibrarySongs = useCallback(async () => {
     setLibraryLoading(true);
     try {
-      const res = await fetch('/api/songs');
-      const data = await res.json();
+      const data = await apiClient.getSongs();
       if (data.success) {
-        setLibrarySongs(data.songs || []);
+        setLibrarySongs((data.songs || []) as LibrarySong[]);
       }
     } catch {
       setError('Failed to load library');
@@ -162,12 +161,11 @@ export default function MobilePage() {
   const fetchQueueStatus = useCallback(async () => {
     if (!clientId) return;
     try {
-      const res = await fetch('/api/mobile?action=getqueue');
-      const data = await res.json();
+      const data = await apiClient.mobileGetQueue();
       if (data.success) {
         // Count songs by this client
-        const myQueueItems = (data.queue || []).filter(
-          (item: { companionCode: string; status: string }) => 
+        const myQueueItems = ((data.queue || []) as Array<{ companionCode: string; status: string }>).filter(
+          (item) => 
             item.companionCode === connectionCode && item.status === 'pending'
         );
         setQueueSlots({ used: myQueueItems.length, max: 3 });
@@ -186,26 +184,17 @@ export default function MobilePage() {
     
     setAddingSongId(song.id);
     try {
-      const res = await fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'queue',
-          clientId,
-          payload: {
-            songId: song.id,
-            songTitle: song.title,
-            songArtist: song.artist,
-          },
-        }),
+      const data = await apiClient.mobileQueue(clientId, {
+        songId: song.id,
+        songTitle: song.title,
+        songArtist: song.artist,
       });
-      const data = await res.json();
       if (data.success) {
         setSuccessMessage(`Added "${song.title}" to queue`);
         setQueueSlots(prev => ({ ...prev, used: prev.used + 1 }));
         setTimeout(() => setSuccessMessage(null), 3000);
       } else {
-        setError(data.message || 'Failed to add song');
+        setError((data as { message?: string }).message || 'Failed to add song');
       }
     } catch {
       setError('Failed to add song to queue');
@@ -218,10 +207,9 @@ export default function MobilePage() {
   const checkRemoteControl = useCallback(async () => {
     if (!clientId) return;
     try {
-      const res = await fetch(`/api/mobile?action=remotecontrol&clientId=${clientId}`);
-      const data = await res.json();
+      const data = await apiClient.mobileGetRemoteControl(clientId);
       if (data.success) {
-        setRemoteControl(data.remoteControl);
+        setRemoteControl(data.remoteControl as RemoteControlState);
       }
     } catch {
       // Silently fail
@@ -231,10 +219,9 @@ export default function MobilePage() {
   // Fetch game state (to detect ads)
   const fetchGameState = useCallback(async () => {
     try {
-      const res = await fetch('/api/mobile?action=gamestate');
-      const data = await res.json();
+      const data = await apiClient.mobileGetGameState();
       if (data.success) {
-        setGameState(data.gameState);
+        setGameState(data.gameState as GameState);
       }
     } catch {
       // Silently fail
@@ -245,12 +232,7 @@ export default function MobilePage() {
   const skipAd = useCallback(async () => {
     if (!clientId) return;
     try {
-      const res = await fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'skipAd', clientId }),
-      });
-      const data = await res.json();
+      const data = await apiClient.mobileAction('skipAd', clientId);
       if (data.success) {
         // Optimistically update local state
         setGameState(prev => ({ ...prev, isAdPlaying: false }));
@@ -265,23 +247,19 @@ export default function MobilePage() {
     if (!clientId) return;
     setIsAcquiringControl(true);
     try {
-      const res = await fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'remote_acquire', clientId }),
-      });
-      const data = await res.json();
+      const data = await apiClient.mobileRemoteAcquire(clientId);
       if (data.success) {
+        const rc = data.remoteControl as { lockedByName: string; lockedAt: number };
         setRemoteControl(prev => ({
           ...prev,
           isLocked: true,
           lockedBy: clientId,
-          lockedByName: data.remoteControl.lockedByName,
-          lockedAt: data.remoteControl.lockedAt,
+          lockedByName: rc.lockedByName,
+          lockedAt: rc.lockedAt,
           iHaveControl: true,
         }));
       } else {
-        setError(data.message || 'Could not acquire control');
+        setError((data as { message?: string }).message || 'Could not acquire control');
         // Refresh state
         checkRemoteControl();
       }
@@ -296,12 +274,7 @@ export default function MobilePage() {
   const releaseControl = useCallback(async () => {
     if (!clientId) return;
     try {
-      const res = await fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'remote_release', clientId }),
-      });
-      const data = await res.json();
+      const data = await apiClient.mobileRemoteRelease(clientId);
       if (data.success) {
         setRemoteControl(prev => ({
           ...prev,
@@ -321,18 +294,9 @@ export default function MobilePage() {
   const sendRemoteCommand = useCallback(async (command: string, data?: unknown) => {
     if (!clientId || !remoteControl.iHaveControl) return;
     try {
-      const res = await fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'remote_command',
-          clientId,
-          payload: { command, data },
-        }),
-      });
-      const result = await res.json();
+      const result = await apiClient.mobileRemoteCommand(clientId, command);
       if (!result.success) {
-        setError(result.message || 'Command failed');
+        setError((result as { message?: string }).message || 'Command failed');
         checkRemoteControl();
       }
     } catch {
@@ -430,11 +394,7 @@ export default function MobilePage() {
       stopMicrophone();
       // Release remote control on unmount
       if (remoteControl.iHaveControl) {
-        fetch('/api/mobile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'remote_release', clientId }),
-        }).catch(() => {});
+        apiClient.mobileRemoteRelease(clientId || '').catch(() => {});
       }
     };
   }, [connect, stopMicrophone]);

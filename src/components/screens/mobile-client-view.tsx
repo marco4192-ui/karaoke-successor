@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { midiToNoteName } from '@/types/game';
+import { apiClient } from '@/lib/api-client';
 
 // ===================== TYPES =====================
 type MobileView = 'home' | 'profile' | 'songs' | 'queue' | 'mic' | 'results' | 'jukebox' | 'remote';
@@ -91,14 +92,13 @@ function RemoteControlView({
   useEffect(() => {
     const pollRemoteState = async () => {
       try {
-        const response = await fetch(`/api/mobile?action=remotecontrol&clientId=${clientId}`);
-        const data = await response.json();
+        const data = await apiClient.mobileGetRemoteControl(clientId || '');
         if (data.success) {
           setRemoteState(prev => ({
             ...prev,
-            hasControl: data.remoteControl.iHaveControl,
-            lockedBy: data.remoteControl.lockedBy,
-            lockedByName: data.remoteControl.lockedByName,
+            hasControl: (data.remoteControl as { iHaveControl: boolean }).iHaveControl,
+            lockedBy: (data.remoteControl as { lockedBy: string | null }).lockedBy,
+            lockedByName: (data.remoteControl as { lockedByName: string | null }).lockedByName,
             isLoading: false,
           }));
         }
@@ -119,30 +119,21 @@ function RemoteControlView({
     setRemoteState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
-      const response = await fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'remote_acquire',
-          clientId,
-        }),
-      });
-      
-      const data = await response.json();
+      const data = await apiClient.mobileRemoteAcquire(clientId);
       
       if (data.success) {
         setRemoteState(prev => ({
           ...prev,
           hasControl: true,
           lockedBy: clientId,
-          lockedByName: data.remoteControl.lockedByName,
+          lockedByName: (data.remoteControl as { lockedByName: string }).lockedByName,
           isLoading: false,
         }));
       } else {
         setRemoteState(prev => ({
           ...prev,
           isLoading: false,
-          error: data.message || 'Failed to acquire control',
+          error: (data as { message?: string }).message || 'Failed to acquire control',
         }));
       }
     } catch {
@@ -161,16 +152,7 @@ function RemoteControlView({
     setRemoteState(prev => ({ ...prev, isLoading: true }));
     
     try {
-      const response = await fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'remote_release',
-          clientId,
-        }),
-      });
-      
-      const data = await response.json();
+      const data = await apiClient.mobileRemoteRelease(clientId);
       
       if (data.success) {
         setRemoteState(prev => ({
@@ -191,17 +173,7 @@ function RemoteControlView({
     if (!clientId || !remoteState.hasControl) return;
     
     try {
-      const response = await fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'remote_command',
-          clientId,
-          payload: { command },
-        }),
-      });
-      
-      const data = await response.json();
+      const data = await apiClient.mobileRemoteCommand(clientId, command);
       
       if (data.success) {
         setCommandSent(command);
@@ -458,26 +430,27 @@ export function MobileClientView() {
       
       if (savedConnectionCode && savedProfile) {
         // Try to reconnect with existing code
-        const reconnectResponse = await fetch(`/api/mobile?action=reconnect&code=${savedConnectionCode}`);
-        const reconnectData = await reconnectResponse.json();
+        const reconnectData = await apiClient.mobileReconnect(savedConnectionCode);
         
         if (reconnectData.success) {
-          setClientId(reconnectData.clientId);
+          setClientId(reconnectData.clientId as string);
           setConnectionCode(savedConnectionCode);
           setIsConnected(true);
           if (reconnectData.profile) {
-            setProfile(reconnectData.profile);
-            setProfileName(reconnectData.profile.name);
-            setProfileColor(reconnectData.profile.color);
-            setAvatarPreview(reconnectData.profile.avatar || null);
+            const profileData = reconnectData.profile as MobileProfile;
+            setProfile(profileData);
+            setProfileName(profileData.name);
+            setProfileColor(profileData.color);
+            setAvatarPreview(profileData.avatar || null);
           }
           if (reconnectData.gameState) {
+            const gs = reconnectData.gameState as { currentSong: { title: string; artist: string } | null; isPlaying: boolean; songEnded?: boolean; queueLength?: number; isAdPlaying?: boolean };
             setGameState({
-              currentSong: reconnectData.gameState.currentSong,
-              isPlaying: reconnectData.gameState.isPlaying,
-              songEnded: reconnectData.gameState.songEnded || false,
-              queueLength: reconnectData.gameState.queueLength || 0,
-              isAdPlaying: reconnectData.gameState.isAdPlaying || false,
+              currentSong: gs.currentSong,
+              isPlaying: gs.isPlaying,
+              songEnded: gs.songEnded || false,
+              queueLength: gs.queueLength || 0,
+              isAdPlaying: gs.isAdPlaying || false,
             });
           }
           return; // Successfully reconnected
@@ -485,11 +458,10 @@ export function MobileClientView() {
       }
       
       // Fresh connection
-      const response = await fetch('/api/mobile?action=connect');
-      const data = await response.json();
+      const data = await apiClient.mobileConnect();
       if (data.success) {
-        const newClientId = data.clientId;
-        const newConnectionCode = data.connectionCode;
+        const newClientId = data.clientId as string;
+        const newConnectionCode = data.connectionCode as string;
         setClientId(newClientId);
         setConnectionCode(newConnectionCode);
         setIsConnected(true);
@@ -498,12 +470,13 @@ export function MobileClientView() {
         localStorage.setItem('karaoke-connection-code', newConnectionCode);
         
         if (data.gameState) {
+          const gs = data.gameState as { currentSong: { title: string; artist: string } | null; isPlaying: boolean; songEnded?: boolean; queueLength?: number; isAdPlaying?: boolean };
           setGameState({
-            currentSong: data.gameState.currentSong,
-            isPlaying: data.gameState.isPlaying,
-            songEnded: data.gameState.songEnded || false,
-            queueLength: data.gameState.queueLength || 0,
-            isAdPlaying: data.gameState.isAdPlaying || false,
+            currentSong: gs.currentSong,
+            isPlaying: gs.isPlaying,
+            songEnded: gs.songEnded || false,
+            queueLength: gs.queueLength || 0,
+            isAdPlaying: gs.isAdPlaying || false,
           });
         }
         
@@ -516,19 +489,10 @@ export function MobileClientView() {
           setAvatarPreview(parsed.avatar || null);
           // Sync profile to server after connection
           try {
-            const syncResponse = await fetch('/api/mobile', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                type: 'profile',
-                clientId: newClientId,
-                payload: parsed,
-              }),
-            });
-            const syncData = await syncResponse.json();
+            const syncData = await apiClient.mobileProfile(newClientId, parsed);
             if (syncData.connectionCode) {
-              setConnectionCode(syncData.connectionCode);
-              localStorage.setItem('karaoke-connection-code', syncData.connectionCode);
+              setConnectionCode(syncData.connectionCode as string);
+              localStorage.setItem('karaoke-connection-code', syncData.connectionCode as string);
             }
           } catch {
             // Ignore sync errors
@@ -546,19 +510,10 @@ export function MobileClientView() {
   const syncProfile = useCallback(async (profileData: MobileProfile) => {
     if (!clientId) return;
     try {
-      const response = await fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'profile',
-          clientId,
-          payload: profileData,
-        }),
-      });
-      const data = await response.json();
+      const data = await apiClient.mobileProfile(clientId, profileData);
       if (data.connectionCode) {
-        setConnectionCode(data.connectionCode);
-        localStorage.setItem('karaoke-connection-code', data.connectionCode);
+        setConnectionCode(data.connectionCode as string);
+        localStorage.setItem('karaoke-connection-code', data.connectionCode as string);
       }
     } catch {
       // Ignore sync errors
@@ -600,10 +555,9 @@ export function MobileClientView() {
   const loadSongs = useCallback(async () => {
     setSongsLoading(true);
     try {
-      const response = await fetch('/api/songs');
-      if (response.ok) {
-        const data = await response.json();
-        setSongs(data.songs || []);
+      const data = await apiClient.getSongs();
+      if (data.success) {
+        setSongs((data.songs || []) as MobileSong[]);
       } else {
         const savedSongs = localStorage.getItem('karaoke-songs');
         if (savedSongs) {
@@ -635,33 +589,23 @@ export function MobileClientView() {
     setQueueError(null);
     
     try {
-      const response = await fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'queue',
-          clientId,
-          payload: {
-            songId: song.id,
-            songTitle: song.title,
-            songArtist: song.artist,
-          },
-        }),
+      const data = await apiClient.mobileQueue(clientId, {
+        songId: song.id,
+        songTitle: song.title,
+        songArtist: song.artist,
       });
-      
-      const data = await response.json();
       
       if (data.success) {
         setQueue(prev => [...prev, {
-          id: data.queueItem.id,
+          id: (data.queueItem as { id: string }).id,
           songId: song.id,
           songTitle: song.title,
           songArtist: song.artist,
           addedBy: profile.name,
           status: 'pending',
         }]);
-        setSlotsRemaining(data.slotsRemaining ?? Math.max(0, slotsRemaining - 1));
-      } else if (data.queueFull) {
+        setSlotsRemaining((data.slotsRemaining as number) ?? Math.max(0, slotsRemaining - 1));
+      } else if ((data as { queueFull?: boolean }).queueFull) {
         setQueueError('Maximum 3 songs in queue!');
         setSlotsRemaining(0);
         setTimeout(() => setQueueError(null), 3000);
@@ -675,13 +619,12 @@ export function MobileClientView() {
   // Get queue from server
   const loadQueue = useCallback(async () => {
     try {
-      const response = await fetch('/api/mobile?action=getqueue');
-      const data = await response.json();
+      const data = await apiClient.mobileGetQueue();
       if (data.success) {
-        const serverQueue = data.queue || [];
-        setQueue(serverQueue);
+        const serverQueue = (data.queue || []) as Array<{ status: string }>;
+        setQueue(serverQueue as typeof queue);
         // Calculate remaining slots
-        const pendingCount = serverQueue.filter((q: { status: string }) => q.status === 'pending').length;
+        const pendingCount = serverQueue.filter((q) => q.status === 'pending').length;
         setSlotsRemaining(Math.max(0, 3 - pendingCount));
       }
     } catch {
@@ -692,10 +635,9 @@ export function MobileClientView() {
   // Load game results for social features
   const loadGameResults = useCallback(async () => {
     try {
-      const response = await fetch('/api/mobile?action=results');
-      const data = await response.json();
+      const data = await apiClient.mobileGetResults();
       if (data.success && data.results) {
-        setGameResults(data.results);
+        setGameResults(data.results as GameResults);
         setShowScoreCard(true);
       }
     } catch {
@@ -711,18 +653,10 @@ export function MobileClientView() {
     }
     
     try {
-      await fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'jukebox',
-          clientId,
-          payload: {
-            songId: song.id,
-            songTitle: song.title,
-            songArtist: song.artist,
-          },
-        }),
+      await apiClient.mobileAction('jukebox', clientId, {
+        songId: song.id,
+        songTitle: song.title,
+        songArtist: song.artist,
       });
       
       setJukeboxWishlist(prev => [...prev, {
@@ -739,10 +673,9 @@ export function MobileClientView() {
   // Load Jukebox wishlist
   const loadJukeboxWishlist = useCallback(async () => {
     try {
-      const response = await fetch('/api/mobile?action=getjukebox');
-      const data = await response.json();
+      const data = await apiClient.mobileGetJukebox();
       if (data.success) {
-        setJukeboxWishlist(data.wishlist || []);
+        setJukeboxWishlist((data.wishlist || []) as typeof jukeboxWishlist);
       }
     } catch {
       // Ignore errors
@@ -855,20 +788,12 @@ export function MobileClientView() {
         
         // Only send pitch if song is playing and not ended
         if (clientId && gameState.isPlaying && !gameState.songEnded && (volume > 0.01 || frequency !== null)) {
-          fetch('/api/mobile', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              type: 'pitch',
-              clientId,
-              payload: {
-                frequency,
-                note,
-                clarity: 0,
-                volume,
-                timestamp: Date.now(),
-              },
-            }),
+          apiClient.mobilePitch(clientId, {
+            frequency,
+            note,
+            clarity: 0,
+            volume,
+            timestamp: Date.now(),
           }).catch(() => {});
         }
         
@@ -911,7 +836,7 @@ export function MobileClientView() {
     return () => {
       stopMicrophone();
       if (clientId) {
-        fetch(`/api/mobile?action=disconnect&clientId=${clientId}`).catch(() => {});
+        apiClient.mobileDisconnect(clientId).catch(() => {});
       }
       if (heartbeatIntervalRef.current) {
         clearInterval(heartbeatIntervalRef.current);
@@ -930,11 +855,7 @@ export function MobileClientView() {
     
     const sendHeartbeat = async () => {
       try {
-        await fetch('/api/mobile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'heartbeat', clientId }),
-        });
+        await apiClient.mobileHeartbeat(clientId);
       } catch {
         // Ignore heartbeat errors
       }
@@ -956,20 +877,19 @@ export function MobileClientView() {
     
     const syncInterval = setInterval(async () => {
       try {
-        const response = await fetch('/api/mobile?action=gamestate');
-        const data = await response.json();
+        const data = await apiClient.mobileGetGameState();
         if (data.success && data.gameState) {
+          const gs = data.gameState as { currentSong: { title: string; artist: string } | null; isPlaying: boolean; songEnded?: boolean; queueLength?: number; isAdPlaying?: boolean };
           const prevSongEnded = gameState.songEnded;
-          const newSongEnded = data.gameState.songEnded || false;
+          const newSongEnded = gs.songEnded || false;
           const wasPlaying = gameState.isPlaying;
-          const nowPlaying = data.gameState.isPlaying;
           
           setGameState({
-            currentSong: data.gameState.currentSong,
-            isPlaying: data.gameState.isPlaying,
+            currentSong: gs.currentSong,
+            isPlaying: gs.isPlaying,
             songEnded: newSongEnded,
-            queueLength: data.gameState.queueLength || 0,
-            isAdPlaying: data.gameState.isAdPlaying || false,
+            queueLength: gs.queueLength || 0,
+            isAdPlaying: gs.isAdPlaying || false,
           });
           
           // Stop microphone when song ends
@@ -1245,14 +1165,7 @@ export function MobileClientView() {
                       <Button
                         onClick={async () => {
                           try {
-                            await fetch('/api/mobile', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({
-                                type: 'skipAd',
-                                clientId: clientId,
-                              }),
-                            });
+                            await apiClient.mobileAction('skipAd', clientId || undefined);
                           } catch (error) {
                             console.error('Skip ad failed:', error);
                           }

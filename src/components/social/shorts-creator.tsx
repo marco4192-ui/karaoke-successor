@@ -6,6 +6,7 @@ import { Slider } from '@/components/ui/slider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Song, HighscoreEntry, GameResult } from '@/types/game';
+import { apiClient } from '@/lib/api-client';
 
 interface ShortsCreatorProps {
   song: Song;
@@ -63,7 +64,7 @@ export function ShortsCreator({ song, score, gameResult, audioUrl, onClose }: Sh
     setIsRequestingMobileCamera(true);
     try {
       // Signal to mobile app to start camera
-      await fetch('/api/mobile?action=requestCameraStart', { method: 'POST' });
+      await apiClient.post('/api/mobile', { action: 'requestCameraStart' });
       setMobileCameraConnected(true);
     } catch {
       setCameraError('Failed to connect to mobile camera');

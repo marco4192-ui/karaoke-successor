@@ -26,6 +26,7 @@ import { WebcamSettingsPanel, WebcamBackground } from '@/components/game/webcam-
 import { LiveStreamingPanel } from '@/components/streaming/live-streaming';
 import { leaderboardService } from '@/lib/api/leaderboard-service';
 import { ImportScreen } from '@/components/import/import-screen';
+import { apiClient } from '@/lib/api-client';
 // Tab components (refactored)
 import { AIAssetsGeneratorTab } from '@/components/settings/ai-assets-generator-tab';
 import { EditorSettingsTab } from '@/components/settings/editor-settings-tab';
@@ -1573,10 +1574,9 @@ function MobileDeviceMicrophoneSection() {
   useEffect(() => {
     const pollClients = async () => {
       try {
-        const res = await fetch('/api/mobile?action=clients');
-        const data = await res.json();
+        const data = await apiClient.get('/api/mobile', { action: 'clients' });
         if (data.clients) {
-          setConnectedClients(data.clients);
+          setConnectedClients(data.clients as typeof connectedClients);
         }
       } catch {
         // Ignore

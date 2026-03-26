@@ -2,6 +2,7 @@
 
 import { useEffect, RefObject } from 'react';
 import { toast } from '@/hooks/use-toast';
+import { apiClient } from '@/lib/api-client';
 
 /**
  * Remote control command types from mobile companions
@@ -54,10 +55,9 @@ export function useRemoteControl({
   useEffect(() => {
     const pollRemoteCommands = async () => {
       try {
-        const response = await fetch('/api/mobile?action=getcommands');
-        const data = await response.json();
+        const data = await apiClient.mobileGetCommands();
         
-        if (data.success && data.commands && data.commands.length > 0) {
+        if (data.success && data.commands && (data.commands as RemoteCommand[]).length > 0) {
           // Process each command
           for (const cmd of data.commands as RemoteCommand[]) {
             switch (cmd.type) {

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { apiClient } from '@/lib/api-client';
 
 // QR Code generator (simple version)
 function generateQRCode(data: string): string {
@@ -157,11 +158,10 @@ export function MobileScreen() {
     
     const pollClients = async () => {
       try {
-        const response = await fetch('/api/mobile?action=status');
-        const data = await response.json();
+        const data = await apiClient.mobileStatus();
         if (data.success) {
-          setConnectedClients(data.clients || []);
-          setMobileQueue(data.queue || []);
+          setConnectedClients((data.clients || []) as typeof connectedClients);
+          setMobileQueue((data.queue || []) as typeof mobileQueue);
         }
       } catch {
         // Ignore polling errors

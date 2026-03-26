@@ -69,6 +69,7 @@ import { NoteHighway } from '@/components/game/note-highway';
 import { SinglePlayerLyrics } from '@/components/game/single-player-lyrics';
 import { useRemoteControl } from '@/hooks/use-remote-control';
 import { useStarPower } from '@/hooks/use-star-power';
+import { apiClient } from '@/lib/api-client';
 
 // ===================== HOME SCREEN =====================
 // HomeScreen has been moved to /src/components/screens/home-screen.tsx
@@ -444,10 +445,9 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     
     const pollMobilePitch = async () => {
       try {
-        const response = await fetch('/api/mobile?action=getpitch');
-        const data = await response.json();
+        const data = await apiClient.mobileGetPitch();
         if (data.success && data.pitch) {
-          setMobilePitch(data.pitch.data);
+          setMobilePitch((data.pitch as { data: { frequency: number | null; note: number | null; volume: number } }).data);
           setHasMobileClient(true);
         }
       } catch {
@@ -477,17 +477,10 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     
     const updateGameState = async () => {
       try {
-        await fetch('/api/mobile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'gamestate',
-            payload: {
-              currentSong: { id: song.id, title: song.title, artist: song.artist },
-              isPlaying: isPlaying,
-              currentTime: gameState.currentTime,
-            },
-          }),
+        await apiClient.mobileGameState({
+          currentSong: { id: song.id, title: song.title, artist: song.artist },
+          isPlaying: isPlaying,
+          currentTime: gameState.currentTime,
         });
       } catch {
         // Ignore sync errors
@@ -604,14 +597,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     }
     
     // Sync ad state to mobile clients
-    fetch('/api/mobile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'setAdPlaying',
-        payload: { isAdPlaying: true },
-      }),
-    }).catch(() => {});
+    apiClient.mobileSetAdPlaying(true).catch(() => {});
   }, [isPlaying]);
   
   const handleAdEnd = useCallback(() => {
@@ -622,14 +608,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     setIsPlaying(true);
     
     // Sync ad state to mobile clients
-    fetch('/api/mobile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'setAdPlaying',
-        payload: { isAdPlaying: false },
-      }),
-    }).catch(() => {});
+    apiClient.mobileSetAdPlaying(false).catch(() => {});
   }, []);
   
   // Ad countdown effect
@@ -979,22 +958,15 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     setResults(results);
     
     // Send results to mobile clients for social features
-    fetch('/api/mobile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'results',
-        payload: {
-          songId: song.id,
-          songTitle: song.title,
-          songArtist: song.artist,
-          score: activePlayer.score,
-          accuracy,
-          maxCombo: activePlayer.maxCombo,
-          rating,
-          playedAt: Date.now(),
-        },
-      }),
+    apiClient.mobileResults({
+      songId: song.id,
+      songTitle: song.title,
+      songArtist: song.artist,
+      score: activePlayer.score,
+      accuracy,
+      maxCombo: activePlayer.maxCombo,
+      rating,
+      playedAt: Date.now(),
     }).catch(() => {});
   }, [gameState.players, song, setResults]);
   
@@ -1030,18 +1002,11 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     
     // Notify mobile clients that song ended
     if (song) {
-      fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'gamestate',
-          payload: {
-            currentSong: { id: song.id, title: song.title, artist: song.artist },
-            isPlaying: false,
-            currentTime: 0,
-            songEnded: true,
-          },
-        }),
+      apiClient.mobileGameState({
+        currentSong: { id: song.id, title: song.title, artist: song.artist },
+        isPlaying: false,
+        currentTime: 0,
+        songEnded: true,
       }).catch(() => {});
     }
     

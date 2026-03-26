@@ -1,6 +1,8 @@
 // AI Service: Lyrics Assistant
 // Provides suggestions for lyrics improvement
 
+import { apiClient } from '@/lib/api-client';
+
 export interface LyricSuggestion {
   lineIndex: number;
   original: string;
@@ -34,31 +36,24 @@ export async function analyzeLyrics(
   }
 ): Promise<LyricsAnalysisResult> {
   try {
-    const response = await fetch('/api/lyrics-suggestions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        lyrics: lyrics.map(l => l.text),
-        title: options?.title,
-        artist: options?.artist,
-        bpm: options?.bpm,
-        checkTiming: options?.checkTiming ?? true,
-        checkSpelling: options?.checkSpelling ?? true,
-        checkGaps: options?.checkGaps ?? true,
-      }),
+    const result = await apiClient.getLyricsSuggestions({
+      lyrics: lyrics.map(l => l.text),
+      title: options?.title,
+      artist: options?.artist,
+      bpm: options?.bpm,
+      checkTiming: options?.checkTiming ?? true,
+      checkSpelling: options?.checkSpelling ?? true,
+      checkGaps: options?.checkGaps ?? true,
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      return { success: false, error: error.error || 'Failed to analyze lyrics' };
+    
+    if (!result.success) {
+      return { success: false, error: result.error || 'Failed to analyze lyrics' };
     }
-
-    const result = await response.json();
     
     return {
       success: true,
-      suggestions: result.suggestions || [],
-      detectedLanguage: result.detectedLanguage,
+      suggestions: (result.suggestions as LyricSuggestion[]) || [],
+      detectedLanguage: result.detectedLanguage as string,
       wordCount: lyrics.reduce((acc, l) => acc + l.text.split(/\s+/).length, 0),
       lineCount: lyrics.length,
     };
@@ -78,28 +73,22 @@ export async function getLineCorrection(
   context?: { prevLine?: string; nextLine?: string; language?: string }
 ): Promise<{ success: boolean; correction?: string; reason?: string }> {
   try {
-    const response = await fetch('/api/lyrics-suggestions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        lyrics: [context?.prevLine, line, context?.nextLine].filter(Boolean),
-        singleLine: true,
-        language: context?.language,
-      }),
+    const result = await apiClient.getLyricsSuggestions({
+      lyrics: [context?.prevLine, line, context?.nextLine].filter(Boolean) as string[],
+      singleLine: true,
+      language: context?.language,
     });
-
-    const result = await response.json();
     
-    if (result.suggestions && result.suggestions.length > 0) {
+    if (result.suggestions && (result.suggestions as LyricSuggestion[]).length > 0) {
       return {
         success: true,
-        correction: result.suggestions[0].suggested,
-        reason: result.suggestions[0].reason,
+        correction: (result.suggestions as LyricSuggestion[])[0].suggested,
+        reason: (result.suggestions as LyricSuggestion[])[0].reason,
       };
     }
 
     return { success: true }; // No correction needed
-  } catch (error) {
+  } catch {
     return { success: false };
   }
 }
@@ -109,14 +98,12 @@ export async function getLineCorrection(
  */
 export async function detectLanguage(text: string): Promise<string | null> {
   try {
-    const response = await fetch('/api/lyrics-suggestions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lyrics: [text], detectOnly: true }),
+    const result = await apiClient.getLyricsSuggestions({
+      lyrics: [text],
+      detectOnly: true,
     });
 
-    const result = await response.json();
-    return result.detectedLanguage || null;
+    return result.detectedLanguage as string || null;
   } catch {
     return null;
   }

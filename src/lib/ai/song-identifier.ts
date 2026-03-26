@@ -1,6 +1,8 @@
 // AI Service: Song Identification
 // Uses web search and LLM to identify song metadata from filename or lyrics
 
+import { apiClient } from '@/lib/api-client';
+
 export interface SongMetadata {
   title: string;
   artist: string;
@@ -36,25 +38,18 @@ export async function identifySong(
   }
 
   try {
-    const response = await fetch('/api/song-identify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ input, type }),
-    });
+    const result = await apiClient.identifySong(input, type);
 
-    if (!response.ok) {
-      const error = await response.json();
-      return { success: false, error: error.error || 'Failed to identify song' };
+    if (!result.success) {
+      return { success: false, error: result.error || 'Failed to identify song' };
     }
 
-    const result = await response.json();
-    
     // Cache the result
     if (result.metadata) {
-      cache.set(cacheKey, { data: result.metadata, timestamp: Date.now() });
+      cache.set(cacheKey, { data: result.metadata as SongMetadata, timestamp: Date.now() });
     }
 
-    return result;
+    return result as IdentifyResult;
   } catch (error) {
     return { 
       success: false, 
