@@ -32,6 +32,7 @@ import { useGameStore } from '@/lib/game/store';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { evaluateTick, calculateTickPoints, calculateScoringMetadata, getRelativePitchDiff } from '@/lib/game/scoring';
 import { getMultiMicrophoneManager, MultiMicrophoneManager } from '@/lib/audio/microphone-manager';
+import { logger } from '@/lib/logger';
 
 interface BattleRoyaleSetupProps {
   profiles: PlayerProfile[];
@@ -476,7 +477,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame }: B
           if (mediaUrls.audioUrl) audioUrl = mediaUrls.audioUrl;
           if (mediaUrls.videoUrl) videoUrl = mediaUrls.videoUrl;
         } catch (e) {
-          console.error('Failed to load media from IndexedDB:', e);
+          logger.error('[BattleRoyale]', 'Failed to load media from IndexedDB:', e);
         }
       }
       
@@ -577,10 +578,10 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame }: B
         
         // Start audio/video playback
         if (audioRef.current && currentSong.audioUrl) {
-          audioRef.current.play().catch(e => console.error('Audio play error:', e));
+          audioRef.current.play().catch(e => logger.error('[BattleRoyale]', 'Audio play error:', e));
         }
         if (videoRef.current && currentSong.videoBackground) {
-          videoRef.current.play().catch(e => console.error('Video play error:', e));
+          videoRef.current.play().catch(e => logger.error('[BattleRoyale]', 'Video play error:', e));
         }
         
         // Start game loop for simultaneous scoring
