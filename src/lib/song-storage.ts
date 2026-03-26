@@ -1,6 +1,8 @@
 // IndexedDB-based persistent storage for songs and media files
 // This ensures songs persist across app restarts
 
+import { LyricLine } from '@/types/game';
+
 const DB_NAME = 'karaoke-successor-db';
 const DB_VERSION = 1;
 const SONGS_STORE = 'songs';
@@ -20,7 +22,7 @@ export interface StoredSong {
   gap: number;
   start?: number;
   videoGap?: number;
-  lyrics: any[]; // LyricLine[]
+  lyrics: LyricLine[];
   preview?: {
     startTime: number;
     duration: number;

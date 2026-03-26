@@ -17,7 +17,7 @@ export interface GameSettingConfig {
   max?: number;
   step?: number;
   options?: { value: string | number; label: string }[];
-  defaultValue: any;
+  defaultValue: string | number | boolean;
   unit?: string;
 }
 

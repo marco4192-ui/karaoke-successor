@@ -111,10 +111,11 @@ export async function POST(request: NextRequest) {
           image: base64,
           filename 
         });
-      } catch (fetchError: any) {
+      } catch (fetchError) {
+        const message = fetchError instanceof Error ? fetchError.message : 'Unknown error';
         console.error('Image fetch error:', fetchError);
         return NextResponse.json({ 
-          error: `Connection failed: ${fetchError.message}. Check if API URL is correct.`
+          error: `Connection failed: ${message}. Check if API URL is correct.`
         }, { status: 503 });
       }
     }
@@ -155,18 +156,20 @@ export async function POST(request: NextRequest) {
           audio: base64,
           filename 
         });
-      } catch (fetchError: any) {
+      } catch (fetchError) {
+        const message = fetchError instanceof Error ? fetchError.message : 'Unknown error';
         console.error('TTS fetch error:', fetchError);
         return NextResponse.json({ 
-          error: `Connection failed: ${fetchError.message}. Check if API URL is correct.`
+          error: `Connection failed: ${message}. Check if API URL is correct.`
         }, { status: 503 });
       }
     }
 
     return NextResponse.json({ error: 'Invalid type. Use "image" or "audio"' }, { status: 400 });
-  } catch (error: any) {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('Asset generation error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -196,7 +199,7 @@ export async function PUT(request: NextRequest) {
       'X-Token': config.apiKey,
     };
 
-    const results: { filename: any; type?: string; success: boolean; data?: any; error?: string }[] = [];
+    const results: { filename: string; type?: string; success: boolean; data?: string; error?: string }[] = [];
 
     for (const asset of assets) {
       try {
@@ -256,17 +259,19 @@ export async function PUT(request: NextRequest) {
             });
           }
         }
-      } catch (err: any) {
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
         results.push({ 
           filename: asset.filename, 
           success: false, 
-          error: err.message 
+          error: message 
         });
       }
     }
 
     return NextResponse.json({ success: true, results });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

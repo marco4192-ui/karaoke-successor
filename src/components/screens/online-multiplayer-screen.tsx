@@ -6,9 +6,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useGameStore } from '@/lib/game/store';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
-import { OnlineLobby } from '@/components/multiplayer/online-lobby';
+import { OnlineLobby, OnlineRoom, OnlinePlayer } from '@/components/multiplayer/online-lobby';
 import { YouTubePlayer } from '@/components/game/youtube-player';
 import { Song, midiToNoteName } from '@/types/game';
+import { Socket } from 'socket.io-client';
 
 // ===================== ICONS =====================
 function MicIcon({ className }: { className?: string }) {
@@ -34,15 +35,28 @@ interface NoteProgress {
   wasPerfect: boolean;
 }
 
+// Game-ended event data types
+interface GameEndedPlayerResult {
+  id: string;
+  name: string;
+  score: number;
+  accuracy: number;
+}
+
+interface GameEndedData {
+  winner: GameEndedPlayerResult;
+  players: GameEndedPlayerResult[];
+}
+
 // ===================== ONLINE MULTIPLAYER SCREEN =====================
 export function OnlineMultiplayerScreen({ onBack }: { onBack: () => void }) {
   const { setSong, setGameMode } = useGameStore();
   const [showGame, setShowGame] = useState(false);
-  const [onlineRoom, setOnlineRoom] = useState<any>(null);
-  const [socketRef, setSocketRef] = useState<any>(null);
+  const [onlineRoom, setOnlineRoom] = useState<OnlineRoom | null>(null);
+  const [socketRef, setSocketRef] = useState<Socket | null>(null);
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   
-  const handleStartGame = useCallback((room: any, socket: any, song: Song) => {
+  const handleStartGame = useCallback((room: OnlineRoom, socket: Socket, song: Song) => {
     setOnlineRoom(room);
     setSocketRef(socket);
     setSelectedSong(song);
@@ -76,7 +90,7 @@ export function OnlineMultiplayerScreen({ onBack }: { onBack: () => void }) {
 }
 
 // Online game screen with real-time score synchronization
-function OnlineGameScreen({ room, socket, song, onEnd }: { room: any; socket: any; song: Song; onEnd: () => void }) {
+function OnlineGameScreen({ room, socket, song, onEnd }: { room: OnlineRoom; socket: Socket; song: Song; onEnd: () => void }) {
   const { gameState, setSong, setCurrentTime, setDetectedPitch, updatePlayer, endGame, setResults } = useGameStore();
   const { isInitialized, isListening, pitchResult, initialize, start, stop } = usePitchDetector();
   
@@ -93,11 +107,11 @@ function OnlineGameScreen({ room, socket, song, onEnd }: { room: any; socket: an
   const [opponentAccuracy, setOpponentAccuracy] = useState(0);
   const [opponentName, setOpponentName] = useState('');
   const [gameEnded, setGameEnded] = useState(false);
-  const [winner, setWinner] = useState<any>(null);
+  const [winner, setWinner] = useState<GameEndedPlayerResult | null>(null);
   
   // Get opponent info
   const myId = socket?.id;
-  const opponent = room.players?.find((p: any) => p.id !== myId);
+  const opponent = room.players?.find((p: OnlinePlayer) => p.id !== myId);
   
   useEffect(() => {
     if (opponent) {
@@ -139,7 +153,7 @@ function OnlineGameScreen({ room, socket, song, onEnd }: { room: any; socket: an
       setOpponentAccuracy(data.accuracy);
     });
     
-    socket.on('game-ended', (data: { winner: any; players: any[] }) => {
+    socket.on('game-ended', (data: GameEndedData) => {
       setGameEnded(true);
       setWinner(data.winner);
       
@@ -148,8 +162,8 @@ function OnlineGameScreen({ room, socket, song, onEnd }: { room: any; socket: an
       stop();
       
       // Set results
-      const myResult = data.players.find((p: any) => p.id === myId);
-      const opponentResult = data.players.find((p: any) => p.id !== myId);
+      const myResult = data.players.find((p: GameEndedPlayerResult) => p.id === myId);
+      const opponentResult = data.players.find((p: GameEndedPlayerResult) => p.id !== myId);
       
       if (myResult && song) {
         setResults({
