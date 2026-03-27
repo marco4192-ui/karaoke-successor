@@ -1,24 +1,26 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  createTournament, 
   getMatchesForRound, 
   getPlayableMatches, 
-  recordMatchResult, 
   getTournamentStats,
   TournamentBracket,
-  TournamentPlayer,
   TournamentMatch,
-  TournamentSettings,
 } from '@/lib/game/tournament';
-import { Song, PlayerProfile, PLAYER_COLORS, Difficulty } from '@/types/game';
-import { getAllSongs } from '@/lib/game/song-library';
-import { useGameStore } from '@/lib/game/store';
+import { Song, PlayerProfile } from '@/types/game';
+import {
+  useTournamentSetup,
+  TournamentSettingsCard,
+  TournamentPlayerSelector,
+  PlayerDisplay,
+  BracketMatchCard,
+} from '@/components/tournament';
 
+// ===================== SETUP SCREEN =====================
 interface TournamentScreenProps {
   profiles: PlayerProfile[];
   songs: Song[];
@@ -27,66 +29,24 @@ interface TournamentScreenProps {
 }
 
 export function TournamentSetupScreen({ profiles, songs, onStartTournament, onBack }: TournamentScreenProps) {
-  const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
-  const [maxPlayers, setMaxPlayers] = useState<2 | 4 | 8 | 16 | 32>(8);
-  const [shortMode, setShortMode] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Filter to only show active profiles (isActive === true or undefined for backwards compatibility)
-  const activeProfiles = useMemo(() => 
-    profiles.filter(p => p.isActive !== false),
-    [profiles]
-  );
-
-  // Use global difficulty from store instead of local state
-  const globalDifficulty = useGameStore((state) => state.gameState.difficulty);
-  const setGlobalDifficulty = useGameStore((state) => state.setDifficulty);
-  const difficulty = globalDifficulty;
-
-  const togglePlayer = (playerId: string) => {
-    setSelectedPlayers(prev => {
-      if (prev.includes(playerId)) {
-        return prev.filter(id => id !== playerId);
-      }
-      if (prev.length >= maxPlayers) {
-        setError(`Maximum ${maxPlayers} players allowed`);
-        return prev;
-      }
-      setError(null);
-      return [...prev, playerId];
-    });
-  };
+  const {
+    selectedPlayers,
+    maxPlayers,
+    shortMode,
+    error,
+    activeProfiles,
+    globalDifficulty,
+    togglePlayer,
+    updateMaxPlayers,
+    setShortMode,
+    setGlobalDifficulty,
+    createTournamentBracket,
+  } = useTournamentSetup(profiles);
 
   const handleStartTournament = () => {
-    if (selectedPlayers.length < 2) {
-      setError('Minimum 2 players required');
-      return;
-    }
-    
-    const players: TournamentPlayer[] = selectedPlayers.map((id, index) => {
-      const profile = profiles.find(p => p.id === id);
-      return {
-        id,
-        name: profile?.name || 'Unknown',
-        avatar: profile?.avatar,
-        color: profile?.color || PLAYER_COLORS[index % PLAYER_COLORS.length],
-        eliminated: false,
-        seed: index + 1,
-      };
-    });
-
-    const settings: TournamentSettings = {
-      maxPlayers,
-      songDuration: shortMode ? 60 : 180, // 60s for short mode, 3 min for full
-      randomSongs: true,
-      difficulty,
-    };
-
-    try {
-      const bracket = createTournament(players, settings);
-      onStartTournament(bracket, settings.songDuration);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create tournament');
+    const result = createTournamentBracket();
+    if (result) {
+      onStartTournament(result.bracket, result.songDuration);
     }
   };
 
@@ -109,112 +69,22 @@ export function TournamentSetupScreen({ profiles, songs, onStartTournament, onBa
       )}
 
       {/* Tournament Settings */}
-      <Card className="bg-white/5 border-white/10 mb-6">
-        <CardHeader>
-          <CardTitle>Tournament Settings</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Max Players */}
-          <div>
-            <label className="text-sm text-white/60 mb-2 block">Bracket Size</label>
-            <div className="flex gap-2 flex-wrap">
-              {[2, 4, 8, 16, 32].map(size => (
-                <Button
-                  key={size}
-                  variant={maxPlayers === size ? 'default' : 'outline'}
-                  onClick={() => {
-                    setMaxPlayers(size as 2 | 4 | 8 | 16 | 32);
-                    if (selectedPlayers.length > size) {
-                      setSelectedPlayers(prev => prev.slice(0, size));
-                    }
-                  }}
-                  className={maxPlayers === size ? 'bg-amber-500 hover:bg-amber-600' : 'border-white/20'}
-                >
-                  {size} {size === 2 ? 'Duel' : 'Players'}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Short Mode */}
-          <div className="flex items-center justify-between">
-            <div>
-              <label className="font-medium">Short Mode</label>
-              <p className="text-sm text-white/60">Each match lasts only 60 seconds</p>
-            </div>
-            <Button
-              variant={shortMode ? 'default' : 'outline'}
-              onClick={() => setShortMode(!shortMode)}
-              className={shortMode ? 'bg-green-500 hover:bg-green-600' : 'border-white/20'}
-            >
-              {shortMode ? '✓ 60 Seconds' : 'Full Song'}
-            </Button>
-          </div>
-
-          {/* Difficulty */}
-          <div>
-            <label className="text-sm text-white/60 mb-2 block">Difficulty</label>
-            <div className="flex gap-2">
-              {['easy', 'medium', 'hard'].map(diff => (
-                <Button
-                  key={diff}
-                  variant={difficulty === diff ? 'default' : 'outline'}
-                  onClick={() => setGlobalDifficulty(diff as Difficulty)}
-                  className={difficulty === diff ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}
-                >
-                  {diff.charAt(0).toUpperCase() + diff.slice(1)}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <TournamentSettingsCard
+        maxPlayers={maxPlayers}
+        shortMode={shortMode}
+        difficulty={globalDifficulty}
+        onUpdateMaxPlayers={updateMaxPlayers}
+        onToggleShortMode={() => setShortMode(!shortMode)}
+        onSetDifficulty={setGlobalDifficulty}
+      />
 
       {/* Player Selection */}
-      <Card className="bg-white/5 border-white/10 mb-6">
-        <CardHeader>
-          <CardTitle>Select Players ({selectedPlayers.length}/{maxPlayers})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {activeProfiles.map(profile => {
-              const isSelected = selectedPlayers.includes(profile.id);
-              return (
-                <div
-                  key={profile.id}
-                  onClick={() => togglePlayer(profile.id)}
-                  className={`p-4 rounded-lg cursor-pointer transition-all ${
-                    isSelected 
-                      ? 'bg-gradient-to-br from-amber-500/30 to-yellow-500/30 border-2 border-amber-500' 
-                      : 'bg-white/5 border border-white/10 hover:bg-white/10'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    {profile.avatar ? (
-                      <img src={profile.avatar} alt={profile.name} className="w-10 h-10 rounded-full object-cover" />
-                    ) : (
-                      <div 
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
-                        style={{ backgroundColor: profile.color }}
-                      >
-                        {profile.name.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <span className="font-medium truncate">{profile.name}</span>
-                    {isSelected && <span className="ml-auto text-amber-400">✓</span>}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          
-          {activeProfiles.length < 2 && (
-            <p className="text-yellow-400 mt-4">
-              ⚠️ Need at least 2 active profiles. Create more in Character selection or activate existing ones.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+      <TournamentPlayerSelector
+        profiles={activeProfiles}
+        selectedPlayers={selectedPlayers}
+        maxPlayers={maxPlayers}
+        onTogglePlayer={togglePlayer}
+      />
 
       {/* Start Button */}
       <Button
@@ -228,7 +98,7 @@ export function TournamentSetupScreen({ profiles, songs, onStartTournament, onBa
   );
 }
 
-// Tournament Bracket View Component
+// ===================== BRACKET VIEW =====================
 interface TournamentBracketViewProps {
   bracket: TournamentBracket;
   currentMatch: TournamentMatch | null;
@@ -248,11 +118,6 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, song
     }
     return roundMatches;
   }, [bracket]);
-
-  const getRandomSong = () => {
-    if (songs.length === 0) return null;
-    return songs[Math.floor(Math.random() * songs.length)];
-  };
 
   // Get next match to play
   const playableMatches = getPlayableMatches(bracket);
@@ -288,8 +153,8 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, song
             ) : (
               <div 
                 className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold"
-                style={{ backgroundColor: bracket.champion.color }
-              }>
+                style={{ backgroundColor: bracket.champion.color }}
+              >
                 {bracket.champion.name.charAt(0).toUpperCase()}
               </div>
             )}
@@ -319,10 +184,10 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, song
         </div>
       )}
 
-      {/* Double Bracket Tree (Doppelbaum) */}
+      {/* Double Bracket Tree */}
       <div className="overflow-x-auto pb-4">
         <div className="flex items-stretch justify-center min-w-max">
-          {/* Left Side of Bracket (Round 1 to Semi-Final) */}
+          {/* Left Side of Bracket */}
           <div className="flex items-center">
             {rounds.slice(0, -1).map((roundMatches, roundIndex) => {
               const isLastRound = roundIndex === rounds.length - 2;
@@ -331,17 +196,14 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, song
               
               return (
                 <div key={`left-${roundIndex}`} className="flex flex-col relative">
-                  {/* Round Header */}
                   <h3 className="text-center font-medium text-white/60 mb-3 text-sm min-w-[180px]">
                     {roundName}
                   </h3>
                   
-                  {/* Matches with connecting lines */}
                   <div 
                     className="flex flex-col justify-around flex-1 relative"
                     style={{ minHeight: `${bracketHeight}px` }}
                   >
-                    {/* Vertical connector line on the right side */}
                     {roundIndex < rounds.length - 2 && (
                       <div 
                         className="absolute right-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-white/20 via-white/10 to-white/20"
@@ -350,10 +212,8 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, song
                     )}
                     
                     {roundMatches.map((match, matchIndex) => {
-                      // Calculate vertical position for connecting lines
                       const totalMatches = roundMatches.length;
                       const spacing = 100 / (totalMatches + 1);
-                      const position = (matchIndex + 1) * spacing;
                       
                       return (
                         <div 
@@ -361,7 +221,6 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, song
                           className="relative flex items-center justify-center"
                           style={{ height: `${spacing}%` }}
                         >
-                          {/* Horizontal connector line */}
                           {roundIndex < rounds.length - 2 && (
                             <div className="absolute right-0 w-6 h-0.5 bg-white/20 translate-x-full" />
                           )}
@@ -391,7 +250,6 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, song
               className="flex flex-col justify-center flex-1 relative"
               style={{ minHeight: `${bracketHeight}px` }}
             >
-              {/* Glowing effect around final */}
               <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 via-yellow-500/20 to-amber-500/10 rounded-xl blur-xl" />
               
               {rounds[rounds.length - 1]?.map(match => (
@@ -411,7 +269,7 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, song
         </div>
       </div>
 
-      {/* Queue Display - Remaining Matches */}
+      {/* Queue Display */}
       {playableMatches.length > 1 && !bracket.champion && (
         <div className="mt-8 bg-white/5 rounded-lg p-4">
           <h4 className="text-sm text-white/60 mb-3">📋 Upcoming Duels</h4>
@@ -432,119 +290,6 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, song
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-// Enhanced Bracket Match Card with better styling
-function BracketMatchCard({ match, isCurrentMatch, isPlayable, onPlay, isComplete, isFinal = false }: { 
-  match: TournamentMatch; 
-  isCurrentMatch: boolean;
-  isPlayable: boolean;
-  onPlay: () => void;
-  isComplete: boolean;
-  isFinal?: boolean;
-}) {
-  if (match.isBye && match.player1) {
-    return (
-      <div className={`bg-white/5 border border-white/10 rounded-lg p-3 ${isFinal ? 'w-56' : 'w-44'}`}>
-        <div className="text-xs text-white/40 mb-1">BYE</div>
-        <PlayerDisplay player={match.player1} small />
-        <div className="text-xs text-green-400 mt-1">Advanced →</div>
-      </div>
-    );
-  }
-
-  const isClickable = isPlayable && !isComplete;
-  
-  return (
-    <div 
-      className={`rounded-lg p-3 ${isFinal ? 'w-56' : 'w-44'} transition-all ${
-        isCurrentMatch && !isComplete
-          ? 'bg-gradient-to-r from-cyan-500/30 to-purple-500/30 border-2 border-cyan-500 shadow-lg shadow-cyan-500/20'
-          : match.completed
-            ? 'bg-white/10 border border-green-500/30'
-            : isPlayable
-              ? 'bg-white/5 border border-white/20 cursor-pointer hover:bg-white/10 hover:border-white/40'
-              : 'bg-white/5 border border-white/10 opacity-60'
-      } ${isClickable ? 'hover:scale-105 cursor-pointer' : ''}`}
-      onClick={isClickable ? onPlay : undefined}
-    >
-      {/* Player 1 */}
-      <div className={`flex items-center gap-2 p-1.5 rounded ${
-        match.winner?.id === match.player1?.id ? 'bg-green-500/20' : ''
-      }`}>
-        <PlayerDisplay player={match.player1} small />
-        {match.completed && (
-          <span className={`ml-auto text-sm font-bold ${
-            match.winner?.id === match.player1?.id ? 'text-green-400' : 'text-white/60'
-          }`}>{match.score1}</span>
-        )}
-      </div>
-      
-      <div className="text-center text-white/30 text-xs my-1 flex items-center justify-center gap-2">
-        <div className="flex-1 h-px bg-white/10" />
-        <span>VS</span>
-        <div className="flex-1 h-px bg-white/10" />
-      </div>
-      
-      {/* Player 2 */}
-      <div className={`flex items-center gap-2 p-1.5 rounded ${
-        match.winner?.id === match.player2?.id ? 'bg-green-500/20' : ''
-      }`}>
-        <PlayerDisplay player={match.player2} small />
-        {match.completed && (
-          <span className={`ml-auto text-sm font-bold ${
-            match.winner?.id === match.player2?.id ? 'text-green-400' : 'text-white/60'
-          }`}>{match.score2}</span>
-        )}
-      </div>
-
-      {/* Winner indicator */}
-      {match.winner && (
-        <div className="mt-2 text-xs text-center text-amber-400 font-medium bg-amber-500/10 rounded py-1">
-          🏆 {match.winner.name}
-        </div>
-      )}
-      
-      {/* Playable indicator */}
-      {isPlayable && !match.completed && !isComplete && (
-        <div className="mt-2 text-xs text-center text-cyan-400 font-medium">
-          Click to play →
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Player Display Component
-function PlayerDisplay({ player, small = false }: { player: TournamentPlayer | null; small?: boolean }) {
-  if (!player) {
-    return (
-      <div className={`flex items-center gap-2 ${small ? 'text-sm' : ''}`}>
-        <div className={`${small ? 'w-8 h-8' : 'w-10 h-10'} rounded-full bg-white/10`} />
-        <span className="text-white/30">TBD</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className={`flex items-center gap-2 ${small ? 'text-sm' : ''}`}>
-      {player.avatar ? (
-        <img 
-          src={player.avatar} 
-          alt={player.name} 
-          className={`${small ? 'w-8 h-8' : 'w-10 h-10'} rounded-full object-cover`}
-        />
-      ) : (
-        <div 
-          className={`${small ? 'w-8 h-8' : 'w-10 h-10'} rounded-full flex items-center justify-center text-white font-bold`}
-          style={{ backgroundColor: player.color }}
-        >
-          {player.name.charAt(0).toUpperCase()}
-        </div>
-      )}
-      <span className="font-medium truncate">{player.name}</span>
     </div>
   );
 }
