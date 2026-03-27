@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Song, Difficulty, GameMode } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
@@ -12,7 +10,6 @@ import {
   getPlaylists, 
   deletePlaylist, 
   addSongToPlaylist, 
-  removeSongFromPlaylist, 
   getPlaylistSongs,
   getPlaylistById,
   initializePlaylists,
@@ -22,30 +19,15 @@ import { SongHighscoreModal } from '@/components/results';
 import { SongStartModal, StartOptions } from '@/components/library/song-start-modal';
 import { CreatePlaylistForm } from '@/components/library/create-playlist-form';
 import { SongCard } from '@/components/library/song-card';
-import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
+import { LibraryFilters } from '@/components/library/library-filters';
+import { PlaylistView } from '@/components/library/playlist-view';
+import { FolderGridView } from '@/components/library/folder-grid-view';
 import { logger } from '@/lib/logger';
-// Icons - imported from central icons file
-import {
-  MusicIcon,
-  PlayIcon,
-  FolderIcon,
-  TrashIcon,
-  QueueIcon,
-} from '@/components/icons';
 // Hooks
 import { useLibrarySettings, LibraryViewMode, LibraryGroupBy } from '@/hooks/use-library-settings';
 import { useLibraryPreview } from '@/hooks/use-library-preview';
 // Utils
-import { 
-  getLetterGroup, 
-  groupSongs, 
-  getSortedFolderKeys,
-  filterSongs,
-  sortSongs,
-  getAvailableGenres,
-  getAvailableLanguages,
-  isDuetSong
-} from '@/lib/library-utils';
+import { groupSongs } from '@/lib/library-utils';
 
 // ===================== LIBRARY SCREEN =====================
 export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong: (song: Song) => void; initialGameMode?: GameMode }) {
@@ -356,28 +338,9 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
     return groupedSongs.get(currentFolder) || [];
   }, [currentFolder, groupBy, filteredSongs, groupedSongs]);
   
-  // Get display name for a group key
-  const getGroupDisplayName = (key: string): string => {
-    if (groupBy === 'language') {
-      return LANGUAGE_NAMES[key] || key;
-    }
-    return key;
-  };
-  
   // Handle folder navigation
   const handleOpenFolder = (folder: string) => {
     navigateToFolder(folder, [...folderBreadcrumb, folder]);
-  };
-  
-  const handleBackFolder = () => {
-    const newBreadcrumb = folderBreadcrumb.slice(0, -1);
-    navigateToFolder(
-      newBreadcrumb.length > 0 ? newBreadcrumb[newBreadcrumb.length - 1] : '',
-      newBreadcrumb
-    );
-    if (newBreadcrumb.length === 0) {
-      exitFolder();
-    }
   };
   
   const handleBreadcrumbClick = (index: number) => {
@@ -496,6 +459,25 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
     }
   };
 
+  // Handle sort change
+  const handleSortChange = (sortBy: 'title' | 'artist' | 'dateAdded', sortOrder: 'asc' | 'desc') => {
+    updateSettings({ sortBy, sortOrder });
+  };
+
+  // Handle view mode change with playlist reset
+  const handleViewModeChange = (mode: LibraryViewMode) => {
+    setViewMode(mode);
+    if (mode !== 'playlists') {
+      setSelectedPlaylist(null);
+    }
+  };
+
+  // Handle group by change with playlist reset
+  const handleGroupByChange = (newGroupBy: LibraryGroupBy) => {
+    setGroupBy(newGroupBy);
+    setSelectedPlaylist(null);
+  };
+
   return (
     <div className="w-[90%] mx-auto max-w-[1800px]">
       <div className="mb-6">
@@ -515,367 +497,57 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
 
       {/* Search and Filters */}
       {!songsLoading && (
-        <div className="space-y-4 mb-6">
-          {/* Search Row */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Input
-                id="song-search"
-                name="song-search"
-                placeholder="Search songs, artists, or genres..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-white/5 border-white/10 text-white placeholder:text-white/40 pr-10"
-              />
-              <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.3-4.3" />
-              </svg>
-            </div>
-            
-            {/* Sort dropdown */}
-            <select
-              value={`${settings.sortBy}-${settings.sortOrder}`}
-              onChange={(e) => {
-                const [sortBy, sortOrder] = e.target.value.split('-') as [typeof settings.sortBy, typeof settings.sortOrder];
-                updateSettings({ sortBy, sortOrder });
-              }}
-              className="bg-gray-800 border border-white/20 rounded-md px-3 py-2 text-white appearance-none cursor-pointer hover:border-cyan-500/50 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', backgroundSize: '16px', paddingRight: '32px' }}
-            >
-              <option value="title-asc" className="bg-gray-800 text-white">Title (A-Z)</option>
-              <option value="title-desc" className="bg-gray-800 text-white">Title (Z-A)</option>
-              <option value="artist-asc" className="bg-gray-800 text-white">Artist (A-Z)</option>
-              <option value="artist-desc" className="bg-gray-800 text-white">Artist (Z-A)</option>
-              <option value="dateAdded-desc" className="bg-gray-800 text-white">Recently Added</option>
-            </select>
-          </div>
-          
-          {/* Filter Row - Genre, Language, and Duet in same row */}
-          <div className="flex flex-wrap gap-3 items-center">
-            {/* Genre Filter - reads from #Genre: tag in txt files */}
-            <div className="flex items-center gap-2">
-              <span className="text-white/40 text-sm">🎸 Genre:</span>
-              <select
-                value={settings.filterGenre || 'all'}
-                onChange={(e) => setFilterGenre(e.target.value)}
-                className="bg-gray-800 border border-white/20 rounded-md px-3 py-1.5 text-white text-sm appearance-none cursor-pointer hover:border-purple-500/50 focus:border-purple-500 focus:outline-none"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center', backgroundSize: '14px', paddingRight: '28px' }}
-              >
-                {availableGenres.map(g => (
-                  <option key={g} value={g} className="bg-gray-800 text-white">{g === 'all' ? 'All Genres' : g}</option>
-                ))}
-              </select>
-            </div>
-            
-            {/* Language Filter - reads from #Language: tag in txt files */}
-            <div className="flex items-center gap-2">
-              <span className="text-white/40 text-sm">🌍 Language:</span>
-              <select
-                value={settings.filterLanguage || 'all'}
-                onChange={(e) => setFilterLanguage(e.target.value)}
-                className="bg-gray-800 border border-white/20 rounded-md px-3 py-1.5 text-white text-sm appearance-none cursor-pointer hover:border-cyan-500/50 focus:border-cyan-500 focus:outline-none"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center', backgroundSize: '14px', paddingRight: '28px' }}
-              >
-                {availableLanguages.map(l => (
-                  <option key={l} value={l} className="bg-gray-800 text-white">{l === 'all' ? 'All Languages' : (LANGUAGE_NAMES[l] || l)}</option>
-                ))}
-              </select>
-            </div>
-            
-            {/* Duet Filter Toggle - in same row as other filters */}
-            <button
-              onClick={() => setFilterDuet(!settings.filterDuet)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                settings.filterDuet 
-                  ? 'bg-pink-500/30 text-pink-300 border border-pink-500/50' 
-                  : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/10'
-              }`}
-            >
-              <span>🎭</span>
-              <span>Duet</span>
-            </button>
-            
-            {/* Active Filters Display */}
-            {(settings.filterGenre !== 'all' || settings.filterLanguage !== 'all' || settings.filterDuet) && (
-              <button
-                onClick={() => updateSettings({ filterGenre: 'all', filterLanguage: 'all', filterDuet: false })}
-                className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
-              >
-                ✕ Clear filters
-              </button>
-            )}
-          </div>
-          
-          {/* View Mode and Group By Options */}
-          <div className="flex flex-wrap gap-2 items-center">
-            {/* View Mode Toggle */}
-            <div className="flex bg-white/5 rounded-lg p-1">
-              <button
-                onClick={() => { setViewMode('grid'); setGroupBy('none'); setSelectedPlaylist(null); }}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                  viewMode === 'grid' && groupBy === 'none' ? 'bg-cyan-500 text-white' : 'text-white/60 hover:text-white'
-                }`}
-              >
-                <div className="flex items-center gap-1.5">
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="3" width="7" height="7" />
-                    <rect x="14" y="3" width="7" height="7" />
-                    <rect x="14" y="14" width="7" height="7" />
-                    <rect x="3" y="14" width="7" height="7" />
-                  </svg>
-                  Grid
-                </div>
-              </button>
-              <button
-                onClick={() => { setViewMode('playlists'); setSelectedPlaylist(null); }}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                  viewMode === 'playlists' ? 'bg-purple-500 text-white' : 'text-white/60 hover:text-white'
-                }`}
-              >
-                <div className="flex items-center gap-1.5">
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M9 18V5l12-2v13" />
-                    <circle cx="6" cy="18" r="3" />
-                    <circle cx="18" cy="16" r="3" />
-                  </svg>
-                  Playlists
-                </div>
-              </button>
-            </div>
-            
-            <span className="text-white/30">|</span>
-            
-            {/* Group By Options */}
-            <span className="text-white/40 text-sm">Group by:</span>
-            <div className="flex flex-wrap gap-1">
-              {[
-                { value: 'artist', label: 'Artist A-Z', icon: '🎤' },
-                { value: 'title', label: 'Title A-Z', icon: '🎵' },
-                { value: 'genre', label: 'Genre', icon: '🎸' },
-                { value: 'language', label: 'Language', icon: '🌍' },
-                { value: 'folder', label: 'Folder', icon: '📁' },
-              ].map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => {
-                    setViewMode('folder');
-                    setGroupBy(option.value as LibraryGroupBy);
-                  }}
-                  className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
-                    groupBy === option.value && viewMode === 'folder' 
-                      ? 'bg-purple-500 text-white' 
-                      : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10'
-                  }`}
-                >
-                  <span className="mr-1">{option.icon}</span>
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          
-          {/* Breadcrumb Navigation */}
-          {viewMode === 'folder' && folderBreadcrumb.length > 0 && (
-            <div className="flex items-center gap-2 text-sm">
-              <button
-                onClick={() => handleBreadcrumbClick(-1)}
-                className="text-cyan-400 hover:text-cyan-300 transition-colors"
-              >
-                All
-              </button>
-              {folderBreadcrumb.map((folder, index) => (
-                <React.Fragment key={index}>
-                  <span className="text-white/30">/</span>
-                  <button
-                    onClick={() => handleBreadcrumbClick(index)}
-                    className={`transition-colors ${
-                      index === folderBreadcrumb.length - 1 
-                        ? 'text-white font-medium' 
-                        : 'text-cyan-400 hover:text-cyan-300'
-                    }`}
-                  >
-                    {getGroupDisplayName(folder)}
-                  </button>
-                </React.Fragment>
-              ))}
-            </div>
-          )}
-        </div>
+        <LibraryFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          sortBy={settings.sortBy}
+          sortOrder={settings.sortOrder}
+          onSortChange={handleSortChange}
+          filterGenre={settings.filterGenre || 'all'}
+          onFilterGenreChange={setFilterGenre}
+          filterLanguage={settings.filterLanguage || 'all'}
+          onFilterLanguageChange={setFilterLanguage}
+          filterDuet={settings.filterDuet}
+          onFilterDuetChange={setFilterDuet}
+          viewMode={viewMode}
+          groupBy={groupBy}
+          onViewModeChange={handleViewModeChange}
+          onGroupByChange={handleGroupByChange}
+          availableGenres={availableGenres}
+          availableLanguages={availableLanguages}
+          folderBreadcrumb={folderBreadcrumb}
+          onBreadcrumbClick={handleBreadcrumbClick}
+          onClearFilters={() => updateSettings({ filterGenre: 'all', filterLanguage: 'all', filterDuet: false })}
+        />
       )}
 
       {/* Song Grid or Folder View or Playlist View */}
       {!songsLoading && (
         <>
           {viewMode === 'playlists' ? (
-            // Playlist View
-            <div className="space-y-6">
-              {/* Back button if viewing playlist songs */}
-              {selectedPlaylist && (
-                <button
-                  onClick={() => setSelectedPlaylist(null)}
-                  className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors"
-                >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M19 12H5M12 19l-7-7 7-7" />
-                  </svg>
-                  Back to Playlists
-                </button>
-              )}
-              
-              {!selectedPlaylist ? (
-                // Show all playlists
-                <>
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-bold">
-                      {playlists.length} Playlist{playlists.length !== 1 ? 's' : ''}
-                    </h2>
-                    <Button
-                      onClick={() => setShowCreatePlaylistModal(true)}
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400"
-                    >
-                      <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                      </svg>
-                      Create Playlist
-                    </Button>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {playlists.map((playlist) => {
-                      const playlistSongs = getPlaylistSongs(playlist.id, loadedSongs);
-                      return (
-                        <button
-                          key={playlist.id}
-                          onClick={() => setSelectedPlaylist(playlist)}
-                          className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-purple-500/50 hover:bg-white/10 transition-all text-left group relative"
-                        >
-                          {/* System playlist badge */}
-                          {playlist.isSystem && (
-                            <div className="absolute top-2 right-2 bg-purple-500/30 text-purple-300 text-xs px-2 py-0.5 rounded-full">
-                              System
-                            </div>
-                          )}
-                          
-                          {/* Cover Image */}
-                          <div className="w-full aspect-square rounded-lg mb-3 overflow-hidden bg-gradient-to-br from-purple-600/30 to-cyan-600/30 flex items-center justify-center">
-                            {playlistSongs.length > 0 && playlistSongs[0].coverImage ? (
-                              <img src={playlistSongs[0].coverImage} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <MusicIcon className="w-12 h-12 text-white/30" />
-                            )}
-                          </div>
-                          
-                          {/* Playlist Name */}
-                          <h3 className="font-semibold text-white truncate">{playlist.name}</h3>
-                          <p className="text-xs text-white/40">{playlistSongs.length} song{playlistSongs.length !== 1 ? 's' : ''}</p>
-                          
-                          {/* Delete button for non-system playlists */}
-                          {!playlist.isSystem && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (confirm(`Delete "${playlist.name}"?`)) {
-                                  deletePlaylist(playlist.id);
-                                  setPlaylists(getPlaylists());
-                                }
-                              }}
-                              className="absolute top-2 left-2 p-1.5 rounded-lg bg-red-500/20 text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500/40 transition-all"
-                              title="Delete playlist"
-                            >
-                              <TrashIcon className="w-4 h-4" />
-                            </button>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </>
-              ) : (
-                // Show songs in selected playlist
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-2xl font-bold">{selectedPlaylist.name}</h2>
-                      {selectedPlaylist.description && (
-                        <p className="text-white/60 text-sm">{selectedPlaylist.description}</p>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => {
-                          const songs = getPlaylistSongs(selectedPlaylist.id, loadedSongs);
-                          songs.forEach(song => {
-                            if (activeProfileId && queue.filter(q => q.playerId === activeProfileId).length < 3) {
-                              addToQueue(song, activeProfileId, activeProfile?.name || 'Player');
-                            }
-                          });
-                        }}
-                        variant="outline"
-                        className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/20"
-                        disabled={!activeProfileId}
-                      >
-                        <QueueIcon className="w-4 h-4 mr-2" />
-                        Add to Queue
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          const songs = getPlaylistSongs(selectedPlaylist.id, loadedSongs);
-                          if (songs.length > 0) {
-                            // Navigate to jukebox with these songs
-                            localStorage.setItem('jukebox-playlist', JSON.stringify(songs.map(s => s.id)));
-                            // Could also set screen to jukebox here
-                          }
-                        }}
-                        className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400"
-                      >
-                        <PlayIcon className="w-4 h-4 mr-2" />
-                        Play in Jukebox
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {getPlaylistSongs(selectedPlaylist.id, loadedSongs).length === 0 ? (
-                    <div className="text-center py-12">
-                      <p className="text-white/60">This playlist is empty</p>
-                      <p className="text-white/40 text-sm mt-2">Add songs from the library</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                      {getPlaylistSongs(selectedPlaylist.id, loadedSongs).map((song) => (
-                        <div key={song.id} className="relative group">
-                          <SongCard 
-                            song={song}
-                            previewSong={previewSong}
-                            onSongClick={handleSongClick}
-                            onPreviewStart={handlePreviewStart}
-                            onPreviewStop={handlePreviewStop}
-                            previewVideoRefs={previewVideoRefs}
-                          />
-                          {/* Remove from playlist button */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeSongFromPlaylist(selectedPlaylist.id, song.id);
-                              setPlaylists(getPlaylists());
-                              setSelectedPlaylist(getPlaylistById(selectedPlaylist.id));
-                            }}
-                            className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-500/80 text-white opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all z-10"
-                            title="Remove from playlist"
-                          >
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <line x1="18" y1="6" x2="6" y2="18" />
-                              <line x1="6" y1="6" x2="18" y2="18" />
-                            </svg>
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            <PlaylistView
+              playlists={playlists}
+              selectedPlaylist={selectedPlaylist}
+              loadedSongs={loadedSongs}
+              previewSong={previewSong}
+              onSelectPlaylist={setSelectedPlaylist}
+              onDeselectPlaylist={() => setSelectedPlaylist(null)}
+              onCreatePlaylist={() => setShowCreatePlaylistModal(true)}
+              onDeletePlaylist={(id) => {
+                deletePlaylist(id);
+                setPlaylists(getPlaylists());
+              }}
+              onSongClick={handleSongClick}
+              onPreviewStart={handlePreviewStart}
+              onPreviewStop={handlePreviewStop}
+              previewVideoRefs={previewVideoRefs}
+              activeProfileId={activeProfileId}
+              activeProfileName={activeProfile?.name || 'Player'}
+              addToQueue={addToQueue}
+              queueCount={queue.filter(q => q.playerId === activeProfileId).length}
+              onUpdatePlaylists={setPlaylists}
+              onUpdateSelectedPlaylist={setSelectedPlaylist}
+            />
           ) : filteredSongs.length === 0 ? (
             <div className="text-center py-20">
               <p className="text-white/60 mb-4">No songs found</p>
@@ -897,54 +569,11 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
               ))}
             </div>
           ) : (
-            // Folder View - Show Folders
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
-              {getSortedFolderKeys(groupedSongs, groupBy).map((folderKey) => {
-                const songs = groupedSongs.get(folderKey) || [];
-                const displayName = getGroupDisplayName(folderKey);
-                
-                return (
-                  <button
-                    key={folderKey}
-                    onClick={() => handleOpenFolder(folderKey)}
-                    className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-cyan-500/50 hover:bg-white/10 transition-all text-left group"
-                  >
-                    {/* Folder Icon */}
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-yellow-500/20 to-orange-500/20 flex items-center justify-center mb-3 group-hover:from-yellow-500/30 group-hover:to-orange-500/30 transition-all">
-                      <FolderIcon className="w-6 h-6 text-yellow-400" />
-                    </div>
-                    
-                    {/* Folder Name */}
-                    <h3 className="font-semibold text-white truncate">{displayName}</h3>
-                    <p className="text-xs text-white/40">{songs.length} song{songs.length !== 1 ? 's' : ''}</p>
-                    
-                    {/* Preview covers */}
-                    <div className="flex -space-x-2 mt-3">
-                      {songs.slice(0, 4).map((song, i) => (
-                        <div 
-                          key={song.id}
-                          className="w-8 h-8 rounded bg-gradient-to-br from-purple-600/50 to-blue-600/50 border-2 border-gray-900 overflow-hidden"
-                          style={{ zIndex: 4 - i }}
-                        >
-                          {song.coverImage ? (
-                            <img src={song.coverImage} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <MusicIcon className="w-4 h-4 text-white/30" />
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                      {songs.length > 4 && (
-                        <div className="w-8 h-8 rounded bg-black/50 border-2 border-gray-900 flex items-center justify-center text-xs text-white/60">
-                          +{songs.length - 4}
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            <FolderGridView
+              groupedSongs={groupedSongs}
+              groupBy={groupBy}
+              onOpenFolder={handleOpenFolder}
+            />
           )}
         </>
       )}
@@ -1049,7 +678,11 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
                            playlist.id === 'system-recently-played' ? '🕐' : '🔥'}
                         </span>
                       ) : (
-                        <MusicIcon className="w-5 h-5 text-white/50" />
+                        <svg className="w-5 h-5 text-white/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M9 18V5l12-2v13" />
+                          <circle cx="6" cy="18" r="3" />
+                          <circle cx="18" cy="16" r="3" />
+                        </svg>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
