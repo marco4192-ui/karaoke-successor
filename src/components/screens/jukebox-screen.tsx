@@ -8,18 +8,31 @@ import { getAllSongsAsync } from '@/lib/game/song-library';
 import { YouTubePlayer, extractYouTubeId } from '@/components/game/youtube-player';
 import { Song } from '@/types/game';
 import { PlayIcon, MusicIcon } from '@/components/icons';
+import { useJukeboxPlaylist } from '@/hooks/use-jukebox-playlist';
 
 // ===================== JUKEBOX SCREEN =====================
 export function JukeboxScreen() {
+  // Use custom hook for playlist management
+  const {
+    playlist,
+    currentIndex,
+    currentSong,
+    shuffle,
+    repeat,
+    upNext,
+    setShuffle,
+    setRepeat,
+    generatePlaylist,
+    playNext,
+    playPrevious,
+    playSongAtIndex,
+    clearPlaylist,
+  } = useJukeboxPlaylist({ initialShuffle: true, initialRepeat: 'all' });
+  
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentSong, setCurrentSong] = useState<Song | null>(null);
-  const [playlist, setPlaylist] = useState<Song[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [filterGenre, setFilterGenre] = useState<string>('all');
   const [filterArtist, setFilterArtist] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [shuffle, setShuffle] = useState(true);
-  const [repeat, setRepeat] = useState<'none' | 'one' | 'all'>('all');
   // Custom YouTube video for Jukebox
   const [customYoutubeUrl, setCustomYoutubeUrl] = useState('');
   const [customYoutubeId, setCustomYoutubeId] = useState<string | null>(null);
@@ -27,14 +40,14 @@ export function JukeboxScreen() {
   const [isAdPlaying, setIsAdPlaying] = useState(false);
   const [volume, setVolume] = useState(0.7);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [hidePlaylist, setHidePlaylist] = useState(false); // Toggle to hide playlist in fullscreen
-  const [showLyrics, setShowLyrics] = useState(false); // Sing-Along Mode: Show lyrics overlay
-  const [currentLyricIndex, setCurrentLyricIndex] = useState(0); // Current lyric line index
+  const [hidePlaylist, setHidePlaylist] = useState(false);
+  const [showLyrics, setShowLyrics] = useState(false);
+  const [currentLyricIndex, setCurrentLyricIndex] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // Load songs asynchronously with media URL restoration
+  // Load songs asynchronously
   const [songs, setSongs] = useState<Song[]>([]);
   
   useEffect(() => {
@@ -82,55 +95,6 @@ export function JukeboxScreen() {
     return filtered;
   }, [songs, filterGenre, filterArtist, searchQuery]);
   
-  // Generate playlist
-  const generatePlaylist = useCallback(() => {
-    if (filteredSongs.length === 0) return;
-    
-    let newPlaylist = [...filteredSongs];
-    if (shuffle) {
-      // Fisher-Yates shuffle
-      for (let i = newPlaylist.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [newPlaylist[i], newPlaylist[j]] = [newPlaylist[j], newPlaylist[i]];
-      }
-    }
-    setPlaylist(newPlaylist);
-    setCurrentIndex(0);
-    setCurrentSong(newPlaylist[0] || null);
-  }, [filteredSongs, shuffle]);
-  
-  // Play next song
-  const playNext = useCallback(() => {
-    if (playlist.length === 0) return;
-    
-    let nextIndex = currentIndex + 1;
-    
-    if (nextIndex >= playlist.length) {
-      if (repeat === 'all') {
-        nextIndex = 0;
-      } else {
-        setIsPlaying(false);
-        return;
-      }
-    }
-    
-    setCurrentIndex(nextIndex);
-    setCurrentSong(playlist[nextIndex]);
-  }, [playlist, currentIndex, repeat]);
-  
-  // Play previous song
-  const playPrevious = useCallback(() => {
-    if (playlist.length === 0) return;
-    
-    let prevIndex = currentIndex - 1;
-    if (prevIndex < 0) {
-      prevIndex = playlist.length - 1;
-    }
-    
-    setCurrentIndex(prevIndex);
-    setCurrentSong(playlist[prevIndex]);
-  }, [playlist, currentIndex]);
-  
   // Handle video end
   const handleMediaEnd = useCallback(() => {
     if (repeat === 'one' && currentSong) {
@@ -149,13 +113,14 @@ export function JukeboxScreen() {
   }, [repeat, currentSong, playNext]);
   
   // Start jukebox
-  const startJukebox = () => {
-    generatePlaylist();
+  const startJukebox = useCallback(() => {
+    if (filteredSongs.length === 0) return;
+    generatePlaylist(filteredSongs);
     setIsPlaying(true);
-  };
+  }, [filteredSongs, generatePlaylist]);
   
   // Stop jukebox
-  const stopJukebox = () => {
+  const stopJukebox = useCallback(() => {
     setIsPlaying(false);
     if (videoRef.current) {
       videoRef.current.pause();
@@ -163,10 +128,10 @@ export function JukeboxScreen() {
     if (audioRef.current) {
       audioRef.current.pause();
     }
-  };
+  }, []);
   
   // Toggle fullscreen
-  const toggleFullscreen = () => {
+  const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
       containerRef.current?.requestFullscreen();
       setIsFullscreen(true);
@@ -174,7 +139,7 @@ export function JukeboxScreen() {
       document.exitFullscreen();
       setIsFullscreen(false);
     }
-  };
+  }, []);
   
   // Listen for fullscreen changes
   useEffect(() => {
@@ -188,23 +153,18 @@ export function JukeboxScreen() {
   // CRITICAL: Cleanup on unmount - stop all media when leaving Jukebox
   useEffect(() => {
     return () => {
-      // Stop video - DON'T clear src, just pause and reset
       if (videoRef.current) {
         videoRef.current.pause();
         videoRef.current.currentTime = 0;
       }
-      // Stop audio - DON'T clear src, just pause and reset
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
       }
-      // Clear playlist state
-      setPlaylist([]);
-      setCurrentSong(null);
-      setCurrentIndex(0);
+      clearPlaylist();
       setIsPlaying(false);
     };
-  }, []);
+  }, [clearPlaylist]);
   
   // Update volume
   useEffect(() => {
@@ -216,21 +176,17 @@ export function JukeboxScreen() {
     }
   }, [volume, currentSong]);
   
-  // Auto-play when song changes - FIXED: properly start audio/video playback
+  // Auto-play when song changes
   useEffect(() => {
     if (isPlaying && currentSong) {
-      // Small delay to allow refs to be set
       const playTimer = setTimeout(() => {
-        // Determine if video has embedded audio (should play with sound)
         const videoHasEmbeddedAudio = currentSong.hasEmbeddedAudio || !currentSong.audioUrl;
         
-        // Play video if available
         if (currentSong.videoBackground && videoRef.current) {
           videoRef.current.currentTime = 0;
           videoRef.current.play().catch(() => {});
         }
         
-        // Play separate audio only if there's a dedicated audioUrl and video doesn't have embedded audio
         if (currentSong.audioUrl && !videoHasEmbeddedAudio && audioRef.current) {
           audioRef.current.currentTime = 0;
           audioRef.current.play().catch(() => {});
@@ -245,10 +201,8 @@ export function JukeboxScreen() {
     if (!showLyrics || !currentSong || !currentSong.lyrics?.length) return;
     
     const updateCurrentLyric = () => {
-      // Get current time from audio or video
-      const currentTime = (audioRef.current?.currentTime || videoRef.current?.currentTime || 0) * 1000; // Convert to ms
+      const currentTime = (audioRef.current?.currentTime || videoRef.current?.currentTime || 0) * 1000;
       
-      // Find the current lyric line
       for (let i = currentSong.lyrics.length - 1; i >= 0; i--) {
         if (currentTime >= currentSong.lyrics[i].startTime) {
           setCurrentLyricIndex(i);
@@ -257,16 +211,10 @@ export function JukeboxScreen() {
       }
     };
     
-    const interval = setInterval(updateCurrentLyric, 100); // Update every 100ms
+    const interval = setInterval(updateCurrentLyric, 100);
     return () => clearInterval(interval);
   }, [showLyrics, currentSong]);
-  
-  // Up next songs
-  const upNext = useMemo(() => {
-    return playlist.slice(currentIndex + 1, currentIndex + 6);
-  }, [playlist, currentIndex]);
-  
-  
+
   return (
     <div ref={containerRef} className={`max-w-6xl mx-auto ${isFullscreen ? 'fixed inset-0 z-50 bg-black flex' : ''}`}>
       {/* Fullscreen Header Overlay */}
@@ -278,7 +226,6 @@ export function JukeboxScreen() {
             <span className="text-white/60">{currentSong?.artist}</span>
           </div>
           <div className="flex items-center gap-2">
-            {/* Sing-Along Mode: Lyrics Toggle */}
             <Button 
               variant="outline" 
               onClick={() => setShowLyrics(!showLyrics)} 
@@ -389,7 +336,6 @@ export function JukeboxScreen() {
             <Card className={`bg-black/50 border-white/10 overflow-hidden ${isFullscreen ? 'h-full rounded-none' : ''}`}>
               <div className={`relative ${isFullscreen ? 'h-full' : 'aspect-video'}`}>
                 {/* Video Background */}
-                {/* Custom YouTube video takes priority */}
                 {customYoutubeId ? (
                   <YouTubePlayer
                     videoId={customYoutubeId}
@@ -407,7 +353,6 @@ export function JukeboxScreen() {
                     ref={videoRef}
                     src={currentSong.videoBackground}
                     className="absolute inset-0 w-full h-full object-cover"
-                    // Mute video only if there's a separate audio file AND video doesn't have embedded audio
                     muted={!!currentSong.audioUrl && !currentSong.hasEmbeddedAudio}
                     loop={false}
                     onEnded={handleMediaEnd}
@@ -431,7 +376,6 @@ export function JukeboxScreen() {
                 )}
                 
                 {/* Audio element for songs with separate audio file */}
-                {/* Only render separate audio if there's an audioUrl and it's NOT the same as videoBackground */}
                 {currentSong.audioUrl && !currentSong.hasEmbeddedAudio && (
                   <audio
                     ref={audioRef}
@@ -444,17 +388,14 @@ export function JukeboxScreen() {
                 {showLyrics && currentSong.lyrics && currentSong.lyrics.length > 0 && (
                   <div className="absolute inset-0 flex items-end justify-center pb-24 pointer-events-none">
                     <div className="text-center max-w-4xl px-8">
-                      {/* Previous line (faded) */}
                       {currentLyricIndex > 0 && (
                         <p className="text-white/40 text-lg md:text-xl mb-2 transition-opacity">
                           {currentSong.lyrics[currentLyricIndex - 1]?.text}
                         </p>
                       )}
-                      {/* Current line (highlighted) */}
                       <p className="text-white text-2xl md:text-4xl font-bold drop-shadow-lg animate-pulse">
                         {currentSong.lyrics[currentLyricIndex]?.text}
                       </p>
-                      {/* Next line (faded) */}
                       {currentLyricIndex < currentSong.lyrics.length - 1 && (
                         <p className="text-white/40 text-lg md:text-xl mt-2 transition-opacity">
                           {currentSong.lyrics[currentLyricIndex + 1]?.text}
@@ -626,8 +567,7 @@ export function JukeboxScreen() {
                         onClick={() => {
                           const songIndex = playlist.findIndex(s => s.id === song.id);
                           if (songIndex !== -1) {
-                            setCurrentIndex(songIndex);
-                            setCurrentSong(playlist[songIndex]);
+                            playSongAtIndex(songIndex);
                           }
                         }}
                         className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-white/10 transition-colors text-left"

@@ -1575,3 +1575,38 @@ All components extracted to `/src/components/mobile/`:
 - Created reusable mobile view components
 - Extracted microphone logic into dedicated hook
 - Improved code organization and maintainability
+
+---
+## Task ID: 15 - Library-Screen Refactoring
+### Agent: Main Agent
+### Task: Extract SongStartModal from library-screen.tsx to reduce file size
+
+### Work Log:
+- Read library-screen.tsx completely (1672 lines)
+- Identified Song Start Modal as largest extractable component (~414 lines)
+- Created `/src/components/library/` directory
+- Created `song-start-modal.tsx` (472 lines) with:
+  - SongStartModal component
+  - StartOptions interface exported for type safety
+  - Full player selection, difficulty, and mode selection logic
+  - Favorite, queue, and playlist actions
+  - Highscore preview display
+- Updated library-screen.tsx:
+  - Imported SongStartModal and StartOptions
+  - Changed startOptions state type to use imported StartOptions
+  - Replaced inline modal JSX with component usage
+  - Removed unused imports (toggleFavorite, MicIcon, StarIcon, TrophyIcon)
+- Build verified successfully
+- Committed: "Refactor: Extract SongStartModal from library-screen.tsx"
+- Pushed to GitHub master (commit 58efec2)
+
+### Files Modified:
+- `/src/components/screens/library-screen.tsx` - Reduced from 1672 to 1277 lines (-395 lines, -24%)
+- `/src/components/library/song-start-modal.tsx` - New file (472 lines)
+
+### Stage Summary:
+- Library-screen.tsx significantly reduced in size
+- SongStartModal extracted as reusable component
+- All functionality preserved
+- Build passes
+- Changes pushed to GitHub
