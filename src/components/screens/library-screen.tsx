@@ -10,7 +10,6 @@ import { useGameStore } from '@/lib/game/store';
 import { getAllSongs, getAllSongsAsync, restoreSongUrls } from '@/lib/game/song-library';
 import { 
   getPlaylists, 
-  createPlaylist, 
   deletePlaylist, 
   addSongToPlaylist, 
   removeSongFromPlaylist, 
@@ -38,6 +37,17 @@ import {
 // Hooks
 import { useLibrarySettings, LibraryViewMode, LibraryGroupBy } from '@/hooks/use-library-settings';
 import { useLibraryPreview } from '@/hooks/use-library-preview';
+// Utils
+import { 
+  getLetterGroup, 
+  groupSongs, 
+  getSortedFolderKeys,
+  filterSongs,
+  sortSongs,
+  getAvailableGenres,
+  getAvailableLanguages,
+  isDuetSong
+} from '@/lib/library-utils';
 
 // ===================== CREATE PLAYLIST FORM =====================
 function CreatePlaylistForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
@@ -46,8 +56,11 @@ function CreatePlaylistForm({ onClose, onSuccess }: { onClose: () => void; onSuc
   
   const handleSubmit = () => {
     if (!name.trim()) return;
-    createPlaylist(name.trim(), description.trim() || undefined);
-    onSuccess();
+    // Import dynamically to avoid circular dependency
+    import('@/lib/playlist-manager').then(({ createPlaylist }) => {
+      createPlaylist(name.trim(), description.trim() || undefined);
+      onSuccess();
+    });
   };
   
   return (
@@ -91,9 +104,7 @@ function CreatePlaylistForm({ onClose, onSuccess }: { onClose: () => void; onSuc
   );
 }
 
-// ===================== LIBRARY SCREEN =====================
-
-// Song Card Component
+// ===================== SONG CARD COMPONENT =====================
 function SongCard({ 
   song, 
   previewSong, 
@@ -118,7 +129,6 @@ function SongCard({
     >
       {/* Cover Image / Video Preview */}
       <div className="relative aspect-square bg-gradient-to-br from-purple-600/50 to-blue-600/50 overflow-hidden">
-        {/* Static Cover Image */}
         {song.coverImage && (
           <img 
             src={song.coverImage} 
@@ -129,7 +139,6 @@ function SongCard({
           />
         )}
         
-        {/* Video Preview - Local Video */}
         {song.videoBackground && (
           <video
             ref={(el) => {
@@ -143,7 +152,6 @@ function SongCard({
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
               previewSong?.id === song.id ? 'opacity-100' : 'opacity-0'
             }`}
-            // Mute only if there's a separate audio file; unmute for videos with embedded audio
             muted={!song.hasEmbeddedAudio && !!song.audioUrl}
             loop
             playsInline
@@ -156,7 +164,6 @@ function SongCard({
           />
         )}
         
-        {/* Video Preview - YouTube */}
         {song.youtubeUrl && previewSong?.id === song.id && (
           <div className="absolute inset-0 w-full h-full">
             <iframe
@@ -169,14 +176,12 @@ function SongCard({
           </div>
         )}
         
-        {/* Fallback Music Icon */}
         {!song.coverImage && !song.videoBackground && !song.youtubeUrl && (
           <div className="absolute inset-0 flex items-center justify-center">
             <MusicIcon className="w-16 h-16 text-white/30" />
           </div>
         )}
         
-        {/* Play indicator on hover - only show if no video */}
         <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300 ${
           previewSong?.id === song.id && (song.videoBackground || song.youtubeUrl) ? 'opacity-0' : 
           previewSong?.id === song.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
@@ -186,14 +191,12 @@ function SongCard({
           </div>
         </div>
         
-        {/* Badges */}
         <div className="absolute top-2 right-2 flex gap-1">
           {song.hasEmbeddedAudio && (
             <Badge className="bg-purple-500/80 text-xs">Video</Badge>
           )}
         </div>
         
-        {/* Duration */}
         <div className="absolute bottom-2 right-2">
           <Badge className="bg-black/60 text-xs">
             {Math.floor(song.duration / 60000)}:{String(Math.floor((song.duration % 60000) / 1000)).padStart(2, '0')}
@@ -201,7 +204,6 @@ function SongCard({
         </div>
       </div>
       
-      {/* Song Info */}
       <div className="p-3">
         <h3 className="font-semibold text-white truncate text-sm">{song.title}</h3>
         <p className="text-xs text-white/60 truncate">{song.artist}</p>
@@ -210,103 +212,7 @@ function SongCard({
   );
 }
 
-// Helper function to get the first letter group for folder view
-function getLetterGroup(name: string): string {
-  if (!name) return '#';
-  const firstChar = name.trim().charAt(0).toUpperCase();
-  
-  // Check if starts with "The "
-  if (name.trim().toLowerCase().startsWith('the ')) {
-    return 'The';
-  }
-  
-  // Check if it's a letter A-Z
-  if (firstChar >= 'A' && firstChar <= 'Z') {
-    return firstChar;
-  }
-  
-  // Everything else goes to #
-  return '#';
-}
-
-// Helper function to group songs
-function groupSongs(songs: Song[], groupBy: LibraryGroupBy): Map<string, Song[]> {
-  const groups = new Map<string, Song[]>();
-  
-  songs.forEach(song => {
-    let key: string;
-    
-    switch (groupBy) {
-      case 'artist':
-        key = getLetterGroup(song.artist);
-        break;
-      case 'title':
-        key = getLetterGroup(song.title);
-        break;
-      case 'genre':
-        key = song.genre || 'Unknown';
-        break;
-      case 'language':
-        key = song.language || 'unknown';
-        break;
-      case 'folder':
-        // Get the TOP-LEVEL folder only (parent folder of the song's folder)
-        // Songs are typically in: BaseFolder/ArtistFolder/SongFolder/song.txt
-        // We want to show only: ArtistFolder (the first level after base)
-        if (song.folderPath) {
-          const parts = song.folderPath.split('/').filter(p => p.length > 0);
-          // Only show the first subfolder level (not the song's immediate folder)
-          // If path is "Artist/Album/Song", show "Artist"
-          // If path is "Artist/Song", show "Artist"
-          // If path is "Song", show "Root"
-          if (parts.length >= 2) {
-            // Skip the last part (song folder) and take the first meaningful parent
-            key = parts[0];
-          } else if (parts.length === 1) {
-            // Single folder - could be an artist folder with songs directly
-            key = parts[0];
-          } else {
-            key = 'Root';
-          }
-        } else if (song.storageFolder) {
-          // For storage folder, extract top-level folder
-          const parts = song.storageFolder.split('/').filter(p => p.length > 0);
-          key = parts.length > 0 ? parts[0] : 'Root';
-        } else {
-          key = 'Root';
-        }
-        break;
-      default:
-        key = 'All';
-    }
-    
-    if (!groups.has(key)) {
-      groups.set(key, []);
-    }
-    groups.get(key)!.push(song);
-  });
-  
-  return groups;
-}
-
-// Get sorted folder keys
-function getSortedFolderKeys(groups: Map<string, Song[]>, groupBy: LibraryGroupBy): string[] {
-  const keys = Array.from(groups.keys());
-  
-  if (groupBy === 'artist' || groupBy === 'title') {
-    // Sort: A-Z first, then "The", then "#"
-    return keys.sort((a, b) => {
-      if (a === '#' && b !== '#') return 1;
-      if (b === '#' && a !== '#') return -1;
-      if (a === 'The' && b !== 'The' && b !== '#') return 1;
-      if (b === 'The' && a !== 'The' && a !== '#') return -1;
-      return a.localeCompare(b);
-    });
-  }
-  
-  return keys.sort((a, b) => a.localeCompare(b));
-}
-
+// ===================== LIBRARY SCREEN =====================
 export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong: (song: Song) => void; initialGameMode?: GameMode }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
