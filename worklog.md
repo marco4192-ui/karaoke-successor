@@ -1643,3 +1643,36 @@ All components extracted to `/src/components/mobile/`:
 - All functionality preserved
 - Build passes
 - Changes pushed to GitHub
+
+---
+## Task ID: 17 - Character-Screen Refactoring
+### Agent: Main Agent
+### Task: Extract ProfileSyncSection from character-screen.tsx
+
+### Work Log:
+- Read character-screen.tsx completely (723 lines)
+- Identified ProfileSyncSection as extractable component (~170 lines)
+- Created `/src/components/profile/profile-sync-section.tsx` (183 lines)
+- Extracted ProfileSyncSection with full sync functionality:
+  - Upload profile to server via leaderboardService
+  - Download profile from server by sync code
+  - Sync code generation and display
+  - Status message handling
+- Updated character-screen.tsx imports
+- Exported COUNTRY_OPTIONS for reuse
+- Removed unused imports (HighscoreEntry, createEmptyPerformanceStats, getPerformanceGrade, formatPlayTime, CloudDownloadIcon)
+- Build verified successfully
+- Committed: "Refactor: Extract ProfileSyncSection from character-screen.tsx"
+- Pushed to GitHub master (commit d9d9e48)
+
+### Files Modified:
+- `/src/components/screens/character-screen.tsx` - Reduced from 723 to 551 lines (-172 lines, -24%)
+- `/src/components/profile/profile-sync-section.tsx` - New file (183 lines)
+
+### Stage Summary:
+- Character-screen.tsx significantly reduced in size
+- ProfileSyncSection extracted as reusable component
+- COUNTRY_OPTIONS exported for use in other components
+- All functionality preserved
+- Build passes
+- Changes pushed to GitHub
