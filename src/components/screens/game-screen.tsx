@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Slider } from '@/components/ui/slider';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useNoteScoring } from '@/hooks/use-note-scoring';
 import { useGameSettings } from '@/hooks/use-game-settings';
@@ -24,7 +22,6 @@ import {
 } from '@/lib/game/daily-challenge';
 import { 
   WebcamBackground, 
-  WebcamQuickControls,
   WebcamBackgroundConfig,
   DEFAULT_WEBCAM_CONFIG,
   loadWebcamConfig,
@@ -39,7 +36,6 @@ import {
   STAR_POWER_CONFIG
 } from '@/lib/game/star-power';
 import { LyricLineDisplay } from '@/components/game/lyric-line-display';
-import { MusicIcon, PlayIcon, SettingsIcon, PauseIcon, SkipForwardIcon, RewindIcon, VolumeIcon } from '@/components/icons';
 import {
   calculateScoringMetadata,
 } from '@/lib/game/scoring';
@@ -67,6 +63,8 @@ import { SpectrogramDisplay } from '@/components/game/spectrogram-display';
 import { DuetNoteHighway } from '@/components/game/duet-note-highway';
 import { NoteHighway } from '@/components/game/note-highway';
 import { SinglePlayerLyrics } from '@/components/game/single-player-lyrics';
+import { GameHeader } from '@/components/game/game-header';
+import { GameAudioEffects } from '@/components/game/game-audio-effects';
 import { useRemoteControl } from '@/hooks/use-remote-control';
 import { useStarPower } from '@/hooks/use-star-power';
 import { useGameMedia } from '@/hooks/use-game-media';
@@ -962,9 +960,8 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-black">
       {/* Header Overlay */}
-      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2 bg-gradient-to-b from-black/70 to-transparent">
-        {/* Left: Back Button */}
-        <Button variant="ghost" onClick={() => {
+      <GameHeader
+        onBack={() => {
           // Cleanup before leaving - stop microphone and all media
           stop();
           if (audioEffects) {
@@ -980,59 +977,16 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
           }
           setIsPlaying(false);
           onBack();
-        }} className="text-white/80 hover:text-white hover:bg-white/10">
-          ← Back
-        </Button>
-        
-        {/* Center: Webcam & Stream Controls */}
-        <div className="flex items-center gap-3">
-          <WebcamQuickControls 
-            config={webcamConfig} 
-            onConfigChange={updateWebcamConfig}
-          />
-          <Button
-            onClick={() => setShowStreamPanel(!showStreamPanel)}
-            className={`${isLiveStreaming ? 'bg-red-500 animate-pulse' : 'bg-purple-600 hover:bg-purple-500'} text-white`}
-            size="sm"
-          >
-            {isLiveStreaming ? '🔴 LIVE' : '🎥 Stream'}
-          </Button>
-        </div>
-        
-        {/* Right: Score, Difficulty & Challenge */}
-        <div className="flex items-center gap-3">
-          {/* Mini Score Display - Only for Single Player */}
-          {!isDuetMode && (
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-1.5">
-                <span className="text-cyan-400 font-bold">{gameState.players[0]?.score?.toLocaleString() || 0}</span>
-                <span className="text-white/40">pts</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-purple-400 font-bold">{gameState.players[0]?.combo || 0}x</span>
-                <span className="text-white/40">combo</span>
-              </div>
-            </div>
-          )}
-          <Badge variant="outline" className="border-white/20 text-white/80">
-            {gameState.difficulty.toUpperCase()}
-          </Badge>
-          
-          {/* Active Challenge Mode Indicator */}
-          {activeChallenge && (
-            <Badge 
-              className={`px-3 py-1 text-sm font-bold ${
-                activeChallenge.difficulty === 'extreme' ? 'bg-red-500/30 text-red-300 border border-red-500/50' :
-                activeChallenge.difficulty === 'hard' ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50' :
-                activeChallenge.difficulty === 'medium' ? 'bg-yellow-500/30 text-yellow-300 border border-yellow-500/50' : 
-                'bg-green-500/30 text-green-300 border border-green-500/50'
-              }`}
-            >
-              {activeChallenge.icon} {activeChallenge.name} (+{activeChallenge.xpReward} XP)
-            </Badge>
-          )}
-        </div>
-      </div>
+        }}
+        webcamConfig={webcamConfig}
+        onWebcamConfigChange={updateWebcamConfig}
+        isLiveStreaming={isLiveStreaming}
+        onToggleStreamPanel={() => setShowStreamPanel(!showStreamPanel)}
+        playerStats={gameState.players[0] ? { score: gameState.players[0].score, combo: gameState.players[0].combo } : null}
+        isDuetMode={isDuetMode}
+        difficulty={gameState.difficulty}
+        activeChallenge={activeChallenge}
+      />
       
       {/* Live Streaming Panel */}
       {showStreamPanel && (
@@ -1310,43 +1264,16 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
           </div>
         </div>
 
-        {/* Audio Effects Button */}
-        <button
-          onClick={() => setShowAudioEffects(!showAudioEffects)}
-          className="fixed bottom-24 right-4 z-30 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
-          title="Audio Effects"
-        >
-          🎛️
-        </button>
-
-        {/* Audio Effects Panel */}
-        {showAudioEffects && (
-          <div className="fixed bottom-40 right-4 z-30 w-72 bg-gray-800/95 rounded-xl p-4 border border-white/20">
-            <h4 className="font-semibold mb-3">Audio Effects</h4>
-            <div className="space-y-3">
-              <div>
-                <span className="text-xs text-white/60">Reverb: {Math.round(reverbAmount * 100)}%</span>
-                <input type="range" min="0" max="100" value={reverbAmount * 100}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value) / 100;
-                    setReverbAmount(val);
-                    audioEffects?.setReverb(val);
-                  }}
-                  className="w-full accent-purple-500" />
-              </div>
-              <div>
-                <span className="text-xs text-white/60">Echo: {Math.round(echoAmount * 100)}%</span>
-                <input type="range" min="0" max="100" value={echoAmount * 100}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value) / 100;
-                    setEchoAmount(val);
-                    audioEffects?.setDelay(val * 0.5, val * 0.5);
-                  }}
-                  className="w-full accent-cyan-500" />
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Audio Effects */}
+        <GameAudioEffects
+          showPanel={showAudioEffects}
+          onTogglePanel={() => setShowAudioEffects(!showAudioEffects)}
+          audioEffects={audioEffects}
+          reverbAmount={reverbAmount}
+          echoAmount={echoAmount}
+          onReverbChange={setReverbAmount}
+          onEchoChange={setEchoAmount}
+        />
         
         {/* Progress Bar - Full Width Bottom */}
         <div className="absolute bottom-0 left-0 right-0 z-20 h-1 bg-white/10">
