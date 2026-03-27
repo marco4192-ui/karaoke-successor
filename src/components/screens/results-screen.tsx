@@ -1,90 +1,37 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useGameStore } from '@/lib/game/store';
 import { Song, Player } from '@/types/game';
-import { getExtendedStats, updateStatsAfterGame, saveExtendedStats, calculateSongXP, getLevelForXP } from '@/lib/game/player-progression';
 import { createShareableCard, downloadScoreCard, shareScoreCard } from '@/lib/game/share-results';
 import { ScoreCard } from '@/components/social/score-card';
 import { ShortsCreator } from '@/components/social/shorts-creator';
 import { TrophyIcon } from '@/components/icons';
 import { SongHighscoreModal, ScoreVisualization } from '@/components/results';
+import { getCountryFlag } from '@/lib/constants/countries';
+import { useHighscoreSave } from '@/hooks/use-highscore-save';
 
 // Constants
 const MAX_POINTS_PER_SONG = 10000;
 
-// Country options for flag display
-const COUNTRY_OPTIONS: { code: string; name: string; flag: string }[] = [
-  { code: 'DE', name: 'Germany', flag: '🇩🇪' },
-  { code: 'US', name: 'United States', flag: '🇺🇸' },
-  { code: 'GB', name: 'United Kingdom', flag: '🇬🇧' },
-  { code: 'FR', name: 'France', flag: '🇫🇷' },
-  { code: 'ES', name: 'Spain', flag: '🇪🇸' },
-  { code: 'IT', name: 'Italy', flag: '🇮🇹' },
-  { code: 'JP', name: 'Japan', flag: '🇯🇵' },
-  { code: 'KR', name: 'South Korea', flag: '🇰🇷' },
-  { code: 'BR', name: 'Brazil', flag: '🇧🇷' },
-  { code: 'MX', name: 'Mexico', flag: '🇲🇽' },
-  { code: 'AU', name: 'Australia', flag: '🇦🇺' },
-  { code: 'CA', name: 'Canada', flag: '🇨🇦' },
-  { code: 'IN', name: 'India', flag: '🇮🇳' },
-  { code: 'CN', name: 'China', flag: '🇨🇳' },
-  { code: 'RU', name: 'Russia', flag: '🇷🇺' },
-  { code: 'NL', name: 'Netherlands', flag: '🇳🇱' },
-  { code: 'PL', name: 'Poland', flag: '🇵🇱' },
-  { code: 'SE', name: 'Sweden', flag: '🇸🇪' },
-  { code: 'NO', name: 'Norway', flag: '🇳🇴' },
-  { code: 'AT', name: 'Austria', flag: '🇦🇹' },
-  { code: 'CH', name: 'Switzerland', flag: '🇨🇭' },
-  { code: 'BE', name: 'Belgium', flag: '🇧🇪' },
-  { code: 'PT', name: 'Portugal', flag: '🇵🇹' },
-  { code: 'AR', name: 'Argentina', flag: '🇦🇷' },
-  { code: 'CL', name: 'Chile', flag: '🇨🇱' },
-  { code: 'CO', name: 'Colombia', flag: '🇨🇴' },
-  { code: 'PH', name: 'Philippines', flag: '🇵🇭' },
-  { code: 'TH', name: 'Thailand', flag: '🇹🇭' },
-  { code: 'VN', name: 'Vietnam', flag: '🇻🇳' },
-  { code: 'ID', name: 'Indonesia', flag: '🇮🇩' },
-  { code: 'MY', name: 'Malaysia', flag: '🇲🇾' },
-  { code: 'SG', name: 'Singapore', flag: '🇸🇬' },
-  { code: 'TW', name: 'Taiwan', flag: '🇹🇼' },
-  { code: 'HK', name: 'Hong Kong', flag: '🇭🇰' },
-  { code: 'AE', name: 'UAE', flag: '🇦🇪' },
-  { code: 'SA', name: 'Saudi Arabia', flag: '🇸🇦' },
-  { code: 'ZA', name: 'South Africa', flag: '🇿🇦' },
-  { code: 'NG', name: 'Nigeria', flag: '🇳🇬' },
-  { code: 'EG', name: 'Egypt', flag: '🇪🇬' },
-  { code: 'IL', name: 'Israel', flag: '🇮🇱' },
-  { code: 'TR', name: 'Turkey', flag: '🇹🇷' },
-  { code: 'GR', name: 'Greece', flag: '🇬🇷' },
-  { code: 'CZ', name: 'Czech Republic', flag: '🇨🇿' },
-  { code: 'HU', name: 'Hungary', flag: '🇭🇺' },
-  { code: 'RO', name: 'Romania', flag: '🇷🇴' },
-  { code: 'UA', name: 'Ukraine', flag: '🇺🇦' },
-  { code: 'DK', name: 'Denmark', flag: '🇩🇰' },
-  { code: 'FI', name: 'Finland', flag: '🇫🇮' },
-  { code: 'IE', name: 'Ireland', flag: '🇮🇪' },
-];
-
-// Country flag helper
-export function getCountryFlag(code?: string): string {
-  if (!code) return '';
-  return COUNTRY_OPTIONS.find(c => c.code === code)?.flag || '';
-}
-
 // ===================== RESULTS SCREEN =====================
 export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void; onHome: () => void }) {
-  const { gameState, resetGame, addHighscore, profiles, activeProfileId, onlineEnabled, updateProfile, highscores } = useGameStore();
-  const savedToHighscoreRef = useRef(false);
-  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
-  const [uploadMessage, setUploadMessage] = useState('');
+  const { gameState, resetGame, profiles, activeProfileId, onlineEnabled, highscores } = useGameStore();
   const [showHighscoreModal, setShowHighscoreModal] = useState(false);
   const results = gameState.results;
   const song = gameState.currentSong;
+
+  // Use custom hook for highscore saving
+  const { uploadStatus, uploadMessage } = useHighscoreSave({
+    song,
+    results,
+    activeProfileId,
+    onlineEnabled,
+  });
 
   // Get song highscores for comparison
   const songHighscores = useMemo(() => {
@@ -100,124 +47,6 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
     const index = songHighscores.findIndex(h => h.playerId === activeProfileId);
     return index >= 0 ? index + 1 : null;
   }, [songHighscores, activeProfileId, song]);
-
-  // Save highscore when results are shown (only once)
-  useEffect(() => {
-    if (results && song && activeProfileId && !savedToHighscoreRef.current) {
-      const playerResult = results.players[0];
-      const profile = profiles.find(p => p.id === activeProfileId);
-      
-      if (profile && playerResult) {
-        // Save to local highscore
-        addHighscore({
-          playerId: profile.id,
-          playerName: profile.name,
-          playerAvatar: profile.avatar,
-          playerColor: profile.color,
-          songId: song.id,
-          songTitle: song.title,
-          artist: song.artist,
-          score: playerResult.score,
-          accuracy: playerResult.accuracy,
-          maxCombo: playerResult.maxCombo,
-          difficulty: gameState.difficulty,
-          gameMode: gameState.gameMode,
-          rating: playerResult.rating,
-        });
-        savedToHighscoreRef.current = true;
-        
-        // UPDATE PLAYER PROGRESSION (XP, Level, Rank, Titles)
-        const currentStats = getExtendedStats();
-        const xpResult = updateStatsAfterGame(currentStats, {
-          songId: song.id,
-          songTitle: song.title,
-          genre: song.genre,
-          score: playerResult.score,
-          accuracy: playerResult.accuracy,
-          maxCombo: playerResult.maxCombo,
-          perfectNotes: Math.floor(playerResult.notesHit * 0.6),
-          goldenNotes: 0, // Would need to track this during gameplay
-          difficulty: gameState.difficulty,
-          mode: gameState.gameMode,
-          duration: song.duration,
-        });
-        saveExtendedStats(xpResult.stats);
-        
-        // UPDATE ACTIVE PROFILE XP AND LEVEL (character-based progression)
-        const earnedXP = calculateSongXP(
-          playerResult.score,
-          playerResult.accuracy,
-          playerResult.maxCombo,
-          Math.floor(playerResult.notesHit * 0.6),
-          0, // goldenNotes - would need to track during gameplay
-          undefined // challengeMode
-        );
-        const currentProfileXP = profile.xp || 0;
-        const newTotalXP = currentProfileXP + earnedXP;
-        const levelInfo = getLevelForXP(newTotalXP);
-        updateProfile(profile.id, {
-          xp: newTotalXP,
-          level: levelInfo.level,
-        });
-        
-        // Show XP earned notification if leveled up or got new titles
-        if (xpResult.leveledUp) {
-          // Level up happened
-        }
-        if (xpResult.newTitles.length > 0) {
-          // New titles unlocked
-        }
-
-        // Upload to global leaderboard if enabled and player allows it
-        if (onlineEnabled && (profile.privacy?.showOnLeaderboard ?? true)) {
-          setUploadStatus('uploading');
-          
-          import('@/lib/api/leaderboard-service').then(({ leaderboardService }) => {
-            // First, ensure player is registered/updated
-            const playerPromise = leaderboardService.savePlayer(profile);
-            
-            // Then, register the song
-            const songPromise = leaderboardService.registerSong(song);
-            
-            // Wait for both, then submit score
-            Promise.all([playerPromise, songPromise])
-              .then(() => {
-                // Calculate notes stats from game state
-                const perfectNotes = Math.floor(playerResult.notesHit * 0.6); // Estimate
-                const goodNotes = Math.floor(playerResult.notesHit * 0.4); // Estimate
-                
-                return leaderboardService.submitScore(
-                  profile,
-                  song,
-                  playerResult.score,
-                  10000, // maxScore baseline
-                  {
-                    perfectNotes,
-                    goodNotes,
-                    missedNotes: playerResult.notesMissed,
-                    maxCombo: playerResult.maxCombo,
-                  },
-                  gameState.difficulty,
-                  gameState.gameMode
-                );
-              })
-              .then((result) => {
-                setUploadStatus('success');
-                if (result.is_new_high_score) {
-                  setUploadMessage('🎉 New global high score!');
-                } else {
-                  setUploadMessage(`Uploaded! Rank #${result.rank}`);
-                }
-              })
-              .catch((err) => {
-                setUploadStatus('error');
-                setUploadMessage(err.message || 'Upload failed');
-              });
-          });
-        }
-      }
-    }
-  }, [results, song, activeProfileId, profiles, addHighscore, gameState.difficulty, gameState.gameMode, onlineEnabled, updateProfile]);
 
   if (!results || !song) {
     return (
@@ -257,6 +86,26 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
     notes: [],
     totalNotes: playerResult.notesHit + playerResult.notesMissed,
   };
+
+  // Helper to create highscore entry for sharing
+  const createHighscoreEntry = () => ({
+    id: '',
+    playerId: '',
+    playerName: activeProfile?.name || 'Player',
+    playerAvatar: activeProfile?.avatar,
+    playerColor: activeProfile?.color || '#FF6B6B',
+    songId: song.id,
+    songTitle: song.title,
+    artist: song.artist,
+    score: playerResult.score,
+    accuracy: playerResult.accuracy,
+    maxCombo: playerResult.maxCombo,
+    difficulty: gameState.difficulty,
+    gameMode: gameState.gameMode,
+    rating: playerResult.rating,
+    rankTitle: '',
+    playedAt: Date.now(),
+  });
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -325,7 +174,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           <CardContent>
             <div className="space-y-2">
               {songHighscores.slice(0, 3).map((entry, index) => (
-                <div 
+                <div
                   key={entry.id}
                   className={`flex items-center gap-3 p-2 rounded-lg ${
                     entry.playerId === activeProfileId ? 'bg-cyan-500/20' : 'bg-white/5'
@@ -364,56 +213,23 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
               <TabsTrigger value="card">📸 Score Card</TabsTrigger>
               <TabsTrigger value="video">🎬 Video Short</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="card">
               {song && playerResult && (
                 <ScoreCard
                   song={song}
-                  score={{
-                    id: 'current',
-                    playerId: activeProfileId || '',
-                    playerName: profiles.find(p => p.id === activeProfileId)?.name || 'Player',
-                    playerAvatar: profiles.find(p => p.id === activeProfileId)?.avatar,
-                    playerColor: profiles.find(p => p.id === activeProfileId)?.color || '#FF6B6B',
-                    songId: song.id,
-                    songTitle: song.title,
-                    artist: song.artist,
-                    score: playerResult.score,
-                    accuracy: playerResult.accuracy,
-                    maxCombo: playerResult.maxCombo,
-                    difficulty: gameState.difficulty,
-                    gameMode: gameState.gameMode,
-                    rating: playerResult.rating,
-                    rankTitle: '',
-                    playedAt: Date.now(),
-                  }}
-                  playerName={profiles.find(p => p.id === activeProfileId)?.name || 'Player'}
-                  playerAvatar={profiles.find(p => p.id === activeProfileId)?.avatar}
+                  score={createHighscoreEntry()}
+                  playerName={activeProfile?.name || 'Player'}
+                  playerAvatar={activeProfile?.avatar}
                 />
               )}
             </TabsContent>
-            
+
             <TabsContent value="video">
               {song && playerResult && (
                 <ShortsCreator
                   song={song}
-                  score={{
-                    id: 'current',
-                    playerId: activeProfileId || '',
-                    playerName: profiles.find(p => p.id === activeProfileId)?.name || 'Player',
-                    playerColor: profiles.find(p => p.id === activeProfileId)?.color || '#FF6B6B',
-                    songId: song.id,
-                    songTitle: song.title,
-                    artist: song.artist,
-                    score: playerResult.score,
-                    accuracy: playerResult.accuracy,
-                    maxCombo: playerResult.maxCombo,
-                    difficulty: gameState.difficulty,
-                    gameMode: gameState.gameMode,
-                    rating: playerResult.rating,
-                    rankTitle: '',
-                    playedAt: Date.now(),
-                  }}
+                  score={createHighscoreEntry()}
                   audioUrl={song.audioUrl}
                 />
               )}
@@ -428,24 +244,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           variant="outline"
           onClick={() => {
             if (playerResult && song) {
-              const card = createShareableCard({
-                id: '',
-                playerId: '',
-                playerName: profiles.find(p => p.id === activeProfileId)?.name || 'Player',
-                playerAvatar: profiles.find(p => p.id === activeProfileId)?.avatar,
-                playerColor: profiles.find(p => p.id === activeProfileId)?.color || '#FF6B6B',
-                songId: song.id,
-                songTitle: song.title,
-                artist: song.artist,
-                score: playerResult.score,
-                accuracy: playerResult.accuracy,
-                maxCombo: playerResult.maxCombo,
-                difficulty: gameState.difficulty,
-                gameMode: gameState.gameMode,
-                rating: playerResult.rating,
-                rankTitle: '',
-                playedAt: Date.now(),
-              });
+              const card = createShareableCard(createHighscoreEntry());
               downloadScoreCard(card);
             }
           }}
@@ -457,24 +256,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           variant="outline"
           onClick={async () => {
             if (playerResult && song) {
-              const card = createShareableCard({
-                id: '',
-                playerId: '',
-                playerName: profiles.find(p => p.id === activeProfileId)?.name || 'Player',
-                playerAvatar: profiles.find(p => p.id === activeProfileId)?.avatar,
-                playerColor: profiles.find(p => p.id === activeProfileId)?.color || '#FF6B6B',
-                songId: song.id,
-                songTitle: song.title,
-                artist: song.artist,
-                score: playerResult.score,
-                accuracy: playerResult.accuracy,
-                maxCombo: playerResult.maxCombo,
-                difficulty: gameState.difficulty,
-                gameMode: gameState.gameMode,
-                rating: playerResult.rating,
-                rankTitle: '',
-                playedAt: Date.now(),
-              });
+              const card = createShareableCard(createHighscoreEntry());
               const success = await shareScoreCard(card);
               if (!success) {
                 alert('Sharing not supported. Card downloaded instead.');
@@ -490,7 +272,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
 
       {/* Actions */}
       <div className="flex gap-4 justify-center">
-        <Button 
+        <Button
           variant="outline"
           onClick={() => setShowHighscoreModal(true)}
           className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 px-4"
