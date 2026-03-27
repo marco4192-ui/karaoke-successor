@@ -1610,3 +1610,36 @@ All components extracted to `/src/components/mobile/`:
 - All functionality preserved
 - Build passes
 - Changes pushed to GitHub
+
+---
+## Task ID: 16 - Jukebox-Screen Refactoring
+### Agent: Main Agent
+### Task: Integrate useJukeboxPlaylist hook into jukebox-screen.tsx
+
+### Work Log:
+- Read jukebox-screen.tsx completely (798 lines)
+- Identified that useJukeboxPlaylist hook existed but wasn't used
+- Refactored to use the hook's state management:
+  - playlist, currentIndex, currentSong from hook
+  - shuffle, repeat from hook with setters
+  - upNext from hook (memoized calculation)
+  - generatePlaylist(songs) from hook
+  - playNext(), playPrevious() from hook
+  - playSongAtIndex(index) for playlist selection
+  - clearPlaylist() for cleanup
+- Removed redundant inline state and functions
+- Updated startJukebox to pass filteredSongs to generatePlaylist
+- Updated cleanup useEffect to use clearPlaylist()
+- Build verified successfully
+- Committed: "Refactor: Integrate useJukeboxPlaylist hook into jukebox-screen.tsx"
+- Pushed to GitHub master (commit 02b2729)
+
+### Files Modified:
+- `/src/components/screens/jukebox-screen.tsx` - Reduced from 798 to 738 lines (-60 lines, -8%)
+
+### Stage Summary:
+- Jukebox-screen.tsx now uses existing hook for playlist management
+- Code is more maintainable with separated concerns
+- All functionality preserved
+- Build passes
+- Changes pushed to GitHub
