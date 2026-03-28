@@ -54,7 +54,7 @@ export function OnlineMultiplayerScreen({ onBack }: { onBack: () => void }) {
     setShowGame(true);
   }, [setSong, setGameMode]);
   
-  if (showGame && onlineRoom && selectedSong) {
+  if (showGame && onlineRoom && selectedSong && socketRef) {
     return (
       <OnlineGameScreen 
         room={onlineRoom}
@@ -99,7 +99,7 @@ function OnlineGameScreen({ room, socket, song, onEnd }: { room: OnlineRoom; soc
   const [winner, setWinner] = useState<GameEndedPlayerResult | null>(null);
   
   // Get opponent info
-  const myId = socket?.id;
+  const myId = socket.id || '';
   const opponent = room.players?.find((p: OnlinePlayer) => p.id !== myId);
   
   useEffect(() => {

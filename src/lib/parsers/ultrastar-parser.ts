@@ -635,7 +635,7 @@ export function generateUltraStarTxt(song: Song): string {
   const MIDI_BASE_OFFSET = 48;
   
   // Track current player for P1/P2 markers
-  let currentPlayer: 'P1' | 'P2' | undefined = undefined;
+  let currentPlayer: DuetPlayer | undefined = undefined;
   
   for (const line of song.lyrics) {
     for (const note of line.notes) {
@@ -647,7 +647,7 @@ export function generateUltraStarTxt(song: Song): string {
       // Add P1/P2 prefix for duet mode if player changes
       let noteLine = `${type} ${startBeat} ${duration} ${relativePitch} ${note.lyric}`;
       
-      if (song.isDuet && note.player) {
+      if (song.isDuet && note.player && note.player !== 'both') {
         if (currentPlayer !== note.player) {
           // Add player marker before this note
           lines.push(note.player);

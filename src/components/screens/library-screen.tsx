@@ -460,7 +460,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
   };
 
   // Handle sort change
-  const handleSortChange = (sortBy: 'title' | 'artist' | 'dateAdded', sortOrder: 'asc' | 'desc') => {
+  const handleSortChange = (sortBy: 'title' | 'artist' | 'dateAdded' | 'difficulty' | 'rating', sortOrder: 'asc' | 'desc') => {
     updateSettings({ sortBy, sortOrder });
   };
 

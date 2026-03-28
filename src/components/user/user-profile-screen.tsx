@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { ExtendedPlayerProfile } from '@/lib/db/user-db';
+import { PLAYER_COLORS } from '@/types/game';
 
 // Import extracted components and hook
 import { UserIcon, LinkIcon, InfoIcon } from './profile-icons';
@@ -158,7 +159,7 @@ export function UserProfileScreen({
               avatar={newProfileAvatar}
               onAvatarChange={setNewProfileAvatar}
               color={newProfileColor}
-              onColorChange={setNewProfileColor}
+              onColorChange={(color) => setNewProfileColor(color as typeof PLAYER_COLORS[number])}
               showTypeSelector
               isGuest={isGuest}
               onGuestChange={setIsGuest}
@@ -197,7 +198,7 @@ export function UserProfileScreen({
               avatar={newProfileAvatar}
               onAvatarChange={setNewProfileAvatar}
               color={newProfileColor}
-              onColorChange={setNewProfileColor}
+              onColorChange={(color) => setNewProfileColor(color as typeof PLAYER_COLORS[number])}
             />
           </div>
 

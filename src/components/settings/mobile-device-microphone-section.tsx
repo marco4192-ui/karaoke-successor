@@ -105,9 +105,9 @@ export function MobileDeviceMicrophoneSection() {
   useEffect(() => {
     const pollClients = async () => {
       try {
-        const data = await apiClient.get('/api/mobile', { action: 'clients' });
+        const data = await apiClient.get<{ clients?: ConnectedClient[] }>('/api/mobile', { action: 'clients' });
         if (data.clients) {
-          setConnectedClients(data.clients as ConnectedClient[]);
+          setConnectedClients(data.clients);
         }
       } catch {
         // Ignore

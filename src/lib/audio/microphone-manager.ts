@@ -695,15 +695,14 @@ export class MultiMicrophoneManager {
       // Migration from old format
       if (config.assignedMics && Array.isArray(config.assignedMics)) {
         config.assignedMics.forEach((mic) => {
-          // Migrate latency values
-          if (mic.config?.latency) {
-            if (mic.config.latency === 'low') {
-              mic.config.latency = 'interactive';
-            } else if (mic.config.latency === 'normal') {
-              mic.config.latency = 'balanced';
-            } else if (mic.config.latency === 'high') {
-              mic.config.latency = 'playback';
-            }
+          // Migrate latency values (handle old format: 'low', 'normal', 'high')
+          const oldLatency = mic.config?.latency as string;
+          if (oldLatency === 'low') {
+            mic.config.latency = 'interactive';
+          } else if (oldLatency === 'normal') {
+            mic.config.latency = 'balanced';
+          } else if (oldLatency === 'high') {
+            mic.config.latency = 'playback';
           }
           // Ensure playerIndex
           if (mic.playerIndex === undefined) {
@@ -898,11 +897,12 @@ export class MicrophoneManager {
     const saved = storage.getJSON<MicrophoneConfig>(STORAGE_KEYS.MIC_CONFIG);
     if (saved) {
       // Migration: Convert old latency values to new valid values
-      if (saved.latency === 'low') {
+      const oldLatency = saved.latency as string;
+      if (oldLatency === 'low') {
         saved.latency = 'interactive';
-      } else if (saved.latency === 'normal') {
+      } else if (oldLatency === 'normal') {
         saved.latency = 'balanced';
-      } else if (saved.latency === 'high') {
+      } else if (oldLatency === 'high') {
         saved.latency = 'playback';
       }
 
