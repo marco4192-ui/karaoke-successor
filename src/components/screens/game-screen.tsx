@@ -389,8 +389,24 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     onComboMilestone: (combo, x, y) => emitComboFirework(x, y, combo),
   });
 
-  // Timing synchronization - user adjustable offset (initialized from song)
-  const [timingOffset, setTimingOffset] = useState(0);
+  // Timing synchronization - user adjustable offset (persisted per song)
+  const [timingOffset, setTimingOffset] = useState(() => {
+    // Load persisted timing offset for this song
+    if (typeof window !== 'undefined' && song?.id) {
+      const saved = localStorage.getItem(`karaoke-timing-offset-${song.id}`);
+      if (saved) {
+        return parseInt(saved, 10) || 0;
+      }
+    }
+    return song?.timingOffset || 0;
+  });
+  
+  // Persist timing offset when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined' && song?.id) {
+      localStorage.setItem(`karaoke-timing-offset-${song.id}`, timingOffset.toString());
+    }
+  }, [song?.id, timingOffset]);
   
   // Poll for mobile pitch data
   useEffect(() => {
@@ -1294,6 +1310,8 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         showControls={showPracticeControls}
         onToggleControls={() => setShowPracticeControls(!showPracticeControls)}
         onPracticeModeChange={(config) => setPracticeMode(p => ({ ...p, ...config }))}
+        timingOffset={timingOffset}
+        onTimingOffsetChange={setTimingOffset}
       />
 
       <ScoreEventsDisplay events={scoreEvents} maxVisible={5} />
