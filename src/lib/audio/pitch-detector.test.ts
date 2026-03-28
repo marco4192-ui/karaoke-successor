@@ -8,12 +8,17 @@ import {
   PitchDetectorManager,
   getPitchDetectorManager,
   resetPitchDetectorManager,
+} from './pitch-detector'
+import {
   yinPitchDetection,
   calculateClarity,
   checkPitchStability,
   generateSineWaveBuffer,
   createPitchDetectorConfig,
-} from './pitch-detector'
+  calculateRMS,
+  calculateBufferLatency,
+  estimateBufferSize,
+} from './pitch-detector-utils'
 import type { Difficulty } from '@/types/game'
 
 describe('PitchDetector', () => {
