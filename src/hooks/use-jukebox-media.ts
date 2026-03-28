@@ -14,8 +14,8 @@ export interface UseJukeboxMediaOptions {
 }
 
 export interface UseJukeboxMediaResult {
-  videoRef: React.RefObject<HTMLVideoElement>;
-  audioRef: React.RefObject<HTMLAudioElement>;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
+  audioRef: React.RefObject<HTMLAudioElement | null>;
   volume: number;
   isPlaying: boolean;
   setVolume: (volume: number) => void;
