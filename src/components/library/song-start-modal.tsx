@@ -66,6 +66,28 @@ export function SongStartModal({
 }: SongStartModalProps) {
   const [showVocalSeparator, setShowVocalSeparator] = useState(false);
 
+  // Hooks must be called before any early returns
+  const handleStemSelect = useCallback((stem: StemType, url: string) => {
+    if (stem === 'instrumental') {
+      onStartOptionsChange({
+        ...startOptions,
+        useInstrumental: true,
+        instrumentalUrl: url,
+      });
+    }
+  }, [startOptions, onStartOptionsChange]);
+
+  const handleSeparationComplete = useCallback((stems: Map<StemType, string>) => {
+    const instrumentalUrl = stems.get('instrumental');
+    if (instrumentalUrl) {
+      onStartOptionsChange({
+        ...startOptions,
+        useInstrumental: true,
+        instrumentalUrl,
+      });
+    }
+  }, [startOptions, onStartOptionsChange]);
+
   if (!song) return null;
 
   const activeProfiles = profiles.filter(p => p.isActive !== false);
@@ -92,27 +114,6 @@ export function SongStartModal({
   const handlePlayersChange = (players: string[]) => {
     onStartOptionsChange({ ...startOptions, players });
   };
-
-  const handleStemSelect = useCallback((stem: StemType, url: string) => {
-    if (stem === 'instrumental') {
-      onStartOptionsChange({
-        ...startOptions,
-        useInstrumental: true,
-        instrumentalUrl: url,
-      });
-    }
-  }, [startOptions, onStartOptionsChange]);
-
-  const handleSeparationComplete = useCallback((stems: Map<StemType, string>) => {
-    const instrumentalUrl = stems.get('instrumental');
-    if (instrumentalUrl) {
-      onStartOptionsChange({
-        ...startOptions,
-        useInstrumental: true,
-        instrumentalUrl,
-      });
-    }
-  }, [startOptions, onStartOptionsChange]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
