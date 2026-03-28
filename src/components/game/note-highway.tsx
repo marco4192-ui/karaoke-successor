@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, memo } from 'react';
 import { Note, LyricLine } from '@/types/game';
 import { getNoteShapeClasses, NoteShapeStyle } from '@/lib/game/note-utils';
 import { MicIcon } from '@/components/icons';
@@ -52,8 +52,15 @@ export interface NoteHighwayProps {
 
 /**
  * Pitch grid background lines
+ * Memoized: static component with no props changes
  */
-function PitchGrid({ count = 7, color = 'cyan' }: { count?: number; color?: string }) {
+const PitchGrid = memo(function PitchGrid({ 
+  count = 7, 
+  color = 'cyan' 
+}: { 
+  count?: number; 
+  color?: string 
+}) {
   return (
     <div className="absolute inset-0 pointer-events-none">
       {Array.from({ length: count }).map((_, i) => (
@@ -65,12 +72,13 @@ function PitchGrid({ count = 7, color = 'cyan' }: { count?: number; color?: stri
       ))}
     </div>
   );
-}
+});
 
 /**
  * Vertical sing line indicator
+ * Memoized: only re-renders when position or color changes
  */
-function SingLine({
+const SingLine = memo(function SingLine({
   position,
   color = 'cyan'
 }: {
@@ -90,12 +98,13 @@ function SingLine({
       <div className={`absolute -left-1 top-0 bottom-0 w-0.5 bg-${color}-500/30`} />
     </div>
   );
-}
+});
 
 /**
  * Single note block with all styling
+ * Memoized: re-renders only when note or currentTime changes
  */
-function NoteBlock({
+const NoteBlock = memo(function NoteBlock({
   note,
   currentTime,
   pitchStats,
@@ -155,7 +164,6 @@ function NoteBlock({
 
   return (
     <div
-      key={note.id}
       className={`absolute ${noteShape.baseClass} ${getBackgroundClasses()} ${isActive ? noteShape.activeClass : ''}`}
       style={{
         left: `${x}%`,
@@ -169,12 +177,31 @@ function NoteBlock({
       }}
     />
   );
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison for better performance
+  // Only re-render if note position or active state changes significantly
+  const prevX = (prevProps.note.startTime - prevProps.currentTime) / prevProps.noteWindow;
+  const nextX = (nextProps.note.startTime - nextProps.currentTime) / nextProps.noteWindow;
+  
+  // Re-render if position changed by more than 1% of the window
+  if (Math.abs(prevX - nextX) > 0.01) return false;
+  
+  // Re-render if active state changed
+  const prevActive = prevProps.currentTime >= prevProps.note.startTime && 
+                     prevProps.currentTime <= prevProps.note.startTime + prevProps.note.duration;
+  const nextActive = nextProps.currentTime >= nextProps.note.startTime && 
+                     nextProps.currentTime <= nextProps.note.startTime + nextProps.note.duration;
+  if (prevActive !== nextActive) return false;
+  
+  // Otherwise, skip re-render
+  return true;
+});
 
 /**
  * Pitch indicator showing singer's current pitch
+ * Memoized: re-renders only when detectedPitch changes
  */
-function PitchIndicator({
+const PitchIndicator = memo(function PitchIndicator({
   detectedPitch,
   pitchStats,
   singLinePosition,
@@ -210,12 +237,13 @@ function PitchIndicator({
       <MicIcon className="w-4 h-4 text-white" />
     </div>
   );
-}
+});
 
 /**
  * Player label badge
+ * Memoized: static component
  */
-function PlayerLabel({
+const PlayerLabel = memo(function PlayerLabel({
   playerName,
   playerNumber,
   color = 'cyan',
@@ -238,11 +266,11 @@ function PlayerLabel({
       </div>
     </div>
   );
-}
+});
 
 // ===================== MAIN COMPONENT =====================
 
-export function NoteHighway({
+function NoteHighwayInternal({
   visibleNotes,
   currentTime,
   pitchStats,
@@ -312,5 +340,8 @@ export function NoteHighway({
     </div>
   );
 }
+
+// Export with React.memo for optimal performance
+export const NoteHighway = memo(NoteHighwayInternal);
 
 export default NoteHighway;
