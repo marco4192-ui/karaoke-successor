@@ -11,6 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { THEMES, applyTheme, getStoredTheme, Theme } from '@/lib/game/themes';
 import { KEYBOARD_SHORTCUTS, formatShortcut, KeyboardShortcut } from '@/lib/game/keyboard-shortcuts';
 import { PRACTICE_MODE_DEFAULTS, PLAYBACK_RATES, PracticeModeConfig } from '@/lib/game/practice-mode';
+import { StemSeparationPanel } from '@/components/audio/stem-separation-panel';
 
 interface SettingsProps {
   onClose?: () => void;
@@ -182,6 +183,7 @@ export function SettingsPanel({ onClose }: SettingsProps) {
             <TabsTrigger value="audio" className="rounded-none border-b-2 border-transparent data-[state=active]:border-cyan-400 data-[state=active]:bg-transparent">Audio</TabsTrigger>
             <TabsTrigger value="visual" className="rounded-none border-b-2 border-transparent data-[state=active]:border-cyan-400 data-[state=active]:bg-transparent">Visual</TabsTrigger>
             <TabsTrigger value="practice" className="rounded-none border-b-2 border-transparent data-[state=active]:border-cyan-400 data-[state=active]:bg-transparent">Practice</TabsTrigger>
+            <TabsTrigger value="tools" className="rounded-none border-b-2 border-transparent data-[state=active]:border-cyan-400 data-[state=active]:bg-transparent">Tools</TabsTrigger>
             <TabsTrigger value="shortcuts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-cyan-400 data-[state=active]:bg-transparent">Shortcuts</TabsTrigger>
           </TabsList>
           
@@ -190,6 +192,12 @@ export function SettingsPanel({ onClose }: SettingsProps) {
               <TabsContent value="audio" className="mt-0">{audioSettings}</TabsContent>
               <TabsContent value="visual" className="mt-0">{themeGrid}</TabsContent>
               <TabsContent value="practice" className="mt-0">{practiceSettings}</TabsContent>
+              <TabsContent value="tools" className="mt-0">
+                <div className="space-y-4">
+                  <h3 className="font-medium text-lg">Audio Tools</h3>
+                  <StemSeparationPanel />
+                </div>
+              </TabsContent>
               <TabsContent value="shortcuts" className="mt-0">{shortcutsContent}</TabsContent>
             </div>
           </ScrollArea>
