@@ -166,7 +166,7 @@ async function pullFromCloud(userId: string) {
       await db.player.update({
         where: { id: player.id },
         data: {
-          totalScore: BigInt(cloudPlayer.total_score || 0),
+          totalScore: cloudPlayer.total_score || 0,
           gamesPlayed: cloudPlayer.games_played || 0,
           avgAccuracy: cloudPlayer.avg_accuracy || 0,
           bestScore: cloudPlayer.best_score || 0,

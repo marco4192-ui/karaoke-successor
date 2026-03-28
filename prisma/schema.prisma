@@ -1,20 +1,22 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// SQLite - Perfect for Tauri Desktop Apps
+// - Single file database that ships with the app
+// - No server installation required
+// - Cross-platform compatible
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 // ============================================
-// Authentication Models (NextAuth.js)
+// Authentication Models (NextAuth.js compatible)
 // ============================================
 
 model Account {
@@ -34,7 +36,6 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
-  @@index([userId])
 }
 
 model Session {
@@ -44,8 +45,6 @@ model Session {
   expires      DateTime
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
 }
 
 model VerificationToken {
@@ -57,7 +56,7 @@ model VerificationToken {
 }
 
 // ============================================
-// User Model (Main Profile)
+// User Model (Main Account)
 // ============================================
 
 model User {
@@ -81,8 +80,6 @@ model User {
   // Timestamps
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-
-  @@index([email])
 }
 
 // ============================================
@@ -106,13 +103,13 @@ model Player {
   showCountry       Boolean @default(true)
 
   // Game stats (cached for performance)
-  totalScore      BigInt   @default(0)
+  totalScore      Int      @default(0)
   gamesPlayed     Int      @default(0)
   songsCompleted  Int      @default(0)
   bestScore       Int      @default(0)
   avgAccuracy     Float    @default(0)
-  totalNotesHit   BigInt   @default(0)
-  totalNotesMissed BigInt  @default(0)
+  totalNotesHit   Int      @default(0)
+  totalNotesMissed Int     @default(0)
   bestCombo       Int      @default(0)
   perfectGames    Int      @default(0)
   totalTimeSung   Int      @default(0) // in seconds
@@ -133,10 +130,6 @@ model Player {
   // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([totalScore])
-  @@index([syncCode])
-  @@index([country])
 }
 
 // ============================================
@@ -212,10 +205,6 @@ model Song {
 
   // Relations
   scores      Score[]
-
-  @@index([title])
-  @@index([artist])
-  @@index([genre])
 }
 
 // ============================================
@@ -261,12 +250,6 @@ model Score {
 
   // Timestamps
   playedAt    DateTime @default(now())
-
-  @@index([playerId])
-  @@index([songId])
-  @@index([score])
-  @@index([playedAt])
-  @@index([playerId, songId])
 }
 
 // ============================================
@@ -292,8 +275,6 @@ model Achievement {
 
   // Relations
   playerAchievements PlayerAchievement[]
-
-  @@index([category])
 }
 
 model PlayerAchievement {
@@ -306,7 +287,6 @@ model PlayerAchievement {
   unlockedAt    DateTime   @default(now())
 
   @@unique([playerId, achievementId])
-  @@index([playerId])
 }
 
 // ============================================
@@ -331,7 +311,6 @@ model DailyChallenge {
   completions DailyChallengeCompletion[]
 
   @@unique([date, type])
-  @@index([date])
 }
 
 model DailyChallengeCompletion {
@@ -348,7 +327,6 @@ model DailyChallengeCompletion {
   createdAt    DateTime      @default(now())
 
   @@unique([challengeId, playerId])
-  @@index([playerId])
 }
 
 // ============================================
@@ -362,7 +340,7 @@ model SyncQueueItem {
   // Item details
   type        String   // highscore, profile, achievement, settings
   action      String   // create, update, delete
-  data        String   @db.Text // JSON data
+  data        String   // JSON data
 
   // Sync status
   synced      Boolean  @default(false)
@@ -372,7 +350,4 @@ model SyncQueueItem {
 
   // Timestamps
   createdAt   DateTime @default(now())
-
-  @@index([playerId, synced])
-  @@index([createdAt])
 }
