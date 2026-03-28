@@ -5,6 +5,8 @@
 
 // Services
 export { StreamingOverlayService, getStreamingOverlayService } from './streaming-overlay-service';
+export { TwitchService, getTwitchService, resetTwitchService } from './twitch-service';
+export { StreamingService, getStreamingService, resetStreamingService } from './streaming-service';
 
 // Types
 export type {
@@ -35,6 +37,26 @@ export type {
   OverlaySize,
   ChatPlatform,
 } from './types';
+
+// Twitch Types
+export type {
+  TwitchConfig,
+  TwitchUser,
+  TwitchToken,
+  TwitchStreamInfo,
+  TwitchChatMessage,
+  TwitchEvent,
+  KaraokeChatCommand,
+} from './twitch-service';
+
+// Streaming Types
+export type {
+  StreamingPlatform,
+  StreamingConfig,
+  StreamStats,
+  StreamEvent,
+  KaraokeSongRequest,
+} from './streaming-service';
 
 // Constants
 export {
