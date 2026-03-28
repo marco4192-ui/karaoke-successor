@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { getTwitchService, TwitchUser } from '@/lib/streaming/twitch-service';
+import { getStreamingService, StreamStats, StreamEvent } from '@/lib/streaming/streaming-service';
+import { ChatOverlay } from './chat-overlay';
 
 interface LiveStreamingProps {
   onStreamStart?: () => void;
@@ -79,6 +82,10 @@ export function LiveStreamingPanel({ onStreamStart, onStreamEnd, gameCanvas, aud
   const [cameraEnabled, setCameraEnabled] = useState(false);
   const [micEnabled, setMicEnabled] = useState(true);
   const [gameAudioEnabled, setGameAudioEnabled] = useState(true);
+  const [twitchUser, setTwitchUser] = useState<TwitchUser | null>(null);
+  const [isTwitchAuth, setIsTwitchAuth] = useState(false);
+  const [showChat, setShowChat] = useState(true);
+  const [streamStats, setStreamStats] = useState<StreamStats | null>(null);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
@@ -86,6 +93,27 @@ export function LiveStreamingPanel({ onStreamStart, onStreamEnd, gameCanvas, aud
   const durationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   const platform = PLATFORMS.find(p => p.id === selectedPlatform) || PLATFORMS[0];
+
+  // Check Twitch auth status
+  useEffect(() => {
+    const twitch = getTwitchService();
+    twitch.initialize({});
+    
+    if (twitch.isAuthenticated()) {
+      setIsTwitchAuth(true);
+      setTwitchUser(twitch.getUser());
+    }
+  }, []);
+
+  // Subscribe to stream stats
+  useEffect(() => {
+    const streaming = getStreamingService();
+    const unsub = streaming.onStats((stats) => {
+      setStreamStats(stats);
+      setStreamDuration(stats.duration);
+    });
+    return unsub;
+  }, []);
 
   // Start camera
   const startCamera = useCallback(async () => {
@@ -158,8 +186,20 @@ export function LiveStreamingPanel({ onStreamStart, onStreamEnd, gameCanvas, aud
       const stream = await createCombinedStream();
       combinedStreamRef.current = stream;
       
-      // Simulate stream start (real RTMP requires server-side component)
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Start streaming service (handles chat, events, etc.)
+      const streamingService = getStreamingService();
+      await streamingService.startStream({
+        platform: selectedPlatform,
+        streamKey,
+        serverUrl: customServerUrl || platform.serverUrl,
+        title: streamTitle,
+      });
+      
+      // For Twitch, update stream title if authenticated
+      if (selectedPlatform === 'twitch' && isTwitchAuth) {
+        const twitch = getTwitchService();
+        await twitch.updateStreamInfo(streamTitle);
+      }
       
       // Create MediaRecorder for local recording/streaming simulation
       const mediaRecorder = new MediaRecorder(stream, {
@@ -172,11 +212,6 @@ export function LiveStreamingPanel({ onStreamStart, onStreamEnd, gameCanvas, aud
       
       setIsStreaming(true);
       setIsConnecting(false);
-      
-      // Start duration counter
-      durationIntervalRef.current = setInterval(() => {
-        setStreamDuration(prev => prev + 1);
-      }, 1000);
       
       onStreamStart?.();
       
@@ -192,10 +227,14 @@ export function LiveStreamingPanel({ onStreamStart, onStreamEnd, gameCanvas, aud
       setError('Failed to start stream. Please check your devices.');
       setIsConnecting(false);
     }
-  }, [streamKey, platform.requiresKey, createCombinedStream, selectedPlatform, streamTitle, customServerUrl, onStreamStart]);
+  }, [streamKey, platform.requiresKey, createCombinedStream, selectedPlatform, streamTitle, customServerUrl, onStreamStart, platform.serverUrl, isTwitchAuth]);
 
   // Stop streaming
   const stopStream = useCallback(() => {
+    // Stop streaming service
+    const streamingService = getStreamingService();
+    streamingService.stopStream();
+    
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
@@ -382,6 +421,56 @@ export function LiveStreamingPanel({ onStreamStart, onStreamEnd, gameCanvas, aud
           <strong>💡 Note:</strong> Direct RTMP streaming from browser requires a media server.
           For production use, consider using OBS or a WebRTC-based solution.
         </div>
+
+        {/* Twitch Authentication */}
+        {selectedPlatform === 'twitch' && !isTwitchAuth && !isStreaming && (
+          <div className="p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-purple-300">Connect Twitch Account</p>
+                <p className="text-xs text-white/50">Enable chat, alerts, and stream management</p>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => {
+                  const twitch = getTwitchService();
+                  window.location.href = twitch.getAuthUrl();
+                }}
+                className="bg-purple-500 hover:bg-purple-400"
+              >
+                Connect
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Twitch User Info */}
+        {selectedPlatform === 'twitch' && isTwitchAuth && twitchUser && (
+          <div className="flex items-center gap-2 p-2 bg-white/5 rounded-lg">
+            <img
+              src={twitchUser.profile_image_url}
+              alt={twitchUser.display_name}
+              className="w-8 h-8 rounded-full"
+            />
+            <div>
+              <p className="text-sm font-medium">{twitchUser.display_name}</p>
+              <p className="text-xs text-white/50">Connected to Twitch</p>
+            </div>
+          </div>
+        )}
+
+        {/* Chat Toggle */}
+        {isStreaming && selectedPlatform === 'twitch' && (
+          <div className="flex items-center justify-between">
+            <span className="text-sm">Show Chat Overlay</span>
+            <Badge
+              className={`cursor-pointer ${showChat ? 'bg-green-500' : 'bg-white/10'}`}
+              onClick={() => setShowChat(!showChat)}
+            >
+              {showChat ? 'On' : 'Off'}
+            </Badge>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
