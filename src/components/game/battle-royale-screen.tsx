@@ -92,9 +92,29 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame }: B
   // Auto elimination when time runs out
   useEffect(() => {
     if (roundTimeLeft === 0 && game.status === 'playing') {
-      handleRoundEnd();
+      // Define the logic inline to avoid setState-in-effect warning
+      stopMedia();
+      
+      if (activePlayers.length <= 1) return;
+
+      const updatedGame = endRoundAndEliminate(game);
+      onUpdateGame(updatedGame);
+      setShowElimination(true);
+
+      const timeout = setTimeout(() => {
+        setShowElimination(false);
+        
+        if (updatedGame.winner) {
+          return;
+        }
+        
+        const nextGame = advanceToNextRound(updatedGame);
+        onUpdateGame(nextGame);
+      }, 4000);
+      
+      return () => clearTimeout(timeout);
     }
-  }, [roundTimeLeft, game.status, handleRoundEnd]);
+  }, [roundTimeLeft, game.status, activePlayers.length, game, onUpdateGame, stopMedia]);
 
   // Start next round
   const handleStartRound = () => {

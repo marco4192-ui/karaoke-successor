@@ -46,13 +46,7 @@ export function useLibraryPlaylists(): UseLibraryPlaylistsReturn {
   const [showAddToPlaylistModal, setShowAddToPlaylistModal] = useState(false);
   const [songToAddToPlaylist, setSongToAddToPlaylist] = useState<Song | null>(null);
 
-  // Initialize playlists on mount
-  useEffect(() => {
-    initializePlaylists();
-    refreshPlaylists();
-  }, []);
-
-  // Refresh playlists
+  // Refresh playlists - defined first to avoid hoisting issues
   const refreshPlaylists = useCallback(() => {
     const allPlaylists = getPlaylists();
     setPlaylists(allPlaylists);
@@ -65,6 +59,12 @@ export function useLibraryPlaylists(): UseLibraryPlaylistsReturn {
     }
     setFavoriteSongIds(favs);
   }, []);
+
+  // Initialize playlists on mount
+  useEffect(() => {
+    initializePlaylists();
+    refreshPlaylists();
+  }, [refreshPlaylists]);
 
   // Create a new playlist
   const handleCreatePlaylist = useCallback((name: string, description?: string): Playlist | null => {

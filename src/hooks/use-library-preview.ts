@@ -33,7 +33,7 @@ export function useLibraryPreview() {
     
     if (previewAudio) {
       previewAudio.pause();
-      previewAudio.src = '';
+      // Don't modify src directly - just set to null and let garbage collection handle it
       setPreviewAudio(null);
     }
     

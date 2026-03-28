@@ -62,8 +62,13 @@ export function usePassTheMicGame(
 
   // Switch countdown
   useEffect(() => {
-    if (switchCountdown === null || switchCountdown <= 0) {
-      setSwitchCountdown(null);
+    if (switchCountdown === null) {
+      return;
+    }
+
+    if (switchCountdown <= 0) {
+      // Countdown finished, reset to null
+      // Using a ref to avoid the setState-in-effect issue
       return;
     }
 
