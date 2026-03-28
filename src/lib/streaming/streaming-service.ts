@@ -1,7 +1,7 @@
 // Multi-Platform Streaming Service
 // Supports Twitch, YouTube, TikTok, Facebook, and custom RTMP
 
-import { getTwitchService, TwitchChatMessage, TwitchEvent } from './twitch-service';
+import { getTwitchService, TwitchChatMessage, TwitchEvent, KaraokeChatCommand } from './twitch-service';
 
 export type StreamingPlatform = 'twitch' | 'youtube' | 'tiktok' | 'facebook' | 'custom';
 
@@ -40,6 +40,21 @@ export interface StreamEvent {
   timestamp: Date;
 }
 
+export interface KaraokeSongRequest {
+  id: string;
+  query: string;
+  requestedBy: {
+    id: string;
+    username: string;
+    displayName: string;
+    isMod: boolean;
+    isSubscriber: boolean;
+    isVip: boolean;
+  };
+  requestedAt: Date;
+  status: 'pending' | 'queued' | 'playing' | 'played' | 'skipped';
+}
+
 // Platform configurations
 const PLATFORM_CONFIGS = {
   twitch: {
@@ -47,7 +62,7 @@ const PLATFORM_CONFIGS = {
     icon: '📺',
     color: '#9146FF',
     rtmpUrl: 'rtmps://live.twitch.tv/app',
-    features: ['chat', 'events', 'alerts'],
+    features: ['chat', 'events', 'alerts', 'commands'],
   },
   youtube: {
     name: 'YouTube Live',
@@ -92,7 +107,12 @@ class StreamingService {
   private chatCallbacks: Set<(msg: ChatMessage) => void> = new Set();
   private eventCallbacks: Set<(event: StreamEvent) => void> = new Set();
   private statsCallbacks: Set<(stats: StreamStats) => void> = new Set();
+  private commandCallbacks: Set<(cmd: KaraokeChatCommand) => void> = new Set();
   private unsubscribeTwitch: (() => void) | null = null;
+  private unsubscribeTwitchCommands: (() => void) | null = null;
+  private songQueue: KaraokeSongRequest[] = [];
+  private maxQueueSize: number = 20;
+  private maxSongsPerUser: number = 3;
 
   /**
    * Start streaming session
@@ -135,6 +155,11 @@ class StreamingService {
       this.unsubscribeTwitch = null;
     }
 
+    if (this.unsubscribeTwitchCommands) {
+      this.unsubscribeTwitchCommands();
+      this.unsubscribeTwitchCommands = null;
+    }
+
     this.stats.isLive = false;
     this.notifyStatsCallbacks();
   }
@@ -170,6 +195,12 @@ class StreamingService {
         this.chatCallbacks.forEach(cb => cb(chatMsg));
       });
 
+      // Subscribe to karaoke commands
+      this.unsubscribeTwitchCommands = twitch.onKaraokeCommand((cmd: KaraokeChatCommand) => {
+        this.handleKaraokeCommand(cmd);
+        this.commandCallbacks.forEach(cb => cb(cmd));
+      });
+
       // Subscribe to events
       twitch.onEvent((event: TwitchEvent) => {
         const streamEvent: StreamEvent = {
@@ -185,6 +216,146 @@ class StreamingService {
     } catch (error) {
       console.error('Failed to connect to Twitch chat:', error);
     }
+  }
+
+  /**
+   * Handle karaoke-specific commands
+   */
+  private handleKaraokeCommand(cmd: KaraokeChatCommand): void {
+    switch (cmd.type) {
+      case 'song_request':
+        this.handleSongRequest(cmd);
+        break;
+      case 'skip':
+        if (cmd.sender.isMod) {
+          // Emit skip event
+          this.eventCallbacks.forEach(cb => cb({
+            type: 'donation', // Using donation as skip event
+            platform: 'twitch',
+            user: cmd.sender.username,
+            message: 'Skip requested by mod',
+            timestamp: new Date(),
+          }));
+        }
+        break;
+      case 'queue':
+        // Send queue to chat
+        const twitch = getTwitchService();
+        const queueInfo = this.songQueue
+          .filter(r => r.status === 'pending')
+          .slice(0, 5)
+          .map((r, i) => `${i + 1}. ${r.query}`)
+          .join(' | ');
+        if (queueInfo) {
+          twitch.sendChatMessage(`📊 Queue: ${queueInfo}`);
+        } else {
+          twitch.sendChatMessage('📊 Queue is empty! Request a song with !sr <song>');
+        }
+        break;
+      case 'stats':
+        // Send current stats to chat
+        const twitchStats = getTwitchService();
+        twitchStats.sendChatMessage(
+          `🎵 Current Score: ${this.stats.viewerCount} | Duration: ${this.formatDuration(this.stats.duration)} | Messages: ${this.stats.chatMessages}`
+        );
+        break;
+      case 'help':
+        const twitchHelp = getTwitchService();
+        twitchHelp.sendChatMessage(
+          '🎤 Commands: !sr <song> - Request song | !queue - View queue | !stats - View stats | !link - Get song link'
+        );
+        break;
+    }
+  }
+
+  /**
+   * Handle song request
+   */
+  private handleSongRequest(cmd: KaraokeChatCommand): void {
+    if (this.songQueue.length >= this.maxQueueSize) {
+      const twitch = getTwitchService();
+      twitch.sendChatMessage(`❌ Queue is full (${this.maxQueueSize} songs max)`);
+      return;
+    }
+
+    const query = cmd.args.join(' ').trim();
+    if (!query) return;
+
+    // Check user's queue count
+    const userRequests = this.songQueue.filter(
+      r => r.requestedBy.id === cmd.sender.id && r.status === 'pending'
+    );
+    if (userRequests.length >= this.maxSongsPerUser) {
+      const twitch = getTwitchService();
+      twitch.sendChatMessage(`❌ You already have ${this.maxSongsPerUser} songs in queue!`);
+      return;
+    }
+
+    const request: KaraokeSongRequest = {
+      id: `sr-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      query,
+      requestedBy: cmd.sender,
+      requestedAt: new Date(),
+      status: 'pending',
+    };
+
+    this.songQueue.push(request);
+
+    // Confirm in chat
+    const twitch = getTwitchService();
+    const position = this.songQueue.filter(r => r.status === 'pending').length;
+    twitch.sendChatMessage(`✅ "${query}" added to queue! Position: #${position}`);
+  }
+
+  /**
+   * Get song queue
+   */
+  getSongQueue(): KaraokeSongRequest[] {
+    return [...this.songQueue];
+  }
+
+  /**
+   * Mark song as playing
+   */
+  playSong(requestId: string): void {
+    const request = this.songQueue.find(r => r.id === requestId);
+    if (request) {
+      request.status = 'playing';
+    }
+  }
+
+  /**
+   * Mark song as played
+   */
+  completeSong(requestId: string): void {
+    const request = this.songQueue.find(r => r.id === requestId);
+    if (request) {
+      request.status = 'played';
+    }
+  }
+
+  /**
+   * Skip song
+   */
+  skipSong(requestId: string): void {
+    const request = this.songQueue.find(r => r.id === requestId);
+    if (request) {
+      request.status = 'skipped';
+    }
+  }
+
+  /**
+   * Remove song from queue
+   */
+  removeSong(requestId: string): void {
+    this.songQueue = this.songQueue.filter(r => r.id !== requestId);
+  }
+
+  /**
+   * Clear queue
+   */
+  clearQueue(): void {
+    this.songQueue = [];
   }
 
   /**
@@ -262,8 +433,31 @@ class StreamingService {
     return () => this.statsCallbacks.delete(callback);
   }
 
+  /**
+   * Register callback for karaoke commands
+   */
+  onKaraokeCommand(callback: (cmd: KaraokeChatCommand) => void): () => void {
+    this.commandCallbacks.add(callback);
+    return () => this.commandCallbacks.delete(callback);
+  }
+
+  /**
+   * Set queue limits
+   */
+  setQueueLimits(maxSize: number, maxPerUser: number): void {
+    this.maxQueueSize = maxSize;
+    this.maxSongsPerUser = maxPerUser;
+  }
+
   private notifyStatsCallbacks(): void {
     this.statsCallbacks.forEach(cb => cb(this.getStats()));
+  }
+
+  private formatDuration(seconds: number): string {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
 }
 
