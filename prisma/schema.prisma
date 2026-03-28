@@ -9,24 +9,370 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+// ============================================
+// Authentication Models (NextAuth.js)
+// ============================================
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================
+// User Model (Main Profile)
+// ============================================
+
 model User {
+  id            String    @id @default(cuid())
+  email         String?   @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  password      String?   // Hashed password for email/password auth
+
+  // OAuth accounts
+  accounts      Account[]
+  sessions      Session[]
+
+  // Player profile
+  player        Player?
+
+  // Settings
+  settings      UserSettings?
+
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([email])
+}
+
+// ============================================
+// Player Profile (Game Data)
+// ============================================
+
+model Player {
   id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Profile info
+  name      String
+  avatar    String?
+  color     String   @default("#8B5CF6")
+  country   String?  @default("DE")
+
+  // Privacy settings
+  showOnLeaderboard Boolean @default(true)
+  showPhoto         Boolean @default(true)
+  showCountry       Boolean @default(true)
+
+  // Game stats (cached for performance)
+  totalScore      BigInt   @default(0)
+  gamesPlayed     Int      @default(0)
+  songsCompleted  Int      @default(0)
+  bestScore       Int      @default(0)
+  avgAccuracy     Float    @default(0)
+  totalNotesHit   BigInt   @default(0)
+  totalNotesMissed BigInt  @default(0)
+  bestCombo       Int      @default(0)
+  perfectGames    Int      @default(0)
+  totalTimeSung   Int      @default(0) // in seconds
+
+  // XP/Level system
+  xp        Int      @default(0)
+  level     Int      @default(1)
+
+  // Sync info
+  syncCode  String   @unique
+  lastSyncAt DateTime?
+
+  // Relations
+  scores        Score[]
+  achievements  PlayerAchievement[]
+  dailyProgress DailyChallengeCompletion[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([totalScore])
+  @@index([syncCode])
+  @@index([country])
+}
+
+// ============================================
+// User Settings
+// ============================================
+
+model UserSettings {
+  id       String @id @default(cuid())
+  userId   String @unique
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Audio settings
+  masterVolume      Float  @default(0.8)
+  musicVolume       Float  @default(0.7)
+  vocalVolume       Float  @default(1.0)
+  micVolume         Float  @default(0.8)
+  micSensitivity    Float  @default(0.5)
+  audioLatency      Int    @default(0) // in ms
+
+  // Graphics settings
+  theme             String @default("default")
+  noteHighwayStyle  String @default("standard")
+  showSpectrogram   Boolean @default(false)
+  showPitchGraph    Boolean @default(true)
+  particleEffects   Boolean @default(true)
+  backgroundStyle   String @default("blur")
+
+  // Game settings
+  defaultDifficulty String @default("medium")
+  defaultGameMode   String @default("standard")
+  lyricDisplayMode  String @default("standard")
+  noteDisplayMode   String @default("highway")
+
+  // Language
+  language          String @default("en")
+
+  // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model Post {
-  id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// ============================================
+// Song (for reference in scores)
+// ============================================
+
+model Song {
+  id          String   @id
+  title       String
+  artist      String?
+  duration    Int      @default(0)
+  genre       String?
+  year        Int?
+  bpm         Float?
+  gap         Int      @default(0)
+
+  // Video/Background
+  videoFile   String?
+  videoGap    Int      @default(0)
+  coverImage  String?
+  backgroundFile String?
+
+  // Metadata
+  language    String?
+  edition     String?
+  creator     String?
+
+  // Stats
+  playCount   Int      @default(0)
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  scores      Score[]
+
+  @@index([title])
+  @@index([artist])
+  @@index([genre])
+}
+
+// ============================================
+// Score (Individual game session)
+// ============================================
+
+model Score {
+  id          String   @id @default(cuid())
+  playerId    String
+  player      Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  songId      String
+  song        Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  // Score details
+  score       Int
+  accuracy    Float
+  maxCombo    Int      @default(0)
+  notesHit    Int      @default(0)
+  notesMissed Int      @default(0)
+  goldenNotesHit Int   @default(0)
+  perfectNotes Int     @default(0)
+
+  // Game settings used
+  difficulty  String   @default("medium") // easy, medium, hard
+  gameMode    String   @default("standard") // standard, duel, battle-royale, pass-the-mic, etc.
+  rating      String   @default("good") // perfect, excellent, good, okay, poor
+
+  // Duration
+  durationPlayed Int   @default(0) // in seconds
+
+  // Duet mode
+  isDuet      Boolean  @default(false)
+  harmonyScore Int?
+  duetPartnerId String?
+
+  // Multiplayer
+  roomId      String?
+  position    Int? // finishing position in multiplayer
+
+  // Online sync
+  syncedToCloud Boolean @default(false)
+  cloudScoreId  String? // ID from PHP backend
+
+  // Timestamps
+  playedAt    DateTime @default(now())
+
+  @@index([playerId])
+  @@index([songId])
+  @@index([score])
+  @@index([playedAt])
+  @@index([playerId, songId])
+}
+
+// ============================================
+// Achievement System
+// ============================================
+
+model Achievement {
+  id          String   @id
+  name        String
+  description String
+  icon        String?
+  category    String   @default("general") // general, scoring, social, special
+  xpReward    Int      @default(0)
+
+  // Unlock condition
+  condition   String // JSON describing unlock condition
+
+  // Rarity
+  rarity      String   @default("common") // common, uncommon, rare, epic, legendary
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+
+  // Relations
+  playerAchievements PlayerAchievement[]
+
+  @@index([category])
+}
+
+model PlayerAchievement {
+  id            String     @id @default(cuid())
+  playerId      String
+  player        Player     @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+
+  unlockedAt    DateTime   @default(now())
+
+  @@unique([playerId, achievementId])
+  @@index([playerId])
+}
+
+// ============================================
+// Daily Challenge System
+// ============================================
+
+model DailyChallenge {
+  id          String   @id @default(cuid())
+  date        DateTime @db.Date
+  type        String   // score, accuracy, streak, songs, etc.
+  target      Int      // target value to achieve
+  description String
+  reward      Int      @default(0) // XP reward
+
+  // Constraints
+  difficulty  String?  // required difficulty if any
+  gameMode    String?  // required game mode if any
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+
+  completions DailyChallengeCompletion[]
+
+  @@unique([date, type])
+  @@index([date])
+}
+
+model DailyChallengeCompletion {
+  id           String        @id @default(cuid())
+  challengeId  String
+  challenge    DailyChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  playerId     String
+  player       Player        @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  progress     Int           @default(0)
+  completed    Boolean       @default(false)
+  completedAt  DateTime?
+
+  createdAt    DateTime      @default(now())
+
+  @@unique([challengeId, playerId])
+  @@index([playerId])
+}
+
+// ============================================
+// Sync Queue (Offline-first support)
+// ============================================
+
+model SyncQueueItem {
+  id          String   @id @default(cuid())
+  playerId    String
+
+  // Item details
+  type        String   // highscore, profile, achievement, settings
+  action      String   // create, update, delete
+  data        String   @db.Text // JSON data
+
+  // Sync status
+  synced      Boolean  @default(false)
+  syncedAt    DateTime?
+  syncAttempts Int     @default(0)
+  lastError   String?
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+
+  @@index([playerId, synced])
+  @@index([createdAt])
 }

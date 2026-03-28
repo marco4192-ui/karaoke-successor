@@ -145,6 +145,99 @@ const response = await fetch(`${API_BASE}/leaderboard/global`);
 const { leaderboard } = await response.json();
 ```
 
+## Cloud Sync Integration
+
+The PHP backend serves as the cloud endpoint for the Prisma/PostgreSQL sync system.
+
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Tauri App (Your PC)                       │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │              Prisma + PostgreSQL (Local)             │   │
+│  │   - User accounts & sessions                         │   │
+│  │   - Player profiles & settings                       │   │
+│  │   - Local scores & achievements                      │   │
+│  │   - Offline-first sync queue                         │   │
+│  └──────────────────────┬──────────────────────────────┘   │
+│                         │                                    │
+│                    Cloud Sync API                            │
+│                         │                                    │
+└─────────────────────────┼────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                 PHP Backend (Shared Hosting)                 │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │                  MySQL Database                      │   │
+│  │   - Global leaderboard aggregation                   │   │
+│  │   - Cross-device score sync                          │   │
+│  │   - Public player profiles                           │   │
+│  │   - Song statistics                                  │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Required PHP Extensions
+
+Ensure your hosting has these extensions enabled:
+- `pdo_mysql` - Database connectivity
+- `json` - JSON encoding/decoding
+- `curl` - Optional, for webhook notifications
+
+### Sync Flow
+
+1. **Push** - Local scores → Cloud
+   - App sends unsynced scores to `/scores`
+   - Player profile updated via `/players`
+   - Cloud returns confirmation with cloud IDs
+
+2. **Pull** - Cloud → Local
+   - App fetches `/players/{id}` for aggregated stats
+   - `/leaderboard/global` for comparison
+   - Stats merged with local data
+
+### New Endpoints for Cloud Sync
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/players/{id}/stats` | Get aggregated player stats |
+| POST | `/sync/batch` | Batch sync multiple scores |
+| GET | `/sync/changes/{timestamp}` | Get changes since timestamp |
+
+## Authentication (Optional Extension)
+
+For enhanced security, you can add API key authentication:
+
+### 1. Add API Keys Table
+
+```sql
+CREATE TABLE `karaoke_api_keys` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `player_id` VARCHAR(32) NOT NULL,
+    `api_key` VARCHAR(64) NOT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `last_used` DATETIME,
+    `is_active` TINYINT(1) DEFAULT 1,
+    
+    UNIQUE KEY `unique_key` (`api_key`),
+    FOREIGN KEY (`player_id`) REFERENCES `karaoke_players`(`id`)
+);
+```
+
+### 2. Add Authentication Middleware
+
+In `config.php`, add:
+```php
+function validateApiKey($key) {
+    // Validate API key from header
+    // Return player_id or false
+}
+
+// In router, check for X-API-Key header on POST/PUT
+```
+
 ## Security Notes
 
 1. The API uses CORS headers for cross-origin requests
@@ -152,6 +245,8 @@ const { leaderboard } = await response.json();
 3. All input is sanitized
 4. Prepared statements prevent SQL injection
 5. Consider adding API key authentication for write operations
+6. **HTTPS is strongly recommended** for production
+7. Set `display_errors = 0` in production php.ini
 
 ## Troubleshooting
 
