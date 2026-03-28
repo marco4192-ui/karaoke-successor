@@ -6,6 +6,7 @@
 // Services
 export { StreamingOverlayService, getStreamingOverlayService } from './streaming-overlay-service';
 export { TwitchService, getTwitchService, resetTwitchService } from './twitch-service';
+export { YouTubeService, getYouTubeService, resetYouTubeService } from './youtube-service';
 export { StreamingService, getStreamingService, resetStreamingService } from './streaming-service';
 
 // Types
@@ -48,6 +49,16 @@ export type {
   TwitchEvent,
   KaraokeChatCommand,
 } from './twitch-service';
+
+// YouTube Types
+export type {
+  YouTubeConfig,
+  YouTubeUser,
+  YouTubeToken,
+  YouTubeLiveStream,
+  YouTubeChatMessage,
+  YouTubeLiveChatConfig,
+} from './youtube-service';
 
 // Streaming Types
 export type {

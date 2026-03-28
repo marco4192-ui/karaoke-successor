@@ -2,6 +2,7 @@
 // Supports Twitch, YouTube, TikTok, Facebook, and custom RTMP
 
 import { getTwitchService, TwitchChatMessage, TwitchEvent, KaraokeChatCommand } from './twitch-service';
+import { getYouTubeService, YouTubeChatMessage } from './youtube-service';
 
 export type StreamingPlatform = 'twitch' | 'youtube' | 'tiktok' | 'facebook' | 'custom';
 
@@ -110,6 +111,7 @@ class StreamingService {
   private commandCallbacks: Set<(cmd: KaraokeChatCommand) => void> = new Set();
   private unsubscribeTwitch: (() => void) | null = null;
   private unsubscribeTwitchCommands: (() => void) | null = null;
+  private unsubscribeYouTube: (() => void) | null = null;
   private songQueue: KaraokeSongRequest[] = [];
   private maxQueueSize: number = 20;
   private maxSongsPerUser: number = 3;
@@ -133,9 +135,11 @@ class StreamingService {
       this.notifyStatsCallbacks();
     }, 1000);
 
-    // Connect to platform chat if Twitch
+    // Connect to platform chat
     if (config.platform === 'twitch') {
       await this.connectTwitchChat();
+    } else if (config.platform === 'youtube') {
+      await this.connectYouTubeChat();
     }
 
     this.notifyStatsCallbacks();
@@ -160,8 +164,63 @@ class StreamingService {
       this.unsubscribeTwitchCommands = null;
     }
 
+    if (this.unsubscribeYouTube) {
+      this.unsubscribeYouTube();
+      this.unsubscribeYouTube = null;
+    }
+
+    // Stop YouTube live chat if active
+    const youtube = getYouTubeService();
+    youtube.stopLiveChat();
+
     this.stats.isLive = false;
     this.notifyStatsCallbacks();
+  }
+
+  /**
+   * Connect to YouTube live chat
+   */
+  private async connectYouTubeChat(): Promise<void> {
+    const youtube = getYouTubeService();
+
+    if (!youtube.isAuthenticated()) {
+      console.warn('YouTube not authenticated, chat features unavailable');
+      return;
+    }
+
+    try {
+      // Get active live stream
+      const liveStream = await youtube.getActiveLiveStream();
+      if (!liveStream?.liveChatId) {
+        console.warn('No active YouTube live stream found');
+        return;
+      }
+
+      // Start live chat polling
+      await youtube.startLiveChat(liveStream.liveChatId);
+
+      // Subscribe to chat messages
+      this.unsubscribeYouTube = youtube.onChatMessage((msg: YouTubeChatMessage) => {
+        const chatMsg: ChatMessage = {
+          id: msg.id,
+          platform: 'youtube',
+          user: msg.user,
+          message: msg.message,
+          timestamp: msg.timestamp,
+          badges: [
+            msg.isOwner ? 'owner' : '',
+            msg.isModerator ? 'moderator' : '',
+            msg.isVerified ? 'verified' : '',
+          ].filter(Boolean),
+          isHighlighted: msg.isOwner || msg.isModerator,
+        };
+
+        this.stats.chatMessages++;
+        this.chatCallbacks.forEach(cb => cb(chatMsg));
+      });
+    } catch (error) {
+      console.error('Failed to connect to YouTube chat:', error);
+    }
   }
 
   /**
@@ -369,8 +428,12 @@ class StreamingService {
       if (twitch.isAuthenticated()) {
         twitch.sendChatMessage(message);
       }
+    } else if (this.config.platform === 'youtube') {
+      const youtube = getYouTubeService();
+      if (youtube.isAuthenticated()) {
+        await youtube.sendChatMessage(message);
+      }
     }
-    // Add other platforms as needed
   }
 
   /**
