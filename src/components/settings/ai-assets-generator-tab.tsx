@@ -10,6 +10,7 @@ import {
   AudioGeneratorCard,
   GeneratedAssetsCard,
   GeneratedAsset,
+  VocalSeparatorCard,
 } from './ai-assets';
 
 function SparkleIcon({ className }: { className?: string }) {
@@ -20,8 +21,10 @@ function SparkleIcon({ className }: { className?: string }) {
   );
 }
 
+type AssetType = 'image' | 'audio' | 'separator';
+
 export function AIAssetsGeneratorTab() {
-  const [assetType, setAssetType] = useState<'image' | 'audio'>('image');
+  const [assetType, setAssetType] = useState<AssetType>('image');
   const [prompt, setPrompt] = useState('');
   const [text, setText] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -56,7 +59,7 @@ export function AIAssetsGeneratorTab() {
           data: data.image as string,
           filename: data.filename as string
         }]);
-      } else {
+      } else if (assetType === 'audio') {
         if (!text.trim()) {
           setError('Please enter text for the audio');
           setIsGenerating(false);
@@ -103,19 +106,19 @@ export function AIAssetsGeneratorTab() {
       <div className="mb-6">
         <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
           <SparkleIcon className="w-6 h-6 text-purple-400" />
-          AI Asset Generator
+          AI Tools
         </h2>
-        <p className="text-white/60">Generate images and audio for your karaoke game using AI</p>
+        <p className="text-white/60">Generate assets and separate vocals using AI - all offline</p>
       </div>
 
       {/* API Configuration Section */}
-      <APIConfigurationCard />
+      {assetType !== 'separator' && <APIConfigurationCard />}
 
       {/* Type Toggle */}
       <AssetTypeSelector assetType={assetType} onChange={setAssetType} />
 
       {/* Generator */}
-      {assetType === 'image' ? (
+      {assetType === 'image' && (
         <ImageGeneratorCard
           prompt={prompt}
           isGenerating={isGenerating}
@@ -123,7 +126,9 @@ export function AIAssetsGeneratorTab() {
           onPromptChange={setPrompt}
           onGenerate={generateAsset}
         />
-      ) : (
+      )}
+
+      {assetType === 'audio' && (
         <AudioGeneratorCard
           text={text}
           isGenerating={isGenerating}
@@ -133,8 +138,14 @@ export function AIAssetsGeneratorTab() {
         />
       )}
 
-      {/* Generated Assets */}
-      <GeneratedAssetsCard assets={generatedAssets} onDownload={downloadAsset} />
+      {assetType === 'separator' && (
+        <VocalSeparatorCard />
+      )}
+
+      {/* Generated Assets - only for image/audio */}
+      {assetType !== 'separator' && (
+        <GeneratedAssetsCard assets={generatedAssets} onDownload={downloadAsset} />
+      )}
 
       {/* Info Card */}
       <Card className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/30">
@@ -142,13 +153,23 @@ export function AIAssetsGeneratorTab() {
           <div className="flex items-start gap-3">
             <SparkleIcon className="w-5 h-5 text-purple-400 mt-0.5" />
             <div className="text-sm text-white/70">
-              <p className="font-medium text-white mb-1">About AI Asset Generation</p>
-              <p>Images and audio are generated using AI. For best results:</p>
-              <ul className="list-disc list-inside mt-2 space-y-1 text-white/60">
-                <li>Be specific in your image descriptions</li>
-                <li>Include style keywords like "gaming", "neon", "vector"</li>
-                <li>Audio supports multiple voices and languages</li>
-              </ul>
+              <p className="font-medium text-white mb-1">About AI Tools</p>
+              {assetType === 'separator' ? (
+                <p>
+                  Vocal separation uses ONNX neural networks running locally in your browser.
+                  No data is uploaded - everything is processed on your device. 
+                  Download a model once, then use it offline forever.
+                </p>
+              ) : (
+                <>
+                  <p>Images and audio are generated using AI. For best results:</p>
+                  <ul className="list-disc list-inside mt-2 space-y-1 text-white/60">
+                    <li>Be specific in your image descriptions</li>
+                    <li>Include style keywords like "gaming", "neon", "vector"</li>
+                    <li>Audio supports multiple voices and languages</li>
+                  </ul>
+                </>
+              )}
             </div>
           </div>
         </CardContent>

@@ -24,7 +24,7 @@
  */
 
 // Main class
-export { VocalSeparator, getVocalSeparator } from './vocal-separator';
+export { VocalSeparator, getVocalSeparator, resetVocalSeparator, getAvailableModels } from './vocal-separator';
 
 // Types
 export type {
@@ -52,6 +52,7 @@ export {
   blobToAudioBuffer,
   loadAudioFile,
   normalizeAudioBuffer,
+  resampleAudioBuffer,
   getStemDisplayName,
   getStemIcon,
 } from './audio-utils';

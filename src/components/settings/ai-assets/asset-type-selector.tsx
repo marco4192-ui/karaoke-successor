@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 interface AssetTypeSelectorProps {
-  assetType: 'image' | 'audio';
-  onChange: (type: 'image' | 'audio') => void;
+  assetType: 'image' | 'audio' | 'separator';
+  onChange: (type: 'image' | 'audio' | 'separator') => void;
 }
 
 export function AssetTypeSelector({ assetType, onChange }: AssetTypeSelectorProps) {
@@ -16,7 +16,7 @@ export function AssetTypeSelector({ assetType, onChange }: AssetTypeSelectorProp
         <CardTitle>Asset Type</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button
             onClick={() => onChange('image')}
             className={assetType === 'image' ? 'bg-purple-500' : 'bg-white/10'}
@@ -28,6 +28,12 @@ export function AssetTypeSelector({ assetType, onChange }: AssetTypeSelectorProp
             className={assetType === 'audio' ? 'bg-purple-500' : 'bg-white/10'}
           >
             🔊 Audio
+          </Button>
+          <Button
+            onClick={() => onChange('separator')}
+            className={assetType === 'separator' ? 'bg-purple-500' : 'bg-white/10'}
+          >
+            🎤 Vocal Separator
           </Button>
         </div>
       </CardContent>

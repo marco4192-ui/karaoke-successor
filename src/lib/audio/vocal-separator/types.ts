@@ -4,7 +4,7 @@
  */
 
 /** Stem types that can be extracted */
-export type StemType = 'vocals' | 'instrumental' | 'drums' | 'bass' | 'other';
+export type StemType = 'vocals' | 'instrumental' | 'drums' | 'bass' | 'other' | 'accompaniment';
 
 export interface SeparationOptions {
   /** Output format for separated audio */
@@ -110,34 +110,43 @@ export interface SeparatorStatus {
   currentProgress: SeparationProgress | null;
 }
 
-// Pre-defined models
+// Pre-defined models - IDs must match model-manager.ts
 export const AVAILABLE_MODELS: SeparationModel[] = [
   {
-    id: 'mdx23c',
-    name: 'MDX23C (Recommended)',
-    source: 'models/mdx23c.onnx',
-    sizeMB: 150,
-    supportedStems: ['vocals', 'instrumental', 'drums', 'bass', 'other'],
+    id: 'mdx23c-instvoc',
+    name: 'MDX23C InstVoc',
+    source: 'https://huggingface.co/onnx-models/mdx23c-instvoc/resolve/main/model.onnx',
+    sizeMB: 148,
+    supportedStems: ['vocals', 'instrumental'],
     supportsGpu: true,
     quality: 'high',
   },
   {
-    id: 'vr-depeg',
+    id: 'spleeter-2stems-44k',
+    name: 'Spleeter 2-Stems',
+    source: 'https://huggingface.co/onnx-models/spleeter-2stems-44k/resolve/main/model.onnx',
+    sizeMB: 89,
+    supportedStems: ['vocals', 'accompaniment'],
+    supportsGpu: true,
+    quality: 'balanced',
+  },
+  {
+    id: 'demucs-htdemucs',
+    name: 'Demucs HTDemucs',
+    source: 'https://huggingface.co/onnx-models/htdemucs/resolve/main/model.onnx',
+    sizeMB: 285,
+    supportedStems: ['vocals', 'drums', 'bass', 'other'],
+    supportsGpu: true,
+    quality: 'high',
+  },
+  {
+    id: 'vr-deecho',
     name: 'VR DeEcho-DeReverb',
-    source: 'models/vr_depeg.onnx',
-    sizeMB: 45,
+    source: 'https://huggingface.co/onnx-models/vr-deecho/resolve/main/model.onnx',
+    sizeMB: 42,
     supportedStems: ['vocals', 'instrumental'],
     supportsGpu: false,
     quality: 'fast',
-  },
-  {
-    id: 'spleeter-2stems',
-    name: 'Spleeter 2-Stems (Fast)',
-    source: 'models/spleeter_2stems.onnx',
-    sizeMB: 85,
-    supportedStems: ['vocals', 'instrumental'],
-    supportsGpu: true,
-    quality: 'balanced',
   },
 ];
 

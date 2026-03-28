@@ -265,8 +265,9 @@ export function getStemDisplayName(stem: StemType): string {
     drums: 'Drums',
     bass: 'Bass',
     other: 'Other',
+    accompaniment: 'Accompaniment',
   };
-  return names[stem];
+  return names[stem] || stem;
 }
 
 /**
@@ -279,8 +280,9 @@ export function getStemIcon(stem: StemType): string {
     drums: '🥁',
     bass: '🎸',
     other: '🎵',
+    accompaniment: '🎹',
   };
-  return icons[stem];
+  return icons[stem] || '🎵';
 }
 
 // Helper function
