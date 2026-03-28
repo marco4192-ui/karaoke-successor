@@ -413,3 +413,143 @@ export function resetPitchDetectorManager(): void {
     managerInstance = null;
   }
 }
+
+// ==================== PURE FUNCTIONS (For Testing) ====================
+// These functions are extracted for testing without browser dependencies
+
+/**
+ * Generate a sine wave buffer for testing
+ */
+export function generateSineWaveBuffer(
+  frequency: number,
+  sampleRate: number,
+  length: number
+): Float32Array {
+  const buffer = new Float32Array(length);
+  const period = sampleRate / frequency;
+
+  for (let i = 0; i < length; i++) {
+    buffer[i] = Math.sin((2 * Math.PI * i) / period);
+  }
+
+  return buffer;
+}
+
+/**
+ * YIN pitch detection algorithm (pure function version)
+ */
+export function yinPitchDetection(
+  buffer: Float32Array,
+  sampleRate: number,
+  threshold: number = 0.15
+): number | null {
+  const yinBuffer = new Float32Array(buffer.length / 2);
+  const yinBufferLength = buffer.length / 2;
+
+  // Compute difference function
+  for (let tau = 0; tau < yinBufferLength; tau++) {
+    yinBuffer[tau] = 0;
+    for (let i = 0; i < yinBufferLength; i++) {
+      const delta = buffer[i] - buffer[i + tau];
+      yinBuffer[tau] += delta * delta;
+    }
+  }
+
+  // Cumulative mean normalized difference function
+  yinBuffer[0] = 1;
+  let runningSum = 0;
+  for (let tau = 1; tau < yinBufferLength; tau++) {
+    runningSum += yinBuffer[tau];
+    yinBuffer[tau] *= tau / runningSum;
+  }
+
+  // Find the first tau where the value is below threshold
+  let tauEstimate = -1;
+  for (let tau = 2; tau < yinBufferLength; tau++) {
+    if (yinBuffer[tau] < threshold) {
+      while (tau + 1 < yinBufferLength && yinBuffer[tau + 1] < yinBuffer[tau]) {
+        tau++;
+      }
+      tauEstimate = tau;
+      break;
+    }
+  }
+
+  if (tauEstimate === -1) {
+    return null;
+  }
+
+  // Parabolic interpolation for better accuracy
+  let betterTau: number;
+  const x0 = tauEstimate < 1 ? tauEstimate : tauEstimate - 1;
+  const x2 = tauEstimate + 1 < yinBufferLength ? tauEstimate + 1 : tauEstimate;
+
+  if (x0 === tauEstimate) {
+    betterTau = yinBuffer[tauEstimate] <= yinBuffer[x2] ? tauEstimate : x2;
+  } else if (x2 === tauEstimate) {
+    betterTau = yinBuffer[tauEstimate] <= yinBuffer[x0] ? tauEstimate : x0;
+  } else {
+    const s0 = yinBuffer[x0];
+    const s1 = yinBuffer[tauEstimate];
+    const s2 = yinBuffer[x2];
+    betterTau = tauEstimate + (s2 - s0) / (2 * (2 * s1 - s2 - s0));
+  }
+
+  return sampleRate / betterTau;
+}
+
+/**
+ * Calculate clarity of a detected pitch (pure function version)
+ */
+export function calculateClarity(
+  buffer: Float32Array,
+  frequency: number,
+  sampleRate: number
+): number {
+  const period = Math.round(sampleRate / frequency);
+  let correlation = 0;
+  let energy = 0;
+
+  for (let i = 0; i < buffer.length - period; i++) {
+    correlation += buffer[i] * buffer[i + period];
+    energy += buffer[i] * buffer[i];
+  }
+
+  if (energy === 0) return 0;
+  return Math.min(1, Math.abs(correlation / energy));
+}
+
+/**
+ * Check pitch stability (pure function version)
+ * Returns the stable pitch and the last stable pitch for reference
+ */
+export function checkPitchStability(
+  recentPitches: number[],
+  requiredFrames: number,
+  lastStablePitch: number | null
+): { stablePitch: number | null; lastStablePitch: number | null } {
+  // Not enough frames yet
+  if (recentPitches.length < requiredFrames) {
+    return { stablePitch: null, lastStablePitch };
+  }
+
+  // Check if all recent pitches are within 1 semitone
+  const avgPitch = recentPitches.reduce((a, b) => a + b, 0) / recentPitches.length;
+  const maxDiff = Math.max(...recentPitches.map(p => Math.abs(p - avgPitch)));
+
+  if (maxDiff <= 1) {
+    const newStablePitch = Math.round(avgPitch * 10) / 10;
+    return { stablePitch: newStablePitch, lastStablePitch: newStablePitch };
+  }
+
+  return { stablePitch: lastStablePitch, lastStablePitch };
+}
+
+/**
+ * Create a pitch detector config with defaults
+ */
+export function createPitchDetectorConfig(
+  overrides: Partial<PitchDetectorConfig>
+): PitchDetectorConfig {
+  return { ...KARAOKE_DEFAULT_CONFIG, ...overrides };
+}
