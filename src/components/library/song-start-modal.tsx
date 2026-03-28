@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Song, GameMode, PlayerProfile, HighscoreEntry } from '@/types/game';
 import { toggleFavorite, getPlaylists } from '@/lib/playlist-manager';
@@ -13,12 +13,20 @@ import {
   HighscorePreview,
   SongActionButtons,
 } from './song-start';
+import { VocalSeparatorPanel } from '@/components/audio/vocal-separator-panel';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
+import { StemType } from '@/lib/audio/vocal-separator';
 
 export interface StartOptions {
   difficulty: 'easy' | 'medium' | 'hard';
   mode: 'single' | 'duel' | 'duet' | GameMode;
   players: string[];
   partyMode?: GameMode;
+  /** Use instrumental track instead of original */
+  useInstrumental?: boolean;
+  /** URL to instrumental audio (from vocal separator) */
+  instrumentalUrl?: string;
 }
 
 interface SongStartModalProps {
@@ -56,6 +64,8 @@ export function SongStartModal({
   playerQueueCount,
   activeProfileId,
 }: SongStartModalProps) {
+  const [showVocalSeparator, setShowVocalSeparator] = useState(false);
+
   if (!song) return null;
 
   const activeProfiles = profiles.filter(p => p.isActive !== false);
@@ -82,6 +92,27 @@ export function SongStartModal({
   const handlePlayersChange = (players: string[]) => {
     onStartOptionsChange({ ...startOptions, players });
   };
+
+  const handleStemSelect = useCallback((stem: StemType, url: string) => {
+    if (stem === 'instrumental') {
+      onStartOptionsChange({
+        ...startOptions,
+        useInstrumental: true,
+        instrumentalUrl: url,
+      });
+    }
+  }, [startOptions, onStartOptionsChange]);
+
+  const handleSeparationComplete = useCallback((stems: Map<StemType, string>) => {
+    const instrumentalUrl = stems.get('instrumental');
+    if (instrumentalUrl) {
+      onStartOptionsChange({
+        ...startOptions,
+        useInstrumental: true,
+        instrumentalUrl,
+      });
+    }
+  }, [startOptions, onStartOptionsChange]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -129,6 +160,31 @@ export function SongStartModal({
 
           {/* Song Info */}
           <SongInfo song={song} />
+
+          {/* Vocal Separator - Collapsible */}
+          {(song.audioUrl || song.relativeAudioPath) && (
+            <Collapsible open={showVocalSeparator} onOpenChange={setShowVocalSeparator}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+                >
+                  🎤 Extract Vocals/Instrumental
+                  {startOptions.useInstrumental && (
+                    <span className="ml-2 text-green-400">✓ Instrumental Ready</span>
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-3">
+                <VocalSeparatorPanel
+                  audioSource={song.audioUrl || song.relativeAudioPath}
+                  onStemSelect={handleStemSelect}
+                  onSeparationComplete={handleSeparationComplete}
+                  compact
+                />
+              </CollapsibleContent>
+            </Collapsible>
+          )}
 
           {/* Local Highscore Preview */}
           <HighscorePreview
