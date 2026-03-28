@@ -8,9 +8,9 @@ import { LibraryViewMode, LibraryGroupBy } from '@/hooks/use-library-settings';
 export interface LibraryFiltersProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
-  sortBy: 'title' | 'artist' | 'dateAdded';
+  sortBy: 'title' | 'artist' | 'dateAdded' | 'difficulty' | 'rating';
   sortOrder: 'asc' | 'desc';
-  onSortChange: (sortBy: 'title' | 'artist' | 'dateAdded', sortOrder: 'asc' | 'desc') => void;
+  onSortChange: (sortBy: 'title' | 'artist' | 'dateAdded' | 'difficulty' | 'rating', sortOrder: 'asc' | 'desc') => void;
   filterGenre: string;
   onFilterGenreChange: (value: string) => void;
   filterLanguage: string;

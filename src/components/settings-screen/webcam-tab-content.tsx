@@ -1,7 +1,13 @@
 'use client';
 
+import { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { WebcamSettingsPanel, WebcamBackground, WebcamBackgroundConfig } from '@/components/game/webcam-background';
+import { 
+  WebcamSettingsPanel, 
+  WebcamBackground, 
+  WebcamBackgroundConfig,
+  useWebcamBackground 
+} from '@/components/webcam';
 import { InfoIcon, WebcamIcon } from '@/components/icons';
 
 interface WebcamTabContentProps {
@@ -10,11 +16,33 @@ interface WebcamTabContentProps {
 }
 
 export function WebcamTabContent({ webcamConfig, onUpdateWebcamConfig }: WebcamTabContentProps) {
+  // Use the webcam hook to manage stream internally
+  const { 
+    stream, 
+    isLoading, 
+    error, 
+    devices, 
+    startWebcam, 
+    stopWebcam, 
+    refreshDevices 
+  } = useWebcamBackground(webcamConfig.deviceId || null);
+  
+  // Start/stop webcam based on config.enabled
+  useEffect(() => {
+    if (webcamConfig.enabled) {
+      startWebcam(webcamConfig.deviceId);
+    } else {
+      stopWebcam();
+    }
+  }, [webcamConfig.enabled, webcamConfig.deviceId, startWebcam, stopWebcam]);
+  
   return (
     <div className="space-y-6">
       <WebcamSettingsPanel 
         config={webcamConfig}
         onConfigChange={onUpdateWebcamConfig}
+        devices={devices}
+        onRefreshDevices={refreshDevices}
       />
       
       {/* Webcam Info Card */}
@@ -63,7 +91,9 @@ export function WebcamTabContent({ webcamConfig, onUpdateWebcamConfig }: WebcamT
           <div className="relative aspect-video bg-black rounded-lg overflow-hidden border border-white/10">
             <WebcamBackground 
               config={webcamConfig}
-              onConfigChange={onUpdateWebcamConfig}
+              stream={stream}
+              isLoading={isLoading}
+              error={error}
             />
             {!webcamConfig.enabled && (
               <div className="absolute inset-0 flex items-center justify-center text-white/40">

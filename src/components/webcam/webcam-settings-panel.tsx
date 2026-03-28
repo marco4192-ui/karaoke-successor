@@ -28,15 +28,15 @@ function WebcamIcon({ className }: { className?: string }) {
 interface WebcamSettingsPanelProps {
   config: WebcamBackgroundConfig;
   onConfigChange: (config: Partial<WebcamBackgroundConfig>) => void;
-  devices: MediaDeviceInfo[];
-  onRefreshDevices: () => void;
+  devices?: MediaDeviceInfo[];
+  onRefreshDevices?: () => void;
   compact?: boolean;
 }
 
 export function WebcamSettingsPanel({ 
   config, 
   onConfigChange, 
-  devices, 
+  devices = [], 
   onRefreshDevices,
   compact = false 
 }: WebcamSettingsPanelProps) {
@@ -110,12 +110,14 @@ export function WebcamSettingsPanel({
                   ))}
                 </SelectContent>
               </Select>
-              <button
-                onClick={onRefreshDevices}
-                className="text-xs text-cyan-400 hover:text-cyan-300"
-              >
-                🔄 Refresh devices
-              </button>
+              {onRefreshDevices && (
+                <button
+                  onClick={onRefreshDevices}
+                  className="text-xs text-cyan-400 hover:text-cyan-300"
+                >
+                  🔄 Refresh devices
+                </button>
+              )}
             </div>
             
             {/* Size Selection */}

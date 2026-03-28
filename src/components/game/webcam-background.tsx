@@ -15,7 +15,6 @@ export {
   useWebcamBackground,
   
   // Components
-  WebcamBackground,
   WebcamSettingsPanel,
   WebcamQuickControls,
 } from '@/components/webcam';
@@ -29,6 +28,7 @@ import {
 import { useEffect, useRef } from 'react';
 
 // Wrapper component for backwards compatibility
+// This is the main WebcamBackground that should be used - it manages the stream internally
 interface WebcamBackgroundWrapperProps {
   config: WebcamBackgroundConfig;
   onConfigChange?: (config: Partial<WebcamBackgroundConfig>) => void;
@@ -90,6 +90,9 @@ function WebcamBackgroundWrapper({
     />
   );
 }
+
+// Named export for backwards compatibility - use this in most cases
+export { WebcamBackgroundWrapper as WebcamBackground };
 
 // Default export for backwards compatibility
 export default WebcamBackgroundWrapper;

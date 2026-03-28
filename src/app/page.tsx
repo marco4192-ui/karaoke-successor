@@ -90,7 +90,7 @@ export default function KaraokeSuccessor() {
           notesHit: p.notesHit,
           notesMissed: p.notesMissed,
           maxCombo: p.maxCombo,
-          rating: p.accuracy >= 95 ? 'perfect' : p.accuracy >= 85 ? 'excellent' : p.accuracy >= 70 ? 'good' : p.accuracy >= 50 ? 'okay' : 'poor',
+          rating: (p.accuracy >= 95 ? 'perfect' : p.accuracy >= 85 ? 'excellent' : p.accuracy >= 70 ? 'good' : p.accuracy >= 50 ? 'okay' : 'poor') as 'perfect' | 'excellent' | 'good' | 'okay' | 'poor',
         })),
         songId: gameState.currentSong?.id || '',
         songTitle: gameState.currentSong?.title || '',

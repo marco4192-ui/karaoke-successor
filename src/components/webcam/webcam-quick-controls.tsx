@@ -21,10 +21,10 @@ function WebcamIcon({ className }: { className?: string }) {
 interface WebcamQuickControlsProps {
   config: WebcamBackgroundConfig;
   onConfigChange: (config: Partial<WebcamBackgroundConfig>) => void;
-  devices: MediaDeviceInfo[];
+  devices?: MediaDeviceInfo[];
 }
 
-export function WebcamQuickControls({ config, onConfigChange, devices }: WebcamQuickControlsProps) {
+export function WebcamQuickControls({ config, onConfigChange, devices = [] }: WebcamQuickControlsProps) {
   return (
     <div className="flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-lg p-2 border border-white/10">
       {/* Enable/Disable */}
