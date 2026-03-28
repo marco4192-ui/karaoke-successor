@@ -10,6 +10,7 @@ import { MobileDeviceMicrophoneSection } from '@/components/settings/mobile-devi
 import { GeneralSettingsTab } from '@/components/settings/general-settings-tab';
 import { GraphicSoundSettingsTab } from '@/components/settings/graphic-sound-settings-tab';
 import { AboutTab } from '@/components/settings/about-tab';
+import { DatabaseManagementPanel } from '@/components/settings/database-management-panel';
 // Extracted components
 import {
   useSettingsScreen,
@@ -160,6 +161,11 @@ function SettingsScreen() {
       {/* About Tab */}
       {activeTab === 'about' && (
         <AboutTab isTauriDetected={isTauriDetected} />
+      )}
+
+      {/* Data Tab - Database Management */}
+      {activeTab === 'data' && (
+        <DatabaseManagementPanel />
       )}
       
       {/* Save Button - Fixed at bottom */}

@@ -9,7 +9,7 @@ import {
 import { useSettingsPersistence } from '@/hooks/use-settings-persistence';
 import { useLibraryManagement } from '@/hooks/use-library-management';
 
-export type SettingsTab = 'general' | 'graphicsound' | 'microphone' | 'mobile' | 'webcam' | 'library' | 'editor' | 'assets' | 'about';
+export type SettingsTab = 'general' | 'graphicsound' | 'microphone' | 'mobile' | 'webcam' | 'library' | 'editor' | 'assets' | 'data' | 'about';
 
 export function useSettingsScreen() {
   const { t, setLanguage, translations } = useTranslation();

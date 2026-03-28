@@ -10,6 +10,7 @@ import {
   EditIcon,
   WebcamIcon,
   FolderIcon,
+  DatabaseIcon,
   InfoIcon,
 } from '@/components/icons';
 import { SettingsTab } from './use-settings-screen';
@@ -83,6 +84,13 @@ export function SettingsTabNavigation({ activeTab, onTabChange, tx, isEditorMode
         className={activeTab === 'assets' ? 'bg-purple-500 text-white' : 'border-white/20 text-white'}
       >
         <SparkleIcon className="w-4 h-4 mr-2" /> AI Asset
+      </Button>
+      <Button
+        variant={activeTab === 'data' ? 'default' : 'outline'}
+        onClick={() => onTabChange('data')}
+        className={activeTab === 'data' ? 'bg-emerald-500 text-white' : 'border-white/20 text-white'}
+      >
+        <DatabaseIcon className="w-4 h-4 mr-2" /> Data
       </Button>
       <Button
         variant={activeTab === 'about' ? 'default' : 'outline'}
