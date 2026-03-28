@@ -15,6 +15,9 @@ import { SongHighscoreModal, ScoreVisualization } from '@/components/results';
 import { getCountryFlag } from '@/lib/constants/countries';
 import { useHighscoreSave } from '@/hooks/use-highscore-save';
 
+// Re-export for convenience
+export { getCountryFlag } from '@/lib/constants/countries';
+
 // Constants
 const MAX_POINTS_PER_SONG = 10000;
 

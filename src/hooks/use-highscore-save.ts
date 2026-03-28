@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '@/lib/game/store';
-import { Song, GameResults } from '@/types/game';
+import { Song, GameResult } from '@/types/game';
 import {
   getExtendedStats,
   updateStatsAfterGame,
@@ -13,7 +13,7 @@ import {
 
 export interface UseHighscoreSaveOptions {
   song: Song | null;
-  results: GameResults | null;
+  results: GameResult | null;
   activeProfileId: string | null;
   onlineEnabled: boolean;
 }

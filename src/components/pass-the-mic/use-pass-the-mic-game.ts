@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Song, LyricLine } from '@/types/game';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
-import { PassTheMicPlayer, PassTheMicSegment, PassTheMicSettings } from './use-pass-the-mic-setup';
+import { PassTheMicPlayer, PassTheMicSettings } from './use-pass-the-mic-setup';
+import { PassTheMicSegment } from '@/components/game/pass-the-mic-screen';
 
 export function usePassTheMicGame(
   players: PassTheMicPlayer[],

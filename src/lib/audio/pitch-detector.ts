@@ -1,6 +1,9 @@
 import { PitchDetectionResult, frequencyToMidi, Difficulty, DIFFICULTY_SETTINGS } from '@/types/game';
 import { logger } from '@/lib/logger';
 
+// Re-export PitchDetectionResult for convenience
+export type { PitchDetectionResult } from '@/types/game';
+
 // Karaoke-optimized pitch detection settings
 export interface PitchDetectorConfig {
   volumeThreshold: number;        // Minimum volume to register (0-1)
@@ -362,5 +365,51 @@ export function resetPitchDetector(): void {
   if (pitchDetectorInstance) {
     pitchDetectorInstance.destroy();
     pitchDetectorInstance = null;
+  }
+}
+
+// Multi-pitch detector support (for future multiplayer features)
+// These are stub implementations that use the singleton for now
+export class PitchDetectorManager {
+  private detectors: Map<string, PitchDetector> = new Map();
+  
+  async createDetector(id: string): Promise<PitchDetector> {
+    const detector = new PitchDetector();
+    await detector.initialize();
+    this.detectors.set(id, detector);
+    return detector;
+  }
+  
+  getDetector(id: string): PitchDetector | undefined {
+    return this.detectors.get(id);
+  }
+  
+  removeDetector(id: string): void {
+    const detector = this.detectors.get(id);
+    if (detector) {
+      detector.destroy();
+      this.detectors.delete(id);
+    }
+  }
+  
+  destroyAll(): void {
+    this.detectors.forEach(d => d.destroy());
+    this.detectors.clear();
+  }
+}
+
+let managerInstance: PitchDetectorManager | null = null;
+
+export function getPitchDetectorManager(): PitchDetectorManager {
+  if (!managerInstance) {
+    managerInstance = new PitchDetectorManager();
+  }
+  return managerInstance;
+}
+
+export function resetPitchDetectorManager(): void {
+  if (managerInstance) {
+    managerInstance.destroyAll();
+    managerInstance = null;
   }
 }

@@ -1,5 +1,8 @@
 // Song Library Store - Manages songs with persistent storage
 import { Song, LyricLine, Note, midiToFrequency } from '@/types/game';
+
+// Re-export Song type for convenience
+export type { Song } from '@/types/game';
 import { sampleSongs } from '@/data/songs/songs';
 import { isTauri, getPlayableUrl, getSongMediaUrl } from '@/lib/tauri-file-storage';
 import { getSongMediaUrls, storeMedia, hasMedia, getTxtContent } from '@/lib/db/media-db';

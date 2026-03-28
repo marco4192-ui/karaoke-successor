@@ -7,8 +7,11 @@
 
 import { useState, useCallback } from 'react';
 import { getAllSongs, reloadLibrary, clearCustomSongs } from '@/lib/game/song-library';
-import { useFolderScan } from '@/hooks/use-folder-scan';
+import { useFolderScan, ScanProgress } from '@/hooks/use-folder-scan';
 import { logger } from '@/lib/logger';
+
+// Re-export ScanProgress for convenience
+export type { ScanProgress } from '@/hooks/use-folder-scan';
 
 export interface LibraryManagementResult {
   songsFolder: string;
@@ -16,11 +19,7 @@ export interface LibraryManagementResult {
   songCount: number;
   setSongCount: (count: number) => void;
   isScanning: boolean;
-  scanProgress: {
-    stage: string;
-    message: string;
-    count: number;
-  } | null;
+  scanProgress: ScanProgress | null;
   isResetting: boolean;
   resetComplete: boolean;
   folderSaveComplete: boolean;
