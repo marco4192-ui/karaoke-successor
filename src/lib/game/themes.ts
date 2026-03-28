@@ -26,6 +26,8 @@ export interface Theme {
   description: string;
   colors: ThemeColors;
   backgroundImage?: string;
+  // Background preview gradient for theme selector
+  background?: string;
   noteStyle: 'rounded' | 'sharp' | 'pill' | 'diamond';
   fontFamily: string;
   borderRadius: number;
@@ -222,6 +224,7 @@ export const THEMES: Theme[] = [
       combo: '#ff00ff',
       starPower: '#ffd700',
     },
+    background: 'linear-gradient(135deg, #0a0a1a, #1a1a2e, #00ffff22)',
     noteStyle: 'rounded',
     fontFamily: 'Inter, sans-serif',
     borderRadius: 8,
@@ -252,6 +255,7 @@ export const THEMES: Theme[] = [
       combo: '#ff00ff',
       starPower: '#ffd700',
     },
+    background: 'linear-gradient(135deg, #000000, #1a0a2e, #39ff1422)',
     noteStyle: 'sharp',
     fontFamily: 'monospace',
     borderRadius: 0,
@@ -282,6 +286,7 @@ export const THEMES: Theme[] = [
       combo: '#feca57',
       starPower: '#ffd700',
     },
+    background: 'linear-gradient(135deg, #2d1b3d, #3d2b4d, #ff6b6b22)',
     noteStyle: 'pill',
     fontFamily: 'Poppins, sans-serif',
     borderRadius: 20,
@@ -319,6 +324,7 @@ export const THEMES: Theme[] = [
     mood: 'calm',
     particleEffect: 'wave',
     backgroundAnimation: 'waves',
+    background: 'linear-gradient(135deg, #0a1628, #162844, #00d2d322)',
   },
   {
     id: 'galaxy-pop',
@@ -349,6 +355,7 @@ export const THEMES: Theme[] = [
     mood: 'party',
     particleEffect: 'sparkle',
     backgroundAnimation: 'stars',
+    background: 'linear-gradient(135deg, #0f0720, #1a0a3e, #a855f722)',
   },
   {
     id: 'minimal-light',
@@ -379,6 +386,7 @@ export const THEMES: Theme[] = [
     mood: 'calm',
     particleEffect: 'none',
     backgroundAnimation: 'none',
+    background: 'linear-gradient(135deg, #f8fafc, #e2e8f0, #3b82f622)',
   },
 ];
 
