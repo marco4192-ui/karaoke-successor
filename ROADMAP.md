@@ -173,20 +173,22 @@
 
 ## 🟣 PRIORITÄT 5: Neue Features
 
-### 5.1 AI-Stimmtrennung (Spleeter)
+### 5.1 AI-Stimmtrennung (Spleeter) ✅ ERLEDIGT
 **Beschreibung:** Instrumental aus beliebigen Songs extrahieren
 
 **Technologie:**
-- Serverseitige Verarbeitung (Python + Spleeter/Demucs)
-- Oder Client-seitig mit ONNX Runtime Web
+- ✅ Client-seitig mit ONNX Runtime Web implementiert
+- ✅ Unterstützung für Vocals, Instrumental, Drums, Bass, Other
 
-**Aufwand:** 16-24 Stunden (komplex)
+**Aufwand:** 16-24 Stunden (erledigt)
 
-**Tasks:**
-- [ ] Research: Client vs Server
-- [ ] Backend-API für Separation
-- [ ] Progress-UI für Verarbeitung
-- [ ] Caching für bereits getrennte Songs
+**Implementiert:**
+- [x] Vocal-Separator Service mit ONNX Runtime
+- [x] UI für Stimmtrennung (VocalSeparatorPanel)
+- [x] useVocalSeparator Hook für React-Integration
+- [x] Progress-UI für Verarbeitung
+- [x] Caching für bereits getrennte Songs
+- [x] Integration in Song-Start-Modal
 
 ### 5.2 Cloud-Sync für Profile
 **Beschreibung:** Geräteübergreifende Highscore-Synchronisation
@@ -203,16 +205,18 @@
 - [ ] Conflict-Resolution bei Offline-Änderungen
 - [ ] UI für Sync-Status
 
-### 5.3 Twitch/Stream Integration
+### 5.3 Twitch/Stream Integration ✅ ERLEDIGT
 **Beschreibung:** Overlay für Streamer
 
 **Features:**
-- [ ] Browser-Source Overlay
-- [ ] Chat-basierte Song-Wünsche
-- [ ] Viewer-Voting für Schwierigkeit
-- [ ] Real-time Score-Anzeige
+- [x] Browser-Source Overlay (/overlay Seite)
+- [x] Chat-basierte Song-Wünsche (StreamingOverlayService)
+- [x] Viewer-Voting für Schwierigkeit (VotingPoll)
+- [x] Real-time Score-Anzeige
+- [x] Multiple Themes (dark, light, neon, minimal, glass)
+- [x] Positionierbar (top-left, top-right, bottom-left, bottom-right)
 
-**Aufwand:** 12-16 Stunden
+**Aufwand:** 12-16 Stunden (erledigt)
 
 ### 5.4 Mobile App (Companion)
 **Beschreibung:** Smartphone als Mikrofon und Controller
@@ -261,9 +265,9 @@
 3. ✅ Test-Coverage Pitch-Detector (erledigt - 46.47%)
 
 ### Sprint 4+ (Nach Bedarf)
-1. ❌ AI-Stimmtrennung
-2. ❌ Cloud-Sync
-3. ❌ Streaming-Integration
+1. ✅ AI-Stimmtrennung (erledigt)
+2. ✅ Streaming-Integration (erledigt)
+3. ❌ Cloud-Sync
 
 ---
 
@@ -293,6 +297,16 @@
 ---
 
 ## 📝 Änderungsprotokoll
+
+### Version 0.2.3 (März 2026)
+- ✅ AI Vocal Separator mit ONNX Runtime Web implementiert
+- ✅ VocalSeparatorPanel Komponente für UI
+- ✅ useVocalSeparator Hook für React-Integration
+- ✅ Streaming Overlay Service für Twitch/OBS
+- ✅ Browser Source Overlay Seite (/overlay)
+- ✅ Chat-Integration für Song-Wünsche
+- ✅ Multiple Themes und Positionen für Overlay
+- ✅ onnxruntime-web Dependency hinzugefügt
 
 ### Version 0.2.2 (März 2026)
 - ✅ Audio-Latenz mit AudioWorklet reduziert (~46ms)
