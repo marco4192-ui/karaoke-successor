@@ -5,6 +5,7 @@ import { PassTheMicPlayer, PassTheMicSettings } from './use-pass-the-mic-setup';
 import { PassTheMicSegment } from '@/components/game/pass-the-mic-screen';
 import { calculatePitchStats, PitchStats } from '@/lib/game/note-utils';
 import { calculateScoringMetadata, ScoringMetadata } from '@/lib/game/scoring';
+import { setGameType } from '@/lib/audio/mobile-audio-processor';
 
 // Constants
 const NOTE_WINDOW = 4000;
@@ -29,6 +30,14 @@ export function usePassTheMicGame(
   const startTimeRef = useRef<number>(0);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isMountedRef = useRef(true);
+  
+  // Set game type for audio-streaming mode (not Battle Royale)
+  useEffect(() => {
+    setGameType('pass-the-mic');
+    return () => {
+      setGameType('single');
+    };
+  }, []);
   
   // Player scores state
   const [playerScores, setPlayerScores] = useState<Map<string, number>>(new Map());

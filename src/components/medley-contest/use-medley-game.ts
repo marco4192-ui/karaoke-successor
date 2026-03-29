@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { LyricLine } from '@/types/game';
 import { MedleyPlayer, MedleySong, MedleySettings } from './use-medley-setup';
+import { setGameType } from '@/lib/audio/mobile-audio-processor';
 
 type GamePhase = 'countdown' | 'playing' | 'transition' | 'ended';
 
@@ -16,6 +17,14 @@ export function useMedleyGame(
   const [countdown, setCountdown] = useState(3);
   const [phase, setPhase] = useState<GamePhase>('countdown');
   const [transitionCountdown, setTransitionCountdown] = useState(settings.transitionTime);
+
+  // Set game type for audio-streaming mode (not Battle Royale)
+  useEffect(() => {
+    setGameType('medley');
+    return () => {
+      setGameType('single');
+    };
+  }, []);
 
   const currentMedleySong = medleySongs[currentSongIndex];
   const currentPlayer = players[0];

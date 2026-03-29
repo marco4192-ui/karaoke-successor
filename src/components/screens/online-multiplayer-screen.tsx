@@ -18,6 +18,7 @@ import { calculatePitchStats, PitchStats, getNoteShapeClasses, NoteShapeStyle } 
 import { calculateScoringMetadata } from '@/lib/game/scoring';
 import { ScoreEventsDisplay } from '@/components/game/score-events-display';
 import { logger } from '@/lib/logger';
+import { setGameType } from '@/lib/audio/mobile-audio-processor';
 
 // Note progress tracking for scoring
 interface NoteProgress {
@@ -100,6 +101,14 @@ function OnlineGameScreen({ room, socket, song, onEnd }: { room: OnlineRoom; soc
   const [isPlaying, setIsPlaying] = useState(false);
   const [countdown, setCountdown] = useState(3);
   const [mediaLoaded, setMediaLoaded] = useState(false);
+  
+  // Set game type for audio-streaming mode (not Battle Royale)
+  useEffect(() => {
+    setGameType('multiplayer');
+    return () => {
+      setGameType('single');
+    };
+  }, []);
   
   // Opponent state for real-time sync
   const [opponentScore, setOpponentScore] = useState(0);

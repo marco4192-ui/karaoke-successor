@@ -5,6 +5,7 @@ import { createDuelMatch, DuelMatch } from '@/lib/game/multiplayer';
 import { useGameStore } from '@/lib/game/store';
 import type { Song, Note, LyricLine } from '@/types/game';
 import type { NoteProgress } from '@/lib/game/scoring';
+import { setGameType } from '@/lib/audio/mobile-audio-processor';
 
 export interface UseDuelModeOptions {
   song: Song | null;
@@ -50,6 +51,16 @@ export function useDuelMode({ song, timingData }: UseDuelModeOptions): DuelModeS
   // Check if this is a duet or duel mode
   const isDuetMode = song?.isDuet || gameState.gameMode === 'duet' || gameState.gameMode === 'duel';
   const isDuelMode = gameState.gameMode === 'duel';
+  
+  // Set game type for audio-streaming mode (not Battle Royale)
+  useEffect(() => {
+    if (isDuetMode || isDuelMode) {
+      setGameType('duet');
+    }
+    return () => {
+      setGameType('single');
+    };
+  }, [isDuetMode, isDuelMode]);
 
   // Duel mode state
   const [duelMatch, setDuelMatch] = useState<DuelMatch | null>(null);
