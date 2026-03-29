@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Song, LyricLine } from '@/types/game';
 import { CompanionPlayer, CompanionSingAlongSettings } from './use-companion-setup';
+import { setGameType as setMobileGameType } from '@/lib/audio/mobile-audio-processor';
 
 type GamePhase = 'setup' | 'playing' | 'switching' | 'ended';
 
@@ -10,6 +11,14 @@ export function useCompanionGame(
   settings: CompanionSingAlongSettings,
   onEndGame: () => void
 ) {
+  // Set game type for audio streaming mode (not Battle Royale)
+  useEffect(() => {
+    setMobileGameType('companion-singalong');
+    return () => {
+      setMobileGameType('single');
+    };
+  }, []);
+  
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [nextPlayerIndex, setNextPlayerIndex] = useState<number | null>(null);
   const [currentTime, setCurrentTime] = useState(0);

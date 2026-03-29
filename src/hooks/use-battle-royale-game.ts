@@ -16,6 +16,7 @@ import {
   updatePlayerScore,
 } from '@/lib/game/battle-royale';
 import { logger } from '@/lib/logger';
+import { setGameType } from '@/lib/audio/mobile-audio-processor';
 
 interface UseBattleRoyaleGameOptions {
   game: BattleRoyaleGame;
@@ -37,6 +38,14 @@ export function useBattleRoyaleGame({
   onUpdateGame,
 }: UseBattleRoyaleGameOptions) {
   const difficulty = game.settings.difficulty || 'medium';
+  
+  // Set game type for pitch-only mode (optimized for Battle Royale)
+  useEffect(() => {
+    setGameType('battle-royale');
+    return () => {
+      setGameType('single');
+    };
+  }, []);
   
   // Pitch detection
   const {

@@ -57,6 +57,34 @@ interface RemoteControlState {
   pendingCommands: RemoteCommand[]; // Commands waiting to be executed by main app
 }
 
+// ===================== AUDIO STREAMING TYPES =====================
+// Transmission mode for companion devices
+type TransmissionMode = 'pitch-only' | 'audio-stream';
+
+// Audio chunk from mobile client (base64 encoded)
+interface AudioChunk {
+  clientId: string;
+  data: string; // base64 encoded audio data
+  sampleRate: number;
+  channels: number;
+  timestamp: number;
+  sequenceNumber: number;
+}
+
+// Audio buffer for streaming mode
+interface ClientAudioBuffer {
+  clientId: string;
+  chunks: AudioChunk[];
+  totalBytes: number;
+  lastSequenceNumber: number;
+  startedAt: number;
+  sampleRate: number;
+  channels: number;
+}
+
+// Game type to determine transmission mode
+type GameType = 'battle-royale' | 'companion-singalong' | 'duet' | 'pass-the-mic' | 'single' | 'medley';
+
 // ===================== GLOBAL STATE =====================
 // Shared state for mobile clients (in-memory, resets on server restart)
 const mobileClients = new Map<string, MobileClient>();
@@ -106,6 +134,32 @@ let remoteControlState: RemoteControlState = {
   lockedAt: null,
   pendingCommands: [],
 };
+
+// ===================== AUDIO STREAMING STATE =====================
+// Current transmission mode for all clients
+let currentTransmissionMode: TransmissionMode = 'pitch-only';
+
+// Current game type
+let currentGameType: GameType | null = null;
+
+// Audio buffers for streaming clients
+const audioBuffers = new Map<string, ClientAudioBuffer>();
+
+// Maximum audio buffer size per client (10MB)
+const MAX_AUDIO_BUFFER_SIZE = 10 * 1024 * 1024;
+
+// Maximum chunks to keep in buffer (rolling window)
+const MAX_CHUNKS_IN_BUFFER = 100;
+
+// Determine transmission mode based on game type
+function getTransmissionModeForGame(gameType: GameType | null): TransmissionMode {
+  // Battle Royale uses pitch-only (optimized for many players)
+  if (gameType === 'battle-royale') {
+    return 'pitch-only';
+  }
+  // All other game types use audio streaming
+  return 'audio-stream';
+}
 
 // ===================== HELPER FUNCTIONS =====================
 function generateConnectionCode(): string {
@@ -347,6 +401,7 @@ export async function GET(request: NextRequest) {
       connectionCodes.clear();
       profileToClient.clear();
       latestPitchData.clear();
+      audioBuffers.clear();
       songQueue = [];
       jukeboxWishlist = [];
       gameState = {
@@ -363,10 +418,81 @@ export async function GET(request: NextRequest) {
         lockedAt: null,
         pendingCommands: [],
       };
+      // Reset transmission mode
+      currentTransmissionMode = 'pitch-only';
+      currentGameType = null;
       return Response.json({ 
         success: true, 
         message: 'All connections cleared',
       });
+
+    // ===================== AUDIO STREAMING ENDPOINTS =====================
+    case 'transmissionmode':
+      // Get current transmission mode for companion devices
+      return Response.json({
+        success: true,
+        transmissionMode: currentTransmissionMode,
+        gameType: currentGameType,
+      });
+
+    case 'getaudio':
+      // PC polls this to get audio chunks from streaming clients
+      const audioClientId = searchParams.get('audioClientId');
+      
+      if (audioClientId && audioBuffers.has(audioClientId)) {
+        // Get audio for specific client
+        const buffer = audioBuffers.get(audioClientId)!;
+        const chunks = [...buffer.chunks];
+        
+        return Response.json({
+          success: true,
+          clientId: audioClientId,
+          chunks: chunks.map(c => ({
+            data: c.data,
+            sampleRate: c.sampleRate,
+            channels: c.channels,
+            timestamp: c.timestamp,
+            sequenceNumber: c.sequenceNumber,
+          })),
+          totalBytes: buffer.totalBytes,
+        });
+      } else {
+        // Get audio from all streaming clients
+        const allAudio: Array<{
+          clientId: string;
+          chunks: AudioChunk[];
+          totalBytes: number;
+          profile: MobileProfile | null;
+        }> = [];
+        
+        audioBuffers.forEach((buffer, cId) => {
+          const client = mobileClients.get(cId);
+          allAudio.push({
+            clientId: cId,
+            chunks: [...buffer.chunks],
+            totalBytes: buffer.totalBytes,
+            profile: client?.profile || null,
+          });
+        });
+        
+        return Response.json({
+          success: true,
+          audioBuffers: allAudio,
+          transmissionMode: currentTransmissionMode,
+        });
+      }
+
+    case 'clearaudio':
+      // Clear audio buffer for a specific client or all clients
+      const clearClientId = searchParams.get('audioClientId');
+      
+      if (clearClientId) {
+        audioBuffers.delete(clearClientId);
+        return Response.json({ success: true, message: `Audio buffer cleared for client ${clearClientId}` });
+      } else {
+        audioBuffers.clear();
+        return Response.json({ success: true, message: 'All audio buffers cleared' });
+      }
 
     default:
       return Response.json({
@@ -766,6 +892,170 @@ export async function POST(request: NextRequest) {
           return Response.json({ success: true, timestamp: Date.now() });
         }
         return Response.json({ success: false, message: 'Client not found' }, { status: 404 });
+
+      // ===================== AUDIO STREAMING CASES =====================
+      case 'audiochunk':
+        // Mobile client sends audio chunk (for audio-stream mode)
+        if (!clientId || !mobileClients.has(clientId)) {
+          return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
+        }
+        
+        const audioChunkPayload = payload as {
+          data: string; // base64 encoded audio
+          sampleRate: number;
+          channels: number;
+          sequenceNumber: number;
+        };
+        
+        // Get or create audio buffer for this client
+        let audioBuffer = audioBuffers.get(clientId);
+        
+        if (!audioBuffer) {
+          audioBuffer = {
+            clientId,
+            chunks: [],
+            totalBytes: 0,
+            lastSequenceNumber: -1,
+            startedAt: Date.now(),
+            sampleRate: audioChunkPayload.sampleRate,
+            channels: audioChunkPayload.channels,
+          };
+        }
+        
+        // Create the audio chunk
+        const newChunk: AudioChunk = {
+          clientId,
+          data: audioChunkPayload.data,
+          sampleRate: audioChunkPayload.sampleRate,
+          channels: audioChunkPayload.channels,
+          timestamp: Date.now(),
+          sequenceNumber: audioChunkPayload.sequenceNumber,
+        };
+        
+        // Add chunk to buffer
+        audioBuffer.chunks.push(newChunk);
+        audioBuffer.lastSequenceNumber = audioChunkPayload.sequenceNumber;
+        
+        // Calculate data size (base64 is ~4/3 the size of binary)
+        const chunkSize = Math.ceil(audioChunkPayload.data.length * 0.75);
+        audioBuffer.totalBytes += chunkSize;
+        
+        // Keep buffer size in check - remove old chunks if needed
+        while (audioBuffer.chunks.length > MAX_CHUNKS_IN_BUFFER) {
+          const removedChunk = audioBuffer.chunks.shift();
+          if (removedChunk) {
+            const removedSize = Math.ceil(removedChunk.data.length * 0.75);
+            audioBuffer.totalBytes -= removedSize;
+          }
+        }
+        
+        // Save buffer
+        audioBuffers.set(clientId, audioBuffer);
+        
+        // Update client activity
+        const audioClient = mobileClients.get(clientId)!;
+        audioClient.lastActivity = Date.now();
+        mobileClients.set(clientId, audioClient);
+        
+        return Response.json({
+          success: true,
+          received: true,
+          sequenceNumber: audioChunkPayload.sequenceNumber,
+          bufferSize: audioBuffer.chunks.length,
+        });
+
+      case 'setgametype':
+        // Main app sets the game type (determines transmission mode)
+        const gameTypePayload = payload as { gameType: GameType };
+        currentGameType = gameTypePayload.gameType;
+        currentTransmissionMode = getTransmissionModeForGame(currentGameType);
+        
+        console.log(`[Mobile API] Game type set to: ${currentGameType}, transmission mode: ${currentTransmissionMode}`);
+        
+        return Response.json({
+          success: true,
+          gameType: currentGameType,
+          transmissionMode: currentTransmissionMode,
+        });
+
+      case 'startaudiostream':
+        // Mobile client starts audio streaming
+        if (!clientId || !mobileClients.has(clientId)) {
+          return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
+        }
+        
+        // Initialize audio buffer
+        const streamConfig = payload as {
+          sampleRate: number;
+          channels: number;
+        };
+        
+        audioBuffers.set(clientId, {
+          clientId,
+          chunks: [],
+          totalBytes: 0,
+          lastSequenceNumber: -1,
+          startedAt: Date.now(),
+          sampleRate: streamConfig.sampleRate,
+          channels: streamConfig.channels,
+        });
+        
+        console.log(`[Mobile API] Audio stream started for client: ${clientId}`);
+        
+        return Response.json({
+          success: true,
+          message: 'Audio stream started',
+          transmissionMode: currentTransmissionMode,
+        });
+
+      case 'stopaudiostream':
+        // Mobile client stops audio streaming
+        if (clientId) {
+          audioBuffers.delete(clientId);
+          console.log(`[Mobile API] Audio stream stopped for client: ${clientId}`);
+        }
+        
+        return Response.json({
+          success: true,
+          message: 'Audio stream stopped',
+        });
+
+      case 'consumeaudio':
+        // Main app consumes and clears audio chunks (after processing)
+        const consumePayload = payload as { 
+          clientIds?: string[];
+          keepLast?: number; // Keep last N chunks
+        };
+        
+        if (consumePayload.clientIds) {
+          consumePayload.clientIds.forEach(cId => {
+            const buffer = audioBuffers.get(cId);
+            if (buffer) {
+              if (consumePayload.keepLast && buffer.chunks.length > consumePayload.keepLast) {
+                // Keep only last N chunks
+                const chunksToRemove = buffer.chunks.length - consumePayload.keepLast;
+                buffer.chunks.splice(0, chunksToRemove);
+              } else {
+                // Clear all chunks
+                buffer.chunks = [];
+              }
+              buffer.totalBytes = buffer.chunks.reduce((sum, c) => sum + Math.ceil(c.data.length * 0.75), 0);
+            }
+          });
+        } else {
+          // Consume from all clients
+          audioBuffers.forEach((buffer, cId) => {
+            if (consumePayload.keepLast && buffer.chunks.length > consumePayload.keepLast) {
+              const chunksToRemove = buffer.chunks.length - consumePayload.keepLast;
+              buffer.chunks.splice(0, chunksToRemove);
+            } else {
+              buffer.chunks = [];
+            }
+            buffer.totalBytes = buffer.chunks.reduce((sum, c) => sum + Math.ceil(c.data.length * 0.75), 0);
+          });
+        }
+        
+        return Response.json({ success: true, message: 'Audio consumed' });
 
       default:
         return Response.json({ success: false, message: 'Unknown message type' }, { status: 400 });
