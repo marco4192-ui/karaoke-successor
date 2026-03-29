@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { Song } from '@/types/game';
+import { setGameType, GameType } from '@/lib/audio/mobile-audio-processor';
 
 export interface MobilePitchData {
   frequency: number | null;
@@ -20,6 +21,8 @@ export interface MobileGameSyncOptions {
   isPlaying: boolean;
   currentTime: number;
   isDuetMode: boolean;
+  /** Game type for setting transmission mode (default: 'single' = audio-stream) */
+  gameType?: GameType;
   /** Callback when mobile pitch is received (for P2 in duet mode) */
   onMobilePitch?: (pitch: MobilePitchData | null) => void;
 }
@@ -41,18 +44,32 @@ export interface MobileGameSyncResult {
  * - Polling for mobile pitch data
  * - Syncing game state to mobile clients
  * - Managing P2 volume for duet mode
+ * - Setting transmission mode based on game type
  */
 export function useMobileGameSync({
   song,
   isPlaying,
   currentTime,
   isDuetMode,
+  gameType = 'single', // Default to single player mode (audio-stream)
   onMobilePitch,
 }: MobileGameSyncOptions): MobileGameSyncResult {
   
   const [mobilePitch, setMobilePitch] = useState<MobilePitchData | null>(null);
   const [hasMobileClient, setHasMobileClient] = useState(false);
   const [p2Volume, setP2Volume] = useState(0);
+  
+  // Set game type when song is loaded (determines transmission mode)
+  // Battle Royale = pitch-only, all others = audio-stream
+  useEffect(() => {
+    if (song) {
+      setGameType(gameType);
+    }
+    return () => {
+      // Reset to single when unmounting
+      setGameType('single');
+    };
+  }, [song, gameType]);
   
   // Poll for mobile pitch data
   useEffect(() => {

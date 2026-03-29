@@ -29,7 +29,17 @@ export interface AudioChunk {
   timestamp?: number;
 }
 
-export type GameType = 'battle-royale' | 'companion-singalong' | 'duet' | 'pass-the-mic' | 'single' | 'medley';
+export type GameType = 
+  | 'battle-royale'    // Pitch-only mode (many players)
+  | 'single'           // Audio-stream mode
+  | 'duet'             // Audio-stream mode
+  | 'duel'             // Audio-stream mode
+  | 'pass-the-mic'     // Audio-stream mode
+  | 'medley'           // Audio-stream mode
+  | 'tournament'       // Audio-stream mode
+  | 'daily-challenge'  // Audio-stream mode
+  | 'multiplayer'      // Audio-stream mode
+  | 'companion-singalong'; // Audio-stream mode
 
 // ===================== YIN PITCH DETECTION =====================
 // Optimized YIN algorithm for pitch detection
