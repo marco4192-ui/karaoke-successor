@@ -5,9 +5,9 @@
 
 // Services
 export { StreamingOverlayService, getStreamingOverlayService } from './streaming-overlay-service';
-export { TwitchService, getTwitchService, resetTwitchService } from './twitch-service';
-export { YouTubeService, getYouTubeService, resetYouTubeService } from './youtube-service';
-export { StreamingService, getStreamingService, resetStreamingService } from './streaming-service';
+export { getTwitchService, resetTwitchService } from './twitch-service';
+export { getYouTubeService, resetYouTubeService } from './youtube-service';
+export { getStreamingService, resetStreamingService } from './streaming-service';
 
 // Types
 export type {

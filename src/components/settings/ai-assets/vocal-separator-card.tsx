@@ -8,8 +8,8 @@ import { Progress } from '@/components/ui/progress';
 import {
   useVocalSeparator,
   SeparatedStem,
-  SeparationProgress,
 } from '@/hooks/use-vocal-separator';
+import type { SeparationProgress } from '@/lib/audio/vocal-separator';
 import { getModelManager, ModelInfo, ModelDownloadProgress } from '@/lib/audio/model-manager';
 import { getStemDisplayName, getStemIcon, audioBufferToWav } from '@/lib/audio/vocal-separator';
 import { StemType } from '@/lib/audio/vocal-separator/types';

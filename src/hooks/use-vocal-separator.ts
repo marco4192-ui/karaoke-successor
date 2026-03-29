@@ -63,6 +63,8 @@ export interface UseVocalSeparatorReturn {
   initialize: () => Promise<boolean>;
   /** Separate audio file */
   separate: (source: string | File, options?: Partial<SeparationOptions>) => Promise<SeparationResult | null>;
+  /** Switch to a different model */
+  switchModel: (modelId: string) => Promise<boolean>;
   /** Get stem URL for playback */
   getStemUrl: (stem: StemType) => string | null;
   /** Clear current result */
@@ -210,6 +212,33 @@ export function useVocalSeparator(
   }, [stems]);
 
   /**
+   * Switch to a different model
+   */
+  const switchModel = useCallback(async (modelId: string): Promise<boolean> => {
+    if (!separatorRef.current) {
+      return false;
+    }
+
+    try {
+      const success = await separatorRef.current.switchModel(modelId, (p) => {
+        setProgress(p);
+        onProgress?.(p);
+      });
+
+      if (success) {
+        setStatus(separatorRef.current.getStatus());
+      }
+
+      return success;
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to switch model';
+      setError(errorMsg);
+      onError?.(new Error(errorMsg));
+      return false;
+    }
+  }, [onProgress, onError]);
+
+  /**
    * Clear current result
    */
   const clearResult = useCallback(() => {
@@ -276,6 +305,7 @@ export function useVocalSeparator(
     error,
     initialize,
     separate,
+    switchModel,
     getStemUrl,
     clearResult,
     cleanup,
