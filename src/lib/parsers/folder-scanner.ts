@@ -616,8 +616,10 @@ async function parseUltraStarFull(txtFile?: File): Promise<{
         hasDuetNotes = true;
       }
       
-      // Parse note - use the ORIGINAL line (not trimmed) to preserve trailing spaces
-      const noteMatch = noteLine.match(/^([:*FGR])\s*(-?\d+)\s+(\d+)\s+(-?\d+)\s*(.*)$/);
+      // Parse note - use TRIMMED line for matching to handle leading spaces
+      // but preserve the original lyric with trailing spaces for syllable detection
+      const trimmedNoteLine = noteLine.trim();
+      const noteMatch = trimmedNoteLine.match(/^([:*FGR])\s*(-?\d+)\s+(\d+)\s+(-?\d+)\s*(.*)$/);
       if (noteMatch) {
         const [, type, startStr, durationStr, pitchStr, lyric] = noteMatch;
         notes.push({
