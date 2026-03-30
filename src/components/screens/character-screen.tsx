@@ -402,12 +402,18 @@ export function CharacterScreen() {
                 <select
                   value={selectedCountry}
                   onChange={(e) => setSelectedCountry(e.target.value)}
-                  className="w-full bg-gray-800 border border-white/10 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 appearance-none cursor-pointer"
-                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.5rem center', backgroundSize: '1.5em 1.5em' }}
+                  className="w-full bg-[rgb(30,30,40)] dark:bg-[rgb(30,30,40)] border border-white/20 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 appearance-none cursor-pointer"
+                  style={{ 
+                    colorScheme: 'dark',
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, 
+                    backgroundRepeat: 'no-repeat', 
+                    backgroundPosition: 'right 0.5rem center', 
+                    backgroundSize: '1.5em 1.5em' 
+                  }}
                 >
-                  <option value="" className="bg-gray-800 text-white">Select Country (optional)</option>
+                  <option value="" className="bg-[rgb(30,30,40)] text-white/60">Select Country (optional)</option>
                   {COUNTRY_OPTIONS.map(c => (
-                    <option key={c.code} value={c.code} className="bg-gray-800 text-white">{c.flag} {c.name}</option>
+                    <option key={c.code} value={c.code} className="bg-[rgb(30,30,40)] text-white">{c.flag} {c.name}</option>
                   ))}
                 </select>
                 {onlineEnabled && (
@@ -793,11 +799,18 @@ export function CharacterScreen() {
                       <select
                         value={displayedProfile.country || ''}
                         onChange={(e) => handleUpdateCountry(displayedProfile.id, e.target.value)}
-                        className="bg-white/10 border border-white/10 rounded px-2 py-1 text-sm text-white"
+                        className="bg-[rgb(30,30,40)] dark:bg-[rgb(30,30,40)] border border-white/20 rounded-md px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 appearance-none cursor-pointer min-w-[160px]"
+                        style={{ 
+                          colorScheme: 'dark',
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, 
+                          backgroundRepeat: 'no-repeat', 
+                          backgroundPosition: 'right 0.5rem center', 
+                          backgroundSize: '1.2em 1.2em' 
+                        }}
                       >
-                        <option value="">-</option>
+                        <option value="" className="bg-[rgb(30,30,40)] text-white/60">Select Country</option>
                         {COUNTRY_OPTIONS.map(c => (
-                          <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
+                          <option key={c.code} value={c.code} className="bg-[rgb(30,30,40)] text-white">{c.flag} {c.name}</option>
                         ))}
                       </select>
                     </div>
