@@ -27,6 +27,7 @@ export default function KaraokeSuccessor() {
   const [isMobileClient, setIsMobileClient] = useState(false);
   const [screen, setScreen] = useState<Screen>('home');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false); // Track client-side mount
   const { gameState, setSong, setGameMode, profiles, queue, resetGame, addPlayer, setResults } = useGameStore();
   
   // Tournament state
@@ -178,6 +179,8 @@ export default function KaraokeSuccessor() {
       // Use microtask to avoid synchronous setState in effect
       queueMicrotask(() => setIsMobileClient(true));
     }
+    // Mark as mounted
+    setIsMounted(true);
   }, []);
   
   // Apply stored theme on app start
@@ -243,7 +246,7 @@ export default function KaraokeSuccessor() {
               </NavButton>
               <NavButton active={screen === 'queue'} onClick={() => setScreen('queue')}>
                 <QueueIcon className="w-5 h-5" /> Queue
-                {queue.length > 0 && (
+                {isMounted && queue.length > 0 && (
                   <Badge variant="secondary" className="ml-1 px-1.5 py-0.5 text-xs">{queue.length}</Badge>
                 )}
               </NavButton>
