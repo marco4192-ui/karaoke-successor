@@ -320,24 +320,29 @@ function parseLyricsFromTxt(content: string, bpm: number, gap: number): LyricLin
   let currentPlayer: 'P1' | 'P2' | undefined = undefined;
   
   for (const line of lines) {
+    // Use trimmed version for header/marker parsing (these should be trimmed)
+    const trimmedLine = line.trim();
+    
     // Check for player markers
-    if (line === 'P1' || line === 'P1:') {
+    if (trimmedLine === 'P1' || trimmedLine === 'P1:') {
       currentPlayer = 'P1';
       continue;
     }
-    if (line === 'P2' || line === 'P2:') {
+    if (trimmedLine === 'P2' || trimmedLine === 'P2:') {
       currentPlayer = 'P2';
       continue;
     }
     
-    // Skip headers
-    if (line.startsWith('#')) continue;
-    if (line === 'E') break;
+    // Skip headers (use trimmed version)
+    if (trimmedLine.startsWith('#')) continue;
+    if (trimmedLine === 'E') break;
     
-    // Line break
-    const lineBreakMatch = line.match(/^-\s*(-?\d+)/);
-    if (lineBreakMatch) {
-      lineBreakBeats.add(parseInt(lineBreakMatch[1]));
+    // Line break (use trimmed version for matching)
+    if (trimmedLine.startsWith('-')) {
+      const lineBreakMatch = trimmedLine.match(/^-\s*(-?\d+)/);
+      if (lineBreakMatch) {
+        lineBreakBeats.add(parseInt(lineBreakMatch[1]));
+      }
       continue;
     }
     
@@ -351,8 +356,10 @@ function parseLyricsFromTxt(content: string, bpm: number, gap: number): LyricLin
       noteLine = duetPrefixMatch[2];
     }
     
-    // Parse note - use the ORIGINAL line (not trimmed) to preserve trailing spaces
-    const noteMatch = noteLine.match(/^([:*FGR])\s*(-?\d+)\s+(\d+)\s+(-?\d+)\s*(.*)$/);
+    // Parse note - use trimmed version of note line for matching
+    // but preserve the original lyric with spaces
+    const trimmedNoteLine = noteLine.trim();
+    const noteMatch = trimmedNoteLine.match(/^([:*FGR])\s*(-?\d+)\s+(\d+)\s+(-?\d+)\s*(.*)$/);
     if (noteMatch) {
       const [, type, startStr, durationStr, pitchStr, lyric] = noteMatch;
       notes.push({
@@ -360,7 +367,8 @@ function parseLyricsFromTxt(content: string, bpm: number, gap: number): LyricLin
         startBeat: parseInt(startStr),
         duration: parseInt(durationStr),
         pitch: parseInt(pitchStr),
-        lyric,
+        // DON'T trim - preserve trailing spaces for syllable detection
+        lyric: lyric,
         player: notePlayer,
       });
     }
