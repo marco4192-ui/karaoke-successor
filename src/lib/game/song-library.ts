@@ -634,7 +634,12 @@ export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
 }
 
 // Parse UltraStar TXT content to lyrics
+// IMPORTANT: Don't trim lines or lyrics - trailing spaces are significant for word boundaries
+// - Trailing space in lyric = end of word (space is displayed)
+// - No trailing space = syllable connected to next note
 function parseUltraStarTxtContent(content: string, gap: number, bpm: number): LyricLine[] {
+  // DON'T trim lines! Trailing spaces in lyrics are significant for word boundaries.
+  // Only filter out completely empty lines (after trimming for the check)
   const lines = content.split('\n').filter(l => l.trim().length > 0);
   const notes: Array<{ type: string; startBeat: number; duration: number; pitch: number; lyric: string; player?: 'P1' | 'P2' }> = [];
   const lineBreakBeats = new Set<number>();
@@ -642,24 +647,29 @@ function parseUltraStarTxtContent(content: string, gap: number, bpm: number): Ly
   let currentPlayer: 'P1' | 'P2' | undefined = undefined;
   
   for (const line of lines) {
+    // Use trimmed version for header/marker parsing (these should be trimmed)
+    const trimmedLine = line.trim();
+    
     // Check for player markers
-    if (line === 'P1' || line === 'P1:') {
+    if (trimmedLine === 'P1' || trimmedLine === 'P1:') {
       currentPlayer = 'P1';
       continue;
     }
-    if (line === 'P2' || line === 'P2:') {
+    if (trimmedLine === 'P2' || trimmedLine === 'P2:') {
       currentPlayer = 'P2';
       continue;
     }
     
-    // Skip headers
-    if (line.startsWith('#')) continue;
-    if (line === 'E') break;
+    // Skip headers (use trimmed version)
+    if (trimmedLine.startsWith('#')) continue;
+    if (trimmedLine === 'E') break;
     
-    // Line break
-    const lineBreakMatch = line.match(/^-\s*(-?\d+)/);
-    if (lineBreakMatch) {
-      lineBreakBeats.add(parseInt(lineBreakMatch[1]));
+    // Line break (use trimmed version for matching)
+    if (trimmedLine.startsWith('-')) {
+      const lineBreakMatch = trimmedLine.match(/^-\s*(-?\d+)/);
+      if (lineBreakMatch) {
+        lineBreakBeats.add(parseInt(lineBreakMatch[1]));
+      }
       continue;
     }
     
@@ -673,8 +683,10 @@ function parseUltraStarTxtContent(content: string, gap: number, bpm: number): Ly
       noteLine = duetPrefixMatch[2];
     }
     
-    // Parse note
-    const noteMatch = noteLine.match(/^([:*FGR])\s*(-?\d+)\s+(\d+)\s+(-?\d+)\s*(.*)$/);
+    // Parse note - use trimmed version of note line for matching
+    // but preserve the original lyric with spaces
+    const trimmedNoteLine = noteLine.trim();
+    const noteMatch = trimmedNoteLine.match(/^([:*FGR])\s*(-?\d+)\s+(\d+)\s+(-?\d+)\s*(.*)$/);
     if (noteMatch) {
       const [, type, startStr, durationStr, pitchStr, lyric] = noteMatch;
       notes.push({
@@ -682,7 +694,8 @@ function parseUltraStarTxtContent(content: string, gap: number, bpm: number): Ly
         startBeat: parseInt(startStr),
         duration: parseInt(durationStr),
         pitch: parseInt(pitchStr),
-        lyric,
+        // DON'T trim - preserve trailing spaces for syllable detection
+        lyric: lyric,
         player: notePlayer,
       });
     }
