@@ -299,7 +299,7 @@ function MicrophoneCard({
               <SelectValue placeholder="Mikrofon wählen..." />
             </SelectTrigger>
             <SelectContent>
-              {devices.map((device) => (
+              {devices.filter(d => d.deviceId).map((device) => (
                 <SelectItem key={device.deviceId} value={device.deviceId}>
                   {device.label}
                   {device.isDefault && ' (Standard)'}
@@ -748,7 +748,7 @@ export function MicrophoneSettingsPanel({
                       <SelectValue placeholder="Mikrofon wählen..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {devices.map((device) => (
+                      {devices.filter(d => d.deviceId).map((device) => (
                         <SelectItem key={device.deviceId} value={device.deviceId}>
                           {device.label}
                           {device.isDefault && ' (Standard)'}

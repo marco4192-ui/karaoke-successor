@@ -442,7 +442,7 @@ export function WebcamSettingsPanel({ config, onConfigChange, compact = false }:
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-white/20">
                   <SelectItem value="default">Default Camera</SelectItem>
-                  {devices.map(device => (
+                  {devices.filter(d => d.deviceId).map(device => (
                     <SelectItem key={device.deviceId} value={device.deviceId}>
                       {device.label || `Camera ${device.deviceId.slice(0, 8)}`}
                     </SelectItem>
