@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { useGameStore } from '@/lib/game/store';
 import { GlobeIcon, CloudUploadIcon, CloudDownloadIcon, PlusIcon, UserIcon } from '@/components/icons';
 import { PlayerProfile, HighscoreEntry } from '@/types/game';
@@ -418,37 +418,46 @@ export function CharacterScreen() {
             </CardContent>
           </Card>
         ) : (
-          <ScrollArea className="w-full">
-            <div className="flex gap-3 pb-2">
-              {profiles.map((profile) => {
-                const level = getLevelForXP(profile.xp || 0);
-                const rank = getRankForXP(profile.xp || 0);
-                const isSelected = displayedProfileId === profile.id;
-                const isActive = activeProfileId === profile.id;
-                
-                return (
+          <div className="flex flex-wrap gap-3">
+            {profiles.map((profile) => {
+              const level = getLevelForXP(profile.xp || 0);
+              const rank = getRankForXP(profile.xp || 0);
+              const isSelected = displayedProfileId === profile.id;
+              const isActiveProfile = activeProfileId === profile.id;
+              const isProfileActive = profile.isActive ?? true;
+
+              return (
+                <div
+                  key={profile.id}
+                  onClick={() => {
+                    setSelectedProfileId(profile.id);
+                    setActiveProfile(profile.id);
+                  }}
+                  className={`
+                    w-28 p-3 rounded-xl cursor-pointer transition-all relative
+                    ${isSelected
+                      ? 'bg-gradient-to-br from-cyan-500/30 to-purple-500/30 border-2 border-cyan-500 scale-105'
+                      : isProfileActive
+                        ? 'bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/30'
+                        : 'bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/30 opacity-50 grayscale'
+                    }
+                  `}
+                >
+                  {/* Active/Inactive Status Indicator */}
                   <div
-                    key={profile.id}
-                    onClick={() => {
-                      setSelectedProfileId(profile.id);
-                      setActiveProfile(profile.id);
-                    }}
-                    className={`
-                      flex-shrink-0 w-28 p-3 rounded-xl cursor-pointer transition-all
-                      ${isSelected 
-                        ? 'bg-gradient-to-br from-cyan-500/30 to-purple-500/30 border-2 border-cyan-500 scale-105' 
-                        : 'bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/30'
-                      }
-                    `}
-                  >
+                    className={`absolute top-2 right-2 w-3 h-3 rounded-full border border-black/30 ${
+                      isProfileActive ? 'bg-green-500' : 'bg-red-500'
+                    }`}
+                    title={isProfileActive ? 'Active' : 'Inactive'}
+                  />
                     <div className="flex flex-col items-center text-center">
                       {/* Avatar */}
                       <div className="relative mb-2">
                         <div 
                           className="w-14 h-14 rounded-full flex items-center justify-center text-white text-lg font-bold overflow-hidden border-2"
-                          style={{ 
+                          style={{
                             backgroundColor: profile.color,
-                            borderColor: isActive ? '#22d3ee' : 'transparent'
+                            borderColor: isActiveProfile ? '#22d3ee' : 'transparent'
                           }}
                         >
                           {profile.avatar ? (
@@ -457,8 +466,8 @@ export function CharacterScreen() {
                             profile.name[0].toUpperCase()
                           )}
                         </div>
-                        {/* Active indicator */}
-                        {isActive && (
+                        {/* Selected/Aktives Profil indicator */}
+                        {isActiveProfile && (
                           <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-cyan-500 rounded-full border-2 border-black flex items-center justify-center">
                             <span className="text-[8px]">✓</span>
                           </div>
@@ -484,7 +493,6 @@ export function CharacterScreen() {
                 );
               })}
             </div>
-          </ScrollArea>
         )}
       </div>
 
