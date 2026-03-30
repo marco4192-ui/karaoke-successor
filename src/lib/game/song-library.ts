@@ -546,16 +546,19 @@ export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
       if (txtContent && txtContent.length > 0) {
         const parsedLyrics = parseUltraStarTxtContent(txtContent, song.gap || 0, song.bpm || 120);
         console.log('[SongLibrary] Parsed lyrics, lines:', parsedLyrics.length);
-        return parsedLyrics;
+        if (parsedLyrics.length > 0) {
+          return parsedLyrics;
+        }
       } else {
-        console.warn('[SongLibrary] TXT content is null or empty for song:', song.id);
+        console.warn('[SongLibrary] TXT content is null or empty for song:', song.id, '- falling through to file system');
       }
     } catch (error) {
-      console.error('[SongLibrary] Failed to load lyrics from IndexedDB:', error);
+      console.error('[SongLibrary] Failed to load lyrics from IndexedDB:', error, '- falling through to file system');
     }
   }
   
   // Strategy 2: Load directly from file system in Tauri (if relativeTxtPath is set)
+  // This is now the PRIMARY fallback when IndexedDB fails or storedTxt is false
   if (song.relativeTxtPath && typeof window !== 'undefined' && '__TAURI__' in window) {
     try {
       console.log('[SongLibrary] Attempting to load TXT from file system:', song.relativeTxtPath);
@@ -574,13 +577,55 @@ export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
         if (txtContent && txtContent.length > 0) {
           const parsedLyrics = parseUltraStarTxtContent(txtContent, song.gap || 0, song.bpm || 120);
           console.log('[SongLibrary] Parsed lyrics from file, lines:', parsedLyrics.length);
-          return parsedLyrics;
+          if (parsedLyrics.length > 0) {
+            // Cache in IndexedDB for future use
+            try {
+              const txtBlob = new Blob([txtContent], { type: 'text/plain' });
+              await storeMedia(song.id, 'txt', txtBlob);
+              console.log('[SongLibrary] Cached TXT in IndexedDB for future use');
+            } catch (cacheErr) {
+              console.warn('[SongLibrary] Failed to cache TXT:', cacheErr);
+            }
+            return parsedLyrics;
+          }
         }
       } else {
         console.warn('[SongLibrary] No songs folder available for loading TXT');
       }
     } catch (error) {
       console.error('[SongLibrary] Failed to load lyrics from file system:', error);
+    }
+  }
+  
+  // Strategy 3: Try to load from stored media in IndexedDB with different key format
+  // Sometimes the song ID might not match due to how it was stored
+  if (song.storedTxt) {
+    try {
+      console.log('[SongLibrary] Trying alternative IndexedDB lookup strategies');
+      const { getMedia } = await import('@/lib/db/media-db');
+      
+      // Try with original ID
+      let blob = await getMedia(song.id, 'txt');
+      
+      // Try with scanned- prefix stripped
+      if (!blob && song.id.startsWith('scanned-')) {
+        const altId = song.id.replace('scanned-', '');
+        console.log('[SongLibrary] Trying alt ID:', altId);
+        blob = await getMedia(altId, 'txt');
+      }
+      
+      if (blob && blob.size > 0) {
+        const txtContent = await blob.text();
+        if (txtContent && txtContent.length > 0) {
+          const parsedLyrics = parseUltraStarTxtContent(txtContent, song.gap || 0, song.bpm || 120);
+          console.log('[SongLibrary] Parsed lyrics from alt IndexedDB lookup, lines:', parsedLyrics.length);
+          if (parsedLyrics.length > 0) {
+            return parsedLyrics;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[SongLibrary] Alternative IndexedDB lookup failed:', error);
     }
   }
   
