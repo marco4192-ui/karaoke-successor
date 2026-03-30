@@ -432,7 +432,7 @@ function SettingsScreen() {
               difficulty: 'medium',
               rating: 3,
               gap: scanned.gap,
-              baseFolder: folderPath, // Store the base folder path for loading media
+              baseFolder: scanned.baseFolder || folderPath, // Use scanned baseFolder or fall back to scan folder
               folderPath: scanned.folderPath,
               relativeTxtPath: scanned.relativeTxtPath,
               relativeAudioPath: scanned.relativeAudioPath,

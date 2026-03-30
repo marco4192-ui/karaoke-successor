@@ -73,6 +73,7 @@ export interface TauriScannedSong {
   title: string;
   artist: string;
   folderPath: string;
+  baseFolder: string; // Absolute path to the songs root folder (critical for media loading)
   relativeTxtPath?: string;
   relativeAudioPath?: string;
   relativeVideoPath?: string;
@@ -96,7 +97,7 @@ export interface TauriScanResult {
 
 // Scan a songs folder recursively using Tauri's fs plugin
 // This is the PRIMARY method for loading songs in Tauri
-export async function scanSongsFolderTauri(folderPath: string): Promise<TauriScanResult> {
+export async function scanSongsFolderTauri(baseSongsFolder: string): Promise<TauriScanResult> {
   const result: TauriScanResult = {
     songs: [],
     errors: [],
@@ -108,11 +109,11 @@ export async function scanSongsFolderTauri(folderPath: string): Promise<TauriSca
     return result;
   }
 
-  console.log('[TauriScanner] Starting scan of folder:', folderPath);
+  console.log('[TauriScanner] Starting scan of folder:', baseSongsFolder);
 
   try {
     // Collect ALL files first, then group by folder
-    const allFiles = await collectAllFiles(folderPath, folderPath);
+    const allFiles = await collectAllFiles(baseSongsFolder, baseSongsFolder);
     result.scannedFiles = allFiles.length;
     
     console.log(`[TauriScanner] Found ${allFiles.length} files`);
@@ -140,8 +141,10 @@ export async function scanSongsFolderTauri(folderPath: string): Promise<TauriSca
     console.log(`[TauriScanner] Found ${folderMap.size} folders with files`);
     
     // Process each folder
-    for (const [folderPath, files] of folderMap) {
-      const song = await processFolder(folderPath, files, folderPath);
+    // CRITICAL: Pass the absolute baseSongsFolder, NOT the relative songFolder from the map!
+    // This is essential for getSongMediaUrl to construct correct absolute paths later
+    for (const [songFolder, files] of folderMap) {
+      const song = await processFolder(songFolder, files, baseSongsFolder);
       if (song) {
         result.songs.push(song);
       }
@@ -292,6 +295,7 @@ async function processFolder(
     title,
     artist,
     folderPath,
+    baseFolder, // Store absolute path to songs root folder for media loading
     relativeTxtPath: txtFile.path,
     relativeAudioPath: audioFile?.path,
     relativeVideoPath: videoFile?.path,
