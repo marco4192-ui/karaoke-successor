@@ -181,6 +181,23 @@ export function PerformanceDisplay() {
   const { profiles, activeProfileId } = useGameStore();
   const activeProfile = profiles.find(p => p.id === activeProfileId);
   
+  // Avoid hydration mismatch - only show content after mount
+  const [isMounted, setIsMounted] = useState(false);
+  
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  
+  if (!isMounted) {
+    return (
+      <Card className="bg-white/5 border-white/10">
+        <CardContent className="pt-4 text-center text-white/40">
+          Loading stats...
+        </CardContent>
+      </Card>
+    );
+  }
+  
   if (!activeProfile) {
     return (
       <Card className="bg-white/5 border-white/10">

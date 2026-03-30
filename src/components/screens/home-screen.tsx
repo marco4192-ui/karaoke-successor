@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,9 +23,17 @@ interface HomeScreenProps {
 
 export function HomeScreen({ onNavigate }: HomeScreenProps) {
   const { profiles, activeProfileId, setActiveProfile } = useGameStore();
+  // Track if component is mounted (to avoid hydration mismatch)
+  const [isMounted, setIsMounted] = useState(false);
   
-  // Get song count from library
+  // Only run on client after mount
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  
+  // Get song count from library - only on client
   const songCount = useMemo(() => {
+    if (typeof window === 'undefined') return 0;
     return getAllSongs().length;
   }, []);
   
@@ -67,13 +75,13 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
         <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
           <CardContent className="pt-6">
-            <div className="text-3xl font-bold text-cyan-400">{songCount}</div>
+            <div className="text-3xl font-bold text-cyan-400">{isMounted ? songCount : 0}</div>
             <div className="text-white/60 text-sm">Songs Available</div>
           </CardContent>
         </Card>
         <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
           <CardContent className="pt-6">
-            <div className="text-3xl font-bold text-purple-400">{profiles.length}</div>
+            <div className="text-3xl font-bold text-purple-400">{isMounted ? profiles.length : 0}</div>
             <div className="text-white/60 text-sm">Characters Created</div>
           </CardContent>
         </Card>
@@ -94,7 +102,11 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
       {/* Performance Stats */}
       <Card className="bg-white/5 border-white/10 mb-8">
         <CardContent className="pt-6">
-          <PerformanceDisplay />
+          {isMounted ? (
+            <PerformanceDisplay />
+          ) : (
+            <div className="text-center text-white/40 py-4">Loading stats...</div>
+          )}
         </CardContent>
       </Card>
 
@@ -144,7 +156,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
       </div>
 
       {/* Select Profile */}
-      {profiles.length > 0 && (
+      {isMounted && profiles.length > 0 && (
         <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
           <CardHeader>
             <CardTitle>Select Your Character</CardTitle>
