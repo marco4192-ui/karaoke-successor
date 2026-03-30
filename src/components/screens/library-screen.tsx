@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Song, Difficulty, GameMode } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
-import { getAllSongs, getAllSongsAsync, restoreSongUrls } from '@/lib/game/song-library';
+import { getAllSongs, getAllSongsAsync, restoreSongUrls, getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { 
   getPlaylists, 
   createPlaylist, 
@@ -792,12 +792,19 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
   const handleStartGame = async () => {
     if (!selectedSong) return;
     
+    // CRITICAL: Load the song with lyrics from IndexedDB or file system
+    // This ensures lyrics are available even if they were cleared in localStorage
+    let songWithLyrics = await getSongByIdWithLyrics(selectedSong.id);
+    if (!songWithLyrics) {
+      songWithLyrics = selectedSong; // Fallback to selected song
+    }
+    
     // CRITICAL: Ensure the song has valid media URLs before passing to game screen
     // This is necessary because blob URLs don't persist across app restarts
-    let songWithUrls = selectedSong;
-    if (!selectedSong.audioUrl && !selectedSong.videoBackground && selectedSong.relativeAudioPath) {
+    let songWithUrls = songWithLyrics;
+    if (!songWithLyrics.audioUrl && !songWithLyrics.videoBackground && selectedSong.relativeAudioPath) {
       console.log('[LibraryScreen] Restoring URLs for song:', selectedSong.title);
-      songWithUrls = await restoreSongUrls(selectedSong);
+      songWithUrls = await restoreSongUrls(songWithLyrics);
     }
     
     // Check if player selection is required (multiple active profiles)
