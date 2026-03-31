@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useGameStore } from '@/lib/game/store';
+import { getAllSongs } from '@/lib/game/song-library';
 import type { Song, GameMode } from '@/types/game';
 
 export interface UseMobileClientOptions {
@@ -51,6 +52,7 @@ export function useMobileClient({
   syncCompanionProfiles: () => Promise<void>;
   companionQueue: CompanionQueueItem[];
   syncCompanionQueue: () => Promise<void>;
+  syncSongLibrary: () => Promise<void>;
 } {
   const [mobilePitch, setMobilePitch] = useState<MobilePitchData | null>(null);
   const [hasMobileClient, setHasMobileClient] = useState(false);
@@ -191,6 +193,44 @@ export function useMobileClient({
     return () => clearInterval(syncInterval);
   }, [fetchCompanionQueue]);
 
+  // Sync song library to server for companion clients
+  const syncSongLibrary = useCallback(async () => {
+    try {
+      const allSongs = getAllSongs();
+      const simplifiedSongs = allSongs.map(song => ({
+        id: song.id,
+        title: song.title,
+        artist: song.artist,
+        duration: song.duration,
+        genre: song.genre,
+        language: song.language,
+        coverImage: song.coverImage,
+      }));
+      
+      await fetch('/api/mobile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'setsongs',
+          payload: simplifiedSongs,
+        }),
+      });
+      
+      console.log('[MobileClient] Synced', simplifiedSongs.length, 'songs to server');
+    } catch (error) {
+      console.error('[MobileClient] Error syncing songs:', error);
+    }
+  }, []);
+
+  // Sync songs on mount and when songs change
+  useEffect(() => {
+    syncSongLibrary();
+    
+    // Also sync periodically (every 30 seconds)
+    const syncInterval = setInterval(syncSongLibrary, 30000);
+    return () => clearInterval(syncInterval);
+  }, [syncSongLibrary]);
+
   return {
     mobilePitch,
     hasMobileClient,
@@ -201,5 +241,6 @@ export function useMobileClient({
     syncCompanionProfiles,
     companionQueue,
     syncCompanionQueue,
+    syncSongLibrary,
   };
 }

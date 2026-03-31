@@ -113,6 +113,17 @@ let remoteControlState: RemoteControlState = {
   pendingCommands: [],
 };
 
+// Song Library - Cached songs from main app for companion clients
+let songLibrary: Array<{
+  id: string;
+  title: string;
+  artist: string;
+  duration: number;
+  genre?: string;
+  language?: string;
+  coverImage?: string;
+}> = [];
+
 // ===================== HELPER FUNCTIONS =====================
 function generateConnectionCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed confusing chars
@@ -388,6 +399,14 @@ export async function GET(request: NextRequest) {
       return Response.json({ 
         success: true, 
         message: 'All connections cleared',
+      });
+
+    case 'getsongs':
+      // Get cached song library for companion clients
+      return Response.json({
+        success: true,
+        songs: songLibrary,
+        count: songLibrary.length,
       });
 
     default:
@@ -823,6 +842,29 @@ export async function POST(request: NextRequest) {
           return Response.json({ success: true, timestamp: Date.now() });
         }
         return Response.json({ success: false, message: 'Client not found' }, { status: 404 });
+
+      case 'setsongs':
+        // Main app syncs its song library for companion clients
+        const songsPayload = payload as Array<{
+          id: string;
+          title: string;
+          artist: string;
+          duration: number;
+          genre?: string;
+          language?: string;
+          coverImage?: string;
+        }>;
+        
+        if (Array.isArray(songsPayload)) {
+          songLibrary = songsPayload;
+          console.log('[Mobile API] Song library updated:', songLibrary.length, 'songs');
+          return Response.json({ 
+            success: true, 
+            message: 'Song library updated',
+            count: songLibrary.length,
+          });
+        }
+        return Response.json({ success: false, message: 'Invalid songs payload' }, { status: 400 });
 
       default:
         return Response.json({ success: false, message: 'Unknown message type' }, { status: 400 });

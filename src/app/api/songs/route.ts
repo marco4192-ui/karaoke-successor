@@ -1,28 +1,28 @@
 import { NextResponse } from 'next/server';
-import { getAllSongs } from '@/lib/game/song-library';
+
+// This endpoint returns songs from the mobile API's cached song library
+// The main app syncs its songs to the mobile API when they change
+// This allows companion apps to access the song library
 
 export async function GET() {
   try {
-    // Get all songs (sample + custom/imported songs)
-    const allSongs = getAllSongs();
+    // Fetch songs from the mobile API's cache
+    const response = await fetch('http://localhost:3000/api/mobile?action=getsongs');
+    const data = await response.json();
     
-    // Return simplified song data for mobile client
-    const simplifiedSongs = allSongs.map(song => ({
-      id: song.id,
-      title: song.title,
-      artist: song.artist,
-      duration: song.duration,
-      genre: song.genre,
-      language: song.language,
-      coverImage: song.coverImage,
-    }));
-    
-    console.log('[API /songs] Returning', simplifiedSongs.length, 'songs');
+    if (data.success) {
+      console.log('[API /songs] Returning', data.songs?.length || 0, 'songs from cache');
+      return NextResponse.json({ 
+        success: true, 
+        songs: data.songs || [],
+        count: data.songs?.length || 0,
+      });
+    }
     
     return NextResponse.json({ 
       success: true, 
-      songs: simplifiedSongs,
-      count: simplifiedSongs.length,
+      songs: [],
+      count: 0,
     });
   } catch (error) {
     console.error('Error fetching songs:', error);
