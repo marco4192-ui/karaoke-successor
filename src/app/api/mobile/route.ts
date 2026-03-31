@@ -72,12 +72,14 @@ let gameState: {
   currentTime: number;
   songEnded: boolean;
   isAdPlaying: boolean;
+  gameMode: string | null; // Current game mode (for pitch handling decision)
 } = {
   currentSong: null,
   isPlaying: false,
   currentTime: 0,
   songEnded: false,
   isAdPlaying: false,
+  gameMode: null,
 };
 
 // Queue for song requests from mobile clients
@@ -369,6 +371,7 @@ export async function GET(request: NextRequest) {
         currentTime: 0,
         songEnded: false,
         isAdPlaying: false,
+        gameMode: null,
       };
       // Reset remote control state
       remoteControlState = {

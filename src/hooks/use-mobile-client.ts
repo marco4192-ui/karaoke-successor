@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useGameStore } from '@/lib/game/store';
-import type { Song } from '@/types/game';
+import type { Song, GameMode } from '@/types/game';
 
 export interface UseMobileClientOptions {
   song: Song | null;
   isPlaying: boolean;
   currentTime: number;
+  gameMode?: GameMode;
 }
 
 export interface MobilePitchData {
@@ -28,6 +29,7 @@ export function useMobileClient({
   song,
   isPlaying,
   currentTime,
+  gameMode,
 }: UseMobileClientOptions): {
   mobilePitch: MobilePitchData | null;
   hasMobileClient: boolean;
@@ -79,13 +81,14 @@ export function useMobileClient({
             currentSong: { id: song.id, title: song.title, artist: song.artist },
             isPlaying,
             currentTime,
+            gameMode: gameMode || 'standard',
           },
         }),
       });
     } catch {
       // Ignore sync errors
     }
-  }, [song, isPlaying, currentTime]);
+  }, [song, isPlaying, currentTime, gameMode]);
 
   // Update game state for mobile clients
   useEffect(() => {

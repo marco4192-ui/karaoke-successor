@@ -486,6 +486,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
               currentSong: { id: song.id, title: song.title, artist: song.artist },
               isPlaying: isPlaying,
               currentTime: gameState.currentTime,
+              gameMode: gameState.gameMode,
             },
           }),
         });
@@ -496,7 +497,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     
     // Update on song change and play state change
     updateGameState();
-  }, [song, isPlaying, gameState.currentTime]);
+  }, [song, isPlaying, gameState.currentTime, gameState.gameMode]);
   
   // Initialize audio effects when microphone is active
   useEffect(() => {
@@ -1040,13 +1041,14 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             isPlaying: false,
             currentTime: 0,
             songEnded: true,
+            gameMode: gameState.gameMode,
           },
         }),
       }).catch(() => {});
     }
     
     onEnd();
-  }, [stop, audioEffects, endGame, generateResults, onEnd, song]);
+  }, [stop, audioEffects, endGame, generateResults, onEnd, song, gameState.gameMode]);
   
   // CRITICAL: Cleanup on unmount - stop microphone when leaving GameScreen
   useEffect(() => {

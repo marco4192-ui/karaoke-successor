@@ -27,6 +27,7 @@ interface GameState {
   songEnded: boolean;
   isAdPlaying: boolean;
   queueLength: number;
+  gameMode: string | null; // Current game mode for pitch handling
 }
 
 interface LibrarySong {
@@ -65,6 +66,7 @@ export default function MobilePage() {
     songEnded: false,
     isAdPlaying: false,
     queueLength: 0,
+    gameMode: null,
   });
   
   // Library state
@@ -81,6 +83,12 @@ export default function MobilePage() {
   const isMicActiveRef = useRef(false);
   const hasConnectedRef = useRef(false);
   const lastPitchSendRef = useRef<number>(0); // For throttling pitch sending
+  const gameStateRef = useRef<GameState>(gameState); // Keep ref for audio callback
+
+  // Update gameStateRef when gameState changes
+  useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
 
   // Simple pitch detection using zero-crossing
   const detectPitchFn = (buffer: Float32Array, sampleRate: number): number | null => {
@@ -155,8 +163,13 @@ export default function MobilePage() {
     const pitchVal = detectPitchFn(dataArray, audioContextRef.current.sampleRate);
     setPitch(pitchVal);
     
-    // Send pitch data to server (throttled - every ~50ms)
-    if (clientId) {
+    // Only send pitch to server if NOT in battle-royale mode
+    // In battle-royale mode, pitch is processed locally on the companion
+    const currentGameMode = gameStateRef.current.gameMode;
+    const isBattleRoyale = currentGameMode === 'battle-royale';
+    
+    if (clientId && !isBattleRoyale) {
+      // Send pitch to main app for processing (all modes except battle-royale)
       sendPitchToServer(pitchVal, normalizedVolume);
     }
 
