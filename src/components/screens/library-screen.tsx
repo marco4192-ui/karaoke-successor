@@ -802,9 +802,28 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
     // CRITICAL: Ensure the song has valid media URLs before passing to game screen
     // This is necessary because blob URLs don't persist across app restarts
     let songWithUrls = songWithLyrics;
-    if (!songWithLyrics.audioUrl && !songWithLyrics.videoBackground && selectedSong.relativeAudioPath) {
-      console.log('[LibraryScreen] Restoring URLs for song:', selectedSong.title);
+    
+    // Check if any URLs need to be restored (audio, video, or cover)
+    const needsUrlRestore = 
+      (selectedSong.relativeAudioPath && !songWithLyrics.audioUrl) ||
+      (selectedSong.relativeVideoPath && !songWithLyrics.videoBackground) ||
+      (selectedSong.relativeCoverPath && !songWithLyrics.coverImage);
+    
+    if (needsUrlRestore) {
+      console.log('[LibraryScreen] Restoring URLs for song:', selectedSong.title, {
+        hasAudio: !!songWithLyrics.audioUrl,
+        hasVideo: !!songWithLyrics.videoBackground,
+        hasCover: !!songWithLyrics.coverImage,
+        relAudio: selectedSong.relativeAudioPath,
+        relVideo: selectedSong.relativeVideoPath,
+        relCover: selectedSong.relativeCoverPath,
+      });
       songWithUrls = await restoreSongUrls(songWithLyrics);
+      console.log('[LibraryScreen] URLs restored:', {
+        audioUrl: !!songWithUrls.audioUrl,
+        videoBackground: !!songWithUrls.videoBackground,
+        coverImage: !!songWithUrls.coverImage,
+      });
     }
     
     // Check if player selection is required (multiple active profiles)

@@ -425,6 +425,7 @@ export function replaceSong(song: Song): void {
 export async function restoreSongUrls(song: Song): Promise<Song> {
   if (!isTauri()) {
     // In browser mode, URLs should already be valid
+    console.log('[SongLibrary] restoreSongUrls: Not in Tauri mode, returning song as-is');
     return song;
   }
   
@@ -435,6 +436,12 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
   // 2. Fallback: localStorage 'karaoke-songs-folder'
   const baseFolder = song.baseFolder || localStorage.getItem('karaoke-songs-folder') || undefined;
   
+  console.log('[SongLibrary] restoreSongUrls for:', song.title, {
+    songBaseFolder: song.baseFolder,
+    localStorageFolder: localStorage.getItem('karaoke-songs-folder'),
+    resolvedBaseFolder: baseFolder,
+  });
+  
   if (!baseFolder) {
     console.warn('[SongLibrary] No base folder available for song:', song.title);
     return song;
@@ -443,10 +450,11 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
   try {
     // Restore audio URL from songs folder
     if (song.relativeAudioPath) {
+      console.log('[SongLibrary] Restoring audio URL:', song.relativeAudioPath);
       const url = await getSongMediaUrl(song.relativeAudioPath, baseFolder);
       if (url) {
         restored.audioUrl = url;
-        console.log('[SongLibrary] Restored audio URL for', song.title);
+        console.log('[SongLibrary] Restored audio URL for', song.title, ':', url.substring(0, 50) + '...');
       } else {
         console.warn('[SongLibrary] Failed to restore audio URL for', song.title);
       }
@@ -454,10 +462,11 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
     
     // Restore video URL from songs folder
     if (song.relativeVideoPath) {
+      console.log('[SongLibrary] Restoring video URL:', song.relativeVideoPath);
       const url = await getSongMediaUrl(song.relativeVideoPath, baseFolder);
       if (url) {
         restored.videoBackground = url;
-        console.log('[SongLibrary] Restored video URL for', song.title);
+        console.log('[SongLibrary] Restored video URL for', song.title, ':', url.substring(0, 50) + '...');
       } else {
         console.warn('[SongLibrary] Failed to restore video URL for', song.title);
       }
@@ -465,10 +474,11 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
     
     // Restore cover URL from songs folder
     if (song.relativeCoverPath) {
+      console.log('[SongLibrary] Restoring cover URL:', song.relativeCoverPath);
       const url = await getSongMediaUrl(song.relativeCoverPath, baseFolder);
       if (url) {
         restored.coverImage = url;
-        console.log('[SongLibrary] Restored cover URL for', song.title);
+        console.log('[SongLibrary] Restored cover URL for', song.title, ':', url.substring(0, 50) + '...');
       } else {
         console.warn('[SongLibrary] Failed to restore cover URL for', song.title);
       }
@@ -483,14 +493,28 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
 // Get all songs asynchronously (with URL restoration for Tauri and IndexedDB for browser)
 export async function getAllSongsAsync(): Promise<Song[]> {
   const songs = getAllSongs();
+  console.log('[SongLibrary] getAllSongsAsync called, songs count:', songs.length);
   
   if (isTauri()) {
+    console.log('[SongLibrary] Running in Tauri mode, restoring URLs for songs with relative paths');
     // In Tauri, restore URLs for all songs that have relative paths
     const restoredSongs = await Promise.all(
-      songs.map(song => {
+      songs.map(async (song) => {
         // Only restore if the song has relative paths stored
         if (song.relativeAudioPath || song.relativeVideoPath || song.relativeCoverPath) {
-          return restoreSongUrls(song);
+          console.log(`[SongLibrary] Restoring URLs for song: ${song.title}`, {
+            relativeAudioPath: song.relativeAudioPath,
+            relativeVideoPath: song.relativeVideoPath,
+            relativeCoverPath: song.relativeCoverPath,
+            baseFolder: song.baseFolder,
+          });
+          const restored = await restoreSongUrls(song);
+          console.log(`[SongLibrary] Restored URLs for ${song.title}:`, {
+            audioUrl: restored.audioUrl ? 'set' : 'not set',
+            videoBackground: restored.videoBackground ? 'set' : 'not set',
+            coverImage: restored.coverImage ? 'set' : 'not set',
+          });
+          return restored;
         }
         return song;
       })
