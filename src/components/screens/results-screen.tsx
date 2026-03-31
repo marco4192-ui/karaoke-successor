@@ -756,13 +756,103 @@ export function ScoreVisualization({
 
 // ===================== RESULTS SCREEN =====================
 export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void; onHome: () => void }) {
-  const { gameState, resetGame, addHighscore, profiles, activeProfileId, onlineEnabled, updateProfile, highscores } = useGameStore();
+  const { gameState, resetGame, addHighscore, profiles, activeProfileId, onlineEnabled, updateProfile, highscores, setSong, setGameMode, addPlayer } = useGameStore();
   const savedToHighscoreRef = useRef(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [uploadMessage, setUploadMessage] = useState('');
   const [showHighscoreModal, setShowHighscoreModal] = useState(false);
+  
+  // Queue state - for showing next song from companion queue
+  const [nextQueueItem, setNextQueueItem] = useState<{
+    id: string;
+    songId: string;
+    songTitle: string;
+    songArtist: string;
+    addedBy: string;
+    gameMode?: 'single' | 'duel' | 'duet';
+    isFromCompanion: boolean;
+  } | null>(null);
+  
   const results = gameState.results;
   const song = gameState.currentSong;
+
+  // Fetch next song from queue (both local and companion)
+  useEffect(() => {
+    const fetchNextInQueue = async () => {
+      try {
+        const response = await fetch('/api/mobile?action=getqueue');
+        const data = await response.json();
+        if (data.success && data.queue && data.queue.length > 0) {
+          const nextItem = data.queue.find((q: { status: string }) => q.status === 'pending');
+          if (nextItem) {
+            setNextQueueItem({
+              id: nextItem.id,
+              songId: nextItem.songId,
+              songTitle: nextItem.songTitle,
+              songArtist: nextItem.songArtist,
+              addedBy: nextItem.addedBy,
+              gameMode: nextItem.gameMode || 'single',
+              isFromCompanion: true,
+            });
+          }
+        }
+      } catch {
+        // Ignore errors
+      }
+    };
+    
+    fetchNextInQueue();
+  }, []);
+  
+  // Play next song from queue
+  const handlePlayFromQueue = async () => {
+    if (!nextQueueItem) return;
+    
+    // Get full song from library
+    const { getAllSongsAsync } = await import('@/lib/game/song-library');
+    const songs = await getAllSongsAsync();
+    const fullSong = songs.find(s => s.id === nextQueueItem.songId);
+    
+    if (!fullSong) {
+      alert('Song not found in library');
+      return;
+    }
+    
+    // Mark as playing
+    try {
+      await fetch('/api/mobile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'markplaying',
+          payload: { itemId: nextQueueItem.id },
+        }),
+      });
+    } catch {
+      // Ignore
+    }
+    
+    // Set up game
+    setSong(fullSong);
+    if (nextQueueItem.gameMode === 'duel') {
+      setGameMode('duel');
+    } else if (nextQueueItem.gameMode === 'duet') {
+      setGameMode('duet');
+    } else {
+      setGameMode('standard');
+    }
+    
+    // Add active player
+    if (activeProfileId) {
+      const profile = profiles.find(p => p.id === activeProfileId);
+      if (profile) {
+        addPlayer(profile);
+      }
+    }
+    
+    resetGame();
+    onPlayAgain();
+  };
 
   // Get song highscores for comparison
   const songHighscores = useMemo(() => {
@@ -1182,6 +1272,41 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           Back to Home
         </Button>
       </div>
+
+      {/* Next Song from Queue - Companion Queue Integration */}
+      {nextQueueItem && (
+        <Card className="mt-6 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border-cyan-500/30">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="text-3xl">📋</div>
+                <div>
+                  <p className="text-sm text-white/60">Next in Queue</p>
+                  <p className="font-semibold text-lg">{nextQueueItem.songTitle}</p>
+                  <p className="text-sm text-white/60">{nextQueueItem.songArtist}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="outline" className="text-xs border-cyan-500/50 text-cyan-400">
+                      📱 {nextQueueItem.addedBy}
+                    </Badge>
+                    {nextQueueItem.gameMode === 'duel' && (
+                      <Badge className="bg-red-500/80 text-xs">⚔️ Duel</Badge>
+                    )}
+                    {nextQueueItem.gameMode === 'duet' && (
+                      <Badge className="bg-pink-500/80 text-xs">🎭 Duet</Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <Button 
+                onClick={handlePlayFromQueue}
+                className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400"
+              >
+                ▶ Play Next
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Song Highscore Modal */}
       {song && (

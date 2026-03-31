@@ -472,10 +472,12 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   }, [isDuetMode, mobilePitch, setP2DetectedPitch, setP2Volume]);
   
   // Update game state for mobile clients to see
+  // ===================== MOBILE COMPANION SYNC =====================
+  // Sync game state to mobile clients periodically
   useEffect(() => {
     if (!song) return;
     
-    const updateGameState = async () => {
+    const syncGameState = async () => {
       try {
         await fetch('/api/mobile', {
           method: 'POST',
@@ -487,6 +489,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
               isPlaying: isPlaying,
               currentTime: gameState.currentTime,
               gameMode: gameState.gameMode,
+              songEnded: false,
             },
           }),
         });
@@ -495,9 +498,14 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       }
     };
     
-    // Update on song change and play state change
-    updateGameState();
-  }, [song, isPlaying, gameState.currentTime, gameState.gameMode]);
+    // Initial sync
+    syncGameState();
+    
+    // Sync every 2 seconds while playing
+    const syncInterval = setInterval(syncGameState, 2000);
+    
+    return () => clearInterval(syncInterval);
+  }, [song, isPlaying, gameState.gameMode]); // Don't include currentTime - we sync periodically instead
   
   // Initialize audio effects when microphone is active
   useEffect(() => {

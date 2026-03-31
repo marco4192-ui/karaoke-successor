@@ -609,6 +609,29 @@ export async function POST(request: NextRequest) {
         }
         return Response.json({ success: false, message: 'Item not found' }, { status: 404 });
 
+      case 'markplaying':
+        // Mark a song as currently playing (called by main app or queue screen)
+        const playingPayload = payload as { itemId: string };
+        const playingItem = songQueue.find(q => q.id === playingPayload.itemId);
+        
+        if (playingItem) {
+          // Mark all other items as not playing (only one can be playing at a time)
+          songQueue.forEach(q => {
+            if (q.status === 'playing') {
+              q.status = 'pending';
+            }
+          });
+          
+          playingItem.status = 'playing';
+          
+          return Response.json({ 
+            success: true, 
+            message: 'Song marked as playing',
+            item: playingItem,
+          });
+        }
+        return Response.json({ success: false, message: 'Item not found' }, { status: 404 });
+
       case 'queuecompleted':
         // Mark a song as completed (called by main app)
         const completedPayload = payload as { itemId: string };
