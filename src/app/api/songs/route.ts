@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server';
-import { getAllSongs } from '@/lib/game/song-library';
+import { getAllSongs, getCustomSongs } from '@/lib/game/song-library';
 
 export async function GET() {
   try {
-    const songs = getAllSongs();
+    // Get both sample songs and custom/imported songs
+    const sampleSongs = getAllSongs();
+    const customSongs = getCustomSongs();
+    
+    // Combine all songs
+    const allSongs = [...sampleSongs, ...customSongs];
     
     // Return simplified song data for mobile client
-    const simplifiedSongs = songs.map(song => ({
+    const simplifiedSongs = allSongs.map(song => ({
       id: song.id,
       title: song.title,
       artist: song.artist,
