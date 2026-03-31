@@ -161,6 +161,60 @@ export function useRemoteControl({
                   }
                 }
                 break;
+                
+              case 'quit':
+                // Quit the application - same as stop but more definitive
+                if (audioRef.current) {
+                  audioRef.current.pause();
+                  audioRef.current.currentTime = 0;
+                }
+                if (videoRef.current) {
+                  videoRef.current.pause();
+                  videoRef.current.currentTime = 0;
+                }
+                setIsPlaying(false);
+                stop();
+                onBack();
+                break;
+                
+              case 'seek':
+                const seekData = cmd.data as { position?: number; direction?: string };
+                if (audioRef.current && seekData?.position !== undefined) {
+                  // Seek to absolute position (in seconds)
+                  audioRef.current.currentTime = seekData.position;
+                } else if (audioRef.current && seekData?.direction) {
+                  // Relative seek
+                  const seekAmount = 10; // 10 seconds
+                  if (seekData.direction === 'forward') {
+                    audioRef.current.currentTime = Math.min(
+                      audioRef.current.duration || 0,
+                      audioRef.current.currentTime + seekAmount
+                    );
+                  } else if (seekData.direction === 'backward') {
+                    audioRef.current.currentTime = Math.max(
+                      0,
+                      audioRef.current.currentTime - seekAmount
+                    );
+                  }
+                }
+                // Also seek video if present
+                if (videoRef.current && seekData?.position !== undefined) {
+                  videoRef.current.currentTime = seekData.position;
+                } else if (videoRef.current && seekData?.direction) {
+                  const seekAmount = 10;
+                  if (seekData.direction === 'forward') {
+                    videoRef.current.currentTime = Math.min(
+                      videoRef.current.duration || 0,
+                      videoRef.current.currentTime + seekAmount
+                    );
+                  } else if (seekData.direction === 'backward') {
+                    videoRef.current.currentTime = Math.max(
+                      0,
+                      videoRef.current.currentTime - seekAmount
+                    );
+                  }
+                }
+                break;
             }
           }
         }
