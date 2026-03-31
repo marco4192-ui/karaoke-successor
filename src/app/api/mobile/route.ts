@@ -311,6 +311,21 @@ export async function GET(request: NextRequest) {
         results: lastGameResults,
       });
 
+    case 'getprofiles':
+      // Get all companion profiles for main app to import
+      const companionProfiles: MobileProfile[] = [];
+      mobileClients.forEach((client) => {
+        if (client.profile) {
+          companionProfiles.push(client.profile);
+        }
+      });
+      
+      return Response.json({
+        success: true,
+        profiles: companionProfiles,
+        count: companionProfiles.length,
+      });
+
     case 'remotecontrol':
       // Get remote control state (for all clients to see who has control)
       return Response.json({
