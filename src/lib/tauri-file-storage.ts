@@ -678,8 +678,11 @@ export async function getPlayableUrl(relativePath: string): Promise<string> {
 // IMPORTANT: In Tauri v2 with dev server, we need to load files directly and create blob URLs
 // because convertFileSrc doesn't work well with http://localhost:3000 origin
 export async function getSongMediaUrl(relativePath: string, baseFolder?: string): Promise<string | null> {
+  console.log('[TauriFS] getSongMediaUrl called:', { relativePath, baseFolder, isTauri: isTauri() });
+  
   if (!isTauri()) {
     // Browser mode - return the path as-is (should be a blob URL)
+    console.log('[TauriFS] Not in Tauri, returning path as-is');
     return relativePath;
   }
 
@@ -690,6 +693,7 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
     
     if (!songsFolder) {
       songsFolder = localStorage.getItem('karaoke-songs-folder') || undefined;
+      console.log('[TauriFS] Using localStorage folder:', songsFolder);
     }
     
     if (!songsFolder) {
@@ -714,7 +718,9 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
     }
     
     // Load file and create blob URL
-    return await loadFileAsBlobUrl(fullPath);
+    const result = await loadFileAsBlobUrl(fullPath);
+    console.log('[TauriFS] loadFileAsBlobUrl result:', result ? 'success' : 'failed');
+    return result;
   } catch (error) {
     console.error('[TauriFS] Failed to get song media URL:', error);
     return null;
