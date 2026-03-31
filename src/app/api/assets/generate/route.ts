@@ -55,14 +55,14 @@ export async function POST(request: NextRequest) {
     
     if (!config) {
       return NextResponse.json({ 
-        error: 'API configuration not found. Please save your API settings first.',
+        error: 'API configuration not found. Please save your API settings in Settings > AI Asset Generator.',
         needsConfig: true
       }, { status: 400 });
     }
     
     if (!config.baseUrl || !config.apiKey) {
       return NextResponse.json({ 
-        error: 'API Base URL and Key are required. Please configure them in Settings > AI Asset.',
+        error: 'API Base URL and Key are required. Please configure them in Settings > AI Asset Generator.',
         needsConfig: true
       }, { status: 400 });
     }
@@ -80,6 +80,8 @@ export async function POST(request: NextRequest) {
       }
 
       try {
+        console.log('[AssetsAPI] Calling image generation API:', `${baseUrl}/images/generations`);
+        
         const response = await fetch(`${baseUrl}/images/generations`, {
           method: 'POST',
           headers,
@@ -93,10 +95,26 @@ export async function POST(request: NextRequest) {
         if (!response.ok) {
           const errorText = await response.text();
           console.error('Image API error:', response.status, errorText);
+          
+          // Provide helpful error messages
+          if (response.status === 405) {
+            return NextResponse.json({ 
+              error: `API endpoint not found (405). The URL "${baseUrl}/images/generations" does not support image generation. Please check your API Base URL in Settings > AI Asset Generator.`,
+              needsConfig: true
+            }, { status: 400 });
+          }
+          
+          if (response.status === 401 || response.status === 403) {
+            return NextResponse.json({ 
+              error: `Authentication failed (${response.status}). Please check your API key in Settings > AI Asset Generator.`,
+              needsConfig: true
+            }, { status: 400 });
+          }
+          
           return NextResponse.json({ 
-            error: `API error (${response.status}): ${errorText}`,
-            needsConfig: response.status === 401
-          }, { status: response.status });
+            error: `API error (${response.status}): ${errorText.substring(0, 200)}`,
+            needsConfig: response.status >= 400 && response.status < 500
+          }, { status: 500 });
         }
 
         const data = await response.json();
@@ -113,6 +131,15 @@ export async function POST(request: NextRequest) {
         });
       } catch (fetchError: any) {
         console.error('Image fetch error:', fetchError);
+        
+        // Check if it's a network error
+        if (fetchError.message?.includes('fetch') || fetchError.message?.includes('ECONNREFUSED')) {
+          return NextResponse.json({ 
+            error: `Could not connect to API at "${baseUrl}". Please check if the URL is correct and the server is running.`,
+            needsConfig: true
+          }, { status: 503 });
+        }
+        
         return NextResponse.json({ 
           error: `Connection failed: ${fetchError.message}. Check if API URL is correct.`
         }, { status: 503 });
@@ -126,6 +153,8 @@ export async function POST(request: NextRequest) {
       }
 
       try {
+        console.log('[AssetsAPI] Calling TTS API:', `${baseUrl}/audio/tts`);
+        
         const response = await fetch(`${baseUrl}/audio/tts`, {
           method: 'POST',
           headers,
@@ -140,10 +169,26 @@ export async function POST(request: NextRequest) {
         if (!response.ok) {
           const errorText = await response.text();
           console.error('TTS API error:', response.status, errorText);
+          
+          // Provide helpful error messages
+          if (response.status === 405) {
+            return NextResponse.json({ 
+              error: `API endpoint not found (405). The URL "${baseUrl}/audio/tts" does not support text-to-speech. Please check your API Base URL in Settings > AI Asset Generator.`,
+              needsConfig: true
+            }, { status: 400 });
+          }
+          
+          if (response.status === 401 || response.status === 403) {
+            return NextResponse.json({ 
+              error: `Authentication failed (${response.status}). Please check your API key in Settings > AI Asset Generator.`,
+              needsConfig: true
+            }, { status: 400 });
+          }
+          
           return NextResponse.json({ 
-            error: `API error (${response.status}): ${errorText}`,
-            needsConfig: response.status === 401
-          }, { status: response.status });
+            error: `API error (${response.status}): ${errorText.substring(0, 200)}`,
+            needsConfig: response.status >= 400 && response.status < 500
+          }, { status: 500 });
         }
 
         const arrayBuffer = await response.arrayBuffer();
@@ -157,6 +202,15 @@ export async function POST(request: NextRequest) {
         });
       } catch (fetchError: any) {
         console.error('TTS fetch error:', fetchError);
+        
+        // Check if it's a network error
+        if (fetchError.message?.includes('fetch') || fetchError.message?.includes('ECONNREFUSED')) {
+          return NextResponse.json({ 
+            error: `Could not connect to API at "${baseUrl}". Please check if the URL is correct and the server is running.`,
+            needsConfig: true
+          }, { status: 503 });
+        }
+        
         return NextResponse.json({ 
           error: `Connection failed: ${fetchError.message}. Check if API URL is correct.`
         }, { status: 503 });
