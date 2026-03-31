@@ -79,6 +79,7 @@ export default function MobilePage() {
   const animationRef = useRef<number | null>(null);
   const isMicActiveRef = useRef(false);
   const hasConnectedRef = useRef(false);
+  const lastPitchSendRef = useRef<number>(0); // For throttling pitch sending
 
   // Simple pitch detection using zero-crossing
   const detectPitchFn = (buffer: Float32Array, sampleRate: number): number | null => {
@@ -104,6 +105,36 @@ export default function MobilePage() {
     return null;
   };
 
+  // Send pitch data to server (throttled to max 20 times per second)
+  const sendPitchToServer = useCallback(async (frequency: number | null, volumeLevel: number) => {
+    if (!clientId) return;
+    
+    // Throttle to max 20 updates per second (50ms)
+    const now = Date.now();
+    if (now - lastPitchSendRef.current < 50) return;
+    lastPitchSendRef.current = now;
+    
+    try {
+      await fetch('/api/mobile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'pitch',
+          clientId,
+          payload: {
+            frequency,
+            note: frequency ? Math.round(12 * (Math.log2(frequency / 440)) + 69) : null,
+            clarity: volumeLevel > 0.1 ? 0.8 : 0.3,
+            volume: volumeLevel,
+            timestamp: now,
+          },
+        }),
+      });
+    } catch {
+      // Silently fail - don't interrupt the audio analysis
+    }
+  }, [clientId]);
+
   // Analyze audio - regular function that calls itself via requestAnimationFrame
   const analyzeAudio = () => {
     if (!analyserRef.current || !audioContextRef.current || !isMicActiveRef.current) return;
@@ -122,6 +153,11 @@ export default function MobilePage() {
 
     const pitchVal = detectPitchFn(dataArray, audioContextRef.current.sampleRate);
     setPitch(pitchVal);
+    
+    // Send pitch data to server (throttled - every ~50ms)
+    if (clientId) {
+      sendPitchToServer(pitchVal, normalizedVolume);
+    }
 
     animationRef.current = requestAnimationFrame(analyzeAudio);
   };
