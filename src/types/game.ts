@@ -214,6 +214,16 @@ export interface QueueItem {
   playerId: string;
   playerName: string;
   addedAt: number;
+  // Optional partner for duet/duel mode
+  partnerId?: string;
+  partnerName?: string;
+  // Game mode for this queue item
+  gameMode?: 'single' | 'duel' | 'duet';
+  // Source tracking
+  isFromCompanion?: boolean;
+  companionCode?: string;
+  // Status
+  status?: 'pending' | 'playing' | 'completed';
 }
 
 export interface ScoreEvent {

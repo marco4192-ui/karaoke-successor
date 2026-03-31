@@ -61,8 +61,16 @@ interface GameStore {
   importProfileFromMobile: (mobileProfile: { id: string; name: string; avatar?: string; color: string }) => PlayerProfile;
 
   // Queue actions
-  addToQueue: (song: Song, playerId: string, playerName: string) => void;
+  addToQueue: (song: Song, playerId: string, playerName: string, options?: {
+    partnerId?: string;
+    partnerName?: string;
+    gameMode?: 'single' | 'duel' | 'duet';
+  }) => void;
+  addCompanionToQueue: (item: Omit<QueueItem, 'id' | 'addedAt'>) => void;
   removeFromQueue: (itemId: string) => void;
+  markQueueItemPlaying: (itemId: string) => void;
+  markQueueItemCompleted: (itemId: string) => void;
+  getNextQueueItem: () => QueueItem | null;
   reorderQueue: (fromIndex: number, toIndex: number) => void;
   clearQueue: () => void;
 
@@ -392,13 +400,13 @@ export const useGameStore = create<GameStore>()(
         return newProfile;
       },
 
-      addToQueue: (song, playerId, playerName) => {
+      addToQueue: (song, playerId, playerName, options) => {
         const currentQueue = get().queue;
         const playerQueueCount = currentQueue.filter(
-          (item) => item.playerId === playerId
+          (item) => item.playerId === playerId || item.partnerId === playerId
         ).length;
 
-        // Max 3 songs per player
+        // Max 3 songs per player (as main or partner)
         if (playerQueueCount >= 3) return;
 
         const item: QueueItem = {
@@ -407,6 +415,33 @@ export const useGameStore = create<GameStore>()(
           playerId,
           playerName,
           addedAt: Date.now(),
+          partnerId: options?.partnerId,
+          partnerName: options?.partnerName,
+          gameMode: options?.gameMode || 'single',
+          status: 'pending',
+        };
+
+        set((state) => ({
+          queue: [...state.queue, item],
+        }));
+      },
+
+      addCompanionToQueue: (queueItemData) => {
+        const currentQueue = get().queue;
+        
+        // Check max 3 songs per companion
+        const companionQueueCount = currentQueue.filter(
+          (item) => item.companionCode === queueItemData.companionCode
+        ).length;
+        
+        if (companionQueueCount >= 3) return;
+
+        const item: QueueItem = {
+          id: `queue-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+          ...queueItemData,
+          addedAt: Date.now(),
+          status: 'pending',
+          isFromCompanion: true,
         };
 
         set((state) => ({
@@ -418,6 +453,25 @@ export const useGameStore = create<GameStore>()(
         set((state) => ({
           queue: state.queue.filter((item) => item.id !== itemId),
         })),
+
+      markQueueItemPlaying: (itemId) =>
+        set((state) => ({
+          queue: state.queue.map((item) =>
+            item.id === itemId ? { ...item, status: 'playing' as const } : item
+          ),
+        })),
+
+      markQueueItemCompleted: (itemId) =>
+        set((state) => ({
+          queue: state.queue.map((item) =>
+            item.id === itemId ? { ...item, status: 'completed' as const } : item
+          ),
+        })),
+
+      getNextQueueItem: () => {
+        const { queue } = get();
+        return queue.find((item) => item.status === 'pending') || null;
+      },
 
       reorderQueue: (fromIndex, toIndex) =>
         set((state) => {

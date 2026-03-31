@@ -39,6 +39,11 @@ interface QueueItem {
   addedAt: number;
   companionCode: string;
   status: 'pending' | 'playing' | 'completed';
+  // Optional partner for duet/duel mode
+  partnerId?: string;
+  partnerName?: string;
+  // Game mode for this queue item
+  gameMode?: 'single' | 'duel' | 'duet';
 }
 
 interface RemoteCommand {
@@ -538,7 +543,14 @@ export async function POST(request: NextRequest) {
           return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         }
         
-        const queuePayload = payload as { songId: string; songTitle: string; songArtist: string };
+        const queuePayload = payload as { 
+          songId: string; 
+          songTitle: string; 
+          songArtist: string;
+          partnerId?: string;
+          partnerName?: string;
+          gameMode?: 'single' | 'duel' | 'duet';
+        };
         const clientForQueue = mobileClients.get(clientId)!;
         
         // Check queue limit (max 3 pending songs per companion)
@@ -557,11 +569,16 @@ export async function POST(request: NextRequest) {
         
         const queueItem: QueueItem = {
           id: `queue-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-          ...queuePayload,
+          songId: queuePayload.songId,
+          songTitle: queuePayload.songTitle,
+          songArtist: queuePayload.songArtist,
           addedBy: clientForQueue.profile?.name || clientForQueue.name,
           addedAt: Date.now(),
           companionCode: clientForQueue.connectionCode,
           status: 'pending',
+          partnerId: queuePayload.partnerId,
+          partnerName: queuePayload.partnerName,
+          gameMode: queuePayload.gameMode || 'single',
         };
         
         songQueue.push(queueItem);

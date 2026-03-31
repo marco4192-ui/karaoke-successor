@@ -417,9 +417,25 @@ export function MobileClientView() {
   const [songsLoading, setSongsLoading] = useState(true);
   
   // Queue state - max 3 songs per companion
-  const [queue, setQueue] = useState<Array<{ id: string; songId: string; songTitle: string; songArtist: string; addedBy: string; status: string }>>([]);
+  const [queue, setQueue] = useState<Array<{ 
+    id: string; 
+    songId: string; 
+    songTitle: string; 
+    songArtist: string; 
+    addedBy: string; 
+    status: string;
+    partnerId?: string;
+    partnerName?: string;
+    gameMode?: 'single' | 'duel' | 'duet';
+  }>>([]);
   const [slotsRemaining, setSlotsRemaining] = useState(3);
   const [queueError, setQueueError] = useState<string | null>(null);
+  
+  // Partner and game mode selection state
+  const [selectedPartner, setSelectedPartner] = useState<{ id: string; name: string } | null>(null);
+  const [selectedGameMode, setSelectedGameMode] = useState<'single' | 'duel' | 'duet'>('single');
+  const [availablePartners, setAvailablePartners] = useState<Array<{ id: string; name: string; code: string }>>([]);
+  const [showSongOptions, setShowSongOptions] = useState<MobileSong | null>(null);
   
   // Game results for social features
   const [gameResults, setGameResults] = useState<GameResults | null>(null);
@@ -619,8 +635,35 @@ export function MobileClientView() {
     setSongsLoading(false);
   }, []);
 
-  // Add song to queue (max 3 per companion)
-  const addToQueue = useCallback(async (song: MobileSong) => {
+  // Load available partners (other connected companions)
+  const loadAvailablePartners = useCallback(async () => {
+    try {
+      const response = await fetch('/api/mobile?action=status');
+      const data = await response.json();
+      if (data.success && data.clients) {
+        // Filter out self and get other connected clients with profiles
+        const partners = data.clients
+          .filter((c: { id: string; connectionCode: string; profile?: { name: string } }) => 
+            c.id !== clientId && c.profile
+          )
+          .map((c: { id: string; connectionCode: string; profile?: { name: string } }) => ({
+            id: c.connectionCode,
+            name: c.profile?.name || 'Unknown',
+            code: c.connectionCode,
+          }));
+        setAvailablePartners(partners);
+      }
+    } catch {
+      // Ignore errors
+    }
+  }, [clientId]);
+
+  // Add song to queue with optional partner and game mode
+  const addToQueue = useCallback(async (song: MobileSong, options?: {
+    partnerId?: string;
+    partnerName?: string;
+    gameMode?: 'single' | 'duel' | 'duet';
+  }) => {
     if (!profile || !clientId) {
       setCurrentView('profile');
       return;
@@ -634,6 +677,10 @@ export function MobileClientView() {
     
     setQueueError(null);
     
+    const gameMode = options?.gameMode || selectedGameMode;
+    const partnerId = options?.partnerId || (selectedPartner?.id);
+    const partnerName = options?.partnerName || (selectedPartner?.name);
+    
     try {
       const response = await fetch('/api/mobile', {
         method: 'POST',
@@ -645,6 +692,9 @@ export function MobileClientView() {
             songId: song.id,
             songTitle: song.title,
             songArtist: song.artist,
+            partnerId,
+            partnerName,
+            gameMode,
           },
         }),
       });
@@ -659,8 +709,15 @@ export function MobileClientView() {
           songArtist: song.artist,
           addedBy: profile.name,
           status: 'pending',
+          partnerId,
+          partnerName,
+          gameMode,
         }]);
         setSlotsRemaining(data.slotsRemaining ?? Math.max(0, slotsRemaining - 1));
+        // Reset selection after adding
+        setShowSongOptions(null);
+        setSelectedPartner(null);
+        setSelectedGameMode('single');
       } else if (data.queueFull) {
         setQueueError('Maximum 3 songs in queue!');
         setSlotsRemaining(0);
@@ -670,7 +727,7 @@ export function MobileClientView() {
       setQueueError('Failed to add song');
       setTimeout(() => setQueueError(null), 3000);
     }
-  }, [profile, clientId, slotsRemaining]);
+  }, [profile, clientId, slotsRemaining, selectedGameMode, selectedPartner]);
 
   // Get queue from server
   const loadQueue = useCallback(async () => {
@@ -1324,6 +1381,114 @@ export function MobileClientView() {
                 />
               </div>
               
+              {/* Song Options Modal */}
+              {showSongOptions && (
+                <Card className="bg-white/10 border-white/20 mb-4">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">{showSongOptions.title}</CardTitle>
+                    <p className="text-sm text-white/40">{showSongOptions.artist}</p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Game Mode Selection */}
+                    <div>
+                      <label className="text-sm text-white/60 mb-2 block">Game Mode</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        <button
+                          onClick={() => setSelectedGameMode('single')}
+                          className={`p-3 rounded-lg text-center transition-all ${
+                            selectedGameMode === 'single' 
+                              ? 'bg-cyan-500 text-white' 
+                              : 'bg-white/5 hover:bg-white/10'
+                          }`}
+                        >
+                          <span className="text-2xl block mb-1">🎤</span>
+                          <span className="text-xs">Single</span>
+                        </button>
+                        <button
+                          onClick={() => setSelectedGameMode('duel')}
+                          className={`p-3 rounded-lg text-center transition-all ${
+                            selectedGameMode === 'duel' 
+                              ? 'bg-red-500 text-white' 
+                              : 'bg-white/5 hover:bg-white/10'
+                          }`}
+                        >
+                          <span className="text-2xl block mb-1">⚔️</span>
+                          <span className="text-xs">Duel</span>
+                        </button>
+                        <button
+                          onClick={() => setSelectedGameMode('duet')}
+                          className={`p-3 rounded-lg text-center transition-all ${
+                            selectedGameMode === 'duet' 
+                              ? 'bg-pink-500 text-white' 
+                              : 'bg-white/5 hover:bg-white/10'
+                          }`}
+                        >
+                          <span className="text-2xl block mb-1">🎭</span>
+                          <span className="text-xs">Duet</span>
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Partner Selection (optional, for duel/duet) */}
+                    {(selectedGameMode === 'duel' || selectedGameMode === 'duet') && (
+                      <div>
+                        <label className="text-sm text-white/60 mb-2 block">
+                          Partner (optional)
+                        </label>
+                        {availablePartners.length > 0 ? (
+                          <div className="space-y-2 max-h-32 overflow-y-auto">
+                            {availablePartners.map((partner) => (
+                              <button
+                                key={partner.id}
+                                onClick={() => setSelectedPartner(
+                                  selectedPartner?.id === partner.id ? null : partner
+                                )}
+                                className={`w-full p-2 rounded-lg flex items-center gap-3 transition-all ${
+                                  selectedPartner?.id === partner.id 
+                                    ? 'bg-purple-500/30 border border-purple-500/50' 
+                                    : 'bg-white/5 hover:bg-white/10'
+                                }`}
+                              >
+                                <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold">
+                                  {partner.name[0]}
+                                </div>
+                                <span className="flex-1 text-left">{partner.name}</span>
+                                <span className="text-xs text-white/40">#{partner.code}</span>
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-white/40 py-2">
+                            No other companions connected. You can still add without a partner.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowSongOptions(null);
+                          setSelectedPartner(null);
+                          setSelectedGameMode('single');
+                        }}
+                        className="flex-1 border-white/20"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={() => addToQueue(showSongOptions)}
+                        className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500"
+                      >
+                        Add to Queue
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
               {/* Song List */}
               {songsLoading ? (
                 <div className="flex items-center justify-center py-12">
@@ -1360,7 +1525,10 @@ export function MobileClientView() {
                       {/* Add to Queue Button */}
                       <Button
                         size="sm"
-                        onClick={() => addToQueue(song)}
+                        onClick={() => {
+                          setShowSongOptions(song);
+                          loadAvailablePartners();
+                        }}
                         className="bg-cyan-500 hover:bg-cyan-400 text-white px-3"
                       >
                         +
@@ -1429,8 +1597,32 @@ export function MobileClientView() {
                       <span className="text-white/40 font-bold w-6">{i + 1}</span>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{item.songTitle}</p>
-                        <p className="text-sm text-white/40">{item.songArtist} • Added by {item.addedBy}</p>
+                        <div className="flex items-center gap-2 text-sm text-white/40">
+                          <span>{item.songArtist}</span>
+                          <span>•</span>
+                          <span>by {item.addedBy}</span>
+                          {item.partnerName && (
+                            <>
+                              <span>•</span>
+                              <span className="text-purple-400">with {item.partnerName}</span>
+                            </>
+                          )}
+                        </div>
                       </div>
+                      
+                      {/* Game Mode Badge */}
+                      <div className="flex items-center gap-1">
+                        {item.gameMode === 'duel' && (
+                          <Badge className="bg-red-500/80 text-xs">⚔️ Duel</Badge>
+                        )}
+                        {item.gameMode === 'duet' && (
+                          <Badge className="bg-pink-500/80 text-xs">🎭 Duet</Badge>
+                        )}
+                        {(!item.gameMode || item.gameMode === 'single') && (
+                          <Badge className="bg-cyan-500/80 text-xs">🎤</Badge>
+                        )}
+                      </div>
+                      
                       {item.status === 'playing' && (
                         <Badge className="bg-cyan-500 text-xs">Playing</Badge>
                       )}
