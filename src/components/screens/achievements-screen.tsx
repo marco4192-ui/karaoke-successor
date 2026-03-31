@@ -27,7 +27,7 @@ export function AchievementsScreen() {
     .reduce((sum, a) => sum + (a.reward?.xp || 0), 0);
   
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">🏆 Achievements</h1>
         <p className="text-white/60">Unlock achievements by playing!</p>

@@ -64,7 +64,7 @@ export function DailyChallengeScreen({ onPlayChallenge, onSelectSong }: { onPlay
   const sortedLeaderboard = [...challenge.entries].sort((a, b) => b.score - a.score);
   
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
       <div className="mb-6 text-center">
         <h1 className="text-3xl font-bold mb-2">⭐ Daily Challenge</h1>
         <p className="text-white/60">Complete daily challenges to earn XP and build your streak!</p>

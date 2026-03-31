@@ -893,7 +893,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
   };
 
   return (
-    <div className="w-[90%] mx-auto max-w-[1800px]">
+    <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">Music Library</h1>
         <p className="text-white/60">

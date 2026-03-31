@@ -677,7 +677,7 @@ function SettingsScreen() {
   };
 
   return (
-    <div className={activeTab === 'editor' ? 'w-full h-full' : 'max-w-4xl mx-auto'}>
+    <div className={activeTab === 'editor' ? 'w-full h-full' : 'w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8'}>
       {/* Header - Hide when in Editor tab */}
       {activeTab !== 'editor' && (
         <div className="mb-8">

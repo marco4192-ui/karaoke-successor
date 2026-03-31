@@ -311,7 +311,7 @@ export function CharacterScreen() {
   };
 
   return (
-    <div className="w-full px-4 md:px-6 lg:px-8">
+    <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-1">Characters</h1>

@@ -351,13 +351,14 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
       )}
       
       {!selectedSong ? (
-        <div className="space-y-4 p-4">
-          <div className="flex items-center justify-between">
+        <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8 space-y-4 py-4">
+          {/* Header - Consistent with other screens */}
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold">Karaoke Editor</h1>
+              <h1 className="text-3xl font-bold mb-2">Karaoke Editor</h1>
               <p className="text-white/60">Bearbeite deine Songs</p>
             </div>
-            <Button onClick={onBack} variant="outline" className="border-white/20">
+            <Button onClick={onBack} variant="outline" className="border-white/20 hover:bg-white/10">
               ← Zurück
             </Button>
           </div>

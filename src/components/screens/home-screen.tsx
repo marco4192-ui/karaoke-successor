@@ -38,7 +38,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
   }, []);
   
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
       {/* Hero Section */}
       <div className="text-center py-16">
         <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-gradient-to-br from-cyan-400 via-purple-500 to-pink-500 mb-6 shadow-2xl shadow-purple-500/30">

@@ -225,7 +225,7 @@ function OnlineGameScreen({ room, socket, song, onEnd }: { room: any; socket: an
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">

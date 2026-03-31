@@ -286,7 +286,7 @@ export function JukeboxScreen() {
   
   
   return (
-    <div ref={containerRef} className={`max-w-6xl mx-auto ${isFullscreen ? 'fixed inset-0 z-50 bg-black flex' : ''}`}>
+    <div ref={containerRef} className={`w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8 ${isFullscreen ? 'fixed inset-0 z-50 bg-black flex' : ''}`}>
       {/* Fullscreen Header Overlay */}
       {isFullscreen && (
         <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/80 to-transparent p-4 flex items-center justify-between">
