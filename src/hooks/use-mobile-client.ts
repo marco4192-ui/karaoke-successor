@@ -25,6 +25,17 @@ export interface CompanionProfile {
   createdAt: number;
 }
 
+export interface CompanionQueueItem {
+  id: string;
+  songId: string;
+  songTitle: string;
+  songArtist: string;
+  addedBy: string;
+  addedAt: number;
+  companionCode: string;
+  status: 'pending' | 'playing' | 'completed';
+}
+
 export function useMobileClient({
   song,
   isPlaying,
@@ -38,11 +49,14 @@ export function useMobileClient({
   sendAdState: (isAdPlaying: boolean) => Promise<void>;
   companionProfiles: CompanionProfile[];
   syncCompanionProfiles: () => Promise<void>;
+  companionQueue: CompanionQueueItem[];
+  syncCompanionQueue: () => Promise<void>;
 } {
   const [mobilePitch, setMobilePitch] = useState<MobilePitchData | null>(null);
   const [hasMobileClient, setHasMobileClient] = useState(false);
   const [isRemoteControlEnabled, setIsRemoteControlEnabled] = useState(true);
   const [companionProfiles, setCompanionProfiles] = useState<CompanionProfile[]>([]);
+  const [companionQueue, setCompanionQueue] = useState<CompanionQueueItem[]>([]);
   const importProfileFromMobile = useGameStore((state) => state.importProfileFromMobile);
 
   // Poll for mobile pitch data
@@ -151,6 +165,32 @@ export function useMobileClient({
     }
   }, [companionProfiles, importProfileFromMobile]);
 
+  // Fetch companion queue from server
+  const fetchCompanionQueue = useCallback(async () => {
+    try {
+      const response = await fetch('/api/mobile?action=getqueue');
+      const data = await response.json();
+      if (data.success && data.queue) {
+        setCompanionQueue(data.queue);
+      }
+    } catch {
+      // Ignore errors
+    }
+  }, []);
+
+  // Sync companion queue - can be used by main app to show companion queue items
+  const syncCompanionQueue = useCallback(async () => {
+    await fetchCompanionQueue();
+  }, [fetchCompanionQueue]);
+
+  // Periodically fetch companion queue (every 5 seconds)
+  useEffect(() => {
+    const syncInterval = setInterval(fetchCompanionQueue, 5000);
+    fetchCompanionQueue(); // Initial fetch
+    
+    return () => clearInterval(syncInterval);
+  }, [fetchCompanionQueue]);
+
   return {
     mobilePitch,
     hasMobileClient,
@@ -159,5 +199,7 @@ export function useMobileClient({
     sendAdState,
     companionProfiles,
     syncCompanionProfiles,
+    companionQueue,
+    syncCompanionQueue,
   };
 }
