@@ -615,22 +615,20 @@ export function MobileClientView() {
   // Load songs from main app
   const loadSongs = useCallback(async () => {
     setSongsLoading(true);
+    console.log('[MobileClient] Loading songs from API...');
     try {
       const response = await fetch('/api/songs');
       if (response.ok) {
         const data = await response.json();
+        console.log('[MobileClient] Songs loaded:', data.songs?.length || 0);
         setSongs(data.songs || []);
       } else {
-        const savedSongs = localStorage.getItem('karaoke-songs');
-        if (savedSongs) {
-          setSongs(JSON.parse(savedSongs));
-        }
+        console.error('[MobileClient] Failed to load songs, status:', response.status);
+        setSongs([]);
       }
-    } catch {
-      const savedSongs = localStorage.getItem('karaoke-songs');
-      if (savedSongs) {
-        setSongs(JSON.parse(savedSongs));
-      }
+    } catch (error) {
+      console.error('[MobileClient] Error loading songs:', error);
+      setSongs([]);
     }
     setSongsLoading(false);
   }, []);

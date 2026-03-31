@@ -1,14 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getAllSongs, getCustomSongs } from '@/lib/game/song-library';
+import { getAllSongs } from '@/lib/game/song-library';
 
 export async function GET() {
   try {
-    // Get both sample songs and custom/imported songs
-    const sampleSongs = getAllSongs();
-    const customSongs = getCustomSongs();
-    
-    // Combine all songs
-    const allSongs = [...sampleSongs, ...customSongs];
+    // Get all songs (sample + custom/imported songs)
+    const allSongs = getAllSongs();
     
     // Return simplified song data for mobile client
     const simplifiedSongs = allSongs.map(song => ({
@@ -20,6 +16,8 @@ export async function GET() {
       language: song.language,
       coverImage: song.coverImage,
     }));
+    
+    console.log('[API /songs] Returning', simplifiedSongs.length, 'songs');
     
     return NextResponse.json({ 
       success: true, 
