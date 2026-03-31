@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useGlobalKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { useGlobalRemoteControl } from '@/hooks/use-global-remote-control';
 import { useGameStore } from '@/lib/game/store';
 import { getAllSongs } from '@/lib/game/song-library';
 // Extracted screens
@@ -170,6 +171,28 @@ export default function KaraokeSuccessor() {
         setScreen('home');
       }
     },
+  });
+  
+  // Global remote control from mobile companions
+  // Navigation handler for remote commands
+  const handleRemoteNavigation = useCallback((targetScreen: string) => {
+    // Map remote command screens to app screens
+    const screenMap: Record<string, Screen> = {
+      'home': 'home',
+      'library': 'library',
+      'settings': 'settings',
+      'queue': 'queue',
+      'party': 'party',
+      'character': 'character',
+    };
+    
+    const mappedScreen = screenMap[targetScreen] || 'home';
+    setScreen(mappedScreen);
+  }, []);
+  
+  useGlobalRemoteControl({
+    navigateToScreen: handleRemoteNavigation,
+    isPlaying: screen === 'game',
   });
   
   useEffect(() => {
