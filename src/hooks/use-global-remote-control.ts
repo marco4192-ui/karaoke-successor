@@ -119,6 +119,7 @@ export function useGlobalRemoteControl({
         const data = await response.json();
         
         if (data.success && data.commands && data.commands.length > 0) {
+          console.log('[GlobalRemoteControl] Received', data.commands.length, 'commands');
           // Process each command
           for (const cmd of data.commands as RemoteCommand[]) {
             processCommand(cmd);

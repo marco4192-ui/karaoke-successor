@@ -562,6 +562,7 @@ export function MobileClientView() {
   const syncProfile = useCallback(async (profileData: MobileProfile) => {
     if (!clientId) return;
     try {
+      console.log('[MobileClient] Syncing profile to server:', profileData.name);
       const response = await fetch('/api/mobile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -576,8 +577,9 @@ export function MobileClientView() {
         setConnectionCode(data.connectionCode);
         localStorage.setItem('karaoke-connection-code', data.connectionCode);
       }
-    } catch {
-      // Ignore sync errors
+      console.log('[MobileClient] Profile synced successfully');
+    } catch (error) {
+      console.error('[MobileClient] Error syncing profile:', error);
     }
   }, [clientId]);
 
@@ -593,6 +595,7 @@ export function MobileClientView() {
       createdAt: Date.now(),
     };
     
+    console.log('[MobileClient] Creating profile:', newProfile.name);
     setProfile(newProfile);
     localStorage.setItem('karaoke-mobile-profile', JSON.stringify(newProfile));
     syncProfile(newProfile);

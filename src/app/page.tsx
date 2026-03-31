@@ -197,12 +197,17 @@ export default function KaraokeSuccessor() {
   });
   
   // Mobile client sync - syncs companion profiles and queue
-  useMobileClient({
+  const { syncSongLibrary } = useMobileClient({
     song: gameState.currentSong,
     isPlaying: screen === 'game',
     currentTime: gameState.currentTime,
     gameMode: gameState.gameMode,
   });
+  
+  // Sync song library on mount and when library screen is shown
+  useEffect(() => {
+    syncSongLibrary();
+  }, [syncSongLibrary, screen]);
   
   useEffect(() => {
     // Check URL parameters for mobile mode

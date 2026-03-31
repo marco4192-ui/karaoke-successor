@@ -133,22 +133,26 @@ export function useMobileClient({
       const response = await fetch('/api/mobile?action=getprofiles');
       const data = await response.json();
       if (data.success && data.profiles) {
+        console.log('[MobileClient] Fetched', data.profiles.length, 'companion profiles');
         setCompanionProfiles(data.profiles);
       }
-    } catch {
-      // Ignore errors
+    } catch (error) {
+      console.error('[MobileClient] Error fetching profiles:', error);
     }
   }, []);
 
   // Sync companion profiles to main app's character list
   const syncCompanionProfiles = useCallback(async () => {
-    await fetchCompanionProfiles();
-    
-    // Import each profile to the main app's store
-    companionProfiles.forEach((profile) => {
-      importProfileFromMobile(profile);
-    });
-  }, [fetchCompanionProfiles, companionProfiles, importProfileFromMobile]);
+    const response = await fetch('/api/mobile?action=getprofiles');
+    const data = await response.json();
+    if (data.success && data.profiles) {
+      // Import each profile directly from the response
+      data.profiles.forEach((profile: CompanionProfile) => {
+        console.log('[MobileClient] Importing profile:', profile.name);
+        importProfileFromMobile(profile);
+      });
+    }
+  }, [importProfileFromMobile]);
 
   // Periodically fetch companion profiles (every 10 seconds)
   useEffect(() => {
@@ -161,6 +165,7 @@ export function useMobileClient({
   // Auto-sync profiles when they change
   useEffect(() => {
     if (companionProfiles.length > 0) {
+      console.log('[MobileClient] Auto-importing', companionProfiles.length, 'profiles');
       companionProfiles.forEach((profile) => {
         importProfileFromMobile(profile);
       });
