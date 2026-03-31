@@ -7,8 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { MobileProfileSection } from '@/components/mobile/mobile-profile-section';
 
-type MobileMode = 'mic' | 'remote' | 'library';
+type MobileMode = 'mic' | 'remote' | 'library' | 'profile';
 
 interface RemoteControlState {
   isLocked: boolean;
@@ -515,10 +516,15 @@ export default function MobilePage() {
       )}
 
       <div className="flex gap-2 mb-4">
+        <Button onClick={() => setMode('profile')} className={`flex-1 ${mode === 'profile' ? 'bg-cyan-500' : 'bg-white/10'}`}>👤 Profile</Button>
         <Button onClick={() => setMode('mic')} className={`flex-1 ${mode === 'mic' ? 'bg-cyan-500' : 'bg-white/10'}`}>🎤 Mic</Button>
         <Button onClick={() => setMode('library')} className={`flex-1 ${mode === 'library' ? 'bg-cyan-500' : 'bg-white/10'}`}>📚 Library</Button>
         <Button onClick={() => setMode('remote')} className={`flex-1 ${mode === 'remote' ? 'bg-cyan-500' : 'bg-white/10'}`}>📱 Remote</Button>
       </div>
+
+      {mode === 'profile' && (
+        <MobileProfileSection clientId={clientId} connectionCode={connectionCode} />
+      )}
 
       {mode === 'mic' && (
         <Card className="bg-white/5 border-white/10">
