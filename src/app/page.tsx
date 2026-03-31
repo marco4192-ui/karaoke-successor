@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useGlobalKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useGlobalRemoteControl } from '@/hooks/use-global-remote-control';
+import { useMobileClient } from '@/hooks/use-mobile-client';
 import { useGameStore } from '@/lib/game/store';
 import { getAllSongs } from '@/lib/game/song-library';
 // Extracted screens
@@ -193,6 +194,14 @@ export default function KaraokeSuccessor() {
   useGlobalRemoteControl({
     navigateToScreen: handleRemoteNavigation,
     isPlaying: screen === 'game',
+  });
+  
+  // Mobile client sync - syncs companion profiles and queue
+  useMobileClient({
+    song: gameState.currentSong,
+    isPlaying: screen === 'game',
+    currentTime: gameState.currentTime,
+    gameMode: gameState.gameMode,
   });
   
   useEffect(() => {
