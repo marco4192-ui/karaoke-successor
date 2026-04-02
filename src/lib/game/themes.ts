@@ -381,6 +381,12 @@ export const THEMES: Theme[] = [
 ];
 
 export function applyTheme(theme: Theme): void {
+  // Safety check - ensure theme is defined
+  if (!theme || !theme.colors) {
+    console.warn('[applyTheme] Invalid theme provided, using default');
+    theme = THEMES[0]; // Fallback to default theme
+  }
+  
   const root = document.documentElement;
   
   // Apply CSS variables to :root for global access
@@ -515,13 +521,24 @@ export function applyTheme(theme: Theme): void {
   }
   
   // Store preference
-  localStorage.setItem('karaoke-theme', theme.id);
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('karaoke-theme', theme.id);
+  }
   
-  // Dispatch event for components to react
-  window.dispatchEvent(new CustomEvent('themeChanged', { detail: theme }));
+  // Dispatch event for components to react (with safety check for SSR)
+  if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
+    try {
+      window.dispatchEvent(new CustomEvent('themeChanged', { detail: theme }));
+    } catch (error) {
+      console.warn('[applyTheme] Failed to dispatch themeChanged event:', error);
+    }
+  }
 }
 
 export function getStoredTheme(): Theme | null {
+  if (typeof localStorage === 'undefined') {
+    return null;
+  }
   const storedId = localStorage.getItem('karaoke-theme');
   return THEMES.find(t => t.id === storedId) || null;
 }
