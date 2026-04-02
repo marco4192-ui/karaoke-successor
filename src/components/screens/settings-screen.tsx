@@ -681,8 +681,8 @@ function SettingsScreen() {
       {/* Header - Hide when in Editor tab */}
       {activeTab !== 'editor' && (
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">{tx('settings.title')}</h1>
-          <p className="text-white/60">{tx('settings.subtitle')}</p>
+          <h1 className="text-3xl font-bold mb-2 theme-adaptive-text">{tx('settings.title')}</h1>
+          <p className="theme-adaptive-text-muted">{tx('settings.subtitle')}</p>
         </div>
       )}
       
@@ -691,63 +691,63 @@ function SettingsScreen() {
         <Button
           variant={activeTab === 'general' ? 'default' : 'outline'}
           onClick={() => setActiveTab('general')}
-          className={activeTab === 'general' ? 'bg-cyan-500 text-white' : 'border-white/20 text-white'}
+          className={activeTab === 'general' ? 'bg-cyan-500 text-white' : 'border-white/20 theme-adaptive-text'}
         >
           <SettingsIcon className="w-4 h-4 mr-2" /> {tx('settings.tabGeneral')}
         </Button>
         <Button
           variant={activeTab === 'graphicsound' ? 'default' : 'outline'}
           onClick={() => setActiveTab('graphicsound')}
-          className={activeTab === 'graphicsound' ? 'bg-cyan-500 text-white' : 'border-white/20 text-white'}
+          className={activeTab === 'graphicsound' ? 'bg-cyan-500 text-white' : 'border-white/20 theme-adaptive-text'}
         >
           <MusicIcon className="w-4 h-4 mr-2" /> Graphic / Sound
         </Button>
         <Button
           variant={activeTab === 'microphone' ? 'default' : 'outline'}
           onClick={() => setActiveTab('microphone')}
-          className={activeTab === 'microphone' ? 'bg-cyan-500 text-white' : 'border-white/20 text-white'}
+          className={activeTab === 'microphone' ? 'bg-cyan-500 text-white' : 'border-white/20 theme-adaptive-text'}
         >
           <MicIcon className="w-4 h-4 mr-2" /> Microphone
         </Button>
         <Button
           variant={activeTab === 'mobile' ? 'default' : 'outline'}
           onClick={() => setActiveTab('mobile')}
-          className={activeTab === 'mobile' ? 'bg-cyan-500 text-white' : 'border-white/20 text-white'}
+          className={activeTab === 'mobile' ? 'bg-cyan-500 text-white' : 'border-white/20 theme-adaptive-text'}
         >
           <PhoneIcon className="w-4 h-4 mr-2" /> Mobile Companion
         </Button>
         <Button
           variant={activeTab === 'webcam' ? 'default' : 'outline'}
           onClick={() => setActiveTab('webcam')}
-          className={activeTab === 'webcam' ? 'bg-cyan-500 text-white' : 'border-white/20 text-white'}
+          className={activeTab === 'webcam' ? 'bg-cyan-500 text-white' : 'border-white/20 theme-adaptive-text'}
         >
           <WebcamIcon className="w-4 h-4 mr-2" /> Webcam
         </Button>
         <Button
           variant={activeTab === 'library' ? 'default' : 'outline'}
           onClick={() => setActiveTab('library')}
-          className={activeTab === 'library' ? 'bg-cyan-500 text-white' : 'border-white/20 text-white'}
+          className={activeTab === 'library' ? 'bg-cyan-500 text-white' : 'border-white/20 theme-adaptive-text'}
         >
           <FolderIcon className="w-4 h-4 mr-2" /> {tx('settings.tabLibrary')}
         </Button>
         <Button
           variant={activeTab === 'editor' ? 'default' : 'outline'}
           onClick={() => setActiveTab('editor')}
-          className={activeTab === 'editor' ? 'bg-cyan-500 text-white' : 'border-white/20 text-white'}
+          className={activeTab === 'editor' ? 'bg-cyan-500 text-white' : 'border-white/20 theme-adaptive-text'}
         >
           <EditIcon className="w-4 h-4 mr-2" /> Editor
         </Button>
         <Button
           variant={activeTab === 'assets' ? 'default' : 'outline'}
           onClick={() => setActiveTab('assets')}
-          className={activeTab === 'assets' ? 'bg-purple-500 text-white' : 'border-white/20 text-white'}
+          className={activeTab === 'assets' ? 'bg-purple-500 text-white' : 'border-white/20 theme-adaptive-text'}
         >
           <SparkleIcon className="w-4 h-4 mr-2" /> AI Asset
         </Button>
         <Button
           variant={activeTab === 'about' ? 'default' : 'outline'}
           onClick={() => setActiveTab('about')}
-          className={activeTab === 'about' ? 'bg-cyan-500 text-white' : 'border-white/20 text-white'}
+          className={activeTab === 'about' ? 'bg-cyan-500 text-white' : 'border-white/20 theme-adaptive-text'}
         >
           <InfoIcon className="w-4 h-4 mr-2" /> {tx('settings.tabAbout')}
         </Button>
@@ -759,19 +759,19 @@ function SettingsScreen() {
           {/* Library Stats */}
           <Card className="bg-white/5 border-white/10">
             <CardHeader>
-              <CardTitle>{tx('settings.libraryStats')}</CardTitle>
+              <CardTitle className="theme-adaptive-text">{tx('settings.libraryStats')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white/5 rounded-lg p-4">
                   <div className="text-2xl font-bold text-cyan-400">{songCount}</div>
-                  <div className="text-sm text-white/60">{tx('settings.songsInLibrary')}</div>
+                  <div className="text-sm theme-adaptive-text-secondary">{tx('settings.songsInLibrary')}</div>
                 </div>
                 <div className="bg-white/5 rounded-lg p-4">
                   <div className="text-2xl font-bold text-purple-400">
                     {Object.keys(localStorage).filter(k => k.startsWith('karaoke-highscores')).length}
                   </div>
-                  <div className="text-sm text-white/60">{tx('settings.highscoreEntries')}</div>
+                  <div className="text-sm theme-adaptive-text-secondary">{tx('settings.highscoreEntries')}</div>
                 </div>
               </div>
             </CardContent>
@@ -1149,16 +1149,16 @@ function SettingsScreen() {
           {/* Theme Settings */}
           <Card className="bg-white/5 border-white/10">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 theme-adaptive-text">
                 <PaletteIcon className="w-5 h-5 text-purple-400" />
                 {tx('settings.themeSettings')}
               </CardTitle>
-              <CardDescription>{tx('settings.themeSettingsDesc')}</CardDescription>
+              <CardDescription className="theme-adaptive-text-secondary">{tx('settings.themeSettingsDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Theme Presets from themes.ts */}
               <div>
-                <label className="text-sm text-white/60 mb-3 block">{tx('settings.colorTheme')}</label>
+                <label className="text-sm theme-adaptive-text-secondary mb-3 block">{tx('settings.colorTheme')}</label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {THEMES.map((theme) => (
                     <button
@@ -1175,8 +1175,8 @@ function SettingsScreen() {
                         className="w-full h-8 rounded-lg mb-2"
                         style={{ background: `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.secondary})` }}
                       />
-                      <span className="text-sm font-medium text-white">{theme.name}</span>
-                      <p className="text-xs text-white/40 truncate">{theme.description}</p>
+                      <span className="text-sm font-medium theme-adaptive-text">{theme.name}</span>
+                      <p className="text-xs theme-adaptive-text-secondary truncate">{theme.description}</p>
                     </button>
                   ))}
                 </div>
@@ -1184,7 +1184,7 @@ function SettingsScreen() {
 
               {/* Note Display Style */}
               <div>
-                <label className="text-sm text-white/60 mb-2 block">Noten-Darstellung</label>
+                <label className="text-sm theme-adaptive-text-secondary mb-2 block">Noten-Darstellung</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
                     { id: 'classic', name: 'Klassisch', icon: '➡️', desc: 'UltraStar-Stil' },
@@ -1204,12 +1204,12 @@ function SettingsScreen() {
                       className={`p-3 rounded-lg border-2 transition-all text-sm cursor-pointer flex flex-col items-center gap-1 ${
                         noteDisplayStyle === style.id
                           ? 'border-cyan-500 bg-cyan-500/20 text-cyan-300'
-                          : 'border-white/10 bg-white/5 hover:border-white/30 text-white'
+                          : 'border-white/10 bg-white/5 hover:border-white/30 theme-adaptive-text'
                       }`}
                     >
                       <span className="text-lg">{style.icon}</span>
                       <span className="font-medium">{style.name}</span>
-                      <span className="text-xs text-white/50">{style.desc}</span>
+                      <span className="text-xs theme-adaptive-text-secondary">{style.desc}</span>
                     </button>
                   ))}
                 </div>
@@ -1217,7 +1217,7 @@ function SettingsScreen() {
               
               {/* Note Shape Style */}
               <div>
-                <label className="text-sm text-white/60 mb-2 block">Notenform</label>
+                <label className="text-sm theme-adaptive-text-secondary mb-2 block">Notenform</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
                     { id: 'rounded', name: 'Abgerundet', icon: '🔵', desc: 'Weiche Kanten' },
@@ -1237,12 +1237,12 @@ function SettingsScreen() {
                       className={`p-3 rounded-lg border-2 transition-all text-sm cursor-pointer flex flex-col items-center gap-1 ${
                         noteShapeStyle === shape.id
                           ? 'border-purple-500 bg-purple-500/20 text-purple-300'
-                          : 'border-white/10 bg-white/5 hover:border-white/30 text-white'
+                          : 'border-white/10 bg-white/5 hover:border-white/30 theme-adaptive-text'
                       }`}
                     >
                       <span className="text-lg">{shape.icon}</span>
                       <span className="font-medium">{shape.name}</span>
-                      <span className="text-xs text-white/50">{shape.desc}</span>
+                      <span className="text-xs theme-adaptive-text-secondary">{shape.desc}</span>
                     </button>
                   ))}
                 </div>

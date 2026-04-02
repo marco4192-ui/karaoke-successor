@@ -34,10 +34,16 @@ export function useGameSettings(): GameSettings & {
     setNoteDisplayStyle(localStorage.getItem('karaoke-note-style') || 'classic');
     setUseAnimatedBackground(localStorage.getItem('karaoke-animated-bg') === 'true');
 
-    // Load note shape style from current theme
-    const storedTheme = getStoredTheme();
-    if (storedTheme) {
-      setNoteShapeStyle(storedTheme.noteStyle);
+    // Load note shape style - PRIORITIZE localStorage setting over theme
+    const storedNoteShape = localStorage.getItem('karaoke-note-shape') as NoteShapeStyle | null;
+    if (storedNoteShape && ['rounded', 'sharp', 'pill', 'diamond'].includes(storedNoteShape)) {
+      setNoteShapeStyle(storedNoteShape);
+    } else {
+      // Fallback to theme only if no explicit localStorage setting
+      const storedTheme = getStoredTheme();
+      if (storedTheme) {
+        setNoteShapeStyle(storedTheme.noteStyle);
+      }
     }
 
     const handleSettingsChange = (e?: Event) => {
@@ -53,6 +59,9 @@ export function useGameSettings(): GameSettings & {
         if (detail.useAnimatedBackground !== undefined) {
           setUseAnimatedBackground(detail.useAnimatedBackground);
         }
+        if (detail.noteShapeStyle !== undefined) {
+          setNoteShapeStyle(detail.noteShapeStyle);
+        }
       }
       // Always refresh from localStorage
       setShowBackgroundVideo(localStorage.getItem('karaoke-bg-video') !== 'false');
@@ -60,18 +69,21 @@ export function useGameSettings(): GameSettings & {
       setNoteDisplayStyle(localStorage.getItem('karaoke-note-style') || 'classic');
       setUseAnimatedBackground(localStorage.getItem('karaoke-animated-bg') === 'true');
 
-      // Refresh note shape style from theme
-      const theme = getStoredTheme();
-      if (theme) {
-        setNoteShapeStyle(theme.noteStyle);
+      // Refresh note shape style - PRIORITIZE localStorage
+      const storedShape = localStorage.getItem('karaoke-note-shape') as NoteShapeStyle | null;
+      if (storedShape && ['rounded', 'sharp', 'pill', 'diamond'].includes(storedShape)) {
+        setNoteShapeStyle(storedShape);
       }
     };
 
-    // Listen for theme changes specifically
+    // Listen for theme changes specifically - only update if no localStorage setting
     const handleThemeChange = () => {
-      const theme = getStoredTheme();
-      if (theme) {
-        setNoteShapeStyle(theme.noteStyle);
+      const storedShape = localStorage.getItem('karaoke-note-shape') as NoteShapeStyle | null;
+      if (!storedShape || !['rounded', 'sharp', 'pill', 'diamond'].includes(storedShape)) {
+        const theme = getStoredTheme();
+        if (theme) {
+          setNoteShapeStyle(theme.noteStyle);
+        }
       }
     };
 

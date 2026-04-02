@@ -383,7 +383,7 @@ export const THEMES: Theme[] = [
 export function applyTheme(theme: Theme): void {
   const root = document.documentElement;
   
-  // Apply CSS variables
+  // Apply CSS variables to :root for global access
   Object.entries(theme.colors).forEach(([key, value]) => {
     const cssVar = key.replace(/([A-Z])/g, '-$1').toLowerCase();
     root.style.setProperty(`--theme-${cssVar}`, value);
@@ -395,12 +395,20 @@ export function applyTheme(theme: Theme): void {
   // Apply border radius
   root.style.setProperty('--theme-radius', `${theme.borderRadius}px`);
   
+  // Apply note style as CSS variable
+  root.style.setProperty('--theme-note-style', theme.noteStyle);
+  
   // Apply colors directly to body for immediate visual effect
   document.body.style.setProperty('--theme-primary', theme.colors.primary);
   document.body.style.setProperty('--theme-secondary', theme.colors.secondary);
   document.body.style.setProperty('--theme-background', theme.colors.background);
   document.body.style.setProperty('--theme-background-secondary', theme.colors.backgroundSecondary || theme.colors.background);
   document.body.style.setProperty('--theme-text', theme.colors.text);
+  document.body.style.setProperty('--theme-text-secondary', theme.colors.textSecondary);
+  document.body.style.setProperty('--theme-accent', theme.colors.accent);
+  document.body.style.setProperty('--theme-success', theme.colors.success);
+  document.body.style.setProperty('--theme-warning', theme.colors.warning);
+  document.body.style.setProperty('--theme-error', theme.colors.error);
   document.body.style.fontFamily = theme.fontFamily;
   
   // Update background gradient on body
@@ -409,12 +417,54 @@ export function applyTheme(theme: Theme): void {
   document.body.style.color = theme.colors.text;
   document.body.style.minHeight = '100vh';
   
-  // Also apply to the theme-container if it exists
-  const container = document.querySelector('.theme-container');
-  if (container) {
+  // Apply to all theme-container elements
+  const containers = document.querySelectorAll('.theme-container');
+  containers.forEach(container => {
     (container as HTMLElement).style.background = bgStyle;
     (container as HTMLElement).style.color = theme.colors.text;
     (container as HTMLElement).style.fontFamily = theme.fontFamily;
+  });
+  
+  // Apply to all theme-text elements (dynamic text color adaptation)
+  const themeTextElements = document.querySelectorAll('.theme-text-adaptive');
+  themeTextElements.forEach(el => {
+    (el as HTMLElement).style.color = theme.colors.text;
+  });
+  
+  const themeTextSecondaryElements = document.querySelectorAll('.theme-text-secondary-adaptive');
+  themeTextSecondaryElements.forEach(el => {
+    (el as HTMLElement).style.color = theme.colors.textSecondary;
+  });
+  
+  // Inject dynamic CSS for text-white and text-white/XX overrides based on theme brightness
+  const isLightTheme = theme.colors.background.startsWith('#f') || 
+                       theme.colors.background.startsWith('#F') ||
+                       theme.colors.background.startsWith('#e') ||
+                       theme.colors.background.startsWith('#E') ||
+                       theme.colors.text.startsWith('#1') ||
+                       theme.colors.text.startsWith('#2');
+  
+  // Create or update dynamic theme styles
+  let styleEl = document.getElementById('theme-dynamic-styles');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'theme-dynamic-styles';
+    document.head.appendChild(styleEl);
+  }
+  
+  // For light themes, we need to adjust text colors
+  if (isLightTheme) {
+    styleEl.textContent = `
+      .theme-adaptive-text { color: ${theme.colors.text} !important; }
+      .theme-adaptive-text-secondary { color: ${theme.colors.textSecondary} !important; }
+      .theme-adaptive-bg { background-color: ${theme.colors.background} !important; }
+    `;
+  } else {
+    styleEl.textContent = `
+      .theme-adaptive-text { color: ${theme.colors.text} !important; }
+      .theme-adaptive-text-secondary { color: ${theme.colors.textSecondary} !important; }
+      .theme-adaptive-bg { background-color: ${theme.colors.background} !important; }
+    `;
   }
   
   // Store preference

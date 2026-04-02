@@ -121,6 +121,80 @@
   }
 }
 
+/* Theme-aware text colors - these adapt to the selected theme */
+@layer utilities {
+  .text-theme-primary {
+    color: var(--theme-primary, #00ffff);
+  }
+  .text-theme-secondary {
+    color: var(--theme-secondary, #ff00ff);
+  }
+  .text-theme-text {
+    color: var(--theme-text, #ffffff);
+  }
+  .text-theme-text-secondary {
+    color: var(--theme-text-secondary, #8888aa);
+  }
+  .text-theme-text-muted {
+    color: var(--theme-text-secondary, #8888aa);
+    opacity: 0.6;
+  }
+  .text-theme-accent {
+    color: var(--theme-accent, #ffff00);
+  }
+  .text-theme-success {
+    color: var(--theme-success, #00ff88);
+  }
+  .text-theme-warning {
+    color: var(--theme-warning, #ffaa00);
+  }
+  .text-theme-error {
+    color: var(--theme-error, #ff4466);
+  }
+  
+  /* Background colors from theme */
+  .bg-theme-background {
+    background-color: var(--theme-background, #0a0a1a);
+  }
+  .bg-theme-background-secondary {
+    background-color: var(--theme-background-secondary, #1a1a2e);
+  }
+  
+  /* Border colors from theme */
+  .border-theme-primary {
+    border-color: var(--theme-primary, #00ffff);
+  }
+  .border-theme-secondary {
+    border-color: var(--theme-secondary, #ff00ff);
+  }
+}
+
+/* 
+ * Dynamic Theme Adaptation 
+ * These styles automatically adapt text colors based on the applied theme.
+ * The applyTheme() function in themes.ts injects these variables.
+ */
+.theme-adaptive-text {
+  color: var(--theme-text, #ffffff) !important;
+}
+
+.theme-adaptive-text-secondary {
+  color: var(--theme-text-secondary, #8888aa) !important;
+}
+
+.theme-adaptive-text-muted {
+  color: var(--theme-text-secondary, #8888aa) !important;
+  opacity: 0.6;
+}
+
+.theme-adaptive-bg {
+  background-color: var(--theme-background, #0a0a1a) !important;
+}
+
+.theme-adaptive-bg-secondary {
+  background-color: var(--theme-background-secondary, #1a1a2e) !important;
+}
+
 /* Karaoke game animations */
 @keyframes scorePopIn {
   0% {

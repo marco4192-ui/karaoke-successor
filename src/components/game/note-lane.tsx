@@ -174,7 +174,7 @@ export function NoteLane({
 }: NoteLaneProps) {
   const settings = DIFFICULTY_SETTINGS[difficulty];
 
-  // Load note shape style - prefer localStorage setting, fallback to theme
+  // Load note shape style - PRIORITIZE localStorage setting, fallback to theme
   const [noteShapeStyle, setNoteShapeStyle] = useState<NoteShapeStyle>('rounded');
 
   useEffect(() => {
@@ -184,7 +184,7 @@ export function NoteLane({
       if (storedNoteShape && ['rounded', 'sharp', 'pill', 'diamond'].includes(storedNoteShape)) {
         setNoteShapeStyle(storedNoteShape);
       } else {
-        // Fallback to theme
+        // Fallback to theme only if no explicit localStorage setting
         const theme = getStoredTheme();
         if (theme) {
           setNoteShapeStyle(theme.noteStyle);
@@ -194,11 +194,17 @@ export function NoteLane({
     loadNoteShapeStyle();
 
     // Listen for settings changes
-    const handleSettingsChange = () => loadNoteShapeStyle();
+    const handleSettingsChange = () => {
+      const storedShape = localStorage.getItem('karaoke-note-shape') as NoteShapeStyle | null;
+      if (storedShape && ['rounded', 'sharp', 'pill', 'diamond'].includes(storedShape)) {
+        setNoteShapeStyle(storedShape);
+      }
+    };
+    
     const handleThemeChange = () => {
-      // Only update from theme if no explicit setting
-      const storedShape = localStorage.getItem('karaoke-note-shape');
-      if (!storedShape) {
+      // Only update from theme if no explicit localStorage setting
+      const storedShape = localStorage.getItem('karaoke-note-shape') as NoteShapeStyle | null;
+      if (!storedShape || !['rounded', 'sharp', 'pill', 'diamond'].includes(storedShape)) {
         const theme = getStoredTheme();
         if (theme) {
           setNoteShapeStyle(theme.noteStyle);
@@ -211,7 +217,7 @@ export function NoteLane({
     window.addEventListener('settingsChange', handleSettingsChange);
     window.addEventListener('storage', handleSettingsChange);
 
-    const interval = setInterval(loadNoteShapeStyle, 500);
+    const interval = setInterval(handleSettingsChange, 500);
     return () => {
       window.removeEventListener('themeChanged', handleThemeChange);
       window.removeEventListener('themeChange', handleThemeChange);
