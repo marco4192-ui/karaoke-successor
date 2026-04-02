@@ -1606,6 +1606,8 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             pitchStats={pitchStats}
             detectedPitch={pitchResult?.note ?? null}
             noteShapeStyle={noteShapeStyle}
+            noteDisplayStyle={noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
+            notePerformance={notePerformance}
             singLinePosition={SING_LINE_POSITION}
             noteWindow={NOTE_WINDOW}
             playerColor={PLAYER_COLORS[0]}

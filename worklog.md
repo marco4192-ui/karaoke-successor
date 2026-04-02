@@ -1341,3 +1341,82 @@ The original implementation stored complete lyrics (all notes with timing, pitch
 - No more "Quota exceeded" errors for large libraries
 - IndexedDB handles large binary files (audio, video, txt) efficiently
 
+
+---
+## Task ID: 15 - Graphic Settings Fixes
+### Agent: Main Agent
+### Task: Fix graphic settings - Theme text colors and Note visual styles
+
+### Issues Fixed:
+
+#### 1. Theme Settings - Text Colors Not Adapting (HIGH PRIORITY)
+- **Problem**: Theme settings changed layout colors but text colors remained hardcoded (text-white, text-white/60, etc.), making text unreadable on certain themes
+- **Root Causes**:
+  - CSS used hardcoded Tailwind classes like `text-white`, `text-white/50`, etc.
+  - The `applyTheme()` function only injected basic CSS variable overrides
+  - No CSS scope isolation for theme-aware components
+- **Fixes**:
+  - Added comprehensive dynamic CSS injection in `applyTheme()` function
+  - Added `.theme-container` class for CSS scope isolation
+  - Updated `globals.css` with theme-aware override classes
+  - Dynamic CSS now overrides Tailwind classes within `.theme-container` scope
+  - Both light and dark themes properly handled with appropriate text colors
+- **Files**: `/src/lib/game/themes.ts`, `/src/app/globals.css`, `/src/components/screens/settings-screen.tsx`
+
+#### 2. Note Shape Style Not Applied (HIGH PRIORITY)
+- **Problem**: Note shape settings (rounded, sharp, pill, diamond) had no effect
+- **Root Causes**:
+  - `single-player-highway.tsx` had a local `getNoteShapeClasses()` function instead of using the utility
+  - The local function didn't match the implementation in `note-utils.tsx`
+- **Fixes**:
+  - Updated `single-player-highway.tsx` to import and use `getNoteShapeClasses` from `note-utils.tsx`
+  - Now all note rendering uses consistent shape styling
+- **Files**: `/src/components/game/single-player-highway.tsx`
+
+#### 3. Note Display Style Not Applied (HIGH PRIORITY)
+- **Problem**: Note display style settings (classic, fill-level, color-feedback, glow-intensity) had no effect
+- **Root Causes**:
+  - `DuetNoteHighway` component wasn't passing `noteDisplayStyle` prop to `NoteHighway`
+  - `single-player-highway.tsx` wasn't using `getNoteDisplayStyleClasses()` at all
+  - `note-highway.tsx` had the props but wasn't fully implementing the display styles
+- **Fixes**:
+  - Updated `DuetNoteHighway` to pass `noteDisplayStyle` and `notePerformance` to both player highways
+  - Updated `single-player-highway.tsx` to use `getNoteDisplayStyleClasses()` utility
+  - Added accuracy calculation for display style feedback
+  - Added display style overlay elements (fill level bars, etc.)
+- **Files**: `/src/components/game/duet-note-highway.tsx`, `/src/components/game/single-player-highway.tsx`, `/src/components/game/note-highway.tsx`
+
+### Technical Changes:
+
+**Note Display Styles Implementation**:
+- **Classic**: Standard note appearance (no modifications)
+- **Fill-level**: Shows a fill indicator inside the note based on accuracy
+- **Color-feedback**: Changes note color based on accuracy (green = good, yellow = ok, red = bad)
+- **Glow-intensity**: Adds glow effect based on accuracy, with golden/pink/cyan colors
+
+**Theme Text Color Override Pattern**:
+```css
+.theme-container .text-white { color: var(--theme-text) !important; }
+.theme-container .text-white\\/60 { color: var(--theme-text-secondary) !important; opacity: 0.6; }
+```
+
+**Light Theme Detection**:
+- Detects light themes by checking if background color starts with #f, #e, #d (light hex values)
+- Also checks if text color starts with #1, #2, #3 (dark text on light background)
+
+### Files Modified:
+- `/src/lib/game/themes.ts` - Enhanced `applyTheme()` with comprehensive CSS injection
+- `/src/app/globals.css` - Added theme-aware CSS override classes
+- `/src/components/screens/settings-screen.tsx` - Added `theme-container` class
+- `/src/components/game/single-player-highway.tsx` - Use note style utilities
+- `/src/components/game/duet-note-highway.tsx` - Pass note display props
+- `/src/components/game/note-highway.tsx` - Implement display styles
+
+### Commit: 7ae2ece
+- All changes pushed to GitHub: https://github.com/marco4192-ui/karaoke-successor
+
+### Stage Summary:
+- Theme text colors now adapt properly to selected theme
+- Note shape styles (rounded, sharp, pill, diamond) now work correctly
+- Note display styles (classic, fill-level, color-feedback, glow-intensity) now functional
+- All graphic settings have visible effects
