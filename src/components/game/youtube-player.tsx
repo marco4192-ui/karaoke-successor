@@ -149,6 +149,13 @@ export function YouTubePlayer({
             const state = event.data;
             lastStateRef.current = state;
             
+            // SAFETY: Check if YT.PlayerState exists before accessing it
+            // This prevents errors if the YouTube API is not fully loaded
+            if (!window.YT?.PlayerState) {
+              console.warn('[YouTube] YT.PlayerState not available, skipping state handling');
+              return;
+            }
+            
             if (state === window.YT.PlayerState.ENDED) {
               onEnded?.();
             }
