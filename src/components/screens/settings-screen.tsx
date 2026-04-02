@@ -194,6 +194,9 @@ const EditorSettingsView = EditorSettingsTab;
 function SettingsScreen() {
   const { t, language, setLanguage, translations } = useTranslation();
   const { setDifficulty, gameState } = useGameStore();
+
+  // Initialize difficulty from store (which is persisted)
+  const [initialDifficultyLoaded, setInitialDifficultyLoaded] = useState(false);
   
   // Helper to access nested translations with fallback
   const tx = useCallback((key: string): string => {
@@ -280,32 +283,34 @@ function SettingsScreen() {
     } catch {
       // Ignore errors
     }
-    
+
     // Check if running in Tauri
     if (typeof window !== 'undefined' && (window as any).__TAURI__) {
       setIsTauriDetected(true);
     }
-    
+
     // Load all settings from localStorage safely
     try {
       const savedPreviewVolume = safeGetItem('karaoke-preview-volume', '30');
       setPreviewVolume(parseInt(savedPreviewVolume) || 30);
-      
+
       const savedMicSensitivity = safeGetItem('karaoke-mic-sensitivity', '50');
       setMicSensitivity(parseInt(savedMicSensitivity) || 50);
-      
-      const savedDifficulty = safeGetItem('karaoke-default-difficulty', 'medium') as Difficulty;
-      if (['easy', 'medium', 'hard'].includes(savedDifficulty)) {
-        setDefaultDifficulty(savedDifficulty);
+
+      // Load difficulty from Store (persisted) instead of localStorage
+      // This ensures the global difficulty setting is used
+      if (!initialDifficultyLoaded && gameState.difficulty) {
+        setDefaultDifficulty(gameState.difficulty);
+        setInitialDifficultyLoaded(true);
       }
-      
+
       setShowPitchGuide(safeGetBool('karaoke-show-pitch-guide', true));
       setLyricsStyle(safeGetItem('karaoke-lyrics-style', 'classic'));
       setNoteDisplayStyle(safeGetItem('karaoke-note-style', 'classic'));
       setNoteShapeStyle(safeGetItem('karaoke-note-shape', 'rounded'));
       setBgVideo(safeGetBool('karaoke-bg-video', true));
       setUseAnimatedBg(safeGetItem('karaoke-animated-bg', 'false') === 'true');
-      
+
       try {
         const storedTheme = getStoredTheme();
         if (storedTheme) setCurrentThemeId(storedTheme.id);
@@ -315,7 +320,7 @@ function SettingsScreen() {
     } catch {
       // Ignore any localStorage errors
     }
-  }, [safeGetItem, safeGetBool]);
+  }, [safeGetItem, safeGetBool, gameState.difficulty, initialDifficultyLoaded]);
   
   // Save songs folder and reload library
   const handleSaveFolder = async () => {
@@ -560,9 +565,17 @@ function SettingsScreen() {
     setHasChanges(true);
   };
   
-  // Handle difficulty change - mark as changed
+  // Handle difficulty change - update store immediately for global effect
   const handleDifficultyChange = (diff: Difficulty) => {
     setDefaultDifficulty(diff);
+    // Immediately update the store so the difficulty is applied globally
+    setDifficulty(diff);
+    // Also save to localStorage for persistence
+    localStorage.setItem('karaoke-default-difficulty', diff);
+    // Dispatch event for other components
+    window.dispatchEvent(new CustomEvent('settingsChange', {
+      detail: { difficulty: diff }
+    }));
     setHasChanges(true);
   };
   
