@@ -583,8 +583,9 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   
   // Check if song has YouTube URL (from #VIDEO: tag with URL)
   // Priority: custom YouTube > song.youtubeUrl > videoBackground if URL
-  const songYoutubeUrl = song?.youtubeUrl;
-  const videoBackground = song?.videoBackground;
+  // Uses effectiveSong which has restored URLs for Tauri
+  const songYoutubeUrl = effectiveSong?.youtubeUrl;
+  const videoBackground = effectiveSong?.videoBackground;
   const songYoutubeId = songYoutubeUrl ? extractYouTubeId(songYoutubeUrl) : 
                        (videoBackground && (videoBackground.startsWith('http://') || videoBackground.startsWith('https://')) ? 
                         extractYouTubeId(videoBackground) : null);
@@ -593,7 +594,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   const isYouTube = !!youtubeVideoId;
   
   // Determine if we should use YouTube audio (no separate audio file)
-  const useYouTubeAudio = isYouTube && !song?.audioUrl;
+  const useYouTubeAudio = isYouTube && !effectiveSong?.audioUrl;
   
   // Handle custom YouTube URL input
   const handleYoutubeUrlSubmit = useCallback((url: string) => {
@@ -716,8 +717,9 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   const mediaCheckIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Initialize media elements on mount
+  // Uses effectiveSong which has restored URLs for Tauri
   useEffect(() => {
-    if (!song) return;
+    if (!effectiveSong) return;
     
     // Reset media loaded state
     setMediaLoaded(false);
@@ -727,7 +729,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     // Pre-load media with proper waiting
     const loadMedia = async () => {
       // For songs with audioUrl, wait for audio element to be ready
-      if (song.audioUrl) {
+      if (effectiveSong.audioUrl) {
         // Wait for audio to be canplay with a reasonable timeout
         const maxWait = 5000; // 5 seconds max
         const startTime = Date.now();
@@ -738,13 +740,14 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         
         if (audioLoadedRef.current) {
           // Audio loaded successfully
+          console.log('[GameScreen] Audio loaded successfully');
         } else {
           console.warn('[GameScreen] Audio load timeout, proceeding anyway');
         }
       }
       
       // For songs with embedded audio (video), wait for video element
-      if (song.hasEmbeddedAudio && song.videoBackground && !song.audioUrl) {
+      if (effectiveSong.hasEmbeddedAudio && effectiveSong.videoBackground && !effectiveSong.audioUrl) {
         const maxWait = 5000;
         const startTime = Date.now();
         
@@ -754,13 +757,14 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         
         if (videoLoadedRef.current) {
           // Video loaded successfully
+          console.log('[GameScreen] Video loaded successfully');
         } else {
           console.warn('[GameScreen] Video load timeout, proceeding anyway');
         }
       }
       
       // For YouTube videos, just need a small delay for iframe to initialize
-      if (song.youtubeUrl) {
+      if (effectiveSong.youtubeUrl) {
         await new Promise(resolve => setTimeout(resolve, 500));
       }
       
@@ -774,11 +778,12 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         clearInterval(mediaCheckIntervalRef.current);
       }
     };
-  }, [song]);
+  }, [effectiveSong]);
 
   // Initialize and start game - FIXED: proper countdown with visible numbers
+  // Uses effectiveSong which has restored URLs for Tauri
   useEffect(() => {
-    if (!song || !mediaLoaded) return;
+    if (!effectiveSong || !mediaLoaded) return;
 
     isMountedRef.current = true;
 
@@ -830,24 +835,34 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             // Start audio/video playback with user interaction context
             const playMedia = async () => {
               try {
+                // Use effectiveSong which has restored URLs
+                const currentSong = effectiveSong;
+                if (!currentSong) return;
+                
                 // Calculate start position from #START tag (in milliseconds)
-                const startPosition = (song.start || 0) / 1000; // Convert to seconds
+                const startPosition = (currentSong.start || 0) / 1000; // Convert to seconds
                 
-                // Get fresh media URLs from IndexedDB if storedMedia flag is set
-                // This ensures we always have valid blob URLs
-                let currentAudioUrl = song.audioUrl;
-                let currentVideoUrl = song.videoBackground;
+                // Use URLs from effectiveSong (already restored for Tauri)
+                let currentAudioUrl = currentSong.audioUrl;
+                let currentVideoUrl = currentSong.videoBackground;
                 
-                if (song.storedMedia) {
+                // Fallback: Get fresh media URLs from IndexedDB if storedMedia flag is set
+                if (currentSong.storedMedia && (!currentAudioUrl || !currentVideoUrl)) {
                   try {
                     const { getSongMediaUrls } = await import('@/lib/db/media-db');
-                    const mediaUrls = await getSongMediaUrls(song.id);
-                    if (mediaUrls.audioUrl) currentAudioUrl = mediaUrls.audioUrl;
-                    if (mediaUrls.videoUrl) currentVideoUrl = mediaUrls.videoUrl;
+                    const mediaUrls = await getSongMediaUrls(currentSong.id);
+                    if (mediaUrls.audioUrl && !currentAudioUrl) currentAudioUrl = mediaUrls.audioUrl;
+                    if (mediaUrls.videoUrl && !currentVideoUrl) currentVideoUrl = mediaUrls.videoUrl;
                   } catch (e) {
                     console.error('[GameScreen] Failed to load media from IndexedDB:', e);
                   }
                 }
+                
+                console.log('[GameScreen] playMedia - using URLs:', {
+                  audioUrl: currentAudioUrl ? 'present' : 'missing',
+                  videoUrl: currentVideoUrl ? 'present' : 'missing',
+                  hasEmbeddedAudio: currentSong.hasEmbeddedAudio
+                });
                 
                 // PRIORITY 1: Separate audio file (most common case)
                 if (audioRef.current && currentAudioUrl) {
@@ -858,7 +873,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
                 
                 // PRIORITY 2: Video with embedded audio (video IS the audio source)
                 // Only use this if there's NO separate audioUrl
-                else if (song.hasEmbeddedAudio && videoRef.current && currentVideoUrl && !currentAudioUrl) {
+                else if (currentSong.hasEmbeddedAudio && videoRef.current && currentVideoUrl && !currentAudioUrl) {
                   videoRef.current.src = currentVideoUrl;
                   videoRef.current.currentTime = startPosition;
                   
@@ -894,7 +909,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
                 
                 // BACKGROUND VIDEO (muted, synced with audio)
                 // This is for videos that should play in background while audio plays
-                if (videoRef.current && song.videoBackground && !song.hasEmbeddedAudio) {
+                if (videoRef.current && currentVideoUrl && !currentSong.hasEmbeddedAudio) {
                   // Validate background video blob URL
                   const videoSrc = videoRef.current.src;
                   if (videoSrc && videoSrc.startsWith('blob:')) {
@@ -906,7 +921,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
                     } catch (fetchError) {
                       console.error('[GameScreen] Background video blob validation failed:', fetchError);
                       const { getSongMediaUrls } = await import('@/lib/db/media-db');
-                      const mediaUrls = await getSongMediaUrls(song.id);
+                      const mediaUrls = await getSongMediaUrls(currentSong.id);
                       if (mediaUrls.videoUrl) {
                         videoRef.current.src = mediaUrls.videoUrl;
                       }
@@ -914,7 +929,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
                   }
                   
                   // Apply videoGap: positive = video starts after audio, so skip ahead in video
-                  const videoGapSeconds = (song.videoGap || 0) / 1000;
+                  const videoGapSeconds = (currentSong.videoGap || 0) / 1000;
                   videoRef.current.currentTime = Math.max(0, startPosition - videoGapSeconds);
                   videoRef.current.muted = true; // Background video is always muted
                   videoRef.current.play().catch(() => {});
@@ -962,7 +977,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       setIsPlaying(false);
       setCountdown(3);
     };
-  }, [song, mediaLoaded, initialize, start, stop]);
+  }, [effectiveSong, mediaLoaded, initialize, start, stop]);
 
   // Generate results at end
   const generateResults = useCallback(() => {
@@ -1099,10 +1114,10 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
 
   // Game loop
   useEffect(() => {
-    if (!isPlaying || !song) return;
+    if (!isPlaying || !effectiveSong) return;
     
     // Get the start position from #START tag (in milliseconds)
-    const startPositionMs = song.start || 0;
+    const startPositionMs = effectiveSong.start || 0;
 
     const gameLoop = () => {
       // Use media's currentTime for accurate sync
@@ -1117,7 +1132,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         elapsed = audioRef.current.currentTime * 1000; // Convert to ms
       }
       // For video with embedded audio (when no separate audio file)
-      else if (song.hasEmbeddedAudio && videoRef.current && !videoRef.current.paused) {
+      else if (effectiveSong.hasEmbeddedAudio && videoRef.current && !videoRef.current.paused) {
         elapsed = videoRef.current.currentTime * 1000; // Convert to ms
       }
       // Fallback to system time (less accurate) - account for start position
@@ -1159,7 +1174,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       }
       
       // Check if song ended
-      if (adjustedTime >= song.duration) {
+      if (adjustedTime >= effectiveSong.duration) {
         endGameAndCleanup();
         return;
       }
@@ -1174,7 +1189,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [isPlaying, song, pitchResult, setCurrentTime, setDetectedPitch, checkNoteHits, checkP2NoteHits, endGameAndCleanup, isYouTube, youtubeTime, timingOffset, isDuetMode, p2DetectedPitch, p2Volume, setP2Volume]);
+  }, [isPlaying, effectiveSong, pitchResult, setCurrentTime, setDetectedPitch, checkNoteHits, checkP2NoteHits, endGameAndCleanup, isYouTube, youtubeTime, timingOffset, isDuetMode, p2DetectedPitch, p2Volume, setP2Volume]);
 
   // Get upcoming notes - OPTIMIZED with pre-computed data
   const visibleNotes = useMemo(() => {
@@ -1409,10 +1424,11 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       {/* Audio Element - For songs with separate audio file */}
       {/* ALWAYS render audio element if audioUrl exists - this is the primary audio source */}
       {/* Sound priority: 1) Music file (audioUrl) > 2) YouTube audio > 3) Local video audio */}
-      {song.audioUrl && (
+      {/* Uses effectiveSong which has restored URLs for Tauri */}
+      {effectiveSong?.audioUrl && (
         <audio 
           ref={audioRef}
-          src={song.audioUrl}
+          src={effectiveSong.audioUrl}
           className="hidden"
           onEnded={endGameAndCleanup}
           onError={(e) => {
@@ -1434,10 +1450,10 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
 
       {/* Hidden Video Element for embedded audio (when video has audio but we don't show it) */}
       {/* Case 1: Local video with embedded audio, video disabled */}
-      {song.hasEmbeddedAudio && song.videoBackground && !showBackgroundVideo && !isYouTube && !song.audioUrl && (
+      {effectiveSong?.hasEmbeddedAudio && effectiveSong?.videoBackground && !showBackgroundVideo && !isYouTube && !effectiveSong?.audioUrl && (
         <video
           ref={videoRef}
-          src={song.videoBackground}
+          src={effectiveSong.videoBackground}
           className="hidden"
           muted={false}
           playsInline
@@ -1455,7 +1471,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         {showBackgroundVideo && isYouTube && youtubeVideoId ? (
           <YouTubePlayer
             videoId={youtubeVideoId}
-            videoGap={song.videoGap || 0}
+            videoGap={effectiveSong?.videoGap || 0}
             onReady={() => {}}
             onTimeUpdate={(time) => setYoutubeTime(time)}
             onEnded={endGameAndCleanup}
@@ -1471,7 +1487,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
           <div className="hidden">
             <YouTubePlayer
               videoId={youtubeVideoId}
-              videoGap={song.videoGap || 0}
+              videoGap={effectiveSong?.videoGap || 0}
               onReady={() => {}}
               onTimeUpdate={(time) => setYoutubeTime(time)}
               onEnded={endGameAndCleanup}
@@ -1482,11 +1498,11 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             />
           </div>
         ) : /* Local video file - separate audio (video muted, audio plays separately) */
-        showBackgroundVideo && song.videoBackground && !song.hasEmbeddedAudio && !isYouTube ? (
+        showBackgroundVideo && effectiveSong?.videoBackground && !effectiveSong?.hasEmbeddedAudio && !isYouTube ? (
           <video
-            key={`video-bg-${song.id}`}
+            key={`video-bg-${effectiveSong?.id}`}
             ref={videoRef}
-            src={song.videoBackground}
+            src={effectiveSong.videoBackground}
             className="absolute inset-0 w-full h-full object-cover"
             muted={true}
             playsInline
@@ -1495,11 +1511,11 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             onEnded={endGameAndCleanup}
           />
         ) : /* Video with embedded audio - visible AND plays audio */
-        showBackgroundVideo && song.videoBackground && song.hasEmbeddedAudio && !isYouTube ? (
+        showBackgroundVideo && effectiveSong?.videoBackground && effectiveSong?.hasEmbeddedAudio && !isYouTube ? (
           <video
-            key={`video-embedded-${song.id}`}
+            key={`video-embedded-${effectiveSong?.id}`}
             ref={videoRef}
-            src={song.videoBackground}
+            src={effectiveSong.videoBackground}
             className="absolute inset-0 w-full h-full object-cover"
             muted={false}
             playsInline
@@ -1512,11 +1528,11 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             }}
           />
         ) : /* Background image from #BACKGROUND: or #COVER: tag */
-        showBackgroundVideo && !useAnimatedBackground && (song.backgroundImage || song.coverImage) ? (
+        showBackgroundVideo && !useAnimatedBackground && (effectiveSong?.backgroundImage || effectiveSong?.coverImage) ? (
           <div 
             className="absolute inset-0 w-full h-full bg-cover bg-center"
             style={{
-              backgroundImage: `url(${song.backgroundImage || song.coverImage})`,
+              backgroundImage: `url(${effectiveSong?.backgroundImage || effectiveSong?.coverImage})`,
             }}
           >
             {/* Dark overlay for better note visibility */}
@@ -1526,8 +1542,8 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         useAnimatedBackground ? (
           <VisualAnimatedBackground 
             hasVideo={false}
-            hasBackgroundImage={!!song.backgroundImage || !!song.coverImage}
-            backgroundImage={song.backgroundImage || song.coverImage}
+            hasBackgroundImage={!!effectiveSong?.backgroundImage || !!effectiveSong?.coverImage}
+            backgroundImage={effectiveSong?.backgroundImage || effectiveSong?.coverImage}
             songEnergy={songEnergy}
             isPlaying={isPlaying}
           />
@@ -1536,7 +1552,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
           <MusicReactiveBackground 
             volume={volume} 
             isPlaying={isPlaying} 
-            bpm={song.bpm}
+            bpm={effectiveSong?.bpm}
             intensity={1}
           />
         )}
@@ -1692,13 +1708,13 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         <div className="absolute bottom-0 left-0 right-0 z-20 h-1 bg-white/10">
           <div 
             className="h-full bg-gradient-to-r from-cyan-500 to-purple-500"
-            style={{ width: `${(gameState.currentTime / song.duration) * 100}%` }}
+            style={{ width: `${(gameState.currentTime / (effectiveSong?.duration || 1)) * 100}%` }}
           />
         </div>
         
         {/* Time Display */}
         <div className="absolute bottom-2 right-4 z-20 text-white/60 text-sm font-mono">
-          {Math.floor(gameState.currentTime / 60000)}:{String(Math.floor((gameState.currentTime % 60000) / 1000)).padStart(2, '0')} / {Math.floor(song.duration / 60000)}:{String(Math.floor((song.duration % 60000) / 1000)).padStart(2, '0')}
+          {Math.floor(gameState.currentTime / 60000)}:{String(Math.floor((gameState.currentTime % 60000) / 1000)).padStart(2, '0')} / {Math.floor((effectiveSong?.duration || 0) / 60000)}:{String(Math.floor(((effectiveSong?.duration || 0) % 60000) / 1000)).padStart(2, '0')}
         </div>
       </div>
 
