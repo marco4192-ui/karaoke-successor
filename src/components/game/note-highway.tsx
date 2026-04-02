@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { Note, LyricLine } from '@/types/game';
-import { getNoteShapeClasses, NoteShapeStyle } from '@/lib/game/note-utils';
+import { getNoteShapeClasses, getNoteDisplayStyleClasses, NoteShapeStyle, NoteDisplayStyle } from '@/lib/game/note-utils';
 import { MicIcon } from '@/components/icons';
 
 // ===================== TYPES =====================
@@ -29,6 +29,10 @@ export interface NoteHighwayProps {
   detectedPitch: number | null;
   /** Note shape style from settings */
   noteShapeStyle: NoteShapeStyle;
+  /** Note display style from settings */
+  noteDisplayStyle?: NoteDisplayStyle;
+  /** Note performance for display style feedback */
+  notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
   /** Position of the sing line (percentage from left) */
   singLinePosition?: number;
   /** Time window for note display (milliseconds) */
@@ -107,6 +111,8 @@ function NoteBlock({
   visibleRange,
   noteWidthExtra = 20,
   color = 'cyan',
+  noteDisplayStyle = 'classic',
+  notePerformance,
 }: {
   note: NoteWithLine;
   currentTime: number;
@@ -118,10 +124,13 @@ function NoteBlock({
   visibleRange: number;
   noteWidthExtra?: number;
   color?: 'cyan' | 'pink';
+  noteDisplayStyle?: NoteDisplayStyle;
+  notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
 }) {
   const timeUntilNote = note.startTime - currentTime;
   const noteEnd = note.startTime + note.duration;
   const isActive = currentTime >= note.startTime && currentTime <= noteEnd;
+  const isPast = currentTime > noteEnd;
 
   // Calculate horizontal position (distance from sing line)
   const distanceFromSingLine = (timeUntilNote / noteWindow) * (100 - singLinePosition + noteWidthExtra);
@@ -154,10 +163,29 @@ function NoteBlock({
 
   const glowColor = color === 'cyan' ? 'rgba(34, 211, 238, 0.8)' : 'rgba(236, 72, 153, 0.8)';
 
+  // Calculate accuracy for display style (for past notes)
+  const getNoteAccuracy = (): number => {
+    if (!notePerformance) return 1;
+    const noteId = note.id || `note-${note.startTime}`;
+    const samples = notePerformance.get(noteId) || [];
+    if (samples.length === 0) return isPast ? 0.5 : 1;
+    return samples.reduce((sum, s) => sum + s.accuracy, 0) / samples.length;
+  };
+
+  const accuracy = getNoteAccuracy();
+
+  // Apply note display style
+  const displayStyle = getNoteDisplayStyleClasses(
+    noteDisplayStyle,
+    accuracy,
+    note.isGolden || false,
+    note.isBonus || false
+  );
+
   return (
     <div
       key={note.id}
-      className={`absolute ${noteShape.baseClass} ${getBackgroundClasses()} ${isActive ? noteShape.activeClass : ''}`}
+      className={`absolute ${noteShape.baseClass} ${getBackgroundClasses()} ${displayStyle.additionalClasses} ${isActive ? noteShape.activeClass : ''} ${isPast ? 'opacity-60' : ''}`}
       style={{
         left: `${x}%`,
         top: `${pitchY}%`,
@@ -165,10 +193,13 @@ function NoteBlock({
         height: `${noteHeight}px`,
         transform: 'translateY(-50%)',
         boxShadow: isActive ? `0 0 15px ${glowColor}` : 'none',
-        opacity: x > 120 || x < -30 ? 0 : 1,
+        opacity: x > 120 || x < -30 ? 0 : isPast ? 0.6 : 1,
         ...noteShape.style,
+        ...displayStyle.inlineStyle,
       }}
-    />
+    >
+      {displayStyle.overlayElement}
+    </div>
   );
 }
 
@@ -249,6 +280,8 @@ export function NoteHighway({
   pitchStats,
   detectedPitch,
   noteShapeStyle,
+  noteDisplayStyle = 'classic',
+  notePerformance,
   singLinePosition = 25,
   noteWindow = 4000,
   playerColor = '#22d3ee',
@@ -289,6 +322,8 @@ export function NoteHighway({
           visibleTop={visibleTop}
           visibleRange={visibleRange}
           color={colorScheme}
+          noteDisplayStyle={noteDisplayStyle}
+          notePerformance={notePerformance}
         />
       ))}
 

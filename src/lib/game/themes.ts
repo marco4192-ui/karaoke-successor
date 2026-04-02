@@ -441,8 +441,11 @@ export function applyTheme(theme: Theme): void {
                        theme.colors.background.startsWith('#F') ||
                        theme.colors.background.startsWith('#e') ||
                        theme.colors.background.startsWith('#E') ||
+                       theme.colors.background.startsWith('#d') ||
+                       theme.colors.background.startsWith('#D') ||
                        theme.colors.text.startsWith('#1') ||
-                       theme.colors.text.startsWith('#2');
+                       theme.colors.text.startsWith('#2') ||
+                       theme.colors.text.startsWith('#3');
   
   // Create or update dynamic theme styles
   let styleEl = document.getElementById('theme-dynamic-styles');
@@ -458,12 +461,56 @@ export function applyTheme(theme: Theme): void {
       .theme-adaptive-text { color: ${theme.colors.text} !important; }
       .theme-adaptive-text-secondary { color: ${theme.colors.textSecondary} !important; }
       .theme-adaptive-bg { background-color: ${theme.colors.background} !important; }
+      
+      /* Override Tailwind text colors for light themes */
+      .theme-container .text-white { color: ${theme.colors.text} !important; }
+      .theme-container .text-white\\/50 { color: ${theme.colors.textSecondary} !important; opacity: 0.5; }
+      .theme-container .text-white\\/60 { color: ${theme.colors.textSecondary} !important; opacity: 0.6; }
+      .theme-container .text-white\\/70 { color: ${theme.colors.textSecondary} !important; opacity: 0.7; }
+      .theme-container .text-white\\/80 { color: ${theme.colors.text} !important; opacity: 0.8; }
+      .theme-container .text-white\\/90 { color: ${theme.colors.text} !important; opacity: 0.9; }
+      
+      /* Override for direct children of theme-aware components */
+      .theme-override .text-white { color: ${theme.colors.text} !important; }
+      .theme-override .text-white\\/50 { color: ${theme.colors.textSecondary} !important; opacity: 0.5; }
+      .theme-override .text-white\\/60 { color: ${theme.colors.textSecondary} !important; opacity: 0.6; }
+      
+      /* Border overrides for light theme */
+      .theme-container .border-white\\/10 { border-color: ${theme.colors.primary}20 !important; }
+      .theme-container .border-white\\/20 { border-color: ${theme.colors.primary}30 !important; }
+      .theme-container .border-white\\/30 { border-color: ${theme.colors.primary}40 !important; }
+      
+      /* Background overrides for light theme */
+      .theme-container .bg-white\\/5 { background-color: ${theme.colors.backgroundSecondary}80 !important; }
+      .theme-container .bg-white\\/10 { background-color: ${theme.colors.backgroundSecondary} !important; }
     `;
   } else {
     styleEl.textContent = `
       .theme-adaptive-text { color: ${theme.colors.text} !important; }
       .theme-adaptive-text-secondary { color: ${theme.colors.textSecondary} !important; }
       .theme-adaptive-bg { background-color: ${theme.colors.background} !important; }
+      
+      /* Override Tailwind text colors for dark themes */
+      .theme-container .text-white { color: ${theme.colors.text} !important; }
+      .theme-container .text-white\\/50 { color: ${theme.colors.textSecondary} !important; opacity: 0.5; }
+      .theme-container .text-white\\/60 { color: ${theme.colors.textSecondary} !important; opacity: 0.6; }
+      .theme-container .text-white\\/70 { color: ${theme.colors.textSecondary} !important; opacity: 0.7; }
+      .theme-container .text-white\\/80 { color: ${theme.colors.text} !important; opacity: 0.8; }
+      .theme-container .text-white\\/90 { color: ${theme.colors.text} !important; opacity: 0.9; }
+      
+      /* Override for direct children of theme-aware components */
+      .theme-override .text-white { color: ${theme.colors.text} !important; }
+      .theme-override .text-white\\/50 { color: ${theme.colors.textSecondary} !important; opacity: 0.5; }
+      .theme-override .text-white\\/60 { color: ${theme.colors.textSecondary} !important; opacity: 0.6; }
+      
+      /* Border overrides */
+      .theme-container .border-white\\/10 { border-color: ${theme.colors.primary}20 !important; }
+      .theme-container .border-white\\/20 { border-color: ${theme.colors.primary}30 !important; }
+      .theme-container .border-white\\/30 { border-color: ${theme.colors.primary}40 !important; }
+      
+      /* Background overrides */
+      .theme-container .bg-white\\/5 { background-color: ${theme.colors.backgroundSecondary}80 !important; }
+      .theme-container .bg-white\\/10 { background-color: ${theme.colors.backgroundSecondary} !important; }
     `;
   }
   

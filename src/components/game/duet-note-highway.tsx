@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import { Note, LyricLine, Player } from '@/types/game';
 import { NoteHighway, NoteWithLine, PitchStats } from './note-highway';
 import { LyricLineDisplay } from './lyric-line-display';
-import { NoteShapeStyle } from '@/lib/game/note-utils';
+import { NoteShapeStyle, NoteDisplayStyle } from '@/lib/game/note-utils';
 
 // ===================== TYPES =====================
 
@@ -60,7 +60,7 @@ export interface DuetNoteHighwayProps {
   /** P2 player name */
   p2PlayerName?: string;
   /** Note display style */
-  noteDisplayStyle?: 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity';
+  noteDisplayStyle?: NoteDisplayStyle;
 }
 
 // ===================== SUB-COMPONENTS =====================
@@ -134,7 +134,7 @@ function PlayerLyrics({
   lines?: LyricLine[];
   currentTime: number;
   playerColor: string;
-  noteDisplayStyle?: 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity';
+  noteDisplayStyle?: NoteDisplayStyle;
   notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
   gameMode?: string;
   missingWordsIndices?: number[];
@@ -224,6 +224,8 @@ export function DuetNoteHighway({
           pitchStats={p1PitchStats}
           detectedPitch={p1DetectedPitch}
           noteShapeStyle={noteShapeStyle}
+          noteDisplayStyle={noteDisplayStyle}
+          notePerformance={notePerformance}
           singLinePosition={singLinePosition}
           noteWindow={noteWindow}
           playerColor="#22d3ee"
@@ -258,6 +260,8 @@ export function DuetNoteHighway({
           pitchStats={p2PitchStats}
           detectedPitch={p2DetectedPitch}
           noteShapeStyle={noteShapeStyle}
+          noteDisplayStyle={noteDisplayStyle}
+          notePerformance={notePerformance}
           singLinePosition={singLinePosition}
           noteWindow={noteWindow}
           playerColor="#ec4899"

@@ -4,7 +4,7 @@ import React from 'react';
 import { Note, LyricLine } from '@/types/game';
 import { NoteHighway, NoteWithLine, PitchStats } from './note-highway';
 import { SinglePlayerLyrics } from './single-player-lyrics';
-import { NoteShapeStyle } from '@/lib/game/note-utils';
+import { NoteShapeStyle, NoteDisplayStyle, getNoteShapeClasses, getNoteDisplayStyleClasses } from '@/lib/game/note-utils';
 import { MicIcon } from '@/components/icons';
 
 // ===================== TYPES =====================
@@ -34,7 +34,7 @@ export interface SinglePlayerNoteHighwayProps {
   /** Player color for styling */
   playerColor?: string;
   /** Note display style from settings */
-  noteDisplayStyle?: 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity';
+  noteDisplayStyle?: NoteDisplayStyle;
   /** Note performance for visual feedback */
   notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
   /** Game mode */
@@ -96,6 +96,7 @@ export function SinglePlayerNoteHighway({
         const timeUntilNote = note.startTime - currentTime;
         const noteEnd = note.startTime + note.duration;
         const isActive = currentTime >= note.startTime && currentTime <= noteEnd;
+        const isPast = currentTime > noteEnd;
 
         const distanceFromSingLine = (timeUntilNote / noteWindow) * (100 - singLinePosition + 20);
         const x = singLinePosition + distanceFromSingLine;
@@ -116,38 +117,26 @@ export function SinglePlayerNoteHighway({
           return 'bg-gradient-to-r from-cyan-500 to-blue-500';
         };
 
-        // Get note shape classes
-        const getNoteShapeClasses = (style: NoteShapeStyle) => {
-          switch (style) {
-            case 'sharp':
-              return {
-                baseClass: 'rounded-none',
-                activeClass: 'ring-2 ring-white/50',
-                style: {},
-              };
-            case 'pill':
-              return {
-                baseClass: 'rounded-full',
-                activeClass: 'ring-2 ring-white/50 scale-105',
-                style: {},
-              };
-            case 'diamond':
-              return {
-                baseClass: 'rounded-md transform rotate-45',
-                activeClass: 'ring-2 ring-white/50',
-                style: {},
-              };
-            case 'rounded':
-            default:
-              return {
-                baseClass: 'rounded-lg',
-                activeClass: 'ring-2 ring-white/50 scale-105',
-                style: {},
-              };
-          }
-        };
-
+        // Get note shape classes from utility function
         const noteShape = getNoteShapeClasses(noteShapeStyle);
+        
+        // Calculate accuracy for display style
+        const getNoteAccuracy = (): number => {
+          if (!notePerformance) return 1;
+          const noteId = note.id || `note-${note.startTime}`;
+          const samples = notePerformance.get(noteId) || [];
+          if (samples.length === 0) return isPast ? 0.5 : 1;
+          return samples.reduce((sum, s) => sum + s.accuracy, 0) / samples.length;
+        };
+        const accuracy = getNoteAccuracy();
+        
+        // Apply note display style
+        const displayStyle = getNoteDisplayStyleClasses(
+          noteDisplayStyle,
+          accuracy,
+          note.isGolden || false,
+          note.isBonus || false
+        );
 
         // Skip notes that are too far off-screen
         if (x > 120 || x < -30) return null;
@@ -155,7 +144,7 @@ export function SinglePlayerNoteHighway({
         return (
           <div
             key={note.id}
-            className={`absolute ${noteShape.baseClass} ${getBackgroundClasses()} ${isActive ? noteShape.activeClass : ''}`}
+            className={`absolute ${noteShape.baseClass} ${getBackgroundClasses()} ${displayStyle.additionalClasses} ${isActive ? noteShape.activeClass : ''} ${isPast ? 'opacity-60' : ''}`}
             style={{
               left: `${x}%`,
               top: `${pitchY}%`,
@@ -164,8 +153,11 @@ export function SinglePlayerNoteHighway({
               transform: 'translateY(-50%)',
               boxShadow: isActive ? '0 0 20px rgba(34, 211, 238, 0.6)' : 'none',
               ...noteShape.style,
+              ...displayStyle.inlineStyle,
             }}
-          />
+          >
+            {displayStyle.overlayElement}
+          </div>
         );
       })}
 
