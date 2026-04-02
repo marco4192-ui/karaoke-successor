@@ -532,6 +532,15 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     };
   }, [isPlaying]);
   
+  // ===================== AD/YOUTUBE STATE =====================
+  // MUST be defined BEFORE useRemoteControl hook!
+  // Custom YouTube video for background (can be set by user)
+  const [customYoutubeUrl, setCustomYoutubeUrl] = useState('');
+  const [customYoutubeId, setCustomYoutubeId] = useState<string | null>(null);
+  const [showYoutubeInput, setShowYoutubeInput] = useState(false);
+  const [isAdPlaying, setIsAdPlaying] = useState(false);
+  const [adCountdown, setAdCountdown] = useState(0);
+  
   // ===================== REMOTE CONTROL POLLING =====================
   // Poll for remote commands from mobile companions
   useRemoteControl({
@@ -564,13 +573,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     player: gameState.players[0],
     updatePlayer,
   });
-  
-  // Custom YouTube video for background (can be set by user)
-  const [customYoutubeUrl, setCustomYoutubeUrl] = useState('');
-  const [customYoutubeId, setCustomYoutubeId] = useState<string | null>(null);
-  const [showYoutubeInput, setShowYoutubeInput] = useState(false);
-  const [isAdPlaying, setIsAdPlaying] = useState(false);
-  const [adCountdown, setAdCountdown] = useState(0);
   
   // Check if song has YouTube URL (from #VIDEO: tag with URL)
   // Priority: custom YouTube > song.youtubeUrl > videoBackground if URL
