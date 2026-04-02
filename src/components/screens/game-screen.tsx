@@ -569,10 +569,17 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   
   // ===================== STAR POWER ACTIVATION =====================
   // Use custom hook for Star Power activation (keyboard + button)
-  const { activateStarPower } = useStarPower({
+  const { activateStarPower, canActivate } = useStarPower({
     player: gameState.players[0],
     updatePlayer,
   });
+  
+  // Handler for Star Power bar activation (wraps the hook's activateStarPower)
+  const handleActivateStarPower = useCallback(() => {
+    if (canActivate) {
+      activateStarPower();
+    }
+  }, [activateStarPower, canActivate]);
   
   // Check if song has YouTube URL (from #VIDEO: tag with URL)
   // Priority: custom YouTube > song.youtubeUrl > videoBackground if URL
