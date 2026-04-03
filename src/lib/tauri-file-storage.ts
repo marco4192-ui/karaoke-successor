@@ -356,10 +356,9 @@ function parseLyricsFromTxt(content: string, bpm: number, gap: number): LyricLin
       noteLine = duetPrefixMatch[2];
     }
     
-    // Parse note - use trimmed version of note line for matching
-    // but preserve the original lyric with spaces
-    const trimmedNoteLine = noteLine.trim();
-    const noteMatch = trimmedNoteLine.match(/^([:*FGR])\s*(-?\d+)\s+(\d+)\s+(-?\d+)\s*(.*)$/);
+    // Parse note - use original note line for matching to preserve trailing spaces in lyric
+    // The regex handles leading whitespace with \s* at the start
+    const noteMatch = noteLine.match(/^\s*([:*FGR])\s*(-?\d+)\s+(\d+)\s+(-?\d+)\s*(.*)$/);
     if (noteMatch) {
       const [, type, startStr, durationStr, pitchStr, lyric] = noteMatch;
       notes.push({
@@ -367,7 +366,7 @@ function parseLyricsFromTxt(content: string, bpm: number, gap: number): LyricLin
         startBeat: parseInt(startStr),
         duration: parseInt(durationStr),
         pitch: parseInt(pitchStr),
-        // DON'T trim - preserve trailing spaces for syllable detection
+        // Preserve trailing spaces for syllable detection - trailing space = word boundary
         lyric: lyric,
         player: notePlayer,
       });
