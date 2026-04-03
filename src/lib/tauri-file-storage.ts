@@ -510,7 +510,14 @@ function parseLyricsFromTxt(content: string, bpm: number, gap: number): LyricLin
   const notes: Array<{ type: string; startBeat: number; duration: number; pitch: number; lyric: string; player?: 'P1' | 'P2' }> = [];
   const lineBreakBeats = new Set<number>();
   
+  // DEBUG: Log parser input
+  const nonHeaderLines = lines.filter(l => !l.trim().startsWith('#') && l.trim() !== 'E');
+  console.log('[TauriParser] Total lines:', lines.length, 'Non-header lines:', nonHeaderLines.length);
+  console.log('[TauriParser] BPM:', bpm, 'GAP:', gap);
+  console.log('[TauriParser] First 5 non-header lines:', nonHeaderLines.slice(0, 5).map(l => l.substring(0, 60)));
+  
   let currentPlayer: 'P1' | 'P2' | undefined = undefined;
+  let noteCount = 0;
   
   for (const line of lines) {
     // Use trimmed version for header/marker parsing (these should be trimmed)
@@ -563,8 +570,11 @@ function parseLyricsFromTxt(content: string, bpm: number, gap: number): LyricLin
         lyric: lyric,
         player: notePlayer,
       });
+      noteCount++;
     }
   }
+  
+  console.log('[TauriParser] Parsed', noteCount, 'notes from', lines.length, 'lines');
   
   // Convert to LyricLines
   const beatDuration = 15000 / bpm;

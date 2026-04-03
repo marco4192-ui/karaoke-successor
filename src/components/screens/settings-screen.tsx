@@ -402,10 +402,12 @@ function SettingsScreen() {
             let videoBackground: string | undefined = undefined;
             let coverImage: string | undefined = undefined;
             
-            // CRITICAL FIX: Use scanned.baseFolder for media URLs, not folderPath
-            // The scanned.baseFolder is set by the scanner and is the absolute path to the songs root
-            const effectiveBaseFolder = scanned.baseFolder || folderPath;
+            // CRITICAL FIX: ALWAYS use folderPath as baseFolder
+            // This is the songs folder selected by the user - it's the ONLY valid baseFolder
+            // Do NOT rely on scanned.baseFolder as it may be undefined
+            const effectiveBaseFolder = folderPath;
             console.log(`[Import] Using baseFolder: ${effectiveBaseFolder} for ${scanned.title}`);
+            console.log(`[Import] Relative paths - audio: ${scanned.relativeAudioPath}, video: ${scanned.relativeVideoPath}, cover: ${scanned.relativeCoverPath}`);
             
             // Load audio URL
             if (scanned.relativeAudioPath) {
