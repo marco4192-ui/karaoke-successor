@@ -67,18 +67,31 @@ export function getCustomSongs(): Song[] {
       });
       
       // MIGRATION 2: Fix songs with missing baseFolder
-      // If localStorage 'karaoke-songs-folder' is set and song has no baseFolder,
-      // use the localStorage value as baseFolder
+      // Try multiple sources for baseFolder:
+      // 1. localStorage 'karaoke-songs-folder'
+      // 2. folderPath if it looks like an absolute path
+      // 3. Any song that already has baseFolder (use that as reference)
       const storedSongsFolder = localStorage.getItem('karaoke-songs-folder');
-      if (storedSongsFolder) {
+      
+      // Find a song with a valid baseFolder to use as reference
+      const songWithBaseFolder = songs.find((s: Song) => s.baseFolder && s.baseFolder.length > 0);
+      const referenceBaseFolder = songWithBaseFolder?.baseFolder || storedSongsFolder;
+      
+      if (referenceBaseFolder) {
         songs = songs.map((song: Song) => {
-          if (!song.baseFolder && song.relativeTxtPath) {
-            console.log(`[SongLibrary] Migrating baseFolder for ${song.title}: ${storedSongsFolder}`);
+          if (!song.baseFolder) {
+            console.log(`[SongLibrary] Migrating baseFolder for ${song.title}: ${referenceBaseFolder}`);
             needsSave = true;
-            return { ...song, baseFolder: storedSongsFolder };
+            return { ...song, baseFolder: referenceBaseFolder };
           }
           return song;
         });
+      } else {
+        // No reference baseFolder found - log warning
+        const songsMissingBaseFolder = songs.filter((s: Song) => !s.baseFolder).length;
+        if (songsMissingBaseFolder > 0) {
+          console.warn(`[SongLibrary] ${songsMissingBaseFolder} songs have no baseFolder and no reference found. User needs to re-scan songs folder.`);
+        }
       }
       
       if (needsSave) {
@@ -774,7 +787,16 @@ function parseUltraStarTxtContent(content: string, gap: number, bpm: number): Ly
   const notes: Array<{ type: string; startBeat: number; duration: number; pitch: number; lyric: string; player?: 'P1' | 'P2' }> = [];
   const lineBreakBeats = new Set<number>();
   
+  // DEBUG: Log first 10 non-header lines to understand the format
+  const nonHeaderLines = lines.filter(l => !l.trim().startsWith('#') && l.trim() !== 'E');
+  console.log('[Parser] Total lines:', lines.length, 'Non-header lines:', nonHeaderLines.length);
+  console.log('[Parser] First 10 non-header lines:', nonHeaderLines.slice(0, 10));
+  console.log('[Parser] Gap:', gap, 'BPM:', bpm);
+  
   let currentPlayer: 'P1' | 'P2' | undefined = undefined;
+  let headerCount = 0;
+  let noteCount = 0;
+  let lineBreakCount = 0;
   
   for (const line of lines) {
     // Use trimmed version for header/marker parsing (these should be trimmed)
@@ -791,7 +813,10 @@ function parseUltraStarTxtContent(content: string, gap: number, bpm: number): Ly
     }
     
     // Skip headers (use trimmed version)
-    if (trimmedLine.startsWith('#')) continue;
+    if (trimmedLine.startsWith('#')) {
+      headerCount++;
+      continue;
+    }
     if (trimmedLine === 'E') break;
     
     // Line break (use trimmed version for matching)
@@ -799,6 +824,7 @@ function parseUltraStarTxtContent(content: string, gap: number, bpm: number): Ly
       const lineBreakMatch = trimmedLine.match(/^-\s*(-?\d+)/);
       if (lineBreakMatch) {
         lineBreakBeats.add(parseInt(lineBreakMatch[1]));
+        lineBreakCount++;
       }
       continue;
     }
@@ -827,8 +853,16 @@ function parseUltraStarTxtContent(content: string, gap: number, bpm: number): Ly
         lyric: lyric,
         player: notePlayer,
       });
+      noteCount++;
+    } else {
+      // DEBUG: Log lines that didn't match the note pattern
+      if (noteCount < 3 && !trimmedLine.startsWith('#')) {
+        console.log('[Parser] Line did not match note pattern:', JSON.stringify(noteLine.substring(0, 50)));
+      }
     }
   }
+  
+  console.log('[Parser] Parsed:', headerCount, 'headers,', noteCount, 'notes,', lineBreakCount, 'line breaks');
   
   // Convert to LyricLines
   const beatDuration = 15000 / bpm;

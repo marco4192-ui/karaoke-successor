@@ -340,6 +340,11 @@ function SettingsScreen() {
     setIsScanning(true);
     setScanProgress({ stage: 'scanning', message: 'Scanning folder...', count: 0 });
     
+    // CRITICAL: Always save the songs folder to localStorage
+    // This is needed for migration and URL restoration
+    localStorage.setItem('karaoke-songs-folder', folderPath);
+    console.log('[Import] Saved karaoke-songs-folder to localStorage:', folderPath);
+    
     try {
       // Import the Tauri scanner
       const { scanSongsFolderTauri, isTauri } = await import('@/lib/tauri-file-storage');
