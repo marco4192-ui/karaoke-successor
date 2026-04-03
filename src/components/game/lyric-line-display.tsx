@@ -219,6 +219,11 @@ export function LyricLineDisplay({
 
         // Preserve trailing spaces - they indicate word boundaries
         // Use display: inline instead of inline-block to preserve whitespace correctly
+        // Special case: hyphen-only lyric = line break, don't display the hyphen
+        if (isHyphenOnly) {
+          return <br key={noteId} />;
+        }
+
         return (
           <span key={noteId} style={{ display: 'inline' }}>
             <span
@@ -227,7 +232,6 @@ export function LyricLineDisplay({
             >
               {renderedLyric}
             </span>
-            {isHyphenOnly && <br />}
           </span>
         );
       })}
