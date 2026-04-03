@@ -81,6 +81,7 @@ export interface TauriScannedSong {
   relativeAudioPath?: string;
   relativeVideoPath?: string;
   relativeCoverPath?: string;
+  relativeBackgroundPath?: string;
   bpm: number;
   gap: number;
   genre?: string;
@@ -90,8 +91,23 @@ export interface TauriScannedSong {
   previewDuration?: number;
   // Parsed lyrics (notes data)
   lyrics?: LyricLine[];
-  // NEW: Additional metadata from TXT headers
+  // Additional metadata from TXT headers
   creator?: string;
+  version?: string;
+  edition?: string;
+  tags?: string;
+  // Time control
+  start?: number; // #START: skip beginning (ms)
+  end?: number; // #END: early end (ms)
+  videoGap?: number; // #VIDEOGAP: video sync offset (ms)
+  videoStart?: number; // #VIDEOSTART: fixed video start (ms)
+  // Medley
+  medleyStartBeat?: number;
+  medleyEndBeat?: number;
+  // Duet
+  isDuet?: boolean;
+  duetPlayerNames?: [string, string];
+  // Media flags
   hasEmbeddedAudio?: boolean; // True if #MP3: points to a video file
 }
 
@@ -258,7 +274,8 @@ async function processFolder(
   
   // Parse metadata from TXT
   const lines = txtContent.split('\n');
-  
+
+  // Basic info
   let title = 'Unknown';
   let artist = 'Unknown';
   let bpm = 120;
@@ -266,17 +283,41 @@ async function processFolder(
   let genre: string | undefined;
   let language: string | undefined;
   let year: number | undefined;
+
+  // Preview
   let previewStart: number | undefined;
   let previewDuration: number | undefined;
-  // NEW: Parse file references from TXT headers
+
+  // File references
   let txtMp3File: string | undefined;
   let txtVideoFile: string | undefined;
   let txtCoverFile: string | undefined;
   let txtBackgroundFile: string | undefined;
+
+  // Additional metadata
   let creator: string | undefined;
+  let version: string | undefined;
+  let edition: string | undefined;
+  let tags: string | undefined;
+
+  // Time control
+  let start: number | undefined;
+  let end: number | undefined;
+  let videoGap: number | undefined;
+  let videoStart: number | undefined;
+
+  // Medley
+  let medleyStartBeat: number | undefined;
+  let medleyEndBeat: number | undefined;
+
+  // Duet
+  let p1Name: string | undefined;
+  let p2Name: string | undefined;
 
   for (const line of lines) {
     const trimmed = line.trim();
+
+    // Basic info
     if (trimmed.startsWith('#TITLE:')) {
       title = trimmed.substring(7).trim();
     } else if (trimmed.startsWith('#ARTIST:')) {
@@ -291,24 +332,63 @@ async function processFolder(
       language = trimmed.substring(10).trim();
     } else if (trimmed.startsWith('#YEAR:')) {
       year = parseInt(trimmed.substring(6)) || undefined;
-    } else if (trimmed.startsWith('#PREVIEWSTART:')) {
+    }
+
+    // File references
+    else if (trimmed.startsWith('#MP3:')) {
+      txtMp3File = trimmed.substring(5).trim();
+    } else if (trimmed.startsWith('#AUDIO:')) {
+      // Alternative to #MP3:
+      txtMp3File = trimmed.substring(7).trim();
+    } else if (trimmed.startsWith('#VIDEO:')) {
+      txtVideoFile = trimmed.substring(7).trim();
+    } else if (trimmed.startsWith('#COVER:')) {
+      txtCoverFile = trimmed.substring(7).trim();
+    } else if (trimmed.startsWith('#BACKGROUND:')) {
+      txtBackgroundFile = trimmed.substring(12).trim();
+    }
+
+    // Time control
+    else if (trimmed.startsWith('#START:')) {
+      start = parseInt(trimmed.substring(7)) || undefined;
+    } else if (trimmed.startsWith('#END:')) {
+      end = parseInt(trimmed.substring(5)) || undefined;
+    } else if (trimmed.startsWith('#VIDEOGAP:')) {
+      videoGap = parseInt(trimmed.substring(10)) || undefined;
+    } else if (trimmed.startsWith('#VIDEOSTART:')) {
+      videoStart = parseInt(trimmed.substring(12)) || undefined;
+    }
+
+    // Preview
+    else if (trimmed.startsWith('#PREVIEWSTART:')) {
       previewStart = parseFloat(trimmed.substring(13)) || undefined;
     } else if (trimmed.startsWith('#PREVIEWDURATION:')) {
       previewDuration = parseFloat(trimmed.substring(16)) || undefined;
-    } else if (trimmed.startsWith('#MP3:')) {
-      // NEW: Extract audio file reference from TXT header
-      txtMp3File = trimmed.substring(5).trim();
-    } else if (trimmed.startsWith('#VIDEO:')) {
-      // NEW: Extract video file reference from TXT header
-      txtVideoFile = trimmed.substring(7).trim();
-    } else if (trimmed.startsWith('#COVER:')) {
-      // NEW: Extract cover file reference from TXT header
-      txtCoverFile = trimmed.substring(7).trim();
-    } else if (trimmed.startsWith('#BACKGROUND:')) {
-      // NEW: Extract background file reference from TXT header
-      txtBackgroundFile = trimmed.substring(12).trim();
-    } else if (trimmed.startsWith('#CREATOR:')) {
+    }
+
+    // Medley
+    else if (trimmed.startsWith('#MEDLEYSTARTBEAT:')) {
+      medleyStartBeat = parseInt(trimmed.substring(16)) || undefined;
+    } else if (trimmed.startsWith('#MEDLEYENDBEAT:')) {
+      medleyEndBeat = parseInt(trimmed.substring(14)) || undefined;
+    }
+
+    // Additional metadata
+    else if (trimmed.startsWith('#CREATOR:')) {
       creator = trimmed.substring(9).trim();
+    } else if (trimmed.startsWith('#VERSION:')) {
+      version = trimmed.substring(9).trim();
+    } else if (trimmed.startsWith('#EDITION:')) {
+      edition = trimmed.substring(9).trim();
+    } else if (trimmed.startsWith('#TAGS:')) {
+      tags = trimmed.substring(6).trim();
+    }
+
+    // Duet player names
+    else if (trimmed.startsWith('#P1:')) {
+      p1Name = trimmed.substring(4).trim();
+    } else if (trimmed.startsWith('#P2:')) {
+      p2Name = trimmed.substring(4).trim();
     }
   }
 
@@ -354,16 +434,23 @@ async function processFolder(
     // No #MP3: in TXT, use scanned audio file
     finalAudioPath = audioFile?.path;
   }
-  
+
   // If #VIDEO: is set, it overrides the video path (but #MP3: as video takes precedence for audio)
   if (txtVideoFile && !hasEmbeddedAudio) {
     finalVideoPath = resolveTxtReference(txtVideoFile, videoFile);
   } else if (!finalVideoPath) {
     finalVideoPath = videoFile?.path;
   }
-  
-  // Resolve cover path
+
+  // Resolve cover and background paths
   const finalCoverPath = resolveTxtReference(txtCoverFile, coverFile);
+  const finalBackgroundPath = resolveTxtReference(txtBackgroundFile, null);
+
+  // Determine if this is a duet
+  const isDuet = !!(p1Name || p2Name);
+  const duetPlayerNames: [string, string] | undefined = isDuet
+    ? [p1Name || 'Player 1', p2Name || 'Player 2']
+    : undefined;
 
   console.log(`[TauriScanner] Created song: ${artist} - ${title}`);
   console.log(`[TauriScanner]   baseFolder: ${baseFolder}`);
@@ -371,7 +458,9 @@ async function processFolder(
   console.log(`[TauriScanner]   audio: ${finalAudioPath || 'none'}`);
   console.log(`[TauriScanner]   video: ${finalVideoPath || 'none'}`);
   console.log(`[TauriScanner]   cover: ${finalCoverPath || 'none'}`);
+  console.log(`[TauriScanner]   background: ${finalBackgroundPath || 'none'}`);
   console.log(`[TauriScanner]   hasEmbeddedAudio: ${hasEmbeddedAudio}`);
+  console.log(`[TauriScanner]   isDuet: ${isDuet}`);
 
   // Parse lyrics from TXT content
   const lyrics = parseLyricsFromTxt(txtContent, bpm, gap);
@@ -380,11 +469,12 @@ async function processFolder(
     title,
     artist,
     folderPath,
-    baseFolder, // Store absolute path to songs root folder for media loading
+    baseFolder,
     relativeTxtPath: txtFile.path,
     relativeAudioPath: finalAudioPath,
     relativeVideoPath: finalVideoPath,
     relativeCoverPath: finalCoverPath,
+    relativeBackgroundPath: finalBackgroundPath,
     bpm,
     gap,
     genre,
@@ -393,7 +483,23 @@ async function processFolder(
     previewStart,
     previewDuration,
     lyrics,
+    // Additional metadata
     creator,
+    version,
+    edition,
+    tags,
+    // Time control
+    start,
+    end,
+    videoGap,
+    videoStart,
+    // Medley
+    medleyStartBeat,
+    medleyEndBeat,
+    // Duet
+    isDuet,
+    duetPlayerNames,
+    // Media flags
     hasEmbeddedAudio,
   };
 }

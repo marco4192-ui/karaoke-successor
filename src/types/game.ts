@@ -47,11 +47,12 @@ export interface Song {
   youtubeUrl?: string; // YouTube video URL
   youtubeId?: string; // YouTube video ID (extracted from URL)
   videoUrl?: string; // Direct video URL (for local video files)
-  videoGap?: number; // Offset for video sync (ms)
+  videoGap?: number; // #VIDEOGAP: Offset for video sync (ms)
+  videoStart?: number; // #VIDEOSTART: Fixed start point for video (ms)
   audioUrl?: string;
-  gap: number; // gap before lyrics start (ms)
-  start?: number; // #START tag - milliseconds to skip at beginning of audio
-  end?: number; // #END tag - song end time in ms
+  gap: number; // #GAP: gap before lyrics start (ms)
+  start?: number; // #START: milliseconds to skip at beginning of audio
+  end?: number; // #END: song end time in ms
   hasEmbeddedAudio?: boolean; // video file has audio, no separate audio needed
   lastPlayed?: number;
   dateAdded?: number;
@@ -77,6 +78,7 @@ export interface Song {
   // UltraStar TXT Metadata (editable in editor)
   version?: string; // #VERSION: - format version
   creator?: string; // #CREATOR: - who created the txt file
+  edition?: string; // #EDITION: - edition or album name
   mp3File?: string; // #MP3: - audio file name
   coverFile?: string; // #COVER: - cover image file name
   backgroundFile?: string; // #BACKGROUND: - background image file name

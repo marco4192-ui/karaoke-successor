@@ -297,17 +297,30 @@ export function filterSongs(songs: Song[], settings: LibrarySettings): Song[] {
 }
 
 // Search songs
+// Includes title, artist, genre, album, tags, and edition in search
 export function searchSongs(query: string): Song[] {
   const songs = getAllSongs();
   if (!query) return songs;
-  
+
   const lowerQuery = query.toLowerCase();
-  return songs.filter(song =>
-    song.title.toLowerCase().includes(lowerQuery) ||
-    song.artist.toLowerCase().includes(lowerQuery) ||
-    song.genre?.toLowerCase().includes(lowerQuery) ||
-    song.album?.toLowerCase().includes(lowerQuery)
-  );
+  return songs.filter(song => {
+    // Search in basic fields
+    if (song.title.toLowerCase().includes(lowerQuery)) return true;
+    if (song.artist.toLowerCase().includes(lowerQuery)) return true;
+    if (song.genre?.toLowerCase().includes(lowerQuery)) return true;
+    if (song.album?.toLowerCase().includes(lowerQuery)) return true;
+
+    // Search in tags (comma-separated)
+    if (song.tags) {
+      const tags = song.tags.toLowerCase().split(',').map(t => t.trim());
+      if (tags.some(tag => tag.includes(lowerQuery))) return true;
+    }
+
+    // Search in edition
+    if (song.edition?.toLowerCase().includes(lowerQuery)) return true;
+
+    return false;
+  });
 }
 
 // Get song by ID

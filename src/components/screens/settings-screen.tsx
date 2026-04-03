@@ -442,29 +442,49 @@ function SettingsScreen() {
               difficulty: 'medium',
               rating: 3,
               gap: scanned.gap,
-              baseFolder: effectiveBaseFolder, // Store the effective base folder
+              baseFolder: effectiveBaseFolder,
               folderPath: scanned.folderPath,
               relativeTxtPath: scanned.relativeTxtPath,
               relativeAudioPath: scanned.relativeAudioPath,
               relativeVideoPath: scanned.relativeVideoPath,
               relativeCoverPath: scanned.relativeCoverPath,
-              // CRITICAL: Set the media URLs
+              relativeBackgroundPath: scanned.relativeBackgroundPath,
+              // Media URLs
               audioUrl,
               videoBackground,
               coverImage,
+              // Basic metadata
               genre: scanned.genre,
               language: scanned.language,
               year: scanned.year,
-              creator: scanned.creator, // NEW: Pass creator from scanner
+              // Additional metadata
+              creator: scanned.creator,
+              version: scanned.version,
+              edition: scanned.edition,
+              tags: scanned.tags,
+              // Time control
+              start: scanned.start,
+              end: scanned.end,
+              videoGap: scanned.videoGap,
+              videoStart: scanned.videoStart,
+              // Preview
               preview: scanned.previewStart ? {
                 startTime: scanned.previewStart * 1000,
                 duration: (scanned.previewDuration || 15) * 1000,
               } : undefined,
-              // CRITICAL: Use lyrics from scanner if available
+              previewStart: scanned.previewStart,
+              previewDuration: scanned.previewDuration,
+              // Medley
+              medleyStartBeat: scanned.medleyStartBeat,
+              medleyEndBeat: scanned.medleyEndBeat,
+              // Duet
+              isDuet: scanned.isDuet,
+              duetPlayerNames: scanned.duetPlayerNames,
+              // Lyrics
               lyrics: scanned.lyrics || [],
               storedTxt,
               storedMedia: false,
-              // CRITICAL FIX: Use hasEmbeddedAudio from scanner (it correctly detects when #MP3: points to video)
+              // Media flags
               hasEmbeddedAudio: scanned.hasEmbeddedAudio ?? (!scanned.relativeAudioPath && !!scanned.relativeVideoPath),
               dateAdded: Date.now(),
             };
