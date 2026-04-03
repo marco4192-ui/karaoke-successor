@@ -831,8 +831,15 @@ function parseUltraStarTxtContent(content: string, gap: number, bpm: number): Ly
     const startTime = gap + (note.startBeat * beatDuration);
     const duration = note.duration * beatDuration;
     
-    // Skip hyphen separators - they indicate line breaks but should NOT be removed from text
-    if (note.lyric === '-' || (note.lyric.trim() === '-' && note.lyric.length <= 2)) {
+    // Skip hyphen separators - they indicate line breaks
+    // UltraStar format: Notes with "-" or "~" as lyric are line breaks
+    // These separate lyric lines and should trigger a line break
+    const trimmedLyric = note.lyric.trim();
+    const isLineBreakNote = trimmedLyric === '-' || trimmedLyric === '~' || 
+                            note.lyric === '-' || note.lyric === '~';
+    
+    if (isLineBreakNote) {
+      console.log('[Parser] Found line break note at beat', note.startBeat, 'lyric:', JSON.stringify(note.lyric));
       if (currentLineNotes.length > 0) {
         const lineStartTime = currentLineNotes[0].startTime;
         const lineEndTime = currentLineNotes[currentLineNotes.length - 1].startTime + currentLineNotes[currentLineNotes.length - 1].duration;
