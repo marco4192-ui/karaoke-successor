@@ -770,14 +770,14 @@ function parseUltraStarTxtContent(content: string, gap: number, bpm: number): Ly
     const startTime = gap + (note.startBeat * beatDuration);
     const duration = note.duration * beatDuration;
     
-    // Skip hyphen separators
+    // Skip hyphen separators - they indicate line breaks but should NOT be removed from text
     if (note.lyric === '-' || (note.lyric.trim() === '-' && note.lyric.length <= 2)) {
       if (currentLineNotes.length > 0) {
         const lineStartTime = currentLineNotes[0].startTime;
         const lineEndTime = currentLineNotes[currentLineNotes.length - 1].startTime + currentLineNotes[currentLineNotes.length - 1].duration;
+        // Keep the line text as-is, including trailing spaces
+        // Only remove leading whitespace for display
         let finalLineText = currentLineText.replace(/^\s+/, '');
-        if (finalLineText.endsWith(' -')) finalLineText = finalLineText.slice(0, -2);
-        else if (finalLineText.endsWith('-') && !finalLineText.endsWith('--')) finalLineText = finalLineText.slice(0, -1);
         
         if (finalLineText) {
           lyricLines.push({
@@ -824,9 +824,9 @@ function parseUltraStarTxtContent(content: string, gap: number, bpm: number): Ly
     if ((isLineBreak || i === sortedNotes.length - 1) && currentLineNotes.length > 0) {
       const lineStartTime = currentLineNotes[0].startTime;
       const lineEndTime = currentLineNotes[currentLineNotes.length - 1].startTime + currentLineNotes[currentLineNotes.length - 1].duration;
+      // Keep the line text as-is, including trailing spaces
+      // Only remove leading whitespace for display
       let finalLineText = currentLineText.replace(/^\s+/, '');
-      if (finalLineText.endsWith(' -')) finalLineText = finalLineText.slice(0, -2);
-      else if (finalLineText.endsWith('-') && !finalLineText.endsWith('--')) finalLineText = finalLineText.slice(0, -1);
       
       if (finalLineText) {
         lyricLines.push({
