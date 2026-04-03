@@ -516,6 +516,22 @@ export async function getAllSongsAsync(): Promise<Song[]> {
   const songs = getAllSongs();
   console.log('[SongLibrary] getAllSongsAsync called, songs count:', songs.length);
   
+  // Debug: Log first song's properties to verify baseFolder is stored
+  if (songs.length > 0) {
+    const firstSong = songs[0];
+    console.log('[SongLibrary] First song sample:', {
+      id: firstSong.id,
+      title: firstSong.title,
+      baseFolder: firstSong.baseFolder,
+      relativeAudioPath: firstSong.relativeAudioPath,
+      relativeVideoPath: firstSong.relativeVideoPath,
+      relativeCoverPath: firstSong.relativeCoverPath,
+      audioUrl: firstSong.audioUrl ? 'present' : 'missing',
+      videoBackground: firstSong.videoBackground ? 'present' : 'missing',
+      coverImage: firstSong.coverImage ? 'present' : 'missing',
+    });
+  }
+  
   if (isTauri()) {
     console.log('[SongLibrary] Running in Tauri mode, restoring URLs for songs with relative paths');
     // In Tauri, restore URLs for all songs that have relative paths with missing URLs

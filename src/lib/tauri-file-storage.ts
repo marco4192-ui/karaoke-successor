@@ -730,9 +730,12 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
 // Load a file from the filesystem and return a blob URL
 // This is the most reliable way to load media in Tauri v2 with dev server
 async function loadFileAsBlobUrl(fullPath: string): Promise<string | null> {
+  console.log('[TauriFS] loadFileAsBlobUrl called for:', fullPath);
+  
   try {
     // Read file as Uint8Array
     const fileData = await readFile(fullPath);
+    console.log('[TauriFS] File read successfully, size:', fileData.length);
     
     // Determine MIME type from extension
     const ext = '.' + fullPath.split('.').pop()?.toLowerCase();
@@ -745,7 +748,7 @@ async function loadFileAsBlobUrl(fullPath: string): Promise<string | null> {
     // Cache the URL
     blobUrlCache.set(fullPath, blobUrl);
     
-    console.log('[TauriFS] Created blob URL for:', fullPath, 'MIME:', mimeType, 'Size:', fileData.length);
+    console.log('[TauriFS] Created blob URL for:', fullPath, 'MIME:', mimeType, 'Size:', fileData.length, 'BlobURL:', blobUrl.substring(0, 50) + '...');
     return blobUrl;
   } catch (error) {
     console.error('[TauriFS] Failed to load file as blob:', fullPath, error);
