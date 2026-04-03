@@ -51,56 +51,7 @@ export function getCustomSongs(): Song[] {
   try {
     const stored = localStorage.getItem(CUSTOM_SONGS_KEY);
     if (stored) {
-      let songs = JSON.parse(stored);
-      
-      // MIGRATION 1: Fix songs with hasEmbeddedAudio but incorrectly set audioUrl
-      // If hasEmbeddedAudio is true and audioUrl is set, clear audioUrl
-      // This was a bug in earlier versions where the video URL was incorrectly
-      // assigned to audioUrl for videos with embedded audio
-      let needsSave = false;
-      songs = songs.map((song: Song) => {
-        if (song.hasEmbeddedAudio && song.audioUrl) {
-          needsSave = true;
-          return { ...song, audioUrl: undefined };
-        }
-        return song;
-      });
-      
-      // MIGRATION 2: Fix songs with missing baseFolder
-      // Try multiple sources for baseFolder:
-      // 1. localStorage 'karaoke-songs-folder'
-      // 2. folderPath if it looks like an absolute path
-      // 3. Any song that already has baseFolder (use that as reference)
-      const storedSongsFolder = localStorage.getItem('karaoke-songs-folder');
-      
-      // Find a song with a valid baseFolder to use as reference
-      const songWithBaseFolder = songs.find((s: Song) => s.baseFolder && s.baseFolder.length > 0);
-      const referenceBaseFolder = songWithBaseFolder?.baseFolder || storedSongsFolder;
-      
-      if (referenceBaseFolder) {
-        songs = songs.map((song: Song) => {
-          if (!song.baseFolder) {
-            console.log(`[SongLibrary] Migrating baseFolder for ${song.title}: ${referenceBaseFolder}`);
-            needsSave = true;
-            return { ...song, baseFolder: referenceBaseFolder };
-          }
-          return song;
-        });
-      } else {
-        // No reference baseFolder found - log warning
-        const songsMissingBaseFolder = songs.filter((s: Song) => !s.baseFolder).length;
-        if (songsMissingBaseFolder > 0) {
-          console.warn(`[SongLibrary] ${songsMissingBaseFolder} songs have no baseFolder and no reference found. User needs to re-scan songs folder.`);
-        }
-      }
-      
-      if (needsSave) {
-        try {
-          localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(songs));
-        } catch (e) {
-          console.error('[SongLibrary] Failed to save migrated songs:', e);
-        }
-      }
+      const songs = JSON.parse(stored);
       customSongsCache = songs;
       return customSongsCache || [];
     }
