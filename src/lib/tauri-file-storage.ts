@@ -90,6 +90,9 @@ export interface TauriScannedSong {
   previewDuration?: number;
   // Parsed lyrics (notes data)
   lyrics?: LyricLine[];
+  // NEW: Additional metadata from TXT headers
+  creator?: string;
+  hasEmbeddedAudio?: boolean; // True if #MP3: points to a video file
 }
 
 export interface TauriScanResult {
@@ -265,6 +268,12 @@ async function processFolder(
   let year: number | undefined;
   let previewStart: number | undefined;
   let previewDuration: number | undefined;
+  // NEW: Parse file references from TXT headers
+  let txtMp3File: string | undefined;
+  let txtVideoFile: string | undefined;
+  let txtCoverFile: string | undefined;
+  let txtBackgroundFile: string | undefined;
+  let creator: string | undefined;
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -286,10 +295,83 @@ async function processFolder(
       previewStart = parseFloat(trimmed.substring(13)) || undefined;
     } else if (trimmed.startsWith('#PREVIEWDURATION:')) {
       previewDuration = parseFloat(trimmed.substring(16)) || undefined;
+    } else if (trimmed.startsWith('#MP3:')) {
+      // NEW: Extract audio file reference from TXT header
+      txtMp3File = trimmed.substring(5).trim();
+    } else if (trimmed.startsWith('#VIDEO:')) {
+      // NEW: Extract video file reference from TXT header
+      txtVideoFile = trimmed.substring(7).trim();
+    } else if (trimmed.startsWith('#COVER:')) {
+      // NEW: Extract cover file reference from TXT header
+      txtCoverFile = trimmed.substring(7).trim();
+    } else if (trimmed.startsWith('#BACKGROUND:')) {
+      // NEW: Extract background file reference from TXT header
+      txtBackgroundFile = trimmed.substring(12).trim();
+    } else if (trimmed.startsWith('#CREATOR:')) {
+      creator = trimmed.substring(9).trim();
     }
   }
 
-  console.log(`[TauriScanner] Created song: ${artist} - ${title} (audio: ${!!audioFile}, video: ${!!videoFile})`);
+  // CRITICAL FIX: Use file paths from TXT headers as primary source
+  // The TXT file specifies the exact files to use - we should honor that
+  // The txtFile.path is relative to baseFolder, so we need to construct paths for referenced files
+  
+  // Get the folder containing the TXT file (relative to baseFolder)
+  const txtDir = txtFile.path.includes('/') ? txtFile.path.substring(0, txtFile.path.lastIndexOf('/')) : '';
+  
+  // Helper to resolve file reference from TXT header
+  const resolveTxtReference = (refFile: string | undefined, fallbackFile: { path: string } | null): string | undefined => {
+    if (refFile) {
+      // Reference from TXT - combine with TXT directory
+      // The reference is typically just a filename, relative to the TXT file location
+      const resolvedPath = txtDir ? `${txtDir}/${refFile}` : refFile;
+      console.log(`[TauriScanner] Resolved TXT reference: ${refFile} -> ${resolvedPath}`);
+      return resolvedPath;
+    }
+    // Fallback to scanned file
+    return fallbackFile?.path;
+  };
+
+  // Determine audio and video paths
+  // IMPORTANT: In UltraStar format, #MP3: can point to .mp4 files (video with embedded audio)
+  let finalAudioPath: string | undefined;
+  let finalVideoPath: string | undefined;
+  let hasEmbeddedAudio = false;
+  
+  // If #MP3: points to a video file, treat it as video with embedded audio
+  if (txtMp3File) {
+    const mp3Ext = '.' + txtMp3File.split('.').pop()?.toLowerCase();
+    if (VIDEO_EXTENSIONS.includes(mp3Ext)) {
+      // #MP3: points to a video file - this is the video with embedded audio
+      finalVideoPath = resolveTxtReference(txtMp3File, videoFile);
+      hasEmbeddedAudio = true;
+      console.log(`[TauriScanner] #MP3: points to video file: ${txtMp3File} -> hasEmbeddedAudio=true`);
+    } else {
+      // #MP3: points to an audio file
+      finalAudioPath = resolveTxtReference(txtMp3File, audioFile);
+    }
+  } else {
+    // No #MP3: in TXT, use scanned audio file
+    finalAudioPath = audioFile?.path;
+  }
+  
+  // If #VIDEO: is set, it overrides the video path (but #MP3: as video takes precedence for audio)
+  if (txtVideoFile && !hasEmbeddedAudio) {
+    finalVideoPath = resolveTxtReference(txtVideoFile, videoFile);
+  } else if (!finalVideoPath) {
+    finalVideoPath = videoFile?.path;
+  }
+  
+  // Resolve cover path
+  const finalCoverPath = resolveTxtReference(txtCoverFile, coverFile);
+
+  console.log(`[TauriScanner] Created song: ${artist} - ${title}`);
+  console.log(`[TauriScanner]   baseFolder: ${baseFolder}`);
+  console.log(`[TauriScanner]   TXT dir: ${txtDir || '(root)'}`);
+  console.log(`[TauriScanner]   audio: ${finalAudioPath || 'none'}`);
+  console.log(`[TauriScanner]   video: ${finalVideoPath || 'none'}`);
+  console.log(`[TauriScanner]   cover: ${finalCoverPath || 'none'}`);
+  console.log(`[TauriScanner]   hasEmbeddedAudio: ${hasEmbeddedAudio}`);
 
   // Parse lyrics from TXT content
   const lyrics = parseLyricsFromTxt(txtContent, bpm, gap);
@@ -300,9 +382,9 @@ async function processFolder(
     folderPath,
     baseFolder, // Store absolute path to songs root folder for media loading
     relativeTxtPath: txtFile.path,
-    relativeAudioPath: audioFile?.path,
-    relativeVideoPath: videoFile?.path,
-    relativeCoverPath: coverFile?.path,
+    relativeAudioPath: finalAudioPath,
+    relativeVideoPath: finalVideoPath,
+    relativeCoverPath: finalCoverPath,
     bpm,
     gap,
     genre,
@@ -311,6 +393,8 @@ async function processFolder(
     previewStart,
     previewDuration,
     lyrics,
+    creator,
+    hasEmbeddedAudio,
   };
 }
 

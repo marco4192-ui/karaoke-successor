@@ -397,10 +397,15 @@ function SettingsScreen() {
             let videoBackground: string | undefined = undefined;
             let coverImage: string | undefined = undefined;
             
+            // CRITICAL FIX: Use scanned.baseFolder for media URLs, not folderPath
+            // The scanned.baseFolder is set by the scanner and is the absolute path to the songs root
+            const effectiveBaseFolder = scanned.baseFolder || folderPath;
+            console.log(`[Import] Using baseFolder: ${effectiveBaseFolder} for ${scanned.title}`);
+            
             // Load audio URL
             if (scanned.relativeAudioPath) {
               try {
-                audioUrl = await getSongMediaUrl(scanned.relativeAudioPath, folderPath) || undefined;
+                audioUrl = await getSongMediaUrl(scanned.relativeAudioPath, effectiveBaseFolder) || undefined;
                 console.log(`[Import] Created audio URL for ${scanned.title}:`, audioUrl ? 'success' : 'failed');
               } catch (e) {
                 console.warn(`[Import] Failed to create audio URL for ${scanned.title}:`, e);
@@ -410,7 +415,7 @@ function SettingsScreen() {
             // Load video URL
             if (scanned.relativeVideoPath) {
               try {
-                videoBackground = await getSongMediaUrl(scanned.relativeVideoPath, folderPath) || undefined;
+                videoBackground = await getSongMediaUrl(scanned.relativeVideoPath, effectiveBaseFolder) || undefined;
                 console.log(`[Import] Created video URL for ${scanned.title}:`, videoBackground ? 'success' : 'failed');
               } catch (e) {
                 console.warn(`[Import] Failed to create video URL for ${scanned.title}:`, e);
@@ -420,7 +425,7 @@ function SettingsScreen() {
             // Load cover URL
             if (scanned.relativeCoverPath) {
               try {
-                coverImage = await getSongMediaUrl(scanned.relativeCoverPath, folderPath) || undefined;
+                coverImage = await getSongMediaUrl(scanned.relativeCoverPath, effectiveBaseFolder) || undefined;
                 console.log(`[Import] Created cover URL for ${scanned.title}:`, coverImage ? 'success' : 'failed');
               } catch (e) {
                 console.warn(`[Import] Failed to create cover URL for ${scanned.title}:`, e);
@@ -437,7 +442,7 @@ function SettingsScreen() {
               difficulty: 'medium',
               rating: 3,
               gap: scanned.gap,
-              baseFolder: scanned.baseFolder || folderPath, // Use scanned baseFolder or fall back to scan folder
+              baseFolder: effectiveBaseFolder, // Store the effective base folder
               folderPath: scanned.folderPath,
               relativeTxtPath: scanned.relativeTxtPath,
               relativeAudioPath: scanned.relativeAudioPath,
@@ -450,6 +455,7 @@ function SettingsScreen() {
               genre: scanned.genre,
               language: scanned.language,
               year: scanned.year,
+              creator: scanned.creator, // NEW: Pass creator from scanner
               preview: scanned.previewStart ? {
                 startTime: scanned.previewStart * 1000,
                 duration: (scanned.previewDuration || 15) * 1000,
@@ -458,7 +464,8 @@ function SettingsScreen() {
               lyrics: scanned.lyrics || [],
               storedTxt,
               storedMedia: false,
-              hasEmbeddedAudio: !scanned.relativeAudioPath && !!scanned.relativeVideoPath,
+              // CRITICAL FIX: Use hasEmbeddedAudio from scanner (it correctly detects when #MP3: points to video)
+              hasEmbeddedAudio: scanned.hasEmbeddedAudio ?? (!scanned.relativeAudioPath && !!scanned.relativeVideoPath),
               dateAdded: Date.now(),
             };
             
