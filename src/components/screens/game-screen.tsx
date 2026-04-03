@@ -153,9 +153,12 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     }
     
     // Check if URLs need to be restored (Tauri songs with relative paths but no URLs)
+    // Restore if ANY media URL is missing (not just when ALL are missing)
     const needsUrlRestore = typeof window !== 'undefined' && '__TAURI__' in window &&
       (song.relativeAudioPath || song.relativeVideoPath || song.relativeCoverPath) &&
-      (!song.audioUrl && !song.videoBackground);
+      ((song.relativeAudioPath && !song.audioUrl) ||
+       (song.relativeVideoPath && !song.videoBackground) ||
+       (song.relativeCoverPath && !song.coverImage));
     
     if (needsUrlRestore) {
       console.log('[GameScreen] Restoring URLs for song:', song.title);
@@ -178,7 +181,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     } else {
       setRestoredSong(song);
     }
-  }, [song?.id, song?.audioUrl, song?.videoBackground, song?.relativeAudioPath, song?.relativeVideoPath]);
+  }, [song?.id, song?.audioUrl, song?.videoBackground, song?.coverImage, song?.relativeAudioPath, song?.relativeVideoPath, song?.relativeCoverPath]);
   
   // Use restored song if available, otherwise use original song
   const effectiveSongBase = restoredSong || song;
