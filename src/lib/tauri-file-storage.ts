@@ -7,8 +7,11 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 import { LyricLine, Note, midiToFrequency } from '@/types/game';
 
 // Check if running in Tauri
+// Tauri v2 may use __TAURI_INTERNALS__ instead of __TAURI__
 export function isTauri(): boolean {
-  return typeof window !== 'undefined' && '__TAURI__' in window;
+  if (typeof window === 'undefined') return false;
+  // Check for both Tauri v1 and v2
+  return '__TAURI__' in window || '__TAURI_INTERNALS__' in window;
 }
 
 // Dynamic import for Tauri APIs
