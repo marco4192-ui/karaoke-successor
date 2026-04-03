@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Song, Difficulty, GameMode } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
-import { getAllSongs, getAllSongsAsync, restoreSongUrls, getSongByIdWithLyrics } from '@/lib/game/song-library';
+import { getAllSongs, getAllSongsAsync, restoreSongUrls, getSongByIdWithLyrics, ensureSongUrls } from '@/lib/game/song-library';
 import { 
   getPlaylists, 
   createPlaylist, 
@@ -800,31 +800,16 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
     }
     
     // CRITICAL: Ensure the song has valid media URLs before passing to game screen
-    // This is necessary because blob URLs don't persist across app restarts
-    let songWithUrls = songWithLyrics;
+    // Use ensureSongUrls which handles Tauri URL restoration automatically
+    const songWithUrls = await ensureSongUrls(songWithLyrics);
     
-    // Check if any URLs need to be restored (audio, video, or cover)
-    const needsUrlRestore = 
-      (selectedSong.relativeAudioPath && !songWithLyrics.audioUrl) ||
-      (selectedSong.relativeVideoPath && !songWithLyrics.videoBackground) ||
-      (selectedSong.relativeCoverPath && !songWithLyrics.coverImage);
-    
-    if (needsUrlRestore) {
-      console.log('[LibraryScreen] Restoring URLs for song:', selectedSong.title, {
-        hasAudio: !!songWithLyrics.audioUrl,
-        hasVideo: !!songWithLyrics.videoBackground,
-        hasCover: !!songWithLyrics.coverImage,
-        relAudio: selectedSong.relativeAudioPath,
-        relVideo: selectedSong.relativeVideoPath,
-        relCover: selectedSong.relativeCoverPath,
-      });
-      songWithUrls = await restoreSongUrls(songWithLyrics);
-      console.log('[LibraryScreen] URLs restored:', {
-        audioUrl: !!songWithUrls.audioUrl,
-        videoBackground: !!songWithUrls.videoBackground,
-        coverImage: !!songWithUrls.coverImage,
-      });
-    }
+    console.log('[LibraryScreen] Song prepared for game:', {
+      title: songWithUrls.title,
+      hasAudio: !!songWithUrls.audioUrl,
+      hasVideo: !!songWithUrls.videoBackground,
+      hasCover: !!songWithUrls.coverImage,
+      hasLyrics: !!(songWithUrls.lyrics && songWithUrls.lyrics.length > 0),
+    });
     
     // Check if player selection is required (multiple active profiles)
     const activeProfiles = profiles.filter(p => p.isActive !== false);

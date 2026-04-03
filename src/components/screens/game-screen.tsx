@@ -152,35 +152,25 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       return;
     }
     
-    // Check if URLs need to be restored (Tauri songs with relative paths but no URLs)
-    // Restore if ANY media URL is missing (not just when ALL are missing)
-    const needsUrlRestore = typeof window !== 'undefined' && '__TAURI__' in window &&
-      (song.relativeAudioPath || song.relativeVideoPath || song.relativeCoverPath) &&
-      ((song.relativeAudioPath && !song.audioUrl) ||
-       (song.relativeVideoPath && !song.videoBackground) ||
-       (song.relativeCoverPath && !song.coverImage));
-    
-    if (needsUrlRestore) {
-      console.log('[GameScreen] Restoring URLs for song:', song.title);
-      import('@/lib/game/song-library').then(({ restoreSongUrls }) => {
-        restoreSongUrls(song).then(restored => {
-          console.log('[GameScreen] URLs restored:', {
-            audioUrl: !!restored.audioUrl,
-            videoBackground: !!restored.videoBackground,
-            coverImage: !!restored.coverImage
-          });
-          setRestoredSong(restored);
-        }).catch(err => {
-          console.error('[GameScreen] Error restoring URLs:', err);
-          setRestoredSong(song);
+    // Use ensureSongUrls to handle URL restoration
+    const restoreUrls = async () => {
+      try {
+        const { ensureSongUrls } = await import('@/lib/game/song-library');
+        const preparedSong = await ensureSongUrls(song);
+        console.log('[GameScreen] Song URLs ensured:', {
+          title: preparedSong.title,
+          audioUrl: !!preparedSong.audioUrl,
+          videoBackground: !!preparedSong.videoBackground,
+          coverImage: !!preparedSong.coverImage
         });
-      }).catch(err => {
-        console.error('[GameScreen] Error importing restoreSongUrls:', err);
+        setRestoredSong(preparedSong);
+      } catch (err) {
+        console.error('[GameScreen] Error ensuring URLs:', err);
         setRestoredSong(song);
-      });
-    } else {
-      setRestoredSong(song);
-    }
+      }
+    };
+    
+    restoreUrls();
   }, [song?.id, song?.audioUrl, song?.videoBackground, song?.coverImage, song?.relativeAudioPath, song?.relativeVideoPath, song?.relativeCoverPath]);
   
   // Use restored song if available, otherwise use original song

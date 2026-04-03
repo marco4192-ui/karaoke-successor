@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { getAllSongsAsync } from '@/lib/game/song-library';
+import { getAllSongsAsync, ensureSongUrls } from '@/lib/game/song-library';
 import { YouTubePlayer, extractYouTubeId } from '@/components/game/youtube-player';
 import { Song } from '@/types/game';
 
@@ -101,7 +101,7 @@ export function JukeboxScreen() {
   }, [songs, filterGenre, filterArtist, searchQuery]);
   
   // Generate playlist
-  const generatePlaylist = useCallback(() => {
+  const generatePlaylist = useCallback(async () => {
     if (filteredSongs.length === 0) return;
     
     let newPlaylist = [...filteredSongs];
@@ -112,13 +112,21 @@ export function JukeboxScreen() {
         [newPlaylist[i], newPlaylist[j]] = [newPlaylist[j], newPlaylist[i]];
       }
     }
+    
+    // Ensure the first song has valid URLs before playing
+    const firstSong = newPlaylist[0];
+    if (firstSong) {
+      const preparedSong = await ensureSongUrls(firstSong);
+      newPlaylist = [preparedSong, ...newPlaylist.slice(1)];
+    }
+    
     setPlaylist(newPlaylist);
     setCurrentIndex(0);
     setCurrentSong(newPlaylist[0] || null);
   }, [filteredSongs, shuffle]);
   
   // Play next song
-  const playNext = useCallback(() => {
+  const playNext = useCallback(async () => {
     if (playlist.length === 0) return;
     
     let nextIndex = currentIndex + 1;
@@ -132,12 +140,16 @@ export function JukeboxScreen() {
       }
     }
     
+    // Ensure the next song has valid URLs
+    const nextSong = playlist[nextIndex];
+    const preparedSong = await ensureSongUrls(nextSong);
+    
     setCurrentIndex(nextIndex);
-    setCurrentSong(playlist[nextIndex]);
+    setCurrentSong(preparedSong);
   }, [playlist, currentIndex, repeat]);
   
   // Play previous song
-  const playPrevious = useCallback(() => {
+  const playPrevious = useCallback(async () => {
     if (playlist.length === 0) return;
     
     let prevIndex = currentIndex - 1;
@@ -145,8 +157,12 @@ export function JukeboxScreen() {
       prevIndex = playlist.length - 1;
     }
     
+    // Ensure the previous song has valid URLs
+    const prevSong = playlist[prevIndex];
+    const preparedSong = await ensureSongUrls(prevSong);
+    
     setCurrentIndex(prevIndex);
-    setCurrentSong(playlist[prevIndex]);
+    setCurrentSong(preparedSong);
   }, [playlist, currentIndex]);
   
   // Handle video end
@@ -641,11 +657,13 @@ export function JukeboxScreen() {
                     {upNext.map((song, index) => (
                       <button
                         key={song.id}
-                        onClick={() => {
+                        onClick={async () => {
                           const songIndex = playlist.findIndex(s => s.id === song.id);
                           if (songIndex !== -1) {
+                            // Ensure the song has valid URLs before playing
+                            const preparedSong = await ensureSongUrls(playlist[songIndex]);
                             setCurrentIndex(songIndex);
-                            setCurrentSong(playlist[songIndex]);
+                            setCurrentSong(preparedSong);
                           }
                         }}
                         className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-white/10 transition-colors text-left"
