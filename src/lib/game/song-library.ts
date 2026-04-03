@@ -53,7 +53,7 @@ export function getCustomSongs(): Song[] {
     if (stored) {
       let songs = JSON.parse(stored);
       
-      // MIGRATION: Fix songs with hasEmbeddedAudio but incorrectly set audioUrl
+      // MIGRATION 1: Fix songs with hasEmbeddedAudio but incorrectly set audioUrl
       // If hasEmbeddedAudio is true and audioUrl is set, clear audioUrl
       // This was a bug in earlier versions where the video URL was incorrectly
       // assigned to audioUrl for videos with embedded audio
@@ -65,6 +65,21 @@ export function getCustomSongs(): Song[] {
         }
         return song;
       });
+      
+      // MIGRATION 2: Fix songs with missing baseFolder
+      // If localStorage 'karaoke-songs-folder' is set and song has no baseFolder,
+      // use the localStorage value as baseFolder
+      const storedSongsFolder = localStorage.getItem('karaoke-songs-folder');
+      if (storedSongsFolder) {
+        songs = songs.map((song: Song) => {
+          if (!song.baseFolder && song.relativeTxtPath) {
+            console.log(`[SongLibrary] Migrating baseFolder for ${song.title}: ${storedSongsFolder}`);
+            needsSave = true;
+            return { ...song, baseFolder: storedSongsFolder };
+          }
+          return song;
+        });
+      }
       
       if (needsSave) {
         try {
