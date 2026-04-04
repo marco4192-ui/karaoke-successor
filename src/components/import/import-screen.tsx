@@ -519,6 +519,17 @@ export function ImportScreen({ onImport, onCancel }: ImportScreenProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Tauri Warning */}
+              {typeof window !== 'undefined' && (window as any).__TAURI__ && (
+                <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                  <p className="text-yellow-400 text-sm font-medium">⚠️ For Tauri Desktop App</p>
+                  <p className="text-yellow-300/80 text-xs mt-1">
+                    For best results, use <strong>Settings → Library → Songs Base Folder</strong> instead. 
+                    This ensures proper file paths for media loading after app restart.
+                  </p>
+                </div>
+              )}
+              
               <div className="text-center py-8">
                 <p className="text-white/60 mb-4">
                   Each subfolder should contain song files (audio, video, txt, cover)
