@@ -164,6 +164,11 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   const p3NoteProgressRef = useRef<Map<string, NoteProgress>>(new Map());
   const p4NoteProgressRef = useRef<Map<string, NoteProgress>>(new Map());
 
+  // Ref to always have the latest players array — prevents stale closure issues
+  // when checkNoteHits is called from requestAnimationFrame
+  const playersRef = useRef(players);
+  playersRef.current = players;
+
   // Reset scoring state
   const resetScoring = useCallback(() => {
     setScoreEvents([]);
@@ -328,7 +333,8 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       const difficultySettings = DIFFICULTY_SETTINGS[difficulty];
       if (!song || !pitch.frequency || pitch.note === null || pitch.volume < difficultySettings.volumeThreshold) return;
 
-      const activePlayer = players[0];
+      // Use playersRef to avoid stale closure — always get the latest player state
+      const activePlayer = playersRef.current[0];
       if (!activePlayer) return;
 
       // In duet/party mode, only check P1 notes
@@ -483,7 +489,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         }
       }
     },
-    [song, difficulty, players, updatePlayer, timingData, isDuetMode, isPartyMode, beatDuration, onPerfectHit, onGoldenNote, onComboMilestone]
+    [song, difficulty, updatePlayer, timingData, isDuetMode, isPartyMode, beatDuration, onPerfectHit, onGoldenNote, onComboMilestone]
   );
 
   // Check P2 notes (duet/party mode)
