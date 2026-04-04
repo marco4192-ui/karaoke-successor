@@ -152,7 +152,7 @@ export function SinglePlayerLyrics({
             playerColor={playerColor}
             noteDisplayStyle={noteDisplayStyle}
             notePerformance={notePerformance}
-            gameMode={gameMode}
+            gameMode={gameMode as any}
             missingWordsIndices={missingWordsIndices}
             isBlindSection={isBlindSection}
           />
