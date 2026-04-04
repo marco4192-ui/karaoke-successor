@@ -9,7 +9,6 @@ import { useGameStore } from '@/lib/game/store';
 import { LyricLine, Note, PLAYER_COLORS } from '@/types/game';
 import { PRACTICE_MODE_DEFAULTS, PracticeModeConfig } from '@/lib/game/practice-mode';
 import { AudioEffectsEngine } from '@/lib/audio/audio-effects';
-import { MusicReactiveBackground } from '@/components/game/music-reactive-background';
 import { CHALLENGE_MODES } from '@/lib/game/player-progression';
 import { 
   WebcamBackground, 
@@ -19,7 +18,7 @@ import {
   loadWebcamConfig,
   saveWebcamConfig,
 } from '@/components/game/webcam-background';
-import { YouTubePlayer, extractYouTubeId } from '@/components/game/youtube-player';
+import { extractYouTubeId } from '@/components/game/youtube-player';
 import LyricLineDisplay from '@/components/game/lyric-line-display';
 import {
   calculateScoringMetadata,
@@ -40,11 +39,11 @@ import { ProminentScoreDisplay } from '@/components/game/prominent-score-display
 import {
   ParticleSystem,
   useParticleEmitter,
-  AnimatedBackground as VisualAnimatedBackground,
   ComboFireEffect,
   useSongEnergy
 } from '@/components/game/visual-effects';
 import { SpectrogramDisplay } from '@/components/game/spectrogram-display';
+import { GameBackground } from '@/components/game/game-background';
 import { DuetNoteHighway } from '@/components/game/duet-note-highway';
 import { NoteHighway } from '@/components/game/note-highway';
 import { SinglePlayerLyrics } from '@/components/game/single-player-lyrics';
@@ -754,98 +753,25 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
 
       {/* Game Area - Full Screen */}
       <div className="absolute inset-0 overflow-hidden">
-        {/* Video Background */}
-        {/* YouTube Video - plays with audio when no separate audio file exists */}
-        {/* When showBackgroundVideo is true: show video AND play audio from YouTube if no audioUrl */}
-        {/* When showBackgroundVideo is false but useYouTubeAudio: still play audio from hidden YouTube */}
-        {showBackgroundVideo && isYouTube && youtubeVideoId ? (
-          <YouTubePlayer
-            videoId={youtubeVideoId}
-            videoGap={effectiveSong?.videoGap || 0}
-            onReady={() => {}}
-            onTimeUpdate={(time) => setYoutubeTime(time)}
-            onEnded={endGameAndCleanup}
-            onAdStart={handleAdStart}
-            onAdEnd={handleAdEnd}
-            isPlaying={isPlaying}
-            startTime={0}
-            interactive={isAdPlaying}
-          />
-        ) : /* Hidden YouTube for audio only (video disabled but using YouTube audio) */
-        !showBackgroundVideo && isYouTube && youtubeVideoId && useYouTubeAudio ? (
-          /* Hidden YouTube player - we need to play it but not show it */
-          <div className="hidden">
-            <YouTubePlayer
-              videoId={youtubeVideoId}
-              videoGap={effectiveSong?.videoGap || 0}
-              onReady={() => {}}
-              onTimeUpdate={(time) => setYoutubeTime(time)}
-              onEnded={endGameAndCleanup}
-              onAdStart={handleAdStart}
-              onAdEnd={handleAdEnd}
-              isPlaying={isPlaying}
-              startTime={0}
-            />
-          </div>
-        ) : /* Local video file - separate audio (video muted, audio plays separately) */
-        showBackgroundVideo && effectiveSong?.videoBackground && !effectiveSong?.hasEmbeddedAudio && !isYouTube ? (
-          <video
-            key={`video-bg-${effectiveSong?.id}`}
-            ref={videoRef}
-            src={effectiveSong.videoBackground}
-            className="absolute inset-0 w-full h-full object-cover"
-            muted={true}
-            playsInline
-            autoPlay={false}
-            preload="auto"
-            onEnded={endGameAndCleanup}
-          />
-        ) : /* Video with embedded audio - visible AND plays audio */
-        showBackgroundVideo && effectiveSong?.videoBackground && effectiveSong?.hasEmbeddedAudio && !isYouTube ? (
-          <video
-            key={`video-embedded-${effectiveSong?.id}`}
-            ref={videoRef}
-            src={effectiveSong.videoBackground}
-            className="absolute inset-0 w-full h-full object-cover"
-            muted={false}
-            playsInline
-            autoPlay={false}
-            preload="auto"
-            onEnded={endGameAndCleanup}
-            onLoadedMetadata={() => {}}
-            onCanPlay={() => {
-              videoLoadedRef.current = true;
-            }}
-          />
-        ) : /* Background image from #BACKGROUND: or #COVER: tag */
-        showBackgroundVideo && !useAnimatedBackground && (effectiveSong?.backgroundImage || effectiveSong?.coverImage) ? (
-          <div 
-            className="absolute inset-0 w-full h-full bg-cover bg-center"
-            style={{
-              backgroundImage: `url(${effectiveSong?.backgroundImage || effectiveSong?.coverImage})`,
-            }}
-          >
-            {/* Dark overlay for better note visibility */}
-            <div className="absolute inset-0 bg-black/40" />
-          </div>
-        ) : /* Visual effects animated background with disco lights and particles */
-        useAnimatedBackground ? (
-          <VisualAnimatedBackground 
-            hasVideo={false}
-            hasBackgroundImage={!!effectiveSong?.backgroundImage || !!effectiveSong?.coverImage}
-            backgroundImage={effectiveSong?.backgroundImage || effectiveSong?.coverImage}
-            songEnergy={songEnergy}
-            isPlaying={isPlaying}
-          />
-        ) : /* Music-reactive animated background */
-        (
-          <MusicReactiveBackground 
-            volume={volume} 
-            isPlaying={isPlaying} 
-            bpm={effectiveSong?.bpm}
-            intensity={1}
-          />
-        )}
+        {/* Background layer — YouTube, local video, image, or animated */}
+        <GameBackground
+          effectiveSong={effectiveSong}
+          showBackgroundVideo={showBackgroundVideo}
+          useAnimatedBackground={useAnimatedBackground}
+          isYouTube={isYouTube}
+          youtubeVideoId={youtubeVideoId}
+          useYouTubeAudio={useYouTubeAudio}
+          isPlaying={isPlaying}
+          isAdPlaying={isAdPlaying}
+          songEnergy={songEnergy}
+          volume={volume}
+          videoRef={videoRef}
+          onYoutubeTimeUpdate={setYoutubeTime}
+          onAdStart={handleAdStart}
+          onAdEnd={handleAdEnd}
+          onVideoEnded={endGameAndCleanup}
+          onVideoCanPlay={() => { videoLoadedRef.current = true; }}
+        />
 
         {/* Webcam Background - SEPARATE camera for filming singers */}
         <WebcamBackground 
