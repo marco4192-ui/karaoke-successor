@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useNoteScoring } from '@/hooks/use-note-scoring';
 import { useGameSettings } from '@/hooks/use-game-settings';
@@ -28,6 +27,11 @@ import {
 import {
   calculatePitchStats,
   PitchStats,
+  SING_LINE_POSITION,
+  NOTE_WINDOW,
+  VISIBLE_TOP,
+  VISIBLE_RANGE,
+  getVisibleNotes,
 } from '@/lib/game/note-utils';
 import { ScoreEventsDisplay } from '@/components/game/score-events-display';
 import { PitchGraphDisplay } from '@/components/game/pitch-graph-display';
@@ -518,18 +522,9 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     }
   }, [isAdPlaying, adCountdown]);
   
-  // Sing line position at 25% from left (like UltraStar/Vocaluxe)
-  const SING_LINE_POSITION = 25; // percentage from left
-  
-  // Fixed time window for note display (in milliseconds)
-  // This ensures consistent scrolling speed regardless of BPM
-  // 4 seconds = 4000ms window for upcoming notes
-  const NOTE_WINDOW = 4000; // Fixed 4 second window
-  
   // NOTE: timingData and beatDuration are now defined EARLIER in the file (before useNoteScoring hook)
   
   // Calculate pitch range dynamically from pre-computed notes
-  // Uses utility function for consistent pitch range calculation
   const pitchStats = useMemo<PitchStats>(() => {
     return calculatePitchStats(timingData?.allNotes);
   }, [timingData]);
@@ -576,11 +571,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     missingWordsGeneratedRef.current = false;
   }, [song?.id]);
 
-  // Vertical pitch display constants (percentage of screen)
-  // Leave 8% padding at top (for header) and 15% at bottom (for lyrics)
-  const VISIBLE_TOP = 8; // percentage from top
-  const VISIBLE_BOTTOM = 85; // percentage from bottom
-  const VISIBLE_RANGE = VISIBLE_BOTTOM - VISIBLE_TOP;
+  // Vertical pitch display constants are now imported from note-utils.tsx (SING_LINE_POSITION, NOTE_WINDOW, VISIBLE_TOP, VISIBLE_RANGE)
 
   // (mediaLoaded, audioLoadedRef, videoLoadedRef, media loading effect moved to useGameMedia hook)
 
@@ -629,117 +620,23 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
 
   // (game init, generateResults, endGameAndCleanup, cleanup, and game loop effects moved to useGameLoop hook)
 
-  // Get upcoming notes - OPTIMIZED with pre-computed data
-  const visibleNotes = useMemo(() => {
-    if (!timingData) return [];
-    const currentTime = gameState.currentTime;
-    const windowStart = currentTime - 1000;
-    const windowEnd = currentTime + NOTE_WINDOW;
-    
-    // Use the the pre-sorted notes array for efficient filtering
-    const notes = timingData.allNotes;
-    const result: Array<Note & { lineIndex: number; line: LyricLine }> = [];
-    
-    // Binary search to find starting point
-    let startIdx = 0;
-    let endIdx = notes.length - 1;
-    let midIdx: number;
-    
-    // Find first note that could be visible
-    while (startIdx <= endIdx) {
-      midIdx = Math.floor((startIdx + endIdx) / 2);
-      if (notes[midIdx].startTime < windowStart) {
-        startIdx = midIdx + 1;
-      } else {
-        endIdx = midIdx - 1;
-      }
-    }
-    
-    // Collect visible notes from starting point
-    for (let i = startIdx; i < notes.length; i++) {
-      const note = notes[i];
-      const noteEnd = note.startTime + note.duration;
-      
-      if (note.startTime > windowEnd) break; // No more visible notes
-      if (noteEnd >= windowStart) {
-        result.push({ ...note, line: note.line });
-      }
-    }
-    
-    return result;
-  }, [gameState.currentTime, timingData, NOTE_WINDOW]);
-  
-  // Get upcoming notes for P1 (duet mode)
-  const p1VisibleNotes = useMemo(() => {
-    if (!timingData || !timingData.p1Notes) return [];
-    const currentTime = gameState.currentTime;
-    const windowStart = currentTime - 1000;
-    const windowEnd = currentTime + NOTE_WINDOW;
-    
-    const notes = timingData.p1Notes;
-    const result: Array<Note & { lineIndex: number; line: LyricLine }> = [];
-    
-    let startIdx = 0;
-    let endIdx = notes.length - 1;
-    let midIdx: number;
-    
-    while (startIdx <= endIdx) {
-      midIdx = Math.floor((startIdx + endIdx) / 2);
-      if (notes[midIdx].startTime < windowStart) {
-        startIdx = midIdx + 1;
-      } else {
-        endIdx = midIdx - 1;
-      }
-    }
-    
-    for (let i = startIdx; i < notes.length; i++) {
-      const note = notes[i];
-      const noteEnd = note.startTime + note.duration;
-      
-      if (note.startTime > windowEnd) break;
-      if (noteEnd >= windowStart) {
-        result.push({ ...note, line: note.line });
-      }
-    }
-    
-    return result;
-  }, [gameState.currentTime, timingData, NOTE_WINDOW]);
-  
-  // Get upcoming notes for P2 (duet mode)
-  const p2VisibleNotes = useMemo(() => {
-    if (!timingData || !timingData.p2Notes) return [];
-    const currentTime = gameState.currentTime;
-    const windowStart = currentTime - 1000;
-    const windowEnd = currentTime + NOTE_WINDOW;
-    
-    const notes = timingData.p2Notes;
-    const result: Array<Note & { lineIndex: number; line: LyricLine }> = [];
-    
-    let startIdx = 0;
-    let endIdx = notes.length - 1;
-    let midIdx: number;
-    
-    while (startIdx <= endIdx) {
-      midIdx = Math.floor((startIdx + endIdx) / 2);
-      if (notes[midIdx].startTime < windowStart) {
-        startIdx = midIdx + 1;
-      } else {
-        endIdx = midIdx - 1;
-      }
-    }
-    
-    for (let i = startIdx; i < notes.length; i++) {
-      const note = notes[i];
-      const noteEnd = note.startTime + note.duration;
-      
-      if (note.startTime > windowEnd) break;
-      if (noteEnd >= windowStart) {
-        result.push({ ...note, line: note.line });
-      }
-    }
-    
-    return result;
-  }, [gameState.currentTime, timingData, NOTE_WINDOW]);
+  // Get visible notes using shared utility (eliminates code duplication)
+  const visibleNotes = useMemo(() =>
+    getVisibleNotes(timingData?.allNotes, gameState.currentTime, NOTE_WINDOW),
+    [gameState.currentTime, timingData]
+  );
+
+  // Get visible notes for P1 (duet mode)
+  const p1VisibleNotes = useMemo(() =>
+    getVisibleNotes(timingData?.p1Notes, gameState.currentTime, NOTE_WINDOW),
+    [gameState.currentTime, timingData]
+  );
+
+  // Get visible notes for P2 (duet mode)
+  const p2VisibleNotes = useMemo(() =>
+    getVisibleNotes(timingData?.p2Notes, gameState.currentTime, NOTE_WINDOW),
+    [gameState.currentTime, timingData]
+  );
 
   if (!song) {
     return (

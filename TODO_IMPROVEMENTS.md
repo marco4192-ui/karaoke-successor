@@ -71,6 +71,54 @@ Letztes Update: 2026-04-05
 
 ---
 
+## CODE-REVIEW RUND 3 (2026-04-05) — Re-Audit + Dateigrößen-Reduzierung
+
+### 🔧 Code-Qualität & Aufräumen
+
+- [ ] **#37** `game-screen.tsx` — Dreifache visibleNotes Code-Duplikation
+  - Die drei useMemo-Hooks `visibleNotes`, `p1VisibleNotes`, `p2VisibleNotes` (Zeilen 633-742) haben identische Binary-Search-Logik
+  - Fix: Gemeinsame Utility-Funktion `getVisibleNotes()` erstellen und wiederverwenden
+  - Erwartete Reduzierung: ~70 Zeilen
+
+- [ ] **#38** `game-screen.tsx` — Konstanten innerhalb der Component-Funktion
+  - `SING_LINE_POSITION`, `NOTE_WINDOW`, `VISIBLE_TOP`, `VISIBLE_BOTTOM`, `VISIBLE_RANGE` werden bei jedem Render neu erstellt
+  - Fix: Als `const` außerhalb der Komponente definieren
+
+- [ ] **#39** `game-screen.tsx` — Unused Import `Badge`
+  - `Badge` wird importiert (Zeile 5) aber nie verwendet
+  - Fix: Import entfernen
+
+- [ ] **#42** `use-multi-pitch-detector.ts` — Unused Import `resetPitchDetectorManager`
+  - Wird importiert (Zeile 7) aber nie im File benutzt
+  - Fix: Import entfernen
+
+### 🏗️ Dateigrößen-Reduzierung durch Auslagerung
+
+- [ ] **#40** `game-screen.tsx` (1142 Zeilen) — Video-Background Sektion auslagern
+  - Die Video-Background-Rendering-Logik (Zeilen 858-951) ist ~95 Zeilen lang mit komplexer Verschachtelung
+  - Fix: In `GameBackground.tsx` Component auslagern
+  - Erwartete Reduzierung: ~80 Zeilen
+
+- [ ] **#43** `settings-screen.tsx` (1848 Zeilen) — Größte Datei, dringend aufteilen
+  - Fix: Tabs in separate Components auslagern (MicrophoneTab, LibraryTab, EditorTab, AIAssetsTab, etc.)
+  - Erwartete Reduzierung: Ziel < 400 Zeilen
+
+- [ ] **#44** `results-screen.tsx` (1319 Zeilen) — Aufteilen
+  - Fix: Score-Zusammenfassung, Statistik-Details, Action-Buttons in eigene Components
+  - Erwartete Reduzierung: Ziel < 500 Zeilen
+
+- [ ] **#45** `page.tsx` (749 Zeilen) — Weiter reduzieren
+  - Fix: Song-Auswahl, Party-Modus-Setup, Screen-Navigation in eigene Hooks/Components
+  - Erwartete Reduzierung: Ziel < 500 Zeilen
+
+### 🛡️ Sicherheit & Guards
+
+- [ ] **#41** `library-cache.ts` — Fehlender typeof window Guard
+  - Fix #18 sollte SSR-Guards in 5 Dateien hinzufügen, aber `library-cache.ts` hat keinen Guard
+  - Fix: `typeof window === 'undefined'` Guard hinzufügen
+
+---
+
 ## ERWEITERUNGSIDEEN (für später)
 
 - [ ] **A.1** useNoteScoring in Web Worker auslagern

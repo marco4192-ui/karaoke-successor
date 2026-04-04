@@ -1,4 +1,5 @@
 import React from 'react';
+import { Note, LyricLine } from '@/types/game';
 
 // Note shape style type
 export type NoteShapeStyle = 'rounded' | 'sharp' | 'pill' | 'diamond';
@@ -254,4 +255,58 @@ export function calculatePitchStats(
     maxPitch: paddedMax,
     pitchRange: Math.max(12, paddedMax - paddedMin), // At least 1 octave
   };
+}
+
+// Game display constants — defined once, outside any component
+export const SING_LINE_POSITION = 25; // percentage from left (like UltraStar/Vocaluxe)
+export const NOTE_WINDOW = 4000; // Fixed 4 second window for upcoming notes
+export const VISIBLE_TOP = 8; // percentage from top (padding for header)
+export const VISIBLE_BOTTOM = 85; // percentage from bottom (padding for lyrics)
+export const VISIBLE_RANGE = VISIBLE_BOTTOM - VISIBLE_TOP;
+
+/**
+ * Get visible notes within a time window using binary search.
+ * Extracted from game-screen.tsx to eliminate triple code duplication.
+ *
+ * @param notes - Pre-sorted array of notes (sorted by startTime)
+ * @param currentTime - Current playback time in ms
+ * @param noteWindow - Time window in ms to look ahead
+ * @returns Filtered array of notes visible in the current window
+ */
+export function getVisibleNotes(
+  notes: Array<Note & { lineIndex: number; line: LyricLine }> | undefined | null,
+  currentTime: number,
+  noteWindow: number
+): Array<Note & { lineIndex: number; line: LyricLine }> {
+  if (!notes || notes.length === 0) return [];
+
+  const windowStart = currentTime - 1000;
+  const windowEnd = currentTime + noteWindow;
+  const result: Array<Note & { lineIndex: number; line: LyricLine }> = [];
+
+  // Binary search to find the first note that could be visible
+  let startIdx = 0;
+  let endIdx = notes.length - 1;
+
+  while (startIdx <= endIdx) {
+    const midIdx = Math.floor((startIdx + endIdx) / 2);
+    if (notes[midIdx].startTime < windowStart) {
+      startIdx = midIdx + 1;
+    } else {
+      endIdx = midIdx - 1;
+    }
+  }
+
+  // Collect visible notes from the starting point
+  for (let i = startIdx; i < notes.length; i++) {
+    const note = notes[i];
+    const noteEnd = note.startTime + note.duration;
+
+    if (note.startTime > windowEnd) break;
+    if (noteEnd >= windowStart) {
+      result.push({ ...note, line: note.line });
+    }
+  }
+
+  return result;
 }
