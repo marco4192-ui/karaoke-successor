@@ -803,6 +803,58 @@ function SettingsScreen() {
       {/* Library Tab */}
       {activeTab === 'library' && (
         <div className="space-y-6">
+          {/* Songs Base Folder */}
+          <Card className="bg-white/5 border-white/10">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 theme-adaptive-text">
+                <FolderIcon className="w-5 h-5 text-cyan-400" />
+                Songs Base Folder
+              </CardTitle>
+              <CardDescription>
+                All songs are imported from this folder. Each subfolder contains one song.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Input
+                  value={songsFolder}
+                  onChange={(e) => setSongsFolder(e.target.value)}
+                  placeholder="C:/Karaoke Successor/Songs"
+                  className="bg-white/5 border-white/10 text-white flex-1"
+                />
+                <Button
+                  onClick={handleBrowseFolder}
+                  disabled={isScanning}
+                  variant="outline"
+                  className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
+                >
+                  Browse
+                </Button>
+              </div>
+              {songsFolder && (
+                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 flex items-center gap-3">
+                  <svg className="w-5 h-5 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                  <div>
+                    <p className="text-green-400 font-medium">Base Folder: {songsFolder}</p>
+                    <p className="text-sm text-white/60">All songs will use this as the base path for media files</p>
+                  </div>
+                </div>
+              )}
+              {!songsFolder && (
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 flex items-center gap-3">
+                  <svg className="w-5 h-5 text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                  <p className="text-yellow-400">No base folder set. Please select a songs folder to import songs.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
           {/* Library Stats */}
           <Card className="bg-white/5 border-white/10">
             <CardHeader>
