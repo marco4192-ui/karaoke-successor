@@ -23,7 +23,6 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
   { id: 'game-pause', key: 'Escape', modifiers: [], action: 'game:pause', description: 'Pause/Resume', category: 'gameplay', isGlobal: false },
   { id: 'game-restart', key: 'r', modifiers: ['ctrl'], action: 'game:restart', description: 'Restart Song', category: 'gameplay', isGlobal: false },
   { id: 'game-skip', key: 'n', modifiers: ['ctrl'], action: 'game:skip', description: 'Skip to Next Song', category: 'gameplay', isGlobal: false },
-  { id: 'game-star-power', key: ' ', modifiers: [], action: 'game:starPower', description: 'Activate Star Power', category: 'gameplay', isGlobal: false },
   { id: 'game-back', key: 'Backspace', modifiers: [], action: 'game:back', description: 'Back to Library', category: 'gameplay', isGlobal: false },
   
   // Audio

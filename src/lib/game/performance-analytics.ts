@@ -13,7 +13,6 @@ export interface PerformanceStats {
   bestCombo: number;
   perfectGames: number; // Games with 100% accuracy
   goldenNotesHit: number;
-  starPowerActivations: number;
   
   // Per difficulty stats
   byDifficulty: {
@@ -75,7 +74,6 @@ export function createEmptyPerformanceStats(): PerformanceStats {
     bestCombo: 0,
     perfectGames: 0,
     goldenNotesHit: 0,
-    starPowerActivations: 0,
     byDifficulty: {
       easy: createEmptyDifficultyStats(),
       medium: createEmptyDifficultyStats(),

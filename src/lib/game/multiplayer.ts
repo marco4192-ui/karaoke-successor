@@ -66,7 +66,7 @@ export function updateDuelScore(
   combo: number,
   notesHit: number
 ): DuelMatch {
-  const updates = { score, combo, notesHit, notesMissed: 0, accuracy: 0, starPower: 0, isStarPowerActive: false };
+  const updates = { score, combo, notesHit, notesMissed: 0, accuracy: 0 };
   
   if (match.player1.id === playerId) {
     match.player1 = { ...match.player1, ...updates };

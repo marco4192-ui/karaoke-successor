@@ -15,7 +15,6 @@ export interface ThemeColors {
   noteBonus: string;
   pitchIndicator: string;
   combo: string;
-  starPower: string;
 }
 
 export interface Theme {
@@ -218,7 +217,7 @@ export const THEMES: Theme[] = [
       noteBonus: '#ff66ff',
       pitchIndicator: '#00ff88',
       combo: '#ff00ff',
-      starPower: '#ffd700',
+
     },
     noteStyle: 'rounded',
     fontFamily: 'Inter, sans-serif',
@@ -248,7 +247,7 @@ export const THEMES: Theme[] = [
       noteBonus: '#ff6ec7',
       pitchIndicator: '#00ffff',
       combo: '#ff00ff',
-      starPower: '#ffd700',
+
     },
     noteStyle: 'sharp',
     fontFamily: 'monospace',
@@ -278,7 +277,7 @@ export const THEMES: Theme[] = [
       noteBonus: '#ff6b6b',
       pitchIndicator: '#1dd1a1',
       combo: '#feca57',
-      starPower: '#ffd700',
+
     },
     noteStyle: 'pill',
     fontFamily: 'Poppins, sans-serif',
@@ -308,7 +307,7 @@ export const THEMES: Theme[] = [
       noteBonus: '#5f27cd',
       pitchIndicator: '#00d2d3',
       combo: '#54a0ff',
-      starPower: '#ffd700',
+
     },
     noteStyle: 'rounded',
     fontFamily: 'Inter, sans-serif',
@@ -338,7 +337,7 @@ export const THEMES: Theme[] = [
       noteBonus: '#ec4899',
       pitchIndicator: '#06b6d4',
       combo: '#ec4899',
-      starPower: '#fcd34d',
+
     },
     noteStyle: 'diamond',
     fontFamily: 'Inter, sans-serif',
@@ -368,7 +367,7 @@ export const THEMES: Theme[] = [
       noteBonus: '#8b5cf6',
       pitchIndicator: '#10b981',
       combo: '#8b5cf6',
-      starPower: '#f59e0b',
+
     },
     noteStyle: 'rounded',
     fontFamily: 'Inter, sans-serif',
@@ -567,7 +566,6 @@ export function getThemeCSS(theme: Theme): string {
       --theme-note-bonus: ${theme.colors.noteBonus};
       --theme-pitch-indicator: ${theme.colors.pitchIndicator};
       --theme-combo: ${theme.colors.combo};
-      --theme-star-power: ${theme.colors.starPower};
       --theme-font: ${theme.fontFamily};
       --theme-radius: ${theme.borderRadius}px;
     }
