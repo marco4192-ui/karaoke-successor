@@ -830,23 +830,11 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
                 // Calculate start position from #START tag (in milliseconds)
                 const startPosition = (currentSong.start || 0) / 1000; // Convert to seconds
                 
-                // Use URLs from effectiveSong (already restored for Tauri)
+                // Use URLs from effectiveSong (already restored for Tauri via ensureSongUrls)
                 let currentAudioUrl = currentSong.audioUrl;
                 let currentVideoUrl = currentSong.videoBackground;
                 
-                // Fallback: Get fresh media URLs from IndexedDB if storedMedia flag is set
-                if (currentSong.storedMedia && (!currentAudioUrl || !currentVideoUrl)) {
-                  try {
-                    const { getSongMediaUrls } = await import('@/lib/db/media-db');
-                    const mediaUrls = await getSongMediaUrls(currentSong.id);
-                    if (mediaUrls.audioUrl && !currentAudioUrl) currentAudioUrl = mediaUrls.audioUrl;
-                    if (mediaUrls.videoUrl && !currentVideoUrl) currentVideoUrl = mediaUrls.videoUrl;
-                  } catch (e) {
-                    console.error('[GameScreen] Failed to load media from IndexedDB:', e);
-                  }
-                }
-                
-                console.log('[GameScreen] playMedia - using URLs:', {
+                console.log('[GameScreen] playMedia - using URLs from effectiveSong:', {
                   audioUrl: currentAudioUrl ? 'present' : 'missing',
                   videoUrl: currentVideoUrl ? 'present' : 'missing',
                   hasEmbeddedAudio: currentSong.hasEmbeddedAudio
@@ -898,26 +886,9 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
                 // BACKGROUND VIDEO (muted, synced with audio)
                 // This is for videos that should play in background while audio plays
                 if (videoRef.current && currentVideoUrl && !currentSong.hasEmbeddedAudio) {
-                  // Validate background video blob URL
-                  const videoSrc = videoRef.current.src;
-                  if (videoSrc && videoSrc.startsWith('blob:')) {
-                    try {
-                      const response = await fetch(videoSrc);
-                      if (!response.ok) throw new Error('Background video blob invalid');
-                      const blob = await response.blob();
-                      if (blob.size === 0) throw new Error('Background video blob empty');
-                    } catch (fetchError) {
-                      console.error('[GameScreen] Background video blob validation failed:', fetchError);
-                      const { getSongMediaUrls } = await import('@/lib/db/media-db');
-                      const mediaUrls = await getSongMediaUrls(currentSong.id);
-                      if (mediaUrls.videoUrl) {
-                        videoRef.current.src = mediaUrls.videoUrl;
-                      }
-                    }
-                  }
-                  
                   // Apply videoGap: positive = video starts after audio, so skip ahead in video
                   const videoGapSeconds = (currentSong.videoGap || 0) / 1000;
+                  videoRef.current.src = currentVideoUrl;
                   videoRef.current.currentTime = Math.max(0, startPosition - videoGapSeconds);
                   videoRef.current.muted = true; // Background video is always muted
                   videoRef.current.play().catch(() => {});
