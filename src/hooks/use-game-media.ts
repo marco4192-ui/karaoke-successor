@@ -163,9 +163,11 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
     const loadMedia = async () => {
       let audioReady = true;
       let videoReady = true;
+      let anyMedia = false;
 
       // For songs with audioUrl, wait for audio element to be canplay
       if (effectiveSong.audioUrl && audioRef.current) {
+        anyMedia = true;
         audioReady = await waitForMediaEvent(audioRef.current, 'canplay', 5000);
         audioLoadedRef.current = audioReady;
 
@@ -178,6 +180,7 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
 
       // For songs with embedded audio (video), wait for video element
       if (effectiveSong.hasEmbeddedAudio && effectiveSong.videoBackground && !effectiveSong.audioUrl) {
+        anyMedia = true;
         if (videoRef.current) {
           videoReady = await waitForMediaEvent(videoRef.current, 'canplay', 5000);
           videoLoadedRef.current = videoReady;
@@ -192,10 +195,18 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
 
       // For YouTube videos, just need a small delay for iframe to initialize
       if (effectiveSong.youtubeUrl) {
+        anyMedia = true;
         await new Promise(resolve => setTimeout(resolve, 500));
       }
 
-      setMediaLoaded(true);
+      // Only mark as loaded if no media was needed, or all media loaded successfully
+      // If a timeout occurred, still proceed but log the warning
+      if (!anyMedia || (audioReady && videoReady)) {
+        setMediaLoaded(true);
+      } else {
+        console.warn('[GameScreen] Media load had failures, proceeding anyway after timeout');
+        setMediaLoaded(true); // Still proceed — game should not hang
+      }
     };
 
     loadMedia();
