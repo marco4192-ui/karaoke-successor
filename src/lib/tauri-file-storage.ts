@@ -592,8 +592,15 @@ function parseLyricsFromTxt(content: string, bpm: number, gap: number): LyricLin
     const startTime = gap + (note.startBeat * beatDuration);
     const duration = note.duration * beatDuration;
     
-    // Skip hyphen separators - they indicate line breaks but should NOT be removed from text
-    if (note.lyric === '-' || (note.lyric.trim() === '-' && note.lyric.length <= 2)) {
+    // Line break note: Only a hyphen "-" alone in the lyric column triggers a line break
+    // Example: ": 100 5 60 -" means line break
+    // "~" is NEVER a line break - it's used for other purposes in UltraStar
+    // Hyphens with other text (e.g. "O-") are normal lyrics, NOT line breaks
+    const trimmedLyric = note.lyric.trim();
+    const isLineBreakNote = trimmedLyric === '-';
+    
+    if (isLineBreakNote) {
+      console.log('[TauriParser] Found line break note at beat', note.startBeat, 'lyric:', JSON.stringify(note.lyric));
       if (currentLineNotes.length > 0) {
         const lineStartTime = currentLineNotes[0].startTime;
         const lineEndTime = currentLineNotes[currentLineNotes.length - 1].startTime + currentLineNotes[currentLineNotes.length - 1].duration;
