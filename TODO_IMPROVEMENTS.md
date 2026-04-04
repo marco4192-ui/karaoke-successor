@@ -71,51 +71,39 @@ Letztes Update: 2026-04-05
 
 ---
 
-## CODE-REVIEW RUND 3 (2026-04-05) — Re-Audit + Dateigrößen-Reduzierung
+## CODE-REVIEW RUND 3 (2026-04-05) — Re-Audit + Dateigrößen-Reduzierung ✅ ALLE ABGESCHLOSSEN
 
-### 🔧 Code-Qualität & Aufräumen
+### 🔧 Code-Qualität & Aufräumen — Alle bereits vorher behoben
 
-- [ ] **#37** `game-screen.tsx` — Dreifache visibleNotes Code-Duplikation
-  - Die drei useMemo-Hooks `visibleNotes`, `p1VisibleNotes`, `p2VisibleNotes` (Zeilen 633-742) haben identische Binary-Search-Logik
-  - Fix: Gemeinsame Utility-Funktion `getVisibleNotes()` erstellen und wiederverwenden
-  - Erwartete Reduzierung: ~70 Zeilen
+- [x] **#37** `game-screen.tsx` — Dreifache visibleNotes Code-Duplikation — BEREITS BEHOBEN: `getVisibleNotes()` Utility existiert
+- [x] **#38** `game-screen.tsx` — Konstanten innerhalb der Component — BEREITS BEHOBEN: Konstanten in `note-utils.tsx` ausgelagert
+- [x] **#39** `game-screen.tsx` — Unused Import `Badge` — BEREITS BEHOBEN: Import existiert nicht mehr
+- [x] **#42** `use-multi-pitch-detector.ts` — Unused Import — BEREITS BEHOBEN: `resetPitchDetectorManager` nicht mehr importiert
+- [x] **#40** `game-screen.tsx` — Video-Background — BEREITS BEHOBEN: `GameBackground.tsx` Component existiert
+- [x] **#41** `library-cache.ts` — SSR Guard — BEREITS BEHOBEN: `typeof indexedDB === 'undefined'` Guard in `openDatabase()`
 
-- [ ] **#38** `game-screen.tsx` — Konstanten innerhalb der Component-Funktion
-  - `SING_LINE_POSITION`, `NOTE_WINDOW`, `VISIBLE_TOP`, `VISIBLE_BOTTOM`, `VISIBLE_RANGE` werden bei jedem Render neu erstellt
-  - Fix: Als `const` außerhalb der Komponente definieren
+### 🏗️ Dateigrößen-Reduzierung durch Auslagerung — ALLE ABGESCHLOSSEN
 
-- [ ] **#39** `game-screen.tsx` — Unused Import `Badge`
-  - `Badge` wird importiert (Zeile 5) aber nie verwendet
-  - Fix: Import entfernen
+- [x] **#43** `settings-screen.tsx` — **1848 → 314 Zeilen (83% Reduzierung)** ✅ `4179153`, `54083ce`
+  - 7 Tab-Components extrahiert: settings-icons.tsx, library-tab.tsx, graphic-sound-tab.tsx, general-tab.tsx, about-tab.tsx, webcam-tab.tsx, mobile-device-section.tsx
+  - `useFolderScanner` Hook (389 Zeilen): Folder scanning, browsing, library reset
+  - `SettingsTabBar` Component (50 Zeilen): Tab navigation
 
-- [ ] **#42** `use-multi-pitch-detector.ts` — Unused Import `resetPitchDetectorManager`
-  - Wird importiert (Zeile 7) aber nie im File benutzt
-  - Fix: Import entfernen
+- [x] **#44** `results-screen.tsx` — **1319 → 383 Zeilen (71% Reduzierung)** ✅ `c5df146`
+  - 7 Components extrahiert: constants.tsx, song-highscore-modal.tsx, score-visualization.tsx, upload-status.tsx, song-leaderboard-preview.tsx, share-section.tsx, queue-next-song.tsx
 
-### 🏗️ Dateigrößen-Reduzierung durch Auslagerung
+- [x] **#45** `page.tsx` — **749 → 332 Zeilen (56% Reduzierung)** ✅ `54083ce`
+  - 3 Components extrahiert: navbar.tsx, party-setup-section.tsx, party-game-screens.tsx
 
-- [ ] **#40** `game-screen.tsx` (1142 Zeilen) — Video-Background Sektion auslagern
-  - Die Video-Background-Rendering-Logik (Zeilen 858-951) ist ~95 Zeilen lang mit komplexer Verschachtelung
-  - Fix: In `GameBackground.tsx` Component auslagern
-  - Erwartete Reduzierung: ~80 Zeilen
+### 📊 Zusammenfassung der Dateigrößen-Reduzierung
 
-- [ ] **#43** `settings-screen.tsx` (1848 Zeilen) — Größte Datei, dringend aufteilen
-  - Fix: Tabs in separate Components auslagern (MicrophoneTab, LibraryTab, EditorTab, AIAssetsTab, etc.)
-  - Erwartete Reduzierung: Ziel < 400 Zeilen
-
-- [ ] **#44** `results-screen.tsx` (1319 Zeilen) — Aufteilen
-  - Fix: Score-Zusammenfassung, Statistik-Details, Action-Buttons in eigene Components
-  - Erwartete Reduzierung: Ziel < 500 Zeilen
-
-- [ ] **#45** `page.tsx` (749 Zeilen) — Weiter reduzieren
-  - Fix: Song-Auswahl, Party-Modus-Setup, Screen-Navigation in eigene Hooks/Components
-  - Erwartete Reduzierung: Ziel < 500 Zeilen
-
-### 🛡️ Sicherheit & Guards
-
-- [ ] **#41** `library-cache.ts` — Fehlender typeof window Guard
-  - Fix #18 sollte SSR-Guards in 5 Dateien hinzufügen, aber `library-cache.ts` hat keinen Guard
-  - Fix: `typeof window === 'undefined'` Guard hinzufügen
+| Datei | Vorher | Nachher | Reduzierung |
+|-------|--------|---------|-------------|
+| settings-screen.tsx | 1848 | 314 | -83% |
+| results-screen.tsx | 1319 | 383 | -71% |
+| page.tsx | 749 | 332 | -56% |
+| game-screen.tsx | 1124 | 965 | -14% |
+| **Gesamt** | **5040** | **1994** | **-60%** |
 
 ---
 
