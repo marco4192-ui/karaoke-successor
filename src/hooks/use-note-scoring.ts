@@ -153,6 +153,14 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   const [p3State, setP3State] = useState<PlayerScoringState>({ ...DEFAULT_PLAYER_SCORING_STATE });
   const [p4State, setP4State] = useState<PlayerScoringState>({ ...DEFAULT_PLAYER_SCORING_STATE });
   
+  // Refs for P2-P4 states to avoid stale closures in checkPlayerNoteHits
+  const p2StateRef = useRef(p2State);
+  p2StateRef.current = p2State;
+  const p3StateRef = useRef(p3State);
+  p3StateRef.current = p3State;
+  const p4StateRef = useRef(p4State);
+  p4StateRef.current = p4State;
+  
   // Detected pitches for P2-P4
   const [p2DetectedPitch, setP2DetectedPitch] = useState<number | null>(null);
   const [p3DetectedPitch, setP3DetectedPitch] = useState<number | null>(null);
@@ -190,6 +198,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   }, []);
 
   // Generic function to check note hits for any player
+  // Uses stateRef to always get the latest player state (avoids stale closure)
   const checkPlayerNoteHits = useCallback(
     (
       currentTime: number,
@@ -198,7 +207,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       notesToCheck: Array<Note & { lineIndex: number; line: LyricLine }> | undefined,
       scoringMeta: ScoringMetadata | undefined,
       noteProgressMap: React.MutableRefObject<Map<string, NoteProgress>>,
-      playerState: PlayerScoringState,
+      stateRef: React.MutableRefObject<PlayerScoringState>,
       setPlayerState: React.Dispatch<React.SetStateAction<PlayerScoringState>>,
       setScoreEventsState: React.Dispatch<React.SetStateAction<ScoreEvent[]>>,
       noteIdPrefix: string
@@ -208,6 +217,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       if (!notesToCheck || notesToCheck.length === 0 || !scoringMeta) return;
 
       const beatDurationMs = timingData?.beatDuration || 500;
+      const playerState = stateRef.current; // Always read latest from ref
 
       for (const note of notesToCheck) {
         const noteEnd = note.startTime + note.duration;
@@ -503,13 +513,13 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         timingData?.p2Notes,
         timingData?.p2ScoringMetadata,
         p2NoteProgressRef,
-        p2State,
+        p2StateRef,
         setP2State,
         setP2ScoreEvents,
         'p2-note'
       );
     },
-    [isDuetMode, isPartyMode, timingData, checkPlayerNoteHits, p2State]
+    [isDuetMode, isPartyMode, timingData, checkPlayerNoteHits]
   );
 
   // Check P3 notes (party mode only)
@@ -523,13 +533,13 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         timingData?.p3Notes,
         timingData?.p3ScoringMetadata,
         p3NoteProgressRef,
-        p3State,
+        p3StateRef,
         setP3State,
         setP3ScoreEvents,
         'p3-note'
       );
     },
-    [isPartyMode, timingData, checkPlayerNoteHits, p3State]
+    [isPartyMode, timingData, checkPlayerNoteHits]
   );
 
   // Check P4 notes (party mode only)
@@ -543,13 +553,13 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         timingData?.p4Notes,
         timingData?.p4ScoringMetadata,
         p4NoteProgressRef,
-        p4State,
+        p4StateRef,
         setP4State,
         setP4ScoreEvents,
         'p4-note'
       );
     },
-    [isPartyMode, timingData, checkPlayerNoteHits, p4State]
+    [isPartyMode, timingData, checkPlayerNoteHits]
   );
 
   return {
