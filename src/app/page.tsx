@@ -375,7 +375,7 @@ export default function KaraokeSuccessor() {
             songs={getAllSongs()}
             onStartGame={(result) => {
               party.setUnifiedSetupResult(result);
-              setGameMode(party.selectedGameMode);
+              if (party.selectedGameMode) setGameMode(party.selectedGameMode);
               
               // Handle different game modes
               if (party.selectedGameMode === 'tournament') {
@@ -440,7 +440,7 @@ export default function KaraokeSuccessor() {
             }}
             onSelectLibrary={(result) => {
               party.setUnifiedSetupResult(result);
-              setGameMode(party.selectedGameMode);
+              if (party.selectedGameMode) setGameMode(party.selectedGameMode);
               
               // Store settings based on game mode and navigate to library
               if (party.selectedGameMode === 'pass-the-mic') {
@@ -472,7 +472,7 @@ export default function KaraokeSuccessor() {
               const selectedSong = party.votingSongs.find(s => s.id === songId);
               if (selectedSong) {
                 setSong(selectedSong);
-                setGameMode(party.selectedGameMode);
+                if (party.selectedGameMode) setGameMode(party.selectedGameMode);
                 
                 // Handle game-specific setup
                 if (party.selectedGameMode === 'pass-the-mic') {
