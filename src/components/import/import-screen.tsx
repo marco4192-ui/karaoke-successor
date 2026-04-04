@@ -279,9 +279,17 @@ export function ImportScreen({ onImport, onCancel }: ImportScreenProps) {
     const songsToImport: Song[] = [];
     const selectedArray = Array.from(selectedScanned);
     
+    // Track baseFolder from first song for localStorage
+    let detectedBaseFolder: string | undefined;
+    
     for (let i = 0; i < selectedArray.length; i++) {
       const index = selectedArray[i];
       const scanned = scannedSongs[index];
+      
+      // Capture baseFolder from first scanned song
+      if (!detectedBaseFolder && scanned.baseFolder) {
+        detectedBaseFolder = scanned.baseFolder;
+      }
       
       try {
         // convertScannedSongToSong already stores all media files in IndexedDB
@@ -300,6 +308,22 @@ export function ImportScreen({ onImport, onCancel }: ImportScreenProps) {
     
     if (songsToImport.length > 0) {
       addSongs(songsToImport);
+      
+      // CRITICAL: Save baseFolder to localStorage for Tauri
+      // This allows media files to be loaded on next app start
+      if (detectedBaseFolder) {
+        try {
+          const existingFolder = localStorage.getItem('karaoke-songs-folder');
+          if (!existingFolder) {
+            localStorage.setItem('karaoke-songs-folder', detectedBaseFolder);
+            console.log('[Import] Saved baseFolder to localStorage:', detectedBaseFolder);
+          } else {
+            console.log('[Import] localStorage already has karaoke-songs-folder:', existingFolder);
+          }
+        } catch (e) {
+          console.warn('[Import] Could not save baseFolder to localStorage:', e);
+        }
+      }
     }
     
     setProgress({ 
