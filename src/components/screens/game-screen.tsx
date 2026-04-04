@@ -210,6 +210,9 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   } = useParticleEmitter();
   
   // Song energy for visual effects intensity
+  // Note: useSongEnergy uses the audio element for analysis, so we pass the current ref value
+  // This is intentionally audioRef.current (the DOM node) since the hook expects an HTMLAudioElement
+  // The ref is stable for the component lifetime
   const songEnergy = useSongEnergy(audioRef.current);
   
   // Check if this is a duet song (either marked as duet or gameMode is 'duet')
