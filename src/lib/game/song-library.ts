@@ -456,12 +456,23 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
   // Determine the base folder to use:
   // 1. Priority: song's own baseFolder (stored when scanned)
   // 2. Fallback: localStorage 'karaoke-songs-folder'
-  const baseFolder = song.baseFolder || localStorage.getItem('karaoke-songs-folder') || undefined;
+  let baseFolder = song.baseFolder || localStorage.getItem('karaoke-songs-folder') || undefined;
+  
+  // If baseFolder is still not set, check if relative paths look like absolute paths
+  if (!baseFolder) {
+    // Try to extract base folder from the relative paths
+    const allPaths = [song.relativeAudioPath, song.relativeVideoPath, song.relativeCoverPath].filter(Boolean);
+    if (allPaths.length > 0) {
+      console.warn('[SongLibrary] No baseFolder set for song:', song.title, '- attempting to use paths as-is');
+    }
+  }
   
   if (!baseFolder) {
     console.warn('[SongLibrary] No base folder available for song:', song.title);
     return song;
   }
+  
+  console.log('[SongLibrary] Using baseFolder:', baseFolder, 'for song:', song.title);
   
   try {
     // Restore audio URL from songs folder - only if missing
@@ -470,7 +481,7 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
       const url = await getSongMediaUrl(song.relativeAudioPath, baseFolder);
       if (url) {
         restored.audioUrl = url;
-        console.log('[SongLibrary] Restored audio URL for', song.title, ':', url.substring(0, 50) + '...');
+        console.log('[SongLibrary] Restored audio URL for', song.title);
       } else {
         console.warn('[SongLibrary] Failed to restore audio URL for', song.title, '- file may not exist:', song.relativeAudioPath);
       }
@@ -482,7 +493,7 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
       const url = await getSongMediaUrl(song.relativeVideoPath, baseFolder);
       if (url) {
         restored.videoBackground = url;
-        console.log('[SongLibrary] Restored video URL for', song.title, ':', url.substring(0, 50) + '...');
+        console.log('[SongLibrary] Restored video URL for', song.title);
       } else {
         console.warn('[SongLibrary] Failed to restore video URL for', song.title, '- file may not exist:', song.relativeVideoPath);
       }
@@ -494,7 +505,7 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
       const url = await getSongMediaUrl(song.relativeCoverPath, baseFolder);
       if (url) {
         restored.coverImage = url;
-        console.log('[SongLibrary] Restored cover URL for', song.title, ':', url.substring(0, 50) + '...');
+        console.log('[SongLibrary] Restored cover URL for', song.title);
       } else {
         console.warn('[SongLibrary] Failed to restore cover URL for', song.title, '- file may not exist:', song.relativeCoverPath);
       }
