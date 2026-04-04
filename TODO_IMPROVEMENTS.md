@@ -5,42 +5,33 @@ Letztes Update: 2026-04-04
 
 ---
 
-## ABGESCHLOSSEN ✅
+## ALLE KRITISCHEN FEHLER BEHOBEN ✅
 
-- [x] **#1** PitchDetectorManager Import bricht Build — `use-multi-pitch-detector.ts` → `ea8a8e5`
-- [x] **#2** Duplicate NoteShapeStyle Typdefinition — `note-utils.tsx` vs `screens.ts` → `e26e278`
-- [x] **#4** useStarPower Hook: Space-Key kollidiert mit Game-Controls → Star Power komplett entfernt
-- [x] **#7** Doppelte Pitch-Polling (useMobileClient + Game-Screen) → `6a4753a`
-- [x] **#8** useGameSettings Polling alle 500ms optimieren → `29da881`
-- [x] **#9** Race Condition in checkNoteHits — stale closure über activePlayer → `b47fb2f`
-- [x] **#11** useNoteScoring — checkPlayerNoteHits Abhängigkeits-Problem → `f88bebc`
-- [x] **#14** handleTournamentGameEnd — setResults mit falschem Typ → `b569654`
-- [x] **#15** PitchDetector Singleton Reset bei Song-Wechsel → `6de0f04`
-- [x] **#16** Blind Mode nutzt Math.random() in useEffect — Flackern → `f0ac080`
-- [x] **#17** Missing Words Mode generiert bei jedem Render neue Indizes → `f0ac080`
-- [x] **#19** Busy-Waiting bei Media-Laden durch Event-basiertes Laden ersetzen → `8d7d7c4`
+- [x] **#1** PitchDetectorManager Import bricht Build — `ea8a8e5`
+- [x] **#2** Duplicate NoteShapeStyle Typdefinition — `e26e278`
+- [x] **#4** useStarPower Hook: Space-Key kollidiert → Star Power komplett entfernt
+- [x] **#5** Game-Screen God-Component (1699→1124 Zeilen) — `f131360`
+- [x] **#6** Doppelte Media-Initialisierung konsolidiert — `83310c6`
+- [x] **#7** Doppelte Pitch-Polling entfernt — `6a4753a`
+- [x] **#8** useGameSettings 500ms Polling entfernt — `29da881`
+- [x] **#9** Race Condition in checkNoteHits — `b47fb2f`
+- [x] **#10** AudioManager createMediaElementSource Guard — `2b927a7`
+- [x] **#11** checkPlayerNoteHits Abhängigkeits-Problem — `f88bebc`
+- [x] **#12** Star Power Charge aus Scoring entfernt (verifiziert)
+- [x] **#13** localStorage → IndexedDB Migration — `4cbe71d`
+- [x] **#14** handleTournamentGameEnd Typ-Mismatch — `b569654`
+- [x] **#15** PitchDetector Singleton Reset — `6de0f04`
+- [x] **#16** Blind Mode Math.random() Flackern — `f0ac080`
+- [x] **#17** Missing Words Mode Render-Flicker — `f0ac080`
+- [x] **#18** Tauri-spezifische Checks (5 Dateien) — `cdd98c7`
+- [x] **#19** Busy-Waiting → Event-basiertes Laden — `8d7d7c4`
+- [x] **#20** Global State → Zustand usePartyStore — `534d68b`
+- [x] **#21** Duplizierte Icons (87 Zeilen entfernt) — `360b968`
+- [x] **#22** getAllSongs() Cache TTL + Cleanup — `d8216ba`
 - [x] Star Power komplett aus Codebase entfernt (Feature)
 - [x] Live Streaming komplett aus Codebase entfernt (Feature)
 
 ---
-
-## KRITISCHE FEHLER (Break/Must-Fix)
-
-- [ ] **#5** Game-Screen ist ~1760 Zeilen — God-Component auftrennen
-- [ ] **#6** Doppelte Media-Initialisierung und URL-Wiederherstellung aufräumen
-- [ ] **#10** AudioManager.loadAudio — createMediaElementSource Guard
-- [ ] **#13** SongLibrary.saveCustomSongs — localStorage Overflow (→ IndexedDB)
-
-## MITTEL-PRIORITÄT
-
-- [ ] **#12** Star Power Charge aus Scoring komplett entfernt? (prüfen)
-- [ ] **#18** Tauri-spezifische Checks fehlen in vielen Dateien
-- [ ] **#20** Globaler State in page.tsx statt Context/Zustand
-- [ ] **#22** Kein Cleanup für getAllSongs() Cache
-
-## NIEDRIGE PRIORITÄT
-
-- [ ] **#21** Duplicated Icons in page.tsx
 
 ## ERWEITERUNGSIDEEN (für später)
 
