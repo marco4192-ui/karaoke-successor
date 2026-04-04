@@ -228,20 +228,41 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   }, []);
   
   // BLIND KARAOKE MODE: Set blind sections based on time
+  // Uses a deterministic seed generated once per song to avoid flickering
+  const blindSeedRef = useRef<number[]>([]);
+  
   useEffect(() => {
     if (gameState.gameMode === 'blind' && song && gameState.status === 'playing') {
-      // In blind mode, alternate between visible and blind sections
-      // Each section is about 10-15 seconds
+      // Generate a deterministic blind pattern when the song starts
+      // This ensures the same sections are blind every time, no flickering
+      if (blindSeedRef.current.length === 0) {
+        // Pre-generate blind decisions for up to 100 sections (~20 minutes of music)
+        const maxSections = 100;
+        const seed: number[] = [];
+        let rng = Math.random(); // Generate seed once
+        for (let i = 0; i < maxSections; i++) {
+          rng = (rng * 16807 + 0.5) % 1; // Simple LCG pseudo-random
+          seed.push(rng);
+        }
+        blindSeedRef.current = seed;
+      }
+      
       const sectionDuration = 12000; // 12 seconds per section
       const blindChance = 0.4; // 40% chance of being blind
       const currentTime = gameState.currentTime;
       
       const sectionIndex = Math.floor(currentTime / sectionDuration);
-      const isBlind = (sectionIndex % 2 === 1) || (Math.random() < blindChance && sectionIndex > 0);
+      const seedValue = blindSeedRef.current[sectionIndex % blindSeedRef.current.length] || 0;
+      const isBlind = (sectionIndex % 2 === 1) || (seedValue < blindChance && sectionIndex > 0);
       
       setBlindSection(isBlind);
     }
   }, [gameState.gameMode, song, gameState.status, gameState.currentTime, setBlindSection]);
+  
+  // Reset blind seed when song changes
+  useEffect(() => {
+    blindSeedRef.current = [];
+  }, [song?.id]);
   
   // SAFETY: Ensure at least one player exists before game starts
   // This prevents "Cannot read properties of undefined (reading '0')" errors
@@ -657,21 +678,35 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     return stats === calculatePitchStats(null) ? pitchStats : stats;
   }, [timingData, pitchStats]);
 
-  // MISSING WORDS MODE: Generate random hidden word indices when game starts
+  // MISSING WORDS MODE: Generate random hidden word indices ONCE when game starts
+  const missingWordsGeneratedRef = useRef(false);
+  
   useEffect(() => {
     if (gameState.gameMode === 'missing-words' && song && timingData && gameState.status === 'playing') {
-      // Generate random indices for words to hide (about 20-30% of words)
+      // Only generate once per game — prevent flickering on re-renders
+      if (missingWordsGeneratedRef.current) return;
+      missingWordsGeneratedRef.current = true;
+      
       const totalNotes = timingData.allNotes.length;
+      if (totalNotes === 0) return;
+      
       const hideCount = Math.floor(totalNotes * 0.25); // 25% of words
       const allIndices = Array.from({ length: totalNotes }, (_, i) => i);
       
-      // Shuffle and pick random indices
-      const shuffled = allIndices.sort(() => Math.random() - 0.5);
-      const indicesToHide = shuffled.slice(0, hideCount);
+      // Fisher-Yates shuffle for proper random distribution
+      for (let i = allIndices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allIndices[i], allIndices[j]] = [allIndices[j], allIndices[i]];
+      }
       
-      setMissingWordsIndices(indicesToHide);
+      setMissingWordsIndices(allIndices.slice(0, hideCount));
     }
   }, [gameState.gameMode, song, timingData, gameState.status, setMissingWordsIndices]);
+  
+  // Reset missing words when song changes
+  useEffect(() => {
+    missingWordsGeneratedRef.current = false;
+  }, [song?.id]);
 
   // Vertical pitch display constants (percentage of screen)
   // Leave 8% padding at top (for header) and 15% at bottom (for lyrics)
