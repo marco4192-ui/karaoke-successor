@@ -42,9 +42,7 @@
         { "path": "$PICTURES/**" },
         { "path": "$VIDEO/**" },
         { "path": "/" },
-        { "path": "C:/**" },
-        { "path": "D:/**" },
-        { "path": "E:/**" }
+        { "path": "**" }
       ]
     },
     "dialog:default",

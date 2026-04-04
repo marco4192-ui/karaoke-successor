@@ -26,6 +26,8 @@ import { WebcamSettingsPanel, WebcamBackground } from '@/components/game/webcam-
 import { LiveStreamingPanel } from '@/components/streaming/live-streaming';
 import { leaderboardService } from '@/lib/api/leaderboard-service';
 import { ImportScreen } from '@/components/import/import-screen';
+// Tauri imports - use isTauri function from tauri-file-storage
+import { isTauri } from '@/lib/tauri-file-storage';
 // Tab components (refactored)
 import { AIAssetsGeneratorTab } from '@/components/settings/ai-assets-generator-tab';
 import { EditorSettingsTab } from '@/components/settings/editor-settings-tab';
@@ -565,34 +567,59 @@ function SettingsScreen() {
   
   // Browse folder (using Tauri dialog if available, otherwise show instructions)
   const handleBrowseFolder = async () => {
-    // Check if running in Tauri
-    if (typeof window !== 'undefined' && (window as any).__TAURI__) {
-      try {
-        const { open } = await import('@tauri-apps/plugin-dialog');
-        const selected = await open({
-          directory: true,
-          multiple: false,
-          title: 'Select Songs Folder'
-        });
-        if (selected && typeof selected === 'string') {
-          setSongsFolder(selected);
-          localStorage.setItem('karaoke-songs-folder', selected);
-          
-          // Perform the actual scan
-          await performFolderScan(selected);
-        }
-      } catch (e) {
-        alert('Could not open folder picker. Please enter the path manually.');
-      }
-    } else {
-      // Browser mode - show instructions
+    console.log('[Settings] handleBrowseFolder called');
+    console.log('[Settings] isTauri():', isTauri());
+    console.log('[Settings] window.__TAURI__:', typeof window !== 'undefined' ? !!(window as any).__TAURI__ : 'window undefined');
+    console.log('[Settings] window.__TAURI_INTERNALS__:', typeof window !== 'undefined' ? !!(window as any).__TAURI_INTERNALS__ : 'window undefined');
+    
+    // Check if running in Tauri using the imported isTauri function
+    if (!isTauri()) {
+      // Not running in Tauri - show instructions
       alert(
         'Folder picker is only available in the desktop app.\n\n' +
-        'In browser mode, please:\n' +
-        '1. Enter the full path to your songs folder\n' +
-        '2. Click "Save" to apply\n\n' +
-        'Note: Browser security restricts direct file system access. ' +
-        'Use the Import tab to add songs manually.'
+        'Please use the desktop app (Tauri) to browse for folders.\n\n' +
+        'If you are running the desktop app, there may be an issue with Tauri detection.'
+      );
+      return;
+    }
+    
+    try {
+      console.log('[Settings] Importing @tauri-apps/plugin-dialog...');
+      const dialogModule = await import('@tauri-apps/plugin-dialog');
+      console.log('[Settings] Dialog module imported:', dialogModule);
+      
+      const open = dialogModule.open;
+      if (!open) {
+        throw new Error('open function not found in dialog module');
+      }
+      
+      console.log('[Settings] Calling dialog.open()...');
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title: 'Select Songs Folder'
+      });
+      
+      console.log('[Settings] Dialog result:', selected);
+      
+      if (selected && typeof selected === 'string') {
+        setSongsFolder(selected);
+        localStorage.setItem('karaoke-songs-folder', selected);
+        
+        // Perform the actual scan
+        await performFolderScan(selected);
+      } else if (selected === null) {
+        console.log('[Settings] User cancelled the dialog');
+      } else {
+        console.warn('[Settings] Unexpected dialog result:', selected);
+      }
+    } catch (e) {
+      console.error('[Settings] Error in handleBrowseFolder:', e);
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      alert(
+        'Could not open folder picker.\n\n' +
+        'Error: ' + errorMessage + '\n\n' +
+        'Please enter the path manually in the input field and click "Scan".'
       );
     }
   };
