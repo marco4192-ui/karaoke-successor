@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { 
   PitchDetectorManager, 
   getPitchDetectorManager, 
-  resetPitchDetectorManager,
 } from '@/lib/audio/pitch-detector';
 import type { PitchDetectionResult } from '@/types/game';
 import { Difficulty } from '@/types/game';
