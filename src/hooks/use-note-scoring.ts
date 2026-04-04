@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
-import { DIFFICULTY_SETTINGS, Difficulty, Note, LyricLine, DuetPlayer } from '@/types/game';
+import { DIFFICULTY_SETTINGS, Difficulty, Note, LyricLine } from '@/types/game';
 import {
   evaluateTick,
   calculateTickPoints,
@@ -9,7 +9,6 @@ import {
   NoteProgress,
   ScoringMetadata,
 } from '@/lib/game/scoring';
-import { getStarPowerChargeFromNote, STAR_POWER_CONFIG } from '@/lib/game/star-power';
 import { Player } from '@/types/game';
 
 // Score event type for visual feedback
@@ -34,8 +33,6 @@ export interface PlayerScoringState {
   maxCombo: number;
   notesHit: number;
   notesMissed: number;
-  starPower: number;
-  isStarPowerActive: boolean;
 }
 
 // Timing data structure (subset used by scoring)
@@ -120,8 +117,6 @@ const DEFAULT_PLAYER_SCORING_STATE: PlayerScoringState = {
   maxCombo: 0,
   notesHit: 0,
   notesMissed: 0,
-  starPower: 0,
-  isStarPowerActive: false,
 };
 
 /**
@@ -245,27 +240,16 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
               noteProgress.ticksHit++;
 
               const tickPoints = calculateTickPoints(tickResult.accuracy, note.isGolden, scoringMeta.pointsPerTick, difficulty);
-              const roundedPoints = Math.max(1, Math.round(tickPoints));
-
-              // Apply star power multiplier if active
-              const finalPoints = playerState.isStarPowerActive
-                ? Math.round(roundedPoints * STAR_POWER_CONFIG.multiplier)
-                : roundedPoints;
+              const finalPoints = Math.max(1, Math.round(tickPoints));
 
               if (finalPoints > 0) {
                 const newCombo = playerState.combo + 1;
-
-                const isPerfect = tickResult.accuracy > 0.95;
-                const isGood = tickResult.accuracy > 0.7;
-                const starPowerCharge = getStarPowerChargeFromNote(note.isGolden, isPerfect, isGood, newCombo);
-                const newStarPower = Math.min(100, playerState.starPower + starPowerCharge);
 
                 setPlayerState(prev => ({
                   ...prev,
                   score: prev.score + finalPoints,
                   combo: newCombo,
                   maxCombo: Math.max(prev.maxCombo, newCombo),
-                  starPower: newStarPower,
                 }));
 
                 setScoreEventsState(prev => [
@@ -398,25 +382,16 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
               noteProgress.ticksHit++;
 
               const tickPoints = calculateTickPoints(tickResult.accuracy, note.isGolden, scoringMeta.pointsPerTick, difficulty);
-              const roundedPoints = Math.max(1, Math.round(tickPoints));
-
-              const finalPoints = activePlayer.isStarPowerActive
-                ? Math.round(roundedPoints * STAR_POWER_CONFIG.multiplier)
-                : roundedPoints;
+              const finalPoints = Math.max(1, Math.round(tickPoints));
 
               if (finalPoints > 0) {
                 const newCombo = activePlayer.combo + 1;
-
                 const isPerfect = tickResult.accuracy > 0.95;
-                const isGood = tickResult.accuracy > 0.7;
-                const starPowerCharge = getStarPowerChargeFromNote(note.isGolden, isPerfect, isGood, newCombo);
-                const newStarPower = Math.min(100, (activePlayer.starPower || 0) + starPowerCharge);
 
                 updatePlayer(activePlayer.id, {
                   score: activePlayer.score + finalPoints,
                   combo: newCombo,
                   maxCombo: Math.max(activePlayer.maxCombo, newCombo),
-                  starPower: newStarPower,
                 });
 
                 setScoreEvents(prev => [
