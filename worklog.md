@@ -56,3 +56,47 @@ Successfully refactored game-screen.tsx from **1699 lines down to 1124 lines** (
 - Zero NEW TypeScript errors introduced
 - All 6 pre-existing errors in other files remain unchanged
 - 3 pre-existing errors in game-screen.tsx (NoteWithLine type mismatch) remain unchanged
+
+---
+Task ID: refactor-round4 - Main Agent
+### Work Task
+Proactive file size reduction across the codebase. Refactor 10 additional oversized files by extracting hooks, components, types, and utilities.
+
+### Work Summary
+Successfully refactored 10 files, creating 60+ new modules. Total reduction across all 10 files: 9707 → 1940 lines (80%). Combined with Round 3, the overall codebase reduction across 14 files is 14747 → 3934 lines (73%).
+
+### Files Refactored
+
+1. **game-screen.tsx** — 965 → 651 lines (-33%)
+   - 5 modules: useGameAudioEffects, useYouTubeGame, useGameModes, useMobileGameSync, game-hud.tsx
+
+2. **mobile-client-view.tsx** — 1911 → 189 lines (-90%)
+   - 7 modules: mobile-types, mobile-icons, remote-control-view, mobile-views, use-mobile-connection, use-mobile-pitch-detection, use-mobile-data
+
+3. **library-screen.tsx** — 1904 → 278 lines (-85%)
+   - 13 modules: types, icons, utils, song-card, song-start-modal, playlist-view, etc.
+
+4. **karaoke-editor.tsx** — 1338 → 246 lines (-82%)
+   - 8 modules: editor-header, tools-panel, editor-note-tab, editor-song-info-tab, editor-metadata-tab, use-editor-history, use-editor-playback, use-editor-keyboard-shortcuts
+
+5. **battle-royale-screen.tsx** — 1176 → 82 lines (-93%)
+   - 8 modules: use-battle-royale-game, setup-screen, playing-view, round-setup-view, elimination-view, winner-view, player-card, lyrics-display
+
+6. **character-screen.tsx** — 871 → 149 lines (-83%)
+   - 6 modules: country-options, profile-sync-section, character-card, create-character-form, player-progression-card, character-settings-card
+
+7. **jukebox-screen.tsx** — 834 → 25 lines (-97%)
+   - 4 modules: jukebox-types, use-jukebox, jukebox-setup-view, jukebox-player-view
+
+8. **import-screen.tsx** — 775 → 96 lines (-88%)
+   - 6 modules: import-types, use-import-screen, drop-zone, ultrastar-tab, folder-scan-tab, import-preview
+
+9. **unified-party-setup.tsx** — 869 → 75 lines (-91%)
+   - 4 modules: types, config, hook, components
+
+10. **microphone-settings-panel.tsx** — 839 → 149 lines (-82%)
+    - 4 modules: microphone-card, microphone-presets, use-microphone-settings, settings-icons
+
+### Compilation Status
+- Zero TypeScript errors after each commit
+- All commits pushed to master branch
