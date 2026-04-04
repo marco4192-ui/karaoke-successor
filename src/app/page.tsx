@@ -8,7 +8,7 @@ import { useGlobalRemoteControl } from '@/hooks/use-global-remote-control';
 import { useMobileClient } from '@/hooks/use-mobile-client';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
-import { getAllSongs } from '@/lib/game/song-library';
+import { getAllSongs, loadCustomSongsFromStorage } from '@/lib/game/song-library';
 // Extracted screens
 import { HomeScreen, PartyScreen, QueueScreen, AchievementsScreen, HighscoreScreen, CharacterScreen, EditorScreen, OnlineMultiplayerScreen, DailyChallengeScreen, JukeboxScreen, MobileScreen, MobileClientView, ResultsScreen, LibraryScreen, SettingsScreen, GameScreen } from '@/components/screens';
 import { Song, GameMode } from '@/types/game';
@@ -33,6 +33,13 @@ export default function KaraokeSuccessor() {
   const [isMounted, setIsMounted] = useState(false); // Track client-side mount
   const { gameState, setSong, setGameMode, profiles, queue, resetGame, addPlayer, setResults } = useGameStore();
   const party = usePartyStore();
+  
+  // On mount: load custom songs from IndexedDB (async, updates cache)
+  useEffect(() => {
+    loadCustomSongsFromStorage().catch(err => {
+      console.warn('[App] Failed to load custom songs from IndexedDB:', err);
+    });
+  }, []);
   
   // Toggle fullscreen function
   const toggleFullscreen = useCallback(() => {
