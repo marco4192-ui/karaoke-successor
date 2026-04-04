@@ -62,6 +62,7 @@ import { DuetNoteHighway } from '@/components/game/duet-note-highway';
 import { NoteHighway } from '@/components/game/note-highway';
 import { SinglePlayerLyrics } from '@/components/game/single-player-lyrics';
 import { useRemoteControl } from '@/hooks/use-remote-control';
+import { useMobilePitchPolling } from '@/hooks/use-mobile-pitch-polling';
 
 // ===================== HOME SCREEN =====================
 // HomeScreen has been moved to /src/components/screens/home-screen.tsx
@@ -105,9 +106,8 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     return null;
   });
   
-  // Mobile client state
-  const [mobilePitch, setMobilePitch] = useState<{ frequency: number | null; note: number | null; volume: number } | null>(null);
-  const [hasMobileClient, setHasMobileClient] = useState(false);
+  // Mobile client state - pitch polling extracted to dedicated hook
+  const { mobilePitch, hasMobileClient } = useMobilePitchPolling(song);
   
   // Audio effects state - defaults to 0% (off)
   const [audioEffects, setAudioEffects] = useState<AudioEffectsEngine | null>(null);
@@ -440,28 +440,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
 
   // Timing synchronization - user adjustable offset (initialized from song)
   const [timingOffset, setTimingOffset] = useState(0);
-  
-  // Poll for mobile pitch data
-  useEffect(() => {
-    if (!song) return;
-    
-    const pollMobilePitch = async () => {
-      try {
-        const response = await fetch('/api/mobile?action=getpitch');
-        const data = await response.json();
-        if (data.success && data.pitch) {
-          setMobilePitch(data.pitch.data);
-          setHasMobileClient(true);
-        }
-      } catch {
-        // Ignore polling errors
-      }
-    };
-    
-    const pollInterval = setInterval(pollMobilePitch, 50); // Poll every 50ms for real-time sync
-    
-    return () => clearInterval(pollInterval);
-  }, [song]);
   
   // Use mobile pitch for P2 in duet/duel mode
   useEffect(() => {
