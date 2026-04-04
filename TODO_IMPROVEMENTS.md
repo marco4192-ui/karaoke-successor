@@ -33,6 +33,24 @@ Letztes Update: 2026-04-04
 
 ---
 
+## NEUE FEHLER (Code-Review 2026-04-04)
+
+- [ ] **#23** `spectrogram.ts:14-15` Duplicate identifier `maxDecibels` — Build-Error
+- [ ] **#24** `party-store.ts:45` medleySongs ist `Song[]` aber muss `MedleySong[]` sein — 6× TS-Error in page.tsx
+- [ ] **#25** `page.tsx:378,443,475` setGameMode(null) — GameMode|null nicht erlaubt, null-Check fehlt
+- [ ] **#26** `game-screen.tsx:968,969,993` visibleNotes fehlt `lineIndex` Property für NoteWithLine
+- [ ] **#27** `ultrastar-parser.ts:654` DuetPlayer-Typ erlaubt 'both' nicht, aber Code erzeugt es
+- [ ] **#28** `duet-note-highway.tsx:175` + `single-player-lyrics.tsx:155` GameMode string→enum Typfehler
+- [ ] **#29** `use-game-loop.ts:297-300` Audio src wird bei jedem Countdown-Start neu gesetzt → Playback zurückgesetzt
+- [ ] **#30** `use-game-media.ts:163-201` Media-Warte-Timeout setzt mediaLoaded=true auch bei Fehlschlag
+- [ ] **#31** `use-game-loop.ts:374-397` Unmount-Cleanup: audioEffects Dependency fehlt setAudioEffects
+- [ ] **#32** `game-screen.tsx:213` useSongEnergy(audioRef.current) übergibt DOM-Node statt Ref
+- [ ] **#33** `song-library.ts` loadCustomSongsFromStorage() wird nie aufgerufen — App startet nur mit localStorage
+- [ ] **#34** `use-game-loop.ts:118-119` players[0] kann undefined sein wenn Spiel endet ohne Spieler
+- [ ] **#35** `use-game-media.ts` Media-Event-Listener wird nie entfernt (addEventListener ohne cleanup)
+
+---
+
 ## ERWEITERUNGSIDEEN (für später)
 
 - [ ] **A.1** useNoteScoring in Web Worker auslagern
