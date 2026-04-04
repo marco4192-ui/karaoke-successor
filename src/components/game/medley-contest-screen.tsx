@@ -22,7 +22,7 @@ interface MedleyPlayer {
   songsCompleted: number;
 }
 
-interface MedleySong {
+export interface MedleySong {
   song: Song;
   startTime: number; // Start time in the original song
   endTime: number; // End time in the original song

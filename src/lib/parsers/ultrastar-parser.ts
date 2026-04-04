@@ -650,8 +650,13 @@ export function generateUltraStarTxt(song: Song): string {
       if (song.isDuet && note.player) {
         if (currentPlayer !== note.player) {
           // Add player marker before this note
-          lines.push(note.player);
-          currentPlayer = note.player;
+          // Note: 'both' means the note is sung by both players — write it under both
+          if (note.player === 'both') {
+            // Don't switch — both players sing this note, write once without marker
+          } else {
+            lines.push(note.player);
+            currentPlayer = note.player;
+          }
         }
       }
       
