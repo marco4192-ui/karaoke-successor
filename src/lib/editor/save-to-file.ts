@@ -42,14 +42,15 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
       const fileName = `${song.title} - ${song.artist}.txt`;
       filePath = `${songsFolder}/${song.folderPath}/${fileName}`;
     }
-    // Fallback: Ask user where to save
+    // Fallback: Ask user where to save (using native dialog)
     else {
       console.warn('[SaveToFile] No path info available, asking user...');
-      const { save } = await import('@tauri-apps/plugin-dialog');
-      const userPath = await save({
-        defaultPath: `${song.title} - ${song.artist}.txt`,
-        filters: [{ name: 'UltraStar TXT', extensions: ['txt'] }],
-      });
+      const { nativePickFileSave } = await import('@/lib/native-fs');
+      const userPath = await nativePickFileSave(
+        'Save TXT file',
+        'UltraStar TXT',
+        ['txt']
+      );
       
       if (!userPath) {
         return { success: false, message: 'Speichern abgebrochen' };
@@ -58,10 +59,10 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
       filePath = userPath;
     }
     
-    // Verify the file exists before writing (for non-user-selected paths)
+    // Verify the file exists before writing (using native command)
     if (song.relativeTxtPath || song.folderPath) {
-      const { exists } = await import('@tauri-apps/plugin-fs');
-      const fileExists = await exists(filePath!);
+      const { nativeFileExists } = await import('@/lib/native-fs');
+      const fileExists = await nativeFileExists(filePath!);
       
       if (!fileExists) {
         console.warn('[SaveToFile] Original file does not exist:', filePath);
@@ -69,9 +70,9 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
       }
     }
     
-    // Write the file directly (overwrites if exists, creates if not)
-    const { writeTextFile } = await import('@tauri-apps/plugin-fs');
-    await writeTextFile(filePath!, txtContent);
+    // Write the file using native command (bypasses ACL)
+    const { nativeWriteFileText } = await import('@/lib/native-fs');
+    await nativeWriteFileText(filePath!, txtContent);
     
     console.log(`[SaveToFile] Successfully saved to: ${filePath}`);
     return { success: true, message: 'Datei gespeichert!', path: filePath! };

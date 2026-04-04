@@ -5,6 +5,7 @@ import { getAllSongs, reloadLibrary, clearCustomSongs, addSongs } from '@/lib/ga
 import { Song } from '@/types/game';
 import { isTauri } from '@/lib/tauri-file-storage';
 import { safeAlert, safeConfirm, safePrompt } from '@/lib/safe-dialog';
+import { nativePickFolder } from '@/lib/native-fs';
 
 export interface ScanProgress {
   stage: 'scanning' | 'importing' | 'complete' | 'error';
@@ -107,12 +108,12 @@ export function useFolderScanner(): UseFolderScannerReturn {
             // Generate song ID
             const songId = `song-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
-            // Store TXT content in IndexedDB for caching
+            // Store TXT content in IndexedDB for caching (using native command)
             let storedTxt = false;
             if (scanned.relativeTxtPath) {
               try {
-                const { readTextFile } = await import('@tauri-apps/plugin-fs');
-                const txtContent = await readTextFile(`${folderPath}/${scanned.relativeTxtPath}`);
+                const { nativeReadFileText } = await import('@/lib/native-fs');
+                const txtContent = await nativeReadFileText(`${folderPath}/${scanned.relativeTxtPath}`);
                 if (txtContent) {
                   const txtBlob = new Blob([txtContent], { type: 'text/plain' });
                   await storeMedia(songId, 'txt', txtBlob);
@@ -271,7 +272,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
     await performFolderScan(songsFolder);
   }, [songsFolder, performFolderScan]);
 
-  // Browse folder (using Tauri dialog if available)
+  // Browse folder using native Tauri command (bypasses ACL restrictions)
   const handleBrowseFolder = useCallback(async () => {
     if (!isTauri()) {
       safeAlert(
@@ -283,26 +284,16 @@ export function useFolderScanner(): UseFolderScannerReturn {
     }
 
     try {
-      const dialogModule = await import('@tauri-apps/plugin-dialog');
-      const open = dialogModule.open;
-      if (!open) {
-        throw new Error('open function not found in dialog module');
-      }
+      // Use native command instead of plugin dialog — bypasses ACL
+      const selected = await nativePickFolder('Select Songs Folder');
 
-      const selected = await open({
-        directory: true,
-        multiple: false,
-        title: 'Select Songs Folder'
-      });
-
-      if (selected && typeof selected === 'string') {
+      if (selected) {
+        console.log('[Settings] Folder selected:', selected);
         setSongsFolder(selected);
         localStorage.setItem('karaoke-songs-folder', selected);
         await performFolderScan(selected);
-      } else if (selected === null) {
-        console.log('[Settings] User cancelled the dialog');
       } else {
-        console.warn('[Settings] Unexpected dialog result:', selected);
+        console.log('[Settings] User cancelled the dialog');
       }
     } catch (e) {
       console.error('[Settings] Error in handleBrowseFolder:', e);

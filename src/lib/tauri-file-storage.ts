@@ -2,10 +2,15 @@
 // This module handles copying imported files to app data directory
 // so they persist across app restarts
 
-import { writeFile, readTextFile, BaseDirectory, exists, mkdir, readDir, readFile } from '@tauri-apps/plugin-fs';
+import { writeFile, readTextFile, BaseDirectory, exists, mkdir } from '@tauri-apps/plugin-fs';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { LyricLine } from '@/types/game';
 import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
+import {
+  nativeReadFileBytes,
+  nativeReadFileText,
+  nativeReadDir,
+} from '@/lib/native-fs';
 
 // Check if running in Tauri
 // Tauri v2 may use __TAURI_INTERNALS__ instead of __TAURI__
@@ -196,21 +201,19 @@ async function collectAllFiles(
   const files: CollectedFile[] = [];
   
   try {
-    const entries = await readDir(currentPath);
+    // Use native command to bypass ACL
+    const entries = await nativeReadDir(currentPath);
     
     for (const entry of entries) {
-      const fullPath = `${currentPath}/${entry.name}`;
+      const fullPath = entry.path;
       const relativePath = fullPath.startsWith(basePath + '/') 
         ? fullPath.slice(basePath.length + 1) 
         : fullPath;
       
-      // Check if it's a directory using Tauri v2 API
-      if ('isDirectory' in entry && entry.isDirectory) {
-        // Recurse into subdirectory
+      if (entry.is_directory) {
         const subFiles = await collectAllFiles(basePath, fullPath);
         files.push(...subFiles);
-      } else if ('isFile' in entry && entry.isFile) {
-        // It's a file
+      } else if (entry.is_file) {
         files.push({
           relativePath,
           fullPath,
@@ -259,13 +262,13 @@ async function processFolder(
     return null;
   }
   
-  // Read TXT content
+  // Read TXT content using native command (bypass ACL)
   let txtContent: string | null = null;
   try {
     const fullPath = `${baseFolder}/${txtFile.path}`;
-    txtContent = await readTextFile(fullPath);
+    txtContent = await nativeReadFileText(fullPath);
   } catch (e) {
-    console.warn('[TauriScanner] Could not read TXT:', txtFile.path);
+    console.warn('[TauriScanner] Could not read TXT:', txtFile.path, e);
     return null;
   }
   
@@ -812,27 +815,34 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
 }
 
 // Load a file from the filesystem and return a blob URL
-// This is the most reliable way to load media in Tauri v2 with dev server
+// Uses native Tauri command to bypass plugin ACL restrictions.
 async function loadFileAsBlobUrl(fullPath: string): Promise<string | null> {
   console.log('[TauriFS] loadFileAsBlobUrl called for:', fullPath);
   
   try {
-    // Read file as Uint8Array
-    const fileData = await readFile(fullPath);
-    console.log('[TauriFS] File read successfully, size:', fileData.length);
+    // Use native command — returns base64-encoded bytes (bypass ACL)
+    const base64Data = await nativeReadFileBytes(fullPath);
+    
+    // Decode base64 to binary
+    const binaryString = atob(base64Data);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    console.log('[TauriFS] File read successfully (native), size:', bytes.length);
     
     // Determine MIME type from extension
     const ext = '.' + fullPath.split('.').pop()?.toLowerCase();
     const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
     
     // Create blob and URL
-    const blob = new Blob([fileData], { type: mimeType });
+    const blob = new Blob([bytes], { type: mimeType });
     const blobUrl = URL.createObjectURL(blob);
     
     // Cache the URL
     blobUrlCache.set(fullPath, blobUrl);
     
-    console.log('[TauriFS] Created blob URL for:', fullPath, 'MIME:', mimeType, 'Size:', fileData.length, 'BlobURL:', blobUrl.substring(0, 50) + '...');
+    console.log('[TauriFS] Created blob URL for:', fullPath, 'MIME:', mimeType, 'Size:', bytes.length);
     return blobUrl;
   } catch (error) {
     console.error('[TauriFS] Failed to load file as blob:', fullPath, error);

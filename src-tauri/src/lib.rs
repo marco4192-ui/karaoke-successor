@@ -8,6 +8,188 @@ use std::path::PathBuf;
 use std::fs;
 
 use tauri::Manager;
+use serde::{Deserialize, Serialize};
+
+// ============================================================
+// Custom Tauri Commands — bypass plugin ACL restrictions
+// In Tauri v2, custom #[tauri::command] functions are allowed
+// by default without ACL configuration. We use these as reliable
+// fallbacks for file system and dialog operations.
+// ============================================================
+
+/// Read a file as raw bytes (for audio, video, images).
+/// Returns base64-encoded string to avoid IPC binary issues.
+#[tauri::command]
+fn native_read_file_bytes(file_path: String) -> Result<String, String> {
+    let path = PathBuf::from(&file_path);
+    if !path.exists() {
+        return Err(format!("File not found: {}", file_path));
+    }
+    let bytes = fs::read(&path).map_err(|e| format!("Failed to read '{}': {}", file_path, e))?;
+    Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes))
+}
+
+/// Read a file as text (for TXT, config files, etc.)
+#[tauri::command]
+fn native_read_file_text(file_path: String) -> Result<String, String> {
+    let path = PathBuf::from(&file_path);
+    if !path.exists() {
+        return Err(format!("File not found: {}", file_path));
+    }
+    fs::read_to_string(&path).map_err(|e| format!("Failed to read '{}': {}", file_path, e))
+}
+
+/// Check if a file or directory exists
+#[tauri::command]
+fn native_file_exists(file_path: String) -> bool {
+    PathBuf::from(&file_path).exists()
+}
+
+/// List directory contents
+#[derive(Serialize, Deserialize, Clone)]
+struct NativeDirEntry {
+    name: String,
+    is_directory: bool,
+    is_file: bool,
+    path: String,
+}
+
+#[tauri::command]
+fn native_read_dir(dir_path: String) -> Result<Vec<NativeDirEntry>, String> {
+    let path = PathBuf::from(&dir_path);
+    if !path.exists() {
+        return Err(format!("Directory not found: {}", dir_path));
+    }
+    if !path.is_dir() {
+        return Err(format!("Not a directory: {}", dir_path));
+    }
+
+    let entries = fs::read_dir(&path)
+        .map_err(|e| format!("Failed to read directory '{}': {}", dir_path, e))?;
+
+    let mut result = Vec::new();
+    for entry in entries.flatten() {
+        let entry_path = entry.path();
+        let name = entry.file_name().to_string_lossy().to_string();
+        let full_path = entry_path.to_string_lossy().to_string();
+        result.push(NativeDirEntry {
+            name,
+            is_directory: entry_path.is_dir(),
+            is_file: entry_path.is_file(),
+            path: full_path,
+        });
+    }
+
+    Ok(result)
+}
+
+/// Open a native folder picker dialog.
+/// Uses rfd (Rust File Dialog) crate for reliable cross-platform support.
+#[tauri::command]
+fn native_pick_folder(title: String) -> Option<String> {
+    rfd::FileDialog::new()
+        .set_title(&title)
+        .pick_folder()
+        .map(|p| p.to_string_lossy().to_string())
+}
+
+/// Open a native file dialog for saving.
+#[tauri::command]
+fn native_pick_file_save(title: String, filter_name: String, extensions: Vec<String>) -> Option<String> {
+    let mut dialog = rfd::FileDialog::new().set_title(&title);
+    if !extensions.is_empty() {
+        dialog = dialog.add_filter(
+            &filter_name,
+            &extensions.iter().map(|s| s.as_str()).collect::<Vec<&str>>(),
+        );
+    }
+    dialog.save_file().map(|p| p.to_string_lossy().to_string())
+}
+
+/// Show a native message dialog.
+#[tauri::command]
+fn native_message(title: String, message: String, kind: String) -> bool {
+    match kind.as_str() {
+        "info" => rfd::MessageDialog::new()
+            .set_title(&title)
+            .set_description(&message)
+            .set_level(rfd::MessageLevel::Info)
+            .show(),
+        "warning" => rfd::MessageDialog::new()
+            .set_title(&title)
+            .set_description(&message)
+            .set_level(rfd::MessageLevel::Warning)
+            .show(),
+        "error" => rfd::MessageDialog::new()
+            .set_title(&title)
+            .set_description(&message)
+            .set_level(rfd::MessageLevel::Error)
+            .show(),
+        _ => rfd::MessageDialog::new()
+            .set_title(&title)
+            .set_description(&message)
+            .set_level(rfd::MessageLevel::Info)
+            .show(),
+    }
+}
+
+/// Show a native confirm dialog.
+#[tauri::command]
+fn native_confirm(title: String, message: String) -> bool {
+    rfd::MessageDialog::new()
+        .set_title(&title)
+        .set_description(&message)
+        .set_buttons(rfd::MessageButtons::YesNo)
+        .show()
+}
+
+/// Create a directory (recursive)
+#[tauri::command]
+fn native_mkdir(dir_path: String) -> Result<(), String> {
+    fs::create_dir_all(&dir_path)
+        .map_err(|e| format!("Failed to create directory '{}': {}", dir_path, e))
+}
+
+/// Write bytes to a file (decoded from base64)
+#[tauri::command]
+fn native_write_file_bytes(file_path: String, data_base64: String) -> Result<(), String> {
+    let bytes = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &data_base64)
+        .map_err(|e| format!("Failed to decode base64: {}", e))?;
+
+    if let Some(parent) = PathBuf::from(&file_path).parent() {
+        fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create parent directory: {}", e))?;
+    }
+
+    fs::write(&file_path, &bytes)
+        .map_err(|e| format!("Failed to write '{}': {}", file_path, e))
+}
+
+/// Write text to a file
+#[tauri::command]
+fn native_write_file_text(file_path: String, content: String) -> Result<(), String> {
+    if let Some(parent) = PathBuf::from(&file_path).parent() {
+        fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create parent directory: {}", e))?;
+    }
+
+    fs::write(&file_path, &content)
+        .map_err(|e| format!("Failed to write '{}': {}", file_path, e))
+}
+
+/// Remove a file
+#[tauri::command]
+fn native_remove_file(file_path: String) -> Result<(), String> {
+    fs::remove_file(&file_path)
+        .map_err(|e| format!("Failed to remove '{}': {}", file_path, e))
+}
+
+/// Remove a directory (recursive)
+#[tauri::command]
+fn native_remove_dir(dir_path: String) -> Result<(), String> {
+    fs::remove_dir_all(&dir_path)
+        .map_err(|e| format!("Failed to remove directory '{}': {}", dir_path, e))
+}
 
 static SERVER_STARTED: AtomicBool = AtomicBool::new(false);
 static mut SERVER_PROCESS: Option<Child> = None;
@@ -80,6 +262,23 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
+        .invoke_handler(tauri::generate_handler![
+            // Native file system commands (bypass ACL)
+            native_read_file_bytes,
+            native_read_file_text,
+            native_file_exists,
+            native_read_dir,
+            native_mkdir,
+            native_write_file_bytes,
+            native_write_file_text,
+            native_remove_file,
+            native_remove_dir,
+            // Native dialog commands (bypass ACL)
+            native_pick_folder,
+            native_pick_file_save,
+            native_message,
+            native_confirm,
+        ])
         .setup(|app| {
             // Get the main window and open DevTools in debug mode
             #[cfg(debug_assertions)]

@@ -771,12 +771,11 @@ export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
     }
   }
   
-  // Strategy 2: Load directly from file system in Tauri (if relativeTxtPath is set)
-  // This is now the PRIMARY fallback when IndexedDB fails or storedTxt is false
-  if (song.relativeTxtPath && typeof window !== 'undefined' && '__TAURI__' in window) {
+  // Strategy 2: Load directly from file system in Tauri using native command (bypass ACL)
+  if (song.relativeTxtPath && typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window)) {
     try {
-      console.log('[SongLibrary] Attempting to load TXT from file system:', song.relativeTxtPath);
-      const { readTextFile } = await import('@tauri-apps/plugin-fs');
+      console.log('[SongLibrary] Attempting to load TXT from file system (native):', song.relativeTxtPath);
+      const { nativeReadFileText } = await import('@/lib/native-fs');
       
       // Use song.baseFolder as primary source, fallback to localStorage
       const songsFolder = song.baseFolder || localStorage.getItem('karaoke-songs-folder');
@@ -785,7 +784,7 @@ export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
         const filePath = `${songsFolder}/${song.relativeTxtPath}`;
         console.log('[SongLibrary] Loading from path:', filePath);
         
-        const txtContent = await readTextFile(filePath);
+        const txtContent = await nativeReadFileText(filePath);
         console.log('[SongLibrary] TXT content loaded from file system, length:', txtContent?.length || 0);
         
         if (txtContent && txtContent.length > 0) {
