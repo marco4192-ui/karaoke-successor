@@ -1,135 +1,197 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { extractYouTubeId } from '@/components/game/youtube-player';
-import type { Song } from '@/types/game';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import type { Song, LyricLine } from '@/types/game';
 
-export interface UseGameMediaOptions {
-  song: Song | null;
-  isPlaying: boolean;
-  onTimeUpdate?: (time: number) => void;
-  onAdStart?: () => void;
-  onAdEnd?: () => void;
-}
-
-export interface GameMediaState {
+export interface UseGameMediaResult {
+  /** Song with URLs restored via ensureSongUrls (for Tauri compatibility) */
+  restoredSong: Song | null;
+  /** Song with restored URLs AND on-demand loaded lyrics */
+  effectiveSong: Song | null;
+  /** Lyrics loaded on-demand from IndexedDB */
+  loadedLyrics: LyricLine[];
+  /** Error message if lyrics loading failed */
+  lyricsLoadError: string | null;
+  /** Whether media (audio/video) has finished loading and is ready to play */
   mediaLoaded: boolean;
-  isYouTube: boolean;
-  youtubeVideoId: string | null;
-  useYouTubeAudio: boolean;
-  isAdPlaying: boolean;
-  adCountdown: number;
-  customYoutubeId: string | null;
+  /** Ref to the <audio> element */
   audioRef: React.RefObject<HTMLAudioElement | null>;
+  /** Ref to the <video> element */
   videoRef: React.RefObject<HTMLVideoElement | null>;
+  /** Ref tracking audio element load state */
+  audioLoadedRef: React.RefObject<boolean>;
+  /** Ref tracking video element load state */
+  videoLoadedRef: React.RefObject<boolean>;
 }
 
-export function useGameMedia({
-  song,
-  isPlaying,
-  onTimeUpdate,
-  onAdStart,
-  onAdEnd,
-}: UseGameMediaOptions): GameMediaState & {
-  setMediaLoaded: (value: boolean) => void;
-  handleYoutubeUrlSubmit: (url: string) => void;
-  clearCustomYoutube: () => void;
-  handleAdStart: () => void;
-  handleAdEnd: () => void;
-  startMediaPlayback: (startPosition: number) => Promise<void>;
-  pauseMedia: () => void;
-  stopMedia: () => void;
-} {
-  const [mediaLoaded, setMediaLoaded] = useState(false);
-  const [customYoutubeId, setCustomYoutubeId] = useState<string | null>(null);
-  const [isAdPlaying, setIsAdPlaying] = useState(false);
-  const [adCountdown, setAdCountdown] = useState(0);
+/**
+ * Hook that encapsulates all song media preparation:
+ * - URL restoration for Tauri (ensureSongUrls)
+ * - On-demand lyrics loading from IndexedDB (storedTxt flag)
+ * - Media loading detection (audio/video canplay events)
+ * - Computes the final effectiveSong with restored URLs + loaded lyrics
+ */
+export function useGameMedia(song: Song | null): UseGameMediaResult {
+  // ── State for song with restored URLs (if needed) ──
+  const [restoredSong, setRestoredSong] = useState<Song | null>(null);
 
+  // ── On-demand URL restoration for Tauri - ensure media URLs are valid ──
+  useEffect(() => {
+    if (!song) {
+      setRestoredSong(null);
+      return;
+    }
+
+    // Use ensureSongUrls to handle URL restoration
+    const restoreUrls = async () => {
+      try {
+        const { ensureSongUrls } = await import('@/lib/game/song-library');
+        const preparedSong = await ensureSongUrls(song);
+        console.log('[GameScreen] Song URLs ensured:', {
+          title: preparedSong.title,
+          audioUrl: !!preparedSong.audioUrl,
+          videoBackground: !!preparedSong.videoBackground,
+          coverImage: !!preparedSong.coverImage
+        });
+        setRestoredSong(preparedSong);
+      } catch (err) {
+        console.error('[GameScreen] Error ensuring URLs:', err);
+        setRestoredSong(song);
+      }
+    };
+
+    restoreUrls();
+  }, [song?.id, song?.audioUrl, song?.videoBackground, song?.coverImage, song?.relativeAudioPath, song?.relativeVideoPath, song?.relativeCoverPath]);
+
+  // Use restored song if available, otherwise use original song
+  const effectiveSongBase = restoredSong || song;
+
+  // ── On-demand lyrics loading - load lyrics from IndexedDB if storedTxt flag is set ──
+  const [loadedLyrics, setLoadedLyrics] = useState<LyricLine[]>([]);
+  const [lyricsLoadError, setLyricsLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    console.log('[GameScreen] Lyrics loading effect triggered', {
+      songId: song?.id,
+      storedTxt: song?.storedTxt,
+      lyricsLength: song?.lyrics?.length || 0
+    });
+
+    if (song?.storedTxt && (!song.lyrics || song.lyrics.length === 0)) {
+      // Load lyrics on-demand from IndexedDB
+      console.log('[GameScreen] Loading lyrics from IndexedDB for song:', song.id);
+      setLyricsLoadError(null);
+
+      import('@/lib/game/song-library').then(({ loadSongLyrics }) => {
+        loadSongLyrics(song).then(lyrics => {
+          console.log('[GameScreen] Lyrics loaded, length:', lyrics.length);
+          if (lyrics.length > 0) {
+            setLoadedLyrics(lyrics);
+            setLyricsLoadError(null);
+          } else {
+            setLyricsLoadError('Failed to load lyrics from IndexedDB - empty result');
+          }
+        }).catch(err => {
+          console.error('[GameScreen] Error loading lyrics:', err);
+          setLyricsLoadError(`Error loading lyrics: ${err.message}`);
+        });
+      }).catch(err => {
+        console.error('[GameScreen] Error importing song-library:', err);
+        setLyricsLoadError(`Error importing module: ${err.message}`);
+      });
+    } else {
+      setLoadedLyrics([]);
+      setLyricsLoadError(null);
+    }
+  }, [song?.id, song?.storedTxt, song?.lyrics]);
+
+  // ── Compute effectiveSong: restored URLs + loaded lyrics ──
+  const effectiveSong = useMemo(() => {
+    console.log('[GameScreen] Computing effectiveSong', {
+      hasSong: !!effectiveSongBase,
+      loadedLyricsLength: loadedLyrics.length,
+      songLyricsLength: effectiveSongBase?.lyrics?.length || 0,
+      lyricsLoadError
+    });
+
+    if (!effectiveSongBase) return null;
+    if (loadedLyrics.length > 0) {
+      return { ...effectiveSongBase, lyrics: loadedLyrics };
+    }
+    return effectiveSongBase;
+  }, [effectiveSongBase, loadedLyrics, lyricsLoadError]);
+
+  // ── Media element refs ──
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const audioLoadedRef = useRef(false);
   const videoLoadedRef = useRef(false);
 
-  // Check if song has YouTube URL
-  const songYoutubeUrl = song?.youtubeUrl;
-  const videoBackground = song?.videoBackground;
-  const songYoutubeId = songYoutubeUrl ? extractYouTubeId(songYoutubeUrl) :
-    (videoBackground && (videoBackground.startsWith('http://') || videoBackground.startsWith('https://')) ?
-      extractYouTubeId(videoBackground) : null);
+  // ── Media loaded state ──
+  const [mediaLoaded, setMediaLoaded] = useState(false);
 
-  // Use custom YouTube ID if set, otherwise use song's YouTube ID
-  const youtubeVideoId = customYoutubeId || songYoutubeId;
-  const isYouTube = !!youtubeVideoId;
-  const useYouTubeAudio = isYouTube && !song?.audioUrl;
-
-  // Handle custom YouTube URL input
-  const handleYoutubeUrlSubmit = useCallback((url: string) => {
-    const extractedId = extractYouTubeId(url);
-    if (extractedId) {
-      setCustomYoutubeId(extractedId);
-    }
-  }, []);
-
-  // Clear custom YouTube video
-  const clearCustomYoutube = useCallback(() => {
-    setCustomYoutubeId(null);
-  }, []);
-
-  // Handle ad detection callbacks
-  const handleAdStart = useCallback(() => {
-    setIsAdPlaying(true);
-    setAdCountdown(30);
-    onAdStart?.();
-  }, [onAdStart]);
-
-  const handleAdEnd = useCallback(() => {
-    setIsAdPlaying(false);
-    setAdCountdown(0);
-    onAdEnd?.();
-  }, [onAdEnd]);
-
-  // Ad countdown effect
+  // Initialize media elements on mount
+  // Uses effectiveSong which has restored URLs for Tauri
   useEffect(() => {
-    if (isAdPlaying && adCountdown > 0) {
-      const timer = setTimeout(() => {
-        setAdCountdown(prev => prev - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [isAdPlaying, adCountdown]);
-
-  // Initialize media elements when song loads
-  useEffect(() => {
-    if (!song) return;
+    if (!effectiveSong) return;
 
     // Reset media loaded state
     setMediaLoaded(false);
     audioLoadedRef.current = false;
     videoLoadedRef.current = false;
 
-    const loadMedia = async () => {
-      // For songs with audioUrl, wait for audio element to be ready
-      if (song.audioUrl) {
-        const maxWait = 5000;
-        const startTime = Date.now();
+    // Event-based media loading helper — avoids busy-waiting anti-pattern
+    const waitForMediaEvent = (
+      element: HTMLAudioElement | HTMLVideoElement | null,
+      eventName: string,
+      timeoutMs: number = 5000
+    ): Promise<boolean> => {
+      if (!element) return Promise.resolve(false);
 
-        while (!audioLoadedRef.current && Date.now() - startTime < maxWait) {
-          await new Promise(resolve => setTimeout(resolve, 50));
+      return new Promise((resolve) => {
+        const onReady = () => {
+          resolve(true);
+        };
+
+        element.addEventListener(eventName, onReady, { once: true });
+
+        // Timeout fallback
+        setTimeout(() => resolve(false), timeoutMs);
+      });
+    };
+
+    const loadMedia = async () => {
+      let audioReady = true;
+      let videoReady = true;
+
+      // For songs with audioUrl, wait for audio element to be canplay
+      if (effectiveSong.audioUrl && audioRef.current) {
+        audioReady = await waitForMediaEvent(audioRef.current, 'canplay', 5000);
+        audioLoadedRef.current = audioReady;
+
+        if (audioReady) {
+          console.log('[GameScreen] Audio loaded successfully');
+        } else {
+          console.warn('[GameScreen] Audio load timeout, proceeding anyway');
         }
       }
 
       // For songs with embedded audio (video), wait for video element
-      if (song.hasEmbeddedAudio && song.videoBackground && !song.audioUrl) {
-        const maxWait = 5000;
-        const startTime = Date.now();
+      if (effectiveSong.hasEmbeddedAudio && effectiveSong.videoBackground && !effectiveSong.audioUrl) {
+        if (videoRef.current) {
+          videoReady = await waitForMediaEvent(videoRef.current, 'canplay', 5000);
+          videoLoadedRef.current = videoReady;
 
-        while (!videoLoadedRef.current && Date.now() - startTime < maxWait) {
-          await new Promise(resolve => setTimeout(resolve, 50));
+          if (videoReady) {
+            console.log('[GameScreen] Video loaded successfully');
+          } else {
+            console.warn('[GameScreen] Video load timeout, proceeding anyway');
+          }
         }
       }
 
       // For YouTube videos, just need a small delay for iframe to initialize
-      if (song.youtubeUrl) {
+      if (effectiveSong.youtubeUrl) {
         await new Promise(resolve => setTimeout(resolve, 500));
       }
 
@@ -137,108 +199,17 @@ export function useGameMedia({
     };
 
     loadMedia();
-  }, [song]);
-
-  // Start media playback
-  const startMediaPlayback = useCallback(async (startPosition: number) => {
-    try {
-      // Get fresh media URLs from IndexedDB if storedMedia flag is set
-      let currentAudioUrl = song?.audioUrl;
-      let currentVideoUrl = song?.videoBackground;
-
-      if (song?.storedMedia) {
-        try {
-          const { getSongMediaUrls } = await import('@/lib/db/media-db');
-          const mediaUrls = await getSongMediaUrls(song.id);
-          if (mediaUrls.audioUrl) currentAudioUrl = mediaUrls.audioUrl;
-          if (mediaUrls.videoUrl) currentVideoUrl = mediaUrls.videoUrl;
-        } catch (e) {
-          console.error('[useGameMedia] Failed to load media from IndexedDB:', e);
-        }
-      }
-
-      // PRIORITY 1: Separate audio file
-      if (audioRef.current && currentAudioUrl) {
-        audioRef.current.src = currentAudioUrl;
-        audioRef.current.currentTime = startPosition;
-        await audioRef.current.play();
-      }
-
-      // PRIORITY 2: Video with embedded audio
-      else if (song?.hasEmbeddedAudio && videoRef.current && currentVideoUrl && !currentAudioUrl) {
-        videoRef.current.src = currentVideoUrl;
-        videoRef.current.currentTime = startPosition;
-
-        try {
-          videoRef.current.muted = false;
-          await videoRef.current.play();
-        } catch {
-          videoRef.current.muted = true;
-          await videoRef.current.play();
-          setTimeout(() => {
-            if (videoRef.current) {
-              videoRef.current.muted = false;
-            }
-          }, 100);
-        }
-      }
-
-      // PRIORITY 3: YouTube video
-      else if (isYouTube && youtubeVideoId) {
-        // YouTube player is rendered in JSX and controlled by isPlaying prop
-      }
-
-      // BACKGROUND VIDEO (muted, synced with audio)
-      if (videoRef.current && song?.videoBackground && !song?.hasEmbeddedAudio) {
-        const videoGapSeconds = (song.videoGap || 0) / 1000;
-        videoRef.current.currentTime = Math.max(0, startPosition - videoGapSeconds);
-        videoRef.current.muted = true;
-        videoRef.current.play().catch(() => { });
-      }
-    } catch (error) {
-      console.error('[useGameMedia] Media playback failed:', error);
-    }
-  }, [song, isYouTube, youtubeVideoId]);
-
-  // Pause media
-  const pauseMedia = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-    if (videoRef.current) {
-      videoRef.current.pause();
-    }
-  }, []);
-
-  // Stop media
-  const stopMedia = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
-    }
-  }, []);
+  }, [effectiveSong]);
 
   return {
+    restoredSong,
+    effectiveSong,
+    loadedLyrics,
+    lyricsLoadError,
     mediaLoaded,
-    isYouTube,
-    youtubeVideoId,
-    useYouTubeAudio,
-    isAdPlaying,
-    adCountdown,
-    customYoutubeId,
     audioRef,
     videoRef,
-    setMediaLoaded,
-    handleYoutubeUrlSubmit,
-    clearCustomYoutube,
-    handleAdStart,
-    handleAdEnd,
-    startMediaPlayback,
-    pauseMedia,
-    stopMedia,
+    audioLoadedRef,
+    videoLoadedRef,
   };
 }

@@ -3,25 +3,15 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Slider } from '@/components/ui/slider';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useNoteScoring } from '@/hooks/use-note-scoring';
 import { useGameSettings } from '@/hooks/use-game-settings';
 import { useGameStore } from '@/lib/game/store';
-import { Song, Difficulty, LyricLine, Note, DIFFICULTY_SETTINGS, PLAYER_COLORS } from '@/types/game';
+import { LyricLine, Note, PLAYER_COLORS } from '@/types/game';
 import { PRACTICE_MODE_DEFAULTS, PracticeModeConfig } from '@/lib/game/practice-mode';
-import { PerformanceDisplay } from '@/components/game/game-enhancements';
 import { AudioEffectsEngine } from '@/lib/audio/audio-effects';
 import { MusicReactiveBackground } from '@/components/game/music-reactive-background';
-import { 
-  getDailyChallenge, 
-  getPlayerDailyStats, 
-  getXPLevel, 
-  getTimeUntilReset, 
-  isChallengeCompletedToday,
-  XP_REWARDS,
-  DAILY_BADGES,
-} from '@/lib/game/daily-challenge';
+import { CHALLENGE_MODES } from '@/lib/game/player-progression';
 import { 
   WebcamBackground, 
   WebcamQuickControls,
@@ -31,24 +21,17 @@ import {
   saveWebcamConfig,
 } from '@/components/game/webcam-background';
 import { YouTubePlayer, extractYouTubeId } from '@/components/game/youtube-player';
-import { CHALLENGE_MODES, getExtendedStats, ExtendedPlayerStats } from '@/lib/game/player-progression';
-import { createDuelMatch, DuelMatch } from '@/lib/game/multiplayer';
 import LyricLineDisplay from '@/components/game/lyric-line-display';
-import { MusicIcon, PlayIcon, SettingsIcon, PauseIcon, SkipForwardIcon, RewindIcon, VolumeIcon } from '@/components/icons';
 import {
   calculateScoringMetadata,
 } from '@/lib/game/scoring';
 import {
-  NoteShapeStyle,
   calculatePitchStats,
   PitchStats,
 } from '@/lib/game/note-utils';
 import { ScoreEventsDisplay } from '@/components/game/score-events-display';
 import { PitchGraphDisplay } from '@/components/game/pitch-graph-display';
-import { BackgroundVideo } from '@/components/game/background-video';
-import { DuelScorecard } from '@/components/game/duel-scorecard';
 import { PracticePanel } from '@/components/game/practice-panel';
-import { AudioEffectsPanel } from '@/components/game/audio-effects-panel';
 import { ProminentScoreDisplay } from '@/components/game/prominent-score-display';
 import {
   ParticleSystem,
@@ -63,20 +46,34 @@ import { NoteHighway } from '@/components/game/note-highway';
 import { SinglePlayerLyrics } from '@/components/game/single-player-lyrics';
 import { useRemoteControl } from '@/hooks/use-remote-control';
 import { useMobilePitchPolling } from '@/hooks/use-mobile-pitch-polling';
+import { useGameMedia } from '@/hooks/use-game-media';
+import { useGameLoop } from '@/hooks/use-game-loop';
+import { GameCountdown } from '@/components/game/game-countdown';
+import { GameScoreDisplay } from '@/components/game/game-score-display';
 
 // ===================== HOME SCREEN =====================
 // HomeScreen has been moved to /src/components/screens/home-screen.tsx
 
 // ===================== GAME SCREEN =====================
 function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }) {
-  const { gameState, setSong, setCurrentTime, setDetectedPitch, updatePlayer, endGame, setResults, setGameMode, addPlayer, createProfile, profiles, setMissingWordsIndices, setBlindSection } = useGameStore();
-  const { isInitialized, isListening, pitchResult, initialize, start, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
+  const { gameState, setCurrentTime, setDetectedPitch, updatePlayer, endGame, setResults, addPlayer, createProfile, profiles, setMissingWordsIndices, setBlindSection } = useGameStore();
+  const { pitchResult, initialize, start, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
   
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [countdown, setCountdown] = useState(3);
-  const [volume, setVolume] = useState(0);
-  const [mediaLoaded, setMediaLoaded] = useState(false);
+  // Current song reference - must be defined early as it's used by multiple hooks
+  const song = gameState.currentSong;
+  
+  // ── Media: URL restoration, lyrics loading, media element refs ──
+  const {
+    effectiveSong,
+    mediaLoaded,
+    audioRef,
+    videoRef,
+    audioLoadedRef,
+    videoLoadedRef,
+  } = useGameMedia(song);
+
   const [youtubeTime, setYoutubeTime] = useState(0); // Track YouTube video time
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // Settings from localStorage - managed via useGameSettings hook
   const {
@@ -115,118 +112,20 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   const [showAudioEffects, setShowAudioEffects] = useState(false);
   const [reverbAmount, setReverbAmount] = useState(0);
   const [echoAmount, setEchoAmount] = useState(0);
+  const [adCountdown, setAdCountdown] = useState(0);
   
   // Duel mode state
-  const [duelMatch, setDuelMatch] = useState<DuelMatch | null>(null);
-  const [player2Pitch, setPlayer2Pitch] = useState<number | null>(null);
-  const [player2Score, setPlayer2Score] = useState(0);
+  const [customYoutubeUrl, setCustomYoutubeUrl] = useState('');
+  const [customYoutubeId, setCustomYoutubeId] = useState<string | null>(null);
+  const [showYoutubeInput, setShowYoutubeInput] = useState(false);
+  const [isAdPlaying, setIsAdPlaying] = useState(false);
   
   // Webcam background state - SEPARATE camera for filming singers
   // Initialize with defaults to avoid hydration mismatch
   const [webcamConfig, setWebcamConfig] = useState<WebcamBackgroundConfig>({ ...DEFAULT_WEBCAM_CONFIG });
   
-  // Player progression state (XP, Level, Rank)
-  const [playerStats, setPlayerStats] = useState<ExtendedPlayerStats | null>(null);
-  
-  // Current song reference - must be defined before useEffects that use it
-  const song = gameState.currentSong;
-  
-  // State for song with restored URLs (if needed)
-  const [restoredSong, setRestoredSong] = useState<Song | null>(null);
-  
-  // On-demand URL restoration for Tauri - ensure media URLs are valid
-  useEffect(() => {
-    if (!song) {
-      setRestoredSong(null);
-      return;
-    }
-    
-    // Use ensureSongUrls to handle URL restoration
-    const restoreUrls = async () => {
-      try {
-        const { ensureSongUrls } = await import('@/lib/game/song-library');
-        const preparedSong = await ensureSongUrls(song);
-        console.log('[GameScreen] Song URLs ensured:', {
-          title: preparedSong.title,
-          audioUrl: !!preparedSong.audioUrl,
-          videoBackground: !!preparedSong.videoBackground,
-          coverImage: !!preparedSong.coverImage
-        });
-        setRestoredSong(preparedSong);
-      } catch (err) {
-        console.error('[GameScreen] Error ensuring URLs:', err);
-        setRestoredSong(song);
-      }
-    };
-    
-    restoreUrls();
-  }, [song?.id, song?.audioUrl, song?.videoBackground, song?.coverImage, song?.relativeAudioPath, song?.relativeVideoPath, song?.relativeCoverPath]);
-  
-  // Use restored song if available, otherwise use original song
-  const effectiveSongBase = restoredSong || song;
-  
-  // On-demand lyrics loading - load lyrics from IndexedDB if storedTxt flag is set
-  const [loadedLyrics, setLoadedLyrics] = useState<LyricLine[]>([]);
-  const [lyricsLoadError, setLyricsLoadError] = useState<string | null>(null);
-  
-  useEffect(() => {
-    console.log('[GameScreen] Lyrics loading effect triggered', {
-      songId: song?.id,
-      storedTxt: song?.storedTxt,
-      lyricsLength: song?.lyrics?.length || 0
-    });
-    
-    if (song?.storedTxt && (!song.lyrics || song.lyrics.length === 0)) {
-      // Load lyrics on-demand from IndexedDB
-      console.log('[GameScreen] Loading lyrics from IndexedDB for song:', song.id);
-      setLyricsLoadError(null);
-      
-      import('@/lib/game/song-library').then(({ loadSongLyrics }) => {
-        loadSongLyrics(song).then(lyrics => {
-          console.log('[GameScreen] Lyrics loaded, length:', lyrics.length);
-          if (lyrics.length > 0) {
-            setLoadedLyrics(lyrics);
-            setLyricsLoadError(null);
-          } else {
-            setLyricsLoadError('Failed to load lyrics from IndexedDB - empty result');
-          }
-        }).catch(err => {
-          console.error('[GameScreen] Error loading lyrics:', err);
-          setLyricsLoadError(`Error loading lyrics: ${err.message}`);
-        });
-      }).catch(err => {
-        console.error('[GameScreen] Error importing song-library:', err);
-        setLyricsLoadError(`Error importing module: ${err.message}`);
-      });
-    } else {
-      setLoadedLyrics([]);
-      setLyricsLoadError(null);
-    }
-  }, [song?.id, song?.storedTxt, song?.lyrics]);
-  
-  // Use loaded lyrics if available, otherwise use song's lyrics
-  // Uses effectiveSongBase which has restored URLs
-  const effectiveSong = useMemo(() => {
-    console.log('[GameScreen] Computing effectiveSong', {
-      hasSong: !!effectiveSongBase,
-      loadedLyricsLength: loadedLyrics.length,
-      songLyricsLength: effectiveSongBase?.lyrics?.length || 0,
-      lyricsLoadError
-    });
-    
-    if (!effectiveSongBase) return null;
-    if (loadedLyrics.length > 0) {
-      return { ...effectiveSongBase, lyrics: loadedLyrics };
-    }
-    return effectiveSongBase;
-  }, [effectiveSongBase, loadedLyrics, lyricsLoadError]);
-  
-  // Load player stats after mount
-  useEffect(() => {
-    const stats = getExtendedStats();
-    setPlayerStats(stats);
-  }, []);
-  
+  // (restoredSong, loadedLyrics, lyricsLoadError, effectiveSong moved to useGameMedia hook)
+
   // BLIND KARAOKE MODE: Set blind sections based on time
   // Uses a deterministic seed generated once per song to avoid flickering
   const blindSeedRef = useRef<number[]>([]);
@@ -299,12 +198,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   // Duet mode state - P2 volume (other P2 state is managed by useNoteScoring hook)
   const [p2Volume, setP2Volume] = useState(0);
   
-  const gameLoopRef = useRef<number | null>(null);
-  const startTimeRef = useRef<number>(0);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const isMountedRef = useRef(true);
+  // (gameLoopRef, startTimeRef, countdownIntervalRef, isMountedRef moved to useGameLoop hook)
   
   // Visual Effects - Particle system for score feedback
   const { 
@@ -513,15 +407,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     };
   }, [isPlaying]);
   
-  // ===================== AD/YOUTUBE STATE =====================
-  // MUST be defined BEFORE useRemoteControl hook!
-  // Custom YouTube video for background (can be set by user)
-  const [customYoutubeUrl, setCustomYoutubeUrl] = useState('');
-  const [customYoutubeId, setCustomYoutubeId] = useState<string | null>(null);
-  const [showYoutubeInput, setShowYoutubeInput] = useState(false);
-  const [isAdPlaying, setIsAdPlaying] = useState(false);
-  const [adCountdown, setAdCountdown] = useState(0);
-  
   // ===================== REMOTE CONTROL POLLING =====================
   // Poll for remote commands from mobile companions
   useRemoteControl({
@@ -534,19 +419,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     onBack,
     onEnd,
   });
-  
-  // Initialize duel mode - use useMemo to avoid setState in effect
-  const duelMatchValue = useMemo(() => {
-    if (gameState.gameMode === 'duel' && song && gameState.players.length >= 2) {
-      return createDuelMatch(song, gameState.players[0], gameState.players[1]);
-    }
-    return null;
-  }, [gameState.gameMode, song, gameState.players]);
-  
-  // Update duelMatch state when the computed value changes
-  useEffect(() => {
-    setDuelMatch(duelMatchValue);
-  }, [duelMatchValue]);
   
   // Check if song has YouTube URL (from #VIDEO: tag with URL)
   // Priority: custom YouTube > song.youtubeUrl > videoBackground if URL
@@ -692,463 +564,52 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   const VISIBLE_BOTTOM = 85; // percentage from bottom
   const VISIBLE_RANGE = VISIBLE_BOTTOM - VISIBLE_TOP;
 
-  // Track media loading state with refs for reliability
-  const audioLoadedRef = useRef(false);
-  const videoLoadedRef = useRef(false);
-  const mediaCheckIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // (mediaLoaded, audioLoadedRef, videoLoadedRef, media loading effect moved to useGameMedia hook)
 
-  // Initialize media elements on mount
-  // Uses effectiveSong which has restored URLs for Tauri
-  useEffect(() => {
-    if (!effectiveSong) return;
-    
-    // Reset media loaded state
-    setMediaLoaded(false);
-    audioLoadedRef.current = false;
-    videoLoadedRef.current = false;
-    
-    // Event-based media loading helper — avoids busy-waiting anti-pattern
-    const waitForMediaEvent = (
-      element: HTMLAudioElement | HTMLVideoElement | null,
-      eventName: string,
-      timeoutMs: number = 5000
-    ): Promise<boolean> => {
-      if (!element) return Promise.resolve(false);
-      
-      return new Promise((resolve) => {
-        const onReady = () => {
-          resolve(true);
-        };
-        
-        element.addEventListener(eventName, onReady, { once: true });
-        
-        // Timeout fallback
-        setTimeout(() => resolve(false), timeoutMs);
-      });
-    };
-    
-    const loadMedia = async () => {
-      let audioReady = true;
-      let videoReady = true;
-      
-      // For songs with audioUrl, wait for audio element to be canplay
-      if (effectiveSong.audioUrl && audioRef.current) {
-        audioReady = await waitForMediaEvent(audioRef.current, 'canplay', 5000);
-        audioLoadedRef.current = audioReady;
-        
-        if (audioReady) {
-          console.log('[GameScreen] Audio loaded successfully');
-        } else {
-          console.warn('[GameScreen] Audio load timeout, proceeding anyway');
-        }
-      }
-      
-      // For songs with embedded audio (video), wait for video element
-      if (effectiveSong.hasEmbeddedAudio && effectiveSong.videoBackground && !effectiveSong.audioUrl) {
-        if (videoRef.current) {
-          videoReady = await waitForMediaEvent(videoRef.current, 'canplay', 5000);
-          videoLoadedRef.current = videoReady;
-          
-          if (videoReady) {
-            console.log('[GameScreen] Video loaded successfully');
-          } else {
-            console.warn('[GameScreen] Video load timeout, proceeding anyway');
-          }
-        }
-      }
-      
-      // For YouTube videos, just need a small delay for iframe to initialize
-      if (effectiveSong.youtubeUrl) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-      
-      setMediaLoaded(true);
-    };
-    
-    loadMedia();
-  }, [effectiveSong]);
+  // ── Game Loop: countdown, game loop, media playback, song-end detection ──
+  const {
+    countdown,
+    volume,
+    pauseGame,
+    resumeGame,
+    endGameAndCleanup,
+  } = useGameLoop({
+    effectiveSong,
+    mediaLoaded,
+    audioRef,
+    videoRef,
+    isYouTube,
+    youtubeVideoId,
+    youtubeTime,
+    isPlaying,
+    setIsPlaying,
+    pitchResult,
+    initialize,
+    start,
+    stop,
+    setPitchDifficulty,
+    setCurrentTime,
+    setDetectedPitch,
+    endGame,
+    setResults,
+    resetScoring,
+    checkNoteHits,
+    checkP2NoteHits,
+    difficulty: gameState.difficulty,
+    gameMode: gameState.gameMode,
+    timingOffset,
+    isDuetMode,
+    p2DetectedPitch,
+    p2Volume,
+    setP2Volume,
+    onEnd,
+    audioEffects,
+    setAudioEffects,
+    song,
+    players: gameState.players,
+  });
 
-  // Initialize and start game - FIXED: proper countdown with visible numbers
-  // Uses effectiveSong which has restored URLs for Tauri
-  useEffect(() => {
-    if (!effectiveSong || !mediaLoaded) return;
-
-    isMountedRef.current = true;
-
-    const initGame = async () => {
-      const success = await initialize();
-      if (!isMountedRef.current) return; // Check if still mounted after async
-
-      if (success) {
-        // Set pitch detector to current difficulty
-        setPitchDifficulty(gameState.difficulty);
-
-        start();
-
-        // Reset scoring state (note progress tracking is handled by the hook)
-        resetScoring();
-
-        // Start countdown from 3
-        setCountdown(3);
-
-        // Use a ref to track countdown value for proper timing
-        let currentCount = 3;
-
-        countdownIntervalRef.current = setInterval(() => {
-          if (!isMountedRef.current) {
-            // Component unmounted, clear interval
-            if (countdownIntervalRef.current) {
-              clearInterval(countdownIntervalRef.current);
-              countdownIntervalRef.current = null;
-            }
-            return;
-          }
-
-          currentCount -= 1;
-
-          if (currentCount <= 0) {
-            // Clear interval first
-            if (countdownIntervalRef.current) {
-              clearInterval(countdownIntervalRef.current);
-              countdownIntervalRef.current = null;
-            }
-
-            // Set countdown to 0 to hide it
-            setCountdown(0);
-
-            // Start playing - do this OUTSIDE of setState to avoid batching issues
-            setIsPlaying(true);
-            startTimeRef.current = Date.now();
-            
-            // Start audio/video playback with user interaction context
-            const playMedia = async () => {
-              try {
-                // Use effectiveSong which has restored URLs
-                const currentSong = effectiveSong;
-                if (!currentSong) return;
-                
-                // Calculate start position from #START tag (in milliseconds)
-                const startPosition = (currentSong.start || 0) / 1000; // Convert to seconds
-                
-                // Use URLs from effectiveSong (already restored for Tauri via ensureSongUrls)
-                let currentAudioUrl = currentSong.audioUrl;
-                let currentVideoUrl = currentSong.videoBackground;
-                
-                console.log('[GameScreen] playMedia - using URLs from effectiveSong:', {
-                  audioUrl: currentAudioUrl ? 'present' : 'missing',
-                  videoUrl: currentVideoUrl ? 'present' : 'missing',
-                  hasEmbeddedAudio: currentSong.hasEmbeddedAudio
-                });
-                
-                // PRIORITY 1: Separate audio file (most common case)
-                if (audioRef.current && currentAudioUrl) {
-                  audioRef.current.src = currentAudioUrl;
-                  audioRef.current.currentTime = startPosition;
-                  await audioRef.current.play();
-                }
-                
-                // PRIORITY 2: Video with embedded audio (video IS the audio source)
-                // Only use this if there's NO separate audioUrl
-                else if (currentSong.hasEmbeddedAudio && videoRef.current && currentVideoUrl && !currentAudioUrl) {
-                  videoRef.current.src = currentVideoUrl;
-                  videoRef.current.currentTime = startPosition;
-                  
-                  // Browser autoplay policy workaround:
-                  // 1. First try unmuted playback (will work if we have user interaction context)
-                  // 2. If that fails, start muted and then unmute after playback begins
-                  try {
-                    videoRef.current.muted = false;
-                    await videoRef.current.play();
-                  } catch (autoplayError) {
-                    // Start muted, then unmute
-                    videoRef.current.muted = true;
-                    await videoRef.current.play();
-                    // Wait a brief moment then unmute
-                    setTimeout(() => {
-                      if (videoRef.current) {
-                        videoRef.current.muted = false;
-                      }
-                    }, 100);
-                  }
-                }
-                
-                // PRIORITY 3: YouTube video (no separate audio, use YouTube as source)
-                // When song has YouTube URL but no separate audio file, we rely on YouTube for audio
-                // The YouTubePlayer component is rendered in JSX and controlled by isPlaying prop
-                // No additional action needed here - just log for debugging
-                else if (isYouTube && youtubeVideoId) {
-                  console.log('[GameScreen] Starting YouTube playback for video:', youtubeVideoId);
-                  // YouTube player is rendered in JSX and controlled by isPlaying prop
-                  // Time sync is handled by onTimeUpdate callback from YouTubePlayer
-                  // The player will start automatically when isPlaying becomes true
-                }
-                
-                // BACKGROUND VIDEO (muted, synced with audio)
-                // This is for videos that should play in background while audio plays
-                if (videoRef.current && currentVideoUrl && !currentSong.hasEmbeddedAudio) {
-                  // Apply videoGap: positive = video starts after audio, so skip ahead in video
-                  const videoGapSeconds = (currentSong.videoGap || 0) / 1000;
-                  videoRef.current.src = currentVideoUrl;
-                  videoRef.current.currentTime = Math.max(0, startPosition - videoGapSeconds);
-                  videoRef.current.muted = true; // Background video is always muted
-                  videoRef.current.play().catch(() => {});
-                }
-              } catch (error) {
-                console.error('[GameScreen] Media playback failed:', error);
-                // Try fallback: just start with system time
-                setIsPlaying(true);
-              }
-            };
-            playMedia();
-          } else {
-            // Update countdown state - this will show 2, then 1
-            setCountdown(currentCount);
-          }
-        }, 1000);
-      }
-    };
-
-    initGame();
-
-    return () => {
-      // Mark component as unmounted
-      isMountedRef.current = false;
-
-      // Clear countdown interval if still running
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current);
-        countdownIntervalRef.current = null;
-      }
-      stop();
-      if (gameLoopRef.current) {
-        cancelAnimationFrame(gameLoopRef.current);
-      }
-      // Stop audio/video on cleanup - DON'T clear src, just pause
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-      }
-      if (videoRef.current) {
-        videoRef.current.pause();
-        videoRef.current.currentTime = 0;
-      }
-      // Reset states
-      setIsPlaying(false);
-      setCountdown(3);
-    };
-  }, [effectiveSong, mediaLoaded, initialize, start, stop]);
-
-  // Generate results at end
-  const generateResults = useCallback(() => {
-    const activePlayer = gameState.players[0];
-    if (!activePlayer || !song) return;
-    
-    const totalNotes = song.lyrics.reduce((acc, line) => acc + line.notes.length, 0);
-    const accuracy = totalNotes > 0 ? (activePlayer.notesHit / totalNotes) * 100 : 0;
-    
-    let rating: 'perfect' | 'excellent' | 'good' | 'okay' | 'poor';
-    if (accuracy >= 95) rating = 'perfect';
-    else if (accuracy >= 85) rating = 'excellent';
-    else if (accuracy >= 70) rating = 'good';
-    else if (accuracy >= 50) rating = 'okay';
-    else rating = 'poor';
-    
-    const results = {
-      songId: song.id,
-      players: [{
-        playerId: activePlayer.id,
-        score: activePlayer.score,
-        notesHit: activePlayer.notesHit,
-        notesMissed: activePlayer.notesMissed,
-        accuracy,
-        maxCombo: activePlayer.maxCombo,
-        rating,
-      }],
-      playedAt: Date.now(),
-      duration: song.duration,
-    };
-    
-    setResults(results);
-    
-    // Send results to mobile clients for social features
-    fetch('/api/mobile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'results',
-        payload: {
-          songId: song.id,
-          songTitle: song.title,
-          songArtist: song.artist,
-          score: activePlayer.score,
-          accuracy,
-          maxCombo: activePlayer.maxCombo,
-          rating,
-          playedAt: Date.now(),
-        },
-      }),
-    }).catch(() => {});
-  }, [gameState.players, song, setResults]);
-  
-  // End game and cleanup - stops all audio/microphone
-  const endGameAndCleanup = useCallback(() => {
-    // Stop pitch detection (microphone)
-    stop();
-    
-    // Stop audio effects
-    if (audioEffects) {
-      audioEffects.disconnect();
-      setAudioEffects(null);
-    }
-    
-    // Stop audio element
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-    
-    // Stop video element
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
-    }
-    
-    // Set playing to false
-    setIsPlaying(false);
-    
-    // End game state and generate results
-    endGame();
-    generateResults();
-    
-    // Notify mobile clients that song ended
-    if (song) {
-      fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'gamestate',
-          payload: {
-            currentSong: { id: song.id, title: song.title, artist: song.artist },
-            isPlaying: false,
-            currentTime: 0,
-            songEnded: true,
-            gameMode: gameState.gameMode,
-          },
-        }),
-      }).catch(() => {});
-    }
-    
-    onEnd();
-  }, [stop, audioEffects, endGame, generateResults, onEnd, song, gameState.gameMode]);
-  
-  // CRITICAL: Cleanup on unmount - stop microphone when leaving GameScreen
-  useEffect(() => {
-    return () => {
-      // Stop pitch detection (microphone) when component unmounts
-      stop();
-      
-      // Stop audio effects
-      if (audioEffects) {
-        audioEffects.disconnect();
-      }
-      
-      // Stop audio element
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-      }
-      
-      // Stop video element
-      if (videoRef.current) {
-        videoRef.current.pause();
-        videoRef.current.currentTime = 0;
-      }
-      
-      // Cancel any pending animation frames
-      if (gameLoopRef.current) {
-        cancelAnimationFrame(gameLoopRef.current);
-      }
-    };
-  }, [stop, audioEffects]);
-
-  // Game loop
-  useEffect(() => {
-    if (!isPlaying || !effectiveSong) return;
-    
-    // Get the start position from #START tag (in milliseconds)
-    const startPositionMs = effectiveSong.start || 0;
-
-    const gameLoop = () => {
-      // Use media's currentTime for accurate sync
-      let elapsed: number;
-      
-      // For YouTube videos, use tracked time from player
-      if (isYouTube && youtubeTime > 0) {
-        elapsed = youtubeTime;
-      }
-      // PRIORITY: Use audio element time if available (most reliable for scoring)
-      else if (audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2) {
-        elapsed = audioRef.current.currentTime * 1000; // Convert to ms
-      }
-      // For video with embedded audio (when no separate audio file)
-      else if (effectiveSong.hasEmbeddedAudio && videoRef.current && !videoRef.current.paused) {
-        elapsed = videoRef.current.currentTime * 1000; // Convert to ms
-      }
-      // Fallback to system time (less accurate) - account for start position
-      else {
-        // Add start position to fallback time so notes are in correct position
-        elapsed = (Date.now() - startTimeRef.current) + startPositionMs;
-      }
-      
-      // Apply user-adjustable timing offset
-      const adjustedTime = elapsed + timingOffset;
-      
-      setCurrentTime(adjustedTime);
-      
-      // Update volume from pitch detection
-      if (pitchResult) {
-        setVolume(pitchResult.volume);
-        setDetectedPitch(pitchResult.frequency);
-        
-        // Check for note hits for P1
-        checkNoteHits(adjustedTime, pitchResult);
-      }
-      
-      // In duet mode, check P2 note hits ONLY if P2 has a separate microphone signal
-      // P2 should only get points when singing into their own microphone
-      // Currently, p2DetectedPitch comes from a separate pitch detection or remains null
-      if (isDuetMode && p2DetectedPitch !== null) {
-        // P2 has a separate pitch signal (from second microphone)
-        const p2PitchResult = {
-          frequency: p2DetectedPitch,
-          note: Math.round(12 * (Math.log2(p2DetectedPitch / 440)) + 69),
-          clarity: pitchResult?.clarity || 0,
-          volume: p2Volume
-        };
-        checkP2NoteHits(adjustedTime, p2PitchResult);
-      } else if (isDuetMode) {
-        // No separate P2 microphone - P2 doesn't get points
-        // Reset P2 volume when no P2 microphone is active
-        setP2Volume(0);
-      }
-      
-      // Check if song ended
-      if (adjustedTime >= effectiveSong.duration) {
-        endGameAndCleanup();
-        return;
-      }
-      
-      gameLoopRef.current = requestAnimationFrame(gameLoop);
-    };
-    
-    gameLoopRef.current = requestAnimationFrame(gameLoop);
-    
-    return () => {
-      if (gameLoopRef.current) {
-        cancelAnimationFrame(gameLoopRef.current);
-      }
-    };
-  }, [isPlaying, effectiveSong, pitchResult, setCurrentTime, setDetectedPitch, checkNoteHits, checkP2NoteHits, endGameAndCleanup, isYouTube, youtubeTime, timingOffset, isDuetMode, p2DetectedPitch, p2Volume, setP2Volume]);
+  // (game init, generateResults, endGameAndCleanup, cleanup, and game loop effects moved to useGameLoop hook)
 
   // Get upcoming notes - OPTIMIZED with pre-computed data
   const visibleNotes = useMemo(() => {
@@ -1305,38 +766,13 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         </div>
         
         {/* Right: Score, Difficulty & Challenge */}
-        <div className="flex items-center gap-3">
-          {/* Mini Score Display - Only for Single Player */}
-          {!isDuetMode && (
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-1.5">
-                <span className="text-cyan-400 font-bold">{gameState.players[0]?.score?.toLocaleString() || 0}</span>
-                <span className="text-white/40">pts</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-purple-400 font-bold">{gameState.players[0]?.combo || 0}x</span>
-                <span className="text-white/40">combo</span>
-              </div>
-            </div>
-          )}
-          <Badge variant="outline" className="border-white/20 text-white/80">
-            {gameState.difficulty.toUpperCase()}
-          </Badge>
-          
-          {/* Active Challenge Mode Indicator */}
-          {activeChallenge && (
-            <Badge 
-              className={`px-3 py-1 text-sm font-bold ${
-                activeChallenge.difficulty === 'extreme' ? 'bg-red-500/30 text-red-300 border border-red-500/50' :
-                activeChallenge.difficulty === 'hard' ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50' :
-                activeChallenge.difficulty === 'medium' ? 'bg-yellow-500/30 text-yellow-300 border border-yellow-500/50' : 
-                'bg-green-500/30 text-green-300 border border-green-500/50'
-              }`}
-            >
-              {activeChallenge.icon} {activeChallenge.name} (+{activeChallenge.xpReward} XP)
-            </Badge>
-          )}
-        </div>
+          <GameScoreDisplay
+            isDuetMode={isDuetMode}
+            score={gameState.players[0]?.score || 0}
+            combo={gameState.players[0]?.combo || 0}
+            difficulty={gameState.difficulty}
+            activeChallenge={activeChallenge}
+          />
       </div>
       
 
@@ -1503,18 +939,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         />
 
         {/* Countdown */}
-        {countdown > 0 && (
-          <div key={countdown} className="absolute inset-0 flex items-center justify-center bg-black/60 z-30">
-            <div 
-              className="text-9xl font-black text-white drop-shadow-2xl"
-              style={{
-                animation: 'countdownPop 0.3s ease-out'
-              }}
-            >
-              {countdown}
-            </div>
-          </div>
-        )}
+        <GameCountdown countdown={countdown} />
         
         {/* Ad Indicator - Small non-blocking indicator when YouTube ad is playing */}
         {isAdPlaying && (

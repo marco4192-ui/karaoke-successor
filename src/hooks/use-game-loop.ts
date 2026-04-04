@@ -1,0 +1,469 @@
+'use client';
+
+import { useState, useEffect, useCallback, useRef } from 'react';
+import type { Song, Difficulty } from '@/types/game';
+import type { AudioEffectsEngine } from '@/lib/audio/audio-effects';
+
+export interface UseGameLoopOptions {
+  // Song / media
+  effectiveSong: Song | null;
+  mediaLoaded: boolean;
+  audioRef: React.RefObject<HTMLAudioElement | null>;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
+  isYouTube: boolean;
+  youtubeVideoId: string | null;
+  youtubeTime: number;
+  // Playing state (owned by caller so it's available everywhere)
+  isPlaying: boolean;
+  setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
+  // Pitch detector
+  pitchResult: { frequency: number | null; note: number | null; clarity: number; volume: number } | null;
+  initialize: () => Promise<boolean>;
+  start: () => void;
+  stop: () => void;
+  setPitchDifficulty: (diff: Difficulty) => void;
+  // Game store
+  setCurrentTime: (time: number) => void;
+  setDetectedPitch: (pitch: number | null) => void;
+  endGame: () => void;
+  setResults: (results: any) => void;
+  // Note scoring
+  resetScoring: () => void;
+  checkNoteHits: (time: number, pitch: any) => void;
+  checkP2NoteHits: (time: number, pitch: any) => void;
+  // Game mode / state
+  difficulty: Difficulty;
+  gameMode: string;
+  timingOffset: number;
+  // Duet
+  isDuetMode: boolean;
+  p2DetectedPitch: number | null;
+  p2Volume: number;
+  setP2Volume: (vol: number) => void;
+  // Lifecycle callbacks
+  onEnd: () => void;
+  // Audio effects (for cleanup)
+  audioEffects: AudioEffectsEngine | null;
+  setAudioEffects: (engine: AudioEffectsEngine | null) => void;
+  // Song + players (for results generation)
+  song: Song | null;
+  players: Array<{ id: string; score: number; notesHit: number; notesMissed: number; maxCombo: number }>;
+}
+
+export interface UseGameLoopResult {
+  countdown: number;
+  volume: number;
+  startTimeRef: React.RefObject<number>;
+  gameLoopRef: React.RefObject<number | null>;
+  pauseGame: () => void;
+  resumeGame: () => void;
+  endGameAndCleanup: () => void;
+}
+
+/**
+ * Hook that encapsulates the game lifecycle effects:
+ * - Countdown initialization + media playback
+ * - Game loop (requestAnimationFrame)
+ * - Song-end detection and cleanup
+ *
+ * NOTE: `isPlaying` and `setIsPlaying` are owned by the caller so they are
+ * accessible in effects/callbacks that are declared before this hook.
+ */
+export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
+  const {
+    effectiveSong,
+    mediaLoaded,
+    audioRef,
+    videoRef,
+    isYouTube,
+    youtubeVideoId,
+    youtubeTime,
+    isPlaying,
+    setIsPlaying,
+    pitchResult,
+    initialize,
+    start,
+    stop,
+    setPitchDifficulty,
+    setCurrentTime,
+    setDetectedPitch,
+    endGame,
+    setResults,
+    resetScoring,
+    checkNoteHits,
+    checkP2NoteHits,
+    difficulty,
+    gameMode,
+    timingOffset,
+    isDuetMode,
+    p2DetectedPitch,
+    p2Volume,
+    setP2Volume,
+    onEnd,
+    audioEffects,
+    setAudioEffects,
+    song,
+    players,
+  } = options;
+
+  // ── Internal state (not needed outside the hook) ──
+  const [countdown, setCountdown] = useState(3);
+  const [volume, setVolume] = useState(0);
+  const gameLoopRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number>(0);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isMountedRef = useRef(true);
+
+  // ── Generate results at song end ──
+  const generateResults = useCallback(() => {
+    const activePlayer = players[0];
+    if (!activePlayer || !song) return;
+
+    const totalNotes = song.lyrics.reduce((acc, line) => acc + line.notes.length, 0);
+    const accuracy = totalNotes > 0 ? (activePlayer.notesHit / totalNotes) * 100 : 0;
+
+    let rating: 'perfect' | 'excellent' | 'good' | 'okay' | 'poor';
+    if (accuracy >= 95) rating = 'perfect';
+    else if (accuracy >= 85) rating = 'excellent';
+    else if (accuracy >= 70) rating = 'good';
+    else if (accuracy >= 50) rating = 'okay';
+    else rating = 'poor';
+
+    const results = {
+      songId: song.id,
+      players: [{
+        playerId: activePlayer.id,
+        score: activePlayer.score,
+        notesHit: activePlayer.notesHit,
+        notesMissed: activePlayer.notesMissed,
+        accuracy,
+        maxCombo: activePlayer.maxCombo,
+        rating,
+      }],
+      playedAt: Date.now(),
+      duration: song.duration,
+    };
+
+    setResults(results);
+
+    // Send results to mobile clients for social features
+    fetch('/api/mobile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'results',
+        payload: {
+          songId: song.id,
+          songTitle: song.title,
+          songArtist: song.artist,
+          score: activePlayer.score,
+          accuracy,
+          maxCombo: activePlayer.maxCombo,
+          rating,
+          playedAt: Date.now(),
+        },
+      }),
+    }).catch(() => {});
+  }, [players, song, setResults]);
+
+  // ── End game and cleanup - stops all audio/microphone ──
+  const endGameAndCleanup = useCallback(() => {
+    // Stop pitch detection (microphone)
+    stop();
+
+    // Stop audio effects
+    if (audioEffects) {
+      audioEffects.disconnect();
+      setAudioEffects(null);
+    }
+
+    // Stop audio element
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+
+    // Stop video element
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+
+    // Set playing to false
+    setIsPlaying(false);
+
+    // End game state and generate results
+    endGame();
+    generateResults();
+
+    // Notify mobile clients that song ended
+    if (song) {
+      fetch('/api/mobile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'gamestate',
+          payload: {
+            currentSong: { id: song.id, title: song.title, artist: song.artist },
+            isPlaying: false,
+            currentTime: 0,
+            songEnded: true,
+            gameMode,
+          },
+        }),
+      }).catch(() => {});
+    }
+
+    onEnd();
+  }, [stop, audioEffects, setAudioEffects, audioRef, videoRef, endGame, generateResults, onEnd, song, gameMode, setIsPlaying]);
+
+  // ── Pause / Resume helpers ──
+  const pauseGame = useCallback(() => {
+    if (audioRef.current) audioRef.current.pause();
+    if (videoRef.current) videoRef.current.pause();
+    setIsPlaying(false);
+  }, [audioRef, videoRef, setIsPlaying]);
+
+  const resumeGame = useCallback(() => {
+    if (audioRef.current) audioRef.current.play().catch(() => {});
+    if (videoRef.current) videoRef.current.play().catch(() => {});
+    setIsPlaying(true);
+  }, [audioRef, videoRef, setIsPlaying]);
+
+  // ── Initialize and start game - countdown + media playback ──
+  useEffect(() => {
+    if (!effectiveSong || !mediaLoaded) return;
+
+    isMountedRef.current = true;
+
+    const initGame = async () => {
+      const success = await initialize();
+      if (!isMountedRef.current) return; // Check if still mounted after async
+
+      if (success) {
+        // Set pitch detector to current difficulty
+        setPitchDifficulty(difficulty);
+
+        start();
+
+        // Reset scoring state (note progress tracking is handled by the hook)
+        resetScoring();
+
+        // Start countdown from 3
+        setCountdown(3);
+
+        // Use a ref to track countdown value for proper timing
+        let currentCount = 3;
+
+        countdownIntervalRef.current = setInterval(() => {
+          if (!isMountedRef.current) {
+            if (countdownIntervalRef.current) {
+              clearInterval(countdownIntervalRef.current);
+              countdownIntervalRef.current = null;
+            }
+            return;
+          }
+
+          currentCount -= 1;
+
+          if (currentCount <= 0) {
+            if (countdownIntervalRef.current) {
+              clearInterval(countdownIntervalRef.current);
+              countdownIntervalRef.current = null;
+            }
+
+            setCountdown(0);
+            setIsPlaying(true);
+            startTimeRef.current = Date.now();
+
+            // Start audio/video playback with user interaction context
+            const playMedia = async () => {
+              try {
+                const currentSong = effectiveSong;
+                if (!currentSong) return;
+
+                const startPosition = (currentSong.start || 0) / 1000;
+
+                let currentAudioUrl = currentSong.audioUrl;
+                let currentVideoUrl = currentSong.videoBackground;
+
+                console.log('[GameScreen] playMedia - using URLs from effectiveSong:', {
+                  audioUrl: currentAudioUrl ? 'present' : 'missing',
+                  videoUrl: currentVideoUrl ? 'present' : 'missing',
+                  hasEmbeddedAudio: currentSong.hasEmbeddedAudio
+                });
+
+                // PRIORITY 1: Separate audio file (most common case)
+                if (audioRef.current && currentAudioUrl) {
+                  audioRef.current.src = currentAudioUrl;
+                  audioRef.current.currentTime = startPosition;
+                  await audioRef.current.play();
+                }
+
+                // PRIORITY 2: Video with embedded audio
+                else if (currentSong.hasEmbeddedAudio && videoRef.current && currentVideoUrl && !currentAudioUrl) {
+                  videoRef.current.src = currentVideoUrl;
+                  videoRef.current.currentTime = startPosition;
+
+                  try {
+                    videoRef.current.muted = false;
+                    await videoRef.current.play();
+                  } catch (autoplayError) {
+                    videoRef.current.muted = true;
+                    await videoRef.current.play();
+                    setTimeout(() => {
+                      if (videoRef.current) {
+                        videoRef.current.muted = false;
+                      }
+                    }, 100);
+                  }
+                }
+
+                // PRIORITY 3: YouTube video
+                else if (isYouTube && youtubeVideoId) {
+                  console.log('[GameScreen] Starting YouTube playback for video:', youtubeVideoId);
+                }
+
+                // BACKGROUND VIDEO (muted, synced with audio)
+                if (videoRef.current && currentVideoUrl && !currentSong.hasEmbeddedAudio) {
+                  const videoGapSeconds = (currentSong.videoGap || 0) / 1000;
+                  videoRef.current.src = currentVideoUrl;
+                  videoRef.current.currentTime = Math.max(0, startPosition - videoGapSeconds);
+                  videoRef.current.muted = true;
+                  videoRef.current.play().catch(() => {});
+                }
+              } catch (error) {
+                console.error('[GameScreen] Media playback failed:', error);
+                setIsPlaying(true);
+              }
+            };
+            playMedia();
+          } else {
+            setCountdown(currentCount);
+          }
+        }, 1000);
+      }
+    };
+
+    initGame();
+
+    return () => {
+      isMountedRef.current = false;
+
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+      stop();
+      if (gameLoopRef.current) {
+        cancelAnimationFrame(gameLoopRef.current);
+      }
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
+      setIsPlaying(false);
+      setCountdown(3);
+    };
+  }, [effectiveSong, mediaLoaded, initialize, start, stop, setPitchDifficulty, difficulty, resetScoring, audioRef, videoRef, isYouTube, youtubeVideoId, setIsPlaying]);
+
+  // ── CRITICAL: Cleanup on unmount ──
+  useEffect(() => {
+    return () => {
+      stop();
+
+      if (audioEffects) {
+        audioEffects.disconnect();
+      }
+
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
+
+      if (gameLoopRef.current) {
+        cancelAnimationFrame(gameLoopRef.current);
+      }
+    };
+  }, [stop, audioEffects, audioRef, videoRef]);
+
+  // ── Game loop (requestAnimationFrame) ──
+  useEffect(() => {
+    if (!isPlaying || !effectiveSong) return;
+
+    const startPositionMs = effectiveSong.start || 0;
+
+    const gameLoop = () => {
+      let elapsed: number;
+
+      if (isYouTube && youtubeTime > 0) {
+        elapsed = youtubeTime;
+      }
+      else if (audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2) {
+        elapsed = audioRef.current.currentTime * 1000;
+      }
+      else if (effectiveSong.hasEmbeddedAudio && videoRef.current && !videoRef.current.paused) {
+        elapsed = videoRef.current.currentTime * 1000;
+      }
+      else {
+        elapsed = (Date.now() - startTimeRef.current) + startPositionMs;
+      }
+
+      const adjustedTime = elapsed + timingOffset;
+
+      setCurrentTime(adjustedTime);
+
+      if (pitchResult) {
+        setVolume(pitchResult.volume);
+        setDetectedPitch(pitchResult.frequency);
+        checkNoteHits(adjustedTime, pitchResult);
+      }
+
+      if (isDuetMode && p2DetectedPitch !== null) {
+        const p2PitchResult = {
+          frequency: p2DetectedPitch,
+          note: Math.round(12 * (Math.log2(p2DetectedPitch / 440)) + 69),
+          clarity: pitchResult?.clarity || 0,
+          volume: p2Volume
+        };
+        checkP2NoteHits(adjustedTime, p2PitchResult);
+      } else if (isDuetMode) {
+        setP2Volume(0);
+      }
+
+      if (adjustedTime >= effectiveSong.duration) {
+        endGameAndCleanup();
+        return;
+      }
+
+      gameLoopRef.current = requestAnimationFrame(gameLoop);
+    };
+
+    gameLoopRef.current = requestAnimationFrame(gameLoop);
+
+    return () => {
+      if (gameLoopRef.current) {
+        cancelAnimationFrame(gameLoopRef.current);
+      }
+    };
+  }, [isPlaying, effectiveSong, pitchResult, setCurrentTime, setDetectedPitch, checkNoteHits, checkP2NoteHits, endGameAndCleanup, isYouTube, youtubeTime, timingOffset, isDuetMode, p2DetectedPitch, p2Volume, setP2Volume, audioRef, videoRef, startTimeRef]);
+
+  return {
+    countdown,
+    volume,
+    startTimeRef,
+    gameLoopRef,
+    pauseGame,
+    resumeGame,
+    endGameAndCleanup,
+  };
+}
