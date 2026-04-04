@@ -24,8 +24,8 @@ export type Screen =
   | 'companion-singalong-game'
   | 'medley';
 
-// Note shape style for theming
-export type NoteShapeStyle = 'rounded' | 'sharp' | 'pill' | 'diamond';
+// Note shape style for theming — canonical definition in note-utils.tsx
+export type { NoteShapeStyle } from '@/lib/game/note-utils';
 
 // Note progress tracking for duration-based scoring
 export interface NoteProgress {
