@@ -7,6 +7,7 @@ import { useGlobalKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useGlobalRemoteControl } from '@/hooks/use-global-remote-control';
 import { useMobileClient } from '@/hooks/use-mobile-client';
 import { useGameStore } from '@/lib/game/store';
+import { usePartyStore } from '@/lib/game/party-store';
 import { getAllSongs } from '@/lib/game/song-library';
 // Extracted screens
 import { HomeScreen, PartyScreen, QueueScreen, AchievementsScreen, HighscoreScreen, CharacterScreen, EditorScreen, OnlineMultiplayerScreen, DailyChallengeScreen, JukeboxScreen, MobileScreen, MobileClientView, ResultsScreen, LibraryScreen, SettingsScreen, GameScreen } from '@/components/screens';
@@ -19,7 +20,6 @@ import { CompanionSingAlongSetupScreen, CompanionGameView } from '@/components/g
 import { MedleySetupScreen, MedleyGameView } from '@/components/game/medley-contest-screen';
 import { UnifiedPartySetup, SongVotingModal, GameSetupResult, PARTY_GAME_CONFIGS } from '@/components/game/unified-party-setup';
 import { TournamentBracket, TournamentMatch, recordMatchResult } from '@/lib/game/tournament';
-import { BattleRoyaleGame as BattleRoyaleGameState } from '@/lib/game/battle-royale';
 
 // Screen types
 type Screen = 'home' | 'library' | 'game' | 'party' | 'character' | 'queue' | 'mobile' | 'results' | 'highscores' | 'import' | 'settings' | 'jukebox' | 'achievements' | 'dailyChallenge' | 'tournament' | 'tournament-game' | 'battle-royale' | 'battle-royale-game' | 'pass-the-mic' | 'pass-the-mic-game' | 'companion-singalong' | 'companion-singalong-game' | 'medley' | 'medley-game' | 'editor' | 'online' | 'party-setup' | 'song-voting';
@@ -32,35 +32,7 @@ export default function KaraokeSuccessor() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMounted, setIsMounted] = useState(false); // Track client-side mount
   const { gameState, setSong, setGameMode, profiles, queue, resetGame, addPlayer, setResults } = useGameStore();
-  
-  // Tournament state
-  const [tournamentBracket, setTournamentBracket] = useState<TournamentBracket | null>(null);
-  const [tournamentSongDuration, setTournamentSongDuration] = useState(60);
-  const [currentTournamentMatch, setCurrentTournamentMatch] = useState<TournamentMatch | null>(null);
-  
-  // Battle Royale state
-  const [battleRoyaleGame, setBattleRoyaleGame] = useState<BattleRoyaleGameState | null>(null);
-  
-  // Pass the Mic state
-  const [passTheMicPlayers, setPassTheMicPlayers] = useState<any[]>([]);
-  const [passTheMicSong, setPassTheMicSong] = useState<Song | null>(null);
-  const [passTheMicSegments, setPassTheMicSegments] = useState<any[]>([]);
-  const [passTheMicSettings, setPassTheMicSettings] = useState<any>(null);
-  
-  // Companion Sing-A-Long state
-  const [companionPlayers, setCompanionPlayers] = useState<any[]>([]);
-  const [companionSong, setCompanionSong] = useState<Song | null>(null);
-  const [companionSettings, setCompanionSettings] = useState<any>(null);
-  
-  // Medley Contest state
-  const [medleyPlayers, setMedleyPlayers] = useState<any[]>([]);
-  const [medleySongs, setMedleySongs] = useState<any[]>([]);
-  const [medleySettings, setMedleySettings] = useState<any>(null);
-  
-  // Unified Party Setup state
-  const [selectedGameMode, setSelectedGameMode] = useState<GameMode | null>(null);
-  const [unifiedSetupResult, setUnifiedSetupResult] = useState<GameSetupResult | null>(null);
-  const [votingSongs, setVotingSongs] = useState<Song[]>([]);
+  const party = usePartyStore();
   
   // Toggle fullscreen function
   const toggleFullscreen = useCallback(() => {
@@ -73,7 +45,7 @@ export default function KaraokeSuccessor() {
   
   // Handle tournament game end - record result and go back to bracket
   const handleTournamentGameEnd = useCallback(() => {
-    if (!tournamentBracket || !currentTournamentMatch) {
+    if (!party.tournamentBracket || !party.currentTournamentMatch) {
       setScreen('results');
       return;
     }
@@ -127,31 +99,31 @@ export default function KaraokeSuccessor() {
     
     // Record match result in bracket
     const updatedBracket = recordMatchResult(
-      tournamentBracket,
-      currentTournamentMatch.id,
+      party.tournamentBracket,
+      party.currentTournamentMatch.id,
       score1,
       score2
     );
     
     // Update bracket state
-    setTournamentBracket(updatedBracket);
+    party.setTournamentBracket(updatedBracket);
     
     // Clear current match
-    setCurrentTournamentMatch(null);
+    party.setCurrentTournamentMatch(null);
     
     // Go back to tournament bracket view
     setScreen('tournament-game');
-  }, [tournamentBracket, currentTournamentMatch, gameState.results, gameState.players, gameState.currentSong, gameState.currentTime, gameState.gameMode, gameState.difficulty, setResults]);
+  }, [party.tournamentBracket, party.currentTournamentMatch, gameState.results, gameState.players, gameState.currentSong, gameState.currentTime, gameState.gameMode, gameState.difficulty, setResults]);
   
   // Handle game end based on game mode
   const handleGameEnd = useCallback(() => {
-    // Check if we're in a tournament match (has currentTournamentMatch set)
-    if (currentTournamentMatch && tournamentBracket) {
+    // Check if we're in a tournament match (has party.currentTournamentMatch set)
+    if (party.currentTournamentMatch && party.tournamentBracket) {
       handleTournamentGameEnd();
     } else {
       setScreen('results');
     }
-  }, [currentTournamentMatch, tournamentBracket, handleTournamentGameEnd]);
+  }, [party.currentTournamentMatch, party.tournamentBracket, handleTournamentGameEnd]);
   
   // Listen for fullscreen changes
   useEffect(() => {
@@ -357,7 +329,7 @@ export default function KaraokeSuccessor() {
               // Check game mode and navigate accordingly
               if (gameState.gameMode === 'pass-the-mic') {
                 // Generate segments for pass the mic
-                const segmentDuration = passTheMicSettings?.segmentDuration || 30;
+                const segmentDuration = party.passTheMicSettings?.segmentDuration || 30;
                 const segmentCount = Math.ceil(song.duration / (segmentDuration * 1000));
                 const segments: PassTheMicSegment[] = [];
                 for (let i = 0; i < segmentCount; i++) {
@@ -367,11 +339,11 @@ export default function KaraokeSuccessor() {
                     playerId: null,
                   });
                 }
-                setPassTheMicSegments(segments);
-                setPassTheMicSong(song);
+                party.setPassTheMicSegments(segments);
+                party.setPassTheMicSong(song);
                 setScreen('pass-the-mic-game');
               } else if (gameState.gameMode === 'companion-singalong') {
-                setCompanionSong(song);
+                party.setCompanionSong(song);
                 setScreen('companion-singalong-game');
               } else {
                 setScreen('game');
@@ -388,7 +360,7 @@ export default function KaraokeSuccessor() {
               if (mode === 'online') {
                 setScreen('online');
               } else {
-                setSelectedGameMode(mode);
+                party.setSelectedGameMode(mode);
                 setScreen('party-setup');
               }
             }} 
@@ -396,17 +368,17 @@ export default function KaraokeSuccessor() {
         )}
         
         {/* Unified Party Setup Screen */}
-        {screen === 'party-setup' && selectedGameMode && (
+        {screen === 'party-setup' && party.selectedGameMode && (
           <UnifiedPartySetup
-            gameMode={selectedGameMode}
+            gameMode={party.selectedGameMode}
             profiles={profiles}
             songs={getAllSongs()}
             onStartGame={(result) => {
-              setUnifiedSetupResult(result);
-              setGameMode(selectedGameMode);
+              party.setUnifiedSetupResult(result);
+              setGameMode(party.selectedGameMode);
               
               // Handle different game modes
-              if (selectedGameMode === 'tournament') {
+              if (party.selectedGameMode === 'tournament') {
                 // Create tournament bracket
                 const maxPlayers = result.settings.maxPlayers || 8;
                 const shortMode = result.settings.shortMode !== false;
@@ -422,7 +394,7 @@ export default function KaraokeSuccessor() {
                   setSong(randomSong);
                   setScreen('game');
                 }
-              } else if (selectedGameMode === 'battle-royale') {
+              } else if (party.selectedGameMode === 'battle-royale') {
                 // Create battle royale game
                 const battlePlayers = result.players.map((p, i) => ({
                   ...p,
@@ -435,7 +407,7 @@ export default function KaraokeSuccessor() {
                   setSong(randomSong);
                   setScreen('game');
                 }
-              } else if (selectedGameMode === 'medley') {
+              } else if (party.selectedGameMode === 'medley') {
                 // Create medley game with random songs
                 const songs = getAllSongs();
                 const snippetCount = result.settings.snippetCount || 5;
@@ -447,19 +419,19 @@ export default function KaraokeSuccessor() {
                   endTime: snippetDuration * 1000,
                   duration: snippetDuration * 1000,
                 }));
-                setMedleyPlayers(result.players);
-                setMedleySongs(medleySongList);
-                setMedleySettings(result.settings);
+                party.setMedleyPlayers(result.players);
+                party.setMedleySongs(medleySongList);
+                party.setMedleySettings(result.settings);
                 setScreen('medley-game');
-              } else if (selectedGameMode === 'pass-the-mic') {
+              } else if (party.selectedGameMode === 'pass-the-mic') {
                 // Store settings and go to library for song selection
-                setPassTheMicPlayers(result.players);
-                setPassTheMicSettings(result.settings);
+                party.setPassTheMicPlayers(result.players);
+                party.setPassTheMicSettings(result.settings);
                 setScreen('library');
-              } else if (selectedGameMode === 'companion-singalong') {
+              } else if (party.selectedGameMode === 'companion-singalong') {
                 // Store settings and go to library for song selection
-                setCompanionPlayers(result.players);
-                setCompanionSettings(result.settings);
+                party.setCompanionPlayers(result.players);
+                party.setCompanionSettings(result.settings);
                 setScreen('library');
               } else {
                 // Default: go to library for song selection
@@ -467,23 +439,23 @@ export default function KaraokeSuccessor() {
               }
             }}
             onSelectLibrary={(result) => {
-              setUnifiedSetupResult(result);
-              setGameMode(selectedGameMode);
+              party.setUnifiedSetupResult(result);
+              setGameMode(party.selectedGameMode);
               
               // Store settings based on game mode and navigate to library
-              if (selectedGameMode === 'pass-the-mic') {
-                setPassTheMicPlayers(result.players);
-                setPassTheMicSettings(result.settings);
-              } else if (selectedGameMode === 'companion-singalong') {
-                setCompanionPlayers(result.players);
-                setCompanionSettings(result.settings);
+              if (party.selectedGameMode === 'pass-the-mic') {
+                party.setPassTheMicPlayers(result.players);
+                party.setPassTheMicSettings(result.settings);
+              } else if (party.selectedGameMode === 'companion-singalong') {
+                party.setCompanionPlayers(result.players);
+                party.setCompanionSettings(result.settings);
               }
               
               setScreen('library');
             }}
             onVoteMode={(result, suggestedSongs) => {
-              setUnifiedSetupResult(result);
-              setVotingSongs(suggestedSongs);
+              party.setUnifiedSetupResult(result);
+              party.setVotingSongs(suggestedSongs);
               setScreen('song-voting');
             }}
             onBack={() => setScreen('party')}
@@ -491,20 +463,20 @@ export default function KaraokeSuccessor() {
         )}
         
         {/* Song Voting Modal */}
-        {screen === 'song-voting' && votingSongs.length > 0 && selectedGameMode && (
+        {screen === 'song-voting' && party.votingSongs.length > 0 && party.selectedGameMode && (
           <SongVotingModal
-            songs={votingSongs}
-            players={unifiedSetupResult?.players || []}
-            gameColor={PARTY_GAME_CONFIGS[selectedGameMode]?.color || 'from-cyan-500 to-blue-500'}
+            songs={party.votingSongs}
+            players={party.unifiedSetupResult?.players || []}
+            gameColor={PARTY_GAME_CONFIGS[party.selectedGameMode]?.color || 'from-cyan-500 to-blue-500'}
             onVote={(songId) => {
-              const selectedSong = votingSongs.find(s => s.id === songId);
+              const selectedSong = party.votingSongs.find(s => s.id === songId);
               if (selectedSong) {
                 setSong(selectedSong);
-                setGameMode(selectedGameMode);
+                setGameMode(party.selectedGameMode);
                 
                 // Handle game-specific setup
-                if (selectedGameMode === 'pass-the-mic') {
-                  const segmentDuration = unifiedSetupResult?.settings?.segmentDuration || 30;
+                if (party.selectedGameMode === 'pass-the-mic') {
+                  const segmentDuration = party.unifiedSetupResult?.settings?.segmentDuration || 30;
                   const segmentCount = Math.ceil(selectedSong.duration / (segmentDuration * 1000));
                   const segments: PassTheMicSegment[] = [];
                   for (let i = 0; i < segmentCount; i++) {
@@ -514,13 +486,13 @@ export default function KaraokeSuccessor() {
                       playerId: null,
                     });
                   }
-                  setPassTheMicPlayers(unifiedSetupResult?.players || []);
-                  setPassTheMicSegments(segments);
-                  setPassTheMicSong(selectedSong);
+                  party.setPassTheMicPlayers(party.unifiedSetupResult?.players || []);
+                  party.setPassTheMicSegments(segments);
+                  party.setPassTheMicSong(selectedSong);
                   setScreen('pass-the-mic-game');
-                } else if (selectedGameMode === 'companion-singalong') {
-                  setCompanionPlayers(unifiedSetupResult?.players || []);
-                  setCompanionSong(selectedSong);
+                } else if (party.selectedGameMode === 'companion-singalong') {
+                  party.setCompanionPlayers(party.unifiedSetupResult?.players || []);
+                  party.setCompanionSong(selectedSong);
                   setScreen('companion-singalong-game');
                 } else {
                   setScreen('game');
@@ -536,8 +508,8 @@ export default function KaraokeSuccessor() {
           <PassTheMicSetupScreen
             profiles={profiles}
             onSelectSong={(players, settings) => {
-              setPassTheMicPlayers(players);
-              setPassTheMicSettings(settings);
+              party.setPassTheMicPlayers(players);
+              party.setPassTheMicSettings(settings);
               setGameMode('pass-the-mic');
               setScreen('library');
             }}
@@ -546,20 +518,20 @@ export default function KaraokeSuccessor() {
         )}
         
         {/* Pass the Mic Game Screen */}
-        {screen === 'pass-the-mic-game' && passTheMicSong && (
+        {screen === 'pass-the-mic-game' && party.passTheMicSong && (
           <PassTheMicGameView
-            players={passTheMicPlayers}
-            song={passTheMicSong}
-            segments={passTheMicSegments}
-            settings={passTheMicSettings}
+            players={party.passTheMicPlayers}
+            song={party.passTheMicSong}
+            segments={party.passTheMicSegments}
+            settings={party.passTheMicSettings}
             onUpdateGame={(players, segments) => {
-              setPassTheMicPlayers(players);
-              setPassTheMicSegments(segments);
+              party.setPassTheMicPlayers(players);
+              party.setPassTheMicSegments(segments);
             }}
             onEndGame={() => {
-              setPassTheMicPlayers([]);
-              setPassTheMicSong(null);
-              setPassTheMicSegments([]);
+              party.setPassTheMicPlayers([]);
+              party.setPassTheMicSong(null);
+              party.setPassTheMicSegments([]);
               setScreen('home');
             }}
           />
@@ -571,8 +543,8 @@ export default function KaraokeSuccessor() {
             profiles={profiles}
             songs={getAllSongs()}
             onStartTournament={(bracket, songDuration) => {
-              setTournamentBracket(bracket);
-              setTournamentSongDuration(songDuration);
+              party.setTournamentBracket(bracket);
+              party.setTournamentSongDuration(songDuration);
               setScreen('tournament-game');
             }}
             onBack={() => setScreen('party')}
@@ -580,14 +552,14 @@ export default function KaraokeSuccessor() {
         )}
         
         {/* Tournament Game Screen */}
-        {screen === 'tournament-game' && tournamentBracket && (
+        {screen === 'tournament-game' && party.tournamentBracket && (
           <TournamentBracketView
-            bracket={tournamentBracket}
-            currentMatch={currentTournamentMatch}
+            bracket={party.tournamentBracket}
+            currentMatch={party.currentTournamentMatch}
             onPlayMatch={(match) => {
               if (!match.player1 || !match.player2) return;
               
-              setCurrentTournamentMatch(match);
+              party.setCurrentTournamentMatch(match);
               
               // Reset game state for new match
               resetGame();
@@ -618,7 +590,7 @@ export default function KaraokeSuccessor() {
               }
             }}
             songs={getAllSongs()}
-            shortMode={tournamentSongDuration === 60}
+            shortMode={party.tournamentSongDuration === 60}
           />
         )}
         
@@ -628,7 +600,7 @@ export default function KaraokeSuccessor() {
             profiles={profiles}
             songs={getAllSongs()}
             onStartGame={(game) => {
-              setBattleRoyaleGame(game);
+              party.setBattleRoyaleGame(game);
               setScreen('battle-royale-game');
             }}
             onBack={() => setScreen('party')}
@@ -636,13 +608,13 @@ export default function KaraokeSuccessor() {
         )}
         
         {/* Battle Royale Game Screen */}
-        {screen === 'battle-royale-game' && battleRoyaleGame && (
+        {screen === 'battle-royale-game' && party.battleRoyaleGame && (
           <BattleRoyaleGameView
-            game={battleRoyaleGame}
+            game={party.battleRoyaleGame}
             songs={getAllSongs()}
-            onUpdateGame={(game) => setBattleRoyaleGame(game)}
+            onUpdateGame={(game) => party.setBattleRoyaleGame(game)}
             onEndGame={() => {
-              setBattleRoyaleGame(null);
+              party.setBattleRoyaleGame(null);
               setScreen('home');
             }}
           />
@@ -653,8 +625,8 @@ export default function KaraokeSuccessor() {
           <CompanionSingAlongSetupScreen
             profiles={profiles}
             onSelectSong={(players, settings) => {
-              setCompanionPlayers(players);
-              setCompanionSettings(settings);
+              party.setCompanionPlayers(players);
+              party.setCompanionSettings(settings);
               setGameMode('companion-singalong');
               setScreen('library');
             }}
@@ -663,16 +635,16 @@ export default function KaraokeSuccessor() {
         )}
         
         {/* Companion Sing-A-Long Game Screen */}
-        {screen === 'companion-singalong-game' && companionSong && (
+        {screen === 'companion-singalong-game' && party.companionSong && (
           <CompanionGameView
-            players={companionPlayers}
-            song={companionSong}
-            settings={companionSettings}
-            onUpdatePlayers={setCompanionPlayers}
+            players={party.companionPlayers}
+            song={party.companionSong}
+            settings={party.companionSettings}
+            onUpdatePlayers={party.setCompanionPlayers}
             onEndGame={() => {
-              setCompanionPlayers([]);
-              setCompanionSong(null);
-              setCompanionSettings(null);
+              party.setCompanionPlayers([]);
+              party.setCompanionSong(null);
+              party.setCompanionSettings(null);
               setScreen('home');
             }}
           />
@@ -684,9 +656,9 @@ export default function KaraokeSuccessor() {
             profiles={profiles}
             songs={getAllSongs()}
             onStartGame={(players, medleySongList, settings) => {
-              setMedleyPlayers(players);
-              setMedleySongs(medleySongList);
-              setMedleySettings(settings);
+              party.setMedleyPlayers(players);
+              party.setMedleySongs(medleySongList);
+              party.setMedleySettings(settings);
               setScreen('medley-game');
             }}
             onBack={() => setScreen('party')}
@@ -694,16 +666,16 @@ export default function KaraokeSuccessor() {
         )}
         
         {/* Medley Contest Game Screen */}
-        {screen === 'medley-game' && medleySongs.length > 0 && (
+        {screen === 'medley-game' && party.medleySongs.length > 0 && (
           <MedleyGameView
-            players={medleyPlayers}
-            medleySongs={medleySongs}
-            settings={medleySettings}
-            onUpdatePlayers={setMedleyPlayers}
+            players={party.medleyPlayers}
+            medleySongs={party.medleySongs}
+            settings={party.medleySettings}
+            onUpdatePlayers={party.setMedleyPlayers}
             onEndGame={() => {
-              setMedleyPlayers([]);
-              setMedleySongs([]);
-              setMedleySettings(null);
+              party.setMedleyPlayers([]);
+              party.setMedleySongs([]);
+              party.setMedleySettings(null);
               setScreen('home');
             }}
           />
