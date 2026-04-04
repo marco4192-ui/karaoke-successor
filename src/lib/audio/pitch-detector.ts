@@ -141,6 +141,9 @@ export class PitchDetector {
       cancelAnimationFrame(this.animationFrame);
       this.animationFrame = null;
     }
+    // Clear pitch history to prevent stale data on next start
+    this.recentPitches = [];
+    this.lastStablePitch = null;
   }
 
   private detect(): void {
