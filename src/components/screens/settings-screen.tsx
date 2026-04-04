@@ -103,11 +103,14 @@ function SettingsScreen() {
     }
   }, []);
 
+  // Initialize folder scanner ONCE on mount (must not re-run — would overwrite user input)
+  useEffect(() => {
+    folderScanner.initializeFromStorage && folderScanner.initializeFromStorage();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Load settings on mount
   useEffect(() => {
-    // Initialize folder scanner state from storage
-    folderScanner.initializeFromStorage && folderScanner.initializeFromStorage();
-
     // Check if running in Tauri
     if (typeof window !== 'undefined' && (window as any).__TAURI__) {
       setIsTauriDetected(true);
@@ -139,7 +142,7 @@ function SettingsScreen() {
     } catch {
       // Ignore any localStorage errors
     }
-  }, [safeGetItem, safeGetBool, gameState.difficulty, initialDifficultyLoaded, folderScanner]);
+  }, [safeGetItem, safeGetBool, gameState.difficulty, initialDifficultyLoaded]);
 
   // Settings change handlers
   const handleLanguageChange = (newLang: Language) => {
