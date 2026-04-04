@@ -280,6 +280,17 @@ function SettingsScreen() {
       const savedFolder = safeGetItem('karaoke-songs-folder', '');
       setSongsFolder(savedFolder);
       setSongCount(getAllSongs().length);
+      
+      // CRITICAL: Log for debugging baseFolder issues
+      console.log('[Settings] Loaded karaoke-songs-folder from localStorage:', savedFolder);
+      
+      // Check if songs have baseFolder but localStorage is empty (migration needed)
+      const songs = getAllSongs();
+      if (songs.length > 0 && songs[0].baseFolder && !savedFolder) {
+        console.log('[Settings] Songs have baseFolder but localStorage is empty - setting localStorage from songs');
+        localStorage.setItem('karaoke-songs-folder', songs[0].baseFolder);
+        setSongsFolder(songs[0].baseFolder);
+      }
     } catch {
       // Ignore errors
     }

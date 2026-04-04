@@ -456,7 +456,15 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
   // Determine the base folder to use:
   // 1. Priority: song's own baseFolder (stored when scanned)
   // 2. Fallback: localStorage 'karaoke-songs-folder'
-  let baseFolder = song.baseFolder || localStorage.getItem('karaoke-songs-folder') || undefined;
+  // IMPORTANT: Use || with explicit null/undefined check because empty string is valid
+  let localStorageFolder: string | null = null;
+  try {
+    localStorageFolder = localStorage.getItem('karaoke-songs-folder');
+  } catch (e) {
+    console.warn('[SongLibrary] Could not access localStorage:', e);
+  }
+  
+  let baseFolder = song.baseFolder || localStorageFolder || undefined;
   
   // If baseFolder is still not set, check if relative paths look like absolute paths
   if (!baseFolder) {
@@ -464,11 +472,20 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
     const allPaths = [song.relativeAudioPath, song.relativeVideoPath, song.relativeCoverPath].filter(Boolean);
     if (allPaths.length > 0) {
       console.warn('[SongLibrary] No baseFolder set for song:', song.title, '- attempting to use paths as-is');
+      // Check if any path looks like an absolute path
+      for (const path of allPaths) {
+        if (path && (path.startsWith('/') || path.match(/^[A-Za-z]:\\/))) {
+          console.log('[SongLibrary] Found absolute path, using as-is:', path);
+          baseFolder = undefined; // Will try to load directly
+          break;
+        }
+      }
     }
   }
   
   if (!baseFolder) {
     console.warn('[SongLibrary] No base folder available for song:', song.title);
+    console.warn('[SongLibrary] SOLUTION: Please re-scan your songs folder in Settings to set the base folder');
     return song;
   }
   
@@ -552,6 +569,15 @@ export async function getAllSongsAsync(): Promise<Song[]> {
   const songs = getAllSongs();
   console.log('[SongLibrary] getAllSongsAsync called, songs count:', songs.length);
   
+  // Debug: Check localStorage songs folder
+  let localStorageFolder: string | null = null;
+  try {
+    localStorageFolder = localStorage.getItem('karaoke-songs-folder');
+  } catch (e) {
+    console.warn('[SongLibrary] Could not read localStorage:', e);
+  }
+  console.log('[SongLibrary] localStorage karaoke-songs-folder:', localStorageFolder);
+  
   // Debug: Log first song's properties to verify baseFolder is stored
   if (songs.length > 0) {
     const firstSong = songs[0];
@@ -566,6 +592,19 @@ export async function getAllSongsAsync(): Promise<Song[]> {
       videoBackground: firstSong.videoBackground ? 'present' : 'missing',
       coverImage: firstSong.coverImage ? 'present' : 'missing',
     });
+    
+    // CRITICAL: If songs have no baseFolder but localStorage has one, update all songs
+    if (localStorageFolder && !firstSong.baseFolder && (firstSong.relativeAudioPath || firstSong.relativeVideoPath || firstSong.relativeCoverPath)) {
+      console.log('[SongLibrary] Songs have no baseFolder but localStorage has folder - updating songs with baseFolder:', localStorageFolder);
+      // Update all songs with the baseFolder from localStorage
+      const updatedSongs = songs.map(s => ({
+        ...s,
+        baseFolder: s.baseFolder || localStorageFolder || undefined,
+      }));
+      // Save the updated songs
+      saveCustomSongs(updatedSongs);
+      console.log('[SongLibrary] Updated all songs with baseFolder from localStorage');
+    }
   }
   
   if (isTauri()) {
