@@ -29,13 +29,29 @@ const defaultSettings: LibrarySettings = {
 // In-memory song cache
 let songCache: Song[] | null = null;
 let customSongsCache: Song[] | null = null;
+// Cache timestamp for automatic staleness detection
+let songCacheTimestamp = 0;
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+/** Invalidate all in-memory caches, forcing fresh reads from storage. */
+export function clearSongCache(): void {
+  songCache = null;
+  customSongsCache = null;
+  songCacheTimestamp = 0;
+}
 
 // Get all songs (sample + custom)
 export function getAllSongs(): Song[] {
+  // Auto-expire cache after TTL
+  if (songCache && Date.now() - songCacheTimestamp > CACHE_TTL_MS) {
+    songCache = null;
+  }
+  
   if (songCache) return songCache;
   
   const customSongs = getCustomSongs();
   songCache = [...sampleSongs, ...customSongs];
+  songCacheTimestamp = Date.now();
   return songCache;
 }
 
@@ -395,8 +411,7 @@ export function clearCustomSongs(): void {
 
 // Reload library - clear cache and force fresh load from localStorage
 export function reloadLibrary(): Song[] {
-  songCache = null;
-  customSongsCache = null;
+  clearSongCache();
   // Clear blob URL cache in Tauri to force fresh loads
   if (isTauri()) {
     clearBlobUrlCache();
