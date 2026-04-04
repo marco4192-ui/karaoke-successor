@@ -399,7 +399,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [stop, audioEffects, audioRef, videoRef]);
+  }, [stop, audioEffects, setAudioEffects, audioRef, videoRef]);
 
   // ── Game loop (requestAnimationFrame) ──
   useEffect(() => {
