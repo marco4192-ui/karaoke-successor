@@ -17,6 +17,7 @@
     "shell:default",
     "shell:allow-open",
     "fs:default",
+    "fs:allow-read-file",
     "fs:allow-read-text-file",
     "fs:allow-write-text-file",
     "fs:allow-read-dir",
@@ -39,7 +40,11 @@
         { "path": "$DOWNLOAD/**" },
         { "path": "$MUSIC/**" },
         { "path": "$PICTURES/**" },
-        { "path": "$VIDEO/**" }
+        { "path": "$VIDEO/**" },
+        { "path": "/" },
+        { "path": "C:/**" },
+        { "path": "D:/**" },
+        { "path": "E:/**" }
       ]
     },
     "dialog:default",

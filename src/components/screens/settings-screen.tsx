@@ -826,7 +826,7 @@ function SettingsScreen() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
                 <Input
                   value={songsFolder}
                   onChange={(e) => setSongsFolder(e.target.value)}
@@ -834,14 +834,28 @@ function SettingsScreen() {
                   className="bg-white/5 border-white/10 text-white flex-1"
                 />
                 <Button
+                  onClick={handleSaveFolder}
+                  disabled={isScanning || !songsFolder.trim()}
+                  className="bg-green-500 hover:bg-green-400 text-white shrink-0"
+                >
+                  {isScanning ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    'Scan'
+                  )}
+                </Button>
+                <Button
                   onClick={handleBrowseFolder}
                   disabled={isScanning}
                   variant="outline"
-                  className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
+                  className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 shrink-0"
                 >
                   Browse
                 </Button>
               </div>
+              <p className="text-xs text-white/50">
+                Enter the path to your songs folder and click "Scan" to import, or use "Browse" to select a folder.
+              </p>
               {songsFolder && (
                 <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 flex items-center gap-3">
                   <svg className="w-5 h-5 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
