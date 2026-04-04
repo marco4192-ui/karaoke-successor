@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { Song, Difficulty, GameResult, PitchDetectionResult } from '@/types/game';
+import type { Song, Difficulty, GameResult, PitchDetectionResult, GameMode } from '@/types/game';
 import type { AudioEffectsEngine } from '@/lib/audio/audio-effects';
 
 export interface UseGameLoopOptions {
@@ -33,7 +33,7 @@ export interface UseGameLoopOptions {
   checkP2NoteHits: (time: number, pitch: PitchDetectionResult) => void;
   // Game mode / state
   difficulty: Difficulty;
-  gameMode: string;
+  gameMode: GameMode;
   timingOffset: number;
   // Duet
   isDuetMode: boolean;
