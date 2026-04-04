@@ -4,6 +4,7 @@ import React from 'react';
 import { Song } from '@/types/game';
 import { Playlist, getPlaylistSongs } from '@/lib/playlist-manager';
 import { SongCard } from './song-card';
+import { safeConfirm } from '@/lib/safe-dialog';
 import { SongCardProps } from './types';
 import { MusicIcon, TrashIcon, QueueIcon, PlayIcon } from './icons';
 import { Button } from '@/components/ui/button';
@@ -106,7 +107,7 @@ export function PlaylistView({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (confirm(`Delete "${playlist.name}"?`)) {
+                        if (safeConfirm(`Delete "${playlist.name}"?`)) {
                           onPlaylistDelete(playlist.id);
                         }
                       }}

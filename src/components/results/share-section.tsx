@@ -4,6 +4,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { safeAlert } from '@/lib/safe-dialog';
 import { Song, HighscoreEntry, GameMode, Difficulty } from '@/types/game';
 import { createShareableCard, downloadScoreCard, shareScoreCard } from '@/lib/game/share-results';
 import { ScoreCard } from '@/components/social/score-card';
@@ -114,7 +115,7 @@ export function ShareSection({
             const card = createShareableCard(buildScoreEntry());
             const success = await shareScoreCard(card);
             if (!success) {
-              alert('Sharing not supported. Card downloaded instead.');
+              safeAlert('Sharing not supported. Card downloaded instead.');
               downloadScoreCard(card);
             }
           }}

@@ -4,6 +4,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { leaderboardService } from '@/lib/api/leaderboard-service';
+import { safeAlert } from '@/lib/safe-dialog';
 import { MusicIcon } from '@/components/settings/settings-icons';
 
 interface AboutTabProps {
@@ -96,7 +97,7 @@ export function AboutTab({
               variant="outline"
               onClick={async () => {
                 const connected = await leaderboardService.testConnection();
-                alert(connected ? '✅ Connected to leaderboard!' : '❌ Could not connect to leaderboard');
+                safeAlert(connected ? '✅ Connected to leaderboard!' : '❌ Could not connect to leaderboard');
               }}
               className="border-cyan-500/50 text-cyan-400"
             >

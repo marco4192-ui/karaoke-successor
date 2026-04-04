@@ -4,6 +4,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { safeAlert } from '@/lib/safe-dialog';
 import { Badge } from '@/components/ui/badge';
 import { midiToNoteName } from '@/types/game';
 import { MicIcon, MusicIcon } from './mobile-icons';
@@ -550,7 +551,7 @@ export function MobileResultsView({ gameResults, onNavigate }: ResultsViewProps)
           <div className="grid grid-cols-2 gap-3">
             <Button 
               onClick={() => {
-                alert('Score card saved to your photos! (Feature coming soon)');
+                safeAlert('Score card saved to your photos! (Feature coming soon)');
               }}
               className="bg-gradient-to-r from-cyan-500 to-purple-500"
             >
@@ -563,7 +564,7 @@ export function MobileResultsView({ gameResults, onNavigate }: ResultsViewProps)
                   navigator.share({ text }).catch(() => {});
                 } else {
                   navigator.clipboard.writeText(text);
-                  alert('Score copied to clipboard!');
+                  safeAlert('Score copied to clipboard!');
                 }
               }}
               variant="outline"

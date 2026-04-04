@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useGameStore } from '@/lib/game/store';
 import { Player } from '@/types/game';
+import { safeAlert } from '@/lib/safe-dialog';
 import { getExtendedStats, updateStatsAfterGame, saveExtendedStats, calculateSongXP, getLevelForXP } from '@/lib/game/player-progression';
 
 // Re-export moved components for backward compatibility
@@ -82,7 +83,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
     const fullSong = songs.find(s => s.id === nextQueueItem.songId);
     
     if (!fullSong) {
-      alert('Song not found in library');
+      safeAlert('Song not found in library');
       return;
     }
     

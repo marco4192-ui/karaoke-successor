@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { safeAlert, safeConfirm } from '@/lib/safe-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -197,7 +198,7 @@ export function UserProfileScreen({
   };
 
   const handleDeleteProfile = async (profileId: string) => {
-    if (!confirm('Are you sure you want to delete this profile? This action cannot be undone.')) {
+    if (!safeConfirm('Are you sure you want to delete this profile? This action cannot be undone.')) {
       return;
     }
 
@@ -230,15 +231,15 @@ export function UserProfileScreen({
       
       if (existingProfile) {
         // Link this device to existing profile
-        alert(`Found profile: ${existingProfile.name}. Device linked successfully!`);
+        safeAlert(`Found profile: ${existingProfile.name}. Device linked successfully!`);
         setShowSyncDialog(false);
         setSyncCode('');
       } else {
-        alert('Invalid sync code. Please check and try again.');
+        safeAlert('Invalid sync code. Please check and try again.');
       }
     } catch (error) {
       console.error('Failed to sync profiles:', error);
-      alert('Failed to sync profiles. Please try again.');
+      safeAlert('Failed to sync profiles. Please try again.');
     }
   };
 

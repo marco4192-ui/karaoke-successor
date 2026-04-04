@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { getAllSongs, reloadLibrary, clearCustomSongs, addSongs } from '@/lib/game/song-library';
 import { Song } from '@/types/game';
 import { isTauri } from '@/lib/tauri-file-storage';
+import { safeAlert, safeConfirm, safePrompt } from '@/lib/safe-dialog';
 
 export interface ScanProgress {
   stage: 'scanning' | 'importing' | 'complete' | 'error';
@@ -76,7 +77,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
       const { scanSongsFolderTauri, isTauri: checkTauri } = await import('@/lib/tauri-file-storage');
 
       if (!checkTauri()) {
-        alert('Folder scanning is only available in the desktop app.');
+        safeAlert('Folder scanning is only available in the desktop app.');
         setIsScanning(false);
         return;
       }
@@ -262,7 +263,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
   // Save songs folder and reload library
   const handleSaveFolder = useCallback(async () => {
     if (!songsFolder.trim()) {
-      alert('Please enter a folder path first.');
+      safeAlert('Please enter a folder path first.');
       return;
     }
 
@@ -273,7 +274,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
   // Browse folder (using Tauri dialog if available)
   const handleBrowseFolder = useCallback(async () => {
     if (!isTauri()) {
-      alert(
+      safeAlert(
         'Folder picker is only available in the desktop app.\n\n' +
         'Please use the desktop app (Tauri) to browse for folders.\n\n' +
         'If you are running the desktop app, there may be an issue with Tauri detection.'
@@ -306,7 +307,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
     } catch (e) {
       console.error('[Settings] Error in handleBrowseFolder:', e);
       const errorMessage = e instanceof Error ? e.message : String(e);
-      alert(
+      safeAlert(
         'Could not open folder picker.\n\n' +
         'Error: ' + errorMessage + '\n\n' +
         'Please enter the path manually in the input field and click "Scan".'
@@ -316,7 +317,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
 
   // Reset library without deleting highscores
   const handleResetLibrary = useCallback(async () => {
-    if (!confirm('Are you sure you want to reset the song library? This will remove all imported songs, but your highscores will be preserved.')) {
+    if (!safeConfirm('Are you sure you want to reset the song library? This will remove all imported songs, but your highscores will be preserved.')) {
       return;
     }
 
@@ -350,11 +351,11 @@ export function useFolderScanner(): UseFolderScannerReturn {
 
   // Clear all data including highscores
   const handleClearAllData = useCallback(async () => {
-    if (!confirm('⚠️ WARNING: This will delete ALL data including highscores, profiles, and settings. This cannot be undone!\n\nType "DELETE" to confirm.')) {
+    if (!safeConfirm('⚠️ WARNING: This will delete ALL data including highscores, profiles, and settings. This cannot be undone!\n\nType "DELETE" to confirm.')) {
       return;
     }
 
-    const confirmation = prompt('Type "DELETE" to confirm complete data reset:');
+    const confirmation = safePrompt('Type "DELETE" to confirm complete data reset:');
     if (confirmation !== 'DELETE') {
       return;
     }

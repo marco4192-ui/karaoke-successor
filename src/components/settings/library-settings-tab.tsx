@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getAllSongs, reloadLibrary, clearCustomSongs } from '@/lib/game/song-library';
 import { ImportScreen } from '@/components/import/import-screen';
+import { safeConfirm, safePrompt } from '@/lib/safe-dialog';
 
 // Icons
 function MusicIcon({ className }: { className?: string }) {
@@ -60,7 +61,7 @@ export function LibrarySettingsTab({ tx }: LibrarySettingsTabProps) {
   
   // Reset library without deleting highscores
   const handleResetLibrary = async () => {
-    if (!confirm('Are you sure you want to reset the song library? This will remove all imported songs, but your highscores will be preserved.')) {
+    if (!safeConfirm('Are you sure you want to reset the song library? This will remove all imported songs, but your highscores will be preserved.')) {
       return;
     }
     
@@ -99,11 +100,11 @@ export function LibrarySettingsTab({ tx }: LibrarySettingsTabProps) {
   
   // Clear all data including highscores (dangerous!)
   const handleClearAllData = async () => {
-    if (!confirm('⚠️ WARNING: This will delete ALL data including highscores, profiles, and settings. This cannot be undone!\n\nType "DELETE" to confirm.')) {
+    if (!safeConfirm('⚠️ WARNING: This will delete ALL data including highscores, profiles, and settings. This cannot be undone!\n\nType "DELETE" to confirm.')) {
       return;
     }
     
-    const confirmation = prompt('Type "DELETE" to confirm complete data reset:');
+    const confirmation = safePrompt('Type "DELETE" to confirm complete data reset:');
     if (confirmation !== 'DELETE') {
       return;
     }
