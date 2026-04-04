@@ -3,6 +3,7 @@ import { Song, LyricLine, Note, midiToFrequency } from '@/types/game';
 import { sampleSongs } from '@/data/songs/songs';
 import { isTauri, getPlayableUrl, getSongMediaUrl, clearBlobUrlCache } from '@/lib/tauri-file-storage';
 import { getSongMediaUrls, storeMedia, hasMedia, getTxtContent } from '@/lib/db/media-db';
+import { saveCustomSongsToDB, loadCustomSongsFromDB, migrateFromLocalStorage, clearCustomSongsFromDB } from '@/lib/db/custom-songs-db';
 
 const STORAGE_KEY = 'karaoke-successor-songs';
 const SETTINGS_KEY = 'karaoke-successor-settings';
@@ -55,7 +56,7 @@ export function getAllSongs(): Song[] {
   return songCache;
 }
 
-// Get custom/imported songs
+// Get custom/imported songs — reads from IndexedDB cache, falls back to localStorage
 export function getCustomSongs(): Song[] {
   if (customSongsCache) return customSongsCache;
   
@@ -64,17 +65,49 @@ export function getCustomSongs(): Song[] {
     return [];
   }
   
+  // Try localStorage first (fast, sync)
   try {
     const stored = localStorage.getItem(CUSTOM_SONGS_KEY);
     if (stored) {
       const songs = JSON.parse(stored);
       customSongsCache = songs;
+      // Trigger background migration to IndexedDB
+      if (typeof indexedDB !== 'undefined' && songs.length > 0) {
+        migrateFromLocalStorage(songs, CUSTOM_SONGS_KEY).then(migrated => {
+          if (migrated) {
+            customSongsCache = migrated;
+            songCache = null; // Force refresh
+          }
+        }).catch(() => {});
+      }
       return customSongsCache || [];
     }
   } catch (e) {
-    console.error('[SongLibrary] Failed to load custom songs:', e);
+    console.error('[SongLibrary] Failed to load custom songs from localStorage:', e);
   }
   return [];
+}
+
+// Load custom songs from IndexedDB (async — call on app startup)
+export async function loadCustomSongsFromStorage(): Promise<Song[]> {
+  if (typeof indexedDB === 'undefined') return getCustomSongs();
+  
+  try {
+    const songs = await loadCustomSongsFromDB();
+    if (songs.length > 0) {
+      customSongsCache = songs;
+      return songs;
+    }
+    // IndexedDB empty — check localStorage for migration
+    const lsSongs = getCustomSongs();
+    if (lsSongs.length > 0) {
+      await migrateFromLocalStorage(lsSongs, CUSTOM_SONGS_KEY);
+    }
+    return lsSongs;
+  } catch (e) {
+    console.error('[SongLibrary] Failed to load from IndexedDB:', e);
+    return getCustomSongs();
+  }
 }
 
 // Add a song to the library
@@ -134,39 +167,55 @@ export function removeSong(songId: string): void {
   songCache = null;
 }
 
-// Save custom songs to localStorage
-// IMPORTANT: We store relative paths, not blob URLs
-// Audio/Video/Cover are loaded from filesystem using relative paths
-// TXT content is cached in IndexedDB for fast lyrics loading
+// Save custom songs — primary storage is IndexedDB, localStorage is legacy fallback
 function saveCustomSongs(songs: Song[]): void {
-  try {
-    // Create minimal versions for localStorage
-    const minimalSongs = songs.map(s => {
-      return {
-        ...s,
-        // Keep the storedTxt flag so we know TXT is cached in IndexedDB
-        storedTxt: s.storedTxt,
-        storedMedia: false, // We don't store large media in IndexedDB anymore
-        // Important: Store baseFolder for loading media from filesystem
-        baseFolder: s.baseFolder,
-        // Remove blob URLs that don't persist across sessions
-        audioUrl: s.audioUrl && !s.audioUrl.startsWith('blob:') ? s.audioUrl : undefined,
-        videoBackground: s.videoBackground && !s.videoBackground.startsWith('blob:') ? s.videoBackground : undefined,
-        coverImage: s.coverImage && !s.coverImage.startsWith('blob:') ? s.coverImage : undefined,
-        // Remove lyrics - they will be loaded on-demand from IndexedDB or file system
-        lyrics: [],
-        // Keep relative paths for loading from filesystem
-        relativeAudioPath: s.relativeAudioPath,
-        relativeVideoPath: s.relativeVideoPath,
-        relativeCoverPath: s.relativeCoverPath,
-        relativeTxtPath: s.relativeTxtPath,
-      };
+  // Create minimal versions for storage (remove blob URLs and lyrics)
+  const minimalSongs = songs.map(s => {
+    return {
+      ...s,
+      storedTxt: s.storedTxt,
+      storedMedia: false,
+      baseFolder: s.baseFolder,
+      audioUrl: s.audioUrl && !s.audioUrl.startsWith('blob:') ? s.audioUrl : undefined,
+      videoBackground: s.videoBackground && !s.videoBackground.startsWith('blob:') ? s.videoBackground : undefined,
+      coverImage: s.coverImage && !s.coverImage.startsWith('blob:') ? s.coverImage : undefined,
+      lyrics: [],
+      relativeAudioPath: s.relativeAudioPath,
+      relativeVideoPath: s.relativeVideoPath,
+      relativeCoverPath: s.relativeCoverPath,
+      relativeTxtPath: s.relativeTxtPath,
+    };
+  });
+
+  // Update in-memory cache immediately
+  customSongsCache = minimalSongs;
+
+  // Persist to IndexedDB (async, non-blocking)
+  if (typeof window !== 'undefined' && typeof indexedDB !== 'undefined') {
+    saveCustomSongsToDB(minimalSongs).then(() => {
+      console.log('[SongLibrary] Saved', minimalSongs.length, 'custom songs to IndexedDB');
+      // Clear localStorage to free space — IndexedDB is now the source of truth
+      try {
+        localStorage.removeItem(CUSTOM_SONGS_KEY);
+      } catch (e) {
+        // Ignore
+      }
+    }).catch(err => {
+      console.error('[SongLibrary] IndexedDB save failed, falling back to localStorage:', err);
+      saveToLocalStorage(minimalSongs);
     });
-    localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(minimalSongs));
-    customSongsCache = minimalSongs;
+  } else {
+    saveToLocalStorage(minimalSongs);
+  }
+}
+
+/** Legacy localStorage save — used as fallback when IndexedDB is unavailable. */
+function saveToLocalStorage(songs: Song[]): void {
+  try {
+    localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(songs));
   } catch (e) {
-    console.error('[SongLibrary] Failed to save custom songs:', e);
-    // Try even more minimal save
+    console.error('[SongLibrary] Failed to save custom songs to localStorage:', e);
+    // Try ultra-minimal save as last resort
     try {
       const ultraMinimalSongs = songs.map(s => ({
         id: s.id,
@@ -181,8 +230,7 @@ function saveCustomSongs(songs: Song[]): void {
         language: s.language,
         year: s.year,
         folderPath: s.folderPath,
-        baseFolder: s.baseFolder, // Store base songs folder for media loading
-        // Relative paths for loading from filesystem
+        baseFolder: s.baseFolder,
         relativeAudioPath: s.relativeAudioPath,
         relativeVideoPath: s.relativeVideoPath,
         relativeCoverPath: s.relativeCoverPath,
@@ -195,7 +243,7 @@ function saveCustomSongs(songs: Song[]): void {
       }));
       localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(ultraMinimalSongs));
     } catch (e2) {
-      console.error('[SongLibrary] Failed to save even ultra-minimal data:', e2);
+      console.error('[SongLibrary] Failed to save even ultra-minimal data — storage is full!', e2);
     }
   }
 }
@@ -400,12 +448,18 @@ export function importSongsFromBackup(json: string): number {
 
 // Clear all custom songs
 export function clearCustomSongs(): void {
-  localStorage.removeItem(CUSTOM_SONGS_KEY);
+  try { localStorage.removeItem(CUSTOM_SONGS_KEY); } catch {}
   customSongsCache = [];
   songCache = null;
   // Clear blob URL cache in Tauri to force fresh loads
   if (isTauri()) {
     clearBlobUrlCache();
+  }
+  // Also clear IndexedDB
+  if (typeof indexedDB !== 'undefined') {
+    clearCustomSongsFromDB().catch(e => {
+      console.warn('[SongLibrary] Failed to clear IndexedDB:', e);
+    });
   }
 }
 
