@@ -7,13 +7,7 @@ export interface SpectrogramConfig {
   colorScheme: 'rainbow' | 'heat' | 'neon' | 'ocean' | 'fire';
 }
 
-export const DEFAULT_SPECTROGRAM_CONFIG: SpectrogramConfig & { 
-  fftSize: number; 
-  smoothing: number; 
-  minDecibels: number; 
-  maxDecibels: number; 
-  maxDecibels: number; 
-} = {
+export const DEFAULT_SPECTROGRAM_CONFIG: SpectrogramConfig = {
   fftSize: 2048,
   smoothing: 0.8,
   minDecibels: -90,
