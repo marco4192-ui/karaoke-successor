@@ -2,6 +2,7 @@ export class AudioManager {
   private audioContext: AudioContext | null = null;
   private audioElement: HTMLAudioElement | null = null;
   private gainNode: GainNode | null = null;
+  private mediaSource: MediaElementAudioSourceNode | null = null;
   private isPlaying = false;
   private currentTime = 0;
   private startTime = 0;
@@ -17,13 +18,16 @@ export class AudioManager {
 
   async loadAudio(url: string): Promise<void> {
     return new Promise((resolve, reject) => {
+      // Disconnect and clean up previous source before creating a new one
+      this.disconnectSource();
+
       this.audioElement = new Audio(url);
       this.audioElement.crossOrigin = 'anonymous';
 
       this.audioElement.addEventListener('canplaythrough', () => {
-        if (this.audioContext && this.gainNode) {
-          const source = this.audioContext.createMediaElementSource(this.audioElement!);
-          source.connect(this.gainNode);
+        if (this.audioContext && this.gainNode && !this.mediaSource) {
+          this.mediaSource = this.audioContext.createMediaElementSource(this.audioElement!);
+          this.mediaSource.connect(this.gainNode);
         }
         resolve();
       }, { once: true });
@@ -34,6 +38,25 @@ export class AudioManager {
 
       this.audioElement.load();
     });
+  }
+
+  /** Safely disconnect previous MediaElementSourceNode and clean up the old Audio element. */
+  private disconnectSource(): void {
+    if (this.mediaSource) {
+      try {
+        this.mediaSource.disconnect();
+      } catch {
+        // Already disconnected — safe to ignore
+      }
+      this.mediaSource = null;
+    }
+    if (this.audioElement) {
+      this.audioElement.pause();
+      this.audioElement.src = '';
+      this.audioElement = null;
+    }
+    this.stopTimeUpdate();
+    this.isPlaying = false;
   }
 
   play(startTime = 0): void {
@@ -116,11 +139,7 @@ export class AudioManager {
   }
 
   destroy(): void {
-    this.stop();
-    this.stopTimeUpdate();
-    if (this.audioElement) {
-      this.audioElement = null;
-    }
+    this.disconnectSource();
     if (this.audioContext) {
       this.audioContext.close();
       this.audioContext = null;
