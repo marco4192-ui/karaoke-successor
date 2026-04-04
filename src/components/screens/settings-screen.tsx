@@ -23,7 +23,6 @@ import {
 } from '@/components/game/webcam-background';
 import { THEMES, applyTheme, getStoredTheme, Theme } from '@/lib/game/themes';
 import { WebcamSettingsPanel, WebcamBackground } from '@/components/game/webcam-background';
-import { LiveStreamingPanel } from '@/components/streaming/live-streaming';
 import { leaderboardService } from '@/lib/api/leaderboard-service';
 import { ImportScreen } from '@/components/import/import-screen';
 // Tauri imports - use isTauri function from tauri-file-storage
