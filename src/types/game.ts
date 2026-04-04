@@ -101,8 +101,6 @@ export interface Player {
   notesHit: number;
   notesMissed: number;
   accuracy: number;
-  starPower: number;
-  isStarPowerActive: boolean;
   notes?: Note[]; // Optional notes array for detailed display
   totalNotes?: number; // Total notes count for display
 }
@@ -299,7 +297,6 @@ export const SCORE_VALUES = {
   goldenNoteBonus: 50,
   holdNoteBonus: 10, // per 100ms held
   comboBonus: 25, // per combo level
-  starPowerMultiplier: 2,
 } as const;
 
 // Musical constants
