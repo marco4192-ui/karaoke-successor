@@ -5,8 +5,8 @@ import {
   PitchDetectorManager, 
   getPitchDetectorManager, 
   resetPitchDetectorManager,
-  PitchDetectionResult 
 } from '@/lib/audio/pitch-detector';
+import type { PitchDetectionResult } from '@/types/game';
 import { Difficulty } from '@/types/game';
 
 export interface PlayerPitchConfig {

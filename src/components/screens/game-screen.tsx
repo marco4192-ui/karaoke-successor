@@ -33,7 +33,7 @@ import {
 import { YouTubePlayer, extractYouTubeId } from '@/components/game/youtube-player';
 import { CHALLENGE_MODES, getExtendedStats, ExtendedPlayerStats } from '@/lib/game/player-progression';
 import { createDuelMatch, DuelMatch } from '@/lib/game/multiplayer';
-import { LyricLineDisplay from '@/components/game/lyric-line-display';
+import LyricLineDisplay from '@/components/game/lyric-line-display';
 import { MusicIcon, PlayIcon, SettingsIcon, PauseIcon, SkipForwardIcon, RewindIcon, VolumeIcon } from '@/components/icons';
 import {
   calculateScoringMetadata,
