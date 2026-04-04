@@ -27,6 +27,7 @@ export interface ScannedSong {
   backgroundUrl?: string;
   folder: string;
   folderPath: string;
+  baseFolder?: string; // CRITICAL: Root folder for media loading
   previewStart?: number;
   previewDuration?: number;
   genre?: string;
@@ -86,7 +87,11 @@ export async function scanFolderWithPicker(): Promise<ScanResult> {
       mode: 'read',
     });
 
-    return await scanDirectoryHandle(dirHandle, '', null);
+    // Get the folder name as baseFolder reference
+    // Note: For Tauri, use scanSongsFolderTauri instead which provides actual filesystem paths
+    const baseFolder = dirHandle.name;
+
+    return await scanDirectoryHandle(dirHandle, '', null, baseFolder);
   } catch (e) {
     if ((e as Error).name === 'AbortError') {
       return { songs: [], folders: [], errors: ['Folder selection cancelled'] };
@@ -99,7 +104,8 @@ export async function scanFolderWithPicker(): Promise<ScanResult> {
 async function scanDirectoryHandle(
   dirHandle: FileSystemDirectoryHandle, 
   path: string,
-  parentPath: string | null
+  parentPath: string | null,
+  baseFolder: string // Root folder name for media loading
 ): Promise<ScanResult> {
   const result: ScanResult = { songs: [], folders: [], errors: [] };
   const songFolders: Map<string, ScannedSong> = new Map();
@@ -125,8 +131,8 @@ async function scanDirectoryHandle(
   for (const { entry, fullPath } of entries) {
     if (entry.kind === 'directory') {
       try {
-        // @ts-ignore
-        const subResult = await scanDirectoryHandle(entry, fullPath, path);
+        // @ts-ignore - Pass baseFolder to recursive calls
+        const subResult = await scanDirectoryHandle(entry, fullPath, path, baseFolder);
         result.songs.push(...subResult.songs);
         result.folders.push(...subResult.folders);
         result.errors.push(...subResult.errors);
@@ -160,6 +166,7 @@ async function scanDirectoryHandle(
             artist: 'Unknown',
             folder: folderName,
             folderPath: path,
+            baseFolder, // CRITICAL: Set baseFolder for media loading
           });
         }
 
@@ -294,6 +301,17 @@ export async function scanFilesFromFileList(files: FileList): Promise<ScanResult
   const songFolders: Map<string, ScannedSong> = new Map();
   const folderMap: Map<string, { parentPath: string | null; songs: ScannedSong[] }> = new Map();
 
+  // Extract baseFolder from the first file's path
+  let baseFolder: string | undefined = undefined;
+  if (files.length > 0) {
+    const firstPath = files[0].webkitRelativePath;
+    if (firstPath) {
+      // The root folder is the first part of the path
+      baseFolder = firstPath.split('/')[0];
+      console.log('[FolderScanner] Extracted baseFolder from FileList:', baseFolder);
+    }
+  }
+
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     const pathParts = file.webkitRelativePath.split('/');
@@ -322,6 +340,7 @@ export async function scanFilesFromFileList(files: FileList): Promise<ScanResult
         artist: 'Unknown',
         folder: folderName,
         folderPath: songFolderPath,
+        baseFolder, // CRITICAL: Set baseFolder for media loading
       });
     }
 
@@ -510,6 +529,9 @@ export async function convertScannedSongToSong(scanned: ScannedSong): Promise<So
     }
   }
 
+  // CRITICAL: Log baseFolder for debugging
+  console.log(`[FolderScanner] Creating song ${scanned.title} with baseFolder: ${scanned.baseFolder || 'not set'}`);
+
   return {
     id: songId,
     title: scanned.title,
@@ -533,6 +555,8 @@ export async function convertScannedSongToSong(scanned: ScannedSong): Promise<So
     preview,
     dateAdded: Date.now(),
     folderPath: normalizedFolderPath,
+    // CRITICAL: Pass baseFolder for media loading in Tauri
+    baseFolder: scanned.baseFolder,
     // Relative paths for loading from filesystem (Tauri)
     relativeAudioPath,
     relativeVideoPath,
