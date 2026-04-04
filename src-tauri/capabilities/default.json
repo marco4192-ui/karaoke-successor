@@ -16,19 +16,8 @@
     "core:webview:default",
     "shell:default",
     "shell:allow-open",
-    "fs:default",
-    "fs:allow-read-file",
-    "fs:allow-read-text-file",
-    "fs:allow-write-text-file",
-    "fs:allow-read-dir",
-    "fs:allow-exists",
-    "fs:allow-mkdir",
-    "fs:allow-remove",
-    "fs:allow-rename",
-    "fs:allow-copy-file",
-    "fs:allow-watch",
     {
-      "identifier": "fs:scope",
+      "identifier": "fs:allow-read-file",
       "allow": [
         { "path": "$HOME/**" },
         { "path": "$RESOURCE/**" },
@@ -41,8 +30,157 @@
         { "path": "$MUSIC/**" },
         { "path": "$PICTURES/**" },
         { "path": "$VIDEO/**" },
-        { "path": "/" },
-        { "path": "**" }
+        { "path": "$CWD/**" },
+        { "path": "/" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-read-text-file",
+      "allow": [
+        { "path": "$HOME/**" },
+        { "path": "$RESOURCE/**" },
+        { "path": "$APPDATA/**" },
+        { "path": "$APPLOCALDATA/**" },
+        { "path": "$APPCONFIG/**" },
+        { "path": "$DESKTOP/**" },
+        { "path": "$DOCUMENTS/**" },
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$MUSIC/**" },
+        { "path": "$PICTURES/**" },
+        { "path": "$VIDEO/**" },
+        { "path": "$CWD/**" },
+        { "path": "/" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-write-file",
+      "allow": [
+        { "path": "$HOME/**" },
+        { "path": "$APPDATA/**" },
+        { "path": "$APPLOCALDATA/**" },
+        { "path": "$APPCONFIG/**" },
+        { "path": "$DESKTOP/**" },
+        { "path": "$DOCUMENTS/**" },
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$CWD/**" },
+        { "path": "/" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-write-text-file",
+      "allow": [
+        { "path": "$HOME/**" },
+        { "path": "$APPDATA/**" },
+        { "path": "$APPLOCALDATA/**" },
+        { "path": "$APPCONFIG/**" },
+        { "path": "$DESKTOP/**" },
+        { "path": "$DOCUMENTS/**" },
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$CWD/**" },
+        { "path": "/" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-read-dir",
+      "allow": [
+        { "path": "$HOME/**" },
+        { "path": "$RESOURCE/**" },
+        { "path": "$APPDATA/**" },
+        { "path": "$APPLOCALDATA/**" },
+        { "path": "$APPCONFIG/**" },
+        { "path": "$DESKTOP/**" },
+        { "path": "$DOCUMENTS/**" },
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$MUSIC/**" },
+        { "path": "$PICTURES/**" },
+        { "path": "$VIDEO/**" },
+        { "path": "$CWD/**" },
+        { "path": "/" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-exists",
+      "allow": [
+        { "path": "$HOME/**" },
+        { "path": "$RESOURCE/**" },
+        { "path": "$APPDATA/**" },
+        { "path": "$APPLOCALDATA/**" },
+        { "path": "$APPCONFIG/**" },
+        { "path": "$DESKTOP/**" },
+        { "path": "$DOCUMENTS/**" },
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$MUSIC/**" },
+        { "path": "$PICTURES/**" },
+        { "path": "$VIDEO/**" },
+        { "path": "$CWD/**" },
+        { "path": "/" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-mkdir",
+      "allow": [
+        { "path": "$HOME/**" },
+        { "path": "$APPDATA/**" },
+        { "path": "$APPLOCALDATA/**" },
+        { "path": "$APPCONFIG/**" },
+        { "path": "$DESKTOP/**" },
+        { "path": "$DOCUMENTS/**" },
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$CWD/**" },
+        { "path": "/" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-remove",
+      "allow": [
+        { "path": "$HOME/**" },
+        { "path": "$APPDATA/**" },
+        { "path": "$APPLOCALDATA/**" },
+        { "path": "$APPCONFIG/**" },
+        { "path": "$DESKTOP/**" },
+        { "path": "$DOCUMENTS/**" },
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$CWD/**" },
+        { "path": "/" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-rename",
+      "allow": [
+        { "path": "$HOME/**" },
+        { "path": "$APPDATA/**" },
+        { "path": "$APPLOCALDATA/**" },
+        { "path": "$APPCONFIG/**" },
+        { "path": "$DESKTOP/**" },
+        { "path": "$DOCUMENTS/**" },
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$CWD/**" },
+        { "path": "/" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-copy-file",
+      "allow": [
+        { "path": "$HOME/**" },
+        { "path": "$APPDATA/**" },
+        { "path": "$APPLOCALDATA/**" },
+        { "path": "$APPCONFIG/**" },
+        { "path": "$DESKTOP/**" },
+        { "path": "$DOCUMENTS/**" },
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$CWD/**" },
+        { "path": "/" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-watch",
+      "allow": [
+        { "path": "$HOME/**" },
+        { "path": "$RESOURCE/**" },
+        { "path": "$APPDATA/**" },
+        { "path": "$APPLOCALDATA/**" },
+        { "path": "$CWD/**" },
+        { "path": "/" }
       ]
     },
     "dialog:default",
