@@ -88,23 +88,27 @@ export default function KaraokeSuccessor() {
       }
       
       // Create results from current game state
-      const gameResult = {
-        players: players.map(p => ({
-          playerId: p.id,
-          score: p.score,
-          accuracy: p.accuracy,
-          notesHit: p.notesHit,
-          notesMissed: p.notesMissed,
-          maxCombo: p.maxCombo,
-          rating: p.accuracy >= 95 ? 'perfect' : p.accuracy >= 85 ? 'excellent' : p.accuracy >= 70 ? 'good' : p.accuracy >= 50 ? 'okay' : 'poor',
-        })),
+      const gameResult: import('@/types/game').GameResult = {
+        players: players.map(p => {
+          let rating: 'perfect' | 'excellent' | 'good' | 'okay' | 'poor';
+          if (p.accuracy >= 95) rating = 'perfect';
+          else if (p.accuracy >= 85) rating = 'excellent';
+          else if (p.accuracy >= 70) rating = 'good';
+          else if (p.accuracy >= 50) rating = 'okay';
+          else rating = 'poor';
+          return {
+            playerId: p.id,
+            score: p.score,
+            accuracy: p.accuracy,
+            notesHit: p.notesHit,
+            notesMissed: p.notesMissed,
+            maxCombo: p.maxCombo,
+            rating,
+          };
+        }),
         songId: gameState.currentSong?.id || '',
-        songTitle: gameState.currentSong?.title || '',
-        artist: gameState.currentSong?.artist || '',
-        duration: gameState.currentTime,
-        gameMode: gameState.gameMode,
-        difficulty: gameState.difficulty,
         playedAt: Date.now(),
+        duration: gameState.currentTime,
       };
       setResults(gameResult);
     }

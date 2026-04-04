@@ -39,7 +39,7 @@ interface GameStore {
   setSong: (song: Song | null) => void;
   setDifficulty: (difficulty: Difficulty) => void;
   setGameMode: (mode: GameMode) => void;
-  addPlayer: (profile: PlayerProfile) => void;
+  addPlayer: (profile: Pick<PlayerProfile, 'id' | 'name' | 'avatar' | 'color'>) => void;
   removePlayer: (playerId: string) => void;
   updatePlayer: (playerId: string, updates: Partial<Player>) => void;
   setCurrentTime: (time: number) => void;
