@@ -58,6 +58,9 @@ const STORE_NAME = 'library';
 
 // Get IndexedDB instance
 function openDatabase(): Promise<IDBDatabase> {
+  if (typeof indexedDB === 'undefined') {
+    return Promise.reject(new Error('[LibraryCache] IndexedDB not available'));
+  }
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, CACHE_VERSION);
     

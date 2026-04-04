@@ -14,6 +14,7 @@ function generateId(): string {
 
 // Get all playlists from storage
 export function getPlaylists(): Playlist[] {
+  if (typeof window === 'undefined') return getDefaultPlaylists();
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
@@ -63,6 +64,7 @@ function getDefaultPlaylists(): Playlist[] {
 
 // Save playlists to storage
 function savePlaylists(playlists: Playlist[]): void {
+  if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(playlists));
   } catch (e) {
@@ -358,6 +360,7 @@ export function incrementPlaylistPlayCount(playlistId: string): void {
 // ============ FOLDER MANAGEMENT ============
 
 export function getFolders(): PlaylistFolder[] {
+  if (typeof window === 'undefined') return [];
   try {
     const stored = localStorage.getItem(FOLDERS_KEY);
     if (stored) {
@@ -370,6 +373,7 @@ export function getFolders(): PlaylistFolder[] {
 }
 
 function saveFolders(folders: PlaylistFolder[]): void {
+  if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(FOLDERS_KEY, JSON.stringify(folders));
   } catch (e) {
@@ -447,6 +451,7 @@ export function renameFolder(id: string, name: string): boolean {
 
 // Initialize playlists (call on app start)
 export function initializePlaylists(): void {
+  if (typeof window === 'undefined') return;
   const stored = localStorage.getItem(STORAGE_KEY);
   if (!stored) {
     // Create default playlists

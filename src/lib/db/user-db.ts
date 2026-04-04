@@ -70,6 +70,7 @@ export interface UserSession {
 
 // Generate unique device ID
 function getDeviceId(): string {
+  if (typeof window === 'undefined') return 'device-server';
   let deviceId = localStorage.getItem('karaoke-device-id');
   if (!deviceId) {
     deviceId = `device-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -103,6 +104,9 @@ class UserDatabase {
   private initPromise: Promise<IDBDatabase> | null = null;
 
   async init(): Promise<IDBDatabase> {
+    if (typeof indexedDB === 'undefined') {
+      throw new Error('[UserDB] IndexedDB not available in this environment');
+    }
     if (this.db) return this.db;
     if (this.initPromise) return this.initPromise;
 

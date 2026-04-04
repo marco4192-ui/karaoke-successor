@@ -45,6 +45,9 @@ let dbInstance: IDBDatabase | null = null;
 
 // Initialize the database
 export async function initDB(): Promise<IDBDatabase> {
+  if (typeof indexedDB === 'undefined') {
+    throw new Error('[SongStorage] IndexedDB not available in this environment');
+  }
   if (dbInstance) return dbInstance;
   
   return new Promise((resolve, reject) => {

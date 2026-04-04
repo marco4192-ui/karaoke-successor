@@ -312,7 +312,9 @@ export class MultiMicrophoneManager {
   private onAssignedMicsChange: ((mics: AssignedMicrophone[]) => void) | null = null;
 
   constructor() {
-    this.loadConfig();
+    if (typeof window !== 'undefined') {
+      this.loadConfig();
+    }
   }
 
   // Get list of all available microphones
@@ -681,6 +683,7 @@ export class MultiMicrophoneManager {
 
   // Load config from localStorage
   private loadConfig(): void {
+    if (typeof window === 'undefined') return;
     try {
       const saved = localStorage.getItem('karaoke-multi-mic-config');
       if (saved) {
@@ -742,7 +745,9 @@ export class MicrophoneManager {
 
   constructor() {
     this.multiMicManager = getMultiMicrophoneManager();
-    this.loadConfig();
+    if (typeof window !== 'undefined') {
+      this.loadConfig();
+    }
   }
 
   async getMicrophones(): Promise<MicrophoneDevice[]> {
@@ -888,6 +893,7 @@ export class MicrophoneManager {
   }
 
   private saveConfig(): void {
+    if (typeof window === 'undefined') return;
     try {
       localStorage.setItem('karaoke-mic-config', JSON.stringify(this.config));
     } catch (e) {
@@ -896,6 +902,7 @@ export class MicrophoneManager {
   }
 
   private loadConfig(): void {
+    if (typeof window === 'undefined') return;
     try {
       const saved = localStorage.getItem('karaoke-mic-config');
       if (saved) {
