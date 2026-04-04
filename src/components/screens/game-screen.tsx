@@ -707,20 +707,36 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     audioLoadedRef.current = false;
     videoLoadedRef.current = false;
     
-    // Pre-load media with proper waiting
+    // Event-based media loading helper — avoids busy-waiting anti-pattern
+    const waitForMediaEvent = (
+      element: HTMLAudioElement | HTMLVideoElement | null,
+      eventName: string,
+      timeoutMs: number = 5000
+    ): Promise<boolean> => {
+      if (!element) return Promise.resolve(false);
+      
+      return new Promise((resolve) => {
+        const onReady = () => {
+          resolve(true);
+        };
+        
+        element.addEventListener(eventName, onReady, { once: true });
+        
+        // Timeout fallback
+        setTimeout(() => resolve(false), timeoutMs);
+      });
+    };
+    
     const loadMedia = async () => {
-      // For songs with audioUrl, wait for audio element to be ready
-      if (effectiveSong.audioUrl) {
-        // Wait for audio to be canplay with a reasonable timeout
-        const maxWait = 5000; // 5 seconds max
-        const startTime = Date.now();
+      let audioReady = true;
+      let videoReady = true;
+      
+      // For songs with audioUrl, wait for audio element to be canplay
+      if (effectiveSong.audioUrl && audioRef.current) {
+        audioReady = await waitForMediaEvent(audioRef.current, 'canplay', 5000);
+        audioLoadedRef.current = audioReady;
         
-        while (!audioLoadedRef.current && Date.now() - startTime < maxWait) {
-          await new Promise(resolve => setTimeout(resolve, 50));
-        }
-        
-        if (audioLoadedRef.current) {
-          // Audio loaded successfully
+        if (audioReady) {
           console.log('[GameScreen] Audio loaded successfully');
         } else {
           console.warn('[GameScreen] Audio load timeout, proceeding anyway');
@@ -729,18 +745,15 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       
       // For songs with embedded audio (video), wait for video element
       if (effectiveSong.hasEmbeddedAudio && effectiveSong.videoBackground && !effectiveSong.audioUrl) {
-        const maxWait = 5000;
-        const startTime = Date.now();
-        
-        while (!videoLoadedRef.current && Date.now() - startTime < maxWait) {
-          await new Promise(resolve => setTimeout(resolve, 50));
-        }
-        
-        if (videoLoadedRef.current) {
-          // Video loaded successfully
-          console.log('[GameScreen] Video loaded successfully');
-        } else {
-          console.warn('[GameScreen] Video load timeout, proceeding anyway');
+        if (videoRef.current) {
+          videoReady = await waitForMediaEvent(videoRef.current, 'canplay', 5000);
+          videoLoadedRef.current = videoReady;
+          
+          if (videoReady) {
+            console.log('[GameScreen] Video loaded successfully');
+          } else {
+            console.warn('[GameScreen] Video load timeout, proceeding anyway');
+          }
         }
       }
       
@@ -753,12 +766,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     };
     
     loadMedia();
-    
-    return () => {
-      if (mediaCheckIntervalRef.current) {
-        clearInterval(mediaCheckIntervalRef.current);
-      }
-    };
   }, [effectiveSong]);
 
   // Initialize and start game - FIXED: proper countdown with visible numbers
