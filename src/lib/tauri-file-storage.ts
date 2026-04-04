@@ -4,7 +4,8 @@
 
 import { writeFile, readTextFile, BaseDirectory, exists, mkdir, readDir, readFile } from '@tauri-apps/plugin-fs';
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { LyricLine, Note, midiToFrequency } from '@/types/game';
+import { LyricLine } from '@/types/game';
+import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
 
 // Check if running in Tauri
 // Tauri v2 may use __TAURI_INTERNALS__ instead of __TAURI__
@@ -509,171 +510,39 @@ function parseLyricsFromTxt(content: string, bpm: number, gap: number): LyricLin
   const lines = content.split('\n').filter(l => l.trim().length > 0);
   const notes: Array<{ type: string; startBeat: number; duration: number; pitch: number; lyric: string; player?: 'P1' | 'P2' }> = [];
   const lineBreakBeats = new Set<number>();
-  
-  // DEBUG: Log parser input
-  const nonHeaderLines = lines.filter(l => !l.trim().startsWith('#') && l.trim() !== 'E');
-  console.log('[TauriParser] Total lines:', lines.length, 'Non-header lines:', nonHeaderLines.length);
-  console.log('[TauriParser] BPM:', bpm, 'GAP:', gap);
-  console.log('[TauriParser] First 5 non-header lines:', nonHeaderLines.slice(0, 5).map(l => l.substring(0, 60)));
-  
+
   let currentPlayer: 'P1' | 'P2' | undefined = undefined;
-  let noteCount = 0;
-  
+
   for (const line of lines) {
-    // Use trimmed version for header/marker parsing (these should be trimmed)
     const trimmedLine = line.trim();
-    
-    // Check for player markers
-    if (trimmedLine === 'P1' || trimmedLine === 'P1:') {
-      currentPlayer = 'P1';
-      continue;
-    }
-    if (trimmedLine === 'P2' || trimmedLine === 'P2:') {
-      currentPlayer = 'P2';
-      continue;
-    }
-    
-    // Skip headers (use trimmed version)
+
+    if (trimmedLine === 'P1' || trimmedLine === 'P1:') { currentPlayer = 'P1'; continue; }
+    if (trimmedLine === 'P2' || trimmedLine === 'P2:') { currentPlayer = 'P2'; continue; }
     if (trimmedLine.startsWith('#')) continue;
     if (trimmedLine === 'E') break;
-    
-    // Line break (use trimmed version for matching)
+
     if (trimmedLine.startsWith('-')) {
       const lineBreakMatch = trimmedLine.match(/^-\s*(-?\d+)/);
-      if (lineBreakMatch) {
-        lineBreakBeats.add(parseInt(lineBreakMatch[1]));
-      }
+      if (lineBreakMatch) lineBreakBeats.add(parseInt(lineBreakMatch[1]));
       continue;
     }
-    
-    // Check for P1/P2 prefix in note line
+
     const duetPrefixMatch = line.match(/^(P1|P2):\s*(.*)$/);
     let noteLine = line;
     let notePlayer: 'P1' | 'P2' | undefined = currentPlayer;
-    
     if (duetPrefixMatch) {
       notePlayer = duetPrefixMatch[1] as 'P1' | 'P2';
       noteLine = duetPrefixMatch[2];
     }
-    
-    // Parse note - use original note line for matching to preserve trailing spaces in lyric
-    // The regex handles leading whitespace with \s* at the start
+
     const noteMatch = noteLine.match(/^\s*([:*FGR])\s*(-?\d+)\s+(\d+)\s+(-?\d+)\s*(.*)$/);
     if (noteMatch) {
       const [, type, startStr, durationStr, pitchStr, lyric] = noteMatch;
-      notes.push({
-        type,
-        startBeat: parseInt(startStr),
-        duration: parseInt(durationStr),
-        pitch: parseInt(pitchStr),
-        // Preserve trailing spaces for syllable detection - trailing space = word boundary
-        lyric: lyric,
-        player: notePlayer,
-      });
-      noteCount++;
+      notes.push({ type, startBeat: parseInt(startStr), duration: parseInt(durationStr), pitch: parseInt(pitchStr), lyric, player: notePlayer });
     }
   }
-  
-  console.log('[TauriParser] Parsed', noteCount, 'notes from', lines.length, 'lines');
-  
-  // Convert to LyricLines
-  const beatDuration = 15000 / bpm;
-  const MIDI_BASE_OFFSET = 48;
-  const lyricLines: LyricLine[] = [];
-  let currentLineNotes: Note[] = [];
-  let currentLineText = '';
-  let currentLinePlayer: 'P1' | 'P2' | 'both' | undefined = undefined;
-  
-  const sortedNotes = [...notes].sort((a, b) => a.startBeat - b.startBeat);
-  
-  for (let i = 0; i < sortedNotes.length; i++) {
-    const note = sortedNotes[i];
-    const noteEndBeat = note.startBeat + note.duration;
-    const startTime = gap + (note.startBeat * beatDuration);
-    const duration = note.duration * beatDuration;
-    
-    // Line break note: Only a hyphen "-" alone in the lyric column triggers a line break
-    // Example: ": 100 5 60 -" means line break
-    // "~" is NEVER a line break - it's used for other purposes in UltraStar
-    // Hyphens with other text (e.g. "O-") are normal lyrics, NOT line breaks
-    const trimmedLyric = note.lyric.trim();
-    const isLineBreakNote = trimmedLyric === '-';
-    
-    if (isLineBreakNote) {
-      console.log('[TauriParser] Found line break note at beat', note.startBeat, 'lyric:', JSON.stringify(note.lyric));
-      if (currentLineNotes.length > 0) {
-        const lineStartTime = currentLineNotes[0].startTime;
-        const lineEndTime = currentLineNotes[currentLineNotes.length - 1].startTime + currentLineNotes[currentLineNotes.length - 1].duration;
-        // Keep the line text as-is, including trailing spaces
-        // Only remove leading whitespace for display
-        let finalLineText = currentLineText.replace(/^\s+/, '');
-        
-        if (finalLineText) {
-          lyricLines.push({
-            id: `line-${lyricLines.length}`,
-            text: finalLineText,
-            startTime: lineStartTime,
-            endTime: lineEndTime,
-            notes: currentLineNotes,
-            player: currentLinePlayer,
-          });
-        }
-        currentLineNotes = [];
-        currentLineText = '';
-        currentLinePlayer = undefined;
-      }
-      continue;
-    }
-    
-    const convertedNote: Note = {
-      id: `note-${lyricLines.length}-${currentLineNotes.length}`,
-      pitch: note.pitch + MIDI_BASE_OFFSET,
-      frequency: midiToFrequency(note.pitch + MIDI_BASE_OFFSET),
-      startTime: Math.round(startTime),
-      duration: Math.round(duration),
-      lyric: note.lyric,
-      isBonus: note.type === 'F',
-      isGolden: note.type === '*' || note.type === 'G',
-      player: note.player,
-    };
-    
-    currentLineNotes.push(convertedNote);
-    currentLineText += note.lyric;
-    
-    if (currentLinePlayer === undefined) {
-      currentLinePlayer = note.player;
-    } else if (currentLinePlayer !== note.player && note.player !== undefined) {
-      currentLinePlayer = 'both';
-    }
-    
-    // Check for line break
-    const isLineBreak = lineBreakBeats.has(noteEndBeat) ||
-      (i < sortedNotes.length - 1 && sortedNotes[i + 1].startBeat - noteEndBeat >= 8);
-    
-    if ((isLineBreak || i === sortedNotes.length - 1) && currentLineNotes.length > 0) {
-      const lineStartTime = currentLineNotes[0].startTime;
-      const lineEndTime = currentLineNotes[currentLineNotes.length - 1].startTime + currentLineNotes[currentLineNotes.length - 1].duration;
-      // Keep the line text as-is, including trailing spaces
-      // Only remove leading whitespace for display
-      let finalLineText = currentLineText.replace(/^\s+/, '');
-      
-      if (finalLineText) {
-        lyricLines.push({
-          id: `line-${lyricLines.length}`,
-          text: finalLineText,
-          startTime: lineStartTime,
-          endTime: lineEndTime,
-          notes: currentLineNotes,
-          player: currentLinePlayer,
-        });
-      }
-      currentLineNotes = [];
-      currentLineText = '';
-      currentLinePlayer = undefined;
-    }
-  }
-  
-  return lyricLines;
+
+  return convertNotesToLyricLines(notes, lineBreakBeats, bpm, gap);
 }
 
 // Copy a file to the app's persistent data directory
