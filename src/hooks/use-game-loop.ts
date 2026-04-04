@@ -295,14 +295,19 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
 
                 // PRIORITY 1: Separate audio file (most common case)
                 if (audioRef.current && currentAudioUrl) {
-                  audioRef.current.src = currentAudioUrl;
+                  // Only set src if it differs — avoids resetting playback
+                  if (audioRef.current.src !== currentAudioUrl) {
+                    audioRef.current.src = currentAudioUrl;
+                  }
                   audioRef.current.currentTime = startPosition;
                   await audioRef.current.play();
                 }
 
                 // PRIORITY 2: Video with embedded audio
                 else if (currentSong.hasEmbeddedAudio && videoRef.current && currentVideoUrl && !currentAudioUrl) {
-                  videoRef.current.src = currentVideoUrl;
+                  if (videoRef.current.src !== currentVideoUrl) {
+                    videoRef.current.src = currentVideoUrl;
+                  }
                   videoRef.current.currentTime = startPosition;
 
                   try {
