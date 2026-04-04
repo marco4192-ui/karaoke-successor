@@ -149,14 +149,25 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
       if (!element) return Promise.resolve(false);
 
       return new Promise((resolve) => {
+        let settled = false;
+        const abortController = new AbortController();
+
         const onReady = () => {
+          if (settled) return;
+          settled = true;
+          abortController.abort(); // Clean up timeout
           resolve(true);
         };
 
-        element.addEventListener(eventName, onReady, { once: true });
+        element.addEventListener(eventName, onReady, { once: true, signal: abortController.signal });
 
-        // Timeout fallback
-        setTimeout(() => resolve(false), timeoutMs);
+        // Timeout fallback — also cleans up listener
+        setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          // Listener auto-removed by abort or once:true when element fires
+          resolve(false);
+        }, timeoutMs);
       });
     };
 

@@ -172,7 +172,7 @@ function PlayerLyrics({
           playerColor={playerColor}
           noteDisplayStyle={noteDisplayStyle}
           notePerformance={notePerformance}
-          gameMode={gameMode as any}
+          gameMode={gameMode as 'standard' | 'missing-words' | 'duel' | 'blind' | 'duet'}
           missingWordsIndices={missingWordsIndices}
           isBlindSection={isBlindSection}
         />
@@ -241,7 +241,7 @@ export function DuetNoteHighway({
           playerColor="#22d3ee"
           noteDisplayStyle={noteDisplayStyle}
           notePerformance={notePerformance}
-          gameMode={gameMode as any}
+          gameMode={gameMode as 'standard' | 'missing-words' | 'duel' | 'blind' | 'duet'}
           missingWordsIndices={missingWordsIndices}
           isBlindSection={isBlindSection}
         />
@@ -277,7 +277,7 @@ export function DuetNoteHighway({
           playerColor="#ec4899"
           noteDisplayStyle={noteDisplayStyle}
           notePerformance={notePerformance}
-          gameMode={gameMode as any}
+          gameMode={gameMode as 'standard' | 'missing-words' | 'duel' | 'blind' | 'duet'}
           missingWordsIndices={missingWordsIndices}
           isBlindSection={isBlindSection}
         />

@@ -385,30 +385,45 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     return () => clearInterval(syncInterval);
   }, [song, isPlaying, gameState.gameMode]); // Don't include currentTime - we sync periodically instead
   
-  // Initialize audio effects when microphone is active
-  useEffect(() => {
-    if (isPlaying && !audioEffectsRef.current) {
-      const initAudioEffects = async () => {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          const engine = new AudioEffectsEngine();
-          await engine.initialize(stream);
-          audioEffectsRef.current = engine;
-          setAudioEffects(engine);
-        } catch (error) {
-          console.error('Failed to initialize audio effects:', error);
-        }
-      };
+  // Initialize audio effects lazily — only when the user opens the panel
+  // Avoids requesting a second microphone stream at game start
+  const initAudioEffects = useCallback(async () => {
+    if (audioEffectsRef.current) return; // Already initialized
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+      const engine = new AudioEffectsEngine();
+      await engine.initialize(stream);
+      audioEffectsRef.current = engine;
+      setAudioEffects(engine);
+    } catch (error) {
+      console.error('Failed to initialize audio effects:', error);
+    }
+  }, []);
+
+  // Toggle audio effects panel with lazy initialization
+  const toggleAudioEffects = useCallback(() => {
+    if (!showAudioEffects) {
+      // Opening the panel — initialize if needed
       initAudioEffects();
     }
+    setShowAudioEffects(prev => !prev);
+  }, [showAudioEffects, initAudioEffects]);
 
+  // Cleanup audio effects on unmount
+  useEffect(() => {
     return () => {
       if (audioEffectsRef.current) {
         audioEffectsRef.current.disconnect();
         audioEffectsRef.current = null;
       }
     };
-  }, [isPlaying]);
+  }, []);
   
   // ===================== REMOTE CONTROL POLLING =====================
   // Poll for remote commands from mobile companions
@@ -1035,7 +1050,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
 
         {/* Audio Effects Button */}
         <button
-          onClick={() => setShowAudioEffects(!showAudioEffects)}
+          onClick={toggleAudioEffects}
           className="fixed bottom-24 right-4 z-30 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
           title="Audio Effects"
         >

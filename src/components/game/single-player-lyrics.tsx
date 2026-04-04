@@ -152,7 +152,7 @@ export function SinglePlayerLyrics({
             playerColor={playerColor}
             noteDisplayStyle={noteDisplayStyle}
             notePerformance={notePerformance}
-            gameMode={gameMode as any}
+            gameMode={gameMode as 'standard' | 'missing-words' | 'duel' | 'blind' | 'duet'}
             missingWordsIndices={missingWordsIndices}
             isBlindSection={isBlindSection}
           />

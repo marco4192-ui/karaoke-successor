@@ -1,7 +1,7 @@
 # Karaoke Successor - To-Do Liste für Verbesserungen und Fehlerbehebungen
 
 Erstellt: 2026-04-04
-Letztes Update: 2026-04-04
+Letztes Update: 2026-04-05
 
 ---
 
@@ -33,21 +33,39 @@ Letztes Update: 2026-04-04
 
 ---
 
-## NEUE FEHLER (Code-Review 2026-04-04)
+## CODE-REVIEW RUND 2 (2026-04-05)
 
-- [ ] **#23** `spectrogram.ts:14-15` Duplicate identifier `maxDecibels` — Build-Error
-- [ ] **#24** `party-store.ts:45` medleySongs ist `Song[]` aber muss `MedleySong[]` sein — 6× TS-Error in page.tsx
-- [ ] **#25** `page.tsx:378,443,475` setGameMode(null) — GameMode|null nicht erlaubt, null-Check fehlt
-- [ ] **#26** `game-screen.tsx:968,969,993` visibleNotes fehlt `lineIndex` Property für NoteWithLine
-- [ ] **#27** `ultrastar-parser.ts:654` DuetPlayer-Typ erlaubt 'both' nicht, aber Code erzeugt es
-- [ ] **#28** `duet-note-highway.tsx:175` + `single-player-lyrics.tsx:155` GameMode string→enum Typfehler
-- [ ] **#29** `use-game-loop.ts:297-300` Audio src wird bei jedem Countdown-Start neu gesetzt → Playback zurückgesetzt
-- [ ] **#30** `use-game-media.ts:163-201` Media-Warte-Timeout setzt mediaLoaded=true auch bei Fehlschlag
-- [ ] **#31** `use-game-loop.ts:374-397` Unmount-Cleanup: audioEffects Dependency fehlt setAudioEffects
-- [ ] **#32** `game-screen.tsx:213` useSongEnergy(audioRef.current) übergibt DOM-Node statt Ref
-- [ ] **#33** `song-library.ts` loadCustomSongsFromStorage() wird nie aufgerufen — App startet nur mit localStorage
-- [ ] **#34** `use-game-loop.ts:118-119` players[0] kann undefined sein wenn Spiel endet ohne Spieler
-- [ ] **#35** `use-game-media.ts` Media-Event-Listener wird nie entfernt (addEventListener ohne cleanup)
+### ✅ Falsch-Positive (bereits behoben oder nicht existent)
+
+- [x] ~~**#23** `spectrogram.ts` Duplicate identifier `maxDecibels`~~ — FALSCH POSITIV: `minDecibels` und `maxDecibels` sind verschiedene Properties, kein Duplikat
+- [x] ~~**#24** `party-store.ts` medleySongs Typ~~ — BEREITS BEHOBEN: Verwendet korrekt `MedleySong[]`
+- [x] ~~**#25** `page.tsx` setGameMode(null)~~ — FALSCH POSITIV: `setGameMode(null)` existiert nicht im Code
+- [x] ~~**#26** `game-screen.tsx` visibleNotes fehlt `lineIndex`~~ — BEREITS BEHOBEN: `lineIndex` wird durch Spread-Operator erhalten
+- [x] ~~**#27** `ultrastar-parser.ts` DuetPlayer-Typ~~ — FALSCH POSITIV: DuetPlayer-Typ enthält bereits `'both'`
+- [x] ~~**#29** `use-game-loop.ts` Audio src Reset~~ — BEREITS BEHOBEN: Guard mit src-Vergleich existiert
+- [x] ~~**#30** `use-game-media.ts` Timeout→mediaLoaded~~ — BY DESIGN: Timeout soll nicht den Spielablauf blockieren
+- [x] ~~**#31** `use-game-loop.ts` Cleanup Dependency~~ — FALSCH POSITIV: `setAudioEffects` IST im Dependency-Array
+- [x] ~~**#33** `song-library.ts` loadCustomSongsFromStorage() nie aufgerufen~~ — FALSCH POSITIV: Wird in page.tsx aufgerufen
+- [x] ~~**#34** `use-game-loop.ts` players[0] undefined~~ — BEREITS BEHOBEN: Null-Check existiert
+
+### 🔧 Echte Probleme (zu beheben)
+
+- [ ] **#32** `game-screen.tsx:216` useSongEnergy(audioRef.current) — AnalyserNode + Source-Leak
+  - Problem: `useSongEnergy` erhält DOM-Node-Wert statt Ref. Jeder Effect-Lauf erstellt neue AnalyserNode ohne alte zu trennen.
+  - Zusätzlich: `sourceRef.current` wird nie zurückgesetzt → wenn sich Audio-Element ändert, bleibt alte Source auf dem alten Element.
+  - Effekt: Audio-Node-Leak bei jedem Song-Wechsel, abnehmende Performance.
+
+- [ ] **#35** `use-game-media.ts:144-161` waitForMediaEvent — Listener-Leak bei Timeout
+  - Problem: `addEventListener` mit `{ once: true }` wird registriert. Wenn Timeout zuerst feuert, bleibt Listener bis zum Event oder GC hängen.
+  - Fix: Listener explizit mit `AbortController` entfernen.
+
+- [ ] **#36** `game-screen.tsx:389-403` Audio Effects — Zweites getUserMedia für Mikrofon
+  - Problem: AudioEffectsEngine ruft `navigator.mediaDevices.getUserMedia({ audio: true })` auf, aber PitchDetector hat bereits Mikrofon-Zugriff. Doppelter Stream = Verschwendung + doppelte Berechtigungs-Abfrage in Tauri.
+  - Fix: Den existierenden MediaStream vom PitchDetector wiederverwenden oder MediaStream.clone() nutzen.
+
+- [ ] **#28** `duet-note-highway.tsx:175` + `single-player-lyrics.tsx:155` — `gameMode as any` Type-Cast
+  - Problem: `gameMode` wird mit `as any` an LyricLineDisplay übergeben, obwohl korrekter GameMode-Typ verfügbar.
+  - Fix: Korrekten Typ `gameMode as GameMode` verwenden oder Props-Typ korrigieren.
 
 ---
 
