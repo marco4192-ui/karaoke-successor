@@ -10,7 +10,7 @@ import { useGameSettings } from '@/hooks/use-game-settings';
 import { useGameStore } from '@/lib/game/store';
 import { Song, Difficulty, LyricLine, Note, DIFFICULTY_SETTINGS, PLAYER_COLORS } from '@/types/game';
 import { PRACTICE_MODE_DEFAULTS, PracticeModeConfig } from '@/lib/game/practice-mode';
-import { StarPowerBar, PerformanceDisplay } from '@/components/game/game-enhancements';
+import { PerformanceDisplay } from '@/components/game/game-enhancements';
 import { AudioEffectsEngine } from '@/lib/audio/audio-effects';
 import { MusicReactiveBackground } from '@/components/game/music-reactive-background';
 import { 
@@ -33,12 +33,7 @@ import {
 import { YouTubePlayer, extractYouTubeId } from '@/components/game/youtube-player';
 import { CHALLENGE_MODES, getExtendedStats, ExtendedPlayerStats } from '@/lib/game/player-progression';
 import { createDuelMatch, DuelMatch } from '@/lib/game/multiplayer';
-import { LiveStreamingPanel } from '@/components/streaming/live-streaming';
-import { 
-  getStarPowerChargeFromNote, 
-  STAR_POWER_CONFIG
-} from '@/lib/game/star-power';
-import { LyricLineDisplay } from '@/components/game/lyric-line-display';
+import { LyricLineDisplay from '@/components/game/lyric-line-display';
 import { MusicIcon, PlayIcon, SettingsIcon, PauseIcon, SkipForwardIcon, RewindIcon, VolumeIcon } from '@/components/icons';
 import {
   calculateScoringMetadata,
@@ -60,7 +55,6 @@ import {
   useParticleEmitter,
   AnimatedBackground as VisualAnimatedBackground,
   ComboFireEffect,
-  StarPowerEffect,
   useSongEnergy
 } from '@/components/game/visual-effects';
 import { SpectrogramDisplay } from '@/components/game/spectrogram-display';
@@ -68,7 +62,6 @@ import { DuetNoteHighway } from '@/components/game/duet-note-highway';
 import { NoteHighway } from '@/components/game/note-highway';
 import { SinglePlayerLyrics } from '@/components/game/single-player-lyrics';
 import { useRemoteControl } from '@/hooks/use-remote-control';
-import { useStarPower } from '@/hooks/use-star-power';
 
 // ===================== HOME SCREEN =====================
 // HomeScreen has been moved to /src/components/screens/home-screen.tsx
@@ -131,10 +124,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   // Webcam background state - SEPARATE camera for filming singers
   // Initialize with defaults to avoid hydration mismatch
   const [webcamConfig, setWebcamConfig] = useState<WebcamBackgroundConfig>({ ...DEFAULT_WEBCAM_CONFIG });
-  
-  // Live streaming state
-  const [showStreamPanel, setShowStreamPanel] = useState(false);
-  const [isLiveStreaming, setIsLiveStreaming] = useState(false);
   
   // Player progression state (XP, Level, Rank)
   const [playerStats, setPlayerStats] = useState<ExtendedPlayerStats | null>(null);
@@ -559,20 +548,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   useEffect(() => {
     setDuelMatch(duelMatchValue);
   }, [duelMatchValue]);
-  
-  // ===================== STAR POWER ACTIVATION =====================
-  // Use custom hook for Star Power activation (keyboard + button)
-  const { activateStarPower, canActivate } = useStarPower({
-    player: gameState.players[0],
-    updatePlayer,
-  });
-  
-  // Handler for Star Power bar activation (wraps the hook's activateStarPower)
-  const handleActivateStarPower = useCallback(() => {
-    if (canActivate) {
-      activateStarPower();
-    }
-  }, [activateStarPower, canActivate]);
   
   // Check if song has YouTube URL (from #VIDEO: tag with URL)
   // Priority: custom YouTube > song.youtubeUrl > videoBackground if URL
@@ -1330,19 +1305,12 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
           ← Back
         </Button>
         
-        {/* Center: Webcam & Stream Controls */}
+        {/* Center: Webcam Controls */}
         <div className="flex items-center gap-3">
           <WebcamQuickControls 
             config={webcamConfig} 
             onConfigChange={updateWebcamConfig}
           />
-          <Button
-            onClick={() => setShowStreamPanel(!showStreamPanel)}
-            className={`${isLiveStreaming ? 'bg-red-500 animate-pulse' : 'bg-purple-600 hover:bg-purple-500'} text-white`}
-            size="sm"
-          >
-            {isLiveStreaming ? '🔴 LIVE' : '🎥 Stream'}
-          </Button>
         </div>
         
         {/* Right: Score, Difficulty & Challenge */}
@@ -1380,20 +1348,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         </div>
       </div>
       
-      {/* Live Streaming Panel */}
-      {showStreamPanel && (
-        <div className="absolute top-16 right-4 z-30 w-80">
-          <LiveStreamingPanel 
-            onStreamStart={() => setIsLiveStreaming(true)}
-            onStreamEnd={() => setIsLiveStreaming(false)}
-          />
-        </div>
-      )}
 
-      {/* Star Power Bar */}
-      <div className="absolute top-20 left-4 z-20 w-64">
-        <StarPowerBar onActivate={handleActivateStarPower} />
-      </div>
 
       {/* Pitch Graph Display - Shows real-time pitch visualization */}
       {isPlaying && showPitchGuide && (
@@ -1742,12 +1697,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
           <ComboFireEffect combo={gameState.players[0].combo} isLarge={gameState.players[0].combo >= 20} />
         </div>
       )}
-      
-      {/* Star Power Visual Effect */}
-      <StarPowerEffect 
-        isActive={gameState.players[0]?.isStarPowerActive || false} 
-        charge={gameState.players[0]?.starPower || 0} 
-      />
       
       {/* Prominent Score Display - Only for Single Player Mode */}
       {!isDuetMode && <ProminentScoreDisplay player={gameState.players[0]} />}
