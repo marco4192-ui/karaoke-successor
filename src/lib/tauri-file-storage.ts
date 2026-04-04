@@ -915,8 +915,14 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
       return null;
     }
     
-    // Construct full path
-    const fullPath = `${songsFolder}/${relativePath}`;
+    // Normalize paths - handle both forward and backward slashes
+    // Remove trailing slash from songsFolder
+    const normalizedBaseFolder = songsFolder.replace(/[\/\\]+$/, '');
+    // Normalize the relative path (convert backslashes to forward slashes)
+    const normalizedRelativePath = relativePath.replace(/\\/g, '/');
+    
+    // Construct full path using forward slash (works on both Windows and Unix)
+    const fullPath = `${normalizedBaseFolder}/${normalizedRelativePath}`;
     console.log('[TauriFS] Loading media from:', fullPath);
     
     // Check cache first
