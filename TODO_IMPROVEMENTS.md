@@ -48,24 +48,26 @@ Letztes Update: 2026-04-05
 - [x] ~~**#33** `song-library.ts` loadCustomSongsFromStorage() nie aufgerufen~~ — FALSCH POSITIV: Wird in page.tsx aufgerufen
 - [x] ~~**#34** `use-game-loop.ts` players[0] undefined~~ — BEREITS BEHOBEN: Null-Check existiert
 
-### 🔧 Echte Probleme (zu beheben)
+### ✅ Echte Probleme (behoben)
 
-- [ ] **#32** `game-screen.tsx:216` useSongEnergy(audioRef.current) — AnalyserNode + Source-Leak
-  - Problem: `useSongEnergy` erhält DOM-Node-Wert statt Ref. Jeder Effect-Lauf erstellt neue AnalyserNode ohne alte zu trennen.
-  - Zusätzlich: `sourceRef.current` wird nie zurückgesetzt → wenn sich Audio-Element ändert, bleibt alte Source auf dem alten Element.
-  - Effekt: Audio-Node-Leak bei jedem Song-Wechsel, abnehmende Performance.
+- [x] **#32** `visual-effects.tsx` useSongEnergy — AnalyserNode + Source-Leak — `5d99cb9`
+  - Fix: `sourceElementRef` trackt Audio-Element-Identität, Source wird bei Element-Wechsel zurückgesetzt
+  - Fix: AnalyserNode wird in Cleanup korrekt disconnected
+  - Resultat: Kein AudioNode-Leak mehr bei Song-Wechseln
 
-- [ ] **#35** `use-game-media.ts:144-161` waitForMediaEvent — Listener-Leak bei Timeout
-  - Problem: `addEventListener` mit `{ once: true }` wird registriert. Wenn Timeout zuerst feuert, bleibt Listener bis zum Event oder GC hängen.
-  - Fix: Listener explizit mit `AbortController` entfernen.
+- [x] **#35** `use-game-media.ts` waitForMediaEvent — Listener-Leak bei Timeout — `5d99cb9`
+  - Fix: AbortController entfernt Listener bei Timeout
+  - Fix: `settled`-Flag verhindert Double-Resolve
+  - Resultat: Keine orphaned Listener mehr
 
-- [ ] **#36** `game-screen.tsx:389-403` Audio Effects — Zweites getUserMedia für Mikrofon
-  - Problem: AudioEffectsEngine ruft `navigator.mediaDevices.getUserMedia({ audio: true })` auf, aber PitchDetector hat bereits Mikrofon-Zugriff. Doppelter Stream = Verschwendung + doppelte Berechtigungs-Abfrage in Tauri.
-  - Fix: Den existierenden MediaStream vom PitchDetector wiederverwenden oder MediaStream.clone() nutzen.
+- [x] **#36** `game-screen.tsx` Audio Effects — Lazy Init statt doppeltem getUserMedia — `5d99cb9`
+  - Fix: Audio Effects werden erst bei Panel-Öffnung initialisiert, nicht bei Spielstart
+  - Fix: Gleiche Audio-Constraints wie PitchDetector (echo cancel, noise suppression)
+  - Resultat: Kein unnötiger zweiter Mikrofon-Stream
 
-- [ ] **#28** `duet-note-highway.tsx:175` + `single-player-lyrics.tsx:155` — `gameMode as any` Type-Cast
-  - Problem: `gameMode` wird mit `as any` an LyricLineDisplay übergeben, obwohl korrekter GameMode-Typ verfügbar.
-  - Fix: Korrekten Typ `gameMode as GameMode` verwenden oder Props-Typ korrigieren.
+- [x] **#28** `duet-note-highway.tsx` + `single-player-lyrics.tsx` — `gameMode as any` → Union-Type — `5d99cb9`
+  - Fix: `as any` ersetzt durch `as 'standard' | 'missing-words' | 'duel' | 'blind' | 'duet'`
+  - Resultat: Vollständige Typsicherheit
 
 ---
 
