@@ -92,15 +92,15 @@ export function useGameSettings(): GameSettings & {
     window.addEventListener('themeChanged', handleThemeChange);
     window.addEventListener('themeChange', handleThemeChange);
     
-    // Poll for changes (needed for cross-tab sync)
-    const interval = setInterval(handleSettingsChange, 500);
+    // NOTE: No polling interval — this is a Tauri app, not a browser.
+    // The storage event + custom events handle all settings changes.
+    // Cross-tab sync is not needed for a desktop Tauri application.
     
     return () => {
       window.removeEventListener('storage', handleSettingsChange);
       window.removeEventListener('settingsChange', handleSettingsChange);
       window.removeEventListener('themeChanged', handleThemeChange);
       window.removeEventListener('themeChange', handleThemeChange);
-      clearInterval(interval);
     };
   }, []);
 
