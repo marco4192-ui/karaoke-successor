@@ -620,7 +620,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     
     // Use the the pre-sorted notes array for efficient filtering
     const notes = timingData.allNotes;
-    const result: Array<Note & { line: LyricLine }> = [];
+    const result: Array<Note & { lineIndex: number; line: LyricLine }> = [];
     
     // Binary search to find starting point
     let startIdx = 0;
@@ -659,7 +659,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     const windowEnd = currentTime + NOTE_WINDOW;
     
     const notes = timingData.p1Notes;
-    const result: Array<Note & { line: LyricLine }> = [];
+    const result: Array<Note & { lineIndex: number; line: LyricLine }> = [];
     
     let startIdx = 0;
     let endIdx = notes.length - 1;
@@ -695,7 +695,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     const windowEnd = currentTime + NOTE_WINDOW;
     
     const notes = timingData.p2Notes;
-    const result: Array<Note & { line: LyricLine }> = [];
+    const result: Array<Note & { lineIndex: number; line: LyricLine }> = [];
     
     let startIdx = 0;
     let endIdx = notes.length - 1;
