@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { Song, Difficulty } from '@/types/game';
+import type { Song, Difficulty, GameResult, PitchDetectionResult } from '@/types/game';
 import type { AudioEffectsEngine } from '@/lib/audio/audio-effects';
 
 export interface UseGameLoopOptions {
@@ -17,7 +17,7 @@ export interface UseGameLoopOptions {
   isPlaying: boolean;
   setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
   // Pitch detector
-  pitchResult: { frequency: number | null; note: number | null; clarity: number; volume: number } | null;
+  pitchResult: PitchDetectionResult | null;
   initialize: () => Promise<boolean>;
   start: () => void;
   stop: () => void;
@@ -26,11 +26,11 @@ export interface UseGameLoopOptions {
   setCurrentTime: (time: number) => void;
   setDetectedPitch: (pitch: number | null) => void;
   endGame: () => void;
-  setResults: (results: any) => void;
+  setResults: (results: GameResult) => void;
   // Note scoring
   resetScoring: () => void;
-  checkNoteHits: (time: number, pitch: any) => void;
-  checkP2NoteHits: (time: number, pitch: any) => void;
+  checkNoteHits: (time: number, pitch: PitchDetectionResult) => void;
+  checkP2NoteHits: (time: number, pitch: PitchDetectionResult) => void;
   // Game mode / state
   difficulty: Difficulty;
   gameMode: string;
