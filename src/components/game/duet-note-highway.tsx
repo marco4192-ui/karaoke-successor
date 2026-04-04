@@ -14,8 +14,6 @@ export interface PlayerScoringState {
   maxCombo: number;
   notesHit: number;
   notesMissed: number;
-  starPower: number;
-  isStarPowerActive: boolean;
 }
 
 export interface DuetNoteHighwayProps {

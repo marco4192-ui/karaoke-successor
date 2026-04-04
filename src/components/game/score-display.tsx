@@ -83,29 +83,6 @@ export function ScoreDisplay({ player, showCombo = true, compact = false }: Scor
         />
       </div>
 
-      {/* Star Power */}
-      <div>
-        <div className="flex justify-between text-sm mb-1">
-          <span className="text-gray-400">Star Power</span>
-          <span className={`${player.isStarPowerActive ? 'text-yellow-400' : 'text-white'}`}>
-            {Math.round(player.starPower)}%
-          </span>
-        </div>
-        <Progress
-          value={player.starPower}
-          className={`h-2 ${player.isStarPowerActive ? 'animate-pulse' : ''}`}
-        />
-        {player.isStarPowerActive && (
-          <motion.p
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-yellow-400 text-xs font-bold mt-1"
-          >
-            ⭐ STAR POWER ACTIVE!
-          </motion.p>
-        )}
-      </div>
-
       {/* Max combo */}
       <div className="mt-3 text-xs text-gray-500">
         Best Combo: {player.maxCombo}x

@@ -1020,8 +1020,6 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
     notesMissed: playerResult.notesMissed,
     color: activeProfile?.color || '#FF6B6B',
     avatar: activeProfile?.avatar,
-    starPower: 0,
-    isStarPowerActive: false,
     notes: [],
     totalNotes: playerResult.notesHit + playerResult.notesMissed,
   };
