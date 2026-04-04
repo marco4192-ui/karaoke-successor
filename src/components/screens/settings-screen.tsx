@@ -111,8 +111,8 @@ function SettingsScreen() {
 
   // Load settings on mount
   useEffect(() => {
-    // Check if running in Tauri
-    if (typeof window !== 'undefined' && (window as any).__TAURI__) {
+    // Check if running in Tauri (v1: __TAURI__, v2: __TAURI_INTERNALS__)
+    if (typeof window !== 'undefined' && ((window as any).__TAURI__ || (window as any).__TAURI_INTERNALS__)) {
       setIsTauriDetected(true);
     }
 
