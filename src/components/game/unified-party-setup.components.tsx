@@ -1,0 +1,366 @@
+'use client';
+
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Song, PlayerProfile, Difficulty } from '@/types/game';
+import { SONG_SELECTION_CONFIG } from './unified-party-setup.config';
+import type { PartyGameConfig, GameSettingConfig, SelectedPlayer, SongSelectionOption } from './unified-party-setup.types';
+
+// ===================== SETTING CONTROL =====================
+
+function SettingControl({
+  setting, value, onChange,
+}: {
+  setting: GameSettingConfig;
+  value: any;
+  onChange: (key: string, value: any) => void;
+}) {
+  switch (setting.type) {
+    case 'slider':
+      return (
+        <div className="space-y-2">
+          <label className="text-sm text-white/60 block">
+            {setting.label}: {value}{setting.unit || ''}
+          </label>
+          <input
+            type="range" min={setting.min} max={setting.max} step={setting.step}
+            value={value}
+            onChange={(e) => onChange(setting.key, Number(e.target.value))}
+            className="w-full accent-cyan-500"
+          />
+          <div className="flex justify-between text-xs text-white/40">
+            <span>{setting.min}{setting.unit || ''}</span>
+            <span>{setting.max}{setting.unit || ''}</span>
+          </div>
+        </div>
+      );
+    case 'toggle':
+      return (
+        <div className="flex items-center justify-between py-2">
+          <div>
+            <label className="font-medium">{setting.label}</label>
+            {setting.description && <p className="text-sm text-white/60">{setting.description}</p>}
+          </div>
+          <Button
+            variant={value ? 'default' : 'outline'}
+            onClick={() => onChange(setting.key, !value)}
+            className={value ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}
+          >
+            {value ? '✓ On' : 'Off'}
+          </Button>
+        </div>
+      );
+    case 'select':
+      return (
+        <div className="space-y-2">
+          <label className="text-sm text-white/60 block">{setting.label}</label>
+          <div className="flex gap-2 flex-wrap">
+            {setting.options?.map(opt => (
+              <Button
+                key={String(opt.value)}
+                variant={value === opt.value ? 'default' : 'outline'}
+                onClick={() => onChange(setting.key, opt.value)}
+                className={value === opt.value ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}
+              >
+                {opt.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+      );
+    default:
+      return null;
+  }
+}
+
+// ===================== GAME SIDEBAR =====================
+
+function GameSidebar({ config }: { config: PartyGameConfig }) {
+  return (
+    <div className="hidden lg:block w-64 flex-shrink-0">
+      <div className="sticky top-24">
+        <Card className={`bg-gradient-to-br ${config.color} border-0`}>
+          <CardContent className="pt-6">
+            <div className="text-6xl mb-4">{config.icon}</div>
+            <h2 className="text-2xl font-bold text-white mb-2">{config.title}</h2>
+            <p className="text-white/80 mb-4">{config.description}</p>
+            <div className="bg-black/20 rounded-lg p-4 space-y-2">
+              <h3 className="font-bold text-white/90 mb-2">🎮 How it works</h3>
+              {config.extendedDescription.map((desc, i) => (
+                <p key={i} className="text-sm text-white/70">{desc}</p>
+              ))}
+            </div>
+            <div className="mt-4 flex gap-2">
+              <Badge className="bg-white/20 text-white">{config.minPlayers}-{config.maxPlayers} players</Badge>
+              {config.supportsCompanionApp && (
+                <Badge className="bg-purple-500/30 text-purple-200">📱 Companion</Badge>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// ===================== MOBILE GAME HEADER =====================
+
+function MobileGameHeader({ config }: { config: PartyGameConfig }) {
+  return (
+    <div className="lg:hidden mb-6">
+      <Card className={`bg-gradient-to-br ${config.color} border-0`}>
+        <CardContent className="py-4">
+          <div className="flex items-center gap-4">
+            <div className="text-5xl">{config.icon}</div>
+            <div>
+              <h3 className="font-bold text-lg text-white">{config.title}</h3>
+              <p className="text-white/80 text-sm">{config.description}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ===================== SETTINGS PANEL =====================
+
+function SettingsPanel({
+  config, settings, difficulty, onSettingChange, onDifficultyChange,
+}: {
+  config: PartyGameConfig;
+  settings: Record<string, any>;
+  difficulty: Difficulty;
+  onSettingChange: (key: string, value: any) => void;
+  onDifficultyChange: (d: Difficulty) => void;
+}) {
+  if (config.settings.length === 0) return null;
+
+  return (
+    <Card className="bg-white/5 border-white/10 mb-6">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><span className="text-xl">⚙️</span>Game Settings</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {config.settings.map(s => (
+          <SettingControl key={s.key} setting={s} value={settings[s.key]} onChange={onSettingChange} />
+        ))}
+        <div className="pt-4 border-t border-white/10">
+          <label className="text-sm text-white/60 mb-2 block">Difficulty</label>
+          <div className="flex gap-2">
+            {(['easy', 'medium', 'hard'] as Difficulty[]).map(diff => (
+              <Button
+                key={diff}
+                variant={difficulty === diff ? 'default' : 'outline'}
+                onClick={() => onDifficultyChange(diff)}
+                className={difficulty === diff ? `bg-gradient-to-r ${config.color}` : 'border-white/20'}
+              >
+                {diff.charAt(0).toUpperCase() + diff.slice(1)}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ===================== PLAYER GRID =====================
+
+function PlayerGrid({
+  config, activeProfiles, selectedPlayers, togglePlayer,
+}: {
+  config: PartyGameConfig;
+  activeProfiles: PlayerProfile[];
+  selectedPlayers: string[];
+  togglePlayer: (id: string) => void;
+}) {
+  return (
+    <Card className="bg-white/5 border-white/10 mb-6">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <span className="text-xl">👥</span>
+          Player Selection ({selectedPlayers.length}/{config.maxPlayers})
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {activeProfiles.map(profile => {
+            const isSelected = selectedPlayers.includes(profile.id);
+            return (
+              <div
+                key={profile.id}
+                onClick={() => togglePlayer(profile.id)}
+                className={`p-4 rounded-lg cursor-pointer transition-all ${
+                  isSelected
+                    ? `bg-gradient-to-br ${config.color} border-2 border-white/50`
+                    : 'bg-white/5 border border-white/10 hover:bg-white/10'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  {profile.avatar ? (
+                    <img src={profile.avatar} alt={profile.name} className="w-10 h-10 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                      style={{ backgroundColor: profile.color }}>
+                      {profile.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <span className="font-medium truncate">{profile.name}</span>
+                  {isSelected && <span className="ml-auto text-white">✓</span>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        {activeProfiles.length < config.minPlayers && (
+          <p className="text-yellow-400 mt-4">
+            ⚠️ Need at least {config.minPlayers} active profiles. Create more in Character selection or activate existing ones.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ===================== SONG SELECTION GRID =====================
+
+function SongSelectionGrid({
+  config, selectedPlayerCount, onSongSelection,
+}: {
+  config: PartyGameConfig;
+  selectedPlayerCount: number;
+  onSongSelection: (option: SongSelectionOption) => void;
+}) {
+  return (
+    <Card className="bg-white/5 border-white/10 mb-6">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><span className="text-xl">🎵</span>Song Selection</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {config.songSelectionOptions.map(option => {
+            const optConfig = SONG_SELECTION_CONFIG[option];
+            const enabled = selectedPlayerCount >= config.minPlayers;
+            return (
+              <button
+                key={option}
+                onClick={() => onSongSelection(option)}
+                disabled={!enabled}
+                className={`p-4 rounded-xl text-center transition-all ${
+                  enabled
+                    ? `${optConfig.color} text-white hover:scale-105`
+                    : 'bg-white/5 text-white/30 cursor-not-allowed'
+                }`}
+              >
+                <div className="text-4xl mb-2">{optConfig.icon}</div>
+                <div className="font-bold">{optConfig.label}</div>
+                <div className="text-xs opacity-80 mt-1">{optConfig.description}</div>
+              </button>
+            );
+          })}
+        </div>
+        <div className="mt-6 pt-4 border-t border-white/10">
+          <p className="text-white/40 text-sm mb-2">💡 Additional Ideas:</p>
+          <div className="flex flex-wrap gap-2">
+            {['🎯 Challenge Mode', '🌍 Country Selection', '📊 By Difficulty', '⏱️ By Duration'].map(label => (
+              <Badge key={label} variant="outline" className="border-white/20 text-white/50">{label}</Badge>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ===================== READY SUMMARY =====================
+
+function ReadySummary({
+  config, selectedPlayerCount, difficulty,
+}: {
+  config: PartyGameConfig;
+  selectedPlayerCount: number;
+  difficulty: Difficulty;
+}) {
+  return (
+    <Card className={`bg-gradient-to-r ${config.color} border-0 mb-6`}>
+      <CardContent className="py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-bold text-lg text-white">Ready to Play!</h3>
+            <p className="text-sm text-white/80">{selectedPlayerCount} players selected • {difficulty} difficulty</p>
+          </div>
+          <div className="text-right">
+            <div className="text-3xl font-bold text-white">{selectedPlayerCount}</div>
+            <div className="text-xs text-white/60">players</div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ===================== SONG VOTING MODAL =====================
+
+export function SongVotingModal({ songs, players, onVote, onClose, gameColor }: {
+  songs: Song[];
+  players: SelectedPlayer[];
+  onVote: (songId: string) => void;
+  onClose: () => void;
+  gameColor: string;
+}) {
+  const [votes, setVotes] = useState<Record<string, string>>({});
+
+  const handleVote = (songId: string) => onVote(songId);
+
+  const getVoteCount = (songId: string) =>
+    Object.values(votes).filter(v => v === songId).length;
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <Card className="bg-gray-900 border-white/20 max-w-4xl w-full max-h-[90vh] overflow-auto">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-2xl">🗳️ Vote for a Song!</CardTitle>
+          <Button variant="ghost" onClick={onClose} className="text-white/60">✕</Button>
+        </CardHeader>
+        <CardContent>
+          <p className="text-white/60 mb-6">Click on a song to vote for it. The song with the most votes will be played!</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {songs.map((song, index) => (
+              <div
+                key={song.id}
+                onClick={() => handleVote(song.id)}
+                className={`relative p-4 rounded-xl cursor-pointer transition-all hover:scale-105 bg-gradient-to-br ${gameColor} border-2 border-transparent hover:border-white/50`}
+              >
+                <div className="absolute top-2 left-2 w-8 h-8 rounded-full bg-black/30 flex items-center justify-center font-bold">
+                  {index + 1}
+                </div>
+                {song.coverImage ? (
+                  <img src={song.coverImage} alt="" className="w-full aspect-square rounded-lg object-cover mb-3" />
+                ) : (
+                  <div className="w-full aspect-square rounded-lg bg-black/20 flex items-center justify-center text-6xl mb-3">🎵</div>
+                )}
+                <h3 className="font-bold text-white truncate">{song.title}</h3>
+                <p className="text-white/70 text-sm truncate">{song.artist}</p>
+                {getVoteCount(song.id) > 0 && (
+                  <div className="absolute bottom-2 right-2 bg-white/20 rounded-full px-2 py-1 text-sm">
+                    {getVoteCount(song.id)} vote{getVoteCount(song.id) > 1 ? 's' : ''}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 text-center text-white/40 text-sm">
+            💡 In future, players can vote via the Companion App!
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ===================== EXPORT ALL SUB-COMPONENTS =====================
+
+export { GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, ReadySummary };
