@@ -497,7 +497,9 @@ export async function convertScannedSongToSong(scanned: ScannedSong): Promise<So
     }
   }
 
-  // Helper to extract relative path from webkitRelativePath
+  // Helper to extract relative path from webkitRelativePath or folderPath
+  // CRITICAL FIX: Files from showDirectoryPicker() do NOT have webkitRelativePath.
+  // We must fall back to scanned.folderPath + file.name to construct the relative path.
   const getRelativePath = (file: File): string | undefined => {
     const webkitPath = (file as any).webkitRelativePath;
     if (webkitPath) {
@@ -507,6 +509,16 @@ export async function convertScannedSongToSong(scanned: ScannedSong): Promise<So
         return parts.slice(1).join('/');
       }
       return webkitPath;
+    }
+    // Fallback: use scanned.folderPath + file.name
+    // folderPath is like "Artist - Song" or "Category/Artist - Song"
+    if (scanned.folderPath) {
+      // Remove root folder prefix if present (e.g. "Songs/Artist" → "Artist")
+      const pathParts = scanned.folderPath.split('/');
+      const songFolder = pathParts.length > 1 ? pathParts.slice(1).join('/') : scanned.folderPath;
+      if (songFolder) {
+        return `${songFolder}/${file.name}`;
+      }
     }
     return file.name;
   };

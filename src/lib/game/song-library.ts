@@ -90,14 +90,23 @@ export function getCustomSongs(): Song[] {
 }
 
 // Load custom songs from IndexedDB (async — call on app startup)
+// IMPORTANT: Only overwrites in-memory cache if cache is empty or stale.
+// This prevents race conditions where a Settings scan adds songs to cache
+// and this async function later overwrites them with old IndexedDB data.
 export async function loadCustomSongsFromStorage(): Promise<Song[]> {
   if (typeof indexedDB === 'undefined') return getCustomSongs();
   
   try {
     const songs = await loadCustomSongsFromDB();
-    if (songs.length > 0) {
+    // CRITICAL: Only overwrite cache if it's empty or has fewer songs.
+    // If a scan just added songs, the cache is more up-to-date than IndexedDB.
+    if (songs.length > 0 && (!customSongsCache || customSongsCache.length < songs.length)) {
       customSongsCache = songs;
       return songs;
+    }
+    // If cache has data, prefer it (it's more recent)
+    if (customSongsCache && customSongsCache.length > 0) {
+      return customSongsCache;
     }
     // IndexedDB empty — check localStorage for migration
     const lsSongs = getCustomSongs();
