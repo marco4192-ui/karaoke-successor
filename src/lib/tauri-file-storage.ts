@@ -206,9 +206,16 @@ async function collectAllFiles(
     
     for (const entry of entries) {
       const fullPath = entry.path;
-      const relativePath = fullPath.startsWith(basePath + '/') 
-        ? fullPath.slice(basePath.length + 1) 
-        : fullPath;
+      
+      // CRITICAL FIX: Normalize path separators for cross-platform support.
+      // Rust fs::read_dir returns OS-native separators (\ on Windows, / on Unix).
+      // We normalize to forward slashes so all downstream code works consistently.
+      const normalizedBase = basePath.replace(/\\/g, '/');
+      const normalizedFull = fullPath.replace(/\\/g, '/');
+      
+      const relativePath = normalizedFull.startsWith(normalizedBase + '/')
+        ? normalizedFull.slice(normalizedBase.length + 1)
+        : normalizedFull;
       
       if (entry.is_directory) {
         const subFiles = await collectAllFiles(basePath, fullPath);
@@ -263,9 +270,11 @@ async function processFolder(
   }
   
   // Read TXT content using native command (bypass ACL)
+  // Normalize base folder separators to construct correct full path
   let txtContent: string | null = null;
   try {
-    const fullPath = `${baseFolder}/${txtFile.path}`;
+    const normalizedBase = baseFolder.replace(/\\/g, '/');
+    const fullPath = `${normalizedBase}/${txtFile.path}`;
     txtContent = await nativeReadFileText(fullPath);
   } catch (e) {
     console.warn('[TauriScanner] Could not read TXT:', txtFile.path, e);
@@ -401,7 +410,9 @@ async function processFolder(
   // The txtFile.path is relative to baseFolder, so we need to construct paths for referenced files
   
   // Get the folder containing the TXT file (relative to baseFolder)
-  const txtDir = txtFile.path.includes('/') ? txtFile.path.substring(0, txtFile.path.lastIndexOf('/')) : '';
+  // Normalize to forward slashes first for consistent handling
+  const normalizedTxtPath = txtFile.path.replace(/\\/g, '/');
+  const txtDir = normalizedTxtPath.includes('/') ? normalizedTxtPath.substring(0, normalizedTxtPath.lastIndexOf('/')) : '';
   
   // Helper to resolve file reference from TXT header
   const resolveTxtReference = (refFile: string | undefined, fallbackFile: { path: string } | null): string | undefined => {
