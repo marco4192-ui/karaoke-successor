@@ -210,8 +210,9 @@ async function collectAllFiles(
       // CRITICAL FIX: Normalize path separators for cross-platform support.
       // Rust fs::read_dir returns OS-native separators (\ on Windows, / on Unix).
       // We normalize to forward slashes so all downstream code works consistently.
-      const normalizedBase = basePath.replace(/\\/g, '/');
-      const normalizedFull = fullPath.replace(/\\/g, '/');
+      // Also strip trailing slashes to ensure correct prefix matching.
+      const normalizedBase = basePath.replace(/\\/g, '/').replace(/\/+$/, '');
+      const normalizedFull = fullPath.replace(/\\/g, '/').replace(/\/+$/, '');
       
       const relativePath = normalizedFull.startsWith(normalizedBase + '/')
         ? normalizedFull.slice(normalizedBase.length + 1)
@@ -273,7 +274,7 @@ async function processFolder(
   // Normalize base folder separators to construct correct full path
   let txtContent: string | null = null;
   try {
-    const normalizedBase = baseFolder.replace(/\\/g, '/');
+    const normalizedBase = baseFolder.replace(/\\/g, '/').replace(/\/+$/, '');
     const fullPath = `${normalizedBase}/${txtFile.path}`;
     txtContent = await nativeReadFileText(fullPath);
   } catch (e) {
