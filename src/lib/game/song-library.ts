@@ -524,9 +524,10 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
   const restored = { ...song };
   
   // Determine the base folder to use:
-  // 1. Priority: song's own baseFolder (stored when scanned)
+  // 1. Priority: song's own baseFolder (stored when scanned) — ONLY if absolute
   // 2. Fallback: localStorage 'karaoke-songs-folder'
-  // IMPORTANT: Use || with explicit null/undefined check because empty string is valid
+  // IMPORTANT: A relative baseFolder (e.g. "Songs") will NOT work for file access.
+  // We must validate that baseFolder is an absolute path.
   let localStorageFolder: string | null = null;
   try {
     localStorageFolder = localStorage.getItem('karaoke-songs-folder');
@@ -534,7 +535,34 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
     console.warn('[SongLibrary] Could not access localStorage:', e);
   }
   
+  // Helper: check if a path looks absolute (Windows: D:\... or Unix: /...)
+  const isAbsolutePath = (p: string): boolean => 
+    p.startsWith('/') || /^[A-Za-z]:[\\/]/.test(p);
+  
   let baseFolder = song.baseFolder || localStorageFolder || undefined;
+  
+  // CRITICAL FIX: If baseFolder is relative, prefer localStorage if it's absolute
+  if (baseFolder && !isAbsolutePath(baseFolder)) {
+    if (localStorageFolder && isAbsolutePath(localStorageFolder)) {
+      console.warn('[SongLibrary] baseFolder is relative, replacing with absolute localStorage value:',
+        `"${baseFolder}" -> "${localStorageFolder}"`);
+      baseFolder = localStorageFolder;
+    } else {
+      console.warn('[SongLibrary] baseFolder is relative and no absolute fallback available:', baseFolder);
+      console.warn('[SongLibrary] SOLUTION: Please re-scan your songs folder in Settings');
+    }
+  }
+  
+  // Update the song's baseFolder if we fixed it (so it persists)
+  if (baseFolder && baseFolder !== song.baseFolder && isAbsolutePath(baseFolder)) {
+    restored.baseFolder = baseFolder;
+    // Persist the fix silently
+    try {
+      updateSong(song.id, { baseFolder });
+    } catch (e) {
+      // Non-critical — the fix is in memory for this session
+    }
+  }
   
   // If baseFolder is still not set, check if relative paths look like absolute paths
   if (!baseFolder) {
@@ -663,17 +691,23 @@ export async function getAllSongsAsync(): Promise<Song[]> {
       coverImage: firstSong.coverImage ? 'present' : 'missing',
     });
     
-    // CRITICAL: If songs have no baseFolder but localStorage has one, update all songs
-    if (localStorageFolder && !firstSong.baseFolder && (firstSong.relativeAudioPath || firstSong.relativeVideoPath || firstSong.relativeCoverPath)) {
-      console.log('[SongLibrary] Songs have no baseFolder but localStorage has folder - updating songs with baseFolder:', localStorageFolder);
-      // Update all songs with the baseFolder from localStorage
+    // CRITICAL: If songs have no baseFolder or a RELATIVE baseFolder, fix them
+    // A relative baseFolder (e.g. "Songs") cannot be used for file access
+    const isAbsPath = (p: string): boolean => 
+      p.startsWith('/') || /^[A-Za-z]:[\\/]/.test(p);
+    
+    const needsBaseFolderFix = firstSong.baseFolder && !isAbsPath(firstSong.baseFolder);
+    const needsBaseFolderMigration = !firstSong.baseFolder && localStorageFolder && 
+      (firstSong.relativeAudioPath || firstSong.relativeVideoPath || firstSong.relativeCoverPath);
+    
+    if ((needsBaseFolderFix || needsBaseFolderMigration) && localStorageFolder && isAbsPath(localStorageFolder)) {
+      console.log('[SongLibrary] Songs have', needsBaseFolderFix ? 'relative' : 'no', 'baseFolder - updating all songs with:', localStorageFolder);
       const updatedSongs = songs.map(s => ({
         ...s,
-        baseFolder: s.baseFolder || localStorageFolder || undefined,
+        baseFolder: (s.baseFolder && isAbsPath(s.baseFolder)) ? s.baseFolder : (localStorageFolder || undefined),
       }));
-      // Save the updated songs
       saveCustomSongs(updatedSongs);
-      console.log('[SongLibrary] Updated all songs with baseFolder from localStorage');
+      console.log('[SongLibrary] Updated all songs with absolute baseFolder from localStorage');
     }
   }
   
@@ -778,7 +812,14 @@ export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
       const { nativeReadFileText } = await import('@/lib/native-fs');
       
       // Use song.baseFolder as primary source, fallback to localStorage
-      const songsFolder = song.baseFolder || localStorage.getItem('karaoke-songs-folder');
+      // IMPORTANT: Validate that baseFolder is absolute — relative paths won't work
+      let songsFolder = song.baseFolder || localStorage.getItem('karaoke-songs-folder');
+      if (songsFolder && !songsFolder.startsWith('/') && !/^[A-Za-z]:[\\/]/.test(songsFolder)) {
+        const lsFolder = localStorage.getItem('karaoke-songs-folder');
+        if (lsFolder && (lsFolder.startsWith('/') || /^[A-Za-z]:[\\/]/.test(lsFolder))) {
+          songsFolder = lsFolder;
+        }
+      }
       
       if (songsFolder) {
         const filePath = `${songsFolder}/${song.relativeTxtPath}`;
