@@ -109,7 +109,7 @@ fn native_pick_file_save(title: String, filter_name: String, extensions: Vec<Str
 /// Show a native message dialog.
 #[tauri::command]
 fn native_message(title: String, message: String, kind: String) -> bool {
-    match kind.as_str() {
+    let result = match kind.as_str() {
         "info" => rfd::MessageDialog::new()
             .set_title(&title)
             .set_description(&message)
@@ -130,7 +130,8 @@ fn native_message(title: String, message: String, kind: String) -> bool {
             .set_description(&message)
             .set_level(rfd::MessageLevel::Info)
             .show(),
-    }
+    };
+    result.as_bool()
 }
 
 /// Show a native confirm dialog.
@@ -141,6 +142,7 @@ fn native_confirm(title: String, message: String) -> bool {
         .set_description(&message)
         .set_buttons(rfd::MessageButtons::YesNo)
         .show()
+        .as_bool()
 }
 
 /// Create a directory (recursive)
