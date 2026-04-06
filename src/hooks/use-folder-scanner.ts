@@ -111,58 +111,40 @@ export function useFolderScanner(): UseFolderScannerReturn {
             // Generate song ID
             const songId = `song-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
-            // Store TXT content in IndexedDB for caching (using native command)
+            // PERFORMANCE: Load TXT cache and cover image in parallel per song.
+            // Audio/video URLs are deferred — loaded lazily when played.
             let storedTxt = false;
-            if (scanned.relativeTxtPath) {
-              try {
+            let coverImage: string | undefined = undefined;
+
+            const [txtResult, coverResult] = await Promise.allSettled([
+              // Cache TXT content in IndexedDB
+              (async () => {
+                if (!scanned.relativeTxtPath) return false;
                 const { nativeReadFileText } = await import('@/lib/native-fs');
                 const txtContent = await nativeReadFileText(`${folderPath}/${scanned.relativeTxtPath}`);
                 if (txtContent) {
                   const txtBlob = new Blob([txtContent], { type: 'text/plain' });
                   await storeMedia(songId, 'txt', txtBlob);
-                  storedTxt = true;
+                  return true;
                 }
-              } catch (e) {
-                console.warn('Could not cache TXT for', scanned.title);
-              }
-            }
+                return false;
+              })(),
+              // Load cover image blob URL
+              (async () => {
+                if (!scanned.relativeCoverPath) return undefined;
+                return await getSongMediaUrl(scanned.relativeCoverPath, folderPath) || undefined;
+              })(),
+            ]);
 
-            // CRITICAL: Create blob URLs for media files NOW
-            let audioUrl: string | undefined = undefined;
-            let videoBackground: string | undefined = undefined;
-            let coverImage: string | undefined = undefined;
+            if (txtResult.status === 'fulfilled') storedTxt = txtResult.value;
+            else console.warn('Could not cache TXT for', scanned.title);
 
-            const effectiveBaseFolder = folderPath;
-            console.log(`[Import] Using baseFolder: ${effectiveBaseFolder} for ${scanned.title}`);
+            if (coverResult.status === 'fulfilled') coverImage = coverResult.value;
+            else console.warn(`[Import] Failed to create cover URL for ${scanned.title}`);
 
-            // Load audio URL
-            if (scanned.relativeAudioPath) {
-              try {
-                audioUrl = await getSongMediaUrl(scanned.relativeAudioPath, effectiveBaseFolder) || undefined;
-              } catch (e) {
-                console.warn(`[Import] Failed to create audio URL for ${scanned.title}:`, e);
-              }
-            }
-
-            // Load video URL
-            if (scanned.relativeVideoPath) {
-              try {
-                videoBackground = await getSongMediaUrl(scanned.relativeVideoPath, effectiveBaseFolder) || undefined;
-              } catch (e) {
-                console.warn(`[Import] Failed to create video URL for ${scanned.title}:`, e);
-              }
-            }
-
-            // Load cover URL
-            if (scanned.relativeCoverPath) {
-              try {
-                coverImage = await getSongMediaUrl(scanned.relativeCoverPath, effectiveBaseFolder) || undefined;
-              } catch (e) {
-                console.warn(`[Import] Failed to create cover URL for ${scanned.title}:`, e);
-              }
-            }
-
-            // Create song object with relative paths AND blob URLs
+            // Create song object with relative paths and cover blob URL.
+            // Audio/video URLs are NOT set here — they are loaded lazily
+            // by ensureSongUrls() / restoreSongUrls() when a song is played.
             const song: Song = {
               id: songId,
               title: scanned.title,
@@ -172,15 +154,13 @@ export function useFolderScanner(): UseFolderScannerReturn {
               difficulty: 'medium',
               rating: 3,
               gap: scanned.gap,
-              baseFolder: effectiveBaseFolder,
+              baseFolder: folderPath,
               folderPath: scanned.folderPath,
               relativeTxtPath: scanned.relativeTxtPath,
               relativeAudioPath: scanned.relativeAudioPath,
               relativeVideoPath: scanned.relativeVideoPath,
               relativeCoverPath: scanned.relativeCoverPath,
               relativeBackgroundPath: scanned.relativeBackgroundPath,
-              audioUrl,
-              videoBackground,
               coverImage,
               genre: scanned.genre,
               language: scanned.language,
