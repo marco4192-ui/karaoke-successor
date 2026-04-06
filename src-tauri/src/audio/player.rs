@@ -158,7 +158,7 @@ impl NativeAudioPlayer {
         duration_ms: u64,
     ) -> Result<(), String>
     where
-        T: cpal::Sample + cpal::SizedSample + Default + 'static,
+        T: cpal::Sample + cpal::SizedSample + Default + cpal::FromSample<f32> + 'static,
     {
         let sample_rate = config.sample_rate.0;
         let frame_size = channels as usize;
