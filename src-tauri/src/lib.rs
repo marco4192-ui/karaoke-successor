@@ -10,6 +10,8 @@ use std::fs;
 use tauri::Manager;
 use serde::{Deserialize, Serialize};
 
+mod audio;
+
 // ============================================================
 // Custom Tauri Commands — bypass plugin ACL restrictions
 // In Tauri v2, custom #[tauri::command] functions are allowed
@@ -266,6 +268,7 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
+        .manage(std::sync::Mutex::new(audio::commands::AudioState::new()))
         .invoke_handler(tauri::generate_handler![
             // Native file system commands (bypass ACL)
             native_read_file_bytes,
@@ -282,6 +285,17 @@ pub fn run() {
             native_pick_file_save,
             native_message,
             native_confirm,
+            // Native audio commands (ASIO / WASAPI)
+            audio::commands::audio_list_devices,
+            audio::commands::audio_get_default_device,
+            audio::commands::audio_play_file,
+            audio::commands::audio_pause,
+            audio::commands::audio_resume,
+            audio::commands::audio_seek,
+            audio::commands::audio_set_volume,
+            audio::commands::audio_stop,
+            audio::commands::audio_get_position,
+            audio::commands::audio_get_state,
         ])
         .setup(|app| {
             // Get the main window and open DevTools in debug mode

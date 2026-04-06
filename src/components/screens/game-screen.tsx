@@ -49,6 +49,7 @@ import { useRemoteControl } from '@/hooks/use-remote-control';
 import { useMobilePitchPolling } from '@/hooks/use-mobile-pitch-polling';
 import { useGameMedia } from '@/hooks/use-game-media';
 import { useGameLoop } from '@/hooks/use-game-loop';
+import { useNativeAudio } from '@/hooks/use-native-audio';
 import { GameCountdown } from '@/components/game/game-countdown';
 import { GameScoreDisplay } from '@/components/game/game-score-display';
 import { useGameAudioEffects } from '@/hooks/use-game-audio-effects';
@@ -84,6 +85,9 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
 
   const [youtubeTime, setYoutubeTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+
+  // Native audio (ASIO / WASAPI)
+  const nativeAudio = useNativeAudio();
 
   // Settings from localStorage - managed via useGameSettings hook
   const {
@@ -373,6 +377,14 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     setAudioEffects,
     song,
     players: gameState.players,
+    // Native audio support
+    isNativeAudio: nativeAudio.enabled,
+    nativeAudioTime: nativeAudio.currentPosition,
+    nativeAudioPlay: nativeAudio.play,
+    nativeAudioPause: nativeAudio.pause,
+    nativeAudioResume: nativeAudio.resume,
+    nativeAudioStop: nativeAudio.stop,
+    nativeAudioSeek: nativeAudio.seek,
   });
 
   // Get visible notes using shared utility
@@ -410,6 +422,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
           if (audioEffects) audioEffects.disconnect();
           if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
           if (videoRef.current) { videoRef.current.pause(); videoRef.current.currentTime = 0; }
+          nativeAudio.stop().catch(() => {});
           setIsPlaying(false);
           onBack();
         }} className="text-white/80 hover:text-white hover:bg-white/10">

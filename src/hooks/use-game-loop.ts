@@ -48,6 +48,14 @@ export interface UseGameLoopOptions {
   // Song + players (for results generation)
   song: Song | null;
   players: Array<{ id: string; score: number; notesHit: number; notesMissed: number; maxCombo: number }>;
+  // Native audio (ASIO / WASAPI)
+  isNativeAudio?: boolean;
+  nativeAudioTime?: number;
+  nativeAudioPlay?: (filePath: string) => Promise<void>;
+  nativeAudioPause?: () => Promise<void>;
+  nativeAudioResume?: () => Promise<void>;
+  nativeAudioStop?: () => Promise<void>;
+  nativeAudioSeek?: (positionMs: number) => Promise<void>;
 }
 
 export interface UseGameLoopResult {
@@ -104,6 +112,13 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     setAudioEffects,
     song,
     players,
+    isNativeAudio = false,
+    nativeAudioTime = 0,
+    nativeAudioPlay,
+    nativeAudioPause,
+    nativeAudioResume,
+    nativeAudioStop,
+    nativeAudioSeek,
   } = options;
 
   // ── Internal state (not needed outside the hook) ──
@@ -189,6 +204,11 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       videoRef.current.currentTime = 0;
     }
 
+    // Stop native audio (ASIO / WASAPI)
+    if (nativeAudioStop) {
+      nativeAudioStop().catch(() => {});
+    }
+
     // Set playing to false
     setIsPlaying(false);
 
@@ -215,20 +235,22 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     }
 
     onEnd();
-  }, [stop, audioEffects, setAudioEffects, audioRef, videoRef, endGame, generateResults, onEnd, song, gameMode, setIsPlaying]);
+  }, [stop, audioEffects, setAudioEffects, audioRef, videoRef, endGame, generateResults, onEnd, song, gameMode, setIsPlaying, nativeAudioStop]);
 
   // ── Pause / Resume helpers ──
   const pauseGame = useCallback(() => {
     if (audioRef.current) audioRef.current.pause();
     if (videoRef.current) videoRef.current.pause();
+    if (nativeAudioPause) nativeAudioPause().catch(() => {});
     setIsPlaying(false);
-  }, [audioRef, videoRef, setIsPlaying]);
+  }, [audioRef, videoRef, setIsPlaying, nativeAudioPause]);
 
   const resumeGame = useCallback(() => {
     if (audioRef.current) audioRef.current.play().catch(() => {});
     if (videoRef.current) videoRef.current.play().catch(() => {});
+    if (nativeAudioResume) nativeAudioResume().catch(() => {});
     setIsPlaying(true);
-  }, [audioRef, videoRef, setIsPlaying]);
+  }, [audioRef, videoRef, setIsPlaying, nativeAudioResume]);
 
   // ── Initialize and start game - countdown + media playback ──
   useEffect(() => {
@@ -300,7 +322,26 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
                     audioRef.current.src = currentAudioUrl;
                   }
                   audioRef.current.currentTime = startPosition;
+                  // When native audio is active, mute the browser audio element
+                  if (isNativeAudio) {
+                    audioRef.current.muted = true;
+                  }
                   await audioRef.current.play();
+
+                  // Start native audio playback if enabled and file path is available
+                  if (isNativeAudio && nativeAudioPlay && currentSong.baseFolder && currentSong.relativeAudioPath) {
+                    const separator = currentSong.baseFolder.includes('\\') ? '\\' : '/';
+                    const nativePath = currentSong.baseFolder + separator + currentSong.relativeAudioPath;
+                    console.log('[GameScreen] Starting native audio playback:', nativePath);
+                    nativeAudioPlay(nativePath).catch((err) => {
+                      console.error('[GameScreen] Native audio play failed, falling back to browser:', err);
+                      if (audioRef.current) audioRef.current.muted = false;
+                    });
+                    // Seek to start position after native audio begins
+                    if (nativeAudioSeek) {
+                    nativeAudioSeek(currentSong.start || 0).catch(() => {});
+                    }
+                  }
                 }
 
                 // PRIORITY 2: Video with embedded audio
@@ -410,7 +451,11 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     const gameLoop = () => {
       let elapsed: number;
 
-      if (isYouTube && youtubeTime > 0) {
+      // Priority: native audio time (ASIO / WASAPI)
+      if (isNativeAudio && nativeAudioTime > 0) {
+        elapsed = nativeAudioTime;
+      }
+      else if (isYouTube && youtubeTime > 0) {
         elapsed = youtubeTime;
       }
       else if (audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2) {
@@ -460,7 +505,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [isPlaying, effectiveSong, pitchResult, setCurrentTime, setDetectedPitch, checkNoteHits, checkP2NoteHits, endGameAndCleanup, isYouTube, youtubeTime, timingOffset, isDuetMode, p2DetectedPitch, p2Volume, setP2Volume, audioRef, videoRef, startTimeRef]);
+  }, [isPlaying, effectiveSong, pitchResult, setCurrentTime, setDetectedPitch, checkNoteHits, checkP2NoteHits, endGameAndCleanup, isYouTube, youtubeTime, timingOffset, isDuetMode, p2DetectedPitch, p2Volume, setP2Volume, audioRef, videoRef, startTimeRef, isNativeAudio, nativeAudioTime]);
 
   return {
     countdown,

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Theme } from '@/lib/game/themes';
 import { THEMES } from '@/lib/game/themes';
 import { MusicIcon, PaletteIcon } from '@/components/settings/settings-icons';
+import { AudioOutputSection } from '@/components/settings/audio-output-section';
 
 interface GraphicSoundTabProps {
   bgVideo: boolean;
@@ -49,6 +50,9 @@ export function GraphicSoundTab({
 }: GraphicSoundTabProps) {
   return (
     <div className="space-y-6">
+      {/* Audio Output / ASIO Device Selection */}
+      <AudioOutputSection />
+
       {/* Video Settings */}
       <Card className="bg-white/5 border-white/10">
         <CardHeader>
