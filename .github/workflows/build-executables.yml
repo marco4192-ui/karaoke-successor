@@ -373,7 +373,8 @@ jobs:
             squashfs-tools \
             file \
             desktop-file-utils \
-            appstream
+            appstream \
+            libasound2-dev
 
       - name: Install dependencies
         run: bun install --frozen-lockfile

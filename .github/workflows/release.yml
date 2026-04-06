@@ -282,7 +282,8 @@ jobs:
             libjavascriptcoregtk-4.1-dev \
             libfuse2 \
             file \
-            desktop-file-utils
+            desktop-file-utils \
+            libasound2-dev
 
       - name: Install dependencies
         run: bun install
