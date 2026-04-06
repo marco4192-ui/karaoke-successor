@@ -217,7 +217,12 @@ export function removeSong(songId: string): void {
 
 // Save custom songs — primary storage is IndexedDB, localStorage is legacy fallback
 function saveCustomSongs(songs: Song[]): void {
-  // Create minimal versions for storage (remove blob URLs and lyrics)
+  // PERFORMANCE: Keep blob URLs in the in-memory cache for the current session.
+  // Blob URLs are valid as long as the page isn't reloaded, and recreating them
+  // for all songs (especially videos) is extremely slow.
+  customSongsCache = songs.map(s => ({ ...s }));
+
+  // Create minimal versions for persistent storage (remove blob URLs and lyrics)
   const minimalSongs = songs.map(s => {
     return {
       ...s,
@@ -234,9 +239,6 @@ function saveCustomSongs(songs: Song[]): void {
       relativeTxtPath: s.relativeTxtPath,
     };
   });
-
-  // Update in-memory cache immediately
-  customSongsCache = minimalSongs;
 
   // Persist to IndexedDB (async, non-blocking)
   if (typeof window !== 'undefined' && typeof indexedDB !== 'undefined') {
@@ -759,38 +761,33 @@ export async function getAllSongsAsync(): Promise<Song[]> {
   }
   
   if (isTauri()) {
-    console.log('[SongLibrary] Running in Tauri mode, restoring URLs for songs with relative paths');
-    // In Tauri, restore URLs for all songs that have relative paths with missing URLs
-    const restoredSongs = await Promise.all(
-      songs.map(async (song) => {
-        // Check if ANY URL needs to be restored (not just all of them)
-        const hasRelativePaths = song.relativeAudioPath || song.relativeVideoPath || song.relativeCoverPath;
-        const needsAudioRestore = song.relativeAudioPath && !song.audioUrl;
-        const needsVideoRestore = song.relativeVideoPath && !song.videoBackground;
-        const needsCoverRestore = song.relativeCoverPath && !song.coverImage;
-        
-        if (hasRelativePaths && (needsAudioRestore || needsVideoRestore || needsCoverRestore)) {
-          console.log(`[SongLibrary] Restoring URLs for song: ${song.title}`, {
-            relativeAudioPath: song.relativeAudioPath,
-            relativeVideoPath: song.relativeVideoPath,
-            relativeCoverPath: song.relativeCoverPath,
-            baseFolder: song.baseFolder,
-            needsAudioRestore,
-            needsVideoRestore,
-            needsCoverRestore,
-          });
-          const restored = await restoreSongUrls(song);
-          console.log(`[SongLibrary] Restored URLs for ${song.title}:`, {
-            audioUrl: restored.audioUrl ? 'set' : 'not set',
-            videoBackground: restored.videoBackground ? 'set' : 'not set',
-            coverImage: restored.coverImage ? 'set' : 'not set',
-          });
-          return restored;
+    // PERFORMANCE: Only restore COVER URLs eagerly (small images for library grid).
+    // Audio/Video URLs are restored lazily when a song is actually played (via ensureSongUrls).
+    // This avoids loading potentially hundreds of MB of video data at library load time.
+    const songsNeedingCover = songs.filter(song =>
+      song.relativeCoverPath && !song.coverImage
+    );
+    if (songsNeedingCover.length > 0) {
+      console.log(`[SongLibrary] Restoring cover URLs for ${songsNeedingCover.length} songs (audio/video deferred)`);
+    }
+    const coverUrlMap = new Map<string, string>();
+    await Promise.all(
+      songsNeedingCover.map(async (song) => {
+        if (song.relativeCoverPath && song.baseFolder) {
+          try {
+            const url = await getSongMediaUrl(song.relativeCoverPath, song.baseFolder);
+            if (url) coverUrlMap.set(song.id, url);
+          } catch (e) {
+            // Non-critical — cover just won't show
+          }
         }
-        return song;
       })
     );
-    return restoredSongs;
+    return songs.map(song => {
+      const coverUrl = coverUrlMap.get(song.id);
+      if (coverUrl) return { ...song, coverImage: coverUrl };
+      return song;
+    });
   }
   
   // In browser mode, restore URLs from IndexedDB for songs that have storedMedia flag
