@@ -498,12 +498,14 @@ export async function convertScannedSongToSong(scanned: ScannedSong): Promise<So
   }
 
   // Helper to extract relative path from webkitRelativePath or folderPath
-  // CRITICAL FIX: Files from showDirectoryPicker() do NOT have webkitRelativePath.
-  // We must fall back to scanned.folderPath + file.name to construct the relative path.
+  // CRITICAL: The relative path must include ALL subfolder names from the base folder.
+  // Example: Songs/Artist/SongName/video.mp4 → relative path = Artist/SongName/video.mp4
+  // The baseFolder is stored separately; the code reconstructs full paths at runtime.
   const getRelativePath = (file: File): string | undefined => {
     const webkitPath = (file as any).webkitRelativePath;
     if (webkitPath) {
-      // Remove the first folder (root folder) from the path
+      // webkitRelativePath starts with the root folder name (e.g. "Songs/Artist/Song/video.mp4")
+      // Strip only the first segment (the root folder) to get the relative path
       const parts = webkitPath.split('/');
       if (parts.length > 1) {
         return parts.slice(1).join('/');
@@ -511,13 +513,18 @@ export async function convertScannedSongToSong(scanned: ScannedSong): Promise<So
       return webkitPath;
     }
     // Fallback: use scanned.folderPath + file.name
-    // folderPath is like "Artist - Song" or "Category/Artist - Song"
+    // folderPath from scanDirectoryHandle is already relative to base folder (e.g. "Artist/SongName")
+    // folderPath from scanFilesFromFileList includes the root folder (e.g. "Songs/Artist/SongName")
+    // We detect which case by checking if folderPath starts with baseFolder
     if (scanned.folderPath) {
-      // Remove root folder prefix if present (e.g. "Songs/Artist" → "Artist")
-      const pathParts = scanned.folderPath.split('/');
-      const songFolder = pathParts.length > 1 ? pathParts.slice(1).join('/') : scanned.folderPath;
-      if (songFolder) {
-        return `${songFolder}/${file.name}`;
+      let effectiveFolderPath = scanned.folderPath;
+      // If folderPath starts with the baseFolder name, strip it
+      // (scanFilesFromFileList includes root; scanDirectoryHandle does not)
+      if (scanned.baseFolder && effectiveFolderPath.startsWith(scanned.baseFolder + '/')) {
+        effectiveFolderPath = effectiveFolderPath.substring(scanned.baseFolder.length + 1);
+      }
+      if (effectiveFolderPath) {
+        return `${effectiveFolderPath}/${file.name}`;
       }
     }
     return file.name;
@@ -530,19 +537,26 @@ export async function convertScannedSongToSong(scanned: ScannedSong): Promise<So
   const relativeCoverPath = scanned.coverFile ? getRelativePath(scanned.coverFile) : undefined;
   const relativeTxtPath = scanned.txtFile ? getRelativePath(scanned.txtFile) : undefined;
 
-  // Normalize folderPath: remove root folder if present
+  // Normalize folderPath: remove root folder ONLY if present
+  // folderPath from scanDirectoryHandle is already relative (e.g. "Artist/SongName")
+  // folderPath from scanFilesFromFileList includes root (e.g. "Songs/Artist/SongName")
+  // We detect by checking if folderPath starts with baseFolder
   let normalizedFolderPath = scanned.folderPath;
   if (normalizedFolderPath) {
-    const parts = normalizedFolderPath.split('/');
-    if (parts.length > 1) {
-      normalizedFolderPath = parts.slice(1).join('/');
-    } else {
-      normalizedFolderPath = '';
+    if (scanned.baseFolder && normalizedFolderPath.startsWith(scanned.baseFolder + '/')) {
+      normalizedFolderPath = normalizedFolderPath.substring(scanned.baseFolder.length + 1);
     }
   }
 
-  // CRITICAL: Log baseFolder for debugging
-  console.log(`[FolderScanner] Creating song ${scanned.title} with baseFolder: ${scanned.baseFolder || 'not set'}`);
+  // CRITICAL: Log paths for debugging
+  console.log(`[FolderScanner] Creating song ${scanned.title}`);
+  console.log(`[FolderScanner]   baseFolder: ${scanned.baseFolder || 'not set'}`);
+  console.log(`[FolderScanner]   folderPath (raw): ${scanned.folderPath}`);
+  console.log(`[FolderScanner]   folderPath (normalized): ${normalizedFolderPath}`);
+  console.log(`[FolderScanner]   relativeAudioPath: ${relativeAudioPath || 'none'}`);
+  console.log(`[FolderScanner]   relativeVideoPath: ${relativeVideoPath || 'none'}`);
+  console.log(`[FolderScanner]   relativeCoverPath: ${relativeCoverPath || 'none'}`);
+  console.log(`[FolderScanner]   relativeTxtPath: ${relativeTxtPath || 'none'}`);
 
   return {
     id: songId,
