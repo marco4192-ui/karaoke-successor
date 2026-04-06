@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { getAllSongs, reloadLibrary, clearCustomSongs, addSongs } from '@/lib/game/song-library';
+import { getAllSongs, reloadLibrary, clearCustomSongs, replaceCustomSongs, setScanInProgress } from '@/lib/game/song-library';
 import { Song } from '@/types/game';
 import { isTauri } from '@/lib/tauri-file-storage';
 import { safeAlert, safeConfirm, safePrompt } from '@/lib/safe-dialog';
@@ -68,6 +68,9 @@ export function useFolderScanner(): UseFolderScannerReturn {
   const performFolderScan = useCallback(async (folderPath: string) => {
     setIsScanning(true);
     setScanProgress({ stage: 'scanning', message: 'Scanning folder...', count: 0 });
+
+    // CRITICAL: Set scan lock to prevent loadCustomSongsFromStorage race condition
+    setScanInProgress(true);
 
     // CRITICAL: Always save the songs folder to localStorage
     localStorage.setItem('karaoke-songs-folder', folderPath);
@@ -220,9 +223,9 @@ export function useFolderScanner(): UseFolderScannerReturn {
           }
         }
 
-        // Add all songs to library
+        // Replace ALL songs (not addSongs — avoids duplicate detection race condition)
         if (songsToImport.length > 0) {
-          addSongs(songsToImport);
+          replaceCustomSongs(songsToImport);
         }
 
         reloadLibrary();
@@ -252,6 +255,9 @@ export function useFolderScanner(): UseFolderScannerReturn {
         message: `Scan failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
         count: 0
       });
+    } finally {
+      // Always clear the scan lock
+      setScanInProgress(false);
     }
 
     setIsScanning(false);

@@ -35,6 +35,16 @@ let customSongsCache: Song[] | null = null;
 let songCacheTimestamp = 0;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
+// Scan lock: prevents loadCustomSongsFromStorage from overwriting cache
+// while a Settings scan is in progress (avoids race condition)
+let scanInProgress = false;
+
+/** Mark that a scan is starting — prevents async IndexedDB load from overwriting. */
+export function setScanInProgress(inProgress: boolean): void {
+  scanInProgress = inProgress;
+  console.log('[SongLibrary] Scan in progress:', inProgress);
+}
+
 /** Invalidate all in-memory caches, forcing fresh reads from storage. */
 export function clearSongCache(): void {
   songCache = null;
@@ -90,16 +100,27 @@ export function getCustomSongs(): Song[] {
 }
 
 // Load custom songs from IndexedDB (async — call on app startup)
-// IMPORTANT: Only overwrites in-memory cache if cache is empty or stale.
-// This prevents race conditions where a Settings scan adds songs to cache
-// and this async function later overwrites them with old IndexedDB data.
+// IMPORTANT: Skips entirely if a scan is in progress to prevent race conditions.
+// A scan calls clearCustomSongs() → cache=[] → then loadCustomSongsFromStorage
+// could overwrite with old IndexedDB data during the async scan loop.
 export async function loadCustomSongsFromStorage(): Promise<Song[]> {
+  // CRITICAL: If a scan is in progress, DO NOT overwrite the cache.
+  // The scan will set the cache when it completes.
+  if (scanInProgress) {
+    console.log('[SongLibrary] Skipping loadCustomSongsFromStorage — scan in progress');
+    return getCustomSongs();
+  }
+  
   if (typeof indexedDB === 'undefined') return getCustomSongs();
   
   try {
     const songs = await loadCustomSongsFromDB();
-    // CRITICAL: Only overwrite cache if it's empty or has fewer songs.
-    // If a scan just added songs, the cache is more up-to-date than IndexedDB.
+    // Re-check scan flag after async operation
+    if (scanInProgress) {
+      console.log('[SongLibrary] Skipping loadCustomSongsFromStorage — scan started during load');
+      return getCustomSongs();
+    }
+    // Only overwrite cache if it's empty or has fewer songs.
     if (songs.length > 0 && (!customSongsCache || customSongsCache.length < songs.length)) {
       customSongsCache = songs;
       return songs;
@@ -167,6 +188,16 @@ export function addSongs(songs: Song[]): void {
     saveCustomSongs(customSongs);
     songCache = null;
   }
+}
+
+// Replace ALL custom songs (used after a full folder scan)
+// Unlike addSongs, this does NOT check for duplicates — it replaces everything.
+// This prevents the race condition where loadCustomSongsFromStorage overwrites
+// the cache with old IndexedDB data during the scan loop.
+export function replaceCustomSongs(songs: Song[]): void {
+  console.log('[SongLibrary] Replacing all custom songs with', songs.length, 'songs');
+  saveCustomSongs(songs);
+  songCache = null;
 }
 
 // Remove a song
