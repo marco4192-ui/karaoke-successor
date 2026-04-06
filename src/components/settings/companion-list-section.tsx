@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -50,7 +50,11 @@ function getLastSeen(lastActivity: number): string {
 }
 
 // ===================== COMPONENT =====================
-export function CompanionListSection() {
+interface CompanionListSectionProps {
+  isVisible: boolean;
+}
+
+export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
   const [companions, setCompanions] = useState<CompanionClient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [kickingId, setKickingId] = useState<string | null>(null);
@@ -78,19 +82,14 @@ export function CompanionListSection() {
     }
   }, []);
 
-  // Poll for updates every 3 seconds
+  // Fetch once when the tab becomes visible
+  const wasVisible = useRef(false);
   useEffect(() => {
-    fetchCompanions();
-    const interval = setInterval(fetchCompanions, 3000);
-    return () => clearInterval(interval);
-  }, [fetchCompanions]);
-
-  // Force refresh counter for lastSeen timestamps
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    const timer = setInterval(() => setTick((t) => t + 1), 10000);
-    return () => clearInterval(timer);
-  }, []);
+    if (isVisible && !wasVisible.current) {
+      fetchCompanions();
+    }
+    wasVisible.current = isVisible;
+  }, [isVisible, fetchCompanions]);
 
   // Kick a companion
   const handleKick = async (companionId: string, companionName: string) => {
@@ -181,16 +180,14 @@ export function CompanionListSection() {
               Manage connected mobile devices and their assigned characters
             </CardDescription>
           </div>
-          {companions.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchCompanions}
-              className="border-white/20 text-white hover:bg-white/10"
-            >
-              Refresh
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => { setIsLoading(true); fetchCompanions(); }}
+            className="border-white/20 text-white hover:bg-white/10"
+          >
+            ↻ Refresh
+          </Button>
         </div>
       </CardHeader>
       <CardContent>

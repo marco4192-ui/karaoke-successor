@@ -279,7 +279,7 @@ function SettingsScreen() {
 
       {activeTab === 'mobile' && (
         <div className="space-y-6">
-          <CompanionListSection />
+          <CompanionListSection isVisible={activeTab === 'mobile'} />
           <MobileDeviceMicrophoneSection />
         </div>
       )}
