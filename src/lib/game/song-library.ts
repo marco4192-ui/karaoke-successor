@@ -937,11 +937,21 @@ export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
 // Parse UltraStar TXT content to lyrics
 // IMPORTANT: Don't trim lines or lyrics - trailing spaces are significant for word boundaries
 function parseUltraStarTxtContent(content: string, gap: number, bpm: number): LyricLine[] {
-  const lines = content.split('\n').filter(l => l.trim().length > 0);
+  // Strip BOM if present (common on Windows)
+  let cleanContent = content;
+  if (cleanContent.charCodeAt(0) === 0xFEFF) {
+    cleanContent = cleanContent.substring(1);
+  }
+
+  // Also strip \r from all lines (Windows \r\n line endings)
+  cleanContent = cleanContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  const lines = cleanContent.split('\n').filter(l => l.trim().length > 0);
   const notes: Array<{ type: string; startBeat: number; duration: number; pitch: number; lyric: string; player?: 'P1' | 'P2' }> = [];
   const lineBreakBeats = new Set<number>();
 
   let currentPlayer: 'P1' | 'P2' | undefined = undefined;
+  let noteLineCount = 0;
 
   for (const line of lines) {
     const trimmedLine = line.trim();
@@ -969,8 +979,83 @@ function parseUltraStarTxtContent(content: string, gap: number, bpm: number): Ly
     if (noteMatch) {
       const [, type, startStr, durationStr, pitchStr, lyric] = noteMatch;
       notes.push({ type, startBeat: parseInt(startStr), duration: parseInt(durationStr), pitch: parseInt(pitchStr), lyric, player: notePlayer });
+      noteLineCount++;
     }
   }
 
-  return convertNotesToLyricLines(notes, lineBreakBeats, bpm, gap);
+  // DIAGNOSTIC: If no notes were found, log sample lines to identify the format
+  if (noteLineCount === 0 && lines.length > 0) {
+    const nonHeaderLines = lines.filter(l => {
+      const t = l.trim();
+      return t.length > 0 && !t.startsWith('#') && t !== 'E' && t !== 'P1' && t !== 'P2' && t !== 'P1:' && t !== 'P2:' && !t.startsWith('-');
+    });
+    const sampleLines = nonHeaderLines.slice(0, 5).map(l => `"${l.substring(0, 100)}"`);
+    console.warn('[SongLibrary] parseUltraStarTxtContent: 0 notes found!', {
+      totalLines: lines.length,
+      nonHeaderLines: nonHeaderLines.length,
+      contentLength: cleanContent.length,
+      bpm, gap,
+      sampleLines,
+    });
+  }
+
+  const result = convertNotesToLyricLines(notes, lineBreakBeats, bpm, gap);
+
+  // FALLBACK: If UltraStar parsing found no lines but content exists,
+  // try to create simple lyric lines from non-header text.
+  if (result.length === 0 && noteLineCount === 0 && lines.length > 0) {
+    const fallbackLines = createFallbackLyrics(lines);
+    if (fallbackLines.length > 0) {
+      console.log('[SongLibrary] Using fallback lyric parser, lines:', fallbackLines.length);
+      return fallbackLines;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Create simple LyricLine[] from non-header text lines when UltraStar parsing fails.
+ * This allows displaying lyrics even without note timing data.
+ * Each non-header text line becomes a lyric line with a small time offset.
+ */
+function createFallbackLyrics(lines: string[]): LyricLine[] {
+  const lyricLines: LyricLine[] = [];
+  let timeOffset = 0;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    // Skip headers, control lines, and empty lines
+    if (!trimmed || trimmed.startsWith('#') || trimmed === 'E' ||
+        trimmed === 'P1' || trimmed === 'P2' || trimmed.startsWith('-')) {
+      continue;
+    }
+    // Skip lines that look like UltraStar notes (even if regex didn't match)
+    if (/^\s*[:*FGR]\s*-?\d+\s+\d+\s+-?\d+/.test(trimmed)) {
+      continue;
+    }
+
+    const startTime = timeOffset;
+    const endTime = timeOffset + 3000; // 3 seconds per line default
+    timeOffset += 3500;
+
+    lyricLines.push({
+      id: `line-${lyricLines.length}`,
+      text: trimmed,
+      startTime,
+      endTime,
+      notes: [{
+        id: `note-${lyricLines.length}-0`,
+        pitch: 0,
+        frequency: 261.63, // C4
+        startTime,
+        duration: 3000,
+        lyric: trimmed,
+        isBonus: false,
+        isGolden: false,
+      }],
+    });
+  }
+
+  return lyricLines;
 }

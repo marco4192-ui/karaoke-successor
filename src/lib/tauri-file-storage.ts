@@ -287,7 +287,12 @@ async function processFolder(
   }
   
   // Parse metadata from TXT
-  const lines = txtContent.split('\n');
+  // Strip BOM and normalize line endings
+  let normalizedContent = txtContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  if (normalizedContent.charCodeAt(0) === 0xFEFF) {
+    normalizedContent = normalizedContent.substring(1);
+  }
+  const lines = normalizedContent.split('\n');
 
   // Basic info
   let title = 'Unknown';
@@ -522,7 +527,15 @@ async function processFolder(
 
 // Parse lyrics (notes) from UltraStar TXT content
 function parseLyricsFromTxt(content: string, bpm: number, gap: number): LyricLine[] {
-  const lines = content.split('\n').filter(l => l.trim().length > 0);
+  // Strip BOM if present (common on Windows)
+  let cleanContent = content;
+  if (cleanContent.charCodeAt(0) === 0xFEFF) {
+    cleanContent = cleanContent.substring(1);
+  }
+  // Normalize line endings
+  cleanContent = cleanContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  const lines = cleanContent.split('\n').filter(l => l.trim().length > 0);
   const notes: Array<{ type: string; startBeat: number; duration: number; pitch: number; lyric: string; player?: 'P1' | 'P2' }> = [];
   const lineBreakBeats = new Set<number>();
 

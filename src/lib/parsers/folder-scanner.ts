@@ -258,7 +258,9 @@ function parseUltraStarMetadata(content: string): {
   language?: string;
   year?: number;
 } {
-  const lines = content.split('\n');
+  // Normalize line endings
+  const normalized = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = normalized.split('\n');
   let title = 'Unknown';
   let artist = 'Unknown';
   let bpm = 120;
@@ -612,9 +614,16 @@ async function parseUltraStarFull(txtFile?: File): Promise<{
   }
 
   const content = await txtFile.text();
+  // Strip BOM if present (common on Windows)
+  let cleanContent = content;
+  if (cleanContent.charCodeAt(0) === 0xFEFF) {
+    cleanContent = cleanContent.substring(1);
+  }
+  // Normalize line endings (Windows \r\n → \n)
+  cleanContent = cleanContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   // DON'T trim lines! Trailing spaces in lyrics are significant for word boundaries.
   // Only filter out completely empty lines (after trimming for the check)
-  const lines = content.split('\n').filter(l => l.trim().length > 0);
+  const lines = cleanContent.split('\n').filter(l => l.trim().length > 0);
   
   let bpm = 120;
   let gap = 0;
