@@ -772,9 +772,13 @@ async function parseUltraStarFull(txtFile?: File): Promise<{
     }
 
     // Check for line break
+    // IMPORTANT: "- 30" means a new line starts at beat 30. So we must check
+    // BOTH the current note's end beat AND the next note's start beat against lineBreakBeats.
+    const nextNoteStart = i < sortedNotes.length - 1 ? sortedNotes[i + 1].startBeat : -1;
     const isLineBreak = lineBreakBeats.has(noteEndBeat) || 
+                        (nextNoteStart >= 0 && lineBreakBeats.has(nextNoteStart)) ||
                         (i < sortedNotes.length - 1 && 
-                         sortedNotes[i + 1].startBeat - noteEndBeat >= 8);
+                         nextNoteStart - noteEndBeat >= 8);
 
     if (isLineBreak || i === sortedNotes.length - 1) {
       if (currentLineNotes.length > 0) {

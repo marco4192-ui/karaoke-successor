@@ -78,8 +78,12 @@ export function convertNotesToLyricLines(
     }
 
     // Check for line break: explicit line break marker or 8+ beat gap
+    // IMPORTANT: "- 30" means a new line starts at beat 30. So we must check
+    // BOTH the current note's end beat AND the next note's start beat against lineBreakBeats.
+    const nextNoteStart = i < sortedNotes.length - 1 ? sortedNotes[i + 1].startBeat : -1;
     const isLineBreak = lineBreakBeats.has(noteEndBeat) ||
-      (i < sortedNotes.length - 1 && sortedNotes[i + 1].startBeat - noteEndBeat >= 8);
+      (nextNoteStart >= 0 && lineBreakBeats.has(nextNoteStart)) ||
+      (i < sortedNotes.length - 1 && nextNoteStart - noteEndBeat >= 8);
 
     if ((isLineBreak || i === sortedNotes.length - 1) && currentLineNotes.length > 0) {
       flushLine();

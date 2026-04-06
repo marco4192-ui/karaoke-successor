@@ -1,79 +1,34 @@
 ---
 Task ID: 1
-Agent: Super Z (Main)
-Task: Fix Tauri ACL errors and improve code quality in karaoke-successor
+Agent: Main Agent
+Task: Implement ASIO/WASAPI native audio output support
 
 Work Log:
-- Cloned repo from GitHub, analyzed console errors
-- Identified root cause: Tauri v2 ACL permissions using string format inherited restrictive default scope
-- Fix #1: Restructured capabilities/default.json — replaced string fs permissions + fs:scope with OBJECT format per permission, each with explicit allow list ($HOME, $RESOURCE, $CWD, / etc.)
-- Fix #2: Verified all cover URL restoration errors are caused by ACL (not path issues)
-- Fix #3: Created src/lib/safe-dialog.ts with safeAlert/safeConfirm/safePrompt wrappers, updated 8 files
-- Fix #4: Extracted duplicate UltraStar lyric parsing from song-library.ts and tauri-file-storage.ts into src/lib/parsers/notes-to-lyric-lines.ts
-- Fix #5: Replaced `any` types in use-game-loop.ts with GameResult, PitchDetectionResult
-- Fix #6: Replaced `gameMode: string` with `GameMode` union type in use-game-loop.ts
+- Pulled latest code from GitHub master branch
+- Analyzed current audio architecture: browser Web Audio API (AudioContext, HTMLAudioElement, GainNode)
+- Analyzed game loop: reads audioRef.currentTime for position tracking, controls play/pause/seek on <audio> elements
+- Planned ASIO architecture: Rust backend (cpal + symphonia) for native audio, frontend integration via Tauri commands/events
+- Added Rust dependencies: cpal 0.15 (audio I/O), symphonia 0.5 (audio decoding), rubato 0.15 (resampling)
+- Created src-tauri/src/audio/ module:
+  - devices.rs: Device enumeration across all hosts (ASIO, WASAPI, DirectSound)
+  - player.rs: Native audio player with symphonia decoding, cpal output, playback control (play/pause/seek/stop/volume)
+  - commands.rs: Tauri commands (audio_list_devices, audio_play_file, audio_pause, audio_resume, audio_seek, audio_set_volume, audio_stop, audio_get_position, audio_get_state)
+  - mod.rs: Module root
+- Updated src-tauri/src/lib.rs: Added mod audio, registered AudioState, added all audio commands to invoke_handler
+- Created src/lib/audio/native-audio.ts: TypeScript wrappers for all Tauri audio commands + event listeners
+- Created src/hooks/use-native-audio.ts: React hook for native audio state management with localStorage persistence
+- Created src/components/settings/audio-output-section.tsx: Settings UI for device selection with ASIO detection, device grouping by host, refresh, current device info
+- Updated src/components/settings/graphic-sound-tab.tsx: Added AudioOutputSection at top of Graphics & Sound tab
+- Updated src/hooks/use-game-loop.ts: Added native audio options (isNativeAudio, nativeAudioTime, play/pause/resume/stop/seek), integrated native audio time in game loop, added native audio start in playMedia (mutes browser audio, starts native playback), added native audio cleanup in endGameAndCleanup and pause/resume
+- Updated src/components/screens/game-screen.tsx: Integrated useNativeAudio hook, passed native audio params to useGameLoop, added native audio stop on back button
+- Committed and pushed to GitHub master
 
 Stage Summary:
-- 6 fixes pushed to master (commits 2084b79, c1e8a12, 3b6611d, 24393ed, e19da13)
-- ACL fix resolves: fs|read_file, fs|read_dir, dialog|open, dialog|message errors
-- Safe dialog wrappers prevent unhandled errors from Tauri dialog plugin
-- 166 lines of duplicated TXT parsing code removed
-- 3 `any` types replaced with proper interfaces
-
----
-Task ID: 2
-Agent: Super Z (Main)
-Task: Fix Songs Browse Folder — ACL path scope, text field overwrite, Tauri v2 detection
-
-Work Log:
-- Analyzed ACL capability file (src-tauri/capabilities/default.json)
-- Found root cause: `{ "path": "/" }` only matches literal root `/` on Unix, NOT Windows drive-letter paths like `D:\Karaoke Songs`
-- Fix #1 (f6ae861): Replaced all `{ "path": "/" }` with `{ "path": "**" }` in 11 permission entries to match all paths on all platforms
-- Analyzed settings-screen.tsx useEffect dependencies
-- Found root cause: `folderScanner` object in dependency array caused `initializeFromStorage()` to re-run on EVERY render, overwriting user input in the text field
-- Fix #2 (fbbe700): Split folder scanner initialization into separate useEffect with empty deps `[]`
-- Fix #3 (15f0c5a): Updated Tauri detection in settings-screen.tsx to check both `__TAURI__` (v1) and `__TAURI_INTERNALS__` (v2)
-- Verified all 3 fixes pushed to master
-
-Stage Summary:
-- 3 fixes pushed to master (commits f6ae861, fbbe700, 15f0c5a)
-- ACL fix resolves ALL permission errors: fs|read_file, fs|read_dir, dialog|open, dialog|message
-- Text field is now editable (useEffect re-render loop eliminated)
-- Browse function now works (dialog ACL permissions correct)
-- Song folder is saved and restored correctly
-- Tauri v2 properly detected in About tab
-- User must rebuild Tauri app (`cargo tauri dev`) for ACL changes to take effect
-
----
-Task ID: 3
-Agent: Super Z (Main)
-Task: Add MobileCompanion management settings with character assignment and kick functionality
-
-Work Log:
-- Analyzed existing mobile companion implementation (API route, hooks, settings section)
-- Found that MobileDeviceMicrophoneSection had a basic client list but used a non-existent API endpoint (`action=clients`)
-- Extended mobile API (`src/app/api/mobile/route.ts`):
-  - Added `kick` GET action: force-disconnects a client, releases remote control, clears their queue
-  - Added `clients` GET action: alias for status with extended fields (hasRemoteControl)
-  - Added `assigncharacter` POST action: assigns/removes character profile for a companion
-  - Enhanced `disconnect` to also release remote control lock
-- Created `src/components/settings/companion-list-section.tsx`:
-  - Connected companions list with auto-polling every 3 seconds
-  - Character display with avatar, color, and name for each companion
-  - Character switch dropdown showing all active profiles from the store
-  - "Remove character" option to unassign a character from a companion
-  - Kick button with confirmation dialog, loading state, and success feedback
-  - Status badges: Mic Active, Remote Control, Queue count
-  - Connection duration and last-seen timestamps
-  - Empty state when no companions are connected
-  - Error and success message banners
-- Updated `src/components/screens/settings-screen.tsx`:
-  - Added CompanionListSection import and export
-  - Integrated companion list above the QR code section in mobile tab
-
-Stage Summary:
-- 3 files changed, 538 insertions
-- All pushed to master (commit e70b8ff)
-- New features: companion list with character assignment, kick, connection info, status badges
-- Additional ideas implemented: connection duration, last seen, pitch status, queue count, remote control indicator
-- TypeScript compilation passes (no new errors introduced)
+- ASIO/WASAPI native audio output support fully implemented
+- Device enumeration works across all available audio hosts
+- Native audio playback decodes MP3/AAC/FLAC/WAV/OGG/MKV via symphonia, outputs through selected device via cpal
+- Resampling supported via rubato (converts source sample rate to device sample rate)
+- Settings UI shows devices grouped by host (ASIO highlighted as Low-Latency)
+- Game loop uses native audio time updates when ASIO is enabled
+- Graceful fallback: if native audio fails, browser audio is unmuted and used
+- Persistent device selection via localStorage

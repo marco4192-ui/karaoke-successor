@@ -402,12 +402,16 @@ export function convertUltraStarToSong(
     }
 
     // Check if this note ends a line (after adding)
-    // 1. Explicit line break marker after this note
+    // 1. Explicit line break marker at this note's end beat OR next note's start beat
     // 2. Last note
     // 3. Large gap to next note (fallback)
+    // IMPORTANT: "- 30" means a new line starts at beat 30. So we must check
+    // BOTH the current note's end beat AND the next note's start beat against lineBreakBeats.
+    const nextNoteStart = i < sortedNotes.length - 1 ? sortedNotes[i + 1].startBeat : -1;
     const isLineBreak = lineBreakBeats.has(noteEndBeat) ||
+                        (nextNoteStart >= 0 && lineBreakBeats.has(nextNoteStart)) ||
                         (i < sortedNotes.length - 1 &&
-                         sortedNotes[i + 1].startBeat - noteEndBeat >= 8);
+                         nextNoteStart - noteEndBeat >= 8);
 
     if ((isLineBreak || i === sortedNotes.length - 1) && currentLineNotes.length > 0) {
       const lineStartTime = currentLineNotes[0].startTime;
