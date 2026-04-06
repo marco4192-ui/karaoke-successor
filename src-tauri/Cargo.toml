@@ -27,6 +27,9 @@ cpal = "0.15"
 symphonia = { version = "0.5", features = ["mp3", "aac", "vorbis", "flac", "wav", "pcm", "isomp4", "mkv", "ogg"] }
 rubato = "0.15"
 
+[features]
+asio = ["cpal/asio"]
+
 [profile.release]
 panic = "abort"
 codegen-units = 1
