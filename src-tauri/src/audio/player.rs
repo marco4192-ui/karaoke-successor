@@ -118,6 +118,8 @@ impl NativeAudioPlayer {
             .default_output_config()
             .map_err(|e| format!("Cannot get device config: {}", e))?;
 
+        // Extract sample_format BEFORE consuming supported_config via .into()
+        let sample_format = supported_config.sample_format();
         let config: StreamConfig = supported_config.into();
 
         // Resample decoded audio to device sample rate if needed
@@ -128,8 +130,6 @@ impl NativeAudioPlayer {
             decoded.channels,
         );
 
-        // Convert to the device's sample format
-        let sample_format = supported_config.sample_format();
         let channels = config.channels;
 
         match sample_format {
