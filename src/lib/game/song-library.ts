@@ -240,22 +240,20 @@ function saveCustomSongs(songs: Song[]): void {
     };
   });
 
-  // Persist to IndexedDB (async, non-blocking)
+  // CRITICAL: Always save to localStorage FIRST (synchronous).
+  // getCustomSongs() is synchronous and depends on localStorage as its fallback
+  // when customSongsCache is null (e.g., after page reload). If we only save to
+  // IndexedDB and clear localStorage, songs disappear until loadCustomSongsFromStorage
+  // completes — causing the Library to render empty.
+  saveToLocalStorage(minimalSongs);
+
+  // Also persist to IndexedDB (async, non-blocking) as the primary large storage.
   if (typeof window !== 'undefined' && typeof indexedDB !== 'undefined') {
     saveCustomSongsToDB(minimalSongs).then(() => {
       console.log('[SongLibrary] Saved', minimalSongs.length, 'custom songs to IndexedDB');
-      // Clear localStorage to free space — IndexedDB is now the source of truth
-      try {
-        localStorage.removeItem(CUSTOM_SONGS_KEY);
-      } catch (e) {
-        // Ignore
-      }
     }).catch(err => {
-      console.error('[SongLibrary] IndexedDB save failed, falling back to localStorage:', err);
-      saveToLocalStorage(minimalSongs);
+      console.error('[SongLibrary] IndexedDB save failed (localStorage still has data):', err);
     });
-  } else {
-    saveToLocalStorage(minimalSongs);
   }
 }
 

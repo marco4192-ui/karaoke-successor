@@ -180,12 +180,9 @@ export async function migrateFromLocalStorage(
     console.log('[CustomSongsDB] Migrating', localStorageSongs.length, 'songs from localStorage to IndexedDB');
     await saveCustomSongsToDB(localStorageSongs);
 
-    // Remove from localStorage to free space (keep the ID index only)
-    try {
-      localStorage.removeItem(localStorageKey);
-    } catch (e) {
-      // Ignore — localStorage might already be full
-    }
+    // NOTE: Do NOT remove from localStorage! getCustomSongs() is synchronous
+    // and needs localStorage as a fallback when the in-memory cache is null
+    // (e.g., after page reload). Both storages stay in sync.
 
     console.log('[CustomSongsDB] Migration complete');
     return localStorageSongs;
