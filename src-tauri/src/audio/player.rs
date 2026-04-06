@@ -308,10 +308,9 @@ impl Drop for NativeAudioPlayer {
 // ---------------------------------------------------------------------------
 
 /// Convert an f32 sample to the target sample type T.
-/// Uses dasp_sample::FromSample which all cpal sample types implement.
-fn sample_to<T: cpal::SizedSample>(val: f32) -> T {
-    use dasp_sample::FromSample;
-    T::from_sample_(val)
+/// Uses cpal::FromSample (re-exported from dasp_sample) which all cpal sample types implement.
+fn sample_to<T: cpal::SizedSample + cpal::FromSample<f32>>(val: f32) -> T {
+    T::from_sample(val)
 }
 
 // ---------------------------------------------------------------------------
