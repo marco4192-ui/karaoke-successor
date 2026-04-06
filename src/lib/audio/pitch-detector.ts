@@ -323,6 +323,12 @@ export class PitchDetector {
     return Math.min(1, Math.abs(correlation / energy));
   }
 
+  /** Return the current MediaStream so other components (e.g. audio effects)
+   *  can reuse it without requesting a second getUserMedia(). */
+  getMediaStream(): MediaStream | null {
+    return this.mediaStream;
+  }
+
   async destroy(): Promise<void> {
     this.stop();
     if (this.mediaStream) {

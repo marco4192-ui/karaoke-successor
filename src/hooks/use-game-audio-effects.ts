@@ -2,11 +2,16 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { AudioEffectsEngine } from '@/lib/audio/audio-effects';
+import { getPitchDetector } from '@/lib/audio/pitch-detector';
 
 /**
  * Hook for managing audio effects (reverb, echo) during gameplay.
  * Audio effects are initialized lazily — only when the user opens the panel.
- * This avoids requesting a second microphone stream at game start.
+ *
+ * IMPORTANT: We reuse the existing MediaStream from the PitchDetector instead
+ * of calling getUserMedia() a second time. A second getUserMedia() call on the
+ * same microphone device can kill the first stream on Tauri/WebView, which
+ * would stop pitch detection during gameplay.
  */
 export function useGameAudioEffects() {
   const [audioEffects, setAudioEffects] = useState<AudioEffectsEngine | null>(null);
@@ -19,13 +24,25 @@ export function useGameAudioEffects() {
   const initAudioEffects = useCallback(async () => {
     if (audioEffectsRef.current) return; // Already initialized
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
+      let stream: MediaStream | null = null;
+
+      // Strategy 1: Reuse the existing MediaStream from the PitchDetector.
+      // This avoids a second getUserMedia() call that would kill pitch detection.
+      const pitchDetector = getPitchDetector();
+      stream = pitchDetector.getMediaStream();
+
+      // Strategy 2: Fallback — request a new stream (shouldn't happen during gameplay)
+      if (!stream) {
+        console.warn('[AudioEffects] No existing mic stream found, requesting new one');
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        });
+      }
+
       const engine = new AudioEffectsEngine();
       await engine.initialize(stream);
       audioEffectsRef.current = engine;
@@ -45,6 +62,8 @@ export function useGameAudioEffects() {
   }, [showAudioEffects, initAudioEffects]);
 
   // Cleanup audio effects on unmount
+  // NOTE: We do NOT stop the MediaStream tracks here because the PitchDetector
+  // still owns them. Only the AudioContext and effect nodes are cleaned up.
   useEffect(() => {
     return () => {
       if (audioEffectsRef.current) {
