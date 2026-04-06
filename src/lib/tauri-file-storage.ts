@@ -567,6 +567,14 @@ function parseLyricsFromTxt(content: string, bpm: number, gap: number): LyricLin
     if (noteMatch) {
       const [, type, startStr, durationStr, pitchStr, lyric] = noteMatch;
       notes.push({ type, startBeat: parseInt(startStr), duration: parseInt(durationStr), pitch: parseInt(pitchStr), lyric, player: notePlayer });
+      continue;
+    }
+
+    // Line break note format: : (Beat) -  (colon type, beat number, hyphen only → line break)
+    const lineBreakNoteMatch = noteLine.match(/^\s*:\s*(-?\d+)\s+-\s*$/);
+    if (lineBreakNoteMatch) {
+      const startBeat = parseInt(lineBreakNoteMatch[1]);
+      notes.push({ type: ':', startBeat, duration: 1, pitch: 0, lyric: '-', player: notePlayer });
     }
   }
 

@@ -251,6 +251,23 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
         lyric: lyric, 
         player: notePlayer,
       });
+      continue;
+    }
+
+    // Line break note format: : (Beat) -  (colon type, beat number, hyphen only → line break)
+    // This format has NO duration and NO pitch — it's a simplified line break marker.
+    // Example: ": 30 -" → line break at beat 30
+    const lineBreakNoteMatch = noteLine.match(/^\s*:\s*(-?\d+)\s+-\s*$/);
+    if (lineBreakNoteMatch) {
+      const startBeat = parseInt(lineBreakNoteMatch[1]);
+      song.notes.push({
+        type: ':',
+        startBeat,
+        duration: 1,
+        pitch: 0,
+        lyric: '-',
+        player: notePlayer,
+      });
     }
   }
   
