@@ -268,7 +268,6 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
-        .manage(std::sync::Mutex::new(audio::commands::AudioState::new()))
         .invoke_handler(tauri::generate_handler![
             // Native file system commands (bypass ACL)
             native_read_file_bytes,
@@ -298,6 +297,9 @@ pub fn run() {
             audio::commands::audio_get_state,
         ])
         .setup(|app| {
+            // Register the audio state (needs AppHandle for the dedicated audio thread)
+            app.manage(audio::commands::AudioState::new(app.handle().clone()));
+
             // Get the main window and open DevTools in debug mode
             #[cfg(debug_assertions)]
             {

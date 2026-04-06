@@ -2,13 +2,14 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{SampleFormat, SampleRate, Stream, StreamConfig};
-use rubato::{SincFixedIn, Resampler};
+use rubato::{
+    Resampler, SincFixedIn, SincInterpolationParameters, SincInterpolationType, WindowFunction,
+};
 use symphonia::core::audio::SampleBuffer;
-use symphonia::core::codecs::{DecoderOptions, CODEC_TYPE_NULL};
+use symphonia::core::codecs::DecoderOptions;
 use symphonia::core::errors::Error as SymphoniaError;
 use symphonia::core::formats::FormatOptions;
 use symphonia::core::io::MediaSourceStream;
@@ -58,13 +59,11 @@ struct DecodedAudio {
 }
 
 /// The native audio player.
+/// NOTE: This type is intentionally !Send because cpal::Stream is !Send on some platforms.
+/// It must live exclusively on a single dedicated audio thread.
 pub struct NativeAudioPlayer {
     state: Arc<Mutex<PlaybackState>>,
     stream: Option<Stream>,
-    /// Callback invoked periodically with position updates (ms).
-    on_time_update: Option<Box<dyn Fn(u64) + Send + 'static>>,
-    /// Callback invoked when playback ends.
-    on_ended: Option<Box<dyn Fn() + Send + 'static>>,
 }
 
 impl NativeAudioPlayer {
@@ -72,28 +71,23 @@ impl NativeAudioPlayer {
         Self {
             state: Arc::new(Mutex::new(PlaybackState::default())),
             stream: None,
-            on_time_update: None,
-            on_ended: None,
         }
     }
 
-    /// Set the time-update callback.
-    pub fn set_on_time_update<F>(&mut self, f: F)
-    where
-        F: Fn(u64) + Send + 'static,
-    {
-        self.on_time_update = Some(Box::new(f));
+    /// Create a player that shares state with an external Arc (used by the audio thread).
+    pub fn with_shared_state(state: Arc<Mutex<PlaybackState>>) -> Self {
+        Self {
+            state,
+            stream: None,
+        }
     }
 
-    /// Set the ended callback.
-    pub fn set_on_ended<F>(&mut self, f: F)
-    where
-        F: Fn() + Send + 'static,
-    {
-        self.on_ended = Some(Box::new(f));
+    /// Get a clone of the shared state Arc.
+    pub fn state_arc(&self) -> Arc<Mutex<PlaybackState>> {
+        self.state.clone()
     }
 
-    /// Get a clone of the current state (for Tauri commands).
+    /// Get a lock on the current state (for Tauri commands).
     pub fn state(&self) -> std::sync::MutexGuard<'_, PlaybackState> {
         self.state.lock().unwrap()
     }
@@ -118,7 +112,7 @@ impl NativeAudioPlayer {
         }
 
         // Resolve the output device
-        let (device, host_name) = resolve_device(device_id)?;
+        let (device, _host_name) = resolve_device(device_id)?;
 
         // Build the output config matching the device's preferred format
         let supported_config = device
@@ -140,9 +134,15 @@ impl NativeAudioPlayer {
         let channels = config.channels;
 
         match sample_format {
-            SampleFormat::F32 => self.build_stream::<f32>(&device, config, resampled, channels, decoded.duration_ms),
-            SampleFormat::I16 => self.build_stream::<i16>(&device, config, resampled, channels, decoded.duration_ms),
-            SampleFormat::U16 => self.build_stream::<u16>(&device, config, resampled, channels, decoded.duration_ms),
+            SampleFormat::F32 => {
+                self.build_stream::<f32>(&device, config, resampled, channels, decoded.duration_ms)
+            }
+            SampleFormat::I16 => {
+                self.build_stream::<i16>(&device, config, resampled, channels, decoded.duration_ms)
+            }
+            SampleFormat::U16 => {
+                self.build_stream::<u16>(&device, config, resampled, channels, decoded.duration_ms)
+            }
             _ => return Err(format!("Unsupported sample format: {:?}", sample_format)),
         }
 
@@ -172,9 +172,6 @@ impl NativeAudioPlayer {
         let state = self.state.clone();
         let state_clone = state.clone();
 
-        let on_time_update = self.on_time_update.take();
-        let on_ended = self.on_ended.take();
-
         let samples = Arc::new(samples);
 
         let stream = device
@@ -193,7 +190,8 @@ impl NativeAudioPlayer {
 
                     // Handle seek
                     if let Some(target_ms) = state.seek_request.take() {
-                        let target_frame = (target_ms as f64 / 1000.0 * sample_rate as f64) as usize;
+                        let target_frame =
+                            (target_ms as f64 / 1000.0 * sample_rate as f64) as usize;
                         *cursor_clone.lock().unwrap() = target_frame.min(total_frames);
                         state.position_ms = target_ms;
                     }
@@ -226,7 +224,7 @@ impl NativeAudioPlayer {
                             let src_idx = start + i;
                             if src_idx < src.len() {
                                 let val = src[src_idx] * volume;
-                                *s = T::from::<f32>(&val);
+                                *s = T::from(&val);
                             } else {
                                 *s = T::SILENCE;
                             }
@@ -251,34 +249,8 @@ impl NativeAudioPlayer {
         // Store stream to keep it alive
         self.stream = Some(stream);
 
-        // Re-store callbacks (they were taken above)
-        // We can't move them back into self since we need them in the closure.
-        // Instead, spawn a position-update thread.
-        let state_for_updates = self.state.clone();
-        let on_ended_cb = on_ended;
-
-        std::thread::spawn(move || {
-            loop {
-                std::thread::sleep(Duration::from_millis(50));
-                let state = state_for_updates.lock().unwrap();
-                if !state.is_playing {
-                    if state.position_ms >= state.duration_ms && state.duration_ms > 0 {
-                        drop(state);
-                        if let Some(ref cb) = on_ended_cb {
-                            cb();
-                        }
-                        return;
-                    }
-                    if state.stop_requested {
-                        return;
-                    }
-                }
-                if state.stop_requested {
-                    return;
-                }
-                drop(state);
-            }
-        });
+        // NOTE: Position updates and "ended" events are handled by the
+        // dedicated audio thread in commands.rs, which polls this shared state.
 
         Ok(())
     }
@@ -368,11 +340,10 @@ fn decode_audio_file(file_path: &str) -> Result<DecodedAudio, String> {
         .ok_or("No default track in audio file")?;
 
     let track_id = default_track.id;
-    let track = default_track;
 
     // Determine sample rate and channels from codec params
-    let sample_rate = track.codec_params.sample_rate.unwrap_or(44100);
-    let channels = track
+    let sample_rate = default_track.codec_params.sample_rate.unwrap_or(44100);
+    let channels = default_track
         .codec_params
         .channels
         .map(|c| c.count())
@@ -380,7 +351,7 @@ fn decode_audio_file(file_path: &str) -> Result<DecodedAudio, String> {
 
     let decoder_opts = DecoderOptions::default();
     let mut decoder = symphonia::default::get_codecs()
-        .make(&track.codec_params, &decoder_opts)
+        .make(&default_track.codec_params, &decoder_opts)
         .map_err(|e| format!("No decoder available: {}", e))?;
 
     let mut all_samples: Vec<f32> = Vec::new();
@@ -390,7 +361,9 @@ fn decode_audio_file(file_path: &str) -> Result<DecodedAudio, String> {
         let packet = match format_reader.next_packet() {
             Ok(p) => p,
             Err(SymphoniaError::ResetRequired) => continue,
-            Err(SymphoniaError::IoError(e)) if e.kind() == std::io::ErrorKind::UnexpectedEof => break,
+            Err(SymphoniaError::IoError(e)) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
+                break
+            }
             Err(e) => return Err(format!("Error reading packet: {}", e)),
         };
 
@@ -404,14 +377,16 @@ fn decode_audio_file(file_path: &str) -> Result<DecodedAudio, String> {
             Err(e) => return Err(format!("Decode error: {}", e)),
         };
 
-        // Convert to f32
-        let mut conv_buf: SampleBuffer<f32> = SampleBuffer::new(
-            audio_buf.capacity() as u64,
-            *audio_buf.spec(),
-        );
-        conv_buf.copy_interleaved_ref(&audio_buf);
+        // Extract info BEFORE moving audio_buf into copy_interleaved_ref
+        let buf_frames = audio_buf.frames() as u64;
+        let buf_capacity = audio_buf.capacity() as u64;
+        let buf_spec = *audio_buf.spec();
+
+        // Convert to interleaved f32 (audio_buf is consumed here)
+        let mut conv_buf: SampleBuffer<f32> = SampleBuffer::new(buf_capacity, buf_spec);
+        conv_buf.copy_interleaved_ref(audio_buf);
         all_samples.extend_from_slice(conv_buf.samples());
-        decoded_frames += audio_buf.frames();
+        decoded_frames += buf_frames;
     }
 
     if all_samples.is_empty() {
@@ -434,47 +409,86 @@ fn decode_audio_file(file_path: &str) -> Result<DecodedAudio, String> {
 }
 
 /// Resample interleaved f32 samples if the source rate differs from the target rate.
-fn resample_if_needed(samples: Vec<f32>, source_rate: u32, target_rate: u32, channels: u16) -> Vec<f32> {
+fn resample_if_needed(
+    samples: Vec<f32>,
+    source_rate: u32,
+    target_rate: u32,
+    channels: u16,
+) -> Vec<f32> {
     if source_rate == target_rate {
         return samples;
     }
 
+    let channels = channels as usize;
     let chunk_size = 1024;
+
+    let sinc_params = SincInterpolationParameters {
+        sinc_len: 128,
+        f_cutoff: 0.95,
+        oversampling_factor: 64,
+        interpolation_type: SincInterpolationType::Linear,
+        window: WindowFunction::Hann,
+    };
+
     let mut resampler = SincFixedIn::new(
         target_rate as f64 / source_rate as f64,
-        2.0,
-        chunk_size,
-        channels as usize,
+        0.95,       // f_cutoff (normalized, must be <= 1.0)
+        sinc_params, // SincInterpolationParameters
+        channels,    // number of channels
+        chunk_size,  // processing chunk size
     )
     .expect("Failed to create resampler");
 
-    let frames_in = samples.len() / channels as usize;
-    let mut input = Vec::with_capacity(chunk_size * channels as usize);
-    let mut output_samples = Vec::new();
+    let frames_in = samples.len() / channels;
+
+    // rubato works with deinterleaved data: Vec<Vec<f32>> where each inner Vec is one channel
+    let mut deinterleaved: Vec<Vec<f32>> = vec![Vec::with_capacity(chunk_size); channels];
+    let mut output_samples: Vec<f32> = Vec::new();
 
     for frame_idx in 0..frames_in {
-        for ch in 0..channels as usize {
-            input.push(samples[frame_idx * channels as usize + ch]);
+        for ch in 0..channels {
+            deinterleaved[ch].push(samples[frame_idx * channels + ch]);
         }
 
-        if input.len() == chunk_size * channels as usize {
-            let resampled = resampler.process(&input, None).expect("Resampling failed");
-            for chunk in resampled {
-                for ch in 0..channels as usize {
-                    output_samples.push(chunk[ch]);
+        if deinterleaved[0].len() == chunk_size {
+            match resampler.process(&deinterleaved, None) {
+                Ok(resampled) => {
+                    // Reinterleave: resampled is Vec<Vec<f32>> (channels × frames)
+                    let num_out = if resampled.is_empty() {
+                        0
+                    } else {
+                        resampled[0].len()
+                    };
+                    for f in 0..num_out {
+                        for ch in 0..channels {
+                            output_samples.push(resampled[ch][f]);
+                        }
+                    }
                 }
+                Err(e) => eprintln!("Resampling error: {}", e),
             }
-            input.clear();
+            for ch in &mut deinterleaved {
+                ch.clear();
+            }
         }
     }
 
     // Process remaining samples
-    if !input.is_empty() {
-        let resampled = resampler.process(&input, None).expect("Resampling failed");
-        for chunk in resampled {
-            for ch in 0..channels as usize {
-                output_samples.push(chunk[ch]);
+    if !deinterleaved[0].is_empty() {
+        match resampler.process(&deinterleaved, None) {
+            Ok(resampled) => {
+                let num_out = if resampled.is_empty() {
+                    0
+                } else {
+                    resampled[0].len()
+                };
+                for f in 0..num_out {
+                    for ch in 0..channels {
+                        output_samples.push(resampled[ch][f]);
+                    }
+                }
             }
+            Err(e) => eprintln!("Resampling error: {}", e),
         }
     }
 
@@ -500,12 +514,14 @@ fn resolve_device(device_id: &str) -> Result<(cpal::Device, String), String> {
     let device_index: usize = parts[1].parse().map_err(|_| "Invalid device index")?;
 
     // Map host name to HostId
+    // NOTE: ASIO requires the "asio" feature on cpal. Without it, ASIO requests
+    // fall through to the default device.
     let host_id = match host_name {
         "WASAPI" => cpal::HostId::Wasapi,
+        #[cfg(feature = "asio")]
         "ASIO" => cpal::HostId::Asio,
-        "DirectSound" | "Dsound" => cpal::HostId::Dsound,
         _ => {
-            // Try default host as fallback
+            // Unknown or unavailable host – fall back to the system default device.
             let host = cpal::default_host();
             let device = host
                 .default_output_device()
