@@ -1,10 +1,9 @@
 use std::fs::File;
-use std::io::BufReader;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use cpal::{SampleFormat, SampleRate, Stream, StreamConfig};
+use cpal::{SampleFormat, Stream, StreamConfig};
 use rubato::{
     Resampler, SincFixedIn, SincInterpolationParameters, SincInterpolationType, WindowFunction,
 };
@@ -183,7 +182,7 @@ impl NativeAudioPlayer {
                     // Handle stop
                     if state.stop_requested {
                         for s in data.iter_mut() {
-                            *s = T::SILENCE;
+                            *s = T::default();
                         }
                         return;
                     }
@@ -199,7 +198,7 @@ impl NativeAudioPlayer {
                     // Handle pause
                     if !state.is_playing {
                         for s in data.iter_mut() {
-                            *s = T::SILENCE;
+                            *s = T::default();
                         }
                         return;
                     }
@@ -212,7 +211,7 @@ impl NativeAudioPlayer {
                         if *cursor >= total_frames {
                             // Fill silence and signal end
                             for s in frame.iter_mut() {
-                                *s = T::SILENCE;
+                                *s = T::default();
                             }
                             state.is_playing = false;
                             state.position_ms = duration_ms;
@@ -224,9 +223,9 @@ impl NativeAudioPlayer {
                             let src_idx = start + i;
                             if src_idx < src.len() {
                                 let val = src[src_idx] * volume;
-                                *s = cpal::Sample::from(val);
+                                *s = sample_to::<T>(val);
                             } else {
-                                *s = T::SILENCE;
+                                *s = T::default();
                             }
                         }
 
@@ -248,9 +247,6 @@ impl NativeAudioPlayer {
 
         // Store stream to keep it alive
         self.stream = Some(stream);
-
-        // NOTE: Position updates and "ended" events are handled by the
-        // dedicated audio thread in commands.rs, which polls this shared state.
 
         Ok(())
     }
@@ -308,6 +304,17 @@ impl Drop for NativeAudioPlayer {
 }
 
 // ---------------------------------------------------------------------------
+// Sample conversion helpers
+// ---------------------------------------------------------------------------
+
+/// Convert an f32 sample to the target sample type T.
+/// Uses dasp_sample::FromSample which all cpal sample types implement.
+fn sample_to<T: cpal::SizedSample>(val: f32) -> T {
+    use dasp_sample::FromSample;
+    T::from_sample_(val)
+}
+
+// ---------------------------------------------------------------------------
 // Helper functions
 // ---------------------------------------------------------------------------
 
@@ -321,7 +328,8 @@ fn decode_audio_file(file_path: &str) -> Result<DecodedAudio, String> {
     let file = File::open(&path).map_err(|e| format!("Cannot open file: {}", e))?;
     let file_size = file.metadata().map(|m| m.len()).unwrap_or(0);
 
-    let mss = MediaSourceStream::new(BufReader::new(file), Default::default());
+    // symphonia 0.5 expects Box<dyn MediaSource>; std::fs::File implements MediaSource.
+    let mss = MediaSourceStream::new(Box::new(file), Default::default());
 
     let mut hint = Hint::new();
     if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
@@ -331,9 +339,13 @@ fn decode_audio_file(file_path: &str) -> Result<DecodedAudio, String> {
     let format_opts = FormatOptions::default();
     let metadata_opts = MetadataOptions::default();
 
-    let mut format_reader = symphonia::default::get_probe()
+    // get_probe().format() returns a ProbeResult.
+    // The actual format reader is stored in the `.format` field.
+    let probe_result = symphonia::default::get_probe()
         .format(&hint, mss, &format_opts, &metadata_opts)
         .map_err(|e| format!("Unsupported format: {}", e))?;
+
+    let mut format_reader = probe_result.format;
 
     let default_track = format_reader
         .default_track()
@@ -346,8 +358,11 @@ fn decode_audio_file(file_path: &str) -> Result<DecodedAudio, String> {
     let channels = default_track
         .codec_params
         .channels
-        .map(|c| c.count())
-        .unwrap_or(2) as u16;
+        .map(|c| {
+            let count: u16 = c.count() as u16;
+            count
+        })
+        .unwrap_or(2);
 
     let decoder_opts = DecoderOptions::default();
     let mut decoder = symphonia::default::get_codecs()
@@ -355,7 +370,7 @@ fn decode_audio_file(file_path: &str) -> Result<DecodedAudio, String> {
         .map_err(|e| format!("No decoder available: {}", e))?;
 
     let mut all_samples: Vec<f32> = Vec::new();
-    let mut decoded_frames = 0u64;
+    let mut decoded_frames: u64 = 0;
 
     loop {
         let packet = match format_reader.next_packet() {
@@ -378,8 +393,8 @@ fn decode_audio_file(file_path: &str) -> Result<DecodedAudio, String> {
         };
 
         // Extract info BEFORE moving audio_buf into copy_interleaved_ref
-        let buf_frames = audio_buf.frames() as u64;
-        let buf_capacity = audio_buf.capacity() as u64;
+        let buf_frames: u64 = audio_buf.frames() as u64;
+        let buf_capacity: u64 = audio_buf.capacity() as u64;
         let buf_spec = *audio_buf.spec();
 
         // Convert to interleaved f32 (audio_buf is consumed here)
