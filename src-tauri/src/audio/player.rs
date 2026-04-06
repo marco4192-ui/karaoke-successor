@@ -224,7 +224,7 @@ impl NativeAudioPlayer {
                             let src_idx = start + i;
                             if src_idx < src.len() {
                                 let val = src[src_idx] * volume;
-                                *s = T::from(&val);
+                                *s = cpal::Sample::from(val);
                             } else {
                                 *s = T::SILENCE;
                             }
@@ -426,7 +426,7 @@ fn resample_if_needed(
         sinc_len: 128,
         f_cutoff: 0.95,
         oversampling_factor: 64,
-        interpolation_type: SincInterpolationType::Linear,
+        interpolation: SincInterpolationType::Linear,
         window: WindowFunction::Hann,
     };
 
@@ -453,7 +453,7 @@ fn resample_if_needed(
         if deinterleaved[0].len() == chunk_size {
             match resampler.process(&deinterleaved, None) {
                 Ok(resampled) => {
-                    // Reinterleave: resampled is Vec<Vec<f32>> (channels × frames)
+                    // Reinterleave: resampled is Vec<Vec<f64>> (channels × frames)
                     let num_out = if resampled.is_empty() {
                         0
                     } else {
@@ -461,7 +461,7 @@ fn resample_if_needed(
                     };
                     for f in 0..num_out {
                         for ch in 0..channels {
-                            output_samples.push(resampled[ch][f]);
+                            output_samples.push(resampled[ch][f] as f32);
                         }
                     }
                 }
@@ -484,7 +484,7 @@ fn resample_if_needed(
                 };
                 for f in 0..num_out {
                     for ch in 0..channels {
-                        output_samples.push(resampled[ch][f]);
+                        output_samples.push(resampled[ch][f] as f32);
                     }
                 }
             }
