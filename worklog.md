@@ -43,3 +43,37 @@ Stage Summary:
 - Song folder is saved and restored correctly
 - Tauri v2 properly detected in About tab
 - User must rebuild Tauri app (`cargo tauri dev`) for ACL changes to take effect
+
+---
+Task ID: 3
+Agent: Super Z (Main)
+Task: Add MobileCompanion management settings with character assignment and kick functionality
+
+Work Log:
+- Analyzed existing mobile companion implementation (API route, hooks, settings section)
+- Found that MobileDeviceMicrophoneSection had a basic client list but used a non-existent API endpoint (`action=clients`)
+- Extended mobile API (`src/app/api/mobile/route.ts`):
+  - Added `kick` GET action: force-disconnects a client, releases remote control, clears their queue
+  - Added `clients` GET action: alias for status with extended fields (hasRemoteControl)
+  - Added `assigncharacter` POST action: assigns/removes character profile for a companion
+  - Enhanced `disconnect` to also release remote control lock
+- Created `src/components/settings/companion-list-section.tsx`:
+  - Connected companions list with auto-polling every 3 seconds
+  - Character display with avatar, color, and name for each companion
+  - Character switch dropdown showing all active profiles from the store
+  - "Remove character" option to unassign a character from a companion
+  - Kick button with confirmation dialog, loading state, and success feedback
+  - Status badges: Mic Active, Remote Control, Queue count
+  - Connection duration and last-seen timestamps
+  - Empty state when no companions are connected
+  - Error and success message banners
+- Updated `src/components/screens/settings-screen.tsx`:
+  - Added CompanionListSection import and export
+  - Integrated companion list above the QR code section in mobile tab
+
+Stage Summary:
+- 3 files changed, 538 insertions
+- All pushed to master (commit e70b8ff)
+- New features: companion list with character assignment, kick, connection info, status badges
+- Additional ideas implemented: connection duration, last seen, pitch status, queue count, remote control indicator
+- TypeScript compilation passes (no new errors introduced)
