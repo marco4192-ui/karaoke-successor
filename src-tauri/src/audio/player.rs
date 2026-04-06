@@ -528,10 +528,17 @@ fn resolve_device(device_id: &str) -> Result<(cpal::Device, String), String> {
     let device_index: usize = parts[1].parse().map_err(|_| "Invalid device index")?;
 
     // Map host name to HostId
-    // NOTE: ASIO requires the "asio" feature on cpal. Without it, ASIO requests
-    // fall through to the default device.
+    // NOTE: WASAPI only exists on Windows. ASIO requires the "asio" feature on cpal.
+    // On non-Windows or when the feature is missing, requests fall back to the default device.
     let host_id = match host_name {
+        // WASAPI is only available on Windows.
+        #[cfg(target_os = "windows")]
         "WASAPI" => cpal::HostId::Wasapi,
+        // On non-Windows platforms, WASAPI requests fall through to the default device.
+        #[cfg(not(target_os = "windows"))]
+        "WASAPI" => {
+            return resolve_device("default");
+        }
         // ASIO requires the "asio" feature on cpal (not enabled by default).
         // Without it, ASIO requests fall through to the default device.
         #[allow(unused)]
