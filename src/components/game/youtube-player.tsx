@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { YTPlayer } from '@/types/youtube';
 
 // Extract YouTube video ID from various URL formats
@@ -51,8 +51,22 @@ export function YouTubePlayer({
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YTPlayer | null>(null);
   const [isApiLoaded, setIsApiLoaded] = useState(false);
-  const timeUpdateIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timeUpdateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const playerIdRef = useRef<string>(`youtube-player-${++playerCounter}`);
+  
+  // Store callback props in refs to avoid re-initialization on identity changes
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
+  const onTimeUpdateRef = useRef(onTimeUpdate);
+  onTimeUpdateRef.current = onTimeUpdate;
+  const onEndedRef = useRef(onEnded);
+  onEndedRef.current = onEnded;
+  const onAdStartRef = useRef(onAdStart);
+  onAdStartRef.current = onAdStart;
+  const onAdEndRef = useRef(onAdEnd);
+  onAdEndRef.current = onAdEnd;
+  const isPlayingRef = useRef(isPlaying);
+  isPlayingRef.current = isPlaying;
   
   // Ad detection refs
   const lastDurationRef = useRef<number>(0);
@@ -61,7 +75,7 @@ export function YouTubePlayer({
   const expectedDurationRef = useRef<number>(0);
   const initialVideoIdRef = useRef<string>(videoId);
   
-  // Load YouTube IFrame API
+  // Load YouTube IFrame API (once globally)
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
@@ -92,15 +106,11 @@ export function YouTubePlayer({
     window.onYouTubeIframeAPIReady = () => {
       setIsApiLoaded(true);
     };
-    
-    return () => {
-      if (timeUpdateIntervalRef.current) {
-        clearInterval(timeUpdateIntervalRef.current);
-      }
-    };
   }, []);
   
   // Initialize player when API is loaded and videoId changes
+  // NOTE: Callback props are NOT in the dependency array — they are read via refs
+  // to prevent the player from being destroyed and recreated on every parent render.
   useEffect(() => {
     if (!isApiLoaded || !containerRef.current) return;
     
@@ -119,8 +129,6 @@ export function YouTubePlayer({
     playerIdRef.current = `youtube-player-${++playerCounter}`;
     
     // videoGap is in milliseconds, convert to seconds for YouTube API
-    // Positive videoGap: video starts AFTER audio, so video needs to skip ahead
-    // Negative videoGap: video starts BEFORE audio, so video starts later relative to audio
     const videoGapSeconds = videoGap / 1000;
     const adjustedStartTime = Math.max(0, (startTime / 1000) - videoGapSeconds);
     
@@ -130,8 +138,8 @@ export function YouTubePlayer({
         videoId,
         playerVars: {
           autoplay: 0,
-          controls: 0,
-          disablekb: 1,
+          controls: interactive ? 1 : 0,
+          disablekb: interactive ? 0 : 1,
           fs: 0,
           modestbranding: 1,
           rel: 0,
@@ -139,69 +147,59 @@ export function YouTubePlayer({
           origin: window.location.origin,
         },
         events: {
-          onReady: () => {
+          onReady: (event) => {
             try {
               expectedDurationRef.current = playerRef.current?.getDuration() || 0;
             } catch { /* ignore */ }
-            onReady?.();
+            
+            // CRITICAL: If the game already signaled play, start the video now.
+            // This fixes the race condition where isPlaying=true fires before
+            // the player is ready (e.g. during countdown → play transition).
+            if (isPlayingRef.current) {
+              try {
+                event.target.playVideo();
+              } catch { /* ignore */ }
+            }
+            
+            onReadyRef.current?.();
           },
           onStateChange: (event) => {
             const state = event.data;
             lastStateRef.current = state;
             
-            // SAFETY: Check if YT.PlayerState exists before accessing it
-            // This prevents errors if the YouTube API is not fully loaded
-            if (!window.YT?.PlayerState) {
-              console.warn('[YouTube] YT.PlayerState not available, skipping state handling');
-              return;
-            }
+            if (!window.YT?.PlayerState) return;
             
             if (state === window.YT.PlayerState.ENDED) {
-              onEnded?.();
+              onEndedRef.current?.();
             }
             
-            // Ad detection: Check if video duration changed unexpectedly
+            // Ad detection: only flag when video ID changes (reliable heuristic)
             if (state === window.YT.PlayerState.PLAYING && playerRef.current) {
               try {
-                const currentDuration = playerRef.current.getDuration();
-                const currentTime = playerRef.current.getCurrentTime();
                 const videoData = playerRef.current.getVideoData();
                 
-                // Ad detection heuristics:
-                // 1. Duration is much shorter than expected (ads are usually short)
-                // 2. Video ID changed (ad video vs main video)
-                // 3. Current time is near start with very short duration
-                
-                const isAd = (
-                  (currentDuration < 60 && currentTime < 10) ||
-                  (videoData?.video_id && videoData.video_id !== initialVideoIdRef.current) ||
-                  (lastDurationRef.current > 0 && Math.abs(currentDuration - lastDurationRef.current) > 30)
-                );
+                // Ad detected when the video_id differs from our initial video
+                const isAd = videoData?.video_id && videoData.video_id !== initialVideoIdRef.current;
                 
                 if (isAd && !adDetectedRef.current) {
                   adDetectedRef.current = true;
-                  onAdStart?.();
+                  onAdStartRef.current?.();
                 } else if (!isAd && adDetectedRef.current) {
                   adDetectedRef.current = false;
-                  onAdEnd?.();
+                  onAdEndRef.current?.();
                 }
-                
-                lastDurationRef.current = currentDuration;
               } catch { /* ignore */ }
             }
             
-            // Also detect ad end on buffering after ad
+            // Detect ad end when buffering returns to our video
             if (state === window.YT.PlayerState.BUFFERING && adDetectedRef.current) {
               setTimeout(() => {
                 if (playerRef.current) {
                   try {
-                    const currentDuration = playerRef.current.getDuration();
                     const videoData = playerRef.current.getVideoData();
-                    
-                    if (videoData?.video_id === initialVideoIdRef.current && 
-                        currentDuration > 60 && adDetectedRef.current) {
+                    if (videoData?.video_id === initialVideoIdRef.current && adDetectedRef.current) {
                       adDetectedRef.current = false;
-                      onAdEnd?.();
+                      onAdEndRef.current?.();
                     }
                   } catch { /* ignore */ }
                 }
@@ -220,21 +218,15 @@ export function YouTubePlayer({
       }
       
       timeUpdateIntervalRef.current = setInterval(() => {
-        if (playerRef.current && onTimeUpdate && !adDetectedRef.current) {
+        if (playerRef.current && !adDetectedRef.current) {
           try {
             const currentTime = playerRef.current.getCurrentTime();
             if (typeof currentTime === 'number' && !isNaN(currentTime)) {
-              // Convert video time to audio/song time
-              // songTime = videoTime + videoGap
-              // If videoGap > 0: video started after audio, so song time is ahead of video
-              // If videoGap < 0: video started before audio, so song time is behind video
               const videoGapSeconds = videoGap / 1000;
               const songTime = (currentTime + videoGapSeconds) * 1000;
-              onTimeUpdate(songTime);
+              onTimeUpdateRef.current?.(songTime);
             }
-          } catch (e) {
-            // Player not ready yet
-          }
+          } catch { /* Player not ready yet */ }
         }
       }, 100);
     }, 100);
@@ -242,20 +234,17 @@ export function YouTubePlayer({
     return () => {
       clearTimeout(initTimeout);
       if (playerRef.current) {
-        try {
-          playerRef.current.destroy();
-        } catch (e) {
-          // Ignore destroy errors
-        }
+        try { playerRef.current.destroy(); } catch { /* ignore */ }
         playerRef.current = null;
       }
       if (timeUpdateIntervalRef.current) {
         clearInterval(timeUpdateIntervalRef.current);
+        timeUpdateIntervalRef.current = null;
       }
     };
-  }, [isApiLoaded, videoId, videoGap, onReady, onTimeUpdate, onEnded, onAdStart, onAdEnd, startTime]);
+  }, [isApiLoaded, videoId, videoGap, startTime, interactive]);
   
-  // Handle play/pause
+  // Handle play/pause (only triggers when isPlaying actually changes)
   useEffect(() => {
     if (!playerRef.current) return;
     
@@ -265,9 +254,7 @@ export function YouTubePlayer({
       } else {
         playerRef.current.pauseVideo();
       }
-    } catch (e) {
-      // Player not ready
-    }
+    } catch { /* Player not ready */ }
   }, [isPlaying]);
   
   return (

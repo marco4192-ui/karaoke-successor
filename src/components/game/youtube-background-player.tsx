@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { YTPlayer } from '@/types/youtube';
 import { extractYouTubeId } from './youtube-player';
 
@@ -37,11 +37,24 @@ export function YouTubeBackgroundPlayer({
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YTPlayer | null>(null);
   const [isApiLoaded, setIsApiLoaded] = useState(false);
-  const timeUpdateIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timeUpdateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const playerIdRef = useRef<string>(`youtube-bg-player-${++playerCounter}`);
-  const lastStateRef = useRef<number>(-1);
   const adDetectedRef = useRef<boolean>(false);
-  const wasPlayingBeforeAdRef = useRef<boolean>(false);
+  const initialVideoIdRef = useRef<string>(videoId);
+
+  // Store callback props in refs to avoid re-initialization on identity changes
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
+  const onTimeUpdateRef = useRef(onTimeUpdate);
+  onTimeUpdateRef.current = onTimeUpdate;
+  const onEndedRef = useRef(onEnded);
+  onEndedRef.current = onEnded;
+  const onAdStartRef = useRef(onAdStart);
+  onAdStartRef.current = onAdStart;
+  const onAdEndRef = useRef(onAdEnd);
+  onAdEndRef.current = onAdEnd;
+  const isPlayingRef = useRef(isPlaying);
+  isPlayingRef.current = isPlaying;
   
   // Load YouTube IFrame API
   useEffect(() => {
@@ -82,33 +95,8 @@ export function YouTubeBackgroundPlayer({
     };
   }, []);
   
-  // Detect ads based on player state anomalies
-  const detectAd = useCallback((player: YTPlayer) => {
-    try {
-      const currentTime = player.getCurrentTime();
-      const duration = player.getDuration();
-      const state = player.getPlayerState();
-      
-      // Ad detection heuristics:
-      // 1. If video duration suddenly changes (ads are usually short)
-      // 2. If we're playing but time is not advancing normally
-      // 3. If video data changes (ad video vs main video)
-      
-      // Check if current time is valid
-      if (currentTime > 0 && duration > 0) {
-        // If video is playing but time is near start with short duration, likely an ad
-        if (state === window.YT.PlayerState.PLAYING && duration < 60 && currentTime < 5) {
-          return true;
-        }
-      }
-      
-      return false;
-    } catch {
-      return false;
-    }
-  }, []);
-  
   // Initialize player when API is loaded and videoId changes
+  // NOTE: Callback props are NOT in the dependency array — they are read via refs.
   useEffect(() => {
     if (!isApiLoaded || !containerRef.current) return;
     
@@ -121,6 +109,7 @@ export function YouTubeBackgroundPlayer({
     // Generate new player ID for this video
     playerIdRef.current = `youtube-bg-player-${++playerCounter}`;
     adDetectedRef.current = false;
+    initialVideoIdRef.current = videoId;
     
     const videoGapSeconds = videoGap / 1000;
     const adjustedStartTime = Math.max(0, (startTime / 1000) - videoGapSeconds);
@@ -142,49 +131,49 @@ export function YouTubeBackgroundPlayer({
         },
         events: {
           onReady: (event) => {
-            console.log('[YouTube] Player ready');
-            if (muted) {
-              event.target.mute();
+            if (muted) event.target.mute();
+            // Auto-play if game already signaled play
+            if (isPlayingRef.current) {
+              try { event.target.playVideo(); } catch { /* ignore */ }
             }
-            onReady?.();
+            onReadyRef.current?.();
           },
           onStateChange: (event) => {
             const state = event.data;
-            const prevState = lastStateRef.current;
-            lastStateRef.current = state;
             
-            console.log('[YouTube] State changed:', {
-              state,
-              prevState,
-              stateName: state === -1 ? 'UNSTARTED' : 
-                         state === 0 ? 'ENDED' :
-                         state === 1 ? 'PLAYING' :
-                         state === 2 ? 'PAUSED' :
-                         state === 3 ? 'BUFFERING' :
-                         state === 5 ? 'CUED' : 'UNKNOWN'
-            });
-            
-            // Ad detection logic
-            if (state === window.YT.PlayerState.PLAYING) {
-              const player = event.target;
-              
-              // Check for ad
-              const isAdPlaying = detectAd(player);
-              
-              if (isAdPlaying && !adDetectedRef.current) {
-                console.log('[YouTube] Ad detected!');
-                adDetectedRef.current = true;
-                wasPlayingBeforeAdRef.current = true;
-                onAdStart?.();
-              } else if (!isAdPlaying && adDetectedRef.current) {
-                console.log('[YouTube] Ad ended, resuming');
-                adDetectedRef.current = false;
-                onAdEnd?.();
-              }
-            }
+            if (!window.YT?.PlayerState) return;
             
             if (state === window.YT.PlayerState.ENDED) {
-              onEnded?.();
+              onEndedRef.current?.();
+            }
+            
+            // Ad detection: only flag when video ID changes
+            if (state === window.YT.PlayerState.PLAYING && playerRef.current) {
+              try {
+                const videoData = playerRef.current.getVideoData();
+                const isAd = videoData?.video_id && videoData.video_id !== initialVideoIdRef.current;
+                if (isAd && !adDetectedRef.current) {
+                  adDetectedRef.current = true;
+                  onAdStartRef.current?.();
+                } else if (!isAd && adDetectedRef.current) {
+                  adDetectedRef.current = false;
+                  onAdEndRef.current?.();
+                }
+              } catch { /* ignore */ }
+            }
+            
+            if (state === window.YT.PlayerState.BUFFERING && adDetectedRef.current) {
+              setTimeout(() => {
+                if (playerRef.current) {
+                  try {
+                    const videoData = playerRef.current.getVideoData();
+                    if (videoData?.video_id === initialVideoIdRef.current) {
+                      adDetectedRef.current = false;
+                      onAdEndRef.current?.();
+                    }
+                  } catch { /* ignore */ }
+                }
+              }, 500);
             }
           },
           onError: (event) => {
@@ -199,17 +188,15 @@ export function YouTubeBackgroundPlayer({
       }
       
       timeUpdateIntervalRef.current = setInterval(() => {
-        if (playerRef.current && onTimeUpdate) {
+        if (playerRef.current && !adDetectedRef.current) {
           try {
             const currentTime = playerRef.current.getCurrentTime();
             if (typeof currentTime === 'number' && !isNaN(currentTime)) {
               const videoGapSeconds = videoGap / 1000;
               const songTime = (currentTime + videoGapSeconds) * 1000;
-              onTimeUpdate(songTime);
+              onTimeUpdateRef.current?.(songTime);
             }
-          } catch (e) {
-            // Player not ready yet
-          }
+          } catch { /* Player not ready yet */ }
         }
       }, 100);
     }, 100);
@@ -217,18 +204,15 @@ export function YouTubeBackgroundPlayer({
     return () => {
       clearTimeout(initTimeout);
       if (playerRef.current) {
-        try {
-          playerRef.current.destroy();
-        } catch (e) {
-          // Ignore destroy errors
-        }
+        try { playerRef.current.destroy(); } catch { /* ignore */ }
         playerRef.current = null;
       }
       if (timeUpdateIntervalRef.current) {
         clearInterval(timeUpdateIntervalRef.current);
+        timeUpdateIntervalRef.current = null;
       }
     };
-  }, [isApiLoaded, videoId, videoGap, onReady, onTimeUpdate, onEnded, onAdStart, onAdEnd, startTime, muted, showControls, detectAd]);
+  }, [isApiLoaded, videoId, videoGap, startTime, muted, showControls]);
   
   // Handle play/pause
   useEffect(() => {

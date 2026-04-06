@@ -275,6 +275,18 @@ export function JukeboxPlayerView({ j }: { j: UseJukeboxReturn }) {
                   isPlaying={j.isPlaying}
                   startTime={0}
                 />
+              ) : j.currentSong!.youtubeUrl ? (
+                <YouTubePlayer
+                  videoId={extractYouTubeId(j.currentSong!.youtubeUrl) || ''}
+                  videoGap={j.currentSong!.videoGap || 0}
+                  onReady={() => {}}
+                  onTimeUpdate={(time) => j.setYoutubeTime(time)}
+                  onEnded={j.handleMediaEnd}
+                  onAdStart={() => j.setIsAdPlaying(true)}
+                  onAdEnd={() => j.setIsAdPlaying(false)}
+                  isPlaying={j.isPlaying}
+                  startTime={0}
+                />
               ) : j.currentSong!.videoBackground ? (
                 <video
                   ref={j.videoRef}
@@ -284,13 +296,6 @@ export function JukeboxPlayerView({ j }: { j: UseJukeboxReturn }) {
                   loop={false}
                   onEnded={j.handleMediaEnd}
                   playsInline
-                />
-              ) : j.currentSong!.youtubeUrl ? (
-                <iframe
-                  src={`https://www.youtube.com/embed/${extractYouTubeId(j.currentSong!.youtubeUrl)}?autoplay=1&mute=0&controls=0&showinfo=0&rel=0`}
-                  className="absolute inset-0 w-full h-full"
-                  allow="autoplay; encrypted-media"
-                  allowFullScreen
                 />
               ) : (
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-600/30 to-blue-600/30 flex items-center justify-center">

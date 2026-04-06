@@ -228,9 +228,12 @@ export function useJukebox() {
   useEffect(() => {
     if (!showLyrics || !currentSong || !currentSong.lyrics?.length) return;
     const updateCurrentLyric = () => {
-      const currentTime = (audioRef.current?.currentTime || videoRef.current?.currentTime || 0) * 1000;
+      // Use YouTube time if available, otherwise fall back to audio/video element time
+      const currentTimeMs = youtubeTime > 0
+        ? youtubeTime
+        : (audioRef.current?.currentTime || videoRef.current?.currentTime || 0) * 1000;
       for (let i = currentSong.lyrics.length - 1; i >= 0; i--) {
-        if (currentTime >= currentSong.lyrics[i].startTime) {
+        if (currentTimeMs >= currentSong.lyrics[i].startTime) {
           setCurrentLyricIndex(i);
           break;
         }
@@ -238,7 +241,7 @@ export function useJukebox() {
     };
     const interval = setInterval(updateCurrentLyric, 100);
     return () => clearInterval(interval);
-  }, [showLyrics, currentSong]);
+  }, [showLyrics, currentSong, youtubeTime]);
 
   // Up next songs
   const upNext = useMemo(() => {
