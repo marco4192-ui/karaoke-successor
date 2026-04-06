@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { getAllSongs, reloadLibrary, clearCustomSongs, replaceCustomSongs, setScanInProgress } from '@/lib/game/song-library';
+import { getAllSongs, clearCustomSongs, replaceCustomSongs, setScanInProgress, invalidateSongCache } from '@/lib/game/song-library';
 import { Song } from '@/types/game';
 import { isTauri } from '@/lib/tauri-file-storage';
 import { safeAlert, safeConfirm, safePrompt } from '@/lib/safe-dialog';
@@ -228,7 +228,12 @@ export function useFolderScanner(): UseFolderScannerReturn {
           replaceCustomSongs(songsToImport);
         }
 
-        reloadLibrary();
+        // CRITICAL: Only invalidate songCache, NOT customSongsCache.
+        // replaceCustomSongs already set customSongsCache correctly.
+        // reloadLibrary() would clear it, causing getAllSongs() to return [].
+        // Note: blob URL cache was already cleared by clearCustomSongs() at scan start.
+        // New blob URLs created during scan are still valid.
+        invalidateSongCache();
         setSongCount(getAllSongs().length);
         setFolderSaveComplete(true);
         setScanProgress({

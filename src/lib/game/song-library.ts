@@ -52,6 +52,13 @@ export function clearSongCache(): void {
   songCacheTimestamp = 0;
 }
 
+/** Invalidate only the combined song cache, preserving customSongsCache.
+ *  Use after replaceCustomSongs() to avoid clearing the freshly set cache. */
+export function invalidateSongCache(): void {
+  songCache = null;
+  songCacheTimestamp = 0;
+}
+
 // Get all songs (sample + custom)
 export function getAllSongs(): Song[] {
   // Auto-expire cache after TTL
