@@ -228,11 +228,64 @@ export async function GET(request: NextRequest) {
         if (client.profile) {
           profileToClient.delete(client.profile.id);
         }
+        // Release remote control if this client had it
+        if (remoteControlState.lockedBy === clientId) {
+          remoteControlState = { lockedBy: null, lockedByName: null, lockedAt: null, pendingCommands: [] };
+        }
         mobileClients.delete(clientId);
         latestPitchData.delete(clientId);
         return Response.json({ success: true, message: 'Disconnected' });
       }
       return Response.json({ success: false, message: 'Client not found' }, { status: 404 });
+
+    case 'kick':
+      // Admin kick: forcefully disconnect a client (called from settings)
+      {
+        const kickClientId = searchParams.get('kickClientId');
+        if (kickClientId && mobileClients.has(kickClientId)) {
+          const client = mobileClients.get(kickClientId)!;
+          const kickedName = client.profile?.name || client.name;
+          connectionCodes.delete(client.connectionCode);
+          if (client.profile) {
+            profileToClient.delete(client.profile.id);
+          }
+          // Release remote control if this client had it
+          if (remoteControlState.lockedBy === kickClientId) {
+            remoteControlState = { lockedBy: null, lockedByName: null, lockedAt: null, pendingCommands: [] };
+          }
+          // Remove their queue items
+          songQueue = songQueue.filter(q => q.companionCode !== client.connectionCode);
+          mobileClients.delete(kickClientId);
+          latestPitchData.delete(kickClientId);
+          console.log(`[Mobile API] Kicked client: ${kickedName} (${client.connectionCode})`);
+          return Response.json({ success: true, message: `Kicked ${kickedName}` });
+        }
+        return Response.json({ success: false, message: 'Client not found' }, { status: 404 });
+      }
+
+    case 'clients':
+      // Alias for status (used by companion list component)
+      // Return all connected clients with their profiles and detailed info
+      return Response.json({
+        success: true,
+        clients: Array.from(mobileClients.values()).map(c => ({
+          id: c.id,
+          connectionCode: c.connectionCode,
+          name: c.name,
+          type: c.type,
+          connected: c.connected,
+          lastActivity: c.lastActivity,
+          profile: c.profile,
+          queueCount: c.queueCount,
+          hasPitch: c.pitchData !== null,
+          hasRemoteControl: c.hasRemoteControl,
+        })),
+        connectedCount: mobileClients.size,
+        remoteControl: {
+          isLocked: remoteControlState.lockedBy !== null,
+          lockedByName: remoteControlState.lockedByName,
+        },
+      });
 
     case 'getpitch':
       // PC polls this to get the latest pitch from all mobile devices
@@ -832,6 +885,47 @@ export async function POST(request: NextRequest) {
           success: true, 
           message: 'Skip ad command sent',
         });
+
+      case 'assigncharacter':
+        // Assign a character profile to a companion (called from settings)
+        {
+          const assignPayload = payload as { targetClientId: string; profile: MobileProfile | null };
+          const targetClientId = assignPayload.targetClientId;
+          
+          if (targetClientId && mobileClients.has(targetClientId)) {
+            const targetClient = mobileClients.get(targetClientId)!;
+            
+            // Clear old profile mapping
+            if (targetClient.profile) {
+              profileToClient.delete(targetClient.profile.id);
+            }
+            
+            // Set new profile
+            targetClient.profile = assignPayload.profile;
+            if (assignPayload.profile) {
+              targetClient.name = assignPayload.profile.name;
+              profileToClient.set(assignPayload.profile.id, targetClientId);
+            } else {
+              targetClient.name = 'Mobile Device';
+            }
+            
+            mobileClients.set(targetClientId, targetClient);
+            
+            return Response.json({
+              success: true,
+              message: assignPayload.profile
+                ? `Character "${assignPayload.profile.name}" assigned to companion`
+                : 'Character removed from companion',
+              client: {
+                id: targetClient.id,
+                connectionCode: targetClient.connectionCode,
+                name: targetClient.name,
+                profile: targetClient.profile,
+              },
+            });
+          }
+          return Response.json({ success: false, message: 'Client not found' }, { status: 404 });
+        }
 
       case 'heartbeat':
         // Keep connection alive

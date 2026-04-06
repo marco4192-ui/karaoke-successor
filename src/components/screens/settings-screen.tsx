@@ -22,6 +22,7 @@ import { GeneralTab } from '@/components/settings/general-tab';
 import { GraphicSoundTab } from '@/components/settings/graphic-sound-tab';
 import { AboutTab } from '@/components/settings/about-tab';
 import { MobileDeviceMicrophoneSection } from '@/components/settings/mobile-device-section';
+import { CompanionListSection } from '@/components/settings/companion-list-section';
 import { SettingsTabBar, SettingsTab } from '@/components/settings/settings-tab-bar';
 // Hooks
 import { useFolderScanner } from '@/hooks/use-folder-scanner';
@@ -278,6 +279,7 @@ function SettingsScreen() {
 
       {activeTab === 'mobile' && (
         <div className="space-y-6">
+          <CompanionListSection />
           <MobileDeviceMicrophoneSection />
         </div>
       )}
@@ -314,4 +316,4 @@ function SettingsScreen() {
   );
 }
 
-export { SettingsScreen, AIAssetsGenerator, EditorSettingsView, MobileDeviceMicrophoneSection };
+export { SettingsScreen, AIAssetsGenerator, EditorSettingsView, MobileDeviceMicrophoneSection, CompanionListSection };
