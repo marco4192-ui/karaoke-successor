@@ -436,15 +436,25 @@ export async function getSongByIdWithLyrics(id: string): Promise<Song | undefine
     return restoredSong;
   }
   
-  // If TXT is stored in IndexedDB, load lyrics
-  if (restoredSong.storedTxt) {
-    console.log('[SongLibrary] getSongByIdWithLyrics: Loading lyrics from IndexedDB for', id);
+  // If lyrics are missing, try to load them.
+  // Trigger loading if storedTxt is set (IndexedDB cache) OR if relativeTxtPath exists (filesystem).
+  // This ensures lyrics are loaded even if storedTxt was never set (e.g. scan cache miss).
+  const canLoadLyrics = restoredSong.storedTxt || !!restoredSong.relativeTxtPath;
+  if (canLoadLyrics) {
+    console.log('[SongLibrary] getSongByIdWithLyrics: Loading lyrics for', id, {
+      storedTxt: restoredSong.storedTxt,
+      relativeTxtPath: restoredSong.relativeTxtPath,
+    });
     const lyrics = await loadSongLyrics(restoredSong);
     if (lyrics.length > 0) {
       console.log('[SongLibrary] getSongByIdWithLyrics: Loaded', lyrics.length, 'lyric lines');
-      return { ...restoredSong, lyrics };
+      // Update storedTxt flag since we successfully loaded lyrics
+      if (!restoredSong.storedTxt) {
+        try { updateSong(id, { storedTxt: true }); } catch {}
+      }
+      return { ...restoredSong, lyrics, storedTxt: true };
     } else {
-      console.warn('[SongLibrary] getSongByIdWithLyrics: Failed to load lyrics from IndexedDB');
+      console.warn('[SongLibrary] getSongByIdWithLyrics: Failed to load lyrics for song', id);
     }
   }
   

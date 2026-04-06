@@ -295,21 +295,25 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   const songsWithoutLanguage = songs.filter(s => !s.language).length;
   const incompleteSongs = songs.filter(s => !s.genre || !s.language).length;
 
-  // Handle song selection - load lyrics from IndexedDB if needed
+  // Handle song selection - load lyrics from IndexedDB/filesystem if needed
   const handleSelectSong = async (song: Song) => {
     console.log('[EditorScreen] Selecting song:', song.id, song.title);
     console.log('[EditorScreen] Song has lyrics:', song.lyrics?.length || 0);
     console.log('[EditorScreen] Song storedTxt:', song.storedTxt);
+    console.log('[EditorScreen] Song relativeTxtPath:', song.relativeTxtPath);
     
-    // If song has no lyrics but has storedTxt, load from IndexedDB
-    if ((!song.lyrics || song.lyrics.length === 0) && song.storedTxt) {
+    // If song has no lyrics but can load them (IndexedDB cache or filesystem)
+    const needsLyrics = !song.lyrics || song.lyrics.length === 0;
+    const canLoadLyrics = song.storedTxt || !!song.relativeTxtPath;
+    
+    if (needsLyrics && canLoadLyrics) {
       setIsLoadingLyrics(true);
-      console.log('[EditorScreen] Loading lyrics from IndexedDB...');
+      console.log('[EditorScreen] Loading lyrics...');
       
       try {
         const songWithLyrics = await getSongByIdWithLyrics(song.id);
-        if (songWithLyrics) {
-          console.log('[EditorScreen] Lyrics loaded, lines:', songWithLyrics.lyrics?.length || 0);
+        if (songWithLyrics && songWithLyrics.lyrics && songWithLyrics.lyrics.length > 0) {
+          console.log('[EditorScreen] Lyrics loaded, lines:', songWithLyrics.lyrics.length);
           setSelectedSong(songWithLyrics);
         } else {
           console.warn('[EditorScreen] Failed to load song with lyrics');
@@ -322,7 +326,6 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
         setIsLoadingLyrics(false);
       }
     } else {
-      // Song already has lyrics or no storedTxt
       setSelectedSong(song);
     }
   };
