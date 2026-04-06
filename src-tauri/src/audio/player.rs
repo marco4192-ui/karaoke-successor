@@ -134,13 +134,13 @@ impl NativeAudioPlayer {
 
         match sample_format {
             SampleFormat::F32 => {
-                self.build_stream::<f32>(&device, config, resampled, channels, decoded.duration_ms)
+                self.build_stream::<f32>(&device, config, resampled, channels, decoded.duration_ms)?;
             }
             SampleFormat::I16 => {
-                self.build_stream::<i16>(&device, config, resampled, channels, decoded.duration_ms)
+                self.build_stream::<i16>(&device, config, resampled, channels, decoded.duration_ms)?;
             }
             SampleFormat::U16 => {
-                self.build_stream::<u16>(&device, config, resampled, channels, decoded.duration_ms)
+                self.build_stream::<u16>(&device, config, resampled, channels, decoded.duration_ms)?;
             }
             _ => return Err(format!("Unsupported sample format: {:?}", sample_format)),
         }
@@ -158,7 +158,7 @@ impl NativeAudioPlayer {
         duration_ms: u64,
     ) -> Result<(), String>
     where
-        T: cpal::Sample + cpal::SizedSample + 'static,
+        T: cpal::Sample + cpal::SizedSample + Default + 'static,
     {
         let sample_rate = config.sample_rate.0;
         let frame_size = channels as usize;
@@ -532,8 +532,19 @@ fn resolve_device(device_id: &str) -> Result<(cpal::Device, String), String> {
     // fall through to the default device.
     let host_id = match host_name {
         "WASAPI" => cpal::HostId::Wasapi,
-        #[cfg(feature = "asio")]
-        "ASIO" => cpal::HostId::Asio,
+        // ASIO requires the "asio" feature on cpal (not enabled by default).
+        // Without it, ASIO requests fall through to the default device.
+        #[allow(unused)]
+        "ASIO" => {
+            #[cfg(feature = "asio")]
+            {
+                cpal::HostId::Asio
+            }
+            #[cfg(not(feature = "asio"))]
+            {
+                return resolve_device("default");
+            }
+        }
         _ => {
             // Unknown or unavailable host – fall back to the system default device.
             let host = cpal::default_host();
