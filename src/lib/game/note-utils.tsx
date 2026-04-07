@@ -15,6 +15,7 @@ export const BASE_PITCH = 48; // C3 - lowest pitch to display
 /**
  * Get note shape classes based on theme setting
  * Used by both NoteLane and GameScreen components
+ * Each shape produces a clearly distinct visual appearance.
  */
 export function getNoteShapeClasses(noteStyle: NoteShapeStyle): {
   baseClass: string;
@@ -23,29 +24,45 @@ export function getNoteShapeClasses(noteStyle: NoteShapeStyle): {
 } {
   switch (noteStyle) {
     case 'sharp':
+      // Sharp corners with chamfered/angled edges for a distinctive look
       return {
-        baseClass: 'rounded-none',
-        activeClass: 'ring-2 ring-white/80',
-        style: { clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }
+        baseClass: '',
+        activeClass: 'ring-2 ring-white/80 brightness-110',
+        style: {
+          clipPath: 'polygon(4% 0%, 100% 0%, 96% 100%, 0% 100%)',
+          transition: 'clip-path 0.3s ease, transform 0.15s ease',
+        }
       };
     case 'pill':
+      // Pill/capsule shape with very rounded ends
       return {
-        baseClass: 'rounded-full',
-        activeClass: 'ring-2 ring-white/60 ring-offset-1',
-        style: { borderRadius: '9999px' }
+        baseClass: '',
+        activeClass: 'ring-2 ring-white/60 brightness-110',
+        style: {
+          borderRadius: '9999px',
+          transition: 'border-radius 0.3s ease, transform 0.15s ease',
+        }
       };
     case 'diamond':
+      // Diamond/rhombus shape — note shrinks to show diamond outline
       return {
-        baseClass: 'rounded-sm',
-        activeClass: 'ring-2 ring-white/80',
-        style: { clipPath: 'polygon(15% 50%, 50% 0, 85% 50%, 50% 100%)' }
+        baseClass: '',
+        activeClass: 'ring-2 ring-white/80 brightness-125 scale-110',
+        style: {
+          clipPath: 'polygon(10% 50%, 50% 5%, 90% 50%, 50% 95%)',
+          transition: 'clip-path 0.3s ease, transform 0.15s ease',
+        }
       };
     case 'rounded':
     default:
+      // Standard rounded rectangle with smooth corners
       return {
-        baseClass: 'rounded-md',
+        baseClass: '',
         activeClass: 'ring-2 ring-white/80 brightness-125',
-        style: {}
+        style: {
+          borderRadius: '8px',
+          transition: 'border-radius 0.3s ease, transform 0.15s ease',
+        }
       };
   }
 }
@@ -62,28 +79,40 @@ export function getNoteShapeClassesForLane(noteStyle: NoteShapeStyle): {
   switch (noteStyle) {
     case 'sharp':
       return {
-        baseClass: 'rounded-none',
-        activeClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent scale-125',
-        style: { clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }
+        baseClass: '',
+        activeClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent scale-125 brightness-125',
+        style: {
+          clipPath: 'polygon(4% 0%, 100% 0%, 96% 100%, 0% 100%)',
+          transition: 'clip-path 0.3s ease, transform 0.15s ease',
+        }
       };
     case 'pill':
       return {
-        baseClass: 'rounded-full',
-        activeClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent scale-125',
-        style: { borderRadius: '9999px' }
+        baseClass: '',
+        activeClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent scale-125 brightness-110',
+        style: {
+          borderRadius: '9999px',
+          transition: 'border-radius 0.3s ease, transform 0.15s ease',
+        }
       };
     case 'diamond':
       return {
-        baseClass: 'rounded-sm',
-        activeClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent scale-125',
-        style: { clipPath: 'polygon(15% 50%, 50% 0, 85% 50%, 50% 100%)' }
+        baseClass: '',
+        activeClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent scale-125 brightness-125',
+        style: {
+          clipPath: 'polygon(10% 50%, 50% 5%, 90% 50%, 50% 95%)',
+          transition: 'clip-path 0.3s ease, transform 0.15s ease',
+        }
       };
     case 'rounded':
     default:
       return {
-        baseClass: 'rounded-xl',
-        activeClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent scale-125',
-        style: {}
+        baseClass: '',
+        activeClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent scale-125 brightness-125',
+        style: {
+          borderRadius: '12px',
+          transition: 'border-radius 0.3s ease, transform 0.15s ease',
+        }
       };
   }
 }
@@ -91,6 +120,7 @@ export function getNoteShapeClassesForLane(noteStyle: NoteShapeStyle): {
 /**
  * Get note display style classes based on display mode
  * Controls how notes are visually rendered (fill-level, color-feedback, glow-intensity)
+ * Each mode provides a clearly distinct and visually appealing effect.
  */
 export function getNoteDisplayStyleClasses(
   displayStyle: NoteDisplayStyle,
@@ -103,50 +133,98 @@ export function getNoteDisplayStyleClasses(
   overlayElement: React.ReactNode | null;
 } {
   switch (displayStyle) {
-    case 'fill-level':
-      // Shows a fill indicator inside the note based on accuracy
+    case 'fill-level': {
+      // Fill-level: A bright overlay fills from left to right based on accuracy.
+      // Unfilled portion dims to show gaps visually.
+      const fillColor = isGolden
+        ? 'rgba(251, 191, 36, 0.55)'
+        : isBonus
+          ? 'rgba(236, 72, 153, 0.55)'
+          : 'rgba(34, 211, 238, 0.55)';
       return {
         additionalClasses: 'relative overflow-hidden',
         inlineStyle: {},
         overlayElement: (
-          <div 
-            className="absolute inset-0 bg-white/30 transition-all duration-100"
-            style={{ 
-              width: `${accuracy * 100}%`,
-              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4))'
-            }}
-          />
+          <>
+            {/* Bright fill overlay */}
+            <div
+              className="absolute inset-y-0 left-0 transition-all duration-200 ease-out"
+              style={{
+                width: `${accuracy * 100}%`,
+                background: `linear-gradient(90deg, ${fillColor}, rgba(255,255,255,0.35))`,
+              }}
+            />
+            {/* Dimming overlay on unfilled portion */}
+            <div
+              className="absolute inset-0 transition-all duration-200 ease-out"
+              style={{
+                background: `linear-gradient(90deg, transparent ${accuracy * 100}%, rgba(0,0,0,0.45) ${accuracy * 100}%)`,
+              }}
+            />
+          </>
         )
       };
-      
-    case 'color-feedback':
-      // Changes note color based on accuracy
-      // Green for good, yellow for okay, red for bad
-      const hue = accuracy * 120; // 0 = red, 60 = yellow, 120 = green
+    }
+
+    case 'color-feedback': {
+      // Color-feedback: Note background color shifts from red→orange→yellow→green
+      // based on accuracy. Provides immediate visual scoring feedback.
+      let bgColor: string;
+      let borderColor: string;
+      if (accuracy > 0.85) {
+        bgColor = 'linear-gradient(90deg, #22c55e, #4ade80)'; // green
+        borderColor = 'rgba(34,197,94,0.8)';
+      } else if (accuracy > 0.6) {
+        bgColor = 'linear-gradient(90deg, #eab308, #facc15)'; // yellow
+        borderColor = 'rgba(234,179,8,0.8)';
+      } else if (accuracy > 0.35) {
+        bgColor = 'linear-gradient(90deg, #f97316, #fb923c)'; // orange
+        borderColor = 'rgba(249,115,22,0.8)';
+      } else {
+        bgColor = 'linear-gradient(90deg, #ef4444, #f87171)'; // red
+        borderColor = 'rgba(239,68,68,0.8)';
+      }
+      // Keep golden/bonus colors for special notes
+      const finalBg = isGolden
+        ? 'linear-gradient(90deg, #f59e0b, #fbbf24)'
+        : isBonus
+          ? 'linear-gradient(90deg, #ec4899, #f472b6)'
+          : bgColor;
       return {
-        additionalClasses: 'transition-all duration-150',
+        additionalClasses: 'transition-all duration-200 ease-out',
         inlineStyle: {
-          filter: `hue-rotate(${hue - 180}deg) saturate(${0.5 + accuracy * 0.5})`,
+          background: finalBg,
+          boxShadow: `0 0 12px ${borderColor}, inset 0 1px 0 rgba(255,255,255,0.2)`,
         },
         overlayElement: null
       };
-      
-    case 'glow-intensity':
-      // Adds a glow effect based on accuracy
-      const glowIntensity = 0.3 + accuracy * 0.7;
-      const glowColor = isGolden 
-        ? `rgba(251, 191, 36, ${glowIntensity})` 
-        : isBonus 
+    }
+
+    case 'glow-intensity': {
+      // Glow-intensity: Strong luminous glow effect that pulses with accuracy.
+      // High accuracy = bright vivid glow, low = dim.
+      const glowIntensity = 0.2 + accuracy * 0.8;
+      const glowSpread1 = 8 + accuracy * 24;
+      const glowSpread2 = 16 + accuracy * 48;
+      const glowColor = isGolden
+        ? `rgba(251, 191, 36, ${glowIntensity})`
+        : isBonus
           ? `rgba(236, 72, 153, ${glowIntensity})`
           : `rgba(34, 211, 238, ${glowIntensity})`;
+      // Add a subtle inner glow for better visibility
+      const innerGlow = accuracy > 0.5
+        ? `inset 0 0 ${8 + accuracy * 12}px rgba(255,255,255,${accuracy * 0.25})`
+        : 'none';
       return {
-        additionalClasses: 'transition-all duration-100',
+        additionalClasses: 'transition-all duration-200 ease-out',
         inlineStyle: {
-          boxShadow: `0 0 ${20 + accuracy * 40}px ${glowColor}, 0 0 ${40 + accuracy * 60}px ${glowColor}`,
+          boxShadow: `${innerGlow}, 0 0 ${glowSpread1}px ${glowColor}, 0 0 ${glowSpread2}px ${glowColor}`,
+          filter: `brightness(${0.85 + accuracy * 0.35})`,
         },
         overlayElement: null
       };
-      
+    }
+
     case 'classic':
     default:
       return {
