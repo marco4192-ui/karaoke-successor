@@ -19,6 +19,7 @@
 // - A hyphen "-" as lyric text is just normal text, NOT a line break
 
 import { Song, Note, LyricLine, Difficulty, DuetPlayer, midiToFrequency } from '@/types/game';
+import { isYouTubeUrl, isDirectVideoUrl } from '@/components/game/youtube-player';
 
 export interface UltraStarNote {
   type: ':' | '*' | 'F' | 'R' | 'G';
@@ -103,13 +104,17 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
             song.mp3 = value.trim();
             break;
           case 'VIDEO':
-            // Check if this is a YouTube URL
+            // Classify URL: YouTube, direct video file, or local path
             const videoValue = value.trim();
             if (videoValue.startsWith('http://') || videoValue.startsWith('https://')) {
-              // This is a URL (likely YouTube)
-              song.youtubeUrl = videoValue;
-              // Also set video field for backward compatibility
-              song.video = videoValue;
+              if (isYouTubeUrl(videoValue)) {
+                // YouTube URL — store separately for YouTube player
+                song.youtubeUrl = videoValue;
+              } else {
+                // Direct video URL (MP4, WebM, etc.) — play via HTML5 <video> element
+                // Stored in video field, which becomes videoBackground later
+                song.video = videoValue;
+              }
             } else {
               song.video = videoValue;
             }
@@ -393,7 +398,7 @@ export function convertUltraStarToSong(
   // Calculate rating based on note density
   const rating = Math.min(5, Math.max(1, Math.ceil(notesPerMinute / 10)));
 
-  // Determine if video is a YouTube URL or local file
+  // Determine if video is a YouTube URL, direct video URL, or local file
   let videoBackground: string | undefined;
   let youtubeUrl: string | undefined;
   
@@ -402,9 +407,11 @@ export function convertUltraStarToSong(
     youtubeUrl = ultraStar.youtubeUrl;
     videoBackground = undefined; // Don't set videoBackground for YouTube URLs
   } else if (ultraStar.video) {
-    // Local video file
-    if (ultraStar.video.startsWith('http://') || ultraStar.video.startsWith('https://')) {
-      // URL detected - treat as YouTube
+    if (isDirectVideoUrl(ultraStar.video)) {
+      // Direct video URL (MP4, WebM, OGG, etc.) — play via HTML5 <video> element
+      videoBackground = ultraStar.video;
+    } else if (ultraStar.video.startsWith('http://') || ultraStar.video.startsWith('https://')) {
+      // Non-YouTube HTTP URL that isn't a direct video file — treat as YouTube (fallback)
       youtubeUrl = ultraStar.video;
     } else {
       // Local file path
@@ -433,8 +440,8 @@ export function convertUltraStarToSong(
     youtubeUrl,
     videoGap: ultraStar.videoGap,
     audioUrl,
-    // If we have YouTube URL but no audio file, we'll use YouTube's audio
-    hasEmbeddedAudio: !audioUrl && !!youtubeUrl,
+    // If we have video (YouTube or direct URL) but no separate audio, video provides audio
+    hasEmbeddedAudio: !audioUrl && (!!youtubeUrl || !!videoBackground),
     lyrics: lyricLines,
     preview: ultraStar.previewStart ? {
       startTime: ultraStar.previewStart * 1000,
@@ -449,7 +456,7 @@ export function convertUltraStarToSong(
     mp3File: ultraStar.mp3,
     coverFile: ultraStar.cover,
     backgroundFile: ultraStar.background,
-    videoFile: ultraStar.video && !ultraStar.youtubeUrl ? ultraStar.video : undefined,
+    videoFile: ultraStar.video && !ultraStar.youtubeUrl && !(ultraStar.video.startsWith('http://') || ultraStar.video.startsWith('https://')) ? ultraStar.video : undefined,
     previewStart: ultraStar.previewStart,
     previewDuration: ultraStar.previewDuration,
     medleyStartBeat: ultraStar.medleyStartBeat,
