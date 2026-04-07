@@ -715,36 +715,6 @@ async function parseUltraStarFull(txtFile?: File): Promise<{
     const startTime = gap + (note.startBeat * beatDuration);
     const duration = note.duration * beatDuration;
 
-    // Check if this note is ONLY a hyphen - this marks a LINE BREAK
-    const isHyphenSeparator = note.lyric === '-' || (note.lyric.trim() === '-' && note.lyric.length <= 2);
-
-    // Handle hyphen separator as line break
-    if (isHyphenSeparator && currentLineNotes.length > 0) {
-      const lineStartTime = currentLineNotes[0].startTime;
-      const lineEndTime = currentLineNotes[currentLineNotes.length - 1].startTime + 
-                         currentLineNotes[currentLineNotes.length - 1].duration;
-      
-      // Build line text: PRESERVE SPACES between words
-      // Only trim leading whitespace, keep internal and trailing spaces
-      let finalLineText = currentLineText.replace(/^\s+/, '');
-      
-      if (finalLineText) {
-        lyricLines.push({
-          id: `line-${lyricLines.length}`,
-          text: finalLineText,
-          startTime: lineStartTime,
-          endTime: lineEndTime,
-          notes: currentLineNotes,
-          player: currentLinePlayer,
-        });
-      }
-      
-      currentLineNotes = [];
-      currentLineText = '';
-      currentLinePlayer = undefined;
-      continue;
-    }
-
     const convertedNote: Note = {
       id: `note-${lyricLines.length}-${currentLineNotes.length}`,
       pitch: note.pitch + MIDI_BASE_OFFSET,
@@ -757,23 +727,18 @@ async function parseUltraStarFull(txtFile?: File): Promise<{
       player: note.player,
     };
 
-    // Skip hyphen separators as notes
-    if (!isHyphenSeparator) {
-      currentLineNotes.push(convertedNote);
-      // Build line text: concatenate lyrics, spaces are already embedded
-      currentLineText += note.lyric;
-      
-      // Track line player
-      if (currentLinePlayer === undefined) {
-        currentLinePlayer = note.player;
-      } else if (currentLinePlayer !== note.player && note.player !== undefined) {
-        currentLinePlayer = 'both';
-      }
+    currentLineNotes.push(convertedNote);
+    // Build line text: concatenate lyrics, spaces are already embedded
+    currentLineText += note.lyric;
+    
+    // Track line player
+    if (currentLinePlayer === undefined) {
+      currentLinePlayer = note.player;
+    } else if (currentLinePlayer !== note.player && note.player !== undefined) {
+      currentLinePlayer = 'both';
     }
 
-    // Check for line break
-    // IMPORTANT: "- 30" means a new line starts at beat 30. So we must check
-    // BOTH the current note's end beat AND the next note's start beat against lineBreakBeats.
+    // Check for line break: explicit "- <beat>" marker or 8+ beat gap fallback
     const nextNoteStart = i < sortedNotes.length - 1 ? sortedNotes[i + 1].startBeat : -1;
     const isLineBreak = lineBreakBeats.has(noteEndBeat) || 
                         (nextNoteStart >= 0 && lineBreakBeats.has(nextNoteStart)) ||
@@ -789,13 +754,6 @@ async function parseUltraStarFull(txtFile?: File): Promise<{
         // Build line text: PRESERVE SPACES between words
         // Only trim leading whitespace, keep internal and trailing spaces
         let finalLineText = currentLineText.replace(/^\s+/, '');
-        
-        // Remove trailing hyphens that are purely separators (not part of words)
-        if (finalLineText.endsWith(' -')) {
-          finalLineText = finalLineText.slice(0, -2);
-        } else if (finalLineText.endsWith('-') && !finalLineText.endsWith('--')) {
-          finalLineText = finalLineText.slice(0, -1);
-        }
         
         if (finalLineText) {
           lyricLines.push({
