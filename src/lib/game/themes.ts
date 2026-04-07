@@ -441,17 +441,47 @@ export function applyTheme(theme: Theme): void {
     (el as HTMLElement).style.color = theme.colors.textSecondary;
   });
   
-  // Inject dynamic CSS for text-white and text-white/XX overrides based on theme brightness
-  const isLightTheme = theme.colors.background.startsWith('#f') || 
-                       theme.colors.background.startsWith('#F') ||
-                       theme.colors.background.startsWith('#e') ||
-                       theme.colors.background.startsWith('#E') ||
-                       theme.colors.background.startsWith('#d') ||
-                       theme.colors.background.startsWith('#D') ||
-                       theme.colors.text.startsWith('#1') ||
-                       theme.colors.text.startsWith('#2') ||
-                       theme.colors.text.startsWith('#3');
-  
+  // Determine if theme is light using relative luminance (WCAG formula)
+  const hexToRgb = (hex: string): [number, number, number] => {
+    const clean = hex.replace('#', '');
+    return [
+      parseInt(clean.substring(0, 2), 16),
+      parseInt(clean.substring(2, 4), 16),
+      parseInt(clean.substring(4, 6), 16),
+    ];
+  };
+  const [bgR, bgG, bgB] = hexToRgb(theme.colors.background);
+  const sRGB = [bgR / 255, bgG / 255, bgB / 255].map(c =>
+    c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+  );
+  const bgLuminance = 0.2126 * sRGB[0] + 0.7152 * sRGB[1] + 0.0722 * sRGB[2];
+  const isLightTheme = bgLuminance > 0.4;
+
+  // Pre-compute adaptive colors by blending theme text toward background
+  // This replaces the old opacity-based approach which left white text on light bg
+  const blendColor = (baseHex: string, opacity: number): string => {
+    const [r, g, b] = hexToRgb(baseHex);
+    const [br, bg2, bb] = hexToRgb(theme.colors.background);
+    const m = (a: number, bv: number) => Math.round(a * opacity + bv * (1 - opacity));
+    return `rgb(${m(r, br)}, ${m(g, bg2)}, ${m(b, bb)})`;
+  };
+  const blendBg = (opacity: number): string => {
+    const [r, g, b] = hexToRgb(theme.colors.backgroundSecondary || theme.colors.background);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
+  const blendBorder = (opacity: number): string => {
+    const [r, g, b] = hexToRgb(theme.colors.text);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
+
+  const cTextMain = theme.colors.text;
+  const cTextSec = theme.colors.textSecondary;
+  const cText80 = blendColor(cTextMain, 0.8);
+  const cText70 = blendColor(cTextMain, 0.7);
+  const cText60 = blendColor(cTextSec, 0.6);
+  const cText50 = blendColor(cTextSec, 0.5);
+  const cText40 = blendColor(cTextSec, 0.4);
+
   // Create or update dynamic theme styles
   let styleEl = document.getElementById('theme-dynamic-styles');
   if (!styleEl) {
@@ -459,65 +489,54 @@ export function applyTheme(theme: Theme): void {
     styleEl.id = 'theme-dynamic-styles';
     document.head.appendChild(styleEl);
   }
-  
-  // For light themes, we need to adjust text colors
-  if (isLightTheme) {
-    styleEl.textContent = `
-      .theme-adaptive-text { color: ${theme.colors.text} !important; }
-      .theme-adaptive-text-secondary { color: ${theme.colors.textSecondary} !important; }
-      .theme-adaptive-bg { background-color: ${theme.colors.background} !important; }
-      
-      /* Override Tailwind text colors for light themes */
-      .theme-container .text-white { color: ${theme.colors.text} !important; }
-      .theme-container .text-white\\/50 { color: ${theme.colors.textSecondary} !important; opacity: 0.5; }
-      .theme-container .text-white\\/60 { color: ${theme.colors.textSecondary} !important; opacity: 0.6; }
-      .theme-container .text-white\\/70 { color: ${theme.colors.textSecondary} !important; opacity: 0.7; }
-      .theme-container .text-white\\/80 { color: ${theme.colors.text} !important; opacity: 0.8; }
-      .theme-container .text-white\\/90 { color: ${theme.colors.text} !important; opacity: 0.9; }
-      
-      /* Override for direct children of theme-aware components */
-      .theme-override .text-white { color: ${theme.colors.text} !important; }
-      .theme-override .text-white\\/50 { color: ${theme.colors.textSecondary} !important; opacity: 0.5; }
-      .theme-override .text-white\\/60 { color: ${theme.colors.textSecondary} !important; opacity: 0.6; }
-      
-      /* Border overrides for light theme */
-      .theme-container .border-white\\/10 { border-color: ${theme.colors.primary}20 !important; }
-      .theme-container .border-white\\/20 { border-color: ${theme.colors.primary}30 !important; }
-      .theme-container .border-white\\/30 { border-color: ${theme.colors.primary}40 !important; }
-      
-      /* Background overrides for light theme */
-      .theme-container .bg-white\\/5 { background-color: ${theme.colors.backgroundSecondary}80 !important; }
-      .theme-container .bg-white\\/10 { background-color: ${theme.colors.backgroundSecondary} !important; }
-    `;
-  } else {
-    styleEl.textContent = `
-      .theme-adaptive-text { color: ${theme.colors.text} !important; }
-      .theme-adaptive-text-secondary { color: ${theme.colors.textSecondary} !important; }
-      .theme-adaptive-bg { background-color: ${theme.colors.background} !important; }
-      
-      /* Override Tailwind text colors for dark themes */
-      .theme-container .text-white { color: ${theme.colors.text} !important; }
-      .theme-container .text-white\\/50 { color: ${theme.colors.textSecondary} !important; opacity: 0.5; }
-      .theme-container .text-white\\/60 { color: ${theme.colors.textSecondary} !important; opacity: 0.6; }
-      .theme-container .text-white\\/70 { color: ${theme.colors.textSecondary} !important; opacity: 0.7; }
-      .theme-container .text-white\\/80 { color: ${theme.colors.text} !important; opacity: 0.8; }
-      .theme-container .text-white\\/90 { color: ${theme.colors.text} !important; opacity: 0.9; }
-      
-      /* Override for direct children of theme-aware components */
-      .theme-override .text-white { color: ${theme.colors.text} !important; }
-      .theme-override .text-white\\/50 { color: ${theme.colors.textSecondary} !important; opacity: 0.5; }
-      .theme-override .text-white\\/60 { color: ${theme.colors.textSecondary} !important; opacity: 0.6; }
-      
-      /* Border overrides */
-      .theme-container .border-white\\/10 { border-color: ${theme.colors.primary}20 !important; }
-      .theme-container .border-white\\/20 { border-color: ${theme.colors.primary}30 !important; }
-      .theme-container .border-white\\/30 { border-color: ${theme.colors.primary}40 !important; }
-      
-      /* Background overrides */
-      .theme-container .bg-white\\/5 { background-color: ${theme.colors.backgroundSecondary}80 !important; }
-      .theme-container .bg-white\\/10 { background-color: ${theme.colors.backgroundSecondary} !important; }
-    `;
-  }
+
+  // Comprehensive GLOBAL CSS overrides — no longer scoped to .theme-container only
+  styleEl.textContent = `
+    /* === GLOBAL THEME TEXT OVERRIDES === */
+    .text-white { color: ${cTextMain} !important; }
+    .text-white\\/40 { color: ${cText40} !important; }
+    .text-white\\/50 { color: ${cText50} !important; }
+    .text-white\\/60 { color: ${cText60} !important; }
+    .text-white\\/70 { color: ${cText70} !important; }
+    .text-white\\/80 { color: ${cText80} !important; }
+    .text-white\\/90 { color: ${cText80} !important; }
+    .text-white\\/95 { color: ${cTextMain} !important; }
+
+    /* === THEME ADAPTIVE UTILITY CLASSES === */
+    .theme-adaptive-text { color: ${cTextMain} !important; }
+    .theme-adaptive-text-secondary { color: ${cTextSec} !important; }
+    .theme-adaptive-text-muted { color: ${cText60} !important; }
+    .theme-adaptive-bg { background-color: ${theme.colors.background} !important; }
+    .theme-adaptive-bg-secondary { background-color: ${theme.colors.backgroundSecondary || theme.colors.background} !important; }
+
+    /* === GLOBAL BACKGROUND OVERRIDES === */
+    .bg-white\\/5 { background-color: ${blendBg(0.06)} !important; }
+    .bg-white\\/10 { background-color: ${blendBg(0.1)} !important; }
+    .bg-white\\/20 { background-color: ${blendBg(0.2)} !important; }
+    .bg-white\\/30 { background-color: ${blendBg(0.3)} !important; }
+    .bg-white\\/50 { background-color: ${blendBg(0.5)} !important; }
+
+    /* === GLOBAL BORDER OVERRIDES === */
+    .border-white\\/5 { border-color: ${blendBorder(0.08)} !important; }
+    .border-white\\/10 { border-color: ${blendBorder(0.12)} !important; }
+    .border-white\\/20 { border-color: ${blendBorder(0.2)} !important; }
+    .border-white\\/30 { border-color: ${blendBorder(0.3)} !important; }
+
+    /* === SETTINGS PANEL === */
+    .settings-theme-container,
+    .theme-container,
+    .theme-override {
+      background-color: ${isLightTheme ? 'rgba(255,255,255,0.9)' : theme.colors.background} !important;
+      color: ${cTextMain} !important;
+    }
+    .settings-theme-container .bg-white\\/5,
+    .theme-container .bg-white\\/5 {
+      background-color: ${isLightTheme ? 'rgba(0,0,0,0.04)' : blendBg(0.08)} !important;
+    }
+
+    /* === CARD BACKGROUNDS === */
+    .bg-gray-900\\/80 { background-color: ${isLightTheme ? 'rgba(255,255,255,0.85)' : 'rgba(17,24,39,0.8)'} !important; }
+  `;
   
   // Store preference
   if (typeof localStorage !== 'undefined') {
