@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { extractYouTubeId } from '@/components/game/youtube-player';
+import { extractYouTubeId, isYouTubeUrl } from '@/components/game/youtube-player';
 
 interface UseYouTubeGameParams {
   effectiveSong: {
@@ -43,12 +43,12 @@ export function useYouTubeGame({
   const [isAdPlaying, setIsAdPlaying] = useState(false);
   const [adCountdown, setAdCountdown] = useState(0);
 
-  // Extract YouTube ID from song or video background
+  // Extract YouTube ID from song URL or videoBackground (only if it's a YouTube URL)
   const songYoutubeUrl = effectiveSong?.youtubeUrl;
   const videoBackground = effectiveSong?.videoBackground;
   const songYoutubeId = songYoutubeUrl
     ? extractYouTubeId(songYoutubeUrl)
-    : (videoBackground && (videoBackground.startsWith('http://') || videoBackground.startsWith('https://'))
+    : (videoBackground && isYouTubeUrl(videoBackground)
         ? extractYouTubeId(videoBackground)
         : null);
 
