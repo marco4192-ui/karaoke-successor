@@ -295,15 +295,22 @@ export function exportToUltraStar(song: Song): string {
   
   // Use correct UltraStar formula: beatDuration = 15000 / BPM
   const beatDuration = 15000 / (song.bpm || 120);
+  const MIDI_BASE_OFFSET = 48;
   
   for (const line of song.lyrics) {
     for (const note of line.notes) {
-      const beat = Math.round(note.startTime / beatDuration);
+      const startBeat = Math.round((note.startTime - (song.gap || 0)) / beatDuration);
       const duration = Math.round(note.duration / beatDuration);
+      const relativePitch = note.pitch - MIDI_BASE_OFFSET;
       const type = note.isGolden ? '*' : note.isBonus ? 'F' : ':';
-      lines.push(`${type} ${beat} ${note.pitch} ${duration} ${note.lyric}`);
+      lines.push(`${type} ${startBeat} ${duration} ${relativePitch} ${note.lyric}`);
     }
-    lines.push('-');
+    // Line break: - <beat> after each lyric line
+    if (line.notes.length > 0) {
+      const lastNote = line.notes[line.notes.length - 1];
+      const lineBreakBeat = Math.round((lastNote.startTime + lastNote.duration - (song.gap || 0)) / beatDuration);
+      lines.push(`- ${lineBreakBeat}`);
+    }
   }
   
   lines.push('E');
