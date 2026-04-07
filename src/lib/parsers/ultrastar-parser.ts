@@ -9,15 +9,14 @@
 //   - F = freestyle (optional)
 //   - R = rap note
 //   - G = rap golden
-// - Line breaks: - <beat> (marks end of a lyric line)
+// - Line breaks: - <beat> (marks end of a lyric line, separate line in file)
 // - End: E
 //
 // LYRIC SPACING RULES:
 // - Trailing space in lyric = end of word (space is displayed)
 // - No trailing space = syllable connected to next note
-// - Hyphen "-" in lyric = word break / visual separator
-// - Empty lyric or just "-" = held note without new text
-// - Line breaks (-) create new lyric lines
+// - Line breaks ("- <beat>") create new lyric lines
+// - A hyphen "-" as lyric text is just normal text, NOT a line break
 
 import { Song, Note, LyricLine, Difficulty, DuetPlayer, midiToFrequency } from '@/types/game';
 
@@ -253,22 +252,6 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
       });
       continue;
     }
-
-    // Line break note format: : (Beat) -  (colon type, beat number, hyphen only → line break)
-    // This format has NO duration and NO pitch — it's a simplified line break marker.
-    // Example: ": 30 -" → line break at beat 30
-    const lineBreakNoteMatch = noteLine.match(/^\s*:\s*(-?\d+)\s+-\s*$/);
-    if (lineBreakNoteMatch) {
-      const startBeat = parseInt(lineBreakNoteMatch[1]);
-      song.notes.push({
-        type: ':',
-        startBeat,
-        duration: 1,
-        pitch: 0,
-        lyric: '-',
-        player: notePlayer,
-      });
-    }
   }
   
   // Mark as duet if we found player assignments
@@ -319,26 +302,14 @@ export function convertUltraStarToSong(
     const startTime = ultraStar.gap + (note.startBeat * beatDuration);
     const duration = note.duration * beatDuration;
 
-    // IMPROVED LYRIC HANDLING:
+    // LYRIC HANDLING:
     // In UltraStar format:
     // - Trailing space = end of word (display space after the word)
     // - No trailing space = syllable (connected to next note)
-    // - Single hyphen "-" in lyric text = word separator (treat as line break)
-    // - Hyphen surrounded by spaces or standalone = line break marker
-    // - Multiple hyphens or empty = held note
-    //
-    // We preserve the raw lyric and process for display
+    // - Line breaks are separate lines: "- <beat>" (handled via lineBreakBeats)
+    // - A lyric of "-" on a note is just a normal note with hyphen text (NOT a line break)
 
     const rawLyric = note.lyric;
-
-    // Check if this note contains ONLY a hyphen - this marks a LINE BREAK
-    // This is the UltraStar convention: "-" alone on a note line = line break
-    const isHyphenSeparator = rawLyric === '-' || (rawLyric.trim() === '-' && rawLyric.length <= 2);
-
-    // For display: preserve trailing spaces, they indicate word boundaries
-    // The lyric is used as-is for scoring and display
-    // We also preserve internal spaces and hyphens
-    const displayLyric = rawLyric;
 
     const convertedNote: Note = {
       id: `note-${lyricLines.length}-${currentLineNotes.length}`,
@@ -346,67 +317,28 @@ export function convertUltraStarToSong(
       frequency: midiToFrequency(note.pitch + MIDI_BASE_OFFSET),
       startTime: Math.round(startTime),
       duration: Math.round(duration),
-      lyric: displayLyric,
+      lyric: rawLyric,
       isBonus: note.type === 'F', // Freestyle notes are bonus
       isGolden: note.type === '*' || note.type === 'G', // Golden notes
       player: note.player, // Preserve player assignment for duet mode
     };
 
-    // Check if we should end the current line BEFORE adding this note
-    // This happens when:
-    // 1. This note is a hyphen separator (word break = line break)
-    // 2. There's an explicit line break before this note's beat
-    const shouldBreakBefore = isHyphenSeparator;
+    // Add note to current line
+    currentLineNotes.push(convertedNote);
 
-    if (shouldBreakBefore && currentLineNotes.length > 0) {
-      // Save current line before the hyphen
-      const lineStartTime = currentLineNotes[0].startTime;
-      const lineEndTime = currentLineNotes[currentLineNotes.length - 1].startTime +
-                         currentLineNotes[currentLineNotes.length - 1].duration;
+    // Build line text: concatenate lyrics, spaces are already embedded
+    currentLineText += rawLyric;
 
-      // Build line text from notes
-      // PRESERVE SPACES: Only trim leading whitespace, keep trailing spaces
-      // This ensures proper word separation in display
-      let finalLineText = currentLineText.replace(/^\s+/, '');
-      // Don't trim trailing spaces - they indicate word boundaries!
-
-      if (finalLineText) {
-        lyricLines.push({
-          id: `line-${lyricLines.length}`,
-          text: finalLineText,
-          startTime: lineStartTime,
-          endTime: lineEndTime,
-          notes: currentLineNotes,
-          player: currentLinePlayer,
-        });
-      }
-
-      currentLineNotes = [];
-      currentLineText = '';
-      currentLinePlayer = undefined;
-    }
-
-    // Add note to current line (skip hyphen separators as notes)
-    if (!isHyphenSeparator) {
-      currentLineNotes.push(convertedNote);
-
-      // Build line text: concatenate lyrics, spaces are already embedded
-      currentLineText += displayLyric;
-
-      // Track line player
-      if (currentLinePlayer === undefined) {
-        currentLinePlayer = note.player;
-      } else if (currentLinePlayer !== note.player && note.player !== undefined) {
-        currentLinePlayer = 'both';
-      }
+    // Track line player
+    if (currentLinePlayer === undefined) {
+      currentLinePlayer = note.player;
+    } else if (currentLinePlayer !== note.player && note.player !== undefined) {
+      currentLinePlayer = 'both';
     }
 
     // Check if this note ends a line (after adding)
-    // 1. Explicit line break marker at this note's end beat OR next note's start beat
-    // 2. Last note
-    // 3. Large gap to next note (fallback)
-    // IMPORTANT: "- 30" means a new line starts at beat 30. So we must check
-    // BOTH the current note's end beat AND the next note's start beat against lineBreakBeats.
+    // Line breaks are determined ONLY by the explicit "- <beat>" markers in lineBreakBeats,
+    // or by a large gap between notes (8+ beats fallback).
     const nextNoteStart = i < sortedNotes.length - 1 ? sortedNotes[i + 1].startBeat : -1;
     const isLineBreak = lineBreakBeats.has(noteEndBeat) ||
                         (nextNoteStart >= 0 && lineBreakBeats.has(nextNoteStart)) ||
@@ -421,17 +353,6 @@ export function convertUltraStarToSong(
       // Build line text: PRESERVE SPACES between words
       // Only trim leading whitespace, keep internal and trailing spaces
       let finalLineText = currentLineText.replace(/^\s+/, '');
-
-      // Don't trim trailing spaces - they indicate word boundaries!
-      // Remove only trailing hyphens that are standalone (not part of word)
-      // But keep internal hyphens (e.g., "self-confidence")
-      // Only remove "-" at the very end if it's purely a separator
-      if (finalLineText.endsWith(' -')) {
-        finalLineText = finalLineText.slice(0, -2);
-      } else if (finalLineText.endsWith('-') && !finalLineText.endsWith('--')) {
-        finalLineText = finalLineText.slice(0, -1);
-      }
-      // Keep trailing spaces - they are significant for word display
 
       if (finalLineText) {
         lyricLines.push({
