@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Users } from 'lucide-react';
 import type { Song } from '@/types/game';
+import { isYouTubeUrl } from '@/components/game/youtube-player';
 
 interface EditorSongInfoTabProps {
   song: Song;
@@ -116,15 +117,24 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
             value={song.videoBackground || song.youtubeUrl || ''}
             onChange={(e) => {
               const url = e.target.value;
-              const isYoutube = url.includes('youtube.com') || url.includes('youtu.be');
-              onSongChange(prev => ({
-                ...prev,
-                videoBackground: isYoutube ? undefined : url,
-                youtubeUrl: isYoutube ? url : undefined,
-              }));
+              if (!url) {
+                // Clear both fields when URL is emptied
+                onSongChange(prev => ({
+                  ...prev,
+                  videoBackground: undefined,
+                  youtubeUrl: undefined,
+                }));
+              } else {
+                const isYt = isYouTubeUrl(url);
+                onSongChange(prev => ({
+                  ...prev,
+                  videoBackground: isYt ? undefined : url,
+                  youtubeUrl: isYt ? url : undefined,
+                }));
+              }
               onSetUnsavedChanges();
             }}
-            placeholder="YouTube URL oder lokaler Pfad"
+            placeholder="YouTube URL, direkte Video-URL (.mp4, .webm) oder lokaler Pfad"
             className="bg-slate-800 border-slate-600"
           />
         </div>

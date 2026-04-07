@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { Song } from '@/types/game';
+import { isYouTubeUrl } from '@/components/game/youtube-player';
 
 interface EditorMetadataTabProps {
   song: Song;
@@ -103,18 +104,23 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
           <Label htmlFor="meta-video" className="text-slate-400 text-xs">#VIDEO:</Label>
           <Input
             id="meta-video"
-            value={song.videoFile || song.youtubeUrl || ''}
+            value={song.videoFile || song.youtubeUrl || (song.videoBackground && (song.videoBackground.startsWith('http://') || song.videoBackground.startsWith('https://')) ? song.videoBackground : '')}
             onChange={(e) => {
               const value = e.target.value;
-              const isUrl = value.startsWith('http://') || value.startsWith('https://');
-              onSongChange(prev => ({
-                ...prev,
-                videoFile: isUrl ? undefined : value || undefined,
-                youtubeUrl: isUrl ? value : undefined,
-              }));
+              if (!value) {
+                onSongChange(prev => ({ ...prev, videoFile: undefined, youtubeUrl: undefined }));
+              } else if (isYouTubeUrl(value)) {
+                onSongChange(prev => ({ ...prev, videoFile: undefined, youtubeUrl: value, videoBackground: undefined }));
+              } else if (value.startsWith('http://') || value.startsWith('https://')) {
+                // Direct video URL — store in videoBackground for HTML5 <video> playback
+                onSongChange(prev => ({ ...prev, videoFile: undefined, youtubeUrl: undefined, videoBackground: value }));
+              } else {
+                // Local file name
+                onSongChange(prev => ({ ...prev, videoFile: value, youtubeUrl: undefined }));
+              }
               onSetUnsavedChanges();
             }}
-            placeholder="video.mp4 oder YouTube URL"
+            placeholder="video.mp4, YouTube URL oder direkte Video-URL"
             className="bg-slate-800 border-slate-600 h-8"
           />
         </div>
