@@ -20,8 +20,9 @@ interface ParsedNote {
  * - beatDuration = 15000 / BPM (BPM is beats per 4 measures)
  * - startTime = GAP + startBeat * beatDuration
  * - Trailing space in lyric = word boundary
- * - Hyphen "-" alone = line break marker
- * - 8+ beat gap between notes = automatic line break
+ * - Line breaks are separate lines: "- <beat>" (passed via lineBreakBeats set)
+ * - A hyphen "-" as lyric text on a note is just normal text, NOT a line break
+ * - 8+ beat gap between notes = automatic line break (fallback)
  */
 export function convertNotesToLyricLines(
   notes: ParsedNote[],
@@ -45,17 +46,6 @@ export function convertNotesToLyricLines(
     const startTime = gap + (note.startBeat * beatDuration);
     const duration = note.duration * beatDuration;
 
-    // Line break note: Only a hyphen "-" alone in the lyric column triggers a line break
-    const trimmedLyric = note.lyric.trim();
-    const isLineBreakNote = trimmedLyric === '-';
-
-    if (isLineBreakNote) {
-      if (currentLineNotes.length > 0) {
-        flushLine();
-      }
-      continue;
-    }
-
     const convertedNote: Note = {
       id: `note-${lyricLines.length}-${currentLineNotes.length}`,
       pitch: note.pitch + MIDI_BASE_OFFSET,
@@ -77,9 +67,7 @@ export function convertNotesToLyricLines(
       currentLinePlayer = 'both';
     }
 
-    // Check for line break: explicit line break marker or 8+ beat gap
-    // IMPORTANT: "- 30" means a new line starts at beat 30. So we must check
-    // BOTH the current note's end beat AND the next note's start beat against lineBreakBeats.
+    // Check for line break: explicit "- <beat>" marker or 8+ beat gap fallback
     const nextNoteStart = i < sortedNotes.length - 1 ? sortedNotes[i + 1].startBeat : -1;
     const isLineBreak = lineBreakBeats.has(noteEndBeat) ||
       (nextNoteStart >= 0 && lineBreakBeats.has(nextNoteStart)) ||
