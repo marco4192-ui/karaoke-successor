@@ -169,6 +169,7 @@ export function SinglePlayerNoteHighway({
             left: `${singLinePosition - 2}%`,
             top: `${VISIBLE_TOP + VISIBLE_RANGE - ((pitchResult.note - pitchStats.minPitch) / pitchStats.pitchRange) * VISIBLE_RANGE}%`,
             transform: 'translateY(-50%)',
+            transition: 'top 80ms ease-out',
           }}
         >
           <MicIcon className="w-5 h-5 text-white" />

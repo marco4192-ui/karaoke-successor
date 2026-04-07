@@ -237,6 +237,7 @@ function PitchIndicator({
         left: `${singLinePosition - 1.5}%`,
         top: `${pitchY}%`,
         transform: 'translateY(-50%)',
+        transition: 'top 80ms ease-out',
       }}
     >
       <MicIcon className="w-4 h-4 text-white" />

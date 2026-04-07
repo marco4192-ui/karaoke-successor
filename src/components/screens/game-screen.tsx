@@ -52,6 +52,7 @@ import { useGameLoop } from '@/hooks/use-game-loop';
 import { useNativeAudio } from '@/hooks/use-native-audio';
 import { GameCountdown } from '@/components/game/game-countdown';
 import { GameScoreDisplay } from '@/components/game/game-score-display';
+import { useSmoothedPitch } from '@/hooks/use-smoothed-pitch';
 import { useGameAudioEffects } from '@/hooks/use-game-audio-effects';
 import { useYouTubeGame } from '@/hooks/use-youtube-game';
 import { useGameModes } from '@/hooks/use-game-modes';
@@ -69,6 +70,10 @@ import {
 function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }) {
   const { gameState, setCurrentTime, setDetectedPitch, updatePlayer, endGame, setResults, addPlayer, createProfile, profiles, setMissingWordsIndices, setBlindSection } = useGameStore();
   const { pitchResult, initialize, start, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
+
+  // Smoothed pitch for visual display (prevents flickering/jitter)
+  // Raw pitch is still used for scoring accuracy
+  const smoothedPitch = useSmoothedPitch(pitchResult?.note ?? null, 0.3, 0.25);
   
   // Current song reference - must be defined early as it's used by multiple hooks
   const song = gameState.currentSong;
@@ -452,7 +457,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       {isPlaying && showPitchGuide && (
         <div className="absolute top-44 left-4 z-20 w-64">
           <PitchGraphDisplay
-            currentPitch={pitchResult?.note ?? null}
+            currentPitch={smoothedPitch}
             targetPitch={null}
             currentTime={gameState.currentTime}
             isPlaying={isPlaying}
@@ -565,7 +570,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             p1PitchStats={p1PitchStats}
             p2PitchStats={p2PitchStats}
             currentTime={gameState.currentTime}
-            p1DetectedPitch={pitchResult?.note ?? null}
+            p1DetectedPitch={smoothedPitch}
             p2DetectedPitch={p2DetectedPitch}
             p1State={gameState.players[0]}
             p2State={p2State}
@@ -587,7 +592,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             visibleNotes={visibleNotes}
             currentTime={gameState.currentTime}
             pitchStats={pitchStats}
-            detectedPitch={pitchResult?.note ?? null}
+            detectedPitch={smoothedPitch}
             noteShapeStyle={noteShapeStyle}
             noteDisplayStyle={noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
             notePerformance={notePerformance}
