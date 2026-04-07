@@ -62,17 +62,21 @@ export function SongCard({
         )}
         
         {/* Video Preview - YouTube */}
-        {song.youtubeUrl && previewSong?.id === song.id && (
-          <div className="absolute inset-0 w-full h-full">
-            <iframe
-              src={`https://www.youtube.com/embed/${extractYouTubeId(song.youtubeUrl)}?autoplay=1&mute=1&loop=1&playlist=${extractYouTubeId(song.youtubeUrl)}&controls=0&showinfo=0&rel=0&modestbranding=1&start=${Math.floor((song.preview?.startTime || 0) / 1000)}`}
-              className="w-full h-full object-cover pointer-events-none"
-              style={{ transform: 'scale(1.5)', transformOrigin: 'center' }}
-              allow="autoplay; encrypted-media"
-              allowFullScreen
-            />
-          </div>
-        )}
+        {song.youtubeUrl && previewSong?.id === song.id && (() => {
+          const ytId = extractYouTubeId(song.youtubeUrl);
+          if (!ytId) return null;
+          return (
+            <div className="absolute inset-0 w-full h-full">
+              <iframe
+                src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&modestbranding=1&enablejsapi=1&start=${Math.floor((song.preview?.startTime || 0) / 1000)}`}
+                className="w-full h-full object-cover pointer-events-none"
+                style={{ transform: 'scale(1.5)', transformOrigin: 'center' }}
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+              />
+            </div>
+          );
+        })()}
         
         {/* Fallback Music Icon */}
         {!song.coverImage && !song.videoBackground && !song.youtubeUrl && (

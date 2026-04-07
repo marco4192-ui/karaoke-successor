@@ -84,6 +84,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   } = useGameMedia(song);
 
   const [youtubeTime, setYoutubeTime] = useState(0);
+  const [youtubeError, setYoutubeError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
   // Native audio (ASIO / WASAPI)
@@ -521,6 +522,17 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
           onAdEnd={handleAdEnd}
           onVideoEnded={endGameAndCleanup}
           onVideoCanPlay={() => { videoLoadedRef.current = true; }}
+          onYoutubeError={(errorCode) => {
+            const messages: Record<number, string> = {
+              100: 'YouTube-Video nicht gefunden (gelöscht oder privat)',
+              101: 'Dieses Video kann nicht eingebettet werden (Vevo/Einbettungssperre)',
+              150: 'Dieses Video kann nicht eingebettet werden (Einbettungssperre)',
+              2: 'Ungültiger YouTube-Parameter',
+              5: 'HTML5-Fehler beim YouTube-Player',
+            };
+            setYoutubeError(messages[errorCode] || `YouTube-Fehler (Code: ${errorCode})`);
+            console.error('[GameScreen] YouTube error:', errorCode);
+          }}
         />
 
         {/* Webcam Background */}
@@ -534,6 +546,13 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         
         {/* Ad Indicator */}
         <AdIndicator isAdPlaying={isAdPlaying} adCountdown={adCountdown} />
+        
+        {/* YouTube Error Indicator */}
+        {youtubeError && (
+          <div className="absolute top-14 left-1/2 -translate-x-1/2 z-30 bg-red-500/90 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-lg max-w-md text-center">
+            ⚠️ {youtubeError}
+          </div>
+        )}
 
         {/* Dark Overlay for better note visibility */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50 z-5" />

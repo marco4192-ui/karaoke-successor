@@ -8,8 +8,16 @@ export function extractYouTubeId(url: string): string | null {
   if (!url) return null;
   
   const patterns = [
+    // Standard: youtube.com/watch?v=ID, youtu.be/ID, youtube.com/embed/ID, youtube.com/v/ID
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([^&\?\/]+)/,
-    /^([a-zA-Z0-9_-]{11})$/, // Direct video ID
+    // YouTube Shorts: youtube.com/shorts/ID
+    /(?:youtube\.com\/shorts\/)([^&\?\/]+)/,
+    // YouTube Music: music.youtube.com/watch?v=ID
+    /(?:music\.youtube\.com\/watch\?v=)([^&\?\/]+)/,
+    // YouTube Live: youtube.com/live/ID
+    /(?:youtube\.com\/live\/)([^&\?\/]+)/,
+    // Direct video ID (11 chars)
+    /^([a-zA-Z0-9_-]{11})$/,
   ];
   
   for (const pattern of patterns) {
@@ -28,6 +36,7 @@ interface YouTubePlayerProps {
   onEnded?: () => void;
   onAdStart?: () => void;
   onAdEnd?: () => void;
+  onError?: (errorCode: number) => void;
   isPlaying?: boolean;
   startTime?: number; // Start position in milliseconds
   interactive?: boolean; // Allow user interaction with the player
@@ -35,6 +44,15 @@ interface YouTubePlayerProps {
 
 // Global player counter for unique IDs
 let playerCounter = 0;
+
+// YouTube error codes mapped to user-friendly messages
+const YOUTUBE_ERROR_MESSAGES: Record<number, string> = {
+  2: 'Der Anfrage-Parameter enthält einen ungültigen Wert.',
+  5: 'Ein HTML5-spezifischer Fehler ist aufgetreten.',
+  100: 'Das Video wurde nicht gefunden. Möglicherweise wurde es gelöscht oder als privat markiert.',
+  101: 'Das Video kann nicht eingebettet werden.',
+  150: 'Das Video kann nicht eingebettet werden.',
+};
 
 export function YouTubePlayer({ 
   videoId, 
@@ -44,6 +62,7 @@ export function YouTubePlayer({
   onEnded,
   onAdStart,
   onAdEnd,
+  onError,
   isPlaying = true,
   startTime = 0,
   interactive = false
@@ -65,6 +84,8 @@ export function YouTubePlayer({
   onAdStartRef.current = onAdStart;
   const onAdEndRef = useRef(onAdEnd);
   onAdEndRef.current = onAdEnd;
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
   const isPlayingRef = useRef(isPlaying);
   isPlayingRef.current = isPlaying;
   
@@ -97,15 +118,35 @@ export function YouTubePlayer({
       return;
     }
     
+    // CRITICAL: Set the callback BEFORE appending the script to prevent a race condition.
+    // If the script loads very fast (e.g. from cache), the callback must already be registered.
+    window.onYouTubeIframeAPIReady = () => {
+      console.log('[YouTube] IFrame API ready');
+      setIsApiLoaded(true);
+    };
+    
     // Load the API
     const script = document.createElement('script');
     script.id = 'youtube-iframe-api';
     script.src = 'https://www.youtube.com/iframe_api';
     document.head.appendChild(script);
+
+    // Timeout fallback: if the API doesn't load within 10 seconds, try polling
+    const fallbackTimeout = setTimeout(() => {
+      if (!window.YT?.Player) {
+        console.warn('[YouTube] API load timeout — starting polling fallback');
+        const poll = setInterval(() => {
+          if (window.YT?.Player) {
+            clearInterval(poll);
+            setIsApiLoaded(true);
+          }
+        }, 200);
+        // Give up after another 10 seconds
+        setTimeout(() => clearInterval(poll), 10000);
+      }
+    }, 10000);
     
-    window.onYouTubeIframeAPIReady = () => {
-      setIsApiLoaded(true);
-    };
+    return () => clearTimeout(fallbackTimeout);
   }, []);
   
   // Initialize player when API is loaded and videoId changes
@@ -132,8 +173,27 @@ export function YouTubePlayer({
     const videoGapSeconds = videoGap / 1000;
     const adjustedStartTime = Math.max(0, (startTime / 1000) - videoGapSeconds);
     
+    // Determine the origin parameter:
+    // In Tauri, window.location.origin may be "tauri://localhost" which YouTube doesn't accept.
+    // Use a safe fallback — YouTube doesn't strictly require origin, but it helps with
+    // postMessage communication. Omit it in non-standard environments.
+    const origin = window.location.origin.startsWith('http') ? window.location.origin : undefined;
+
+    console.log('[YouTube] Creating player:', {
+      videoId,
+      adjustedStartTime: Math.floor(adjustedStartTime),
+      videoGap,
+      origin: origin || '(omitted for non-HTTP origin)',
+    });
+    
     // Small delay to ensure DOM is ready
     const initTimeout = setTimeout(() => {
+      // Re-check that the container still exists (component may have unmounted)
+      if (!containerRef.current || !document.getElementById(playerIdRef.current)) {
+        console.warn('[YouTube] Container disappeared before player init — skipping');
+        return;
+      }
+
       playerRef.current = new window.YT.Player(playerIdRef.current, {
         videoId,
         playerVars: {
@@ -144,10 +204,13 @@ export function YouTubePlayer({
           modestbranding: 1,
           rel: 0,
           start: Math.floor(adjustedStartTime),
-          origin: window.location.origin,
+          ...(origin ? { origin } : {}),
+          // Enable JavaScript API (redundant with IFrame API but ensures compatibility)
+          enablejsapi: 1,
         },
         events: {
           onReady: (event) => {
+            console.log('[YouTube] Player ready for video:', videoId);
             try {
               expectedDurationRef.current = playerRef.current?.getDuration() || 0;
             } catch { /* ignore */ }
@@ -207,7 +270,10 @@ export function YouTubePlayer({
             }
           },
           onError: (event) => {
-            console.error('[YouTube] Player error:', event.data);
+            const errorCode = event.data as number;
+            const message = YOUTUBE_ERROR_MESSAGES[errorCode] || `Unbekannter YouTube-Fehler (Code: ${errorCode})`;
+            console.error('[YouTube] Player error:', errorCode, message);
+            onErrorRef.current?.(errorCode);
           },
         },
       });

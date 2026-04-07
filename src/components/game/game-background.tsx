@@ -26,6 +26,7 @@ export interface GameBackgroundProps {
   onAdEnd: () => void;
   onVideoEnded: () => void;
   onVideoCanPlay: () => void;
+  onYoutubeError: (errorCode: number) => void;
 }
 
 /**
@@ -49,6 +50,7 @@ export function GameBackground({
   onAdEnd,
   onVideoEnded,
   onVideoCanPlay,
+  onYoutubeError,
 }: GameBackgroundProps) {
   const videoGap = effectiveSong?.videoGap || 0;
 
@@ -64,8 +66,9 @@ export function GameBackground({
         onAdStart={onAdStart}
         onAdEnd={onAdEnd}
         isPlaying={isPlaying}
-        startTime={0}
+        startTime={effectiveSong?.start || 0}
         interactive={isAdPlaying}
+        onError={onYoutubeError}
       />
     );
   }
@@ -83,7 +86,8 @@ export function GameBackground({
           onAdStart={onAdStart}
           onAdEnd={onAdEnd}
           isPlaying={isPlaying}
-          startTime={0}
+          startTime={effectiveSong?.start || 0}
+          onError={onYoutubeError}
         />
       </div>
     );

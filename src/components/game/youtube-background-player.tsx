@@ -78,17 +78,29 @@ export function YouTubeBackgroundPlayer({
       return;
     }
     
+    // CRITICAL: Set the callback BEFORE appending the script to prevent a race condition.
+    window.onYouTubeIframeAPIReady = () => {
+      setIsApiLoaded(true);
+    };
+    
     // Load the API
     const script = document.createElement('script');
     script.id = 'youtube-iframe-api';
     script.src = 'https://www.youtube.com/iframe_api';
     document.head.appendChild(script);
     
-    window.onYouTubeIframeAPIReady = () => {
-      setIsApiLoaded(true);
-    };
+    // Timeout fallback
+    const fallbackTimeout = setTimeout(() => {
+      if (!window.YT?.Player) {
+        const poll = setInterval(() => {
+          if (window.YT?.Player) { clearInterval(poll); setIsApiLoaded(true); }
+        }, 200);
+        setTimeout(() => clearInterval(poll), 10000);
+      }
+    }, 10000);
     
     return () => {
+      clearTimeout(fallbackTimeout);
       if (timeUpdateIntervalRef.current) {
         clearInterval(timeUpdateIntervalRef.current);
       }
@@ -126,8 +138,9 @@ export function YouTubeBackgroundPlayer({
           modestbranding: 1,
           rel: 0,
           start: Math.floor(adjustedStartTime),
-          origin: window.location.origin,
+          origin: window.location.origin.startsWith('http') ? window.location.origin : undefined,
           playsinline: 1,
+          enablejsapi: 1,
         },
         events: {
           onReady: (event) => {

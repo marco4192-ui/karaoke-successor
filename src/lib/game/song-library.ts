@@ -287,6 +287,9 @@ function saveToLocalStorage(songs: Song[]): void {
         storedMedia: false,
         isDuet: s.isDuet,
         hasEmbeddedAudio: s.hasEmbeddedAudio,
+        youtubeUrl: s.youtubeUrl,
+        videoGap: s.videoGap,
+        videoFile: s.videoFile,
         lyrics: [],
       }));
       localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(ultraMinimalSongs));
