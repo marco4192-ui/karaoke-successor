@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useGameStore } from '@/lib/game/store';
-import { Player } from '@/types/game';
 import { safeAlert } from '@/lib/safe-dialog';
 import { getExtendedStats, updateStatsAfterGame, saveExtendedStats, calculateSongXP, getLevelForXP } from '@/lib/game/player-progression';
 
@@ -162,6 +161,46 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           rating: playerResult.rating,
         });
         savedToHighscoreRef.current = true;
+
+        // Also save P2 highscore for duel/duet if P2 has a registered profile
+        const player2Result = results.players[1];
+        if (player2Result && player2Result.playerId) {
+          const p2Profile = profiles.find(p => p.id === player2Result.playerId);
+          if (p2Profile) {
+            addHighscore({
+              playerId: p2Profile.id,
+              playerName: p2Profile.name,
+              playerAvatar: p2Profile.avatar,
+              playerColor: p2Profile.color,
+              songId: song.id,
+              songTitle: song.title,
+              artist: song.artist,
+              score: player2Result.score,
+              accuracy: player2Result.accuracy,
+              maxCombo: player2Result.maxCombo,
+              difficulty: gameState.difficulty,
+              gameMode: gameState.gameMode,
+              rating: player2Result.rating,
+            });
+
+            // Update P2 profile XP
+            const p2XP = calculateSongXP(
+              player2Result.score,
+              player2Result.accuracy,
+              player2Result.maxCombo,
+              Math.floor(player2Result.notesHit * 0.6),
+              0,
+              undefined
+            );
+            const p2CurrentXP = p2Profile.xp || 0;
+            const p2NewXP = p2CurrentXP + p2XP;
+            const p2LevelInfo = getLevelForXP(p2NewXP);
+            updateProfile(p2Profile.id, {
+              xp: p2NewXP,
+              level: p2LevelInfo.level,
+            });
+          }
+        }
         
         // UPDATE PLAYER PROGRESSION (XP, Level, Rank, Titles)
         const currentStats = getExtendedStats();
@@ -266,6 +305,8 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
   }
 
   const playerResult = results.players[0];
+  const player2Result = results.players[1] || null;
+  const isDuel = gameState.gameMode === 'duel' || gameState.gameMode === 'duet';
   const ratingColors: Record<string, string> = {
     perfect: 'from-yellow-400 to-orange-500',
     excellent: 'from-green-400 to-cyan-500',
@@ -276,32 +317,66 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
 
   // Get active profile for display
   const activeProfile = profiles.find(p => p.id === activeProfileId);
+  const player2Profile = player2Result ? profiles.find(p => p.id === player2Result.playerId) : null;
 
-  // Create Player object for ScoreDisplay
-  const playerForDisplay: Player = {
-    id: 'current',
-    name: activeProfile?.name || 'Player',
-    score: playerResult.score,
-    combo: 0,
-    maxCombo: playerResult.maxCombo,
-    accuracy: playerResult.accuracy,
-    notesHit: playerResult.notesHit,
-    notesMissed: playerResult.notesMissed,
-    color: activeProfile?.color || '#FF6B6B',
-    avatar: activeProfile?.avatar,
-    notes: [],
-    totalNotes: playerResult.notesHit + playerResult.notesMissed,
-  };
+  // Determine winner for duel/duet
+  const winnerSide = isDuel && player2Result
+    ? playerResult.score > player2Result.score ? 'p1' : playerResult.score < player2Result.score ? 'p2' : 'draw'
+    : null;
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-      <div className="text-center mb-8">
-        <div className={`inline-block px-8 py-4 rounded-2xl bg-gradient-to-r ${ratingColors[playerResult.rating] || ratingColors.good} mb-4`}>
-          <h1 className="text-4xl font-black text-white uppercase">{playerResult.rating}!</h1>
-        </div>
+      {/* Song title */}
+      <div className="text-center mb-4">
         <h2 className="text-2xl font-bold text-white">{song.title}</h2>
         <p className="text-white/60">{song.artist}</p>
       </div>
+
+      {/* Rating header - Single Player */}
+      {!isDuel && (
+        <div className="text-center mb-8">
+          <div className={`inline-block px-8 py-4 rounded-2xl bg-gradient-to-r ${ratingColors[playerResult.rating] || ratingColors.good} mb-4`}>
+            <h1 className="text-4xl font-black text-white uppercase">{playerResult.rating}!</h1>
+          </div>
+        </div>
+      )}
+
+      {/* Rating header - Duel / Duet: show both players */}
+      {isDuel && player2Result && (
+        <div className="flex justify-center items-stretch gap-6 mb-8">
+          {/* Player 1 rating card */}
+          <div className={`flex-1 max-w-xs rounded-2xl p-6 text-center ${
+            winnerSide === 'p1' ? 'ring-2 ring-yellow-400 shadow-lg shadow-yellow-400/20' : ''
+          }`}>
+            <div className={`inline-block px-6 py-3 rounded-xl bg-gradient-to-r ${ratingColors[playerResult.rating] || ratingColors.good} mb-3`}>
+              <h2 className="text-2xl font-black text-white uppercase">{playerResult.rating}!</h2>
+            </div>
+            <div className="text-cyan-400 font-semibold text-lg">{activeProfile?.name || 'Player 1'}</div>
+            <div className="text-3xl font-black text-white mt-2">{playerResult.score.toLocaleString()}</div>
+            <div className="text-white/40 text-sm">{playerResult.accuracy.toFixed(1)}% accuracy</div>
+            {winnerSide === 'p1' && <div className="mt-3 text-xl">🏆</div>}
+          </div>
+
+          {/* VS / Duet indicator */}
+          <div className="flex flex-col items-center justify-center">
+            <span className="text-4xl font-black text-white/30">{gameState.gameMode === 'duet' ? '🎤' : '⚔️'}</span>
+            {winnerSide === 'draw' && <span className="mt-2 text-sm text-purple-400 font-bold">UNENTSCHIEDEN</span>}
+          </div>
+
+          {/* Player 2 rating card */}
+          <div className={`flex-1 max-w-xs rounded-2xl p-6 text-center bg-white/5 border border-white/10 ${
+            winnerSide === 'p2' ? 'ring-2 ring-yellow-400 shadow-lg shadow-yellow-400/20' : ''
+          }`}>
+            <div className={`inline-block px-6 py-3 rounded-xl bg-gradient-to-r ${ratingColors[player2Result.rating] || ratingColors.good} mb-3`}>
+              <h2 className="text-2xl font-black text-white uppercase">{player2Result.rating}!</h2>
+            </div>
+            <div className="text-pink-400 font-semibold text-lg">{player2Profile?.name || song?.duetPlayerNames?.[1] || 'Player 2'}</div>
+            <div className="text-3xl font-black text-white mt-2">{player2Result.score.toLocaleString()}</div>
+            <div className="text-white/40 text-sm">{player2Result.accuracy.toFixed(1)}% accuracy</div>
+            {winnerSide === 'p2' && <div className="mt-3 text-xl">🏆</div>}
+          </div>
+        </div>
+      )}
 
       {/* Score Visualization with multiple modes */}
       <ScoreVisualization
@@ -312,6 +387,13 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
         notesMissed={playerResult.notesMissed}
         maxCombo={playerResult.maxCombo}
         rating={playerResult.rating}
+        player2Score={player2Result?.score}
+        player2Accuracy={player2Result?.accuracy}
+        player2NotesHit={player2Result?.notesHit}
+        player2NotesMissed={player2Result?.notesMissed}
+        player2MaxCombo={player2Result?.maxCombo}
+        player2Rating={player2Result?.rating}
+        isDuel={isDuel}
       />
 
       {/* Upload Status */}
@@ -329,24 +411,26 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
         onViewAll={() => setShowHighscoreModal(true)}
       />
 
-      {/* Share Section */}
-      <ShareSection
-        song={song}
-        playerResult={{
-          score: playerResult.score,
-          accuracy: playerResult.accuracy,
-          maxCombo: playerResult.maxCombo,
-          notesHit: playerResult.notesHit,
-          notesMissed: playerResult.notesMissed,
-          rating: playerResult.rating,
-        }}
-        activeProfileId={activeProfileId}
-        playerName={activeProfile?.name || 'Player'}
-        playerAvatar={activeProfile?.avatar}
-        playerColor={activeProfile?.color || '#FF6B6B'}
-        difficulty={gameState.difficulty}
-        gameMode={gameState.gameMode}
-      />
+      {/* Share Section — only for single player (duel/duet doesn't make sense to share a single player stat) */}
+      {!isDuel && (
+        <ShareSection
+          song={song}
+          playerResult={{
+            score: playerResult.score,
+            accuracy: playerResult.accuracy,
+            maxCombo: playerResult.maxCombo,
+            notesHit: playerResult.notesHit,
+            notesMissed: playerResult.notesMissed,
+            rating: playerResult.rating,
+          }}
+          activeProfileId={activeProfileId}
+          playerName={activeProfile?.name || 'Player'}
+          playerAvatar={activeProfile?.avatar}
+          playerColor={activeProfile?.color || '#FF6B6B'}
+          difficulty={gameState.difficulty}
+          gameMode={gameState.gameMode}
+        />
+      )}
 
       {/* Actions */}
       <div className="flex gap-4 justify-center">

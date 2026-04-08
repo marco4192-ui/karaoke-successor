@@ -383,6 +383,8 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     setAudioEffects,
     song,
     players: gameState.players,
+    // P2 scoring state for duel/duet results
+    p2ScoringState: p2State,
     // Native audio support
     isNativeAudio: nativeAudio.enabled,
     nativeAudioTime: nativeAudio.currentPosition,

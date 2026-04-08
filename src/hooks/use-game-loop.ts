@@ -48,6 +48,8 @@ export interface UseGameLoopOptions {
   // Song + players (for results generation)
   song: Song | null;
   players: Array<{ id: string; score: number; notesHit: number; notesMissed: number; maxCombo: number }>;
+  // P2 scoring state (for duel/duet results)
+  p2ScoringState?: { score: number; notesHit: number; notesMissed: number; maxCombo: number } | null;
   // Native audio (ASIO / WASAPI)
   isNativeAudio?: boolean;
   nativeAudioTime?: number;
@@ -112,6 +114,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     setAudioEffects,
     song,
     players,
+    p2ScoringState,
     isNativeAudio = false,
     nativeAudioTime = 0,
     nativeAudioPlay,
@@ -134,27 +137,50 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     const activePlayer = players[0];
     if (!activePlayer || !song) return;
 
-    const totalNotes = song.lyrics.reduce((acc, line) => acc + line.notes.length, 0);
-    const accuracy = totalNotes > 0 ? (activePlayer.notesHit / totalNotes) * 100 : 0;
+    // Helper: calculate rating from accuracy
+    const calcRating = (acc: number): 'perfect' | 'excellent' | 'good' | 'okay' | 'poor' => {
+      if (acc >= 95) return 'perfect';
+      if (acc >= 85) return 'excellent';
+      if (acc >= 70) return 'good';
+      if (acc >= 50) return 'okay';
+      return 'poor';
+    };
 
-    let rating: 'perfect' | 'excellent' | 'good' | 'okay' | 'poor';
-    if (accuracy >= 95) rating = 'perfect';
-    else if (accuracy >= 85) rating = 'excellent';
-    else if (accuracy >= 70) rating = 'good';
-    else if (accuracy >= 50) rating = 'okay';
-    else rating = 'poor';
+    // Count total notes for each player (P1 gets all notes, P2 only P2-assigned notes in duet/duel)
+    const totalNotes = song.lyrics.reduce((acc, line) => acc + line.notes.length, 0);
+    const p1Accuracy = totalNotes > 0 ? (activePlayer.notesHit / totalNotes) * 100 : 0;
+
+    const playerResults = [{
+      playerId: activePlayer.id,
+      score: activePlayer.score,
+      notesHit: activePlayer.notesHit,
+      notesMissed: activePlayer.notesMissed,
+      accuracy: p1Accuracy,
+      maxCombo: activePlayer.maxCombo,
+      rating: calcRating(p1Accuracy),
+    }];
+
+    // Add P2 results for duel/duet mode if P2 scoring data is available
+    const p2 = p2ScoringState || null;
+    const p2Player = players[1] || null;
+    if (isDuetMode && p2 && (p2.notesHit > 0 || p2.notesMissed > 0)) {
+      // For P2, count only notes assigned to P2 (or all notes if no explicit assignment)
+      const p2TotalNotes = totalNotes; // In duel mode, P2 sings the same notes
+      const p2Accuracy = p2TotalNotes > 0 ? (p2.notesHit / p2TotalNotes) * 100 : 0;
+      playerResults.push({
+        playerId: p2Player?.id || 'p2',
+        score: p2.score,
+        notesHit: p2.notesHit,
+        notesMissed: p2.notesMissed,
+        accuracy: p2Accuracy,
+        maxCombo: p2.maxCombo,
+        rating: calcRating(p2Accuracy),
+      });
+    }
 
     const results = {
       songId: song.id,
-      players: [{
-        playerId: activePlayer.id,
-        score: activePlayer.score,
-        notesHit: activePlayer.notesHit,
-        notesMissed: activePlayer.notesMissed,
-        accuracy,
-        maxCombo: activePlayer.maxCombo,
-        rating,
-      }],
+      players: playerResults,
       playedAt: Date.now(),
       duration: song.duration,
     };
@@ -172,14 +198,14 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
           songTitle: song.title,
           songArtist: song.artist,
           score: activePlayer.score,
-          accuracy,
+          accuracy: p1Accuracy,
           maxCombo: activePlayer.maxCombo,
-          rating,
+          rating: calcRating(p1Accuracy),
           playedAt: Date.now(),
         },
       }),
     }).catch(() => {});
-  }, [players, song, setResults]);
+  }, [players, song, setResults, isDuetMode, p2ScoringState]);
 
   // ── End game and cleanup - stops all audio/microphone ──
   const endGameAndCleanup = useCallback(() => {
