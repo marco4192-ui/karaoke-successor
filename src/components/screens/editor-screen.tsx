@@ -329,7 +329,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   };
 
   return (
-    <div className="w-full h-full relative">
+    <div className="w-full h-full relative theme-container">
       {/* Loading Overlay */}
       {isLoadingLyrics && (
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -341,7 +341,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
       )}
       
       {!selectedSong ? (
-        <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8 space-y-4 py-4">
+        <div className="w-full h-full overflow-y-auto max-w-7xl mx-auto px-4 md:px-6 lg:px-8 space-y-4 py-4">
           {/* Header - Consistent with other screens */}
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -396,7 +396,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               <button
                 key={song.id}
                     onClick={() => handleSelectSong(song)}
-                    className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-cyan-500/50 rounded-xl overflow-hidden transition-all group"
+                    className="theme-adaptive-bg hover:brightness-110 border border-white/10 hover:border-cyan-500/50 rounded-xl overflow-hidden transition-all group"
                   >
                     {/* Cover Image */}
                     <div className="relative aspect-square bg-gradient-to-br from-purple-600/30 to-blue-600/30 overflow-hidden">
