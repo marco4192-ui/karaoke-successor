@@ -161,6 +161,43 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
         {/* Genre */}
         <div className="space-y-2">
           <Label htmlFor="song-genre" className="text-slate-400 text-xs">Genre</Label>
+          <Select
+            value={song.genre || ''}
+            onValueChange={(value) => {
+              onSongChange(prev => ({ ...prev, genre: value || undefined }));
+              onSetUnsavedChanges();
+            }}
+          >
+            <SelectTrigger className="bg-slate-800 border-slate-600">
+              <SelectValue placeholder="Genre wählen" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Pop">Pop</SelectItem>
+              <SelectItem value="Rock">Rock</SelectItem>
+              <SelectItem value="Hip-Hop">Hip-Hop</SelectItem>
+              <SelectItem value="R&B">R&amp;B</SelectItem>
+              <SelectItem value="Country">Country</SelectItem>
+              <SelectItem value="Electronic">Electronic</SelectItem>
+              <SelectItem value="Dance">Dance</SelectItem>
+              <SelectItem value="Jazz">Jazz</SelectItem>
+              <SelectItem value="Blues">Blues</SelectItem>
+              <SelectItem value="Soul">Soul</SelectItem>
+              <SelectItem value="Funk">Funk</SelectItem>
+              <SelectItem value="Reggae">Reggae</SelectItem>
+              <SelectItem value="Latin">Latin</SelectItem>
+              <SelectItem value="Metal">Metal</SelectItem>
+              <SelectItem value="Punk">Punk</SelectItem>
+              <SelectItem value="Indie">Indie</SelectItem>
+              <SelectItem value="Folk">Folk</SelectItem>
+              <SelectItem value="Classical">Classical</SelectItem>
+              <SelectItem value="Soundtrack">Soundtrack</SelectItem>
+              <SelectItem value="Musical">Musical</SelectItem>
+              <SelectItem value="Schlager">Schlager</SelectItem>
+              <SelectItem value="Deutsch-Pop">Deutsch-Pop</SelectItem>
+              <SelectItem value="K-Pop">K-Pop</SelectItem>
+              <SelectItem value="J-Pop">J-Pop</SelectItem>
+            </SelectContent>
+          </Select>
           <Input
             id="song-genre"
             name="song-genre"
@@ -169,6 +206,7 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
               onSongChange(prev => ({ ...prev, genre: e.target.value || undefined }));
               onSetUnsavedChanges();
             }}
+            placeholder="Oder eigenes Genre eingeben..."
             className="bg-slate-800 border-slate-600"
           />
         </div>
