@@ -22,6 +22,16 @@ import { recordMatchResult } from '@/lib/game/tournament';
 // Screen types
 type Screen = 'home' | 'library' | 'game' | 'party' | 'character' | 'queue' | 'mobile' | 'results' | 'highscores' | 'import' | 'settings' | 'jukebox' | 'achievements' | 'dailyChallenge' | 'tournament' | 'tournament-game' | 'battle-royale' | 'battle-royale-game' | 'pass-the-mic' | 'pass-the-mic-game' | 'companion-singalong' | 'companion-singalong-game' | 'medley' | 'medley-game' | 'editor' | 'online' | 'party-setup' | 'song-voting';
 
+// Screens where the navbar should be hidden (immersive / fullscreen experiences)
+const IMMERSIVE_SCREENS: Set<Screen> = new Set([
+  'editor',
+  'game',
+  'pass-the-mic-game',
+  'battle-royale-game',
+  'companion-singalong-game',
+  'medley-game',
+]);
+
 // ===================== MAIN APP =====================
 export default function KaraokeSuccessor() {
   // All hooks must be called before any conditional returns
@@ -240,8 +250,8 @@ export default function KaraokeSuccessor() {
         fontFamily: 'var(--theme-font, Inter, sans-serif)',
       }}
     >
-      {/* Navigation - Hidden in editor mode only */}
-      {screen !== 'editor' && (
+      {/* Navigation - Hidden during immersive screens (gameplay, editor) */}
+      {!IMMERSIVE_SCREENS.has(screen) && (
         <NavBar
           screen={screen}
           setScreen={setScreen}
@@ -252,12 +262,12 @@ export default function KaraokeSuccessor() {
         />
       )}
 
-      {/* Fullscreen Exit Button - Only visible in fullscreen mode (not in editor) */}
-      {isFullscreen && screen !== 'editor' && <FullscreenExitButton />}
+      {/* Fullscreen Exit Button - Only visible in fullscreen mode (not in immersive screens) */}
+      {isFullscreen && !IMMERSIVE_SCREENS.has(screen) && <FullscreenExitButton />}
 
       {/* Main Content */}
       <main className={`${
-        screen === 'editor'
+        IMMERSIVE_SCREENS.has(screen)
           ? 'pt-0 px-0 pb-0 h-screen'
           : isFullscreen
             ? 'pt-4 px-4 pb-8 min-h-screen'
