@@ -148,26 +148,6 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     }
   }, [currentSong, onSave, setHasUnsavedChanges]);
 
-  // Keyboard shortcuts (disabled when tap mode is active — Space handled by tap hook)
-  useEditorKeyboardShortcuts({
-    selectedNoteId, selectedNote, currentTime,
-    handlePlayPause, handleNoteDelete, handleSave,
-    undo, redo, handleNoteAdd, setSelectedNoteId,
-    tapModeActive: tapPlacement.isActive,
-  });
-
-  const handleNoteSelect = useCallback((noteId: string | undefined) => {
-    setSelectedNoteId(noteId);
-  }, []);
-
-  const updateSelectedNote = useCallback((updates: Partial<Note>) => {
-    if (selectedNoteId) handleNoteUpdate(selectedNoteId, updates);
-  }, [selectedNoteId, handleNoteUpdate]);
-
-  const duplicateNote = useCallback(() => {
-    if (selectedNote) handleNoteAdd(selectedNote.startTime + selectedNote.duration + 100, selectedNote.pitch);
-  }, [selectedNote, handleNoteAdd]);
-
   // --- Tap Note Placement (Ultrastar-style) ---
   // Create note on space-down, set duration on space-up
   const tapNoteCreate = useCallback((startTime: number, pitch: number, lyric: string): string => {
@@ -227,6 +207,26 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     onNoteRelease: tapNoteRelease,
     lyrics: allLyricsSyllables,
   });
+
+  // Keyboard shortcuts (disabled when tap mode is active — Space handled by tap hook)
+  useEditorKeyboardShortcuts({
+    selectedNoteId, selectedNote, currentTime,
+    handlePlayPause, handleNoteDelete, handleSave,
+    undo, redo, handleNoteAdd, setSelectedNoteId,
+    tapModeActive: tapPlacement.isActive,
+  });
+
+  const handleNoteSelect = useCallback((noteId: string | undefined) => {
+    setSelectedNoteId(noteId);
+  }, []);
+
+  const updateSelectedNote = useCallback((updates: Partial<Note>) => {
+    if (selectedNoteId) handleNoteUpdate(selectedNoteId, updates);
+  }, [selectedNoteId, handleNoteUpdate]);
+
+  const duplicateNote = useCallback(() => {
+    if (selectedNote) handleNoteAdd(selectedNote.startTime + selectedNote.duration + 100, selectedNote.pitch);
+  }, [selectedNote, handleNoteAdd]);
 
   // --- Audio Analysis: Apply detected notes ---
   const handleApplyDetectedNotes = useCallback((detectedNotes: DetectedNote[]) => {
