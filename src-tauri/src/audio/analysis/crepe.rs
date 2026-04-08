@@ -92,7 +92,7 @@ mod crepe_impl {
             }
 
             // ort 2.x: Session::builder() returns Result<SessionBuilder>
-            let builder = ort::session::Session::builder()
+            let mut builder = ort::session::Session::builder()
                 .map_err(|e| format!("ONNX Runtime init failed: {}", e))?;
 
             let session = builder

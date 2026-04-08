@@ -4,14 +4,14 @@
 //! Progress is reported back to the frontend via Tauri events.
 
 use std::sync::mpsc::{self, RecvTimeoutError};
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager};
 
 use super::analysis::{
-    types::{AnalysisOptions, AnalysisProgress, PitchAnalysisResult},
+    types::{AnalysisOptions, AnalysisProgress},
     analyzer::AudioAnalyzer,
     crepe,
 };
@@ -119,7 +119,7 @@ fn run_analysis_thread(
 
 fn emit_progress(
     app: &AppHandle,
-    stage: &str,
+    _stage: &str,
     progress: f64,
     message: &str,
 ) {

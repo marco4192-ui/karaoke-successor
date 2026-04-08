@@ -105,7 +105,7 @@ impl OctaveCorrector {
 
     /// Compute the Harmonic Product Spectrum by downsampling the magnitude
     /// spectrum by factors 1, 2, ..., H and multiplying element-wise.
-    fn harmonic_product(&self, magnitude: &[f64], sample_rate: f64) -> Vec<f64> {
+    fn harmonic_product(&self, magnitude: &[f64], _sample_rate: f64) -> Vec<f64> {
         let n = magnitude.len();
         let mut hps = vec![0.0f64; n];
 

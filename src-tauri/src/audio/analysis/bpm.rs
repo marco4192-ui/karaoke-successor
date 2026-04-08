@@ -151,7 +151,7 @@ impl BpmDetector {
         let half_lag = best_lag / 2;
 
         let double_bpm = if double_lag < max_lag {
-            let corr: f64 = (0..onset.len() - double_lag)
+            let _corr: f64 = (0..onset.len() - double_lag)
                 .map(|i| (onset[i] - mean) * (onset[i + double_lag] - mean))
                 .sum::<f64>()
                 / (onset.len() - double_lag) as f64
@@ -162,7 +162,7 @@ impl BpmDetector {
         };
 
         let half_bpm = if half_lag >= min_lag {
-            let corr: f64 = (0..onset.len() - half_lag)
+            let _corr: f64 = (0..onset.len() - half_lag)
                 .map(|i| (onset[i] - mean) * (onset[i + half_lag] - mean))
                 .sum::<f64>()
                 / (onset.len() - half_lag) as f64

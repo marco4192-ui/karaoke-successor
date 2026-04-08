@@ -19,5 +19,7 @@ pub mod analyzer;
 pub mod crepe;
 
 // Re-export main types for convenience
+#[allow(unused_imports)]
 pub use types::*;
+#[allow(unused_imports)]
 pub use analyzer::AudioAnalyzer;
