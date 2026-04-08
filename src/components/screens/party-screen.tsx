@@ -49,15 +49,6 @@ const partyGames: PartyGame[] = [
     color: 'from-orange-500 to-red-500',
   },
   {
-    mode: 'duet',
-    title: 'Duet Mode',
-    description: 'Two players sing together! Split-screen with separate note tracks for each vocalist.',
-    icon: '🎭',
-    players: '2',
-    color: 'from-cyan-500 to-pink-500',
-    isNew: true,
-  },
-  {
     mode: 'blind',
     title: 'Blind Karaoke',
     description: 'Lyrics disappear for certain sections. Can you remember the words?',
