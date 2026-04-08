@@ -43,7 +43,7 @@ impl AudioAnalyzer {
     ///
     /// Returns the complete `PitchAnalysisResult`.
     pub fn analyze<F>(
-        &self,
+        &mut self,
         samples: &[f64],
         sample_rate: u32,
         progress_callback: Option<F>,

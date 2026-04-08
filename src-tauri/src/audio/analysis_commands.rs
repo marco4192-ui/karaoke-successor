@@ -76,7 +76,7 @@ fn run_analysis_thread(
                     Ok(decoded) => {
                         emit_progress(&app_handle, "loading", 10.0, "Audio dekodiert, starte Analyse...");
 
-                        let analyzer = AudioAnalyzer::new(options);
+                        let mut analyzer = AudioAnalyzer::new(options);
                         let result = analyzer.analyze(
                             &decoded.samples,
                             decoded.sample_rate,
