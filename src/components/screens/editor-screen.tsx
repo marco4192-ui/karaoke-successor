@@ -11,6 +11,7 @@ import { KaraokeEditor } from '@/components/editor/karaoke-editor';
 import { NewSongDialog } from '@/components/editor/new-song-dialog';
 import { Song } from '@/types/game';
 import { saveSongToTxt } from '@/lib/editor/save-to-file';
+import { fuzzyMatch } from '@/lib/fuzzy-search';
 
 // Common genres and languages for quick selection
 const COMMON_GENRES = [
@@ -267,12 +268,11 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
         break;
     }
     
-    // Apply search
+    // Apply search (fuzzy matching — tolerant of typos like "Quen" for "Queen")
     if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(s => 
-        s.title.toLowerCase().includes(query) ||
-        s.artist.toLowerCase().includes(query)
+      filtered = filtered.filter(s =>
+        fuzzyMatch(searchQuery, s.title) ||
+        fuzzyMatch(searchQuery, s.artist)
       );
     }
     

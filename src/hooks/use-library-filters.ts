@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { Song } from '@/types/game';
 import { LibrarySettings, StartOptions } from '@/components/screens/library/types';
 import { isDuetSong } from '@/components/screens/library/utils';
+import { fuzzyMatch } from '@/lib/fuzzy-search';
 
 interface UseLibraryFiltersParams {
   loadedSongs: Song[];
@@ -16,14 +17,13 @@ export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMod
   const filteredSongs = useMemo(() => {
     let songs = loadedSongs;
     
-    // Search filter
+    // Search filter (fuzzy matching — tolerant of typos like "Quen" for "Queen")
     if (searchQuery) {
-      const lowerQuery = searchQuery.toLowerCase();
-      songs = songs.filter(s => 
-        s.title.toLowerCase().includes(lowerQuery) ||
-        s.artist.toLowerCase().includes(lowerQuery) ||
-        s.genre?.toLowerCase().includes(lowerQuery) ||
-        s.album?.toLowerCase().includes(lowerQuery)
+      songs = songs.filter(s =>
+        fuzzyMatch(searchQuery, s.title) ||
+        fuzzyMatch(searchQuery, s.artist) ||
+        (s.genre && fuzzyMatch(searchQuery, s.genre)) ||
+        (s.album && fuzzyMatch(searchQuery, s.album))
       );
     }
     
