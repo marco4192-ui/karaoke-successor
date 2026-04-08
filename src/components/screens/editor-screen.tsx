@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useGameStore } from '@/lib/game/store';
-import { getAllSongs, updateSong, getSongByIdWithLyrics } from '@/lib/game/song-library';
+import { getAllSongs, addSong, updateSong, getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { KaraokeEditor } from '@/components/editor/karaoke-editor';
+import { NewSongDialog } from '@/components/editor/new-song-dialog';
 import { Song } from '@/types/game';
 import { saveSongToTxt } from '@/lib/editor/save-to-file';
 
@@ -247,6 +248,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showMetadataPanel, setShowMetadataPanel] = useState(false); // Collapsible metadata panel
   const [isLoadingLyrics, setIsLoadingLyrics] = useState(false); // Loading state for lyrics
+  const [showNewSongDialog, setShowNewSongDialog] = useState(false); // New song creation dialog
 
   // Filter songs based on filter mode and search
   const filteredSongs = useMemo(() => {
@@ -392,6 +394,19 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
 
           {/* Songs Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {/* New Song Button - First card */}
+            <button
+              onClick={() => setShowNewSongDialog(true)}
+              className="border-2 border-dashed border-white/20 hover:border-cyan-500/50 rounded-xl overflow-hidden transition-all group flex flex-col items-center justify-center min-h-[200px] hover:bg-white/5"
+            >
+              <div className="w-16 h-16 rounded-full bg-cyan-500/10 flex items-center justify-center mb-3 group-hover:bg-cyan-500/20 transition-colors">
+                <svg className="w-8 h-8 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </div>
+              <span className="text-sm font-medium text-white/60 group-hover:text-white/80 transition-colors">Neuer Song</span>
+              <span className="text-xs text-white/30 mt-1">Songtext & Metadaten</span>
+            </button>
             {filteredSongs.map(song => (
               <button
                 key={song.id}
@@ -467,6 +482,18 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
             </div>
           )}
         </div>
+      )}
+      {/* New Song Dialog */}
+      {showNewSongDialog && (
+        <NewSongDialog
+          onSave={(song) => {
+            addSong(song);
+            setShowNewSongDialog(false);
+            // Immediately open the new song in the editor
+            setSelectedSong(song);
+          }}
+          onCancel={() => setShowNewSongDialog(false)}
+        />
       )}
     </div>
   );
