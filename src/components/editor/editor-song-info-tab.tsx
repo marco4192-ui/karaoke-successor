@@ -196,6 +196,7 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
           <Select
             value={song.language || ''}
             onValueChange={(value) => {
+              // Select stores full language name (e.g., "Deutsch" instead of "de")
               onSongChange(prev => ({ ...prev, language: value || undefined }));
               onSetUnsavedChanges();
             }}
@@ -204,19 +205,34 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
               <SelectValue placeholder="Sprache wählen" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="de">Deutsch</SelectItem>
-              <SelectItem value="en">Englisch</SelectItem>
-              <SelectItem value="es">Spanisch</SelectItem>
-              <SelectItem value="fr">Französisch</SelectItem>
-              <SelectItem value="it">Italienisch</SelectItem>
-              <SelectItem value="pt">Portugiesisch</SelectItem>
-              <SelectItem value="ja">Japanisch</SelectItem>
-              <SelectItem value="ko">Koreanisch</SelectItem>
-              <SelectItem value="zh">Chinesisch</SelectItem>
-              <SelectItem value="ru">Russisch</SelectItem>
-              <SelectItem value="other">Andere</SelectItem>
+              <SelectItem value="Deutsch">Deutsch</SelectItem>
+              <SelectItem value="Englisch">Englisch</SelectItem>
+              <SelectItem value="Spanisch">Spanisch</SelectItem>
+              <SelectItem value="Französisch">Französisch</SelectItem>
+              <SelectItem value="Italienisch">Italienisch</SelectItem>
+              <SelectItem value="Portugiesisch">Portugiesisch</SelectItem>
+              <SelectItem value="Japanisch">Japanisch</SelectItem>
+              <SelectItem value="Koreanisch">Koreanisch</SelectItem>
+              <SelectItem value="Chinesisch">Chinesisch</SelectItem>
+              <SelectItem value="Russisch">Russisch</SelectItem>
+              <SelectItem value="Niederländisch">Niederländisch</SelectItem>
+              <SelectItem value="Polnisch">Polnisch</SelectItem>
+              <SelectItem value="Türkisch">Türkisch</SelectItem>
+              <SelectItem value="Arabisch">Arabisch</SelectItem>
+              <SelectItem value="Schwedisch">Schwedisch</SelectItem>
+              <SelectItem value="Latein">Latein</SelectItem>
             </SelectContent>
           </Select>
+          <Input
+            id="song-language-custom"
+            value={song.language || ''}
+            onChange={(e) => {
+              onSongChange(prev => ({ ...prev, language: e.target.value || undefined }));
+              onSetUnsavedChanges();
+            }}
+            placeholder="Oder eigene Sprache eingeben..."
+            className="bg-slate-800 border-slate-600 h-8"
+          />
         </div>
 
         {/* Edition */}

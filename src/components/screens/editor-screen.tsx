@@ -20,22 +20,9 @@ const COMMON_GENRES = [
 ];
 
 const COMMON_LANGUAGES = [
-  { code: 'en', name: 'Englisch' },
-  { code: 'de', name: 'Deutsch' },
-  { code: 'es', name: 'Spanisch' },
-  { code: 'fr', name: 'Französisch' },
-  { code: 'it', name: 'Italienisch' },
-  { code: 'pt', name: 'Portugiesisch' },
-  { code: 'ja', name: 'Japanisch' },
-  { code: 'ko', name: 'Koreanisch' },
-  { code: 'zh', name: 'Chinesisch' },
-  { code: 'ru', name: 'Russisch' },
-  { code: 'nl', name: 'Niederländisch' },
-  { code: 'pl', name: 'Polnisch' },
-  { code: 'tr', name: 'Türkisch' },
-  { code: 'ar', name: 'Arabisch' },
-  { code: 'sv', name: 'Schwedisch' },
-  { code: 'la', name: 'Latein' },
+  'Englisch', 'Deutsch', 'Spanisch', 'Französisch', 'Italienisch',
+  'Portugiesisch', 'Japanisch', 'Koreanisch', 'Chinesisch', 'Russisch',
+  'Niederländisch', 'Polnisch', 'Türkisch', 'Arabisch', 'Schwedisch', 'Latein',
 ];
 
 // Genre/Language Editor Component
@@ -59,9 +46,9 @@ function GenreLanguageEditor({
     setShowGenreDropdown(false);
   };
 
-  const handleLanguageSelect = (code: string) => {
-    setCustomLanguage(code);
-    onUpdate({ language: code });
+  const handleLanguageSelect = (name: string) => {
+    setCustomLanguage(name);
+    onUpdate({ language: name });
     setShowLanguageDropdown(false);
   };
 
@@ -175,7 +162,7 @@ function GenreLanguageEditor({
                 className="w-full justify-between border-white/20 text-white"
               >
                 <span className="flex items-center gap-2">
-                  🌐 {COMMON_LANGUAGES.find(l => l.code === customLanguage)?.name || customLanguage || 'Sprache auswählen...'}
+                  🌐 {customLanguage || 'Sprache auswählen...'}
                 </span>
                 <svg className={`w-4 h-4 transition-transform ${showLanguageDropdown ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M6 9l6 6 6-6" />
@@ -186,15 +173,15 @@ function GenreLanguageEditor({
                   <div className="p-2">
                     {COMMON_LANGUAGES.map(lang => (
                       <button
-                        key={lang.code}
-                        onClick={() => handleLanguageSelect(lang.code)}
+                        key={lang}
+                        onClick={() => handleLanguageSelect(lang)}
                         className={`w-full px-3 py-2 text-sm rounded-lg text-left transition-colors ${
-                          customLanguage === lang.code 
+                          customLanguage === lang 
                             ? 'bg-purple-500 text-white' 
                             : 'hover:bg-white/10 text-white/80'
                         }`}
                       >
-                        {lang.name} ({lang.code})
+                        {lang}
                       </button>
                     ))}
                   </div>
@@ -203,7 +190,7 @@ function GenreLanguageEditor({
             </div>
           </div>
           <Input
-            placeholder="Oder eigenen Sprachcode eingeben (z.B. 'en', 'de')..."
+            placeholder="Oder eigene Sprache eingeben..."
             value={customLanguage}
             onChange={(e) => handleCustomLanguageChange(e.target.value)}
             className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
