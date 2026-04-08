@@ -4,9 +4,10 @@
 //!   1. Decode audio → mono f64 samples
 //!   2. For each hop-sized frame:
 //!      a. Layer 1: Voicing detection → confidence
-//!      b. If voiced: Layer 2: YIN pitch estimation → (freq, conf)
-//!      c. If enabled: Layer 3: Octave correction → corrected freq
-//!      d. Fuse confidences → overall score
+//!      b. If voiced:
+//!         - "yin": Layer 2 (YIN) → Layer 3 (Octave correction)
+//!         - "crepe": CREPE deep-learning model
+//!      c. Fuse confidences → overall score
 //!   3. Merge consecutive voiced frames into notes
 //!   4. Run BPM detection on the onset strength signal
 //!   5. Return complete analysis result
@@ -18,6 +19,8 @@ use super::voicing::VoicingDetector;
 use super::yin::YinDetectorSr;
 use super::octave::OctaveCorrector;
 use super::bpm::BpmDetector;
+#[cfg(feature = "crepe")]
+use super::crepe::CrepeDetector;
 
 // ---------------------------------------------------------------------------
 // AudioAnalyzer
@@ -79,12 +82,16 @@ impl AudioAnalyzer {
             };
         }
 
-        // ---- Layer 1: Voicing Detector ----
+        // ---- Layer 1: Voicing Detector (always used) ----
         report(AnalysisStage::VoicingDetection, 5.0, "Initialisiere Voicing-Detektion...", &progress_callback);
         let voicing = VoicingDetector::new(self.options.voicing_threshold, window_size);
 
-        // ---- Layer 2: YIN Pitch Detector ----
+        // ---- Prepare algorithm-specific detectors ----
         report(AnalysisStage::PitchDetection, 10.0, "Initialisiere Pitch-Detektion...", &progress_callback);
+
+        let use_crepe = self.options.algorithm == "crepe";
+
+        // YIN detector (used for "yin" algorithm and as fallback)
         let yin = YinDetectorSr::new(
             self.options.yin_threshold,
             self.options.min_frequency,
@@ -92,56 +99,93 @@ impl AudioAnalyzer {
             sample_rate,
         );
 
-        // ---- Layer 3: Octave Corrector ----
-        let octave: Option<OctaveCorrector> = if self.options.enable_octave_correction {
+        // Octave corrector (only for YIN pipeline)
+        let octave: Option<OctaveCorrector> = if self.options.enable_octave_correction && !use_crepe {
             Some(OctaveCorrector::new(4, window_size))
         } else {
             None
         };
 
+        // CREPE detector (only for "crepe" algorithm)
+        #[cfg(feature = "crepe")]
+        let mut crepe: Option<CrepeDetector> = None;
+        #[cfg(feature = "crepe")]
+        if use_crepe {
+            let mut detector = CrepeDetector::new();
+            // Try to load the model from the provided path
+            if let Some(ref model_path) = self.options.crepe_model_path {
+                match detector.load_model(model_path) {
+                    Ok(()) => {
+                        report(AnalysisStage::PitchDetection, 12.0, "CREPE-Modell geladen — Hochpräzision aktiv!", &progress_callback);
+                        crepe = Some(detector);
+                    }
+                    Err(e) => {
+                        report(AnalysisStage::PitchDetection, 12.0, &format!("CREPE-Modell konnte nicht geladen werden: {}. Fallback auf YIN.", e), &progress_callback);
+                    }
+                }
+            } else {
+                report(AnalysisStage::PitchDetection, 12.0, "CREPE ausgewählt, aber kein Modellpfad angegeben. Fallback auf YIN.", &progress_callback);
+            }
+        }
+
         // ---- Frame-by-frame analysis ----
         let mut frames: Vec<AnalysisFrame> = Vec::with_capacity(total_frames);
-        let analysis_end_progress = if self.options.algorithm == "crepe" { 60.0 } else { 80.0 };
+        let analysis_end_progress = if use_crepe { 60.0 } else { 80.0 };
 
         for i in 0..total_frames {
             let start_sample = i * hop_size;
             let window: Vec<f64> = samples[start_sample..start_sample + window_size].to_vec();
             let time_ms = start_sample as f64 / sr * 1000.0;
 
-            // Layer 1: Voicing
+            // Layer 1: Voicing (always first)
             let voicing_conf = voicing.detect(&window);
 
             let (frequency, midi_note, pitch_conf, overall_conf) = if voicing_conf < 0.3 {
                 // Not voiced → silence / instrumental
                 (None, None, 0.0, voicing_conf * 0.5)
             } else {
-                // Layer 2: YIN pitch
-                let (freq, conf) = yin.detect(&window);
+                // ---- Choose algorithm ----
+                #[cfg(feature = "crepe")]
+                let use_crepe_active = use_crepe && crepe.as_ref().map_or(false, |c| c.is_loaded());
+                #[cfg(not(feature = "crepe"))]
+                let use_crepe_active = false;
 
-                if freq <= 0.0 || conf < 0.1 {
-                    (None, None, 0.0, voicing_conf * 0.3)
+                if use_crepe_active {
+                    // ---- CREPE pipeline ----
+                    let crepe_det = crepe.as_mut().unwrap();
+                    let (freq, conf) = crepe_det.detect(&window, sr);
+
+                    if freq <= 0.0 || conf < 0.1 {
+                        (None, None, 0.0, voicing_conf * 0.3)
+                    } else {
+                        let midi = frequency_to_midi(freq);
+                        // CREPE confidence is already very reliable, weight it higher
+                        let overall = voicing_conf * 0.20 + conf * 0.65 + 0.15;
+                        (Some(freq), Some(midi), conf, overall)
+                    }
                 } else {
-                    let corrected_freq = if let Some(ref oct) = octave {
-                        let (cf, _was_corrected) = oct.correct(&window, freq, sr);
-                        cf
+                    // ---- YIN pipeline (Layer 2 + Layer 3) ----
+                    let (freq, conf) = yin.detect(&window);
+
+                    if freq <= 0.0 || conf < 0.1 {
+                        (None, None, 0.0, voicing_conf * 0.3)
                     } else {
-                        freq
-                    };
+                        // Layer 3: Octave correction — called ONCE per frame
+                        let (corrected_freq, was_corrected) = if let Some(ref oct) = octave {
+                            oct.correct(&window, freq, sr)
+                        } else {
+                            (freq, false)
+                        };
 
-                    let midi = frequency_to_midi(corrected_freq);
+                        let midi = frequency_to_midi(corrected_freq);
 
-                    // Fuse confidences:
-                    // - voicing (weight 0.25) + pitch (weight 0.50) + octave bonus (weight 0.25)
-                    let octave_bonus = if let Some(ref oct) = octave {
-                        let (_cf, was_corrected) = oct.correct(&window, freq, sr);
-                        if was_corrected { 0.7 } else { 0.9 }
-                    } else {
-                        0.85
-                    };
+                        // Fuse confidences:
+                        // - voicing (0.25) + pitch (0.50) + octave agreement (0.25)
+                        let octave_bonus = if was_corrected { 0.7 } else { 0.9 };
+                        let overall = voicing_conf * 0.25 + conf * 0.50 + octave_bonus * 0.25;
 
-                    let overall = voicing_conf * 0.25 + conf * 0.50 + octave_bonus * 0.25;
-
-                    (Some(corrected_freq), Some(midi), conf, overall)
+                        (Some(corrected_freq), Some(midi), conf, overall)
+                    }
                 }
             };
 

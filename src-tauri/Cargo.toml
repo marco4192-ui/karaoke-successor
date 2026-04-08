@@ -30,14 +30,16 @@ rubato = "0.15"
 # Audio analysis: pitch detection, BPM estimation
 rustfft = "6"
 
-# CREPE deep-learning pitch detection (optional)
-ort = { version = "2", optional = true }
+# CREPE deep-learning pitch detection (bundled by default)
+# ort downloads the ONNX Runtime library automatically at build time.
+ort = { version = "2.0.0-rc.12", optional = true }
 ndarray = { version = "0.16", optional = true }
 
 # Async runtime for blocking analysis tasks
 tokio = { version = "1", features = ["rt"] }
 
 [features]
+default = ["crepe"]
 asio = ["cpal/asio"]
 crepe = ["ort", "ndarray"]
 

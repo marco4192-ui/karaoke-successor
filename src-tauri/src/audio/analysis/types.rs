@@ -137,7 +137,7 @@ pub enum AnalysisStage {
 /// Options for the pitch analysis pipeline.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnalysisOptions {
-    /// "yin" (default) or "crepe" (if compiled with that feature).
+    /// "yin" (default) or "crepe" (high-accuracy mode, requires model file).
     pub algorithm: String,
     /// Minimum detectable frequency in Hz. Default 60.
     pub min_frequency: f64,
@@ -151,6 +151,9 @@ pub struct AnalysisOptions {
     pub enable_octave_correction: bool,
     /// Hop size override in samples (None = auto based on sample rate).
     pub hop_size_override: Option<usize>,
+    /// Path to the CREPE ONNX model file (e.g. "crepe-tiny.onnx").
+    /// Required when algorithm = "crepe". Ignored otherwise.
+    pub crepe_model_path: Option<String>,
 }
 
 impl Default for AnalysisOptions {
@@ -163,6 +166,7 @@ impl Default for AnalysisOptions {
             yin_threshold: 0.15,
             enable_octave_correction: true,
             hop_size_override: None,
+            crepe_model_path: None,
         }
     }
 }
