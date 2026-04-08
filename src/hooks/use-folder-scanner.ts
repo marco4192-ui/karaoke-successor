@@ -142,6 +142,17 @@ export function useFolderScanner(): UseFolderScannerReturn {
             if (coverResult.status === 'fulfilled') coverImage = coverResult.value;
             else console.warn(`[Import] Failed to create cover URL for ${scanned.title}`);
 
+            // Calculate actual song duration:
+            // Priority 1: #END tag from TXT (explicit song end time)
+            // Priority 2: Last lyric line end + 5 second buffer
+            // Priority 3: Fallback 180000 (3 minutes)
+            let calculatedDuration = 180000;
+            if (scanned.end && scanned.end > 0) {
+              calculatedDuration = scanned.end;
+            } else if (scanned.lyrics && scanned.lyrics.length > 0) {
+              calculatedDuration = Math.max(...scanned.lyrics.map(l => l.endTime)) + 5000;
+            }
+
             // Create song object with relative paths and cover blob URL.
             // Audio/video URLs are NOT set here — they are loaded lazily
             // by ensureSongUrls() / restoreSongUrls() when a song is played.
@@ -149,7 +160,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
               id: songId,
               title: scanned.title,
               artist: scanned.artist,
-              duration: 180000,
+              duration: calculatedDuration,
               bpm: scanned.bpm,
               difficulty: 'medium',
               rating: 3,
