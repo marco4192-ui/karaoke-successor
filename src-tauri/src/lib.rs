@@ -295,10 +295,16 @@ pub fn run() {
             audio::commands::audio_stop,
             audio::commands::audio_get_position,
             audio::commands::audio_get_state,
+            // Audio analysis commands (pitch detection, BPM estimation)
+            audio::analysis_commands::audio_analyze_pitch,
+            audio::analysis_commands::audio_detect_bpm,
+            audio::analysis_commands::audio_crepe_info,
         ])
         .setup(|app| {
             // Register the audio state (needs AppHandle for the dedicated audio thread)
             app.manage(audio::commands::AudioState::new(app.handle().clone()));
+            // Register the analysis state (needs AppHandle for the dedicated analysis thread)
+            app.manage(audio::analysis_commands::AnalysisState::new(app.handle().clone()));
 
             // Get the main window and open DevTools in debug mode
             #[cfg(debug_assertions)]

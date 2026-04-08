@@ -318,7 +318,7 @@ fn sample_to<T: cpal::SizedSample + cpal::FromSample<f32>>(val: f32) -> T {
 // ---------------------------------------------------------------------------
 
 /// Decode an audio file using Symphonia. Returns interleaved f32 samples.
-fn decode_audio_file(file_path: &str) -> Result<DecodedAudio, String> {
+pub(crate) fn decode_audio_file(file_path: &str) -> Result<DecodedAudio, String> {
     let path = PathBuf::from(file_path);
     if !path.exists() {
         return Err(format!("Audio file not found: {}", file_path));
@@ -572,4 +572,49 @@ fn resolve_device(device_id: &str) -> Result<(cpal::Device, String), String> {
         .ok_or(format!("Device index {} not found", device_index))?;
 
     Ok((device, host_name.to_string()))
+}
+
+// ---------------------------------------------------------------------------
+// Public helper: decode audio file to mono f64 samples (for analysis)
+// ---------------------------------------------------------------------------
+
+/// Result of decoding an audio file for analysis purposes.
+pub struct DecodedMonoAudio {
+    /// Mono f64 samples.
+    pub samples: Vec<f64>,
+    /// Sample rate.
+    pub sample_rate: u32,
+    /// Duration in milliseconds.
+    pub duration_ms: u64,
+}
+
+/// Decode an audio file and return mono f64 samples (for the analysis pipeline).
+/// If the source is stereo, channels are mixed down to mono.
+pub fn decode_mono_f64(file_path: &str) -> Result<DecodedMonoAudio, String> {
+    let decoded = decode_audio_file(file_path)?;
+    let channels = decoded.channels as usize;
+
+    let mono: Vec<f64> = if channels == 1 {
+        decoded.samples.iter().map(|&s| s as f64).collect()
+    } else {
+        let frames = decoded.samples.len() / channels;
+        let mut mono = Vec::with_capacity(frames);
+        for i in 0..frames {
+            let mut sum = 0.0f32;
+            for ch in 0..channels {
+                let idx = i * channels + ch;
+                if idx < decoded.samples.len() {
+                    sum += decoded.samples[idx];
+                }
+            }
+            mono.push((sum / channels as f32) as f64);
+        }
+        mono
+    };
+
+    Ok(DecodedMonoAudio {
+        samples: mono,
+        sample_rate: decoded.sample_rate,
+        duration_ms: decoded.duration_ms,
+    })
 }

@@ -27,8 +27,19 @@ cpal = "0.15"
 symphonia = { version = "0.5", features = ["mp3", "aac", "vorbis", "flac", "wav", "pcm", "isomp4", "mkv", "ogg"] }
 rubato = "0.15"
 
+# Audio analysis: pitch detection, BPM estimation
+rustfft = "6"
+
+# CREPE deep-learning pitch detection (optional)
+ort = { version = "2", optional = true }
+ndarray = { version = "0.16", optional = true }
+
+# Async runtime for blocking analysis tasks
+tokio = { version = "1", features = ["rt"] }
+
 [features]
 asio = ["cpal/asio"]
+crepe = ["ort", "ndarray"]
 
 [profile.release]
 panic = "abort"

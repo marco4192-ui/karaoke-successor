@@ -6,7 +6,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { saveSongToTxt, type SaveResult } from '@/lib/editor/save-to-file';
 import { Timeline } from './timeline/timeline';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Music, FileText, Settings, BookOpen } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Music, FileText, Settings, BookOpen, Waves } from 'lucide-react';
 import { useEditorHistory } from '@/hooks/use-editor-history';
 import { useEditorPlayback } from '@/hooks/use-editor-playback';
 import { useEditorKeyboardShortcuts } from '@/hooks/use-editor-keyboard-shortcuts';
@@ -17,6 +18,8 @@ import { EditorNoteTab, EditorNoteTabPlaceholder } from './editor-note-tab';
 import { EditorSongInfoTab } from './editor-song-info-tab';
 import { EditorMetadataTab } from './editor-metadata-tab';
 import { EditorLyricsTab } from './editor-lyrics-tab';
+import { AudioAnalysisPanel } from './audio-analysis-panel';
+import type { DetectedNote } from '@/hooks/use-audio-analysis';
 
 interface KaraokeEditorProps {
   song: Song;
@@ -225,6 +228,82 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     lyrics: allLyricsSyllables,
   });
 
+  // --- Audio Analysis: Apply detected notes ---
+  const handleApplyDetectedNotes = useCallback((detectedNotes: DetectedNote[]) => {
+    const newLyrics: LyricLine[] = [];
+    let currentLineNotes: Note[] = [];
+    let lineStartTime = 0;
+    const LINE_BREAK_THRESHOLD = 2000; // 2s gap → new line
+
+    for (const dn of detectedNotes) {
+      // Check if we need a new line
+      if (currentLineNotes.length > 0) {
+        const lastNote = currentLineNotes[currentLineNotes.length - 1];
+        const gap = dn.start_time_ms - (lastNote.startTime + lastNote.duration);
+        if (gap >= LINE_BREAK_THRESHOLD) {
+          // Finalise current line
+          const lastN = currentLineNotes[currentLineNotes.length - 1];
+          newLyrics.push({
+            id: uuidv4(),
+            text: currentLineNotes.map(n => n.lyric).join(' ').trim(),
+            startTime: lineStartTime,
+            endTime: lastN.startTime + lastN.duration,
+            notes: currentLineNotes,
+          });
+          currentLineNotes = [];
+        }
+      }
+
+      if (currentLineNotes.length === 0) {
+        lineStartTime = dn.start_time_ms;
+      }
+
+      // Determine lyric text: use the confidence level as a placeholder
+      const confLabel = dn.confidence_level === 'High' ? '♪'
+        : dn.confidence_level === 'Medium' ? '♫'
+        : dn.confidence_level === 'Low' ? '♩'
+        : '♬';
+
+      const note: Note = {
+        id: uuidv4(),
+        pitch: dn.midi_note,
+        frequency: dn.frequency,
+        startTime: Math.round(dn.start_time_ms),
+        duration: Math.round(dn.duration_ms),
+        lyric: confLabel,
+        isBonus: false,
+        isGolden: dn.confidence_level === 'High',
+      };
+
+      currentLineNotes.push(note);
+    }
+
+    // Push the last line
+    if (currentLineNotes.length > 0) {
+      const lastN = currentLineNotes[currentLineNotes.length - 1];
+      newLyrics.push({
+        id: uuidv4(),
+        text: currentLineNotes.map(n => n.lyric).join(' ').trim(),
+        startTime: lineStartTime,
+        endTime: lastN.startTime + lastN.duration,
+        notes: currentLineNotes,
+      });
+    }
+
+    pushHistory(newLyrics);
+    setCurrentSong(prev => ({ ...prev, lyrics: newLyrics }));
+    setHasUnsavedChanges(true);
+  }, [pushHistory, setHasUnsavedChanges]);
+
+  // --- Audio Analysis: Apply detected BPM ---
+  const handleApplyBpm = useCallback((bpm: number) => {
+    setCurrentSong(prev => ({ ...prev, bpm: Math.round(bpm) }));
+    setHasUnsavedChanges(true);
+  }, [setHasUnsavedChanges]);
+
+  // Determine the audio file path for analysis
+  const analysisAudioPath = currentSong.relativeAudioPath || currentSong.audioUrl || null;
+
   return (
     <div className="flex flex-col h-full bg-slate-950 text-white">
       <EditorHeader
@@ -271,18 +350,21 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
 
         <aside className="w-72 bg-slate-900 border-l border-slate-700 flex flex-col overflow-hidden flex-shrink-0">
           <Tabs defaultValue="note" className="flex flex-col h-full">
-            <TabsList className="grid w-full grid-cols-4 bg-slate-800 border-b border-slate-700 rounded-none h-10">
-              <TabsTrigger value="note" className="text-xs data-[state=active]:bg-slate-700">
-                <Music className="w-3 h-3 mr-1" />Note
+            <TabsList className="grid w-full grid-cols-5 bg-slate-800 border-b border-slate-700 rounded-none h-10">
+              <TabsTrigger value="note" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
+                <Music className="w-3 h-3" />
               </TabsTrigger>
-              <TabsTrigger value="info" className="text-xs data-[state=active]:bg-slate-700">
-                <FileText className="w-3 h-3 mr-1" />Info
+              <TabsTrigger value="info" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
+                <FileText className="w-3 h-3" />
               </TabsTrigger>
-              <TabsTrigger value="lyrics" className="text-xs data-[state=active]:bg-slate-700">
-                <BookOpen className="w-3 h-3 mr-1" />Lyrics
+              <TabsTrigger value="lyrics" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
+                <BookOpen className="w-3 h-3" />
               </TabsTrigger>
-              <TabsTrigger value="metadata" className="text-xs data-[state=active]:bg-slate-700">
-                <Settings className="w-3 h-3 mr-1" />Meta
+              <TabsTrigger value="analysis" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
+                <Waves className="w-3 h-3" />
+              </TabsTrigger>
+              <TabsTrigger value="metadata" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
+                <Settings className="w-3 h-3" />
               </TabsTrigger>
             </TabsList>
 
@@ -310,6 +392,16 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
                 onNoteSelect={handleNoteSelect}
                 onTimeChange={handleTimeChange}
               />
+            </TabsContent>
+
+            <TabsContent value="analysis" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
+              <ScrollArea className="h-full">
+                <AudioAnalysisPanel
+                  audioFilePath={analysisAudioPath}
+                  onApplyNotes={handleApplyDetectedNotes}
+                  onApplyBpm={handleApplyBpm}
+                />
+              </ScrollArea>
             </TabsContent>
 
             <TabsContent value="metadata" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
