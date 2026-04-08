@@ -20,6 +20,10 @@ interface LibraryFiltersProps {
   folderBreadcrumb: string[];
   onBreadcrumbClick: (index: number) => void;
   getGroupDisplayName: (key: string) => string;
+  /** Current game start mode (e.g. 'duel', 'duet', 'single') — affects filtering */
+  startMode: string;
+  /** Reset start mode back to 'single' (called when duet filter is explicitly removed) */
+  onResetStartMode: () => void;
 }
 
 export function LibraryFilters({
@@ -37,6 +41,8 @@ export function LibraryFilters({
   folderBreadcrumb,
   onBreadcrumbClick,
   getGroupDisplayName,
+  startMode,
+  onResetStartMode,
 }: LibraryFiltersProps) {
   const selectStyle = {
     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
@@ -125,9 +131,17 @@ export function LibraryFilters({
         
         {/* Duet Filter Toggle */}
         <button
-          onClick={() => setSettings(prev => ({ ...prev, filterDuet: !prev.filterDuet }))}
+          onClick={() => {
+            const newValue = !settings.filterDuet;
+            setSettings(prev => ({ ...prev, filterDuet: newValue }));
+            // When explicitly disabling duet filter, also reset startMode
+            // so songs are no longer filtered by the duet game mode
+            if (!newValue && startMode === 'duet') {
+              onResetStartMode();
+            }
+          }}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-            settings.filterDuet 
+            settings.filterDuet || startMode === 'duet'
               ? 'bg-pink-500/30 text-pink-300 border border-pink-500/50' 
               : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/10'
           }`}
@@ -137,9 +151,15 @@ export function LibraryFilters({
         </button>
         
         {/* Active Filters Display */}
-        {(settings.filterGenre !== 'all' || settings.filterLanguage !== 'all' || settings.filterDuet) && (
+        {(settings.filterGenre !== 'all' || settings.filterLanguage !== 'all' || settings.filterDuet || startMode === 'duet') && (
           <button
-            onClick={() => setSettings(prev => ({ ...prev, filterGenre: 'all', filterLanguage: 'all', filterDuet: false }))}
+            onClick={() => {
+              setSettings(prev => ({ ...prev, filterGenre: 'all', filterLanguage: 'all', filterDuet: false }));
+              // Also reset startMode so duet game mode filter is cleared
+              if (startMode === 'duet') {
+                onResetStartMode();
+              }
+            }}
             className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
           >
             ✕ Clear filters

@@ -210,6 +210,8 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
           onSetGroupBy={setGroupBy} onClearFolder={handleClearFolder}
           folderBreadcrumb={folderBreadcrumb} onBreadcrumbClick={handleBreadcrumbClick}
           getGroupDisplayName={(key) => getGroupDisplayName(key, groupBy)}
+          startMode={startOptions.mode}
+          onResetStartMode={() => setStartOptions(prev => ({ ...prev, mode: 'single' }))}
         />
       )}
 
