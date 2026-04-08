@@ -68,7 +68,7 @@ import {
 
 // ===================== GAME SCREEN =====================
 function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }) {
-  const { gameState, setCurrentTime, setDetectedPitch, updatePlayer, endGame, setResults, addPlayer, createProfile, profiles, setMissingWordsIndices, setBlindSection } = useGameStore();
+  const { gameState, setCurrentTime, setDetectedPitch, updatePlayer, endGame, resetGame, setResults, addPlayer, createProfile, profiles, setMissingWordsIndices, setBlindSection } = useGameStore();
   const { pitchResult, initialize, start, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
 
   // Smoothed pitch for visual display (prevents flickering/jitter)
@@ -430,6 +430,9 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
           if (videoRef.current) { videoRef.current.pause(); videoRef.current.currentTime = 0; }
           nativeAudio.stop().catch(() => {});
           setIsPlaying(false);
+          // Reset scoring state so scores don't carry over to the next game
+          resetScoring();
+          resetGame();
           onBack();
         }} className="text-white/80 hover:text-white hover:bg-white/10">
           ← Back

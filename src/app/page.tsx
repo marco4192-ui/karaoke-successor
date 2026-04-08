@@ -304,7 +304,7 @@ export default function KaraokeSuccessor() {
             initialGameMode={gameState.gameMode}
           />
         )}
-        {screen === 'game' && <GameScreen onEnd={handleGameEnd} onBack={() => setScreen('library')} />}
+        {screen === 'game' && <GameScreen onEnd={handleGameEnd} onBack={() => { resetGame(); setScreen('library'); }} />}
         {screen === 'party' && (
           <PartyScreen
             onSelectMode={(mode) => {
