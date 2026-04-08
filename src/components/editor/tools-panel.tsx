@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Music, Mic, Star, Zap, Users, Copy, Trash2, Scissors } from 'lucide-react';
+import { Plus, Music, Mic, Star, Zap, Users, Copy, Trash2, Scissors, Hand } from 'lucide-react';
 import type { Note, DuetPlayer } from '@/types/game';
 
 interface ToolsPanelProps {
@@ -13,6 +13,14 @@ interface ToolsPanelProps {
   onDuplicateNote: () => void;
   onDeleteNote: () => void;
   onUpdateSelectedNote: (updates: Partial<Note>) => void;
+  tapMode?: {
+    isActive: boolean;
+    isHolding: boolean;
+    notesPlaced: number;
+    nextLyricIndex: number;
+    toggleTapMode: () => void;
+    resetSession: () => void;
+  };
 }
 
 export function ToolsPanel({
@@ -22,6 +30,7 @@ export function ToolsPanel({
   onDuplicateNote,
   onDeleteNote,
   onUpdateSelectedNote,
+  tapMode,
 }: ToolsPanelProps) {
   return (
     <aside className="w-56 bg-slate-900 border-r border-slate-700 flex flex-col overflow-y-auto flex-shrink-0">
@@ -137,6 +146,51 @@ export function ToolsPanel({
             </SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Tap Note Placement Mode */}
+      <div className="p-4 border-b border-slate-700">
+        <h2 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+          <Hand className="w-3.5 h-3.5" />
+          Tap-Modus
+        </h2>
+        <Button
+          variant={tapMode?.isActive ? 'default' : 'outline'}
+          size="sm"
+          onClick={tapMode?.toggleTapMode}
+          className={tapMode?.isActive
+            ? 'bg-green-600 hover:bg-green-700 w-full justify-start'
+            : 'w-full justify-start border-slate-600 text-slate-300'
+          }
+        >
+          <Hand className="w-4 h-4 mr-2" />
+          {tapMode?.isActive ? 'Tap-Modus AN' : 'Tap-Modus AUS'}
+        </Button>
+        {tapMode?.isActive && (
+          <div className="mt-2 space-y-1.5">
+            <div className={`text-xs px-2 py-1.5 rounded ${tapMode.isHolding ? 'bg-green-500/30 text-green-300 animate-pulse' : 'bg-slate-800 text-slate-400'}`}>
+              {tapMode.isHolding ? '⏺ Halte Space... (Note wird erstellt)' : 'Space drücken = Note setzen'}
+            </div>
+            <div className="text-xs text-slate-500 flex justify-between">
+              <span>Noten: {tapMode.notesPlaced}</span>
+              <span>Nächste: #{tapMode.nextLyricIndex}</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={tapMode.resetSession}
+              className="w-full text-slate-500 hover:text-slate-300 text-xs mt-1"
+            >
+              Zähler zurücksetzen
+            </Button>
+          </div>
+        )}
+        {!tapMode?.isActive && (
+          <p className="text-xs text-slate-600 mt-2">
+            Space drücken & halten = Note erstellen.
+            Loslassen = Dauer festlegen.
+          </p>
+        )}
       </div>
 
       {/* Keyboard shortcuts reference */}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import type { Song, Note, LyricLine } from '@/types/game';
 import { v4 as uuidv4 } from 'uuid';
 import { saveSongToTxt, type SaveResult } from '@/lib/editor/save-to-file';
@@ -10,6 +10,7 @@ import { Music, FileText, Settings, BookOpen } from 'lucide-react';
 import { useEditorHistory } from '@/hooks/use-editor-history';
 import { useEditorPlayback } from '@/hooks/use-editor-playback';
 import { useEditorKeyboardShortcuts } from '@/hooks/use-editor-keyboard-shortcuts';
+import { useTapNotePlacement } from '@/hooks/use-tap-note-placement';
 import { EditorHeader } from './editor-header';
 import { ToolsPanel } from './tools-panel';
 import { EditorNoteTab, EditorNoteTabPlaceholder } from './editor-note-tab';
@@ -42,6 +43,16 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
 
   const allNotes = useMemo(() => currentSong.lyrics.flatMap(line => line.notes), [currentSong.lyrics]);
   const selectedNote = useMemo(() => allNotes.find(n => n.id === selectedNoteId), [allNotes, selectedNoteId]);
+
+  // All lyrics syllables for tap-mode auto-assignment
+  const allLyricsSyllables = useMemo(
+    () => allNotes.map(n => n.lyric).filter(l => l && l !== '---'),
+    [allNotes]
+  );
+
+  // Ref for currentTime (needed by tap note placement hook to avoid stale closures)
+  const currentTimeRef = useRef(currentTime);
+  currentTimeRef.current = currentTime;
 
   const undo = useCallback(() => {
     const lyrics = historyUndo();
@@ -134,11 +145,12 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     }
   }, [currentSong, onSave, setHasUnsavedChanges]);
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts (disabled when tap mode is active — Space handled by tap hook)
   useEditorKeyboardShortcuts({
     selectedNoteId, selectedNote, currentTime,
     handlePlayPause, handleNoteDelete, handleSave,
     undo, redo, handleNoteAdd, setSelectedNoteId,
+    tapModeActive: tapPlacement.isActive,
   });
 
   const handleNoteSelect = useCallback((noteId: string | undefined) => {
@@ -152,6 +164,66 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   const duplicateNote = useCallback(() => {
     if (selectedNote) handleNoteAdd(selectedNote.startTime + selectedNote.duration + 100, selectedNote.pitch);
   }, [selectedNote, handleNoteAdd]);
+
+  // --- Tap Note Placement (Ultrastar-style) ---
+  // Create note on space-down, set duration on space-up
+  const tapNoteCreate = useCallback((startTime: number, pitch: number, lyric: string): string => {
+    const noteId = uuidv4();
+    const newNote: Note = {
+      id: noteId, pitch,
+      frequency: 440 * Math.pow(2, (pitch - 69) / 12),
+      startTime, duration: 200, lyric,
+      isBonus: false, isGolden: false,
+    };
+    setCurrentSong(prev => {
+      const targetLine = prev.lyrics.find(line => startTime >= line.startTime && startTime <= line.endTime);
+      let newLyrics: LyricLine[];
+      if (targetLine) {
+        newLyrics = prev.lyrics.map(line =>
+          line.id === targetLine!.id
+            ? { ...line, notes: [...line.notes, newNote].sort((a, b) => a.startTime - b.startTime) }
+            : line
+        );
+      } else {
+        const newLine: LyricLine = { id: uuidv4(), text: lyric, startTime, endTime: startTime + 2000, notes: [newNote] };
+        newLyrics = [...prev.lyrics, newLine].sort((a, b) => a.startTime - b.startTime);
+      }
+      pushHistory(newLyrics);
+      return { ...prev, lyrics: newLyrics };
+    });
+    setSelectedNoteId(noteId);
+    return noteId;
+  }, [pushHistory]);
+
+  const tapNoteRelease = useCallback((noteId: string, releaseTime: number) => {
+    setCurrentSong(prev => {
+      const newLyrics = prev.lyrics.map(line => ({
+        ...line,
+        notes: line.notes.map(note => {
+          if (note.id === noteId) {
+            const duration = Math.max(100, releaseTime - note.startTime);
+            return { ...note, duration };
+          }
+          return note;
+        }),
+      }));
+      // Recalculate line end times
+      const fixedLyrics = newLyrics.map(line => {
+        if (line.notes.length === 0) return line;
+        const lastNote = line.notes[line.notes.length - 1];
+        return { ...line, endTime: lastNote.startTime + lastNote.duration };
+      });
+      return { ...prev, lyrics: fixedLyrics };
+    });
+  }, []);
+
+  const tapPlacement = useTapNotePlacement({
+    currentTimeRef,
+    defaultPitch: 60, // C4
+    onNoteCreate: tapNoteCreate,
+    onNoteRelease: tapNoteRelease,
+    lyrics: allLyricsSyllables,
+  });
 
   return (
     <div className="flex flex-col h-full bg-slate-950 text-white">
@@ -177,6 +249,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
           onDuplicateNote={duplicateNote}
           onDeleteNote={() => selectedNoteId && handleNoteDelete(selectedNoteId)}
           onUpdateSelectedNote={updateSelectedNote}
+          tapMode={tapPlacement}
         />
 
         <main className="flex-1 flex flex-col overflow-hidden">

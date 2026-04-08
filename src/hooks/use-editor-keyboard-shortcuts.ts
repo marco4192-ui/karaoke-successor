@@ -14,6 +14,7 @@ interface UseEditorKeyboardShortcutsParams {
   redo: () => void;
   handleNoteAdd: (startTime: number, pitch: number) => void;
   setSelectedNoteId: (noteId: string | undefined) => void;
+  tapModeActive?: boolean;
 }
 
 export function useEditorKeyboardShortcuts({
@@ -27,6 +28,7 @@ export function useEditorKeyboardShortcuts({
   redo,
   handleNoteAdd,
   setSelectedNoteId,
+  tapModeActive = false,
 }: UseEditorKeyboardShortcutsParams) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -35,8 +37,8 @@ export function useEditorKeyboardShortcuts({
         return;
       }
 
-      // Space: Play/Pause
-      if (e.code === 'Space') {
+      // Space: Play/Pause (disabled in tap mode — Space is used for note placement)
+      if (e.code === 'Space' && !tapModeActive) {
         e.preventDefault();
         handlePlayPause();
       }
@@ -94,5 +96,5 @@ export function useEditorKeyboardShortcuts({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handlePlayPause, selectedNoteId, handleNoteDelete, handleSave, undo, redo, selectedNote, handleNoteAdd, currentTime, setSelectedNoteId]);
+  }, [handlePlayPause, selectedNoteId, handleNoteDelete, handleSave, undo, redo, selectedNote, handleNoteAdd, currentTime, setSelectedNoteId, tapModeActive]);
 }
