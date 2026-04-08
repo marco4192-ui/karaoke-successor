@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { getAllSongs, clearCustomSongs, replaceCustomSongs, setScanInProgress, invalidateSongCache } from '@/lib/game/song-library';
+import { getAllSongs, clearCustomSongs, replaceCustomSongs, setScanInProgress, invalidateSongCache, clearSongCache } from '@/lib/game/song-library';
 import { Song } from '@/types/game';
 import { isTauri } from '@/lib/tauri-file-storage';
 import { safeAlert, safeConfirm, safePrompt } from '@/lib/safe-dialog';
@@ -318,8 +318,10 @@ export function useFolderScanner(): UseFolderScannerReturn {
     setResetComplete(false);
 
     try {
+      // Clear all song data from memory, localStorage, IndexedDB, and blob URL cache
       clearCustomSongs();
 
+      // Clear additional localStorage keys (e.g. karaoke-songs-folder)
       const allKeys = Object.keys(localStorage);
       for (const key of allKeys) {
         if (key.startsWith('karaoke-songs') || key.startsWith('imported-song-') || key === 'karaoke-library') {
@@ -327,7 +329,16 @@ export function useFolderScanner(): UseFolderScannerReturn {
         }
       }
 
-      reloadLibrary();
+      // Fully invalidate all in-memory caches (customSongsCache + songCache)
+      clearSongCache();
+
+      // Clear library cache in IndexedDB (karaoke-successor-cache)
+      try {
+        const { clearCache: clearLibraryCache } = await import('@/lib/game/library-cache');
+        await clearLibraryCache();
+      } catch (e) {
+        console.warn('[Settings] Failed to clear library cache:', e);
+      }
 
       await new Promise(resolve => setTimeout(resolve, 500));
 
