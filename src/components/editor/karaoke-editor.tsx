@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { saveSongToTxt, type SaveResult } from '@/lib/editor/save-to-file';
 import { Timeline } from './timeline/timeline';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Music, FileText, Settings } from 'lucide-react';
+import { Music, FileText, Settings, BookOpen } from 'lucide-react';
 import { useEditorHistory } from '@/hooks/use-editor-history';
 import { useEditorPlayback } from '@/hooks/use-editor-playback';
 import { useEditorKeyboardShortcuts } from '@/hooks/use-editor-keyboard-shortcuts';
@@ -15,6 +15,7 @@ import { ToolsPanel } from './tools-panel';
 import { EditorNoteTab, EditorNoteTabPlaceholder } from './editor-note-tab';
 import { EditorSongInfoTab } from './editor-song-info-tab';
 import { EditorMetadataTab } from './editor-metadata-tab';
+import { EditorLyricsTab } from './editor-lyrics-tab';
 
 interface KaraokeEditorProps {
   song: Song;
@@ -197,12 +198,15 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
 
         <aside className="w-72 bg-slate-900 border-l border-slate-700 flex flex-col overflow-hidden flex-shrink-0">
           <Tabs defaultValue="note" className="flex flex-col h-full">
-            <TabsList className="grid w-full grid-cols-3 bg-slate-800 border-b border-slate-700 rounded-none h-10">
+            <TabsList className="grid w-full grid-cols-4 bg-slate-800 border-b border-slate-700 rounded-none h-10">
               <TabsTrigger value="note" className="text-xs data-[state=active]:bg-slate-700">
                 <Music className="w-3 h-3 mr-1" />Note
               </TabsTrigger>
               <TabsTrigger value="info" className="text-xs data-[state=active]:bg-slate-700">
                 <FileText className="w-3 h-3 mr-1" />Info
+              </TabsTrigger>
+              <TabsTrigger value="lyrics" className="text-xs data-[state=active]:bg-slate-700">
+                <BookOpen className="w-3 h-3 mr-1" />Lyrics
               </TabsTrigger>
               <TabsTrigger value="metadata" className="text-xs data-[state=active]:bg-slate-700">
                 <Settings className="w-3 h-3 mr-1" />Meta
@@ -222,6 +226,16 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
                 allNotesCount={allNotes.length}
                 onSongChange={setCurrentSong}
                 onSetUnsavedChanges={() => setHasUnsavedChanges(true)}
+              />
+            </TabsContent>
+
+            <TabsContent value="lyrics" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
+              <EditorLyricsTab
+                song={currentSong}
+                currentTime={currentTime}
+                selectedNoteId={selectedNoteId}
+                onNoteSelect={handleNoteSelect}
+                onTimeChange={handleTimeChange}
               />
             </TabsContent>
 
