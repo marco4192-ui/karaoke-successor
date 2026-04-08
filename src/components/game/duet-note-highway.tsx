@@ -75,8 +75,8 @@ function CenterScoreBar({
 }) {
   return (
     <div className="relative flex items-center justify-center z-30" style={{ height: '8%' }}>
-      {/* Background gradient for the score bar */}
-      <div className="absolute inset-0 bg-black/90 backdrop-blur-md border-y-2 border-white/10" />
+      {/* Background gradient for the score bar - semi-transparent to show game behind */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm border-y border-white/10" />
 
       {/* P1 Score - Left */}
       <div className="relative flex items-center gap-3 px-4 py-1">
