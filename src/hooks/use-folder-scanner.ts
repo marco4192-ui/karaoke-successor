@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { getAllSongs, clearCustomSongs, replaceCustomSongs, setScanInProgress, invalidateSongCache, clearSongCache } from '@/lib/game/song-library';
+import { clearCustomSongsFromDB } from '@/lib/db/custom-songs-db';
 import { Song } from '@/types/game';
 import { isTauri } from '@/lib/tauri-file-storage';
 import { safeAlert, safeConfirm, safePrompt } from '@/lib/safe-dialog';
@@ -318,10 +319,10 @@ export function useFolderScanner(): UseFolderScannerReturn {
     setResetComplete(false);
 
     try {
-      // Clear all song data from memory, localStorage, IndexedDB, and blob URL cache
+      // Step 1: Clear in-memory caches and localStorage synchronously
       clearCustomSongs();
 
-      // Clear additional localStorage keys (e.g. karaoke-songs-folder)
+      // Step 2: Clear additional localStorage keys (e.g. karaoke-songs-folder)
       const allKeys = Object.keys(localStorage);
       for (const key of allKeys) {
         if (key.startsWith('karaoke-songs') || key.startsWith('imported-song-') || key === 'karaoke-library') {
@@ -329,18 +330,24 @@ export function useFolderScanner(): UseFolderScannerReturn {
         }
       }
 
-      // Fully invalidate all in-memory caches (customSongsCache + songCache)
+      // Step 3: Fully invalidate all in-memory caches (customSongsCache + songCache)
       clearSongCache();
 
-      // Clear library cache in IndexedDB (karaoke-successor-cache)
+      // Step 4: AWAIT IndexedDB clear — previously this was fire-and-forget inside
+      // clearCustomSongs(), causing songs to reappear after page reload.
+      try {
+        await clearCustomSongsFromDB();
+      } catch (e) {
+        console.warn('[Settings] Failed to clear custom songs from IndexedDB:', e);
+      }
+
+      // Step 5: Clear library cache in IndexedDB (karaoke-successor-cache)
       try {
         const { clearCache: clearLibraryCache } = await import('@/lib/game/library-cache');
         await clearLibraryCache();
       } catch (e) {
         console.warn('[Settings] Failed to clear library cache:', e);
       }
-
-      await new Promise(resolve => setTimeout(resolve, 500));
 
       setSongCount(0);
       setResetComplete(true);
