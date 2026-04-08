@@ -16,8 +16,6 @@ interface SettingsTabBarProps {
 }
 
 export function SettingsTabBar({ activeTab, onTabChange, tx }: SettingsTabBarProps) {
-  const isEditor = activeTab === 'editor';
-
   const tabs: { id: SettingsTab; label: string; icon: React.FC<{ className?: string }>; color: string }[] = [
     { id: 'general', label: tx('settings.tabGeneral'), icon: SettingsIcon, color: 'cyan' },
     { id: 'graphicsound', label: 'Graphic / Sound', icon: MusicIcon, color: 'cyan' },
@@ -31,7 +29,7 @@ export function SettingsTabBar({ activeTab, onTabChange, tx }: SettingsTabBarPro
   ];
 
   return (
-    <div className={isEditor ? 'flex flex-wrap gap-2 mb-2 px-4 pt-4' : 'flex flex-wrap gap-2 mb-6'}>
+    <div className="flex flex-wrap gap-2 mb-6">
       {tabs.map(({ id, label, icon: Icon, color }) => (
         <Button
           key={id}
