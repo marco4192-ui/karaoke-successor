@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useRef, useState, useCallback, useEffect } from 'react';
+import React, { useMemo, useRef, useState, useCallback, useLayoutEffect } from 'react';
 import { LyricLine } from '@/types/game';
 import { LyricLineDisplay } from './lyric-line-display';
 
@@ -83,8 +83,10 @@ export function SinglePlayerLyrics({
     firstNoteNodeRef.current = node;
   }, []);
 
-  // Measure first note position relative to container when the current line changes
-  useEffect(() => {
+  // Measure first note position relative to container when the current line changes.
+  // Uses useLayoutEffect to measure BEFORE the browser paints — this prevents the
+  // pointer from flashing to the center (50% fallback) for even a single frame.
+  useLayoutEffect(() => {
     const measure = () => {
       const container = containerRef.current;
       const noteEl = firstNoteNodeRef.current;
@@ -106,13 +108,12 @@ export function SinglePlayerLyrics({
       setFirstNoteXPercent(Math.max(0, Math.min(100, relativeX)));
     };
 
-    // Use rAF to ensure the callback ref has been called with the new node
-    const rafId = requestAnimationFrame(measure);
+    // Measure immediately (DOM is already committed in useLayoutEffect)
+    measure();
 
-    // Also measure on resize
+    // Also re-measure on resize
     window.addEventListener('resize', measure);
     return () => {
-      cancelAnimationFrame(rafId);
       window.removeEventListener('resize', measure);
     };
   }, [currentLine]);

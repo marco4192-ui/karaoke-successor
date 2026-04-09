@@ -137,6 +137,13 @@ export function LyricLineDisplay({
     }
   };
 
+  // Pre-compute index of first note with actual lyric text (for pointer targeting)
+  // This is the "first sung word" — skips empty notes and hyphen-only markers
+  const firstSungNoteIndex = line.notes.findIndex(n => {
+    const lyric = (n.lyric || '').trim();
+    return lyric.length > 0 && lyric !== '-';
+  });
+
   // Show ALL notes of the complete line - no sliding window
   // UltraStar format: trailing space in lyric = word boundary, no space = syllable
   // IMPORTANT: Use inline-block spans to preserve exact spacing from txt file
@@ -227,7 +234,9 @@ export function LyricLineDisplay({
           return <br key={noteId} />;
         }
 
-        const isFirstSingableNote = idx === 0 && !isHyphenOnly;
+        // Pointer targets the first note with a non-empty, non-hyphen lyric
+        // (the "first sung word"), not just the first note at idx===0
+        const isFirstSingableNote = idx === firstSungNoteIndex;
 
         return (
           <span key={noteId} style={{ display: 'inline' }}>
