@@ -34,6 +34,7 @@ interface MedleySettings {
   snippetCount: number; // Number of songs in medley
   transitionTime: number; // Seconds between snippets
   difficulty: Difficulty;
+  playMode: 'cooperative' | 'competitive'; // Cooperative or competitive
 }
 
 const DEFAULT_SETTINGS: MedleySettings = {
@@ -41,6 +42,7 @@ const DEFAULT_SETTINGS: MedleySettings = {
   snippetCount: 5,
   transitionTime: 3,
   difficulty: 'medium',
+  playMode: 'cooperative',
 };
 
 interface MedleySetupProps {
@@ -100,8 +102,9 @@ export function MedleySetupScreen({ profiles, songs, onStartGame, onBack }: Medl
   }, [songs, settings.snippetCount, settings.snippetDuration]);
 
   const handleStartGame = () => {
-    if (selectedPlayers.length < 1) {
-      setError('At least 1 player required');
+    const minPlayers = settings.playMode === 'competitive' ? 2 : 1;
+    if (selectedPlayers.length < minPlayers) {
+      setError(`Minimum ${minPlayers} player${minPlayers > 1 ? 's' : ''} required for ${settings.playMode} mode`);
       return;
     }
 
@@ -237,6 +240,32 @@ export function MedleySetupScreen({ profiles, songs, onStartGame, onBack }: Medl
               ))}
             </div>
           </div>
+
+          {/* Play Mode */}
+          <div>
+            <label className="text-sm text-white/60 mb-2 block">Play Mode</label>
+            <div className="flex gap-2">
+              <Button
+                variant={settings.playMode === 'cooperative' ? 'default' : 'outline'}
+                onClick={() => setSettings(prev => ({ ...prev, playMode: 'cooperative' }))}
+                className={settings.playMode === 'cooperative' ? 'bg-purple-500 hover:bg-purple-600' : 'border-white/20'}
+              >
+                🤝 Kooperativ
+              </Button>
+              <Button
+                variant={settings.playMode === 'competitive' ? 'default' : 'outline'}
+                onClick={() => setSettings(prev => ({ ...prev, playMode: 'competitive' }))}
+                className={settings.playMode === 'competitive' ? 'bg-purple-500 hover:bg-purple-600' : 'border-white/20'}
+              >
+                ⚔️ Kompetitiv
+              </Button>
+            </div>
+            <p className="text-xs text-white/40 mt-1">
+              {settings.playMode === 'competitive'
+                ? '1v1 oder 2v2 — Snippets abwechselnd, Punkte vergleichen'
+                : 'Alle singen zusammen — gemeinsamer Score'}
+            </p>
+          </div>
         </CardContent>
       </Card>
 
@@ -336,6 +365,13 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
 
   const currentMedleySong = medleySongs[currentSongIndex];
   const currentPlayer = players[0]; // In medley, all players sing together
+
+  // In competitive mode, determine which player(s) are singing this snippet
+  const isCompetitive = settings.playMode === 'competitive';
+  const activeSingerIndices = isCompetitive
+    ? [currentSongIndex % players.length]
+    : players.map((_, i) => i); // All players in cooperative mode
+  const activeSingers = activeSingerIndices.map(i => players[i]).filter(Boolean);
 
   // Start game
   const startGame = () => {
@@ -497,22 +533,28 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
 
               {/* Player Scores */}
               <div className="flex justify-center gap-6">
-                {players.map(player => (
-                  <div key={player.id} className="text-center">
-                    {player.avatar ? (
-                      <img src={player.avatar} alt={player.name} className="w-12 h-12 rounded-full object-cover mx-auto border-2 border-purple-500" />
-                    ) : (
-                      <div 
-                        className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold mx-auto border-2 border-purple-500"
-                        style={{ backgroundColor: player.color }}
-                      >
-                        {player.name.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <div className="font-medium mt-1">{player.name}</div>
-                    <div className="text-purple-400 font-bold">{player.score.toLocaleString()}</div>
-                  </div>
-                ))}
+                {players.map((player, playerIndex) => {
+                  const isActive = activeSingerIndices.includes(playerIndex);
+                  return (
+                    <div key={player.id} className={`text-center transition-opacity ${isActive ? 'opacity-100' : 'opacity-30'}`}>
+                      {player.avatar ? (
+                        <img src={player.avatar} alt={player.name} className="w-12 h-12 rounded-full object-cover mx-auto border-2 border-purple-500" />
+                      ) : (
+                        <div 
+                          className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold mx-auto border-2 border-purple-500"
+                          style={{ backgroundColor: player.color }}
+                        >
+                          {player.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="font-medium mt-1">{player.name}</div>
+                      <div className="text-purple-400 font-bold">{player.score.toLocaleString()}</div>
+                      {isCompetitive && isActive && (
+                        <div className="text-xs text-yellow-400">♪ Singt!</div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </>
           )}

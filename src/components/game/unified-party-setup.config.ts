@@ -61,6 +61,10 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     minPlayers: 1,
     maxPlayers: 4,
     settings: [
+      { key: 'playMode', label: 'Play Mode', description: 'Cooperative or competitive', type: 'select', options: [
+        { value: 'cooperative', label: 'Kooperativ (alle zusammen)' },
+        { value: 'competitive', label: 'Kompetitiv (1v1 oder 2v2)' },
+      ], defaultValue: 'cooperative' },
       { key: 'snippetDuration', label: 'Snippet Duration', type: 'slider', min: 15, max: 60, step: 5, defaultValue: 30, unit: 's' },
       { key: 'snippetCount', label: 'Number of Songs', type: 'slider', min: 3, max: 10, step: 1, defaultValue: 5 },
       { key: 'transitionTime', label: 'Transition Time', description: 'Time between snippets', type: 'slider', min: 1, max: 5, step: 1, defaultValue: 3, unit: 's' },
