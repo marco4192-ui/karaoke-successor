@@ -163,12 +163,13 @@ function NoteBlock({
 
   const glowColor = color === 'cyan' ? 'rgba(34, 211, 238, 0.8)' : 'rgba(236, 72, 153, 0.8)';
 
-  // Calculate accuracy for display style (for past notes)
+  // Calculate accuracy for display style
+  // Default is 0 so notes start empty/dim/red and fill/glow/shift-green as the player sings.
   const getNoteAccuracy = (): number => {
-    if (!notePerformance) return 1;
+    if (!notePerformance) return 0;
     const noteId = note.id || `note-${note.startTime}`;
     const samples = notePerformance.get(noteId) || [];
-    if (samples.length === 0) return isPast ? 0.5 : 1;
+    if (samples.length === 0) return 0;
     return samples.reduce((sum, s) => sum + s.accuracy, 0) / samples.length;
   };
 
