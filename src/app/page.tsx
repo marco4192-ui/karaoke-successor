@@ -262,8 +262,9 @@ export default function KaraokeSuccessor() {
         />
       )}
 
-      {/* Fullscreen Exit Button - Only visible in fullscreen mode (not in immersive screens) */}
-      {isFullscreen && !IMMERSIVE_SCREENS.has(screen) && <FullscreenExitButton />}
+      {/* Fullscreen Exit Button - Only visible in fullscreen mode for immersive
+          screens where the NavBar (which has its own toggle) is hidden. */}
+      {isFullscreen && IMMERSIVE_SCREENS.has(screen) && <FullscreenExitButton />}
 
       {/* Main Content */}
       <main className={`${
