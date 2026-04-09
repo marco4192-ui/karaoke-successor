@@ -111,30 +111,9 @@ jobs:
           New-Item -ItemType Directory -Force -Path "src-tauri\bundled\server"
           New-Item -ItemType Directory -Force -Path "src-tauri\bundled\node"
 
-          # Copy Node.js runtime (minimal - only what's needed to run)
-          Write-Host "Copying Node.js runtime (minimal)..."
-          Copy-Item -Recurse -Force "node-v${{ env.NODE_VERSION }}-win-x64" "src-tauri\bundled\node\"
-
-          # Strip unnecessary Node.js files to reduce installer size
-          Write-Host "Stripping unnecessary Node.js files..."
-          $stripDirs = @(
-            "src-tauri\bundled\node\npm",
-            "src-tauri\bundled\node\npm.cmd",
-            "src-tauri\bundled\node\npx",
-            "src-tauri\bundled\node\npx.cmd",
-            "src-tauri\bundled\node\corepack",
-            "src-tauri\bundled\node\node_modules\npm",
-            "src-tauri\bundled\node\node_modules\corepack",
-            "src-tauri\bundled\node\node_modules\npm\*",
-            "src-tauri\bundled\node\node_modules\corepack\*"
-          )
-          foreach ($dir in $stripDirs) {
-            if (Test-Path $dir) {
-              Remove-Item -Recurse -Force $dir -ErrorAction SilentlyContinue
-            }
-          }
-          # Remove documentation and examples
-          Get-ChildItem "src-tauri\bundled\node" -Recurse -Include "*.md","LICENSE","CHANGELOG*","README*" | Remove-Item -Force -ErrorAction SilentlyContinue
+          # Copy only node.exe (self-contained, ~80MB) — skip npm, corepack, docs, etc.
+          Write-Host "Copying node.exe only (minimal runtime)..."
+          Copy-Item -Force "node-v${{ env.NODE_VERSION }}-win-x64\node.exe" "src-tauri\bundled\node\node.exe"
 
           # Copy Next.js standalone server
           Write-Host "Copying Next.js standalone server..."
@@ -172,32 +151,15 @@ jobs:
           Set-Content -Path "src-tauri\bundled\server\start-server.bat" -Value $launcherScript -Encoding ASCII
           Write-Host "Created start-server.bat"
 
-      - name: Free disk space and set temp directory
+      - name: Free disk space before Tauri build
         shell: pwsh
         run: |
           Write-Host "Freeing disk space..."
-          # Remove the downloaded Node.js zip and extracted folder (already copied to bundled)
           Remove-Item -Recurse -Force "node.zip" -ErrorAction SilentlyContinue
           Remove-Item -Recurse -Force "node-v${{ env.NODE_VERSION }}-win-x64" -ErrorAction SilentlyContinue
-          # Clean up bun cache
           Remove-Item -Recurse -Force "$env:LOCALAPPDATA\bun\install\cache\" -ErrorAction SilentlyContinue
-          # Remove Cargo registry cache (not needed anymore)
-          Remove-Item -Recurse -Force "$env:USERPROFILE\.cargo\registry\cache\" -ErrorAction SilentlyContinue
-          Remove-Item -Recurse -Force "$env:USERPROFILE\.cargo\registry\src\" -ErrorAction SilentlyContinue
-          # Clean up Rust target debug artifacts
-          Remove-Item -Recurse -Force "src-tauri\target\debug" -ErrorAction SilentlyContinue
-          Remove-Item -Recurse -Force "src-tauri\target\release\build" -ErrorAction SilentlyContinue
-          Remove-Item -Recurse -Force "src-tauri\target\release\.fingerprint" -ErrorAction SilentlyContinue
-          Remove-Item -Recurse -Force "src-tauri\target\release\incremental" -ErrorAction SilentlyContinue
-          Remove-Item -Recurse -Force "src-tauri\target\release\deps" -ErrorAction SilentlyContinue
-          # Report free space
           $drive = Get-PSDrive -Name C
           Write-Host "Free space on C: $([math]::Round($drive.Free / 1GB, 2)) GB"
-          # Create temp directory on D: drive for NSIS
-          New-Item -ItemType Directory -Force -Path "D:\nsis_temp" | Out-Null
-          Write-Host "NSIS temp directory created on D: drive"
-          echo "TEMP=D:\nsis_temp" >> $env:GITHUB_ENV
-          echo "TMP=D:\nsis_temp" >> $env:GITHUB_ENV
 
       - name: Ensure dist folder
         run: New-Item -ItemType Directory -Force -Path "dist"
@@ -242,7 +204,6 @@ jobs:
         with:
           name: windows-executables
           path: |
-            src-tauri/target/release/bundle/nsis/*.exe
             src-tauri/target/release/bundle/msi/*.msi
           retention-days: 30
           if-no-files-found: warn
