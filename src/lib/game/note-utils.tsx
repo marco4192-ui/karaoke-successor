@@ -34,12 +34,14 @@ export function getNoteShapeClasses(noteStyle: NoteShapeStyle): {
         }
       };
     case 'pill':
-      // Pill/capsule shape with very rounded ends
+      // Pill/capsule shape — fully rounded ends, no border for a smooth clean look.
+      // Visually distinct from 'rounded' which has a visible frame.
       return {
         baseClass: '',
         activeClass: 'ring-2 ring-white/60 brightness-110',
         style: {
           borderRadius: '9999px',
+          border: 'none',
           transition: 'border-radius 0.3s ease, transform 0.15s ease',
         }
       };
@@ -55,12 +57,15 @@ export function getNoteShapeClasses(noteStyle: NoteShapeStyle): {
       };
     case 'rounded':
     default:
-      // Standard rounded rectangle with smooth corners
+      // Rounded rectangle with a visible border frame — clearly rectangular,
+      // distinguished from 'pill' capsule shape by the border + moderate radius.
       return {
         baseClass: '',
         activeClass: 'ring-2 ring-white/80 brightness-125',
         style: {
-          borderRadius: '8px',
+          borderRadius: '10px',
+          border: '1.5px solid rgba(255,255,255,0.25)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.1)',
           transition: 'border-radius 0.3s ease, transform 0.15s ease',
         }
       };
@@ -87,11 +92,13 @@ export function getNoteShapeClassesForLane(noteStyle: NoteShapeStyle): {
         }
       };
     case 'pill':
+      // Pill/capsule shape — no border, smooth and clean (lane version)
       return {
         baseClass: '',
         activeClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent scale-125 brightness-110',
         style: {
           borderRadius: '9999px',
+          border: 'none',
           transition: 'border-radius 0.3s ease, transform 0.15s ease',
         }
       };
@@ -106,11 +113,14 @@ export function getNoteShapeClassesForLane(noteStyle: NoteShapeStyle): {
       };
     case 'rounded':
     default:
+      // Rounded rectangle with visible border frame (lane version)
       return {
         baseClass: '',
         activeClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent scale-125 brightness-125',
         style: {
-          borderRadius: '12px',
+          borderRadius: '14px',
+          border: '1.5px solid rgba(255,255,255,0.25)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.1)',
           transition: 'border-radius 0.3s ease, transform 0.15s ease',
         }
       };

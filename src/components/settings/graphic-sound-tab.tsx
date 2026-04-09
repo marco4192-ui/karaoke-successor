@@ -184,9 +184,9 @@ export function GraphicSoundTab({
             <label className="text-sm theme-adaptive-text-secondary mb-2 block">Notenform</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
-                { id: 'rounded', name: 'Abgerundet', icon: '🔵', desc: 'Weiche Kanten' },
+                { id: 'rounded', name: 'Abgerundet', icon: '🔵', desc: 'Rechteck mit Rahmen' },
                 { id: 'sharp', name: 'Eckig', icon: '🔷', desc: 'Kantige Form' },
-                { id: 'pill', name: 'Pille', icon: '💊', desc: 'Oval-Form' },
+                { id: 'pill', name: 'Pille', icon: '💊', desc: 'Glatte Kapsel' },
                 { id: 'diamond', name: 'Raute', icon: '💎', desc: 'Diamant-Form' },
               ].map((shape) => (
                 <button
