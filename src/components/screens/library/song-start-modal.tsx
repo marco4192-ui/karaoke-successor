@@ -55,8 +55,20 @@ export function SongStartModal({
   };
 
   const handleAddToQueue = () => {
-    if (activeProfileId) {
-      addToQueue(selectedSong, activeProfileId, profiles.find(p => p.id === activeProfileId)?.name || 'Player');
+    // Use the selected player from startOptions, NOT activeProfileId
+    const selectedPlayerId = startOptions.players[0] || activeProfileId;
+    if (selectedPlayerId) {
+      const selectedProfile = profiles.find(p => p.id === selectedPlayerId);
+      const partnerId = startOptions.players[1] || undefined;
+      const partnerProfile = partnerId ? profiles.find(p => p.id === partnerId) : undefined;
+
+      addToQueue(selectedSong, selectedPlayerId, selectedProfile?.name || 'Player', {
+        partnerId,
+        partnerName: partnerProfile?.name,
+        gameMode: startOptions.mode === 'duel' ? 'duel' 
+                 : startOptions.mode === 'duet' ? 'duet' 
+                 : 'single',
+      });
     }
     setShowSongModal(false);
   };
@@ -441,10 +453,10 @@ export function SongStartModal({
           <Button 
             variant="outline" 
             onClick={handleAddToQueue}
-            disabled={!activeProfileId || playerQueueCount >= 3}
+            disabled={!(startOptions.players[0] || activeProfileId)}
             className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <QueueIcon className="w-4 h-4 mr-2" /> Queue {!activeProfileId && '(Select Player)'}
+            <QueueIcon className="w-4 h-4 mr-2" /> Queue {!startOptions.players[0] && !activeProfileId && '(Select Player)'}
           </Button>
           <Button 
             variant="outline" 
