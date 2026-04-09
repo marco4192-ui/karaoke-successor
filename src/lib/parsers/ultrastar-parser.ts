@@ -376,19 +376,26 @@ export function convertUltraStarToSong(
     }
   }
 
-  // Calculate total duration from #END tag or last note
+  // Calculate total duration:
+  // - When #END: is defined → use that value (time-based ending in game loop)
+  // - When #END: is NOT defined → very large value so the game loop
+  //   does NOT end the song by time. The audio/video element's natural
+  //   "ended" event handles song termination instead.
+  const VERY_LARGE_DURATION = 999999999; // effectively infinite
   let totalDuration: number;
   if (ultraStar.end) {
     totalDuration = ultraStar.end;
   } else if (lyricLines.length > 0) {
-    totalDuration = Math.max(...lyricLines.map(l => l.endTime)) + 5000; // 5 second buffer
+    totalDuration = VERY_LARGE_DURATION;
   } else {
     totalDuration = 180000; // Default 3 minutes
   }
 
   // Determine difficulty based on note density
+  // Use last-note-based duration for stats (not the VERY_LARGE_DURATION)
   const totalNotes = sortedNotes.length;
-  const songDurationMinutes = totalDuration / 60000;
+  const effectiveDurationForStats = ultraStar.end || (lyricLines.length > 0 ? Math.max(...lyricLines.map(l => l.endTime)) : 180000);
+  const songDurationMinutes = effectiveDurationForStats / 60000;
   const notesPerMinute = songDurationMinutes > 0 ? totalNotes / songDurationMinutes : 0;
   
   let difficulty: Difficulty = 'medium';

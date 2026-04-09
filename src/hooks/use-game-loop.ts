@@ -131,6 +131,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   const startTimeRef = useRef<number>(0);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isMountedRef = useRef(true);
+  const hasEndedRef = useRef(false); // Guard against double endGameAndCleanup
 
   // ── Generate results at song end ──
   const generateResults = useCallback(() => {
@@ -209,6 +210,10 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
 
   // ── End game and cleanup - stops all audio/microphone ──
   const endGameAndCleanup = useCallback(() => {
+    // Guard: prevent double execution (e.g. game loop time check + onEnded event)
+    if (hasEndedRef.current) return;
+    hasEndedRef.current = true;
+
     // Stop pitch detection (microphone)
     stop();
 
@@ -516,7 +521,10 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         setP2Volume(0);
       }
 
-      if (adjustedTime >= effectiveSong.duration) {
+      // End song by time ONLY when #END: tag is explicitly defined.
+      // When #END: is not defined, the audio/video element's natural
+      // "ended" event (handled via onEnded prop) terminates the game.
+      if (effectiveSong.end && adjustedTime >= effectiveSong.end) {
         endGameAndCleanup();
         return;
       }

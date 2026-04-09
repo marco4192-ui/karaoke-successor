@@ -145,13 +145,14 @@ export function useFolderScanner(): UseFolderScannerReturn {
 
             // Calculate actual song duration:
             // Priority 1: #END tag from TXT (explicit song end time)
-            // Priority 2: Last lyric line end + 5 second buffer
+            // Priority 2: Very large duration — game ends when media ends naturally
             // Priority 3: Fallback 180000 (3 minutes)
+            const VERY_LARGE_DURATION = 999999999;
             let calculatedDuration = 180000;
             if (scanned.end && scanned.end > 0) {
               calculatedDuration = scanned.end;
             } else if (scanned.lyrics && scanned.lyrics.length > 0) {
-              calculatedDuration = Math.max(...scanned.lyrics.map(l => l.endTime)) + 5000;
+              calculatedDuration = VERY_LARGE_DURATION;
             }
 
             // Create song object with relative paths and cover blob URL.

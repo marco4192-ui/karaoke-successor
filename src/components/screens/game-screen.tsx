@@ -417,6 +417,31 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     [gameState.currentTime, timingData]
   );
 
+  // Compute display duration for progress bar & time display:
+  // - If #END: tag exists → use that value
+  // - Otherwise → use the audio/video element's actual media duration
+  //   (avoids showing ~999999s when #END: is not defined)
+  const [displayDuration, setDisplayDuration] = useState(0);
+
+  useEffect(() => {
+    if (!effectiveSong) return;
+    if (effectiveSong.end) {
+      setDisplayDuration(effectiveSong.end);
+      return;
+    }
+    const audioDur = audioRef.current?.duration;
+    if (audioDur && isFinite(audioDur) && audioDur > 0) {
+      setDisplayDuration(audioDur * 1000);
+      return;
+    }
+    const videoDur = videoRef.current?.duration;
+    if (videoDur && isFinite(videoDur) && videoDur > 0) {
+      setDisplayDuration(videoDur * 1000);
+      return;
+    }
+    setDisplayDuration(effectiveSong.duration);
+  }, [effectiveSong, mediaLoaded, audioRef, videoRef]);
+
   if (!song) {
     return (
       <div className="max-w-4xl mx-auto text-center py-20">
@@ -646,16 +671,16 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
           onEchoChange={setEchoAmount}
         />
         
-        {/* Progress Bar */}
+        {/* Progress Bar — uses actual media duration when available */}
         <GameProgressBar
           currentTime={gameState.currentTime}
-          duration={effectiveSong?.duration || 0}
+          duration={displayDuration}
         />
         
-        {/* Time Display */}
+        {/* Time Display — uses actual media duration when available */}
         <TimeDisplay
           currentTime={gameState.currentTime}
-          duration={effectiveSong?.duration || 0}
+          duration={displayDuration}
         />
       </div>
 
