@@ -68,7 +68,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   const lastScoringTimeRef = useRef<number>(0);
   const noteProgressRef = useRef<Map<string, { ticksHit: number; ticksTotal: number }>>(new Map());
   const companionPollRef = useRef<NodeJS.Timeout | null>(null);
-  const companionPitchCacheRef = useRef<Map<string, { note: number; accuracy: number }>>(new Map());
+  const companionPitchCacheRef = useRef<Map<string, { note: number; accuracy: number; isSinging?: boolean }>>(new Map());
   
   // Pre-compute timing data for scoring when song is loaded
   const timingData = useMemo(() => {
@@ -210,6 +210,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
             companionPitchCacheRef.current.set(entry.clientId, {
               note: entry.note,
               accuracy: entry.accuracy || 0,
+              isSinging: entry.isSinging,
             });
           }
         }
@@ -251,6 +252,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         
         // Get the detected pitch from local microphone
         const detectedPitch = pitchResult?.note; // MIDI note number
+        const isSinging = pitchResult?.isSinging;
         
         // Find active notes at current time
         const currentAudioTime = audioRef.current ? audioRef.current.currentTime * 1000 : currentTime;
@@ -259,9 +261,11 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
           // Check if note is currently active (within its time window)
           if (currentAudioTime >= note.startTime && currentAudioTime <= note.startTime + note.duration) {
             // Score all active MICROPHONE players (local mic, shared pitch)
+            // Skip scoring if vocal detection classifies input as humming/noise
             const micPlayers = activePlayers.filter(p => p.playerType === 'microphone' && !p.eliminated);
             
             micPlayers.forEach(player => {
+              if (isSinging === false) return; // Humming/noise detected
               const tickResult = evaluateTick(detectedPitch || 0, note.pitch, difficulty);
               
               if (tickResult.isHit) {
@@ -292,7 +296,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
                 ? companionPitchCacheRef.current.get(player.connectionCode)
                 : null;
               
-              if (cachedPitch && cachedPitch.note > 0) {
+              if (cachedPitch && cachedPitch.note > 0 && cachedPitch.isSinging !== false) {
                 const tickResult = evaluateTick(cachedPitch.note, note.pitch, difficulty);
                 
                 if (tickResult.isHit) {

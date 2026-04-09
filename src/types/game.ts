@@ -238,6 +238,8 @@ export interface PitchDetectionResult {
   note: number | null;
   clarity: number; // 0-1 confidence
   volume: number; // 0-1
+  isSinging?: boolean; // Vocal detection: true if singing (not humming/noise)
+  singingConfidence?: number; // 0-1 confidence of singing detection
 }
 
 export interface MobileMessage {

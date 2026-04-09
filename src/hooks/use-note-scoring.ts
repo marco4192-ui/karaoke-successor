@@ -93,19 +93,19 @@ export interface UseNoteScoringReturn {
   // Functions
   checkNoteHits: (
     currentTime: number,
-    pitch: { frequency: number | null; note: number | null; clarity: number; volume: number }
+    pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }
   ) => void;
   checkP2NoteHits: (
     currentTime: number,
-    pitch: { frequency: number | null; note: number | null; clarity: number; volume: number }
+    pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }
   ) => void;
   checkP3NoteHits: (
     currentTime: number,
-    pitch: { frequency: number | null; note: number | null; clarity: number; volume: number }
+    pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }
   ) => void;
   checkP4NoteHits: (
     currentTime: number,
-    pitch: { frequency: number | null; note: number | null; clarity: number; volume: number }
+    pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }
   ) => void;
   resetScoring: () => void;
 }
@@ -202,7 +202,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   const checkPlayerNoteHits = useCallback(
     (
       currentTime: number,
-      pitch: { frequency: number | null; note: number | null; clarity: number; volume: number },
+      pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean },
       playerIndex: number,
       notesToCheck: Array<Note & { lineIndex: number; line: LyricLine }> | undefined,
       scoringMeta: ScoringMetadata | undefined,
@@ -214,6 +214,8 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     ) => {
       const difficultySettings = DIFFICULTY_SETTINGS[difficulty];
       if (!song || !pitch.frequency || pitch.note === null || pitch.volume < difficultySettings.volumeThreshold) return;
+      // Vocal detection: skip scoring if input is classified as humming/noise
+      if (pitch.isSinging === false) return;
       if (!notesToCheck || notesToCheck.length === 0 || !scoringMeta) return;
 
       const beatDurationMs = timingData?.beatDuration || 500;
@@ -339,9 +341,11 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
 
   // Check if P1 hits notes - using duration-based scoring
   const checkNoteHits = useCallback(
-    (currentTime: number, pitch: { frequency: number | null; note: number | null; clarity: number; volume: number }) => {
+    (currentTime: number, pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }) => {
       const difficultySettings = DIFFICULTY_SETTINGS[difficulty];
       if (!song || !pitch.frequency || pitch.note === null || pitch.volume < difficultySettings.volumeThreshold) return;
+      // Vocal detection: skip scoring if input is classified as humming/noise
+      if (pitch.isSinging === false) return;
 
       // Use playersRef to avoid stale closure — always get the latest player state
       const activePlayer = playersRef.current[0];
@@ -504,7 +508,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
 
   // Check P2 notes (duet/party mode)
   const checkP2NoteHits = useCallback(
-    (currentTime: number, pitch: { frequency: number | null; note: number | null; clarity: number; volume: number }) => {
+    (currentTime: number, pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }) => {
       if (!isDuetMode && !isPartyMode) return;
       checkPlayerNoteHits(
         currentTime,
@@ -524,7 +528,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
 
   // Check P3 notes (party mode only)
   const checkP3NoteHits = useCallback(
-    (currentTime: number, pitch: { frequency: number | null; note: number | null; clarity: number; volume: number }) => {
+    (currentTime: number, pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }) => {
       if (!isPartyMode) return;
       checkPlayerNoteHits(
         currentTime,
@@ -544,7 +548,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
 
   // Check P4 notes (party mode only)
   const checkP4NoteHits = useCallback(
-    (currentTime: number, pitch: { frequency: number | null; note: number | null; clarity: number; volume: number }) => {
+    (currentTime: number, pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }) => {
       if (!isPartyMode) return;
       checkPlayerNoteHits(
         currentTime,

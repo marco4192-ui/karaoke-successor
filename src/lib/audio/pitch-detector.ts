@@ -1,4 +1,5 @@
 import { PitchDetectionResult, frequencyToMidi, Difficulty, DIFFICULTY_SETTINGS } from '@/types/game';
+import { VocalDetector, VocalDetectionResult } from './vocal-detector';
 
 // Karaoke-optimized pitch detection settings
 export interface PitchDetectorConfig {
@@ -72,9 +73,14 @@ export class PitchDetector {
   // Pitch stability tracking
   private recentPitches: number[] = [];
   private lastStablePitch: number | null = null;
+
+  // Vocal detection (singing vs. humming/noise)
+  private vocalDetector: VocalDetector;
+  private lastVocalResult: VocalDetectionResult | null = null;
   
   constructor(config: Partial<PitchDetectorConfig> = {}) {
     this.config = { ...KARAOKE_DEFAULT_CONFIG, ...config };
+    this.vocalDetector = new VocalDetector();
   }
 
   // Update configuration
@@ -88,6 +94,8 @@ export class PitchDetector {
   // Set configuration based on difficulty
   setDifficulty(difficulty: Difficulty): void {
     this.setConfig(DIFFICULTY_PITCH_CONFIGS[difficulty]);
+    // Also update vocal detector for this difficulty
+    this.vocalDetector.setDifficulty(difficulty);
   }
 
   async initialize(): Promise<boolean> {
@@ -154,6 +162,8 @@ export class PitchDetector {
     this.isListening = true;
     this.recentPitches = [];
     this.lastStablePitch = null;
+    this.vocalDetector.reset();
+    this.lastVocalResult = null;
     this.detect();
   }
 
@@ -166,6 +176,8 @@ export class PitchDetector {
     // Clear pitch history to prevent stale data on next start
     this.recentPitches = [];
     this.lastStablePitch = null;
+    this.vocalDetector.reset();
+    this.lastVocalResult = null;
   }
 
   private detect(): void {
@@ -190,6 +202,15 @@ export class PitchDetector {
     const rms = Math.sqrt(sum / this.buffer.length);
     const volume = Math.min(1, rms * 5); // Normalize to 0-1
 
+    // Run vocal detection (every frame, even before pitch detection)
+    this.lastVocalResult = this.vocalDetector.processFrame(
+      null, // pitch not yet known
+      volume,
+      this.frequencyBuffer as Float32Array<ArrayBuffer>,
+      this.audioContext?.sampleRate ?? 44100,
+      performance.now()
+    );
+
     // Noise gate check
     if (this.config.noiseGateEnabled && rms < 0.01) {
       this.onPitchDetected?.({
@@ -197,6 +218,8 @@ export class PitchDetector {
         note: null,
         clarity: 0,
         volume,
+        isSinging: false,
+        singingConfidence: 0,
       });
       this.animationFrame = requestAnimationFrame(() => this.detect());
       return;
@@ -209,6 +232,8 @@ export class PitchDetector {
         note: null,
         clarity: 0,
         volume,
+        isSinging: false,
+        singingConfidence: 0,
       });
       this.animationFrame = requestAnimationFrame(() => this.detect());
       return;
@@ -217,6 +242,18 @@ export class PitchDetector {
     // Use YIN algorithm for pitch detection
     const frequency = this.yinPitchDetection(this.buffer, this.audioContext!.sampleRate, this.config.yinThreshold);
 
+    // Re-run vocal detection now with known pitch for better accuracy
+    const detectedNote = (frequency !== null && frequency >= this.config.minFrequency && frequency <= this.config.maxFrequency)
+      ? frequencyToMidi(frequency)
+      : null;
+    this.lastVocalResult = this.vocalDetector.processFrame(
+      detectedNote,
+      volume,
+      this.frequencyBuffer as Float32Array<ArrayBuffer>,
+      this.audioContext?.sampleRate ?? 44100,
+      performance.now()
+    );
+
     if (frequency !== null && frequency >= this.config.minFrequency && frequency <= this.config.maxFrequency) {
       const note = frequencyToMidi(frequency);
       const clarity = this.calculateClarity(this.buffer, frequency, this.audioContext!.sampleRate);
@@ -224,12 +261,18 @@ export class PitchDetector {
       // Pitch stability check
       const stablePitch = this.checkPitchStability(note);
 
+      // Attach vocal detection result
+      const vocalIsSinging = this.lastVocalResult?.isSinging ?? true;
+      const vocalConfidence = this.lastVocalResult?.singingConfidence ?? 1;
+
       if (stablePitch !== null) {
         this.onPitchDetected?.({
           frequency,
           note: stablePitch,
           clarity,
           volume,
+          isSinging: vocalIsSinging,
+          singingConfidence: vocalConfidence,
         });
       } else {
         // Still updating stability, use current pitch
@@ -238,6 +281,8 @@ export class PitchDetector {
           note,
           clarity,
           volume,
+          isSinging: vocalIsSinging,
+          singingConfidence: vocalConfidence,
         });
       }
     } else {
@@ -246,6 +291,8 @@ export class PitchDetector {
         note: null,
         clarity: 0,
         volume,
+        isSinging: false,
+        singingConfidence: 0,
       });
       // Reset stability on no pitch
       this.recentPitches = [];
@@ -550,6 +597,8 @@ export class PitchDetectorManager {
             note: data.pitch.data.note,
             clarity: data.pitch.data.clarity || 0,
             volume: data.pitch.data.volume || 0,
+            isSinging: data.pitch.data.isSinging,
+            singingConfidence: data.pitch.data.singingConfidence,
           });
         }
       } catch {
