@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import type { PitchData } from '@/components/screens/mobile/mobile-types';
+import { VocalDetector } from '@/lib/audio/vocal-detector';
 
 // YIN pitch detection algorithm
 function yinPitchDetection(buffer: Float32Array, sampleRate: number): number | null {
@@ -75,6 +76,7 @@ export function useMobilePitchDetection({
   const analyserRef = useRef<AnalyserNode | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const vocalDetectorRef = useRef<VocalDetector | null>(null);
 
   const startMicrophone = useCallback(async () => {
     if (!clientId) return;
@@ -96,9 +98,13 @@ export function useMobilePitchDetection({
       analyserRef.current.smoothingTimeConstant = 0.8;
       source.connect(analyserRef.current);
       
+      // Initialize vocal detector for humming detection
+      vocalDetectorRef.current = new VocalDetector();
+      
       setIsListening(true);
       
       const buffer = new Float32Array(analyserRef.current.fftSize);
+      const freqBuffer = new Float32Array(analyserRef.current.frequencyBinCount);
       
       const detectPitch = () => {
         if (!analyserRef.current || !audioContextRef.current) return;
@@ -110,6 +116,7 @@ export function useMobilePitchDetection({
         }
         
         analyserRef.current.getFloatTimeDomainData(buffer);
+        analyserRef.current.getFloatFrequencyData(freqBuffer);
         
         let sum = 0;
         for (let i = 0; i < buffer.length; i++) {
@@ -124,6 +131,17 @@ export function useMobilePitchDetection({
         if (frequency !== null && frequency >= 65 && frequency <= 1047) {
           note = 69 + 12 * Math.log2(frequency / 440);
         }
+        
+        // Run vocal detection to distinguish singing from humming
+        const vocalResult = vocalDetectorRef.current?.processFrame(
+          note,
+          volume,
+          freqBuffer,
+          audioContextRef.current.sampleRate,
+          performance.now()
+        );
+        const isSinging = vocalResult?.isSinging ?? true;
+        const singingConfidence = vocalResult?.singingConfidence ?? 1;
         
         setCurrentPitch({ frequency, note, volume });
         
@@ -141,6 +159,8 @@ export function useMobilePitchDetection({
                 clarity: 0,
                 volume,
                 timestamp: Date.now(),
+                isSinging,
+                singingConfidence,
               },
             }),
           }).catch(() => {});

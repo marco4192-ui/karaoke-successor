@@ -124,6 +124,12 @@ export class VocalDetector {
   private prevEnergy: number = 0;
   private onsetTimes: number[] = [];
 
+  // Hysteresis: avoid rapid toggling between singing/non-singing.
+  // We require N consecutive frames below threshold before blocking scoring.
+  private nonSingingFrameCount: number = 0;
+  private readonly HYSTERESIS_FRAMES = 5; // ~83 ms at 60 fps
+  private isCurrentlySinging: boolean = true; // Start as singing (don't block on first frames)
+
   public constructor(config: Partial<VocalDetectorConfig> = {}) {
     this.config = { ...DEFAULT_VOCAL_CONFIG, ...config };
   }
@@ -148,6 +154,8 @@ export class VocalDetector {
     this.timeHistory = [];
     this.prevEnergy = 0;
     this.onsetTimes = [];
+    this.nonSingingFrameCount = 0;
+    this.isCurrentlySinging = true;
   }
 
   /**
@@ -220,8 +228,22 @@ export class VocalDetector {
       this.config.spectralFlatnessWeight * spectralScore +
       this.config.onsetRateWeight * onsetScore;
 
+    // ---- Hysteresis: smooth isSinging transitions ----
+    const rawIsSinging = confidence >= this.config.singingThreshold;
+    if (rawIsSinging) {
+      // Immediately resume singing on any good frame
+      this.nonSingingFrameCount = 0;
+      this.isCurrentlySinging = true;
+    } else {
+      // Require HYSTERESIS_FRAMES consecutive non-singing frames before blocking
+      this.nonSingingFrameCount++;
+      if (this.nonSingingFrameCount >= this.HYSTERESIS_FRAMES) {
+        this.isCurrentlySinging = false;
+      }
+    }
+
     return {
-      isSinging: confidence >= this.config.singingThreshold,
+      isSinging: this.isCurrentlySinging,
       singingConfidence: confidence,
       pitchVariance,
       spectralFlatness,

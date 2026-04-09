@@ -202,15 +202,6 @@ export class PitchDetector {
     const rms = Math.sqrt(sum / this.buffer.length);
     const volume = Math.min(1, rms * 5); // Normalize to 0-1
 
-    // Run vocal detection (every frame, even before pitch detection)
-    this.lastVocalResult = this.vocalDetector.processFrame(
-      null, // pitch not yet known
-      volume,
-      this.frequencyBuffer as Float32Array<ArrayBuffer>,
-      this.audioContext?.sampleRate ?? 44100,
-      performance.now()
-    );
-
     // Noise gate check
     if (this.config.noiseGateEnabled && rms < 0.01) {
       this.onPitchDetected?.({
