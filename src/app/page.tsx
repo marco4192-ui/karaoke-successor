@@ -160,6 +160,14 @@ export default function KaraokeSuccessor() {
     onEscape: () => {
       if (isFullscreen) {
         document.exitFullscreen().catch(() => {});
+      } else if (screen === 'game' && party.currentTournamentMatch) {
+        // During tournament match, Escape goes back to bracket
+        party.setTournamentMatchAborted(true);
+        resetGame();
+        setScreen('tournament-game');
+      } else if (screen === 'game') {
+        resetGame();
+        setScreen('library');
       } else {
         setScreen('home');
       }
@@ -305,7 +313,22 @@ export default function KaraokeSuccessor() {
             initialGameMode={gameState.gameMode}
           />
         )}
-        {screen === 'game' && <GameScreen onEnd={handleGameEnd} onBack={() => { resetGame(); setScreen('library'); }} />}
+        {screen === 'game' && (
+          <GameScreen
+            onEnd={handleGameEnd}
+            onBack={() => {
+              // If in a tournament match, go back to bracket view (not library)
+              if (party.currentTournamentMatch && party.tournamentBracket) {
+                party.setTournamentMatchAborted(true);
+                resetGame();
+                setScreen('tournament-game');
+              } else {
+                resetGame();
+                setScreen('library');
+              }
+            }}
+          />
+        )}
         {screen === 'party' && (
           <PartyScreen
             onSelectMode={(mode) => {

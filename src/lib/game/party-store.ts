@@ -17,6 +17,8 @@ interface PartyStore {
   setTournamentSongDuration: (duration: number) => void;
   currentTournamentMatch: TournamentMatch | null;
   setCurrentTournamentMatch: (match: TournamentMatch | null) => void;
+  tournamentMatchAborted: boolean;
+  setTournamentMatchAborted: (aborted: boolean) => void;
 
   // Battle Royale
   battleRoyaleGame: BattleRoyaleGame | null;
@@ -68,6 +70,8 @@ export const usePartyStore = create<PartyStore>((set) => ({
   setTournamentSongDuration: (tournamentSongDuration) => set({ tournamentSongDuration }),
   currentTournamentMatch: null,
   setCurrentTournamentMatch: (currentTournamentMatch) => set({ currentTournamentMatch }),
+  tournamentMatchAborted: false,
+  setTournamentMatchAborted: (tournamentMatchAborted) => set({ tournamentMatchAborted }),
 
   // Battle Royale
   battleRoyaleGame: null,
@@ -112,6 +116,7 @@ export const usePartyStore = create<PartyStore>((set) => ({
     tournamentBracket: null,
     tournamentSongDuration: 60,
     currentTournamentMatch: null,
+    tournamentMatchAborted: false,
     battleRoyaleGame: null,
     passTheMicPlayers: [],
     passTheMicSong: null,

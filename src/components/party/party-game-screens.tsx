@@ -4,6 +4,7 @@ import React from 'react';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { getAllSongs } from '@/lib/game/song-library';
+import { recordMatchResult } from '@/lib/game/tournament';
 import { TournamentSetupScreen, TournamentBracketView } from '@/components/game/tournament-screen';
 import { BattleRoyaleSetupScreen, BattleRoyaleGameView } from '@/components/game/battle-royale-screen';
 import { PassTheMicSetupScreen, PassTheMicGameView } from '@/components/game/pass-the-mic-screen';
@@ -78,10 +79,12 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
         <TournamentBracketView
           bracket={party.tournamentBracket}
           currentMatch={party.currentTournamentMatch}
+          matchAborted={party.tournamentMatchAborted}
           onPlayMatch={(match) => {
             if (!match.player1 || !match.player2) return;
 
             party.setCurrentTournamentMatch(match);
+            party.setTournamentMatchAborted(false);
 
             // Reset game state for new match
             resetGame();
@@ -110,6 +113,47 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               setSong(randomSong);
               setScreen('game');
             }
+          }}
+          onManualWinner={(matchId, winnerId) => {
+            if (!party.tournamentBracket || !party.currentTournamentMatch) return;
+            const match = party.currentTournamentMatch;
+            const isP1Winner = winnerId === match.player1?.id;
+            // Use 100 for winner, 0 for loser to clearly indicate the choice
+            const updated = recordMatchResult(
+              party.tournamentBracket,
+              matchId,
+              isP1Winner ? 100 : 0,
+              isP1Winner ? 0 : 100,
+            );
+            party.setTournamentBracket(updated);
+            party.setCurrentTournamentMatch(null);
+          }}
+          onRepeatMatch={() => {
+            if (!party.currentTournamentMatch) return;
+            const match = party.currentTournamentMatch;
+            resetGame();
+            addPlayer({
+              id: match.player1!.id,
+              name: match.player1!.name,
+              avatar: match.player1!.avatar,
+              color: match.player1!.color,
+            });
+            addPlayer({
+              id: match.player2!.id,
+              name: match.player2!.name,
+              avatar: match.player2!.avatar,
+              color: match.player2!.color,
+            });
+            setGameMode('duel');
+            const songs = getAllSongs();
+            if (songs.length > 0) {
+              const randomSong = songs[Math.floor(Math.random() * songs.length)];
+              setSong(randomSong);
+              setScreen('game');
+            }
+          }}
+          onAbortHandled={() => {
+            party.setTournamentMatchAborted(false);
           }}
           songs={getAllSongs()}
           shortMode={party.tournamentSongDuration === 60}

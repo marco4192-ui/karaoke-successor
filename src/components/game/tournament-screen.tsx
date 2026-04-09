@@ -19,6 +19,7 @@ import { Song, PlayerProfile, PLAYER_COLORS, Difficulty } from '@/types/game';
 import { getAllSongs } from '@/lib/game/song-library';
 import { useGameStore } from '@/lib/game/store';
 import { TournamentBracketButterfly } from '@/components/game/tournament-bracket-butterfly';
+import { MatchAbortDialog } from '@/components/game/match-abort-dialog';
 
 interface TournamentScreenProps {
   profiles: PlayerProfile[];
@@ -234,11 +235,15 @@ interface TournamentBracketViewProps {
   bracket: TournamentBracket;
   currentMatch: TournamentMatch | null;
   onPlayMatch: (match: TournamentMatch) => void;
+  onManualWinner?: (matchId: string, winnerId: string) => void;
+  onRepeatMatch?: () => void;
+  matchAborted?: boolean;
+  onAbortHandled?: () => void;
   songs: Song[];
   shortMode: boolean;
 }
 
-export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, songs, shortMode }: TournamentBracketViewProps) {
+export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onManualWinner, onRepeatMatch, matchAborted, onAbortHandled, songs, shortMode }: TournamentBracketViewProps) {
   const stats = getTournamentStats(bracket);
 
   // Get next match to play
@@ -327,6 +332,25 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, song
             )}
           </div>
         </div>
+      )}
+
+      {/* Match Abort Dialog */}
+      {matchAborted && currentMatch && onManualWinner && onRepeatMatch && onAbortHandled && (
+        <MatchAbortDialog
+          match={currentMatch}
+          bracket={bracket}
+          onManualWinner={(matchId, winnerId) => {
+            onManualWinner(matchId, winnerId);
+            onAbortHandled();
+          }}
+          onRepeatMatch={() => {
+            onRepeatMatch();
+            onAbortHandled();
+          }}
+          onDismiss={() => {
+            onAbortHandled();
+          }}
+        />
       )}
     </div>
   );
