@@ -3,7 +3,7 @@
 import React from 'react';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
-import { getAllSongs } from '@/lib/game/song-library';
+import { getAllSongs, filterSongs } from '@/lib/game/song-library';
 import { UnifiedPartySetup, SongVotingModal, GameSetupResult, PARTY_GAME_CONFIGS } from '@/components/game/unified-party-setup';
 import { PassTheMicSegment } from '@/components/game/pass-the-mic-screen';
 import { Song, GameMode } from '@/types/game';
@@ -61,6 +61,14 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
 
             const songs = getAllSongs();
 
+            // Apply song filter if set
+            const filteredSongs = filterSongs(
+              songs,
+              result.settings.filterGenre,
+              result.settings.filterLanguage,
+              result.settings.filterCombined
+            );
+
             switch (mode) {
               // ── Tournament: create bracket → bracket view ──
               case 'tournament': {
@@ -112,7 +120,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                       playerType: p.playerType || 'microphone',
                     })),
                     brSettings,
-                    songs.map(s => s.id),
+                    filteredSongs.map(s => s.id),
                   );
                   party.setBattleRoyaleGame(game);
                   setScreen('battle-royale-game');
@@ -126,7 +134,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               case 'medley': {
                 const snippetCount = result.settings.snippetCount || 5;
                 const snippetDuration = result.settings.snippetDuration || 30;
-                const shuffled = [...songs].sort(() => Math.random() - 0.5);
+                const shuffled = [...filteredSongs].sort(() => Math.random() - 0.5);
                 const medleySongList = shuffled.slice(0, snippetCount).map(song => ({
                   song,
                   startTime: 0,
@@ -142,7 +150,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
 
               // ── Pass the Mic: random song → generate segments → game view ──
               case 'pass-the-mic': {
-                const randomSong = pickRandomSong(songs);
+                const randomSong = pickRandomSong(filteredSongs);
                 if (randomSong) {
                   const segmentDuration = result.settings.segmentDuration || 30;
                   party.setPassTheMicPlayers(result.players);
@@ -157,7 +165,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
 
               // ── Companion Sing-A-Long: random song → game view ──
               case 'companion-singalong': {
-                const randomSong = pickRandomSong(songs);
+                const randomSong = pickRandomSong(filteredSongs);
                 if (randomSong) {
                   party.setCompanionPlayers(result.players);
                   party.setCompanionSong(randomSong);
@@ -171,7 +179,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               // ── Missing Words / Blind: random song → regular game screen ──
               case 'missing-words':
               case 'blind': {
-                const randomSong = pickRandomSong(songs);
+                const randomSong = pickRandomSong(filteredSongs);
                 if (randomSong) {
                   setSong(randomSong);
                   setScreen('game');

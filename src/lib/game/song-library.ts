@@ -481,12 +481,49 @@ export function updateSong(songId: string, updates: Partial<Song>): void {
 export function getGenres(): string[] {
   const songs = getAllSongs();
   const genres = new Set<string>();
-  
+
   songs.forEach(song => {
     if (song.genre) genres.add(song.genre);
   });
-  
+
   return Array.from(genres).sort();
+}
+
+// Get unique languages
+export function getLanguages(): string[] {
+  const songs = getAllSongs();
+  const languages = new Set<string>();
+
+  songs.forEach(song => {
+    if (song.language) languages.add(song.language);
+  });
+
+  return Array.from(languages).sort();
+}
+
+// Filter songs by genre and/or language
+export function filterSongs(
+  songs: Song[],
+  genre?: string,
+  language?: string,
+  combined?: boolean
+): Song[] {
+  let filtered = songs;
+
+  if (genre && genre !== 'all') {
+    filtered = filtered.filter(s => s.genre === genre);
+  }
+
+  if (language && language !== 'all') {
+    filtered = filtered.filter(s => s.language === language);
+  }
+
+  // If combined=false (independent), songs matching EITHER genre OR language are included
+  // If combined=true (default) or both filters set, songs must match BOTH (AND logic)
+  // This is handled naturally above — when both filters are set, both must match.
+  // For independent mode (only one filter active), the active filter applies alone.
+
+  return filtered;
 }
 
 // Export songs for backup

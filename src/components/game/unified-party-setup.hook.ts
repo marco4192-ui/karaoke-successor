@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { Song, PlayerProfile, PLAYER_COLORS, Difficulty, GameMode } from '@/types/game';
 import { PARTY_GAME_CONFIGS } from './unified-party-setup.config';
 import type { SongSelectionOption, SelectedPlayer, GameSetupResult } from './unified-party-setup.types';
+import { getGenres, getLanguages, filterSongs } from '@/lib/game/song-library';
 
 interface UsePartySetupArgs {
   gameMode: GameMode;
@@ -36,6 +37,20 @@ export function usePartySetup({
   const [error, setError] = useState<string | null>(null);
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
 
+  // ── Song filter state ──
+  const [filterGenre, setFilterGenre] = useState('all');
+  const [filterLanguage, setFilterLanguage] = useState('all');
+  const [filterCombined, setFilterCombined] = useState(true); // true = AND, false = OR
+
+  // Available genres and languages from the library
+  const availableGenres = useMemo(() => getGenres(), [songs.length]);
+  const availableLanguages = useMemo(() => getLanguages(), [songs.length]);
+
+  // Filtered songs (applies genre/language filter to the full song list)
+  const filteredSongs = useMemo(() => {
+    return filterSongs(songs, filterGenre, filterLanguage, filterCombined);
+  }, [songs, filterGenre, filterLanguage, filterCombined]);
+
   const togglePlayer = useCallback((playerId: string) => {
     setSelectedPlayers(prev => {
       if (prev.includes(playerId)) return prev.filter(id => id !== playerId);
@@ -69,7 +84,14 @@ export function usePartySetup({
 
     const result: GameSetupResult = {
       players: createPlayers(),
-      settings: { ...settings, difficulty },
+      settings: {
+        ...settings,
+        difficulty,
+        // Pass filter settings so party-setup-section can use filtered songs
+        filterGenre,
+        filterLanguage,
+        filterCombined,
+      },
       songSelection: option,
       difficulty,
     };
@@ -86,12 +108,13 @@ export function usePartySetup({
         onStartGame(result);
         break;
       case 'vote': {
-        const shuffled = [...songs].sort(() => Math.random() - 0.5);
+        // Use filtered songs for vote suggestions
+        const shuffled = [...filteredSongs].sort(() => Math.random() - 0.5);
         onVoteMode(result, shuffled.slice(0, 3));
         break;
       }
     }
-  }, [selectedPlayers, config.minPlayers, createPlayers, settings, difficulty, songs, onSelectLibrary, onStartGame, onVoteMode]);
+  }, [selectedPlayers, config.minPlayers, createPlayers, settings, difficulty, filteredSongs, filterGenre, filterLanguage, filterCombined, onSelectLibrary, onStartGame, onVoteMode]);
 
   return {
     config,
@@ -105,5 +128,15 @@ export function usePartySetup({
     setDifficulty,
     togglePlayer,
     handleSongSelection,
+    // Song filter
+    filterGenre,
+    filterLanguage,
+    filterCombined,
+    setFilterGenre,
+    setFilterLanguage,
+    setFilterCombined,
+    availableGenres,
+    availableLanguages,
+    filteredSongs,
   };
 }

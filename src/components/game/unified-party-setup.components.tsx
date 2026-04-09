@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Song, PlayerProfile, Difficulty } from '@/types/game';
 import { SONG_SELECTION_CONFIG } from './unified-party-setup.config';
 import type { PartyGameConfig, GameSettingConfig, SelectedPlayer, SongSelectionOption } from './unified-party-setup.types';
+import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
 
 // ===================== SETTING CONTROL =====================
 
@@ -225,6 +226,137 @@ function PlayerGrid({
   );
 }
 
+// ===================== SONG FILTER SECTION =====================
+
+interface SongFilterSectionProps {
+  filterGenre: string;
+  filterLanguage: string;
+  filterCombined: boolean;
+  availableGenres: string[];
+  availableLanguages: string[];
+  totalSongs: number;
+  filteredSongs: number;
+  onFilterGenreChange: (genre: string) => void;
+  onFilterLanguageChange: (language: string) => void;
+  onFilterCombinedChange: (combined: boolean) => void;
+}
+
+function SongFilterSection({
+  filterGenre,
+  filterLanguage,
+  filterCombined,
+  availableGenres,
+  availableLanguages,
+  totalSongs,
+  filteredSongs,
+  onFilterGenreChange,
+  onFilterLanguageChange,
+  onFilterCombinedChange,
+}: SongFilterSectionProps) {
+  const hasActiveFilter = filterGenre !== 'all' || filterLanguage !== 'all';
+
+  return (
+    <Card className="bg-white/5 border-white/10 mb-6">
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <span className="flex items-center gap-2"><span className="text-xl">🔍</span>Song Filter</span>
+          {hasActiveFilter && (
+            <Badge className="bg-indigo-500/20 text-indigo-400">
+              {filteredSongs} von {totalSongs} Songs
+            </Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-wrap gap-4 items-end">
+          {/* Genre Dropdown */}
+          <div className="flex-1 min-w-[180px]">
+            <label className="text-sm text-white/60 mb-1 block">🎸 Genre</label>
+            <select
+              value={filterGenre}
+              onChange={(e) => onFilterGenreChange(e.target.value)}
+              className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+            >
+              <option value="all">Alle Genres</option>
+              {availableGenres.map(g => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Language Dropdown */}
+          <div className="flex-1 min-w-[180px]">
+            <label className="text-sm text-white/60 mb-1 block">🌍 Sprache</label>
+            <select
+              value={filterLanguage}
+              onChange={(e) => onFilterLanguageChange(e.target.value)}
+              className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+            >
+              <option value="all">Alle Sprachen</option>
+              {availableLanguages.map(l => (
+                <option key={l} value={l}>{LANGUAGE_NAMES[l] || l}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Combined Toggle */}
+          <div className="min-w-[160px]">
+            <label className="text-sm text-white/60 mb-1 block">🔗 Filter-Logik</label>
+            <div className="flex gap-1">
+              <button
+                onClick={() => onFilterCombinedChange(true)}
+                className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                  filterCombined
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-700 text-white/60 hover:bg-gray-600'
+                }`}
+              >
+                Kombiniert (UND)
+              </button>
+              <button
+                onClick={() => onFilterCombinedChange(false)}
+                className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                  !filterCombined
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-700 text-white/60 hover:bg-gray-600'
+                }`}
+              >
+                Unabhängig (ODER)
+              </button>
+            </div>
+          </div>
+
+          {/* Clear Filter */}
+          {hasActiveFilter && (
+            <button
+              onClick={() => {
+                onFilterGenreChange('all');
+                onFilterLanguageChange('all');
+              }}
+              className="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm text-white/60 hover:text-white transition-all"
+              title="Filter zurücksetzen"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Song count when filter is active */}
+        {hasActiveFilter && (
+          <div className="mt-3 pt-3 border-t border-white/10">
+            <p className="text-xs text-white/40">
+              {filteredSongs === totalSongs
+                ? 'Kein Filter aktiv — alle Songs verfügbar'
+                : `${filteredSongs} Song${filteredSongs !== 1 ? 's' : ''} passen auf die Filter${filterCombined ? ' (beide Bedingungen müssen erfüllt sein)' : ' (mindestens eine Bedingung)'}`
+              }
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 // ===================== SONG SELECTION GRID =====================
 
 function SongSelectionGrid({
@@ -261,14 +393,6 @@ function SongSelectionGrid({
               </button>
             );
           })}
-        </div>
-        <div className="mt-6 pt-4 border-t border-white/10">
-          <p className="text-white/40 text-sm mb-2">💡 Additional Ideas:</p>
-          <div className="flex flex-wrap gap-2">
-            {['🎯 Challenge Mode', '🌍 Country Selection', '📊 By Difficulty', '⏱️ By Duration'].map(label => (
-              <Badge key={label} variant="outline" className="border-white/20 text-white/50">{label}</Badge>
-            ))}
-          </div>
         </div>
       </CardContent>
     </Card>
@@ -363,4 +487,4 @@ export function SongVotingModal({ songs, players, onVote, onClose, gameColor }: 
 
 // ===================== EXPORT ALL SUB-COMPONENTS =====================
 
-export { GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, ReadySummary };
+export { GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary };

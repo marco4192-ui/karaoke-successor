@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Song, PlayerProfile, GameMode } from '@/types/game';
 import { usePartySetup } from './unified-party-setup.hook';
-import { SongVotingModal, GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, ReadySummary } from './unified-party-setup.components';
+import { SongVotingModal, GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary } from './unified-party-setup.components';
 
 // Re-export public API for backward compatibility
 export { SongVotingModal } from './unified-party-setup.components';
@@ -28,6 +28,10 @@ export function UnifiedPartySetup({
   const {
     config, activeProfiles, selectedPlayers, settings, setSettings,
     error, difficulty, setDifficulty, togglePlayer, handleSongSelection,
+    // Song filter
+    filterGenre, filterLanguage, filterCombined,
+    setFilterGenre, setFilterLanguage, setFilterCombined,
+    availableGenres, availableLanguages, filteredSongs,
   } = usePartySetup({ gameMode, profiles, songs, onStartGame, onSelectLibrary, onVoteMode });
 
   const onSettingChange = (key: string, value: any) =>
@@ -61,6 +65,19 @@ export function UnifiedPartySetup({
         <PlayerGrid
           config={config} activeProfiles={activeProfiles}
           selectedPlayers={selectedPlayers} togglePlayer={togglePlayer}
+        />
+
+        <SongFilterSection
+          filterGenre={filterGenre}
+          filterLanguage={filterLanguage}
+          filterCombined={filterCombined}
+          availableGenres={availableGenres}
+          availableLanguages={availableLanguages}
+          totalSongs={songs.length}
+          filteredSongs={filteredSongs.length}
+          onFilterGenreChange={setFilterGenre}
+          onFilterLanguageChange={setFilterLanguage}
+          onFilterCombinedChange={setFilterCombined}
         />
 
         <SongSelectionGrid
