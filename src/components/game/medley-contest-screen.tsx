@@ -85,12 +85,40 @@ export function MedleySetupScreen({ profiles, songs, onStartGame, onBack }: Medl
 
   // Generate random medley songs
   const generateMedleySongs = useCallback(() => {
+    // UltraStar beat duration formula: beatDuration = 15000 / BPM (ms per beat)
+    const beatDurationMs = (bpm: number) => 15000 / bpm;
+
     const availableSongs = songs.filter(s => s.duration > settings.snippetDuration * 1000);
     const shuffled = [...availableSongs].sort(() => Math.random() - 0.5);
     const selectedSongs = shuffled.slice(0, settings.snippetCount);
     
     return selectedSongs.map(song => {
-      // Calculate random start time that allows for full snippet duration
+      // If #MEDLEYSTARTBEAT: and #MEDLEYENDBEAT: are defined, use them
+      if (song.medleyStartBeat !== undefined && song.medleyEndBeat !== undefined && song.bpm > 0) {
+        const bd = beatDurationMs(song.bpm);
+        const startTime = song.medleyStartBeat * bd;
+        const endTime = song.medleyEndBeat * bd;
+        return {
+          song,
+          startTime,
+          endTime,
+          duration: endTime - startTime,
+        };
+      }
+
+      // If only #MEDLEYSTARTBEAT: is defined, start there and play for snippetDuration
+      if (song.medleyStartBeat !== undefined && song.bpm > 0) {
+        const bd = beatDurationMs(song.bpm);
+        const startTime = song.medleyStartBeat * bd;
+        return {
+          song,
+          startTime,
+          endTime: startTime + settings.snippetDuration * 1000,
+          duration: settings.snippetDuration * 1000,
+        };
+      }
+
+      // Fallback: calculate random start time that allows for full snippet duration
       const maxStartTime = song.duration - settings.snippetDuration * 1000;
       const startTime = Math.random() * maxStartTime;
       
