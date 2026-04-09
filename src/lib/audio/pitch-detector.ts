@@ -93,17 +93,32 @@ export class PitchDetector {
   async initialize(): Promise<boolean> {
     try {
       // Request high-quality audio for karaoke
+      // Note: sampleRate and channelCount are NOT standard getUserMedia
+      // constraints and cause issues in Tauri webviews — omit them.
       this.mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
-          sampleRate: 44100,  // CD quality
-          channelCount: 1,    // Mono for karaoke
         },
       });
 
-      this.audioContext = new AudioContext({ sampleRate: 44100 });
+      this.audioContext = new AudioContext();
+
+      // CRITICAL: In Tauri webviews the AudioContext is often created in
+      // a "suspended" state and must be explicitly resumed, otherwise the
+      // AnalyserNode returns all-zeros and pitch detection never triggers.
+      if (this.audioContext.state === 'suspended') {
+        try {
+          await this.audioContext.resume();
+        } catch (resumeErr) {
+          console.warn('AudioContext.resume() failed, retrying…', resumeErr);
+          // Retry once after a short delay (some webviews need a tick)
+          await new Promise<void>(resolve => setTimeout(resolve, 100));
+          await this.audioContext.resume();
+        }
+      }
+
       const source = this.audioContext.createMediaStreamSource(this.mediaStream);
 
       this.analyser = this.audioContext.createAnalyser();
@@ -114,6 +129,13 @@ export class PitchDetector {
 
       this.buffer = new Float32Array(this.analyser.fftSize);
       this.frequencyBuffer = new Float32Array(this.analyser.frequencyBinCount);
+
+      console.log(
+        '[PitchDetector] Initialized — sampleRate:',
+        this.audioContext.sampleRate,
+        'fftSize:',
+        this.analyser.fftSize
+      );
 
       return true;
     } catch (error) {
@@ -149,6 +171,12 @@ export class PitchDetector {
   private detect(): void {
     if (!this.isListening || !this.analyser || !this.buffer || !this.frequencyBuffer) {
       return;
+    }
+
+    // Guard: if AudioContext was suspended (e.g. Tauri window lost focus),
+    // resume it — otherwise getFloatTimeDomainData returns all zeros.
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      this.audioContext.resume().catch(() => {});
     }
 
     this.analyser.getFloatTimeDomainData(this.buffer as Float32Array<ArrayBuffer>);

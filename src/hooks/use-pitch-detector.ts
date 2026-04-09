@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { PitchDetector, getPitchDetector } from '@/lib/audio/pitch-detector';
+import { PitchDetector, getPitchDetector, resetPitchDetector } from '@/lib/audio/pitch-detector';
 import { PitchDetectionResult, Difficulty } from '@/types/game';
 
 export function usePitchDetector() {
@@ -58,11 +58,13 @@ export function usePitchDetector() {
     detectorRef.current.setDifficulty(difficulty);
   }, []);
 
+  // Cleanup on unmount: destroy the detector AND reset the singleton
+  // so that a fresh PitchDetector is created on next mount (avoids
+  // re-using a destroyed instance whose AudioContext is closed).
   useEffect(() => {
     return () => {
-      if (detectorRef.current) {
-        detectorRef.current.destroy();
-      }
+      detectorRef.current?.destroy();
+      resetPitchDetector();
     };
   }, []);
 
