@@ -49,9 +49,7 @@
       "nsis": {
         "installMode": "currentUser",
         "languages": ["English"],
-        "displayLanguageSelector": false,
-        "compression": "lzma",
-        "compressionLevel": 5
+        "displayLanguageSelector": false
       }
     }
   },
