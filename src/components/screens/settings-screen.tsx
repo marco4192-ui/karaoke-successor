@@ -199,7 +199,7 @@ function SettingsScreen() {
   };
 
   return (
-    <div className={`theme-container ${activeTab === 'editor' ? 'w-full h-full' : 'w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8'}`}>
+    <div className={`theme-container w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8`}>
       {/* Header */}
       {activeTab !== 'editor' && (
         <div className="mb-8">
@@ -285,9 +285,7 @@ function SettingsScreen() {
       )}
 
       {activeTab === 'editor' && (
-        <div className="h-[calc(100vh-8rem)]">
-          <EditorSettingsView />
-        </div>
+        <EditorSettingsView />
       )}
 
       {activeTab === 'about' && (
