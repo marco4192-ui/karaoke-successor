@@ -45,6 +45,17 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
   const [companionQueue, setCompanionQueue] = useState<CompanionQueueItem[]>([]);
   const [songs, setSongs] = useState<Song[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [needsPlayerSelection, setNeedsPlayerSelection] = useState<string | null>(null); // queue item ID
+  const [reassignPlayer1, setReassignPlayer1] = useState<string>('');
+  const [reassignPlayer2, setReassignPlayer2] = useState<string>('');
+
+  // Reset reassignment state when dialog closes
+  useEffect(() => {
+    if (!needsPlayerSelection) {
+      setReassignPlayer1('');
+      setReassignPlayer2('');
+    }
+  }, [needsPlayerSelection]);
 
   // Load songs library
   useEffect(() => {
@@ -54,6 +65,31 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
     };
     loadSongs();
   }, []);
+
+  // Auto-handle deactivated players in queue:
+  // - Single songs: remove entirely
+  // - Duel/Duet songs: flag for re-selection (don't auto-remove)
+  useEffect(() => {
+    const activeIds = new Set(profiles.filter(p => p.isActive !== false).map(p => p.id));
+    let changed = false;
+
+    queue.forEach((item) => {
+      if (item.status !== 'pending') return;
+      const mainInactive = item.playerId && !activeIds.has(item.playerId);
+      const partnerInactive = item.partnerId && !activeIds.has(item.partnerId);
+
+      if (mainInactive && item.gameMode === 'single') {
+        // Remove single songs of deactivated players
+        removeFromQueue(item.id);
+        changed = true;
+      } else if ((mainInactive || partnerInactive) && (item.gameMode === 'duel' || item.gameMode === 'duet')) {
+        // Flag duel/duet songs for re-selection (don't remove)
+        if (!needsPlayerSelection) {
+          setNeedsPlayerSelection(item.id);
+        }
+      }
+    });
+  }, [profiles, queue, removeFromQueue, needsPlayerSelection]);
 
   // Fetch companion queue from API
   const fetchCompanionQueue = useCallback(async () => {
@@ -129,6 +165,18 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
     if (!song) return;
     
     const gameMode = item.gameMode || 'single';
+    const activeIds = new Set(profiles.filter(p => p.isActive !== false).map(p => p.id));
+
+    // Check if any required player is deactivated (for duel/duet)
+    if ((gameMode === 'duel' || gameMode === 'duet') && !item.isFromCompanion) {
+      const mainInactive = item.playerId && !activeIds.has(item.playerId);
+      const partnerInactive = item.partnerId && !activeIds.has(item.partnerId);
+      if (mainInactive || partnerInactive) {
+        setNeedsPlayerSelection(item.id);
+        return; // Don't start — user must reassign players
+      }
+    }
+    
     const players: { id: string; name: string }[] = [];
     
     // Add main player
@@ -286,21 +334,45 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
                 
                 {/* Players */}
                 <div className="flex items-center gap-2">
-                  <div 
-                    className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                    style={{ backgroundColor: profiles.find(p => p.id === item.playerId)?.color || '#888' }}
-                  >
-                    {item.playerName?.[0]?.toUpperCase() || '?'}
-                  </div>
+                  {(() => {
+                    const mainProfile = profiles.find(p => p.id === item.playerId);
+                    const isMainInactive = mainProfile && mainProfile.isActive === false;
+                    return (
+                      <div className="flex items-center gap-1">
+                        <div 
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                          style={{ backgroundColor: mainProfile?.color || '#888', opacity: isMainInactive ? 0.4 : 1 }}
+                          title={isMainInactive ? 'Player deactivated' : ''}
+                        >
+                          {item.playerName?.[0]?.toUpperCase() || '?'}
+                        </div>
+                        {isMainInactive && (
+                          <span className="text-[10px] text-red-400">⚠</span>
+                        )}
+                      </div>
+                    );
+                  })()}
                   {item.partnerName && (
                     <>
                       <span className="text-white/40">+</span>
-                      <div 
-                        className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                        style={{ backgroundColor: profiles.find(p => p.id === item.partnerId)?.color || '#888' }}
-                      >
-                        {item.partnerName[0].toUpperCase()}
-                      </div>
+                      {(() => {
+                        const partnerProfile = profiles.find(p => p.id === item.partnerId);
+                        const isPartnerInactive = partnerProfile && partnerProfile.isActive === false;
+                        return (
+                          <div className="flex items-center gap-1">
+                            <div 
+                              className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                              style={{ backgroundColor: partnerProfile?.color || '#888', opacity: isPartnerInactive ? 0.4 : 1 }}
+                              title={isPartnerInactive ? 'Player deactivated' : ''}
+                            >
+                              {item.partnerName[0].toUpperCase()}
+                            </div>
+                            {isPartnerInactive && (
+                              <span className="text-[10px] text-red-400">⚠</span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </>
                   )}
                 </div>
@@ -361,7 +433,110 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
         </div>
       )}
 
-      {/* Queue Rules */}
+      {/* Player Re-selection Dialog for duel/duet with deactivated player */}
+      {needsPlayerSelection && (() => {
+        const item = queue.find(q => q.id === needsPlayerSelection);
+        if (!item) return null;
+        const activeProfiles = profiles.filter(p => p.isActive !== false);
+        const [sel1, setSel1] = [reassignPlayer1, setReassignPlayer1];
+        const [sel2, setSel2] = [reassignPlayer2, setReassignPlayer2];
+        return (
+          <Card className="bg-yellow-500/10 border-yellow-500/30 mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg text-yellow-400">
+                ⚠ Spieler-Neuauswahl benötigt
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-white/80">
+                Ein Spieler für <strong>{item.song.title}</strong> ({item.gameMode === 'duel' ? 'Duell' : 'Duett'}) wurde deaktiviert. Bitte wähle neue Spieler oder lösche den Song.
+              </p>
+              {activeProfiles.length >= 2 ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    {activeProfiles.map((profile) => (
+                      <button
+                        key={profile.id}
+                        onClick={() => {
+                          if (!sel1) setSel1(profile.id);
+                          else if (!sel2 && profile.id !== sel1) setSel2(profile.id);
+                        }}
+                        className={`flex items-center gap-2 p-2 rounded-lg transition-all ${
+                          sel1 === profile.id
+                            ? 'bg-pink-500 text-white'
+                            : sel2 === profile.id
+                              ? 'bg-purple-500 text-white'
+                              : 'bg-white/10 text-white hover:bg-white/20'
+                        }`}
+                      >
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold" style={{ backgroundColor: profile.color }}>
+                          {profile.name[0]}
+                        </div>
+                        <span className="text-sm">{profile.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      disabled={sel1 && sel2 ? false : true}
+                      onClick={() => {
+                        // Update queue item with new players
+                        const p1 = profiles.find(p => p.id === sel1);
+                        const p2 = profiles.find(p => p.id === sel2);
+                        if (p1 && p2) {
+                          // Remove old and re-add with new players
+                          removeFromQueue(item.id);
+                          // Use the store's addToQueue — access via useGameStore
+                          useGameStore.getState().addToQueue(item.song, p1.id, p1.name, {
+                            partnerId: p2.id,
+                            partnerName: p2.name,
+                            gameMode: item.gameMode as 'single' | 'duel' | 'duet',
+                          });
+                        }
+                        setNeedsPlayerSelection(null);
+                      }}
+                      className="bg-green-500 hover:bg-green-400 disabled:opacity-50"
+                    >
+                      ✓ Spieler zuweisen
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        removeFromQueue(item.id);
+                        setNeedsPlayerSelection(null);
+                      }}
+                      className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                    >
+                      ✕ Song löschen
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setNeedsPlayerSelection(null)}
+                      className="border-white/20 text-white hover:bg-white/10"
+                    >
+                      Später
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-red-400">Nicht genügend aktive Spieler verfügbar (mindestens 2 benötigt).</p>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      removeFromQueue(item.id);
+                      setNeedsPlayerSelection(null);
+                    }}
+                    className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                  >
+                    ✕ Song aus Queue löschen
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
       <Card className="bg-white/5 border-white/10 mt-8">
         <CardHeader>
           <CardTitle className="text-lg">Queue Rules</CardTitle>
