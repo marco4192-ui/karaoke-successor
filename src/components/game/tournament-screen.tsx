@@ -18,6 +18,7 @@ import {
 import { Song, PlayerProfile, PLAYER_COLORS, Difficulty } from '@/types/game';
 import { getAllSongs } from '@/lib/game/song-library';
 import { useGameStore } from '@/lib/game/store';
+import { TournamentBracketButterfly } from '@/components/game/tournament-bracket-butterfly';
 
 interface TournamentScreenProps {
   profiles: PlayerProfile[];
@@ -239,30 +240,10 @@ interface TournamentBracketViewProps {
 
 export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, songs, shortMode }: TournamentBracketViewProps) {
   const stats = getTournamentStats(bracket);
-  
-  // Get all matches organized by round
-  const rounds = useMemo(() => {
-    const roundMatches: TournamentMatch[][] = [];
-    for (let r = 1; r <= bracket.totalRounds; r++) {
-      roundMatches.push(getMatchesForRound(bracket, r));
-    }
-    return roundMatches;
-  }, [bracket]);
-
-  const getRandomSong = () => {
-    if (songs.length === 0) return null;
-    return songs[Math.floor(Math.random() * songs.length)];
-  };
 
   // Get next match to play
   const playableMatches = getPlayableMatches(bracket);
   const nextMatch = playableMatches[0] || null;
-  
-  // Calculate bracket height based on first round matches
-  const bracketHeight = useMemo(() => {
-    const firstRoundMatches = rounds[0]?.length || 4;
-    return Math.max(400, firstRoundMatches * 100);
-  }, [rounds]);
 
   return (
     <div className="max-w-full mx-auto px-4">
@@ -314,102 +295,17 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, song
             onClick={() => onPlayMatch(nextMatch)}
             className="w-full py-4 text-lg bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400"
           >
-            🎤 Start Duel
+            🎤 Start Next Match
           </Button>
         </div>
       )}
 
-      {/* Double Bracket Tree (Doppelbaum) */}
-      <div className="overflow-x-auto pb-4">
-        <div className="flex items-stretch justify-center min-w-max">
-          {/* Left Side of Bracket (Round 1 to Semi-Final) */}
-          <div className="flex items-center">
-            {rounds.slice(0, -1).map((roundMatches, roundIndex) => {
-              const isLastRound = roundIndex === rounds.length - 2;
-              const roundName = roundIndex === 0 ? 'First Round' : 
-                               isLastRound ? 'Semi-Finals' : `Round ${roundIndex + 1}`;
-              
-              return (
-                <div key={`left-${roundIndex}`} className="flex flex-col relative">
-                  {/* Round Header */}
-                  <h3 className="text-center font-medium text-white/60 mb-3 text-sm min-w-[180px]">
-                    {roundName}
-                  </h3>
-                  
-                  {/* Matches with connecting lines */}
-                  <div 
-                    className="flex flex-col justify-around flex-1 relative"
-                    style={{ minHeight: `${bracketHeight}px` }}
-                  >
-                    {/* Vertical connector line on the right side */}
-                    {roundIndex < rounds.length - 2 && (
-                      <div 
-                        className="absolute right-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-white/20 via-white/10 to-white/20"
-                        style={{ transform: 'translateX(50%)' }}
-                      />
-                    )}
-                    
-                    {roundMatches.map((match, matchIndex) => {
-                      // Calculate vertical position for connecting lines
-                      const totalMatches = roundMatches.length;
-                      const spacing = 100 / (totalMatches + 1);
-                      const position = (matchIndex + 1) * spacing;
-                      
-                      return (
-                        <div 
-                          key={match.id} 
-                          className="relative flex items-center justify-center"
-                          style={{ height: `${spacing}%` }}
-                        >
-                          {/* Horizontal connector line */}
-                          {roundIndex < rounds.length - 2 && (
-                            <div className="absolute right-0 w-6 h-0.5 bg-white/20 translate-x-full" />
-                          )}
-                          
-                          <BracketMatchCard 
-                            match={match} 
-                            isCurrentMatch={currentMatch?.id === match.id}
-                            isPlayable={playableMatches.some(m => m.id === match.id)}
-                            onPlay={() => onPlayMatch(match)}
-                            isComplete={bracket.status === 'completed'}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Finals in the Center */}
-          <div className="flex flex-col px-8 relative">
-            <h3 className="text-center font-bold text-amber-400 mb-3 text-lg">
-              🏆 FINAL
-            </h3>
-            <div 
-              className="flex flex-col justify-center flex-1 relative"
-              style={{ minHeight: `${bracketHeight}px` }}
-            >
-              {/* Glowing effect around final */}
-              <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 via-yellow-500/20 to-amber-500/10 rounded-xl blur-xl" />
-              
-              {rounds[rounds.length - 1]?.map(match => (
-                <div key={match.id} className="relative z-10 transform scale-125">
-                  <BracketMatchCard 
-                    match={match} 
-                    isCurrentMatch={currentMatch?.id === match.id}
-                    isPlayable={playableMatches.some(m => m.id === match.id)}
-                    onPlay={() => onPlayMatch(match)}
-                    isComplete={bracket.status === 'completed'}
-                    isFinal
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Butterfly-Style Bracket (NFL-Playoff layout) */}
+      <TournamentBracketButterfly
+        bracket={bracket}
+        currentMatch={currentMatch}
+        onPlayMatch={onPlayMatch}
+      />
 
       {/* Queue Display - Remaining Matches */}
       {playableMatches.length > 1 && !bracket.champion && (
