@@ -18,6 +18,7 @@ import { Song, GameMode } from '@/types/game';
 import { applyTheme, getStoredTheme } from '@/lib/game/themes';
 import { PassTheMicSegment } from '@/components/game/pass-the-mic-screen';
 import { recordMatchResult } from '@/lib/game/tournament';
+import { finishCompetitiveRound } from '@/lib/game/competitive-words-blind';
 
 // Screen types
 type Screen = 'home' | 'library' | 'game' | 'party' | 'character' | 'queue' | 'mobile' | 'results' | 'highscores' | 'import' | 'settings' | 'jukebox' | 'achievements' | 'dailyChallenge' | 'tournament' | 'tournament-game' | 'battle-royale' | 'battle-royale-game' | 'pass-the-mic' | 'pass-the-mic-game' | 'companion-singalong' | 'companion-singalong-game' | 'medley' | 'medley-game' | 'editor' | 'online' | 'party-setup' | 'song-voting' | 'missing-words' | 'missing-words-game' | 'blind' | 'blind-game';
@@ -132,13 +133,41 @@ export default function KaraokeSuccessor() {
 
   // Handle game end based on game mode
   const handleGameEnd = useCallback(() => {
+    // Check if we're in a competitive Missing Words / Blind match
+    if (party.competitiveGame && (gameState.gameMode === 'missing-words' || gameState.gameMode === 'blind')) {
+      const results = gameState.results;
+      const players = gameState.players;
+
+      // Get scores from results or current game state
+      const score1 = results?.players?.[0]?.score || players?.[0]?.score || 0;
+      const score2 = results?.players?.[1]?.score || players?.[1]?.score || 0;
+
+      // TODO: Calculate bonus points for missing words / blind sections hit
+      // For now, bonus is 0 — will be wired in a follow-up
+      const bonus1 = 0;
+      const bonus2 = 0;
+
+      // Record round results in the competitive game
+      const updatedGame = finishCompetitiveRound(
+        party.competitiveGame,
+        score1, bonus1,
+        score2, bonus2
+      );
+      party.setCompetitiveGame(updatedGame);
+
+      // Navigate back to competitive game view (scoreboard / next round / winner)
+      const modeScreen = gameState.gameMode === 'missing-words' ? 'missing-words-game' : 'blind-game';
+      setScreen(modeScreen as Screen);
+      return;
+    }
+
     // Check if we're in a tournament match (has party.currentTournamentMatch set)
     if (party.currentTournamentMatch && party.tournamentBracket) {
       handleTournamentGameEnd();
     } else {
       setScreen('results');
     }
-  }, [party.currentTournamentMatch, party.tournamentBracket, handleTournamentGameEnd]);
+  }, [party.competitiveGame, party.currentTournamentMatch, party.tournamentBracket, gameState.results, gameState.players, gameState.gameMode, handleTournamentGameEnd]);
 
   // Listen for fullscreen changes
   useEffect(() => {
@@ -165,6 +194,11 @@ export default function KaraokeSuccessor() {
         party.setTournamentMatchAborted(true);
         resetGame();
         setScreen('tournament-game');
+      } else if (screen === 'game' && party.competitiveGame) {
+        // During competitive MW/Blind match, Escape goes back to competitive view
+        resetGame();
+        const modeScreen = gameState.gameMode === 'missing-words' ? 'missing-words-game' : 'blind-game';
+        setScreen(modeScreen as Screen);
       } else if (screen === 'game') {
         resetGame();
         setScreen('library');
@@ -332,8 +366,10 @@ export default function KaraokeSuccessor() {
         {screen === 'party' && (
           <PartyScreen
             onSelectMode={(mode) => {
-              // Use unified setup for all party games
-              if (mode === 'online') {
+              // Missing Words and Blind Karaoke use their own competitive setup screens
+              if (mode === 'missing-words' || mode === 'blind') {
+                setScreen(mode);
+              } else if (mode === 'online') {
                 setScreen('online');
               } else {
                 party.setSelectedGameMode(mode);

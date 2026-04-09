@@ -11,12 +11,18 @@ interface UseGameModesParams {
   allNotes?: Array<Note & { lineIndex: number; line: LyricLine }>;
   setBlindSection: (isBlind: boolean) => void;
   setMissingWordsIndices: (indices: number[]) => void;
+  /** Override blind frequency (0.10–0.60). Falls back to 0.4 if not set. */
+  blindFrequency?: number;
+  /** Override missing words percentage (0.15–0.50). Falls back to 0.25 if not set. */
+  missingWordFrequency?: number;
 }
 
 /**
  * Hook for managing special game modes: Blind Mode and Missing Words Mode.
  * - Blind Mode: Deterministic seed-based section hiding (no flickering)
- * - Missing Words Mode: Fisher-Yates shuffle for 25% word hiding (generated once per game)
+ * - Missing Words Mode: Fisher-Yates shuffle for word hiding (generated once per game)
+ *
+ * Frequencies can be overridden via props (e.g. from competitive settings).
  */
 export function useGameModes({
   gameMode,
@@ -26,6 +32,8 @@ export function useGameModes({
   allNotes,
   setBlindSection,
   setMissingWordsIndices,
+  blindFrequency,
+  missingWordFrequency,
 }: UseGameModesParams) {
   // BLIND KARAOKE MODE: Set blind sections based on time
   // Uses a deterministic seed generated once per song to avoid flickering
@@ -52,7 +60,7 @@ export function useGameModes({
       }
 
       const sectionDuration = 12000; // 12 seconds per section
-      const blindChance = 0.4; // 40% chance of being blind
+      const blindChance = blindFrequency ?? 0.4; // Use override or default 40%
 
       const sectionIndex = Math.floor(currentTime / sectionDuration);
       const seedValue = blindSeedRef.current[sectionIndex % blindSeedRef.current.length] || 0;
@@ -60,7 +68,7 @@ export function useGameModes({
 
       setBlindSection(isBlind);
     }
-  }, [gameMode, status, currentTime, setBlindSection]);
+  }, [gameMode, status, currentTime, setBlindSection, blindFrequency]);
 
   // Generate missing words indices once when missing-words game starts
   useEffect(() => {
@@ -72,7 +80,8 @@ export function useGameModes({
       const totalNotes = allNotes.length;
       if (totalNotes === 0) return;
 
-      const hideCount = Math.floor(totalNotes * 0.25); // 25% of words
+      const hidePercentage = missingWordFrequency ?? 0.25; // Use override or default 25%
+      const hideCount = Math.floor(totalNotes * hidePercentage);
       const allIndices = Array.from({ length: totalNotes }, (_, i) => i);
 
       // Fisher-Yates shuffle for proper random distribution
@@ -83,7 +92,7 @@ export function useGameModes({
 
       setMissingWordsIndices(allIndices.slice(0, hideCount));
     }
-  }, [gameMode, allNotes, status, setMissingWordsIndices]);
+  }, [gameMode, allNotes, status, setMissingWordsIndices, missingWordFrequency]);
 
   // Reset both modes when song changes
   useEffect(() => {

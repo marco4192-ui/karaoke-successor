@@ -6,6 +6,7 @@ import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useNoteScoring } from '@/hooks/use-note-scoring';
 import { useGameSettings } from '@/hooks/use-game-settings';
 import { useGameStore } from '@/lib/game/store';
+import { usePartyStore } from '@/lib/game/party-store';
 import { LyricLine, Note, PLAYER_COLORS } from '@/types/game';
 import { PRACTICE_MODE_DEFAULTS, PracticeModeConfig } from '@/lib/game/practice-mode';
 import { CHALLENGE_MODES } from '@/lib/game/player-progression';
@@ -70,6 +71,7 @@ import { isDuetSong } from '@/components/screens/library/utils';
 // ===================== GAME SCREEN =====================
 function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }) {
   const { gameState, setCurrentTime, setDetectedPitch, updatePlayer, endGame, resetGame, setResults, addPlayer, createProfile, profiles, setMissingWordsIndices, setBlindSection } = useGameStore();
+  const party = usePartyStore();
   const { pitchResult, initialize, start, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
 
   // Smoothed pitch for visual display (prevents flickering/jitter)
@@ -314,6 +316,9 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     allNotes: timingData?.allNotes,
     setBlindSection,
     setMissingWordsIndices,
+    // Pass competitive settings frequencies if available
+    blindFrequency: party.competitiveGame?.settings?.blindFrequency,
+    missingWordFrequency: party.competitiveGame?.settings?.missingWordFrequency,
   });
 
   // Remote control polling - commands from mobile companions
