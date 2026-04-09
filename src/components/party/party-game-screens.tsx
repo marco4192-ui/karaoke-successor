@@ -10,9 +10,10 @@ import { BattleRoyaleSetupScreen, BattleRoyaleGameView } from '@/components/game
 import { PassTheMicSetupScreen, PassTheMicGameView } from '@/components/game/pass-the-mic-screen';
 import { CompanionSingAlongSetupScreen, CompanionGameView } from '@/components/game/companion-singalong-screen';
 import { MedleySetupScreen, MedleyGameView } from '@/components/game/medley-contest-screen';
+import { CompetitiveSetupScreen, CompetitiveGameView } from '@/components/game/competitive-words-blind-screen';
 
 // Screen types (matches page.tsx)
-type Screen = 'home' | 'library' | 'game' | 'party' | 'character' | 'queue' | 'mobile' | 'results' | 'highscores' | 'import' | 'settings' | 'jukebox' | 'achievements' | 'dailyChallenge' | 'tournament' | 'tournament-game' | 'battle-royale' | 'battle-royale-game' | 'pass-the-mic' | 'pass-the-mic-game' | 'companion-singalong' | 'companion-singalong-game' | 'medley' | 'medley-game' | 'editor' | 'online' | 'party-setup' | 'song-voting';
+type Screen = 'home' | 'library' | 'game' | 'party' | 'character' | 'queue' | 'mobile' | 'results' | 'highscores' | 'import' | 'settings' | 'jukebox' | 'achievements' | 'dailyChallenge' | 'tournament' | 'tournament-game' | 'battle-royale' | 'battle-royale-game' | 'pass-the-mic' | 'pass-the-mic-game' | 'companion-singalong' | 'companion-singalong-game' | 'medley' | 'medley-game' | 'editor' | 'online' | 'party-setup' | 'song-voting' | 'missing-words' | 'missing-words-game' | 'blind' | 'blind-game';
 
 interface PartyGameScreensProps {
   screen: Screen;
@@ -243,6 +244,79 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             party.setMedleySongs([]);
             party.setMedleySettings(null);
             setScreen('home');
+          }}
+        />
+      )}
+
+      {/* Missing Words Competitive Setup */}
+      {screen === 'missing-words' && (
+        <CompetitiveSetupScreen
+          profiles={profiles}
+          songs={getAllSongs()}
+          modeType='missing-words'
+          onStartGame={(game) => {
+            party.setCompetitiveGame(game);
+            setScreen('missing-words-game');
+          }}
+          onBack={() => setScreen('party')}
+        />
+      )}
+
+      {/* Missing Words Competitive Game */}
+      {screen === 'missing-words-game' && party.competitiveGame && (
+        <CompetitiveGameView
+          game={party.competitiveGame}
+          songs={getAllSongs()}
+          modeType='missing-words'
+          onUpdateGame={(game) => party.setCompetitiveGame(game)}
+          onEndGame={() => {
+            party.setCompetitiveGame(null);
+            setScreen('home');
+          }}
+          onPlayMatch={(p1Id, p2Id, p1Name, p2Name, song) => {
+            // Start duel mode with the two players and the selected song
+            resetGame();
+            addPlayer({ id: p1Id, name: p1Name, color: party.competitiveGame!.players.find(p => p.id === p1Id)?.color || '#FF6B6B' });
+            addPlayer({ id: p2Id, name: p2Name, color: party.competitiveGame!.players.find(p => p.id === p2Id)?.color || '#4ECDC4' });
+            setGameMode('missing-words');
+            setSong(song);
+            setScreen('game');
+          }}
+        />
+      )}
+
+      {/* Blind Karaoke Competitive Setup */}
+      {screen === 'blind' && (
+        <CompetitiveSetupScreen
+          profiles={profiles}
+          songs={getAllSongs()}
+          modeType='blind'
+          onStartGame={(game) => {
+            party.setCompetitiveGame(game);
+            setScreen('blind-game');
+          }}
+          onBack={() => setScreen('party')}
+        />
+      )}
+
+      {/* Blind Karaoke Competitive Game */}
+      {screen === 'blind-game' && party.competitiveGame && (
+        <CompetitiveGameView
+          game={party.competitiveGame}
+          songs={getAllSongs()}
+          modeType='blind'
+          onUpdateGame={(game) => party.setCompetitiveGame(game)}
+          onEndGame={() => {
+            party.setCompetitiveGame(null);
+            setScreen('home');
+          }}
+          onPlayMatch={(p1Id, p2Id, p1Name, p2Name, song) => {
+            resetGame();
+            addPlayer({ id: p1Id, name: p1Name, color: party.competitiveGame!.players.find(p => p.id === p1Id)?.color || '#FF6B6B' });
+            addPlayer({ id: p2Id, name: p2Name, color: party.competitiveGame!.players.find(p => p.id === p2Id)?.color || '#4ECDC4' });
+            setGameMode('blind');
+            setSong(song);
+            setScreen('game');
           }}
         />
       )}

@@ -8,6 +8,7 @@ import type { TournamentBracket, TournamentMatch } from '@/lib/game/tournament';
 import type { GameSetupResult } from '@/components/game/unified-party-setup';
 import type { BattleRoyaleGame } from '@/lib/game/battle-royale';
 import type { MedleySong } from '@/components/game/medley-contest-screen';
+import type { CompetitiveGame } from '@/lib/game/competitive-words-blind';
 
 interface PartyStore {
   // Tournament
@@ -49,6 +50,10 @@ interface PartyStore {
   setMedleySongs: (songs: MedleySong[]) => void;
   medleySettings: any;
   setMedleySettings: (settings: any) => void;
+
+  // Competitive Words/Blind
+  competitiveGame: CompetitiveGame | null;
+  setCompetitiveGame: (game: CompetitiveGame | null) => void;
 
   // Unified Party Setup
   selectedGameMode: GameMode | null;
@@ -103,6 +108,10 @@ export const usePartyStore = create<PartyStore>((set) => ({
   medleySettings: null,
   setMedleySettings: (medleySettings) => set({ medleySettings }),
 
+  // Competitive Words/Blind
+  competitiveGame: null,
+  setCompetitiveGame: (competitiveGame) => set({ competitiveGame }),
+
   // Unified Party Setup
   selectedGameMode: null,
   setSelectedGameMode: (selectedGameMode) => set({ selectedGameMode }),
@@ -128,6 +137,7 @@ export const usePartyStore = create<PartyStore>((set) => ({
     medleyPlayers: [],
     medleySongs: [] as MedleySong[],
     medleySettings: null,
+    competitiveGame: null,
     selectedGameMode: null,
     unifiedSetupResult: null,
     votingSongs: [],
