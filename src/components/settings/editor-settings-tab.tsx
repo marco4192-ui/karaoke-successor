@@ -9,6 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { getAllSongsAsync, updateSong } from '@/lib/game/song-library';
 import { Song } from '@/types/game';
 import { KaraokeEditor } from '@/components/editor/karaoke-editor';
+import { fuzzyMatch } from '@/lib/fuzzy-search';
 
 export function EditorSettingsTab() {
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
@@ -39,12 +40,13 @@ export function EditorSettingsTab() {
         break;
     }
     
-    // Apply search
+    // Apply fuzzy search (tolerant of typos, same as Library)
     if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(s => 
-        s.title.toLowerCase().includes(query) ||
-        s.artist.toLowerCase().includes(query)
+      filtered = filtered.filter(s =>
+        fuzzyMatch(searchQuery, s.title) ||
+        fuzzyMatch(searchQuery, s.artist) ||
+        (s.genre && fuzzyMatch(searchQuery, s.genre)) ||
+        (s.album && fuzzyMatch(searchQuery, s.album))
       );
     }
     
