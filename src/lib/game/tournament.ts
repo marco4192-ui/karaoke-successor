@@ -215,14 +215,16 @@ export function getMatchesForRound(bracket: TournamentBracket, round: number): T
   return bracket.matches.filter(m => m.round === round);
 }
 
-// Get current round matches that are ready to play
+// Get all matches that are ready to play (any round where both players are assigned)
+// This allows clicking on any match in the bracket to start it out of order,
+// as long as both feeder matches have completed and assigned their winners.
 export function getPlayableMatches(bracket: TournamentBracket): TournamentMatch[] {
   return bracket.matches.filter(
-    m => m.round === bracket.currentRound && 
-    !m.completed && 
-    m.player1 && 
-    m.player2 &&
-    !m.isBye
+    m =>
+      !m.completed &&
+      m.player1 &&
+      m.player2 &&
+      !m.isBye
   );
 }
 
