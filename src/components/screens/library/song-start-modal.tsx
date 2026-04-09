@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Song, GameMode } from '@/types/game';
@@ -31,6 +31,15 @@ export function SongStartModal({
 }: SongStartModalProps) {
   const isPartyMode = startOptions.partyMode && startOptions.partyMode !== 'standard' && startOptions.partyMode !== 'duel' && startOptions.partyMode !== 'duet';
   const songIsDuet = isDuetSong(selectedSong);
+
+  // Auto-remove deactivated players from selection to prevent blocked slots
+  useEffect(() => {
+    const activeIds = new Set(profiles.filter(p => p.isActive !== false).map(p => p.id));
+    const cleanedPlayers = startOptions.players.filter(id => activeIds.has(id));
+    if (cleanedPlayers.length !== startOptions.players.length) {
+      setStartOptions(prev => ({ ...prev, players: cleanedPlayers }));
+    }
+  }, [profiles, startOptions.players, setStartOptions]);
   
   const handleFavorite = () => {
     toggleFavorite(selectedSong.id);
