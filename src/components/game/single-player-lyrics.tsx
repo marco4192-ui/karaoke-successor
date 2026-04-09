@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useState, useCallback, useEffect } from 'react';
 import { LyricLine } from '@/types/game';
 import { LyricLineDisplay } from './lyric-line-display';
 
@@ -40,7 +40,7 @@ export function SinglePlayerLyrics({
   isBlindSection = false,
   previewTime = 2000,
 }: SinglePlayerLyricsProps) {
-  // Find current and next lines
+  // ── Find current and next lines ──
   const { currentLine, nextLine, timeUntilSing, isSinging, isFlying } = useMemo(() => {
     // Find current line
     let currentLine = sortedLines.find(line =>
@@ -73,79 +73,111 @@ export function SinglePlayerLyrics({
     return { currentLine, nextLine, timeUntilSing, isSinging, isFlying };
   }, [sortedLines, currentTime, previewTime]);
 
+  // ── Refs for measuring first note position ──
+  const containerRef = useRef<HTMLDivElement>(null);
+  const firstNoteNodeRef = useRef<HTMLSpanElement | null>(null);
+  const [firstNoteXPercent, setFirstNoteXPercent] = useState<number | null>(null);
+
+  // Callback ref for the first note element in LyricLineDisplay
+  const firstNoteRefCallback = useCallback((node: HTMLSpanElement | null) => {
+    firstNoteNodeRef.current = node;
+  }, []);
+
+  // Measure first note position relative to container when the current line changes
+  useEffect(() => {
+    const measure = () => {
+      const container = containerRef.current;
+      const noteEl = firstNoteNodeRef.current;
+      if (!container || !noteEl) {
+        setFirstNoteXPercent(null);
+        return;
+      }
+
+      const containerRect = container.getBoundingClientRect();
+      const noteRect = noteEl.getBoundingClientRect();
+
+      if (containerRect.width === 0) {
+        setFirstNoteXPercent(null);
+        return;
+      }
+
+      // X position of first note's left edge as percentage of container width
+      const relativeX = ((noteRect.left - containerRect.left) / containerRect.width) * 100;
+      setFirstNoteXPercent(Math.max(0, Math.min(100, relativeX)));
+    };
+
+    // Use rAF to ensure the callback ref has been called with the new node
+    const rafId = requestAnimationFrame(measure);
+
+    // Also measure on resize
+    window.addEventListener('resize', measure);
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', measure);
+    };
+  }, [currentLine]);
+
   if (!currentLine) return null;
 
-  // Calculate flying animation progress
+  // Calculate flying animation progress (0 = start, 1 = arrived at first note)
   const flyProgress = isFlying ? Math.max(0, Math.min(1, 1 - (timeUntilSing / previewTime))) : 0;
 
-  // Get the first word of the line for the marker target
-  const firstNote = currentLine.notes[0];
-  const firstWord = firstNote?.lyric?.trim() || '';
+  // Determine pointer target X position
+  // If we have a measured position, use it; otherwise fall back to center
+  const pointerTargetX = firstNoteXPercent !== null ? firstNoteXPercent : 50;
+  // Pointer starts off-screen left (-5%) and flies to the target
+  const pointerX = isFlying ? -5 + flyProgress * (pointerTargetX + 5) : 0;
+
+  // Easing function for smooth deceleration (ease-in-out quad)
+  const easedProgress = flyProgress < 0.5
+    ? 2 * flyProgress * flyProgress
+    : 1 - Math.pow(-2 * flyProgress + 2, 2) / 2;
 
   return (
     <div className="absolute bottom-0 left-0 right-0 z-20">
       <div className="bg-gradient-to-t from-black/80 to-transparent p-6">
-        <div className="text-2xl md:text-3xl font-bold text-center drop-shadow-lg relative w-full">
-          {/* Flying Line Indicator - Moves from left edge to first word */}
+        <div ref={containerRef} className="text-2xl md:text-3xl font-bold text-center drop-shadow-lg relative w-full">
+          {/* Flying Pointer — flies from off-screen left to the first singable note.
+              Disappears immediately when singing starts (no lingering indicator). */}
           {isFlying && (
             <div
               className="absolute top-1/2 flex items-center pointer-events-none"
               style={{
-                left: `${5 + flyProgress * 40}%`,
+                left: `${pointerX}%`,
                 transform: 'translateY(-50%)',
-                opacity: 0.5 + flyProgress * 0.5,
+                opacity: 0.4 + easedProgress * 0.6,
                 zIndex: 100,
               }}
             >
+              {/* Glowing orb */}
               <div
-                className="rounded-full flex items-center justify-center"
+                className="rounded-full flex items-center justify-center flex-shrink-0"
                 style={{
-                  width: `${12 + flyProgress * 8}px`,
-                  height: `${12 + flyProgress * 8}px`,
+                  width: `${10 + easedProgress * 6}px`,
+                  height: `${10 + easedProgress * 6}px`,
                   background: 'radial-gradient(circle, rgba(34, 211, 238, 1) 0%, rgba(34, 211, 238, 0.7) 50%, transparent 100%)',
-                  boxShadow: `0 0 ${20 + flyProgress * 40}px rgba(34, 211, 238, ${0.6 + flyProgress * 0.4})`,
+                  boxShadow: `0 0 ${15 + easedProgress * 25}px rgba(34, 211, 238, ${0.5 + easedProgress * 0.5})`,
                   animation: 'pulse 0.4s ease-in-out infinite',
                 }}
               />
-              {/* Arrow pointing to the text */}
+              {/* Arrow pointing right toward the text */}
               <svg
-                className="text-cyan-400"
+                className="text-cyan-400 flex-shrink-0"
                 style={{
-                  width: `${16 + flyProgress * 8}px`,
-                  height: `${16 + flyProgress * 8}px`,
-                  marginLeft: '4px',
-                  filter: `drop-shadow(0 0 ${10 + flyProgress * 15}px rgba(34, 211, 238, 0.9))`,
+                  width: `${14 + easedProgress * 6}px`,
+                  height: `${14 + easedProgress * 6}px`,
+                  marginLeft: '3px',
+                  filter: `drop-shadow(0 0 ${8 + easedProgress * 12}px rgba(34, 211, 238, 0.9))`,
                 }}
                 viewBox="0 0 24 24"
                 fill="currentColor"
               >
                 <path d="M8 5v14l11-7z" />
               </svg>
-              {/* Show the first word as a label during flight */}
-              <span
-                className="ml-2 text-cyan-400 font-bold"
-                style={{
-                  fontSize: `${14 + flyProgress * 6}px`,
-                  textShadow: `0 0 ${10 + flyProgress * 10}px rgba(34, 211, 238, 0.9)`,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {firstWord}
-              </span>
             </div>
           )}
 
-          {/* Pulsing indicator during singing - directly before the text */}
-          {isSinging && (
-            <div className="absolute left-4 top-1/2 -translate-y-1/2">
-              <div
-                className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse"
-                style={{ boxShadow: '0 0 15px rgba(34, 211, 238, 0.8)' }}
-              />
-            </div>
-          )}
-
-          {/* Current lyrics */}
+          {/* Current lyrics — pass firstNoteRef for pointer targeting */}
           <LyricLineDisplay
             line={currentLine}
             currentTime={currentTime}
@@ -155,6 +187,7 @@ export function SinglePlayerLyrics({
             gameMode={gameMode as 'standard' | 'missing-words' | 'duel' | 'blind' | 'duet'}
             missingWordsIndices={missingWordsIndices}
             isBlindSection={isBlindSection}
+            firstNoteRef={firstNoteRefCallback}
           />
         </div>
 

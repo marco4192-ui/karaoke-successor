@@ -18,6 +18,8 @@ interface LyricLineDisplayProps {
   gameMode?: GameModeType;
   missingWordsIndices?: number[];
   isBlindSection?: boolean;
+  /** Callback ref attached to the first singable note span (for pointer targeting) */
+  firstNoteRef?: (node: HTMLSpanElement | null) => void;
 }
 
 /**
@@ -39,7 +41,8 @@ export function LyricLineDisplay({
   notePerformance = new Map(),
   gameMode = 'standard',
   missingWordsIndices = [],
-  isBlindSection = false
+  isBlindSection = false,
+  firstNoteRef,
 }: LyricLineDisplayProps) {
   // Get lyrics style from localStorage - initialize with default to avoid hydration mismatch
   const [lyricsStyle, setLyricsStyle] = useState<string>('classic');
@@ -224,9 +227,12 @@ export function LyricLineDisplay({
           return <br key={noteId} />;
         }
 
+        const isFirstSingableNote = idx === 0 && !isHyphenOnly;
+
         return (
           <span key={noteId} style={{ display: 'inline' }}>
             <span
+              ref={isFirstSingableNote ? firstNoteRef : undefined}
               className={`${fontClass} ${finalTextClass} transition-all duration-100 ${isMissingWord && !isSung ? 'tracking-wider' : ''}`}
               style={{ ...finalShadowStyle, ...fillClipStyle, display: 'inline' }}
             >
