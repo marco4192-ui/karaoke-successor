@@ -211,25 +211,25 @@ export function getNoteDisplayStyleClasses(
     }
 
     case 'glow-intensity': {
-      // Glow-intensity: Strong luminous glow effect that pulses with accuracy.
-      // High accuracy = bright vivid glow, low = dim.
-      const glowIntensity = 0.2 + accuracy * 0.8;
-      const glowSpread1 = 8 + accuracy * 24;
-      const glowSpread2 = 16 + accuracy * 48;
+      // Glow-intensity: Notes start very pale/dim and glow brighter as the player
+      // sings accurately. accuracy=0 → barely visible, accuracy=1 → vivid glow.
+      const glowIntensity = 0.05 + accuracy * 0.95;
+      const glowSpread1 = 2 + accuracy * 30;
+      const glowSpread2 = 4 + accuracy * 60;
       const glowColor = isGolden
         ? `rgba(251, 191, 36, ${glowIntensity})`
         : isBonus
           ? `rgba(236, 72, 153, ${glowIntensity})`
           : `rgba(34, 211, 238, ${glowIntensity})`;
-      // Add a subtle inner glow for better visibility
-      const innerGlow = accuracy > 0.5
-        ? `inset 0 0 ${8 + accuracy * 12}px rgba(255,255,255,${accuracy * 0.25})`
+      // Inner glow only kicks in at higher accuracy for a satisfying reveal
+      const innerGlow = accuracy > 0.4
+        ? `inset 0 0 ${4 + accuracy * 16}px rgba(255,255,255,${accuracy * 0.3})`
         : 'none';
       return {
         additionalClasses: 'transition-all duration-200 ease-out',
         inlineStyle: {
           boxShadow: `${innerGlow}, 0 0 ${glowSpread1}px ${glowColor}, 0 0 ${glowSpread2}px ${glowColor}`,
-          filter: `brightness(${0.85 + accuracy * 0.35})`,
+          filter: `brightness(${0.4 + accuracy * 0.6})`,
         },
         overlayElement: null
       };
