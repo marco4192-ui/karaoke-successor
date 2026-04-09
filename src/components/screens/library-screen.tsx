@@ -150,7 +150,10 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
 
   const handleSongClick = (song: Song) => {
     setSelectedSong(song);
-    setStartOptions({ difficulty: song.difficulty, mode: initialGameMode === 'duel' ? 'duel' : 'single', players: activeProfileId ? [activeProfileId] : [], partyMode: isPartyMode ? initialGameMode : undefined });
+    // Use the user's global default difficulty (from the store, which
+    // reflects the Settings → Default Difficulty choice) instead of the
+    // per-song difficulty, so that the global setting is actually applied.
+    setStartOptions({ difficulty: gameState.difficulty, mode: initialGameMode === 'duel' ? 'duel' : 'single', players: activeProfileId ? [activeProfileId] : [], partyMode: isPartyMode ? initialGameMode : undefined });
     setShowSongModal(true);
   };
 

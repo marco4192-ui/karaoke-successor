@@ -223,6 +223,9 @@ export const useGameStore = create<GameStore>()(
         set((state) => ({
           gameState: {
             ...initialGameState,
+            // Preserve the current difficulty so the user's default setting
+            // is not lost every time a game ends.
+            difficulty: state.gameState.difficulty,
             players: state.gameState.players.map((p) => ({
               ...p,
               score: 0,
