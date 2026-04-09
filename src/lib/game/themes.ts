@@ -208,7 +208,7 @@ export const THEMES: Theme[] = [
       background: '#0a0a1a',
       backgroundSecondary: '#1a1a2e',
       text: '#ffffff',
-      textSecondary: '#8888aa',
+      textSecondary: '#aabbdd',
       success: '#00ff88',
       warning: '#ffaa00',
       error: '#ff4466',
@@ -238,7 +238,7 @@ export const THEMES: Theme[] = [
       background: '#000000',
       backgroundSecondary: '#1a0a2e',
       text: '#39ff14',
-      textSecondary: '#888888',
+      textSecondary: '#b0ffb0',
       success: '#39ff14',
       warning: '#ffff00',
       error: '#ff0000',
@@ -328,7 +328,7 @@ export const THEMES: Theme[] = [
       background: '#0f0720',
       backgroundSecondary: '#1a0a3e',
       text: '#ffffff',
-      textSecondary: '#aabbcc',
+      textSecondary: '#ccddff',
       success: '#10b981',
       warning: '#f59e0b',
       error: '#ef4444',
@@ -476,11 +476,14 @@ export function applyTheme(theme: Theme): void {
 
   const cTextMain = theme.colors.text;
   const cTextSec = theme.colors.textSecondary;
-  const cText80 = blendColor(cTextMain, 0.8);
-  const cText70 = blendColor(cTextMain, 0.7);
-  const cText60 = blendColor(cTextSec, 0.6);
-  const cText50 = blendColor(cTextSec, 0.5);
-  const cText40 = blendColor(cTextSec, 0.4);
+  // Use higher blend factors to ensure text remains readable on dark backgrounds.
+  // Old values (0.4-0.8) produced nearly invisible text when textSecondary was already
+  // a muted colour blended towards a near-black background.
+  const cText80 = blendColor(cTextMain, 0.85);
+  const cText70 = blendColor(cTextMain, 0.75);
+  const cText60 = blendColor(cTextSec, 0.75);
+  const cText50 = blendColor(cTextSec, 0.65);
+  const cText40 = blendColor(cTextSec, 0.55);
 
   // Create or update dynamic theme styles
   let styleEl = document.getElementById('theme-dynamic-styles');
