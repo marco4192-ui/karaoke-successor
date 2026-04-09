@@ -508,7 +508,62 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
           ) : phase === 'ended' ? (
             <div className="text-center">
               <div className="text-6xl mb-4">🎉</div>
-              <h2 className="text-2xl font-bold mb-4">Medley Complete!</h2>
+              <h2 className="text-2xl font-bold mb-4">
+                {isCompetitive ? 'Medley Contest — Ergebnis' : 'Medley Complete!'}
+              </h2>
+
+              {/* Competitive: Show rankings */}
+              {isCompetitive && (
+                <div className="mb-6">
+                  {[...players]
+                    .sort((a, b) => b.score - a.score)
+                    .map((player, index) => (
+                      <div
+                        key={player.id}
+                        className={`flex items-center gap-4 p-3 rounded-lg mb-2 ${
+                          index === 0
+                            ? 'bg-yellow-500/10 border border-yellow-500/30'
+                            : 'bg-white/5 border border-white/10'
+                        }`}
+                      >
+                        <div className="text-2xl w-8 text-center">
+                          {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}`}
+                        </div>
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                          style={{ backgroundColor: player.color }}
+                        >
+                          {player.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 text-left">
+                          <div className="font-medium">{player.name}</div>
+                          <div className="text-xs text-white/40">
+                            {player.songsCompleted} Snippet{player.songsCompleted !== 1 ? 's' : ''} gesungen
+                          </div>
+                        </div>
+                        <div className="text-xl font-bold text-purple-400">
+                          {player.score.toLocaleString()}
+                        </div>
+                      </div>
+                    ))}
+                  {players.length > 0 && (
+                    <div className="mt-4 text-lg">
+                      🏆 <span className="font-bold text-yellow-400">
+                        {[...players].sort((a, b) => b.score - a.score)[0]?.name}
+                      </span>{' '}
+                      gewinnt!
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Cooperative: Show total score */}
+              {!isCompetitive && players.length > 0 && (
+                <div className="text-4xl font-bold text-purple-400 mb-4">
+                  {players.reduce((sum, p) => sum + p.score, 0).toLocaleString()} Punkte
+                </div>
+              )}
+
               <Button onClick={onEndGame} className="bg-gradient-to-r from-purple-500 to-pink-500 px-8">
                 Return to Menu
               </Button>
@@ -603,6 +658,11 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
                 </div>
                 {index < currentSongIndex && <div className="text-xs text-green-400 mt-1">✓ Done</div>}
                 {index === currentSongIndex && phase === 'playing' && <div className="text-xs text-purple-400 mt-1">♪ Now</div>}
+                {isCompetitive && (
+                  <div className="text-xs mt-1" style={{ color: players[index % players.length]?.color || '#999' }}>
+                    → {players[index % players.length]?.name}
+                  </div>
+                )}
               </div>
             ))}
           </div>
