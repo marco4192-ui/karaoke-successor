@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Song, GameMode } from '@/types/game';
 import { SongStartModalProps } from './types';
 import { MusicIcon, MicIcon, StarIcon, TrophyIcon, QueueIcon, PlayIcon } from './icons';
+import { isDuetSong } from './utils';
 
 export function SongStartModal({
   selectedSong,
@@ -29,6 +30,7 @@ export function SongStartModal({
   highscores,
 }: SongStartModalProps) {
   const isPartyMode = startOptions.partyMode && startOptions.partyMode !== 'standard' && startOptions.partyMode !== 'duel' && startOptions.partyMode !== 'duet';
+  const songIsDuet = isDuetSong(selectedSong);
   
   const handleFavorite = () => {
     toggleFavorite(selectedSong.id);
@@ -138,9 +140,9 @@ export function SongStartModal({
               // Regular single/duel/duet selection
               // Duet mode only shows if song is a duet song
               // Single and Duel are hidden/grayed when Duet is available
-              <div className={`grid ${selectedSong?.isDuet ? 'grid-cols-1' : 'grid-cols-2'} gap-2`}>
+              <div className={`grid ${songIsDuet ? 'grid-cols-1' : 'grid-cols-2'} gap-2`}>
                 {/* Duet Mode - Only show for duet songs */}
-                {selectedSong?.isDuet ? (
+                {songIsDuet ? (
                   <button
                     onClick={() => setStartOptions(prev => ({ ...prev, mode: 'duet' }))}
                     className={`py-3 rounded-lg font-medium transition-all ${

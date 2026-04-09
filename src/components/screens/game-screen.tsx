@@ -65,6 +65,7 @@ import {
   GameProgressBar,
   TimeDisplay,
 } from '@/components/game/game-hud';
+import { isDuetSong } from '@/components/screens/library/utils';
 
 // ===================== GAME SCREEN =====================
 function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }) {
@@ -199,8 +200,8 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   // Song energy for visual effects intensity
   const songEnergy = useSongEnergy(audioRef.current);
   
-  // Check if this is a duet song
-  const isDuetMode = song?.isDuet || gameState.gameMode === 'duet' || gameState.gameMode === 'duel';
+  // Check if this is a duet song (use comprehensive detection, not just flag)
+  const isDuetMode = (song ? isDuetSong(song) : false) || gameState.gameMode === 'duet' || gameState.gameMode === 'duel';
 
   // =====================================================
   // PRE-COMPUTE ALL TIMING DATA ONCE WHEN SONG LOADS
