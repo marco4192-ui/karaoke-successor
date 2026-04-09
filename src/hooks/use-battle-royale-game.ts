@@ -67,6 +67,8 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   const gameLoopRef = useRef<number | null>(null);
   const lastScoringTimeRef = useRef<number>(0);
   const noteProgressRef = useRef<Map<string, { ticksHit: number; ticksTotal: number }>>(new Map());
+  const companionPollRef = useRef<NodeJS.Timeout | null>(null);
+  const companionPitchCacheRef = useRef<Map<string, { note: number; accuracy: number }>>(new Map());
   
   // Pre-compute timing data for scoring when song is loaded
   const timingData = useMemo(() => {
@@ -169,9 +171,64 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         if (gameLoopRef.current) {
           cancelAnimationFrame(gameLoopRef.current);
         }
+        if (companionPollRef.current) {
+          clearInterval(companionPollRef.current);
+          companionPollRef.current = null;
+        }
       };
     }
   }, [game.status, mediaLoaded, currentSong, pitchInitialized, initPitch, startPitch, stopPitch]);
+
+  // Companion pitch data polling — fetch pitch results from companion phones
+  // Companion apps detect pitch on-device and submit via /api/mobile?action=pitch
+  // We poll their results here and score them like local mic players
+  useEffect(() => {
+    if (game.status !== 'playing') {
+      if (companionPollRef.current) {
+        clearInterval(companionPollRef.current);
+        companionPollRef.current = null;
+      }
+      return;
+    }
+
+    const companionPlayers = game.players.filter(p => p.playerType === 'companion' && !p.eliminated);
+    if (companionPlayers.length === 0) return;
+
+    const pollCompanionPitch = async () => {
+      try {
+        const res = await fetch('/api/mobile?action=getpitch');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        // data is expected to be an array of { clientId, note, accuracy } objects
+        const pitchEntries = Array.isArray(data) ? data : [];
+        
+        // Update the cache
+        companionPitchCacheRef.current.clear();
+        for (const entry of pitchEntries) {
+          if (entry.clientId && entry.note !== undefined) {
+            companionPitchCacheRef.current.set(entry.clientId, {
+              note: entry.note,
+              accuracy: entry.accuracy || 0,
+            });
+          }
+        }
+      } catch {
+        // Silently ignore polling errors (companion API may not be available)
+      }
+    };
+
+    // Poll every 200ms
+    pollCompanionPitch();
+    companionPollRef.current = setInterval(pollCompanionPitch, 200);
+
+    return () => {
+      if (companionPollRef.current) {
+        clearInterval(companionPollRef.current);
+        companionPollRef.current = null;
+      }
+    };
+  }, [game.status, game.players]);
   
   // Game loop for simultaneous scoring (Champions League - all players scored at once)
   const startGameLoop = () => {
@@ -189,11 +246,11 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
       }
       
       // Evaluate scoring for all active players simultaneously
-      if (deltaTime >= TICK_INTERVAL && pitchResult && timingData && currentSong) {
+      if (deltaTime >= TICK_INTERVAL && timingData && currentSong) {
         lastTickTime = timestamp;
         
-        // Get the detected pitch from microphone
-        const detectedPitch = pitchResult.note; // MIDI note number
+        // Get the detected pitch from local microphone
+        const detectedPitch = pitchResult?.note; // MIDI note number
         
         // Find active notes at current time
         const currentAudioTime = audioRef.current ? audioRef.current.currentTime * 1000 : currentTime;
@@ -201,15 +258,13 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         timingData.allNotes.forEach(note => {
           // Check if note is currently active (within its time window)
           if (currentAudioTime >= note.startTime && currentAudioTime <= note.startTime + note.duration) {
-            // Score for all active microphone players simultaneously
+            // Score all active MICROPHONE players (local mic, shared pitch)
             const micPlayers = activePlayers.filter(p => p.playerType === 'microphone' && !p.eliminated);
             
             micPlayers.forEach(player => {
-              // Evaluate this tick for this player
               const tickResult = evaluateTick(detectedPitch || 0, note.pitch, difficulty);
               
               if (tickResult.isHit) {
-                // Calculate points
                 const points = calculateTickPoints(
                   tickResult.accuracy,
                   note.isGolden,
@@ -217,17 +272,46 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
                   difficulty
                 );
                 
-                // Update player score
                 const updatedGame = updatePlayerScore(
                   game,
                   player.id,
                   points,
                   tickResult.accuracy,
-                  1, // notesHitDelta
-                  0, // notesMissedDelta
-                  1  // comboDelta
+                  1, 0, 1
                 );
                 onUpdateGame(updatedGame);
+              }
+            });
+
+            // Score all active COMPANION players (pitch from their phones)
+            const companionPlayers = activePlayers.filter(p => p.playerType === 'companion' && !p.eliminated);
+            
+            companionPlayers.forEach(player => {
+              // Look up companion's submitted pitch from cache
+              const cachedPitch = player.connectionCode
+                ? companionPitchCacheRef.current.get(player.connectionCode)
+                : null;
+              
+              if (cachedPitch && cachedPitch.note > 0) {
+                const tickResult = evaluateTick(cachedPitch.note, note.pitch, difficulty);
+                
+                if (tickResult.isHit) {
+                  const points = calculateTickPoints(
+                    tickResult.accuracy,
+                    note.isGolden,
+                    timingData.scoringMetadata.pointsPerTick,
+                    difficulty
+                  );
+                  
+                  const updatedGame = updatePlayerScore(
+                    game,
+                    player.id,
+                    points,
+                    tickResult.accuracy,
+                    1, 0, 1
+                  );
+                  onUpdateGame(updatedGame);
+                }
               }
             });
           }

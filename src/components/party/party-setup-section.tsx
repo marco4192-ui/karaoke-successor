@@ -109,7 +109,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                       name: p.name,
                       avatar: p.avatar,
                       color: p.color,
-                      playerType: 'microphone' as const,
+                      playerType: p.playerType || 'microphone',
                     })),
                     brSettings,
                     songs.map(s => s.id),
