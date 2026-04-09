@@ -134,13 +134,32 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               case 'medley': {
                 const snippetCount = result.settings.snippetCount || 5;
                 const snippetDuration = result.settings.snippetDuration || 30;
+                const snippetDurationMs = snippetDuration * 1000;
                 const shuffled = [...filteredSongs].sort(() => Math.random() - 0.5);
-                const medleySongList = shuffled.slice(0, snippetCount).map(song => ({
-                  song,
-                  startTime: 0,
-                  endTime: snippetDuration * 1000,
-                  duration: snippetDuration * 1000,
-                }));
+                // UltraStar beat duration: 15000 / BPM ms per beat
+                const beatDurationMs = (bpm: number) => 15000 / bpm;
+                const medleySongList = shuffled.slice(0, snippetCount).map(song => {
+                  // If both #MEDLEYSTARTBEAT: and #MEDLEYENDBEAT: are defined, use them
+                  if (song.medleyStartBeat !== undefined && song.medleyEndBeat !== undefined && song.bpm > 0) {
+                    const bd = beatDurationMs(song.bpm);
+                    const startTime = song.medleyStartBeat * bd;
+                    const endTime = song.medleyEndBeat * bd;
+                    return { song, startTime, endTime, duration: endTime - startTime };
+                  }
+                  // If only #MEDLEYSTARTBEAT: is defined, start there
+                  if (song.medleyStartBeat !== undefined && song.bpm > 0) {
+                    const startTime = song.medleyStartBeat * beatDurationMs(song.bpm);
+                    return { song, startTime, endTime: startTime + snippetDurationMs, duration: snippetDurationMs };
+                  }
+                  // Fallback: random start within song's actual note range
+                  // Use last lyric end time instead of song.duration (may be 999999999 sentinel)
+                  const maxSafeTime = song.lyrics && song.lyrics.length > 0
+                    ? Math.max(...song.lyrics.map(l => l.endTime))
+                    : Math.min(song.duration, snippetDurationMs * 3);
+                  const maxStartTime = Math.max(0, maxSafeTime - snippetDurationMs);
+                  const startTime = Math.random() * maxStartTime;
+                  return { song, startTime, endTime: startTime + snippetDurationMs, duration: snippetDurationMs };
+                });
                 party.setMedleyPlayers(result.players);
                 party.setMedleySongs(medleySongList);
                 party.setMedleySettings(result.settings);
