@@ -297,41 +297,73 @@ export function SongStartModal({
             </div>
           )}
           
-          {/* Player Selection (for Duet mode) */}
+          {/* Player Selection (for Duet mode) — shows P1/P2 part info and allows swapping */}
           {!startOptions.partyMode && startOptions.mode === 'duet' && profiles.filter(p => p.isActive !== false).length >= 2 && (
             <div>
-              <label className="text-sm text-white/60 mb-2 block">Select 2 Players (P1 & P2) - {profiles.filter(p => p.isActive !== false).length} available</label>
-              <div className={`grid grid-cols-2 gap-2 ${profiles.filter(p => p.isActive !== false).length > 6 ? 'max-h-48 overflow-y-auto pr-1' : ''}`}>
-                {profiles.filter(p => p.isActive !== false).map((profile) => (
+              <label className="text-sm text-white/60 mb-2 block">
+                Select 2 Players — {selectedSong.duetPlayerNames?.[0] || 'Part 1'} & {selectedSong.duetPlayerNames?.[1] || 'Part 2'}
+              </label>
+              {startOptions.players.length === 2 && (
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <div className="text-xs text-pink-300 font-medium px-3 py-1 rounded-full bg-pink-500/20">
+                    {profiles.find(p => p.id === startOptions.players[0])?.name || 'Player 1'} → {selectedSong.duetPlayerNames?.[0] || 'P1'}
+                  </div>
                   <button
-                    key={profile.id}
-                    onClick={() => {
-                      const players = startOptions.players.includes(profile.id)
-                        ? startOptions.players.filter(id => id !== profile.id)
-                        : startOptions.players.length < 2
-                          ? [...startOptions.players, profile.id]
-                          : startOptions.players;
-                      setStartOptions(prev => ({ ...prev, players }));
-                    }}
-                    className={`flex items-center gap-2 p-2 rounded-lg transition-all ${
-                      startOptions.players.includes(profile.id) 
-                        ? 'bg-pink-500 text-white' 
-                        : 'bg-white/10 text-white hover:bg-white/20'
-                    }`}
+                    onClick={() => setStartOptions(prev => ({ ...prev, players: [prev.players[1], prev.players[0]] }))}
+                    className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-all"
+                    title="Swap P1 / P2"
                   >
-                    <div 
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-                      style={{ backgroundColor: profile.color }}
-                    >
-                      {profile.avatar ? (
-                        <img src={profile.avatar} alt={profile.name} className="w-full h-full rounded-full object-cover" />
-                      ) : (
-                        profile.name[0]
-                      )}
-                    </div>
-                    <span className="text-sm truncate">{profile.name}</span>
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M7 16l-4-4 4-4M17 8l4 4-4 4M3 12h18" />
+                    </svg>
                   </button>
-                ))}
+                  <div className="text-xs text-purple-300 font-medium px-3 py-1 rounded-full bg-purple-500/20">
+                    {profiles.find(p => p.id === startOptions.players[1])?.name || 'Player 2'} → {selectedSong.duetPlayerNames?.[1] || 'P2'}
+                  </div>
+                </div>
+              )}
+              <div className={`grid grid-cols-2 gap-2 ${profiles.filter(p => p.isActive !== false).length > 6 ? 'max-h-48 overflow-y-auto pr-1' : ''}`}>
+                {profiles.filter(p => p.isActive !== false).map((profile) => {
+                  const playerIndex = startOptions.players.indexOf(profile.id);
+                  const isP1 = playerIndex === 0;
+                  const isP2 = playerIndex === 1;
+                  return (
+                    <button
+                      key={profile.id}
+                      onClick={() => {
+                        const players = startOptions.players.includes(profile.id)
+                          ? startOptions.players.filter(id => id !== profile.id)
+                          : startOptions.players.length < 2
+                            ? [...startOptions.players, profile.id]
+                            : startOptions.players;
+                        setStartOptions(prev => ({ ...prev, players }));
+                      }}
+                      className={`flex items-center gap-2 p-2 rounded-lg transition-all ${
+                        isP1
+                          ? 'bg-pink-500 text-white ring-1 ring-pink-300'
+                          : isP2
+                            ? 'bg-purple-500 text-white ring-1 ring-purple-300'
+                            : 'bg-white/10 text-white hover:bg-white/20'
+                      }`}
+                    >
+                      <div 
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                        style={{ backgroundColor: profile.color }}
+                      >
+                        {profile.avatar ? (
+                          <img src={profile.avatar} alt={profile.name} className="w-full h-full rounded-full object-cover" />
+                        ) : (
+                          profile.name[0]
+                        )}
+                      </div>
+                      <div className="flex flex-col items-start min-w-0">
+                        <span className="text-sm truncate">{profile.name}</span>
+                        {isP1 && <span className="text-[10px] opacity-70">{selectedSong.duetPlayerNames?.[0] || 'Part 1'}</span>}
+                        {isP2 && <span className="text-[10px] opacity-70">{selectedSong.duetPlayerNames?.[1] || 'Part 2'}</span>}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
