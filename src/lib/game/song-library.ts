@@ -358,8 +358,8 @@ export function sortSongs(songs: Song[], settings: LibrarySettings): Song[] {
   return sorted;
 }
 
-// Filter songs
-export function filterSongs(songs: Song[], settings: LibrarySettings): Song[] {
+// Filter songs by library settings (difficulty + genre from LibrarySettings object)
+export function filterSongsBySettings(songs: Song[], settings: LibrarySettings): Song[] {
   let filtered = [...songs];
   
   if (settings.filterDifficulty !== 'all') {
