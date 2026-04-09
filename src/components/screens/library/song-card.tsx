@@ -29,13 +29,13 @@ export function SongCard({
             src={song.coverImage} 
             alt={song.title} 
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
-              previewSong?.id === song.id && (song.videoBackground || song.youtubeUrl) ? 'opacity-0' : 'opacity-100'
+              previewSong?.id === song.id && (song.videoBackground || song.videoUrl || song.youtubeUrl) ? 'opacity-0' : 'opacity-100'
             }`} 
           />
         )}
         
         {/* Video Preview - Local Video */}
-        {song.videoBackground && (
+        {(song.videoBackground || song.videoUrl) && (
           <video
             ref={(el) => {
               if (el) {
@@ -44,17 +44,26 @@ export function SongCard({
                 previewVideoRefs.current.delete(song.id);
               }
             }}
-            src={song.videoBackground}
+            src={song.videoUrl || song.videoBackground}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
               previewSong?.id === song.id ? 'opacity-100' : 'opacity-0'
             }`}
             // Mute only if there's a separate audio file; unmute for videos with embedded audio
             muted={!song.hasEmbeddedAudio && !!song.audioUrl}
-            loop
             playsInline
+            preload="metadata"
             onLoadedData={(e) => {
               const video = e.currentTarget;
               if (previewSong?.id === song.id) {
+                // Respect #PREVIEWSTART for video start time
+                const previewStartSec = song.previewStart
+                  ? song.previewStart
+                  : song.preview?.startTime
+                    ? song.preview.startTime / 1000
+                    : 0;
+                if (previewStartSec > 0 && video.duration >= previewStartSec) {
+                  video.currentTime = previewStartSec;
+                }
                 video.play().catch(() => {});
               }
             }}
@@ -68,7 +77,7 @@ export function SongCard({
           return (
             <div className="absolute inset-0 w-full h-full">
               <iframe
-                src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&modestbranding=1&enablejsapi=1&start=${Math.floor((song.preview?.startTime || 0) / 1000)}`}
+                src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&modestbranding=1&enablejsapi=1&start=${Math.floor(song.previewStart || (song.preview?.startTime || 0) / 1000)}`}
                 className="w-full h-full object-cover pointer-events-none"
                 style={{ transform: 'scale(1.5)', transformOrigin: 'center' }}
                 allow="autoplay; encrypted-media"
@@ -79,7 +88,7 @@ export function SongCard({
         })()}
         
         {/* Fallback Music Icon */}
-        {!song.coverImage && !song.videoBackground && !song.youtubeUrl && (
+        {!song.coverImage && !song.videoBackground && !song.videoUrl && !song.youtubeUrl && (
           <div className="absolute inset-0 flex items-center justify-center">
             <MusicIcon className="w-16 h-16 text-white/30" />
           </div>
@@ -87,7 +96,7 @@ export function SongCard({
         
         {/* Play indicator on hover - only show if no video */}
         <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300 ${
-          previewSong?.id === song.id && (song.videoBackground || song.youtubeUrl) ? 'opacity-0' : 
+          previewSong?.id === song.id && (song.videoBackground || song.videoUrl || song.youtubeUrl) ? 'opacity-0' : 
           previewSong?.id === song.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
         }`}>
           <div className="w-14 h-14 rounded-full bg-cyan-500/80 flex items-center justify-center">
