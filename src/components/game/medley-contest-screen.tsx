@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,8 @@ import { Progress } from '@/components/ui/progress';
 import { Song, PlayerProfile, PLAYER_COLORS, Difficulty } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
 import { getAllSongs } from '@/lib/game/song-library';
+import { useMedleyGame } from '@/hooks/use-medley-game';
+import type { MedleyScoreEvent } from '@/hooks/use-medley-game';
 
 interface MedleyPlayer {
   id: string;
@@ -345,6 +347,18 @@ export function MedleySetupScreen({ profiles, songs, onStartGame, onBack }: Medl
   );
 }
 
+// ===================== RATING COLORS =====================
+function getRatingColor(rating: string): string {
+  switch (rating) {
+    case 'Perfect': return '#FFD700';
+    case 'Great': return '#4ADE80';
+    case 'Good': return '#60A5FA';
+    case 'Okay': return '#FBBF24';
+    case 'Miss': return '#EF4444';
+    default: return '#FFFFFF';
+  }
+}
+
 // ===================== MEDLEY GAME VIEW =====================
 interface MedleyGameViewProps {
   players: MedleyPlayer[];
@@ -356,80 +370,108 @@ interface MedleyGameViewProps {
 
 export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers, onEndGame }: MedleyGameViewProps) {
   const [currentSongIndex, setCurrentSongIndex] = useState(0);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [songTime, setSongTime] = useState(0); // Time within current song snippet
   const [isPlaying, setIsPlaying] = useState(false);
   const [countdown, setCountdown] = useState(3);
   const [phase, setPhase] = useState<'countdown' | 'playing' | 'transition' | 'ended'>('countdown');
   const [transitionCountdown, setTransitionCountdown] = useState(settings.transitionTime);
+  const [songTime, setSongTime] = useState(0);
 
   const currentMedleySong = medleySongs[currentSongIndex];
-  const currentPlayer = players[0]; // In medley, all players sing together
 
   // In competitive mode, determine which player(s) are singing this snippet
   const isCompetitive = settings.playMode === 'competitive';
   const activeSingerIndices = isCompetitive
     ? [currentSongIndex % players.length]
-    : players.map((_, i) => i); // All players in cooperative mode
+    : players.map((_, i) => i);
   const activeSingers = activeSingerIndices.map(i => players[i]).filter(Boolean);
 
-  // Start game
-  const startGame = () => {
+  // ── Handle snippet end: called by useMedleyGame when audio reaches endTime ──
+  const handleSnippetEnd = useCallback(() => {
+    // Mark current snippet as completed for active singers
+    const updatedPlayers = players.map(p => ({
+      ...p,
+      songsCompleted: p.songsCompleted + (activeSingerIndices.includes(players.indexOf(p)) ? 1 : 0),
+    }));
+    onUpdatePlayers(updatedPlayers);
+
+    if (currentSongIndex < medleySongs.length - 1) {
+      setPhase('transition');
+      setTransitionCountdown(settings.transitionTime);
+      setIsPlaying(false);
+    } else {
+      setPhase('ended');
+      setIsPlaying(false);
+    }
+  }, [currentSongIndex, medleySongs.length, settings.transitionTime, players, activeSingerIndices, onUpdatePlayers]);
+
+  // ── Handle snippet time updates from the game loop ──
+  const handleSnippetTimeUpdate = useCallback((timeMs: number) => {
+    setSongTime(timeMs);
+  }, []);
+
+  // ── Medley game hook: audio + pitch + scoring ──
+  const {
+    audioRef,
+    isAudioReady,
+    audioError,
+    scoreEvents,
+    lastRatings,
+    currentPitch,
+    pitchVolume,
+    isSinging,
+    snippetTimeMs,
+    currentSnippetNotes,
+    startSnippet,
+    stopCurrentAudio,
+    cleanup,
+  } = useMedleyGame({
+    medleySongs,
+    settings,
+    players,
+    currentSongIndex,
+    phase,
+    isPlaying,
+    onSnippetTimeUpdate: handleSnippetTimeUpdate,
+    onSnippetEnd: handleSnippetEnd,
+    onPlayersUpdate: onUpdatePlayers,
+  });
+
+  // ── Start game countdown ──
+  const startGame = useCallback(() => {
     setCountdown(3);
     const countdownInterval = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
           clearInterval(countdownInterval);
-          setIsPlaying(true);
           setPhase('playing');
+          setIsPlaying(true);
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
-  };
+  }, []);
 
-  // Game loop
+  // ── Start audio playback when phase becomes 'playing' ──
   useEffect(() => {
-    if (!isPlaying || phase !== 'playing') return;
+    if (phase === 'playing' && isPlaying) {
+      startSnippet();
+    }
+  }, [phase, isPlaying, startSnippet]);
 
-    const interval = setInterval(() => {
-      setSongTime(prev => {
-        const newTime = prev + 100;
-        
-        // Check if snippet ended
-        if (newTime >= currentMedleySong.duration) {
-          if (currentSongIndex < medleySongs.length - 1) {
-            // Transition to next song
-            setPhase('transition');
-            setTransitionCountdown(settings.transitionTime);
-            setIsPlaying(false);
-          } else {
-            // Game ended
-            setPhase('ended');
-            setIsPlaying(false);
-          }
-          return 0;
-        }
-
-        return newTime;
-      });
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [isPlaying, phase, currentMedleySong.duration, currentSongIndex, medleySongs.length, settings.transitionTime]);
-
-  // Transition countdown
+  // ── Transition countdown: move to next song ──
   useEffect(() => {
     if (phase !== 'transition') return;
+
+    stopCurrentAudio();
 
     const interval = setInterval(() => {
       setTransitionCountdown(prev => {
         if (prev <= 1) {
-          // Move to next song
           setCurrentSongIndex(i => i + 1);
           setPhase('playing');
           setIsPlaying(true);
+          setSongTime(0);
           return settings.transitionTime;
         }
         return prev - 1;
@@ -437,40 +479,70 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [phase, settings.transitionTime]);
+  }, [phase, settings.transitionTime, stopCurrentAudio]);
 
-  // Calculate total progress
+  // ── Cleanup on unmount ──
+  useEffect(() => {
+    return () => {
+      cleanup();
+    };
+  }, [cleanup]);
+
+  // ── Calculate progress ──
   const totalDuration = medleySongs.reduce((sum, s) => sum + s.duration, 0);
   const completedDuration = medleySongs.slice(0, currentSongIndex).reduce((sum, s) => sum + s.duration, 0);
-  const currentProgress = songTime;
-  const totalProgress = ((completedDuration + currentProgress) / totalDuration) * 100;
+  const totalProgress = totalDuration > 0 ? ((completedDuration + songTime) / totalDuration) * 100 : 0;
+  const snippetProgress = currentMedleySong ? (songTime / currentMedleySong.duration) * 100 : 0;
 
-  // Snippet progress
-  const snippetProgress = (songTime / currentMedleySong.duration) * 100;
-
-  // Get lyrics for current time
-  const getCurrentLyrics = () => {
+  // ── Get lyrics for current snippet time ──
+  const getCurrentLyrics = useCallback(() => {
+    if (!currentMedleySong) return null;
     const song = currentMedleySong.song;
     if (!song.lyrics || song.lyrics.length === 0) return null;
-    
+
     const actualTime = currentMedleySong.startTime + songTime;
-    
+
     const currentLine = song.lyrics.find((line, index) => {
       const nextLine = song.lyrics[index + 1];
       return actualTime >= line.startTime && (!nextLine || actualTime < nextLine.startTime);
     });
 
     return currentLine;
-  };
+  }, [currentMedleySong, songTime]);
 
   const currentLyrics = getCurrentLyrics();
 
+  // ── Determine winner in competitive mode ──
+  const winner = useMemo(() => {
+    if (!isCompetitive || phase !== 'ended') return null;
+    return [...players].sort((a, b) => b.score - a.score)[0];
+  }, [isCompetitive, phase, players]);
+
+  // ── Latest score event per player (for display) ──
+  const latestEventPerPlayer = useMemo(() => {
+    const map: Record<string, MedleyScoreEvent | null> = {};
+    for (const p of players) { map[p.id] = null; }
+    for (let i = scoreEvents.length - 1; i >= 0; i--) {
+      const evt = scoreEvents[i];
+      if (!map[evt.playerId]) map[evt.playerId] = evt;
+    }
+    return map;
+  }, [scoreEvents, players]);
+
   return (
     <div className="max-w-6xl mx-auto">
+      {/* Hidden audio element for medley playback */}
+      <audio ref={audioRef} className="hidden" preload="auto" />
+
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Badge className="bg-purple-500/20 text-purple-400 text-lg px-3 py-1">🎵 MEDLEY CONTEST</Badge>
+          {isCompetitive && (
+            <Badge className="bg-red-500/20 text-red-400">
+              ⚔️ Kompetitiv
+            </Badge>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Badge className="bg-pink-500/20 text-pink-400">
@@ -529,16 +601,20 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
                         <div className="text-2xl w-8 text-center">
                           {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}`}
                         </div>
-                        <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
-                          style={{ backgroundColor: player.color }}
-                        >
-                          {player.name.charAt(0).toUpperCase()}
-                        </div>
+                        {player.avatar ? (
+                          <img src={player.avatar} alt={player.name} className="w-10 h-10 rounded-full object-cover" />
+                        ) : (
+                          <div
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                            style={{ backgroundColor: player.color }}
+                          >
+                            {player.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
                         <div className="flex-1 text-left">
                           <div className="font-medium">{player.name}</div>
                           <div className="text-xs text-white/40">
-                            {player.songsCompleted} Snippet{player.songsCompleted !== 1 ? 's' : ''} gesungen
+                            {player.songsCompleted} Snippet{player.songsCompleted !== 1 ? 's' : ''} gesungen · {player.notesHit} Hit · {player.notesMissed} Miss · Max Combo: {player.maxCombo}
                           </div>
                         </div>
                         <div className="text-xl font-bold text-purple-400">
@@ -570,11 +646,24 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
             </div>
           ) : (
             <>
+              {/* Audio Error Warning */}
+              {audioError && (
+                <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-2 mb-3 text-red-400 text-sm text-center">
+                  ⚠️ {audioError}
+                </div>
+              )}
+
               {/* Current Song Info */}
               <div className="text-center mb-4">
                 <div className="text-sm text-white/60 mb-1">NOW SINGING</div>
                 <h3 className="text-2xl font-bold">{currentMedleySong.song.title}</h3>
                 <p className="text-white/60">{currentMedleySong.song.artist}</p>
+                {/* Active singers indicator for competitive mode */}
+                {isCompetitive && activeSingers.length > 0 && (
+                  <div className="text-sm text-yellow-400 mt-1">
+                    🎤 {activeSingers.map(s => s.name).join(', ')} singt
+                  </div>
+                )}
               </div>
 
               {/* Snippet Progress */}
@@ -590,12 +679,16 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
               <div className="flex justify-center gap-6">
                 {players.map((player, playerIndex) => {
                   const isActive = activeSingerIndices.includes(playerIndex);
+                  const lastEvent = latestEventPerPlayer[player.id];
+                  const lastRating = lastRatings[player.id];
+                  const ratingColor = lastRating ? getRatingColor(lastRating) : undefined;
+
                   return (
                     <div key={player.id} className={`text-center transition-opacity ${isActive ? 'opacity-100' : 'opacity-30'}`}>
                       {player.avatar ? (
                         <img src={player.avatar} alt={player.name} className="w-12 h-12 rounded-full object-cover mx-auto border-2 border-purple-500" />
                       ) : (
-                        <div 
+                        <div
                           className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold mx-auto border-2 border-purple-500"
                           style={{ backgroundColor: player.color }}
                         >
@@ -603,13 +696,40 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
                         </div>
                       )}
                       <div className="font-medium mt-1">{player.name}</div>
-                      <div className="text-purple-400 font-bold">{player.score.toLocaleString()}</div>
+                      <div className="text-purple-400 font-bold text-lg">{player.score.toLocaleString()}</div>
+                      {/* Combo */}
+                      {player.combo > 0 && (
+                        <div className="text-xs text-yellow-400 font-bold">
+                          🔥 {player.combo}x Combo
+                        </div>
+                      )}
+                      {/* Last rating */}
+                      {isActive && lastRating && (
+                        <div className="text-sm font-bold mt-0.5" style={{ color: ratingColor }}>
+                          {lastRating} {lastEvent && lastEvent.points > 0 && `+${lastEvent.points}`}
+                        </div>
+                      )}
+                      {/* Notes stats */}
+                      <div className="text-xs text-white/40 mt-0.5">
+                        ✓{player.notesHit} ✗{player.notesMissed}
+                      </div>
                       {isCompetitive && isActive && (
                         <div className="text-xs text-yellow-400">♪ Singt!</div>
                       )}
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Pitch indicator */}
+              <div className="mt-3 text-center">
+                {currentPitch ? (
+                  <div className={`text-xs ${isSinging ? 'text-green-400' : 'text-orange-400'}`}>
+                    🎵 {Math.round(currentPitch)} Hz · Vol: {Math.round(pitchVolume * 100)}% {isSinging ? '(Singen)' : '(Summen)'}
+                  </div>
+                ) : (
+                  <div className="text-xs text-white/30">🎤 Keine Spracheingabe erkannt</div>
+                )}
               </div>
             </>
           )}
@@ -633,13 +753,13 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
         <CardContent>
           <div className="flex gap-2 overflow-x-auto pb-2">
             {medleySongs.map((medleySong, index) => (
-              <div 
+              <div
                 key={index}
                 className={`flex-shrink-0 p-3 rounded-lg min-w-[140px] ${
-                  index === currentSongIndex 
-                    ? 'bg-gradient-to-br from-purple-500/30 to-pink-500/30 border-2 border-purple-500' 
-                    : index < currentSongIndex 
-                      ? 'bg-white/5 border border-white/10 opacity-50' 
+                  index === currentSongIndex
+                    ? 'bg-gradient-to-br from-purple-500/30 to-pink-500/30 border-2 border-purple-500'
+                    : index < currentSongIndex
+                      ? 'bg-white/5 border border-white/10 opacity-50'
                       : 'bg-white/5 border border-white/10'
                 }`}
               >
@@ -683,7 +803,10 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
       {/* End Game Button */}
       {isPlaying && (
         <Button
-          onClick={onEndGame}
+          onClick={() => {
+            cleanup();
+            onEndGame();
+          }}
           variant="outline"
           className="w-full border-white/20 text-white/60 hover:text-white"
         >
