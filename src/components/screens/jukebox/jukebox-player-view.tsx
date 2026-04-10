@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ensureSongUrls } from '@/lib/game/song-library';
+import { ensureSongUrls, getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { YouTubePlayer, extractYouTubeId } from '@/components/game/youtube-player';
 import { PlayIcon, MusicIcon } from '@/components/icons';
 import type { UseJukeboxReturn } from './jukebox-types';
@@ -168,7 +168,7 @@ function PlaylistSidebar({ j }: { j: UseJukeboxReturn }) {
   const handleSongClick = async (songId: string) => {
     const songIndex = j.playlist.findIndex(s => s.id === songId);
     if (songIndex !== -1) {
-      const preparedSong = await ensureSongUrls(j.playlist[songIndex]);
+      const preparedSong = await getSongByIdWithLyrics(songId) || await ensureSongUrls(j.playlist[songIndex]);
       j.setCurrentIndex(songIndex);
       j.setCurrentSong(preparedSong);
     }

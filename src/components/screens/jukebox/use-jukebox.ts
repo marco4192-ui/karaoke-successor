@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Song } from '@/types/game';
-import { getAllSongsAsync, ensureSongUrls } from '@/lib/game/song-library';
+import { getAllSongsAsync, ensureSongUrls, getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { RepeatMode } from './jukebox-types';
 
 export function useJukebox() {
@@ -71,6 +71,13 @@ export function useJukebox() {
     return filtered;
   }, [songs, filterGenre, filterArtist, searchQuery]);
 
+  // Prepare a song for playback: restore URLs + load lyrics
+  const prepareSong = useCallback(async (song: Song): Promise<Song> => {
+    // getSongByIdWithLyrics loads lyrics from IndexedDB/filesystem AND restores URLs
+    const withLyrics = await getSongByIdWithLyrics(song.id);
+    return withLyrics || await ensureSongUrls(song);
+  }, []);
+
   // Generate playlist
   const generatePlaylist = useCallback(async () => {
     if (filteredSongs.length === 0) return;
@@ -83,13 +90,13 @@ export function useJukebox() {
     }
     const firstSong = newPlaylist[0];
     if (firstSong) {
-      const preparedSong = await ensureSongUrls(firstSong);
+      const preparedSong = await prepareSong(firstSong);
       newPlaylist = [preparedSong, ...newPlaylist.slice(1)];
     }
     setPlaylist(newPlaylist);
     setCurrentIndex(0);
     setCurrentSong(newPlaylist[0] || null);
-  }, [filteredSongs, shuffle]);
+  }, [filteredSongs, shuffle, prepareSong]);
 
   // Play next song
   const playNext = useCallback(async () => {
@@ -104,10 +111,10 @@ export function useJukebox() {
       }
     }
     const nextSong = playlist[nextIndex];
-    const preparedSong = await ensureSongUrls(nextSong);
+    const preparedSong = await prepareSong(nextSong);
     setCurrentIndex(nextIndex);
     setCurrentSong(preparedSong);
-  }, [playlist, currentIndex, repeat]);
+  }, [playlist, currentIndex, repeat, prepareSong]);
 
   // Play previous song
   const playPrevious = useCallback(async () => {
@@ -117,10 +124,10 @@ export function useJukebox() {
       prevIndex = playlist.length - 1;
     }
     const prevSong = playlist[prevIndex];
-    const preparedSong = await ensureSongUrls(prevSong);
+    const preparedSong = await prepareSong(prevSong);
     setCurrentIndex(prevIndex);
     setCurrentSong(preparedSong);
-  }, [playlist, currentIndex]);
+  }, [playlist, currentIndex, prepareSong]);
 
   // Handle media end
   const handleMediaEnd = useCallback(() => {
