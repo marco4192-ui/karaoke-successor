@@ -452,7 +452,18 @@ export default function KaraokeSuccessor() {
         <PartyGameScreens screen={screen} setScreen={setScreen} />
 
         {screen === 'character' && <CharacterScreen />}
-        {screen === 'queue' && <QueueScreen />}
+        {screen === 'queue' && (
+          <QueueScreen onPlayFromQueue={(song, gameMode, players) => {
+            resetGame();
+            setSong(song);
+            setGameMode(gameMode === 'duel' || gameMode === 'duet' ? 'duel' : 'standard');
+            players.forEach(player => {
+              const profile = profiles.find(p => p.id === player.id);
+              if (profile) addPlayer(profile);
+            });
+            setScreen('game');
+          }} />
+        )}
         {screen === 'mobile' && <MobileScreen />}
         {screen === 'highscores' && <HighscoreScreen />}
         {screen === 'results' && <ResultsScreen onPlayAgain={() => setScreen('library')} onHome={() => setScreen('home')} />}
