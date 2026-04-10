@@ -83,14 +83,14 @@ export function MedleySetupScreen({ profiles, songs, onStartGame, onBack }: Medl
     });
   };
 
-  // Generate random medley songs
-  const generateMedleySongs = useCallback(() => {
+  // Generate random medley songs for a given count
+  const generateMedleySongsForCount = useCallback((count: number) => {
     // UltraStar beat duration formula: beatDuration = 15000 / BPM (ms per beat)
     const beatDurationMs = (bpm: number) => 15000 / bpm;
 
     const availableSongs = songs.filter(s => s.duration > settings.snippetDuration * 1000);
     const shuffled = [...availableSongs].sort(() => Math.random() - 0.5);
-    const selectedSongs = shuffled.slice(0, settings.snippetCount);
+    const selectedSongs = shuffled.slice(0, count);
     
     return selectedSongs.map(song => {
       // If #MEDLEYSTARTBEAT: and #MEDLEYENDBEAT: are defined, use them
@@ -133,7 +133,10 @@ export function MedleySetupScreen({ profiles, songs, onStartGame, onBack }: Medl
         duration: settings.snippetDuration * 1000,
       };
     });
-  }, [songs, settings.snippetCount, settings.snippetDuration]);
+  }, [songs, settings.snippetDuration]);
+
+  // Generate random medley songs (uses settings.snippetCount)
+  const generateMedleySongs = useCallback(() => generateMedleySongsForCount(settings.snippetCount), [generateMedleySongsForCount, settings.snippetCount]);
 
   const handleStartGame = () => {
     const minPlayers = settings.playMode === 'competitive' ? 2 : 1;
@@ -159,15 +162,30 @@ export function MedleySetupScreen({ profiles, songs, onStartGame, onBack }: Medl
       };
     });
 
-    // Generate medley songs
-    const medleySongs = generateMedleySongs();
+    // In competitive mode, ensure snippet count is a multiple of player count
+    // so every player sings the same number of snippets
+    const numPlayers = selectedPlayers.length;
+    const effectiveSnippetCount = settings.playMode === 'competitive'
+      ? Math.ceil(settings.snippetCount / numPlayers) * numPlayers
+      : settings.snippetCount;
+
+    // Generate medley songs with adjusted count
+    const originalCount = settings.snippetCount;
+    const medleySongs = generateMedleySongsForCount(effectiveSnippetCount);
     
     if (medleySongs.length === 0) {
       setError('No suitable songs found. Need songs longer than snippet duration.');
       return;
     }
 
-    onStartGame(players, medleySongs, { ...settings, difficulty: globalDifficulty });
+    const finalSettings = { ...settings, difficulty: globalDifficulty, snippetCount: effectiveSnippetCount };
+
+    // Show info if snippet count was adjusted
+    if (settings.playMode === 'competitive' && effectiveSnippetCount !== originalCount) {
+      console.log(`[Medley] Snippet count adjusted from ${originalCount} to ${effectiveSnippetCount} for ${numPlayers} players (balanced rounds)`);
+    }
+
+    onStartGame(players, medleySongs, finalSettings);
   };
 
   return (
@@ -358,6 +376,17 @@ export function MedleySetupScreen({ profiles, songs, onStartGame, onBack }: Medl
               <p className="text-sm text-white/60">
                 {settings.snippetCount} songs × {settings.snippetDuration}s = {Math.ceil(settings.snippetCount * settings.snippetDuration / 60)} min total
               </p>
+              {settings.playMode === 'competitive' && selectedPlayers.length > 0 && (() => {
+                const balanced = Math.ceil(settings.snippetCount / selectedPlayers.length) * selectedPlayers.length;
+                if (balanced !== settings.snippetCount) {
+                  return (
+                    <p className="text-xs text-yellow-400 mt-1">
+                      ⚖️ Angepasst auf {balanced} Snippets ({balanced / selectedPlayers.length} Runden pro Spieler) für faire Verteilung
+                    </p>
+                  );
+                }
+                return <p className="text-xs text-white/40 mt-1">{balanced / selectedPlayers.length} Runden pro Spieler</p>;
+              })()}
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-purple-400">{settings.snippetCount * settings.snippetDuration}s</div>
