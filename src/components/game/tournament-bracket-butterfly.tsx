@@ -14,6 +14,7 @@ const MATCH_W = 170;
 const MATCH_W_FINAL = 210;
 const COL_GAP = 44;
 const FINAL_GAP = 56;
+const ROUND_LABEL_H = 28; // space for round labels above bracket
 
 interface ButterflyBracketProps {
   bracket: TournamentBracket;
@@ -55,13 +56,13 @@ export function TournamentBracketButterfly({
   const playableMatches = getPlayableMatches(bracket);
   const firstRoundCount = Math.pow(2, bracket.totalRounds - 1);
 
-  // Dynamic spacing – tighter for large brackets
-  const matchSpacing = Math.max(68, Math.min(94, 680 / firstRoundCount));
-  const bracketH = firstRoundCount * matchSpacing;
+  // Dynamic spacing – 130px minimum so match cards (~110px) don't overlap
+  const matchSpacing = Math.max(130, Math.min(160, 600 / firstRoundCount));
+  const bracketH = firstRoundCount * matchSpacing + ROUND_LABEL_H;
 
-  // Memoised helper
+  // Memoised helper (adds top padding for round labels)
   const getCY = (round: number, pos: number) =>
-    computeCenterY(round, pos, bracket.totalRounds, bracketH);
+    computeCenterY(round, pos, bracket.totalRounds, bracketH - ROUND_LABEL_H) + ROUND_LABEL_H;
 
   // ── Split rounds into left (top-half), right (bottom-half, reversed) and final ──
   const { leftRounds, rightRounds, finalMatch } = useMemo(() => {
@@ -195,7 +196,7 @@ export function TournamentBracketButterfly({
   return (
     <div className="overflow-x-auto pb-4">
       <div
-        className="relative inline-flex items-stretch mx-auto"
+        className="relative mx-auto"
         style={{ width: totalW, height: bracketH }}
       >
         {/* SVG connector lines */}
@@ -220,10 +221,11 @@ export function TournamentBracketButterfly({
         {leftRounds.map((rd, i) => (
           <div
             key={`L${i}`}
-            className="relative flex-shrink-0"
-            style={{ width: MATCH_W, height: bracketH }}
+            className="absolute top-0"
+            style={{ left: leftX(i), width: MATCH_W, height: bracketH }}
           >
-            <div className="absolute -top-7 left-0 right-0 text-center text-[11px] text-white/40 font-medium select-none">
+            <div className="absolute left-0 right-0 text-center text-[11px] text-white/40 font-medium select-none"
+              style={{ top: 4 }}>
               {getRoundName(rd.rn, bracket.totalRounds)}
             </div>
             {rd.matches.map((m) => {
@@ -255,23 +257,29 @@ export function TournamentBracketButterfly({
         {/* ── Centre: Final ── */}
         {finalMatch && (
           <div
-            className="relative flex-shrink-0 flex items-center justify-center"
-            style={{ width: MATCH_W_FINAL, height: bracketH }}
+            className="absolute top-0"
+            style={{ left: centerX, width: MATCH_W_FINAL, height: bracketH }}
           >
-            <div className="absolute -top-7 left-0 right-0 text-center text-sm text-amber-400 font-bold select-none">
+            <div className="absolute left-0 right-0 text-center text-sm text-amber-400 font-bold select-none"
+              style={{ top: 4 }}>
               {getRoundName(bracket.totalRounds, bracket.totalRounds)}
             </div>
-            <div className="relative" style={{ zIndex: 1 }}>
-              <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 via-yellow-500/20 to-amber-500/10 rounded-xl blur-xl -m-4" />
-              <div style={{ transform: 'scale(1.08)' }}>
-                <MatchCard
-                  match={finalMatch}
-                  isCurrent={currentMatch?.id === finalMatch.id}
-                  isPlayable={playableMatches.some((pm) => pm.id === finalMatch.id)}
-                  onPlay={() => onPlayMatch(finalMatch)}
-                  done={bracket.status === 'completed'}
-                  isFinal
-                />
+            <div
+              className="absolute"
+              style={{ top: bracketH / 2, left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1 }}
+            >
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 via-yellow-500/20 to-amber-500/10 rounded-xl blur-xl -m-4" />
+                <div style={{ transform: 'scale(1.08)' }}>
+                  <MatchCard
+                    match={finalMatch}
+                    isCurrent={currentMatch?.id === finalMatch.id}
+                    isPlayable={playableMatches.some((pm) => pm.id === finalMatch.id)}
+                    onPlay={() => onPlayMatch(finalMatch)}
+                    done={bracket.status === 'completed'}
+                    isFinal
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -281,10 +289,11 @@ export function TournamentBracketButterfly({
         {rightRounds.map((rd, i) => (
           <div
             key={`R${i}`}
-            className="relative flex-shrink-0"
-            style={{ width: MATCH_W, height: bracketH }}
+            className="absolute top-0"
+            style={{ left: rightX(i), width: MATCH_W, height: bracketH }}
           >
-            <div className="absolute -top-7 left-0 right-0 text-center text-[11px] text-white/40 font-medium select-none">
+            <div className="absolute left-0 right-0 text-center text-[11px] text-white/40 font-medium select-none"
+              style={{ top: 4 }}>
               {getRoundName(rd.rn, bracket.totalRounds)}
             </div>
             {rd.matches.map((m) => {
