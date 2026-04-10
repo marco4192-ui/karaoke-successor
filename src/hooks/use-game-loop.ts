@@ -68,6 +68,8 @@ export interface UseGameLoopResult {
   pauseGame: () => void;
   resumeGame: () => void;
   endGameAndCleanup: () => void;
+  /** Immediately stop the game loop and cancel the animation frame — used when aborting. */
+  abortGameLoop: () => void;
 }
 
 /**
@@ -132,6 +134,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isMountedRef = useRef(true);
   const hasEndedRef = useRef(false); // Guard against double endGameAndCleanup
+  const abortedRef = useRef(false);   // Set when user aborts to prevent endGameAndCleanup
 
   // ── Generate results at song end ──
   const generateResults = useCallback(() => {
@@ -210,6 +213,8 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
 
   // ── End game and cleanup - stops all audio/microphone ──
   const endGameAndCleanup = useCallback(() => {
+    // Guard: prevent execution if game was aborted (user pressed Back)
+    if (abortedRef.current) return;
     // Guard: prevent double execution (e.g. game loop time check + onEnded event)
     if (hasEndedRef.current) return;
     hasEndedRef.current = true;
@@ -541,6 +546,20 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     };
   }, [isPlaying, effectiveSong, pitchResult, setCurrentTime, setDetectedPitch, checkNoteHits, checkP2NoteHits, endGameAndCleanup, isYouTube, youtubeTime, timingOffset, isDuetMode, p2DetectedPitch, p2Volume, setP2Volume, audioRef, videoRef, startTimeRef, isNativeAudio, nativeAudioTime]);
 
+  // ── Abort: immediately stop game loop without saving results ──
+  const abortGameLoop = useCallback(() => {
+    abortedRef.current = true;
+    hasEndedRef.current = true; // Also block endGameAndCleanup
+    if (gameLoopRef.current) {
+      cancelAnimationFrame(gameLoopRef.current);
+      gameLoopRef.current = null;
+    }
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+  }, []);
+
   return {
     countdown,
     volume,
@@ -549,5 +568,6 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     pauseGame,
     resumeGame,
     endGameAndCleanup,
+    abortGameLoop,
   };
 }

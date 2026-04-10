@@ -355,6 +355,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     pauseGame,
     resumeGame,
     endGameAndCleanup,
+    abortGameLoop,
   } = useGameLoop({
     effectiveSong,
     mediaLoaded,
@@ -457,6 +458,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2 bg-gradient-to-b from-black/70 to-transparent">
         {/* Left: Back Button */}
         <Button variant="ghost" onClick={() => {
+          abortGameLoop();
           stop();
           if (audioEffects) audioEffects.disconnect();
           if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
