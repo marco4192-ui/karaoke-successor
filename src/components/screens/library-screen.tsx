@@ -170,7 +170,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
     if (startOptions.mode === 'duel' && startOptions.players.length < 2) return;
     if (startOptions.mode === 'duet' && startOptions.players.length < 2) return;
     
-    const addPlayers = (playerIds: string[]) => playerIds.forEach(id => { const p = profiles.find(x => x.id === id); if (p) addPlayer(p); });
+    const addPlayers = (playerIds: string[]) => playerIds.forEach(id => { const p = profiles.find(x => x.id === id); if (p && p.isActive !== false) addPlayer(p); });
     if (startOptions.partyMode && startOptions.players.length > 0) addPlayers(startOptions.players);
     else if (startOptions.mode === 'single') { const pid = startOptions.players[0] || activeProfileId; if (pid) addPlayers([pid]); }
     else if ((startOptions.mode === 'duel' || startOptions.mode === 'duet') && startOptions.players.length >= 2) addPlayers(startOptions.players);
