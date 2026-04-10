@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { getAllSongsAsync, updateSong } from '@/lib/game/song-library';
+import { getAllSongsAsync, updateSong, addSong } from '@/lib/game/song-library';
 import { Song } from '@/types/game';
 import { KaraokeEditor } from '@/components/editor/karaoke-editor';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
@@ -64,6 +64,24 @@ export function EditorSettingsTab() {
     // Reload songs list
     getAllSongsAsync().then(setSongs);
   }, []);
+
+  // Create a new blank song and open it in the editor
+  const handleNewSong = useCallback(() => {
+    const newSong: Song = {
+      id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+      title: 'Neuer Song',
+      artist: 'Unbekannt',
+      bpm: 120,
+      duration: 180000,
+      gap: 0,
+      difficulty: 'medium',
+      genre: '',
+      language: '',
+      lyrics: [],
+    };
+    addSong(newSong);
+    setSelectedSong(newSong);
+  }, []);
   
   // If a song is selected, show the editor (full height)
   if (selectedSong) {
@@ -85,7 +103,16 @@ export function EditorSettingsTab() {
     <div className="space-y-6">
       <Card className="bg-white/5 border-white/10">
         <CardHeader>
-          <CardTitle>Song-Editor</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            <span>Song-Editor</span>
+            <Button
+              onClick={handleNewSong}
+              size="sm"
+              className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white text-xs"
+            >
+              + Neuen Song erstellen
+            </Button>
+          </CardTitle>
           <CardDescription>
             Wähle einen Song aus, um die Noten, Lyrics und Metadaten zu bearbeiten.
           </CardDescription>
