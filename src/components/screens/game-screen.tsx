@@ -621,8 +621,8 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             gameMode={gameState.gameMode}
             missingWordsIndices={gameState.missingWordsIndices}
             isBlindSection={gameState.isBlindSection}
-            p1PlayerName={song?.duetPlayerNames?.[0] || 'Player 1'}
-            p2PlayerName={song?.duetPlayerNames?.[1] || 'Player 2'}
+            p1PlayerName={song?.duetPlayerNames?.[0] || gameState.players[0]?.name || 'Player 1'}
+            p2PlayerName={song?.duetPlayerNames?.[1] || gameState.players[1]?.name || 'Player 2'}
             noteDisplayStyle={noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
           />
         ) : (
