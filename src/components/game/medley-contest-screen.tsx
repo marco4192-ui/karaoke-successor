@@ -119,7 +119,7 @@ export function MedleySetupScreen({ profiles, songs, onStartGame, onBack }: Medl
       }
 
       // Fallback: calculate random start time within song's actual note range.
-      // Use last lyric end time instead of song.duration (which may be 999999999 sentinel).
+      // Use last lyric end time instead of song.duration (which includes buffer).
       const maxSafeTime = song.lyrics && song.lyrics.length > 0
         ? Math.max(...song.lyrics.map(l => l.endTime))
         : Math.min(song.duration, settings.snippetDuration * 1000 * 3);

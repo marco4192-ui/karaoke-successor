@@ -378,23 +378,24 @@ export function convertUltraStarToSong(
 
   // Calculate total duration:
   // - When #END: is defined → use that value (time-based ending in game loop)
-  // - When #END: is NOT defined → very large value so the game loop
-  //   does NOT end the song by time. The audio/video element's natural
-  //   "ended" event handles song termination instead.
-  const VERY_LARGE_DURATION = 999999999; // effectively infinite
+  // - When #END: is NOT defined → use last lyric line end time + buffer.
+  //   The game loop only checks song.end for time-based termination;
+  //   when song.end is undefined, the audio/video element's "ended" event
+  //   handles natural termination. So song.duration can be a realistic value.
   let totalDuration: number;
   if (ultraStar.end) {
     totalDuration = ultraStar.end;
   } else if (lyricLines.length > 0) {
-    totalDuration = VERY_LARGE_DURATION;
+    // Use last lyric line end time + 5s buffer for a realistic display duration
+    const lastLineEnd = Math.max(...lyricLines.map(l => l.endTime));
+    totalDuration = lastLineEnd + 5000;
   } else {
     totalDuration = 180000; // Default 3 minutes
   }
 
   // Determine difficulty based on note density
-  // Use last-note-based duration for stats (not the VERY_LARGE_DURATION)
   const totalNotes = sortedNotes.length;
-  const effectiveDurationForStats = ultraStar.end || (lyricLines.length > 0 ? Math.max(...lyricLines.map(l => l.endTime)) : 180000);
+  const effectiveDurationForStats = ultraStar.end || totalDuration;
   const songDurationMinutes = effectiveDurationForStats / 60000;
   const notesPerMinute = songDurationMinutes > 0 ? totalNotes / songDurationMinutes : 0;
   
