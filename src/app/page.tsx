@@ -43,6 +43,36 @@ export default function KaraokeSuccessor() {
   const { gameState, setSong, setGameMode, profiles, queue, resetGame, addPlayer, setResults } = useGameStore();
   const party = usePartyStore();
 
+  // ── Party mode active guard ──
+  const isPartyModeActive = !!(
+    party.tournamentBracket ||
+    party.battleRoyaleGame ||
+    (party.passTheMicPlayers && party.passTheMicPlayers.length > 0 && party.passTheMicSong) ||
+    (party.medleyPlayers && party.medleyPlayers.length > 0 && party.medleySongs && party.medleySongs.length > 0) ||
+    party.competitiveGame
+  );
+
+  const [pendingNavigation, setPendingNavigation] = useState<Screen | null>(null);
+
+  const navigateWithGuard = useCallback((target: Screen) => {
+    const partyScreens: Screen[] = [
+      'party', 'party-setup', 'pass-the-mic', 'pass-the-mic-game',
+      'medley', 'medley-game', 'battle-royale', 'battle-royale-game',
+      'tournament', 'tournament-game', 'missing-words', 'missing-words-game',
+      'blind', 'blind-game', 'companion-singalong', 'companion-singalong-game',
+      'song-voting', 'game', 'results',
+    ];
+    if (partyScreens.includes(target)) {
+      setScreen(target);
+      return;
+    }
+    if (isPartyModeActive) {
+      setPendingNavigation(target);
+      return;
+    }
+    setScreen(target);
+  }, [isPartyModeActive]);
+
   // On mount: load custom songs from IndexedDB (async, updates cache)
   useEffect(() => {
     loadCustomSongsFromStorage().catch(err => {
@@ -182,10 +212,10 @@ export default function KaraokeSuccessor() {
 
   // Global keyboard shortcuts
   useGlobalKeyboardShortcuts({
-    onSearch: () => setScreen('library'),
+    onSearch: () => navigateWithGuard('library'),
     onFullscreen: toggleFullscreen,
-    onLibrary: () => setScreen('library'),
-    onSettings: () => setScreen('settings'),
+    onLibrary: () => navigateWithGuard('library'),
+    onSettings: () => navigateWithGuard('settings'),
     onEscape: () => {
       if (isFullscreen) {
         document.exitFullscreen().catch(() => {});
@@ -283,6 +313,42 @@ export default function KaraokeSuccessor() {
     return <MobileClientView />;
   }
 
+  // Party mode exit confirmation dialog
+  if (pendingNavigation) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+        <div className="bg-zinc-900 border border-white/15 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+          <div className="text-center mb-6">
+            <div className="text-4xl mb-2">⚠️</div>
+            <h2 className="text-xl font-bold text-white">Party-Modus verlassen?</h2>
+            <p className="text-sm text-white/50 mt-2">
+              Ein Party-Modus läuft gerade. Wenn du die Seite verlässt,
+              wird dein aktueller Spielfortschritt verloren gehen.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setPendingNavigation(null)}
+              className="flex-1 py-3 rounded-lg font-medium bg-white/10 text-white hover:bg-white/20 transition-all"
+            >
+              Zurück bleiben
+            </button>
+            <button
+              onClick={() => {
+                const target = pendingNavigation;
+                setPendingNavigation(null);
+                setScreen(target);
+              }}
+              className="flex-1 py-3 rounded-lg font-medium bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all"
+            >
+              Verlassen
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="min-h-screen text-white theme-container"
@@ -296,7 +362,7 @@ export default function KaraokeSuccessor() {
       {!IMMERSIVE_SCREENS.has(screen) && (
         <NavBar
           screen={screen}
-          setScreen={setScreen}
+          setScreen={navigateWithGuard}
           queueLength={queue.length}
           isMounted={isMounted}
           isFullscreen={isFullscreen}
