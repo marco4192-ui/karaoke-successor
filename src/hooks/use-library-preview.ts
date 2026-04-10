@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Song } from '@/types/game';
+import { ensureSongUrls } from '@/lib/game/song-library';
 
 export function useLibraryPreview() {
   const [previewSong, setPreviewSong] = useState<Song | null>(null);
@@ -54,18 +55,26 @@ export function useLibraryPreview() {
     }
 
     // Delay before starting preview (avoid instant playback on quick hovers)
-    previewTimeoutRef.current = setTimeout(() => {
+    previewTimeoutRef.current = setTimeout(async () => {
       // Stop any existing preview first
       stopAllMedia();
 
-      const startTime = getPreviewStartTime(song);
-      const duration = getPreviewDuration(song);
+      // Restore media URLs if missing (Tauri needs relative paths resolved)
+      let songToPlay = song;
+      if (!songToPlay.audioUrl || !songToPlay.videoBackground) {
+        try {
+          songToPlay = await ensureSongUrls(song);
+        } catch { /* use original song */ }
+      }
+
+      const startTime = getPreviewStartTime(songToPlay);
+      const duration = getPreviewDuration(songToPlay);
 
       // Create new audio for preview
-      if (song.audioUrl) {
+      if (songToPlay.audioUrl) {
         const audio = new Audio();
         audio.volume = 0.3;
-        audio.src = song.audioUrl;
+        audio.src = songToPlay.audioUrl;
 
         audio.addEventListener('loadedmetadata', () => {
           // Set start time for audio preview
@@ -89,9 +98,9 @@ export function useLibraryPreview() {
       }
 
       // Start video preview
-      const videoSrc = song.videoUrl || song.videoBackground;
+      const videoSrc = songToPlay.videoUrl || songToPlay.videoBackground;
       if (videoSrc) {
-        const videoEl = previewVideoRefs.current.get(song.id);
+        const videoEl = previewVideoRefs.current.get(songToPlay.id);
         if (videoEl) {
           videoEl.addEventListener('loadedmetadata', () => {
             if (startTime > 0 && videoEl.duration >= startTime) {
@@ -110,7 +119,7 @@ export function useLibraryPreview() {
         }
       }
 
-      setPreviewSong(song);
+      setPreviewSong(songToPlay);
 
       // Auto-stop after preview duration
       previewDurationTimeoutRef.current = setTimeout(() => {
