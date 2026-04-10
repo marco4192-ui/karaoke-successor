@@ -42,6 +42,7 @@ interface GameStore {
   addPlayer: (profile: Pick<PlayerProfile, 'id' | 'name' | 'avatar' | 'color'>) => void;
   removePlayer: (playerId: string) => void;
   updatePlayer: (playerId: string, updates: Partial<Player>) => void;
+  setPlayers: (players: Player[]) => void;
   setCurrentTime: (time: number) => void;
   setDetectedPitch: (pitch: number | null) => void;
   setMicActive: (active: boolean) => void;
@@ -131,26 +132,35 @@ export const useGameStore = create<GameStore>()(
         })),
 
       addPlayer: (profile) =>
-        set((state) => ({
-          gameState: {
-            ...state.gameState,
-            players: [
-              ...state.gameState.players,
-              {
-                id: profile.id,
-                name: profile.name,
-                avatar: profile.avatar,
-                color: profile.color,
-                score: 0,
-                combo: 0,
-                maxCombo: 0,
-                notesHit: 0,
-                notesMissed: 0,
-                accuracy: 0,
-              },
-            ],
-          },
-        })),
+        set((state) => {
+          // Upsert: update existing player with same ID, or add new one
+          const existingIndex = state.gameState.players.findIndex(p => p.id === profile.id);
+          const newPlayer = {
+            id: profile.id,
+            name: profile.name,
+            avatar: profile.avatar,
+            color: profile.color,
+            score: 0,
+            combo: 0,
+            maxCombo: 0,
+            notesHit: 0,
+            notesMissed: 0,
+            accuracy: 0,
+          };
+
+          if (existingIndex >= 0) {
+            const newPlayers = [...state.gameState.players];
+            newPlayers[existingIndex] = newPlayer;
+            return { gameState: { ...state.gameState, players: newPlayers } };
+          }
+
+          return {
+            gameState: {
+              ...state.gameState,
+              players: [...state.gameState.players, newPlayer],
+            },
+          };
+        }),
 
       removePlayer: (playerId) =>
         set((state) => ({
@@ -158,6 +168,11 @@ export const useGameStore = create<GameStore>()(
             ...state.gameState,
             players: state.gameState.players.filter((p) => p.id !== playerId),
           },
+        })),
+
+      setPlayers: (players) =>
+        set((state) => ({
+          gameState: { ...state.gameState, players },
         })),
 
       updatePlayer: (playerId, updates) =>

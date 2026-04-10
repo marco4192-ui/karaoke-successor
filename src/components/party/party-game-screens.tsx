@@ -22,7 +22,7 @@ interface PartyGameScreensProps {
 
 // ===================== PARTY GAME MODE SCREENS =====================
 export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
-  const { profiles, setGameMode, setSong, resetGame, addPlayer } = useGameStore();
+  const { profiles, setGameMode, setSong, resetGame, addPlayer, setPlayers } = useGameStore();
   const party = usePartyStore();
 
   return (
@@ -309,6 +309,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           onPlayMatch={(p1Id, p2Id, p1Name, p2Name, song) => {
             // Start duel mode with the two players and the selected song
             resetGame();
+            setPlayers([]); // Clear any leftover players from previous games
             addPlayer({ id: p1Id, name: p1Name, color: party.competitiveGame!.players.find(p => p.id === p1Id)?.color || '#FF6B6B' });
             addPlayer({ id: p2Id, name: p2Name, color: party.competitiveGame!.players.find(p => p.id === p2Id)?.color || '#4ECDC4' });
             setGameMode('missing-words');
@@ -345,6 +346,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           }}
           onPlayMatch={(p1Id, p2Id, p1Name, p2Name, song) => {
             resetGame();
+            setPlayers([]); // Clear any leftover players from previous games
             addPlayer({ id: p1Id, name: p1Name, color: party.competitiveGame!.players.find(p => p.id === p1Id)?.color || '#FF6B6B' });
             addPlayer({ id: p2Id, name: p2Name, color: party.competitiveGame!.players.find(p => p.id === p2Id)?.color || '#4ECDC4' });
             setGameMode('blind');

@@ -203,7 +203,9 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   const songEnergy = useSongEnergy(audioRef.current);
   
   // Check if this is a duet song (use comprehensive detection, not just flag)
-  const isDuetMode = (song ? isDuetSong(song) : false) || gameState.gameMode === 'duet' || gameState.gameMode === 'duel';
+  // Also treat blind/missing-words competitive modes as duet when 2+ players are added
+  const isCompetitiveMultiplayer = (gameState.gameMode === 'blind' || gameState.gameMode === 'missing-words') && gameState.players.length >= 2;
+  const isDuetMode = (song ? isDuetSong(song) : false) || gameState.gameMode === 'duet' || gameState.gameMode === 'duel' || isCompetitiveMultiplayer;
 
   // =====================================================
   // PRE-COMPUTE ALL TIMING DATA ONCE WHEN SONG LOADS
