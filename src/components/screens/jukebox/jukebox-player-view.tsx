@@ -175,7 +175,7 @@ function PlaylistSidebar({ j }: { j: UseJukeboxReturn }) {
   };
 
   return (
-    <div className={`${j.isFullscreen ? 'w-[25%] h-full flex flex-col bg-black/80' : ''}`}>
+    <div className={`${j.isFullscreen ? 'w-[25%] h-full flex flex-col bg-black/80 pt-14' : ''}`}>
       <Card className={`bg-white/5 border-white/10 ${j.isFullscreen ? 'flex-1 rounded-none border-0 flex flex-col' : ''}`}>
         <CardHeader className={j.isFullscreen ? 'pb-2 border-b border-white/10' : ''}>
           <CardTitle className="text-lg flex items-center justify-between">
