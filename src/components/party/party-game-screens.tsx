@@ -232,13 +232,46 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
         />
       )}
 
-      {/* Medley Contest Game Screen */}
+      {/* Medley Contest Game Screen — flow controller, launches game screen for each snippet */}
       {screen === 'medley-game' && party.medleySongs.length > 0 && (
         <MedleyGameView
           players={party.medleyPlayers}
           medleySongs={party.medleySongs}
           settings={party.medleySettings}
           onUpdatePlayers={party.setMedleyPlayers}
+          onPlaySnippet={(playerId, snippetIndex) => {
+            const snippet = party.medleySongs[snippetIndex];
+            if (!snippet) return;
+
+            // Reset game state
+            resetGame();
+
+            // Create a modified song with snippet timing
+            const snippetSong = {
+              ...snippet.song,
+              start: snippet.startTime,
+              end: snippet.endTime,
+            };
+            setSong(snippetSong);
+            setGameMode('medley');
+
+            // Add the active singer as the game player
+            const playerProfile = party.medleyPlayers.find((p: any) => p.id === playerId);
+            if (playerProfile) {
+              addPlayer({
+                id: playerProfile.id,
+                name: playerProfile.name,
+                avatar: playerProfile.avatar,
+                color: playerProfile.color,
+              });
+            }
+
+            // Mark current snippet index in party store so the flow knows where we are
+            party.setMedleySettings({ ...party.medleySettings, currentSnippetIndex: snippetIndex });
+
+            // Launch the game screen
+            setScreen('game');
+          }}
           onEndGame={() => {
             party.setMedleyPlayers([]);
             party.setMedleySongs([]);
