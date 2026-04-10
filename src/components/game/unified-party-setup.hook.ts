@@ -3,6 +3,7 @@ import { Song, PlayerProfile, PLAYER_COLORS, Difficulty, GameMode } from '@/type
 import { PARTY_GAME_CONFIGS } from './unified-party-setup.config';
 import type { SongSelectionOption, SelectedPlayer, GameSetupResult } from './unified-party-setup.types';
 import { getGenres, getLanguages, filterSongs } from '@/lib/game/song-library';
+import { useGameStore } from '@/lib/game/store';
 
 interface UsePartySetupArgs {
   gameMode: GameMode;
@@ -35,7 +36,8 @@ export function usePartySetup({
   const [settings, setSettings] = useState<Record<string, any>>(initialSettings);
   const [songSelection, setSongSelection] = useState<SongSelectionOption | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [difficulty, setDifficulty] = useState<Difficulty>('medium');
+  const storeDifficulty = useGameStore((state) => state.gameState.difficulty);
+  const [difficulty, setDifficulty] = useState<Difficulty>(storeDifficulty || 'medium');
 
   // ── Song filter state ──
   const [filterGenre, setFilterGenre] = useState('all');
