@@ -151,8 +151,12 @@ export function getNoteDisplayStyleClasses(
         : isBonus
           ? 'rgba(236, 72, 153, 0.55)'
           : 'rgba(34, 211, 238, 0.55)';
+      // NOTE: Do NOT add 'relative' here — it would override the
+      // NoteBlock's 'absolute' positioning, causing notes to wander
+      // vertically. 'absolute' already establishes a containing block
+      // for the child overlay divs, so 'relative' is not needed.
       return {
-        additionalClasses: 'relative overflow-hidden',
+        additionalClasses: 'overflow-hidden',
         inlineStyle: {},
         overlayElement: (
           <>

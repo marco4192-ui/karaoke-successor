@@ -142,11 +142,24 @@ export class AudioEffectsEngine {
   private settings: AudioEffectSettings = { ...DEFAULT_EFFECTS_SETTINGS };
   private currentPreset: AudioEffectPreset | null = null;
   
-  private isInitialized = false;
+  private ownsAudioContext = false; // true if we created it, false if reused
 
-  async initialize(stream: MediaStream): Promise<AudioContext> {
-    this.audioContext = new AudioContext();
+  /**
+   * Initialize the audio effects engine.
+   * @param stream - MediaStream to process (mic input)
+   * @param existingAudioContext - Optional: reuse an existing AudioContext.
+   *   On Tauri/WebView, creating a second AudioContext can steal audio focus
+   *   from <audio>/<video> elements, stopping media playback. Pass the
+   *   PitchDetector's AudioContext to avoid this.
+   */
+  async initialize(stream: MediaStream, existingAudioContext?: AudioContext | null): Promise<AudioContext> {
+    this.audioContext = existingAudioContext ?? new AudioContext();
     
+    // Ensure the AudioContext is running (important for Tauri webviews)
+    if (this.audioContext.state === 'suspended') {
+      await this.audioContext.resume();
+    }
+
     // Create input from microphone
     this.inputNode = this.audioContext.createMediaStreamSource(stream);
     
@@ -209,6 +222,7 @@ export class AudioEffectsEngine {
     this.connectEffectChain();
     
     this.isInitialized = true;
+    this.ownsAudioContext = !existingAudioContext; // only close what we created
     return this.audioContext;
   }
 
@@ -526,10 +540,12 @@ export class AudioEffectsEngine {
       this.inputNode.disconnect();
       this.inputNode = null;
     }
-    if (this.audioContext) {
+    // Only close the AudioContext if we created it ourselves.
+    // If it was reused from PitchDetector, it must stay alive.
+    if (this.audioContext && this.ownsAudioContext) {
       this.audioContext.close();
-      this.audioContext = null;
     }
+    this.audioContext = null;
     this.isInitialized = false;
   }
 

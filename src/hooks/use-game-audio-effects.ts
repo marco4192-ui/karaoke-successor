@@ -25,11 +25,15 @@ export function useGameAudioEffects() {
     if (audioEffectsRef.current) return; // Already initialized
     try {
       let stream: MediaStream | null = null;
+      let existingAudioContext: AudioContext | null = null;
 
-      // Strategy 1: Reuse the existing MediaStream from the PitchDetector.
-      // This avoids a second getUserMedia() call that would kill pitch detection.
+      // Strategy 1: Reuse the existing MediaStream AND AudioContext from the
+      // PitchDetector. This avoids a second getUserMedia() call that would
+      // kill pitch detection AND a second AudioContext that would steal audio
+      // focus from <audio>/<video> media elements on Tauri/WebView.
       const pitchDetector = getPitchDetector();
       stream = pitchDetector.getMediaStream();
+      existingAudioContext = pitchDetector.getAudioContext();
 
       // Strategy 2: Fallback — request a new stream (shouldn't happen during gameplay)
       if (!stream) {
@@ -44,7 +48,7 @@ export function useGameAudioEffects() {
       }
 
       const engine = new AudioEffectsEngine();
-      await engine.initialize(stream);
+      await engine.initialize(stream, existingAudioContext);
       audioEffectsRef.current = engine;
       setAudioEffects(engine);
     } catch (error) {

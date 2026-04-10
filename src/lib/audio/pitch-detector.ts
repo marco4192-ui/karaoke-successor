@@ -395,6 +395,13 @@ export class PitchDetector {
     return this.mediaStream;
   }
 
+  /** Return the existing AudioContext so other components (e.g. audio effects)
+   *  can reuse it. Creating a second AudioContext on Tauri/WebView can steal
+   *  audio focus from <audio>/<video> media elements, stopping playback. */
+  getAudioContext(): AudioContext | null {
+    return this.audioContext;
+  }
+
   async destroy(): Promise<void> {
     this.stop();
     if (this.mediaStream) {

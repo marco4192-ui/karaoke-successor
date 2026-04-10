@@ -31,7 +31,7 @@ export function useAudioEffects({ isPlaying }: UseAudioEffectsOptions): {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           const engine = new AudioEffectsEngine();
-          await engine.initialize(stream);
+          await engine.initialize(stream, null);
           audioEffectsRef.current = engine;
           setAudioEffects(engine);
         } catch (error) {
