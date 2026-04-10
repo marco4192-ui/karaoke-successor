@@ -32,6 +32,13 @@ export function SongStartModal({
   const isPartyMode = startOptions.partyMode && startOptions.partyMode !== 'standard' && startOptions.partyMode !== 'duel' && startOptions.partyMode !== 'duet';
   const songIsDuet = isDuetSong(selectedSong);
 
+  // Auto-fix mode mismatch: if current mode is duet/duel but song is not a duet, reset to single
+  useEffect(() => {
+    if (!startOptions.partyMode && !songIsDuet && (startOptions.mode === 'duet')) {
+      setStartOptions(prev => ({ ...prev, mode: 'single', players: [] }));
+    }
+  }, [songIsDuet, startOptions.partyMode, startOptions.mode, setStartOptions]);
+
   // Auto-remove deactivated players from selection to prevent blocked slots
   useEffect(() => {
     const activeIds = new Set(profiles.filter(p => p.isActive !== false).map(p => p.id));
