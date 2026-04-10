@@ -53,32 +53,26 @@ export function PlayingView({
 
   return (
     <div className="h-screen flex flex-col relative overflow-hidden">
-      {/* Hidden Audio Element */}
-      {currentSong?.audioUrl && (
-        <audio
-          ref={audioRef}
-          onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime * 1000)}
-          onEnded={() => onRoundEnd()}
-          className="hidden"
-          preload="auto"
-        />
-      )}
+      {/* Hidden Audio Element — always rendered so the hook can set src dynamically */}
+      <audio
+        ref={audioRef}
+        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime * 1000)}
+        onEnded={() => onRoundEnd()}
+        className="hidden"
+        preload="auto"
+      />
 
-      {/* Video Background */}
-      {currentSong?.videoBackground && (
-        <>
-          <video
-            ref={videoRef}
-            className="fixed inset-0 w-full h-full object-cover -z-10"
-            style={{ opacity: 0.4 }}
-            muted
-            playsInline
-            loop
-            preload="auto"
-          />
-          <div className="fixed inset-0 bg-black/50 -z-10" />
-        </>
-      )}
+      {/* Video Background — always rendered so the hook can set src dynamically */}
+      <video
+        ref={videoRef}
+        className="fixed inset-0 w-full h-full object-cover -z-10"
+        style={{ opacity: 0.4 }}
+        muted
+        playsInline
+        loop
+        preload="auto"
+      />
+      <div className="fixed inset-0 bg-black/50 -z-10" />
 
       {/* ─────────── UPPER THIRD: Player Cards ─────────── */}
       <div className="flex-shrink-0 pt-3 px-3">

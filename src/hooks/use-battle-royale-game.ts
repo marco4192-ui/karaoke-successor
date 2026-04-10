@@ -15,6 +15,7 @@ import {
 } from '@/lib/game/battle-royale';
 import { Song, Note, Difficulty } from '@/types/game';
 import { getSongMediaUrls } from '@/lib/db/media-db';
+import { getSongMediaUrl, isTauri } from '@/lib/tauri-file-storage';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { evaluateTick, calculateTickPoints, calculateScoringMetadata } from '@/lib/game/scoring';
 
@@ -69,6 +70,9 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   const noteProgressRef = useRef<Map<string, { ticksHit: number; ticksTotal: number }>>(new Map());
   const companionPollRef = useRef<NodeJS.Timeout | null>(null);
   const companionPitchCacheRef = useRef<Map<string, { note: number; accuracy: number; isSinging?: boolean }>>(new Map());
+  // Track the resolved media URLs so the play logic can use them
+  const resolvedAudioUrlRef = useRef<string | null>(null);
+  const resolvedVideoUrlRef = useRef<string | null>(null);
   
   // Pre-compute timing data for scoring when song is loaded
   const timingData = useMemo(() => {
@@ -102,18 +106,20 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     }
   }, [currentRound?.songId, songs]);
 
-  // Load media when song changes
+  // Load media when song changes — handles both browser (IndexedDB) and Tauri (filesystem)
   useEffect(() => {
     const loadMedia = async () => {
       if (!currentSong) {
         setMediaLoaded(false);
+        resolvedAudioUrlRef.current = null;
+        resolvedVideoUrlRef.current = null;
         return;
       }
       
-      let audioUrl = currentSong.audioUrl;
-      let videoUrl = currentSong.videoBackground;
+      let audioUrl: string | undefined = currentSong.audioUrl;
+      let videoUrl: string | undefined = currentSong.videoBackground;
       
-      // Load from IndexedDB if storedMedia flag is set
+      // Browser: Load from IndexedDB if storedMedia flag is set
       if (currentSong.storedMedia) {
         try {
           const mediaUrls = await getSongMediaUrls(currentSong.id);
@@ -124,13 +130,35 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         }
       }
       
-      // Set up audio element
+      // Tauri: Resolve filesystem paths if audioUrl/videoUrl is still missing
+      if (!audioUrl && currentSong.relativeAudioPath && isTauri()) {
+        try {
+          const url = await getSongMediaUrl(currentSong.relativeAudioPath, currentSong.baseFolder);
+          if (url) audioUrl = url;
+        } catch (e) {
+          console.error('Failed to resolve audio from filesystem:', e);
+        }
+      }
+      if (!videoUrl && currentSong.relativeVideoPath && isTauri()) {
+        try {
+          const url = await getSongMediaUrl(currentSong.relativeVideoPath, currentSong.baseFolder);
+          if (url) videoUrl = url;
+        } catch (e) {
+          console.error('Failed to resolve video from filesystem:', e);
+        }
+      }
+      
+      // Store resolved URLs for the play check
+      resolvedAudioUrlRef.current = audioUrl || null;
+      resolvedVideoUrlRef.current = videoUrl || null;
+      
+      // Set up audio element (always exists now — not conditional)
       if (audioRef.current && audioUrl) {
         audioRef.current.src = audioUrl;
         audioRef.current.load();
       }
       
-      // Set up video element
+      // Set up video element (always exists now — not conditional)
       if (videoRef.current && videoUrl) {
         videoRef.current.src = videoUrl;
         videoRef.current.load();
@@ -152,11 +180,11 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         }
         startPitch();
         
-        // Start audio/video playback
-        if (audioRef.current && currentSong.audioUrl) {
+        // Start audio/video playback — use resolved URLs, not the original song fields
+        if (audioRef.current && resolvedAudioUrlRef.current) {
           audioRef.current.play().catch(e => console.error('Audio play error:', e));
         }
-        if (videoRef.current && currentSong.videoBackground) {
+        if (videoRef.current && resolvedVideoUrlRef.current) {
           videoRef.current.play().catch(e => console.error('Video play error:', e));
         }
         
@@ -328,10 +356,13 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     gameLoopRef.current = requestAnimationFrame(gameLoop);
   };
 
-  // Get random song for the round
+  // Get random song for the round — only pick songs that have audio
   const getRandomSong = useCallback((): Song | null => {
-    if (songs.length === 0) return null;
-    return songs[Math.floor(Math.random() * songs.length)];
+    const playableSongs = songs.filter(s =>
+      s.audioUrl || s.relativeAudioPath || s.storedMedia
+    );
+    if (playableSongs.length === 0) return null;
+    return playableSongs[Math.floor(Math.random() * playableSongs.length)];
   }, [songs]);
   
   // Update time when round changes - AUTO ELIMINATION when time runs out
