@@ -46,8 +46,11 @@ export function useLibraryPreview() {
   }, [previewAudio]);
 
   const handlePreviewStart = useCallback((song: Song) => {
-    // Allow preview even without audioUrl if there's video
-    if (!song.audioUrl && !song.videoBackground && !song.youtubeUrl && !song.videoUrl) return;
+    // Allow preview if song has any media (direct URLs, YouTube, or relative paths
+    // that will be resolved by ensureSongUrls for Tauri)
+    const hasMedia = song.audioUrl || song.videoBackground || song.youtubeUrl || song.videoUrl
+      || song.relativeAudioPath || song.relativeVideoPath;
+    if (!hasMedia) return;
 
     // Clear any existing delay timeout
     if (previewTimeoutRef.current) {
@@ -102,6 +105,11 @@ export function useLibraryPreview() {
       if (videoSrc) {
         const videoEl = previewVideoRefs.current.get(songToPlay.id);
         if (videoEl) {
+          // If the video element has no src yet (Tauri: URLs resolved lazily), set it now
+          if (!videoEl.src || videoEl.src === window.location.href) {
+            videoEl.src = videoSrc;
+          }
+
           videoEl.addEventListener('loadedmetadata', () => {
             if (startTime > 0 && videoEl.duration >= startTime) {
               videoEl.currentTime = startTime;

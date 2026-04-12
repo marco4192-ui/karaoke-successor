@@ -29,13 +29,13 @@ export function SongCard({
             src={song.coverImage} 
             alt={song.title} 
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
-              previewSong?.id === song.id && (song.videoBackground || song.videoUrl || song.youtubeUrl) ? 'opacity-0' : 'opacity-100'
+              previewSong?.id === song.id && (song.videoBackground || song.videoUrl || song.youtubeUrl || song.relativeVideoPath) ? 'opacity-0' : 'opacity-100'
             }`} 
           />
         )}
         
-        {/* Video Preview - Local Video */}
-        {(song.videoBackground || song.videoUrl) && (
+        {/* Video Preview - Local Video (also render for relative paths so the ref is available for URL restoration) */}
+        {(song.videoBackground || song.videoUrl || song.relativeVideoPath) && (
           <video
             ref={(el) => {
               if (el) {
@@ -44,7 +44,7 @@ export function SongCard({
                 previewVideoRefs.current.delete(song.id);
               }
             }}
-            src={song.videoUrl || song.videoBackground}
+            src={song.videoUrl || song.videoBackground || undefined}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
               previewSong?.id === song.id ? 'opacity-100' : 'opacity-0'
             }`}
@@ -88,7 +88,7 @@ export function SongCard({
         })()}
         
         {/* Fallback Music Icon */}
-        {!song.coverImage && !song.videoBackground && !song.videoUrl && !song.youtubeUrl && (
+        {!song.coverImage && !song.videoBackground && !song.videoUrl && !song.youtubeUrl && !song.relativeVideoPath && (
           <div className="absolute inset-0 flex items-center justify-center">
             <MusicIcon className="w-16 h-16 text-white/30" />
           </div>
@@ -96,7 +96,7 @@ export function SongCard({
         
         {/* Play indicator on hover - only show if no video */}
         <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300 ${
-          previewSong?.id === song.id && (song.videoBackground || song.videoUrl || song.youtubeUrl) ? 'opacity-0' : 
+          previewSong?.id === song.id && (song.videoBackground || song.videoUrl || song.youtubeUrl || song.relativeVideoPath) ? 'opacity-0' : 
           previewSong?.id === song.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
         }`}>
           <div className="w-14 h-14 rounded-full bg-cyan-500/80 flex items-center justify-center">
