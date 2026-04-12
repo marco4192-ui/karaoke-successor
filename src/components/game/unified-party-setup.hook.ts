@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Song, PlayerProfile, PLAYER_COLORS, Difficulty, GameMode } from '@/types/game';
 import { PARTY_GAME_CONFIGS } from './unified-party-setup.config';
 import type { SongSelectionOption, SelectedPlayer, GameSetupResult } from './unified-party-setup.types';
@@ -38,6 +38,13 @@ export function usePartySetup({
   const [error, setError] = useState<string | null>(null);
   const storeDifficulty = useGameStore((state) => state.gameState.difficulty);
   const [difficulty, setDifficulty] = useState<Difficulty>(storeDifficulty || 'medium');
+
+  // Sync difficulty from global store (e.g. when changed in Settings or rehydrated from persistence)
+  useEffect(() => {
+    if (storeDifficulty) {
+      setDifficulty(storeDifficulty);
+    }
+  }, [storeDifficulty]);
 
   // ── Song filter state ──
   const [filterGenre, setFilterGenre] = useState('all');
