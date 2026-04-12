@@ -2,11 +2,16 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { AudioEffectsEngine } from '@/lib/audio/audio-effects';
+import { getPitchDetector } from '@/lib/audio/pitch-detector';
 
 export interface UseAudioEffectsOptions {
   isPlaying: boolean;
 }
 
+/**
+ * @deprecated Use useGameAudioEffects instead — it properly reuses the
+ * PitchDetector's AudioContext to avoid stealing audio focus on Tauri/WebView.
+ */
 export function useAudioEffects({ isPlaying }: UseAudioEffectsOptions): {
   audioEffects: AudioEffectsEngine | null;
   showAudioEffects: boolean;
@@ -29,9 +34,27 @@ export function useAudioEffects({ isPlaying }: UseAudioEffectsOptions): {
     if (isPlaying && !audioEffectsRef.current) {
       const initAudioEffects = async () => {
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          // Reuse PitchDetector's stream and AudioContext to avoid
+          // stealing audio focus from <audio>/<video> elements
+          const pitchDetector = getPitchDetector();
+          const stream = pitchDetector.getMediaStream();
+          const existingAudioContext = pitchDetector.getAudioContext();
+
+          if (!existingAudioContext) {
+            console.warn(
+              '[useAudioEffects] PitchDetector AudioContext not available, ' +
+              'skipping init to avoid stealing audio focus'
+            );
+            return;
+          }
+
+          if (!stream) {
+            console.warn('[useAudioEffects] No mic stream available');
+            return;
+          }
+
           const engine = new AudioEffectsEngine();
-          await engine.initialize(stream, null);
+          await engine.initialize(stream, existingAudioContext);
           audioEffectsRef.current = engine;
           setAudioEffects(engine);
         } catch (error) {
@@ -56,7 +79,7 @@ export function useAudioEffects({ isPlaying }: UseAudioEffectsOptions): {
     }
   }, [audioEffects, reverbAmount]);
 
-  // Apply delay when amount changes  
+  // Apply delay when amount changes
   useEffect(() => {
     if (audioEffects) {
       audioEffects.setDelay(echoAmount / 1000, 0.3, echoAmount / 100);

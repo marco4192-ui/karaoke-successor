@@ -129,7 +129,9 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   // Mobile client state - pitch polling extracted to dedicated hook
   const { mobilePitch } = useMobilePitchPolling(song);
   
-  // Audio effects - lazy init, cleanup managed by hook
+  // Audio effects - lazy init, cleanup managed by hook.
+  // Pass audioRef/videoRef so the hook can resume media playback
+  // after effects init (Tauri/WebView may pause them).
   const {
     audioEffects,
     setAudioEffects,
@@ -139,7 +141,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     setReverbAmount,
     echoAmount,
     setEchoAmount,
-  } = useGameAudioEffects();
+  } = useGameAudioEffects({ audioRef, videoRef });
   
   // YouTube + Ad handling - URL extraction, ad callbacks, countdown
   const {
