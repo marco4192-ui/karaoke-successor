@@ -12,8 +12,9 @@
 
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { PlayerProfile, Song, PLAYER_COLORS, Difficulty } from '@/types/game';
+import { useGameStore } from '@/lib/game/store';
 import {
   CompetitiveGame,
   CompetitiveModeType,
@@ -38,9 +39,26 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
   const activeProfiles = useMemo(() => profiles.filter(p => p.isActive !== false), [profiles]);
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [bestOf, setBestOf] = useState<number>(3);
-  const [difficulty, setDifficulty] = useState<Difficulty>('medium');
   const [frequency, setFrequency] = useState<string>('normal');
   const [error, setError] = useState<string | null>(null);
+
+  // Read default difficulty from global store (set in Settings)
+  const globalDifficulty = useGameStore((state) => state.gameState.difficulty);
+  const setGlobalDifficulty = useGameStore((state) => state.setDifficulty);
+  const [difficulty, setDifficulty] = useState<Difficulty>(globalDifficulty || 'medium');
+
+  // Sync difficulty when global store changes (e.g. changed in Settings)
+  useEffect(() => {
+    if (globalDifficulty) {
+      setDifficulty(globalDifficulty);
+    }
+  }, [globalDifficulty]);
+
+  // Update difficulty locally AND globally so the game screen picks it up
+  const handleDifficultyChange = (d: Difficulty) => {
+    setDifficulty(d);
+    setGlobalDifficulty(d);
+  };
 
   const togglePlayer = (playerId: string) => {
     setSelectedPlayers(prev => {
@@ -63,6 +81,9 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
       setError('No songs available in library');
       return;
     }
+
+    // Ensure global difficulty is set so game screen picks it up
+    setGlobalDifficulty(difficulty);
 
     const settings: CompetitiveSettings = {
       difficulty,
@@ -113,7 +134,7 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
             {(['easy', 'medium', 'hard'] as const).map(d => (
               <button
                 key={d}
-                onClick={() => setDifficulty(d)}
+                onClick={() => handleDifficultyChange(d)}
                 className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all ${
                   difficulty === d
                     ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
