@@ -30,7 +30,7 @@ export function getNoteShapeClasses(noteStyle: NoteShapeStyle): {
         activeClass: 'ring-2 ring-white/80 brightness-110',
         style: {
           clipPath: 'polygon(4% 0%, 100% 0%, 96% 100%, 0% 100%)',
-          transition: 'clip-path 0.3s ease, transform 0.15s ease',
+          transition: 'clip-path 0.3s ease',
         }
       };
     case 'pill':
@@ -42,17 +42,20 @@ export function getNoteShapeClasses(noteStyle: NoteShapeStyle): {
         style: {
           borderRadius: '9999px',
           border: 'none',
-          transition: 'border-radius 0.3s ease, transform 0.15s ease',
+          transition: 'border-radius 0.3s ease',
         }
       };
     case 'diamond':
       // Diamond/rhombus shape — note shrinks to show diamond outline
+      // NOTE: Do NOT use Tailwind scale-* in activeClass — it sets `transform: scale(...)` via CSS
+      // which would override the inline `transform: translateY(-50%)` on NoteBlock, causing
+      // notes to jump vertically when becoming active. Use brightness only.
       return {
         baseClass: '',
-        activeClass: 'ring-2 ring-white/80 brightness-125 scale-110',
+        activeClass: 'brightness-125',
         style: {
           clipPath: 'polygon(10% 50%, 50% 5%, 90% 50%, 50% 95%)',
-          transition: 'clip-path 0.3s ease, transform 0.15s ease',
+          transition: 'clip-path 0.3s ease',
         }
       };
     case 'rounded':
@@ -66,7 +69,7 @@ export function getNoteShapeClasses(noteStyle: NoteShapeStyle): {
           borderRadius: '10px',
           border: '1.5px solid rgba(255,255,255,0.25)',
           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.1)',
-          transition: 'border-radius 0.3s ease, transform 0.15s ease',
+          transition: 'border-radius 0.3s ease',
         }
       };
   }
@@ -85,30 +88,31 @@ export function getNoteShapeClassesForLane(noteStyle: NoteShapeStyle): {
     case 'sharp':
       return {
         baseClass: '',
-        activeClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent scale-125 brightness-125',
+        activeClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent brightness-125',
         style: {
           clipPath: 'polygon(4% 0%, 100% 0%, 96% 100%, 0% 100%)',
-          transition: 'clip-path 0.3s ease, transform 0.15s ease',
+          transition: 'clip-path 0.3s ease',
         }
       };
     case 'pill':
       // Pill/capsule shape — no border, smooth and clean (lane version)
       return {
         baseClass: '',
-        activeClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent scale-125 brightness-110',
+        activeClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent brightness-110',
         style: {
           borderRadius: '9999px',
           border: 'none',
-          transition: 'border-radius 0.3s ease, transform 0.15s ease',
+          transition: 'border-radius 0.3s ease',
         }
       };
     case 'diamond':
+      // NOTE: Do NOT use Tailwind scale-* — it overrides inline translateY(-50%)
       return {
         baseClass: '',
-        activeClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent scale-125 brightness-125',
+        activeClass: 'brightness-125',
         style: {
           clipPath: 'polygon(10% 50%, 50% 5%, 90% 50%, 50% 95%)',
-          transition: 'clip-path 0.3s ease, transform 0.15s ease',
+          transition: 'clip-path 0.3s ease',
         }
       };
     case 'rounded':
@@ -116,12 +120,12 @@ export function getNoteShapeClassesForLane(noteStyle: NoteShapeStyle): {
       // Rounded rectangle with visible border frame (lane version)
       return {
         baseClass: '',
-        activeClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent scale-125 brightness-125',
+        activeClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent brightness-125',
         style: {
           borderRadius: '14px',
           border: '1.5px solid rgba(255,255,255,0.25)',
           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.1)',
-          transition: 'border-radius 0.3s ease, transform 0.15s ease',
+          transition: 'border-radius 0.3s ease',
         }
       };
   }
@@ -160,19 +164,21 @@ export function getNoteDisplayStyleClasses(
         inlineStyle: {},
         overlayElement: (
           <>
-            {/* Bright fill overlay */}
+            {/* Bright fill overlay — only transition width to avoid layout side-effects */}
             <div
-              className="absolute inset-y-0 left-0 transition-all duration-200 ease-out"
+              className="absolute inset-y-0 left-0"
               style={{
                 width: `${accuracy * 100}%`,
                 background: `linear-gradient(90deg, ${fillColor}, rgba(255,255,255,0.35))`,
+                transition: 'width 200ms ease-out',
               }}
             />
-            {/* Dimming overlay on unfilled portion */}
+            {/* Dimming overlay on unfilled portion — only transition background */}
             <div
-              className="absolute inset-0 transition-all duration-200 ease-out"
+              className="absolute inset-0"
               style={{
                 background: `linear-gradient(90deg, transparent ${accuracy * 100}%, rgba(0,0,0,0.45) ${accuracy * 100}%)`,
+                transition: 'background 200ms ease-out',
               }}
             />
           </>
