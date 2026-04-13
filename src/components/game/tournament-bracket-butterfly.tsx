@@ -56,8 +56,8 @@ export function TournamentBracketButterfly({
   const playableMatches = getPlayableMatches(bracket);
   const firstRoundCount = Math.pow(2, bracket.totalRounds - 1);
 
-  // Dynamic spacing – 130px minimum so match cards (~110px) don't overlap
-  const matchSpacing = Math.max(130, Math.min(160, 600 / (firstRoundCount / 2)));
+  // Dynamic spacing – 150px minimum so match cards (~110px) don't overlap
+  const matchSpacing = Math.max(150, Math.min(200, 800 / (firstRoundCount / 2)));
   // Only half the matches per side → bracket height covers one half
   const bracketH = (firstRoundCount / 2) * matchSpacing + ROUND_LABEL_H;
 
