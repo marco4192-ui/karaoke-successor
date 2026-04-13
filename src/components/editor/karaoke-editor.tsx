@@ -301,8 +301,18 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     setHasUnsavedChanges(true);
   }, [setHasUnsavedChanges]);
 
-  // Determine the audio file path for analysis
-  const analysisAudioPath = currentSong.relativeAudioPath || currentSong.audioUrl || null;
+  // Determine the audio file path for analysis — resolve relative paths to absolute
+  const analysisAudioPath = useMemo(() => {
+    // Prefer stored/blob URLs that work directly
+    if (currentSong.audioUrl && !currentSong.audioUrl.startsWith('blob:')) return currentSong.audioUrl;
+    // Resolve relative path using baseFolder (Tauri)
+    if (currentSong.relativeAudioPath && currentSong.baseFolder) {
+      return `${currentSong.baseFolder}/${currentSong.relativeAudioPath}`;
+    }
+    // Fallback: storedMedia flag might mean audio is in IndexedDB
+    if (currentSong.audioUrl) return currentSong.audioUrl;
+    return null;
+  }, [currentSong.audioUrl, currentSong.relativeAudioPath, currentSong.baseFolder]);
 
   return (
     <div className="flex flex-col h-full bg-slate-950 text-white">

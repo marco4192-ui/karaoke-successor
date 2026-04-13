@@ -281,7 +281,17 @@ export function AudioAnalysisPanel({
       )}
 
       {/* Info */}
-      {!isComplete && !isWorking && !isError && (
+      {!isComplete && !isWorking && !isError && !audioFilePath && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-xs text-amber-300">
+          <p className="font-semibold">Keine Audiodatei zugewiesen</p>
+          <p className="text-slate-500 mt-1">
+            Die Analyse-Funktionen erfordern eine Audiodatei. Bitte weise im Editor eine Audio-Datei zu,
+            oder stelle sicher dass der Song korrekt importiert wurde.
+          </p>
+        </div>
+      )}
+
+      {!isComplete && !isWorking && !isError && audioFilePath && (
         <div className="text-[10px] text-slate-600 space-y-1.5">
           <p className="flex items-start gap-1.5">
             <Brain className="w-3 h-3 mt-0.5 flex-shrink-0 text-cyan-600" />

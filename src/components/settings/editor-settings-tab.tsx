@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { getAllSongsAsync, updateSong, addSong } from '@/lib/game/song-library';
+import { getAllSongsAsync, updateSong, addSong, getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { Song } from '@/types/game';
 import { KaraokeEditor } from '@/components/editor/karaoke-editor';
 import { NewSongDialog } from '@/components/editor/new-song-dialog';
@@ -166,7 +166,17 @@ export function EditorSettingsTab() {
           {filteredSongs.map(song => (
             <button
               key={song.id}
-              onClick={() => setSelectedSong(song)}
+              onClick={async () => {
+                // Load lyrics before opening editor — same logic as EditorScreen
+                const needsLyrics = !song.lyrics || song.lyrics.length === 0;
+                const canLoadLyrics = song.storedTxt || !!song.relativeTxtPath;
+                let songToEdit = song;
+                if (needsLyrics && canLoadLyrics) {
+                  const loaded = await getSongByIdWithLyrics(song.id);
+                  if (loaded) songToEdit = loaded;
+                }
+                setSelectedSong(songToEdit);
+              }}
               className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-cyan-500/50 rounded-xl overflow-hidden transition-all group text-left"
             >
               {/* Cover Image */}
