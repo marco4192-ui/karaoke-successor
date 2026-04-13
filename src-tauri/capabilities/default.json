@@ -15,6 +15,9 @@
     "core:window:allow-set-focus",
     "core:webview:default",
     "event:default",
+    "event:allow-listen",
+    "event:allow-emit",
+    "event:allow-emit-to",
     "shell:default",
     "shell:allow-open",
     {

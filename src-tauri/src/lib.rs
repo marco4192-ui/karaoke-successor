@@ -268,6 +268,7 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_event::init())
         .invoke_handler(tauri::generate_handler![
             // Native file system commands (bypass ACL)
             native_read_file_bytes,
