@@ -15,6 +15,7 @@ import type { Song, LyricLine, Note } from '@/types/game';
 import { v4 as uuidv4 } from 'uuid';
 import { parseLyricsToSyllables, syllablesToUltraStarNotes, type SyllableResult } from '@/lib/editor/syllable-separator';
 import { isTauri } from '@/lib/tauri-file-storage';
+import { nativePickFileOpen } from '@/lib/native-fs';
 
 interface NewSongDialogProps {
   onSave: (song: Song) => void;
@@ -211,17 +212,23 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
     }
   }, [generateSong, onSave]);
 
-  // Pick a file using Tauri native dialog or browser file input
+  // Pick a file using native Tauri command (bypass ACL) or browser fallback
   const pickFile = useCallback(async (fileType: 'audio' | 'video' | 'cover', setter: (path: string) => void) => {
     if (isTauri()) {
       try {
-        const { open } = await import('@tauri-apps/plugin-dialog');
         const filters = fileType === 'audio'
-          ? [{ name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma'] }]
+          ? { name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma'] }
           : fileType === 'video'
-            ? [{ name: 'Video', extensions: ['mp4', 'webm', 'mkv', 'avi', 'mov'] }]
-            : [{ name: 'Image', extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'gif'] }];
-        const selected = await open({ multiple: false, filters });
+            ? { name: 'Video', extensions: ['mp4', 'webm', 'mkv', 'avi', 'mov'] }
+            : { name: 'Image', extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'gif'] };
+
+        const title = fileType === 'audio'
+          ? 'Audiodatei auswählen'
+          : fileType === 'video'
+            ? 'Videodatei auswählen'
+            : 'Cover-Bild auswählen';
+
+        const selected = await nativePickFileOpen(title, filters.name, filters.extensions);
         if (selected) setter(selected);
       } catch (err) {
         console.error(`[NewSong] File picker error:`, err);

@@ -74,6 +74,15 @@ export async function nativePickFolder(title: string = 'Select Folder'): Promise
   return invoke<string | null>('native_pick_folder', { title });
 }
 
+/** Open a native file picker for opening an existing file. Returns the selected path or null. */
+export async function nativePickFileOpen(
+  title: string,
+  filterName: string,
+  extensions: string[]
+): Promise<string | null> {
+  return invoke<string | null>('native_pick_file_open', { title, filterName, extensions });
+}
+
 /** Open a native save-file dialog. Returns the selected path or null. */
 export async function nativePickFileSave(
   title: string,

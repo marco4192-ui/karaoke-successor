@@ -95,6 +95,20 @@ fn native_pick_folder(title: String) -> Option<String> {
         .map(|p| p.to_string_lossy().to_string())
 }
 
+/// Open a native file dialog for opening/picking an existing file.
+/// Uses rfd (Rust File Dialog) crate for reliable cross-platform support.
+#[tauri::command]
+fn native_pick_file_open(title: String, filter_name: String, extensions: Vec<String>) -> Option<String> {
+    let mut dialog = rfd::FileDialog::new().set_title(&title);
+    if !extensions.is_empty() {
+        dialog = dialog.add_filter(
+            &filter_name,
+            &extensions.iter().map(|s| s.as_str()).collect::<Vec<&str>>(),
+        );
+    }
+    dialog.pick_file().map(|p| p.to_string_lossy().to_string())
+}
+
 /// Open a native file dialog for saving.
 #[tauri::command]
 fn native_pick_file_save(title: String, filter_name: String, extensions: Vec<String>) -> Option<String> {
@@ -281,6 +295,7 @@ pub fn run() {
             native_remove_dir,
             // Native dialog commands (bypass ACL)
             native_pick_folder,
+            native_pick_file_open,
             native_pick_file_save,
             native_message,
             native_confirm,
