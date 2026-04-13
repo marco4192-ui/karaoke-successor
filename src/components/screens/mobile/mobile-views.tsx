@@ -681,6 +681,26 @@ export function MobileProfileCreateView({
   onCreateProfile,
   onPhotoUpload,
 }: ProfileCreateViewProps) {
+  const [hostProfiles, setHostProfiles] = useState<MobileProfile[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch host profiles when component mounts
+  React.useEffect(() => {
+    const fetchHostProfiles = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/mobile?action=hostprofiles');
+        const data = await response.json();
+        if (data.success && data.profiles) {
+          setHostProfiles(data.profiles);
+        }
+      } catch { /* ignore */ } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchHostProfiles();
+  }, []);
+
   return (
     <div className="p-4 max-w-md mx-auto">
       <Card className="bg-white/10 border-white/20">
@@ -689,6 +709,49 @@ export function MobileProfileCreateView({
           <p className="text-center text-white/40 text-sm mt-2">Your profile will sync with the main app</p>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Choose Existing Character from Host */}
+          {hostProfiles.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">👤</span>
+                <h3 className="font-bold text-sm">Bestehenden Charakter wählen</h3>
+              </div>
+              <p className="text-xs text-white/40 mb-2">
+                Wähle einen Charakter, der auf dem Hauptgerät erstellt wurde
+              </p>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {hostProfiles.map((hp) => (
+                  <button
+                    key={hp.id}
+                    onClick={() => {
+                      onProfileNameChange(hp.name);
+                      onProfileColorChange(hp.color);
+                      onCreateProfile(); // Will use the host profile's name/color
+                    }}
+                    className="flex items-center gap-3 p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors w-full text-left"
+                  >
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                      style={{ backgroundColor: hp.color }}
+                    >
+                      {hp.avatar ? (
+                        <img src={hp.avatar} alt={hp.name} className="w-full h-full rounded-full object-cover" />
+                      ) : (
+                        hp.name.charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <span className="text-sm truncate">{hp.name}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-2 pt-2">
+                <div className="flex-1 h-px bg-white/10" />
+                <span className="text-xs text-white/30">oder neu erstellen</span>
+                <div className="flex-1 h-px bg-white/10" />
+              </div>
+            </div>
+          )}
+
           {/* Avatar Upload */}
           <div className="flex flex-col items-center">
             <button 

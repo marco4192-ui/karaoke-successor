@@ -60,6 +60,7 @@ export function useMobileClient({
   const [companionProfiles, setCompanionProfiles] = useState<CompanionProfile[]>([]);
   const [companionQueue, setCompanionQueue] = useState<CompanionQueueItem[]>([]);
   const importProfileFromMobile = useGameStore((state) => state.importProfileFromMobile);
+  const profiles = useGameStore((state) => state.profiles);
 
   // Poll for mobile pitch data
   useEffect(() => {
@@ -235,6 +236,22 @@ export function useMobileClient({
     const syncInterval = setInterval(syncSongLibrary, 30000);
     return () => clearInterval(syncInterval);
   }, [syncSongLibrary]);
+
+  // Publish host profiles to localStorage for companion app to fetch via API
+  useEffect(() => {
+    if (profiles.length > 0) {
+      const hostProfiles = profiles.map(p => ({
+        id: p.id,
+        name: p.name,
+        avatar: p.avatar,
+        color: p.color,
+        createdAt: p.createdAt,
+      }));
+      try {
+        localStorage.setItem('karaoke-host-profiles', JSON.stringify(hostProfiles));
+      } catch { /* ignore */ }
+    }
+  }, [profiles]);
 
   return {
     mobilePitch,

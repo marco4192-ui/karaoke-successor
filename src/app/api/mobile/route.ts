@@ -397,6 +397,26 @@ export async function GET(request: NextRequest) {
         count: companionProfiles.length,
       });
 
+    case 'hostprofiles':
+      // Get host profiles for companion to choose from
+      // Main app stores its profiles in localStorage via zustand
+      // We read from a shared endpoint that the main app writes to
+      {
+        let hostProfiles: MobileProfile[] = [];
+        try {
+          const stored = localStorage.getItem('karaoke-host-profiles');
+          if (stored) {
+            hostProfiles = JSON.parse(stored);
+          }
+        } catch { /* ignore */ }
+        
+        return Response.json({
+          success: true,
+          profiles: hostProfiles,
+          count: hostProfiles.length,
+        });
+      }
+
     case 'remotecontrol':
       // Get remote control state (for all clients to see who has control)
       return Response.json({
