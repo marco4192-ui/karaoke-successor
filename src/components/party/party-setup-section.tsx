@@ -115,6 +115,18 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
 
               // ── Battle Royale: create game object → game view ──
               case 'battle-royale': {
+                // Battle Royale allows max 4 microphone players + 20 companion players.
+                // The unified setup marks all players as 'microphone', so we need to
+                // auto-convert excess players (>4) to 'companion' type.
+                const MIC_LIMIT = 4;
+                const mappedPlayers = result.players.map((p, i) => ({
+                  id: p.id,
+                  name: p.name,
+                  avatar: p.avatar,
+                  color: p.color,
+                  playerType: (i < MIC_LIMIT ? 'microphone' : 'companion') as 'microphone' | 'companion',
+                }));
+
                 const brSettings: BattleRoyaleSettings = {
                   roundDuration: result.settings.roundDuration || 60,
                   finalRoundDuration: result.settings.finalRoundDuration || 120,
@@ -125,21 +137,12 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   eliminationAnimation: true,
                 };
                 try {
-                  const game = createBattleRoyale(
-                    result.players.map(p => ({
-                      id: p.id,
-                      name: p.name,
-                      avatar: p.avatar,
-                      color: p.color,
-                      playerType: p.playerType || 'microphone',
-                    })),
-                    brSettings,
-                    filteredSongs.map(s => s.id),
-                  );
+                  const game = createBattleRoyale(mappedPlayers, brSettings, filteredSongs.map(s => s.id));
                   party.setBattleRoyaleGame(game);
                   setScreen('battle-royale-game');
                 } catch (err) {
                   console.error('[PartySetup] Failed to create battle royale:', err);
+                  alert(`Fehler beim Starten von Battle Royale: ${err instanceof Error ? err.message : String(err)}`);
                 }
                 break;
               }
