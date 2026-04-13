@@ -141,7 +141,7 @@ export class AudioManager {
   destroy(): void {
     this.disconnectSource();
     if (this.audioContext) {
-      this.audioContext.close();
+      try { this.audioContext.close(); } catch { /* already closed */ }
       this.audioContext = null;
     }
     this.gainNode = null;
@@ -198,7 +198,7 @@ export class SyntheticAudioGenerator {
       }
     });
     if (this.audioContext) {
-      this.audioContext.close();
+      try { this.audioContext.close(); } catch { /* already closed */ }
       this.audioContext = null;
     }
     this.gainNode = null;

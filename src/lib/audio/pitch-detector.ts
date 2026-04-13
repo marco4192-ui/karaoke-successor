@@ -409,8 +409,14 @@ export class PitchDetector {
       this.mediaStream = null;
     }
     if (this.audioContext) {
-      await this.audioContext.close();
+      // Set to null BEFORE closing to prevent double-close race condition
+      const ctx = this.audioContext;
       this.audioContext = null;
+      try {
+        await ctx.close();
+      } catch {
+        // Already closed or closing — safe to ignore
+      }
     }
     this.analyser = null;
     this.buffer = null;

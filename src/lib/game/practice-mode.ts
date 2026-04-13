@@ -140,7 +140,7 @@ export class PitchGuidePlayer {
   destroy(): void {
     this.stopNote();
     if (this.audioContext) {
-      this.audioContext.close();
+      try { this.audioContext.close(); } catch { /* already closed */ }
       this.audioContext = null;
     }
     this.gainNode = null;

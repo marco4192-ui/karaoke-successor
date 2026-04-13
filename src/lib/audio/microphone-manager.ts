@@ -191,8 +191,9 @@ class MicrophoneInstance {
     }
 
     if (this.audioContext) {
-      await this.audioContext.close();
+      const ctx = this.audioContext;
       this.audioContext = null;
+      try { await ctx.close(); } catch { /* already closed */ }
     }
 
     this.sourceNode = null;

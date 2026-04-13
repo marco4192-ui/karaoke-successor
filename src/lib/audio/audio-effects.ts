@@ -543,7 +543,7 @@ export class AudioEffectsEngine {
     // Only close the AudioContext if we created it ourselves.
     // If it was reused from PitchDetector, it must stay alive.
     if (this.audioContext && this.ownsAudioContext) {
-      this.audioContext.close();
+      try { this.audioContext.close(); } catch { /* already closed */ }
     }
     this.audioContext = null;
     this.isInitialized = false;
