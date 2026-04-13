@@ -516,8 +516,12 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       )}
 
       {/* Audio Element - Primary audio source for songs with separate audio file */}
+      {/* key=song.id forces React to create a fresh DOM element per song,
+          preventing "already connected to different MediaElementSourceNode" errors
+          when SpectrogramDisplay / useSongEnergy call createMediaElementSource */}
       {effectiveSong?.audioUrl && (
         <audio 
+          key={effectiveSong.id}
           ref={audioRef}
           src={effectiveSong.audioUrl}
           className="hidden"
@@ -540,6 +544,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       {/* Hidden Video Element for embedded audio (when video has audio but we don't show it) */}
       {effectiveSong?.hasEmbeddedAudio && effectiveSong?.videoBackground && !showBackgroundVideo && !isYouTube && !effectiveSong?.audioUrl && (
         <video
+          key={`video-${effectiveSong.id}`}
           ref={videoRef}
           src={effectiveSong.videoBackground}
           className="hidden"
