@@ -106,14 +106,14 @@ export function SongCard({
         
         {/* Badges */}
         <div className="absolute top-2 right-2 flex gap-1">
-          {song.hasEmbeddedAudio && (
+          {(song.hasEmbeddedAudio || song.videoBackground || song.videoUrl || song.youtubeUrl || song.relativeVideoPath) && (
             <Badge className="bg-purple-500/80 text-xs">Video</Badge>
           )}
         </div>
         
         {/* Duration */}
         <div className="absolute bottom-2 right-2">
-          <Badge className="bg-black/60 text-xs">
+          <Badge className="bg-white/90 text-black text-xs font-bold">
             {Math.floor(song.duration / 60000)}:{String(Math.floor((song.duration % 60000) / 1000)).padStart(2, '0')}
           </Badge>
         </div>
