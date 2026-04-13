@@ -54,8 +54,11 @@ export default function KaraokeSuccessor() {
   const [pendingNavigation, setPendingNavigation] = useState<Screen | null>(null);
 
   const navigateWithGuard = useCallback((target: Screen) => {
+    // Screens that are allowed without confirmation when a party mode is active
+    // Note: 'party' and 'party-setup' are intentionally excluded so the user
+    // gets a leave-warning when clicking the "Party" nav item mid-game.
     const partyScreens: Screen[] = [
-      'party', 'party-setup', 'pass-the-mic', 'pass-the-mic-game',
+      'pass-the-mic', 'pass-the-mic-game',
       'medley', 'medley-game', 'battle-royale', 'battle-royale-game',
       'tournament', 'tournament-game', 'missing-words', 'missing-words-game',
       'blind', 'blind-game', 'companion-singalong', 'companion-singalong-game',
