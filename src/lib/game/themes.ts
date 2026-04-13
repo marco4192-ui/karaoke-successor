@@ -539,6 +539,14 @@ export function applyTheme(theme: Theme): void {
 
     /* === CARD BACKGROUNDS === */
     .bg-gray-900\\/80 { background-color: ${isLightTheme ? 'rgba(255,255,255,0.85)' : 'rgba(17,24,39,0.8)'} !important; }
+
+    /* === GRADIENT TILE TEXT PRESERVATION === */
+    .party-tile .tile-text-white,
+    .party-tile .text-white { color: #ffffff !important; }
+    .party-tile .text-white\\/80 { color: rgba(255,255,255,0.8) !important; }
+    .party-tile .text-white\\/90 { color: rgba(255,255,255,0.9) !important; }
+    .party-tile .text-white\\/95 { color: rgba(255,255,255,0.95) !important; }
+    .party-tile .bg-white\\/20 { background-color: rgba(255,255,255,0.2) !important; }
   `;
   
   // Store preference

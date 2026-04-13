@@ -101,7 +101,7 @@ export function PartyScreen({ onSelectMode }: PartyScreenProps) {
         {partyGames.map((game) => (
           <Card 
             key={game.mode}
-            className={`bg-gradient-to-br ${game.color} border-0 cursor-pointer hover:scale-105 transition-transform relative`}
+            className={`party-tile bg-gradient-to-br ${game.color} border-0 cursor-pointer hover:scale-105 transition-transform relative`}
             onClick={() => onSelectMode(game.mode)}
           >
             <CardContent className="pt-6">
@@ -111,10 +111,10 @@ export function PartyScreen({ onSelectMode }: PartyScreenProps) {
                 </div>
               )}
               <div className="text-5xl mb-4">{game.icon}</div>
-              <h3 className="text-2xl font-bold text-white mb-2">{game.title}</h3>
-              <p className="text-white/80 mb-4">{game.description}</p>
+              <h3 className="tile-text-white text-2xl font-bold text-white mb-2">{game.title}</h3>
+              <p className="tile-text-white text-white/80 mb-4">{game.description}</p>
               <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="bg-white/20 text-white">
+                <Badge variant="secondary" className="tile-text-white bg-white/20 text-white">
                   {game.players} players
                 </Badge>
               </div>
