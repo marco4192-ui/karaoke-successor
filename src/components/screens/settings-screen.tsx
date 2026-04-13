@@ -182,7 +182,7 @@ function SettingsScreen() {
 
       const theme = THEMES.find(t => t.id === currentThemeId);
       if (theme) {
-        localStorage.setItem('karaoke-theme', JSON.stringify(theme));
+        localStorage.setItem('karaoke-theme', currentThemeId);
         window.dispatchEvent(new CustomEvent('themeChange', { detail: theme.id }));
       }
 
