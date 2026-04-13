@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Song, PlayerProfile, PLAYER_COLORS, Difficulty, GameMode } from '@/types/game';
 import { PARTY_GAME_CONFIGS } from './unified-party-setup.config';
-import type { SongSelectionOption, SelectedPlayer, GameSetupResult } from './unified-party-setup.types';
+import type { SongSelectionOption, SelectedPlayer, GameSetupResult, InputMode } from './unified-party-setup.types';
 import { getGenres, getLanguages, filterSongs } from '@/lib/game/song-library';
 import { useGameStore } from '@/lib/game/store';
 
@@ -39,30 +39,46 @@ export function usePartySetup({
   const storeDifficulty = useGameStore((state) => state.gameState.difficulty);
   const [difficulty, setDifficulty] = useState<Difficulty>(storeDifficulty || 'medium');
 
-  // Sync difficulty from global store (e.g. when changed in Settings or rehydrated from persistence)
+  // ── Input Mode ──
+  const [inputMode, setInputMode] = useState<InputMode>(
+    config.supportsCompanionApp ? 'mixed' : 'microphone'
+  );
+
+  // ── Mic-to-Player assignment (micId → profileId) ──
+  const [micAssignments, setMicAssignments] = useState<Record<string, string>>({});
+
+  // ── Song filter state ──
+  const [filterGenre, setFilterGenre] = useState('all');
+  const [filterLanguage, setFilterLanguage] = useState('all');
+  const [filterCombined, setFilterCombined] = useState(true);
+
+  const availableGenres = useMemo(() => getGenres(), [songs.length]);
+  const availableLanguages = useMemo(() => getLanguages(), [songs.length]);
+
+  const filteredSongs = useMemo(() => {
+    return filterSongs(songs, filterGenre, filterLanguage, filterCombined);
+  }, [songs, filterGenre, filterLanguage, filterCombined]);
+
+  // Sync difficulty from global store
   useEffect(() => {
     if (storeDifficulty) {
       setDifficulty(storeDifficulty);
     }
   }, [storeDifficulty]);
 
-  // ── Song filter state ──
-  const [filterGenre, setFilterGenre] = useState('all');
-  const [filterLanguage, setFilterLanguage] = useState('all');
-  const [filterCombined, setFilterCombined] = useState(true); // true = AND, false = OR
-
-  // Available genres and languages from the library
-  const availableGenres = useMemo(() => getGenres(), [songs.length]);
-  const availableLanguages = useMemo(() => getLanguages(), [songs.length]);
-
-  // Filtered songs (applies genre/language filter to the full song list)
-  const filteredSongs = useMemo(() => {
-    return filterSongs(songs, filterGenre, filterLanguage, filterCombined);
-  }, [songs, filterGenre, filterLanguage, filterCombined]);
-
   const togglePlayer = useCallback((playerId: string) => {
     setSelectedPlayers(prev => {
-      if (prev.includes(playerId)) return prev.filter(id => id !== playerId);
+      if (prev.includes(playerId)) {
+        // Remove mic assignment when deselecting
+        setMicAssignments(prevMic => {
+          const updated = { ...prevMic };
+          for (const [mic, pid] of Object.entries(updated)) {
+            if (pid === playerId) delete updated[mic];
+          }
+          return updated;
+        });
+        return prev.filter(id => id !== playerId);
+      }
       if (prev.length >= config.maxPlayers) {
         setError(`Maximum ${config.maxPlayers} players allowed`);
         return prev;
@@ -72,18 +88,58 @@ export function usePartySetup({
     });
   }, [config.maxPlayers]);
 
+  // Assign a mic to a player
+  const assignMic = useCallback((micId: string, playerId: string) => {
+    setMicAssignments(prev => {
+      const updated = { ...prev };
+      // Remove any existing assignment for this mic
+      for (const [m, p] of Object.entries(updated)) {
+        if (m === micId) delete updated[m];
+      }
+      updated[micId] = playerId;
+      return updated;
+    });
+  }, []);
+
+  // Remove a mic assignment
+  const removeMicAssignment = useCallback((micId: string) => {
+    setMicAssignments(prev => {
+      const updated = { ...prev };
+      delete updated[micId];
+      return updated;
+    });
+  }, []);
+
   const createPlayers = useCallback((): SelectedPlayer[] => {
+    // Load saved mic configs to get mic names
+    let savedMics: Array<{ id: string; deviceId: string; customName: string; deviceName: string }> = [];
+    try {
+      const saved = localStorage.getItem('karaoke-multi-mic-config');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        savedMics = parsed.assignedMics || [];
+      }
+    } catch { /* ignore */ }
+
     return selectedPlayers.map((id, index) => {
       const profile = profiles.find(p => p.id === id);
+      const isMicPlayer = inputMode === 'microphone' || (inputMode === 'mixed');
+
+      // Find mic assignment for this player
+      const micEntry = Object.entries(micAssignments).find(([, pid]) => pid === id);
+      const assignedMic = micEntry ? savedMics.find(m => m.id === micEntry[0]) : null;
+
       return {
         id,
         name: profile?.name || 'Unknown',
         avatar: profile?.avatar,
         color: profile?.color || PLAYER_COLORS[index % PLAYER_COLORS.length],
-        playerType: 'microphone' as const,
+        playerType: isMicPlayer ? 'microphone' as const : 'companion' as const,
+        micId: assignedMic?.id || (isMicPlayer ? savedMics[index]?.id : undefined),
+        micName: assignedMic?.customName || (isMicPlayer ? savedMics[index]?.customName : undefined),
       };
     });
-  }, [selectedPlayers, profiles]);
+  }, [selectedPlayers, profiles, inputMode, micAssignments]);
 
   const handleSongSelection = useCallback((option: SongSelectionOption) => {
     if (selectedPlayers.length < config.minPlayers) {
@@ -96,13 +152,13 @@ export function usePartySetup({
       settings: {
         ...settings,
         difficulty,
-        // Pass filter settings so party-setup-section can use filtered songs
         filterGenre,
         filterLanguage,
         filterCombined,
       },
       songSelection: option,
       difficulty,
+      inputMode,
     };
 
     setError(null);
@@ -117,13 +173,12 @@ export function usePartySetup({
         onStartGame(result);
         break;
       case 'vote': {
-        // Use filtered songs for vote suggestions
         const shuffled = [...filteredSongs].sort(() => Math.random() - 0.5);
         onVoteMode(result, shuffled.slice(0, 3));
         break;
       }
     }
-  }, [selectedPlayers, config.minPlayers, createPlayers, settings, difficulty, filteredSongs, filterGenre, filterLanguage, filterCombined, onSelectLibrary, onStartGame, onVoteMode]);
+  }, [selectedPlayers, config.minPlayers, createPlayers, settings, difficulty, filteredSongs, filterGenre, filterLanguage, filterCombined, onSelectLibrary, onStartGame, onVoteMode, inputMode]);
 
   return {
     config,
@@ -137,6 +192,13 @@ export function usePartySetup({
     setDifficulty,
     togglePlayer,
     handleSongSelection,
+    // Input mode
+    inputMode,
+    setInputMode,
+    // Mic assignments
+    micAssignments,
+    assignMic,
+    removeMicAssignment,
     // Song filter
     filterGenre,
     filterLanguage,
