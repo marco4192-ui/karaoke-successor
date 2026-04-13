@@ -73,6 +73,8 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // Track the resolved media URLs so the play logic can use them
   const resolvedAudioUrlRef = useRef<string | null>(null);
   const resolvedVideoUrlRef = useRef<string | null>(null);
+  // Guard: prevent onEnded from firing before audio actually started playing
+  const audioHasPlayedRef = useRef(false);
   
   // Pre-compute timing data for scoring when song is loaded
   const timingData = useMemo(() => {
@@ -170,6 +172,11 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     loadMedia();
   }, [currentSong]);
 
+  // Reset audio-has-played guard when song changes
+  useEffect(() => {
+    audioHasPlayedRef.current = false;
+  }, [currentSong?.id]);
+
   // Initialize pitch detection and start game loop when playing
   useEffect(() => {
     if (game.status === 'playing' && mediaLoaded && currentSong) {
@@ -182,7 +189,11 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         
         // Start audio/video playback — use resolved URLs, not the original song fields
         if (audioRef.current && resolvedAudioUrlRef.current) {
-          audioRef.current.play().catch(e => console.error('Audio play error:', e));
+          audioRef.current.play()
+            .then(() => { audioHasPlayedRef.current = true; })
+            .catch(e => console.error('Audio play error:', e));
+        } else {
+          console.warn('[BattleRoyale] No audio URL resolved — starting without audio');
         }
         if (videoRef.current && resolvedVideoUrlRef.current) {
           videoRef.current.play().catch(e => console.error('Video play error:', e));
@@ -396,6 +407,9 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
       videoRef.current.pause();
     }
     
+    // Reset audio-has-played guard
+    audioHasPlayedRef.current = false;
+    
     // Stop pitch detection
     stopPitch();
     
@@ -420,7 +434,10 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // Start next round
   const handleStartRound = () => {
     const song = getRandomSong();
-    if (!song) return;
+    if (!song) {
+      console.error('[BattleRoyale] No playable songs found in library. Cannot start round.');
+      return;
+    }
 
     const updatedGame = startRound(game, song.id, song.title);
     onUpdateGame(updatedGame);

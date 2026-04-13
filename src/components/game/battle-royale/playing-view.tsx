@@ -37,6 +37,8 @@ export function PlayingView({
   onRoundEnd,
 }: PlayingViewProps) {
   const currentRound = game.rounds[game.rounds.length - 1];
+  // Guard: only allow onEnded to fire if audio actually started playing
+  const audioStartedRef = React.useRef(false);
 
   // Determine the 3 lowest active players for danger pulsing (Fix 2f)
   const activeSorted = sortedPlayers.filter(p => !p.eliminated);
@@ -56,8 +58,19 @@ export function PlayingView({
       {/* Hidden Audio Element — always rendered so the hook can set src dynamically */}
       <audio
         ref={audioRef}
-        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime * 1000)}
-        onEnded={() => onRoundEnd()}
+        onTimeUpdate={(e) => {
+          setCurrentTime(e.currentTarget.currentTime * 1000);
+          audioStartedRef.current = true; // Mark as playing once we receive time updates
+        }}
+        onEnded={() => {
+          // Only trigger round end if audio actually played (prevents false triggers)
+          if (audioStartedRef.current) {
+            onRoundEnd();
+          }
+        }}
+        onError={(e) => {
+          console.error('[BattleRoyale] Audio error:', e);
+        }}
         className="hidden"
         preload="auto"
       />
