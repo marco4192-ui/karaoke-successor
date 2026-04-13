@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Song, PlayerProfile, Difficulty } from '@/types/game';
 import { SONG_SELECTION_CONFIG } from './unified-party-setup.config';
-import type { PartyGameConfig, GameSettingConfig, SelectedPlayer, SongSelectionOption } from './unified-party-setup.types';
+import type { PartyGameConfig, GameSettingConfig, SelectedPlayer, SongSelectionOption, InputMode } from './unified-party-setup.types';
+import { INPUT_MODE_CONFIG } from './unified-party-setup.types';
 import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
 
 // ===================== SETTING CONTROL =====================
@@ -170,14 +171,195 @@ function SettingsPanel({
 
 // ===================== PLAYER GRID =====================
 
+// ===================== INPUT MODE SELECTOR =====================
+
+export function InputModeSelector({
+  inputMode,
+  onInputModeChange,
+  supportsCompanionApp,
+}: {
+  inputMode: InputMode;
+  onInputModeChange: (mode: InputMode) => void;
+  supportsCompanionApp?: boolean;
+}) {
+  const modes: InputMode[] = supportsCompanionApp
+    ? ['microphone', 'companion', 'mixed']
+    : ['microphone'];
+
+  // If companion not supported, don't show the selector at all
+  if (!supportsCompanionApp) return null;
+
+  return (
+    <Card className="bg-white/5 border-white/10 mb-6">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <span className="text-xl">🎮</span>
+          Input Mode
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {modes.map(mode => {
+            const modeConfig = INPUT_MODE_CONFIG[mode];
+            const isActive = inputMode === mode;
+            return (
+              <button
+                key={mode}
+                onClick={() => onInputModeChange(mode)}
+                className={`p-4 rounded-xl text-left transition-all ${
+                  isActive
+                    ? `${modeConfig.color} text-white ring-2 ring-white/30`
+                    : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <div className="text-2xl mb-1">{modeConfig.icon}</div>
+                <div className="font-bold text-sm">{modeConfig.label}</div>
+                <div className="text-xs opacity-70 mt-1">{modeConfig.description}</div>
+              </button>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ===================== MIC ASSIGNMENT PANEL =====================
+
+export function MicAssignmentPanel({
+  selectedPlayers,
+  profiles,
+  micAssignments,
+  onAssignMic,
+  onRemoveMic,
+  inputMode,
+}: {
+  selectedPlayers: string[];
+  profiles: PlayerProfile[];
+  micAssignments: Record<string, string>;
+  onAssignMic: (micId: string, playerId: string) => void;
+  onRemoveMic: (micId: string) => void;
+  inputMode: InputMode;
+}) {
+  // Load saved mic configs from localStorage
+  const [savedMics, setSavedMics] = useState<Array<{ id: string; customName: string; deviceName: string }>>([]);
+
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem('karaoke-multi-mic-config');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setSavedMics((parsed.assignedMics || []).map((m: any) => ({
+          id: m.id,
+          customName: m.customName,
+          deviceName: m.deviceName,
+        })));
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  const micPlayers = inputMode === 'mixed'
+    ? selectedPlayers // In mixed mode, all players could use mics
+    : selectedPlayers;
+
+  const usedMicIds = new Set(Object.keys(micAssignments));
+
+  return (
+    <Card className="bg-white/5 border-white/10 mb-6">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <span className="text-xl">🎤</span>
+          Mikrofon-Zuordnung
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {micPlayers.map((playerId, index) => {
+            const profile = profiles.find(p => p.id === playerId);
+            if (!profile) return null;
+
+            const currentMicEntry = Object.entries(micAssignments).find(([, pid]) => pid === playerId);
+            const currentMicId = currentMicEntry?.[0];
+            const currentMic = currentMicId ? savedMics.find(m => m.id === currentMicId) : null;
+
+            return (
+              <div key={playerId} className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                  style={{ backgroundColor: profile.color }}
+                >
+                  {profile.avatar ? (
+                    <img src={profile.avatar} alt={profile.name} className="w-full h-full rounded-full object-cover" />
+                  ) : (
+                    profile.name.charAt(0).toUpperCase()
+                  )}
+                </div>
+                <span className="font-medium text-sm truncate min-w-[80px]">{profile.name}</span>
+                <span className="text-white/40 text-xs">→</span>
+                <select
+                  value={currentMicId || ''}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      onAssignMic(e.target.value, playerId);
+                    } else {
+                      currentMicId && onRemoveMic(currentMicId);
+                    }
+                  }}
+                  className="flex-1 bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+                >
+                  <option value="">— Kein Mikro zugewiesen —</option>
+                  {savedMics
+                    .filter(m => !usedMicIds.has(m.id) || m.id === currentMicId)
+                    .map(mic => (
+                      <option key={mic.id} value={mic.id}>
+                        {mic.customName || mic.deviceName}
+                      </option>
+                    ))
+                  }
+                </select>
+                {currentMic && (
+                  <button
+                    onClick={() => onRemoveMic(currentMicId)}
+                    className="text-red-400/60 hover:text-red-400 transition-colors p-1"
+                    title="Zuordnung entfernen"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {savedMics.length === 0 && (
+          <p className="text-xs text-white/40 mt-3">
+            ⚠️ Keine Mikrofone konfiguriert. Gehe zu Settings → Mikrofon, um Mikrofone hinzuzufügen.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ===================== PLAYER GRID =====================
+
 function PlayerGrid({
-  config, activeProfiles, selectedPlayers, togglePlayer,
+  config, activeProfiles, selectedPlayers, togglePlayer, inputMode,
 }: {
   config: PartyGameConfig;
   activeProfiles: PlayerProfile[];
   selectedPlayers: string[];
   togglePlayer: (id: string) => void;
+  inputMode?: InputMode;
 }) {
+  const getTypeIcon = (profile: PlayerProfile) => {
+    if (!inputMode || inputMode === 'microphone') return '🎤';
+    if (inputMode === 'companion') return '📱';
+    // mixed: show mic by default, companion icon is set per-player in the future
+    return '🎤';
+  };
+
   return (
     <Card className="bg-white/5 border-white/10 mb-6">
       <CardHeader>
@@ -190,6 +372,7 @@ function PlayerGrid({
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {activeProfiles.map(profile => {
             const isSelected = selectedPlayers.includes(profile.id);
+            const typeIcon = getTypeIcon(profile);
             return (
               <div
                 key={profile.id}
@@ -209,7 +392,12 @@ function PlayerGrid({
                       {profile.name.charAt(0).toUpperCase()}
                     </div>
                   )}
-                  <span className="font-medium truncate">{profile.name}</span>
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-medium truncate">{profile.name}</span>
+                    {isSelected && (
+                      <span className="text-[10px] opacity-70">{typeIcon}</span>
+                    )}
+                  </div>
                   {isSelected && <span className="ml-auto text-white">✓</span>}
                 </div>
               </div>
@@ -402,19 +590,23 @@ function SongSelectionGrid({
 // ===================== READY SUMMARY =====================
 
 function ReadySummary({
-  config, selectedPlayerCount, difficulty,
+  config, selectedPlayerCount, difficulty, inputMode,
 }: {
   config: PartyGameConfig;
   selectedPlayerCount: number;
   difficulty: Difficulty;
+  inputMode?: InputMode;
 }) {
+  const modeLabel = inputMode
+    ? INPUT_MODE_CONFIG[inputMode].label
+    : 'Mikrofone';
   return (
     <Card className={`bg-gradient-to-r ${config.color} border-0 mb-6`}>
       <CardContent className="py-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-bold text-lg text-white">Ready to Play!</h3>
-            <p className="text-sm text-white/80">{selectedPlayerCount} players selected • {difficulty} difficulty</p>
+            <p className="text-sm text-white/80">{selectedPlayerCount} players • {difficulty} • {modeLabel}</p>
           </div>
           <div className="text-right">
             <div className="text-3xl font-bold text-white">{selectedPlayerCount}</div>
@@ -487,4 +679,4 @@ export function SongVotingModal({ songs, players, onVote, onClose, gameColor }: 
 
 // ===================== EXPORT ALL SUB-COMPONENTS =====================
 
-export { GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary };
+export { GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, InputModeSelector, MicAssignmentPanel };

@@ -3,12 +3,12 @@
 import { Button } from '@/components/ui/button';
 import { Song, PlayerProfile, GameMode } from '@/types/game';
 import { usePartySetup } from './unified-party-setup.hook';
-import { SongVotingModal, GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary } from './unified-party-setup.components';
+import { SongVotingModal, GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, InputModeSelector, MicAssignmentPanel } from './unified-party-setup.components';
 
 // Re-export public API for backward compatibility
 export { SongVotingModal } from './unified-party-setup.components';
 export { PARTY_GAME_CONFIGS, SONG_SELECTION_CONFIG } from './unified-party-setup.config';
-export type { GameSettingConfig, PartyGameConfig, SongSelectionOption, SelectedPlayer, GameSetupResult } from './unified-party-setup.types';
+export type { GameSettingConfig, PartyGameConfig, SongSelectionOption, SelectedPlayer, GameSetupResult, InputMode } from './unified-party-setup.types';
 
 // ===================== UNIFIED PARTY SETUP COMPONENT =====================
 
@@ -28,7 +28,8 @@ export function UnifiedPartySetup({
   const {
     config, activeProfiles, selectedPlayers, settings, setSettings,
     error, difficulty, setDifficulty, togglePlayer, handleSongSelection,
-    // Song filter
+    inputMode, setInputMode,
+    micAssignments, assignMic, removeMicAssignment,
     filterGenre, filterLanguage, filterCombined,
     setFilterGenre, setFilterLanguage, setFilterCombined,
     availableGenres, availableLanguages, filteredSongs,
@@ -62,10 +63,28 @@ export function UnifiedPartySetup({
           onSettingChange={onSettingChange} onDifficultyChange={setDifficulty}
         />
 
+        <InputModeSelector
+          inputMode={inputMode}
+          onInputModeChange={setInputMode}
+          supportsCompanionApp={config.supportsCompanionApp}
+        />
+
         <PlayerGrid
           config={config} activeProfiles={activeProfiles}
           selectedPlayers={selectedPlayers} togglePlayer={togglePlayer}
+          inputMode={inputMode}
         />
+
+        {(inputMode === 'microphone' || inputMode === 'mixed') && selectedPlayers.length > 0 && (
+          <MicAssignmentPanel
+            selectedPlayers={selectedPlayers}
+            profiles={activeProfiles}
+            micAssignments={micAssignments}
+            onAssignMic={assignMic}
+            onRemoveMic={removeMicAssignment}
+            inputMode={inputMode}
+          />
+        )}
 
         <SongFilterSection
           filterGenre={filterGenre}
@@ -85,7 +104,10 @@ export function UnifiedPartySetup({
           onSongSelection={handleSongSelection}
         />
 
-        <ReadySummary config={config} selectedPlayerCount={selectedPlayers.length} difficulty={difficulty} />
+        <ReadySummary
+          config={config} selectedPlayerCount={selectedPlayers.length}
+          difficulty={difficulty} inputMode={inputMode}
+        />
       </div>
     </div>
   );
