@@ -19,12 +19,32 @@ export function useGameSettings(): GameSettings & {
   setNoteDisplayStyle: (value: string) => void;
   setNoteShapeStyle: (value: NoteShapeStyle) => void;
 } {
-  // Initialize with defaults to avoid hydration mismatch
-  const [showBackgroundVideo, setShowBackgroundVideo] = useState(true);
-  const [showPitchGuide, setShowPitchGuide] = useState(true);
-  const [useAnimatedBackground, setUseAnimatedBackground] = useState(false);
-  const [noteDisplayStyle, setNoteDisplayStyle] = useState('classic');
-  const [noteShapeStyle, setNoteShapeStyle] = useState<NoteShapeStyle>('rounded');
+  // Helper to safely read localStorage (returns null in SSR)
+  const getStored = (key: string): string | null => {
+    try { return localStorage.getItem(key); } catch { return null; }
+  };
+
+  // Initialize with stored values to avoid flash of default on mount
+  const [showBackgroundVideo, setShowBackgroundVideo] = useState(
+    () => getStored('karaoke-bg-video') !== 'false'
+  );
+  const [showPitchGuide, setShowPitchGuide] = useState(
+    () => getStored('karaoke-show-pitch-guide') !== 'false'
+  );
+  const [useAnimatedBackground, setUseAnimatedBackground] = useState(
+    () => getStored('karaoke-animated-bg') === 'true'
+  );
+  const [noteDisplayStyle, setNoteDisplayStyle] = useState(
+    () => getStored('karaoke-note-style') || 'classic'
+  );
+  const [noteShapeStyle, setNoteShapeStyle] = useState<NoteShapeStyle>(() => {
+    const stored = getStored('karaoke-note-shape') as NoteShapeStyle | null;
+    if (stored && ['rounded', 'sharp', 'pill', 'diamond'].includes(stored)) {
+      return stored;
+    }
+    const theme = getStoredTheme();
+    return theme?.noteStyle || 'rounded';
+  });
 
   // Load initial settings and listen for changes
   useEffect(() => {
