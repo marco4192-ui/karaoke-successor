@@ -39,6 +39,20 @@ function generatePassTheMicSegments(song: Song, segmentDuration: number): PassTh
 }
 
 // ===================== PARTY SETUP + SONG VOTING SECTION =====================
+// ===================== HELPER: Convert SelectedPlayer to Medley/PassTheMic/Companion player =====================
+function toMedleyPlayers(players: { id: string; name: string; avatar?: string; color: string }[]) {
+  return players.map(p => ({ ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, songsCompleted: 0 }));
+}
+
+function toPassTheMicPlayers(players: { id: string; name: string; avatar?: string; color: string }[]) {
+  return players.map(p => ({ ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, isActive: false, segmentsSung: 0 }));
+}
+
+function toCompanionPlayers(players: { id: string; name: string; avatar?: string; color: string }[]) {
+  return players.map(p => ({ ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, isActive: false, turnsSung: 0 }));
+}
+
+// ===================== PARTY SETUP + SONG VOTING SECTION =====================
 export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps) {
   const { profiles, setGameMode, setSong, setDifficulty } = useGameStore();
   const party = usePartyStore();
@@ -160,7 +174,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   const startTime = Math.random() * maxStartTime;
                   return { song, startTime, endTime: startTime + snippetDurationMs, duration: snippetDurationMs };
                 });
-                party.setMedleyPlayers(result.players);
+                party.setMedleyPlayers(toMedleyPlayers(result.players));
                 party.setMedleySongs(medleySongList);
                 party.setMedleySettings(result.settings);
                 setScreen('medley-game');
@@ -172,7 +186,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 const randomSong = pickRandomSong(filteredSongs);
                 if (randomSong) {
                   const segmentDuration = result.settings.segmentDuration || 30;
-                  party.setPassTheMicPlayers(result.players);
+                  party.setPassTheMicPlayers(toPassTheMicPlayers(result.players));
                   party.setPassTheMicSegments(generatePassTheMicSegments(randomSong, segmentDuration));
                   party.setPassTheMicSong(randomSong);
                   party.setPassTheMicSettings(result.settings);
@@ -186,7 +200,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               case 'companion-singalong': {
                 const randomSong = pickRandomSong(filteredSongs);
                 if (randomSong) {
-                  party.setCompanionPlayers(result.players);
+                  party.setCompanionPlayers(toCompanionPlayers(result.players));
                   party.setCompanionSong(randomSong);
                   party.setCompanionSettings(result.settings);
                   setSong(randomSong);
@@ -220,10 +234,10 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
 
             // Store settings based on game mode and navigate to library
             if (party.selectedGameMode === 'pass-the-mic') {
-              party.setPassTheMicPlayers(result.players);
+              party.setPassTheMicPlayers(toPassTheMicPlayers(result.players));
               party.setPassTheMicSettings(result.settings);
             } else if (party.selectedGameMode === 'companion-singalong') {
-              party.setCompanionPlayers(result.players);
+              party.setCompanionPlayers(toCompanionPlayers(result.players));
               party.setCompanionSettings(result.settings);
             }
 
@@ -256,12 +270,12 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               // Handle game-specific setup
               if (party.selectedGameMode === 'pass-the-mic') {
                 const segmentDuration = party.unifiedSetupResult?.settings?.segmentDuration || 30;
-                party.setPassTheMicPlayers(party.unifiedSetupResult?.players || []);
+                party.setPassTheMicPlayers(toPassTheMicPlayers(party.unifiedSetupResult?.players || []));
                 party.setPassTheMicSegments(generatePassTheMicSegments(selectedSong, segmentDuration));
                 party.setPassTheMicSong(selectedSong);
                 setScreen('pass-the-mic-game');
               } else if (party.selectedGameMode === 'companion-singalong') {
-                party.setCompanionPlayers(party.unifiedSetupResult?.players || []);
+                party.setCompanionPlayers(toCompanionPlayers(party.unifiedSetupResult?.players || []));
                 party.setCompanionSong(selectedSong);
                 setScreen('companion-singalong-game');
               } else {
