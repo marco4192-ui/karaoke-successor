@@ -230,6 +230,15 @@ export default function KaraokeSuccessor() {
     // Check if we're in a tournament match (has party.currentTournamentMatch set)
     if (party.currentTournamentMatch && party.tournamentBracket) {
       handleTournamentGameEnd();
+    } else if (gameState.gameMode === 'pass-the-mic' || gameState.gameMode === 'companion-singalong') {
+      // Pass the Mic / Companion: clean up party state and show results
+      if (gameState.gameMode === 'pass-the-mic') {
+        party.setPassTheMicSong(null);
+        party.setPassTheMicSegments([]);
+      } else {
+        party.setCompanionSong(null);
+      }
+      setScreen('results');
     } else {
       setScreen('results');
     }
@@ -442,10 +451,12 @@ export default function KaraokeSuccessor() {
                 }
                 party.setPassTheMicSegments(segments);
                 party.setPassTheMicSong(song);
-                setScreen('pass-the-mic-game');
+                // Use main game screen for proper audio/video/notes/lyrics playback
+                setScreen('game');
               } else if (gameState.gameMode === 'companion-singalong') {
                 party.setCompanionSong(song);
-                setScreen('companion-singalong-game');
+                // Use main game screen for proper audio/video/notes/lyrics playback
+                setScreen('game');
               } else {
                 setScreen('game');
               }
@@ -478,6 +489,24 @@ export default function KaraokeSuccessor() {
                 // The competitive game object stores rounds/wins independently
                 resetGame();
                 setScreen(modeScreen as Screen);
+                return;
+              }
+              // If in pass-the-mic or companion-singalong, clean up party state and go home
+              if (gameState.gameMode === 'pass-the-mic') {
+                party.setPassTheMicPlayers([]);
+                party.setPassTheMicSong(null);
+                party.setPassTheMicSegments([]);
+                party.setPassTheMicSettings(null);
+                resetGame();
+                setScreen('home');
+                return;
+              }
+              if (gameState.gameMode === 'companion-singalong') {
+                party.setCompanionPlayers([]);
+                party.setCompanionSong(null);
+                party.setCompanionSettings(null);
+                resetGame();
+                setScreen('home');
                 return;
               }
               resetGame();
