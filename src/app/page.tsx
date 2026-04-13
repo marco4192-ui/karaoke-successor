@@ -166,34 +166,53 @@ export default function KaraokeSuccessor() {
   // Handle game end based on game mode
   const handleGameEnd = useCallback(() => {
     // Check if we're finishing a medley snippet — return to medley flow
-    if (gameState.gameMode === 'medley' && party.medleySongs.length > 0) {
+    // (medley mode uses 'medley' for cooperative, 'duel' for competitive)
+    if ((gameState.gameMode === 'medley' || gameState.gameMode === 'duel') && party.medleySongs.length > 0) {
       // Read snippet results and accumulate into medley player scores
       const results = gameState.results;
       const players = gameState.players;
-      const snippetScore = results?.players?.[0]?.score || players?.[0]?.score || 0;
-      const snippetNotesHit = results?.players?.[0]?.notesHit || players?.[0]?.notesHit || 0;
-      const snippetNotesMissed = results?.players?.[0]?.notesMissed || players?.[0]?.notesMissed || 0;
-      const snippetMaxCombo = results?.players?.[0]?.maxCombo || players?.[0]?.maxCombo || 0;
       const isCooperative = party.medleySettings?.playMode !== 'competitive';
 
       // Update medley player scores
-      // Cooperative: all players share the same score
-      // Competitive: only the active player (players[0]) gets the score
-      const updatedPlayers = party.medleyPlayers.map((p: any) => {
-        const isActivePlayer = p.id === players?.[0]?.id;
-        if (isActivePlayer || isCooperative) {
+      if (isCooperative) {
+        // Cooperative: all players share the same score (single player sings)
+        const snippetScore = results?.players?.[0]?.score || players?.[0]?.score || 0;
+        const snippetNotesHit = results?.players?.[0]?.notesHit || players?.[0]?.notesHit || 0;
+        const snippetNotesMissed = results?.players?.[0]?.notesMissed || players?.[0]?.notesMissed || 0;
+        const snippetMaxCombo = results?.players?.[0]?.maxCombo || players?.[0]?.maxCombo || 0;
+
+        const updatedPlayers = party.medleyPlayers.map((p: any) => ({
+          ...p,
+          score: p.score + snippetScore,
+          notesHit: p.notesHit + snippetNotesHit,
+          notesMissed: p.notesMissed + snippetNotesMissed,
+          maxCombo: Math.max(p.maxCombo, snippetMaxCombo),
+          songsCompleted: p.songsCompleted + 1,
+        }));
+        party.setMedleyPlayers(updatedPlayers);
+      } else {
+        // Competitive duel: each player keeps their own score
+        const updatedPlayers = party.medleyPlayers.map((p: any) => {
+          const gamePlayer = players?.find((gp: any) => gp.id === p.id);
+          const resultPlayer = results?.players?.find((rp: any) => rp.playerId === p.id);
+          if (!gamePlayer && !resultPlayer) return p;
+
+          const score = resultPlayer?.score || gamePlayer?.score || 0;
+          const notesHit = resultPlayer?.notesHit || gamePlayer?.notesHit || 0;
+          const notesMissed = resultPlayer?.notesMissed || gamePlayer?.notesMissed || 0;
+          const maxCombo = resultPlayer?.maxCombo || gamePlayer?.maxCombo || 0;
+
           return {
             ...p,
-            score: p.score + snippetScore,
-            notesHit: p.notesHit + snippetNotesHit,
-            notesMissed: p.notesMissed + snippetNotesMissed,
-            maxCombo: Math.max(p.maxCombo, snippetMaxCombo),
+            score: p.score + score,
+            notesHit: p.notesHit + notesHit,
+            notesMissed: p.notesMissed + notesMissed,
+            maxCombo: Math.max(p.maxCombo, maxCombo),
             songsCompleted: p.songsCompleted + 1,
           };
-        }
-        return p;
-      });
-      party.setMedleyPlayers(updatedPlayers);
+        });
+        party.setMedleyPlayers(updatedPlayers);
+      }
 
       setScreen('medley-game');
       return;
@@ -468,8 +487,8 @@ export default function KaraokeSuccessor() {
           <GameScreen
             onEnd={handleGameEnd}
             onBack={() => {
-              // If in a medley snippet, go back to medley flow
-              if (gameState.gameMode === 'medley' && party.medleySongs.length > 0) {
+              // If in a medley snippet (cooperative 'medley' or competitive 'duel'), go back to medley flow
+              if ((gameState.gameMode === 'medley' || gameState.gameMode === 'duel') && party.medleySongs.length > 0) {
                 resetGame();
                 setScreen('medley-game');
                 return;

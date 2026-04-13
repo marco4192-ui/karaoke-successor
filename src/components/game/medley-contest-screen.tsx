@@ -162,11 +162,12 @@ export function MedleySetupScreen({ profiles, songs, onStartGame, onBack }: Medl
       };
     });
 
-    // In competitive mode, ensure snippet count is a multiple of player count
-    // so every player sings the same number of snippets
+    // In competitive mode, ensure snippet count is a multiple of unique pair count
+    // so every pair gets the same number of duels
     const numPlayers = selectedPlayers.length;
+    const numPairs = numPlayers * (numPlayers - 1) / 2; // number of unique pairs
     const effectiveSnippetCount = settings.playMode === 'competitive'
-      ? Math.ceil(settings.snippetCount / numPlayers) * numPlayers
+      ? Math.ceil(settings.snippetCount / numPairs) * numPairs
       : settings.snippetCount;
 
     // Generate medley songs with adjusted count
@@ -314,7 +315,7 @@ export function MedleySetupScreen({ profiles, songs, onStartGame, onBack }: Medl
             </div>
             <p className="text-xs text-white/40 mt-1">
               {settings.playMode === 'competitive'
-                ? '1v1 oder 2v2 — Snippets abwechselnd, Punkte vergleichen'
+                ? '1v1 Duelle — Paare rotieren, Punkte vergleichen'
                 : 'Alle singen zusammen — gemeinsamer Score'}
             </p>
           </div>
@@ -377,15 +378,16 @@ export function MedleySetupScreen({ profiles, songs, onStartGame, onBack }: Medl
                 {settings.snippetCount} songs × {settings.snippetDuration}s = {Math.ceil(settings.snippetCount * settings.snippetDuration / 60)} min total
               </p>
               {settings.playMode === 'competitive' && selectedPlayers.length > 0 && (() => {
-                const balanced = Math.ceil(settings.snippetCount / selectedPlayers.length) * selectedPlayers.length;
+                const pairs = selectedPlayers.length * (selectedPlayers.length - 1) / 2;
+                const balanced = Math.ceil(settings.snippetCount / pairs) * pairs;
                 if (balanced !== settings.snippetCount) {
                   return (
                     <p className="text-xs text-yellow-400 mt-1">
-                      ⚖️ Angepasst auf {balanced} Snippets ({balanced / selectedPlayers.length} Runden pro Spieler) für faire Verteilung
+                      ⚖️ Angepasst auf {balanced} Duelle ({balanced / pairs} Runden pro Paar) für faire Verteilung
                     </p>
                   );
                 }
-                return <p className="text-xs text-white/40 mt-1">{balanced / selectedPlayers.length} Runden pro Spieler</p>;
+                return <p className="text-xs text-white/40 mt-1">{pairs} Paare, {balanced / pairs} Runden pro Paar</p>;
               })()}
             </div>
             <div className="text-right">
@@ -414,7 +416,7 @@ interface MedleyGameViewProps {
   medleySongs: MedleySong[];
   settings: MedleySettings & { currentSnippetIndex?: number };
   onUpdatePlayers: (players: MedleyPlayer[]) => void;
-  onPlaySnippet: (playerId: string, snippetIndex: number) => void;
+  onPlaySnippet: (playerId: string, snippetIndex: number, opponentId?: string) => void;
   onEndGame: () => void;
 }
 
@@ -434,15 +436,35 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
   const [countdown, setCountdown] = useState(3);
   const [transitionCountdown, setTransitionCountdown] = useState(settings.transitionTime);
 
-  // ── In competitive mode, determine which player sings the next snippet ──
+  // ── In competitive mode, determine which TWO players duel in the next snippet ──
+  // Generate all unique pairs, then cycle through them
+  const duelPairs = useMemo(() => {
+    if (!isCompetitive || players.length < 2) return [];
+    const pairs: Array<[string, string]> = [];
+    for (let i = 0; i < players.length; i++) {
+      for (let j = i + 1; j < players.length; j++) {
+        pairs.push([players[i].id, players[j].id]);
+      }
+    }
+    return pairs;
+  }, [isCompetitive, players]);
+
   const getActivePlayerId = useCallback((snippetIdx: number): string => {
     if (isCompetitive) {
-      const playerIdx = snippetIdx % players.length;
-      return players[playerIdx]?.id || players[0]?.id || '';
+      if (duelPairs.length === 0) return players[0]?.id || '';
+      const pairIdx = snippetIdx % duelPairs.length;
+      return duelPairs[pairIdx][0]; // P1 of the duel
     }
     // Cooperative: use the first player (all share the same cumulative score)
     return players[0]?.id || '';
-  }, [isCompetitive, players]);
+  }, [isCompetitive, players, duelPairs]);
+
+  // Get the duel pair for a given snippet index (competitive mode only)
+  const getDuelPair = useCallback((snippetIdx: number): [string, string] | null => {
+    if (!isCompetitive || duelPairs.length === 0) return null;
+    const pairIdx = snippetIdx % duelPairs.length;
+    return duelPairs[pairIdx];
+  }, [isCompetitive, duelPairs]);
 
   // ── Countdown then launch snippet ──
   const launchWithCountdown = useCallback((snippetIdx: number) => {
@@ -453,13 +475,16 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
         if (prev <= 1) {
           clearInterval(interval);
           const playerId = getActivePlayerId(snippetIdx);
-          onPlaySnippet(playerId, snippetIdx);
+          // In competitive mode, also pass the opponent for duel
+          const pair = getDuelPair(snippetIdx);
+          const opponentId = pair ? pair[1] : undefined;
+          onPlaySnippet(playerId, snippetIdx, opponentId);
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
-  }, [getActivePlayerId, onPlaySnippet]);
+  }, [getActivePlayerId, getDuelPair, onPlaySnippet]);
 
   // ── Start button handler (initial start) ──
   const handleStart = useCallback(() => {
@@ -491,6 +516,8 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
   const currentSnippet = !allDone ? medleySongs[nextSnippetIndex] : null;
   const activePlayerId = currentSnippet ? getActivePlayerId(nextSnippetIndex) : '';
   const activePlayer = players.find(p => p.id === activePlayerId);
+  const currentPair = currentSnippet ? getDuelPair(nextSnippetIndex) : null;
+  const opponentPlayer = currentPair ? players.find(p => p.id === currentPair[1]) : null;
 
   // ── Calculate overall progress ──
   const totalSnippets = medleySongs.length;
@@ -630,8 +657,8 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
                 <p className="text-sm text-white/40 mb-1">NEXT SONG</p>
                 <h3 className="text-xl font-bold">{currentSnippet.song.title}</h3>
                 <p className="text-white/60">{currentSnippet.song.artist}</p>
-                {isCompetitive && activePlayer && (
-                  <p className="text-sm text-yellow-400 mt-2">🎤 {activePlayer.name} singt</p>
+                {isCompetitive && activePlayer && opponentPlayer && (
+                  <p className="text-sm text-yellow-400 mt-2">⚔️ {activePlayer.name} vs {opponentPlayer.name}</p>
                 )}
                 <p className="text-xs text-white/30 mt-1">{Math.floor(currentSnippet.duration / 1000)}s snippet</p>
               </div>
@@ -654,8 +681,8 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
                 <p className="text-sm text-white/40 mb-1">UP NEXT</p>
                 <h3 className="text-xl font-bold">{currentSnippet.song.title}</h3>
                 <p className="text-white/60">{currentSnippet.song.artist}</p>
-                {isCompetitive && activePlayer && (
-                  <p className="text-sm text-yellow-400 mt-2">🎤 {activePlayer.name} singt</p>
+                {isCompetitive && activePlayer && opponentPlayer && (
+                  <p className="text-sm text-yellow-400 mt-2">⚔️ {activePlayer.name} vs {opponentPlayer.name}</p>
                 )}
               </div>
             </div>
@@ -676,8 +703,8 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
                   <p className="text-sm text-white/40 mb-1">FIRST SONG</p>
                   <h3 className="text-xl font-bold">{currentSnippet.song.title}</h3>
                   <p className="text-white/60">{currentSnippet.song.artist}</p>
-                  {isCompetitive && activePlayer && (
-                    <p className="text-sm text-yellow-400 mt-2">🎤 {activePlayer.name} singt zuerst</p>
+                  {isCompetitive && activePlayer && opponentPlayer && (
+                    <p className="text-sm text-yellow-400 mt-2">⚔️ {activePlayer.name} vs {opponentPlayer.name}</p>
                   )}
                   <p className="text-xs text-white/30 mt-1">{Math.floor(currentSnippet.duration / 1000)}s snippet</p>
                 </div>
@@ -750,11 +777,20 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
                 </div>
                 {index <= lastPlayedSnippetIndex && <div className="text-xs text-green-400 mt-1">✓ Done</div>}
                 {index === nextSnippetIndex && <div className="text-xs text-purple-400 mt-1">♪ Next</div>}
-                {isCompetitive && (
-                  <div className="text-xs mt-1" style={{ color: players[index % players.length]?.color || '#999' }}>
-                    → {players[index % players.length]?.name}
-                  </div>
-                )}
+                {isCompetitive && (() => {
+                  const pair = getDuelPair(index);
+                  if (!pair) return null;
+                  const p1 = players.find(p => p.id === pair[0]);
+                  const p2 = players.find(p => p.id === pair[1]);
+                  if (!p1 || !p2) return null;
+                  return (
+                    <div className="text-xs mt-1">
+                      <span style={{ color: p1.color }}>{p1.name}</span>
+                      <span className="text-white/40"> vs </span>
+                      <span style={{ color: p2.color }}>{p2.name}</span>
+                    </div>
+                  );
+                })()}
               </div>
             ))}
           </div>

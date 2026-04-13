@@ -239,7 +239,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           medleySongs={party.medleySongs}
           settings={party.medleySettings}
           onUpdatePlayers={party.setMedleyPlayers}
-          onPlaySnippet={(playerId, snippetIndex) => {
+          onPlaySnippet={(playerId, snippetIndex, opponentId) => {
             const snippet = party.medleySongs[snippetIndex];
             if (!snippet) return;
 
@@ -253,17 +253,42 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               end: snippet.endTime,
             };
             setSong(snippetSong);
-            setGameMode('medley');
 
-            // Add the active singer as the game player
-            const playerProfile = party.medleyPlayers.find((p: any) => p.id === playerId);
-            if (playerProfile) {
-              addPlayer({
-                id: playerProfile.id,
-                name: playerProfile.name,
-                avatar: playerProfile.avatar,
-                color: playerProfile.color,
-              });
+            const isCompetitive = party.medleySettings?.playMode === 'competitive';
+
+            if (isCompetitive && opponentId) {
+              // Duel mode: add both players
+              setGameMode('duel');
+              const p1 = party.medleyPlayers.find((p: any) => p.id === playerId);
+              const p2 = party.medleyPlayers.find((p: any) => p.id === opponentId);
+              if (p1) {
+                addPlayer({
+                  id: p1.id,
+                  name: p1.name,
+                  avatar: p1.avatar,
+                  color: p1.color,
+                });
+              }
+              if (p2) {
+                addPlayer({
+                  id: p2.id,
+                  name: p2.name,
+                  avatar: p2.avatar,
+                  color: p2.color,
+                });
+              }
+            } else {
+              // Cooperative: single player mode
+              setGameMode('medley');
+              const playerProfile = party.medleyPlayers.find((p: any) => p.id === playerId);
+              if (playerProfile) {
+                addPlayer({
+                  id: playerProfile.id,
+                  name: playerProfile.name,
+                  avatar: playerProfile.avatar,
+                  color: playerProfile.color,
+                });
+              }
             }
 
             // Mark current snippet index in party store so the flow knows where we are
