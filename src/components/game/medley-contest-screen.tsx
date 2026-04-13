@@ -509,7 +509,7 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button variant="ghost" onClick={onEndGame} className="text-white/60">
-            ← Quit
+            ← Back
           </Button>
           <Badge className="bg-purple-500/20 text-purple-400 text-lg px-3 py-1">🎵 MEDLEY CONTEST</Badge>
           {isCompetitive && (
