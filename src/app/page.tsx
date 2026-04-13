@@ -405,6 +405,9 @@ export default function KaraokeSuccessor() {
               onClick={() => {
                 const target = pendingNavigation;
                 setPendingNavigation(null);
+                // Clean up all party state so the mode is fully terminated
+                party.resetPartyState();
+                resetGame();
                 setScreen(target);
               }}
               className="flex-1 py-3 rounded-lg font-medium bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all"
