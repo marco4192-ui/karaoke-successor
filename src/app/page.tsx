@@ -472,8 +472,11 @@ export default function KaraokeSuccessor() {
               }
               // If in competitive MW/Blind match, go back to competitive view
               if (party.competitiveGame) {
-                resetGame();
+                // Capture gameMode BEFORE resetGame() clears it
                 const modeScreen = gameState.gameMode === 'missing-words' ? 'missing-words-game' : 'blind-game';
+                // Reset game state FIRST (clears scoring/players), then navigate
+                // The competitive game object stores rounds/wins independently
+                resetGame();
                 setScreen(modeScreen as Screen);
                 return;
               }

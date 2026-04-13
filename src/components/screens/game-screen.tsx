@@ -471,7 +471,8 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
           setIsPlaying(false);
           // Reset scoring state so scores don't carry over to the next game
           resetScoring();
-          resetGame();
+          // Don't call resetGame() here — onBack() handles navigation and cleanup.
+          // Calling resetGame() would clear the song/mode which breaks competitive mode navigation.
           onBack();
         }} className="text-white/80 hover:text-white hover:bg-white/10">
           ← Back

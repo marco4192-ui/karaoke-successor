@@ -42,10 +42,16 @@ export function SpectrogramDisplay({
   useEffect(() => {
     if (!isActive || (!audioElement && !audioStream)) return;
 
+    // Reset source when audio element changes (same element can only be connected once)
+    if (sourceRef.current) {
+      try { sourceRef.current.disconnect(); } catch { /* already disconnected */ }
+      sourceRef.current = null;
+    }
+
     const initAudio = async () => {
       try {
         // Create audio context if not exists
-        if (!audioContextRef.current) {
+        if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
           audioContextRef.current = new AudioContext();
         }
         const audioContext = audioContextRef.current;
@@ -79,6 +85,15 @@ export function SpectrogramDisplay({
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+      }
+      // Disconnect source node and close audio context on unmount
+      if (sourceRef.current) {
+        try { sourceRef.current.disconnect(); } catch { /* already disconnected */ }
+        sourceRef.current = null;
+      }
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        try { audioContextRef.current.close(); } catch { /* already closed */ }
+        audioContextRef.current = null;
       }
     };
   }, [isActive, audioElement, audioStream]);
