@@ -547,6 +547,22 @@ export function applyTheme(theme: Theme): void {
     .party-tile .text-white\\/90 { color: rgba(255,255,255,0.9) !important; }
     .party-tile .text-white\\/95 { color: rgba(255,255,255,0.95) !important; }
     .party-tile .bg-white\\/20 { background-color: rgba(255,255,255,0.2) !important; }
+    ${isLightTheme ? `
+    /* === LIGHT THEME: override gray/slate/zinc text classes === */
+    .text-gray-200, .text-slate-200, .text-zinc-200 { color: ${theme.colors.text} !important; }
+    .text-gray-300, .text-slate-300, .text-zinc-300 { color: ${theme.colors.text} !important; }
+    .text-gray-400, .text-slate-400, .text-zinc-400 { color: ${theme.colors.textSecondary} !important; }
+    .text-gray-500, .text-slate-500, .text-zinc-500 { color: ${theme.colors.textSecondary} !important; }
+    .text-gray-600, .text-slate-600, .text-zinc-600 { color: ${blendColor(theme.colors.text, 0.55)} !important; }
+    /* Light theme: dark backgrounds for elements expecting dark-mode surfaces */
+    .bg-slate-800, .bg-gray-800, .bg-zinc-800 { background-color: #e2e8f0 !important; }
+    .bg-slate-900, .bg-gray-900 { background-color: ${theme.colors.background} !important; }
+    .border-slate-600, .border-gray-600, .border-zinc-600 { border-color: #cbd5e1 !important; }
+    .bg-gray-700\\/50, .bg-slate-700\\/50 { background-color: rgba(203,213,225,0.5) !important; }
+    .hover\\:text-white:hover { color: ${theme.colors.text} !important; }
+    .hover\\:bg-slate-700\\/50:hover { background-color: rgba(203,213,225,0.5) !important; }
+    .hover\\:text-slate-300:hover { color: ${theme.colors.text} !important; }
+    ` : ''}
   `;
   
   // Store preference
