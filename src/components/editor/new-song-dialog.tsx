@@ -10,10 +10,11 @@ import { Separator } from '@/components/ui/separator';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { X, Save, Music, FileText, Sparkles } from 'lucide-react';
+import { X, Save, Music, FileText, Sparkles, FolderOpen, Film, Image } from 'lucide-react';
 import type { Song, LyricLine, Note } from '@/types/game';
 import { v4 as uuidv4 } from 'uuid';
 import { parseLyricsToSyllables, syllablesToUltraStarNotes, type SyllableResult } from '@/lib/editor/syllable-separator';
+import { isTauri } from '@/lib/tauri-file-storage';
 
 interface NewSongDialogProps {
   onSave: (song: Song) => void;
@@ -58,6 +59,11 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
   const [beatsPerSyllable, setBeatsPerSyllable] = useState(4);
   const [beatsBetweenLines, setBeatsBetweenLines] = useState(8);
   const [basePitch, setBasePitch] = useState(12); // UltraStar relative pitch (C4 area)
+
+  // Media file paths (Tauri filesystem)
+  const [audioPath, setAudioPath] = useState('');
+  const [videoPath, setVideoPath] = useState('');
+  const [coverPath, setCoverPath] = useState('');
 
   // UI state
   const [syllableResult, setSyllableResult] = useState<SyllableResult | null>(null);
@@ -179,11 +185,15 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
       lyrics,
       dateAdded: Date.now(),
       // UltraStar TXT metadata
-      mp3File: 'song.mp3',
+      mp3File: audioPath ? audioPath.split(/[/\\]/).pop() || 'song.mp3' : 'song.mp3',
+      // Tauri file paths
+      ...(audioPath ? { relativeAudioPath: audioPath } : {}),
+      ...(videoPath ? { relativeVideoPath: videoPath } : {}),
+      ...(coverPath ? { relativeCoverPath: coverPath, coverImage: coverPath } : {}),
     };
 
     return song;
-  }, [title, artist, bpm, gap, genre, language, edition, syllableResult, beatsPerSyllable, beatsBetweenLines, basePitch]);
+  }, [title, artist, bpm, gap, genre, language, edition, syllableResult, beatsPerSyllable, beatsBetweenLines, basePitch, audioPath, videoPath, coverPath]);
 
   // Handle save
   const handleSave = useCallback(async () => {
@@ -200,6 +210,34 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
       setIsSaving(false);
     }
   }, [generateSong, onSave]);
+
+  // Pick a file using Tauri native dialog or browser file input
+  const pickFile = useCallback(async (fileType: 'audio' | 'video' | 'cover', setter: (path: string) => void) => {
+    if (isTauri()) {
+      try {
+        const { open } = await import('@tauri-apps/plugin-dialog');
+        const filters = fileType === 'audio'
+          ? [{ name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma'] }]
+          : fileType === 'video'
+            ? [{ name: 'Video', extensions: ['mp4', 'webm', 'mkv', 'avi', 'mov'] }]
+            : [{ name: 'Image', extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'gif'] }];
+        const selected = await open({ multiple: false, filters });
+        if (selected) setter(selected);
+      } catch (err) {
+        console.error(`[NewSong] File picker error:`, err);
+      }
+    } else {
+      // Browser fallback: use hidden file input
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = fileType === 'audio' ? 'audio/*' : fileType === 'video' ? 'video/*' : 'image/*';
+      input.onchange = (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (file) setter(file.name);
+      };
+      input.click();
+    }
+  }, []);
 
   const isValid = title.trim().length > 0 && artist.trim().length > 0;
 
@@ -399,6 +437,82 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
                 )}
               </div>
             )}
+          </div>
+
+          <Separator className="bg-slate-700" />
+
+          {/* Section 3: Media Files */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-slate-400 flex items-center gap-2">
+              <FolderOpen className="w-4 h-4" /> Mediendateien
+            </h3>
+            <p className="text-xs text-slate-600">
+              Optional: Wähle Audio, Video und Cover-Bilddateien aus. In der Tauri-App werden Dateipfade gespeichert.
+            </p>
+            <div className="grid grid-cols-1 gap-3">
+              {/* Audio */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 flex items-center gap-2 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 min-w-0">
+                  <Music className="w-4 h-4 text-cyan-400 shrink-0" />
+                  <Input
+                    value={audioPath}
+                    onChange={(e) => setAudioPath(e.target.value)}
+                    placeholder="Keine Audiodatei ausgewählt"
+                    className="bg-transparent border-none shadow-none focus-visible:ring-0 text-sm h-auto p-0"
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => pickFile('audio', setAudioPath)}
+                  className="border-slate-600 text-slate-400 shrink-0"
+                >
+                  Durchsuchen
+                </Button>
+              </div>
+
+              {/* Video */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 flex items-center gap-2 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 min-w-0">
+                  <Film className="w-4 h-4 text-purple-400 shrink-0" />
+                  <Input
+                    value={videoPath}
+                    onChange={(e) => setVideoPath(e.target.value)}
+                    placeholder="Keine Videodatei ausgewählt"
+                    className="bg-transparent border-none shadow-none focus-visible:ring-0 text-sm h-auto p-0"
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => pickFile('video', setVideoPath)}
+                  className="border-slate-600 text-slate-400 shrink-0"
+                >
+                  Durchsuchen
+                </Button>
+              </div>
+
+              {/* Cover */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 flex items-center gap-2 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 min-w-0">
+                  <Image className="w-4 h-4 text-amber-400 shrink-0" />
+                  <Input
+                    value={coverPath}
+                    onChange={(e) => setCoverPath(e.target.value)}
+                    placeholder="Kein Cover-Bild ausgewählt"
+                    className="bg-transparent border-none shadow-none focus-visible:ring-0 text-sm h-auto p-0"
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => pickFile('cover', setCoverPath)}
+                  className="border-slate-600 text-slate-400 shrink-0"
+                >
+                  Durchsuchen
+                </Button>
+              </div>
+            </div>
           </div>
 
           <Separator className="bg-slate-700" />
