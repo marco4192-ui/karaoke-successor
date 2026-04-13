@@ -20,6 +20,8 @@ export interface StartOptions {
   mode: 'single' | 'duel' | 'duet' | GameMode;
   players: string[];
   partyMode?: GameMode;
+  /** Assigned microphone ID for the selected player (Single mode) */
+  micId?: string;
 }
 
 export interface SongCardProps {

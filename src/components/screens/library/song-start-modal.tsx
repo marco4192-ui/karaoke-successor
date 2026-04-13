@@ -1,12 +1,51 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Song, GameMode } from '@/types/game';
 import { SongStartModalProps } from './types';
 import { MusicIcon, MicIcon, StarIcon, TrophyIcon, QueueIcon, PlayIcon } from './icons';
 import { isDuetSong } from './utils';
+
+// ===================== MIC SELECTOR =====================
+function MicSelector({ micId, onMicChange }: { micId?: string; onMicChange: (id: string | undefined) => void }) {
+  const [savedMics, setSavedMics] = useState<Array<{ id: string; customName: string; deviceName: string }>>([]);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('karaoke-multi-mic-config');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setSavedMics((parsed.assignedMics || []).map((m: any) => ({
+          id: m.id,
+          customName: m.customName,
+          deviceName: m.deviceName,
+        })));
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  if (savedMics.length === 0) return null;
+
+  return (
+    <div className="mt-2">
+      <label className="text-xs text-white/40 mb-1 block">🎤 Mikrofon zuweisen</label>
+      <select
+        value={micId || ''}
+        onChange={(e) => onMicChange(e.target.value || undefined)}
+        className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+      >
+        <option value="">— Automatisch —</option>
+        {savedMics.map(mic => (
+          <option key={mic.id} value={mic.id}>
+            {mic.customName || mic.deviceName}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
 
 export function SongStartModal({
   selectedSong,
@@ -242,6 +281,14 @@ export function SongStartModal({
                 ))}
               </div>
             </div>
+          )}
+
+          {/* Mic Selector (for Single mode) */}
+          {!startOptions.partyMode && startOptions.mode === 'single' && startOptions.players.length === 1 && (
+            <MicSelector
+              micId={startOptions.micId}
+              onMicChange={(id) => setStartOptions(prev => ({ ...prev, micId: id }))}
+            />
           )}
 
           {/* Player Selection (for Duel mode) */}
