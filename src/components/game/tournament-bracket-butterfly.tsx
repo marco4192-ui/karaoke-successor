@@ -57,8 +57,9 @@ export function TournamentBracketButterfly({
   const firstRoundCount = Math.pow(2, bracket.totalRounds - 1);
 
   // Dynamic spacing – 130px minimum so match cards (~110px) don't overlap
-  const matchSpacing = Math.max(130, Math.min(160, 600 / firstRoundCount));
-  const bracketH = firstRoundCount * matchSpacing + ROUND_LABEL_H;
+  const matchSpacing = Math.max(130, Math.min(160, 600 / (firstRoundCount / 2)));
+  // Only half the matches per side → bracket height covers one half
+  const bracketH = (firstRoundCount / 2) * matchSpacing + ROUND_LABEL_H;
 
   // Memoised helper (adds top padding for round labels)
   const getCY = (round: number, pos: number) =>
@@ -154,9 +155,10 @@ export function TournamentBracketButterfly({
         const f2 = outer.matches.find((m) => m.position === mIn.position * 2 + 1);
         if (!f1 || !f2) continue;
 
-        const y1 = getCY(outer.rn, f1.position);
-        const y2 = getCY(outer.rn, f2.position);
-        const yt = getCY(inner.rn, mIn.position);
+        // Remap positions to top-half equivalent for right side
+        const y1 = getCY(outer.rn, f1.position - outer.matches.length);
+        const y2 = getCY(outer.rn, f2.position - outer.matches.length);
+        const yt = getCY(inner.rn, mIn.position - inner.matches.length);
 
         // Vertical between feeders
         p.push(`M ${jx} ${y1} L ${jx} ${y2}`);
@@ -173,7 +175,7 @@ export function TournamentBracketButterfly({
     if (rightRounds.length > 0 && finalMatch) {
       const semi = rightRounds[0].matches[0];
       if (semi) {
-        const sy = getCY(rightRounds[0].rn, semi.position);
+        const sy = getCY(rightRounds[0].rn, semi.position - rightRounds[0].matches.length);
         const fy = bracketH / 2;
         p.push(`M ${centerX + MATCH_W_FINAL} ${fy} L ${rightX(0)} ${sy}`);
       }
@@ -297,7 +299,9 @@ export function TournamentBracketButterfly({
               {getRoundName(rd.rn, bracket.totalRounds)}
             </div>
             {rd.matches.map((m) => {
-              const cy = getCY(rd.rn, m.position);
+              // Remap right-side positions to top-half equivalent
+              const displayPos = m.position - rd.matches.length;
+              const cy = getCY(rd.rn, displayPos);
               return (
                 <div
                   key={m.id}
