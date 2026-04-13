@@ -562,6 +562,26 @@ export function applyTheme(theme: Theme): void {
     .hover\\:text-white:hover { color: ${theme.colors.text} !important; }
     .hover\\:bg-slate-700\\/50:hover { background-color: rgba(203,213,225,0.5) !important; }
     .hover\\:text-slate-300:hover { color: ${theme.colors.text} !important; }
+    /* === LIGHT THEME: override shadcn CSS variables for dropdowns/popovers === */
+    .dark {
+      --popover: ${theme.colors.background} !important;
+      --popover-foreground: ${theme.colors.text} !important;
+      --accent: ${theme.colors.backgroundSecondary || theme.colors.background} !important;
+      --accent-foreground: ${theme.colors.text} !important;
+      --muted: ${theme.colors.backgroundSecondary || theme.colors.background} !important;
+      --muted-foreground: ${theme.colors.textSecondary} !important;
+      --input: ${blendBorder(0.2)} !important;
+      --border: ${blendBorder(0.2)} !important;
+      --ring: ${theme.colors.primary} !important;
+      --primary: ${theme.colors.primary} !important;
+      --primary-foreground: #ffffff !important;
+      --secondary: ${theme.colors.backgroundSecondary || theme.colors.background} !important;
+      --secondary-foreground: ${theme.colors.text} !important;
+      --destructive: ${theme.colors.error} !important;
+      --destructive-foreground: #ffffff !important;
+      --card: ${theme.colors.background} !important;
+      --card-foreground: ${theme.colors.text} !important;
+    }
     ` : ''}
   `;
   
