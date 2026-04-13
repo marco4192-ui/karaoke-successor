@@ -101,11 +101,13 @@ export function useNativeAudio(): UseNativeAudioResult {
   useEffect(() => {
     refreshDevices();
 
-    // Setup event listeners
+    // Setup event listeners (gracefully degrade if event plugin is unavailable)
     onAudioTimeUpdate((pos) => {
       setCurrentPosition(pos);
     }).then((unlisten) => {
       unlistenTimeRef.current = unlisten;
+    }).catch((err) => {
+      console.warn('[NativeAudio] Could not register time-update listener (non-fatal):', err);
     });
 
     onAudioEnded(() => {
@@ -114,6 +116,8 @@ export function useNativeAudio(): UseNativeAudioResult {
       setPlaybackState(null);
     }).then((unlisten) => {
       unlistenEndedRef.current = unlisten;
+    }).catch((err) => {
+      console.warn('[NativeAudio] Could not register ended listener (non-fatal):', err);
     });
 
     return () => {

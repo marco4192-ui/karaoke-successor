@@ -115,6 +115,7 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
     const unlisteners: UnlistenFn[] = [];
 
     const setup = async () => {
+      try {
       // Analysis progress
       const unlistenProgress = await listen<AnalysisProgress>('analysis:progress', (event) => {
         setProgress(event.payload);
@@ -153,6 +154,9 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
         setStatus('error');
       });
       unlisteners.push(unlistenBpmError);
+      } catch (err) {
+        console.warn('[AudioAnalysis] Event listeners not available (non-fatal, analysis may not work):', err);
+      }
     };
 
     setup();
