@@ -265,9 +265,9 @@ export function JukeboxPlayerView({ j }: { j: UseJukeboxReturn }) {
         </div>
       )}
 
-      <div className={`flex-1 flex ${j.isFullscreen ? 'flex-row' : 'flex-col space-y-6'}`}>
+      <div className={`flex-1 flex min-h-0 ${j.isFullscreen ? 'flex-row' : 'flex-col space-y-6'}`}>
         {/* Video Player */}
-        <div className={`${j.isFullscreen ? (j.hidePlaylist ? 'flex-1' : 'w-[75%] h-full') : 'flex-1'}`}>
+        <div className={`${j.isFullscreen ? (j.hidePlaylist ? 'flex-1 min-h-0' : 'w-[75%] h-full') : 'flex-1'}`}>
           <Card className={`bg-black/50 border-white/10 overflow-hidden ${j.isFullscreen ? 'h-full rounded-none' : ''}`}>
             <div className={`relative ${j.isFullscreen ? 'h-full' : 'aspect-video'}`}>
               {/* Video Background */}
