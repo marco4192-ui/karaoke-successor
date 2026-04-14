@@ -148,37 +148,38 @@ export function getNoteDisplayStyleClasses(
 } {
   switch (displayStyle) {
     case 'fill-level': {
-      // Fill-level: A bright overlay fills from left to right based on accuracy.
-      // Unfilled portion dims to show gaps visually.
+      // Fill-level: The note is an empty shell (dark outline) that fills
+      // from left to right based on singing accuracy. Clear color difference
+      // between filled (bright color) and unfilled (dark) portions.
       const fillColor = isGolden
-        ? 'rgba(251, 191, 36, 0.55)'
+        ? 'linear-gradient(90deg, rgba(251, 191, 36, 0.9), rgba(251, 191, 36, 0.6))'
         : isBonus
-          ? 'rgba(236, 72, 153, 0.55)'
-          : 'rgba(34, 211, 238, 0.55)';
+          ? 'linear-gradient(90deg, rgba(236, 72, 153, 0.9), rgba(236, 72, 153, 0.6))'
+          : 'linear-gradient(90deg, rgba(34, 211, 238, 0.9), rgba(59, 130, 246, 0.6))';
       // NOTE: Do NOT add 'relative' here — it would override the
       // NoteBlock's 'absolute' positioning, causing notes to wander
       // vertically. 'absolute' already establishes a containing block
       // for the child overlay divs, so 'relative' is not needed.
       return {
         additionalClasses: 'overflow-hidden',
-        inlineStyle: {},
+        // Override the Tailwind gradient background to show empty shell.
+        // backgroundImage: 'none' clears the Tailwind bg-gradient, while
+        // backgroundColor sets the dark shell base. We avoid using the
+        // 'background' shorthand because it would also reset boxShadow
+        // which is needed for the active glow effect on notes.
+        inlineStyle: {
+          backgroundImage: 'none',
+          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        },
         overlayElement: (
           <>
-            {/* Bright fill overlay — only transition width to avoid layout side-effects */}
+            {/* Bright fill overlay — fills from left to right */}
             <div
               className="absolute inset-y-0 left-0"
               style={{
                 width: `${accuracy * 100}%`,
-                background: `linear-gradient(90deg, ${fillColor}, rgba(255,255,255,0.35))`,
+                background: fillColor,
                 transition: 'width 200ms ease-out',
-              }}
-            />
-            {/* Dimming overlay on unfilled portion — only transition background */}
-            <div
-              className="absolute inset-0"
-              style={{
-                background: `linear-gradient(90deg, transparent ${accuracy * 100}%, rgba(0,0,0,0.45) ${accuracy * 100}%)`,
-                transition: 'background 200ms ease-out',
               }}
             />
           </>
