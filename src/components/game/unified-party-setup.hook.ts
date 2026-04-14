@@ -41,7 +41,7 @@ export function usePartySetup({
 
   // ── Input Mode ──
   const [inputMode, setInputMode] = useState<InputMode>(
-    config.supportsCompanionApp ? 'mixed' : 'microphone'
+    config.forceInputMode || (config.supportsCompanionApp ? 'mixed' : 'microphone')
   );
 
   // ── Mic-to-Player assignment (micId → profileId) ──

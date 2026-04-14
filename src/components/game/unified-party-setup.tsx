@@ -67,6 +67,7 @@ export function UnifiedPartySetup({
           inputMode={inputMode}
           onInputModeChange={setInputMode}
           supportsCompanionApp={config.supportsCompanionApp}
+          forceInputMode={config.forceInputMode}
         />
 
         <PlayerGrid
@@ -75,7 +76,7 @@ export function UnifiedPartySetup({
           inputMode={inputMode}
         />
 
-        {(inputMode === 'microphone' || inputMode === 'mixed') && selectedPlayers.length > 0 && (
+        {!config.forceInputMode && (inputMode === 'microphone' || inputMode === 'mixed') && selectedPlayers.length > 0 && (
           <MicAssignmentPanel
             selectedPlayers={selectedPlayers}
             profiles={activeProfiles}

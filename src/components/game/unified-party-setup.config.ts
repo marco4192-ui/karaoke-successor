@@ -45,6 +45,7 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     ],
     songSelectionOptions: ['library', 'random', 'vote', 'medley'],
     supportsCompanionApp: true,
+    forceInputMode: 'companion',
   },
   'medley': {
     mode: 'medley',

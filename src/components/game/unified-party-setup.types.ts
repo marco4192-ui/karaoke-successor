@@ -27,6 +27,8 @@ export interface PartyGameConfig {
   settings: GameSettingConfig[];
   songSelectionOptions: SongSelectionOption[];
   supportsCompanionApp?: boolean;
+  /** If set, the input mode is forced to this value (no selector shown) */
+  forceInputMode?: InputMode;
 }
 
 export type SongSelectionOption = 'library' | 'random' | 'vote' | 'medley';

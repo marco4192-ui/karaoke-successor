@@ -178,17 +178,20 @@ function InputModeSelector({
   inputMode,
   onInputModeChange,
   supportsCompanionApp,
+  forceInputMode,
 }: {
   inputMode: InputMode;
   onInputModeChange: (mode: InputMode) => void;
   supportsCompanionApp?: boolean;
+  forceInputMode?: InputMode;
 }) {
+  // If input mode is forced (e.g. companion-singalong requires companion-only),
+  // don't show the selector at all.
+  if (forceInputMode) return null;
+
   const modes: InputMode[] = supportsCompanionApp
     ? ['microphone', 'companion', 'mixed']
     : ['microphone'];
-
-  // If companion not supported, don't show the selector at all
-  if (!supportsCompanionApp) return null;
 
   return (
     <Card className="bg-white/5 border-white/10 mb-6">
