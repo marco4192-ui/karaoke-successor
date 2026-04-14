@@ -280,13 +280,23 @@ function CompanionCard({
           )}
         </div>
 
-        {/* Name & Code */}
+        {/* Name, Code & Character */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="font-medium text-white truncate">{companionName}</span>
             <code className="text-xs bg-white/10 px-1.5 py-0.5 rounded text-cyan-400 font-mono shrink-0">
               {companion.connectionCode}
             </code>
+            {/* Show assigned character as prominent badge */}
+            {companion.profile ? (
+              <Badge className="bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs px-2 shrink-0">
+                <span>👤</span> {companion.profile.name}
+              </Badge>
+            ) : (
+              <Badge className="bg-white/5 text-white/30 border border-white/10 text-xs px-2 shrink-0">
+                Kein Charakter
+              </Badge>
+            )}
           </div>
           <div className="flex items-center gap-2 mt-0.5">
             {/* Connection duration */}
