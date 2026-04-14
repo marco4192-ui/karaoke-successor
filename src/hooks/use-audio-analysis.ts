@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import { invoke } from '@tauri-apps/api/core';
+import { invoke, Channel } from '@tauri-apps/api/core';
 
 // ============================================================================
 // Types matching the Rust backend
@@ -97,73 +96,28 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
   const [error, setError] = useState<string | null>(null);
   const [crepeAvailable, setCrepeAvailable] = useState(false);
 
-  const cleanupRef = useRef<UnlistenFn[]>([]);
+  const channelsRef = useRef<{
+    progress: Channel<AnalysisProgress> | null;
+    complete: Channel<PitchAnalysisResult> | null;
+    bpmComplete: Channel<BpmDetectionResult> | null;
+    errorCh: Channel<string> | null;
+  }>({ progress: null, complete: null, bpmComplete: null, errorCh: null });
 
   // Check CREPE availability on mount
   useEffect(() => {
     invoke<{ available: boolean; info: string }>('audio_crepe_info')
       .then((info) => setCrepeAvailable(info.available))
       .catch(() => setCrepeAvailable(false));
-
-    return () => {
-      cleanupRef.current.forEach(fn => fn());
-    };
   }, []);
 
-  // Register Tauri event listeners
+  // Cleanup channels on unmount
   useEffect(() => {
-    const unlisteners: UnlistenFn[] = [];
-
-    const setup = async () => {
-      try {
-      // Analysis progress
-      const unlistenProgress = await listen<AnalysisProgress>('analysis:progress', (event) => {
-        setProgress(event.payload);
-        if (event.payload.stage !== 'loading') {
-          setStatus('analyzing');
-        }
-      });
-      unlisteners.push(unlistenProgress);
-
-      // Analysis complete
-      const unlistenComplete = await listen<PitchAnalysisResult>('analysis:complete', (event) => {
-        setResult(event.payload);
-        setStatus('complete');
-        setProgress(null);
-      });
-      unlisteners.push(unlistenComplete);
-
-      // Analysis error
-      const unlistenError = await listen<string>('analysis:error', (event) => {
-        setError(event.payload);
-        setStatus('error');
-        setProgress(null);
-      });
-      unlisteners.push(unlistenError);
-
-      // BPM complete
-      const unlistenBpm = await listen<BpmDetectionResult>('bpm:complete', (event) => {
-        setBpmResult(event.payload);
-        setStatus('complete');
-      });
-      unlisteners.push(unlistenBpm);
-
-      // BPM error
-      const unlistenBpmError = await listen<string>('bpm:error', (event) => {
-        setError(event.payload);
-        setStatus('error');
-      });
-      unlisteners.push(unlistenBpmError);
-      } catch (err) {
-        console.warn('[AudioAnalysis] Event listeners not available (non-fatal, analysis may not work):', err);
-      }
-    };
-
-    setup();
-    cleanupRef.current = unlisteners;
-
+    const ref = channelsRef.current;
     return () => {
-      unlisteners.forEach(fn => fn());
+      ref.progress = null;
+      ref.complete = null;
+      ref.bpmComplete = null;
+      ref.errorCh = null;
     };
   }, []);
 
@@ -173,11 +127,47 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
     setResult(null);
     setProgress(null);
 
-    invoke('audio_analyze_pitch', { filePath, options })
-      .catch((e) => {
+    try {
+      const onProgress = new Channel<AnalysisProgress>();
+      onProgress.onmessage = (payload) => {
+        setProgress(payload);
+        if (payload.stage !== 'Loading') {
+          setStatus('analyzing');
+        }
+      };
+
+      const onComplete = new Channel<PitchAnalysisResult>();
+      onComplete.onmessage = (payload) => {
+        setResult(payload);
+        setStatus('complete');
+        setProgress(null);
+      };
+
+      const onError = new Channel<string>();
+      onError.onmessage = (payload) => {
+        setError(payload);
+        setStatus('error');
+        setProgress(null);
+      };
+
+      channelsRef.current.progress = onProgress;
+      channelsRef.current.complete = onComplete;
+      channelsRef.current.errorCh = onError;
+
+      invoke('audio_analyze_pitch', {
+        filePath,
+        options,
+        onProgress,
+        onComplete,
+        onError,
+      }).catch((e) => {
         setError(e instanceof Error ? e.message : String(e));
         setStatus('error');
       });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setStatus('error');
+    }
   }, []);
 
   const detectBpm = useCallback((filePath: string) => {
@@ -185,11 +175,34 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
     setError(null);
     setBpmResult(null);
 
-    invoke('audio_detect_bpm', { filePath })
-      .catch((e) => {
+    try {
+      const onComplete = new Channel<BpmDetectionResult>();
+      onComplete.onmessage = (payload) => {
+        setBpmResult(payload);
+        setStatus('complete');
+      };
+
+      const onError = new Channel<string>();
+      onError.onmessage = (payload) => {
+        setError(payload);
+        setStatus('error');
+      };
+
+      channelsRef.current.bpmComplete = onComplete;
+      channelsRef.current.errorCh = onError;
+
+      invoke('audio_detect_bpm', {
+        filePath,
+        onComplete,
+        onError,
+      }).catch((e) => {
         setError(e instanceof Error ? e.message : String(e));
         setStatus('error');
       });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setStatus('error');
+    }
   }, []);
 
   const reset = useCallback(() => {
