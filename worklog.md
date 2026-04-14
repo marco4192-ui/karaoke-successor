@@ -54,3 +54,19 @@ Stage Summary:
 - Task 6 (QuickSwapOverlay): "Mikro weitergeben!" popup in Pass-the-Mic with next player info
 - Task 7 (ConnectionStatusBadge): Green/red dot on companion player avatars in PlayerGrid
 - All 7 input mode system tasks are now complete
+
+---
+Task ID: 1-4 (Round 2)
+Agent: Main Agent
+Task: 4 companion/input-mode improvements
+
+Work Log:
+- Task 1: API hostprofiles endpoint returns claimedProfileIds; Companion UI greys out locked characters with "Bereits verbunden" + lock icon
+- Task 2: Mic assignments persisted to localStorage as 'karaoke-player-mic-preferences'; auto-restored when player is toggled on
+- Task 3: CharacterScreen polls /api/mobile?action=clients every 10s; CharacterCard shows purple "📱 Verbunden" badge on claimed chars
+- Task 4: CompanionListSection shows character name as purple "👤 CharakterName" badge in header row; "Kein Charakter" badge when unassigned
+
+Stage Summary:
+- All 4 tasks implemented and pushed to GitHub
+- No existing features broken
+- 4 commits: f49c97e, 092e174, 1c74d6a, 0260928
