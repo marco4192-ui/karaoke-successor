@@ -164,12 +164,13 @@ export function getNoteDisplayStyleClasses(
         additionalClasses: 'overflow-hidden',
         // Override the Tailwind gradient background to show empty shell.
         // backgroundImage: 'none' clears the Tailwind bg-gradient, while
-        // backgroundColor sets the dark shell base. We avoid using the
-        // 'background' shorthand because it would also reset boxShadow
-        // which is needed for the active glow effect on notes.
+        // backgroundColor sets the dark shell base. A visible border makes
+        // the empty shell clearly distinguishable from the background.
         inlineStyle: {
           backgroundImage: 'none',
           backgroundColor: 'rgba(255, 255, 255, 0.08)',
+          border: '1.5px solid rgba(255, 255, 255, 0.25)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.1)',
         },
         overlayElement: (
           <>
@@ -180,6 +181,8 @@ export function getNoteDisplayStyleClasses(
                 width: `${accuracy * 100}%`,
                 background: fillColor,
                 transition: 'width 200ms ease-out',
+                borderTopLeftRadius: 'inherit',
+                borderBottomLeftRadius: 'inherit',
               }}
             />
           </>

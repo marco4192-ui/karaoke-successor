@@ -148,6 +148,9 @@ function NoteBlock({
 
   // Determine note styling based on type and player color
   const getBackgroundClasses = () => {
+    // In fill-level mode, skip Tailwind gradient classes — the display style
+    // manages its own background via inline styles (empty shell + fill overlay).
+    if (noteDisplayStyle === 'fill-level') return '';
     if (note.isGolden) {
       return 'bg-gradient-to-r from-yellow-400 to-orange-500 shadow-lg shadow-yellow-500/50';
     }
