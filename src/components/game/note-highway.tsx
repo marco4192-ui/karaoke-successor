@@ -263,7 +263,7 @@ function PlayerLabel({
   const textColor = color === 'cyan' ? 'text-cyan-300' : 'text-pink-300';
 
   return (
-    <div className={`absolute top-2 left-4 z-20 bg-black/50 backdrop-blur-sm rounded-lg px-2 py-1 border ${borderColor}`}>
+    <div className={`absolute top-12 left-4 z-20 bg-black/50 backdrop-blur-sm rounded-lg px-2 py-1 border ${borderColor}`}>
       <div className="flex items-center gap-2">
         <div className={`w-6 h-6 rounded-full ${bgColor} flex items-center justify-center text-xs font-bold text-white`}>
           P{playerNumber}
