@@ -9,11 +9,11 @@ import {
   getPlayableMatches,
 } from '@/lib/game/tournament';
 
-// Layout constants
-const MATCH_W = 170;
-const MATCH_W_FINAL = 210;
-const COL_GAP = 44;
-const FINAL_GAP = 56;
+// Layout constants — kept compact to leave room for spacing between brackets
+const MATCH_W = 140;
+const MATCH_W_FINAL = 170;
+const COL_GAP = 36;
+const FINAL_GAP = 44;
 const ROUND_LABEL_H = 28; // space for round labels above bracket
 
 interface ButterflyBracketProps {
@@ -56,8 +56,8 @@ export function TournamentBracketButterfly({
   const playableMatches = getPlayableMatches(bracket);
   const firstRoundCount = Math.pow(2, bracket.totalRounds - 1);
 
-  // Dynamic spacing – 150px minimum so match cards (~110px) don't overlap
-  const matchSpacing = Math.max(150, Math.min(200, 800 / (firstRoundCount / 2)));
+  // Dynamic spacing – 170px minimum for comfortable gaps between match cards
+  const matchSpacing = Math.max(170, Math.min(220, 800 / (firstRoundCount / 2)));
   // Only half the matches per side → bracket height covers one half
   const bracketH = (firstRoundCount / 2) * matchSpacing + ROUND_LABEL_H;
 
