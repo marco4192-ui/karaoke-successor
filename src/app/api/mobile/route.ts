@@ -409,11 +409,20 @@ export async function GET(request: NextRequest) {
             hostProfiles = JSON.parse(stored);
           }
         } catch { /* ignore */ }
+
+        // Collect all profile IDs that are currently claimed by a connected companion
+        const claimedProfileIds: string[] = [];
+        mobileClients.forEach((client) => {
+          if (client.profile) {
+            claimedProfileIds.push(client.profile.id);
+          }
+        });
         
         return Response.json({
           success: true,
           profiles: hostProfiles,
           count: hostProfiles.length,
+          claimedProfileIds, // IDs of profiles already taken by connected companions
         });
       }
 

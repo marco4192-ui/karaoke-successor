@@ -682,6 +682,7 @@ export function MobileProfileCreateView({
   onPhotoUpload,
 }: ProfileCreateViewProps) {
   const [hostProfiles, setHostProfiles] = useState<MobileProfile[]>([]);
+  const [claimedProfileIds, setClaimedProfileIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   // Fetch host profiles when component mounts
@@ -693,6 +694,7 @@ export function MobileProfileCreateView({
         const data = await response.json();
         if (data.success && data.profiles) {
           setHostProfiles(data.profiles);
+          setClaimedProfileIds(data.claimedProfileIds || []);
         }
       } catch { /* ignore */ } finally {
         setIsLoading(false);
@@ -720,29 +722,45 @@ export function MobileProfileCreateView({
                 Wähle einen Charakter, der auf dem Hauptgerät erstellt wurde
               </p>
               <div className="space-y-2 max-h-40 overflow-y-auto">
-                {hostProfiles.map((hp) => (
-                  <button
-                    key={hp.id}
-                    onClick={() => {
-                      onProfileNameChange(hp.name);
-                      onProfileColorChange(hp.color);
-                      onCreateProfile(); // Will use the host profile's name/color
-                    }}
-                    className="flex items-center gap-3 p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors w-full text-left"
-                  >
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-                      style={{ backgroundColor: hp.color }}
+                {hostProfiles.map((hp) => {
+                  const isClaimed = claimedProfileIds.includes(hp.id);
+                  return (
+                    <button
+                      key={hp.id}
+                      disabled={isClaimed}
+                      onClick={() => {
+                        onProfileNameChange(hp.name);
+                        onProfileColorChange(hp.color);
+                        onCreateProfile(); // Will use the host profile's name/color
+                      }}
+                      className={`flex items-center gap-3 p-2 rounded-lg w-full text-left transition-colors ${
+                        isClaimed
+                          ? 'bg-white/5 opacity-40 cursor-not-allowed'
+                          : 'bg-white/5 hover:bg-white/10 cursor-pointer'
+                      }`}
                     >
-                      {hp.avatar ? (
-                        <img src={hp.avatar} alt={hp.name} className="w-full h-full rounded-full object-cover" />
-                      ) : (
-                        hp.name.charAt(0).toUpperCase()
+                      <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                        style={{ backgroundColor: hp.color }}
+                      >
+                        {hp.avatar ? (
+                          <img src={hp.avatar} alt={hp.name} className="w-full h-full rounded-full object-cover" />
+                        ) : (
+                          hp.name.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm truncate block">{hp.name}</span>
+                        {isClaimed && (
+                          <span className="text-xs text-red-400">Bereits verbunden</span>
+                        )}
+                      </div>
+                      {isClaimed && (
+                        <span className="text-xs text-white/30 flex-shrink-0">🔒</span>
                       )}
-                    </div>
-                    <span className="text-sm truncate">{hp.name}</span>
-                  </button>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
               <div className="flex items-center gap-2 pt-2">
                 <div className="flex-1 h-px bg-white/10" />
