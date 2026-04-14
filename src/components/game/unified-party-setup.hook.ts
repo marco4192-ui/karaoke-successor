@@ -45,7 +45,13 @@ export function usePartySetup({
   );
 
   // ── Mic-to-Player assignment (micId → profileId) ──
-  const [micAssignments, setMicAssignments] = useState<Record<string, string>>({});
+  const [micAssignments, setMicAssignments] = useState<Record<string, string>>(() => {
+    // Restore saved mic preferences when component mounts
+    try {
+      const saved = localStorage.getItem('karaoke-player-mic-preferences');
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
 
   // ── Song filter state ──
   const [filterGenre, setFilterGenre] = useState('all');
@@ -66,6 +72,13 @@ export function usePartySetup({
     }
   }, [storeDifficulty]);
 
+  // Persist mic assignments to localStorage
+  const persistMicAssignments = useCallback((assignments: Record<string, string>) => {
+    try {
+      localStorage.setItem('karaoke-player-mic-preferences', JSON.stringify(assignments));
+    } catch { /* ignore */ }
+  }, []);
+
   const togglePlayer = useCallback((playerId: string) => {
     setSelectedPlayers(prev => {
       if (prev.includes(playerId)) {
@@ -84,31 +97,65 @@ export function usePartySetup({
         return prev;
       }
       setError(null);
+      // Auto-restore this player's last mic assignment from localStorage
+      // (only if the mic still exists in saved mic configs)
+      try {
+        const saved = localStorage.getItem('karaoke-player-mic-preferences');
+        if (saved) {
+          const preferences: Record<string, string> = JSON.parse(saved);
+          const preferredMicId = preferences[playerId];
+          if (preferredMicId) {
+            // Check if this mic exists in current configs
+            const micConfig = localStorage.getItem('karaoke-multi-mic-config');
+            if (micConfig) {
+              const parsed = JSON.parse(micConfig);
+              const micExists = (parsed.assignedMics || []).some((m: any) => m.id === preferredMicId);
+              if (micExists) {
+                setMicAssignments(prevMic => {
+                  const updated = { ...prevMic };
+                  // Don't overwrite if this mic is already taken by another selected player
+                  if (!updated[preferredMicId]) {
+                    updated[preferredMicId] = playerId;
+                    persistMicAssignments(updated);
+                  }
+                  return updated;
+                });
+              }
+            }
+          }
+        }
+      } catch { /* ignore */ }
       return [...prev, playerId];
     });
-  }, [config.maxPlayers]);
+  }, [config.maxPlayers, persistMicAssignments]);
 
-  // Assign a mic to a player
+  // Assign a mic to a player (persists to localStorage)
   const assignMic = useCallback((micId: string, playerId: string) => {
     setMicAssignments(prev => {
       const updated = { ...prev };
-      // Remove any existing assignment for this mic
+      // Remove any existing assignment for this mic (from a different player)
       for (const [m, p] of Object.entries(updated)) {
         if (m === micId) delete updated[m];
       }
+      // Remove any existing mic assignment for this player (player switches mic)
+      for (const [m, p] of Object.entries(updated)) {
+        if (p === playerId) delete updated[m];
+      }
       updated[micId] = playerId;
+      persistMicAssignments(updated);
       return updated;
     });
-  }, []);
+  }, [persistMicAssignments]);
 
-  // Remove a mic assignment
+  // Remove a mic assignment (persists to localStorage)
   const removeMicAssignment = useCallback((micId: string) => {
     setMicAssignments(prev => {
       const updated = { ...prev };
       delete updated[micId];
+      persistMicAssignments(updated);
       return updated;
     });
-  }, []);
+  }, [persistMicAssignments]);
 
   const createPlayers = useCallback((): SelectedPlayer[] => {
     // Load saved mic configs to get mic names
