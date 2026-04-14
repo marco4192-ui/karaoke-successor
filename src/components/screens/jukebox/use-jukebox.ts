@@ -158,20 +158,17 @@ export function useJukebox() {
   };
 
   // Toggle fullscreen — specifically targets the jukebox container, not the entire document.
-  // When the app is already in app-level fullscreen (NavBar button), exit that first,
-  // then enter jukebox fullscreen on the container.
+  // When the app is already in app-level fullscreen (NavBar button), simply exit fullscreen
+  // instead of switching to the jukebox's own split layout fullscreen.
   const toggleFullscreen = () => {
     if (document.fullscreenElement === containerRef.current) {
       // We are in jukebox fullscreen → exit
       document.exitFullscreen();
     } else if (document.fullscreenElement) {
-      // App-level fullscreen is active (e.g. NavBar button) → exit it first,
-      // then enter jukebox fullscreen on the container.
-      document.exitFullscreen().then(() => {
-        setTimeout(() => {
-          containerRef.current?.requestFullscreen().catch(() => {});
-        }, 100);
-      }).catch(() => {});
+      // App-level fullscreen is active (NavBar button) → exit fullscreen entirely.
+      // Do NOT switch to jukebox container fullscreen — the main menu fullscreen
+      // should only stretch the current view, not trigger jukebox half-fullscreen.
+      document.exitFullscreen();
     } else {
       // Not in any fullscreen → enter jukebox fullscreen
       containerRef.current?.requestFullscreen().catch(() => {});
