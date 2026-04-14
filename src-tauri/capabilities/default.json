@@ -14,7 +14,6 @@
     "core:window:allow-set-position",
     "core:window:allow-set-focus",
     "core:webview:default",
-    "core:default",
     "core:event:default",
     "core:event:allow-listen",
     "core:event:allow-emit",
@@ -22,11 +21,7 @@
     "core:event:allow-unlisten",
     "core:app:allow-register-listener",
     "core:app:allow-remove-listener",
-    "plugin:event:default",
-    "plugin:event:allow-listen",
-    "plugin:event:allow-unlisten",
-    "plugin:event:allow-emit",
-    "plugin:event:allow-emit-to",
+
     "shell:default",
     "shell:allow-open",
     {
