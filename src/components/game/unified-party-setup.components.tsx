@@ -9,6 +9,7 @@ import { SONG_SELECTION_CONFIG } from './unified-party-setup.config';
 import type { PartyGameConfig, GameSettingConfig, SelectedPlayer, SongSelectionOption, InputMode } from './unified-party-setup.types';
 import { INPUT_MODE_CONFIG } from './unified-party-setup.types';
 import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
+import { ConnectionStatusBadge } from './connection-status-badge';
 
 // ===================== SETTING CONTROL =====================
 
@@ -173,7 +174,7 @@ function SettingsPanel({
 
 // ===================== INPUT MODE SELECTOR =====================
 
-export function InputModeSelector({
+function InputModeSelector({
   inputMode,
   onInputModeChange,
   supportsCompanionApp,
@@ -226,7 +227,7 @@ export function InputModeSelector({
 
 // ===================== MIC ASSIGNMENT PANEL =====================
 
-export function MicAssignmentPanel({
+function MicAssignmentPanel({
   selectedPlayers,
   profiles,
   micAssignments,
@@ -319,7 +320,7 @@ export function MicAssignmentPanel({
                 </select>
                 {currentMic && (
                   <button
-                    onClick={() => onRemoveMic(currentMicId)}
+                    onClick={() => currentMicId && onRemoveMic(currentMicId)}
                     className="text-red-400/60 hover:text-red-400 transition-colors p-1"
                     title="Zuordnung entfernen"
                   >
@@ -356,9 +357,12 @@ function PlayerGrid({
   const getTypeIcon = (profile: PlayerProfile) => {
     if (!inputMode || inputMode === 'microphone') return '🎤';
     if (inputMode === 'companion') return '📱';
-    // mixed: show mic by default, companion icon is set per-player in the future
+    // mixed: show mic by default
     return '🎤';
   };
+
+  // Check if any input mode involves companion app
+  const showConnectionStatus = inputMode === 'companion' || inputMode === 'mixed';
 
   return (
     <Card className="bg-white/5 border-white/10 mb-6">
@@ -366,13 +370,22 @@ function PlayerGrid({
         <CardTitle className="flex items-center gap-2">
           <span className="text-xl">👥</span>
           Player Selection ({selectedPlayers.length}/{config.maxPlayers})
+          {showConnectionStatus && (
+            <span className="text-xs text-white/40 font-normal ml-2">
+              (🎮 Mic-Spieler • 📱 Companion)
+            </span>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {activeProfiles.map(profile => {
+          {activeProfiles.map((profile, profileIndex) => {
             const isSelected = selectedPlayers.includes(profile.id);
             const typeIcon = getTypeIcon(profile);
+            // In mixed mode, first half uses mic, second half uses companion
+            const isCompanionInMixed = inputMode === 'mixed' && profileIndex >= Math.ceil(activeProfiles.length / 2);
+            const isCompanionPlayer = inputMode === 'companion' || isCompanionInMixed;
+
             return (
               <div
                 key={profile.id}
@@ -384,18 +397,45 @@ function PlayerGrid({
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  {profile.avatar ? (
-                    <img src={profile.avatar} alt={profile.name} className="w-10 h-10 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
-                      style={{ backgroundColor: profile.color }}>
-                      {profile.name.charAt(0).toUpperCase()}
-                    </div>
-                  )}
+                  {/* Avatar with optional connection ring */}
+                  <div className="relative flex-shrink-0">
+                    {profile.avatar ? (
+                      <img src={profile.avatar} alt={profile.name} className="w-10 h-10 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                        style={{ backgroundColor: profile.color }}>
+                        {profile.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    {/* Show connection status badge for companion players when selected */}
+                    {isSelected && isCompanionPlayer && (
+                      <div className="absolute -bottom-0.5 -right-0.5">
+                        <ConnectionStatusBadge
+                          player={{
+                            id: profile.id,
+                            name: profile.name,
+                            color: profile.color,
+                            playerType: 'companion',
+                            isConnected: false, // Will be updated by mobile sync
+                          }}
+                          size="sm"
+                        />
+                      </div>
+                    )}
+                  </div>
                   <div className="flex flex-col min-w-0">
                     <span className="font-medium truncate">{profile.name}</span>
                     {isSelected && (
-                      <span className="text-[10px] opacity-70">{typeIcon}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] opacity-70">
+                          {isCompanionPlayer ? '📱' : '🎤'}
+                        </span>
+                        {isCompanionPlayer && (
+                          <span className="text-[10px] text-white/40">
+                            (nicht verbunden)
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
                   {isSelected && <span className="ml-auto text-white">✓</span>}
@@ -406,7 +446,7 @@ function PlayerGrid({
         </div>
         {activeProfiles.length < config.minPlayers && (
           <p className="text-yellow-400 mt-4">
-            ⚠️ Need at least {config.minPlayers} active profiles. Create more in Character selection or activate existing ones.
+            ⚠️ Mindestens {config.minPlayers} aktive Profile benötigt. Erstelle weitere in der Charakterauswahl oder aktiviere bestehende.
           </p>
         )}
       </CardContent>

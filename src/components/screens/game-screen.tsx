@@ -67,6 +67,7 @@ import {
   TimeDisplay,
 } from '@/components/game/game-hud';
 import { isDuetSong } from '@/components/screens/library/utils';
+import { MicIndicator } from '@/components/game/mic-indicator';
 
 // ===================== GAME SCREEN =====================
 function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }) {
@@ -666,6 +667,14 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
             isBlindSection={gameState.isBlindSection}
           />
         )}
+
+        {/* Mic Indicator — shows assigned mic + player during gameplay */}
+        <MicIndicator
+          currentTime={gameState.currentTime}
+          isPlaying={isPlaying}
+          isDuetMode={isDuetMode}
+          gameMode={gameState.gameMode}
+        />
 
         {/* Volume Meter */}
         <VolumeMeter volume={volume} />

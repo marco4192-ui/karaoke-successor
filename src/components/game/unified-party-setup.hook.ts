@@ -121,13 +121,27 @@ export function usePartySetup({
       }
     } catch { /* ignore */ }
 
+    // In mixed mode, split players: first half uses mic, second half uses companion
+    const micPlayerCount = inputMode === 'companion'
+      ? 0
+      : inputMode === 'mixed'
+        ? Math.ceil(selectedPlayers.length / 2)
+        : selectedPlayers.length;
+
+    // Track mic index for auto-assignment (when no explicit mic assignment exists)
+    let autoMicIndex = 0;
+
     return selectedPlayers.map((id, index) => {
       const profile = profiles.find(p => p.id === id);
-      const isMicPlayer = inputMode === 'microphone' || (inputMode === 'mixed');
+      const isMicPlayer = index < micPlayerCount;
 
-      // Find mic assignment for this player
+      // Find explicit mic assignment for this player
       const micEntry = Object.entries(micAssignments).find(([, pid]) => pid === id);
       const assignedMic = micEntry ? savedMics.find(m => m.id === micEntry[0]) : null;
+
+      // Auto-assign mic from saved configs for mic players without explicit assignment
+      const autoMic = isMicPlayer && !assignedMic ? savedMics[autoMicIndex] : null;
+      if (isMicPlayer && !assignedMic) autoMicIndex++;
 
       return {
         id,
@@ -135,8 +149,8 @@ export function usePartySetup({
         avatar: profile?.avatar,
         color: profile?.color || PLAYER_COLORS[index % PLAYER_COLORS.length],
         playerType: isMicPlayer ? 'microphone' as const : 'companion' as const,
-        micId: assignedMic?.id || (isMicPlayer ? savedMics[index]?.id : undefined),
-        micName: assignedMic?.customName || (isMicPlayer ? savedMics[index]?.customName : undefined),
+        micId: assignedMic?.id || autoMic?.id,
+        micName: assignedMic?.customName || autoMic?.customName,
       };
     });
   }, [selectedPlayers, profiles, inputMode, micAssignments]);

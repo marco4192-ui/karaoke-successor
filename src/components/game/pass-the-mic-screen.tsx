@@ -10,6 +10,7 @@ import { useGameStore } from '@/lib/game/store';
 import { getAllSongs } from '@/lib/game/song-library';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { DIFFICULTY_SETTINGS } from '@/types/game';
+import { QuickSwapOverlay } from '@/components/game/quick-swap-overlay';
 
 interface PassTheMicPlayer {
   id: string;
@@ -395,6 +396,13 @@ export function PassTheMicGameView({ players, song, segments, settings, onUpdate
           className="hidden"
         />
       )}
+
+      {/* Quick Swap Overlay — shows when segment changes */}
+      <QuickSwapOverlay
+        currentTime={currentTime}
+        isPlaying={isPlaying}
+        segments={segments}
+      />
 
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
