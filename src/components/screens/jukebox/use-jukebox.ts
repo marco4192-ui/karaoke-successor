@@ -157,14 +157,24 @@ export function useJukebox() {
     if (audioRef.current) audioRef.current.pause();
   };
 
-  // Toggle fullscreen
+  // Toggle fullscreen — specifically targets the jukebox container, not the entire document.
+  // When the app is already in app-level fullscreen (NavBar button), exit that first,
+  // then enter jukebox fullscreen on the container.
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      containerRef.current?.requestFullscreen();
-      setIsFullscreen(true);
-    } else {
+    if (document.fullscreenElement === containerRef.current) {
+      // We are in jukebox fullscreen → exit
       document.exitFullscreen();
-      setIsFullscreen(false);
+    } else if (document.fullscreenElement) {
+      // App-level fullscreen is active (e.g. NavBar button) → exit it first,
+      // then enter jukebox fullscreen on the container.
+      document.exitFullscreen().then(() => {
+        setTimeout(() => {
+          containerRef.current?.requestFullscreen().catch(() => {});
+        }, 100);
+      }).catch(() => {});
+    } else {
+      // Not in any fullscreen → enter jukebox fullscreen
+      containerRef.current?.requestFullscreen().catch(() => {});
     }
   };
 
@@ -180,10 +190,11 @@ export function useJukebox() {
     }
   };
 
-  // Fullscreen change listener
+  // Fullscreen change listener — only respond when THIS container is the fullscreen element.
+  // The app-level NavBar fullscreen (documentElement) must NOT trigger jukebox fullscreen layout.
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      setIsFullscreen(document.fullscreenElement === containerRef.current);
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
