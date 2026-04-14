@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useGameStore } from '@/lib/game/store';
@@ -20,6 +20,33 @@ export function CharacterScreen() {
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+
+  // ── Track which characters are claimed by connected companions ──
+  const [claimedProfileIds, setClaimedProfileIds] = useState<Record<string, string>>({});
+  // Map: profileId → companion connection code
+
+  const fetchClaimedProfiles = useCallback(async () => {
+    try {
+      const response = await fetch('/api/mobile?action=clients');
+      const data = await response.json();
+      if (data.success && data.clients) {
+        const claimed: Record<string, string> = {};
+        for (const client of data.clients) {
+          if (client.profile?.id) {
+            claimed[client.profile.id] = client.connectionCode;
+          }
+        }
+        setClaimedProfileIds(claimed);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  // Poll claimed profiles every 10s
+  useEffect(() => {
+    fetchClaimedProfiles();
+    const interval = setInterval(fetchClaimedProfiles, 10000);
+    return () => clearInterval(interval);
+  }, [fetchClaimedProfiles]);
 
   const displayedProfileId = selectedProfileId || activeProfileId;
   const displayedProfile = profiles.find(p => p.id === displayedProfileId);
@@ -115,6 +142,8 @@ export function CharacterScreen() {
                 profile={profile}
                 isSelected={displayedProfileId === profile.id}
                 isActiveProfile={activeProfileId === profile.id}
+                isClaimedByCompanion={!!claimedProfileIds[profile.id]}
+                claimedByDevice={claimedProfileIds[profile.id] ? `Companion (${claimedProfileIds[profile.id]})` : undefined}
                 onClick={() => {
                   setSelectedProfileId(profile.id);
                   setActiveProfile(profile.id);
