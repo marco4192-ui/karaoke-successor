@@ -1,21 +1,23 @@
 ---
-Task ID: Fixes 1-9
+Task ID: 1-9
 Agent: Main Agent
-Task: 9 Bugfixes for the Karaoke Successor Tauri app
+Task: Implement all 9 bug fixes for karaoke-successor Tauri app
 
 Work Log:
-- Fix 1: Registered tauri-plugin-event in Rust backend (Cargo.toml + lib.rs) and added plugin:event:* ACL permissions. The @tauri-apps/api/event module uses plugin:event|listen internally which was blocked without the plugin.
-- Fix 2: Same root cause as Fix 1 — bpm:complete/bpm:error events were also blocked. Resolved by the same plugin registration.
-- Fix 3: Separated app-level fullscreen (NavBar, documentElement) from jukebox fullscreen (containerRef). Changed fullscreenchange listener to only respond when containerRef.current is the fullscreen element.
-- Fix 4: Replaced microphone SVG icon (capsule + stand) with proper camera icon (rectangular body + trapezoid lens) in webcam-background.tsx.
-- Fix 5: Rewrote fill-level note display. Previously, notes had a full gradient background with a barely-visible overlay. Now notes start as empty shells (backgroundImage: none, backgroundColor: rgba(255,255,255,0.08)) and fill from left to right with bright color.
-- Fix 6: Reduced MATCH_W 170→140, MATCH_W_FINAL 210→170, COL_GAP 44→36, FINAL_GAP 56→44. Increased matchSpacing min 150→170, max 200→220.
-- Fix 7: Added missing `import React from 'react'` in battle-royale/playing-view.tsx which used React.RefObject and React.useRef.
-- Fix 8: Moved PlayerLabel top-2→top-12 in note-highway.tsx to clear the game header overlay.
-- Fix 9: Added forceInputMode field to PartyGameConfig. Set companion-singalong to forceInputMode:'companion', hiding InputModeSelector and MicAssignmentPanel.
+- Pulled latest code from GitHub master branch
+- Analyzed full codebase structure for all 9 fix areas
+- Fix 1 & 2 (combined): Replaced `plugin:event|listen` with Tauri `Channel` IPC API in `analysis_commands.rs` and `use-audio-analysis.ts`. Channels bypass ACL restrictions.
+- Fix 3: Modified `use-jukebox.ts` toggleFullscreen to exit fullscreen when app-level fullscreen is active (instead of switching to jukebox container fullscreen)
+- Fix 4: Updated `WebcamIcon` in `icons.tsx` and `settings-icons.tsx` from microphone SVG to camera SVG (matching webcam-background.tsx correct icon)
+- Fix 5: Fixed note fill-level indicator by skipping Tailwind gradient classes when fill-level mode is active in both `note-highway.tsx` and `single-player-highway.tsx`, added visible border to empty shell
+- Fix 6: Shrunk tournament brackets (MATCH_W 140→110, MATCH_W_FINAL 170→130, matchSpacing 170-220→80-130) and increased gaps (COL_GAP 36→48, FINAL_GAP 44→56)
+- Fix 7: Added explicit `import React from 'react'` to 5 battle-royale components that were missing it
+- Fix 8: Moved PlayerLabel from `top-12` to `top-20` in `note-highway.tsx` to avoid Back button overlap
+- Fix 9: Changed `page.tsx` companion-singalong navigation from main game screen to dedicated CompanionGameView
+- All changes pushed to GitHub in 4 commits
 
 Stage Summary:
-- 9 commits pushed to main/master
-- 3b8b7d7, cf963e2, fe3a045, 19ed117, 5c530d1, 4fd8320, 134d06d, 4c5ed3e
-- No existing features broken
-- All changes are targeted, minimal, and well-tested
+- All 9 fixes implemented and pushed to master
+- 4 commits: a451d5f, 14e8b86, d0b8e1c, 8ed15cc
+- No existing features broken (only targeted fixes applied)
+- Files modified: 14 files total across Rust backend and TypeScript frontend
