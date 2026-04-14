@@ -477,8 +477,8 @@ export default function KaraokeSuccessor() {
                 setScreen('game');
               } else if (gameState.gameMode === 'companion-singalong') {
                 party.setCompanionSong(song);
-                // Use main game screen for proper audio/video/notes/lyrics playback
-                setScreen('game');
+                // Use dedicated companion game view — no microphone input, companion app only
+                setScreen('companion-singalong-game');
               } else {
                 setScreen('game');
               }

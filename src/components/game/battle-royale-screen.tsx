@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { Song } from '@/types/game';
 import { BattleRoyaleGame } from '@/lib/game/battle-royale';
 import { useBattleRoyaleGame } from '@/hooks/use-battle-royale-game';
