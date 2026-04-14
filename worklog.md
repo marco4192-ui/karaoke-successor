@@ -32,3 +32,25 @@ Stage Summary:
 - Game loop uses native audio time updates when ASIO is enabled
 - Graceful fallback: if native audio fails, browser audio is unmuted and used
 - Persistent device selection via localStorage
+
+---
+Task ID: 5-7
+Agent: Main Agent
+Task: Implement MicIndicator, QuickSwapOverlay, ConnectionStatusBadge (Input Mode System Tasks 5-7)
+
+Work Log:
+- Created src/components/game/mic-indicator.tsx: Shows assigned mic name + player during gameplay, auto-fades after 8s, reappears on player changes
+- Created src/components/game/quick-swap-overlay.tsx: Pass-the-Mic segment change overlay with next player info, 4s countdown, Space/click dismiss
+- Created src/components/game/connection-status-badge.tsx: Green/red dot for companion connection status, mic/companion type icons
+- Integrated MicIndicator into game-screen.tsx (bottom-left, above VolumeMeter)
+- Integrated QuickSwapOverlay into pass-the-mic-screen.tsx
+- Enhanced PlayerGrid in unified-party-setup.components.tsx: shows connection status dots on companion player avatars, type icons per player
+- Fixed createPlayers() in unified-party-setup.hook.ts: correct mixed mode split (first half mic, second half companion)
+- Fixed TS errors (currentMicId undefined check, duplicate exports)
+- Pushed to main/master
+
+Stage Summary:
+- Task 5 (MicIndicator): Shows "Mikro 1 — Anna singt" on game screen, fades after 8s
+- Task 6 (QuickSwapOverlay): "Mikro weitergeben!" popup in Pass-the-Mic with next player info
+- Task 7 (ConnectionStatusBadge): Green/red dot on companion player avatars in PlayerGrid
+- All 7 input mode system tasks are now complete
