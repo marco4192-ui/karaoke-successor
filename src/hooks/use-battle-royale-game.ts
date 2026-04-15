@@ -98,12 +98,34 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     return { allNotes, beatDuration: beatDurationMs, scoringMetadata };
   }, [currentSong]);
 
-  // Get current song from the round
+  // Get current song from the round — load full song data with lyrics + URLs
   useEffect(() => {
     if (currentRound?.songId) {
       const song = songs.find(s => s.id === currentRound.songId);
       if (song) {
-        setCurrentSong(song);
+        // Ensure full song data: resolve URLs (Tauri) + load lyrics (IndexedDB/filesystem)
+        import('@/lib/game/song-library').then(async ({ ensureSongUrls, loadSongLyrics }) => {
+          let preparedSong = song;
+          // Restore media URLs for Tauri filesystem access
+          try {
+            preparedSong = await ensureSongUrls(song);
+          } catch (e) {
+            console.warn('[BattleRoyale] Failed to ensure song URLs:', e);
+          }
+          // Load lyrics if missing (storedTxt or relativeTxtPath)
+          if ((!preparedSong.lyrics || preparedSong.lyrics.length === 0) &&
+              (preparedSong.storedTxt || preparedSong.relativeTxtPath)) {
+            try {
+              const lyrics = await loadSongLyrics(preparedSong);
+              if (lyrics.length > 0) {
+                preparedSong = { ...preparedSong, lyrics };
+              }
+            } catch (e) {
+              console.warn('[BattleRoyale] Failed to load lyrics:', e);
+            }
+          }
+          setCurrentSong(preparedSong);
+        });
       }
     }
   }, [currentRound?.songId, songs]);
