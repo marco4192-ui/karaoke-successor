@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ensureSongUrls, getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { YouTubePlayer, extractYouTubeId } from '@/components/game/youtube-player';
-import { PlayIcon, MusicIcon } from '@/components/icons';
+import { PlayIcon, PauseIcon, MusicIcon } from '@/components/icons';
 import type { UseJukeboxReturn } from './jukebox-types';
 
 /** Fullscreen header overlay */
@@ -90,7 +90,11 @@ function VideoOverlay({ j }: { j: UseJukeboxReturn }) {
             </svg>
           </button>
           <button onClick={j.togglePlayPause} className="w-16 h-16 rounded-full bg-cyan-500 hover:bg-cyan-400 flex items-center justify-center transition-colors">
-            <PlayIcon className="w-8 h-8 text-white ml-1" />
+            {j.isPlaying ? (
+              <PauseIcon className="w-8 h-8 text-white" />
+            ) : (
+              <PlayIcon className="w-8 h-8 text-white ml-1" />
+            )}
           </button>
           <button onClick={j.playNext} className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
             <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
