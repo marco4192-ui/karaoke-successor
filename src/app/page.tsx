@@ -21,7 +21,7 @@ import { recordMatchResult } from '@/lib/game/tournament';
 import { finishCompetitiveRound } from '@/lib/game/competitive-words-blind';
 
 // Screen types
-type Screen = 'home' | 'library' | 'game' | 'party' | 'character' | 'queue' | 'mobile' | 'results' | 'highscores' | 'import' | 'settings' | 'jukebox' | 'achievements' | 'dailyChallenge' | 'tournament' | 'tournament-game' | 'battle-royale' | 'battle-royale-game' | 'pass-the-mic' | 'pass-the-mic-game' | 'companion-singalong' | 'companion-singalong-game' | 'medley' | 'medley-game' | 'editor' | 'online' | 'party-setup' | 'song-voting' | 'missing-words' | 'missing-words-game' | 'blind' | 'blind-game';
+type Screen = 'home' | 'library' | 'game' | 'party' | 'character' | 'queue' | 'mobile' | 'results' | 'highscores' | 'import' | 'settings' | 'jukebox' | 'achievements' | 'dailyChallenge' | 'tournament' | 'tournament-game' | 'battle-royale' | 'battle-royale-game' | 'pass-the-mic' | 'pass-the-mic-game' | 'companion-singalong' | 'companion-singalong-game' | 'medley' | 'medley-game' | 'editor' | 'online' | 'party-setup' | 'song-voting' | 'missing-words' | 'missing-words-game' | 'blind' | 'blind-game' | 'rate-my-song' | 'rate-my-song-rating' | 'rate-my-song-results';
 
 // Screens where the navbar should be hidden (immersive / fullscreen experiences)
 const IMMERSIVE_SCREENS: Set<Screen> = new Set([
@@ -51,7 +51,8 @@ export default function KaraokeSuccessor() {
     party.battleRoyaleGame ||
     (party.passTheMicPlayers && party.passTheMicPlayers.length > 0 && party.passTheMicSong) ||
     (party.medleyPlayers && party.medleyPlayers.length > 0 && party.medleySongs && party.medleySongs.length > 0) ||
-    party.competitiveGame
+    party.competitiveGame ||
+    party.rateMySongSettings
   );
 
   const [pendingNavigation, setPendingNavigation] = useState<Screen | null>(null);
@@ -65,7 +66,7 @@ export default function KaraokeSuccessor() {
       'medley', 'medley-game', 'battle-royale', 'battle-royale-game',
       'tournament', 'tournament-game', 'missing-words', 'missing-words-game',
       'blind', 'blind-game', 'companion-singalong', 'companion-singalong-game',
-      'song-voting', 'game', 'results',
+      'song-voting', 'game', 'results', 'rate-my-song', 'rate-my-song-rating', 'rate-my-song-results',
     ];
     if (partyScreens.includes(target)) {
       setScreen(target);
@@ -261,6 +262,9 @@ export default function KaraokeSuccessor() {
         party.setCompanionSong(null);
       }
       setScreen('results');
+    } else if (gameState.gameMode === 'rate-my-song') {
+      // Rate my Song: go to rating screen instead of results
+      setScreen('rate-my-song-rating');
     } else {
       setScreen('results');
     }
@@ -450,6 +454,11 @@ export default function KaraokeSuccessor() {
       party.setCompanionSettings(null);
       resetGame();
       setScreen('home');
+    } else if (gameState.gameMode === 'rate-my-song') {
+      party.setRateMySongSettings(null);
+      party.setRateMySongPlayerIds([]);
+      resetGame();
+      setScreen('home');
     } else {
       resetGame();
       setScreen('library');
@@ -624,6 +633,13 @@ export default function KaraokeSuccessor() {
                 setScreen('home');
                 return;
               }
+              if (gameState.gameMode === 'rate-my-song') {
+                party.setRateMySongSettings(null);
+                party.setRateMySongPlayerIds([]);
+                resetGame();
+                setScreen('home');
+                return;
+              }
               resetGame();
               setScreen('library');
             }}
@@ -633,7 +649,7 @@ export default function KaraokeSuccessor() {
           <PartyScreen
             onSelectMode={(mode) => {
               // Missing Words and Blind Karaoke use their own competitive setup screens
-              if (mode === 'missing-words' || mode === 'blind') {
+              if (mode === 'missing-words' || mode === 'blind' || mode === 'rate-my-song') {
                 setScreen(mode);
               } else if (mode === 'online') {
                 setScreen('online');

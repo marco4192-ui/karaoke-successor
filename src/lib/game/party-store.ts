@@ -55,6 +55,12 @@ interface PartyStore {
   competitiveGame: CompetitiveGame | null;
   setCompetitiveGame: (game: CompetitiveGame | null) => void;
 
+  // Rate my Song
+  rateMySongSettings: any;
+  setRateMySongSettings: (settings: any) => void;
+  rateMySongPlayerIds: string[];
+  setRateMySongPlayerIds: (ids: string[]) => void;
+
   // Unified Party Setup
   selectedGameMode: GameMode | null;
   setSelectedGameMode: (mode: GameMode | null) => void;
@@ -112,6 +118,12 @@ export const usePartyStore = create<PartyStore>((set) => ({
   competitiveGame: null,
   setCompetitiveGame: (competitiveGame) => set({ competitiveGame }),
 
+  // Rate my Song
+  rateMySongSettings: null,
+  setRateMySongSettings: (rateMySongSettings) => set({ rateMySongSettings }),
+  rateMySongPlayerIds: [],
+  setRateMySongPlayerIds: (rateMySongPlayerIds) => set({ rateMySongPlayerIds }),
+
   // Unified Party Setup
   selectedGameMode: null,
   setSelectedGameMode: (selectedGameMode) => set({ selectedGameMode }),
@@ -138,6 +150,8 @@ export const usePartyStore = create<PartyStore>((set) => ({
     medleySongs: [] as MedleySong[],
     medleySettings: null,
     competitiveGame: null,
+    rateMySongSettings: null,
+    rateMySongPlayerIds: [],
     selectedGameMode: null,
     unifiedSetupResult: null,
     votingSongs: [],

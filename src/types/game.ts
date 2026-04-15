@@ -2,7 +2,7 @@
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
-export type GameMode = 'standard' | 'pass-the-mic' | 'companion-singalong' | 'medley' | 'missing-words' | 'duel' | 'blind' | 'tournament' | 'battle-royale' | 'duet' | 'online';
+export type GameMode = 'standard' | 'pass-the-mic' | 'companion-singalong' | 'medley' | 'missing-words' | 'duel' | 'blind' | 'tournament' | 'battle-royale' | 'duet' | 'online' | 'rate-my-song';
 
 // Duet Mode - Player assignment for lyrics
 export type DuetPlayer = 'P1' | 'P2' | 'both';

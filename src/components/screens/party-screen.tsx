@@ -75,6 +75,15 @@ const partyGames: PartyGame[] = [
     isNew: true,
   },
   {
+    mode: 'rate-my-song',
+    title: 'Rate my Song',
+    description: 'Sing a song and let your friends rate your performance! No scoring — just pure fun. Solo, Duel, or Duet mode.',
+    icon: '⭐',
+    players: '1-2',
+    color: 'from-amber-500 to-orange-500',
+    isNew: true,
+  },
+  {
     mode: 'online',
     title: 'Online Multiplayer',
     description: 'Play against friends or find opponents online! Create rooms, join matches, and compete globally!',

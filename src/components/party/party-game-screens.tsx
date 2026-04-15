@@ -11,10 +11,12 @@ import { PassTheMicSetupScreen, PassTheMicGameView } from '@/components/game/pas
 import { CompanionSingAlongSetupScreen, CompanionGameView } from '@/components/game/companion-singalong-screen';
 import { MedleySetupScreen, MedleyGameView } from '@/components/game/medley-contest-screen';
 import { CompetitiveSetupScreen, CompetitiveGameView } from '@/components/game/competitive-words-blind-screen';
+import { RateMySongSetupScreen, RateMySongRatingScreen, RateMySongResultsScreen } from '@/components/game/rate-my-song-screen';
+import type { RateMySongResult } from '@/components/game/rate-my-song-screen';
 import type { GameSetupResult } from '@/components/game/unified-party-setup';
 
 // Screen types (matches page.tsx)
-type Screen = 'home' | 'library' | 'game' | 'party' | 'character' | 'queue' | 'mobile' | 'results' | 'highscores' | 'import' | 'settings' | 'jukebox' | 'achievements' | 'dailyChallenge' | 'tournament' | 'tournament-game' | 'battle-royale' | 'battle-royale-game' | 'pass-the-mic' | 'pass-the-mic-game' | 'companion-singalong' | 'companion-singalong-game' | 'medley' | 'medley-game' | 'editor' | 'online' | 'party-setup' | 'song-voting' | 'missing-words' | 'missing-words-game' | 'blind' | 'blind-game';
+type Screen = 'home' | 'library' | 'game' | 'party' | 'character' | 'queue' | 'mobile' | 'results' | 'highscores' | 'import' | 'settings' | 'jukebox' | 'achievements' | 'dailyChallenge' | 'tournament' | 'tournament-game' | 'battle-royale' | 'battle-royale-game' | 'pass-the-mic' | 'pass-the-mic-game' | 'companion-singalong' | 'companion-singalong-game' | 'medley' | 'medley-game' | 'editor' | 'online' | 'party-setup' | 'song-voting' | 'missing-words' | 'missing-words-game' | 'blind' | 'blind-game' | 'rate-my-song' | 'rate-my-song-game' | 'rate-my-song-rating' | 'rate-my-song-results';
 
 interface PartyGameScreensProps {
   screen: Screen;
@@ -25,6 +27,9 @@ interface PartyGameScreensProps {
 export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
   const { profiles, setGameMode, setSong, resetGame, addPlayer, setPlayers } = useGameStore();
   const party = usePartyStore();
+
+  // State for Rate my Song results
+  const [rateMySongResult, setRateMySongResult] = React.useState<RateMySongResult | null>(null);
 
   return (
     <>
@@ -406,6 +411,97 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             setGameMode('blind');
             setSong(song);
             setScreen('game');
+          }}
+        />
+      )}
+
+      {/* Rate my Song Setup */}
+      {screen === 'rate-my-song' && (
+        <RateMySongSetupScreen
+          profiles={profiles}
+          onStart={(settings, playerIds) => {
+            party.setRateMySongSettings(settings);
+            party.setRateMySongPlayerIds(playerIds);
+            setRateMySongResult(null);
+            const song = getAllSongs().find(s => s.id === settings.songId);
+            if (!song) return;
+
+            resetGame();
+            setGameMode('rate-my-song');
+
+            // If short mode, trim song to 60 seconds
+            if (settings.duration === 'short') {
+              setSong({ ...song, start: song.start, end: Math.min((song.start || 0) + 60000, song.end || song.duration) });
+            } else {
+              setSong(song);
+            }
+
+            // Add players
+            setPlayers([]);
+            const setupResult: GameSetupResult = {
+              players: playerIds.map((id, i) => {
+                const p = profiles.find(pr => pr.id === id);
+                return {
+                  id,
+                  name: p?.name || `Player ${i + 1}`,
+                  color: p?.color || '#FF6B6B',
+                  playerType: 'microphone' as const,
+                  micId: 'default',
+                  micName: `Mikrofon ${i + 1}`,
+                };
+              }),
+              settings: {},
+              songSelection: 'library',
+              difficulty: 'medium',
+              inputMode: 'microphone',
+            };
+            party.setUnifiedSetupResult(setupResult);
+            playerIds.forEach((id, i) => {
+              const p = profiles.find(pr => pr.id === id);
+              if (p) addPlayer({ id: p.id, name: p.name, color: p.color });
+            });
+
+            setScreen('game');
+          }}
+          onBack={() => setScreen('party')}
+        />
+      )}
+
+      {/* Rate my Song — After song ends, go to rating screen */}
+      {screen === 'rate-my-song-rating' && party.rateMySongSettings && (
+        <RateMySongRatingScreen
+          songTitle={getAllSongs().find(s => s.id === party.rateMySongSettings.songId)?.title || ''}
+          songArtist={getAllSongs().find(s => s.id === party.rateMySongSettings.songId)?.artist || ''}
+          players={party.rateMySongPlayerIds.map(id => {
+            const p = profiles.find(pr => pr.id === id);
+            return { id, name: p?.name || 'Player', color: p?.color || '#FF6B6B' };
+          })}
+          onSubmit={(ratings) => {
+            const avg = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
+            setRateMySongResult({
+              songTitle: getAllSongs().find(s => s.id === party.rateMySongSettings.songId)?.title || '',
+              ratings,
+              averageRating: Math.round(avg * 10) / 10,
+            });
+            setScreen('rate-my-song-results');
+          }}
+          onBack={() => setScreen('party')}
+        />
+      )}
+
+      {/* Rate my Song — Results */}
+      {screen === 'rate-my-song-results' && rateMySongResult && (
+        <RateMySongResultsScreen
+          result={rateMySongResult}
+          onPlayAgain={() => {
+            setRateMySongResult(null);
+            setScreen('rate-my-song');
+          }}
+          onEnd={() => {
+            party.setRateMySongSettings(null);
+            party.setRateMySongPlayerIds([]);
+            setRateMySongResult(null);
+            setScreen('home');
           }}
         />
       )}
