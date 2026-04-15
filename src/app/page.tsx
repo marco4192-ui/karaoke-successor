@@ -290,6 +290,14 @@ export default function KaraokeSuccessor() {
         setScreen('tournament-game');
       } else if (screen === 'game' && party.competitiveGame) {
         // During competitive MW/Blind match, Escape goes back to competitive view
+        // Mark current round as forfeited so CompetitiveGameView shows scoreboard
+        const cg = party.competitiveGame;
+        const cgRounds = [...cg.rounds];
+        if (cg.currentRoundIndex < cgRounds.length) {
+          cgRounds[cg.currentRoundIndex] = { ...cgRounds[cg.currentRoundIndex], completed: true, player1Score: 0, player1Bonus: 0, player2Score: 0, player2Bonus: 0 };
+        }
+        const cgAllDone = cgRounds.length >= cg.totalRounds && cgRounds.every(r => r.completed);
+        party.setCompetitiveGame({ ...cg, rounds: cgRounds, status: cgAllDone ? 'game-over' : 'round-end', winner: cgAllDone ? [...cg.players].sort((a, b) => b.totalScore - a.totalScore)[0] || null : null });
         resetGame();
         const modeScreen = gameState.gameMode === 'missing-words' ? 'missing-words-game' : 'blind-game';
         setScreen(modeScreen as Screen);
@@ -509,8 +517,33 @@ export default function KaraokeSuccessor() {
               if (party.competitiveGame) {
                 // Capture gameMode BEFORE resetGame() clears it
                 const modeScreen = gameState.gameMode === 'missing-words' ? 'missing-words-game' : 'blind-game';
+                // Mark the current round as forfeited (completed with 0 scores) so
+                // CompetitiveGameView shows the scoreboard instead of re-triggering onPlayMatch
+                const game = party.competitiveGame;
+                const updatedRounds = [...game.rounds];
+                if (game.currentRoundIndex < updatedRounds.length) {
+                  updatedRounds[game.currentRoundIndex] = {
+                    ...updatedRounds[game.currentRoundIndex],
+                    completed: true,
+                    player1Score: 0,
+                    player1Bonus: 0,
+                    player2Score: 0,
+                    player2Bonus: 0,
+                  };
+                }
+                const allComplete = updatedRounds.length >= game.totalRounds && updatedRounds.every(r => r.completed);
+                let winner: typeof game.players[0] | null = null;
+                if (allComplete) {
+                  const sorted = [...game.players].sort((a, b) => b.totalScore - a.totalScore);
+                  winner = sorted[0] || null;
+                }
+                party.setCompetitiveGame({
+                  ...game,
+                  rounds: updatedRounds,
+                  status: allComplete ? 'game-over' : 'round-end',
+                  winner,
+                });
                 // Reset game state FIRST (clears scoring/players), then navigate
-                // The competitive game object stores rounds/wins independently
                 resetGame();
                 setScreen(modeScreen as Screen);
                 return;
