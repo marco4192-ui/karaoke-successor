@@ -290,6 +290,10 @@ function saveToLocalStorage(songs: Song[]): void {
         youtubeUrl: s.youtubeUrl,
         videoGap: s.videoGap,
         videoFile: s.videoFile,
+        mp3File: s.mp3File,
+        coverFile: s.coverFile,
+        backgroundFile: s.backgroundFile,
+        relativeBackgroundPath: s.relativeBackgroundPath,
         lyrics: [],
       }));
       localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(ultraMinimalSongs));
@@ -914,7 +918,9 @@ export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
       }
       
       if (songsFolder) {
-        const filePath = `${songsFolder}/${song.relativeTxtPath}`;
+        const normalizedFolder = songsFolder.replace(/\\/g, '/');
+        const normalizedTxtPath = (song.relativeTxtPath || '').replace(/\\/g, '/');
+        const filePath = `${normalizedFolder}/${normalizedTxtPath}`;
         console.log('[SongLibrary] Loading from path:', filePath);
         
         const txtContent = await nativeReadFileText(filePath);

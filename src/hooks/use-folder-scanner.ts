@@ -122,7 +122,9 @@ export function useFolderScanner(): UseFolderScannerReturn {
               (async () => {
                 if (!scanned.relativeTxtPath) return false;
                 const { nativeReadFileText } = await import('@/lib/native-fs');
-                const txtContent = await nativeReadFileText(`${folderPath}/${scanned.relativeTxtPath}`);
+                const normalizedFolder = folderPath.replace(/\\/g, '/');
+                const normalizedTxtPath = scanned.relativeTxtPath.replace(/\\/g, '/');
+                const txtContent = await nativeReadFileText(`${normalizedFolder}/${normalizedTxtPath}`);
                 if (txtContent) {
                   const txtBlob = new Blob([txtContent], { type: 'text/plain' });
                   await storeMedia(songId, 'txt', txtBlob);
@@ -200,6 +202,11 @@ export function useFolderScanner(): UseFolderScannerReturn {
               storedTxt,
               storedMedia: false,
               hasEmbeddedAudio: scanned.hasEmbeddedAudio ?? (!scanned.relativeAudioPath && !!scanned.relativeVideoPath),
+              // Raw TXT metadata file references (for editor metadata tab)
+              mp3File: scanned.mp3File,
+              coverFile: scanned.coverFile,
+              backgroundFile: scanned.backgroundFile,
+              videoFile: scanned.videoFile,
               dateAdded: Date.now(),
             };
 

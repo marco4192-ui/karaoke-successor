@@ -307,7 +307,10 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     if (currentSong.audioUrl && !currentSong.audioUrl.startsWith('blob:')) return currentSong.audioUrl;
     // Resolve relative path using baseFolder (Tauri)
     if (currentSong.relativeAudioPath && currentSong.baseFolder) {
-      return `${currentSong.baseFolder}/${currentSong.relativeAudioPath}`;
+      // Normalize both paths to use forward slashes for consistent path construction
+      const normalizedBase = currentSong.baseFolder.replace(/\\/g, '/');
+      const normalizedRelative = currentSong.relativeAudioPath.replace(/\\/g, '/');
+      return `${normalizedBase}/${normalizedRelative}`;
     }
     // Fallback: storedMedia flag might mean audio is in IndexedDB
     if (currentSong.audioUrl) return currentSong.audioUrl;

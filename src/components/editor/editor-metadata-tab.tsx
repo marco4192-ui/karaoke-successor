@@ -98,6 +98,21 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
           />
         </div>
 
+        {/* VIDEO File */}
+        <div className="space-y-2">
+          <Label htmlFor="meta-video" className="text-slate-400 text-xs">#VIDEO:</Label>
+          <Input
+            id="meta-video"
+            value={song.videoFile || ''}
+            onChange={(e) => {
+              onSongChange(prev => ({ ...prev, videoFile: e.target.value || undefined }));
+              onSetUnsavedChanges();
+            }}
+            placeholder="video.mp4"
+            className="bg-slate-800 border-slate-600 h-8"
+          />
+        </div>
+
         <Separator className="bg-slate-700" />
 
         {/* PREVIEWSTART */}

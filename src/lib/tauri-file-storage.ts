@@ -113,6 +113,11 @@ export interface TauriScannedSong {
   // Duet
   isDuet?: boolean;
   duetPlayerNames?: [string, string];
+  // Raw TXT metadata file references (for editor display)
+  mp3File?: string;        // #MP3: raw value from TXT
+  coverFile?: string;      // #COVER: raw value from TXT
+  backgroundFile?: string; // #BACKGROUND: raw value from TXT
+  videoFile?: string;      // #VIDEO: raw value from TXT (non-URL)
   // Media flags
   hasEmbeddedAudio?: boolean; // True if #MP3: points to a video file
 }
@@ -517,6 +522,13 @@ async function processFolder(
     // Medley
     medleyStartBeat,
     medleyEndBeat,
+    // Raw TXT metadata file references (for editor display)
+    mp3File: txtMp3File,
+    coverFile: txtCoverFile,
+    backgroundFile: txtBackgroundFile,
+    // videoFile: only store non-URL values (local file references)
+    videoFile: txtVideoFile && !txtVideoFile.startsWith('http://') && !txtVideoFile.startsWith('https://')
+      ? txtVideoFile : undefined,
     // Duet
     isDuet,
     duetPlayerNames,

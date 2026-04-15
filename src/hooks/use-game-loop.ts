@@ -366,8 +366,10 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
 
                   // Start native audio playback if enabled and file path is available
                   if (isNativeAudio && nativeAudioPlay && currentSong.baseFolder && currentSong.relativeAudioPath) {
-                    const separator = currentSong.baseFolder.includes('\\') ? '\\' : '/';
-                    const nativePath = currentSong.baseFolder + separator + currentSong.relativeAudioPath;
+                    // Normalize both paths to use forward slashes for consistent path construction
+                    const normalizedBase = currentSong.baseFolder.replace(/\\/g, '/');
+                    const normalizedRelative = currentSong.relativeAudioPath.replace(/\\/g, '/');
+                    const nativePath = `${normalizedBase}/${normalizedRelative}`;
                     console.log('[GameScreen] Starting native audio playback:', nativePath);
                     nativeAudioPlay(nativePath).catch((err) => {
                       console.error('[GameScreen] Native audio play failed, falling back to browser:', err);
