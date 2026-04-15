@@ -538,7 +538,9 @@ export function SongStartModal({
             onClick={onStartGame}
             disabled={
               // Single mode: need player selection if multiple profiles
-              (startOptions.mode === 'single' && 
+              // BUT: skip this check when a party mode is active — party modes
+              // handle player selection independently (e.g. Pass-the-Mic, Companion)
+              (!startOptions.partyMode && startOptions.mode === 'single' && 
                profiles.filter(p => p.isActive !== false).length > 1 && 
                startOptions.players.length === 0) ||
               // Duet mode: need 2 players selected

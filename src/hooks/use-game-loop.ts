@@ -307,6 +307,104 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         // Reset scoring state (note progress tracking is handled by the hook)
         resetScoring();
 
+        // ── Extracted media playback function (shared by countdown + medley skip) ──
+        const playMedia = async () => {
+          try {
+            const currentSong = effectiveSong;
+            if (!currentSong) return;
+
+            const startPosition = (currentSong.start || 0) / 1000;
+
+            let currentAudioUrl = currentSong.audioUrl;
+            let currentVideoUrl = currentSong.videoBackground;
+
+            console.log('[GameScreen] playMedia - using URLs from effectiveSong:', {
+              audioUrl: currentAudioUrl ? 'present' : 'missing',
+              videoUrl: currentVideoUrl ? 'present' : 'missing',
+              hasEmbeddedAudio: currentSong.hasEmbeddedAudio
+            });
+
+            // PRIORITY 1: Separate audio file (most common case)
+            if (audioRef.current && currentAudioUrl) {
+              // Only set src if it differs — avoids resetting playback
+              if (audioRef.current.src !== currentAudioUrl) {
+                audioRef.current.src = currentAudioUrl;
+              }
+              audioRef.current.currentTime = startPosition;
+              // When native audio is active, mute the browser audio element
+              if (isNativeAudio) {
+                audioRef.current.muted = true;
+              }
+              await audioRef.current.play();
+
+              // Start native audio playback if enabled and file path is available
+              if (isNativeAudio && nativeAudioPlay && currentSong.baseFolder && currentSong.relativeAudioPath) {
+                // Normalize both paths to use forward slashes for consistent path construction
+                const normalizedBase = currentSong.baseFolder.replace(/\\/g, '/');
+                const normalizedRelative = currentSong.relativeAudioPath.replace(/\\/g, '/');
+                const nativePath = `${normalizedBase}/${normalizedRelative}`;
+                console.log('[GameScreen] Starting native audio playback:', nativePath);
+                nativeAudioPlay(nativePath).catch((err) => {
+                  console.error('[GameScreen] Native audio play failed, falling back to browser:', err);
+                  if (audioRef.current) audioRef.current.muted = false;
+                });
+                // Seek to start position after native audio begins
+                if (nativeAudioSeek) {
+                nativeAudioSeek(currentSong.start || 0).catch(() => {});
+                }
+              }
+            }
+
+            // PRIORITY 2: Video with embedded audio
+            else if (currentSong.hasEmbeddedAudio && videoRef.current && currentVideoUrl && !currentAudioUrl) {
+              if (videoRef.current.src !== currentVideoUrl) {
+                videoRef.current.src = currentVideoUrl;
+              }
+              videoRef.current.currentTime = startPosition;
+
+              try {
+                videoRef.current.muted = false;
+                await videoRef.current.play();
+              } catch (autoplayError) {
+                videoRef.current.muted = true;
+                await videoRef.current.play();
+                setTimeout(() => {
+                  if (videoRef.current) {
+                    videoRef.current.muted = false;
+                  }
+                }, 100);
+              }
+            }
+
+            // PRIORITY 3: YouTube video
+            else if (isYouTube && youtubeVideoId) {
+              console.log('[GameScreen] Starting YouTube playback for video:', youtubeVideoId);
+            }
+
+            // BACKGROUND VIDEO (muted, synced with audio)
+            if (videoRef.current && currentVideoUrl && !currentSong.hasEmbeddedAudio) {
+              const videoGapSeconds = (currentSong.videoGap || 0) / 1000;
+              videoRef.current.src = currentVideoUrl;
+              videoRef.current.currentTime = Math.max(0, startPosition - videoGapSeconds);
+              videoRef.current.muted = true;
+              videoRef.current.play().catch(() => {});
+            }
+          } catch (error) {
+            console.error('[GameScreen] Media playback failed:', error);
+            setIsPlaying(true);
+          }
+        };
+
+        // ── Medley mode: skip countdown (MedleyGameView already counted down) ──
+        if (gameMode === 'medley') {
+          setCountdown(0);
+          setIsPlaying(true);
+          startTimeRef.current = Date.now();
+          playMedia();
+          return;
+        }
+
+        // ── Normal mode: 3-second countdown then play ──
         // Start countdown from 3
         setCountdown(3);
 
@@ -333,94 +431,6 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
             setCountdown(0);
             setIsPlaying(true);
             startTimeRef.current = Date.now();
-
-            // Start audio/video playback with user interaction context
-            const playMedia = async () => {
-              try {
-                const currentSong = effectiveSong;
-                if (!currentSong) return;
-
-                const startPosition = (currentSong.start || 0) / 1000;
-
-                let currentAudioUrl = currentSong.audioUrl;
-                let currentVideoUrl = currentSong.videoBackground;
-
-                console.log('[GameScreen] playMedia - using URLs from effectiveSong:', {
-                  audioUrl: currentAudioUrl ? 'present' : 'missing',
-                  videoUrl: currentVideoUrl ? 'present' : 'missing',
-                  hasEmbeddedAudio: currentSong.hasEmbeddedAudio
-                });
-
-                // PRIORITY 1: Separate audio file (most common case)
-                if (audioRef.current && currentAudioUrl) {
-                  // Only set src if it differs — avoids resetting playback
-                  if (audioRef.current.src !== currentAudioUrl) {
-                    audioRef.current.src = currentAudioUrl;
-                  }
-                  audioRef.current.currentTime = startPosition;
-                  // When native audio is active, mute the browser audio element
-                  if (isNativeAudio) {
-                    audioRef.current.muted = true;
-                  }
-                  await audioRef.current.play();
-
-                  // Start native audio playback if enabled and file path is available
-                  if (isNativeAudio && nativeAudioPlay && currentSong.baseFolder && currentSong.relativeAudioPath) {
-                    // Normalize both paths to use forward slashes for consistent path construction
-                    const normalizedBase = currentSong.baseFolder.replace(/\\/g, '/');
-                    const normalizedRelative = currentSong.relativeAudioPath.replace(/\\/g, '/');
-                    const nativePath = `${normalizedBase}/${normalizedRelative}`;
-                    console.log('[GameScreen] Starting native audio playback:', nativePath);
-                    nativeAudioPlay(nativePath).catch((err) => {
-                      console.error('[GameScreen] Native audio play failed, falling back to browser:', err);
-                      if (audioRef.current) audioRef.current.muted = false;
-                    });
-                    // Seek to start position after native audio begins
-                    if (nativeAudioSeek) {
-                    nativeAudioSeek(currentSong.start || 0).catch(() => {});
-                    }
-                  }
-                }
-
-                // PRIORITY 2: Video with embedded audio
-                else if (currentSong.hasEmbeddedAudio && videoRef.current && currentVideoUrl && !currentAudioUrl) {
-                  if (videoRef.current.src !== currentVideoUrl) {
-                    videoRef.current.src = currentVideoUrl;
-                  }
-                  videoRef.current.currentTime = startPosition;
-
-                  try {
-                    videoRef.current.muted = false;
-                    await videoRef.current.play();
-                  } catch (autoplayError) {
-                    videoRef.current.muted = true;
-                    await videoRef.current.play();
-                    setTimeout(() => {
-                      if (videoRef.current) {
-                        videoRef.current.muted = false;
-                      }
-                    }, 100);
-                  }
-                }
-
-                // PRIORITY 3: YouTube video
-                else if (isYouTube && youtubeVideoId) {
-                  console.log('[GameScreen] Starting YouTube playback for video:', youtubeVideoId);
-                }
-
-                // BACKGROUND VIDEO (muted, synced with audio)
-                if (videoRef.current && currentVideoUrl && !currentSong.hasEmbeddedAudio) {
-                  const videoGapSeconds = (currentSong.videoGap || 0) / 1000;
-                  videoRef.current.src = currentVideoUrl;
-                  videoRef.current.currentTime = Math.max(0, startPosition - videoGapSeconds);
-                  videoRef.current.muted = true;
-                  videoRef.current.play().catch(() => {});
-                }
-              } catch (error) {
-                console.error('[GameScreen] Media playback failed:', error);
-                setIsPlaying(true);
-              }
-            };
             playMedia();
           } else {
             setCountdown(currentCount);

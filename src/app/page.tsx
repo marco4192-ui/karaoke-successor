@@ -477,8 +477,10 @@ export default function KaraokeSuccessor() {
                 setScreen('game');
               } else if (gameState.gameMode === 'companion-singalong') {
                 party.setCompanionSong(song);
-                // Use dedicated companion game view — no microphone input, companion app only
-                setScreen('companion-singalong-game');
+                // Use main game screen for proper audio/video/notes/lyrics playback
+                // (the old companion-singalong-game view used a plain <audio> element
+                //  that cannot handle Tauri local file paths)
+                setScreen('game');
               } else {
                 setScreen('game');
               }
