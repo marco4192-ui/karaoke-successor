@@ -135,6 +135,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   const isMountedRef = useRef(true);
   const hasEndedRef = useRef(false); // Guard against double endGameAndCleanup
   const abortedRef = useRef(false);   // Set when user aborts to prevent endGameAndCleanup
+  const mediaPlayWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Generate results at song end ──
   const generateResults = useCallback(() => {
@@ -391,7 +392,8 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
             }
           } catch (error) {
             console.error('[GameScreen] Media playback failed:', error);
-            setIsPlaying(true);
+            // Do NOT set isPlaying(true) — the media didn't start,
+            // so the game loop must not run (would cause infinite wall-clock hang).
           }
         };
 
@@ -410,6 +412,12 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
 
         // Use a ref to track countdown value for proper timing
         let currentCount = 3;
+
+        // Clear any previous watchdog
+        if (mediaPlayWatchdogRef.current) {
+          clearTimeout(mediaPlayWatchdogRef.current);
+          mediaPlayWatchdogRef.current = null;
+        }
 
         countdownIntervalRef.current = setInterval(() => {
           if (!isMountedRef.current) {
@@ -432,6 +440,20 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
             setIsPlaying(true);
             startTimeRef.current = Date.now();
             playMedia();
+
+            // Watchdog: if audio/video still isn't actually playing after 10 seconds,
+            // end the game to prevent infinite hang (wall-clock fallback loop).
+            mediaPlayWatchdogRef.current = setTimeout(() => {
+              const audioPlaying = audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2;
+              const videoPlaying = videoRef.current && !videoRef.current.paused && videoRef.current.readyState >= 2;
+              const youTubeActive = isYouTube;
+              const nativePlaying = isNativeAudio && nativeAudioTime > 0;
+
+              if (!audioPlaying && !videoPlaying && !youTubeActive && !nativePlaying) {
+                console.error('[GameLoop] Media playback watchdog: no media actually playing after 10s — ending game to prevent hang');
+                endGameAndCleanup();
+              }
+            }, 10000);
           } else {
             setCountdown(currentCount);
           }
@@ -447,6 +469,10 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       if (countdownIntervalRef.current) {
         clearInterval(countdownIntervalRef.current);
         countdownIntervalRef.current = null;
+      }
+      if (mediaPlayWatchdogRef.current) {
+        clearTimeout(mediaPlayWatchdogRef.current);
+        mediaPlayWatchdogRef.current = null;
       }
       stop();
       if (gameLoopRef.current) {
