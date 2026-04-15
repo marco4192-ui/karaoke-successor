@@ -11,6 +11,7 @@ import { PassTheMicSetupScreen, PassTheMicGameView } from '@/components/game/pas
 import { CompanionSingAlongSetupScreen, CompanionGameView } from '@/components/game/companion-singalong-screen';
 import { MedleySetupScreen, MedleyGameView } from '@/components/game/medley-contest-screen';
 import { CompetitiveSetupScreen, CompetitiveGameView } from '@/components/game/competitive-words-blind-screen';
+import type { GameSetupResult } from '@/components/game/unified-party-setup';
 
 // Screen types (matches page.tsx)
 type Screen = 'home' | 'library' | 'game' | 'party' | 'character' | 'queue' | 'mobile' | 'results' | 'highscores' | 'import' | 'settings' | 'jukebox' | 'achievements' | 'dailyChallenge' | 'tournament' | 'tournament-game' | 'battle-royale' | 'battle-royale-game' | 'pass-the-mic' | 'pass-the-mic-game' | 'companion-singalong' | 'companion-singalong-game' | 'medley' | 'medley-game' | 'editor' | 'online' | 'party-setup' | 'song-voting' | 'missing-words' | 'missing-words-game' | 'blind' | 'blind-game';
@@ -335,8 +336,22 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             // Start duel mode with the two players and the selected song
             resetGame();
             setPlayers([]); // Clear any leftover players from previous games
-            addPlayer({ id: p1Id, name: p1Name, color: party.competitiveGame!.players.find(p => p.id === p1Id)?.color || '#FF6B6B' });
-            addPlayer({ id: p2Id, name: p2Name, color: party.competitiveGame!.players.find(p => p.id === p2Id)?.color || '#4ECDC4' });
+            const p1Color = party.competitiveGame!.players.find(p => p.id === p1Id)?.color || '#FF6B6B';
+            const p2Color = party.competitiveGame!.players.find(p => p.id === p2Id)?.color || '#4ECDC4';
+            addPlayer({ id: p1Id, name: p1Name, color: p1Color });
+            addPlayer({ id: p2Id, name: p2Name, color: p2Color });
+            // Set unifiedSetupResult so MicIndicator can display mic assignments
+            const setupResult: GameSetupResult = {
+              players: [
+                { id: p1Id, name: p1Name, color: p1Color, playerType: 'microphone', micId: 'default', micName: 'Mikrofon 1' },
+                { id: p2Id, name: p2Name, color: p2Color, playerType: 'microphone', micId: 'default', micName: 'Mikrofon 2' },
+              ],
+              settings: {},
+              songSelection: 'random',
+              difficulty: party.competitiveGame!.settings.difficulty,
+              inputMode: 'microphone',
+            };
+            party.setUnifiedSetupResult(setupResult);
             setGameMode('missing-words');
             setSong(song);
             setScreen('game');
@@ -371,9 +386,23 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           }}
           onPlayMatch={(p1Id, p2Id, p1Name, p2Name, song) => {
             resetGame();
-            setPlayers([]); // Clear any leftover players from previous games
-            addPlayer({ id: p1Id, name: p1Name, color: party.competitiveGame!.players.find(p => p.id === p1Id)?.color || '#FF6B6B' });
-            addPlayer({ id: p2Id, name: p2Name, color: party.competitiveGame!.players.find(p => p.id === p2Id)?.color || '#4ECDC4' });
+            setPlayers([]);
+            const p1Color = party.competitiveGame!.players.find(p => p.id === p1Id)?.color || '#FF6B6B';
+            const p2Color = party.competitiveGame!.players.find(p => p.id === p2Id)?.color || '#4ECDC4';
+            addPlayer({ id: p1Id, name: p1Name, color: p1Color });
+            addPlayer({ id: p2Id, name: p2Name, color: p2Color });
+            // Set unifiedSetupResult so MicIndicator can display mic assignments
+            const setupResult: GameSetupResult = {
+              players: [
+                { id: p1Id, name: p1Name, color: p1Color, playerType: 'microphone', micId: 'default', micName: 'Mikrofon 1' },
+                { id: p2Id, name: p2Name, color: p2Color, playerType: 'microphone', micId: 'default', micName: 'Mikrofon 2' },
+              ],
+              settings: {},
+              songSelection: 'random',
+              difficulty: party.competitiveGame!.settings.difficulty,
+              inputMode: 'microphone',
+            };
+            party.setUnifiedSetupResult(setupResult);
             setGameMode('blind');
             setSong(song);
             setScreen('game');
