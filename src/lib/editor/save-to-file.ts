@@ -35,12 +35,16 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
     if (song.relativeTxtPath) {
       // relativeTxtPath is relative to the songs folder (without root folder name)
       // e.g., "Artist - Title/song.txt"
-      filePath = `${songsFolder}/${song.relativeTxtPath}`;
+      // Normalize both to forward slashes for consistent path construction
+      const normalizedFolder = songsFolder.replace(/\\/g, '/');
+      const normalizedPath = song.relativeTxtPath.replace(/\\/g, '/');
+      filePath = `${normalizedFolder}/${normalizedPath}`;
     }
     // Priority 2: Use folderPath + constructed filename
     else if (song.folderPath) {
+      const normalizedFolder = songsFolder.replace(/\\/g, '/');
       const fileName = `${song.title} - ${song.artist}.txt`;
-      filePath = `${songsFolder}/${song.folderPath}/${fileName}`;
+      filePath = `${normalizedFolder}/${song.folderPath}/${fileName}`;
     }
     // Fallback: Ask user where to save (using native dialog)
     else {

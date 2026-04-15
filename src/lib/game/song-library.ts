@@ -918,7 +918,9 @@ export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
       }
       
       if (songsFolder) {
-        const filePath = `${songsFolder}/${song.relativeTxtPath}`;
+        const normalizedFolder = songsFolder.replace(/\\/g, '/');
+        const normalizedTxtPath = (song.relativeTxtPath || '').replace(/\\/g, '/');
+        const filePath = `${normalizedFolder}/${normalizedTxtPath}`;
         console.log('[SongLibrary] Loading from path:', filePath);
         
         const txtContent = await nativeReadFileText(filePath);
