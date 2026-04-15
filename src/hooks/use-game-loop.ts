@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Song, Difficulty, GameResult, PitchDetectionResult, GameMode } from '@/types/game';
 import type { AudioEffectsEngine } from '@/lib/audio/audio-effects';
+import { useGameStore } from '@/lib/game/store';
 
 export interface UseGameLoopOptions {
   // Song / media
@@ -125,6 +126,12 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     nativeAudioStop,
     nativeAudioSeek,
   } = options;
+
+  // Subscribe to the store's game status so the Escape-key pause dialog
+  // (which calls store.pauseGame / store.resumeGame) actually pauses/resumes
+  // audio, video and native-audio.
+  const gameStatus = useGameStore((s) => s.gameState.status);
+  const wasPausedByStoreRef = useRef(false); // tracks whether WE initiated the pause
 
   // ── Internal state (not needed outside the hook) ──
   const [countdown, setCountdown] = useState(3);
@@ -515,6 +522,44 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       }
     };
   }, [stop, audioEffects, setAudioEffects, audioRef, videoRef]);
+
+  // ── Sync media playback to store's pause status ──
+  // When the Escape key sets gameState.status = 'paused' we must actually
+  // pause audio/video/native-audio and stop the animation-frame loop.
+  // When resumeGame() sets status back to 'playing' we resume everything.
+  useEffect(() => {
+    if (gameStatus === 'paused' && !wasPausedByStoreRef.current) {
+      wasPausedByStoreRef.current = true;
+      // Pause all media sources
+      if (audioRef.current) audioRef.current.pause();
+      if (videoRef.current) videoRef.current.pause();
+      if (nativeAudioPause) nativeAudioPause().catch(() => {});
+      setIsPlaying(false);
+      // Cancel the animation-frame game loop
+      if (gameLoopRef.current) {
+        cancelAnimationFrame(gameLoopRef.current);
+        gameLoopRef.current = null;
+      }
+      // Cancel the countdown if still counting down
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+    } else if (gameStatus === 'playing' && wasPausedByStoreRef.current) {
+      wasPausedByStoreRef.current = false;
+      // Resume all media sources
+      if (audioRef.current) audioRef.current.play().catch(() => {});
+      if (videoRef.current) videoRef.current.play().catch(() => {});
+      if (nativeAudioResume) nativeAudioResume().catch(() => {});
+      setIsPlaying(true);
+      // Restart the wall-clock reference so the loop picks up from where we left off
+      startTimeRef.current = Date.now();
+    }
+    // Reset the flag when game ends or is idle (so the next game starts fresh)
+    if (gameStatus === 'ended' || gameStatus === 'idle') {
+      wasPausedByStoreRef.current = false;
+    }
+  }, [gameStatus, audioRef, videoRef, nativeAudioPause, nativeAudioResume, setIsPlaying]);
 
   // ── Game loop (requestAnimationFrame) ──
   useEffect(() => {
