@@ -200,6 +200,11 @@ export function useFolderScanner(): UseFolderScannerReturn {
               storedTxt,
               storedMedia: false,
               hasEmbeddedAudio: scanned.hasEmbeddedAudio ?? (!scanned.relativeAudioPath && !!scanned.relativeVideoPath),
+              // Raw TXT metadata file references (for editor metadata tab)
+              mp3File: scanned.mp3File,
+              coverFile: scanned.coverFile,
+              backgroundFile: scanned.backgroundFile,
+              videoFile: scanned.videoFile,
               dateAdded: Date.now(),
             };
 

@@ -290,6 +290,10 @@ function saveToLocalStorage(songs: Song[]): void {
         youtubeUrl: s.youtubeUrl,
         videoGap: s.videoGap,
         videoFile: s.videoFile,
+        mp3File: s.mp3File,
+        coverFile: s.coverFile,
+        backgroundFile: s.backgroundFile,
+        relativeBackgroundPath: s.relativeBackgroundPath,
         lyrics: [],
       }));
       localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(ultraMinimalSongs));
