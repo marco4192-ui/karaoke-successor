@@ -829,9 +829,20 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
     // CRITICAL: On Windows, baseFolder from rfd dialog uses backslashes (D:\Songs)
     // but relative paths from the scanner use forward slashes. We must normalize
     // BOTH to forward slashes for consistent path construction.
-    const normalizedBaseFolder = songsFolder.replace(/\\/g, '/').replace(/\/+$/, '');
+    const normalizedBaseFolder = songsFolder
+      .replace(/\\/g, '/')
+      .replace(/\/+$/, '')
+      .replace(/&amp;/g, '&');
     // Normalize the relative path (convert backslashes to forward slashes)
-    const normalizedRelativePath = relativePath.replace(/\\/g, '/');
+    // FIX: Decode HTML entities that may have been introduced during serialization
+    // e.g. "Tom &amp; Jerry" → "Tom & Jerry" — the filesystem expects literal '&' not '&amp;'
+    const normalizedRelativePath = relativePath
+      .replace(/\\/g, '/')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
     
     // Construct full path using forward slash (works on both Windows and Unix)
     const fullPath = `${normalizedBaseFolder}/${normalizedRelativePath}`;
