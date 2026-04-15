@@ -39,8 +39,11 @@ export default function KaraokeSuccessor() {
   const [screen, setScreen] = useState<Screen>('home');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMounted, setIsMounted] = useState(false); // Track client-side mount
-  const { gameState, setSong, setGameMode, profiles, queue, resetGame, addPlayer, setResults } = useGameStore();
+  const { gameState, setSong, setGameMode, profiles, queue, resetGame, addPlayer, setResults, pauseGame, resumeGame } = useGameStore();
   const party = usePartyStore();
+
+  // ── Game pause dialog state (Escape key during gameplay) ──
+  const [showGamePauseDialog, setShowGamePauseDialog] = useState(false);
 
   // ── Party mode active guard ──
   const isPartyModeActive = !!(
@@ -283,31 +286,10 @@ export default function KaraokeSuccessor() {
     onEscape: () => {
       if (isFullscreen) {
         document.exitFullscreen().catch(() => {});
-      } else if (screen === 'game' && party.currentTournamentMatch) {
-        // During tournament match, Escape goes back to bracket
-        party.setTournamentMatchAborted(true);
-        resetGame();
-        setScreen('tournament-game');
-      } else if (screen === 'game' && party.competitiveGame) {
-        // During competitive MW/Blind match, Escape goes back to competitive view
-        // Mark current round as forfeited so CompetitiveGameView shows scoreboard
-        const cg = party.competitiveGame;
-        const cgRounds = [...cg.rounds];
-        if (cg.currentRoundIndex < cgRounds.length) {
-          cgRounds[cg.currentRoundIndex] = { ...cgRounds[cg.currentRoundIndex], completed: true, player1Score: 0, player1Bonus: 0, player2Score: 0, player2Bonus: 0 };
-        }
-        const cgAllDone = cgRounds.length >= cg.totalRounds && cgRounds.every(r => r.completed);
-        party.setCompetitiveGame({ ...cg, rounds: cgRounds, status: cgAllDone ? 'game-over' : 'round-end', winner: cgAllDone ? [...cg.players].sort((a, b) => b.totalScore - a.totalScore)[0] || null : null });
-        resetGame();
-        const modeScreen = gameState.gameMode === 'missing-words' ? 'missing-words-game' : 'blind-game';
-        setScreen(modeScreen as Screen);
-      } else if (screen === 'game' && gameState.gameMode === 'medley') {
-        // During medley snippet, Escape goes back to medley flow
-        resetGame();
-        setScreen('medley-game');
       } else if (screen === 'game') {
-        resetGame();
-        setScreen('library');
+        // During gameplay, show pause dialog instead of immediately leaving
+        pauseGame();
+        setShowGamePauseDialog(true);
       } else {
         setScreen('home');
       }
@@ -418,6 +400,82 @@ export default function KaraokeSuccessor() {
                 resetGame();
                 setScreen(target);
               }}
+              className="flex-1 py-3 rounded-lg font-medium bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all"
+            >
+              Verlassen
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Game pause dialog (Escape during gameplay)
+  const handleResumeGame = () => {
+    setShowGamePauseDialog(false);
+    resumeGame();
+  };
+
+  const handleLeaveGame = () => {
+    setShowGamePauseDialog(false);
+    // Execute the appropriate exit logic based on game mode
+    if (party.currentTournamentMatch && party.tournamentBracket) {
+      party.setTournamentMatchAborted(true);
+      resetGame();
+      setScreen('tournament-game');
+    } else if (party.competitiveGame) {
+      const cg = party.competitiveGame;
+      const cgRounds = [...cg.rounds];
+      if (cg.currentRoundIndex < cgRounds.length) {
+        cgRounds[cg.currentRoundIndex] = { ...cgRounds[cg.currentRoundIndex], completed: true, player1Score: 0, player1Bonus: 0, player2Score: 0, player2Bonus: 0 };
+      }
+      const cgAllDone = cgRounds.length >= cg.totalRounds && cgRounds.every(r => r.completed);
+      party.setCompetitiveGame({ ...cg, rounds: cgRounds, status: cgAllDone ? 'game-over' : 'round-end', winner: cgAllDone ? [...cg.players].sort((a, b) => b.totalScore - a.totalScore)[0] || null : null });
+      resetGame();
+      const modeScreen = gameState.gameMode === 'missing-words' ? 'missing-words-game' : 'blind-game';
+      setScreen(modeScreen as Screen);
+    } else if ((gameState.gameMode === 'medley' || gameState.gameMode === 'duel') && party.medleySongs.length > 0) {
+      resetGame();
+      setScreen('medley-game');
+    } else if (gameState.gameMode === 'pass-the-mic') {
+      party.setPassTheMicPlayers([]);
+      party.setPassTheMicSong(null);
+      party.setPassTheMicSegments([]);
+      party.setPassTheMicSettings(null);
+      resetGame();
+      setScreen('home');
+    } else if (gameState.gameMode === 'companion-singalong') {
+      party.setCompanionPlayers([]);
+      party.setCompanionSong(null);
+      party.setCompanionSettings(null);
+      resetGame();
+      setScreen('home');
+    } else {
+      resetGame();
+      setScreen('library');
+    }
+  };
+
+  if (showGamePauseDialog) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div className="bg-zinc-900 border border-white/15 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+          <div className="text-center mb-6">
+            <div className="text-4xl mb-2">⏸️</div>
+            <h2 className="text-xl font-bold text-white">Spiel pausiert</h2>
+            <p className="text-sm text-white/50 mt-2">
+              Möchtest du das Spiel fortsetzen oder verlassen?
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={handleResumeGame}
+              className="flex-1 py-3 rounded-lg font-medium bg-green-500/20 border border-green-500/40 text-green-300 hover:bg-green-500/30 transition-all"
+            >
+              Fortsetzen
+            </button>
+            <button
+              onClick={handleLeaveGame}
               className="flex-1 py-3 rounded-lg font-medium bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all"
             >
               Verlassen
