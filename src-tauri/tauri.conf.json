@@ -25,7 +25,7 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self' asset: https://tauri.localhost; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://s.ytimg.com blob:; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; media-src 'self' asset: https://tauri.localhost blob: https:; connect-src 'self' asset: https://tauri.localhost https://www.youtube.com https://s.ytimg.com https:; img-src 'self' asset: https://tauri.localhost https: data: blob:; style-src 'self' 'unsafe-inline' https://s.ytimg.com;"
     }
   },
   "bundle": {
