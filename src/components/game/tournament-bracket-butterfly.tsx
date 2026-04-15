@@ -362,7 +362,7 @@ function MatchCard({
 
   return (
     <div
-      className={`rounded-lg p-2 transition-all ${
+      className={`rounded-lg p-2 transition-all overflow-hidden ${
         isCurrent && !done
           ? 'bg-gradient-to-r from-cyan-500/30 to-purple-500/30 border-2 border-cyan-500 shadow-lg shadow-cyan-500/20'
           : match.completed
@@ -375,7 +375,7 @@ function MatchCard({
     >
       {/* Player 1 */}
       <div
-        className={`flex items-center gap-1.5 p-1 rounded text-xs ${
+        className={`flex items-center gap-1.5 p-1 rounded text-xs min-w-0 ${
           match.winner?.id === match.player1?.id ? 'bg-green-500/20' : ''
         }`}
       >
@@ -402,7 +402,7 @@ function MatchCard({
 
       {/* Player 2 */}
       <div
-        className={`flex items-center gap-1.5 p-1 rounded text-xs ${
+        className={`flex items-center gap-1.5 p-1 rounded text-xs min-w-0 ${
           match.winner?.id === match.player2?.id ? 'bg-green-500/20' : ''
         }`}
       >
@@ -449,7 +449,7 @@ function SmallPlayer({ player }: { player: TournamentPlayer | null }) {
     );
   }
   return (
-    <div className="flex items-center gap-1.5 text-xs">
+    <div className="flex items-center gap-1.5 text-xs min-w-0">
       {player.avatar ? (
         <img
           src={player.avatar}
@@ -464,7 +464,7 @@ function SmallPlayer({ player }: { player: TournamentPlayer | null }) {
           {player.name.charAt(0).toUpperCase()}
         </div>
       )}
-      <span className="font-medium truncate">{player.name}</span>
+      <span className="font-medium truncate min-w-0">{player.name}</span>
     </div>
   );
 }
