@@ -857,8 +857,28 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
     
     // Load file and create blob URL
     const result = await loadFileAsBlobUrl(fullPath);
-    console.log('[TauriFS] loadFileAsBlobUrl result:', result ? 'success' : 'failed');
-    return result;
+    if (result) {
+      console.log('[TauriFS] loadFileAsBlobUrl result: success');
+      return result;
+    }
+    
+    // FALLBACK: Try with OS-native backslashes on Windows.
+    // On some Windows configurations, forward-slash paths containing special
+    // characters (like &) may not resolve correctly even though Rust's
+    // PathBuf normally handles them. Using backslashes is the safest bet.
+    if (fullPath.includes('/')) {
+      const backslashPath = fullPath.replace(/\//g, '\\');
+      console.log('[TauriFS] Retrying with backslashes:', backslashPath);
+      const fallback = await loadFileAsBlobUrl(backslashPath);
+      if (fallback) {
+        // Cache under both paths
+        blobUrlCache.set(backslashPath, fallback);
+        return fallback;
+      }
+    }
+    
+    console.log('[TauriFS] loadFileAsBlobUrl result: failed');
+    return null;
   } catch (error) {
     console.error('[TauriFS] Failed to get song media URL:', error);
     return null;

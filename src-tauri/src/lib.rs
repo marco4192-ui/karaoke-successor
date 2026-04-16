@@ -21,30 +21,53 @@ mod audio;
 
 /// Read a file as raw bytes (for audio, video, images).
 /// Returns base64-encoded string to avoid IPC binary issues.
+/// Tries the path as-is first, then with OS-native separators as fallback.
 #[tauri::command]
 fn native_read_file_bytes(file_path: String) -> Result<String, String> {
+    // Attempt 1: use the path exactly as received
     let path = PathBuf::from(&file_path);
-    if !path.exists() {
-        return Err(format!("File not found: {}", file_path));
+    if let Ok(bytes) = fs::read(&path) {
+        return Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes));
     }
-    let bytes = fs::read(&path).map_err(|e| format!("Failed to read '{}': {}", file_path, e))?;
-    Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes))
+
+    // Attempt 2: normalize separators to OS-native and retry.
+    // On Windows, forward slashes are generally fine but edge cases with
+    // special characters (like & in folder names) can sometimes cause
+    // PathBuf::from to produce a path that doesn't match the filesystem.
+    let normalized = file_path.replace('/', &std::path::MAIN_SEPARATOR.to_string());
+    let path2 = PathBuf::from(&normalized);
+    match fs::read(&path2) {
+        Ok(bytes) => Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes)),
+        Err(e) => Err(format!("File not found: {} (also tried: {})", file_path, e)),
+    }
 }
 
 /// Read a file as text (for TXT, config files, etc.)
 #[tauri::command]
 fn native_read_file_text(file_path: String) -> Result<String, String> {
+    // Attempt 1: use the path exactly as received
     let path = PathBuf::from(&file_path);
-    if !path.exists() {
-        return Err(format!("File not found: {}", file_path));
+    if let Ok(content) = fs::read_to_string(&path) {
+        return Ok(content);
     }
-    fs::read_to_string(&path).map_err(|e| format!("Failed to read '{}': {}", file_path, e))
+
+    // Attempt 2: normalize separators to OS-native and retry
+    let normalized = file_path.replace('/', &std::path::MAIN_SEPARATOR.to_string());
+    let path2 = PathBuf::from(&normalized);
+    fs::read_to_string(&path2)
+        .map_err(|e| format!("File not found: {} (also tried: {})", file_path, e))
 }
 
 /// Check if a file or directory exists
 #[tauri::command]
 fn native_file_exists(file_path: String) -> bool {
-    PathBuf::from(&file_path).exists()
+    let path = PathBuf::from(&file_path);
+    if path.exists() {
+        return true;
+    }
+    // Fallback: try with OS-native separators
+    let normalized = file_path.replace('/', &std::path::MAIN_SEPARATOR.to_string());
+    PathBuf::from(&normalized).exists()
 }
 
 /// List directory contents
