@@ -99,6 +99,43 @@ export function MobileClientView() {
     if (currentView === 'songs' && data.songs.length === 0) queueMicrotask(() => data.loadSongs());
   }, [currentView, data.songs.length, data.loadSongs]);
 
+  // Keyboard navigation: Arrow keys to move focus between interactive elements, Enter to activate
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const focusableSelector = 'button:not([disabled]), [role="button"], input, [tabindex]:not([tabindex="-1"])';
+        const focusable = Array.from(document.querySelectorAll<HTMLElement>(focusableSelector))
+          .filter(el => {
+            // Only consider elements visible and inside the main content area
+            const rect = el.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) return false;
+            return rect.top >= 0 && rect.bottom <= window.innerHeight && rect.left >= 0 && rect.right <= window.innerWidth;
+          });
+
+        if (focusable.length === 0) return;
+        const active = document.activeElement as HTMLElement;
+        const currentIndex = focusable.indexOf(active);
+        let nextIndex: number;
+
+        if (currentIndex === -1) {
+          nextIndex = e.key === 'ArrowDown' ? 0 : focusable.length - 1;
+        } else if (e.key === 'ArrowDown') {
+          nextIndex = (currentIndex + 1) % focusable.length;
+        } else {
+          nextIndex = (currentIndex - 1 + focusable.length) % focusable.length;
+        }
+
+        focusable[nextIndex]?.focus();
+        // Scroll the focused element into view smoothly
+        focusable[nextIndex]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   useEffect(() => {
     if (isConnected) {
       queueMicrotask(() => data.loadQueue());
