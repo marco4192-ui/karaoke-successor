@@ -12,6 +12,7 @@ interface MobileClient {
   profile: MobileProfile | null;
   queueCount: number; // Songs currently in queue
   hasRemoteControl: boolean; // Whether this client has remote control
+  clientIp?: string; // Client IP address for IP-based reconnection
 }
 
 interface PitchData {
@@ -66,6 +67,7 @@ interface RemoteControlState {
 const mobileClients = new Map<string, MobileClient>();
 const connectionCodes = new Map<string, string>(); // code -> clientId
 const profileToClient = new Map<string, string>(); // profileId -> clientId (for duplicate detection)
+const profileAndIpToClient = new Map<string, string>(); // "profileId:ip" -> clientId (for IP-based reconnection)
 
 // Latest pitch data from all clients (for PC to poll)
 let latestPitchData: Map<string, PitchData> = new Map();
@@ -135,6 +137,17 @@ let hostProfiles: Array<{
 }> = [];
 
 // ===================== HELPER FUNCTIONS =====================
+// Extract client IP from request headers (works with proxies and Tauri)
+function getClientIp(request: NextRequest): string {
+  const forwarded = request.headers.get('x-forwarded-for');
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  const realIp = request.headers.get('x-real-ip');
+  if (realIp) return realIp;
+  return '127.0.0.1'; // Default for Tauri/localhost
+}
+
 function generateConnectionCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed confusing chars
   let code = '';
@@ -166,6 +179,9 @@ function cleanupInactiveClients() {
       connectionCodes.delete(client.connectionCode);
       if (client.profile) {
         profileToClient.delete(client.profile.id);
+        if (client.clientIp) {
+          profileAndIpToClient.delete(`${client.profile.id}:${client.clientIp}`);
+        }
       }
       latestPitchData.delete(clientId);
     }
@@ -185,31 +201,45 @@ export async function GET(request: NextRequest) {
   switch (action) {
     case 'connect':
       // Generate new client with unique connection code
-      const newClientId = `mobile-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-      const connectionCode = getUniqueConnectionCode();
-      
-      mobileClients.set(newClientId, {
-        id: newClientId,
-        connectionCode,
-        type: 'microphone',
-        name: 'Mobile Device',
-        connected: Date.now(),
-        lastActivity: Date.now(),
-        pitchData: null,
-        profile: null,
-        queueCount: 0,
-        hasRemoteControl: false,
-      });
-      
-      connectionCodes.set(connectionCode, newClientId);
-      
-      return Response.json({ 
-        success: true, 
-        clientId: newClientId,
-        connectionCode,
-        message: 'Connected to Karaoke Successor',
-        gameState,
-      });
+      {
+        const clientIp = getClientIp(request);
+        const newClientId = `mobile-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+        const connectionCode = getUniqueConnectionCode();
+        
+        mobileClients.set(newClientId, {
+          id: newClientId,
+          connectionCode,
+          type: 'microphone',
+          name: 'Mobile Device',
+          connected: Date.now(),
+          lastActivity: Date.now(),
+          pitchData: null,
+          profile: null,
+          queueCount: 0,
+          hasRemoteControl: false,
+          clientIp,
+        });
+        
+        connectionCodes.set(connectionCode, newClientId);
+        
+        // Check if there's an existing client with same IP (from a refresh)
+        // If so, return info to help the client re-associate its profile
+        const existingClients = Array.from(mobileClients.values());
+        const existingProfileClient = existingClients.find(
+          (c) => c.id !== newClientId && c.clientIp === clientIp && c.profile
+        ) || null;
+        
+        return Response.json({ 
+          success: true, 
+          clientId: newClientId,
+          connectionCode,
+          message: 'Connected to Karaoke Successor',
+          gameState,
+          // Hint to client: there's an existing profile on this IP
+          existingProfile: existingProfileClient?.profile || null,
+          existingConnectionCode: existingProfileClient?.connectionCode || null,
+        });
+      }
 
     case 'status':
       // Return all connected clients with their profiles
@@ -237,6 +267,9 @@ export async function GET(request: NextRequest) {
         connectionCodes.delete(client.connectionCode);
         if (client.profile) {
           profileToClient.delete(client.profile.id);
+          if (client.clientIp) {
+            profileAndIpToClient.delete(`${client.profile.id}:${client.clientIp}`);
+          }
         }
         // Release remote control if this client had it
         if (remoteControlState.lockedBy === clientId) {
@@ -258,6 +291,9 @@ export async function GET(request: NextRequest) {
           connectionCodes.delete(client.connectionCode);
           if (client.profile) {
             profileToClient.delete(client.profile.id);
+            if (client.clientIp) {
+              profileAndIpToClient.delete(`${client.profile.id}:${client.clientIp}`);
+            }
           }
           // Release remote control if this client had it
           if (remoteControlState.lockedBy === kickClientId) {
@@ -461,6 +497,7 @@ export async function GET(request: NextRequest) {
       mobileClients.clear();
       connectionCodes.clear();
       profileToClient.clear();
+      profileAndIpToClient.clear();
       latestPitchData.clear();
       songQueue = [];
       jukeboxWishlist = [];
@@ -614,6 +651,7 @@ export async function POST(request: NextRequest) {
         if (clientId && mobileClients.has(clientId)) {
           const profilePayload = payload as MobileProfile;
           const client = mobileClients.get(clientId)!;
+          const clientIp = client.clientIp;
           
           // Check for duplicate profile (different client using same profile)
           if (profileToClient.has(profilePayload.id) && profileToClient.get(profilePayload.id) !== clientId) {
@@ -621,6 +659,9 @@ export async function POST(request: NextRequest) {
             const oldClient = mobileClients.get(oldClientId);
             if (oldClient) {
               connectionCodes.delete(oldClient.connectionCode);
+              if (oldClient.profile && oldClient.clientIp) {
+                profileAndIpToClient.delete(`${oldClient.profile.id}:${oldClient.clientIp}`);
+              }
               mobileClients.delete(oldClientId);
               latestPitchData.delete(oldClientId);
             }
@@ -630,6 +671,11 @@ export async function POST(request: NextRequest) {
           client.name = profilePayload.name;
           mobileClients.set(clientId, client);
           profileToClient.set(profilePayload.id, clientId);
+          
+          // Track profile + IP for IP-based reconnection
+          if (clientIp) {
+            profileAndIpToClient.set(`${profilePayload.id}:${clientIp}`, clientId);
+          }
           
           return Response.json({ 
             success: true, 

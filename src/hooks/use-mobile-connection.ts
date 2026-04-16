@@ -160,6 +160,9 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
   // Cleanup - only clear heartbeat, do NOT disconnect.
   // The server's 5-minute inactivity timeout handles stale clients.
   // Not disconnecting on unmount allows seamless reconnect on page refresh.
+  // Also: we do NOT use beforeunload disconnect anymore, because it fires
+  // on both refresh and close. On refresh, the disconnect would be processed
+  // before the new page can reconnect, breaking IP-based reconnection.
   const cleanup = useCallback(() => {
     if (heartbeatIntervalRef.current) {
       clearInterval(heartbeatIntervalRef.current);
@@ -167,19 +170,12 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     }
   }, []);
 
-  // Send disconnect on actual page close (beforeunload), not on React unmount.
-  // This fires when the user closes/navigates away, but NOT on refresh (the page unloads).
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (clientId) {
-        // Use sendBeacon for reliability during page unload
-        const url = `/api/mobile?action=disconnect&clientId=${clientId}`;
-        navigator.sendBeacon?.(url);
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [clientId]);
+  // NOTE: We intentionally do NOT send disconnect on beforeunload anymore.
+  // The 5-minute inactivity timeout on the server handles stale clients.
+  // This ensures that refreshing the companion page does NOT break the
+  // connection — the reconnection flow (via connection code + IP matching)
+  // can find and reuse the existing client session.
+  // If the user actually closes the tab, the 5-minute timeout will clean up.
 
   // Auto-connect on mount
   useEffect(() => {
