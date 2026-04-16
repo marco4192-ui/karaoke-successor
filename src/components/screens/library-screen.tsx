@@ -176,8 +176,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
     else if ((startOptions.mode === 'duel' || startOptions.mode === 'duet') && startOptions.players.length >= 2) addPlayers(startOptions.players);
     
     setDifficulty(startOptions.difficulty);
-    setGameMode(startOptions.partyMode || startOptions.mode === 'duel' ? 'duel' : startOptions.mode === 'duet' ? 'duet' : 'standard');
-    if (startOptions.partyMode) setGameMode(startOptions.partyMode);
+    setGameMode(startOptions.partyMode || (startOptions.mode === 'duel' ? 'duel' : startOptions.mode === 'duet' ? 'duet' : 'standard'));
     setShowSongModal(false);
     
     onSelectSong(customYoutubeId ? { ...songWithUrls, videoBackground: `https://www.youtube.com/watch?v=${customYoutubeId}`, youtubeId: customYoutubeId } : songWithUrls);
