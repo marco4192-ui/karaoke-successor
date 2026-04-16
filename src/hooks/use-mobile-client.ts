@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useGameStore } from '@/lib/game/store';
 import { getAllSongs } from '@/lib/game/song-library';
 import type { Song, GameMode } from '@/types/game';
@@ -85,8 +85,15 @@ export function useMobileClient({
   }, [song]);
 
   // Send game state to mobile clients
+  // Fix (Code Review #5): Throttled to max 2 Hz to avoid 60 HTTP requests/sec
+  // when currentTime updates at animation frame rate.
+  const lastSentRef = useRef(0);
   const sendGameState = useCallback(async () => {
     if (!song) return;
+
+    const now = Date.now();
+    if (now - lastSentRef.current < 500) return; // Max 2 Hz
+    lastSentRef.current = now;
 
     try {
       await fetch('/api/mobile', {

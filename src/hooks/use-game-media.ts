@@ -42,7 +42,11 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
       return;
     }
 
-    // Use ensureSongUrls to handle URL restoration
+    // Fix (Code Review #5): Add cancellation to prevent race condition
+    // when song.id changes rapidly (e.g., quick navigation).
+    // Without this, a slow restoreUrls() for song A could finish after
+    // song B has already started, setting stale URL data.
+    let cancelled = false;
     const restoreUrls = async () => {
       try {
         const { ensureSongUrls } = await import('@/lib/game/song-library');
@@ -67,14 +71,17 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
           videoBackground: !!preparedSong.videoBackground,
           coverImage: !!preparedSong.coverImage
         });
+        if (cancelled) return;
         setRestoredSong(preparedSong);
       } catch (err) {
         console.error('[GameScreen] Error ensuring URLs:', err);
+        if (cancelled) return;
         setRestoredSong(song);
       }
     };
 
     restoreUrls();
+    return () => { cancelled = true; };
   }, [song?.id, song?.audioUrl, song?.videoBackground, song?.coverImage, song?.relativeAudioPath, song?.relativeVideoPath, song?.relativeCoverPath]);
 
   // Use restored song if available, otherwise use original song

@@ -121,6 +121,11 @@ export function useMedleyGame(options: UseMedleyGameOptions): UseMedleyGameResul
   const gameLoopRef = useRef<number | null>(null);
   const snippetStartTimeRef = useRef<number>(0);
   const mountedRef = useRef(true);
+  // Fix (Code Review #5): Use ref for pitchResult to avoid game loop restart
+  // at ~50 Hz (every pitch update). The game loop reads this ref instead of
+  // depending on pitchResult directly.
+  const pitchResultRef = useRef(pitchResult);
+  pitchResultRef.current = pitchResult;
 
   // ── Current medley song ──
   const currentMedleySong = medleySongs[currentSongIndex] || null;
@@ -414,7 +419,8 @@ export function useMedleyGame(options: UseMedleyGameOptions): UseMedleyGameResul
       onSnippetTimeUpdate(timeInSnippet);
 
       // Evaluate pitch for all active singers
-      if (pitchResult) {
+      const currentPitch = pitchResultRef.current;
+      if (currentPitch) {
         const isCompetitive = settings.playMode === 'competitive';
         const activePlayerIndices = (isCompetitive && players.length > 0)
           ? [currentSongIndex % players.length]
@@ -423,7 +429,7 @@ export function useMedleyGame(options: UseMedleyGameOptions): UseMedleyGameResul
         for (const playerIndex of activePlayerIndices) {
           const player = players[playerIndex];
           if (player) {
-            evaluatePitchAgainstNotes(currentTimeInSong, pitchResult, player.id);
+            evaluatePitchAgainstNotes(currentTimeInSong, currentPitch, player.id);
           }
         }
       }
@@ -439,7 +445,7 @@ export function useMedleyGame(options: UseMedleyGameOptions): UseMedleyGameResul
         gameLoopRef.current = null;
       }
     };
-  }, [isPlaying, phase, currentMedleySong, currentSongIndex, pitchResult, settings.playMode, players, evaluatePitchAgainstNotes, onSnippetTimeUpdate, onSnippetEnd]);
+  }, [isPlaying, phase, currentMedleySong, currentSongIndex, settings.playMode, players, evaluatePitchAgainstNotes, onSnippetTimeUpdate, onSnippetEnd]);
 
   // ── Cleanup on unmount ──
   const cleanup = useCallback(() => {
