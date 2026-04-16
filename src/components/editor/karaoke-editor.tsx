@@ -7,7 +7,7 @@ import { saveSongToTxt, type SaveResult } from '@/lib/editor/save-to-file';
 import { Timeline } from './timeline/timeline';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Music, FileText, Settings, BookOpen, Waves } from 'lucide-react';
+import { Music, FileText, Settings, BookOpen, Waves, Sparkles } from 'lucide-react';
 import { useEditorHistory } from '@/hooks/use-editor-history';
 import { useEditorPlayback } from '@/hooks/use-editor-playback';
 import { useEditorKeyboardShortcuts } from '@/hooks/use-editor-keyboard-shortcuts';
@@ -19,6 +19,7 @@ import { EditorSongInfoTab } from './editor-song-info-tab';
 import { EditorMetadataTab } from './editor-metadata-tab';
 import { EditorLyricsTab } from './editor-lyrics-tab';
 import { AudioAnalysisPanel } from './audio-analysis-panel';
+import { AIAssistantPanel } from './panels/ai-assistant-panel';
 import type { DetectedNote } from '@/hooks/use-audio-analysis';
 
 interface KaraokeEditorProps {
@@ -420,7 +421,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
 
         <aside className="w-72 bg-slate-900 border-l border-slate-700 flex flex-col overflow-hidden flex-shrink-0">
           <Tabs defaultValue="note" className="flex flex-col h-full">
-            <TabsList className="grid w-full grid-cols-5 bg-slate-800 border-b border-slate-700 rounded-none h-10">
+            <TabsList className="grid w-full grid-cols-6 bg-slate-800 border-b border-slate-700 rounded-none h-10">
               <TabsTrigger value="note" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
                 <Music className="w-3 h-3" />
               </TabsTrigger>
@@ -432,6 +433,9 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
               </TabsTrigger>
               <TabsTrigger value="analysis" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
                 <Waves className="w-3 h-3" />
+              </TabsTrigger>
+              <TabsTrigger value="ai" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
+                <Sparkles className="w-3 h-3" />
               </TabsTrigger>
               <TabsTrigger value="metadata" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
                 <Settings className="w-3 h-3" />
@@ -470,6 +474,23 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
                   audioFilePath={analysisAudioPath}
                   onApplyNotes={handleApplyDetectedNotes}
                   onApplyBpm={handleApplyBpm}
+                />
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="ai" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
+              <ScrollArea className="h-full">
+                <AIAssistantPanel
+                  song={currentSong}
+                  onSongUpdate={(updates) => {
+                    setCurrentSong(prev => ({ ...prev, ...updates }));
+                    setHasUnsavedChanges(true);
+                  }}
+                  onLyricsUpdate={(lyrics) => {
+                    pushHistory(lyrics);
+                    setCurrentSong(prev => ({ ...prev, lyrics }));
+                    setHasUnsavedChanges(true);
+                  }}
                 />
               </ScrollArea>
             </TabsContent>

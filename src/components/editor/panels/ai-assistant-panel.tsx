@@ -1,27 +1,19 @@
 'use client';
 
 /**
- * DEAD CODE (Code Review #5, 2026-04-17)
+ * AI Assistant Panel for the Karaoke Editor (Code Review #6, 2026-04-17)
  *
- * This file is not imported by any other file in the project.
+ * Provides AI-powered features integrated into the editing workflow:
+ * - Song identification from metadata (filename-based AI lookup)
+ * - Lyrics analysis with improvement suggestions (spelling, timing, gaps)
+ * - Cover art generation (AI-generated album art)
  *
- * Possible function: AI-powered assistant panel for the karaoke editor.
- * Features include: AI lyrics suggestions, song identification from audio,
- * cover art generation, and syllable timing assistance. Integrates with
- * the AI API routes (song-identify, lyrics-suggestions, cover-generate).
+ * Integrates with AI API routes:
+ * - /api/song-identify → identifySong() from song-identifier.ts
+ * - /api/lyrics-suggestions → analyzeLyrics() from lyrics-assistant.ts
+ * - /api/cover-generate → generateCoverArt() from cover-generator.ts
  *
- * Currently, the karaoke editor (karaoke-editor.tsx) does not have an AI
- * assistant panel. AI features are available through the import screen's
- * song identification and the settings' AI asset generator tab, but not
- * integrated into the editing workflow.
- *
- * This is a substantial component (~397 lines) that would add significant
- * value to the editor by allowing users to get AI help while creating/editing
- * karaoke songs — generating lyrics, identifying songs from audio, and
- * creating cover art.
- *
- * Consider: High-value feature for the editor. The AI integration pattern
- * here could be the foundation for AI-assisted song creation.
+ * Re-imported from dead code state. Added as a new tab in the editor sidebar.
  */
 
 import React, { useState, useCallback } from 'react';
@@ -178,14 +170,14 @@ export function AIAssistantPanel({ song, onSongUpdate, onLyricsUpdate }: AIAssis
     onSongUpdate({
       title: identifiedMetadata.title || song.title,
       artist: identifiedMetadata.artist || song.artist,
-      year: identifiedMetadata.year || song.year,
-      genre: identifiedMetadata.genre || song.genre,
-      bpm: identifiedMetadata.bpm || song.bpm,
-      language: identifiedMetadata.language || song.language,
+      year: identifiedMetadata.year ?? song.year,
+      genre: identifiedMetadata.genre ?? song.genre,
+      bpm: identifiedMetadata.bpm ?? song.bpm,
+      language: identifiedMetadata.language ?? song.language,
     });
 
     setIdentifiedMetadata(null);
-    setIdentifyStatus('success');
+    setIdentifyStatus('idle');
   }, [identifiedMetadata, onSongUpdate, song]);
 
   // Analyze Lyrics
@@ -212,7 +204,7 @@ export function AIAssistantPanel({ song, onSongUpdate, onLyricsUpdate }: AIAssis
       setLyricsStatus('error');
       setError(result.error || 'Analyse fehlgeschlagen');
     }
-  }, [song]);
+  }, [song.title, song.artist, song.genre]);
 
   // Accept suggestion
   const acceptSuggestion = useCallback((index: number) => {
@@ -246,13 +238,24 @@ export function AIAssistantPanel({ song, onSongUpdate, onLyricsUpdate }: AIAssis
     setSuggestions(prev => prev.filter((_, i) => i !== index));
   }, []);
 
-  // Accept all suggestions
+  // Accept all suggestions — iterate backwards to avoid index shift during removal
   const acceptAllSuggestions = useCallback(() => {
-    suggestions.forEach((_, index) => {
-      acceptSuggestion(index);
-    });
+    // Process from last to first so that filtering doesn't affect earlier indices
+    const updatedLyrics = [...song.lyrics];
+    for (let i = suggestions.length - 1; i >= 0; i--) {
+      const suggestion = suggestions[i];
+      const line = updatedLyrics[suggestion.lineIndex];
+      if (!line) continue;
+
+      const words = suggestion.suggested.split(' ');
+      line.notes = line.notes.map((note, i) => {
+        const newLyric = words[i] || note.lyric;
+        return { ...note, lyric: newLyric };
+      });
+    }
+    onLyricsUpdate(updatedLyrics);
     setSuggestions([]);
-  }, [suggestions, acceptSuggestion]);
+  }, [suggestions, song.lyrics, onLyricsUpdate]);
 
   // Generate Cover
   const handleGenerateCover = useCallback(async () => {
