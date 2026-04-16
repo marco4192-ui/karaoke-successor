@@ -79,8 +79,18 @@ export function useMobilePitchDetection({
   const animationFrameRef = useRef<number | null>(null);
   const vocalDetectorRef = useRef<VocalDetector | null>(null);
 
+  // Refs for values consumed inside the requestAnimationFrame loop.
+  // Without these, detectPitch would capture stale snapshots of
+  // isPlaying / songEnded / clientId at the time startMicrophone was called.
+  const isPlayingRef = useRef(isPlaying);
+  isPlayingRef.current = isPlaying;
+  const songEndedRef = useRef(songEnded);
+  songEndedRef.current = songEnded;
+  const clientIdRef = useRef(clientId);
+  clientIdRef.current = clientId;
+
   const startMicrophone = useCallback(async () => {
-    if (!clientId) return;
+    if (!clientIdRef.current) return;
     
     // CRITICAL: Check if we're in a secure context before requesting microphone.
     // On iOS Safari and some Android browsers, getUserMedia requires HTTPS.
@@ -129,8 +139,10 @@ export function useMobilePitchDetection({
       const detectPitch = () => {
         if (!analyserRef.current || !audioContextRef.current) return;
         
-        // STOP if song ended
-        if (songEnded || !isPlaying) {
+        // STOP if song ended (read from ref to avoid stale closure)
+        const currentlyPlaying = isPlayingRef.current;
+        const currentlyEnded = songEndedRef.current;
+        if (currentlyEnded || !currentlyPlaying) {
           // Don't stop immediately, just don't send data
           // The effect will handle stopping
         }
@@ -165,14 +177,15 @@ export function useMobilePitchDetection({
         
         setCurrentPitch({ frequency, note, volume });
         
-        // Only send pitch if song is playing and not ended
-        if (clientId && isPlaying && !songEnded && (volume > 0.01 || frequency !== null)) {
+        // Only send pitch if song is playing and not ended (via refs)
+        const activeClientId = clientIdRef.current;
+        if (activeClientId && currentlyPlaying && !currentlyEnded && (volume > 0.01 || frequency !== null)) {
           fetch('/api/mobile', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               type: 'pitch',
-              clientId,
+              clientId: activeClientId,
               payload: {
                 frequency,
                 note,
@@ -213,7 +226,7 @@ export function useMobilePitchDetection({
         );
       }
     }
-  }, [clientId, isPlaying, songEnded, onError]);
+  }, [onError]);
 
   const stopMicrophone = useCallback(() => {
     if (animationFrameRef.current) {
