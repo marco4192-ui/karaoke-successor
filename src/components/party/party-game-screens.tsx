@@ -453,7 +453,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               settings: {},
               songSelection: 'library',
               difficulty: 'medium',
-              inputMode: 'microphone',
+              inputMode: 'mixed',
             };
             party.setUnifiedSetupResult(setupResult);
             playerIds.forEach((id, i) => {
