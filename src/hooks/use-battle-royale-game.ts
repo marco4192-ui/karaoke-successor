@@ -61,6 +61,11 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   const [mediaLoaded, setMediaLoaded] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [roundTimeLeft, setRoundTimeLeft] = useState(currentRound?.duration || 0);
+
+  // Refs for high-frequency values consumed inside the game loop (requestAnimationFrame)
+  // Without refs the loop would capture stale closure snapshots of these values.
+  const pitchResultRef = useRef(pitchResult);
+  pitchResultRef.current = pitchResult;
   
   // Media playback refs
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -97,6 +102,10 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     
     return { allNotes, beatDuration: beatDurationMs, scoringMetadata };
   }, [currentSong]);
+
+  // Ref for timing data — placed after declaration so TS is happy
+  const timingDataRef = useRef(timingData);
+  timingDataRef.current = timingData;
 
   // Get current song from the round — load full song data with lyrics + URLs
   useEffect(() => {
@@ -298,7 +307,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     let lastTickTime = performance.now();
     
     const gameLoop = (timestamp: number) => {
-      if (game.status !== 'playing') return;
+      if (gameRef.current.status !== 'playing') return;
       
       const deltaTime = timestamp - lastTickTime;
       
@@ -308,37 +317,39 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
       }
       
       // Evaluate scoring for all active players simultaneously
-      if (deltaTime >= TICK_INTERVAL && timingData && currentSong) {
+      const td = timingDataRef.current;
+      if (deltaTime >= TICK_INTERVAL && td && currentSong) {
         lastTickTime = timestamp;
-        
-        // Get the detected pitch from local microphone
-        const detectedPitch = pitchResult?.note; // MIDI note number
-        const isSinging = pitchResult?.isSinging;
-        
+
+        // Get the detected pitch from local microphone (via ref — avoids stale closure)
+        const currentPitchResult = pitchResultRef.current;
+        const detectedPitch = currentPitchResult?.note; // MIDI note number
+        const isSinging = currentPitchResult?.isSinging;
+
         // Find active notes at current time
-        const currentAudioTime = audioRef.current ? audioRef.current.currentTime * 1000 : currentTime;
-        
-        timingData.allNotes.forEach(note => {
+        const currentAudioTime = audioRef.current ? audioRef.current.currentTime * 1000 : currentTime; // audioRef is a ref so always fresh
+
+        td.allNotes.forEach(note => {
           // Check if note is currently active (within its time window)
           if (currentAudioTime >= note.startTime && currentAudioTime <= note.startTime + note.duration) {
             // Score all active MICROPHONE players (local mic, shared pitch)
             // Skip scoring if vocal detection classifies input as humming/noise
-            const micPlayers = activePlayers.filter(p => p.playerType === 'microphone' && !p.eliminated);
-            
+            const micPlayers = activePlayersRef.current.filter(p => p.playerType === 'microphone' && !p.eliminated);
+
             micPlayers.forEach(player => {
               if (isSinging === false) return; // Humming/noise detected
               const tickResult = evaluateTick(detectedPitch || 0, note.pitch, difficulty);
-              
+
               if (tickResult.isHit) {
                 const points = calculateTickPoints(
                   tickResult.accuracy,
                   note.isGolden,
-                  timingData.scoringMetadata.pointsPerTick,
+                  td.scoringMetadata.pointsPerTick,
                   difficulty
                 );
                 
                 const updatedGame = updatePlayerScore(
-                  game,
+                  gameRef.current,
                   player.id,
                   points,
                   tickResult.accuracy,
@@ -349,7 +360,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
             });
 
             // Score all active COMPANION players (pitch from their phones)
-            const companionPlayers = activePlayers.filter(p => p.playerType === 'companion' && !p.eliminated);
+            const companionPlayers = activePlayersRef.current.filter(p => p.playerType === 'companion' && !p.eliminated);
             
             companionPlayers.forEach(player => {
               // Look up companion's submitted pitch from cache
@@ -364,12 +375,12 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
                   const points = calculateTickPoints(
                     tickResult.accuracy,
                     note.isGolden,
-                    timingData.scoringMetadata.pointsPerTick,
+                    td.scoringMetadata.pointsPerTick,
                     difficulty
                   );
                   
                   const updatedGame = updatePlayerScore(
-                    game,
+                    gameRef.current,
                     player.id,
                     points,
                     tickResult.accuracy,
