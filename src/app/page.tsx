@@ -494,36 +494,6 @@ export default function KaraokeSuccessor() {
     }
   };
 
-  if (showGamePauseDialog) {
-    return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-        <div className="bg-zinc-900 border border-white/15 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
-          <div className="text-center mb-6">
-            <div className="text-4xl mb-2">⏸️</div>
-            <h2 className="text-xl font-bold text-white">Spiel pausiert</h2>
-            <p className="text-sm text-white/50 mt-2">
-              Möchtest du das Spiel fortsetzen oder verlassen?
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={handleResumeGame}
-              className="flex-1 py-3 rounded-lg font-medium bg-green-500/20 border border-green-500/40 text-green-300 hover:bg-green-500/30 transition-all"
-            >
-              Fortsetzen
-            </button>
-            <button
-              onClick={handleLeaveGame}
-              className="flex-1 py-3 rounded-lg font-medium bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all"
-            >
-              Verlassen
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div
       className="min-h-screen text-white theme-container"
@@ -725,6 +695,35 @@ export default function KaraokeSuccessor() {
         {screen === 'editor' && <EditorScreen onBack={() => setScreen('library')} />}
         {screen === 'online' && <OnlineMultiplayerScreen onBack={() => setScreen('party')} />}
       </main>
+
+      {/* Pause dialog overlay — rendered ON TOP so GameScreen stays mounted */}
+      {showGamePauseDialog && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="bg-zinc-900 border border-white/15 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="text-4xl mb-2">⏸️</div>
+              <h2 className="text-xl font-bold text-white">Spiel pausiert</h2>
+              <p className="text-sm text-white/50 mt-2">
+                Möchtest du das Spiel fortsetzen oder verlassen?
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={handleResumeGame}
+                className="flex-1 py-3 rounded-lg font-medium bg-green-500/20 border border-green-500/40 text-green-300 hover:bg-green-500/30 transition-all"
+              >
+                Fortsetzen
+              </button>
+              <button
+                onClick={handleLeaveGame}
+                className="flex-1 py-3 rounded-lg font-medium bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all"
+              >
+                Verlassen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

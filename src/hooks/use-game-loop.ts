@@ -491,11 +491,9 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       }
       if (audioRef.current) {
         audioRef.current.pause();
-        audioRef.current.currentTime = 0;
       }
       if (videoRef.current) {
         videoRef.current.pause();
-        videoRef.current.currentTime = 0;
       }
       setIsPlaying(false);
       setCountdown(3);
