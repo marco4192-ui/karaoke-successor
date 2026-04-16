@@ -57,15 +57,18 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
   // Returns a score (0 = no match, higher = better match).
   // Scores word-boundary matches and consecutive matches higher.
   function fuzzyScore(query: string, text: string): number {
-    if (!query) return 0;
-    const q = query.toLowerCase();
-    const t = text.toLowerCase();
+    if (!query || !text) return 0;
+    // Normalize for diacritics: ä→a, ö→o, ü→u, é→e, etc.
+    const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const q = normalize(query);
+    const t = normalize(text);
+    const tOriginal = text.toLowerCase(); // Keep original for exact substring check
 
     // Exact substring match gets highest priority
-    const idx = t.indexOf(q);
+    const idx = tOriginal.indexOf(q) !== -1 ? tOriginal.indexOf(q) : t.indexOf(q);
     if (idx !== -1) {
       // Bonus for match at start of string or after a space
-      const startsWord = idx === 0 || t[idx - 1] === ' ';
+      const startsWord = idx === 0 || tOriginal[idx - 1] === ' ' || t[idx - 1] === ' ';
       return startsWord ? 1000 + (100 - idx) : 500 + (100 - idx);
     }
 

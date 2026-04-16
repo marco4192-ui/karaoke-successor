@@ -109,7 +109,7 @@ export function MobileClientView() {
   // Keyboard navigation: Arrow keys to move focus between interactive elements, Enter to activate
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         e.preventDefault();
         const focusableSelector = 'button:not([disabled]), [role="button"], input, [tabindex]:not([tabindex="-1"])';
         const focusable = Array.from(document.querySelectorAll<HTMLElement>(focusableSelector))
@@ -123,19 +123,54 @@ export function MobileClientView() {
         if (focusable.length === 0) return;
         const active = document.activeElement as HTMLElement;
         const currentIndex = focusable.indexOf(active);
-        let nextIndex: number;
 
-        if (currentIndex === -1) {
-          nextIndex = e.key === 'ArrowDown' ? 0 : focusable.length - 1;
-        } else if (e.key === 'ArrowDown') {
-          nextIndex = (currentIndex + 1) % focusable.length;
-        } else {
-          nextIndex = (currentIndex - 1 + focusable.length) % focusable.length;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          let nextIndex: number;
+          if (currentIndex === -1) {
+            nextIndex = e.key === 'ArrowDown' ? 0 : focusable.length - 1;
+          } else if (e.key === 'ArrowDown') {
+            nextIndex = (currentIndex + 1) % focusable.length;
+          } else {
+            nextIndex = (currentIndex - 1 + focusable.length) % focusable.length;
+          }
+          focusable[nextIndex]?.focus();
+          focusable[nextIndex]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+          // For grid layouts: move to the nearest element in the horizontal direction
+          if (currentIndex === -1) {
+            focusable[0]?.focus();
+          } else {
+            const activeRect = active.getBoundingClientRect();
+            const activeCenterY = activeRect.top + activeRect.height / 2;
+            let bestIndex = -1;
+            let bestDist = Infinity;
+            focusable.forEach((el, i) => {
+              if (i === currentIndex) return;
+              const rect = el.getBoundingClientRect();
+              const centerY = rect.top + rect.height / 2;
+              const horizontalDist = e.key === 'ArrowRight'
+                ? (rect.left - activeRect.right)
+                : (activeRect.left - rect.right);
+              // Only consider elements that are roughly on the same row (within 50px vertical distance)
+              const verticalDist = Math.abs(centerY - activeCenterY);
+              if (horizontalDist > 0 && horizontalDist < bestDist && verticalDist < 80) {
+                bestDist = horizontalDist;
+                bestIndex = i;
+              }
+            });
+            if (bestIndex === -1) {
+              // Fallback: just move to next/previous element
+              const nextIndex = e.key === 'ArrowRight'
+                ? (currentIndex + 1) % focusable.length
+                : (currentIndex - 1 + focusable.length) % focusable.length;
+              focusable[nextIndex]?.focus();
+              focusable[nextIndex]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
+              focusable[bestIndex]?.focus();
+              focusable[bestIndex]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+          }
         }
-
-        focusable[nextIndex]?.focus();
-        // Scroll the focused element into view smoothly
-        focusable[nextIndex]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     };
 

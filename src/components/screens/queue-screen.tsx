@@ -154,18 +154,35 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
     })),
   ].sort((a, b) => a.addedAt - b.addedAt); // Sort by added time
 
-  // Get full song object by ID
-  const getFullSong = (songId: string): Song | null => {
-    return songs.find(s => s.id === songId) || null;
+  // Get full song object by ID (with title+artist fallback for ID mismatches)
+  const getFullSong = (songId: string, songTitle?: string, songArtist?: string): Song | null => {
+    // Try exact ID match first
+    const exactMatch = songs.find(s => s.id === songId);
+    if (exactMatch) return exactMatch;
+
+    // Fallback: match by title + artist (handles companion song ID mismatches)
+    if (songTitle && songArtist) {
+      const fuzzyMatch = songs.find(s =>
+        s.title.toLowerCase() === songTitle.toLowerCase() &&
+        s.artist.toLowerCase() === songArtist.toLowerCase()
+      );
+      if (fuzzyMatch) {
+        console.log('[QueueScreen] Song found via title+artist fallback:', songTitle);
+        return fuzzyMatch;
+      }
+    }
+    return null;
   };
 
   // Create a minimal fallback Song object from queue item data when full song isn't found
   const createFallbackSong = (item: typeof unifiedQueue[0]): Song => {
+    // Try to find the duration from companion queue item data
+    const duration = item.song.duration || 180000; // Default 3 minutes if unknown
     return {
       id: item.song.id,
       title: item.song.title,
       artist: item.song.artist,
-      duration: 0,
+      duration,
       bpm: 0,
       difficulty: 'medium',
       rating: 3,
@@ -176,7 +193,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
 
   // Play next song from queue
   const playFromQueue = async (item: typeof unifiedQueue[0]) => {
-    let song = item.isFromCompanion ? getFullSong(item.song.id) : item.song;
+    let song = item.isFromCompanion ? getFullSong(item.song.id, item.song.title, item.song.artist) : item.song;
     // If song not found in local library (companion song with ID mismatch),
     // create a fallback Song so karaoke can at least start with available data
     if (!song) {

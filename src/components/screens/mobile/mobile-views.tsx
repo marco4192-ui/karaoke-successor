@@ -137,6 +137,17 @@ export function MobileMicView({ gameState, clientId, currentPitch, isListening, 
                 <p>2. Finde "Mikrofon" und wähle "Erlauben"</p>
                 <p>3. Lade die Seite neu</p>
               </div>
+              <details className="text-xs text-white/40">
+                <summary className="cursor-pointer hover:text-white/60">Weitere Hilfe</summary>
+                <div className="mt-2 space-y-1">
+                  <p className="font-semibold text-white/60">iOS (Safari):</p>
+                  <p>Einstellungen &rarr; Safari &rarr; Mikrofon &rarr; Erlauben</p>
+                  <p className="font-semibold text-white/60 mt-1">Android (Chrome):</p>
+                  <p>Site-Einstellungen (Schloss-Symbol) &rarr; Mikrofon &rarr; Erlauben</p>
+                  <p className="font-semibold text-white/60 mt-1">Desktop:</p>
+                  <p>Adresseiste &rarr; Kamera/Mikrofon-Symbol &rarr; Erlauben</p>
+                </div>
+              </details>
               <Button
                 onClick={onStartMic}
                 className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white font-bold"
@@ -270,7 +281,7 @@ export function MobileSongsView({
           name="song-search-modal"
           value={songSearch}
           onChange={(e) => onSongSearchChange(e.target.value)}
-          placeholder="Search songs..."
+          placeholder="Songs suchen..."
           className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
         />
       </div>
@@ -423,7 +434,8 @@ export function MobileSongsView({
                   onShowSongOptions(song);
                   onLoadPartners();
                 }}
-                className="bg-cyan-500 hover:bg-cyan-400 text-white px-3 flex-shrink-0"
+                className="bg-cyan-500 hover:bg-cyan-400 text-white px-3 py-5 flex-shrink-0 text-xl font-bold rounded-lg"
+                aria-label="Song zur Warteschlange hinzufügen"
               >
                 +
               </Button>
@@ -432,7 +444,8 @@ export function MobileSongsView({
           
           {filteredSongs.length === 0 && (
             <div className="text-center py-12 text-white/40">
-              No songs found
+              <p className="text-lg mb-1">🎵</p>
+              Keine Songs gefunden
             </div>
           )}
         </div>
