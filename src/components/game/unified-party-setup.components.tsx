@@ -346,7 +346,73 @@ function MicAssignmentPanel({
   );
 }
 
-// ===================== PLAYER GRID =====================
+// ===================== SINGLE MIC SELECTOR =====================
+
+export function SingleMicSelector({
+  selectedMicId,
+  onMicChange,
+}: {
+  selectedMicId: string | null;
+  onMicChange: (micId: string, micName: string) => void;
+}) {
+  const [savedMics, setSavedMics] = useState<Array<{ id: string; customName: string; deviceName: string }>>([]);
+
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem('karaoke-multi-mic-config');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setSavedMics((parsed.assignedMics || []).map((m: any) => ({
+          id: m.id,
+          customName: m.customName,
+          deviceName: m.deviceName,
+        })));
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  return (
+    <Card className="bg-white/5 border-white/10 mb-6">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <span className="text-xl">🎤</span>
+          Mikrofon-Auswahl
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center gap-3">
+          <select
+            value={selectedMicId || ''}
+            onChange={(e) => {
+              const mic = savedMics.find(m => m.id === e.target.value);
+              if (mic) {
+                onMicChange(mic.id, mic.customName || mic.deviceName);
+              }
+            }}
+            className="flex-1 bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+          >
+            <option value="">— Mikrofon auswählen —</option>
+            {savedMics.map(mic => (
+              <option key={mic.id} value={mic.id}>
+                {mic.customName || mic.deviceName}
+              </option>
+            ))}
+          </select>
+        </div>
+        <p className="text-xs text-white/40 mt-2">
+          Dieses Mikrofon wird von allen Spielern geteilt und bei jedem Spielerwechsel weitergegeben.
+        </p>
+        {savedMics.length === 0 && (
+          <p className="text-xs text-yellow-400 mt-3">
+            Keine Mikrofone konfiguriert. Gehe zu Settings &rarr; Mikrofon, um Mikrofone hinzuzufügen.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ===================== PLAYER GRID (Component) =====================
 
 function PlayerGrid({
   config, activeProfiles, selectedPlayers, togglePlayer, inputMode,
@@ -722,4 +788,4 @@ export function SongVotingModal({ songs, players, onVote, onClose, gameColor }: 
 
 // ===================== EXPORT ALL SUB-COMPONENTS =====================
 
-export { GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, InputModeSelector, MicAssignmentPanel };
+export { GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, InputModeSelector, MicAssignmentPanel, SingleMicSelector };

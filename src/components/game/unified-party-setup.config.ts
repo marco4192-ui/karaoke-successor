@@ -23,6 +23,8 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     ],
     songSelectionOptions: ['library', 'random', 'vote', 'medley'],
     supportsCompanionApp: false,
+    forceInputMode: 'microphone',
+    sharedMic: true,
   },
   'companion-singalong': {
     mode: 'companion-singalong',

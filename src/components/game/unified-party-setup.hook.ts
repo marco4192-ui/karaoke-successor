@@ -53,6 +53,10 @@ export function usePartySetup({
     } catch { return {}; }
   });
 
+  // ── Shared single mic (for modes like pass-the-mic) ──
+  const [selectedMicId, setSelectedMicId] = useState<string | null>(null);
+  const [selectedMicName, setSelectedMicName] = useState<string | null>(null);
+
   // ── Song filter state ──
   const [filterGenre, setFilterGenre] = useState('all');
   const [filterLanguage, setFilterLanguage] = useState('all');
@@ -168,6 +172,22 @@ export function usePartySetup({
       }
     } catch { /* ignore */ }
 
+    // Shared mic mode: all players use the same mic
+    if (config.sharedMic && selectedMicId) {
+      return selectedPlayers.map((id, index) => {
+        const profile = profiles.find(p => p.id === id);
+        return {
+          id,
+          name: profile?.name || 'Unknown',
+          avatar: profile?.avatar,
+          color: profile?.color || PLAYER_COLORS[index % PLAYER_COLORS.length],
+          playerType: 'microphone' as const,
+          micId: selectedMicId,
+          micName: selectedMicName || undefined,
+        };
+      });
+    }
+
     // In mixed mode, split players: first half uses mic, second half uses companion
     const micPlayerCount = inputMode === 'companion'
       ? 0
@@ -200,7 +220,7 @@ export function usePartySetup({
         micName: assignedMic?.customName || autoMic?.customName,
       };
     });
-  }, [selectedPlayers, profiles, inputMode, micAssignments]);
+  }, [selectedPlayers, profiles, inputMode, micAssignments, config.sharedMic, selectedMicId, selectedMicName]);
 
   const handleSongSelection = useCallback((option: SongSelectionOption) => {
     if (selectedPlayers.length < config.minPlayers) {
@@ -216,6 +236,7 @@ export function usePartySetup({
         filterGenre,
         filterLanguage,
         filterCombined,
+        ...(config.sharedMic && selectedMicId ? { sharedMicId: selectedMicId, sharedMicName: selectedMicName } : {}),
       },
       songSelection: option,
       difficulty,
@@ -239,7 +260,7 @@ export function usePartySetup({
         break;
       }
     }
-  }, [selectedPlayers, config.minPlayers, createPlayers, settings, difficulty, filteredSongs, filterGenre, filterLanguage, filterCombined, onSelectLibrary, onStartGame, onVoteMode, inputMode]);
+  }, [selectedPlayers, config.minPlayers, createPlayers, settings, difficulty, filteredSongs, filterGenre, filterLanguage, filterCombined, onSelectLibrary, onStartGame, onVoteMode, inputMode, config.sharedMic, selectedMicId, selectedMicName]);
 
   return {
     config,
@@ -260,6 +281,11 @@ export function usePartySetup({
     micAssignments,
     assignMic,
     removeMicAssignment,
+    // Shared mic (single mic for modes like pass-the-mic)
+    selectedMicId,
+    selectedMicName,
+    setSelectedMicId,
+    setSelectedMicName,
     // Song filter
     filterGenre,
     filterLanguage,

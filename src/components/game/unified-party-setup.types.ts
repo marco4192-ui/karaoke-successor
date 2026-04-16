@@ -29,6 +29,8 @@ export interface PartyGameConfig {
   supportsCompanionApp?: boolean;
   /** If set, the input mode is forced to this value (no selector shown) */
   forceInputMode?: InputMode;
+  /** If true, players share a single microphone instead of per-player mic assignment */
+  sharedMic?: boolean;
 }
 
 export type SongSelectionOption = 'library' | 'random' | 'vote' | 'medley';

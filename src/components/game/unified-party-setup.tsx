@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Song, PlayerProfile, GameMode } from '@/types/game';
 import { usePartySetup } from './unified-party-setup.hook';
-import { SongVotingModal, GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, InputModeSelector, MicAssignmentPanel } from './unified-party-setup.components';
+import { SongVotingModal, GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, InputModeSelector, MicAssignmentPanel, SingleMicSelector } from './unified-party-setup.components';
 
 // Re-export public API for backward compatibility
 export { SongVotingModal } from './unified-party-setup.components';
@@ -30,6 +30,7 @@ export function UnifiedPartySetup({
     error, difficulty, setDifficulty, togglePlayer, handleSongSelection,
     inputMode, setInputMode,
     micAssignments, assignMic, removeMicAssignment,
+    selectedMicId, selectedMicName, setSelectedMicId, setSelectedMicName,
     filterGenre, filterLanguage, filterCombined,
     setFilterGenre, setFilterLanguage, setFilterCombined,
     availableGenres, availableLanguages, filteredSongs,
@@ -76,7 +77,19 @@ export function UnifiedPartySetup({
           inputMode={inputMode}
         />
 
-        {!config.forceInputMode && (inputMode === 'microphone' || inputMode === 'mixed') && selectedPlayers.length > 0 && (
+        {/* Shared single mic (e.g. Pass-the-Mic) */}
+        {config.sharedMic && selectedPlayers.length > 0 && (
+          <SingleMicSelector
+            selectedMicId={selectedMicId}
+            onMicChange={(micId, micName) => {
+              setSelectedMicId(micId);
+              setSelectedMicName(micName);
+            }}
+          />
+        )}
+
+        {/* Per-player mic assignment */}
+        {!config.sharedMic && !config.forceInputMode && (inputMode === 'microphone' || inputMode === 'mixed') && selectedPlayers.length > 0 && (
           <MicAssignmentPanel
             selectedPlayers={selectedPlayers}
             profiles={activeProfiles}
