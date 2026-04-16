@@ -383,7 +383,7 @@ export function MobileSongsView({
               </div>
               
               {/* Duration */}
-              <span className="text-xs text-white/30">{formatDuration(song.duration)}</span>
+              <span className="text-xs text-white/30 whitespace-nowrap flex-shrink-0">{formatDuration(song.duration)}</span>
               
               {/* Add to Queue Button */}
               <Button
@@ -392,7 +392,7 @@ export function MobileSongsView({
                   onShowSongOptions(song);
                   onLoadPartners();
                 }}
-                className="bg-cyan-500 hover:bg-cyan-400 text-white px-3"
+                className="bg-cyan-500 hover:bg-cyan-400 text-white px-3 flex-shrink-0"
               >
                 +
               </Button>
