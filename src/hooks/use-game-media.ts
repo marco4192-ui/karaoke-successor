@@ -88,10 +88,11 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
     console.log('[GameScreen] Lyrics loading effect triggered', {
       songId: song?.id,
       storedTxt: song?.storedTxt,
+      relativeTxtPath: song?.relativeTxtPath,
       lyricsLength: song?.lyrics?.length || 0
     });
 
-    if (song?.storedTxt && (!song.lyrics || song.lyrics.length === 0)) {
+    if (song && (!song.lyrics || song.lyrics.length === 0) && (song.storedTxt || song.relativeTxtPath)) {
       // Load lyrics on-demand from IndexedDB
       console.log('[GameScreen] Loading lyrics from IndexedDB for song:', song.id);
       setLyricsLoadError(null);
@@ -117,7 +118,7 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
       setLoadedLyrics([]);
       setLyricsLoadError(null);
     }
-  }, [song?.id, song?.storedTxt, song?.lyrics]);
+  }, [song?.id, song?.storedTxt, song?.relativeTxtPath, song?.lyrics]);
 
   // ── Compute effectiveSong: restored URLs + loaded lyrics ──
   const effectiveSong = useMemo(() => {
