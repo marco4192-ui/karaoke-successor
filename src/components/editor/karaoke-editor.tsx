@@ -59,6 +59,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   const {
     isPlaying, currentTime, audioRef,
     handlePlayPause, handleTimeChange, setIsPlaying,
+    playbackRate, setPlaybackRate,
   } = useEditorPlayback(currentSong.duration, currentSong.audioUrl);
 
   const allNotes = useMemo(() => currentSong.lyrics.flatMap(line => line.notes), [currentSong.lyrics]);
@@ -404,6 +405,8 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
             isPlaying={isPlaying}
             selectedNoteId={selectedNoteId}
             audioBuffer={audioBuffer}
+            playbackRate={playbackRate}
+            onPlaybackRateChange={setPlaybackRate}
             onTimeChange={handleTimeChange}
             onPlayPause={handlePlayPause}
             onNoteSelect={handleNoteSelect}

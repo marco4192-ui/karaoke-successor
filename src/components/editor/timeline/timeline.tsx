@@ -6,7 +6,8 @@ import type { Note, Song } from '@/types/game';
 import { NoteBlock } from './note-block';
 import { LyricTrack } from './lyric-track';
 import { Waveform } from './waveform';
-import { Play, Pause, ZoomIn, ZoomOut, RotateCcw, SkipBack, SkipForward } from 'lucide-react';
+import { Play, Pause, ZoomIn, ZoomOut, RotateCcw, SkipBack, SkipForward, Gauge } from 'lucide-react';
+import { EDITOR_PLAYBACK_RATES } from '@/hooks/use-editor-playback';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 
@@ -16,6 +17,8 @@ interface TimelineProps {
   isPlaying: boolean;
   selectedNoteId?: string;
   audioBuffer?: AudioBuffer;
+  playbackRate?: number;
+  onPlaybackRateChange?: (rate: number) => void;
   onTimeChange: (time: number) => void;
   onPlayPause: () => void;
   onNoteSelect: (noteId: string | undefined) => void;
@@ -31,6 +34,8 @@ export function Timeline({
   isPlaying,
   selectedNoteId,
   audioBuffer,
+  playbackRate = 1.0,
+  onPlaybackRateChange,
   onTimeChange,
   onPlayPause,
   onNoteSelect,
@@ -304,6 +309,29 @@ export function Timeline({
         </div>
 
         <div className="flex items-center gap-1">
+          {/* Playback speed selector */}
+          <div className="flex items-center gap-0.5 mr-1">
+            <Gauge className="w-3 h-3 text-slate-500" />
+            {EDITOR_PLAYBACK_RATES.map(({ value, label }) => (
+              <Button
+                key={value}
+                size="sm"
+                variant={playbackRate === value ? 'default' : 'ghost'}
+                className={cn(
+                  'h-7 px-1.5 text-[10px]',
+                  playbackRate === value
+                    ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                    : 'text-slate-400 hover:text-white'
+                )}
+                onClick={() => onPlaybackRateChange?.(value)}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+
+          <span className="text-slate-600 text-xs mx-1">|</span>
+
           <Button
             size="sm"
             variant="ghost"
