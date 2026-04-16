@@ -158,6 +158,12 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   youtubeTimeRef.current = youtubeTime;
   const nativeAudioTimeRef = useRef(nativeAudioTime);
   nativeAudioTimeRef.current = nativeAudioTime;
+  // Refs for checkNoteHits / checkP2NoteHits — prevents game loop restart
+  // when these callbacks are recreated (e.g. inline arrow functions in caller).
+  const checkNoteHitsRef = useRef(checkNoteHits);
+  checkNoteHitsRef.current = checkNoteHits;
+  const checkP2NoteHitsRef = useRef(checkP2NoteHits);
+  checkP2NoteHitsRef.current = checkP2NoteHits;
   // When the game is paused mid-song we must remember where the song was so
   // that resume picks up from that exact wall-clock offset instead of from 0.
   const pausedAtElapsedMsRef = useRef<number | null>(null);
@@ -488,7 +494,8 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
 
               if (!audioPlaying && !videoPlaying && !youTubeActive && !nativePlaying) {
                 console.error('[GameLoop] Media playback watchdog: no media actually playing after 10s — ending game to prevent hang');
-                endGameAndCleanup();
+                // Use ref to call the latest version (avoids stale closure)
+                endGameAndCleanupRef.current();
               }
             }, 10000);
           } else {
@@ -654,7 +661,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       if (currentPitch) {
         setVolume(currentPitch.volume);
         setDetectedPitch(currentPitch.frequency);
-        checkNoteHits(adjustedTime, currentPitch);
+        checkNoteHitsRef.current(adjustedTime, currentPitch);
       }
 
       // Read P2 pitch from ref (not closure) to avoid stale values
@@ -667,7 +674,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
           clarity: currentPitch?.clarity || 0,
           volume: currentP2Vol
         };
-        checkP2NoteHits(adjustedTime, p2PitchResult);
+        checkP2NoteHitsRef.current(adjustedTime, p2PitchResult);
       } else if (isDuetMode) {
         setP2Volume(0);
       }
@@ -690,7 +697,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [isPlaying, effectiveSong, setCurrentTime, setDetectedPitch, checkNoteHits, checkP2NoteHits, isYouTube, timingOffset, isDuetMode, setP2Volume, audioRef, videoRef, startTimeRef, isNativeAudio]);
+  }, [isPlaying, effectiveSong, setCurrentTime, setDetectedPitch, isYouTube, timingOffset, isDuetMode, setP2Volume, audioRef, videoRef, startTimeRef, isNativeAudio]);
 
   // ── Abort: immediately stop game loop without saving results ──
   const abortGameLoop = useCallback(() => {

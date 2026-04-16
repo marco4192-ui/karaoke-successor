@@ -308,7 +308,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     updatePlayer,
     onPerfectHit: emitPerfectHit,
     onGoldenNote: emitGoldenNote,
-    onComboMilestone: (combo, x, y) => emitComboFirework(x, y, combo),
+    onComboMilestone: useCallback((combo: number, x: number, y: number) => emitComboFirework(x, y, combo), [emitComboFirework]),
   });
 
   // Timing synchronization - user adjustable offset
