@@ -211,7 +211,8 @@ export function LyricLineDisplay({
         const isHyphenOnly = displayLyric.trim() === '-';
 
         // MISSING WORDS MODE: Hide certain words (replace with underscores or blanks)
-        const isMissingWord = gameMode === 'missing-words' && missingWordsIndices.includes(idx);
+        // missingWordsIndices now stores note startTimes of hidden words
+        const isMissingWord = gameMode === 'missing-words' && missingWordsIndices.includes(note.startTime);
 
         // BLIND KARAOKE MODE: Hide all lyrics in blind sections
         const shouldHideLyric = isBlindSection && gameMode === 'blind';

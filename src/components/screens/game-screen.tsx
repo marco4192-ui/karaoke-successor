@@ -319,6 +319,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     currentTime: gameState.currentTime,
     songId: song?.id,
     allNotes: timingData?.allNotes,
+    sortedLines: timingData?.sortedLines,
     setBlindSection,
     setMissingWordsIndices,
     // Pass competitive settings frequencies if available
