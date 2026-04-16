@@ -136,6 +136,7 @@ pub enum AnalysisStage {
 
 /// Options for the pitch analysis pipeline.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct AnalysisOptions {
     /// "yin" (default) or "crepe" (high-accuracy mode, requires model file).
     pub algorithm: String,
