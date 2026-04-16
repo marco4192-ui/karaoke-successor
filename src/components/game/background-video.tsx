@@ -1,5 +1,26 @@
 'use client';
 
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: Video/animated background component for the game screen.
+ * Supports local video files, YouTube videos, and gradient animations as
+ * backgrounds behind the note highway and lyrics.
+ *
+ * Currently, game backgrounds are handled by GameBackground.tsx which uses
+ * a different architecture — it integrates with the store and supports
+ * image backgrounds, gradient animations, and webcam backgrounds.
+ * YouTube backgrounds use the youtube-background-player.tsx component separately.
+ *
+ * This component predates the current GameBackground system and was likely
+ * replaced during the Round 3/4 refactoring.
+ *
+ * Consider: The gradient animation feature from this component could be
+ * integrated into GameBackground.tsx if animated gradient backgrounds are desired.
+ */
+
 import React, { useRef, RefObject } from 'react';
 import { Song } from '@/types/game';
 import { YouTubePlayer } from './youtube-player';

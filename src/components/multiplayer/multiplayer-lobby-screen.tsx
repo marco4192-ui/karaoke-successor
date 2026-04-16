@@ -1,3 +1,26 @@
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: Full multiplayer lobby screen with room creation/joining,
+ * QR code sharing, player management, and game mode selection. Supports both
+ * online multiplayer (via WebSocket) and local party mode.
+ *
+ * Currently, online multiplayer uses online-multiplayer-screen.tsx and
+ * online-lobby.tsx. The lobby component uses the room-service.ts and
+ * useWebSocket hook for real-time communication.
+ *
+ * This component (~674 lines) is a comprehensive lobby implementation that
+ * includes features like room code display/copy, player readiness toggles,
+ * game settings configuration, and chat. It's a more feature-complete version
+ * than what's currently in online-lobby.tsx.
+ *
+ * Consider: This could replace or merge with online-lobby.tsx for a more
+ * complete multiplayer lobby experience. The QR code sharing feature is
+ * particularly useful for quick room joining.
+ */
+
 // Multiplayer Lobby Screen - Room creation and joining with room codes
 // Supports: Create room, Join by code, QR code sharing, Local party mode
 

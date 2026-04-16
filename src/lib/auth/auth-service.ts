@@ -1,3 +1,30 @@
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: Complete authentication service with hybrid auth model
+ * (guest mode auto-created, optional cloud sync, profile linking via sync codes).
+ * Provides session management, profile CRUD, highscore recording, data export/import,
+ * and an event system for auth state changes.
+ *
+ * Currently, the app handles profiles directly through user-db.ts and the character
+ * screen components. Session management is done inline in the app startup. Highscores
+ * are recorded directly through the store and results screen without going through
+ * an auth layer.
+ *
+ * The sync code system (linkBySyncCode, generateNewSyncCode) is a unique feature
+ * not found elsewhere — it allows profile linking across devices using short codes.
+ * This would be valuable for the leaderboard and multiplayer features.
+ *
+ * Note: Has 2 unused imports (PlayerProfile, PLAYER_COLORS from @/types/game and
+ * generateRoomCode from user-db) that suggest this was originally more tightly
+ * integrated with the game types and multiplayer room system.
+ *
+ * Consider: Should be the central auth layer if cloud sync or cross-device profiles
+ * are implemented. The singleton pattern and event system are production-ready.
+ */
+
 // Auth Service - Hybrid authentication for Karaoke Successor
 // Supports: Guest mode (automatic), Optional cloud sync, Profile linking via sync codes
 

@@ -1,3 +1,30 @@
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: Defines state types and helper functions for gameplay features:
+ * - DailyChallenge: Type definition and generator for daily challenge system
+ * - Achievement checking logic (14 achievement conditions)
+ * - Duet harmony scoring (pitch comparison between two players)
+ * - Practice mode helpers (playback rates, time formatting)
+ *
+ * Currently:
+ * - Achievements are defined in lib/game/achievements.ts with a different structure
+ * - Daily challenges are in lib/game/daily-challenge.ts with different implementation
+ * - Duet mode is handled in game-screen.tsx without harmony scoring
+ * - Practice mode helpers exist in lib/game/practice-mode.ts
+ *
+ * The harmony scoring algorithm (calculateHarmonyScore) is unique to this file and
+ * not found elsewhere. The achievement check conditions overlap with but differ from
+ * the achievements.ts implementation.
+ *
+ * Note: Has unused import of PlayerProfile from @/types/game.
+ *
+ * Consider: The harmony scoring could be a valuable addition to duet mode if it's
+ * ever enhanced to support actual two-player local play.
+ */
+
 // Achievement System
 import { Achievement, PlayerProfile } from '@/types/game';
 

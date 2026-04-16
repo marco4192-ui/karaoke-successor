@@ -1,3 +1,31 @@
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: Audio analysis engine for automatic note detection from audio
+ * files. Implements the YIN pitch detection algorithm, converts detected pitches
+ * to note events, estimates BPM, and can generate a complete Song object from
+ * raw audio analysis. Features progress reporting for UI feedback.
+ *
+ * This is a substantial piece of audio DSP code (~496 lines) that would enable
+ * an "auto-transcribe" feature — loading any audio file and automatically
+ * generating karaoke notes for it.
+ *
+ * Currently, the editor's audio analysis panel (editor/audio-analysis-panel.tsx)
+ * uses a different approach — it reads existing .txt/.usdx files with pre-defined
+ * notes rather than analyzing audio from scratch.
+ *
+ * The YIN algorithm implementation here is well-written with proper thresholds
+ * for human vocal range (C2-C6) and confidence filtering. The BPM estimation
+ * uses a histogram approach testing 40-400 BPM range.
+ *
+ * Consider: This is a high-value feature that could be marketed as "auto-create
+ * karaoke notes from any song". The progress callback pattern supports async
+ * processing without blocking the UI. Could be moved to a Web Worker for better
+ * performance (see TODO_IMPROVEMENTS.md A.1).
+ */
+
 // Audio Analyzer for automatic note detection from audio files
 // Uses Web Audio API and pitch detection algorithms
 

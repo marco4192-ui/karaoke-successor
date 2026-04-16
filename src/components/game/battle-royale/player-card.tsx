@@ -1,5 +1,24 @@
 'use client';
 
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: Battle Royale player card component displaying player name,
+ * avatar, score, and elimination status. Designed for the BR player list/lobby.
+ *
+ * Currently, battle royale uses components from battle-royale/ subdirectory
+ * (setup-screen.tsx, playing-view.tsx, etc.) which have their own player
+ * display approaches.
+ *
+ * This appears to be an earlier version of the BR player display that was
+ * replaced during the Round 4 extraction of battle-royale-screen.tsx.
+ *
+ * Consider: Could be used as a simpler player display in the BR setup screen
+ * or eliminated screens where the full player-card from battle-royale/ is overkill.
+ */
+
 import { useState } from 'react';
 import { BattleRoyalePlayer } from '@/lib/game/battle-royale';
 

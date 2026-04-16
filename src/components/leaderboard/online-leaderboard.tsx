@@ -1,5 +1,27 @@
 'use client';
 
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: Online leaderboard display component with song filtering,
+ * difficulty tabs, and player rank display. Fetches leaderboard data from
+ * the API and shows top scores with player avatars and stats.
+ *
+ * Currently, the leaderboard is shown in results-screen.tsx's
+ * song-leaderboard-preview.tsx component and the full leaderboard is in
+ * highscore-screen.tsx. This component appears to be a different implementation
+ * that was designed for an online/API-based leaderboard system.
+ *
+ * The online-leaderboard.tsx focuses on fetching data from a server API,
+ * while the current highscore screen uses local IndexedDB data.
+ *
+ * Consider: Should be revived if/when the online leaderboard API
+ * (leaderboard-service.ts) is integrated into the highscore screen.
+ * The tab-based difficulty filtering is a good UX pattern.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

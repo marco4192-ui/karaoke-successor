@@ -1,5 +1,25 @@
 'use client';
 
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: This hook manages 1v1 duel mode state — tracking two players'
+ * scores, combos, note hit/miss counts, and score events. It was designed to wrap
+ * the multiplayer.ts duel match logic with React state management.
+ *
+ * Currently, duel mode scoring is handled directly within game-screen.tsx and
+ * the useGameModes hook. The createDuelMatch() function from multiplayer.ts
+ * is used directly without this wrapper hook.
+ *
+ * The hook provides a clean abstraction for managing P2 state that could be
+ * revived if duel mode gets its own dedicated screen or component.
+ * The p2NoteProgressRef pattern for tracking individual note progress is
+ * particularly useful and could be applied to other multi-player scenarios.
+ *
+ * Consider: Revive if duel mode is extracted into a standalone game mode screen.
+ */
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { createDuelMatch, DuelMatch } from '@/lib/game/multiplayer';
 import { useGameStore } from '@/lib/game/store';

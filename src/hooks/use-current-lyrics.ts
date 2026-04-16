@@ -1,5 +1,23 @@
 'use client';
 
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: This hook was designed to manage lyrics display state for the
+ * game screen — determining which lyric line is currently active, which is next,
+ * and managing fly-in animations. The logic appears to be duplicated in the
+ * game-screen.tsx component which handles lyrics display inline.
+ *
+ * The getLineText() helper could be useful if lyrics rendering is ever extracted
+ * into a separate component. The TimingDataForLyrics interface provides a clean
+ * abstraction for passing lyric timing data between components.
+ *
+ * Consider: If the game screen's lyrics section is refactored into its own component,
+ * this hook could be revived as the core lyrics timing logic.
+ */
+
 import { useMemo } from 'react';
 import { LyricLine } from '@/types/game';
 

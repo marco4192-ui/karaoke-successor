@@ -1,5 +1,27 @@
 'use client';
 
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: YouTube video background player with YouTube IFrame API
+ * integration. Supports URL input, ad overlay management, and video looping.
+ * Designed to play YouTube music videos as animated backgrounds during gameplay.
+ *
+ * Currently, YouTube playback for songs is handled by youtube-player.tsx and
+ * the useYouTubeGame hook. Background videos use GameBackground.tsx which
+ * supports image backgrounds and animated gradients but not YouTube videos.
+ *
+ * This component provides the missing YouTube background feature — the ability
+ * to play the song's music video behind the note highway and lyrics.
+ *
+ * The AdOverlay and YouTubeUrlInput sub-components are also dead exports.
+ *
+ * Consider: This would be a popular feature for YouTube-sourced songs.
+ * Could be integrated into GameBackground.tsx as an additional background source.
+ */
+
 import React, { useEffect, useRef, useState } from 'react';
 import type { YTPlayer } from '@/types/youtube';
 import { extractYouTubeId } from './youtube-player';

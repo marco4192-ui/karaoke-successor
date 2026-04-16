@@ -1,5 +1,25 @@
 'use client';
 
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: Player profile panel with XP/rank display, statistics
+ * summary, and recent activity. Designed as a sidebar or overlay panel for
+ * quick profile access during gameplay or party mode.
+ *
+ * Currently, player profiles are displayed in character-screen.tsx and
+ * its sub-components. The player-progression-card.tsx shows XP and level
+ * progression. There's no dedicated "profile panel" for quick access.
+ *
+ * This component could serve as a lightweight profile popup accessible from
+ * the game screen or navbar without navigating to the full character screen.
+ *
+ * Consider: Useful as a quick-access profile overlay in the game screen
+ * or party mode lobby.
+ */
+
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

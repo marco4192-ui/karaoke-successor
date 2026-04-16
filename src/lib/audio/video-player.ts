@@ -1,3 +1,26 @@
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: Video playback manager supporting three sources — local files,
+ * YouTube URLs, and direct URLs. Wraps HTMLVideoElement and YouTube IFrame API
+ * with a unified play/pause/seek/volume interface. Handles YouTube API loading
+ * and player creation dynamically.
+ *
+ * Currently, the app uses separate approaches:
+ * - useYouTubeGame hook manages YouTube playback via the youtube-player.tsx component
+ * - use-game-media.ts handles local video files through HTMLVideoElement directly
+ * - GameBackground.tsx component manages video backgrounds
+ *
+ * This class provides a cleaner unified interface that could consolidate the
+ * current fragmented video handling. The YouTube integration with IFrame API
+ * is more robust than the current approach.
+ *
+ * Consider: Useful as a unified video backend if video background support is
+ * expanded or if the YouTube integration needs to be more robust.
+ */
+
 // Video Player Manager - Handles video backgrounds for songs
 import type { YTPlayer, YTStatic } from '@/types/youtube';
 

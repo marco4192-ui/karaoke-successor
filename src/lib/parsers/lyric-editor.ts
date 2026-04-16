@@ -1,3 +1,24 @@
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: Editor state management via useReducer pattern for the karaoke
+ * editor. Handles lyric editing operations (add/update/delete notes, lines),
+ * pixel-to-time conversion for the timeline UI, and syllable splitting logic.
+ *
+ * Currently, the karaoke editor (karaoke-editor.tsx) manages its own state
+ * through individual hooks (useEditorHistory, useEditorPlayback, etc.)
+ * and the timeline component uses its own state management.
+ *
+ * The pixel↔time conversion helpers could be useful for the timeline component.
+ * The reducer pattern provides a clean single-source-of-truth for editor state
+ * that the current scattered approach lacks.
+ *
+ * Consider: The reducer pattern could consolidate editor state management if
+ * the editor is ever refactored for better maintainability.
+ */
+
 // Lyric Editor Component Types and Utilities
 import { Song, LyricLine, Note } from '@/types/game';
 

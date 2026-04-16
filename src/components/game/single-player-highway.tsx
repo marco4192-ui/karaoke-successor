@@ -1,5 +1,24 @@
 'use client';
 
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: Standalone single-player highway wrapper component that
+ * wraps NoteHighway with game mode-specific configuration and pitch stats
+ * display. Handles the common setup of note filtering, theme application,
+ * and scoring overlay for single-player mode.
+ *
+ * Currently, game-screen.tsx renders NoteHighway directly with inline
+ * configuration. This wrapper was likely created during the component
+ * extraction phase but the game screen still uses the direct approach.
+ *
+ * Consider: Could be used to simplify game-screen.tsx by extracting the
+ * highway rendering into this component. Note: Also has unused import of
+ * NoteHighway from ./note-highway.
+ */
+
 import React from 'react';
 import { Note, LyricLine } from '@/types/game';
 import { NoteHighway, NoteWithLine, PitchStats } from './note-highway';

@@ -1,5 +1,30 @@
 'use client';
 
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: This hook manages multiple simultaneous pitch detectors for
+ * multi-player karaoke. It wraps PitchDetectorManager with React state, supporting
+ * both local players (multiple microphones) and mobile players (pitch data via
+ * WebSocket). Features dynamic player addition/removal, per-player difficulty, and
+ * error handling per player.
+ *
+ * Currently, the app uses the single-pitch usePitchDetector hook in game-screen.tsx
+ * for solo mode, and the mobile pitch polling system handles companion players.
+ * There is no unified multi-pitch approach — local multiplayer uses a single
+ * pitch detector and the second player's pitch is simulated or comes from mobile.
+ *
+ * The hook also exports useSinglePitchDetector() as a backward-compatible wrapper.
+ *
+ * This is the most substantial dead hook (~391 lines) and represents significant
+ * design work for a feature that was planned but never fully integrated.
+ *
+ * Consider: This hook is the foundation for local split-screen multiplayer.
+ * It should be used instead of the current ad-hoc pitch detection approach
+ * when true local multiplayer is implemented.
+ */
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { 
   PitchDetectorManager, 

@@ -1,3 +1,31 @@
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: Centralized audio playback manager class that wraps
+ * HTMLAudioElement with AudioContext/GainNode for volume control. Provides
+ * play/pause/seek/stop with time update callbacks at ~60fps. Also includes
+ * SyntheticAudioGenerator for generating demo tones from note frequencies.
+ *
+ * Currently, the app uses a different audio approach — audio elements are managed
+ * directly in hooks (use-game-media.ts, use-native-audio.ts) and the store.
+ * The Tauri native audio bridge (native-audio.ts) handles audio on desktop.
+ * Volume is controlled through the audio element directly or through Tauri commands.
+ *
+ * The AudioManager's approach of wrapping audio in AudioContext + GainNode is
+ * actually the correct pattern for applying audio effects (reverb, echo) alongside
+ * playback. The current approach in useGameAudioEffects reuses the PitchDetector's
+ * AudioContext instead.
+ *
+ * The SyntheticAudioGenerator could be useful for a "preview notes" feature or
+ * for testing without real audio files.
+ *
+ * Consider: The AudioManager pattern could replace the current ad-hoc audio element
+ * management if a unified audio pipeline is desired. Particularly useful for the
+ * audio effects integration path.
+ */
+
 export class AudioManager {
   private audioContext: AudioContext | null = null;
   private audioElement: HTMLAudioElement | null = null;

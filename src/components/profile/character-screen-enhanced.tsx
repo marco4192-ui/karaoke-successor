@@ -1,5 +1,27 @@
 'use client';
 
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: Enhanced character/profile management screen with tabs
+ * for character customization, stats display, achievements showcase, and
+ * social features. More feature-rich than the current character-screen.tsx.
+ *
+ * Currently, character management uses character-screen.tsx which was
+ * refactored during Round 4 into smaller components (character-card.tsx,
+ * create-character-form.tsx, player-progression-card.tsx, etc.).
+ *
+ * This "enhanced" version appears to be an earlier attempt at a more
+ * comprehensive profile screen that was abandoned in favor of the
+ * modular approach. It includes features like XP bar visualization,
+ * achievement gallery, and friend list that aren't in the current screen.
+ *
+ * Consider: The XP bar visualization and achievement gallery could be
+ * extracted and added to the current modular character screen.
+ */
+
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';

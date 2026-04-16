@@ -1,3 +1,28 @@
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: Comprehensive user profile screen with tabs for overview,
+ * game history, achievements, and settings. Supports both guest and synced
+ * profiles with cloud sync capability. Includes stats visualization,
+ * performance grades, and rank titles.
+ *
+ * Currently, user profiles are managed through character-screen.tsx and
+ * its sub-components. The highscore-screen.tsx shows game history.
+ * Achievements have their own screen (achievements-screen.tsx).
+ *
+ * This is the most comprehensive dead component (~631 lines) and represents
+ * a "unified profile" vision that was never integrated. It consolidates
+ * features currently spread across multiple screens.
+ *
+ * Note: Has 6+ unused imports (PlayerStats, getRankTitle, getRoomService,
+ * useWebSocket, getPerformanceGrade, more) suggesting incomplete integration.
+ *
+ * Consider: Could serve as the basis for a unified profile screen that
+ * combines character, achievements, and highscores in one place.
+ */
+
 // User Profile Screen - Manages guest and synced profiles
 // Supports: Guest mode, Profile sync, Character customization
 

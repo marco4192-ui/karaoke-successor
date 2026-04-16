@@ -1,5 +1,27 @@
 'use client';
 
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: This hook provides practice mode controls — loop regions,
+ * adjustable playback speed (0.5x-1.5x), pitch guide toggle, and auto-play notes.
+ * It manages loop detection via currentTime monitoring and auto-seeks back to
+ * the loop start when the end is reached.
+ *
+ * Currently, practice mode is handled differently — the practice-panel.tsx
+ * component manages its own state and directly manipulates the audio element.
+ * The lib/game/practice-mode.ts types (PracticeModeConfig, PRACTICE_MODE_DEFAULTS)
+ * are still used, but through a different state management path.
+ *
+ * The loop detection logic here uses useEffect with currentTime dependency,
+ * which could cause issues at high update frequencies. The practice-panel.tsx
+ * approach using audio element events is more reliable.
+ *
+ * Consider: The playback rate and auto-play features from this hook could be
+ * integrated into the existing practice panel if those features are desired.
+ */
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { PRACTICE_MODE_DEFAULTS, PracticeModeConfig } from '@/lib/game/practice-mode';
 

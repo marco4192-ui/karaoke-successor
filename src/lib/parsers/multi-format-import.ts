@@ -1,3 +1,29 @@
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: Parsers for importing songs from additional karaoke formats:
+ * - KaraokeMugen (.km) format
+ * - MIDI (.mid) files with lyric tracks
+ * - SingStar XML export format
+ * - StepMania (.sm) chart format
+ *
+ * Currently, the import screen (import-screen.tsx) only supports UltraStar (.txt)
+ * format via ultrastar-parser.ts and folder scanning. These additional parsers
+ * would significantly expand import compatibility.
+ *
+ * Each parser follows the same pattern: parse the input format and convert to the
+ * internal Song/LyricLine/Note types. The MIDI parser is particularly valuable
+ * as many karaoke MIDI files exist with embedded lyrics.
+ *
+ * Note: Has unused import of Difficulty from @/types/game.
+ *
+ * Consider: These parsers are high-value for users migrating from other karaoke
+ * software. The MIDI parser alone could unlock a large library of existing songs.
+ * Could be offered as optional import format plugins.
+ */
+
 // Additional Song Import Formats
 import { Song, LyricLine, Note, Difficulty } from '@/types/game';
 

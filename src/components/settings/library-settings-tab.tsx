@@ -1,5 +1,26 @@
 'use client';
 
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: Library settings tab for managing song library preferences —
+ * scan paths, auto-refresh interval, cover art display options, and library
+ * statistics. Designed as a tab in the settings screen.
+ *
+ * Currently, library settings are split across library-tab.tsx (folder
+ * management, scan settings) and the folder scanner hook (useFolderScanner).
+ * This component consolidates all library-related settings in one place.
+ *
+ * The library statistics feature (total songs, total duration, genre breakdown)
+ * is not available in the current UI and would be a nice addition.
+ *
+ * Consider: Could merge with or replace library-tab.tsx for a more
+ * comprehensive library settings view. The statistics display is a
+ * useful feature missing from the current settings.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';

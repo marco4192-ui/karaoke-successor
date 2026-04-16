@@ -11,6 +11,12 @@ export interface UseAudioEffectsOptions {
 /**
  * @deprecated Use useGameAudioEffects instead — it properly reuses the
  * PitchDetector's AudioContext to avoid stealing audio focus on Tauri/WebView.
+ *
+ * NOTE (Code Review #1, 2026-04-17): This hook is DEAD CODE — it is not imported by any
+ * other file. It was the original audio effects hook that initialized effects
+ * eagerly when isPlaying became true. It was replaced by useGameAudioEffects
+ * which uses lazy initialization (only when the user opens the effects panel).
+ * Kept for reference — may contain useful patterns for future effects work.
  */
 export function useAudioEffects({ isPlaying }: UseAudioEffectsOptions): {
   audioEffects: AudioEffectsEngine | null;

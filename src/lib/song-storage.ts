@@ -1,3 +1,27 @@
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: IndexedDB-based persistent storage layer for songs and media
+ * files. Provides CRUD operations for songs (add, get, update, delete, search),
+ * media file storage (audio/video blobs), and library management functions.
+ * Designed to complement or replace the folder-based song library system.
+ *
+ * Currently, songs are stored as files on disk (via Tauri file system) and
+ * discovered through folder scanning (folder-scanner.ts). Media files are
+ * referenced by path, not stored in IndexedDB. The library-cache.ts provides
+ * an IndexedDB cache for song metadata but not the full storage this file offers.
+ *
+ * This storage approach could be useful for:
+ * - Companion app: Store downloaded songs locally
+ * - Custom songs: Store user-created songs with their audio
+ * - Offline mode: Cache songs for playback without file system access
+ *
+ * Consider: If the app ever needs to store songs without file system access
+ * (e.g., companion app on mobile), this provides the storage foundation.
+ */
+
 // IndexedDB-based persistent storage for songs and media files
 // This ensures songs persist across app restarts
 

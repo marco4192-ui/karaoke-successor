@@ -1,3 +1,27 @@
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: Complete PWA (Progressive Web App) support including:
+ * - Web app manifest configuration with icons, shortcuts, and theme
+ * - Service Worker registration with update detection
+ * - Install prompt handling (beforeinstallprompt capture)
+ * - Song caching via Cache API for offline playback
+ * - Tauri detection to disable PWA features on desktop
+ *
+ * Since this is a Tauri-only app, PWA features are intentionally unused.
+ * The Tauri detection (isTauriMode, isPWAInstalled) is redundant since
+ * the app is never deployed as a web app.
+ *
+ * The song caching system (cacheSong, getCachedSong, clearSongCache) could
+ * theoretically be useful for offline playback in a future web version, but
+ * Tauri has native file system access which is superior.
+ *
+ * Consider: This file can be safely removed entirely since the app is Tauri-only.
+ * If a web version is ever planned, this provides a solid PWA foundation.
+ */
+
 // PWA Manifest and Service Worker Configuration
 import { isTauri } from '@/lib/tauri-file-storage';
 

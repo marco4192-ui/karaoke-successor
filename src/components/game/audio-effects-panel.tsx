@@ -1,5 +1,25 @@
 'use client';
 
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: Standalone audio effects control panel UI — sliders for
+ * reverb amount, echo amount, and toggle button for enabling/disabling effects.
+ * Wraps the AudioEffectsEngine from audio-effects.ts.
+ *
+ * Currently, audio effects are controlled through the game-screen.tsx's built-in
+ * audio effects panel (rendered inline), which uses useGameAudioEffects hook.
+ * That hook provides lazy initialization and proper Tauri audio context handling.
+ *
+ * This component is a simpler, self-contained version that doesn't integrate
+ * with the game loop or Tauri audio management.
+ *
+ * Consider: Could serve as a template if audio effects are ever exposed as a
+ * standalone feature (e.g., in a settings screen or practice mode).
+ */
+
 import React from 'react';
 import { AudioEffectsEngine } from '@/lib/audio/audio-effects';
 

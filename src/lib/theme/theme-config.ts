@@ -1,4 +1,27 @@
 /**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: Theme configuration system with predefined presets (Neon,
+ * Sunset, Ocean, Retro, etc.), lyrics style options (normal, karaoke, popup),
+ * and settings persistence. Also includes note display customization and
+ * background theme settings.
+ *
+ * Currently, themes are managed in lib/game/themes.ts which provides a different
+ * set of theme presets focused on game visual effects. The settings screen's
+ * graphic-sound-tab.tsx handles theme selection through the store.
+ *
+ * This file's lyrics style options (normal/karaoke/popup) are not available
+ * in the current UI. The theme preset names differ from themes.ts, suggesting
+ * this was an earlier iteration of the theming system.
+ *
+ * Consider: The lyrics style options (karaoke, popup) could enhance the singing
+ * experience. The broader theme presets could complement the game-specific
+ * themes in themes.ts for a more complete theming system.
+ */
+
+/**
  * Theme Configuration for Karaoke Successor
  */
 

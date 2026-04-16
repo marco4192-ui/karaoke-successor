@@ -1,5 +1,28 @@
 'use client';
 
+/**
+ * DEAD CODE (Code Review #5, 2026-04-17)
+ *
+ * This file is not imported by any other file in the project.
+ *
+ * Possible function: Single-player note lane highway — renders notes falling
+ * from top to bottom with pitch indicator, golden note highlighting, and
+ * miss detection. Integrates with the pitch detection system and provides
+ * visual feedback for note hits/misses.
+ *
+ * Currently, the note highway is rendered by note-highway.tsx which is a
+ * more feature-rich version supporting multiple game modes, themes, and
+ * note styles. This appears to be an earlier, simpler implementation.
+ *
+ * This version uses a canvas-free approach (DOM elements instead of canvas)
+ * and has its own simplified scoring display. It could be lighter weight
+ * for lower-end devices.
+ *
+ * Consider: If performance is an issue with the main note-highway.tsx,
+ * this simpler DOM-based approach could serve as a fallback renderer.
+ * Note: Also has an unused import of Note from @/types/game.
+ */
+
 import React, { useMemo, useState, useEffect } from 'react';
 import { Note, LyricLine, DIFFICULTY_SETTINGS, frequencyToMidi } from '@/types/game';
 import { getStoredTheme } from '@/lib/game/themes';
