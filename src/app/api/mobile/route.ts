@@ -203,6 +203,46 @@ export async function GET(request: NextRequest) {
       // Generate new client with unique connection code
       {
         const clientIp = getClientIp(request);
+        
+        // CRITICAL FIX (IP-based reconnection): Before creating a new client,
+        // check if there's an existing zombie client from the same IP.
+        // On refresh, the old client session should be merged into the new one
+        // to preserve profile, queue, and remote control state.
+        const existingClients = Array.from(mobileClients.values());
+        const zombieClient = existingClients.find(
+          (c) => c.clientIp === clientIp && c.id !== 'active'
+        );
+        
+        // If a zombie with same IP exists, reuse its session instead of creating new
+        if (zombieClient) {
+          console.log('[MobileAPI] IP-based reconnect: found zombie client', zombieClient.id,
+            'from IP', clientIp, '- reusing session');
+          
+          // Update the zombie's activity timestamp
+          zombieClient.connected = Date.now();
+          zombieClient.lastActivity = Date.now();
+          zombieClient.clientIp = clientIp;
+          zombieClient.pitchData = null; // Clear stale pitch data
+          
+          // Regenerate connection code (the old one may have been saved in client's localStorage)
+          // but reuse if possible so the client doesn't need to update
+          const connectionCode = zombieClient.connectionCode;
+          
+          // Return the zombie's session as if reconnect succeeded
+          return Response.json({
+            success: true,
+            clientId: zombieClient.id,
+            connectionCode,
+            message: 'Reconnected via IP recognition',
+            gameState,
+            profile: zombieClient.profile || null,
+            hasRemoteControl: zombieClient.hasRemoteControl,
+            type: zombieClient.type,
+            ipReconnected: true, // Flag to tell client this was IP-based
+          });
+        }
+        
+        // No zombie found — create fresh client
         const newClientId = `mobile-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
         const connectionCode = getUniqueConnectionCode();
         
@@ -222,22 +262,12 @@ export async function GET(request: NextRequest) {
         
         connectionCodes.set(connectionCode, newClientId);
         
-        // Check if there's an existing client with same IP (from a refresh)
-        // If so, return info to help the client re-associate its profile
-        const existingClients = Array.from(mobileClients.values());
-        const existingProfileClient = existingClients.find(
-          (c) => c.id !== newClientId && c.clientIp === clientIp && c.profile
-        ) || null;
-        
         return Response.json({ 
           success: true, 
           clientId: newClientId,
           connectionCode,
           message: 'Connected to Karaoke Successor',
           gameState,
-          // Hint to client: there's an existing profile on this IP
-          existingProfile: existingProfileClient?.profile || null,
-          existingConnectionCode: existingProfileClient?.connectionCode || null,
         });
       }
 

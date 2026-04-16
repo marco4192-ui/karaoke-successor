@@ -97,36 +97,47 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
           callbacksRef.current.onGameStateUpdate(parsed);
         }
         
-        // Auto-restore profile: prefer server-hinted profile (IP match), then localStorage
-        const profileToRestore = data.existingProfile || (savedProfile ? JSON.parse(savedProfile) : null);
-        
-        if (profileToRestore) {
-          callbacksRef.current.onProfileLoaded(profileToRestore);
+        // Handle IP-based reconnection (server found zombie client with same IP)
+        if (data.ipReconnected && data.profile) {
+          // Server already has our profile — just restore it client-side
+          callbacksRef.current.onProfileLoaded(data.profile);
           callbacksRef.current.onProfileFieldsLoaded(
-            profileToRestore.name,
-            profileToRestore.color,
-            profileToRestore.avatar || null,
+            data.profile.name,
+            data.profile.color,
+            data.profile.avatar || null,
           );
-          // Sync profile to server after connection
-          try {
-            const syncResponse = await fetch('/api/mobile', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                type: 'profile',
-                clientId: newClientId,
-                payload: profileToRestore,
-              }),
-            });
-            const syncData = await syncResponse.json();
-            if (syncData.connectionCode) {
-              setConnectionCode(syncData.connectionCode);
-              localStorage.setItem('karaoke-connection-code', syncData.connectionCode);
+          console.log('[MobileClient] IP-based reconnect successful, profile:', data.profile.name);
+        } else if (!data.ipReconnected) {
+          // Truly fresh connection — try profile auto-restore from localStorage
+          const profileToRestore = savedProfile ? JSON.parse(savedProfile) : null;
+          
+          if (profileToRestore) {
+            callbacksRef.current.onProfileLoaded(profileToRestore);
+            callbacksRef.current.onProfileFieldsLoaded(
+              profileToRestore.name,
+              profileToRestore.color,
+              profileToRestore.avatar || null,
+            );
+            // Sync profile to server after connection
+            try {
+              const syncResponse = await fetch('/api/mobile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  type: 'profile',
+                  clientId: newClientId,
+                  payload: profileToRestore,
+                }),
+              });
+              const syncData = await syncResponse.json();
+              if (syncData.connectionCode) {
+                setConnectionCode(syncData.connectionCode);
+                localStorage.setItem('karaoke-connection-code', syncData.connectionCode);
+              }
+              console.log('[MobileClient] Profile auto-restored from localStorage:', profileToRestore.name);
+            } catch {
+              // Ignore sync errors
             }
-            console.log('[MobileClient] Profile auto-restored:', profileToRestore.name,
-              data.existingProfile ? '(via IP match)' : '(from localStorage)');
-          } catch {
-            // Ignore sync errors
           }
         }
       } else {
