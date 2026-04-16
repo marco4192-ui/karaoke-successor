@@ -341,7 +341,8 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     setHasUnsavedChanges(true);
   }, [setHasUnsavedChanges]);
 
-  // Determine the audio file path for analysis — resolve relative paths to absolute
+  // Determine the audio file path for analysis — resolve relative paths to absolute.
+  // Falls back to the video file path so that video-embedded audio can be analyzed.
   const analysisAudioPath = useMemo(() => {
     // Prefer stored/blob URLs that work directly
     if (currentSong.audioUrl && !currentSong.audioUrl.startsWith('blob:')) return currentSong.audioUrl;
@@ -352,10 +353,21 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
       const normalizedRelative = currentSong.relativeAudioPath.replace(/\\/g, '/');
       return `${normalizedBase}/${normalizedRelative}`;
     }
-    // Fallback: storedMedia flag might mean audio is in IndexedDB
+    // Fallback: blob URL (IndexedDB)
     if (currentSong.audioUrl) return currentSong.audioUrl;
+    // Fallback: video file path (audio may be embedded in the video)
+    if (currentSong.videoBackground && !currentSong.videoBackground.startsWith('http') && !currentSong.youtubeUrl) {
+      if (currentSong.videoBackground.startsWith('/') || currentSong.videoBackground.match(/^[A-Za-z]:/)) {
+        return currentSong.videoBackground;
+      }
+      if (currentSong.baseFolder) {
+        const normalizedBase = currentSong.baseFolder.replace(/\\/g, '/');
+        const normalizedVideo = currentSong.videoBackground.replace(/\\/g, '/');
+        return `${normalizedBase}/${normalizedVideo}`;
+      }
+    }
     return null;
-  }, [currentSong.audioUrl, currentSong.relativeAudioPath, currentSong.baseFolder]);
+  }, [currentSong.audioUrl, currentSong.relativeAudioPath, currentSong.baseFolder, currentSong.videoBackground, currentSong.youtubeUrl]);
 
   return (
     <div className="flex flex-col h-full bg-slate-950 text-white">

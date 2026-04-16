@@ -346,27 +346,50 @@ pub(crate) fn decode_audio_file(file_path: &str) -> Result<DecodedAudio, String>
 
     let mut format_reader = probe_result.format;
 
-    let default_track = format_reader
-        .default_track()
-        .ok_or("No default track in audio file")?;
-
-    let track_id = default_track.id;
-
-    // Determine sample rate and channels from codec params
-    let sample_rate = default_track.codec_params.sample_rate.unwrap_or(44100);
-    let channels = default_track
-        .codec_params
-        .channels
-        .map(|c| {
-            let count: u16 = c.count() as u16;
-            count
-        })
-        .unwrap_or(2);
-
+    // Find a decodable audio track.
+    // For audio files the default track is fine; for video containers (MP4, MKV)
+    // the default track may be video, so we fall back to searching all tracks.
     let decoder_opts = DecoderOptions::default();
-    let mut decoder = symphonia::default::get_codecs()
-        .make(&default_track.codec_params, &decoder_opts)
-        .map_err(|e| format!("No decoder available: {}", e))?;
+    let codecs = symphonia::default::get_codecs();
+
+    let (track_id, mut decoder, sample_rate, channels) = {
+        let mut found: Option<(u32, Box<dyn symphonia::core::codecs::Decoder>, u32, u16)> = None;
+
+        // 1) Try the default track
+        if let Some(default) = format_reader.default_track() {
+            if let Ok(dec) = codecs.make(&default.codec_params, &decoder_opts) {
+                let sr = default.codec_params.sample_rate.unwrap_or(44100);
+                let ch = default.codec_params.channels.map(|c| c.count() as u16).unwrap_or(2);
+                found = Some((default.id, dec, sr, ch));
+            }
+        }
+
+        // 2) If the default track couldn't be decoded, search all tracks
+        if found.is_none() {
+            for track in format_reader.tracks().iter() {
+                // Audio tracks have at least a sample rate or channels set
+                if track.codec_params.sample_rate.is_none()
+                    && track.codec_params.channels.is_none()
+                {
+                    continue;
+                }
+                if let Ok(dec) = codecs.make(&track.codec_params, &decoder_opts) {
+                    let sr = track.codec_params.sample_rate.unwrap_or(44100);
+                    let ch = track.codec_params.channels.map(|c| c.count() as u16).unwrap_or(2);
+                    found = Some((track.id, dec, sr, ch));
+                    break;
+                }
+            }
+        }
+
+        found.ok_or_else(|| {
+            let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("?");
+            format!(
+                "No decodable audio track found in file (format: {})",
+                ext
+            )
+        })?
+    };
 
     let mut all_samples: Vec<f32> = Vec::new();
     let mut decoded_frames: u64 = 0;
