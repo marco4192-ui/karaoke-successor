@@ -80,6 +80,8 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   const resolvedVideoUrlRef = useRef<string | null>(null);
   // Guard: prevent onEnded from firing before audio actually started playing
   const audioHasPlayedRef = useRef(false);
+  // Track the elimination-animation timer so it can be cleared on unmount / re-trigger
+  const roundEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Pre-compute timing data for scoring when song is loaded
   const timingData = useMemo(() => {
@@ -479,7 +481,12 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     onUpdateGame(updatedGame);
     setShowElimination(true);
 
-    setTimeout(() => {
+    // Clear any previous elimination timer (e.g. if handleRoundEnd is called twice)
+    if (roundEndTimerRef.current !== null) {
+      clearTimeout(roundEndTimerRef.current);
+    }
+    roundEndTimerRef.current = setTimeout(() => {
+      roundEndTimerRef.current = null;
       setShowElimination(false);
       
       if (updatedGame.winner) {
@@ -496,6 +503,17 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   useEffect(() => {
     handleRoundEndRef.current = handleRoundEnd;
   }, [handleRoundEnd]);
+
+  // Clean up the elimination timer on unmount to prevent state updates
+  // on an unmounted component.
+  useEffect(() => {
+    return () => {
+      if (roundEndTimerRef.current !== null) {
+        clearTimeout(roundEndTimerRef.current);
+        roundEndTimerRef.current = null;
+      }
+    };
+  }, []);
 
   // Start next round
   const handleStartRound = () => {
