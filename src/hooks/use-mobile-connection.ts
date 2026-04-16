@@ -22,7 +22,9 @@ function parseGameState(raw: any): GameState {
 }
 
 export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
-  const { onProfileLoaded, onProfileFieldsLoaded, onGameStateUpdate, onError, onSongEnd } = callbacks;
+  // Store callbacks in refs so connect() stays stable across renders
+  const callbacksRef = useRef(callbacks);
+  callbacksRef.current = callbacks;
 
   const [clientId, setClientId] = useState<string | null>(null);
   const [connectionCode, setConnectionCode] = useState<string>('');
@@ -32,11 +34,16 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
   });
 
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const connectAttemptedRef = useRef(false);
   const gameStateRef = useRef(gameState);
   gameStateRef.current = gameState;
 
-  // Connect to the server
+  // Connect to the server (stable reference - never recreated)
   const connect = useCallback(async () => {
+    // Prevent double-connect from StrictMode or rapid re-renders
+    if (connectAttemptedRef.current) return;
+    connectAttemptedRef.current = true;
+
     try {
       // First, check if we have a saved connection code to reconnect
       const savedConnectionCode = localStorage.getItem('karaoke-connection-code');
@@ -52,8 +59,8 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
           setConnectionCode(savedConnectionCode);
           setIsConnected(true);
           if (reconnectData.profile) {
-            onProfileLoaded(reconnectData.profile);
-            onProfileFieldsLoaded(
+            callbacksRef.current.onProfileLoaded(reconnectData.profile);
+            callbacksRef.current.onProfileFieldsLoaded(
               reconnectData.profile.name,
               reconnectData.profile.color,
               reconnectData.profile.avatar || null,
@@ -62,10 +69,13 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
           if (reconnectData.gameState) {
             const parsed = parseGameState(reconnectData.gameState);
             setGameState(parsed);
-            onGameStateUpdate(parsed);
+            callbacksRef.current.onGameStateUpdate(parsed);
           }
+          console.log('[MobileClient] Reconnected successfully with code:', savedConnectionCode);
           return; // Successfully reconnected
         }
+        // Reconnect failed (server restarted) - fall through to fresh connection
+        console.log('[MobileClient] Reconnect failed, creating new connection...');
       }
       
       // Fresh connection
@@ -84,14 +94,14 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
         if (data.gameState) {
           const parsed = parseGameState(data.gameState);
           setGameState(parsed);
-          onGameStateUpdate(parsed);
+          callbacksRef.current.onGameStateUpdate(parsed);
         }
         
         // Load saved profile from localStorage and sync
         if (savedProfile) {
           const parsed = JSON.parse(savedProfile);
-          onProfileLoaded(parsed);
-          onProfileFieldsLoaded(parsed.name, parsed.color, parsed.avatar || null);
+          callbacksRef.current.onProfileLoaded(parsed);
+          callbacksRef.current.onProfileFieldsLoaded(parsed.name, parsed.color, parsed.avatar || null);
           // Sync profile to server after connection
           try {
             const syncResponse = await fetch('/api/mobile', {
@@ -113,12 +123,14 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
           }
         }
       } else {
-        onError('Failed to connect to server');
+        connectAttemptedRef.current = false;
+        callbacksRef.current.onError('Failed to connect to server');
       }
     } catch {
-      onError('Connection failed - is the server running?');
+      connectAttemptedRef.current = false;
+      callbacksRef.current.onError('Connection failed - is the server running?');
     }
-  }, [onProfileLoaded, onProfileFieldsLoaded, onGameStateUpdate, onError]);
+  }, []);
 
   // Sync profile to server
   const syncProfile = useCallback(async (profileData: MobileProfile) => {
@@ -145,14 +157,28 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     }
   }, [clientId]);
 
-  // Cleanup
+  // Cleanup - only clear heartbeat, do NOT disconnect.
+  // The server's 5-minute inactivity timeout handles stale clients.
+  // Not disconnecting on unmount allows seamless reconnect on page refresh.
   const cleanup = useCallback(() => {
-    if (clientId) {
-      fetch(`/api/mobile?action=disconnect&clientId=${clientId}`).catch(() => {});
-    }
     if (heartbeatIntervalRef.current) {
       clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = null;
     }
+  }, []);
+
+  // Send disconnect on actual page close (beforeunload), not on React unmount.
+  // This fires when the user closes/navigates away, but NOT on refresh (the page unloads).
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (clientId) {
+        // Use sendBeacon for reliability during page unload
+        const url = `/api/mobile?action=disconnect&clientId=${clientId}`;
+        navigator.sendBeacon?.(url);
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [clientId]);
 
   // Auto-connect on mount
@@ -200,11 +226,11 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
           
           const parsed = parseGameState(data.gameState);
           setGameState(parsed);
-          onGameStateUpdate(parsed);
+          callbacksRef.current.onGameStateUpdate(parsed);
           
           // Load game results when song ends
           if (newSongEnded && !prevSongEnded) {
-            onSongEnd();
+            callbacksRef.current.onSongEnd();
           }
         }
       } catch {
@@ -213,7 +239,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     }, 1000);
     
     return () => clearInterval(syncInterval);
-  }, [isConnected, onGameStateUpdate, onSongEnd]);
+  }, [isConnected]);
 
   return {
     clientId,
