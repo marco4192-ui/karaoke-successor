@@ -46,7 +46,21 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
     const restoreUrls = async () => {
       try {
         const { ensureSongUrls } = await import('@/lib/game/song-library');
-        const preparedSong = await ensureSongUrls(song);
+        let preparedSong = await ensureSongUrls(song);
+
+        // Browser: also restore audio/video from IndexedDB if storedMedia flag is set
+        // and URLs are missing (blob URLs may have expired)
+        if (preparedSong.storedMedia && !preparedSong.audioUrl) {
+          try {
+            const { getSongMediaUrls } = await import('@/lib/db/media-db');
+            const mediaUrls = await getSongMediaUrls(preparedSong.id);
+            if (mediaUrls.audioUrl) preparedSong = { ...preparedSong, audioUrl: mediaUrls.audioUrl };
+            if (mediaUrls.videoUrl) preparedSong = { ...preparedSong, videoBackground: mediaUrls.videoUrl };
+          } catch (e) {
+            console.warn('[GameScreen] Failed to restore media from IndexedDB:', e);
+          }
+        }
+
         console.log('[GameScreen] Song URLs ensured:', {
           title: preparedSong.title,
           audioUrl: !!preparedSong.audioUrl,
