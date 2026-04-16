@@ -248,13 +248,9 @@ export function useWebSocket(options: WSOptions = {}): UseWebSocketReturn {
 
   // Room methods
   const createRoom = useCallback(async (hostId: string, hostName: string): Promise<MultiplayerRoom> => {
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error('Create room timeout'));
-      }, 10000);
-
+    return new Promise<MultiplayerRoom>((resolve, reject) => {
       const handleResponse = (payload: unknown) => {
-        clearTimeout(timeout);
+        cleanup();
         const room = payload as MultiplayerRoom;
         if (room) {
           resolve(room);
@@ -263,23 +259,37 @@ export function useWebSocket(options: WSOptions = {}): UseWebSocketReturn {
         }
       };
 
+      // Register one-shot listener (auto-removes after 10s or on response)
       const state = stateRef.current;
-      const existingListeners = state.listeners.get('room-created') || new Set();
-      existingListeners.add(handleResponse);
-      state.listeners.set('room-created', existingListeners);
+      const listeners = state.listeners.get('room-created') || new Set();
+      listeners.add(handleResponse);
+      state.listeners.set('room-created', listeners);
+
+      const removeListener = () => {
+        listeners.delete(handleResponse);
+        if (listeners.size === 0) state.listeners.delete('room-created');
+      };
+
+      const timeout = setTimeout(() => {
+        removeListener();
+        reject(new Error('Create room timeout'));
+      }, 10000);
+
+      const cleanup = () => {
+        clearTimeout(timeout);
+        removeListener();
+      };
 
       sendMessage('room-created', { hostId, hostName });
     });
   }, [sendMessage]);
 
   const joinRoom = useCallback(async (code: string, playerId: string, playerName: string): Promise<MultiplayerRoom> => {
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error('Join room timeout'));
-      }, 10000);
+    return new Promise<MultiplayerRoom>((resolve, reject) => {
+      const state = stateRef.current;
 
       const handleResponse = (payload: unknown) => {
-        clearTimeout(timeout);
+        cleanup();
         const room = payload as MultiplayerRoom;
         if (room) {
           resolve(room);
@@ -288,12 +298,12 @@ export function useWebSocket(options: WSOptions = {}): UseWebSocketReturn {
         }
       };
 
-      const handleError = () => {
-        clearTimeout(timeout);
+      const handleError = (_payload: unknown) => {
+        cleanup();
         reject(new Error('Failed to join room'));
       };
 
-      const state = stateRef.current;
+      // Register one-shot listeners (auto-remove after 10s or on response)
       let joinListeners = state.listeners.get('room-joined') || new Set();
       joinListeners.add(handleResponse);
       state.listeners.set('room-joined', joinListeners);
@@ -301,6 +311,23 @@ export function useWebSocket(options: WSOptions = {}): UseWebSocketReturn {
       let errorListeners = state.listeners.get('error') || new Set();
       errorListeners.add(handleError);
       state.listeners.set('error', errorListeners);
+
+      const removeListeners = () => {
+        joinListeners.delete(handleResponse);
+        if (joinListeners.size === 0) state.listeners.delete('room-joined');
+        errorListeners.delete(handleError);
+        if (errorListeners.size === 0) state.listeners.delete('error');
+      };
+
+      const timeout = setTimeout(() => {
+        removeListeners();
+        reject(new Error('Join room timeout'));
+      }, 10000);
+
+      const cleanup = () => {
+        clearTimeout(timeout);
+        removeListeners();
+      };
 
       sendMessage('room-joined', { code: code.toUpperCase(), playerId, playerName });
     });
