@@ -45,6 +45,7 @@ import { SpectrogramDisplay } from '@/components/game/spectrogram-display';
 import { GameBackground } from '@/components/game/game-background';
 import { DuetNoteHighway } from '@/components/game/duet-note-highway';
 import { NoteHighway } from '@/components/game/note-highway';
+import { NoteLane } from '@/components/game/note-lane';
 import { SinglePlayerLyrics } from '@/components/game/single-player-lyrics';
 import { useRemoteControl } from '@/hooks/use-remote-control';
 import { useMobilePitchPolling } from '@/hooks/use-mobile-pitch-polling';
@@ -106,7 +107,11 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     useAnimatedBackground,
     noteDisplayStyle,
     noteShapeStyle,
+    performanceMode,
   } = useGameSettings();
+
+  // Derived: is low-performance mode?
+  const isLowPerf = performanceMode === 'low';
   
   // Practice mode state
   const [practiceMode, setPracticeMode] = useState<PracticeModeConfig>(PRACTICE_MODE_DEFAULTS);
@@ -207,8 +212,9 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   
   // Check if this is a duet song (use comprehensive detection, not just flag)
   // Also treat blind/missing-words competitive modes as duet when 2+ players are added
-  const isCompetitiveMultiplayer = (gameState.gameMode === 'blind' || gameState.gameMode === 'missing-words') && gameState.players.length >= 2;
-  const isDuetMode = (song ? isDuetSong(song) : false) || gameState.gameMode === 'duet' || gameState.gameMode === 'duel' || isCompetitiveMultiplayer;
+  // NOTE: In low-performance mode, force single-player (no duet split-screen)
+  const isCompetitiveMultiplayer = !isLowPerf && (gameState.gameMode === 'blind' || gameState.gameMode === 'missing-words') && gameState.players.length >= 2;
+  const isDuetMode = !isLowPerf && ((song ? isDuetSong(song) : false) || gameState.gameMode === 'duet' || gameState.gameMode === 'duel' || isCompetitiveMultiplayer);
 
   // =====================================================
   // PRE-COMPUTE ALL TIMING DATA ONCE WHEN SONG LOADS
@@ -480,12 +486,17 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
           ← Back
         </Button>
         
-        {/* Center: Webcam Controls */}
+        {/* Center: Webcam Controls — hidden in low-performance mode */}
         <div className="flex items-center gap-3">
-          <WebcamQuickControls 
-            config={webcamConfig} 
-            onConfigChange={updateWebcamConfig}
-          />
+          {!isLowPerf && (
+            <WebcamQuickControls 
+              config={webcamConfig} 
+              onConfigChange={updateWebcamConfig}
+            />
+          )}
+          {isLowPerf && (
+            <span className="text-xs text-orange-400/80 font-medium px-2 py-1 bg-orange-500/10 rounded">⚡ Low-Perf</span>
+          )}
         </div>
         
         {/* Right: Score, Difficulty & Challenge */}
@@ -498,8 +509,8 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         />
       </div>
 
-      {/* Pitch Graph Display */}
-      {isPlaying && showPitchGuide && (
+      {/* Pitch Graph Display — disabled in low-performance mode */}
+      {isPlaying && showPitchGuide && !isLowPerf && (
         <div className="absolute top-44 left-4 z-20 w-64">
           <PitchGraphDisplay
             currentPitch={smoothedPitch}
@@ -559,17 +570,17 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
 
       {/* Game Area - Full Screen */}
       <div className="absolute inset-0 overflow-hidden">
-        {/* Background layer */}
+        {/* Background layer — in low-perf mode: no video, no animated bg, no song energy */}
         <GameBackground
           effectiveSong={effectiveSong}
-          showBackgroundVideo={showBackgroundVideo}
-          useAnimatedBackground={useAnimatedBackground}
+          showBackgroundVideo={!isLowPerf && showBackgroundVideo}
+          useAnimatedBackground={!isLowPerf && useAnimatedBackground}
           isYouTube={isYouTube}
           youtubeVideoId={youtubeVideoId}
           useYouTubeAudio={useYouTubeAudio}
           isPlaying={isPlaying}
           isAdPlaying={isAdPlaying}
-          songEnergy={songEnergy}
+          songEnergy={isLowPerf ? undefined : songEnergy}
           volume={volume}
           videoRef={videoRef}
           onYoutubeTimeUpdate={setYoutubeTime}
@@ -590,11 +601,13 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
           }}
         />
 
-        {/* Webcam Background */}
-        <WebcamBackground 
-          config={webcamConfig} 
-          onConfigChange={updateWebcamConfig}
-        />
+        {/* Webcam Background — disabled in low-performance mode */}
+        {!isLowPerf && (
+          <WebcamBackground 
+            config={webcamConfig} 
+            onConfigChange={updateWebcamConfig}
+          />
+        )}
 
         {/* Countdown */}
         <GameCountdown countdown={countdown} />
@@ -612,8 +625,15 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         {/* Dark Overlay for better note visibility */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50 z-5" />
 
-        {/* Note Highway */}
-        {isDuetMode ? (
+        {/* Note Highway — use lightweight NoteLane in low-performance mode */}
+        {isLowPerf ? (
+          <NoteLane
+            lyrics={timingData?.sortedLines || []}
+            currentTime={gameState.currentTime}
+            difficulty={gameState.difficulty}
+            detectedPitch={pitchResult?.frequency ?? null}
+          />
+        ) : isDuetMode ? (
           <DuetNoteHighway
             p1VisibleNotes={p1VisibleNotes}
             p2VisibleNotes={p2VisibleNotes}
@@ -655,8 +675,8 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
           />
         )}
 
-        {/* Lyrics Display */}
-        {!isDuetMode && timingData && (
+        {/* Lyrics Display — NoteLane has built-in lyrics in low-perf mode */}
+        {!isDuetMode && !isLowPerf && timingData && (
           <SinglePlayerLyrics
             sortedLines={timingData.sortedLines}
             currentTime={gameState.currentTime}
@@ -713,11 +733,12 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         onPracticeModeChange={(config) => setPracticeMode(p => ({ ...p, ...config }))}
       />
 
-      <ScoreEventsDisplay events={scoreEvents} maxVisible={5} />
-      <ParticleSystem particles={particles} />
+      {/* Score Events & Particles — disabled in low-performance mode */}
+      {!isLowPerf && <ScoreEventsDisplay events={scoreEvents} maxVisible={5} />}
+      {!isLowPerf && <ParticleSystem particles={particles} />}
       
-      {/* Spectrogram Display */}
-      {showPitchGuide && isPlaying && (
+      {/* Spectrogram Display — disabled in low-performance mode */}
+      {showPitchGuide && isPlaying && !isLowPerf && (
         <SpectrogramDisplay
           audioElement={audioRef.current}
           isActive={isPlaying && !!audioRef.current}
@@ -729,8 +750,8 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
         />
       )}
       
-      {/* Combo Fire Effect */}
-      {gameState.players[0]?.combo && gameState.players[0].combo >= 5 && (
+      {/* Combo Fire Effect — disabled in low-performance mode */}
+      {!isLowPerf && gameState.players[0]?.combo && gameState.players[0].combo >= 5 && (
         <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
           <ComboFireEffect combo={gameState.players[0].combo} isLarge={gameState.players[0].combo >= 20} />
         </div>

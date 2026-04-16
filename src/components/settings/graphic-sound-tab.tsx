@@ -24,6 +24,8 @@ interface GraphicSoundTabProps {
   setMicSensitivity: (value: number) => void;
   lyricsStyle: string;
   setLyricsStyle: (value: string) => void;
+  performanceMode: 'full' | 'low';
+  setPerformanceMode: (value: 'full' | 'low') => void;
   tx: (key: string) => string;
   setHasChanges: (value: boolean) => void;
 }
@@ -45,11 +47,74 @@ export function GraphicSoundTab({
   setMicSensitivity,
   lyricsStyle,
   setLyricsStyle,
+  performanceMode,
+  setPerformanceMode,
   tx,
   setHasChanges,
 }: GraphicSoundTabProps) {
+  const isLowPerf = performanceMode === 'low';
   return (
     <div className="space-y-6">
+      {/* Performance Mode */}
+      <Card className={`bg-white/5 border-white/10 ${isLowPerf ? 'border-orange-500/50' : ''}`}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <span className="text-lg">⚡</span>
+            Performance-Modus
+          </CardTitle>
+          <CardDescription>Optimierung für schwächere Hardware</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+            <div>
+              <h4 className="font-medium">Low-Performance-Modus</h4>
+              <p className="text-sm text-white/60">Reduziert visuelle Effekte für flüssigeres Gameplay auf älteren Geräten.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const newValue = isLowPerf ? 'full' : 'low';
+                setPerformanceMode(newValue);
+                localStorage.setItem('karaoke-performance-mode', newValue);
+                window.dispatchEvent(new CustomEvent('settingsChange', { detail: { performanceMode: newValue } }));
+                setHasChanges(true);
+              }}
+              className={`relative w-14 h-7 rounded-full transition-colors cursor-pointer ${
+                isLowPerf ? 'bg-orange-500' : 'bg-white/20'
+              }`}
+            >
+              <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${isLowPerf ? 'left-8' : 'left-1'}`} />
+            </button>
+          </div>
+          {isLowPerf && (
+            <div className="p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg text-sm space-y-1">
+              <p className="font-medium text-orange-300">Im Low-Performance-Modus werden folgende Features deaktiviert:</p>
+              <ul className="text-white/60 space-y-0.5 ml-4 list-disc">
+                <li>Duet-/Multiplayer-Split-Screen (Single-Player-Ansicht)</li>
+                <li>Noten-Darstellungsstile (nur Klassisch verfügbar)</li>
+                <li>Noten-Accuracy-Tracking (Farb-/Glow-Feedback)</li>
+                <li>Partikeleffekte (Perfect-Hit, Combo-Feuerwerk, Konfetti)</li>
+                <li>Spektrogramm- und Pitch-Graph-Anzeige</li>
+                <li>Combo-Feuereffekte</li>
+                <li>Score-Event-Popups</li>
+                <li>Webcam-Hintergrund</li>
+                <li>Animierte Musik-Hintergründe</li>
+                <li>YouTube-Video-Hintergründe (nur Audio)</li>
+                <li>Song-Energy-Visualisierung</li>
+              </ul>
+              <p className="text-white/80 mt-2 font-medium">Verfügbar bleiben:</p>
+              <ul className="text-green-400/80 space-y-0.5 ml-4 list-disc">
+                <li>Kernspielplay (Noten, Scoring, Combo-System)</li>
+                <li>Einfacher Pitch-Indikator</li>
+                <li>Liedtext-Anzeige (eingebaut)</li>
+                <li>Practice-Panel, Fortschrittsbalken, Zeitanzeige</li>
+                <li>Audio-Effekte (Reverb, Echo)</li>
+              </ul>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Audio Output / ASIO Device Selection */}
       <AudioOutputSection />
 
@@ -146,9 +211,9 @@ export function GraphicSoundTab({
             </div>
           </div>
 
-          {/* Note Display Style */}
-          <div>
-            <label className="text-sm theme-adaptive-text-secondary mb-2 block">Noten-Darstellung</label>
+          {/* Note Display Style — disabled in low-performance mode */}
+          <div className={isLowPerf ? 'opacity-40 pointer-events-none' : ''}>
+            <label className="text-sm theme-adaptive-text-secondary mb-2 block">Noten-Darstellung {isLowPerf && '(nur Klassisch im Low-Perf-Modus)'}</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
                 { id: 'classic', name: 'Klassisch', icon: '➡️', desc: 'UltraStar-Stil' },
@@ -180,7 +245,7 @@ export function GraphicSoundTab({
           </div>
           
           {/* Note Shape Style */}
-          <div>
+          <div className={isLowPerf ? 'opacity-40 pointer-events-none' : ''}>
             <label className="text-sm theme-adaptive-text-secondary mb-2 block">Notenform</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[

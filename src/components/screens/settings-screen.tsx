@@ -55,6 +55,12 @@ function SettingsScreen() {
   const [noteShapeStyle, setNoteShapeStyle] = useState<string>('rounded');
   const [bgVideo, setBgVideo] = useState<boolean>(true);
   const [useAnimatedBg, setUseAnimatedBg] = useState<boolean>(false);
+  const [performanceMode, setPerformanceMode] = useState<'full' | 'low'>(() => {
+    try {
+      const stored = localStorage.getItem('karaoke-performance-mode');
+      return stored === 'low' ? 'low' : 'full';
+    } catch { return 'full'; }
+  });
 
   // Webcam settings state
   const [webcamConfig, setWebcamConfig] = useState<WebcamBackgroundConfig>(() => loadWebcamConfig());
@@ -133,6 +139,7 @@ function SettingsScreen() {
       setNoteShapeStyle(safeGetItem('karaoke-note-shape', 'rounded'));
       setBgVideo(safeGetBool('karaoke-bg-video', true));
       setUseAnimatedBg(safeGetItem('karaoke-animated-bg', 'false') === 'true');
+      setPerformanceMode(safeGetItem('karaoke-performance-mode', 'full') === 'low' ? 'low' : 'full');
 
       try {
         const storedTheme = getStoredTheme();
@@ -266,6 +273,8 @@ function SettingsScreen() {
           setMicSensitivity={setMicSensitivity}
           lyricsStyle={lyricsStyle}
           setLyricsStyle={setLyricsStyle}
+          performanceMode={performanceMode}
+          setPerformanceMode={setPerformanceMode}
           tx={tx}
           setHasChanges={setHasChanges}
         />

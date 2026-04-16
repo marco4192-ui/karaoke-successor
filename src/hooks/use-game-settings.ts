@@ -4,12 +4,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { getStoredTheme } from '@/lib/game/themes';
 import type { NoteShapeStyle } from '@/lib/game/note-utils';
 
+export type PerformanceMode = 'full' | 'low';
+
 export interface GameSettings {
   showBackgroundVideo: boolean;
   showPitchGuide: boolean;
   useAnimatedBackground: boolean;
   noteDisplayStyle: string;
   noteShapeStyle: NoteShapeStyle;
+  performanceMode: PerformanceMode;
 }
 
 export function useGameSettings(): GameSettings & {
@@ -18,6 +21,7 @@ export function useGameSettings(): GameSettings & {
   setUseAnimatedBackground: (value: boolean) => void;
   setNoteDisplayStyle: (value: string) => void;
   setNoteShapeStyle: (value: NoteShapeStyle) => void;
+  setPerformanceMode: (value: PerformanceMode) => void;
 } {
   // Helper to safely read localStorage (returns null in SSR)
   const getStored = (key: string): string | null => {
@@ -44,6 +48,10 @@ export function useGameSettings(): GameSettings & {
     }
     const theme = getStoredTheme();
     return theme?.noteStyle || 'rounded';
+  });
+  const [performanceMode, setPerformanceMode] = useState<PerformanceMode>(() => {
+    const stored = getStored('karaoke-performance-mode') as PerformanceMode | null;
+    return stored === 'low' ? 'low' : 'full';
   });
 
   // Load initial settings and listen for changes
@@ -94,6 +102,11 @@ export function useGameSettings(): GameSettings & {
       if (storedShape && ['rounded', 'sharp', 'pill', 'diamond'].includes(storedShape)) {
         setNoteShapeStyle(storedShape);
       }
+      // Refresh performance mode
+      const storedPerf = localStorage.getItem('karaoke-performance-mode') as PerformanceMode | null;
+      if (storedPerf === 'low' || storedPerf === 'full') {
+        setPerformanceMode(storedPerf);
+      }
     };
 
     // Listen for theme changes specifically - only update if no localStorage setting
@@ -130,10 +143,12 @@ export function useGameSettings(): GameSettings & {
     useAnimatedBackground,
     noteDisplayStyle,
     noteShapeStyle,
+    performanceMode,
     setShowBackgroundVideo,
     setShowPitchGuide,
     setUseAnimatedBackground,
     setNoteDisplayStyle,
     setNoteShapeStyle,
+    setPerformanceMode,
   };
 }

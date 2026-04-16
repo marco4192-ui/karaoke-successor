@@ -1,30 +1,25 @@
 'use client';
 
 /**
- * DEAD CODE (Code Review #5, 2026-04-17)
+ * Low-Performance Note Lane (Code Review #6, 2026-04-17)
  *
- * This file is not imported by any other file in the project.
+ * Lightweight single-player note highway for low-end devices.
+ * Used when the user enables "Low-Performance-Modus" in Game Settings.
  *
- * Possible function: Single-player note lane highway — renders notes falling
- * from top to bottom with pitch indicator, golden note highlighting, and
- * miss detection. Integrates with the pitch detection system and provides
- * visual feedback for note hits/misses.
+ * Differences from note-highway.tsx (full version):
+ * - DOM-based rendering (no canvas, no performance maps)
+ * - Single-player only (no duet/multiplayer split-screen)
+ * - Classic note display only (no fill-level, color-feedback, glow-intensity)
+ * - Built-in lyrics display at the bottom
+ * - Fixed sing-line position (no customization)
+ * - Accepts frequency-based pitch input (converts internally to MIDI)
+ * - No particle effects, no spectrogram, no webcam
  *
- * Currently, the note highway is rendered by note-highway.tsx which is a
- * more feature-rich version supporting multiple game modes, themes, and
- * note styles. This appears to be an earlier, simpler implementation.
- *
- * This version uses a canvas-free approach (DOM elements instead of canvas)
- * and has its own simplified scoring display. It could be lighter weight
- * for lower-end devices.
- *
- * Consider: If performance is an issue with the main note-highway.tsx,
- * this simpler DOM-based approach could serve as a fallback renderer.
- * Note: Also has an unused import of Note from @/types/game.
+ * Accepts raw frequency (Hz) as detectedPitch and converts to MIDI internally.
  */
 
 import React, { useMemo, useState, useEffect } from 'react';
-import { Note, LyricLine, DIFFICULTY_SETTINGS, frequencyToMidi } from '@/types/game';
+import { LyricLine, DIFFICULTY_SETTINGS, frequencyToMidi } from '@/types/game';
 import { getStoredTheme } from '@/lib/game/themes';
 import {
   NOTE_HEIGHT,
@@ -241,13 +236,12 @@ export function NoteLane({
     window.addEventListener('settingsChange', handleSettingsChange);
     window.addEventListener('storage', handleSettingsChange);
 
-    const interval = setInterval(handleSettingsChange, 500);
+    // NOTE: No polling interval — this is a Tauri desktop app, not a browser.
     return () => {
       window.removeEventListener('themeChanged', handleThemeChange);
       window.removeEventListener('themeChange', handleThemeChange);
       window.removeEventListener('settingsChange', handleSettingsChange);
       window.removeEventListener('storage', handleSettingsChange);
-      clearInterval(interval);
     };
   }, []);
 
