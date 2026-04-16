@@ -393,6 +393,15 @@ export function useMedleyGame(options: UseMedleyGameOptions): UseMedleyGameResul
     [scoringMetadata, songWithUrls, currentSnippetNotes, settings.difficulty, onPlayersUpdate]
   );
 
+  // Refs for callbacks that must NOT be in the game loop dependency array.
+  // These prevent loop restarts when parent re-renders (e.g. inline callbacks).
+  const evaluatePitchAgainstNotesRef = useRef(evaluatePitchAgainstNotes);
+  evaluatePitchAgainstNotesRef.current = evaluatePitchAgainstNotes;
+  const onSnippetTimeUpdateRef = useRef(onSnippetTimeUpdate);
+  onSnippetTimeUpdateRef.current = onSnippetTimeUpdate;
+  const onSnippetEndRef = useRef(onSnippetEnd);
+  onSnippetEndRef.current = onSnippetEnd;
+
   // ── Game loop: reads audio time, updates scoring ──
   useEffect(() => {
     if (!isPlaying || phase !== 'playing' || !currentMedleySong) return;
@@ -409,27 +418,27 @@ export function useMedleyGame(options: UseMedleyGameOptions): UseMedleyGameResul
       // Check if snippet has ended
       if (currentTimeInSong >= currentMedleySong.endTime) {
         audio.pause();
-        onSnippetEnd();
+        onSnippetEndRef.current();
         return;
       }
 
       // Calculate time within snippet
       const timeInSnippet = currentTimeInSong - currentMedleySong.startTime;
       setSnippetTimeMs(timeInSnippet);
-      onSnippetTimeUpdate(timeInSnippet);
+      onSnippetTimeUpdateRef.current(timeInSnippet);
 
       // Evaluate pitch for all active singers
       const currentPitch = pitchResultRef.current;
       if (currentPitch) {
         const isCompetitive = settings.playMode === 'competitive';
-        const activePlayerIndices = (isCompetitive && players.length > 0)
-          ? [currentSongIndex % players.length]
-          : players.map((_, i) => i);
+        const activePlayerIndices = (isCompetitive && playersRef.current.length > 0)
+          ? [currentSongIndex % playersRef.current.length]
+          : playersRef.current.map((_, i) => i);
 
         for (const playerIndex of activePlayerIndices) {
-          const player = players[playerIndex];
+          const player = playersRef.current[playerIndex];
           if (player) {
-            evaluatePitchAgainstNotes(currentTimeInSong, currentPitch, player.id);
+            evaluatePitchAgainstNotesRef.current(currentTimeInSong, currentPitch, player.id);
           }
         }
       }
@@ -445,7 +454,7 @@ export function useMedleyGame(options: UseMedleyGameOptions): UseMedleyGameResul
         gameLoopRef.current = null;
       }
     };
-  }, [isPlaying, phase, currentMedleySong, currentSongIndex, settings.playMode, players, evaluatePitchAgainstNotes, onSnippetTimeUpdate, onSnippetEnd]);
+  }, [isPlaying, phase, currentMedleySong, currentSongIndex, settings.playMode]);
 
   // ── Cleanup on unmount ──
   const cleanup = useCallback(() => {
