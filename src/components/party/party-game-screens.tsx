@@ -494,6 +494,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       {screen === 'rate-my-song-results' && rateMySongResult && (
         <RateMySongResultsScreen
           result={rateMySongResult}
+          songId={party.rateMySongSettings?.songId}
           onPlayAgain={() => {
             setRateMySongResult(null);
             setScreen('rate-my-song');

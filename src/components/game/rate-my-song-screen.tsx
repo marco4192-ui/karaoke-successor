@@ -8,9 +8,14 @@
 
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { PlayerProfile, Song, PLAYER_COLORS } from '@/types/game';
 import { getAllSongs } from '@/lib/game/song-library';
+import {
+  addRateMySongEntry,
+  getRateMySongTopN,
+  type RateMySongEntry,
+} from '@/lib/game/rate-my-song-ranking';
 
 // ===================== TYPES =====================
 
@@ -467,11 +472,33 @@ export function RateMySongRatingScreen({
 
 interface RateMySongResultsScreenProps {
   result: RateMySongResult;
+  songId?: string;
   onPlayAgain: () => void;
   onEnd: () => void;
 }
 
-export function RateMySongResultsScreen({ result, onPlayAgain, onEnd }: RateMySongResultsScreenProps) {
+export function RateMySongResultsScreen({ result, songId, onPlayAgain, onEnd }: RateMySongResultsScreenProps) {
+  const [topRanking, setTopRanking] = useState<RateMySongEntry[]>([]);
+
+  // Persist ratings and load ranking on mount
+  useEffect(() => {
+    // Save each player's rating to the ranking
+    for (const r of result.ratings) {
+      addRateMySongEntry({
+        songId: songId || 'unknown',
+        songTitle: result.songTitle,
+        songArtist: '',
+        playerId: r.playerId,
+        playerName: r.playerName,
+        playerColor: r.playerColor,
+        rating: r.rating,
+        ratingCount: 1, // Each audience member counts
+      });
+    }
+    // Reload the top ranking
+    setTopRanking(getRateMySongTopN(5));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-amber-900/10 to-gray-900 text-white p-4 md:p-8 flex items-center justify-center">
       <div className="max-w-lg w-full text-center">
@@ -484,7 +511,7 @@ export function RateMySongResultsScreen({ result, onPlayAgain, onEnd }: RateMySo
         </div>
 
         {/* Individual Ratings */}
-        <div className="space-y-3 mb-8 text-left">
+        <div className="space-y-3 mb-6 text-left">
           {result.ratings.map((r, i) => {
             const emoji = r.rating >= 9 ? '🌟' : r.rating >= 7 ? '⭐' : r.rating >= 5 ? '👍' : r.rating >= 3 ? '😐' : '💔';
             return (
@@ -507,6 +534,40 @@ export function RateMySongResultsScreen({ result, onPlayAgain, onEnd }: RateMySo
             );
           })}
         </div>
+
+        {/* Top Ranking */}
+        {topRanking.length > 0 && (
+          <div className="mb-8 text-left">
+            <h3 className="text-lg font-semibold mb-3 text-center">🏅 Top-Ranking</h3>
+            <div className="space-y-2">
+              {topRanking.map((entry, i) => {
+                const score = entry.rating * Math.log2(entry.ratingCount + 1);
+                return (
+                  <div key={entry.id} className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10">
+                    <span className="text-lg w-6 text-center">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</span>
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      style={{ backgroundColor: entry.playerColor }}
+                    >
+                      {entry.playerName.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm truncate">{entry.playerName}</div>
+                      <div className="text-[11px] text-gray-400 truncate">{entry.songTitle}</div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-sm font-bold text-amber-400">{entry.rating.toFixed(1)}</div>
+                      <div className="text-[10px] text-gray-500">Score: {score.toFixed(1)}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-gray-500 text-center mt-2">
+              Score = Rating × log2(Bewertungen + 1)
+            </p>
+          </div>
+        )}
 
         <div className="flex gap-3">
           <button
