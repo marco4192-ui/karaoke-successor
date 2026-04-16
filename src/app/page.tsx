@@ -585,6 +585,14 @@ export default function KaraokeSuccessor() {
                 // (the old companion-singalong-game view used a plain <audio> element
                 //  that cannot handle Tauri local file paths)
                 setScreen('game');
+              } else if (gameState.gameMode === 'rate-my-song' && party.rateMySongSettings) {
+                // Rate my Song: update songId in settings, apply short mode if needed
+                const duration = party.rateMySongSettings.duration;
+                party.setRateMySongSettings({ ...party.rateMySongSettings, songId: song.id });
+                if (duration === 'short') {
+                  setSong({ ...song, start: song.start, end: Math.min((song.start || 0) + 60000, song.end || song.duration) });
+                }
+                setScreen('game');
               } else {
                 setScreen('game');
               }
@@ -677,10 +685,8 @@ export default function KaraokeSuccessor() {
         {screen === 'party' && (
           <PartyScreen
             onSelectMode={(mode) => {
-              // Missing Words and Blind Karaoke use their own competitive setup screens
-              if (mode === 'missing-words' || mode === 'blind' || mode === 'rate-my-song') {
-                setScreen(mode);
-              } else if (mode === 'online') {
+              // All party modes go through unified setup; only online has its own screen
+              if (mode === 'online') {
                 setScreen('online');
               } else {
                 party.setSelectedGameMode(mode);

@@ -193,6 +193,30 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     songSelectionOptions: ['random'],
     supportsCompanionApp: false,
   },
+  'rate-my-song': {
+    mode: 'rate-my-song',
+    title: 'Rate my Song',
+    icon: '⭐',
+    description: 'Sing a song and let friends rate your performance!',
+    extendedDescription: [
+      '🎤 Singe einen Song deiner Wahl',
+      '⭐ Deine Freunde bewerten deinen Auftritt (1-10)',
+      '👥 Solo, Duell oder Duett Modus',
+      '⏱️ Kurz (60s) oder ganzer Song',
+      '🏆 Rangliste mit gewichtetem Score',
+    ],
+    color: 'from-amber-500 to-orange-500',
+    minPlayers: 1,
+    maxPlayers: 2,
+    settings: [
+      { key: 'duration', label: 'Dauer', description: 'Short = 60s, Normal = full song', type: 'select', options: [
+        { value: 'short', label: 'Kurz (60s)' },
+        { value: 'normal', label: 'Normal (ganzer Song)' },
+      ], defaultValue: 'normal' },
+    ],
+    songSelectionOptions: ['library', 'random'],
+    supportsCompanionApp: false,
+  },
 };
 
 // ===================== SONG SELECTION BUTTONS CONFIG =====================

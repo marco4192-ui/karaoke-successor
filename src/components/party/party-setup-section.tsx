@@ -9,9 +9,10 @@ import { PassTheMicSegment } from '@/components/game/pass-the-mic-screen';
 import { Song, GameMode } from '@/types/game';
 import { createTournament, TournamentPlayer, TournamentSettings } from '@/lib/game/tournament';
 import { createBattleRoyale, BattleRoyaleSettings } from '@/lib/game/battle-royale';
+import { createCompetitiveGame, type CompetitiveModeType, type CompetitiveSettings } from '@/lib/game/competitive-words-blind';
 
 // Screen types (matches page.tsx)
-type Screen = 'home' | 'library' | 'game' | 'party' | 'character' | 'queue' | 'mobile' | 'results' | 'highscores' | 'import' | 'settings' | 'jukebox' | 'achievements' | 'dailyChallenge' | 'tournament' | 'tournament-game' | 'battle-royale' | 'battle-royale-game' | 'pass-the-mic' | 'pass-the-mic-game' | 'companion-singalong' | 'companion-singalong-game' | 'medley' | 'medley-game' | 'editor' | 'online' | 'party-setup' | 'song-voting' | 'missing-words' | 'missing-words-game' | 'blind' | 'blind-game';
+type Screen = 'home' | 'library' | 'game' | 'party' | 'character' | 'queue' | 'mobile' | 'results' | 'highscores' | 'import' | 'settings' | 'jukebox' | 'achievements' | 'dailyChallenge' | 'tournament' | 'tournament-game' | 'battle-royale' | 'battle-royale-game' | 'pass-the-mic' | 'pass-the-mic-game' | 'companion-singalong' | 'companion-singalong-game' | 'medley' | 'medley-game' | 'editor' | 'online' | 'party-setup' | 'song-voting' | 'missing-words' | 'missing-words-game' | 'blind' | 'blind-game' | 'rate-my-song' | 'rate-my-song-rating' | 'rate-my-song-results';
 
 interface PartySetupSectionProps {
   screen: Screen;
@@ -54,7 +55,7 @@ function toCompanionPlayers(players: { id: string; name: string; avatar?: string
 
 // ===================== PARTY SETUP + SONG VOTING SECTION =====================
 export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps) {
-  const { profiles, setGameMode, setSong, setDifficulty } = useGameStore();
+  const { profiles, setGameMode, setSong, setDifficulty, resetGame, addPlayer, setPlayers } = useGameStore();
   const party = usePartyStore();
 
   return (
@@ -212,14 +213,59 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 break;
               }
 
-              // ── Missing Words / Blind: random song → regular game screen ──
+              // ── Missing Words / Blind: create competitive game → competitive game view ──
               case 'missing-words':
               case 'blind': {
+                const modeType = mode as CompetitiveModeType;
+                const freqSetting = result.settings.missingWordFrequency || result.settings.blindFrequency || 'normal';
+                const mwFreqMap: Record<string, number> = { easy: 0.15, normal: 0.25, hard: 0.40 };
+                const blindFreqMap: Record<string, number> = { rare: 0.10, normal: 0.25, often: 0.40, insane: 0.60 };
+                const compSettings: CompetitiveSettings = {
+                  difficulty: result.difficulty,
+                  modeType,
+                  bestOf: (result.settings.bestOf ?? 3) as 1 | 3 | 5 | 7,
+                  missingWordFrequency: modeType === 'missing-words'
+                    ? (mwFreqMap[freqSetting] ?? 0.25)
+                    : 0.25,
+                  blindFrequency: modeType === 'blind'
+                    ? (blindFreqMap[freqSetting] ?? 0.25)
+                    : 0.25,
+                };
+                const compGame = createCompetitiveGame(
+                  result.players.map(p => p.id),
+                  result.players.map(p => p.name),
+                  result.players.map(p => p.avatar),
+                  compSettings,
+                );
+                party.setCompetitiveGame(compGame);
+                const modeScreen = modeType === 'missing-words' ? 'missing-words-game' : 'blind-game';
+                setScreen(modeScreen as Screen);
+                break;
+              }
+
+              // ── Rate my Song: pick song → set up state → game screen ──
+              case 'rate-my-song': {
                 const randomSong = pickRandomSong(filteredSongs);
-                if (randomSong) {
+                if (!randomSong) break;
+                const duration = result.settings.duration || 'normal';
+                const rateSettings = { playMode: result.players.length > 1 ? 'duel' as const : 'single' as const, duration: duration as 'short' | 'normal', songId: randomSong.id };
+                const playerIds = result.players.map(p => p.id);
+                party.setRateMySongSettings(rateSettings);
+                party.setRateMySongPlayerIds(playerIds);
+                party.setUnifiedSetupResult(result);
+                // Set up the game
+                resetGame();
+                setGameMode(mode);
+                setPlayers([]);
+                result.players.forEach((p, i) => {
+                  addPlayer({ id: p.id, name: p.name, color: p.color, avatar: p.avatar });
+                });
+                if (duration === 'short') {
+                  setSong({ ...randomSong, start: randomSong.start, end: Math.min((randomSong.start || 0) + 60000, randomSong.end || randomSong.duration) });
+                } else {
                   setSong(randomSong);
-                  setScreen('game');
                 }
+                setScreen('game');
                 break;
               }
 
@@ -242,6 +288,15 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
             } else if (party.selectedGameMode === 'companion-singalong') {
               party.setCompanionPlayers(toCompanionPlayers(result.players));
               party.setCompanionSettings(result.settings);
+            } else if (party.selectedGameMode === 'rate-my-song') {
+              // Pre-store player IDs and settings; songId will be set when user picks from library
+              const duration = result.settings.duration || 'normal';
+              party.setRateMySongSettings({
+                playMode: result.players.length > 1 ? 'duel' as const : 'single' as const,
+                duration: duration as 'short' | 'normal',
+                songId: '', // filled in when song is selected from library
+              });
+              party.setRateMySongPlayerIds(result.players.map(p => p.id));
             }
 
             setScreen('library');
