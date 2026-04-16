@@ -110,11 +110,15 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
       .map(song => {
         const titleScore = fuzzyScore(query, song.title);
         const artistScore = fuzzyScore(query, song.artist);
-        const combinedScore = Math.max(titleScore, artistScore);
-        return { song, score: combinedScore };
+        const genreScore = fuzzyScore(query, song.genre || '');
+        const languageScore = fuzzyScore(query, song.language || '');
+        const combinedScore = Math.max(titleScore, artistScore, genreScore, languageScore);
+        // Weight title and artist matches higher than genre/language
+        const weightedScore = Math.max(titleScore * 1.5, artistScore * 1.2, genreScore * 0.8, languageScore * 0.8);
+        return { song, score: combinedScore, weighted: weightedScore };
       })
       .filter(item => item.score > 0)
-      .sort((a, b) => b.score - a.score)
+      .sort((a, b) => b.weighted - a.weighted)
       .map(item => item.song);
   }, [songs, songSearch]);
 
