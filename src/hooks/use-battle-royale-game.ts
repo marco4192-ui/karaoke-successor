@@ -211,11 +211,18 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // Initialize pitch detection and start game loop when playing
   useEffect(() => {
     if (game.status === 'playing' && mediaLoaded && currentSong) {
+      // Cancellation flag — prevents the async body from continuing after cleanup
+      let cancelled = false;
+
       // Initialize pitch detection
       const initGame = async () => {
         if (!pitchInitialized) {
           await initPitch();
         }
+        // Guard: if the effect was cleaned up while awaiting initPitch(),
+        // do NOT start pitch detection, playback, or the game loop.
+        if (cancelled) return;
+
         startPitch();
         
         // Start audio/video playback — use resolved URLs, not the original song fields
@@ -237,6 +244,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
       initGame();
       
       return () => {
+        cancelled = true;
         stopPitch();
         if (gameLoopRef.current) {
           cancelAnimationFrame(gameLoopRef.current);
