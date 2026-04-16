@@ -84,9 +84,16 @@ export function useMobileClient({
     return () => clearInterval(pollInterval);
   }, [song]);
 
-  // Send game state to mobile clients
   // Fix (Code Review #5): Throttled to max 2 Hz to avoid 60 HTTP requests/sec
   // when currentTime updates at animation frame rate.
+  // Uses refs for currentTime/isPlaying/gameMode so the callback identity
+  // is stable — the throttle handles actual rate limiting.
+  const currentTimeRef = useRef(currentTime);
+  currentTimeRef.current = currentTime;
+  const isPlayingRef = useRef(isPlaying);
+  isPlayingRef.current = isPlaying;
+  const gameModeRef = useRef(gameMode);
+  gameModeRef.current = gameMode;
   const lastSentRef = useRef(0);
   const sendGameState = useCallback(async () => {
     if (!song) return;
@@ -103,20 +110,25 @@ export function useMobileClient({
           type: 'gamestate',
           payload: {
             currentSong: { id: song.id, title: song.title, artist: song.artist },
-            isPlaying,
-            currentTime,
-            gameMode: gameMode || 'standard',
+            isPlaying: isPlayingRef.current,
+            currentTime: currentTimeRef.current,
+            gameMode: gameModeRef.current || 'standard',
           },
         }),
       });
     } catch {
       // Ignore sync errors
     }
-  }, [song, isPlaying, currentTime, gameMode]);
+  }, [song]);
 
-  // Update game state for mobile clients
+  // Update game state for mobile clients — poll at throttle rate.
+  // sendGameState is now stable (only depends on song), so this effect
+  // runs once per song and then polls via interval at the throttled rate.
   useEffect(() => {
-    sendGameState();
+    if (!song) return;
+    sendGameState(); // immediate first send
+    const interval = setInterval(sendGameState, 500); // poll at max 2 Hz
+    return () => clearInterval(interval);
   }, [sendGameState]);
 
   // Send ad state to mobile clients
