@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Save, Undo, Redo, CheckCircle, AlertCircle } from 'lucide-react';
+import { Save, XCircle, Undo, Redo, CheckCircle, AlertCircle } from 'lucide-react';
 import type { SaveResult } from '@/lib/editor/save-to-file';
 
 interface EditorHeaderProps {
@@ -17,7 +17,8 @@ interface EditorHeaderProps {
   onUndo: () => void;
   onRedo: () => void;
   onCancel: () => void;
-  onSave: () => void;
+  onSave: () => void;           // Save & close (original behaviour)
+  onSaveOnly?: () => void;      // Save only, stay in editor
 }
 
 export function EditorHeader({
@@ -32,6 +33,7 @@ export function EditorHeader({
   onRedo,
   onCancel,
   onSave,
+  onSaveOnly,
 }: EditorHeaderProps) {
   return (
     <header className="flex items-center justify-between px-4 py-2 bg-slate-900 border-b border-slate-700 flex-shrink-0">
@@ -50,11 +52,11 @@ export function EditorHeader({
         {/* Save Status */}
         {saveResult && (
           <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${
-            saveResult.success 
-              ? 'bg-green-500/20 text-green-400' 
+            saveResult.success
+              ? 'bg-green-500/20 text-green-400'
               : 'bg-red-500/20 text-red-400'
           }`}>
-            {saveResult.success 
+            {saveResult.success
               ? <CheckCircle className="w-3 h-3" />
               : <AlertCircle className="w-3 h-3" />
             }
@@ -93,6 +95,29 @@ export function EditorHeader({
         >
           Cancel
         </Button>
+        {/* Save only — stay in editor */}
+        {onSaveOnly && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onSaveOnly}
+            disabled={isSaving}
+            className="border-slate-600 text-slate-300 hover:text-white hover:border-slate-400"
+          >
+            {isSaving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-slate-300 border-t-transparent rounded-full animate-spin mr-1" />
+                Speichere...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-1" />
+                Speichern
+              </>
+            )}
+          </Button>
+        )}
+        {/* Save & close */}
         <Button
           size="sm"
           onClick={onSave}
@@ -107,7 +132,7 @@ export function EditorHeader({
           ) : (
             <>
               <Save className="w-4 h-4 mr-1" />
-              Speichern
+              Speichern &amp; Beenden
             </>
           )}
         </Button>

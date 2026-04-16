@@ -165,6 +165,29 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     }
   }, [currentSong, onSave, setHasUnsavedChanges]);
 
+  // Save only — persist to file but stay in the editor
+  const handleSaveOnly = useCallback(async () => {
+    setIsSaving(true);
+    setSaveResult(null);
+    try {
+      // Persist the song data in the store (without closing)
+      const { updateSong } = await import('@/lib/game/song-library');
+      updateSong(currentSong.id, currentSong);
+      const result = await saveSongToTxt(currentSong);
+      setSaveResult(result);
+      setHasUnsavedChanges(false);
+      setTimeout(() => setSaveResult(null), 5000);
+    } catch (error) {
+      console.error('Save error:', error);
+      setSaveResult({
+        success: false,
+        message: `Fehler: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [currentSong, setHasUnsavedChanges]);
+
   // --- Tap Note Placement (Ultrastar-style) ---
   // Create note on space-down, set duration on space-up
   const tapNoteCreate = useCallback((startTime: number, pitch: number, lyric: string): string => {
@@ -348,6 +371,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
         onRedo={redo}
         onCancel={onCancel}
         onSave={handleSave}
+        onSaveOnly={handleSaveOnly}
       />
 
       <div className="flex flex-1 overflow-hidden min-h-0">
