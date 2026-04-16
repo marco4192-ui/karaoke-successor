@@ -47,7 +47,7 @@ export function MobileClientView() {
   });
 
   // Pitch detection
-  const { isListening, currentPitch, startMicrophone, stopMicrophone } = useMobilePitchDetection({
+  const { isListening, currentPitch, micPermissionDenied, startMicrophone, stopMicrophone } = useMobilePitchDetection({
     clientId, isPlaying: gameState.isPlaying, songEnded: gameState.songEnded, onError: setError,
   });
 
@@ -154,7 +154,7 @@ export function MobileClientView() {
           {currentView === 'home' && <MobileHomeView gameState={gameState} queue={data.queue} onNavigate={setCurrentView} />}
           {currentView === 'mic' && (
             <MobileMicView gameState={gameState} clientId={clientId} currentPitch={currentPitch}
-              isListening={isListening} onStartMic={startMicrophone} onStopMic={stopMicrophone} />
+              isListening={isListening} micPermissionDenied={micPermissionDenied} onStartMic={startMicrophone} onStopMic={stopMicrophone} />
           )}
           {currentView === 'songs' && (
             <MobileSongsView

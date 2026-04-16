@@ -71,6 +71,7 @@ export function useMobilePitchDetection({
 }: UseMobilePitchDetectionOptions) {
   const [isListening, setIsListening] = useState(false);
   const [currentPitch, setCurrentPitch] = useState<PitchData>({ frequency: null, note: null, volume: 0 });
+  const [micPermissionDenied, setMicPermissionDenied] = useState(false);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -170,8 +171,16 @@ export function useMobilePitchDetection({
       };
       
       detectPitch();
-    } catch {
-      onError?.('Microphone access denied');
+    } catch (err) {
+      const isPermissionDenied = err instanceof DOMException && (
+        err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError'
+      );
+      if (isPermissionDenied) {
+        setMicPermissionDenied(true);
+        onError?.('Microphone access denied. Please allow microphone access in your browser settings and try again.');
+      } else {
+        onError?.('Could not access microphone. Please make sure a microphone is connected.');
+      }
     }
   }, [clientId, isPlaying, songEnded, onError]);
 
@@ -192,6 +201,7 @@ export function useMobilePitchDetection({
   return {
     isListening,
     currentPitch,
+    micPermissionDenied,
     startMicrophone,
     stopMicrophone,
   };
