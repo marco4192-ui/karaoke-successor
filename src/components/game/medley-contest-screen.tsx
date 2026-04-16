@@ -437,7 +437,8 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
   const [transitionCountdown, setTransitionCountdown] = useState(settings.transitionTime);
 
   // ── In competitive mode, determine which TWO players duel in the next snippet ──
-  // Generate all unique pairs, then cycle through them
+  // Generate all unique pairs, then cycle through them. Shuffle pairs and
+  // alternate P1/P2 roles so every player gets equal singing turns.
   const duelPairs = useMemo(() => {
     if (!isCompetitive || players.length < 2) return [];
     const pairs: Array<[string, string]> = [];
@@ -446,6 +447,11 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
         pairs.push([players[i].id, players[j].id]);
       }
     }
+    // Fisher-Yates shuffle for fairness
+    for (let i = pairs.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
+    }
     return pairs;
   }, [isCompetitive, players]);
 
@@ -453,7 +459,9 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
     if (isCompetitive) {
       if (duelPairs.length === 0) return players[0]?.id || '';
       const pairIdx = snippetIdx % duelPairs.length;
-      return duelPairs[pairIdx][0]; // P1 of the duel
+      // Alternate P1/P2 roles per round so each player gets equal singing time
+      const round = Math.floor(snippetIdx / duelPairs.length);
+      return round % 2 === 0 ? duelPairs[pairIdx][0] : duelPairs[pairIdx][1];
     }
     // Cooperative: use the first player (all share the same cumulative score)
     return players[0]?.id || '';
@@ -463,7 +471,9 @@ export function MedleyGameView({ players, medleySongs, settings, onUpdatePlayers
   const getDuelPair = useCallback((snippetIdx: number): [string, string] | null => {
     if (!isCompetitive || duelPairs.length === 0) return null;
     const pairIdx = snippetIdx % duelPairs.length;
-    return duelPairs[pairIdx];
+    const round = Math.floor(snippetIdx / duelPairs.length);
+    // Alternate order so both players get turns as P1
+    return round % 2 === 0 ? duelPairs[pairIdx] : [duelPairs[pairIdx][1], duelPairs[pairIdx][0]];
   }, [isCompetitive, duelPairs]);
 
   // ── Countdown then launch snippet ──
