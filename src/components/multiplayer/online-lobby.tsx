@@ -105,6 +105,15 @@ function MusicIcon({ className }: { className?: string }) {
   );
 }
 
+function LinkIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+    </svg>
+  );
+}
+
 function SearchIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -316,11 +325,27 @@ export function OnlineLobby({ onStartGame, onBack }: OnlineLobbyProps) {
   }, [room, selectedSong]);
   
   // Copy room code
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const copyRoomCode = useCallback(() => {
     if (room?.code) {
       navigator.clipboard.writeText(room.code);
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2000);
     }
   }, [room]);
+
+  // Copy room link
+  const copyRoomLink = useCallback(() => {
+    if (room?.code) {
+      navigator.clipboard.writeText(`${window.location.origin}?room=${room.code}`);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    }
+  }, [room]);
+
+  // QR code URL for room sharing
+  const qrCodeUrl = room ? `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(`${window.location.origin}?room=${room.code}`)}` : null;
   
   // Get current player from room
   const currentPlayer = room?.players.find(p => p.id === playerId);
@@ -562,7 +587,16 @@ export function OnlineLobby({ onStartGame, onBack }: OnlineLobbyProps) {
                     variant="outline"
                     className="border-white/20"
                   >
-                    <CopyIcon className="w-4 h-4" />
+                    {copiedCode ? <CheckIcon className="w-4 h-4 text-green-400" /> : <CopyIcon className="w-4 h-4" />}
+                  </Button>
+                  <Button
+                    onClick={copyRoomLink}
+                    size="sm"
+                    variant="outline"
+                    className="border-white/20"
+                  >
+                    {copiedLink ? <CheckIcon className="w-3 h-3 mr-1 text-green-400" /> : <LinkIcon className="w-3 h-3 mr-1" />}
+                    {copiedLink ? 'Copied!' : 'Link'}
                   </Button>
                 </div>
                 <div className="flex items-center gap-2">
@@ -574,6 +608,12 @@ export function OnlineLobby({ onStartGame, onBack }: OnlineLobbyProps) {
                   </Badge>
                 </div>
               </div>
+              {/* QR Code for quick room sharing */}
+              {qrCodeUrl && (
+                <div className="mt-3 flex justify-center">
+                  <img src={qrCodeUrl} alt="Room QR Code" className="w-20 h-20 rounded bg-white p-1" />
+                </div>
+              )}
             </CardContent>
           </Card>
           
