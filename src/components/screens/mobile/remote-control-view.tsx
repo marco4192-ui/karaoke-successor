@@ -30,6 +30,7 @@ export function RemoteControlView({
   });
   
   const [commandSent, setCommandSent] = useState<string | null>(null);
+  const [showStopConfirm, setShowStopConfirm] = useState(false);
   
   // Poll remote control state
   useEffect(() => {
@@ -267,9 +268,9 @@ export function RemoteControlView({
             {/* Stop and Restart */}
             <div className="grid grid-cols-2 gap-2 mt-2">
               <Button
-                onClick={() => sendCommand('stop')}
+                onClick={() => setShowStopConfirm(true)}
                 variant="outline"
-                className={`h-12 flex items-center gap-2 border-red-500/30 ${commandSent === 'stop' ? 'bg-red-500/30' : ''}`}
+                className={`h-12 flex items-center gap-2 border-red-500/30 ${showStopConfirm ? 'bg-red-500/30' : ''}`}
               >
                 <span>⏹️</span>
                 <span>Stop</span>
@@ -327,6 +328,51 @@ export function RemoteControlView({
           <p>Commands are sent to the main screen instantly.</p>
         </div>
       </div>
+
+      {/* Stop Confirmation Dialog */}
+      {showStopConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <Card className="bg-gray-900/95 border-red-500/30 mx-4 w-full max-w-sm">
+            <CardHeader>
+              <CardTitle className="text-center text-lg text-red-400">Song stoppen?</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-center text-white/70 text-sm">
+                Möchtest du den aktuellen Song wirklich stoppen und zur Bibliothek zurückkehren?
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowStopConfirm(false);
+                    // Send pause instead of stop to keep the song loaded
+                    sendCommand('pause');
+                  }}
+                  className="flex-1 border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
+                >
+                  ⏸ Pause
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowStopConfirm(false);
+                    sendCommand('stop');
+                  }}
+                  className="flex-1 bg-red-500 hover:bg-red-400 text-white"
+                >
+                  ⏹ Stoppen
+                </Button>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={() => setShowStopConfirm(false)}
+                className="w-full text-white/40 hover:text-white/60"
+              >
+                Abbrechen
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
