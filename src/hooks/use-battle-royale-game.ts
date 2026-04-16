@@ -399,6 +399,9 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   }, [songs]);
   
   // Update time when round changes - AUTO ELIMINATION when time runs out
+  // Uses a ref for handleRoundEnd so the interval always calls the latest version
+  const handleRoundEndRef = useRef<() => void>(() => {});
+
   useEffect(() => {
     if (game.status === 'playing' && currentRound) {
       queueMicrotask(() => setRoundTimeLeft(currentRound.duration));
@@ -407,8 +410,10 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         setRoundTimeLeft(prev => {
           if (prev <= 1) {
             clearInterval(interval);
-            // AUTO ELIMINATION - trigger when time runs out
-            handleRoundEnd();
+            // AUTO ELIMINATION - trigger when time runs out.
+            // Use ref to always call the latest handleRoundEnd version
+            // (avoids stale closure when handleRoundEnd's deps change).
+            handleRoundEndRef.current();
             return 0;
           }
           return prev - 1;
@@ -420,6 +425,13 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   }, [game.status, currentRound?.duration]);
 
   // Handle round end - eliminates lowest scoring player
+  // Uses refs for game/activePlayers to avoid stale closures in the
+  // auto-elimination interval timer.
+  const activePlayersRef = useRef(activePlayers);
+  activePlayersRef.current = activePlayers;
+  const gameRef = useRef(game);
+  gameRef.current = game;
+
   const handleRoundEnd = useCallback(() => {
     // Stop media
     if (audioRef.current) {
@@ -452,6 +464,12 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
       onUpdateGame(nextGame);
     }, 4000); // 4 seconds to show elimination animation
   }, [activePlayers.length, game, onUpdateGame, stopPitch]);
+
+  // Keep the auto-elimination timer's ref to handleRoundEnd up-to-date
+  // so it always calls the latest version when the timer fires.
+  useEffect(() => {
+    handleRoundEndRef.current = handleRoundEnd;
+  }, [handleRoundEnd]);
 
   // Start next round
   const handleStartRound = () => {
