@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect, type RefObject } from 'react';
 import { AudioEffectsEngine } from '@/lib/audio/audio-effects';
 import { getPitchDetector } from '@/lib/audio/pitch-detector';
+import { useGameStore } from '@/lib/game/store';
 
 interface UseGameAudioEffectsOptions {
   /** Ref to the <audio> element playing the song. Used to resume after effects init. */
@@ -24,6 +25,9 @@ interface UseGameAudioEffectsOptions {
  */
 export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
   const { audioRef, videoRef } = options || {};
+  const pauseGame = useGameStore((s) => s.pauseGame);
+  const resumeGame = useGameStore((s) => s.resumeGame);
+  const gameStatus = useGameStore((s) => s.gameState.status);
   const [audioEffects, setAudioEffects] = useState<AudioEffectsEngine | null>(null);
   const audioEffectsRef = useRef<AudioEffectsEngine | null>(null);
   const [showAudioEffects, setShowAudioEffects] = useState(false);
@@ -106,11 +110,20 @@ export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
   // Toggle audio effects panel with lazy initialization
   const toggleAudioEffects = useCallback(() => {
     if (!showAudioEffects) {
-      // Opening the panel — initialize if needed
+      // Opening the panel — pause the game first (saves current position)
+      if (gameStatus === 'playing') {
+        pauseGame();
+      }
+      // Initialize audio effects if needed
       initAudioEffects();
+    } else {
+      // Closing the panel — resume the game from where it was paused
+      if (gameStatus === 'paused') {
+        resumeGame();
+      }
     }
     setShowAudioEffects(prev => !prev);
-  }, [showAudioEffects, initAudioEffects]);
+  }, [showAudioEffects, initAudioEffects, pauseGame, resumeGame, gameStatus]);
 
   // Cleanup audio effects on unmount
   // NOTE: We do NOT stop the MediaStream tracks here because the PitchDetector
