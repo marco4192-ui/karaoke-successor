@@ -15,7 +15,7 @@ import { Song } from '@/types/game';
 import { findDuplicates, DuplicateInfo, ProgressInfo } from './import-types';
 
 export function useImportScreen(onImport: (song: Song) => void) {
-  const [importType, setImportType] = useState<'ultrastar' | 'folder'>('ultrastar');
+  const [importType, setImportType] = useState<'ultrastar' | 'folder' | 'alt-format'>('ultrastar');
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState<ProgressInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -245,10 +245,10 @@ export function useImportScreen(onImport: (song: Song) => void) {
 
   return {
     // State
-    importType, setImportType, isProcessing, progress, error,
+    importType, setImportType, isProcessing, progress, error, setError,
     audioFile, videoFile, ultrastarFile, audioUrl, videoUrl,
     title, setTitle, artist, setArtist, useVideoAudio, setUseVideoAudio,
-    previewSong, scannedSongs, setScannedSongs, selectedScanned, setSelectedScanned,
+    previewSong, setPreviewSong, scannedSongs, setScannedSongs, selectedScanned, setSelectedScanned,
     scanErrors, setScanErrors, setIsProcessing,
     duplicates,
     // Refs

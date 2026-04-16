@@ -7,14 +7,15 @@ import { ImportScreenProps } from './import-types';
 import { useImportScreen } from './use-import-screen';
 import { UltrastarTab } from './ultrastar-tab';
 import { FolderScanTab } from './folder-scan-tab';
+import { AlternateFormatTab } from './alternate-format-tab';
 import { ImportPreview } from './import-preview';
 
 export function ImportScreen({ onImport }: ImportScreenProps) {
   const {
-    importType, setImportType, isProcessing, progress, error,
+    importType, setImportType, isProcessing, progress, error, setError,
     audioFile, videoFile, ultrastarFile, audioUrl, videoUrl,
     title, setTitle, artist, setArtist, useVideoAudio, setUseVideoAudio,
-    previewSong, scannedSongs, selectedScanned, setSelectedScanned,
+    previewSong, setPreviewSong, scannedSongs, selectedScanned, setSelectedScanned,
     scanErrors, setScanErrors, setScannedSongs, setIsProcessing,
     duplicates,
     audioInputRef, videoInputRef, ultrastarInputRef, folderInputRef,
@@ -28,6 +29,7 @@ export function ImportScreen({ onImport }: ImportScreenProps) {
         <TabsList className="mb-6">
           <TabsTrigger value="ultrastar">UltraStar Import</TabsTrigger>
           <TabsTrigger value="folder">Folder Scan</TabsTrigger>
+          <TabsTrigger value="alt-format">More Formats</TabsTrigger>
         </TabsList>
 
         <TabsContent value="ultrastar">
@@ -56,15 +58,30 @@ export function ImportScreen({ onImport }: ImportScreenProps) {
             handleScanFolder={handleScanFolder}
           />
         </TabsContent>
+
+        <TabsContent value="alt-format">
+          <AlternateFormatTab
+            isProcessing={isProcessing}
+            setIsProcessing={setIsProcessing}
+            error={error}
+            setError={setError}
+            previewSong={previewSong}
+            setPreviewSong={setPreviewSong}
+            onImport={onImport}
+          />
+        </TabsContent>
       </Tabs>
 
-      <ImportPreview
-        progress={progress}
-        error={error}
-        previewSong={previewSong}
-        audioUrl={audioUrl}
-        videoUrl={videoUrl}
-      />
+      {/* Only show ImportPreview for ultrastar/folder tabs */}
+      {importType !== 'alt-format' && (
+        <ImportPreview
+          progress={progress}
+          error={error}
+          previewSong={previewSong}
+          audioUrl={audioUrl}
+          videoUrl={videoUrl}
+        />
+      )}
 
       <div className="flex justify-end gap-4">
         {importType === 'ultrastar' && (
@@ -85,7 +102,7 @@ export function ImportScreen({ onImport }: ImportScreenProps) {
             Import {selectedScanned.size} Songs
           </Button>
         )}
-        {previewSong && (
+        {importType !== 'alt-format' && previewSong && (
           <Button onClick={confirmImport} className="bg-green-500 hover:bg-green-400">
             Add to Library
           </Button>
