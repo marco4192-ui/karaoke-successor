@@ -294,6 +294,9 @@ export default function KaraokeSuccessor() {
         // During gameplay, show pause dialog instead of immediately leaving
         pauseGame();
         setShowGamePauseDialog(true);
+      } else if (isPartyModeActive) {
+        // In party modes, show confirmation dialog instead of immediately leaving
+        setShowGamePauseDialog(true);
       } else {
         setScreen('home');
       }
@@ -422,6 +425,32 @@ export default function KaraokeSuccessor() {
 
   const handleLeaveGame = () => {
     setShowGamePauseDialog(false);
+
+    // ── Party mode cleanup: if NOT in gameplay screen, just clear party state and go home ──
+    if (isPartyModeActive && screen !== 'game') {
+      party.setTournamentBracket(null);
+      party.setCurrentTournamentMatch(null);
+      party.setTournamentSongDuration(0);
+      party.setBattleRoyaleGame(null);
+      party.setPassTheMicPlayers([]);
+      party.setPassTheMicSong(null);
+      party.setPassTheMicSegments([]);
+      party.setPassTheMicSettings(null);
+      party.setCompanionPlayers([]);
+      party.setCompanionSong(null);
+      party.setCompanionSettings(null);
+      party.setMedleyPlayers([]);
+      party.setMedleySongs([]);
+      party.setMedleySettings(null);
+      party.setCompetitiveGame(null);
+      party.setRateMySongSettings(null);
+      party.setRateMySongPlayerIds([]);
+      party.setUnifiedSetupResult(null);
+      resetGame();
+      setScreen('home');
+      return;
+    }
+
     // Execute the appropriate exit logic based on game mode
     if (party.currentTournamentMatch && party.tournamentBracket) {
       party.setTournamentMatchAborted(true);
