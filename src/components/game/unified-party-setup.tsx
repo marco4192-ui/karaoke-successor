@@ -20,10 +20,17 @@ interface UnifiedPartySetupProps {
   onSelectLibrary: (result: import('./unified-party-setup.types').GameSetupResult) => void;
   onVoteMode: (result: import('./unified-party-setup.types').GameSetupResult, suggestedSongs: Song[]) => void;
   onBack: () => void;
+  /** Pre-selected song from library (user returned after picking a song) */
+  preSelectedSong?: Song | null;
+  /** Called when user clicks "Start Game" with the pre-selected library song */
+  onStartWithPreselectedSong?: () => void;
+  /** Called when user wants to change the pre-selected song (go back to library) */
+  onChangePreselectedSong?: () => void;
 }
 
 export function UnifiedPartySetup({
   gameMode, profiles, songs, onStartGame, onSelectLibrary, onVoteMode, onBack,
+  preSelectedSong, onStartWithPreselectedSong, onChangePreselectedSong,
 }: UnifiedPartySetupProps) {
   const {
     config, activeProfiles, selectedPlayers, settings, setSettings,
@@ -112,6 +119,43 @@ export function UnifiedPartySetup({
           onFilterLanguageChange={setFilterLanguage}
           onFilterCombinedChange={setFilterCombined}
         />
+
+        {/* Pre-selected Library Song Banner */}
+        {preSelectedSong && (
+          <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-xl p-4 mb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-3xl shrink-0">
+                🎵
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-green-400 font-medium uppercase tracking-wider">Song Selected</p>
+                <h3 className="text-white font-bold text-lg truncate">{preSelectedSong.title}</h3>
+                <p className="text-white/60 text-sm truncate">{preSelectedSong.artist}</p>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                {onChangePreselectedSong && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onChangePreselectedSong}
+                    className="border-white/20 text-white/80 hover:bg-white/10"
+                  >
+                    Change
+                  </Button>
+                )}
+                {onStartWithPreselectedSong && (
+                  <Button
+                    size="sm"
+                    onClick={onStartWithPreselectedSong}
+                    className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold"
+                  >
+                    Start Game
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <SongSelectionGrid
           config={config} selectedPlayerCount={selectedPlayers.length}

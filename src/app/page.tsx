@@ -547,14 +547,16 @@ export default function KaraokeSuccessor() {
                 }
                 party.setPassTheMicSegments(segments);
                 party.setPassTheMicSong(song);
-                // Use main game screen for proper audio/video/notes/lyrics playback
-                setScreen('game');
+                // Store the pre-selected song and return to party setup
+                // so the user can review settings before starting
+                party.setLibrarySelectedSong(song);
+                setScreen('party-setup');
               } else if (gameState.gameMode === 'companion-singalong') {
                 party.setCompanionSong(song);
-                // Use main game screen for proper audio/video/notes/lyrics playback
-                // (the old companion-singalong-game view used a plain <audio> element
-                //  that cannot handle Tauri local file paths)
-                setScreen('game');
+                // Store the pre-selected song and return to party setup
+                // so the user can review settings before starting
+                party.setLibrarySelectedSong(song);
+                setScreen('party-setup');
               } else if (gameState.gameMode === 'rate-my-song' && party.rateMySongSettings) {
                 // Rate my Song: update songId in settings, apply short mode if needed
                 const duration = party.rateMySongSettings.duration;

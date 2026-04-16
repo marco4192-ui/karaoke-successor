@@ -66,8 +66,27 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
           gameMode={party.selectedGameMode}
           profiles={profiles}
           songs={getAllSongs()}
+          preSelectedSong={party.librarySelectedSong}
+          onStartWithPreselectedSong={() => {
+            // User clicked "Start Game" with pre-selected library song
+            const song = party.librarySelectedSong;
+            if (!song) return;
+            // Clear the pre-selected song
+            party.setLibrarySelectedSong(null);
+            // Set the song in the game store and start
+            setSong(song);
+            const mode = party.selectedGameMode;
+            if (mode) setGameMode(mode);
+            setScreen('game');
+          }}
+          onChangePreselectedSong={() => {
+            // User wants to pick a different song — go back to library
+            party.setLibrarySelectedSong(null);
+            setScreen('library');
+          }}
           onStartGame={(result) => {
             party.setUnifiedSetupResult(result);
+            party.setLibrarySelectedSong(null); // clear any pre-selected library song
             const mode = party.selectedGameMode;
             if (mode) {
               setGameMode(mode);
@@ -321,7 +340,10 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
             party.setVotingSongs(suggestedSongs);
             setScreen('song-voting');
           }}
-          onBack={() => setScreen('party')}
+          onBack={() => {
+            party.setLibrarySelectedSong(null);
+            setScreen('party');
+          }}
         />
       )}
 

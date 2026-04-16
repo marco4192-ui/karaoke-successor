@@ -61,6 +61,10 @@ interface PartyStore {
   rateMySongPlayerIds: string[];
   setRateMySongPlayerIds: (ids: string[]) => void;
 
+  // Pre-selected library song (set when user picks from library for pass-the-mic/companion-singalong)
+  librarySelectedSong: Song | null;
+  setLibrarySelectedSong: (song: Song | null) => void;
+
   // Unified Party Setup
   selectedGameMode: GameMode | null;
   setSelectedGameMode: (mode: GameMode | null) => void;
@@ -124,6 +128,10 @@ export const usePartyStore = create<PartyStore>((set) => ({
   rateMySongPlayerIds: [],
   setRateMySongPlayerIds: (rateMySongPlayerIds) => set({ rateMySongPlayerIds }),
 
+  // Pre-selected library song
+  librarySelectedSong: null,
+  setLibrarySelectedSong: (librarySelectedSong) => set({ librarySelectedSong }),
+
   // Unified Party Setup
   selectedGameMode: null,
   setSelectedGameMode: (selectedGameMode) => set({ selectedGameMode }),
@@ -152,6 +160,7 @@ export const usePartyStore = create<PartyStore>((set) => ({
     competitiveGame: null,
     rateMySongSettings: null,
     rateMySongPlayerIds: [],
+    librarySelectedSong: null,
     selectedGameMode: null,
     unifiedSetupResult: null,
     votingSongs: [],
