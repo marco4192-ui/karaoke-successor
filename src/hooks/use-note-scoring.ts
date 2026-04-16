@@ -110,7 +110,10 @@ export interface UseNoteScoringReturn {
   resetScoring: () => void;
 }
 
-// Default player scoring state
+// Maximum number of performance samples stored per note.
+// Prevents unbounded memory growth during long songs while retaining
+// enough data for visual feedback modes (heat-map / accuracy graph).
+const MAX_SAMPLES_PER_NOTE = 100;
 const DEFAULT_PLAYER_SCORING_STATE: PlayerScoringState = {
   score: 0,
   combo: 0,
@@ -394,7 +397,10 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
             setNotePerformance(prev => {
               const newMap = new Map(prev);
               const samples = newMap.get(noteId) || [];
-              newMap.set(noteId, [...samples, { time: currentTime, accuracy: tickResult.accuracy, hit: tickResult.isHit }]);
+              const trimmed = samples.length >= MAX_SAMPLES_PER_NOTE
+                ? samples.slice(-MAX_SAMPLES_PER_NOTE + 1)
+                : samples;
+              newMap.set(noteId, [...trimmed, { time: currentTime, accuracy: tickResult.accuracy, hit: tickResult.isHit }]);
               return newMap;
             });
 
