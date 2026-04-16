@@ -329,6 +329,10 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         // Find active notes at current time
         const currentAudioTime = audioRef.current ? audioRef.current.currentTime * 1000 : currentTime; // audioRef is a ref so always fresh
 
+        // Accumulate all score updates into a single batch to avoid losing
+        // intermediate results when multiple players score in the same tick.
+        let batchedGame = gameRef.current;
+
         td.allNotes.forEach(note => {
           // Check if note is currently active (within its time window)
           if (currentAudioTime >= note.startTime && currentAudioTime <= note.startTime + note.duration) {
@@ -348,14 +352,13 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
                   difficulty
                 );
                 
-                const updatedGame = updatePlayerScore(
-                  gameRef.current,
+                batchedGame = updatePlayerScore(
+                  batchedGame,
                   player.id,
                   points,
                   tickResult.accuracy,
                   1, 0, 1
                 );
-                onUpdateGame(updatedGame);
               }
             });
 
@@ -379,19 +382,23 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
                     difficulty
                   );
                   
-                  const updatedGame = updatePlayerScore(
-                    gameRef.current,
+                  batchedGame = updatePlayerScore(
+                    batchedGame,
                     player.id,
                     points,
                     tickResult.accuracy,
                     1, 0, 1
                   );
-                  onUpdateGame(updatedGame);
                 }
               }
             });
           }
         });
+
+        // Single state update per tick — avoids lost intermediate scores
+        if (batchedGame !== gameRef.current) {
+          onUpdateGame(batchedGame);
+        }
       }
       
       gameLoopRef.current = requestAnimationFrame(gameLoop);
