@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { getSharedMediaSource } from '@/lib/audio/shared-media-source';
 
 // ===================== PARTICLE SYSTEM =====================
 
@@ -689,36 +690,19 @@ export function ComboFireEffect({ combo, isLarge = false }: ComboFireEffectProps
 export function useSongEnergy(audioElement?: HTMLAudioElement | null) {
   const [energy, setEnergy] = useState(0.5);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
-  // Track which audio element the source was created for
-  const sourceElementRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (!audioElement) return;
 
-    if (!audioContextRef.current) {
-      audioContextRef.current = new AudioContext();
-    }
-    const audioContext = audioContextRef.current;
-
-    // If the audio element changed (different DOM node), reset the source
-    // createMediaElementSource can only be called ONCE per element
-    if (sourceRef.current && sourceElementRef.current !== audioElement) {
-      try { sourceRef.current.disconnect(); } catch { /* already disconnected */ }
-      sourceRef.current = null;
-      sourceElementRef.current = null;
-    }
-
-    if (!sourceRef.current) {
-      sourceRef.current = audioContext.createMediaElementSource(audioElement);
-      sourceElementRef.current = audioElement;
-    }
-    const source = sourceRef.current;
+    // Use shared source — avoids duplicate createMediaElementSource calls
+    // (SpectrogramDisplay and other consumers use the same source node).
+    const { context: audioContext, source } = getSharedMediaSource(audioElement);
 
     const analyser = audioContext.createAnalyser();
     analyser.fftSize = 256;
     source.connect(analyser);
+    // Connect to destination so the audio element still produces sound
+    // through the Web Audio graph after createMediaElementSource redirects it.
     analyser.connect(audioContext.destination);
     analyserRef.current = analyser;
 
@@ -744,7 +728,8 @@ export function useSongEnergy(audioElement?: HTMLAudioElement | null) {
 
     return () => {
       clearInterval(interval);
-      // Disconnect old analyser to prevent AudioNode leak
+      // Disconnect old analyser to prevent AudioNode leak.
+      // Do NOT close the shared AudioContext — other consumers may still use it.
       try { analyser.disconnect(); } catch { /* already disconnected */ }
       analyserRef.current = null;
     };

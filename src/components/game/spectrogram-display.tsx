@@ -7,6 +7,7 @@ import {
   generateVisualBars,
   FREQUENCY_BANDS,
 } from '@/lib/audio/spectrogram';
+import { getSharedMediaSource } from '@/lib/audio/shared-media-source';
 
 interface SpectrogramDisplayProps {
   audioElement?: HTMLAudioElement | null;
@@ -42,19 +43,32 @@ export function SpectrogramDisplay({
   useEffect(() => {
     if (!isActive || (!audioElement && !audioStream)) return;
 
-    // Reset source when audio element changes (same element can only be connected once)
-    if (sourceRef.current) {
-      try { sourceRef.current.disconnect(); } catch { /* already disconnected */ }
-      sourceRef.current = null;
-    }
-
     const initAudio = async () => {
       try {
-        // Create audio context if not exists
-        if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
-          audioContextRef.current = new AudioContext();
+        let audioContext: AudioContext;
+        let source: MediaElementAudioSourceNode | MediaStreamAudioSourceNode;
+
+        if (audioElement) {
+          // Use the shared source — useSongEnergy may have already called
+          // createMediaElementSource on this element.  The shared cache
+          // guarantees we reuse the same AudioContext + source node.
+          const shared = getSharedMediaSource(audioElement);
+          audioContext = shared.context;
+          source = shared.source;
+          audioContextRef.current = audioContext;
+        } else if (audioStream) {
+          // Mic stream — own context (no sharing needed)
+          if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+            audioContextRef.current = new AudioContext();
+          }
+          audioContext = audioContextRef.current;
+          if (!sourceRef.current) {
+            sourceRef.current = audioContext.createMediaStreamSource(audioStream);
+          }
+          source = sourceRef.current;
+        } else {
+          return;
         }
-        const audioContext = audioContextRef.current;
 
         // Create analyser
         const analyser = audioContext.createAnalyser();
@@ -63,14 +77,12 @@ export function SpectrogramDisplay({
         analyser.minDecibels = DEFAULT_SPECTROGRAM_CONFIG.minDecibels;
         analyser.maxDecibels = DEFAULT_SPECTROGRAM_CONFIG.maxDecibels;
 
-        // Connect source
-        if (audioElement && !sourceRef.current) {
-          sourceRef.current = audioContext.createMediaElementSource(audioElement);
-          sourceRef.current.connect(analyser);
+        source.connect(analyser);
+        // Only connect analyser → destination for mic streams.
+        // For audio elements, useSongEnergy already handles the
+        // destination connection; connecting again would double the output.
+        if (!audioElement) {
           analyser.connect(audioContext.destination);
-        } else if (audioStream && !sourceRef.current) {
-          sourceRef.current = audioContext.createMediaStreamSource(audioStream);
-          sourceRef.current.connect(analyser);
         }
 
         analyserRef.current = analyser;
@@ -86,14 +98,16 @@ export function SpectrogramDisplay({
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
-      // Disconnect source node and close audio context on unmount
-      if (sourceRef.current) {
+      // Disconnect our analyser only — do NOT close the shared AudioContext
+      // (useSongEnergy or other consumers may still need it).
+      if (analyserRef.current) {
+        try { analyserRef.current.disconnect(); } catch { /* already disconnected */ }
+        analyserRef.current = null;
+      }
+      // Mic stream source can be disconnected (not shared)
+      if (sourceRef.current && audioStream) {
         try { sourceRef.current.disconnect(); } catch { /* already disconnected */ }
         sourceRef.current = null;
-      }
-      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-        try { audioContextRef.current.close(); } catch { /* already closed */ }
-        audioContextRef.current = null;
       }
     };
   }, [isActive, audioElement, audioStream]);
