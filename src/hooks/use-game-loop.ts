@@ -299,6 +299,15 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     onEnd();
   }, [stop, audioEffects, setAudioEffects, audioRef, videoRef, endGame, generateResults, onEnd, song, gameMode, setIsPlaying, nativeAudioStop]);
 
+  // Fix (Code Review #5): Use ref for endGameAndCleanup in the game loop.
+  // endGameAndCleanup depends on generateResults which depends on `players`.
+  // Since `players` changes on every scoring tick (~10 Hz), the entire chain
+  // (generateResults → endGameAndCleanup) gets recreated, which would cause
+  // the game loop effect to tear down and restart on every tick.
+  // Using a ref lets the loop call the latest version without re-running.
+  const endGameAndCleanupRef = useRef(endGameAndCleanup);
+  endGameAndCleanupRef.current = endGameAndCleanup;
+
   // ── Pause / Resume helpers ──
   const pauseGame = useCallback(() => {
     if (audioRef.current) audioRef.current.pause();
@@ -472,7 +481,10 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
               const audioPlaying = audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2;
               const videoPlaying = videoRef.current && !videoRef.current.paused && videoRef.current.readyState >= 2;
               const youTubeActive = isYouTube;
-              const nativePlaying = isNativeAudio && nativeAudioTime > 0;
+              // Fix (Code Review #5): Use nativeAudioTimeRef instead of stale closure value.
+              // The closure captures nativeAudioTime before native audio starts (value: 0),
+              // so the watchdog always evaluates nativePlaying = false incorrectly.
+              const nativePlaying = isNativeAudio && nativeAudioTimeRef.current > 0;
 
               if (!audioPlaying && !videoPlaying && !youTubeActive && !nativePlaying) {
                 console.error('[GameLoop] Media playback watchdog: no media actually playing after 10s — ending game to prevent hang');
@@ -664,7 +676,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       // When #END: is not defined, the audio/video element's natural
       // "ended" event (handled via onEnded prop) terminates the game.
       if (effectiveSong.end && adjustedTime >= effectiveSong.end) {
-        endGameAndCleanup();
+        endGameAndCleanupRef.current();
         return;
       }
 
@@ -678,7 +690,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [isPlaying, effectiveSong, setCurrentTime, setDetectedPitch, checkNoteHits, checkP2NoteHits, endGameAndCleanup, isYouTube, timingOffset, isDuetMode, setP2Volume, audioRef, videoRef, startTimeRef, isNativeAudio]);
+  }, [isPlaying, effectiveSong, setCurrentTime, setDetectedPitch, checkNoteHits, checkP2NoteHits, isYouTube, timingOffset, isDuetMode, setP2Volume, audioRef, videoRef, startTimeRef, isNativeAudio]);
 
   // ── Abort: immediately stop game loop without saving results ──
   const abortGameLoop = useCallback(() => {
