@@ -159,10 +159,30 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
     return songs.find(s => s.id === songId) || null;
   };
 
+  // Create a minimal fallback Song object from queue item data when full song isn't found
+  const createFallbackSong = (item: typeof unifiedQueue[0]): Song => {
+    return {
+      id: item.song.id,
+      title: item.song.title,
+      artist: item.song.artist,
+      duration: 0,
+      bpm: 0,
+      difficulty: 'medium',
+      rating: 3,
+      lyrics: [],
+      gap: 0,
+    } as Song;
+  };
+
   // Play next song from queue
   const playFromQueue = async (item: typeof unifiedQueue[0]) => {
     let song = item.isFromCompanion ? getFullSong(item.song.id) : item.song;
-    if (!song) return;
+    // If song not found in local library (companion song with ID mismatch),
+    // create a fallback Song so karaoke can at least start with available data
+    if (!song) {
+      console.warn('[QueueScreen] Song not found in library, creating fallback:', item.song.id, item.song.title);
+      song = createFallbackSong(item);
+    }
     
     const gameMode = item.gameMode || 'single';
     const activeIds = new Set(profiles.filter(p => p.isActive !== false).map(p => p.id));
