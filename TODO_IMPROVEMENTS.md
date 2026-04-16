@@ -1,7 +1,7 @@
 # Karaoke Successor - To-Do Liste für Verbesserungen und Fehlerbehebungen
 
 Erstellt: 2026-04-04
-Letztes Update: 2026-04-05
+Letztes Update: 2026-04-17
 
 ---
 
@@ -148,6 +148,82 @@ Letztes Update: 2026-04-05
 | Runde 3 | 4 | 5040 | 1994 | -60% |
 | Runde 4 | 10 | 9707 | 1940 | -80% |
 | **Gesamt** | **14 Dateien** | **14747** | **3934** | **-73%** |
+
+---
+
+## CODE-REVIEW RUND 5 (2026-04-17) — Dead Code Analyse + Hook-Bugfixes
+
+### 📝 Dead Code Analysis — 28 vollständig tote Dateien annotiert
+
+Alle Dateien mit JSDoc-Kommentaren versehen, die mögliche Funktion und
+Revival-Potenzial dokumentieren. Dead Code wurde NICHT gelöscht.
+
+**Tote Hooks (6 Dateien, ~1.088 Zeilen):**
+- `use-audio-effects.ts` — Ersetzt durch useGameAudioEffects (lazy init)
+- `use-current-lyrics.ts` — Logik inline in game-screen.tsx dupliziert
+- `use-duel-mode.ts` — P2-Scoring direkt in game-screen/useGameModes
+- `use-i18n.ts` — App nutzt t() direkt statt React-Hook
+- `use-multi-pitch-detector.ts` — Multi-Mic-Pitch nie integriert
+- `use-practice-mode.ts` — Practice-Panel verwaltet eigenen State
+
+**Tote Lib-Dateien (10 Dateien, ~3.131 Zeilen):**
+- `auth-service.ts` — Profile direkt via user-db verwaltet
+- `audio-manager.ts` — Audio über hooks/native-audio verwaltet
+- `video-player.ts` — Video über youtube-player/GameBackground
+- `gameplay-features.ts` — Achievements/DailyChallenge woanders
+- `pwa.ts` — Tauri-only App, PWA nicht relevant
+- `audio-analyzer.ts` — YIN-Pitch-Detection für Auto-Transkription
+- `lyric-editor.ts` — Reducer-Pattern nie integriert
+- `multi-format-import.ts` — Nur UltraStar-Parser aktiv
+- `song-storage.ts` — IndexedDB-Cache reicht aus
+- `theme-config.ts` — themes.ts verwendet andere Presets
+
+**Tote Components (12 Dateien, ~4.079 Zeilen):**
+- `audio-effects-panel.tsx`, `background-video.tsx`, `note-lane.tsx`,
+  `single-player-highway.tsx`, `youtube-background-player.tsx`, `player-card.tsx`,
+  `ai-assistant-panel.tsx`, `online-leaderboard.tsx`, `multiplayer-lobby-screen.tsx`,
+  `character-screen-enhanced.tsx`, `player-profile-panel.tsx`, `library-settings-tab.tsx`,
+  `user-profile-screen.tsx`
+
+**Dead Exports annotiert (scoring.ts: 10, store.ts: 9):**
+- scoring.ts: SCORING_TICK_INTERVAL, GOLDEN_NOTE_MULTIPLIER, PERFECT_NOTE_MULTIPLIER,
+  PERFECT_GOLDEN_MULTIPLIER, TickEvaluation, getPitchClass, getRelativePitchDiff,
+  calculateFinalRating, getRatingColor, getRatingText
+- store.ts: selectGameState, selectCurrentSong, selectPlayers, selectDifficulty,
+  selectGameMode, selectProfiles, selectActiveProfile, selectQueue, selectHighscores
+
+### 🔧 Hook-Bugfixes — 7 kritische Issues behoben
+
+- [x] **#56** `use-game-loop.ts` — Game Loop 10Hz Restart durch endGameAndCleanup Chain — `7eb5347`
+  - Fix: endGameAndCleanupRef pattern — verhindert Game-Loop-Restart bei jedem Scoring-Tick
+  - Ursache: players → generateResults → endGameAndCleanup Dependency-Kette
+
+- [x] **#57** `use-game-loop.ts` — Media Watchdog stale nativeAudioTime — `7eb5347`
+  - Fix: nativeAudioTimeRef.current statt Closure-Wert
+  - Ursache: Watchdog-closure fing nativeAudioTime=0 ein (vor Native-Audio-Start)
+
+- [x] **#58** `use-medley-game.ts` — Game Loop 50Hz Restart durch pitchResult — `c10f009`
+  - Fix: pitchResultRef pattern (gleiches Muster wie use-game-loop.ts)
+  - Ursache: pitchResult in Dependency-Array, Updated ~50x/Sekunde
+
+- [x] **#59** `use-mobile-client.ts` — 60 HTTP Requests/Sekunde — `c10f009`
+  - Fix: Throttle auf max 2 Hz (500ms Intervall)
+  - Ursache: currentTime in useCallback-Dependencies → useEffect bei jedem Frame
+
+- [x] **#60** `use-game-media.ts` — Race Condition bei schnellem Song-Wechsel — `c10f009`
+  - Fix: Cancellation-Flag Pattern
+  - Ursache: Async restoreUrls() ohne Abbruch-Möglichkeit
+
+### ⚠️ Offene Hook-Issues (mittlere/niedrige Priorität)
+
+- [ ] **#61** `use-battle-royale-game.ts` — Game Loop stale closures (pitchResult, game state)
+- [ ] **#62** `use-battle-royale-game.ts` — Simultaneous score updates lose intermediate results
+- [ ] **#63** `use-battle-royale-game.ts` — Async initGame not cancelled on effect cleanup
+- [ ] **#64** `use-battle-royale-game.ts` — 4s setTimeout in handleRoundEnd not cleaned up
+- [ ] **#65** `use-mobile-pitch-detection.ts` — Stale isPlaying/songEnded in startMicrophone
+- [ ] **#66** `use-mobile-pitch-detection.ts` — No unmount cleanup for microphone
+- [ ] **#67** `use-websocket.ts` — createRoom/joinRoom listeners never removed
+- [ ] **#68** `use-note-scoring.ts` — notePerformance Map grows unboundedly during gameplay
 
 ---
 
