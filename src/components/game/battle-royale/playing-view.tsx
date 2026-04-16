@@ -211,10 +211,14 @@ export function PlayingView({
       <div className="flex-1 flex items-end pb-4 px-4 min-h-0">
         {currentSong ? (
           <div className="w-full bg-black/40 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-            <LyricsDisplay
-              lyrics={currentSong.lyrics}
-              currentTime={currentTime}
-            />
+            {currentSong.lyrics && currentSong.lyrics.length > 0 ? (
+              <LyricsDisplay
+                lyrics={currentSong.lyrics}
+                currentTime={currentTime}
+              />
+            ) : (
+              <p className="text-white/30 text-center text-lg">Loading lyrics...</p>
+            )}
           </div>
         ) : (
           <div className="w-full bg-black/30 rounded-xl p-4 border border-white/10 text-center">
