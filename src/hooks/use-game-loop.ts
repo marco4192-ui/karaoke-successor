@@ -143,6 +143,10 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   const hasEndedRef = useRef(false); // Guard against double endGameAndCleanup
   const abortedRef = useRef(false);   // Set when user aborts to prevent endGameAndCleanup
   const mediaPlayWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // ── Pause position tracking ──
+  // When the game is paused mid-song we must remember where the song was so
+  // that resume picks up from that exact wall-clock offset instead of from 0.
+  const pausedAtElapsedMsRef = useRef<number | null>(null);
 
   // ── Generate results at song end ──
   const generateResults = useCallback(() => {
@@ -528,8 +532,25 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   // pause audio/video/native-audio and stop the animation-frame loop.
   // When resumeGame() sets status back to 'playing' we resume everything.
   useEffect(() => {
+    const startPositionMs = effectiveSong?.start || 0;
+
     if (gameStatus === 'paused' && !wasPausedByStoreRef.current) {
       wasPausedByStoreRef.current = true;
+
+      // ── Remember where the song was when we paused ──
+      // The audio/video element's currentTime is the source of truth.
+      // We store the elapsed ms so the game loop can resume from this point.
+      let elapsedAtPause = 0;
+      if (audioRef.current && audioRef.current.readyState >= 2) {
+        elapsedAtPause = audioRef.current.currentTime * 1000;
+      } else if (videoRef.current && videoRef.current.readyState >= 2 && effectiveSong?.hasEmbeddedAudio) {
+        elapsedAtPause = videoRef.current.currentTime * 1000;
+      } else {
+        // Wall-clock fallback
+        elapsedAtPause = (Date.now() - startTimeRef.current) + startPositionMs;
+      }
+      pausedAtElapsedMsRef.current = elapsedAtPause;
+
       // Pause all media sources
       if (audioRef.current) audioRef.current.pause();
       if (videoRef.current) videoRef.current.pause();
@@ -547,19 +568,32 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       }
     } else if (gameStatus === 'playing' && wasPausedByStoreRef.current) {
       wasPausedByStoreRef.current = false;
-      // Resume all media sources
+
+      // Resume all media sources — audio/video elements keep their currentTime,
+      // so calling .play() continues from where they were paused.
       if (audioRef.current) audioRef.current.play().catch(() => {});
       if (videoRef.current) videoRef.current.play().catch(() => {});
       if (nativeAudioResume) nativeAudioResume().catch(() => {});
       setIsPlaying(true);
-      // Restart the wall-clock reference so the loop picks up from where we left off
-      startTimeRef.current = Date.now();
+
+      // Adjust startTimeRef so the wall-clock fallback in the game loop
+      // picks up from the paused position instead of from 0.
+      // Formula: elapsed = (Date.now() - startTimeRef) + startPositionMs
+      // We want:  elapsed = pausedAtElapsedMs
+      // Therefore: startTimeRef = Date.now() - (pausedAtElapsedMs - startPositionMs)
+      if (pausedAtElapsedMsRef.current !== null) {
+        startTimeRef.current = Date.now() - (pausedAtElapsedMsRef.current - startPositionMs);
+        pausedAtElapsedMsRef.current = null;
+      } else {
+        startTimeRef.current = Date.now();
+      }
     }
     // Reset the flag when game ends or is idle (so the next game starts fresh)
     if (gameStatus === 'ended' || gameStatus === 'idle') {
       wasPausedByStoreRef.current = false;
+      pausedAtElapsedMsRef.current = null;
     }
-  }, [gameStatus, audioRef, videoRef, nativeAudioPause, nativeAudioResume, setIsPlaying]);
+  }, [gameStatus, audioRef, videoRef, nativeAudioPause, nativeAudioResume, setIsPlaying, effectiveSong]);
 
   // ── Game loop (requestAnimationFrame) ──
   useEffect(() => {
