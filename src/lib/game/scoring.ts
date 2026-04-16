@@ -9,9 +9,13 @@ import {
 
 // ===================== SCORING CONSTANTS =====================
 export const MAX_POINTS_PER_SONG = 10000;
+/** @internal Dead export — not used outside this file. Kept for reference. */
 export const SCORING_TICK_INTERVAL = 100;
+/** @internal Dead export — only used internally by calculateScoringMetadata and calculateTickPoints. */
 export const GOLDEN_NOTE_MULTIPLIER = 5;
+/** @internal Dead export — only used internally by calculateScoringMetadata. */
 export const PERFECT_NOTE_MULTIPLIER = 2;
+/** @internal Dead export — only used internally by calculateScoringMetadata. */
 export const PERFECT_GOLDEN_MULTIPLIER = 10;
 
 // ===================== INTERFACES =====================
@@ -34,6 +38,7 @@ export interface ScoringMetadata {
   pointsPerTick: number;
 }
 
+/** @internal Dead export — only used internally by evaluateTick return type. */
 export interface TickEvaluation {
   accuracy: number;
   isHit: boolean;
@@ -42,7 +47,9 @@ export interface TickEvaluation {
 
 // ===================== PITCH UTILITIES =====================
 /**
- * Get the pitch class (0-11) from a MIDI note number
+ * @internal Dead export — only used internally by getRelativePitchDiff.
+ *
+ * Get the pitch class (0-11) from a MIDI note number.
  * Pitch class represents the note name regardless of octave (C=0, C#=1, ... B=11)
  * IMPORTANT: Rounds to nearest integer before computing pitch class
  */
@@ -51,8 +58,10 @@ export function getPitchClass(midiNote: number): number {
 }
 
 /**
- * Calculate the relative pitch difference between two MIDI notes
- * Uses UltraStar-style octave wrapping: notes in the same pitch class have 0 difference
+ * @internal Dead export — only used internally by evaluateTick.
+ *
+ * Calculate the relative pitch difference between two MIDI notes.
+ * Uses UltraStar-style octave wrapping: notes in the same pitch class have 0 difference.
  * Maximum difference is 6 semitones (half an octave)
  */
 export function getRelativePitchDiff(sungNote: number, targetNote: number): number {
@@ -172,6 +181,7 @@ export function calculateNoteCompletionBonus(
 }
 
 // ===================== RATING HELPERS =====================
+/** @internal Dead export — not used anywhere in the codebase. Rating logic is done inline in results screen. */
 export function calculateFinalRating(accuracy: number): 'perfect' | 'excellent' | 'good' | 'okay' | 'poor' {
   if (accuracy >= 95) return 'perfect';
   if (accuracy >= 85) return 'excellent';
@@ -180,6 +190,7 @@ export function calculateFinalRating(accuracy: number): 'perfect' | 'excellent' 
   return 'poor';
 }
 
+/** @internal Dead export — not used anywhere in the codebase. Rating colors are defined inline in components. */
 export function getRatingColor(rating: 'perfect' | 'good' | 'okay' | 'miss'): string {
   switch (rating) {
     case 'perfect':
@@ -195,6 +206,7 @@ export function getRatingColor(rating: 'perfect' | 'good' | 'okay' | 'miss'): st
   }
 }
 
+/** @internal Dead export — not used anywhere in the codebase. Rating text is defined inline in components. */
 export function getRatingText(rating: 'perfect' | 'good' | 'okay' | 'miss'): string {
   switch (rating) {
     case 'perfect':
