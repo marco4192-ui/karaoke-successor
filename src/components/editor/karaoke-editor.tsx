@@ -488,6 +488,10 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
       {currentSong.audioUrl && (
         <audio ref={audioRef} src={currentSong.audioUrl} onEnded={() => setIsPlaying(false)} />
       )}
+      {/* Fallback: play audio from video file when no separate audio exists */}
+      {!currentSong.audioUrl && currentSong.videoBackground && !currentSong.videoBackground.startsWith('http') && (
+        <audio ref={audioRef} src={currentSong.videoBackground} onEnded={() => setIsPlaying(false)} />
+      )}
     </div>
   );
 }
