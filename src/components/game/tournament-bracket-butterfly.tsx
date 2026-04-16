@@ -12,6 +12,7 @@ import {
 // Layout constants — compact match cards with comfortable spacing between columns
 const MATCH_W = 110;
 const MATCH_W_FINAL = 130;
+const MATCH_W_FIRST_ROUND = 210; // Wider for horizontal (side-by-side) layout
 const COL_GAP = 48;
 const FINAL_GAP = 56;
 const ROUND_LABEL_H = 24; // space for round labels above bracket
@@ -96,15 +97,28 @@ export function TournamentBracketButterfly({
   // ── Compute column X-positions ──
   const nLeft = leftRounds.length;
 
-  const leftX = (i: number) => i * (MATCH_W + COL_GAP);
-  const leftEnd = nLeft > 0 ? leftX(nLeft - 1) + MATCH_W : 0;
+  // Determine width per column based on round number
+  const colWidth = (rn: number) => rn === 1 ? MATCH_W_FIRST_ROUND : MATCH_W;
+
+  // Compute left X positions cumulatively
+  const leftXStarts: number[] = [];
+  let cumX = 0;
+  for (let i = 0; i < nLeft; i++) {
+    leftXStarts.push(cumX);
+    cumX += colWidth(leftRounds[i].rn) + COL_GAP;
+  }
+  const leftX = (i: number) => leftXStarts[i] || 0;
+
+  const leftEnd = nLeft > 0 ? leftX(nLeft - 1) + colWidth(leftRounds[nLeft - 1].rn) : 0;
   const centerX = leftEnd + FINAL_GAP;
   const rightX = (j: number) =>
     centerX + MATCH_W_FINAL + FINAL_GAP + j * (MATCH_W + COL_GAP);
 
   const nRight = rightRounds.length;
+  // Right side last round (outermost) may be round 1 (first round) → wider
+  const rightLastWidth = nRight > 0 && rightRounds[nRight - 1].rn === 1 ? MATCH_W_FIRST_ROUND : MATCH_W;
   const totalW =
-    nRight > 0 ? rightX(nRight - 1) + MATCH_W : centerX + MATCH_W_FINAL;
+    nRight > 0 ? rightX(nRight - 1) + rightLastWidth : centerX + MATCH_W_FINAL;
 
   // ── SVG connector paths ──
   const svgPaths = useMemo(() => {
@@ -115,8 +129,9 @@ export function TournamentBracketButterfly({
       const outer = leftRounds[i];
       const inner = leftRounds[i + 1];
       const oX = leftX(i);
+      const oW = colWidth(outer.rn);
       const iX = leftX(i + 1);
-      const jx = oX + MATCH_W + COL_GAP / 2;
+      const jx = oX + oW + COL_GAP / 2;
 
       for (const mIn of inner.matches) {
         const f1 = outer.matches.find((m) => m.position === mIn.position * 2);
@@ -130,9 +145,9 @@ export function TournamentBracketButterfly({
         // Vertical line between the two feeders
         p.push(`M ${jx} ${y1} L ${jx} ${y2}`);
         // Feeder 1 → junction
-        p.push(`M ${oX + MATCH_W} ${y1} L ${jx} ${y1}`);
+        p.push(`M ${oX + oW} ${y1} L ${jx} ${y1}`);
         // Feeder 2 → junction
-        p.push(`M ${oX + MATCH_W} ${y2} L ${jx} ${y2}`);
+        p.push(`M ${oX + oW} ${y2} L ${jx} ${y2}`);
         // Junction → target
         p.push(`M ${jx} ${yt} L ${iX} ${yt}`);
       }
@@ -144,7 +159,8 @@ export function TournamentBracketButterfly({
       if (semi) {
         const sy = getCY(leftRounds[nLeft - 1].rn, semi.position);
         const fy = bracketH / 2;
-        p.push(`M ${leftX(nLeft - 1) + MATCH_W} ${sy} L ${centerX} ${fy}`);
+        const semiW = colWidth(leftRounds[nLeft - 1].rn);
+        p.push(`M ${leftX(nLeft - 1) + semiW} ${sy} L ${centerX} ${fy}`);
       }
     }
 
@@ -227,41 +243,46 @@ export function TournamentBracketButterfly({
         </svg>
 
         {/* ── Left side: top-half columns (outer → inner) ── */}
-        {leftRounds.map((rd, i) => (
-          <div
-            key={`L${i}`}
-            className="absolute top-0"
-            style={{ left: leftX(i), width: MATCH_W, height: bracketH }}
-          >
-            <div className="absolute left-0 right-0 text-center text-[11px] text-white/40 font-medium select-none"
-              style={{ top: 4 }}>
-              {getRoundName(rd.rn, bracket.totalRounds)}
+        {leftRounds.map((rd, i) => {
+          const w = colWidth(rd.rn);
+          const isFirstRound = rd.rn === 1;
+          return (
+            <div
+              key={`L${i}`}
+              className="absolute top-0"
+              style={{ left: leftX(i), width: w, height: bracketH }}
+            >
+              <div className="absolute left-0 right-0 text-center text-[11px] text-white/40 font-medium select-none"
+                style={{ top: 4 }}>
+                {getRoundName(rd.rn, bracket.totalRounds)}
+              </div>
+              {rd.matches.map((m) => {
+                const cy = getCY(rd.rn, m.position);
+                return (
+                  <div
+                    key={m.id}
+                    className="absolute"
+                    style={{
+                      top: cy,
+                      transform: 'translateY(-50%)',
+                      width: w,
+                      zIndex: 1,
+                    }}
+                  >
+                    <MatchCard
+                      match={m}
+                      isCurrent={currentMatch?.id === m.id}
+                      isPlayable={playableMatches.some((pm) => pm.id === m.id)}
+                      onPlay={() => onPlayMatch(m)}
+                      done={bracket.status === 'completed'}
+                      isFirstRound={isFirstRound}
+                    />
+                  </div>
+                );
+              })}
             </div>
-            {rd.matches.map((m) => {
-              const cy = getCY(rd.rn, m.position);
-              return (
-                <div
-                  key={m.id}
-                  className="absolute"
-                  style={{
-                    top: cy,
-                    transform: 'translateY(-50%)',
-                    width: MATCH_W,
-                    zIndex: 1,
-                  }}
-                >
-                  <MatchCard
-                    match={m}
-                    isCurrent={currentMatch?.id === m.id}
-                    isPlayable={playableMatches.some((pm) => pm.id === m.id)}
-                    onPlay={() => onPlayMatch(m)}
-                    done={bracket.status === 'completed'}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        ))}
+          );
+        })}
 
         {/* ── Centre: Final ── */}
         {finalMatch && (
@@ -287,6 +308,7 @@ export function TournamentBracketButterfly({
                     onPlay={() => onPlayMatch(finalMatch)}
                     done={bracket.status === 'completed'}
                     isFinal
+                    isFirstRound={bracket.totalRounds === 1}
                   />
                 </div>
               </div>
@@ -295,43 +317,48 @@ export function TournamentBracketButterfly({
         )}
 
         {/* ── Right side: bottom-half columns (inner → outer) ── */}
-        {rightRounds.map((rd, i) => (
-          <div
-            key={`R${i}`}
-            className="absolute top-0"
-            style={{ left: rightX(i), width: MATCH_W, height: bracketH }}
-          >
-            <div className="absolute left-0 right-0 text-center text-[11px] text-white/40 font-medium select-none"
-              style={{ top: 4 }}>
-              {getRoundName(rd.rn, bracket.totalRounds)}
+        {rightRounds.map((rd, i) => {
+          const isFirstRound = rd.rn === 1;
+          const w = isFirstRound ? MATCH_W_FIRST_ROUND : MATCH_W;
+          return (
+            <div
+              key={`R${i}`}
+              className="absolute top-0"
+              style={{ left: rightX(i), width: w, height: bracketH }}
+            >
+              <div className="absolute left-0 right-0 text-center text-[11px] text-white/40 font-medium select-none"
+                style={{ top: 4 }}>
+                {getRoundName(rd.rn, bracket.totalRounds)}
+              </div>
+              {rd.matches.map((m) => {
+                // Remap right-side positions to top-half equivalent
+                const displayPos = m.position - rd.matches.length;
+                const cy = getCY(rd.rn, displayPos);
+                return (
+                  <div
+                    key={m.id}
+                    className="absolute"
+                    style={{
+                      top: cy,
+                      transform: 'translateY(-50%)',
+                      width: w,
+                      zIndex: 1,
+                    }}
+                  >
+                    <MatchCard
+                      match={m}
+                      isCurrent={currentMatch?.id === m.id}
+                      isPlayable={playableMatches.some((pm) => pm.id === m.id)}
+                      onPlay={() => onPlayMatch(m)}
+                      done={bracket.status === 'completed'}
+                      isFirstRound={isFirstRound}
+                    />
+                  </div>
+                );
+              })}
             </div>
-            {rd.matches.map((m) => {
-              // Remap right-side positions to top-half equivalent
-              const displayPos = m.position - rd.matches.length;
-              const cy = getCY(rd.rn, displayPos);
-              return (
-                <div
-                  key={m.id}
-                  className="absolute"
-                  style={{
-                    top: cy,
-                    transform: 'translateY(-50%)',
-                    width: MATCH_W,
-                    zIndex: 1,
-                  }}
-                >
-                  <MatchCard
-                    match={m}
-                    isCurrent={currentMatch?.id === m.id}
-                    isPlayable={playableMatches.some((pm) => pm.id === m.id)}
-                    onPlay={() => onPlayMatch(m)}
-                    done={bracket.status === 'completed'}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -346,6 +373,7 @@ function MatchCard({
   onPlay,
   done,
   isFinal = false,
+  isFirstRound = false,
 }: {
   match: TournamentMatch;
   isCurrent: boolean;
@@ -353,6 +381,8 @@ function MatchCard({
   onPlay: () => void;
   done: boolean;
   isFinal?: boolean;
+  /** Use horizontal layout (side-by-side) for first-round matches */
+  isFirstRound?: boolean;
 }) {
   // BYE match
   if (match.isBye && match.player1) {
@@ -367,6 +397,72 @@ function MatchCard({
 
   const clickable = isPlayable && !done;
 
+  // Horizontal layout for first-round matches: Player 1 vs Player 2 side-by-side
+  if (isFirstRound) {
+    return (
+      <div
+        className={`rounded-lg transition-all overflow-hidden ${
+          isCurrent && !done
+            ? 'bg-gradient-to-r from-cyan-500/30 via-transparent to-purple-500/30 border-2 border-cyan-500 shadow-lg shadow-cyan-500/20'
+            : match.completed
+              ? 'bg-white/10 border border-green-500/30'
+              : isPlayable
+                ? 'bg-white/5 border border-white/20 cursor-pointer hover:bg-white/10 hover:border-white/40'
+                : 'bg-white/5 border border-white/10 opacity-60'
+        } ${clickable ? 'hover:scale-105 cursor-pointer' : ''}`}
+        onClick={clickable ? onPlay : undefined}
+      >
+        <div className="flex items-center gap-1 px-2 py-2">
+          {/* Player 1 */}
+          <div
+            className={`flex-1 flex items-center gap-1 rounded px-1.5 py-1 ${
+              match.winner?.id === match.player1?.id ? 'bg-green-500/20' : ''
+            }`}
+          >
+            <SmallPlayer player={match.player1} />
+            {match.completed && (
+              <span className={`text-xs font-bold ml-auto ${match.winner?.id === match.player1?.id ? 'text-green-400' : 'text-white/60'}`}>
+                {match.score1}
+              </span>
+            )}
+          </div>
+
+          {/* VS divider */}
+          <div className="text-white/40 text-[10px] font-bold px-0.5 shrink-0">VS</div>
+
+          {/* Player 2 */}
+          <div
+            className={`flex-1 flex items-center gap-1 rounded px-1.5 py-1 ${
+              match.winner?.id === match.player2?.id ? 'bg-green-500/20' : ''
+            }`}
+          >
+            <SmallPlayer player={match.player2} />
+            {match.completed && (
+              <span className={`text-xs font-bold ml-auto ${match.winner?.id === match.player2?.id ? 'text-green-400' : 'text-white/60'}`}>
+                {match.score2}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Winner badge */}
+        {match.winner && (
+          <div className="text-[10px] text-center text-amber-400 font-medium bg-amber-500/10 rounded py-0.5">
+            🏆 {match.winner.name}
+          </div>
+        )}
+
+        {/* Playable indicator */}
+        {isPlayable && !match.completed && !done && (
+          <div className="text-[10px] text-center text-cyan-400 font-medium pb-1">
+            ▶ Play →
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Vertical layout (default for later rounds and final)
   return (
     <div
       className={`rounded-lg p-2 transition-all overflow-hidden ${
