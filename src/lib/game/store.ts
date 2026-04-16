@@ -585,28 +585,4 @@ export const useGameStore = create<GameStore>()(
   )
 );
 
-// Selectors — @internal Dead exports (Code Review #5, 2026-04-17)
-// All 9 selectors below are exported but never imported by any file.
-// Consumers access store state directly via useGameStore(state => state.gameState)
-// instead of using these selector functions.
-// Kept for potential future use — selectors provide better memoization
-// when passed to useGameStore(selector) as they maintain reference equality.
-/** @internal Dead export — consumers use inline selectors instead */
-export const selectGameState = (state: GameStore) => state.gameState;
-/** @internal Dead export — consumers use inline selectors instead */
-export const selectCurrentSong = (state: GameStore) => state.gameState.currentSong;
-/** @internal Dead export — consumers use inline selectors instead */
-export const selectPlayers = (state: GameStore) => state.gameState.players;
-/** @internal Dead export — consumers use inline selectors instead */
-export const selectDifficulty = (state: GameStore) => state.gameState.difficulty;
-/** @internal Dead export — consumers use inline selectors instead */
-export const selectGameMode = (state: GameStore) => state.gameState.gameMode;
-/** @internal Dead export — consumers use inline selectors instead */
-export const selectProfiles = (state: GameStore) => state.profiles;
-/** @internal Dead export — consumers use inline selectors instead */
-export const selectActiveProfile = (state: GameStore) =>
-  state.profiles.find((p) => p.id === state.activeProfileId) || null;
-/** @internal Dead export — consumers use inline selectors instead */
-export const selectQueue = (state: GameStore) => state.queue;
-/** @internal Dead export — consumers use inline selectors instead */
-export const selectHighscores = (state: GameStore) => state.highscores;
+
