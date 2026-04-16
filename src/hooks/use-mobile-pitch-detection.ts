@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import type { PitchData } from '@/components/screens/mobile/mobile-types';
 import { VocalDetector } from '@/lib/audio/vocal-detector';
 
@@ -240,6 +240,25 @@ export function useMobilePitchDetection({
     }
     setIsListening(false);
     setCurrentPitch({ frequency: null, note: null, volume: 0 });
+  }, []);
+
+  // Clean up microphone resources on unmount to prevent leaking
+  // the media stream, audio context, and animation frame loop.
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(track => track.stop());
+        mediaStreamRef.current = null;
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {});
+        audioContextRef.current = null;
+      }
+    };
   }, []);
 
   return {
