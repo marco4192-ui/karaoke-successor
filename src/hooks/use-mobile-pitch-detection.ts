@@ -82,6 +82,25 @@ export function useMobilePitchDetection({
   const startMicrophone = useCallback(async () => {
     if (!clientId) return;
     
+    // CRITICAL: Check if we're in a secure context before requesting microphone.
+    // On iOS Safari and some Android browsers, getUserMedia requires HTTPS.
+    // http://localhost is secure, but http://192.168.x.x is NOT.
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      const currentUrl = window.location.href;
+      const isLocalhost = currentUrl.includes('localhost') || currentUrl.includes('127.0.0.1');
+      if (!isLocalhost) {
+        setMicPermissionDenied(true);
+        onError?.(
+          'Microphone access requires a secure connection (HTTPS). ' +
+          'Please access this page via https:// instead of http://. ' +
+          'Tip: On iOS, go to Settings > Safari > Advanced > Experimental Features ' +
+          'and enable "Allow Media Capture on Insecure HTTP Sites", or use a local ' +
+          'development setup with HTTPS.'
+        );
+        return;
+      }
+    }
+    
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -177,9 +196,21 @@ export function useMobilePitchDetection({
       );
       if (isPermissionDenied) {
         setMicPermissionDenied(true);
-        onError?.('Microphone access denied. Please allow microphone access in your browser settings and try again.');
+        // Provide platform-specific instructions
+        const ua = navigator.userAgent;
+        if (/iPad|iPhone|iPod/.test(ua)) {
+          onError?.('Microphone access denied. On iOS: Settings > Safari > Microphone > allow access, then reload the page.');
+        } else if (/Android/.test(ua)) {
+          onError?.('Microphone access denied. On Android: tap the lock/permissions icon in the address bar > Microphone > Allow, then reload.');
+        } else {
+          onError?.('Microphone access denied. Please allow microphone access in your browser settings and reload the page.');
+        }
       } else {
-        onError?.('Could not access microphone. Please make sure a microphone is connected.');
+        const isSecureContext = typeof window !== 'undefined' && window.isSecureContext;
+        onError?.(
+          `Could not access microphone (${isSecureContext ? 'permission or hardware issue' : 'insecure HTTP context'}). ` +
+          `Make sure a microphone is connected and this page is served over HTTPS.`
+        );
       }
     }
   }, [clientId, isPlaying, songEnded, onError]);
