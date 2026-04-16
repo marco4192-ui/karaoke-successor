@@ -15,6 +15,7 @@ const MATCH_W_FINAL = 130;
 const COL_GAP = 48;
 const FINAL_GAP = 56;
 const ROUND_LABEL_H = 24; // space for round labels above bracket
+const MIN_UNIT_SPACING = 90; // minimum vertical spacing between adjacent match centres (prevents card overlap)
 
 interface ButterflyBracketProps {
   bracket: TournamentBracket;
@@ -58,8 +59,14 @@ export function TournamentBracketButterfly({
 
   // Dynamic spacing – compact vertical spacing to prevent oversized brackets
   const matchSpacing = Math.max(80, Math.min(130, 600 / (firstRoundCount / 2)));
-  // Only half the matches per side → bracket height covers one half
-  const bracketH = (firstRoundCount / 2) * matchSpacing + ROUND_LABEL_H;
+
+  // The butterfly layout renders firstRoundCount/2 matches per side vertically.
+  // computeCenterY uses unit = effectiveHeight / firstRoundCount, so effectiveHeight
+  // must be >= firstRoundCount * MIN_UNIT_SPACING to prevent card overlap.
+  const rawEffectiveH = (firstRoundCount / 2) * matchSpacing;
+  const neededEffectiveH = firstRoundCount * MIN_UNIT_SPACING;
+  const effectiveH = Math.max(rawEffectiveH, neededEffectiveH);
+  const bracketH = effectiveH + ROUND_LABEL_H;
 
   // Memoised helper (adds top padding for round labels)
   const getCY = (round: number, pos: number) =>
@@ -196,7 +203,7 @@ export function TournamentBracketButterfly({
 
   // ── Render ──────────────────────────────────────────────────
   return (
-    <div className="overflow-x-auto pb-4">
+    <div className="overflow-auto pb-4" style={{ maxHeight: '80vh' }}>
       <div
         className="relative mx-auto"
         style={{ width: totalW, height: bracketH }}
