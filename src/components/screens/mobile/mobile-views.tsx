@@ -404,13 +404,13 @@ export function MobileSongsView({
         <div className="space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto">
           {filteredSongs.map((song) => (
             <div 
-              key={song.id}
+              key={song.id || `song-${song.title}-${song.artist}`}
               className="flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
             >
               {/* Cover */}
               <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-600/50 to-blue-600/50 overflow-hidden flex-shrink-0">
                 {song.coverImage ? (
-                  <img src={song.coverImage} alt="" className="w-full h-full object-cover" />
+                  <img src={song.coverImage} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <MusicIcon className="w-6 h-6 text-white/30" />
@@ -420,25 +420,27 @@ export function MobileSongsView({
               
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{song.title}</p>
-                <p className="text-sm text-white/40 truncate">{song.artist}</p>
+                <p className="font-medium truncate">{song.title || 'Unknown'}</p>
+                <p className="text-sm text-white/40 truncate">{song.artist || 'Unknown'}</p>
               </div>
               
               {/* Duration */}
-              <span className="text-xs text-white/30 whitespace-nowrap flex-shrink-0">{formatDuration(song.duration)}</span>
+              <span className="text-xs text-white/30 whitespace-nowrap flex-shrink-0">
+                {song.duration > 0 ? formatDuration(song.duration) : '--:--'}
+              </span>
               
-              {/* Add to Queue Button */}
-              <Button
-                size="sm"
+              {/* Add to Queue Button — always visible */}
+              <button
                 onClick={() => {
                   onShowSongOptions(song);
                   onLoadPartners();
                 }}
-                className="bg-cyan-500 hover:bg-cyan-400 text-white px-3 py-5 flex-shrink-0 text-xl font-bold rounded-lg"
+                className="bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 text-white w-10 h-10 flex items-center justify-center flex-shrink-0 text-xl font-bold rounded-lg transition-colors"
                 aria-label="Song zur Warteschlange hinzufügen"
+                style={{ minWidth: '2.5rem', minHeight: '2.5rem' }}
               >
                 +
-              </Button>
+              </button>
             </div>
           ))}
           

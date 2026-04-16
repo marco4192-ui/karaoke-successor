@@ -203,15 +203,20 @@ export function useMobileClient({
   const syncSongLibrary = useCallback(async () => {
     try {
       const allSongs = getAllSongs();
-      const simplifiedSongs = allSongs.map(song => ({
-        id: song.id,
-        title: song.title,
-        artist: song.artist,
-        duration: song.duration,
-        genre: song.genre,
-        language: song.language,
-        coverImage: song.coverImage,
-      }));
+      const simplifiedSongs = allSongs
+        .filter(song => song.id && song.title) // Skip songs without id or title
+        .map(song => ({
+          id: song.id,
+          title: song.title,
+          artist: song.artist || 'Unknown',
+          duration: song.duration || 0,
+          genre: song.genre,
+          language: song.language,
+          // Don't send coverImage if it's a blob: URL — companions can't access main app blobs
+          coverImage: song.coverImage && !song.coverImage.startsWith('blob:')
+            ? song.coverImage
+            : undefined,
+        }));
       
       await fetch('/api/mobile', {
         method: 'POST',
