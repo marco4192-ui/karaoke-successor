@@ -57,7 +57,44 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  // Song search / library selection
   const allSongs = useMemo(() => getAllSongs(), []);
+  const [songSearch, setSongSearch] = useState('');
+  const [songSelectionMode, setSongSelectionMode] = useState<'manual' | 'random'>('manual');
+  const [filterGenre, setFilterGenre] = useState('all');
+  const [filterDifficulty, setFilterDifficulty] = useState<'all' | 'easy' | 'medium' | 'hard'>('all');
+
+  // Collect available genres
+  const genres = useMemo(() => {
+    const g = new Set(allSongs.map(s => s.genre).filter(Boolean) as string[]);
+    return ['all', ...Array.from(g).sort()];
+  }, [allSongs]);
+
+  // Filtered songs based on search + filters
+  const filteredSongs = useMemo(() => {
+    let songs = allSongs;
+    if (filterGenre !== 'all') songs = songs.filter(s => s.genre === filterGenre);
+    if (filterDifficulty !== 'all') songs = songs.filter(s => s.difficulty === filterDifficulty);
+    if (songSearch.trim()) {
+      const q = songSearch.toLowerCase();
+      songs = songs.filter(s =>
+        s.title.toLowerCase().includes(q) ||
+        s.artist.toLowerCase().includes(q)
+      );
+    }
+    return songs.slice(0, 50); // Limit to 50 for performance
+  }, [allSongs, songSearch, filterGenre, filterDifficulty]);
+
+  // Pick a random song from filtered results
+  const pickRandom = () => {
+    const pool = filterGenre !== 'all' || filterDifficulty !== 'all'
+      ? filteredSongs
+      : allSongs;
+    if (pool.length === 0) return;
+    const randomSong = pool[Math.floor(Math.random() * pool.length)];
+    setSelectedSong(randomSong);
+    setSongSelectionMode('manual');
+  };
 
   const togglePlayer = (id: string) => {
     setSelectedPlayers(prev => {
@@ -80,7 +117,13 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
   };
 
   const handleStart = () => {
-    if (!selectedSong) {
+    // In random mode, auto-pick a song now
+    let song = selectedSong;
+    if (songSelectionMode === 'random' && !song) {
+      const pool = allSongs;
+      if (pool.length > 0) song = pool[Math.floor(Math.random() * pool.length)];
+    }
+    if (!song) {
       setError('Bitte wähle einen Song aus');
       return;
     }
@@ -91,7 +134,7 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
     }
     setError(null);
     onStart(
-      { playMode, duration, songId: selectedSong.id },
+      { playMode, duration, songId: song.id },
       selectedPlayers,
     );
   };
@@ -166,24 +209,125 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
         {/* Song Selection */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-3">Song auswählen</h3>
-          <div className="relative">
-            <select
-              value={selectedSong?.id || ''}
-              onChange={(e) => {
-                const song = allSongs.find(s => s.id === e.target.value);
-                setSelectedSong(song || null);
-              }}
-              className="w-full bg-gray-700/50 border border-white/10 rounded-xl p-3 text-white appearance-none cursor-pointer"
+
+          {/* Manual / Random toggle */}
+          <div className="flex gap-2 mb-3">
+            <button
+              onClick={() => setSongSelectionMode('manual')}
+              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                songSelectionMode === 'manual'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-700/50 text-gray-400 hover:bg-gray-600/50'
+              }`}
             >
-              <option value="">— Song wählen —</option>
-              {allSongs.map(song => (
-                <option key={song.id} value={song.id}>
-                  {song.artist} - {song.title}
-                </option>
-              ))}
-            </select>
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none">▼</div>
+              📋 Bibliothek
+            </button>
+            <button
+              onClick={pickRandom}
+              className="flex-1 py-2 px-3 rounded-lg text-sm font-medium bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-400 hover:to-orange-400 transition-all"
+            >
+              🎲 Zufälliger Song
+            </button>
           </div>
+
+          {/* Selected song indicator */}
+          {selectedSong && (
+            <div className="mb-3 p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center gap-3">
+              <span className="text-lg">🎵</span>
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-sm truncate">{selectedSong.title}</div>
+                <div className="text-xs text-gray-400 truncate">{selectedSong.artist}</div>
+              </div>
+              <button
+                onClick={() => setSelectedSong(null)}
+                className="text-gray-400 hover:text-white text-sm px-2"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {songSelectionMode === 'manual' && (
+            <>
+              {/* Search */}
+              <div className="relative mb-3">
+                <input
+                  type="text"
+                  placeholder="Song oder Künstler suchen..."
+                  value={songSearch}
+                  onChange={(e) => setSongSearch(e.target.value)}
+                  className="w-full bg-gray-700/50 border border-white/10 rounded-xl p-3 text-white text-sm pl-9"
+                />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+              </div>
+
+              {/* Filters */}
+              <div className="flex gap-2 mb-3">
+                <select
+                  value={filterGenre}
+                  onChange={(e) => setFilterGenre(e.target.value)}
+                  className="flex-1 bg-gray-700/50 border border-white/10 rounded-lg p-2 text-white text-xs appearance-none cursor-pointer"
+                >
+                  {genres.map(g => (
+                    <option key={g} value={g}>{g === 'all' ? 'Alle Genres' : g}</option>
+                  ))}
+                </select>
+                <select
+                  value={filterDifficulty}
+                  onChange={(e) => setFilterDifficulty(e.target.value as typeof filterDifficulty)}
+                  className="bg-gray-700/50 border border-white/10 rounded-lg p-2 text-white text-xs appearance-none cursor-pointer"
+                >
+                  <option value="all">Alle Schwierigkeiten</option>
+                  <option value="easy">Leicht</option>
+                  <option value="medium">Mittel</option>
+                  <option value="hard">Schwer</option>
+                </select>
+              </div>
+
+              {/* Song list */}
+              <div className="max-h-48 overflow-y-auto rounded-xl border border-white/10 bg-gray-800/50">
+                {filteredSongs.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500 text-sm">Keine Songs gefunden</div>
+                ) : (
+                  filteredSongs.map(song => {
+                    const isSelected = selectedSong?.id === song.id;
+                    return (
+                      <button
+                        key={song.id}
+                        onClick={() => setSelectedSong(song)}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${
+                          isSelected
+                            ? 'bg-purple-600/30 border-l-2 border-purple-400'
+                            : 'hover:bg-white/5 border-l-2 border-transparent'
+                        }`}
+                      >
+                        <span className="text-sm">{isSelected ? '✅' : '🎵'}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate">{song.title}</div>
+                          <div className="text-xs text-gray-400 truncate">{song.artist}</div>
+                        </div>
+                        {song.genre && (
+                          <span className="text-[10px] text-gray-500 bg-gray-700/50 px-1.5 py-0.5 rounded">{song.genre}</span>
+                        )}
+                      </button>
+                    );
+                  })
+                )}
+                {allSongs.length > 50 && filteredSongs.length === 50 && (
+                  <div className="p-2 text-center text-xs text-gray-500">
+                    +{allSongs.length - 50} weitere — Bitte Suche oder Filter verwenden
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Random mode info */}
+          {songSelectionMode === 'random' && !selectedSong && (
+            <p className="text-sm text-gray-400 text-center py-2">
+              Beim Start wird ein zufälliger Song aus der Bibliothek gewählt ({allSongs.length} Songs)
+            </p>
+          )}
         </div>
 
         {/* Player Selection */}
