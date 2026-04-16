@@ -42,12 +42,16 @@ interface PassTheMicSettings {
   segmentDuration: number; // in seconds
   randomSwitches: boolean; // random player switches during song
   difficulty: Difficulty;
+  micId: string; // selected microphone device ID
+  micName: string; // display name for selected mic
 }
 
 const DEFAULT_SETTINGS: PassTheMicSettings = {
   segmentDuration: 30, // 30 seconds per segment
   randomSwitches: true,
   difficulty: 'medium',
+  micId: 'default',
+  micName: 'Standard',
 };
 
 export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTheMicSetupProps) {
@@ -163,6 +167,21 @@ export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTh
             >
               {settings.randomSwitches ? '✓ On' : 'Off'}
             </Button>
+          </div>
+
+          {/* Microphone Selection */}
+          <div>
+            <label className="text-sm text-white/60 mb-2 block">Microphone</label>
+            <select
+              value={settings.micId}
+              onChange={(e) => {
+                const opt = e.target.options[e.target.selectedIndex];
+                setSettings(prev => ({ ...prev, micId: e.target.value, micName: opt.textContent }));
+              }}
+              className="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+            >
+              <option value="default">Standard (System Default)</option>
+            </select>
           </div>
 
           {/* Difficulty */}
