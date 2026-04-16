@@ -59,6 +59,7 @@ import { useGameAudioEffects } from '@/hooks/use-game-audio-effects';
 import { useYouTubeGame } from '@/hooks/use-youtube-game';
 import { useGameModes } from '@/hooks/use-game-modes';
 import { useMobileGameSync } from '@/hooks/use-mobile-game-sync';
+import { usePracticePlayback } from '@/hooks/use-practice-playback';
 import {
   VolumeMeter,
   AudioEffectsButton,
@@ -116,6 +117,15 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   // Practice mode state
   const [practiceMode, setPracticeMode] = useState<PracticeModeConfig>(PRACTICE_MODE_DEFAULTS);
   const [showPracticeControls, setShowPracticeControls] = useState(false);
+
+  // Practice playback: apply playbackRate to audio/video, loop detection
+  const { loopCount, setLoopStart, setLoopEnd, resetLoopCount } = usePracticePlayback({
+    practiceMode,
+    isPlaying,
+    currentTime: gameState.currentTime,
+    audioRef,
+    videoRef,
+  });
   
   // Challenge mode state - read from localStorage when game starts
   const [activeChallenge] = useState<typeof CHALLENGE_MODES[0] | null>(() => {
@@ -729,8 +739,13 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
       <PracticePanel
         practiceMode={practiceMode}
         showControls={showPracticeControls}
+        loopCount={loopCount}
+        currentTimeMs={gameState.currentTime * 1000}
         onToggleControls={() => setShowPracticeControls(!showPracticeControls)}
         onPracticeModeChange={(config) => setPracticeMode(p => ({ ...p, ...config }))}
+        onSetLoopStart={setLoopStart}
+        onSetLoopEnd={setLoopEnd}
+        onResetLoopCount={resetLoopCount}
       />
 
       {/* Score Events & Particles — disabled in low-performance mode */}
