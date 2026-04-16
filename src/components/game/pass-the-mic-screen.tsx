@@ -266,12 +266,14 @@ interface PassTheMicGameViewProps {
   players: PassTheMicPlayer[];
   song: Song;
   segments: PassTheMicSegment[];
-  settings: PassTheMicSettings;
+  settings: PassTheMicSettings | null;
   onUpdateGame: (players: PassTheMicPlayer[], segments: PassTheMicSegment[]) => void;
   onEndGame: () => void;
 }
 
 export function PassTheMicGameView({ players, song, segments, settings, onUpdateGame, onEndGame }: PassTheMicGameViewProps) {
+  // Fallback to defaults if settings is null (prevents white screen when party-store has null)
+  const safeSettings: PassTheMicSettings = settings ?? DEFAULT_SETTINGS;
   const [currentSegmentIndex, setCurrentSegmentIndex] = useState(0);
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -319,7 +321,7 @@ export function PassTheMicGameView({ players, song, segments, settings, onUpdate
         }
 
         // Random switches
-        if (settings.randomSwitches && Math.random() < 0.001) { // 0.1% chance per tick
+        if (safeSettings.randomSwitches && Math.random() < 0.001) { // 0.1% chance per tick
           const nextPlayer = (currentPlayerIndex + 1 + Math.floor(Math.random() * (players.length - 1))) % players.length;
           setCurrentPlayerIndex(nextPlayer);
           setSwitchCountdown(3);
@@ -330,7 +332,7 @@ export function PassTheMicGameView({ players, song, segments, settings, onUpdate
     }, 100);
 
     return () => clearInterval(interval);
-  }, [isPlaying, currentSegment, currentSegmentIndex, segments.length, settings.randomSwitches, currentPlayerIndex, players.length]);
+  }, [isPlaying, currentSegment, currentSegmentIndex, segments.length, safeSettings.randomSwitches, currentPlayerIndex, players.length]);
 
   // Switch countdown
   useEffect(() => {
