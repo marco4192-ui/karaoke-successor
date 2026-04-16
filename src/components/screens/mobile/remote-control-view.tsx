@@ -150,10 +150,40 @@ export function RemoteControlView({
       
       if (data.success) {
         setCommandSent(command);
+        setRemoteState(prev => ({ ...prev, error: null }));
         setTimeout(() => setCommandSent(null), 1500);
+      } else {
+        // Show error from server (e.g., "no active game")
+        setRemoteState(prev => ({
+          ...prev,
+          error: data.message || `Command "${command}" failed`,
+        }));
       }
     } catch {
-      // Error
+      // Connection lost — show clear error with reconnection hint
+      setRemoteState(prev => ({
+        ...prev,
+        error: 'Connection lost. Check if the main app is running. Retrying...',
+        hasControl: false, // Release control since we can't communicate
+      }));
+      // Re-poll after a delay to detect when connection is restored
+      setTimeout(() => {
+        fetch(`/api/mobile?action=remotecontrol&clientId=${clientId}`)
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              setRemoteState(prev => ({
+                ...prev,
+                hasControl: data.remoteControl.iHaveControl,
+                lockedBy: data.remoteControl.lockedBy,
+                lockedByName: data.remoteControl.lockedByName,
+                isLoading: false,
+                error: null,
+              }));
+            }
+          })
+          .catch(() => {});
+      }, 3000);
     }
   };
   
@@ -224,6 +254,21 @@ export function RemoteControlView({
       
       {/* Remote Control Buttons */}
       <div className={`space-y-4 ${!remoteState.hasControl ? 'opacity-40 pointer-events-none' : ''}`}>
+        {/* Error Banner */}
+        {remoteState.error && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+            <p className="text-red-400 text-sm text-center">{remoteState.error}</p>
+            {!remoteState.hasControl && (
+              <Button
+                onClick={acquireControl}
+                className="mt-2 w-full bg-gradient-to-r from-cyan-500 to-purple-500 text-sm"
+              >
+                Reconnect
+              </Button>
+            )}
+          </div>
+        )}
+        
         {/* Transport Controls */}
         <Card className="bg-white/5 border-white/10">
           <CardHeader className="pb-2">
