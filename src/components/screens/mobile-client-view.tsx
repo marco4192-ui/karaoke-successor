@@ -64,6 +64,13 @@ export function MobileClientView() {
     return () => { stopMicrophone(); cleanup(); };
   }, [stopMicrophone, cleanup]);
 
+  // Persist clientId to localStorage for IP-based reconnection hints
+  useEffect(() => {
+    if (clientId) {
+      localStorage.setItem('karaoke-client-id', clientId);
+    }
+  }, [clientId]);
+
   // Profile callbacks
   const handleCreateProfile = useCallback(() => {
     if (!profileName.trim()) return;

@@ -721,7 +721,10 @@ export function MobileProfileCreateView({
     const fetchHostProfiles = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/mobile?action=hostprofiles');
+        // Include clientId to exclude own profile from "claimed" list
+        const storedClientId = localStorage.getItem('karaoke-client-id');
+        const clientIdParam = storedClientId ? `&clientId=${storedClientId}` : '';
+        const response = await fetch(`/api/mobile?action=hostprofiles${clientIdParam}`);
         const data = await response.json();
         if (data.success && data.profiles) {
           setHostProfiles(data.profiles);

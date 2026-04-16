@@ -447,10 +447,11 @@ export async function GET(request: NextRequest) {
       // Get host profiles for companion to choose from
       // Profiles are synced to server memory by the main app via POST sethostprofiles
       {
-        // Collect all profile IDs that are currently claimed by a connected companion
+        // Collect all profile IDs that are currently claimed by OTHER connected companions
+        const requestingClientId = clientId || '';
         const claimedProfileIds: string[] = [];
         mobileClients.forEach((client) => {
-          if (client.profile) {
+          if (client.profile && client.id !== requestingClientId) {
             claimedProfileIds.push(client.profile.id);
           }
         });
@@ -459,7 +460,7 @@ export async function GET(request: NextRequest) {
           success: true,
           profiles: hostProfiles,
           count: hostProfiles.length,
-          claimedProfileIds, // IDs of profiles already taken by connected companions
+          claimedProfileIds, // IDs of profiles taken by OTHER connected companions
         });
       }
 

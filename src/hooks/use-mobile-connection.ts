@@ -97,11 +97,16 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
           callbacksRef.current.onGameStateUpdate(parsed);
         }
         
-        // Load saved profile from localStorage and sync
-        if (savedProfile) {
-          const parsed = JSON.parse(savedProfile);
-          callbacksRef.current.onProfileLoaded(parsed);
-          callbacksRef.current.onProfileFieldsLoaded(parsed.name, parsed.color, parsed.avatar || null);
+        // Auto-restore profile: prefer server-hinted profile (IP match), then localStorage
+        const profileToRestore = data.existingProfile || (savedProfile ? JSON.parse(savedProfile) : null);
+        
+        if (profileToRestore) {
+          callbacksRef.current.onProfileLoaded(profileToRestore);
+          callbacksRef.current.onProfileFieldsLoaded(
+            profileToRestore.name,
+            profileToRestore.color,
+            profileToRestore.avatar || null,
+          );
           // Sync profile to server after connection
           try {
             const syncResponse = await fetch('/api/mobile', {
@@ -110,7 +115,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
               body: JSON.stringify({
                 type: 'profile',
                 clientId: newClientId,
-                payload: parsed,
+                payload: profileToRestore,
               }),
             });
             const syncData = await syncResponse.json();
@@ -118,6 +123,8 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
               setConnectionCode(syncData.connectionCode);
               localStorage.setItem('karaoke-connection-code', syncData.connectionCode);
             }
+            console.log('[MobileClient] Profile auto-restored:', profileToRestore.name,
+              data.existingProfile ? '(via IP match)' : '(from localStorage)');
           } catch {
             // Ignore sync errors
           }
