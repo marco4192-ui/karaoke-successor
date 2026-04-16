@@ -1,29 +1,36 @@
 'use client';
 
 /**
- * DEAD CODE (Code Review #5, 2026-04-17)
+ * Multi-Pitch Detector Hook (Code Review #6, 2026-04-17)
  *
- * This file is not imported by any other file in the project.
+ * Manages multiple simultaneous pitch detectors for multi-player karaoke.
+ * Wraps PitchDetectorManager with React state, supporting both local players
+ * (multiple microphones) and mobile players (pitch data via WebSocket/HTTP polling).
  *
- * Possible function: This hook manages multiple simultaneous pitch detectors for
- * multi-player karaoke. It wraps PitchDetectorManager with React state, supporting
- * both local players (multiple microphones) and mobile players (pitch data via
- * WebSocket). Features dynamic player addition/removal, per-player difficulty, and
- * error handling per player.
+ * Features:
+ * - Dynamic player addition/removal during runtime
+ * - Per-player pitch results with automatic state management
+ * - Per-player error tracking
+ * - Shared difficulty setting across all detectors
+ * - Cleanup on unmount (singleton preserved)
  *
- * Currently, the app uses the single-pitch usePitchDetector hook in game-screen.tsx
- * for solo mode, and the mobile pitch polling system handles companion players.
- * There is no unified multi-pitch approach — local multiplayer uses a single
- * pitch detector and the second player's pitch is simulated or comes from mobile.
+ * Usage example (2 local mics + 1 companion app):
+ * ```tsx
+ * const multiPitch = useMultiPitchDetector({
+ *   players: [
+ *     { playerId: 'p1', type: 'local' },
+ *     { playerId: 'p2', type: 'local' },
+ *     { playerId: 'p3', type: 'mobile', mobileClientId: 'mobile-123' },
+ *   ],
+ *   difficulty: 'medium',
+ *   autoStart: true,
+ * });
  *
- * The hook also exports useSinglePitchDetector() as a backward-compatible wrapper.
+ * // Get individual player pitch
+ * const p1Pitch = multiPitch.getPlayerPitch('p1');
+ * ```
  *
- * This is the most substantial dead hook (~391 lines) and represents significant
- * design work for a feature that was planned but never fully integrated.
- *
- * Consider: This hook is the foundation for local split-screen multiplayer.
- * It should be used instead of the current ad-hoc pitch detection approach
- * when true local multiplayer is implemented.
+ * Also exports useSinglePitchDetector() for backward-compatible single-player mode.
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { 
