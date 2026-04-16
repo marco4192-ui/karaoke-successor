@@ -144,6 +144,20 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   const abortedRef = useRef(false);   // Set when user aborts to prevent endGameAndCleanup
   const mediaPlayWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // ── Pause position tracking ──
+  // ── Refs for frequently-changing values (pitch, YouTube, native audio) ──
+  // These MUST NOT be in the game loop dependency array, otherwise the loop
+  // would be torn down and recreated on every pitch detection callback (~50Hz),
+  // causing severe performance degradation and potential timing gaps.
+  const pitchResultRef = useRef(pitchResult);
+  pitchResultRef.current = pitchResult;
+  const p2DetectedPitchRef = useRef(p2DetectedPitch);
+  p2DetectedPitchRef.current = p2DetectedPitch;
+  const p2VolumeRef = useRef(p2Volume);
+  p2VolumeRef.current = p2Volume;
+  const youtubeTimeRef = useRef(youtubeTime);
+  youtubeTimeRef.current = youtubeTime;
+  const nativeAudioTimeRef = useRef(nativeAudioTime);
+  nativeAudioTimeRef.current = nativeAudioTime;
   // When the game is paused mid-song we must remember where the song was so
   // that resume picks up from that exact wall-clock offset instead of from 0.
   const pausedAtElapsedMsRef = useRef<number | null>(null);
@@ -603,11 +617,11 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       let elapsed: number;
 
       // Priority: native audio time (ASIO / WASAPI)
-      if (isNativeAudio && nativeAudioTime > 0) {
-        elapsed = nativeAudioTime;
+      if (isNativeAudio && nativeAudioTimeRef.current > 0) {
+        elapsed = nativeAudioTimeRef.current;
       }
-      else if (isYouTube && youtubeTime > 0) {
-        elapsed = youtubeTime;
+      else if (isYouTube && youtubeTimeRef.current > 0) {
+        elapsed = youtubeTimeRef.current;
       }
       else if (audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2) {
         elapsed = audioRef.current.currentTime * 1000;
@@ -623,18 +637,23 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
 
       setCurrentTime(adjustedTime);
 
-      if (pitchResult) {
-        setVolume(pitchResult.volume);
-        setDetectedPitch(pitchResult.frequency);
-        checkNoteHits(adjustedTime, pitchResult);
+      // Read pitch from ref (not closure) to avoid stale values
+      const currentPitch = pitchResultRef.current;
+      if (currentPitch) {
+        setVolume(currentPitch.volume);
+        setDetectedPitch(currentPitch.frequency);
+        checkNoteHits(adjustedTime, currentPitch);
       }
 
-      if (isDuetMode && p2DetectedPitch !== null) {
+      // Read P2 pitch from ref (not closure) to avoid stale values
+      const currentP2Pitch = p2DetectedPitchRef.current;
+      const currentP2Vol = p2VolumeRef.current;
+      if (isDuetMode && currentP2Pitch !== null) {
         const p2PitchResult = {
-          frequency: p2DetectedPitch,
-          note: Math.round(12 * (Math.log2(p2DetectedPitch / 440)) + 69),
-          clarity: pitchResult?.clarity || 0,
-          volume: p2Volume
+          frequency: currentP2Pitch,
+          note: Math.round(12 * (Math.log2(currentP2Pitch / 440)) + 69),
+          clarity: currentPitch?.clarity || 0,
+          volume: currentP2Vol
         };
         checkP2NoteHits(adjustedTime, p2PitchResult);
       } else if (isDuetMode) {
@@ -659,7 +678,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [isPlaying, effectiveSong, pitchResult, setCurrentTime, setDetectedPitch, checkNoteHits, checkP2NoteHits, endGameAndCleanup, isYouTube, youtubeTime, timingOffset, isDuetMode, p2DetectedPitch, p2Volume, setP2Volume, audioRef, videoRef, startTimeRef, isNativeAudio, nativeAudioTime]);
+  }, [isPlaying, effectiveSong, setCurrentTime, setDetectedPitch, checkNoteHits, checkP2NoteHits, endGameAndCleanup, isYouTube, timingOffset, isDuetMode, setP2Volume, audioRef, videoRef, startTimeRef, isNativeAudio]);
 
   // ── Abort: immediately stop game loop without saving results ──
   const abortGameLoop = useCallback(() => {
