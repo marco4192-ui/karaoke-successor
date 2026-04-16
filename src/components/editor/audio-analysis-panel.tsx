@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -79,6 +79,15 @@ export function AudioAnalysisPanel({
 
   const hasNotes = result && result.notes.length > 0;
   const hasBpm = (result && result.bpm > 0) || bpmResult;
+
+  // ── Auto-apply detected BPM to the song's BPM field ──
+  useEffect(() => {
+    if (bpmResult && bpmResult.bpm > 0) {
+      onApplyBpm(bpmResult.bpm);
+    } else if (result && result.bpm > 0 && status === 'complete') {
+      onApplyBpm(result.bpm);
+    }
+  }, [bpmResult, result?.bpm, status, onApplyBpm]);
 
   return (
     <div className="p-4 space-y-4">
