@@ -472,10 +472,11 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
         <RateMySongRatingScreen
           songTitle={getAllSongs().find(s => s.id === party.rateMySongSettings.songId)?.title || ''}
           songArtist={getAllSongs().find(s => s.id === party.rateMySongSettings.songId)?.artist || ''}
-          players={party.rateMySongPlayerIds.map(id => {
+          singingPlayers={party.rateMySongPlayerIds.map(id => {
             const p = profiles.find(pr => pr.id === id);
             return { id, name: p?.name || 'Player', color: p?.color || '#FF6B6B' };
           })}
+          allProfiles={profiles}
           onSubmit={(ratings) => {
             const avg = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
             setRateMySongResult({

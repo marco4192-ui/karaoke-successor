@@ -232,7 +232,10 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
 interface RateMySongRatingScreenProps {
   songTitle: string;
   songArtist: string;
-  players: Array<{ id: string; name: string; color: string }>;
+  /** The players who sang — they must NOT rate themselves */
+  singingPlayers: Array<{ id: string; name: string; color: string }>;
+  /** All active profiles (audience + singers) — used to determine who can rate */
+  allProfiles: PlayerProfile[];
   onSubmit: (ratings: RateMySongRating[]) => void;
   onBack: () => void;
 }
@@ -240,23 +243,68 @@ interface RateMySongRatingScreenProps {
 export function RateMySongRatingScreen({
   songTitle,
   songArtist,
-  players,
+  singingPlayers,
+  allProfiles,
   onSubmit,
   onBack,
 }: RateMySongRatingScreenProps) {
-  const [ratings, setRatings] = useState<RateMySongRating[]>(
-    players.map(p => ({ playerId: p.id, playerName: p.name, playerColor: p.color, rating: 5.0 }))
-  );
+  // Audience = all active profiles EXCEPT the singers themselves
+  const audienceProfiles = useMemo(() => {
+    const singerIds = new Set(singingPlayers.map(p => p.id));
+    return allProfiles.filter(p => p.isActive !== false && !singerIds.has(p.id));
+  }, [allProfiles, singingPlayers]);
 
-  const updateRating = (playerId: string, rating: number) => {
-    setRatings(prev => prev.map(r => r.playerId === playerId ? { ...r, rating } : r));
+  // Build the rating list for each singer, each rated by the audience
+  // Each audience member rates each singer — we store per-singer, per-audience ratings
+  const [audienceRatings, setAudienceRatings] = useState<Record<string, Record<string, number>>>(() => {
+    // Initialize all ratings at 5.0: { singerId: { audienceId: 5.0 } }
+    const init: Record<string, Record<string, number>> = {};
+    for (const singer of singingPlayers) {
+      init[singer.id] = {};
+      for (const audience of audienceProfiles) {
+        init[singer.id][audience.id] = 5.0;
+      }
+    }
+    // Also allow "self" rating from the host if no audience members exist
+    if (audienceProfiles.length === 0) {
+      for (const singer of singingPlayers) {
+        init[singer.id] = { '__host__': 5.0 };
+      }
+    }
+    return init;
+  });
+
+  // Current audience member being asked to rate (cycles through audience)
+  const [currentAudienceIdx, setCurrentAudienceIdx] = useState(0);
+
+  const updateRating = (singerId: string, audienceId: string, rating: number) => {
+    setAudienceRatings(prev => ({
+      ...prev,
+      [singerId]: { ...prev[singerId], [audienceId]: rating },
+    }));
+  };
+
+  // Calculate average rating per singer
+  const getAverageForSinger = (singerId: string): number => {
+    const singerRatings = audienceRatings[singerId];
+    if (!singerRatings) return 5.0;
+    const values = Object.values(singerRatings);
+    if (values.length === 0) return 5.0;
+    return values.reduce((sum, v) => sum + v, 0) / values.length;
   };
 
   const handleSubmit = () => {
+    const ratings: RateMySongRating[] = singingPlayers.map(singer => ({
+      playerId: singer.id,
+      playerName: singer.name,
+      playerColor: singer.color,
+      rating: getAverageForSinger(singer.id),
+    }));
     onSubmit(ratings);
   };
 
-  const averageRating = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
+  // If no audience exists, allow a single combined rating screen (fallback)
+  const hasAudience = audienceProfiles.length > 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900 text-white p-4 md:p-8 flex items-center justify-center">
@@ -266,50 +314,131 @@ export function RateMySongRatingScreen({
           <div className="text-4xl mb-2">⭐</div>
           <h1 className="text-2xl font-bold">{songTitle}</h1>
           <p className="text-gray-400">{songArtist}</p>
-          <p className="text-purple-400 text-sm mt-2">Wie war der Auftritt?</p>
+          <p className="text-purple-400 text-sm mt-2">
+            {hasAudience
+              ? `Bewertung durch das Publikum (${audienceProfiles.length} Stimmen)`
+              : 'Bitte bewerte den Auftritt'}
+          </p>
         </div>
 
-        {/* Rating Sliders */}
-        <div className="space-y-6 mb-8">
-          {ratings.map((rating) => (
-            <div key={rating.playerId} className="bg-gray-700/30 rounded-xl p-4 border border-white/10">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
-                    style={{ backgroundColor: rating.playerColor }}
-                  >
-                    {rating.playerName.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="font-medium">{rating.playerName}</span>
-                </div>
-                <div className="text-2xl font-bold text-amber-400">
-                  {rating.rating.toFixed(1)}
-                </div>
-              </div>
-              <input
-                type="range"
-                min="1"
-                max="10"
-                step="0.1"
-                value={rating.rating}
-                onChange={(e) => updateRating(rating.playerId, parseFloat(e.target.value))}
-                className="w-full accent-amber-400 h-2"
-              />
-              <div className="flex justify-between text-xs text-white/30 mt-1">
-                <span>1.0</span>
-                <span>5.0</span>
-                <span>10.0</span>
-              </div>
+        {hasAudience ? (
+          <>
+            {/* Audience member selector */}
+            <div className="flex items-center justify-center gap-2 mb-6">
+              {audienceProfiles.map((audience, i) => (
+                <button
+                  key={audience.id}
+                  onClick={() => setCurrentAudienceIdx(i)}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                    i === currentAudienceIdx
+                      ? 'ring-2 ring-amber-400 scale-110'
+                      : 'opacity-50 hover:opacity-80'
+                  }`}
+                  style={{ backgroundColor: audience.color }}
+                  title={audience.name}
+                >
+                  {audience.name?.[0]?.toUpperCase() || '?'}
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
+            <p className="text-center text-gray-400 text-sm mb-4">
+              Bewertet als: <span className="text-white font-medium">{audienceProfiles[currentAudienceIdx]?.name}</span>
+            </p>
 
-        {/* Average */}
-        {ratings.length > 1 && (
+            {/* Rating sliders — one per singer, for the selected audience member */}
+            <div className="space-y-6 mb-8">
+              {singingPlayers.map((singer) => {
+                const currentAudience = audienceProfiles[currentAudienceIdx];
+                const currentRating = audienceRatings[singer.id]?.[currentAudience.id] ?? 5.0;
+                const avgRating = getAverageForSinger(singer.id);
+                return (
+                  <div key={singer.id} className="bg-gray-700/30 rounded-xl p-4 border border-white/10">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                          style={{ backgroundColor: singer.color }}
+                        >
+                          {singer.name.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="font-medium">{singer.name}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-xs text-gray-400">
+                          Ø {avgRating.toFixed(1)}
+                        </div>
+                        <div className="text-2xl font-bold text-amber-400">
+                          {currentRating.toFixed(1)}
+                        </div>
+                      </div>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      step="0.1"
+                      value={currentRating}
+                      onChange={(e) => updateRating(singer.id, currentAudience.id, parseFloat(e.target.value))}
+                      className="w-full accent-amber-400 h-2"
+                    />
+                    <div className="flex justify-between text-xs text-white/30 mt-1">
+                      <span>1.0</span>
+                      <span>5.0</span>
+                      <span>10.0</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          /* Fallback: No audience — single combined rating per singer */
+          <div className="space-y-6 mb-8">
+            {singingPlayers.map((singer) => {
+              const avgRating = getAverageForSinger(singer.id);
+              return (
+                <div key={singer.id} className="bg-gray-700/30 rounded-xl p-4 border border-white/10">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                        style={{ backgroundColor: singer.color }}
+                      >
+                        {singer.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="font-medium">{singer.name}</span>
+                    </div>
+                    <div className="text-2xl font-bold text-amber-400">
+                      {avgRating.toFixed(1)}
+                    </div>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    step="0.1"
+                    value={avgRating}
+                    onChange={(e) => updateRating(singer.id, '__host__', parseFloat(e.target.value))}
+                    className="w-full accent-amber-400 h-2"
+                  />
+                  <div className="flex justify-between text-xs text-white/30 mt-1">
+                    <span>1.0</span>
+                    <span>5.0</span>
+                    <span>10.0</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Overall Average */}
+        {singingPlayers.length > 1 && (
           <div className="text-center mb-6 bg-purple-500/10 rounded-xl p-3 border border-purple-500/20">
-            <span className="text-purple-300 font-medium">Durchschnitt: </span>
-            <span className="text-xl font-bold text-white">{averageRating.toFixed(1)}</span>
+            <span className="text-purple-300 font-medium">Gesamtdurchschnitt: </span>
+            <span className="text-xl font-bold text-white">
+              {singingPlayers.reduce((sum, s) => sum + getAverageForSinger(s.id), 0) / singingPlayers.length}
+            </span>
             <span className="text-purple-300"> / 10</span>
           </div>
         )}
