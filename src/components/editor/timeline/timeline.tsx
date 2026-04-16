@@ -200,54 +200,50 @@ export function Timeline({
     setScrollOffset(0);
   }, []);
 
-  // Auto-scroll while playing - use requestAnimationFrame with deferred setState
+  // Keep refs for values the scroll loop needs without re-triggering the effect
+  const currentTimeRef = useRef(currentTime);
+  currentTimeRef.current = currentTime;
+  const scrollOffsetRef = useRef(scrollOffset);
+  scrollOffsetRef.current = scrollOffset;
+  const ppsRef = useRef(pixelsPerSecond);
+  ppsRef.current = pixelsPerSecond;
+
+  // Auto-scroll while playing — reads currentTime from a ref so the effect
+  // is only mounted/unmounted when isPlaying changes, NOT every frame.
   useEffect(() => {
     if (!isPlaying) return;
 
     let animationId: number;
-    let pendingScrollUpdate: number | null = null;
 
-    const checkScroll = () => {
+    const tick = () => {
       const container = containerRef.current;
       if (!container) {
-        animationId = requestAnimationFrame(checkScroll);
+        animationId = requestAnimationFrame(tick);
         return;
       }
 
       const now = Date.now();
-      // Only check every 100ms to avoid excessive updates
-      if (now - lastScrollCheckRef.current > 100) {
+      if (now - lastScrollCheckRef.current > 80) {
         lastScrollCheckRef.current = now;
-        
-        const playheadX = (currentTime / 1000) * pixelsPerSecond;
-        const visibleWidth = container.clientWidth;
-        const visibleStart = scrollOffset;
-        const visibleEnd = scrollOffset + visibleWidth;
 
-        if (playheadX < visibleStart || playheadX > visibleEnd - 100) {
-          pendingScrollUpdate = Math.max(0, playheadX - 100);
+        const playheadX = (currentTimeRef.current / 1000) * ppsRef.current;
+        const visibleWidth = container.clientWidth;
+        const currentScroll = scrollOffsetRef.current;
+
+        if (playheadX < currentScroll || playheadX > currentScroll + visibleWidth - 120) {
+          setScrollOffset(Math.max(0, playheadX - 120));
         }
       }
-      
-      animationId = requestAnimationFrame(checkScroll);
+
+      animationId = requestAnimationFrame(tick);
     };
 
-    // Apply scroll updates outside of effect body
-    const applyScroll = () => {
-      if (pendingScrollUpdate !== null) {
-        setScrollOffset(pendingScrollUpdate);
-        pendingScrollUpdate = null;
-      }
-    };
-
-    animationId = requestAnimationFrame(checkScroll);
-    const scrollInterval = setInterval(applyScroll, 150);
+    animationId = requestAnimationFrame(tick);
 
     return () => {
       cancelAnimationFrame(animationId);
-      clearInterval(scrollInterval);
     };
-  }, [isPlaying, currentTime, pixelsPerSecond, scrollOffset]);
+  }, [isPlaying]);
 
   // Format time display
   const formatTime = (ms: number): string => {
@@ -432,6 +428,11 @@ export function Timeline({
                 key={note.id}
                 note={note}
                 isSelected={selectedNoteId === note.id}
+                isPlayingNote={
+                  isPlaying &&
+                  currentTime >= note.startTime &&
+                  currentTime < note.startTime + note.duration
+                }
                 zoom={zoom}
                 pixelsPerSecond={pixelsPerSecond}
                 scrollOffset={scrollOffset}

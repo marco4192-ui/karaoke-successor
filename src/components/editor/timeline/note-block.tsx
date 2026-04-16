@@ -7,6 +7,7 @@ import type { Note, DuetPlayer } from '@/types/game';
 interface NoteBlockProps {
   note: Note;
   isSelected: boolean;
+  isPlayingNote?: boolean;
   zoom: number;
   pixelsPerSecond: number;
   scrollOffset: number;
@@ -21,6 +22,7 @@ interface NoteBlockProps {
 export function NoteBlock({
   note,
   isSelected,
+  isPlayingNote = false,
   zoom,
   pixelsPerSecond,
   scrollOffset,
@@ -118,15 +120,20 @@ export function NoteBlock({
         colors.text,
         'border-2',
         isSelected && 'ring-2 ring-white ring-offset-1 ring-offset-transparent',
-        isHovered && 'brightness-110',
-        isSelected && 'z-10'
+        isPlayingNote && 'ring-2 ring-green-400 ring-offset-1 ring-offset-transparent scale-[1.02] brightness-125',
+        isHovered && !isPlayingNote && 'brightness-110',
+        (isSelected || isPlayingNote) && 'z-10'
       )}
       style={{
         left: `${startX}px`,
         top: `${y}px`,
         width: `${width}px`,
         height: `${pitchHeight * 0.9}px`,
-        boxShadow: isSelected ? `0 0 15px ${note.isGolden ? 'rgba(251, 191, 36, 0.5)' : 'rgba(34, 211, 238, 0.5)'}` : 'none'
+        boxShadow: isSelected
+          ? `0 0 15px ${note.isGolden ? 'rgba(251, 191, 36, 0.5)' : 'rgba(34, 211, 238, 0.5)'}`
+          : isPlayingNote
+            ? '0 0 20px rgba(34, 197, 94, 0.6)'
+            : 'none'
       }}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
