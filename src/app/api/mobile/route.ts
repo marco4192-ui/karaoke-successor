@@ -124,6 +124,16 @@ let songLibrary: Array<{
   coverImage?: string;
 }> = [];
 
+// Host Profiles - Characters from main app for companion to choose from
+// (Cannot use localStorage in API route - must store in server memory)
+let hostProfiles: Array<{
+  id: string;
+  name: string;
+  avatar?: string;
+  color: string;
+  createdAt: number;
+}> = [];
+
 // ===================== HELPER FUNCTIONS =====================
 function generateConnectionCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed confusing chars
@@ -399,17 +409,8 @@ export async function GET(request: NextRequest) {
 
     case 'hostprofiles':
       // Get host profiles for companion to choose from
-      // Main app stores its profiles in localStorage via zustand
-      // We read from a shared endpoint that the main app writes to
+      // Profiles are synced to server memory by the main app via POST sethostprofiles
       {
-        let hostProfiles: MobileProfile[] = [];
-        try {
-          const stored = localStorage.getItem('karaoke-host-profiles');
-          if (stored) {
-            hostProfiles = JSON.parse(stored);
-          }
-        } catch { /* ignore */ }
-
         // Collect all profile IDs that are currently claimed by a connected companion
         const claimedProfileIds: string[] = [];
         mobileClients.forEach((client) => {
@@ -965,6 +966,28 @@ export async function POST(request: NextRequest) {
           return Response.json({ success: true, timestamp: Date.now() });
         }
         return Response.json({ success: false, message: 'Client not found' }, { status: 404 });
+
+      case 'sethostprofiles':
+        // Main app syncs its character profiles for companion to choose from
+        {
+          const profilesPayload = payload as Array<{
+            id: string;
+            name: string;
+            avatar?: string;
+            color: string;
+            createdAt: number;
+          }>;
+          if (Array.isArray(profilesPayload)) {
+            hostProfiles = profilesPayload;
+            console.log('[Mobile API] Host profiles updated:', hostProfiles.length, 'profiles');
+            return Response.json({
+              success: true,
+              message: 'Host profiles updated',
+              count: hostProfiles.length,
+            });
+          }
+          return Response.json({ success: false, message: 'Invalid profiles payload' }, { status: 400 });
+        }
 
       case 'setsongs':
         // Main app syncs its song library for companion clients

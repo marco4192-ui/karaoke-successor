@@ -237,7 +237,8 @@ export function useMobileClient({
     return () => clearInterval(syncInterval);
   }, [syncSongLibrary]);
 
-  // Publish host profiles to localStorage for companion app to fetch via API
+  // Publish host profiles to server memory for companion app to fetch via API
+  // (localStorage is NOT available in API routes, so we POST to server)
   useEffect(() => {
     if (profiles.length > 0) {
       const hostProfiles = profiles.map(p => ({
@@ -247,9 +248,19 @@ export function useMobileClient({
         color: p.color,
         createdAt: p.createdAt,
       }));
+      // Also keep localStorage for any legacy use
       try {
         localStorage.setItem('karaoke-host-profiles', JSON.stringify(hostProfiles));
       } catch { /* ignore */ }
+      // POST to server so the API route can serve them to companion apps
+      fetch('/api/mobile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'sethostprofiles',
+          payload: hostProfiles,
+        }),
+      }).catch(() => { /* ignore */ });
     }
   }, [profiles]);
 
