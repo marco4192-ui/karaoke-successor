@@ -65,7 +65,7 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
               onSetUnsavedChanges();
             }}
             min={20}
-            max={300}
+            max={500}
             step={0.01}
             className="bg-slate-800 border-slate-600"
           />

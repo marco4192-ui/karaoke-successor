@@ -303,7 +303,7 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
                   value={bpm}
                   onChange={(e) => setBpm(parseFloat(e.target.value) || 120)}
                   min={20}
-                  max={300}
+                  max={500}
                   step={1}
                   className="bg-slate-800 border-slate-600"
                 />

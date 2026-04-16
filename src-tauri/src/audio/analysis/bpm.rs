@@ -102,12 +102,18 @@ impl BpmDetector {
     }
 
     /// Estimate BPM using autocorrelation of the onset signal.
+    ///
+    /// The algorithm searches a wide BPM range (40–400) and then applies
+    /// multi-octave correction: if a shorter lag (higher BPM) has comparable
+    /// correlation strength, the higher BPM is preferred. This prevents
+    /// sub-harmonic errors where e.g. a 324 BPM song is detected as 81 BPM
+    /// (period × 4).
     fn autocorrelation_bpm(&self, onset: &[f64]) -> f64 {
         let frames_per_second = self.sample_rate / self.hop_size as f64;
 
-        // Search BPM range: 40-220 BPM
+        // Search BPM range: 40-400 BPM (wide range to cover fast songs)
         let min_bpm = 40.0;
-        let max_bpm = 220.0;
+        let max_bpm = 400.0;
 
         let min_lag = (frames_per_second * 60.0 / max_bpm) as usize;
         let max_lag = ((frames_per_second * 60.0 / min_bpm) as usize).min(onset.len() / 2);
@@ -116,11 +122,7 @@ impl BpmDetector {
             return 120.0;
         }
 
-        // Compute autocorrelation for lags in the BPM range
-        let mut best_lag = min_lag;
-        let mut best_corr = f64::NEG_INFINITY;
-
-        // Also compute the mean of the onset signal for normalisation
+        // Compute mean and variance for normalisation
         let mean: f64 = onset.iter().sum::<f64>() / onset.len() as f64;
         let variance: f64 = onset.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / onset.len() as f64;
 
@@ -128,59 +130,58 @@ impl BpmDetector {
             return 120.0;
         }
 
-        for lag in min_lag..max_lag {
-            let corr: f64 = (0..onset.len() - lag)
+        // Helper: normalised autocorrelation at a given lag
+        let corr_at = |lag: usize| -> f64 {
+            if lag == 0 || lag >= onset.len() {
+                return 0.0;
+            }
+            let c: f64 = (0..onset.len() - lag)
                 .map(|i| (onset[i] - mean) * (onset[i + lag] - mean))
                 .sum::<f64>()
                 / (onset.len() - lag) as f64;
+            c / variance
+        };
 
-            let norm_corr = corr / variance;
+        // Find the lag with the highest autocorrelation
+        let mut best_lag = min_lag;
+        let mut best_corr = f64::NEG_INFINITY;
 
+        for lag in min_lag..max_lag {
+            let norm_corr = corr_at(lag);
             if norm_corr > best_corr {
                 best_corr = norm_corr;
                 best_lag = lag;
             }
         }
 
-        // Convert lag to BPM
-        let beat_period_seconds = best_lag as f64 / frames_per_second;
+        // ---- Multi-octave correction ----
+        // If the detected lag is a multiple of the true beat period, halving
+        // the lag (doubling the BPM) will also yield a strong correlation.
+        // Walk up to 3 octaves (×2, ×4, ×8 BPM) as long as the correlation
+        // stays above a threshold relative to the previous candidate.
+        let mut candidate_lag = best_lag;
+        let mut candidate_corr = best_corr;
+        let octave_threshold = 0.60; // accept up to 40 % correlation drop per octave
+
+        for _ in 0..3 {
+            let shorter = candidate_lag / 2;
+            if shorter < min_lag {
+                break;
+            }
+            let shorter_corr = corr_at(shorter);
+            if shorter_corr >= octave_threshold * candidate_corr {
+                candidate_lag = shorter;
+                candidate_corr = shorter_corr;
+            } else {
+                break;
+            }
+        }
+
+        // Convert final lag to BPM
+        let beat_period_seconds = candidate_lag as f64 / frames_per_second;
         let bpm = 60.0 / beat_period_seconds;
 
-        // Check for double/half-time errors
-        let double_lag = best_lag * 2;
-        let half_lag = best_lag / 2;
-
-        let double_bpm = if double_lag < max_lag {
-            let _corr: f64 = (0..onset.len() - double_lag)
-                .map(|i| (onset[i] - mean) * (onset[i + double_lag] - mean))
-                .sum::<f64>()
-                / (onset.len() - double_lag) as f64
-                / variance;
-            60.0 / (double_lag as f64 / frames_per_second)
-        } else {
-            0.0
-        };
-
-        let half_bpm = if half_lag >= min_lag {
-            let _corr: f64 = (0..onset.len() - half_lag)
-                .map(|i| (onset[i] - mean) * (onset[i + half_lag] - mean))
-                .sum::<f64>()
-                / (onset.len() - half_lag) as f64
-                / variance;
-            60.0 / (half_lag as f64 / frames_per_second)
-        } else {
-            0.0
-        };
-
-        // Prefer BPM in the 80-180 range (most common for karaoke)
-        if bpm < 80.0 && double_bpm >= 80.0 && double_bpm <= 200.0 {
-            return double_bpm;
-        }
-        if bpm > 200.0 && half_bpm >= 80.0 && half_bpm <= 200.0 {
-            return half_bpm;
-        }
-
-        bpm.clamp(40.0, 220.0)
+        bpm.clamp(40.0, 500.0)
     }
 }
 
@@ -192,6 +193,22 @@ impl BpmDetector {
 mod tests {
     use super::*;
 
+    /// Generate a synthetic click signal at a given BPM.
+    fn make_click_signal(sr: u32, bpm: f64, num_beats: usize) -> Vec<f64> {
+        let beat_samples = (60.0 / bpm * sr as f64) as usize;
+        let total_samples = beat_samples * num_beats;
+        let mut signal = vec![0.0f64; total_samples];
+        let click_len = (0.005 * sr as f64) as usize; // 5 ms click
+        for beat in 0..num_beats {
+            let pos = beat * beat_samples;
+            for i in 0..click_len.min(total_samples - pos) {
+                signal[pos + i] =
+                    ((i as f64 / click_len as f64) * std::f64::consts::PI).sin().exp() * 0.8;
+            }
+        }
+        signal
+    }
+
     #[test]
     fn detect_bpm_fallback_for_short_audio() {
         let det = BpmDetector::new(1024, 512, 22050);
@@ -200,29 +217,51 @@ mod tests {
     }
 
     #[test]
-    fn detect_bpm_for_periodic_clicks() {
-        // Generate a signal with clicks at 120 BPM
+    fn detect_bpm_120() {
         let sr = 22050u32;
-        let bpm = 120.0;
-        let beat_samples = (60.0 / bpm * sr as f64) as usize;
-        let total_samples = beat_samples * 8; // 8 beats
-
-        let mut signal = vec![0.0f64; total_samples];
-        for beat in 0..8 {
-            let pos = beat * beat_samples;
-            // Create a short click (10ms)
-            let click_len = (0.01 * sr as f64) as usize;
-            for i in 0..click_len.min(total_samples - pos) {
-                signal[pos + i] = ((i as f64 / click_len as f64) * std::f64::consts::PI).sin().exp() * 0.8;
-            }
-        }
-
         let det = BpmDetector::new(1024, 512, sr);
+        let signal = make_click_signal(sr, 120.0, 16);
         let detected = det.detect(&signal);
-        // Allow some tolerance since onset detection isn't perfect for synthetic clicks
         assert!(
-            (detected - bpm).abs() < 20.0,
-            "expected ~{bpm} BPM, got {detected} BPM"
+            (detected - 120.0).abs() < 15.0,
+            "expected ~120 BPM, got {detected} BPM"
+        );
+    }
+
+    #[test]
+    fn detect_bpm_324_high_bpm() {
+        // Regression: previously detected as 81 BPM (324 / 4)
+        let sr = 44100u32;
+        let det = BpmDetector::new(1024, 512, sr);
+        let signal = make_click_signal(sr, 324.0, 64);
+        let detected = det.detect(&signal);
+        assert!(
+            (detected - 324.0).abs() < 40.0,
+            "expected ~324 BPM, got {detected} BPM"
+        );
+    }
+
+    #[test]
+    fn detect_bpm_80() {
+        let sr = 22050u32;
+        let det = BpmDetector::new(1024, 512, sr);
+        let signal = make_click_signal(sr, 80.0, 12);
+        let detected = det.detect(&signal);
+        assert!(
+            (detected - 80.0).abs() < 15.0,
+            "expected ~80 BPM, got {detected} BPM"
+        );
+    }
+
+    #[test]
+    fn detect_bpm_200() {
+        let sr = 44100u32;
+        let det = BpmDetector::new(1024, 512, sr);
+        let signal = make_click_signal(sr, 200.0, 32);
+        let detected = det.detect(&signal);
+        assert!(
+            (detected - 200.0).abs() < 20.0,
+            "expected ~200 BPM, got {detected} BPM"
         );
     }
 }

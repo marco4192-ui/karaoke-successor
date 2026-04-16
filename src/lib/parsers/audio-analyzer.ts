@@ -353,8 +353,8 @@ export class AudioAnalyzer {
     const intervals: number[] = [];
     for (let i = 1; i < notes.length; i++) {
       const interval = notes[i].startTime - notes[i - 1].startTime;
-      // Only consider reasonable intervals (100ms to 2 seconds)
-      if (interval >= 100 && interval <= 2000) {
+      // Only consider reasonable intervals (30ms to 2 seconds)
+      if (interval >= 30 && interval <= 2000) {
         intervals.push(interval);
       }
     }
@@ -362,12 +362,14 @@ export class AudioAnalyzer {
     if (intervals.length < 3) return 120;
     
     // Use histogram approach for BPM estimation
-    // Test common BPM values and see which fits best
-    const commonBPMs = [60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180];
+    // Test a wide range of BPM values (40-400 in steps of 2)
+    const minBPM = 40;
+    const maxBPM = 400;
+    const step = 2;
     let bestBPM = 120;
     let bestScore = 0;
     
-    for (const bpm of commonBPMs) {
+    for (let bpm = minBPM; bpm <= maxBPM; bpm += step) {
       const beatDuration = 60000 / bpm;
       let score = 0;
       
