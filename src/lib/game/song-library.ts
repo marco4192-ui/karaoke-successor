@@ -920,8 +920,18 @@ export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
       if (songsFolder) {
         const normalizedFolder = songsFolder.replace(/\\/g, '/');
         const normalizedTxtPath = (song.relativeTxtPath || '').replace(/\\/g, '/');
-        const filePath = `${normalizedFolder}/${normalizedTxtPath}`;
-        console.log('[SongLibrary] Loading from path:', filePath);
+        
+        // CRITICAL FIX: If relativeTxtPath is actually an absolute path (e.g. stored
+        // incorrectly as full path instead of relative), use it directly instead of
+        // concatenating — otherwise paths would double: "baseFolder/absolutePath"
+        const txtPathIsAbsolute = normalizedTxtPath.startsWith('/')
+          || /^[A-Za-z]:[\\/]/.test(song.relativeTxtPath || '')
+          || (song.relativeTxtPath || '').startsWith('\\\\');
+        
+        const filePath = txtPathIsAbsolute
+          ? normalizedTxtPath
+          : `${normalizedFolder}/${normalizedTxtPath}`;
+        console.log('[SongLibrary] Loading from path:', filePath, '(absolute:', txtPathIsAbsolute, ')');
         
         const txtContent = await nativeReadFileText(filePath);
         console.log('[SongLibrary] TXT content loaded from file system, length:', txtContent?.length || 0);
@@ -942,6 +952,30 @@ export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
           }
         }
       } else {
+        // No base folder, but relativeTxtPath might be absolute — try it directly
+        const normalizedTxtPath = (song.relativeTxtPath || '').replace(/\\/g, '/');
+        const txtPathIsAbsolute = normalizedTxtPath.startsWith('/')
+          || /^[A-Za-z]:[\\/]/.test(song.relativeTxtPath || '')
+          || (song.relativeTxtPath || '').startsWith('\\\\');
+        
+        if (txtPathIsAbsolute) {
+          console.log('[SongLibrary] No baseFolder but relativeTxtPath is absolute, trying:', normalizedTxtPath);
+          try {
+            const txtContent = await nativeReadFileText(normalizedTxtPath);
+            if (txtContent && txtContent.length > 0) {
+              const parsedLyrics = parseUltraStarTxtContent(txtContent, song.gap || 0, song.bpm || 120);
+              if (parsedLyrics.length > 0) {
+                try {
+                  const txtBlob = new Blob([txtContent], { type: 'text/plain' });
+                  await storeMedia(song.id, 'txt', txtBlob);
+                } catch {}
+                return parsedLyrics;
+              }
+            }
+          } catch (e) {
+            console.warn('[SongLibrary] Failed to load TXT from absolute path:', e);
+          }
+        }
         console.warn('[SongLibrary] No songs folder available for loading TXT');
       }
     } catch (error) {

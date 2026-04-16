@@ -77,6 +77,18 @@ const COVER_PATTERNS = [
   /^\[co\]/i,
 ];
 
+// Check if a path is an absolute file system path (Windows or Unix)
+function isAbsoluteFileSystemPath(p: string): boolean {
+  if (!p) return false;
+  // Unix absolute: /home/...
+  if (p.startsWith('/')) return true;
+  // Windows absolute: C:\... or C:/...
+  if (/^[A-Za-z]:[\\/]/.test(p)) return true;
+  // Windows UNC: \\server\share
+  if (p.startsWith('\\\\')) return true;
+  return false;
+}
+
 // Scanned song from Tauri file system
 export interface TauriScannedSong {
   title: string;
@@ -817,12 +829,20 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
     
     if (!songsFolder) {
       // No base folder available - try using the path as absolute path
-      if (relativePath.startsWith('/') || relativePath.match(/^[A-Za-z]:\\/)) {
+      if (isAbsoluteFileSystemPath(relativePath)) {
         console.log('[TauriFS] Using absolute path directly:', relativePath);
         return await loadFileAsBlobUrl(relativePath);
       }
       console.warn('[TauriFS] No songs folder configured and path is not absolute');
       return null;
+    }
+    
+    // CRITICAL FIX: If relativePath is actually an absolute path (e.g. stored incorrectly
+    // as full path instead of relative), use it directly instead of concatenating.
+    // Without this check, paths would double: "baseFolder/absolutePath" → broken path.
+    if (isAbsoluteFileSystemPath(relativePath)) {
+      console.log('[TauriFS] relativePath is absolute despite having baseFolder, using directly:', relativePath);
+      return await loadFileAsBlobUrl(relativePath);
     }
     
     // Normalize paths - handle both forward and backward slashes
