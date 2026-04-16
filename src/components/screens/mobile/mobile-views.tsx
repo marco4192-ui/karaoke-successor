@@ -710,7 +710,7 @@ interface ProfileCreateViewProps {
   avatarPreview: string | null;
   profileColors: readonly string[];
   fileInputRef: React.RefObject<HTMLInputElement | null>;
-  onCreateProfile: () => void;
+  onCreateProfile: (hostProfile?: MobileProfile) => void;
   onPhotoUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
@@ -778,7 +778,11 @@ export function MobileProfileCreateView({
                       onClick={() => {
                         onProfileNameChange(hp.name);
                         onProfileColorChange(hp.color);
-                        onCreateProfile(); // Will use the host profile's name/color
+                        if (hp.avatar) {
+                          // Trigger avatar preview update via the file input ref's parent
+                          // We pass the host profile directly so the ID is preserved
+                        }
+                        onCreateProfile(hp); // Pass full host profile to preserve its ID
                       }}
                       className={`flex items-center gap-3 p-2 rounded-lg w-full text-left transition-colors ${
                         isClaimed

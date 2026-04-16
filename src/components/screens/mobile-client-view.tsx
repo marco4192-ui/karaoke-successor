@@ -72,13 +72,23 @@ export function MobileClientView() {
   }, [clientId]);
 
   // Profile callbacks
-  const handleCreateProfile = useCallback(() => {
+  const handleCreateProfile = useCallback((hostProfile?: MobileProfile) => {
     if (!profileName.trim()) return;
-    const newProfile: MobileProfile = {
-      id: `profile-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-      name: profileName.trim(), avatar: avatarPreview || undefined, color: profileColor, createdAt: Date.now(),
-    };
-    console.log('[MobileClient] Creating profile:', newProfile.name);
+    const newProfile: MobileProfile = hostProfile
+      ? {
+          // CRITICAL FIX: Use the host profile's original ID so the companion
+          // and main program recognize it as the same character/entity
+          id: hostProfile.id,
+          name: hostProfile.name,
+          avatar: hostProfile.avatar || avatarPreview || undefined,
+          color: hostProfile.color,
+          createdAt: hostProfile.createdAt || Date.now(),
+        }
+      : {
+          id: `profile-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+          name: profileName.trim(), avatar: avatarPreview || undefined, color: profileColor, createdAt: Date.now(),
+        };
+    console.log('[MobileClient] Creating profile:', newProfile.name, newProfile.id);
     setProfile(newProfile);
     localStorage.setItem('karaoke-mobile-profile', JSON.stringify(newProfile));
     syncProfile(newProfile);

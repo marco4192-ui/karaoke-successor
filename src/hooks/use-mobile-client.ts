@@ -239,20 +239,23 @@ export function useMobileClient({
 
   // Publish host profiles to server memory for companion app to fetch via API
   // (localStorage is NOT available in API routes, so we POST to server)
+  // Also re-sync periodically (every 60s) to survive server restarts
   useEffect(() => {
-    if (profiles.length > 0) {
-      const hostProfiles = profiles.map(p => ({
-        id: p.id,
-        name: p.name,
-        avatar: p.avatar,
-        color: p.color,
-        createdAt: p.createdAt,
-      }));
-      // Also keep localStorage for any legacy use
-      try {
-        localStorage.setItem('karaoke-host-profiles', JSON.stringify(hostProfiles));
-      } catch { /* ignore */ }
-      // POST to server so the API route can serve them to companion apps
+    if (profiles.length === 0) return;
+
+    const hostProfiles = profiles.map(p => ({
+      id: p.id,
+      name: p.name,
+      avatar: p.avatar,
+      color: p.color,
+      createdAt: p.createdAt,
+    }));
+    // Also keep localStorage for any legacy use
+    try {
+      localStorage.setItem('karaoke-host-profiles', JSON.stringify(hostProfiles));
+    } catch { /* ignore */ }
+
+    const pushProfiles = () => {
       fetch('/api/mobile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -261,7 +264,14 @@ export function useMobileClient({
           payload: hostProfiles,
         }),
       }).catch(() => { /* ignore */ });
-    }
+    };
+
+    // Push immediately when profiles change
+    pushProfiles();
+
+    // Re-push every 60s to survive server restarts (in-memory state is lost)
+    const interval = setInterval(pushProfiles, 60000);
+    return () => clearInterval(interval);
   }, [profiles]);
 
   return {
