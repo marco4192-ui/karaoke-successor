@@ -99,6 +99,10 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
       lyricsLength: song?.lyrics?.length || 0
     });
 
+    // Fix (#60): Cancellation flag to prevent stale lyrics from overwriting
+    // when song changes rapidly during async lyrics loading.
+    let cancelled = false;
+
     if (song && (!song.lyrics || song.lyrics.length === 0) && (song.storedTxt || song.relativeTxtPath)) {
       // Load lyrics on-demand from IndexedDB
       console.log('[GameScreen] Loading lyrics from IndexedDB for song:', song.id);
@@ -106,6 +110,7 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
 
       import('@/lib/game/song-library').then(({ loadSongLyrics }) => {
         loadSongLyrics(song).then(lyrics => {
+          if (cancelled) return; // Song changed while loading — discard stale result
           console.log('[GameScreen] Lyrics loaded, length:', lyrics.length);
           if (lyrics.length > 0) {
             setLoadedLyrics(lyrics);
@@ -114,10 +119,12 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
             setLyricsLoadError('Failed to load lyrics from IndexedDB - empty result');
           }
         }).catch(err => {
+          if (cancelled) return;
           console.error('[GameScreen] Error loading lyrics:', err);
           setLyricsLoadError(`Error loading lyrics: ${err.message}`);
         });
       }).catch(err => {
+        if (cancelled) return;
         console.error('[GameScreen] Error importing song-library:', err);
         setLyricsLoadError(`Error importing module: ${err.message}`);
       });
@@ -125,6 +132,8 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
       setLoadedLyrics([]);
       setLyricsLoadError(null);
     }
+
+    return () => { cancelled = true; };
   }, [song?.id, song?.storedTxt, song?.relativeTxtPath, song?.lyrics]);
 
   // ── Compute effectiveSong: restored URLs + loaded lyrics ──
