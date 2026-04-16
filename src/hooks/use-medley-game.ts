@@ -416,7 +416,7 @@ export function useMedleyGame(options: UseMedleyGameOptions): UseMedleyGameResul
       // Evaluate pitch for all active singers
       if (pitchResult) {
         const isCompetitive = settings.playMode === 'competitive';
-        const activePlayerIndices = isCompetitive
+        const activePlayerIndices = (isCompetitive && players.length > 0)
           ? [currentSongIndex % players.length]
           : players.map((_, i) => i);
 
