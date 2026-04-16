@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import type { Song, Note, LyricLine } from '@/types/game';
 import { v4 as uuidv4 } from 'uuid';
 import { saveSongToTxt, type SaveResult } from '@/lib/editor/save-to-file';
@@ -33,6 +33,23 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | undefined>();
   const [isSaving, setIsSaving] = useState(false);
   const [saveResult, setSaveResult] = useState<SaveResult | null>(null);
+
+  // ── Restore media URLs for Tauri (audioUrl from relativeAudioPath) ──
+  useEffect(() => {
+    const restoreUrls = async () => {
+      try {
+        const { ensureSongUrls } = await import('@/lib/game/song-library');
+        const restored = await ensureSongUrls(initialSong);
+        if (restored.audioUrl !== initialSong.audioUrl || restored.videoBackground !== initialSong.videoBackground) {
+          console.log('[Editor] URLs restored:', { audioUrl: !!restored.audioUrl });
+          setCurrentSong(restored);
+        }
+      } catch (err) {
+        console.warn('[Editor] URL restoration failed (non-critical):', err);
+      }
+    };
+    restoreUrls();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const {
     pushHistory, undo: historyUndo, redo: historyRedo,

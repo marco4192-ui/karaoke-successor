@@ -21,11 +21,18 @@ export function useEditorPlayback(
   const audioRef = useRef<HTMLAudioElement>(null);
   const animationFrameRef = useRef<number | null>(null);
 
-  // Audio playback animation loop
+  // Keep a ref of the latest currentTime so the animation loop
+  // always knows the correct offset when play starts.
+  const currentTimeRef = useRef(currentTime);
+  currentTimeRef.current = currentTime;
+
+  // ── Start / stop the rAF animation loop + audio element ──
+  // Only depends on isPlaying and duration — NOT on currentTime.
+  // The animation loop reads the startOffset from currentTimeRef at launch.
   useEffect(() => {
     if (isPlaying) {
       const startTime = performance.now();
-      const startOffset = currentTime;
+      const startOffset = currentTimeRef.current;
 
       const animate = () => {
         const elapsed = performance.now() - startTime;
@@ -42,14 +49,15 @@ export function useEditorPlayback(
 
       animationFrameRef.current = requestAnimationFrame(animate);
 
-      // Also play actual audio
+      // Play actual audio from the current position
       if (audioRef.current) {
-        audioRef.current.currentTime = currentTime / 1000;
+        audioRef.current.currentTime = startOffset / 1000;
         audioRef.current.play().catch(() => {});
       }
     } else {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
       if (audioRef.current) {
         audioRef.current.pause();
@@ -59,11 +67,12 @@ export function useEditorPlayback(
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
     };
-  }, [isPlaying, duration, currentTime]);
+  }, [isPlaying, duration]);
 
-  // Update audio element seek position when not playing
+  // Update audio element seek position when the user scrubs (not playing)
   useEffect(() => {
     if (audioRef.current && !isPlaying) {
       audioRef.current.currentTime = currentTime / 1000;
