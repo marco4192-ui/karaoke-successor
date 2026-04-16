@@ -998,6 +998,7 @@ export function setStoredLanguage(language: Language): void {
 }
 
 // React hook for translations (for client components)
+// Supports cross-tab synchronization via StorageEvent
 export function useTranslation() {
   const [language, setLanguageState] = useState<Language>(() => {
     if (typeof window === 'undefined') return 'en';
@@ -1007,6 +1008,20 @@ export function useTranslation() {
   const setLanguage = useCallback((newLang: Language) => {
     setLanguageState(newLang);
     setStoredLanguage(newLang);
+    // Dispatch event for other components to react (within same tab)
+    window.dispatchEvent(new CustomEvent('languageChange', { detail: newLang }));
+  }, []);
+
+  // Cross-tab synchronization: listen for language changes from other tabs
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'karaoke-language' && e.newValue) {
+        const newLang = e.newValue as Language;
+        setLanguageState(newLang);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
   
   const t = useCallback((key: string): string => {
