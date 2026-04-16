@@ -77,13 +77,22 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
     if (!nextQueueItem) return;
     
     // Get full song from library
-    const { getAllSongsAsync } = await import('@/lib/game/song-library');
+    const { getAllSongsAsync, getSongByIdWithLyrics, ensureSongUrls } = await import('@/lib/game/song-library');
     const songs = await getAllSongsAsync();
-    const fullSong = songs.find(s => s.id === nextQueueItem.songId);
+    let fullSong = songs.find(s => s.id === nextQueueItem.songId);
     
     if (!fullSong) {
       safeAlert('Song not found in library');
       return;
+    }
+    
+    // CRITICAL FIX: Pre-resolve lyrics + URLs before setting the song.
+    // Without this, the song may lack audioUrl/lyrics → watchdog fires.
+    try {
+      const withLyrics = await getSongByIdWithLyrics(fullSong.id) || fullSong;
+      fullSong = await ensureSongUrls(withLyrics);
+    } catch (err) {
+      console.error('[ResultsScreen] Failed to prepare song:', err);
     }
     
     // Mark as playing

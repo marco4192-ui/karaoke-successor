@@ -199,6 +199,19 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
     if (!song) {
       console.warn('[QueueScreen] Song not found in library, creating fallback:', item.song.id, item.song.title);
       song = createFallbackSong(item);
+    } else {
+      // CRITICAL FIX: Pre-resolve lyrics + URLs before setting the song.
+      // Without this, the song may lack audioUrl/lyrics → game loop starts
+      // with no media → 10-second watchdog fires → game ends immediately.
+      // This mirrors what the Library screen does (library-screen.tsx:160-163).
+      try {
+        const { getSongByIdWithLyrics, ensureSongUrls } = await import('@/lib/game/song-library');
+        const withLyrics = await getSongByIdWithLyrics(song.id) || song;
+        song = await ensureSongUrls(withLyrics);
+        console.log('[QueueScreen] Song prepared:', song.title, 'audioUrl:', song.audioUrl ? 'yes' : 'no', 'lyrics:', song.lyrics?.length || 0);
+      } catch (err) {
+        console.error('[QueueScreen] Failed to prepare song:', err);
+      }
     }
     
     const gameMode = item.gameMode || 'single';
