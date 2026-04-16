@@ -140,6 +140,22 @@ export function NoteBlock({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
+      {/* Analysis confidence indicator (colored left bar) */}
+      {note.analysisConfidence != null && !isPlayingNote && (
+        <div
+          className={cn(
+            'absolute left-0 top-0 bottom-0 w-1 rounded-l pointer-events-none',
+            note.analysisConfidence >= 0.75
+              ? 'bg-green-400'
+              : note.analysisConfidence >= 0.5
+                ? 'bg-yellow-400'
+                : note.analysisConfidence >= 0.25
+                  ? 'bg-orange-400'
+                  : 'bg-red-400'
+          )}
+        />
+      )}
+
       {/* Lyric display (truncated) */}
       <div className="px-1 py-0.5 text-xs font-medium truncate overflow-hidden whitespace-nowrap">
         {note.lyric}

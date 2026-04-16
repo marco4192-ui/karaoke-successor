@@ -314,6 +314,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
         lyric: confLabel,
         isBonus: false,
         isGolden: dn.confidence_level === 'High',
+        analysisConfidence: dn.confidence,
       };
 
       currentLineNotes.push(note);

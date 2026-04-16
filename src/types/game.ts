@@ -17,6 +17,7 @@ export interface Note {
   isBonus: boolean;
   isGolden: boolean; // Star power note
   player?: DuetPlayer; // For duet mode - which player sings this note
+  analysisConfidence?: number; // 0-1 confidence from pitch analysis (editor-only, not serialized)
 }
 
 export interface LyricLine {
