@@ -200,7 +200,10 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   party.setPassTheMicSong(randomSong);
                   party.setPassTheMicSettings(settingsWithMic);
                   setSong(randomSong);
-                  setScreen('pass-the-mic-game');
+                  // Use main game screen for proper audio/video/notes/lyrics playback
+                  // (the old pass-the-mic-game view used a plain <audio> element
+                  //  that cannot handle Tauri local file paths)
+                  setScreen('game');
                 }
                 break;
               }
@@ -213,7 +216,10 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   party.setCompanionSong(randomSong);
                   party.setCompanionSettings(result.settings);
                   setSong(randomSong);
-                  setScreen('companion-singalong-game');
+                  // Use main game screen for proper audio/video/notes/lyrics playback
+                  // (the old companion-singalong-game view used a plain <audio> element
+                  //  that cannot handle Tauri local file paths)
+                  setScreen('game');
                 }
                 break;
               }
@@ -345,11 +351,13 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   sharedMicId: party.unifiedSetupResult?.settings?.sharedMicId || null,
                   sharedMicName: party.unifiedSetupResult?.settings?.sharedMicName || null,
                 });
-                setScreen('pass-the-mic-game');
+                // Use main game screen for proper audio/video/notes/lyrics playback
+                setScreen('game');
               } else if (party.selectedGameMode === 'companion-singalong') {
                 party.setCompanionPlayers(toCompanionPlayers(party.unifiedSetupResult?.players || []));
                 party.setCompanionSong(selectedSong);
-                setScreen('companion-singalong-game');
+                // Use main game screen for proper audio/video/notes/lyrics playback
+                setScreen('game');
               } else {
                 setScreen('game');
               }
