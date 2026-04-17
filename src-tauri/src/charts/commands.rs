@@ -183,6 +183,11 @@ pub async fn viral_refresh_charts(
 
     let mut all_entries: Vec<ChartEntry> = Vec::new();
 
+    // Capture success flags before moving values out of the Results
+    let apple_ok = apple_result.is_ok();
+    let deezer_ok = deezer_result.is_ok();
+    let itunes_ok = itunes_result.is_ok();
+
     // Collect successful results
     match apple_result {
         Ok(entries) => {
@@ -269,9 +274,9 @@ pub async fn viral_refresh_charts(
         "country": country,
         "fetchedAt": now,
         "sources": {
-            "appleMusic": apple_result.is_ok(),
-            "deezer": deezer_result.is_ok(),
-            "itunes": itunes_result.is_ok(),
+            "appleMusic": apple_ok,
+            "deezer": deezer_ok,
+            "itunes": itunes_ok,
         }
     }))
 }
