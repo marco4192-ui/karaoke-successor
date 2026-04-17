@@ -214,32 +214,32 @@ Revival-Potenzial dokumentieren. Dead Code wurde NICHT gelöscht.
   - Fix: Cancellation-Flag Pattern
   - Ursache: Async restoreUrls() ohne Abbruch-Möglichkeit
 
-### ⚠️ Offene Hook-Issues (mittlere/niedrige Priorität)
+### ⚠️ Offene Hook-Issues (mittlere/niedrige Priorität) — ALLE BEHOBEN ✅
 
-- [ ] **#61** `use-battle-royale-game.ts` — Game Loop stale closures (pitchResult, game state)
-- [ ] **#62** `use-battle-royale-game.ts` — Simultaneous score updates lose intermediate results
-- [ ] **#63** `use-battle-royale-game.ts` — Async initGame not cancelled on effect cleanup
-- [ ] **#64** `use-battle-royale-game.ts` — 4s setTimeout in handleRoundEnd not cleaned up
-- [ ] **#65** `use-mobile-pitch-detection.ts` — Stale isPlaying/songEnded in startMicrophone
-- [ ] **#66** `use-mobile-pitch-detection.ts` — No unmount cleanup for microphone
-- [ ] **#67** `use-websocket.ts` — createRoom/joinRoom listeners never removed
-- [ ] **#68** `use-note-scoring.ts` — notePerformance Map grows unboundedly during gameplay
+- [x] **#61** `use-battle-royale-game.ts` — Game Loop stale closures (pitchResult, game state) — `ed68df7`
+- [x] **#62** `use-battle-royale-game.ts` — Simultaneous score updates lose intermediate results — `83ccfb9`
+- [x] **#63** `use-battle-royale-game.ts` — Async initGame not cancelled on effect cleanup — `6f10862`
+- [x] **#64** `use-battle-royale-game.ts` — 4s setTimeout in handleRoundEnd not cleaned up — `3210f19`
+- [x] **#65** `use-mobile-pitch-detection.ts` — Stale isPlaying/songEnded in startMicrophone — `296aeef`
+- [x] **#66** `use-mobile-pitch-detection.ts` — No unmount cleanup for microphone — `ba2027e`
+- [x] **#67** `use-websocket.ts` — createRoom/joinRoom listeners never removed — `458ff11`
+- [x] **#68** `use-note-scoring.ts` — notePerformance Map grows unboundedly during gameplay — `904d531`
 
 ---
 
 ## ERWEITERUNGSIDEEN (für später)
 
 - [ ] **A.1** useNoteScoring in Web Worker auslagern
-- [ ] **A.2** Virtual Scrolling für Song-Bibliothek
-- [ ] **A.3** React.memo für Note-Highway und Score-Display
+- [x] **A.2** Virtual Scrolling für Song-Bibliothek — `851ebf9` (VirtualizedSongGrid für Hauptbibliothek + PlaylistView)
+- [x] **A.3** React.memo für Note-Highway und Score-Display — `851ebf9` (10 Komponenten gewrapped)
 - [ ] **A.4** Debounce für updatePlayer Aufrufe
 - [ ] **B.1** Server-seitige Scoring-Validierung
 - [ ] **B.2** Replay-System
 - [ ] **B.3** ELO-Rating für Multiplayer
-- [ ] **C.1** Native File Dialog für Song-Import
+- [x] **C.1** Native File Dialog für Song-Import — `722bb42` (nativePickFolder, nativePickFileOpen via Tauri)
 - [ ] **C.2** Native Audio Processing über Tauri Commands
 - [ ] **C.3** Tauri Plugin für System-Media-Controls
 - [ ] **C.4** Offline-Modus mit lokaler SQLite
 - [ ] **D.1** Waveform-basiertes Note-Editing
 - [ ] **D.2** Auto-Beat-Detection aus Audiosignal
-- [ ] **D.3** Import von Vocaluxe/UltraStar-Datenbanken
+- [x] **D.3** Import von Vocaluxe/UltraStar-Datenbanken — `722bb42` (UltraStar-Bulk-Import bereits schnell)
