@@ -7,13 +7,12 @@
 //! - `viral_get_status` — return last fetch timestamp and count
 //! - `viral_clear` — clear all cached chart data
 
-use std::sync::Mutex;
 use std::collections::HashSet;
 
 use serde::Serialize;
 use tauri::{AppHandle, Manager};
 
-use super::sources::{self, ChartEntry};
+use super::sources::ChartEntry;
 use crate::db::DbState;
 
 // ====================================================================

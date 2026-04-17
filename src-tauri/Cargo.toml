@@ -37,7 +37,7 @@ ort = { version = "2.0.0-rc.12", optional = true }
 ndarray = { version = "0.17", optional = true }
 
 # Async runtime for blocking analysis tasks & HTTP requests
-tokio = { version = "1", features = ["rt"] }
+tokio = { version = "1", features = ["rt", "macros"] }
 
 # HTTP client for fetching chart data (Apple Music RSS, Deezer API)
 reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }

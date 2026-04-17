@@ -198,7 +198,7 @@ pub async fn fetch_deezer_charts(
             source: "deezer".to_string(),
             playlist_name: playlist_name.clone(),
             chart_position: t.rank.unwrap_or((i + 1) as i64),
-            country: country_upper,
+            country: country_upper.clone(),
         })
         .collect();
 

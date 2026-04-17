@@ -4,8 +4,6 @@
 //! via Tauri's IPC. All commands acquire the connection mutex briefly
 //! and return JSON-serializable results.
 
-use std::sync::Mutex;
-
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 
@@ -346,8 +344,8 @@ pub fn db_save_profile(app: AppHandle, profile_json: String) -> Result<DbResult,
             profile.get("totalScore").and_then(|v| v.as_i64()).unwrap_or(0),
             profile.get("gamesPlayed").and_then(|v| v.as_i64()).unwrap_or(0),
             profile.get("songsCompleted").and_then(|v| v.as_i64()).unwrap_or(0),
-            profile.get("achievements").and_then(|v| v.to_string()),
-            profile.get("stats").and_then(|v| v.to_string()),
+            profile.get("achievements").map(|v| v.to_string()),
+            profile.get("stats").map(|v| v.to_string()),
             profile.get("createdAt").and_then(|v| v.as_i64()).unwrap_or(0),
             profile.get("xp").and_then(|v| v.as_i64()).unwrap_or(0),
             profile.get("level").and_then(|v| v.as_i64()).unwrap_or(1),
