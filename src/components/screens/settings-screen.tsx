@@ -21,6 +21,7 @@ import { WebcamTab } from '@/components/settings/webcam-tab';
 import { GeneralTab } from '@/components/settings/general-tab';
 import { GraphicSoundTab } from '@/components/settings/graphic-sound-tab';
 import { AboutTab } from '@/components/settings/about-tab';
+import { ViralChartsSettings } from '@/components/settings/viral-charts-tab';
 import { MobileDeviceMicrophoneSection } from '@/components/settings/mobile-device-section';
 import { CompanionListSection } from '@/components/settings/companion-list-section';
 import { SettingsTabBar, SettingsTab } from '@/components/settings/settings-tab-bar';
@@ -254,6 +255,8 @@ function SettingsScreen() {
       )}
 
       {activeTab === 'assets' && <AIAssetsGenerator />}
+
+      {activeTab === 'viral' && <ViralChartsSettings />}
 
       {activeTab === 'graphicsound' && (
         <GraphicSoundTab

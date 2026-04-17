@@ -7,7 +7,7 @@ import {
   WebcamIcon, FolderIcon, EditIcon, SparkleIcon, InfoIcon,
 } from '@/components/settings/settings-icons';
 
-export type SettingsTab = 'general' | 'graphicsound' | 'microphone' | 'mobile' | 'webcam' | 'library' | 'editor' | 'assets' | 'about';
+export type SettingsTab = 'general' | 'graphicsound' | 'microphone' | 'mobile' | 'webcam' | 'library' | 'editor' | 'assets' | 'viral' | 'about';
 
 interface SettingsTabBarProps {
   activeTab: SettingsTab;
@@ -25,6 +25,7 @@ export function SettingsTabBar({ activeTab, onTabChange, tx }: SettingsTabBarPro
     { id: 'library', label: tx('settings.tabLibrary'), icon: FolderIcon, color: 'cyan' },
     { id: 'editor', label: 'Editor', icon: EditIcon, color: 'cyan' },
     { id: 'assets', label: 'AI Asset', icon: SparkleIcon, color: 'purple' },
+    { id: 'viral', label: 'Viral Charts', icon: () => <span>&#128293;</span>, color: 'orange' },
     { id: 'about', label: tx('settings.tabAbout'), icon: InfoIcon, color: 'cyan' },
   ];
 
