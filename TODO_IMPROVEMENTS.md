@@ -229,10 +229,10 @@ Revival-Potenzial dokumentieren. Dead Code wurde NICHT gelöscht.
 
 ## ERWEITERUNGSIDEEN (für später)
 
-- [ ] **A.1** useNoteScoring in Web Worker auslagern
+- [ ] **A.1** useNoteScoring in Web Worker auslagern — Bewertet: Nicht sinnvoll. evaluateTick ist < 0.1ms pro Aufruf und läuft nur mit 4-6 Hz. Web Worker Overhead > Nutzen.
 - [x] **A.2** Virtual Scrolling für Song-Bibliothek — `851ebf9` (VirtualizedSongGrid für Hauptbibliothek + PlaylistView)
 - [x] **A.3** React.memo für Note-Highway und Score-Display — `851ebf9` (10 Komponenten gewrapped)
-- [ ] **A.4** Debounce für updatePlayer Aufrufe
+- [x] **A.4** Debounce/Batch für updatePlayer Aufrufe — `db12dc8` (Gebatchte Updates in checkNoteHits, 1x updatePlayer pro Evaluation)
 - [ ] **B.1** Server-seitige Scoring-Validierung
 - [ ] **B.2** Replay-System
 - [ ] **B.3** ELO-Rating für Multiplayer

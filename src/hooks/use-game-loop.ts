@@ -164,6 +164,10 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   checkNoteHitsRef.current = checkNoteHits;
   const checkP2NoteHitsRef = useRef(checkP2NoteHits);
   checkP2NoteHitsRef.current = checkP2NoteHits;
+  // Throttle detectedPitch store updates to ~30fps.
+  // Pitch visualization doesn't need 60fps — scoring reads pitch directly
+  // from the ref, not from the store, so accuracy is unaffected.
+  const lastPitchStoreUpdateRef = useRef(0);
   // When the game is paused mid-song we must remember where the song was so
   // that resume picks up from that exact wall-clock offset instead of from 0.
   const pausedAtElapsedMsRef = useRef<number | null>(null);
@@ -660,7 +664,13 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       const currentPitch = pitchResultRef.current;
       if (currentPitch) {
         setVolume(currentPitch.volume);
-        setDetectedPitch(currentPitch.frequency);
+        // Throttle detectedPitch store update to ~30fps (33ms interval).
+        // Scoring uses currentPitch directly (not the store), so accuracy is unaffected.
+        const now = performance.now();
+        if (now - lastPitchStoreUpdateRef.current >= 33) {
+          setDetectedPitch(currentPitch.frequency);
+          lastPitchStoreUpdateRef.current = now;
+        }
         checkNoteHitsRef.current(adjustedTime, currentPitch);
       }
 
