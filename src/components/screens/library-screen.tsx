@@ -58,7 +58,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
   const [favoriteSongIds, setFavoriteSongIds] = useState<Set<string>>(new Set());
   
   // Preview hook
-  const { previewSong, previewVideoRefs, handlePreviewStart, handlePreviewStop } = useLibraryPreview();
+  const { previewSong, previewAudio, previewVideoRefs, handlePreviewStart, handlePreviewStop } = useLibraryPreview();
   
   // Settings state with localStorage persistence
   const [settings, setSettings] = useState<LibrarySettings>({
@@ -186,7 +186,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
   const handlePlaylistDelete = (id: string) => { deletePlaylist(id); setPlaylists(getPlaylists()); };
   const handleRemoveSongFromPlaylist = (pid: string, sid: string) => { removeSongFromPlaylist(pid, sid); setPlaylists(getPlaylists()); setSelectedPlaylist(getPlaylistById(pid)); };
 
-  const songCardBaseProps: Omit<SongCardProps, 'song'> = { previewSong, onSongClick: handleSongClick, onPreviewStart: handlePreviewStart, onPreviewStop: handlePreviewStop, previewVideoRefs };
+  const songCardBaseProps: Omit<SongCardProps, 'song'> = { previewSong, previewAudio, onSongClick: handleSongClick, onPreviewStart: handlePreviewStart, onPreviewStop: handlePreviewStop, previewVideoRefs };
 
   // --- Render ---
   return (

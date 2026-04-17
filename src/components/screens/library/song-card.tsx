@@ -5,10 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { SongCardProps } from './types';
 import { MusicIcon, PlayIcon } from './icons';
 import { extractYouTubeId } from '@/components/game/youtube-player';
+import { WaveformBar } from './waveform-bar';
 
 export function SongCard({ 
   song, 
-  previewSong, 
+  previewSong,
+  previewAudio,
   onSongClick, 
   onPreviewStart, 
   onPreviewStop, 
@@ -111,6 +113,9 @@ export function SongCard({
           )}
         </div>
         
+        {/* D.1: Audio Waveform — real-time frequency visualization during preview */
+        <WaveformBar audio={previewAudio || null} isActive={previewSong?.id === song.id && !!song.audioUrl} />
+
         {/* Duration */}
         <div className="absolute bottom-2 right-2">
           <Badge className="bg-white/90 text-black text-xs font-bold">

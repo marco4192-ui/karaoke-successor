@@ -31,6 +31,8 @@ export interface SongCardProps {
   onPreviewStart: (song: Song) => void;
   onPreviewStop: () => void;
   previewVideoRefs: React.MutableRefObject<Map<string, HTMLVideoElement>>;
+  /** Audio element currently playing preview — used for waveform visualization */
+  previewAudio?: HTMLAudioElement | null;
 }
 
 export interface SongStartModalProps {
