@@ -47,5 +47,9 @@ test
 prompt
 
 server.log
+
+# Rust/Cargo
+src-tauri/target/
+
 # Skills directory
 /skills/src-tauri/target/
