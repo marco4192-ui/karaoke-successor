@@ -390,6 +390,10 @@ export function Timeline({
               height={waveformHeight}
               zoom={zoom}
               scrollOffset={scrollOffset}
+              notes={allNotes}
+              selectedNoteId={selectedNoteId}
+              onSeek={onTimeChange}
+              onNoteAdd={onNoteAdd}
             />
           </div>
         )}
