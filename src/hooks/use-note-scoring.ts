@@ -343,6 +343,9 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   );
 
   // Check if P1 hits notes - using duration-based scoring
+  // Uses batched updatePlayer: accumulates all state deltas locally and flushes
+  // a single updatePlayer call at the end, preventing stale-state race conditions
+  // when multiple notes complete in the same frame.
   const checkNoteHits = useCallback(
     (currentTime: number, pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }) => {
       const difficultySettings = DIFFICULTY_SETTINGS[difficulty];
@@ -362,6 +365,14 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       if (!scoringMeta) return;
 
       const beatDurationMs = timingData?.beatDuration || 500;
+
+      // Batch accumulator — all P1 state deltas collected here, flushed once at end
+      let scoreDelta = 0;
+      let comboUpdate: number | undefined;
+      let maxComboUpdate: number | undefined;
+      let notesHitDelta = 0;
+      let notesMissedDelta = 0;
+      let hasPlayerUpdates = false;
 
       for (const note of notesToCheck) {
         const noteEnd = note.startTime + note.duration;
@@ -414,11 +425,10 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
                 const newCombo = activePlayer.combo + 1;
                 const isPerfect = tickResult.accuracy > 0.95;
 
-                updatePlayer(activePlayer.id, {
-                  score: activePlayer.score + finalPoints,
-                  combo: newCombo,
-                  maxCombo: Math.max(activePlayer.maxCombo, newCombo),
-                });
+                scoreDelta += finalPoints;
+                comboUpdate = newCombo;
+                maxComboUpdate = Math.max(activePlayer.maxCombo, newCombo);
+                hasPlayerUpdates = true;
 
                 setScoreEvents(prev => [
                   ...prev.slice(-10),
@@ -460,7 +470,8 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
                 }
               }
             } else {
-              updatePlayer(activePlayer.id, { combo: 0 });
+              comboUpdate = 0;
+              hasPlayerUpdates = true;
 
               setScoreEvents(prev => [
                 ...prev.slice(-10),
@@ -487,17 +498,18 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
             noteProgress.isComplete = true;
 
             if (noteProgress.ticksHit > 0) {
-              updatePlayer(activePlayer.id, { notesHit: activePlayer.notesHit + 1 });
+              notesHitDelta++;
             } else {
-              updatePlayer(activePlayer.id, { notesMissed: activePlayer.notesMissed + 1 });
+              notesMissedDelta++;
             }
+            hasPlayerUpdates = true;
 
             if (noteProgress.ticksHit >= noteProgress.totalTicks) {
               noteProgress.wasPerfect = true;
               const bonusPoints = calculateNoteCompletionBonus(noteProgress, scoringMeta.pointsPerTick);
 
               if (bonusPoints > 0) {
-                updatePlayer(activePlayer.id, { score: activePlayer.score + Math.floor(bonusPoints) });
+                scoreDelta += Math.floor(bonusPoints);
 
                 setScoreEvents(prev => [
                   ...prev.slice(-10),
@@ -507,6 +519,17 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
             }
           }
         }
+      }
+
+      // Flush: single updatePlayer call with all accumulated deltas
+      if (hasPlayerUpdates) {
+        const updates: Partial<Player> = {};
+        if (scoreDelta !== 0) updates.score = activePlayer.score + scoreDelta;
+        if (comboUpdate !== undefined) updates.combo = comboUpdate;
+        if (maxComboUpdate !== undefined) updates.maxCombo = maxComboUpdate;
+        if (notesHitDelta > 0) updates.notesHit = activePlayer.notesHit + notesHitDelta;
+        if (notesMissedDelta > 0) updates.notesMissed = activePlayer.notesMissed + notesMissedDelta;
+        updatePlayer(activePlayer.id, updates);
       }
     },
     [song, difficulty, updatePlayer, timingData, isDuetMode, isPartyMode, beatDuration, onPerfectHit, onGoldenNote, onComboMilestone]
