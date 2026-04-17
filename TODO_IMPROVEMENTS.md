@@ -243,3 +243,32 @@ Revival-Potenzial dokumentieren. Dead Code wurde NICHT gelöscht.
 - [x] **D.1** Waveform-basiertes Note-Editing — `cac99fb` (Note-Grenzen auf Waveform, Click-to-Seek, DblClick-to-Add, Selected-Note-Highlighting in Timeline)
 - [x] **D.2** Auto-Beat-Detection aus Audiosignal — `e3f4e65` (Rust BPM-Detektion via onset/autocorrelation, `detectBpm()` Hook, UI in AudioAnalysisPanel)
 - [x] **D.3** Import von Vocaluxe/UltraStar-Datenbanken — `722bb42` (UltraStar-Bulk-Import bereits schnell)
+
+---
+
+## ONLINE-FEATURES (geplant — gebündelt in einem späteren Zyklus)
+
+> Alle Online-basierten Erweiterungen werden gesammelt und gemeinsam implementiert,
+> sobald die Online-Infrastruktur (zentrale Dienste, Auth, etc.) steht.
+
+- [ ] **E.1** Spotify Viral Charts — Erweiterung des bestehenden Charts-Systems
+  - Spotify "Viral 50" Playlists als zusätzliche Datenquelle
+  - Erfordert zentralen Dienst (GitHub Pages + Actions oder eigener Server)
+  - Einmalige tägliche Abfrage → alle Clients erhalten dieselben Daten
+  - Kein manueller Aufwand für Endnutzer (keine Spotify-App/Account nötig)
+  - Ergänzt die lokalen Quellen (Apple Music RSS Charts, Deezer Charts)
+  - Abhängigkeit: Online-Infrastruktur muss stehen
+  - Priorität: Niedrig (Erweiterung, keine Grundfunktion)
+
+- [ ] **E.2** YouTube/Spotify Integration — Karaoke-Videos & Audio-Streaming
+  - Automatische Lyrics-Sync, Video-Playback aus Streaming-Quellen
+  - ⚠️ Rechtliche Bedenken beachten (Lizenzierung, API-TOS)
+  - Abhängigkeit: Online-Infrastruktur
+
+- [ ] **E.3** Cloud Sync — Profil- und Highscore-Synchronisation
+  - Profile in der Cloud speichern, Geräteübergreifendes Spielen
+  - Abhängigkeit: Online-Infrastruktur + Auth-System
+
+- [ ] **E.4** Twitch/Stream Integration
+  - Overlay für Streamer, Chat-basierte Song-Wünsche, Viewer-Voting
+  - Abhängigkeit: Online-Infrastruktur + Streaming-API

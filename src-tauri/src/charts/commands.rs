@@ -93,7 +93,7 @@ fn regex_removed(s: &mut String) -> bool {
     // Remove ( ...) blocks
     while let Some(open) = s.find('(') {
         if let Some(close) = s[open..].find(')') {
-            s.remove(open..open + close + 1);
+            s.replace_range(open..open + close + 1, "");
             changed = true;
         } else {
             break;
@@ -102,7 +102,7 @@ fn regex_removed(s: &mut String) -> bool {
     // Remove [ ...] blocks
     while let Some(open) = s.find('[') {
         if let Some(close) = s[open..].find(']') {
-            s.remove(open..open + close + 1);
+            s.replace_range(open..open + close + 1, "");
             changed = true;
         } else {
             break;

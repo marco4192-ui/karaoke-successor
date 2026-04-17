@@ -465,7 +465,7 @@ pub fn db_load_highscores(
 
     sql.push_str(" ORDER BY score DESC");
 
-    if let Some(lim) = limit {
+    if let Some(_limit) = limit {
         param_count += 1;
         sql.push_str(&format!(" LIMIT ?{}", param_count));
     }
@@ -515,7 +515,7 @@ pub fn db_save_playlist(app: AppHandle, playlist_json: String) -> Result<DbResul
             pl.get("name").and_then(|v| v.as_str()).unwrap_or(""),
             pl.get("description").and_then(|v| v.as_str()),
             pl.get("coverImage").and_then(|v| v.as_str()),
-            pl.get("songIds").and_then(|v| v.to_string()),
+            pl.get("songIds").map(|v| v.to_string()),
             pl.get("createdAt").and_then(|v| v.as_i64()).unwrap_or(0),
             pl.get("updatedAt").and_then(|v| v.as_i64()).unwrap_or_else(|| chrono_now_ms() as i64),
             pl.get("songCount").and_then(|v| v.as_i64()).unwrap_or(0),
