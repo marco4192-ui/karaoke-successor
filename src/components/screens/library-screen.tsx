@@ -28,6 +28,7 @@ import { SongCardProps, LibraryViewMode, LibraryGroupBy, LibrarySettings, StartO
 import { groupSongs, getGroupDisplayName } from './library/utils';
 import { useLibraryFilters } from '@/hooks/use-library-filters';
 import { useLibraryPreview } from '@/hooks/use-library-preview';
+import { useViralCharts } from '@/hooks/use-viral-charts';
 
 export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong: (song: Song) => void; initialGameMode?: GameMode }) {
   // Core state
@@ -59,11 +60,14 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
   
   // Preview hook
   const { previewSong, previewAudio, previewVideoRefs, handlePreviewStart, handlePreviewStop } = useLibraryPreview();
+
+  // Viral charts hook — fetches trending songs from Apple Music, Deezer, iTunes
+  const viralCharts = useViralCharts();
   
   // Settings state with localStorage persistence
   const [settings, setSettings] = useState<LibrarySettings>({
     sortBy: 'title', sortOrder: 'asc', filterDifficulty: 'all',
-    filterGenre: 'all', filterLanguage: 'all', filterDuet: false,
+    filterGenre: 'all', filterLanguage: 'all', filterDuet: false, filterViral: false,
   });
   const [startOptions, setStartOptions] = useState<StartOptions>(() => {
     const isPartyMode = initialGameMode && initialGameMode !== 'standard' && initialGameMode !== 'duel' && initialGameMode !== 'duet';
@@ -77,6 +81,24 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
 
   // --- Effects ---
   useEffect(() => { initializePlaylists(); setPlaylists(getPlaylists()); }, []);
+
+  // Auto-refresh viral charts on first library load (only once)
+  const viralInitRef = React.useRef(false);
+  useEffect(() => {
+    if (!songsLoading && loadedSongs.length > 0 && !viralInitRef.current && !viralCharts.status?.lastFetchedAt) {
+      viralInitRef.current = true;
+      viralCharts.refreshCharts().then(() => {
+        viralCharts.matchLibrary(loadedSongs);
+      }).catch(() => {});
+    }
+  }, [songsLoading, loadedSongs.length]);
+
+  // Re-match when songs change (e.g. after import)
+  useEffect(() => {
+    if (!songsLoading && loadedSongs.length > 0 && viralCharts.status?.lastFetchedAt && viralCharts.viralSongIds.size === 0) {
+      viralCharts.matchLibrary(loadedSongs).catch(() => {});
+    }
+  }, [songsLoading, loadedSongs.length, viralCharts.status?.lastFetchedAt]);
   
   const updateFavoriteIds = useCallback(() => {
     const favs = new Set<string>();
@@ -125,7 +147,10 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
   }, []);
 
   // --- Computed values ---
-  const { filteredSongs, availableGenres, availableLanguages } = useLibraryFilters({ loadedSongs, searchQuery, settings, startMode: startOptions.mode });
+  const { filteredSongs, availableGenres, availableLanguages } = useLibraryFilters({
+    loadedSongs, searchQuery, settings, startMode: startOptions.mode,
+    viralSongIds: viralCharts.viralSongIds,
+  });
   
   const groupedSongs = useMemo(() => {
     if (groupBy === 'none' || viewMode === 'grid') return new Map<string, Song[]>();
@@ -188,6 +213,11 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
 
   const songCardBaseProps: Omit<SongCardProps, 'song'> = { previewSong, previewAudio, onSongClick: handleSongClick, onPreviewStart: handlePreviewStart, onPreviewStop: handlePreviewStop, previewVideoRefs };
 
+  // Custom card renderer that adds viral hit badge
+  const renderViralSongCard = useCallback((song: Song) => (
+    <SongCard key={song.id} song={song} {...songCardBaseProps} isViralHit={viralCharts.viralSongIds.has(song.id)} />
+  ), [songCardBaseProps, viralCharts.viralSongIds]);
+
   // --- Render ---
   return (
     <div className="w-full px-4 md:px-6 lg:px-8">
@@ -236,7 +266,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
               <p className="text-white/40 text-sm">Try a different search or import some songs</p>
             </div>
           ) : viewMode === 'grid' || (viewMode === 'folder' && currentFolder) ? (
-            <VirtualizedSongGrid songs={currentFolderSongs} songCardProps={songCardBaseProps} />
+            <VirtualizedSongGrid songs={currentFolderSongs} songCardProps={songCardBaseProps} renderSongCard={renderViralSongCard} />
           ) : (
             <FolderView
               groupedSongs={groupedSongs} groupBy={groupBy}

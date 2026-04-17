@@ -150,11 +150,26 @@ export function LibraryFilters({
           <span>Duet</span>
         </button>
         
+        {/* Viral Hits Filter Toggle */}
+        <button
+          onClick={() => {
+            setSettings(prev => ({ ...prev, filterViral: !prev.filterViral }));
+          }}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+            settings.filterViral
+              ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50' 
+              : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/10'
+          }`}
+        >
+          <span>&#128293;</span>
+          <span>Viral Hits</span>
+        </button>
+        
         {/* Active Filters Display */}
-        {(settings.filterGenre !== 'all' || settings.filterLanguage !== 'all' || settings.filterDuet || startMode === 'duet') && (
+        {(settings.filterGenre !== 'all' || settings.filterLanguage !== 'all' || settings.filterDuet || settings.filterViral || startMode === 'duet') && (
           <button
             onClick={() => {
-              setSettings(prev => ({ ...prev, filterGenre: 'all', filterLanguage: 'all', filterDuet: false }));
+              setSettings(prev => ({ ...prev, filterGenre: 'all', filterLanguage: 'all', filterDuet: false, filterViral: false }));
               // Also reset startMode so duet game mode filter is cleared
               if (startMode === 'duet') {
                 onResetStartMode();

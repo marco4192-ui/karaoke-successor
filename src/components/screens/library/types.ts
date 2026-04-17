@@ -13,6 +13,7 @@ export interface LibrarySettings {
   filterGenre: string;
   filterLanguage: string;
   filterDuet: boolean;
+  filterViral: boolean;
 }
 
 export interface StartOptions {
@@ -33,6 +34,8 @@ export interface SongCardProps {
   previewVideoRefs: React.MutableRefObject<Map<string, HTMLVideoElement>>;
   /** Audio element currently playing preview — used for waveform visualization */
   previewAudio?: HTMLAudioElement | null;
+  /** Whether this song is matched as a viral/trending hit */
+  isViralHit?: boolean;
 }
 
 export interface SongStartModalProps {

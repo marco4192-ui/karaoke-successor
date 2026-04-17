@@ -12,9 +12,10 @@ interface UseLibraryFiltersParams {
   searchQuery: string;
   settings: LibrarySettings;
   startMode: StartOptions['mode'];
+  viralSongIds?: Set<string>;
 }
 
-export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMode }: UseLibraryFiltersParams) {
+export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMode, viralSongIds }: UseLibraryFiltersParams) {
   // B.1: Debounce search — wait 200ms after last keystroke before filtering.
   // This prevents expensive fuzzy matching on every single character typed.
   const debouncedQuery = useDebouncedValue(searchQuery, 200);
@@ -64,6 +65,11 @@ export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMod
     if (startMode === 'duet') {
       songs = songs.filter(s => isDuetSong(s));
     }
+
+    // Viral hits filter - show only songs that are matched as trending
+    if (settings.filterViral && viralSongIds && viralSongIds.size > 0) {
+      songs = songs.filter(s => viralSongIds.has(s.id));
+    }
     
     // Sort
     songs = [...songs].sort((a, b) => {
@@ -83,7 +89,7 @@ export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMod
     });
     
     return songs;
-  }, [loadedSongs, deferredQuery, settings, startMode]);
+  }, [loadedSongs, deferredQuery, settings, startMode, viralSongIds]);
   
   // Get unique genres from loaded songs (read from #Genre: in txt files)
   const availableGenres = useMemo(() => {

@@ -14,7 +14,8 @@ export function SongCard({
   onSongClick, 
   onPreviewStart, 
   onPreviewStop, 
-  previewVideoRefs 
+  previewVideoRefs,
+  isViralHit,
 }: SongCardProps) {
   return (
     <div 
@@ -108,6 +109,11 @@ export function SongCard({
         
         {/* Badges */}
         <div className="absolute top-2 right-2 flex gap-1">
+          {isViralHit && (
+            <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-lg animate-pulse">
+              <span className="text-sm">&#128293;</span>Viral
+            </div>
+          )}
           {(song.hasEmbeddedAudio || song.videoBackground || song.videoUrl || song.youtubeUrl || song.relativeVideoPath) && (
             <Badge className="bg-purple-500/80 text-xs">Video</Badge>
           )}
