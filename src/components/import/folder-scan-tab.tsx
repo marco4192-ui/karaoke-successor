@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -28,6 +28,51 @@ export function FolderScanTab({
   duplicates, folderInputRef, handleScanFolder,
 }: FolderScanTabProps) {
   const exactDupCount = duplicates.filter(d => d.matchType === 'exact').length;
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  // C.2: Drag & Drop for folders/files
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (isProcessing) return;
+
+    const items = Array.from(e.dataTransfer.items || []);
+    if (items.length === 0) return;
+
+    setIsProcessing(true);
+
+    try {
+      // Collect all File objects from dropped items (handles both files and folders)
+      const files: File[] = [];
+
+      for (const item of items) {
+        // Try webkitGetAsEntry first (supports folders in Chromium/Tauri)
+        const entry = (item as any).webkitGetAsEntry?.();
+        if (entry) {
+          await collectFilesFromEntry(entry, '', files);
+          continue;
+        }
+        // Fallback: getAsFile for individual files
+        const file = item.getAsFile();
+        if (file) files.push(file);
+      }
+
+      if (files.length === 0) {
+        setIsProcessing(false);
+        return;
+      }
+
+      // Use the existing scanner with the collected files
+      const result = await scanFilesFromFileList(files as unknown as FileList);
+      setScannedSongs(result.songs);
+      setScanErrors(result.errors);
+      setSelectedScanned(new Set(result.songs.map((_, i) => i)));
+    } catch (err) {
+      setScanErrors(prev => [...prev, `Drop failed: ${(err as Error).message}`]);
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [isProcessing, setScannedSongs, setScanErrors, setSelectedScanned]);
 
   // Handle folder input change (non-FileSystemAccess browsers)
   const handleFolderInputChange = () => {
@@ -61,8 +106,18 @@ export function FolderScanTab({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="text-center py-8">
+        <div
+          className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
+            isDragOver ? 'border-cyan-400 bg-cyan-500/10' : 'border-white/20 hover:border-cyan-500/50'
+          }`}
+          onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={handleDrop}
+        >
           <p className="text-white/60 mb-4">
+            Drag a folder here or select one below
+          </p>
+          <p className="text-white/30 text-sm mb-4">
             Each subfolder should contain song files (audio, video, txt, cover)
           </p>
           {isFileSystemAccessSupported() ? (
@@ -143,6 +198,47 @@ export function FolderScanTab({
       </CardContent>
     </Card>
   );
+}
+
+/**
+ * Recursively collect File objects from a dropped FileSystemEntry.
+ * Uses webkitGetAsEntry() which works in Chromium/Tauri webview.
+ * Files get a synthetic webkitRelativePath set via Object.defineProperty
+ * so that scanFilesFromFileList can determine folder structure.
+ */
+async function collectFilesFromEntry(
+  entry: FileSystemEntry,
+  basePath: string,
+  files: File[]
+): Promise<void> {
+  if (entry.isFile) {
+    const file = await new Promise<File>((resolve, reject) => {
+      (entry as FileSystemFileEntry).file(resolve, reject);
+    });
+    const relativePath = basePath ? `${basePath}/${file.name}` : file.name;
+    // Set webkitRelativePath so scanFilesFromFileList can parse folder structure
+    Object.defineProperty(file, 'webkitRelativePath', {
+      value: `drop-root/${relativePath}`,
+      writable: false,
+    });
+    files.push(file);
+  } else if (entry.isDirectory) {
+    const reader = (entry as FileSystemDirectoryEntry).createReader();
+    const entries = await new Promise<FileSystemEntry[]>((resolve) => {
+      const results: FileSystemEntry[] = [];
+      const readBatch = () => {
+        reader.readEntries((batch) => {
+          if (batch.length === 0) { resolve(results); return; }
+          results.push(...batch);
+          readBatch();
+        }, () => resolve(results));
+      };
+      readBatch();
+    });
+    for (const child of entries) {
+      await collectFilesFromEntry(child, basePath ? `${basePath}/${entry.name}` : entry.name, files);
+    }
+  }
 }
 
 function SongListItem({ song, index, dupInfo, selected, onToggle }: {
