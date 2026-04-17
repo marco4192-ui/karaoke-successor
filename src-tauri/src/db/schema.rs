@@ -2,11 +2,13 @@
 //!
 //! Version 1: Initial schema with songs, folders, profiles, highscores,
 //! playlists, and app_settings tables.
+//!
+//! Version 2: Add viral_hits table for chart-matching feature.
 
 use rusqlite::Connection;
 
 /// Current schema version. Increment for each migration.
-const SCHEMA_VERSION: i32 = 1;
+const SCHEMA_VERSION: i32 = 2;
 
 /// Run all pending migrations.
 pub fn migrate(conn: &Connection) -> Result<(), String> {
@@ -29,6 +31,10 @@ pub fn migrate(conn: &Connection) -> Result<(), String> {
 
     if current_version < 1 {
         migrate_v1(conn)?;
+    }
+
+    if current_version < 2 {
+        migrate_v2(conn)?;
     }
 
     // Update schema version
@@ -176,6 +182,32 @@ fn migrate_v1(conn: &Connection) -> Result<(), String> {
         );
         "
     ).map_err(|e| format!("Migration v1 failed: {}", e))?;
+
+    Ok(())
+}
+
+fn migrate_v2(conn: &Connection) -> Result<(), String> {
+    conn.execute_batch(
+        "
+        -- ============================================================
+        -- Viral / trending hits fetched from music charts
+        -- ============================================================
+        CREATE TABLE IF NOT EXISTS viral_hits (
+            id              TEXT PRIMARY KEY,
+            title           TEXT NOT NULL,
+            artist          TEXT NOT NULL,
+            source          TEXT    NOT NULL DEFAULT 'unknown',
+            playlist_name   TEXT,
+            chart_position  INTEGER,
+            country         TEXT,
+            fetched_at      INTEGER NOT NULL,
+            matched_song_id TEXT
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_viral_hits_matched ON viral_hits(matched_song_id);
+        CREATE INDEX IF NOT EXISTS idx_viral_hits_source  ON viral_hits(source);
+        "
+    ).map_err(|e| format!("Migration v2 failed: {}", e))?;
 
     Ok(())
 }

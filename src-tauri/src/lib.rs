@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 
 mod audio;
 mod db;
+mod charts;
 
 // ============================================================
 // Custom Tauri Commands — bypass plugin ACL restrictions
@@ -361,6 +362,14 @@ pub fn run() {
             db::commands::db_delete_playlist,
             db::commands::db_clear_all,
             db::commands::db_get_stats,
+            // Viral / trending charts
+            charts::commands::viral_refresh_charts,
+            charts::commands::viral_match_library,
+            charts::commands::viral_get_matched_ids,
+            charts::commands::viral_get_entries,
+            charts::commands::viral_get_status,
+            charts::commands::viral_clear,
+            charts::commands::viral_set_country,
         ])
         .setup(|app| {
             // Register the audio state (needs AppHandle for the dedicated audio thread)
