@@ -12,7 +12,7 @@ interface ProminentScoreDisplayProps {
  * Prominent score display shown at the top center of the game screen.
  * Shows the current score relative to max possible score and combo multiplier.
  */
-export function ProminentScoreDisplay({ player }: ProminentScoreDisplayProps) {
+export const ProminentScoreDisplay = React.memo(function ProminentScoreDisplay({ player }: ProminentScoreDisplayProps) {
   const score = player?.score || 0;
   const combo = player?.combo || 0;
 
@@ -71,4 +71,4 @@ export function ProminentScoreDisplay({ player }: ProminentScoreDisplayProps) {
       )}
     </>
   );
-}
+});

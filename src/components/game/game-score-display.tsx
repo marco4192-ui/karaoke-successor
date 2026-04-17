@@ -20,7 +20,7 @@ interface GameScoreDisplayProps {
  * Header score display showing points, combo, difficulty badge,
  * and active challenge mode indicator.
  */
-export function GameScoreDisplay({
+export const GameScoreDisplay = React.memo(function GameScoreDisplay({
   isDuetMode,
   score,
   combo,
@@ -61,4 +61,4 @@ export function GameScoreDisplay({
       )}
     </div>
   );
-}
+});

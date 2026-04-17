@@ -58,7 +58,7 @@ export interface NoteHighwayProps {
 /**
  * Pitch grid background lines
  */
-function PitchGrid({ count = 7, color = 'cyan' }: { count?: number; color?: string }) {
+const PitchGrid = React.memo(function PitchGrid({ count = 7, color = 'cyan' }: { count?: number; color?: string }) {
   return (
     <div className="absolute inset-0 pointer-events-none">
       {Array.from({ length: count }).map((_, i) => (
@@ -70,12 +70,12 @@ function PitchGrid({ count = 7, color = 'cyan' }: { count?: number; color?: stri
       ))}
     </div>
   );
-}
+});
 
 /**
  * Vertical sing line indicator
  */
-function SingLine({
+const SingLine = React.memo(function SingLine({
   position,
   color = 'cyan'
 }: {
@@ -95,7 +95,7 @@ function SingLine({
       <div className={`absolute -left-1 top-0 bottom-0 w-0.5 bg-${color}-500/30`} />
     </div>
   );
-}
+});
 
 /**
  * Single note block with all styling
@@ -252,7 +252,7 @@ function PitchIndicator({
 /**
  * Player label badge
  */
-function PlayerLabel({
+const PlayerLabel = React.memo(function PlayerLabel({
   playerName,
   playerNumber,
   color = 'cyan',
@@ -275,7 +275,7 @@ function PlayerLabel({
       </div>
     </div>
   );
-}
+});
 
 // ===================== MAIN COMPONENT =====================
 

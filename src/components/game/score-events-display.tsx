@@ -14,7 +14,7 @@ export interface ScoreEventsDisplayProps {
   maxVisible?: number;
 }
 
-export function ScoreEventsDisplay({
+export const ScoreEventsDisplay = React.memo(function ScoreEventsDisplay({
   events,
   maxVisible = 5,
 }: ScoreEventsDisplayProps) {
@@ -74,4 +74,4 @@ export function ScoreEventsDisplay({
       ))}
     </div>
   );
-}
+});

@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { Song } from '@/types/game';
 import { Playlist, getPlaylistSongs } from '@/lib/playlist-manager';
 import { SongCard } from './song-card';
+import { VirtualizedSongGrid } from './virtualized-song-grid';
 import { safeConfirm } from '@/lib/safe-dialog';
 import { SongCardProps } from './types';
 import { MusicIcon, TrashIcon, QueueIcon, PlayIcon } from './icons';
@@ -164,37 +165,41 @@ export function PlaylistView({
             </div>
           </div>
           
-          {getPlaylistSongs(selectedPlaylist.id, loadedSongs).length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-white/60">This playlist is empty</p>
-              <p className="text-white/40 text-sm mt-2">Add songs from the library</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {getPlaylistSongs(selectedPlaylist.id, loadedSongs).map((song) => (
-                <div key={song.id} className="relative group">
-                  <SongCard 
-                    song={song}
-                    {...songCardProps}
-                  />
-                  {/* Remove from playlist button */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRemoveSongFromPlaylist(selectedPlaylist.id, song.id);
-                    }}
-                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-500/80 text-white opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all z-10"
-                    title="Remove from playlist"
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </button>
+          {(() => {
+            const playlistSongs = getPlaylistSongs(selectedPlaylist.id, loadedSongs);
+            if (playlistSongs.length === 0) {
+              return (
+                <div className="text-center py-12">
+                  <p className="text-white/60">This playlist is empty</p>
+                  <p className="text-white/40 text-sm mt-2">Add songs from the library</p>
                 </div>
-              ))}
-            </div>
-          )}
+              );
+            }
+            return (
+              <VirtualizedSongGrid
+                songs={playlistSongs}
+                songCardProps={songCardProps}
+                renderSongCard={(song) => (
+                  <div className="relative group">
+                    <SongCard song={song} {...songCardProps} />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemoveSongFromPlaylist(selectedPlaylist.id, song.id);
+                      }}
+                      className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-500/80 text-white opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all z-10"
+                      title="Remove from playlist"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              />
+            );
+          })()}
         </div>
       )}
     </div>

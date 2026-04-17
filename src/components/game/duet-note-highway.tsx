@@ -66,7 +66,7 @@ export interface DuetNoteHighwayProps {
 /**
  * Center score bar with VS badge for duet mode
  */
-function CenterScoreBar({
+const CenterScoreBar = React.memo(function CenterScoreBar({
   p1State,
   p2State,
 }: {
@@ -114,7 +114,7 @@ function CenterScoreBar({
       </div>
     </div>
   );
-}
+});
 
 /**
  * Lyrics display for a player's section

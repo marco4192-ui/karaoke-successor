@@ -11,7 +11,7 @@ interface ScoreDisplayProps {
   compact?: boolean;
 }
 
-export function ScoreDisplay({ player, showCombo = true, compact = false }: ScoreDisplayProps) {
+export const ScoreDisplay = React.memo(function ScoreDisplay({ player, showCombo = true, compact = false }: ScoreDisplayProps) {
   return (
     <div className={`${compact ? 'p-3' : 'p-4'} rounded-xl bg-black/40 backdrop-blur-sm border border-white/10`}>
       {/* Player info */}
@@ -89,13 +89,13 @@ export function ScoreDisplay({ player, showCombo = true, compact = false }: Scor
       </div>
     </div>
   );
-}
+});
 
 interface MultiPlayerScoreDisplayProps {
   players: Player[];
 }
 
-export function MultiPlayerScoreDisplay({ players }: MultiPlayerScoreDisplayProps) {
+export const MultiPlayerScoreDisplay = React.memo(function MultiPlayerScoreDisplay({ players }: MultiPlayerScoreDisplayProps) {
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
 
   return (
@@ -115,4 +115,4 @@ export function MultiPlayerScoreDisplay({ players }: MultiPlayerScoreDisplayProp
       ))}
     </div>
   );
-}
+});

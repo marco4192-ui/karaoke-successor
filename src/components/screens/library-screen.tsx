@@ -17,6 +17,7 @@ import { SongHighscoreModal } from './results-screen';
 
 // Extracted components
 import { SongCard } from './library/song-card';
+import { VirtualizedSongGrid } from './library/virtualized-song-grid';
 import { SongStartModal } from './library/song-start-modal';
 import { PlaylistView } from './library/playlist-view';
 import { AddToPlaylistModal } from './library/add-to-playlist-modal';
@@ -235,9 +236,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
               <p className="text-white/40 text-sm">Try a different search or import some songs</p>
             </div>
           ) : viewMode === 'grid' || (viewMode === 'folder' && currentFolder) ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4">
-              {currentFolderSongs.map((song) => <SongCard key={song.id} song={song} {...songCardBaseProps} />)}
-            </div>
+            <VirtualizedSongGrid songs={currentFolderSongs} songCardProps={songCardBaseProps} />
           ) : (
             <FolderView
               groupedSongs={groupedSongs} groupBy={groupBy}
