@@ -1,10 +1,11 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useDeferredValue } from 'react';
 import { Song } from '@/types/game';
 import { LibrarySettings, StartOptions } from '@/components/screens/library/types';
 import { isDuetSong } from '@/components/screens/library/utils';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
+import { useDebouncedValue } from './use-debounce';
 
 interface UseLibraryFiltersParams {
   loadedSongs: Song[];
@@ -14,16 +15,26 @@ interface UseLibraryFiltersParams {
 }
 
 export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMode }: UseLibraryFiltersParams) {
+  // B.1: Debounce search — wait 200ms after last keystroke before filtering.
+  // This prevents expensive fuzzy matching on every single character typed.
+  const debouncedQuery = useDebouncedValue(searchQuery, 200);
+
+  // B.2: Deferred value — lets React keep the search input responsive
+  // while the filter/sort computation runs at lower priority.
+  const deferredQuery = useDeferredValue(debouncedQuery);
+  const isFilterStale = deferredQuery !== debouncedQuery;
+
   const filteredSongs = useMemo(() => {
     let songs = loadedSongs;
     
-    // Search filter (fuzzy matching — tolerant of typos like "Quen" for "Queen")
-    if (searchQuery) {
+    // Use the deferred (lower-priority) search query for filtering.
+    // The raw searchQuery drives the input; deferredQuery drives the grid.
+    if (deferredQuery) {
       songs = songs.filter(s =>
-        fuzzyMatch(searchQuery, s.title) ||
-        fuzzyMatch(searchQuery, s.artist) ||
-        (s.genre && fuzzyMatch(searchQuery, s.genre)) ||
-        (s.album && fuzzyMatch(searchQuery, s.album))
+        fuzzyMatch(deferredQuery, s.title) ||
+        fuzzyMatch(deferredQuery, s.artist) ||
+        (s.genre && fuzzyMatch(deferredQuery, s.genre)) ||
+        (s.album && fuzzyMatch(deferredQuery, s.album))
       );
     }
     
@@ -72,7 +83,7 @@ export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMod
     });
     
     return songs;
-  }, [loadedSongs, searchQuery, settings, startMode]);
+  }, [loadedSongs, deferredQuery, settings, startMode]);
   
   // Get unique genres from loaded songs (read from #Genre: in txt files)
   const availableGenres = useMemo(() => {
@@ -92,5 +103,5 @@ export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMod
     return ['all', ...Array.from(langSet).sort()];
   }, [loadedSongs]);
   
-  return { filteredSongs, availableGenres, availableLanguages };
+  return { filteredSongs, availableGenres, availableLanguages, isFilterStale };
 }
