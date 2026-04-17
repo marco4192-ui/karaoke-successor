@@ -12,7 +12,7 @@ use std::collections::HashSet;
 use serde::Serialize;
 use tauri::{AppHandle, Manager};
 
-use super::sources::ChartEntry;
+use super::sources::{self, ChartEntry};
 use crate::db::DbState;
 
 // ====================================================================
