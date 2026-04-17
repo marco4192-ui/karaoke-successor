@@ -9,7 +9,7 @@ import {
   isFileSystemAccessSupported,
   ScannedSong,
 } from '@/lib/parsers/folder-scanner';
-import { addSong, addSongs, getAllSongs } from '@/lib/game/song-library';
+import { addSong, addSongs, getAllSongs, replaceCustomSongs, setScanInProgress, invalidateSongCache } from '@/lib/game/song-library';
 import { storeMedia } from '@/lib/db/media-db';
 import { Song } from '@/types/game';
 import { findDuplicates, DuplicateInfo, ProgressInfo } from './import-types';
@@ -38,6 +38,10 @@ export function useImportScreen(onImport: (song: Song) => void) {
   const [scanErrors, setScanErrors] = useState<string[]>([]);
 
   const [duplicates, setDuplicates] = useState<DuplicateInfo[]>([]);
+
+  // Store Tauri scan result for native import path
+  const tauriScanResultRef = useRef<any>(null);
+  const tauriScanFolderRef = useRef<string | null>(null);
 
   const existingSongs = useMemo(() => getAllSongs(), []);
 
@@ -152,9 +156,64 @@ export function useImportScreen(onImport: (song: Song) => void) {
     setScannedSongs([]);
     setScanErrors([]);
     setDuplicates([]);
+    tauriScanResultRef.current = null;
+    tauriScanFolderRef.current = null;
     setProgress({ stage: 'loading', progress: 0, message: 'Scanning folder...' });
 
     try {
+      // ── Tauri: Use native folder picker and filesystem scanner ──
+      const { isTauri } = await import('@/lib/tauri-file-storage');
+      if (isTauri()) {
+        const { nativePickFolder } = await import('@/lib/native-fs');
+        const { scanSongsFolderTauri } = await import('@/lib/tauri-file-storage');
+
+        const folderPath = await nativePickFolder('Select Songs Folder');
+        if (!folderPath) {
+          // User cancelled
+          setIsProcessing(false);
+          setProgress(null);
+          return;
+        }
+
+        setProgress({ stage: 'scanning', progress: 10, message: `Scanning ${folderPath}...` });
+        const result = await scanSongsFolderTauri(folderPath);
+
+        // Store Tauri result for later import
+        tauriScanResultRef.current = result;
+        tauriScanFolderRef.current = folderPath;
+
+        // Convert TauriScannedSong[] to ScannedSong[] for display
+        const displaySongs: ScannedSong[] = result.songs.map(s => ({
+          title: s.title,
+          artist: s.artist,
+          folder: s.folderPath.split('/').pop() || s.folderPath,
+          folderPath: s.folderPath,
+          baseFolder: s.baseFolder,
+          // Fake File objects — display only checks truthiness and .name
+          audioFile: s.relativeAudioPath ? { name: s.relativeAudioPath.split('/').pop()! } as any : undefined,
+          videoFile: s.relativeVideoPath ? { name: s.relativeVideoPath.split('/').pop()! } as any : undefined,
+          txtFile: s.relativeTxtPath ? { name: s.relativeTxtPath.split('/').pop()! } as any : undefined,
+          coverFile: s.relativeCoverPath ? { name: s.relativeCoverPath.split('/').pop()! } as any : undefined,
+        }));
+
+        setScannedSongs(displaySongs);
+        setScanErrors(result.errors);
+        setProgress({ stage: 'processing', progress: 90, message: 'Checking for duplicates...' });
+
+        const duplicateResults = findDuplicates(displaySongs, existingSongs);
+        setDuplicates(duplicateResults);
+        const nonDuplicateIndexes = duplicateResults.filter(d => d.matchType === 'none').map(d => d.index);
+        setSelectedScanned(new Set(nonDuplicateIndexes));
+
+        setProgress({
+          stage: 'complete', progress: 100,
+          message: `Found ${result.songs.length} songs${result.errors.length ? ` (${result.errors.length} errors)` : ''}`,
+        });
+        setIsProcessing(false);
+        return;
+      }
+
+      // ── Browser: existing File System Access / webkitdirectory flow ──
       let result;
       if (isFileSystemAccessSupported()) {
         result = await scanFolderWithPicker();
@@ -191,6 +250,144 @@ export function useImportScreen(onImport: (song: Song) => void) {
     setIsProcessing(true);
     setProgress({ stage: 'loading', progress: 0, message: 'Importing songs...' });
 
+    // ── Tauri: Import using native scan result (no File objects needed) ──
+    if (tauriScanResultRef.current && tauriScanFolderRef.current) {
+      const tauriResult = tauriScanResultRef.current;
+      const folderPath = tauriScanFolderRef.current;
+      const selectedArray = Array.from(selectedScanned);
+
+      setScanInProgress(true);
+      localStorage.setItem('karaoke-songs-folder', folderPath);
+
+      try {
+        const { storeMedia } = await import('@/lib/db/media-db');
+        const { getSongMediaUrl } = await import('@/lib/tauri-file-storage');
+        const songsToImport: Song[] = [];
+
+        for (let i = 0; i < selectedArray.length; i++) {
+          const scanned = tauriResult.songs[selectedArray[i]];
+          try {
+            const songId = `song-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+            let storedTxt = false;
+            let coverImage: string | undefined = undefined;
+
+            // Load TXT cache and cover image in parallel
+            const [txtResult, coverResult] = await Promise.allSettled([
+              (async () => {
+                if (!scanned.relativeTxtPath) return false;
+                const { nativeReadFileText } = await import('@/lib/native-fs');
+                const txtContent = await nativeReadFileText(
+                  `${folderPath.replace(/\\/g, '/')}/${scanned.relativeTxtPath.replace(/\\/g, '/')}`
+                );
+                if (txtContent) {
+                  await storeMedia(songId, 'txt', new Blob([txtContent], { type: 'text/plain' }));
+                  return true;
+                }
+                return false;
+              })(),
+              (async () => {
+                if (!scanned.relativeCoverPath) return undefined;
+                return await getSongMediaUrl(scanned.relativeCoverPath, folderPath) || undefined;
+              })(),
+            ]);
+
+            if (txtResult.status === 'fulfilled') storedTxt = txtResult.value;
+            if (coverResult.status === 'fulfilled') coverImage = coverResult.value;
+
+            // Calculate duration
+            let calculatedDuration = 180000;
+            if (scanned.end && scanned.end > 0) {
+              calculatedDuration = scanned.end;
+            } else if (scanned.lyrics?.length > 0) {
+              calculatedDuration = Math.max(...scanned.lyrics.map(l => l.endTime)) + 5000;
+            }
+
+            const song: Song = {
+              id: songId,
+              title: scanned.title,
+              artist: scanned.artist,
+              duration: calculatedDuration,
+              bpm: scanned.bpm,
+              difficulty: 'medium',
+              rating: 3,
+              gap: scanned.gap,
+              baseFolder: folderPath,
+              folderPath: scanned.folderPath,
+              relativeTxtPath: scanned.relativeTxtPath,
+              relativeAudioPath: scanned.relativeAudioPath,
+              relativeVideoPath: scanned.relativeVideoPath,
+              relativeCoverPath: scanned.relativeCoverPath,
+              relativeBackgroundPath: scanned.relativeBackgroundPath,
+              coverImage,
+              genre: scanned.genre,
+              language: scanned.language,
+              year: scanned.year,
+              creator: scanned.creator,
+              version: scanned.version,
+              edition: scanned.edition,
+              tags: scanned.tags,
+              start: scanned.start,
+              end: scanned.end,
+              videoGap: scanned.videoGap,
+              videoStart: scanned.videoStart,
+              preview: scanned.previewStart ? {
+                startTime: scanned.previewStart * 1000,
+                duration: (scanned.previewDuration || 15) * 1000,
+              } : undefined,
+              previewStart: scanned.previewStart,
+              previewDuration: scanned.previewDuration,
+              medleyStartBeat: scanned.medleyStartBeat,
+              medleyEndBeat: scanned.medleyEndBeat,
+              isDuet: scanned.isDuet,
+              duetPlayerNames: scanned.duetPlayerNames,
+              lyrics: scanned.lyrics || [],
+              storedTxt,
+              storedMedia: false,
+              hasEmbeddedAudio: scanned.hasEmbeddedAudio ?? (!scanned.relativeAudioPath && !!scanned.relativeVideoPath),
+              mp3File: scanned.mp3File,
+              coverFile: scanned.coverFile,
+              backgroundFile: scanned.backgroundFile,
+              videoFile: scanned.videoFile,
+              dateAdded: Date.now(),
+            };
+
+            songsToImport.push(song);
+            setProgress({
+              stage: 'processing',
+              progress: ((i + 1) / selectedArray.length) * 100,
+              message: `Importing ${i + 1}/${selectedArray.length}: ${scanned.title}`,
+            });
+          } catch (err) {
+            setScanErrors(prev => [...prev, `Failed to import ${scanned.title}: ${(err as Error).message}`]);
+          }
+        }
+
+        if (songsToImport.length > 0) {
+          replaceCustomSongs(songsToImport);
+          invalidateSongCache();
+        }
+
+        setProgress({
+          stage: 'complete', progress: 100,
+          message: `Imported ${songsToImport.length} songs!`,
+        });
+
+        if (songsToImport.length > 0) {
+          setTimeout(() => onImport(songsToImport[0]), 1500);
+        }
+      } catch (err) {
+        setError('Tauri import failed: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      } finally {
+        setScanInProgress(false);
+        tauriScanResultRef.current = null;
+        tauriScanFolderRef.current = null;
+      }
+
+      setIsProcessing(false);
+      return;
+    }
+
+    // ── Browser: existing File-based import flow ──
     const songsToImport: Song[] = [];
     const selectedArray = Array.from(selectedScanned);
     let detectedBaseFolder: string | undefined;

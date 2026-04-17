@@ -45,6 +45,8 @@ export function UltrastarTab({
             description="Click to change"
             onDrop={(e) => handleDrop(e, 'ultrastar')}
             onFileChange={(f) => handleFileSelect('ultrastar', f)}
+            tauriFilter={{ name: 'UltraStar TXT', extensions: ['txt'] }}
+            tauriPickerTitle="Select UltraStar TXT File"
           />
         </CardContent>
       </Card>
@@ -63,6 +65,8 @@ export function UltrastarTab({
             label="Drop audio file here"
             onDrop={(e) => handleDrop(e, 'audio')}
             onFileChange={(f) => handleFileSelect('audio', f)}
+            tauriFilter={{ name: 'Audio', extensions: ['mp3', 'ogg', 'wav', 'm4a', 'flac', 'aac', 'wma', 'opus'] }}
+            tauriPickerTitle="Select Audio File"
           />
         </CardContent>
       </Card>
@@ -95,6 +99,8 @@ export function UltrastarTab({
             }
             onDrop={(e) => handleDrop(e, 'video')}
             onFileChange={(f) => handleFileSelect('video', f)}
+            tauriFilter={{ name: 'Video', extensions: ['mp4', 'webm', 'mkv', 'avi', 'mov', 'wmv'] }}
+            tauriPickerTitle="Select Video File"
           />
         </CardContent>
       </Card>
