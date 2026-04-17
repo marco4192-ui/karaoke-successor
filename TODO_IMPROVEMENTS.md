@@ -239,7 +239,7 @@ Revival-Potenzial dokumentieren. Dead Code wurde NICHT gelöscht.
 - [x] **C.1** Native File Dialog für Song-Import — `722bb42` (nativePickFolder, nativePickFileOpen via Tauri)
 - [x] **C.2** Native Audio Processing über Tauri Commands — `e3f4e65` (Rust pitch detection, BPM estimation, CREPE via dedicated analysis thread + `useAudioAnalysis` Hook + AudioAnalysisPanel UI)
 - [x] **C.3** Tauri Plugin für System-Media-Controls — `1be0480` (Media Session API in Tauri WebView2/WKWebView/WebKitGTK — Song-Metadaten, Play/Pause, Position-State)
-- [ ] **C.4** Offline-Modus mit lokaler SQLite
+- [x] **C.4** Offline-Modus mit lokaler SQLite — `0288fda` (rusqlite bundled, Schema v1: songs/folders/profiles/highscores/playlists/settings, 20 Tauri Commands, WAL mode, `use-sqlite.ts` Hook, OfflineBanner zeigt SQLite-Stats)
 - [x] **D.1** Waveform-basiertes Note-Editing — `cac99fb` (Note-Grenzen auf Waveform, Click-to-Seek, DblClick-to-Add, Selected-Note-Highlighting in Timeline)
 - [x] **D.2** Auto-Beat-Detection aus Audiosignal — `e3f4e65` (Rust BPM-Detektion via onset/autocorrelation, `detectBpm()` Hook, UI in AudioAnalysisPanel)
 - [x] **D.3** Import von Vocaluxe/UltraStar-Datenbanken — `722bb42` (UltraStar-Bulk-Import bereits schnell)
