@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useNoteScoring } from '@/hooks/use-note-scoring';
@@ -71,6 +71,10 @@ import {
 } from '@/components/game/game-hud';
 import { isDuetSong } from '@/components/screens/library/utils';
 import { MicIndicator } from '@/components/game/mic-indicator';
+import { useReplayRecorder } from '@/hooks/use-replay-recorder';
+import { setLastReplayId } from '@/lib/replay-state';
+import { getPitchDetector } from '@/lib/audio/pitch-detector';
+import { cleanupOldReplays } from '@/lib/db/replay-db';
 
 // ===================== GAME SCREEN =====================
 function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }) {
@@ -95,9 +99,15 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     videoLoadedRef,
   } = useGameMedia(song);
 
+  // Replay recording: enabled by default, persisted in localStorage
+  const [replayEnabled] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('karaoke-replay-enabled') || 'true'); } catch { return true; }
+  });
+
   const [youtubeTime, setYoutubeTime] = useState(0);
   const [youtubeError, setYoutubeError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const wasPlayingRef = useRef(false);
 
   // Native audio (ASIO / WASAPI)
   const nativeAudio = useNativeAudio();
@@ -371,6 +381,31 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     return stats === calculatePitchStats(null) ? pitchStats : stats;
   }, [timingData, pitchStats]);
 
+  // ── Replay Recorder: mic + webcam during gameplay ──
+  const {
+    startRecording: replayStart,
+    stopRecording: replayStop,
+    pauseRecording: replayPause,
+    resumeRecording: replayResume,
+    isRecording: isReplayRecording,
+  } = useReplayRecorder({
+    enabled: replayEnabled,
+    songId: song?.id ?? null,
+    songTitle: song?.title ?? '',
+    songArtist: song?.artist ?? '',
+    playerName: gameState.players[0]?.name || 'Player 1',
+    isWebcamActive: webcamConfig.enabled,
+    getMicStream: useCallback(() => {
+      try { return getPitchDetector().getMediaStream() || null; } catch { return null; }
+    }, []),
+    onReplaySaved: useCallback((replay: { id: string }) => {
+      setLastReplayId(replay.id);
+    }, []),
+  });
+
+  // Run replay cleanup on mount (delete replays >30 days, keep max 50)
+  useEffect(() => { cleanupOldReplays().catch(() => {}); }, []);
+
   // ── Game Loop: countdown, game loop, media playback, song-end detection ──
   const {
     countdown,
@@ -433,6 +468,29 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     onPause: pauseGame,
     onResume: resumeGame,
   });
+
+  // ── Replay: start recording when gameplay begins (after countdown) ──
+  useEffect(() => {
+    if (isPlaying && !wasPlayingRef.current) {
+      // isPlaying went from false → true (gameplay just started)
+      replayStart();
+    } else if (!isPlaying && wasPlayingRef.current) {
+      // isPlaying went from true → false (game ended or paused)
+      // Pause the replay recorder (stop happens on game end)
+      replayPause();
+    } else if (isPlaying && wasPlayingRef.current) {
+      // Resumed from pause
+      replayResume();
+    }
+    wasPlayingRef.current = isPlaying;
+  }, [isPlaying, replayStart, replayPause, replayResume]);
+
+  // ── Replay: stop recording when the game ends ──
+  useEffect(() => {
+    if (gameState.status === 'ended' && replayEnabled) {
+      replayStop(gameState.results);
+    }
+  }, [gameState.status, gameState.results, replayStop, replayEnabled]);
 
   // Get visible notes using shared utility
   const visibleNotes = useMemo(() =>

@@ -21,6 +21,9 @@ import { UploadStatus } from '@/components/results/upload-status';
 import { SongLeaderboardPreview } from '@/components/results/song-leaderboard-preview';
 import { ShareSection } from '@/components/results/share-section';
 import { QueueNextSong } from '@/components/results/queue-next-song';
+import { ReplayModal } from '@/components/results/replay-modal';
+import { getLastReplayId } from '@/lib/replay-state';
+import { getReplay, type ReplayRecord } from '@/lib/db/replay-db';
 
 // ===================== RESULTS SCREEN =====================
 export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void; onHome: () => void }) {
@@ -29,6 +32,8 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [uploadMessage, setUploadMessage] = useState('');
   const [showHighscoreModal, setShowHighscoreModal] = useState(false);
+  const [showReplay, setShowReplay] = useState(false);
+  const [replayRecord, setReplayRecord] = useState<ReplayRecord | null>(null);
   
   // Queue state - for showing next song from companion queue
   const [nextQueueItem, setNextQueueItem] = useState<{
@@ -43,6 +48,24 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
   
   const results = gameState.results;
   const song = gameState.currentSong;
+
+  // Load last replay from IndexedDB (set by game-screen during recording)
+  useEffect(() => {
+    const loadReplay = async () => {
+      const replayId = getLastReplayId();
+      if (replayId) {
+        try {
+          const record = await getReplay(replayId);
+          if (record) {
+            setReplayRecord(record);
+          }
+        } catch (err) {
+          console.warn('[ResultsScreen] Failed to load replay:', err);
+        }
+      }
+    };
+    loadReplay();
+  }, []);
 
   // Fetch next song from queue (both local and companion)
   useEffect(() => {
@@ -450,6 +473,18 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
         >
           <TrophyIcon className="w-4 h-4 mr-2" /> Scores
         </Button>
+        {replayRecord && (
+          <Button
+            variant="outline"
+            onClick={() => setShowReplay(true)}
+            className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 px-4"
+          >
+            <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            Replay
+          </Button>
+        )}
         <Button onClick={() => { resetGame(); onPlayAgain(); }} className="bg-gradient-to-r from-cyan-500 to-purple-500 px-8">
           Play Again
         </Button>
@@ -470,6 +505,16 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           song={song}
           isOpen={showHighscoreModal}
           onClose={() => setShowHighscoreModal(false)}
+        />
+      )}
+
+      {/* Replay Modal */}
+      {replayRecord && (
+        <ReplayModal
+          isOpen={showReplay}
+          onClose={() => setShowReplay(false)}
+          replay={replayRecord}
+          originalAudioUrl={song?.audioUrl}
         />
       )}
     </div>
