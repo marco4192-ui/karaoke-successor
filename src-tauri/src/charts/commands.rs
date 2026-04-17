@@ -189,7 +189,7 @@ pub async fn viral_refresh_charts(
             println!("[ViralCharts] Apple Music: {} entries", entries.len());
             all_entries.extend(entries);
         }
-        Err(e) => println!("[ViralCharts] Apple Music failed: {}", e),
+        Err(ref e) => println!("[ViralCharts] Apple Music failed: {}", e),
     }
 
     match deezer_result {
@@ -197,7 +197,7 @@ pub async fn viral_refresh_charts(
             println!("[ViralCharts] Deezer: {} entries", entries.len());
             all_entries.extend(entries);
         }
-        Err(e) => println!("[ViralCharts] Deezer failed: {}", e),
+        Err(ref e) => println!("[ViralCharts] Deezer failed: {}", e),
     }
 
     match itunes_result {
@@ -205,7 +205,7 @@ pub async fn viral_refresh_charts(
             println!("[ViralCharts] iTunes: {} entries", entries.len());
             all_entries.extend(entries);
         }
-        Err(e) => println!("[ViralCharts] iTunes failed: {}", e),
+        Err(ref e) => println!("[ViralCharts] iTunes failed: {}", e),
     }
 
     if all_entries.is_empty() {
