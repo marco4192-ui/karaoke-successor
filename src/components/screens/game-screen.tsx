@@ -60,6 +60,7 @@ import { useYouTubeGame } from '@/hooks/use-youtube-game';
 import { useGameModes } from '@/hooks/use-game-modes';
 import { useMobileGameSync } from '@/hooks/use-mobile-game-sync';
 import { usePracticePlayback } from '@/hooks/use-practice-playback';
+import { useMediaSession } from '@/hooks/use-media-session';
 import {
   VolumeMeter,
   AudioEffectsButton,
@@ -422,6 +423,15 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     nativeAudioResume: nativeAudio.resume,
     nativeAudioStop: nativeAudio.stop,
     nativeAudioSeek: nativeAudio.seek,
+  });
+
+  // ── OS Media Controls: song metadata, media keys, position seekbar ──
+  useMediaSession({
+    song,
+    isPlaying,
+    audioRef,
+    onPause: pauseGame,
+    onResume: resumeGame,
   });
 
   // Get visible notes using shared utility
