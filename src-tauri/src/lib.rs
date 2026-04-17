@@ -11,6 +11,7 @@ use tauri::Manager;
 use serde::{Deserialize, Serialize};
 
 mod audio;
+mod db;
 
 // ============================================================
 // Custom Tauri Commands — bypass plugin ACL restrictions
@@ -337,12 +338,39 @@ pub fn run() {
             audio::analysis_commands::audio_analyze_pitch,
             audio::analysis_commands::audio_detect_bpm,
             audio::analysis_commands::audio_crepe_info,
+            // SQLite offline database commands
+            db::commands::db_get_setting,
+            db::commands::db_set_setting,
+            db::commands::db_delete_setting,
+            db::commands::db_get_all_settings,
+            db::commands::db_save_songs,
+            db::commands::db_load_songs,
+            db::commands::db_get_song_count,
+            db::commands::db_search_songs,
+            db::commands::db_save_folders,
+            db::commands::db_load_folders,
+            db::commands::db_save_root_folders,
+            db::commands::db_load_root_folders,
+            db::commands::db_save_profile,
+            db::commands::db_load_profiles,
+            db::commands::db_delete_profile,
+            db::commands::db_save_highscore,
+            db::commands::db_load_highscores,
+            db::commands::db_save_playlist,
+            db::commands::db_load_playlists,
+            db::commands::db_delete_playlist,
+            db::commands::db_clear_all,
+            db::commands::db_get_stats,
         ])
         .setup(|app| {
             // Register the audio state (needs AppHandle for the dedicated audio thread)
             app.manage(audio::commands::AudioState::new(app.handle().clone()));
             // Register the analysis state (needs AppHandle for the dedicated analysis thread)
             app.manage(audio::analysis_commands::AnalysisState::new(app.handle().clone()));
+            // Register the SQLite offline database
+            let db_path = db::default_db_path(&app.handle().clone())?;
+            app.manage(db::DbState::new(db_path)?);
+            println!("SQLite database initialized at: {:?}", app.state::<db::DbState>().db_path);
 
             // Get the main window and open DevTools in debug mode
             #[cfg(debug_assertions)]

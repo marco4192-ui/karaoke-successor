@@ -39,6 +39,9 @@ ndarray = { version = "0.17", optional = true }
 # Async runtime for blocking analysis tasks
 tokio = { version = "1", features = ["rt"] }
 
+# SQLite for local offline storage
+rusqlite = { version = "0.31", features = ["bundled"] }
+
 [features]
 default = ["crepe"]
 asio = ["cpal/asio"]
