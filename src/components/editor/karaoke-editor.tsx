@@ -271,6 +271,50 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     if (selectedNote) handleNoteAdd(selectedNote.startTime + selectedNote.duration + 100, selectedNote.pitch);
   }, [selectedNote, handleNoteAdd]);
 
+  const handleNoteSplit = useCallback(() => {
+    if (!selectedNote) return;
+
+    // Split at playhead if it falls within the note, otherwise at midpoint
+    const noteEnd = selectedNote.startTime + selectedNote.duration;
+    const splitPoint = (currentTime >= selectedNote.startTime && currentTime <= noteEnd)
+      ? currentTime
+      : selectedNote.startTime + selectedNote.duration / 2;
+
+    const firstDuration = splitPoint - selectedNote.startTime;
+    const secondDuration = noteEnd - splitPoint;
+
+    // Don't split if either half would be too short (< 50ms)
+    if (firstDuration < 50 || secondDuration < 50) return;
+
+    const secondNote: Note = {
+      id: uuidv4(),
+      pitch: selectedNote.pitch,
+      frequency: selectedNote.frequency,
+      startTime: Math.round(splitPoint),
+      duration: Math.round(secondDuration),
+      lyric: selectedNote.lyric,
+      isBonus: selectedNote.isBonus,
+      isGolden: selectedNote.isGolden,
+      player: selectedNote.player,
+    };
+
+    setCurrentSong(prev => {
+      const newLyrics = prev.lyrics.map(line => {
+        const noteIndex = line.notes.findIndex(n => n.id === selectedNote.id);
+        if (noteIndex === -1) return line;
+        const newNotes = [...line.notes];
+        newNotes.splice(noteIndex, 1,
+          { ...selectedNote, duration: Math.round(firstDuration) },
+          secondNote
+        );
+        return { ...line, notes: newNotes };
+      });
+      pushHistory(newLyrics);
+      return { ...prev, lyrics: newLyrics };
+    });
+    setSelectedNoteId(secondNote.id);
+  }, [selectedNote, currentTime, pushHistory]);
+
   // --- Audio Analysis: Apply detected notes ---
   // Preserves existing lyric text when possible: for each detected note,
   // finds the existing note with the greatest time overlap and copies its
@@ -446,6 +490,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
           onAddNote={handleNoteAdd}
           onDuplicateNote={duplicateNote}
           onDeleteNote={() => selectedNoteId && handleNoteDelete(selectedNoteId)}
+          onSplitNote={handleNoteSplit}
           onUpdateSelectedNote={updateSelectedNote}
           tapMode={tapPlacement}
         />

@@ -12,6 +12,7 @@ interface ToolsPanelProps {
   onAddNote: (startTime: number, pitch: number) => void;
   onDuplicateNote: () => void;
   onDeleteNote: () => void;
+  onSplitNote: () => void;
   onUpdateSelectedNote: (updates: Partial<Note>) => void;
   tapMode?: {
     isActive: boolean;
@@ -29,6 +30,7 @@ export function ToolsPanel({
   onAddNote,
   onDuplicateNote,
   onDeleteNote,
+  onSplitNote,
   onUpdateSelectedNote,
   tapMode,
 }: ToolsPanelProps) {
@@ -36,44 +38,45 @@ export function ToolsPanel({
     <aside className="w-56 bg-slate-900 border-r border-slate-700 flex flex-col overflow-y-auto flex-shrink-0">
       <div className="p-4 border-b border-slate-700">
         <h2 className="text-sm font-semibold text-slate-300 mb-3">Tools</h2>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-1.5">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => selectedNote && onAddNote(currentTime, selectedNote.pitch)}
-            className="justify-start border-slate-600 text-slate-300"
+            onClick={() => onAddNote(currentTime, selectedNote?.pitch ?? 60)}
+            className="justify-start border-slate-600 text-slate-300 whitespace-nowrap overflow-hidden"
           >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Note
+            <Plus className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+            <span className="truncate">Add Note</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={onDuplicateNote}
             disabled={!selectedNote}
-            className="justify-start border-slate-600 text-slate-300"
+            className="justify-start border-slate-600 text-slate-300 whitespace-nowrap overflow-hidden"
           >
-            <Copy className="w-4 h-4 mr-2" />
-            Duplicate
+            <Copy className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+            <span className="truncate">Duplicate</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={onDeleteNote}
             disabled={!selectedNote}
-            className="justify-start border-slate-600 text-slate-300 hover:border-red-500 hover:text-red-400"
+            className="justify-start border-slate-600 text-slate-300 hover:border-red-500 hover:text-red-400 whitespace-nowrap overflow-hidden"
           >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Delete
+            <Trash2 className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+            <span className="truncate">Delete</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
+            onClick={onSplitNote}
             disabled={!selectedNote}
-            className="justify-start border-slate-600 text-slate-300"
+            className="justify-start border-slate-600 text-slate-300 whitespace-nowrap overflow-hidden"
           >
-            <Scissors className="w-4 h-4 mr-2" />
-            Split
+            <Scissors className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+            <span className="truncate">Split</span>
           </Button>
         </div>
       </div>
