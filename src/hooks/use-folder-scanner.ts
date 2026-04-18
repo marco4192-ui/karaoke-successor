@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { getAllSongs, clearCustomSongs, replaceCustomSongs, setScanInProgress, invalidateSongCache, clearSongCache } from '@/lib/game/song-library';
 import { clearCustomSongsFromDB } from '@/lib/db/custom-songs-db';
 import { Song } from '@/types/game';
-import { isTauri } from '@/lib/tauri-file-storage';
+import { isTauri, normalizeFilePath } from '@/lib/tauri-file-storage';
 import { safeAlert, safeConfirm, safePrompt } from '@/lib/safe-dialog';
 import { nativePickFolder } from '@/lib/native-fs';
 
@@ -122,9 +122,9 @@ export function useFolderScanner(): UseFolderScannerReturn {
               (async () => {
                 if (!scanned.relativeTxtPath) return false;
                 const { nativeReadFileText } = await import('@/lib/native-fs');
-                const normalizedFolder = folderPath.replace(/\\/g, '/');
-                const normalizedTxtPath = scanned.relativeTxtPath.replace(/\\/g, '/');
-                const txtContent = await nativeReadFileText(`${normalizedFolder}/${normalizedTxtPath}`);
+                const txtContent = await nativeReadFileText(
+                  `${normalizeFilePath(folderPath)}/${normalizeFilePath(scanned.relativeTxtPath)}`
+                );
                 if (txtContent) {
                   const txtBlob = new Blob([txtContent], { type: 'text/plain' });
                   await storeMedia(songId, 'txt', txtBlob);

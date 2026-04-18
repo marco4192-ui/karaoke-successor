@@ -12,6 +12,28 @@ import {
   nativeReadDir,
 } from '@/lib/native-fs';
 
+/**
+ * Normalize a file path for cross-platform use in Tauri.
+ * - Converts backslashes to forward slashes
+ * - Strips trailing slashes
+ * - Decodes HTML entities that may have been introduced during
+ *   serialization (e.g. localStorage, IndexedDB, React hydration)
+ *   Common culprits: &amp; → &, &lt; → <, &gt; → >, &quot; → ", &#39; → '
+ * This is the single source of truth for path normalization;
+ * all file path construction should use this function.
+ */
+export function normalizeFilePath(path: string): string {
+  return path
+    .replace(/\\/g, '/')           // backslashes → forward slashes (Windows paths)
+    .replace(/\/+$/, '')           // strip trailing slashes
+    .replace(/&amp;/g, '&')       // HTML entities → literal characters
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'");
+}
+
 // Check if running in Tauri
 // Tauri v2 may use __TAURI_INTERNALS__ instead of __TAURI__
 export function isTauri(): boolean {
@@ -845,24 +867,10 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
       return await loadFileAsBlobUrl(relativePath);
     }
     
-    // Normalize paths - handle both forward and backward slashes
-    // CRITICAL: On Windows, baseFolder from rfd dialog uses backslashes (D:\Songs)
-    // but relative paths from the scanner use forward slashes. We must normalize
-    // BOTH to forward slashes for consistent path construction.
-    const normalizedBaseFolder = songsFolder
-      .replace(/\\/g, '/')
-      .replace(/\/+$/, '')
-      .replace(/&amp;/g, '&');
-    // Normalize the relative path (convert backslashes to forward slashes)
-    // FIX: Decode HTML entities that may have been introduced during serialization
-    // e.g. "Tom &amp; Jerry" → "Tom & Jerry" — the filesystem expects literal '&' not '&amp;'
-    const normalizedRelativePath = relativePath
-      .replace(/\\/g, '/')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'");
+    // Normalize both base folder and relative path using centralized utility.
+    // Handles backslashes, trailing slashes, and HTML entities (e.g. &amp; → &).
+    const normalizedBaseFolder = normalizeFilePath(songsFolder);
+    const normalizedRelativePath = normalizeFilePath(relativePath);
     
     // Construct full path using forward slash (works on both Windows and Unix)
     const fullPath = `${normalizedBaseFolder}/${normalizedRelativePath}`;

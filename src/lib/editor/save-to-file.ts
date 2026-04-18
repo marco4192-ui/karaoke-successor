@@ -4,6 +4,7 @@
 
 import { Song } from '@/types/game';
 import { generateUltraStarTxt } from '@/lib/parsers/ultrastar-parser';
+import { normalizeFilePath } from '@/lib/tauri-file-storage';
 
 export interface SaveResult {
   success: boolean;
@@ -34,17 +35,12 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
     // Priority 1: Use relativeTxtPath (most reliable - stored during scan)
     if (song.relativeTxtPath) {
       // relativeTxtPath is relative to the songs folder (without root folder name)
-      // e.g., "Artist - Title/song.txt"
-      // Normalize both to forward slashes for consistent path construction
-      const normalizedFolder = songsFolder.replace(/\\/g, '/');
-      const normalizedPath = song.relativeTxtPath.replace(/\\/g, '/');
-      filePath = `${normalizedFolder}/${normalizedPath}`;
+      // Use centralized normalizeFilePath for consistent path construction
+      filePath = `${normalizeFilePath(songsFolder)}/${normalizeFilePath(song.relativeTxtPath)}`;
     }
     // Priority 2: Use folderPath + constructed filename
     else if (song.folderPath) {
-      const normalizedFolder = songsFolder.replace(/\\/g, '/');
-      const fileName = `${song.title} - ${song.artist}.txt`;
-      filePath = `${normalizedFolder}/${song.folderPath}/${fileName}`;
+      filePath = `${normalizeFilePath(songsFolder)}/${normalizeFilePath(song.folderPath)}/${song.title} - ${song.artist}.txt`;
     }
     // Fallback: Ask user where to save (using native dialog)
     else {

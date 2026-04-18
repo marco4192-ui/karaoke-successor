@@ -1,7 +1,7 @@
 // Song Library Store - Manages songs with persistent storage
 import { Song, LyricLine } from '@/types/game';
 import { sampleSongs } from '@/data/songs/songs';
-import { isTauri, getPlayableUrl, getSongMediaUrl, clearBlobUrlCache } from '@/lib/tauri-file-storage';
+import { isTauri, getPlayableUrl, getSongMediaUrl, clearBlobUrlCache, normalizeFilePath } from '@/lib/tauri-file-storage';
 import { getSongMediaUrls, storeMedia, hasMedia, getTxtContent } from '@/lib/db/media-db';
 import { saveCustomSongsToDB, loadCustomSongsFromDB, migrateFromLocalStorage, clearCustomSongsFromDB } from '@/lib/db/custom-songs-db';
 import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
@@ -918,8 +918,8 @@ export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
       }
       
       if (songsFolder) {
-        const normalizedFolder = songsFolder.replace(/\\/g, '/');
-        const normalizedTxtPath = (song.relativeTxtPath || '').replace(/\\/g, '/');
+        const normalizedFolder = normalizeFilePath(songsFolder);
+        const normalizedTxtPath = normalizeFilePath(song.relativeTxtPath || '');
         
         // CRITICAL FIX: If relativeTxtPath is actually an absolute path (e.g. stored
         // incorrectly as full path instead of relative), use it directly instead of
@@ -953,7 +953,7 @@ export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
         }
       } else {
         // No base folder, but relativeTxtPath might be absolute — try it directly
-        const normalizedTxtPath = (song.relativeTxtPath || '').replace(/\\/g, '/');
+        const normalizedTxtPath = normalizeFilePath(song.relativeTxtPath || '');
         const txtPathIsAbsolute = normalizedTxtPath.startsWith('/')
           || /^[A-Za-z]:[\\/]/.test(song.relativeTxtPath || '')
           || (song.relativeTxtPath || '').startsWith('\\\\');

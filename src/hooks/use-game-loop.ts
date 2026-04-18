@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Song, Difficulty, GameResult, PitchDetectionResult, GameMode } from '@/types/game';
 import type { AudioEffectsEngine } from '@/lib/audio/audio-effects';
+import { normalizeFilePath } from '@/lib/tauri-file-storage';
 import { useGameStore } from '@/lib/game/store';
 
 export interface UseGameLoopOptions {
@@ -384,9 +385,10 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
 
               // Start native audio playback if enabled and file path is available
               if (isNativeAudio && nativeAudioPlay && currentSong.baseFolder && currentSong.relativeAudioPath) {
-                // Normalize both paths to use forward slashes for consistent path construction
-                const normalizedBase = currentSong.baseFolder.replace(/\\/g, '/');
-                const normalizedRelative = currentSong.relativeAudioPath.replace(/\\/g, '/');
+                // Use centralized normalizeFilePath for consistent path construction
+                // (handles backslashes, trailing slashes, and HTML entities like &amp;)
+                const normalizedBase = normalizeFilePath(currentSong.baseFolder);
+                const normalizedRelative = normalizeFilePath(currentSong.relativeAudioPath);
                 const nativePath = `${normalizedBase}/${normalizedRelative}`;
                 console.log('[GameScreen] Starting native audio playback:', nativePath);
                 nativeAudioPlay(nativePath).catch((err) => {

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useMemo } from 'react';
 import { parseUltraStarTxt, convertUltraStarToSong } from '@/lib/parsers/ultrastar-parser';
+import { normalizeFilePath } from '@/lib/tauri-file-storage';
 import {
   scanFolderWithPicker,
   scanFilesFromFileList,
@@ -277,7 +278,7 @@ export function useImportScreen(onImport: (song: Song) => void) {
                 if (!scanned.relativeTxtPath) return false;
                 const { nativeReadFileText } = await import('@/lib/native-fs');
                 const txtContent = await nativeReadFileText(
-                  `${folderPath.replace(/\\/g, '/')}/${scanned.relativeTxtPath.replace(/\\/g, '/')}`
+                  `${normalizeFilePath(folderPath)}/${normalizeFilePath(scanned.relativeTxtPath)}`
                 );
                 if (txtContent) {
                   await storeMedia(songId, 'txt', new Blob([txtContent], { type: 'text/plain' }));

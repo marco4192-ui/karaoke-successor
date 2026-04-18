@@ -8,6 +8,7 @@ import { Timeline } from './timeline/timeline';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Music, FileText, Settings, BookOpen, Waves, Sparkles } from 'lucide-react';
+import { normalizeFilePath } from '@/lib/tauri-file-storage';
 import { useEditorHistory } from '@/hooks/use-editor-history';
 import { useEditorPlayback } from '@/hooks/use-editor-playback';
 import { useEditorKeyboardShortcuts } from '@/hooks/use-editor-keyboard-shortcuts';
@@ -351,9 +352,10 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     if (currentSong.audioUrl && !currentSong.audioUrl.startsWith('blob:')) return currentSong.audioUrl;
     // Resolve relative path using baseFolder (Tauri)
     if (currentSong.relativeAudioPath && currentSong.baseFolder) {
-      // Normalize both paths to use forward slashes for consistent path construction
-      const normalizedBase = currentSong.baseFolder.replace(/\\/g, '/');
-      const normalizedRelative = currentSong.relativeAudioPath.replace(/\\/g, '/');
+      // Use centralized normalizeFilePath for consistent path construction
+      // (handles backslashes, trailing slashes, and HTML entities like &amp;)
+      const normalizedBase = normalizeFilePath(currentSong.baseFolder);
+      const normalizedRelative = normalizeFilePath(currentSong.relativeAudioPath);
       return `${normalizedBase}/${normalizedRelative}`;
     }
     // Fallback: blob URL (IndexedDB)
@@ -364,8 +366,8 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
         return currentSong.videoBackground;
       }
       if (currentSong.baseFolder) {
-        const normalizedBase = currentSong.baseFolder.replace(/\\/g, '/');
-        const normalizedVideo = currentSong.videoBackground.replace(/\\/g, '/');
+        const normalizedBase = normalizeFilePath(currentSong.baseFolder);
+        const normalizedVideo = normalizeFilePath(currentSong.videoBackground);
         return `${normalizedBase}/${normalizedVideo}`;
       }
     }
