@@ -249,7 +249,7 @@ pub async fn viral_refresh_charts(
         );
 
         tx.execute(
-            "INSERT INTO viral_hits (id, title, artist, source, playlist_name, chart_position, country, fetched_at)
+            "INSERT OR REPLACE INTO viral_hits (id, title, artist, source, playlist_name, chart_position, country, fetched_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
             rusqlite::params![
                 id,
