@@ -272,11 +272,39 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   }, [selectedNote, handleNoteAdd]);
 
   // --- Audio Analysis: Apply detected notes ---
+  // Preserves existing lyric text when possible: for each detected note,
+  // finds the existing note with the greatest time overlap and copies its
+  // lyric text. If no overlap is found, falls back to a confidence symbol.
   const handleApplyDetectedNotes = useCallback((detectedNotes: DetectedNote[]) => {
+    // Collect all existing notes with their lyric text for matching.
+    const existingNotes = currentSong.lyrics.flatMap(line => line.notes);
+    const hasRealLyrics = existingNotes.some(
+      n => n.lyric && !/^[\u266A\u266B\u266C\u2669]+$/.test(n.lyric)
+    );
+
     const newLyrics: LyricLine[] = [];
     let currentLineNotes: Note[] = [];
     let lineStartTime = 0;
     const LINE_BREAK_THRESHOLD = 2000; // 2s gap → new line
+
+    // Helper: find the existing note with the most time overlap.
+    const findMatchingLyric = (startMs: number, durationMs: number): string | undefined => {
+      if (!hasRealLyrics || existingNotes.length === 0) return undefined;
+      let bestOverlap = 0;
+      let bestLyric: string | undefined;
+      const detEnd = startMs + durationMs;
+      for (const en of existingNotes) {
+        const enEnd = en.startTime + en.duration;
+        const overlap = Math.max(0, Math.min(detEnd, enEnd) - Math.max(startMs, en.startTime));
+        if (overlap > bestOverlap && en.lyric) {
+          bestOverlap = overlap;
+          bestLyric = en.lyric;
+        }
+      }
+      // Only reuse if overlap is significant (at least 30% of detected note)
+      if (bestLyric && bestOverlap > durationMs * 0.3) return bestLyric;
+      return undefined;
+    };
 
     for (const dn of detectedNotes) {
       // Check if we need a new line
@@ -301,11 +329,14 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
         lineStartTime = dn.start_time_ms;
       }
 
-      // Determine lyric text: use the confidence level as a placeholder
-      const confLabel = dn.confidence_level === 'High' ? '♪'
-        : dn.confidence_level === 'Medium' ? '♫'
-        : dn.confidence_level === 'Low' ? '♩'
-        : '♬';
+      // Preserve existing lyric text when possible.
+      // Fall back to a confidence-based symbol only for genuinely new notes.
+      const matchedLyric = findMatchingLyric(dn.start_time_ms, dn.duration_ms);
+      const lyric = matchedLyric
+        || (dn.confidence_level === 'High' ? '\u266A'
+          : dn.confidence_level === 'Medium' ? '\u266B'
+          : dn.confidence_level === 'Low' ? '\u266C'
+          : '\u2669');
 
       const note: Note = {
         id: uuidv4(),
@@ -313,7 +344,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
         frequency: dn.frequency,
         startTime: Math.round(dn.start_time_ms),
         duration: Math.round(dn.duration_ms),
-        lyric: confLabel,
+        lyric,
         isBonus: false,
         isGolden: dn.confidence_level === 'High',
         analysisConfidence: dn.confidence,
@@ -337,7 +368,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     pushHistory(newLyrics);
     setCurrentSong(prev => ({ ...prev, lyrics: newLyrics }));
     setHasUnsavedChanges(true);
-  }, [pushHistory, setHasUnsavedChanges]);
+  }, [pushHistory, setHasUnsavedChanges, currentSong.lyrics]);
 
   // --- Audio Analysis: Apply detected BPM ---
   const handleApplyBpm = useCallback((bpm: number) => {
