@@ -343,7 +343,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
       )}
       
       {!selectedSong ? (
-        <div className="w-full h-full overflow-y-auto max-w-7xl mx-auto px-4 md:px-6 lg:px-8 space-y-4 py-4">
+        <div className="w-full h-full overflow-y-auto px-4 md:px-6 lg:px-8 space-y-4 py-4">
           {/* Header - Consistent with other screens */}
           <div className="flex items-center justify-between mb-6">
             <div>
