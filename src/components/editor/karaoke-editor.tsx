@@ -348,29 +348,46 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   // Determine the audio file path for analysis — resolve relative paths to absolute.
   // Falls back to the video file path so that video-embedded audio can be analyzed.
   const analysisAudioPath = useMemo(() => {
-    // Prefer stored/blob URLs that work directly
-    if (currentSong.audioUrl && !currentSong.audioUrl.startsWith('blob:')) return currentSong.audioUrl;
-    // Resolve relative path using baseFolder (Tauri)
+    // Helper to check if a path looks like an absolute filesystem path.
+    const isAbsolute = (p: string) =>
+      p.startsWith('/') || /^[A-Za-z]:[\\/]/.test(p) || p.startsWith('\\\\');
+
+    // Step 1: Use relativeAudioPath + baseFolder if available.
+    // This is the primary path for Tauri — constructs an absolute path.
     if (currentSong.relativeAudioPath && currentSong.baseFolder) {
-      // Use centralized normalizeFilePath for consistent path construction
-      // (handles backslashes, trailing slashes, and HTML entities like &amp;)
       const normalizedBase = normalizeFilePath(currentSong.baseFolder);
       const normalizedRelative = normalizeFilePath(currentSong.relativeAudioPath);
+
+      // FIX: If relativeAudioPath is already an absolute path, don't prepend baseFolder
+      // (this prevents "D:/Songs/D:/Songs/Artist/song.mp3" doubling).
+      if (isAbsolute(normalizedRelative)) {
+        return normalizedRelative;
+      }
       return `${normalizedBase}/${normalizedRelative}`;
     }
-    // Fallback: blob URL (IndexedDB)
-    if (currentSong.audioUrl) return currentSong.audioUrl;
-    // Fallback: video file path (audio may be embedded in the video)
-    if (currentSong.videoBackground && !currentSong.videoBackground.startsWith('http') && !currentSong.youtubeUrl) {
-      if (currentSong.videoBackground.startsWith('/') || currentSong.videoBackground.match(/^[A-Za-z]:/)) {
-        return currentSong.videoBackground;
-      }
+
+    // Step 2: Use audioUrl only if it's a filesystem path (not blob/http).
+    // Blob URLs and http URLs can't be read by the Rust backend.
+    if (currentSong.audioUrl && isAbsolute(currentSong.audioUrl) && !currentSong.audioUrl.startsWith('blob:')) {
+      return currentSong.audioUrl;
+    }
+
+    // Step 3: Fallback to video file path (audio may be embedded in the video).
+    if (currentSong.videoBackground && !currentSong.videoBackground.startsWith('http') &&
+        !currentSong.videoBackground.startsWith('blob:') && !currentSong.youtubeUrl) {
       if (currentSong.baseFolder) {
         const normalizedBase = normalizeFilePath(currentSong.baseFolder);
         const normalizedVideo = normalizeFilePath(currentSong.videoBackground);
+        if (isAbsolute(normalizedVideo)) {
+          return normalizedVideo;
+        }
         return `${normalizedBase}/${normalizedVideo}`;
       }
+      if (isAbsolute(currentSong.videoBackground)) {
+        return currentSong.videoBackground;
+      }
     }
+
     return null;
   }, [currentSong.audioUrl, currentSong.relativeAudioPath, currentSong.baseFolder, currentSong.videoBackground, currentSong.youtubeUrl]);
 
