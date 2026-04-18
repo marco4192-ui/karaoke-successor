@@ -584,8 +584,6 @@ export function generateUltraStarTxt(song: Song): string {
     lines.push(`#P2:${song.duetPlayerNames[1]}`);
   }
 
-  lines.push(''); // Empty line before notes
-  
   // Convert notes to UltraStar format using the correct formula
   // beatDuration = 15000 / BPM (inverse of 60000 / (BPM * 4))
   const beatDuration = 15000 / song.bpm;
