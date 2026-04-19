@@ -16,6 +16,7 @@ import {
   UserIcon
 } from '@/components/icons';
 import type { Screen } from '@/types/screens';
+import { generateQRCodeUrl, detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
 
 interface HomeScreenProps {
   onNavigate: (screen: Screen) => void;
@@ -26,9 +27,11 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
   // Track if component is mounted (to avoid hydration mismatch)
   const [isMounted, setIsMounted] = useState(false);
   
-  // Only run on client after mount
+  // Detect local IP for QR code
+  const [localIP, setLocalIP] = useState('');
   useEffect(() => {
     setIsMounted(true);
+    detectLocalIP().then(ip => { if (ip) setLocalIP(ip); });
   }, []);
   
   // Get song count from library - only on client
@@ -143,14 +146,29 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
         <Card className="bg-gradient-to-br from-orange-500/20 to-red-500/20 border-orange-500/30">
           <CardHeader>
             <CardTitle className="text-orange-400 flex items-center gap-2">
-              <PhoneIcon className="w-6 h-6" /> Mobile Integration
+              <PhoneIcon className="w-6 h-6" /> Mobile Companion
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-white/70">
+            <p className="text-white/70 mb-4">
               Use your smartphone as a microphone or remote control! 
-              Simply scan the QR code to connect.
+              Scan the QR code to connect.
             </p>
+            {localIP ? (
+              <div className="flex items-center gap-4">
+                <div className="bg-white rounded-lg p-2 flex-shrink-0">
+                  <img src={generateQRCodeUrl(buildCompanionUrl(localIP), 160)} alt="QR Code" className="w-32 h-32" />
+                </div>
+                <div className="text-xs text-white/50 space-y-1">
+                  <p>1. Same WiFi network</p>
+                  <p>2. Scan QR with camera</p>
+                  <p>3. Open link in browser</p>
+                  <p className="font-mono mt-2 break-all text-orange-400/70">{buildCompanionUrl(localIP)}</p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-white/40">Detecting network address...</p>
+            )}
           </CardContent>
         </Card>
       </div>

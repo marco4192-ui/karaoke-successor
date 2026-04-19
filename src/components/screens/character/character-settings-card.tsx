@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { useGameStore } from '@/lib/game/store';
 import { PlayerProfile } from '@/types/game';
 import { COUNTRY_OPTIONS } from './country-options';
 import { ProfileSyncSection } from './profile-sync-section';
+import { generateQRCodeUrl, detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
 
 interface CharacterSettingsCardProps {
   profile: PlayerProfile;
@@ -22,6 +23,12 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
   const [editName, setEditName] = useState('');
   const [editAvatarUrl, setEditAvatarUrl] = useState('');
   const editFileInputRef = useRef<HTMLInputElement>(null);
+  const [localIP, setLocalIP] = useState('');
+  const [showQR, setShowQR] = useState(false);
+
+  useEffect(() => {
+    detectLocalIP().then(ip => { if (ip) setLocalIP(ip); });
+  }, []);
 
   const handleUpdatePrivacy = (field: string, value: boolean) => {
     updateProfile(profile.id, {
@@ -265,6 +272,33 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
             <ProfileSyncSection profile={profile} />
           </div>
         )}
+
+        {/* Companion App QR Code */}
+        <div className="pt-4 border-t border-white/10">
+          <h4 className="text-sm font-medium text-white/60 mb-3">Companion-App Verknüpfung</h4>
+          <p className="text-xs text-white/40 mb-3">
+            Scanne diesen QR-Code, um dich direkt mit diesem Charakter in der Companion-App zu verbinden.
+          </p>
+          <button
+            onClick={() => setShowQR(!showQR)}
+            className="px-3 py-1.5 rounded-lg text-xs bg-orange-500/20 text-orange-300 border border-orange-500/30 hover:bg-orange-500/30 transition-colors"
+          >
+            {showQR ? 'QR-Code ausblenden' : 'QR-Code anzeigen'}
+          </button>
+          {showQR && localIP && (
+            <div className="mt-3 flex items-center gap-4">
+              <div className="bg-white rounded-lg p-2">
+                <img src={generateQRCodeUrl(buildCompanionUrl(localIP, 3000, profile.id), 160)} alt="QR Code" className="w-32 h-32" />
+              </div>
+              <p className="text-xs text-white/40 font-mono break-all">
+                {buildCompanionUrl(localIP, 3000, profile.id)}
+              </p>
+            </div>
+          )}
+          {showQR && !localIP && (
+            <p className="text-xs text-white/40 mt-2">Netzwerkadresse wird erkannt...</p>
+          )}
+        </div>
 
         {/* Delete Button */}
         <div className="pt-4 border-t border-white/10">
