@@ -902,6 +902,7 @@ interface ProfileEditViewProps {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   onSave: () => void;
   onPhotoUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSwitchToHostProfile?: (hostProfile: MobileProfile) => void;
 }
 
 export function MobileProfileEditView({
@@ -916,7 +917,33 @@ export function MobileProfileEditView({
   fileInputRef,
   onSave,
   onPhotoUpload,
+  onSwitchToHostProfile,
 }: ProfileEditViewProps) {
+  const [hostProfiles, setHostProfiles] = useState<MobileProfile[]>([]);
+  const [claimedProfileIds, setClaimedProfileIds] = useState<string[]>([]);
+
+  // Fetch host profiles so the user can switch to a different host character
+  React.useEffect(() => {
+    const fetchHostProfiles = async () => {
+      try {
+        const storedClientId = localStorage.getItem('karaoke-client-id');
+        const clientIdParam = storedClientId ? `&clientId=${storedClientId}` : '';
+        const response = await fetch(`/api/mobile?action=hostprofiles${clientIdParam}`);
+        const data = await response.json();
+        if (data.success && data.profiles) {
+          setHostProfiles(data.profiles);
+          setClaimedProfileIds(data.claimedProfileIds || []);
+        }
+      } catch { /* ignore */ }
+    };
+    fetchHostProfiles();
+  }, []);
+
+  // Filter out the current profile (already selected) and already-claimed profiles
+  const availableHostProfiles = hostProfiles.filter(
+    (hp) => hp.id !== profile.id && !claimedProfileIds.includes(hp.id)
+  );
+
   return (
     <div className="p-4 max-w-md mx-auto">
       <Card className="bg-white/10 border-white/20">
@@ -948,6 +975,49 @@ export function MobileProfileEditView({
               </Badge>
             )}
           </div>
+
+          {/* Switch to Host Character */}
+          {availableHostProfiles.length > 0 && onSwitchToHostProfile && (
+            <div className="space-y-3 mb-6">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">👤</span>
+                <h3 className="font-bold text-sm">Charakter wechseln</h3>
+              </div>
+              <p className="text-xs text-white/40">
+                Wähle einen Charakter aus der Haupt-App
+              </p>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {availableHostProfiles.map((hp) => (
+                  <button
+                    key={hp.id}
+                    onClick={() => onSwitchToHostProfile(hp)}
+                    className="flex items-center gap-3 p-2 rounded-lg w-full text-left bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+                  >
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                      style={{ backgroundColor: hp.color }}
+                    >
+                      {hp.avatar ? (
+                        <img src={hp.avatar} alt={hp.name} className="w-full h-full rounded-full object-cover" />
+                      ) : (
+                        hp.name.charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <span className="text-sm truncate flex-1">{hp.name}</span>
+                    <span className="text-xs text-cyan-400">Auswählen</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {availableHostProfiles.length > 0 && onSwitchToHostProfile && (
+            <div className="flex items-center gap-2 mb-4">
+              <div className="flex-1 h-px bg-white/10" />
+              <span className="text-xs text-white/30">oder bearbeiten</span>
+              <div className="flex-1 h-px bg-white/10" />
+            </div>
+          )}
           
           {/* Name Edit */}
           <div className="space-y-4">

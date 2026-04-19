@@ -69,6 +69,11 @@ const connectionCodes = new Map<string, string>(); // code -> clientId
 const profileToClient = new Map<string, string>(); // profileId -> clientId (for duplicate detection)
 const profileAndIpToClient = new Map<string, string>(); // "profileId:ip" -> clientId (for IP-based reconnection)
 
+// Persistent profile by IP — survives client cleanup so profiles can be restored
+// after long standby periods where the server cleaned up the client session.
+// Keyed by IP, stores the last known profile for each IP address.
+const persistentProfileByIp = new Map<string, MobileProfile>(); // ip -> MobileProfile
+
 // Latest pitch data from all clients (for PC to poll)
 let latestPitchData: Map<string, PitchData> = new Map();
 
@@ -174,6 +179,10 @@ function cleanupInactiveClients() {
   
   mobileClients.forEach((client, clientId) => {
     if (now - client.lastActivity > timeout) {
+      // Save profile to persistent IP store BEFORE cleaning up
+      if (client.profile && client.clientIp) {
+        persistentProfileByIp.set(client.clientIp, client.profile);
+      }
       // Remove client
       mobileClients.delete(clientId);
       connectionCodes.delete(client.connectionCode);
@@ -242,6 +251,15 @@ export async function GET(request: NextRequest) {
           });
         }
         
+        // No zombie found — check persistent profile store for this IP
+        // (survives cleanup after long standby >5 min)
+        const persistedProfile = persistentProfileByIp.get(clientIp);
+        if (persistedProfile) {
+          persistentProfileByIp.delete(clientIp); // One-time restore
+          console.log('[MobileAPI] Persistent profile found for IP', clientIp,
+            '- profile:', persistedProfile.name);
+        }
+        
         // No zombie found — create fresh client
         const newClientId = `mobile-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
         const connectionCode = getUniqueConnectionCode();
@@ -250,11 +268,11 @@ export async function GET(request: NextRequest) {
           id: newClientId,
           connectionCode,
           type: 'microphone',
-          name: 'Mobile Device',
+          name: persistedProfile?.name || 'Mobile Device',
           connected: Date.now(),
           lastActivity: Date.now(),
           pitchData: null,
-          profile: null,
+          profile: persistedProfile || null,
           queueCount: 0,
           hasRemoteControl: false,
           clientIp,
@@ -262,12 +280,20 @@ export async function GET(request: NextRequest) {
         
         connectionCodes.set(connectionCode, newClientId);
         
+        // Restore profile mappings if we have a persisted profile
+        if (persistedProfile) {
+          profileToClient.set(persistedProfile.id, newClientId);
+          profileAndIpToClient.set(`${persistedProfile.id}:${clientIp}`, newClientId);
+        }
+        
         return Response.json({ 
           success: true, 
           clientId: newClientId,
           connectionCode,
           message: 'Connected to Karaoke Successor',
           gameState,
+          profile: persistedProfile || undefined,
+          ipReconnected: !!persistedProfile,
         });
       }
 
@@ -529,6 +555,7 @@ export async function GET(request: NextRequest) {
       connectionCodes.clear();
       profileToClient.clear();
       profileAndIpToClient.clear();
+      persistentProfileByIp.clear();
       latestPitchData.clear();
       songQueue = [];
       jukeboxWishlist = [];

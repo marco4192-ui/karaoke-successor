@@ -111,6 +111,24 @@ export function MobileClientView() {
     syncProfile(updated);
   }, [profile, profileName, profileColor, avatarPreview, syncProfile]);
 
+  // Switch to a host character from the main app (preserves host profile ID)
+  const handleSwitchToHostProfile = useCallback((hostProfile: MobileProfile) => {
+    const switchedProfile: MobileProfile = {
+      id: hostProfile.id,
+      name: hostProfile.name,
+      avatar: hostProfile.avatar || undefined,
+      color: hostProfile.color,
+      createdAt: hostProfile.createdAt || Date.now(),
+    };
+    console.log('[MobileClient] Switching to host profile:', switchedProfile.name, switchedProfile.id);
+    setProfile(switchedProfile);
+    setProfileName(switchedProfile.name);
+    setProfileColor(switchedProfile.color);
+    setAvatarPreview(switchedProfile.avatar || null);
+    localStorage.setItem('karaoke-mobile-profile', JSON.stringify(switchedProfile));
+    syncProfile(switchedProfile);
+  }, [syncProfile]);
+
   // Effects for lazy loading
   useEffect(() => {
     if (currentView === 'songs' && data.songs.length === 0) queueMicrotask(() => data.loadSongs());
@@ -267,6 +285,7 @@ export function MobileClientView() {
               avatarPreview={avatarPreview} connectionCode={connectionCode}
               profileColors={PROFILE_COLORS} fileInputRef={fileInputRef}
               onSave={handleSaveProfile} onPhotoUpload={handlePhotoUpload}
+              onSwitchToHostProfile={handleSwitchToHostProfile}
             />
           )}
         </div>

@@ -198,33 +198,62 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     };
   }, [isConnected, clientId, reconnectInternal]);
 
+  // Shared wake-up handler: sends heartbeat and reconnects on failure.
+  // Used by visibilitychange, pageshow (iOS), and focus events.
+  const clientIdRef = useRef(clientId);
+  clientIdRef.current = clientId;
+
+  const handleWakeUp = useCallback(() => {
+    const currentClientId = clientIdRef.current;
+    if (!currentClientId) return;
+    console.log('[MobileClient] Wake-up detected, verifying connection...');
+    fetch('/api/mobile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'heartbeat', clientId: currentClientId }),
+    }).then((r) => {
+      if (!r.ok) {
+        console.log('[MobileClient] Heartbeat failed after wake, reconnecting...');
+        setIsConnected(false);
+        reconnectInternal(true).catch(() => {});
+      }
+    }).catch(() => {
+      console.log('[MobileClient] Heartbeat error after wake, reconnecting...');
+      setIsConnected(false);
+      reconnectInternal(true).catch(() => {});
+    });
+  }, [reconnectInternal]);
+
   // Visibility change: reconnect when phone wakes from sleep
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && clientId) {
-        console.log('[MobileClient] Phone woke up, sending heartbeat...');
-        // Send an immediate heartbeat to verify connection is still alive
-        fetch('/api/mobile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'heartbeat', clientId }),
-        }).then((r) => {
-          if (!r.ok) {
-            console.log('[MobileClient] Heartbeat failed after wake, reconnecting...');
-            setIsConnected(false);
-            reconnectInternal(true).catch(() => {});
-          }
-        }).catch(() => {
-          console.log('[MobileClient] Heartbeat error after wake, reconnecting...');
-          setIsConnected(false);
-          reconnectInternal(true).catch(() => {});
-        });
+    document.addEventListener('visibilitychange', handleWakeUp);
+    return () => document.removeEventListener('visibilitychange', handleWakeUp);
+  }, [handleWakeUp]);
+
+  // pageshow: iOS Safari fires this when returning from background or
+  // navigating back to a frozen tab. "persisted" means the page was
+  // restored from the bfcache (back-forward cache).
+  useEffect(() => {
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (e.persisted || document.visibilityState === 'visible') {
+        console.log('[MobileClient] pageshow event (iOS wake-up), reconnecting...');
+        handleWakeUp();
       }
     };
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, [handleWakeUp]);
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [clientId, reconnectInternal]);
+  // focus: fallback for browsers that don't fire visibilitychange reliably
+  useEffect(() => {
+    const handleFocus = () => {
+      if (document.visibilityState === 'visible') {
+        handleWakeUp();
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [handleWakeUp]);
 
   // Sync game state periodically and detect song end
   useEffect(() => {
