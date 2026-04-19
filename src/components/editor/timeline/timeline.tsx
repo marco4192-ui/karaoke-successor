@@ -298,6 +298,7 @@ export function Timeline({
             step={100}
             onValueChange={([value]) => onTimeChange(value)}
             className="flex-1"
+            hideThumb
           />
           <span className="text-slate-400 font-mono text-sm min-w-[80px]">
             {formatTime(totalDuration)}
