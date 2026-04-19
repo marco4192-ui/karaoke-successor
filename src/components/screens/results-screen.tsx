@@ -104,8 +104,28 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
     const songs = await getAllSongsAsync();
     let fullSong = songs.find(s => s.id === nextQueueItem.songId);
     
+    // Fallback: match by title + artist (handles companion song ID mismatches)
     if (!fullSong) {
-      safeAlert('Song not found in library');
+      fullSong = songs.find(s =>
+        s.title.toLowerCase() === nextQueueItem.songTitle.toLowerCase() &&
+        s.artist.toLowerCase() === nextQueueItem.songArtist.toLowerCase()
+      );
+      if (fullSong) {
+        console.log('[ResultsScreen] Song found via title+artist fallback:', nextQueueItem.songTitle);
+      }
+    }
+    
+    if (!fullSong) {
+      safeAlert(`Song "${nextQueueItem.songTitle}" not found in local library`);
+      // Mark as completed so it doesn't block the queue
+      try {
+        await fetch('/api/mobile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'queuecompleted', payload: { itemId: nextQueueItem.id } }),
+        });
+      } catch { /* ignore */ }
+      setNextQueueItem(null);
       return;
     }
     
@@ -116,6 +136,22 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
       fullSong = await ensureSongUrls(withLyrics);
     } catch (err) {
       console.error('[ResultsScreen] Failed to prepare song:', err);
+    }
+    
+    // After URL resolution, check if the song has playable media.
+    const hasMedia = fullSong.audioUrl || fullSong.videoUrl || fullSong.relativeVideoPath || fullSong.relativeAudioPath;
+    if (!hasMedia) {
+      console.warn('[ResultsScreen] No playable media for song:', fullSong.title, '- skipping');
+      safeAlert(`No media found for "${fullSong.title}" — skipping`);
+      try {
+        await fetch('/api/mobile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'queuecompleted', payload: { itemId: nextQueueItem.id } }),
+        });
+      } catch { /* ignore */ }
+      setNextQueueItem(null);
+      return;
     }
     
     // Mark as playing
