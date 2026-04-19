@@ -343,7 +343,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
       )}
       
       {!selectedSong ? (
-        <div className="w-full h-full overflow-y-auto px-4 md:px-6 lg:px-8 space-y-4 py-4">
+        <div className="w-full h-full overflow-y-auto p-4 space-y-4">
           {/* Header - Consistent with other screens */}
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -454,7 +454,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               )}
         </div>
       ) : (
-        <div className="flex h-[calc(100vh-5rem)]">
+        <div className="flex h-full">
           {/* Editor - Full width */}
           <div className="flex-1 min-w-0 overflow-hidden relative">
             {/* Toggle Metadata Panel Button */}
