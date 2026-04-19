@@ -363,7 +363,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     isAdPlaying,
     stop,
     onBack,
-    onEnd,
+    onEnd: handleEnd,
   });
   
   // Calculate pitch ranges
@@ -406,6 +406,17 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   // Run replay cleanup on mount (delete replays >30 days, keep max 50)
   useEffect(() => { cleanupOldReplays().catch(() => {}); }, []);
 
+  // ── Replay: stop recording BEFORE navigating to results screen ──
+  // CRITICAL: This must be synchronous in the onEnd callback, NOT in a useEffect.
+  // A useEffect watching gameState.status === 'ended' will never fire because
+  // onEnd() navigates away and unmounts this component before the effect runs.
+  const handleEnd = useCallback(() => {
+    if (replayEnabled) {
+      replayStop(gameState.results);
+    }
+    onEnd();
+  }, [replayEnabled, replayStop, gameState.results, onEnd]);
+
   // ── Game Loop: countdown, game loop, media playback, song-end detection ──
   const {
     countdown,
@@ -443,7 +454,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     p2DetectedPitch,
     p2Volume,
     setP2Volume,
-    onEnd,
+    onEnd: handleEnd,
     audioEffects,
     setAudioEffects,
     song,
@@ -485,12 +496,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     wasPlayingRef.current = isPlaying;
   }, [isPlaying, replayStart, replayPause, replayResume]);
 
-  // ── Replay: stop recording when the game ends ──
-  useEffect(() => {
-    if (gameState.status === 'ended' && replayEnabled) {
-      replayStop(gameState.results);
-    }
-  }, [gameState.status, gameState.results, replayStop, replayEnabled]);
+
 
   // Get visible notes using shared utility
   const visibleNotes = useMemo(() =>
