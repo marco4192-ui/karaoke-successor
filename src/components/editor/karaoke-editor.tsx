@@ -316,98 +316,56 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   }, [selectedNote, currentTime, pushHistory]);
 
   // --- Audio Analysis: Apply detected notes ---
-  // Preserves existing lyric text when possible: for each detected note,
-  // finds the existing note with the greatest time overlap and copies its
-  // lyric text. If no overlap is found, falls back to a confidence symbol.
+  // Only updates pitch/frequency of existing notes that match detected notes.
+  // Song text, timing, and note durations are NEVER changed.
   const handleApplyDetectedNotes = useCallback((detectedNotes: DetectedNote[]) => {
-    // Collect all existing notes with their lyric text for matching.
+    // Collect all existing notes
     const existingNotes = currentSong.lyrics.flatMap(line => line.notes);
-    const hasRealLyrics = existingNotes.some(
-      n => n.lyric && !/^[\u266A\u266B\u266C\u2669]+$/.test(n.lyric)
-    );
 
-    const newLyrics: LyricLine[] = [];
-    let currentLineNotes: Note[] = [];
-    let lineStartTime = 0;
-    const LINE_BREAK_THRESHOLD = 2000; // 2s gap → new line
+    // Build a map: existingNote.id → best matching detected note (by time overlap)
+    const pitchMap = new Map<string, { pitch: number; frequency: number; confidence: number }>();
 
-    // Helper: find the existing note with the most time overlap.
-    const findMatchingLyric = (startMs: number, durationMs: number): string | undefined => {
-      if (!hasRealLyrics || existingNotes.length === 0) return undefined;
+    for (const en of existingNotes) {
       let bestOverlap = 0;
-      let bestLyric: string | undefined;
-      const detEnd = startMs + durationMs;
-      for (const en of existingNotes) {
-        const enEnd = en.startTime + en.duration;
-        const overlap = Math.max(0, Math.min(detEnd, enEnd) - Math.max(startMs, en.startTime));
-        if (overlap > bestOverlap && en.lyric) {
+      let bestDetected: DetectedNote | null = null;
+      const enEnd = en.startTime + en.duration;
+
+      for (const dn of detectedNotes) {
+        const dnEnd = dn.start_time_ms + dn.duration_ms;
+        const overlap = Math.max(0, Math.min(enEnd, dnEnd) - Math.max(en.startTime, dn.start_time_ms));
+        if (overlap > bestOverlap) {
           bestOverlap = overlap;
-          bestLyric = en.lyric;
-        }
-      }
-      // Only reuse if overlap is significant (at least 30% of detected note)
-      if (bestLyric && bestOverlap > durationMs * 0.3) return bestLyric;
-      return undefined;
-    };
-
-    for (const dn of detectedNotes) {
-      // Check if we need a new line
-      if (currentLineNotes.length > 0) {
-        const lastNote = currentLineNotes[currentLineNotes.length - 1];
-        const gap = dn.start_time_ms - (lastNote.startTime + lastNote.duration);
-        if (gap >= LINE_BREAK_THRESHOLD) {
-          // Finalise current line
-          const lastN = currentLineNotes[currentLineNotes.length - 1];
-          newLyrics.push({
-            id: uuidv4(),
-            text: currentLineNotes.map(n => n.lyric).join(' ').trim(),
-            startTime: lineStartTime,
-            endTime: lastN.startTime + lastN.duration,
-            notes: currentLineNotes,
-          });
-          currentLineNotes = [];
+          bestDetected = dn;
         }
       }
 
-      if (currentLineNotes.length === 0) {
-        lineStartTime = dn.start_time_ms;
+      // Only update if overlap is significant (at least 20% of the existing note)
+      if (bestDetected && bestOverlap > en.duration * 0.2) {
+        pitchMap.set(en.id, {
+          pitch: bestDetected.midi_note,
+          frequency: bestDetected.frequency,
+          confidence: bestDetected.confidence,
+        });
       }
-
-      // Preserve existing lyric text when possible.
-      // Fall back to a confidence-based symbol only for genuinely new notes.
-      const matchedLyric = findMatchingLyric(dn.start_time_ms, dn.duration_ms);
-      const lyric = matchedLyric
-        || (dn.confidence_level === 'High' ? '\u266A'
-          : dn.confidence_level === 'Medium' ? '\u266B'
-          : dn.confidence_level === 'Low' ? '\u266C'
-          : '\u2669');
-
-      const note: Note = {
-        id: uuidv4(),
-        pitch: dn.midi_note,
-        frequency: dn.frequency,
-        startTime: Math.round(dn.start_time_ms),
-        duration: Math.round(dn.duration_ms),
-        lyric,
-        isBonus: false,
-        isGolden: dn.confidence_level === 'High',
-        analysisConfidence: dn.confidence,
-      };
-
-      currentLineNotes.push(note);
     }
 
-    // Push the last line
-    if (currentLineNotes.length > 0) {
-      const lastN = currentLineNotes[currentLineNotes.length - 1];
-      newLyrics.push({
-        id: uuidv4(),
-        text: currentLineNotes.map(n => n.lyric).join(' ').trim(),
-        startTime: lineStartTime,
-        endTime: lastN.startTime + lastN.duration,
-        notes: currentLineNotes,
-      });
-    }
+    if (pitchMap.size === 0) return; // Nothing to update
+
+    // Update only pitch/frequency on matching existing notes — preserve everything else
+    const newLyrics = currentSong.lyrics.map(line => ({
+      ...line,
+      notes: line.notes.map(note => {
+        const update = pitchMap.get(note.id);
+        if (!update) return note;
+        return {
+          ...note,
+          pitch: update.pitch,
+          frequency: update.frequency,
+          analysisConfidence: update.confidence,
+          isGolden: update.confidence >= 0.8 ? true : note.isGolden,
+        };
+      }),
+    }));
 
     pushHistory(newLyrics);
     setCurrentSong(prev => ({ ...prev, lyrics: newLyrics }));

@@ -254,8 +254,8 @@ export function AudioAnalysisPanel({
               >
                 <CheckCircle className="w-3.5 h-3.5 mr-2" />
                 {confidenceSummary
-                  ? `${result.notes.length} Noten übernehmen (${confidenceSummary.highPct}% zuverlässig)`
-                  : 'Noten übernehmen'
+                  ? `Pitches anwenden (${confidenceSummary.highPct}% zuverlässig)`
+                  : 'Pitches anwenden'
                 }
               </Button>
             )}
