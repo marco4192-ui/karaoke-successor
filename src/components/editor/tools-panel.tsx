@@ -4,6 +4,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Music, Mic, Star, Zap, Users, Copy, Trash2, Scissors, Hand } from 'lucide-react';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import type { Note, DuetPlayer } from '@/types/game';
 
 interface ToolsPanelProps {
@@ -39,45 +40,65 @@ export function ToolsPanel({
       <div className="p-4 border-b border-slate-700">
         <h2 className="text-sm font-semibold text-slate-300 mb-3">Tools</h2>
         <div className="grid grid-cols-2 gap-1.5">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onAddNote(currentTime, selectedNote?.pitch ?? 60)}
-            className="justify-start border-slate-600 text-slate-300 whitespace-nowrap overflow-hidden"
-          >
-            <Plus className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
-            <span className="truncate">Add Note</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onDuplicateNote}
-            disabled={!selectedNote}
-            className="justify-start border-slate-600 text-slate-300 whitespace-nowrap overflow-hidden"
-          >
-            <Copy className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
-            <span className="truncate">Duplicate</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onDeleteNote}
-            disabled={!selectedNote}
-            className="justify-start border-slate-600 text-slate-300 hover:border-red-500 hover:text-red-400 whitespace-nowrap overflow-hidden"
-          >
-            <Trash2 className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
-            <span className="truncate">Delete</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onSplitNote}
-            disabled={!selectedNote}
-            className="justify-start border-slate-600 text-slate-300 whitespace-nowrap overflow-hidden"
-          >
-            <Scissors className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
-            <span className="truncate">Split</span>
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onAddNote(currentTime, selectedNote?.pitch ?? 60)}
+                className="justify-start border-slate-600 text-slate-300 whitespace-nowrap overflow-hidden"
+              >
+                <Plus className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                <span className="truncate">+ Add Note</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">+ Add Note</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onDuplicateNote}
+                disabled={!selectedNote}
+                className="justify-start border-slate-600 text-slate-300 whitespace-nowrap overflow-hidden"
+              >
+                <Copy className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                <span className="truncate">Duplicate</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Duplicate Note</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onDeleteNote}
+                disabled={!selectedNote}
+                className="justify-start border-slate-600 text-slate-300 hover:border-red-500 hover:text-red-400 whitespace-nowrap overflow-hidden"
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                <span className="truncate">Delete</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Delete Note</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onSplitNote}
+                disabled={!selectedNote}
+                className="justify-start border-slate-600 text-slate-300 whitespace-nowrap overflow-hidden"
+              >
+                <Scissors className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                <span className="truncate">Split</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Split Note</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
