@@ -354,18 +354,6 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     missingWordFrequency: party.competitiveGame?.settings?.missingWordFrequency,
   });
 
-  // Remote control polling - commands from mobile companions
-  useRemoteControl({
-    audioRef,
-    videoRef,
-    isPlaying,
-    setIsPlaying,
-    isAdPlaying,
-    stop,
-    onBack,
-    onEnd: handleEnd,
-  });
-  
   // Calculate pitch ranges
   const pitchStats = useMemo<PitchStats>(() => {
     return calculatePitchStats(timingData?.allNotes);
@@ -416,6 +404,19 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     }
     onEnd();
   }, [replayEnabled, replayStop, gameState.results, onEnd]);
+
+  // Remote control polling - commands from mobile companions
+  // MUST be defined AFTER handleEnd to avoid TDZ (Temporal Dead Zone) error
+  useRemoteControl({
+    audioRef,
+    videoRef,
+    isPlaying,
+    setIsPlaying,
+    isAdPlaying,
+    stop,
+    onBack,
+    onEnd: handleEnd,
+  });
 
   // ── Game Loop: countdown, game loop, media playback, song-end detection ──
   const {
