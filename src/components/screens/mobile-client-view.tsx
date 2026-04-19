@@ -137,6 +137,15 @@ export function MobileClientView() {
   // Keyboard navigation: Arrow keys to move focus between interactive elements, Enter to activate
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Enter key: activate the currently focused element (buttons, links)
+      if (e.key === 'Enter') {
+        const active = document.activeElement as HTMLElement;
+        if (active && (active.tagName === 'BUTTON' || active.getAttribute('role') === 'button' || active.tagName === 'A')) {
+          e.preventDefault();
+          active.click();
+          return;
+        }
+      }
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         e.preventDefault();
         const focusableSelector = 'button:not([disabled]), [role="button"], input, [tabindex]:not([tabindex="-1"])';
