@@ -92,24 +92,8 @@ export function useMobilePitchDetection({
   const startMicrophone = useCallback(async () => {
     if (!clientIdRef.current) return;
     
-    // CRITICAL: Check if we're in a secure context before requesting microphone.
-    // On iOS Safari and some Android browsers, getUserMedia requires HTTPS.
-    // http://localhost is secure, but http://192.168.x.x is NOT.
-    if (typeof window !== 'undefined' && !window.isSecureContext) {
-      const currentUrl = window.location.href;
-      const isLocalhost = currentUrl.includes('localhost') || currentUrl.includes('127.0.0.1');
-      if (!isLocalhost) {
-        setMicPermissionDenied(true);
-        onError?.(
-          'Microphone access requires a secure connection (HTTPS). ' +
-          'Please access this page via https:// instead of http://. ' +
-          'Tip: On iOS, go to Settings > Safari > Advanced > Experimental Features ' +
-          'and enable "Allow Media Capture on Insecure HTTP Sites", or use a local ' +
-          'development setup with HTTPS.'
-        );
-        return;
-      }
-    }
+    // Reset permission denied state on retry so the user gets another chance
+    setMicPermissionDenied(false);
     
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
