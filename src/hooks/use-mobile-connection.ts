@@ -34,153 +34,117 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
   });
 
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const connectAttemptedRef = useRef(false);
+  const isConnectingRef = useRef(false); // True while a connect attempt is in progress
   const gameStateRef = useRef(gameState);
   gameStateRef.current = gameState;
 
-  // Connect to the server (stable reference - never recreated)
-  const connect = useCallback(async () => {
-    // Prevent double-connect from StrictMode or rapid re-renders
-    if (connectAttemptedRef.current) return;
-    connectAttemptedRef.current = true;
+  // Internal reconnect function — bypasses the isConnecting guard.
+  // Used by visibilitychange handler to force reconnect after wake from sleep.
+  const reconnectInternal = useCallback(async (isWakeUp = false) => {
+    if (isConnectingRef.current) return; // Don't double-connect
+    isConnectingRef.current = true;
 
     try {
-      // First, check if we have a saved connection code to reconnect
-      const savedConnectionCode = localStorage.getItem('karaoke-connection-code');
-      const savedProfile = localStorage.getItem('karaoke-mobile-profile');
-      
-      if (savedConnectionCode && savedProfile) {
-        // Try to reconnect with existing code
-        const reconnectResponse = await fetch(`/api/mobile?action=reconnect&code=${savedConnectionCode}`);
-        const reconnectData = await reconnectResponse.json();
-        
-        if (reconnectData.success) {
-          setClientId(reconnectData.clientId);
-          setConnectionCode(savedConnectionCode);
-          setIsConnected(true);
-          if (reconnectData.profile) {
-            callbacksRef.current.onProfileLoaded(reconnectData.profile);
-            callbacksRef.current.onProfileFieldsLoaded(
-              reconnectData.profile.name,
-              reconnectData.profile.color,
-              reconnectData.profile.avatar || null,
-            );
+      // Strategy 1: Reconnect via saved connection code
+      const savedCode = localStorage.getItem('karaoke-connection-code');
+      if (savedCode) {
+        try {
+          const r = await fetch(`/api/mobile?action=reconnect&code=${savedCode}`);
+          const d = await r.json();
+          if (d.success) {
+            setClientId(d.clientId);
+            setConnectionCode(savedCode);
+            setIsConnected(true);
+            if (d.profile) {
+              callbacksRef.current.onProfileLoaded(d.profile);
+              callbacksRef.current.onProfileFieldsLoaded(d.profile.name, d.profile.color, d.profile.avatar || null);
+            }
+            if (d.gameState) {
+              const parsed = parseGameState(d.gameState);
+              setGameState(parsed);
+              callbacksRef.current.onGameStateUpdate(parsed);
+            }
+            console.log(`[MobileClient] Reconnected via code${isWakeUp ? ' (wake-up)' : ''}:`, savedCode);
+            isConnectingRef.current = false;
+            return;
           }
-          if (reconnectData.gameState) {
-            const parsed = parseGameState(reconnectData.gameState);
-            setGameState(parsed);
-            callbacksRef.current.onGameStateUpdate(parsed);
-          }
-          console.log('[MobileClient] Reconnected successfully with code:', savedConnectionCode);
-          return; // Successfully reconnected
-        }
-        // Reconnect failed (server restarted) - fall through to fresh connection
-        console.log('[MobileClient] Reconnect failed, creating new connection...');
+        } catch { /* fall through */ }
       }
-      
-      // Fresh connection
+
+      // Strategy 2: Fresh connect (server does IP-based zombie detection)
       const response = await fetch('/api/mobile?action=connect');
       const data = await response.json();
       if (data.success) {
         const newClientId = data.clientId;
-        const newConnectionCode = data.connectionCode;
+        const newCode = data.connectionCode;
         setClientId(newClientId);
-        setConnectionCode(newConnectionCode);
+        setConnectionCode(newCode);
         setIsConnected(true);
-        
-        // Save connection code for reconnection
-        localStorage.setItem('karaoke-connection-code', newConnectionCode);
-        
+        localStorage.setItem('karaoke-connection-code', newCode);
+
         if (data.gameState) {
           const parsed = parseGameState(data.gameState);
           setGameState(parsed);
           callbacksRef.current.onGameStateUpdate(parsed);
         }
-        
-        // Handle IP-based reconnection (server found zombie client with same IP)
+
         if (data.ipReconnected && data.profile) {
-          // Server already has our profile — just restore it client-side
           callbacksRef.current.onProfileLoaded(data.profile);
-          callbacksRef.current.onProfileFieldsLoaded(
-            data.profile.name,
-            data.profile.color,
-            data.profile.avatar || null,
-          );
-          console.log('[MobileClient] IP-based reconnect successful, profile:', data.profile.name);
+          callbacksRef.current.onProfileFieldsLoaded(data.profile.name, data.profile.color, data.profile.avatar || null);
+          console.log('[MobileClient] IP-based reconnect, profile:', data.profile.name);
         } else if (!data.ipReconnected) {
-          // Truly fresh connection — try profile auto-restore from localStorage
-          const profileToRestore = savedProfile ? JSON.parse(savedProfile) : null;
-          
-          if (profileToRestore) {
-            callbacksRef.current.onProfileLoaded(profileToRestore);
-            callbacksRef.current.onProfileFieldsLoaded(
-              profileToRestore.name,
-              profileToRestore.color,
-              profileToRestore.avatar || null,
-            );
-            // Sync profile to server after connection
+          // Auto-restore profile from localStorage
+          const savedProfile = localStorage.getItem('karaoke-mobile-profile');
+          if (savedProfile) {
             try {
-              const syncResponse = await fetch('/api/mobile', {
+              const profileToRestore = JSON.parse(savedProfile);
+              callbacksRef.current.onProfileLoaded(profileToRestore);
+              callbacksRef.current.onProfileFieldsLoaded(profileToRestore.name, profileToRestore.color, profileToRestore.avatar || null);
+              // Sync profile to server
+              await fetch('/api/mobile', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  type: 'profile',
-                  clientId: newClientId,
-                  payload: profileToRestore,
-                }),
-              });
-              const syncData = await syncResponse.json();
-              if (syncData.connectionCode) {
-                setConnectionCode(syncData.connectionCode);
-                localStorage.setItem('karaoke-connection-code', syncData.connectionCode);
-              }
-              console.log('[MobileClient] Profile auto-restored from localStorage:', profileToRestore.name);
-            } catch {
-              // Ignore sync errors
-            }
+                body: JSON.stringify({ type: 'profile', clientId: newClientId, payload: profileToRestore }),
+              }).catch(() => {});
+            } catch { /* ignore */ }
           }
         }
+        console.log(`[MobileClient] Connected${isWakeUp ? ' (wake-up)' : ''}:`, newCode);
       } else {
-        connectAttemptedRef.current = false;
         callbacksRef.current.onError('Failed to connect to server');
       }
     } catch {
-      connectAttemptedRef.current = false;
       callbacksRef.current.onError('Connection failed - is the server running?');
+    } finally {
+      isConnectingRef.current = false;
     }
   }, []);
+
+  // Connect — idempotent, safe to call multiple times
+  const connect = useCallback(async () => {
+    await reconnectInternal(false);
+  }, [reconnectInternal]);
 
   // Sync profile to server
   const syncProfile = useCallback(async (profileData: MobileProfile) => {
     if (!clientId) return;
     try {
-      console.log('[MobileClient] Syncing profile to server:', profileData.name);
       const response = await fetch('/api/mobile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'profile',
-          clientId,
-          payload: profileData,
-        }),
+        body: JSON.stringify({ type: 'profile', clientId, payload: profileData }),
       });
       const data = await response.json();
       if (data.connectionCode) {
         setConnectionCode(data.connectionCode);
         localStorage.setItem('karaoke-connection-code', data.connectionCode);
       }
-      console.log('[MobileClient] Profile synced successfully');
     } catch (error) {
       console.error('[MobileClient] Error syncing profile:', error);
     }
   }, [clientId]);
 
-  // Cleanup - only clear heartbeat, do NOT disconnect.
-  // The server's 5-minute inactivity timeout handles stale clients.
-  // Not disconnecting on unmount allows seamless reconnect on page refresh.
-  // Also: we do NOT use beforeunload disconnect anymore, because it fires
-  // on both refresh and close. On refresh, the disconnect would be processed
-  // before the new page can reconnect, breaking IP-based reconnection.
+  // Cleanup heartbeat
   const cleanup = useCallback(() => {
     if (heartbeatIntervalRef.current) {
       clearInterval(heartbeatIntervalRef.current);
@@ -188,43 +152,79 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     }
   }, []);
 
-  // NOTE: We intentionally do NOT send disconnect on beforeunload anymore.
-  // The 5-minute inactivity timeout on the server handles stale clients.
-  // This ensures that refreshing the companion page does NOT break the
-  // connection — the reconnection flow (via connection code + IP matching)
-  // can find and reuse the existing client session.
-  // If the user actually closes the tab, the 5-minute timeout will clean up.
-
   // Auto-connect on mount
   useEffect(() => {
     queueMicrotask(() => connect());
   }, [connect]);
 
-  // Heartbeat to keep connection alive
+  // Heartbeat + connection health check
   useEffect(() => {
     if (!isConnected || !clientId) return;
-    
+
+    let missedHeartbeats = 0;
+    const MAX_MISSED = 2;
+
     const sendHeartbeat = async () => {
       try {
-        await fetch('/api/mobile', {
+        const r = await fetch('/api/mobile', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ type: 'heartbeat', clientId }),
         });
+        if (r.ok) {
+          missedHeartbeats = 0; // Reset on success
+        } else {
+          missedHeartbeats++;
+        }
       } catch {
-        // Ignore heartbeat errors
+        missedHeartbeats++;
+      }
+
+      // If too many missed heartbeats, try reconnecting
+      if (missedHeartbeats >= MAX_MISSED) {
+        console.log('[MobileClient] Heartbeat failed', missedHeartbeats, 'times, reconnecting...');
+        setIsConnected(false);
+        reconnectInternal(true).catch(() => {});
       }
     };
-    
-    // Send heartbeat every 30 seconds
-    heartbeatIntervalRef.current = setInterval(sendHeartbeat, 30000);
-    
+
+    // Send heartbeat every 15 seconds (more frequent for faster failure detection)
+    heartbeatIntervalRef.current = setInterval(sendHeartbeat, 15000);
+
     return () => {
       if (heartbeatIntervalRef.current) {
         clearInterval(heartbeatIntervalRef.current);
       }
     };
-  }, [isConnected, clientId]);
+  }, [isConnected, clientId, reconnectInternal]);
+
+  // Visibility change: reconnect when phone wakes from sleep
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && clientId) {
+        console.log('[MobileClient] Phone woke up, sending heartbeat...');
+        // Send an immediate heartbeat to verify connection is still alive
+        fetch('/api/mobile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'heartbeat', clientId }),
+        }).then((r) => {
+          if (!r.ok) {
+            console.log('[MobileClient] Heartbeat failed after wake, reconnecting...');
+            setIsConnected(false);
+            reconnectInternal(true).catch(() => {});
+          }
+        }).catch(() => {
+          console.log('[MobileClient] Heartbeat error after wake, reconnecting...');
+          setIsConnected(false);
+          reconnectInternal(true).catch(() => {});
+        });
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [clientId, reconnectInternal]);
 
   // Sync game state periodically and detect song end
   useEffect(() => {
@@ -242,7 +242,6 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
           setGameState(parsed);
           callbacksRef.current.onGameStateUpdate(parsed);
           
-          // Load game results when song ends
           if (newSongEnded && !prevSongEnded) {
             callbacksRef.current.onSongEnd();
           }
