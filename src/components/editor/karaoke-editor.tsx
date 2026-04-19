@@ -406,23 +406,25 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     }
 
     // Step 3: Fallback to video file path (audio may be embedded in the video).
-    if (currentSong.videoBackground && !currentSong.videoBackground.startsWith('http') &&
-        !currentSong.videoBackground.startsWith('blob:') && !currentSong.youtubeUrl) {
+    // Check both videoBackground (absolute URL) and relativeVideoPath (Tauri relative path).
+    const videoPath = currentSong.videoBackground || currentSong.relativeVideoPath;
+    if (videoPath && !videoPath.startsWith('http') &&
+        !videoPath.startsWith('blob:') && !currentSong.youtubeUrl) {
       if (currentSong.baseFolder) {
         const normalizedBase = normalizeFilePath(currentSong.baseFolder);
-        const normalizedVideo = normalizeFilePath(currentSong.videoBackground);
+        const normalizedVideo = normalizeFilePath(videoPath);
         if (isAbsolute(normalizedVideo)) {
           return normalizedVideo;
         }
         return `${normalizedBase}/${normalizedVideo}`;
       }
-      if (isAbsolute(currentSong.videoBackground)) {
-        return currentSong.videoBackground;
+      if (isAbsolute(videoPath)) {
+        return videoPath;
       }
     }
 
     return null;
-  }, [currentSong.audioUrl, currentSong.relativeAudioPath, currentSong.baseFolder, currentSong.videoBackground, currentSong.youtubeUrl]);
+  }, [currentSong.audioUrl, currentSong.relativeAudioPath, currentSong.baseFolder, currentSong.videoBackground, currentSong.relativeVideoPath, currentSong.youtubeUrl]);
 
   return (
     <div className="flex flex-col h-full bg-slate-950 text-white">
