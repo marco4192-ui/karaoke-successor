@@ -319,7 +319,8 @@ fn sample_to<T: cpal::SizedSample + cpal::FromSample<f32>>(val: f32) -> T {
 
 /// Decode an audio file using Symphonia. Returns interleaved f32 samples.
 pub(crate) fn decode_audio_file(file_path: &str) -> Result<DecodedAudio, String> {
-    // Helper: try opening a file with fallback path strategies (mirrors lib.rs).
+    // Helper: try opening a file with fallback path strategies.
+    // Mirrors lib.rs native_read_file_bytes but also adds canonicalize-parent.
     fn try_open(p: &str) -> Option<File> {
         // Attempt 1: as-is
         let path = PathBuf::from(p);
@@ -327,11 +328,23 @@ pub(crate) fn decode_audio_file(file_path: &str) -> Result<DecodedAudio, String>
         // Attempt 2: OS-native separators
         let normalized = p.replace('/', &std::path::MAIN_SEPARATOR.to_string());
         if let Ok(f) = File::open(&PathBuf::from(&normalized)) { return Some(f); }
-        // Attempt 3: Windows extended-length prefix
+        // Attempt 3: Windows extended-length prefix + canonicalize parent
         #[cfg(target_os = "windows")]
         {
             if let Ok(f) = File::open(&format!(r"\\?\{}", normalized)) { return Some(f); }
             if let Ok(f) = File::open(&format!(r"\\?\{}", p.replace('/', r"\"))) { return Some(f); }
+            // Attempt 4: Canonicalize the parent directory to resolve symlinks,
+            // junctions, or case mismatches (same as lib.rs native_read_file_bytes).
+            if let Some(parent) = PathBuf::from(&normalized).parent() {
+                if let Ok(canonical_parent) = parent.canonicalize() {
+                    if let Some(file_name) = PathBuf::from(&normalized).file_name() {
+                        let canonical_path = canonical_parent.join(file_name);
+                        if let Ok(f) = File::open(&canonical_path) { return Some(f); }
+                        let verbatim = format!(r"\\?\{}", canonical_path.to_string_lossy());
+                        if let Ok(f) = File::open(&verbatim) { return Some(f); }
+                    }
+                }
+            }
         }
         None
     }
