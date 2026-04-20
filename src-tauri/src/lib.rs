@@ -23,7 +23,8 @@ mod charts;
 
 /// Read a file as raw bytes (for audio, video, images).
 /// Returns base64-encoded string to avoid IPC binary issues.
-/// Tries the path as-is first, then with OS-native separators as fallback.
+/// Tries multiple path strategies to handle Windows edge cases
+/// with special characters (&, parentheses, Unicode) in folder names.
 #[tauri::command]
 fn native_read_file_bytes(file_path: String) -> Result<String, String> {
     // Attempt 1: use the path exactly as received
@@ -38,10 +39,27 @@ fn native_read_file_bytes(file_path: String) -> Result<String, String> {
     // PathBuf::from to produce a path that doesn't match the filesystem.
     let normalized = file_path.replace('/', &std::path::MAIN_SEPARATOR.to_string());
     let path2 = PathBuf::from(&normalized);
-    match fs::read(&path2) {
-        Ok(bytes) => Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes)),
-        Err(e) => Err(format!("File not found: {} (also tried: {})", file_path, e)),
+    if let Ok(bytes) = fs::read(&path2) {
+        return Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes));
     }
+
+    // Attempt 3: On Windows, use the extended-length path prefix (\\?\)
+    // which bypasses MAX_PATH (260 chars) and handles certain special
+    // characters more reliably. The path MUST use backslashes.
+    #[cfg(target_os = "windows")]
+    {
+        let verbatim = format!(r"\\?\{}", file_path.replace('/', r"\"));
+        if let Ok(bytes) = fs::read(&verbatim) {
+            return Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes));
+        }
+        // Also try with the normalized (backslash) version
+        let verbatim_norm = format!(r"\\?\{}", normalized);
+        if let Ok(bytes) = fs::read(&verbatim_norm) {
+            return Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes));
+        }
+    }
+
+    Err(format!("File not found: {} (also tried: {})", file_path, "os error 3"))
 }
 
 /// Read a file as text (for TXT, config files, etc.)
@@ -56,8 +74,24 @@ fn native_read_file_text(file_path: String) -> Result<String, String> {
     // Attempt 2: normalize separators to OS-native and retry
     let normalized = file_path.replace('/', &std::path::MAIN_SEPARATOR.to_string());
     let path2 = PathBuf::from(&normalized);
-    fs::read_to_string(&path2)
-        .map_err(|e| format!("File not found: {} (also tried: {})", file_path, e))
+    if let Ok(content) = fs::read_to_string(&path2) {
+        return Ok(content);
+    }
+
+    // Attempt 3: Windows extended-length path prefix (see native_read_file_bytes)
+    #[cfg(target_os = "windows")]
+    {
+        let verbatim = format!(r"\\?\{}", file_path.replace('/', r"\"));
+        if let Ok(content) = fs::read_to_string(&verbatim) {
+            return Ok(content);
+        }
+        let verbatim_norm = format!(r"\\?\{}", normalized);
+        if let Ok(content) = fs::read_to_string(&verbatim_norm) {
+            return Ok(content);
+        }
+    }
+
+    Err(format!("File not found: {} (also tried: {})", file_path, "os error 3"))
 }
 
 /// Check if a file or directory exists
@@ -69,7 +103,18 @@ fn native_file_exists(file_path: String) -> bool {
     }
     // Fallback: try with OS-native separators
     let normalized = file_path.replace('/', &std::path::MAIN_SEPARATOR.to_string());
-    PathBuf::from(&normalized).exists()
+    if PathBuf::from(&normalized).exists() {
+        return true;
+    }
+    // Windows: try with extended-length path prefix
+    #[cfg(target_os = "windows")]
+    {
+        let verbatim = format!(r"\\?\{}", file_path.replace('/', r"\"));
+        if PathBuf::from(&verbatim).exists() {
+            return true;
+        }
+    }
+    false
 }
 
 /// List directory contents
