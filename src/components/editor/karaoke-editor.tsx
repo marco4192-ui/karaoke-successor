@@ -406,20 +406,23 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     }
 
     // Step 3: Fallback to video file path (audio may be embedded in the video).
-    // Check both videoBackground (absolute URL) and relativeVideoPath (Tauri relative path).
-    const videoPath = currentSong.videoBackground || currentSong.relativeVideoPath;
-    if (videoPath && !videoPath.startsWith('http') &&
-        !videoPath.startsWith('blob:') && !currentSong.youtubeUrl) {
+    // CRITICAL: Check relativeVideoPath FIRST (it's a usable filesystem path),
+    // then videoBackground only if it's an absolute filesystem path (not blob/http).
+    // A blob videoBackground from playback would shadow a valid relativeVideoPath.
+    const videoRelative = currentSong.relativeVideoPath;
+    const videoAbsolute = currentSong.videoBackground &&
+      isAbsolute(currentSong.videoBackground) &&
+      !currentSong.videoBackground.startsWith('blob:') &&
+      !currentSong.videoBackground.startsWith('http');
+    const videoPath = videoRelative || videoAbsolute;
+    if (videoPath && !currentSong.youtubeUrl) {
+      const normalizedPath = normalizeFilePath(videoPath);
+      if (isAbsolute(normalizedPath)) {
+        return normalizedPath;
+      }
       if (currentSong.baseFolder) {
         const normalizedBase = normalizeFilePath(currentSong.baseFolder);
-        const normalizedVideo = normalizeFilePath(videoPath);
-        if (isAbsolute(normalizedVideo)) {
-          return normalizedVideo;
-        }
-        return `${normalizedBase}/${normalizedVideo}`;
-      }
-      if (isAbsolute(videoPath)) {
-        return videoPath;
+        return `${normalizedBase}/${normalizedPath}`;
       }
     }
 

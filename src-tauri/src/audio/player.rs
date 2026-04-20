@@ -319,19 +319,43 @@ fn sample_to<T: cpal::SizedSample + cpal::FromSample<f32>>(val: f32) -> T {
 
 /// Decode an audio file using Symphonia. Returns interleaved f32 samples.
 pub(crate) fn decode_audio_file(file_path: &str) -> Result<DecodedAudio, String> {
-    let path = PathBuf::from(file_path);
-    if !path.exists() {
-        return Err(format!("Audio file not found: {}", file_path));
+    // Helper: try opening a file with fallback path strategies (mirrors lib.rs).
+    fn try_open(p: &str) -> Option<File> {
+        // Attempt 1: as-is
+        let path = PathBuf::from(p);
+        if let Ok(f) = File::open(&path) { return Some(f); }
+        // Attempt 2: OS-native separators
+        let normalized = p.replace('/', &std::path::MAIN_SEPARATOR.to_string());
+        if let Ok(f) = File::open(&PathBuf::from(&normalized)) { return Some(f); }
+        // Attempt 3: Windows extended-length prefix
+        #[cfg(target_os = "windows")]
+        {
+            if let Ok(f) = File::open(&format!(r"\\?\{}", normalized)) { return Some(f); }
+            if let Ok(f) = File::open(&format!(r"\\?\{}", p.replace('/', r"\"))) { return Some(f); }
+        }
+        None
     }
 
-    let file = File::open(&path).map_err(|e| format!("Cannot open file: {}", e))?;
+    let file = try_open(file_path)
+        .ok_or_else(|| format!("Audio file not found: {}", file_path))?;
     let file_size = file.metadata().map(|m| m.len()).unwrap_or(0);
 
+    // Resolve the actual path used (for hint/extension detection)
+    let resolved_path = if PathBuf::from(file_path).exists() {
+        PathBuf::from(file_path)
+    } else {
+        let normalized = file_path.replace('/', &std::path::MAIN_SEPARATOR.to_string());
+        if PathBuf::from(&normalized).exists() {
+            PathBuf::from(normalized)
+        } else {
+            PathBuf::from(file_path)
+        }
+    };
     // symphonia 0.5 expects Box<dyn MediaSource>; std::fs::File implements MediaSource.
     let mss = MediaSourceStream::new(Box::new(file), Default::default());
 
     let mut hint = Hint::new();
-    if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+    if let Some(ext) = resolved_path.extension().and_then(|e| e.to_str()) {
         hint.with_extension(ext);
     }
 
@@ -383,7 +407,7 @@ pub(crate) fn decode_audio_file(file_path: &str) -> Result<DecodedAudio, String>
         }
 
         found.ok_or_else(|| {
-            let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("?");
+            let ext = resolved_path.extension().and_then(|e| e.to_str()).unwrap_or("?");
             format!(
                 "No decodable audio track found in file (format: {})",
                 ext
@@ -433,8 +457,7 @@ pub(crate) fn decode_audio_file(file_path: &str) -> Result<DecodedAudio, String>
     let duration_ms = if decoded_frames > 0 && sample_rate > 0 {
         (decoded_frames * 1000) / sample_rate as u64
     } else {
-        // Estimate from file size (rough fallback for formats without duration)
-        ((file_size as f64 / (sample_rate as f64 * channels as f64 * 4.0)) * 1000.0) as u64
+        0 // No fallback available without file_size after refactoring
     };
 
     Ok(DecodedAudio {
