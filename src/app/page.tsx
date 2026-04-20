@@ -9,7 +9,7 @@ import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { getAllSongs, loadCustomSongsFromStorage } from '@/lib/game/song-library';
 // Extracted screens
-import { HomeScreen, PartyScreen, QueueScreen, AchievementsScreen, HighscoreScreen, CharacterScreen, EditorScreen, OnlineMultiplayerScreen, DailyChallengeScreen, JukeboxScreen, MobileScreen, MobileClientView, ResultsScreen, LibraryScreen, SettingsScreen, GameScreen } from '@/components/screens';
+import { HomeScreen, PartyScreen, QueueScreen, AchievementsScreen, HighscoreScreen, CharacterScreen, EditorScreen, OnlineMultiplayerScreen, DailyChallengeScreen, JukeboxScreen, MobileScreen, ResultsScreen, LibraryScreen, SettingsScreen, GameScreen } from '@/components/screens';
 // Extracted components
 import { NavBar, FullscreenExitButton } from '@/components/home/navbar';
 import { PartySetupSection } from '@/components/party/party-setup-section';
@@ -36,7 +36,6 @@ const IMMERSIVE_SCREENS: Set<Screen> = new Set([
 // ===================== MAIN APP =====================
 export default function KaraokeSuccessor() {
   // All hooks must be called before any conditional returns
-  const [isMobileClient, setIsMobileClient] = useState(false);
   const [screen, setScreen] = useState<Screen>('home');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMounted, setIsMounted] = useState(false); // Track client-side mount
@@ -340,14 +339,19 @@ export default function KaraokeSuccessor() {
   }, [syncSongLibrary, screen]);
 
   useEffect(() => {
-    // Check URL parameters for mobile mode
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('mobile') !== null) {
-      // Use microtask to avoid synchronous setState in effect
-      queueMicrotask(() => setIsMobileClient(true));
-    }
     // Mark as mounted
     setIsMounted(true);
+  }, []);
+
+  // Redirect ?mobile=1 to /mobile for the unified companion app
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mobile') !== null) {
+      // Preserve profile parameter if present
+      const profile = params.get('profile');
+      const targetUrl = profile ? `/mobile?profile=${encodeURIComponent(profile)}` : '/mobile';
+      window.location.replace(targetUrl);
+    }
   }, []);
 
   // Apply stored theme on app start
@@ -373,11 +377,6 @@ export default function KaraokeSuccessor() {
       window.removeEventListener('themeChange', handleThemeChange);
     };
   }, []);
-
-  // Render mobile client view if in mobile mode
-  if (isMobileClient) {
-    return <MobileClientView />;
-  }
 
   // Party mode exit confirmation dialog
   if (pendingNavigation) {

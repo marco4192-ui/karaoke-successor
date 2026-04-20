@@ -5,10 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-// QR Code generator (simple version)
-function generateQRCode(data: string): string {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data)}`;
-}
+import { generateQRCodeUrl, buildCompanionUrl } from '@/lib/qr-code';
 
 // ===================== ICONS =====================
 function PhoneIcon({ className }: { className?: string }) {
@@ -181,9 +178,7 @@ export function MobileScreen() {
   };
   
   // Build connection URL with local IP
-  const connectionUrl = localIP 
-    ? `http://${localIP}:3000?mobile=1`
-    : ''; // Don't generate URL without valid IP
+  const connectionUrl = localIP ? buildCompanionUrl(localIP) : '';
   
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
@@ -239,7 +234,7 @@ export function MobileScreen() {
               <>
                 <div className="bg-white rounded-xl p-4 inline-block mb-4">
                   <img 
-                    src={generateQRCode(connectionUrl)} 
+                    src={generateQRCodeUrl(connectionUrl)} 
                     alt="QR Code" 
                     className="w-48 h-48"
                   />

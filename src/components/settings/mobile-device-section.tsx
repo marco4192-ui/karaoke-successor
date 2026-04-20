@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { PhoneIcon, generateQRCode } from '@/components/settings/settings-icons';
+import { PhoneIcon } from '@/components/settings/settings-icons';
+import { generateQRCodeUrl, detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
 
 interface ConnectedClient {
   id: string;
@@ -101,7 +102,7 @@ export function MobileDeviceMicrophoneSection() {
     return () => clearInterval(interval);
   }, []);
 
-  const mobileUrl = localIP ? `http://${localIP}:3000/mobile` : '/mobile';
+  const mobileUrl = localIP ? buildCompanionUrl(localIP) : '/mobile';
   
   return (
     <Card className="bg-white/5 border-white/10">
@@ -122,7 +123,7 @@ export function MobileDeviceMicrophoneSection() {
             </div>
             <div className="w-48 h-48 bg-white rounded-lg p-2 mb-4">
               <img 
-                src={generateQRCode(mobileUrl)}
+                src={generateQRCodeUrl(mobileUrl)}
                 alt="QR Code for mobile connection"
                 className="w-full h-full"
               />

@@ -66,11 +66,12 @@ export async function detectLocalIP(): Promise<string | null> {
 
 /**
  * Build the companion app connection URL for the given IP and optional profile ID.
+ * Always uses the /mobile route so the companion gets the latest implementation.
  */
 export function buildCompanionUrl(ip: string, port = 3000, profileId?: string): string {
-  const base = `http://${ip}:${port}?mobile=1`;
+  const base = `http://${ip}:${port}/mobile`;
   if (profileId) {
-    return `${base}&profile=${encodeURIComponent(profileId)}`;
+    return `${base}?profile=${encodeURIComponent(profileId)}`;
   }
   return base;
 }
