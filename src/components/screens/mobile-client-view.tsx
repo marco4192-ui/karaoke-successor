@@ -28,7 +28,12 @@ import { useMobilePitchDetection } from '@/hooks/use-mobile-pitch-detection';
 import { useMobileData } from '@/hooks/use-mobile-data';
 
 // ===================== MOBILE CLIENT VIEW =====================
-export function MobileClientView() {
+interface MobileClientViewProps {
+  /** Optional host profile ID passed via ?profile= in the QR URL */
+  profileId?: string;
+}
+
+export function MobileClientView({ profileId }: MobileClientViewProps) {
   const [currentView, setCurrentView] = useState<MobileView>('home');
   const [profile, setProfile] = useState<MobileProfile | null>(null);
   const [profileName, setProfileName] = useState('');
@@ -39,6 +44,7 @@ export function MobileClientView() {
 
   // Connection
   const { clientId, connectionCode, isConnected, gameState, connect, syncProfile, cleanup } = useMobileConnection({
+    profileId,
     onProfileLoaded: (p) => setProfile(p),
     onProfileFieldsLoaded: (name, color, avatar) => { setProfileName(name); setProfileColor(color); setAvatarPreview(avatar); },
     onGameStateUpdate: () => {},
@@ -70,6 +76,36 @@ export function MobileClientView() {
       localStorage.setItem('karaoke-client-id', clientId);
     }
   }, [clientId]);
+
+  // When a profileId is provided via QR, auto-adopt the matching host profile
+  // once the connection is established and we have host profiles available.
+  useEffect(() => {
+    if (!profileId || !isConnected || profile) return;
+    // Fetch host profiles and auto-select the matching one
+    fetch('/api/mobile?action=hostprofiles&clientId=' + clientId)
+      .then(r => r.json())
+      .then(d => {
+        if (!d.success || !Array.isArray(d.profiles)) return;
+        const match = d.profiles.find((p: { id: string }) => p.id === profileId);
+        if (match) {
+          const hostProfile: import('./mobile/mobile-types').MobileProfile = {
+            id: match.id,
+            name: match.name,
+            avatar: match.avatar || undefined,
+            color: match.color,
+            createdAt: match.createdAt || Date.now(),
+          };
+          console.log('[MobileClient] Auto-adopting host profile from QR:', hostProfile.name);
+          setProfile(hostProfile);
+          setProfileName(hostProfile.name);
+          setProfileColor(hostProfile.color);
+          setAvatarPreview(hostProfile.avatar || null);
+          localStorage.setItem('karaoke-mobile-profile', JSON.stringify(hostProfile));
+          syncProfile(hostProfile);
+        }
+      })
+      .catch(() => {});
+  }, [profileId, isConnected, clientId, profile, syncProfile]);
 
   // Profile callbacks
   const handleCreateProfile = useCallback((hostProfile?: MobileProfile) => {
