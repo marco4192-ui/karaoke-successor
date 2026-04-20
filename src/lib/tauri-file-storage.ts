@@ -906,9 +906,109 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
     }
     
     console.log('[TauriFS] loadFileAsBlobUrl result: failed');
+
+    // FALLBACK 2: For cover/image files, scan the song's parent folder to find
+    // the actual file. This handles cases where path encoding, Unicode
+    // normalization, or path separator issues cause the direct path to fail
+    // even though the file exists on disk.
+    const ext = ('.' + relativePath.split('/').pop()?.split('\\').pop()?.toLowerCase()) as string;
+    if (COVER_EXTENSIONS.includes(ext) || AUDIO_EXTENSIONS.includes(ext) || VIDEO_EXTENSIONS.includes(ext)) {
+      const folderResult = await findFileByScanningParentFolder(
+        normalizedBaseFolder,
+        normalizedRelativePath,
+      );
+      if (folderResult) {
+        console.log('[TauriFS] Found file via folder scan fallback:', folderResult);
+        return folderResult;
+      }
+    }
+
     return null;
   } catch (error) {
     console.error('[TauriFS] Failed to get song media URL:', error);
+    return null;
+  }
+}
+
+/**
+ * Scan the parent folder of a relative path to find a file by name.
+ * This is a last-resort fallback when direct path construction fails due to
+ * encoding issues, Unicode normalization mismatches, or path separator problems.
+ *
+ * Strategy:
+ * 1. Extract the parent directory from the relative path
+ * 2. List ALL files in that directory using nativeReadDir
+ * 3. Find a file whose name matches the target file name (case-insensitive)
+ * 4. Load the matched file using its actual filesystem path
+ */
+async function findFileByScanningParentFolder(
+  baseFolder: string,
+  relativePath: string,
+): Promise<string | null> {
+  try {
+    // Extract parent directory and target filename from relative path
+    const pathParts = relativePath.split('/');
+    const fileName = pathParts.pop(); // e.g. "cover.jpg"
+    if (!fileName) return null;
+
+    // The parent directory path relative to baseFolder
+    const parentRelDir = pathParts.join('/'); // e.g. "Artist - Title"
+
+    // Construct the full parent directory path
+    let parentDir: string;
+    if (parentRelDir) {
+      // Try both forward slashes and OS-native separators
+      parentDir = `${baseFolder}/${parentRelDir}`;
+    } else {
+      return null; // File is in root, no parent to scan
+    }
+
+    console.log('[TauriFS] Folder scan fallback: scanning directory:', parentDir, 'for file:', fileName);
+
+    // Try to list the directory
+    let entries: Awaited<ReturnType<typeof nativeReadDir>>;
+    try {
+      entries = await nativeReadDir(parentDir);
+    } catch {
+      // Directory itself might not be readable — try with backslashes
+      try {
+        entries = await nativeReadDir(parentDir.replace(/\//g, '\\'));
+      } catch {
+        console.warn('[TauriFS] Folder scan fallback: could not read directory:', parentDir);
+        return null;
+      }
+    }
+
+    // Case-insensitive filename matching
+    const targetLower = fileName.toLowerCase();
+    for (const entry of entries) {
+      if (!entry.is_file) continue;
+      if (entry.name.toLowerCase() === targetLower) {
+        // Found it! Load using the actual filesystem path from the directory entry
+        console.log('[TauriFS] Folder scan fallback: found matching file:', entry.path);
+        const url = await loadFileAsBlobUrl(entry.path);
+        if (url) return url;
+      }
+    }
+
+    // Also check if there's a cover file with any COVER_PATTERN name in the directory
+    if (COVER_EXTENSIONS.some(ext => targetLower.endsWith(ext))) {
+      for (const entry of entries) {
+        if (!entry.is_file) continue;
+        const entryExt = '.' + entry.name.split('.').pop()?.toLowerCase();
+        if (!COVER_EXTENSIONS.includes(entryExt as typeof COVER_EXTENSIONS[number])) continue;
+        if (COVER_PATTERNS.some(p => p.test(entry.name))) {
+          console.log('[TauriFS] Folder scan fallback: found cover by pattern:', entry.path);
+          const url = await loadFileAsBlobUrl(entry.path);
+          if (url) return url;
+        }
+      }
+    }
+
+    console.warn('[TauriFS] Folder scan fallback: no matching file found in:', parentDir);
+    return null;
+  } catch (error) {
+    console.error('[TauriFS] Folder scan fallback error:', error);
     return null;
   }
 }

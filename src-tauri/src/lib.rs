@@ -48,18 +48,36 @@ fn native_read_file_bytes(file_path: String) -> Result<String, String> {
     // characters more reliably. The path MUST use backslashes.
     #[cfg(target_os = "windows")]
     {
-        let verbatim = format!(r"\\?\{}", file_path.replace('/', r"\"));
+        let backslash_path = file_path.replace('/', r"\");
+        let verbatim = format!(r"\\?\{}", backslash_path);
         if let Ok(bytes) = fs::read(&verbatim) {
             return Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes));
         }
-        // Also try with the normalized (backslash) version
         let verbatim_norm = format!(r"\\?\{}", normalized);
         if let Ok(bytes) = fs::read(&verbatim_norm) {
             return Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes));
         }
+        // Attempt 3c: Canonicalize the parent directory to resolve any
+        // symlinks, junctions, or case mismatches, then re-read the file.
+        if let Some(parent) = PathBuf::from(&backslash_path).parent() {
+            if let Ok(canonical_parent) = parent.canonicalize() {
+                if let Some(file_name) = PathBuf::from(&backslash_path).file_name() {
+                    let canonical_path = canonical_parent.join(file_name);
+                    if let Ok(bytes) = fs::read(&canonical_path) {
+                        println!("[native_read_file_bytes] Found via canonical parent: {:?}", canonical_path);
+                        return Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes));
+                    }
+                    let canonical_verbatim = format!(r"\\?\{}", canonical_path.to_string_lossy());
+                    if let Ok(bytes) = fs::read(&canonical_verbatim) {
+                        println!("[native_read_file_bytes] Found via canonical+verbatim: {:?}", canonical_verbatim);
+                        return Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes));
+                    }
+                }
+            }
+        }
     }
 
-    Err(format!("File not found: {} (also tried: {})", file_path, "os error 3"))
+    Err(format!("File not found: {} (os error 3)", file_path))
 }
 
 /// Read a file as text (for TXT, config files, etc.)
@@ -81,7 +99,8 @@ fn native_read_file_text(file_path: String) -> Result<String, String> {
     // Attempt 3: Windows extended-length path prefix (see native_read_file_bytes)
     #[cfg(target_os = "windows")]
     {
-        let verbatim = format!(r"\\?\{}", file_path.replace('/', r"\"));
+        let backslash_path = file_path.replace('/', r"\");
+        let verbatim = format!(r"\\?\{}", backslash_path);
         if let Ok(content) = fs::read_to_string(&verbatim) {
             return Ok(content);
         }
@@ -89,9 +108,20 @@ fn native_read_file_text(file_path: String) -> Result<String, String> {
         if let Ok(content) = fs::read_to_string(&verbatim_norm) {
             return Ok(content);
         }
+        // Canonicalize parent directory
+        if let Some(parent) = PathBuf::from(&backslash_path).parent() {
+            if let Ok(canonical_parent) = parent.canonicalize() {
+                if let Some(file_name) = PathBuf::from(&backslash_path).file_name() {
+                    let canonical_path = canonical_parent.join(file_name);
+                    if let Ok(content) = fs::read_to_string(&canonical_path) {
+                        return Ok(content);
+                    }
+                }
+            }
+        }
     }
 
-    Err(format!("File not found: {} (also tried: {})", file_path, "os error 3"))
+    Err(format!("File not found: {} (os error 3)", file_path))
 }
 
 /// Check if a file or directory exists
