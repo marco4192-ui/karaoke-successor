@@ -73,10 +73,37 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
             if (!song) return;
             // Clear the pre-selected song
             party.setLibrarySelectedSong(null);
-            // Set the song in the game store and start
-            setSong(song);
             const mode = party.selectedGameMode;
-            if (mode) setGameMode(mode);
+            if (!mode) return;
+
+            // Reset game state and set up players before entering the game screen
+            resetGame();
+            setPlayers([]);
+            setGameMode(mode);
+            setSong(song);
+
+            if (mode === 'pass-the-mic') {
+              // Add first pass-the-mic player as the active singer
+              const ptmPlayers = party.passTheMicPlayers;
+              if (ptmPlayers.length > 0) {
+                addPlayer({ id: ptmPlayers[0].id, name: ptmPlayers[0].name, color: ptmPlayers[0].color, avatar: ptmPlayers[0].avatar });
+              }
+            } else if (mode === 'companion-singalong') {
+              // Add first companion player as the active singer
+              const compPlayers = party.companionPlayers;
+              if (compPlayers.length > 0) {
+                addPlayer({ id: compPlayers[0].id, name: compPlayers[0].name, color: compPlayers[0].color, avatar: compPlayers[0].avatar });
+              }
+            } else {
+              // Standard/duel mode: add all players from setup result
+              const result = party.unifiedSetupResult;
+              if (result) {
+                result.players.forEach((p) => {
+                  addPlayer({ id: p.id, name: p.name, color: p.color, avatar: p.avatar });
+                });
+              }
+            }
+
             setScreen('game');
           }}
           onChangePreselectedSong={() => {
@@ -214,14 +241,19 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                     sharedMicId: result.settings.sharedMicId || null,
                     sharedMicName: result.settings.sharedMicName || null,
                   };
-                  party.setPassTheMicPlayers(toPassTheMicPlayers(result.players));
+                  const ptmPlayers = toPassTheMicPlayers(result.players);
+                  party.setPassTheMicPlayers(ptmPlayers);
                   party.setPassTheMicSegments(generatePassTheMicSegments(randomSong, segmentDuration));
                   party.setPassTheMicSong(randomSong);
                   party.setPassTheMicSettings(settingsWithMic);
+                  // Reset game and add first player as the active singer
+                  resetGame();
+                  setPlayers([]);
+                  if (ptmPlayers.length > 0) {
+                    addPlayer({ id: ptmPlayers[0].id, name: ptmPlayers[0].name, color: ptmPlayers[0].color, avatar: ptmPlayers[0].avatar });
+                  }
                   setSong(randomSong);
                   // Use main game screen for proper audio/video/notes/lyrics playback
-                  // (the old pass-the-mic-game view used a plain <audio> element
-                  //  that cannot handle Tauri local file paths)
                   setScreen('game');
                 }
                 break;
@@ -231,13 +263,18 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               case 'companion-singalong': {
                 const randomSong = pickRandomSong(filteredSongs);
                 if (randomSong) {
-                  party.setCompanionPlayers(toCompanionPlayers(result.players));
+                  const compPlayers = toCompanionPlayers(result.players);
+                  party.setCompanionPlayers(compPlayers);
                   party.setCompanionSong(randomSong);
                   party.setCompanionSettings(result.settings);
+                  // Reset game and add first player as the active singer
+                  resetGame();
+                  setPlayers([]);
+                  if (compPlayers.length > 0) {
+                    addPlayer({ id: compPlayers[0].id, name: compPlayers[0].name, color: compPlayers[0].color, avatar: compPlayers[0].avatar });
+                  }
                   setSong(randomSong);
                   // Use main game screen for proper audio/video/notes/lyrics playback
-                  // (the old companion-singalong-game view used a plain <audio> element
-                  //  that cannot handle Tauri local file paths)
                   setScreen('game');
                 }
                 break;
@@ -363,9 +400,12 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               }
 
               // Handle game-specific setup
+              resetGame();
+              setPlayers([]);
               if (party.selectedGameMode === 'pass-the-mic') {
                 const segmentDuration = party.unifiedSetupResult?.settings?.segmentDuration || 30;
-                party.setPassTheMicPlayers(toPassTheMicPlayers(party.unifiedSetupResult?.players || []));
+                const ptmPlayers = toPassTheMicPlayers(party.unifiedSetupResult?.players || []);
+                party.setPassTheMicPlayers(ptmPlayers);
                 party.setPassTheMicSegments(generatePassTheMicSegments(selectedSong, segmentDuration));
                 party.setPassTheMicSong(selectedSong);
                 party.setPassTheMicSettings({
@@ -373,12 +413,17 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   sharedMicId: party.unifiedSetupResult?.settings?.sharedMicId || null,
                   sharedMicName: party.unifiedSetupResult?.settings?.sharedMicName || null,
                 });
-                // Use main game screen for proper audio/video/notes/lyrics playback
+                if (ptmPlayers.length > 0) {
+                  addPlayer({ id: ptmPlayers[0].id, name: ptmPlayers[0].name, color: ptmPlayers[0].color, avatar: ptmPlayers[0].avatar });
+                }
                 setScreen('game');
               } else if (party.selectedGameMode === 'companion-singalong') {
-                party.setCompanionPlayers(toCompanionPlayers(party.unifiedSetupResult?.players || []));
+                const compPlayers = toCompanionPlayers(party.unifiedSetupResult?.players || []);
+                party.setCompanionPlayers(compPlayers);
                 party.setCompanionSong(selectedSong);
-                // Use main game screen for proper audio/video/notes/lyrics playback
+                if (compPlayers.length > 0) {
+                  addPlayer({ id: compPlayers[0].id, name: compPlayers[0].name, color: compPlayers[0].color, avatar: compPlayers[0].avatar });
+                }
                 setScreen('game');
               } else {
                 setScreen('game');
