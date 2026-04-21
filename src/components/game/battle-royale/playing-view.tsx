@@ -21,6 +21,7 @@ interface PlayingViewProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   setCurrentTime: (time: number) => void;
   onRoundEnd: () => void;
+  onBack?: () => void;
 }
 
 export function PlayingView({
@@ -36,6 +37,7 @@ export function PlayingView({
   videoRef,
   setCurrentTime,
   onRoundEnd,
+  onBack,
 }: PlayingViewProps) {
   const currentRound = game.rounds[game.rounds.length - 1];
   // Guard: only allow onEnded to fire if audio actually started playing
@@ -87,6 +89,19 @@ export function PlayingView({
         preload="auto"
       />
       <div className="fixed inset-0 bg-black/50 -z-10" />
+
+      {/* ─────────── Back Button ─────────── */}
+      {onBack && (
+        <div className="absolute top-3 left-3 z-20">
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            className="text-white/60 hover:text-white hover:bg-white/10"
+          >
+            ← Back
+          </Button>
+        </div>
+      )}
 
       {/* ─────────── UPPER THIRD: Player Cards ─────────── */}
       <div className="flex-shrink-0 pt-3 px-3">

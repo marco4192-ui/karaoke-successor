@@ -18,9 +18,10 @@ interface BattleRoyaleGameViewProps {
   songs: Song[];
   onUpdateGame: (game: BattleRoyaleGame) => void;
   onEndGame: () => void;
+  onBack?: () => void;
 }
 
-export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame }: BattleRoyaleGameViewProps) {
+export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onBack }: BattleRoyaleGameViewProps) {
   const {
     showElimination,
     stats,
@@ -60,6 +61,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame }: B
         stats={stats}
         activePlayers={activePlayers}
         onStartRound={handleStartRound}
+        onBack={onBack}
       />
     );
   }
@@ -79,6 +81,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame }: B
       videoRef={videoRef}
       setCurrentTime={setCurrentTime}
       onRoundEnd={handleRoundEnd}
+      onBack={onBack}
     />
   );
 }

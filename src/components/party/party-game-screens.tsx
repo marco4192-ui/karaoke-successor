@@ -190,6 +190,10 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             party.setBattleRoyaleGame(null);
             setScreen('home');
           }}
+          onBack={() => {
+            party.setBattleRoyaleGame(null);
+            setScreen('party');
+          }}
         />
       )}
 

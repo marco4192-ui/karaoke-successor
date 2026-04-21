@@ -11,11 +11,19 @@ interface RoundSetupViewProps {
   stats: ReturnType<typeof getBattleRoyaleStats>;
   activePlayers: BattleRoyalePlayer[];
   onStartRound: () => void;
+  onBack?: () => void;
 }
 
-export function RoundSetupView({ game, stats, activePlayers, onStartRound }: RoundSetupViewProps) {
+export function RoundSetupView({ game, stats, activePlayers, onStartRound, onBack }: RoundSetupViewProps) {
   return (
     <div className="max-w-5xl mx-auto text-center">
+      {onBack && (
+        <div className="text-left mb-4">
+          <Button variant="ghost" onClick={onBack} className="text-white/60">
+            ← Back
+          </Button>
+        </div>
+      )}
       <h1 className="text-3xl font-bold mb-2">Round {game.currentRound + 1}</h1>
       <p className="text-white/60 mb-6">
         {stats.activeMicPlayers} 🎤 Mic + {stats.activeCompanionPlayers} 📱 Companion = {activePlayers.length} players
