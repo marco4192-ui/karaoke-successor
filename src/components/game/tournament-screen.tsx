@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -249,83 +249,112 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
   const playableMatches = getPlayableMatches(bracket);
   const nextMatch = playableMatches[0] || null;
 
+  // Auto-scale bracket to fit available viewport height
+  const bracketWrapperRef = useRef<HTMLDivElement>(null);
+  const bracketInnerRef = useRef<HTMLDivElement>(null);
+  const [bracketScale, setBracketScale] = useState(1);
+
+  useEffect(() => {
+    const updateScale = () => {
+      const wrapper = bracketWrapperRef.current;
+      const inner = bracketInnerRef.current;
+      if (!wrapper || !inner) return;
+      const available = wrapper.clientHeight;
+      const needed = inner.scrollHeight;
+      if (needed > 0 && available > 0) {
+        setBracketScale(Math.min(1, available / needed));
+      }
+    };
+    updateScale();
+    const ro = new ResizeObserver(updateScale);
+    if (bracketWrapperRef.current) ro.observe(bracketWrapperRef.current);
+    return () => ro.disconnect();
+  }, [bracket]);
+
   return (
-    <div className="max-w-full mx-auto px-4">
-      {/* Tournament Header */}
-      <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold mb-2">🏆 Tournament Bracket</h1>
-        <div className="flex items-center justify-center gap-4 text-white/60">
+    <div className="max-w-full mx-auto px-4 h-[calc(100vh-5rem)] overflow-hidden flex flex-col">
+      {/* Tournament Header — compact */}
+      <div className="text-center mb-1 shrink-0">
+        <h1 className="text-2xl font-bold mb-0.5">🏆 Tournament Bracket</h1>
+        <div className="flex items-center justify-center gap-3 text-white/60 text-sm">
           <span>Round {stats.currentRound} of {stats.totalRounds}</span>
-          <span>•</span>
+          <span>·</span>
           <span>{stats.remainingPlayers} players remaining</span>
-          {shortMode && <Badge className="bg-green-500/20 text-green-400">Short Mode (60s)</Badge>}
+          {shortMode && <Badge className="bg-green-500/20 text-green-400 text-xs">60s</Badge>}
         </div>
       </div>
 
-      {/* Champion Display */}
+      {/* Champion Display — compact */}
       {bracket.champion && (
-        <div className="bg-gradient-to-r from-amber-500/30 to-yellow-500/30 border-2 border-amber-500 rounded-xl p-8 mb-8 text-center">
-          <div className="text-6xl mb-4">👑</div>
-          <h2 className="text-2xl font-bold text-amber-400 mb-2">CHAMPION!</h2>
+        <div className="bg-gradient-to-r from-amber-500/30 to-yellow-500/30 border-2 border-amber-500 rounded-xl p-4 mb-2 text-center shrink-0">
+          <div className="text-4xl mb-1">👑</div>
+          <h2 className="text-xl font-bold text-amber-400 mb-1">CHAMPION!</h2>
           <div className="flex items-center justify-center gap-3">
             {bracket.champion.avatar ? (
-              <img src={bracket.champion.avatar} alt={bracket.champion.name} className="w-16 h-16 rounded-full object-cover" />
+              <img src={bracket.champion.avatar} alt={bracket.champion.name} className="w-10 h-10 rounded-full object-cover" />
             ) : (
-              <div 
-                className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold"
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-bold"
                 style={{ backgroundColor: bracket.champion.color }
               }>
                 {bracket.champion.name.charAt(0).toUpperCase()}
               </div>
             )}
-            <span className="text-3xl font-bold">{bracket.champion.name}</span>
+            <span className="text-2xl font-bold">{bracket.champion.name}</span>
           </div>
         </div>
       )}
 
-      {/* Current Match Info - Who's Next */}
+      {/* Next Match Preview — compact */}
       {nextMatch && !bracket.champion && (
-        <div className="mb-6 bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-pink-500/20 border border-cyan-500/30 rounded-xl p-6">
-          <h3 className="text-xl font-bold mb-4 text-center flex items-center justify-center gap-2">
+        <div className="mb-1 bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-pink-500/20 border border-cyan-500/30 rounded-xl p-2.5 shrink-0">
+          <h3 className="text-sm font-bold mb-1.5 text-center flex items-center justify-center gap-2">
             <span className="animate-pulse">🎤</span>
             <span>Next Duel: {nextMatch.player1?.name || 'TBD'} vs {nextMatch.player2?.name || 'TBD'}</span>
           </h3>
-          <div className="flex items-center justify-center gap-8 mb-4">
+          <div className="flex items-center justify-center gap-5 mb-1.5">
             <PlayerDisplay player={nextMatch.player1} />
-            <span className="text-2xl font-bold text-white/40">⚔️</span>
+            <span className="text-lg font-bold text-white/40">⚔️</span>
             <PlayerDisplay player={nextMatch.player2} />
           </div>
           <Button
             onClick={() => onPlayMatch(nextMatch)}
-            className="w-full py-4 text-lg bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400"
+            className="w-full py-2.5 text-sm bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400"
           >
             🎤 Start Next Match
           </Button>
         </div>
       )}
 
-      {/* Butterfly-Style Bracket (NFL-Playoff layout) */}
-      <TournamentBracketButterfly
-        bracket={bracket}
-        currentMatch={currentMatch}
-        onPlayMatch={onPlayMatch}
-      />
+      {/* Bracket — fills remaining space, auto-scaled to fit */}
+      <div ref={bracketWrapperRef} className="flex-1 min-h-0 overflow-hidden flex items-start justify-center">
+        <div
+          ref={bracketInnerRef}
+          style={{ transform: `scale(${bracketScale})`, transformOrigin: 'top center' }}
+        >
+          <TournamentBracketButterfly
+            bracket={bracket}
+            currentMatch={currentMatch}
+            onPlayMatch={onPlayMatch}
+          />
+        </div>
+      </div>
 
-      {/* Queue Display - Remaining Matches */}
+      {/* Queue Display — compact row */}
       {playableMatches.length > 1 && !bracket.champion && (
-        <div className="mt-8 bg-white/5 rounded-lg p-4">
-          <h4 className="text-sm text-white/60 mb-3">📋 Upcoming Duels</h4>
-          <div className="flex flex-wrap gap-2">
+        <div className="mt-1 bg-white/5 rounded-lg p-1.5 shrink-0">
+          <h4 className="text-xs text-white/60 mb-1">📋 Upcoming Duels</h4>
+          <div className="flex flex-wrap gap-1">
             {playableMatches.slice(1, 5).map((match, i) => (
-              <div key={match.id} className="bg-white/5 rounded-lg px-3 py-2 text-sm border border-white/10">
+              <div key={match.id} className="bg-white/5 rounded px-2 py-0.5 text-xs border border-white/10">
                 <span className="text-white/60">{i + 2}.</span>{' '}
                 <span className="text-cyan-400">{match.player1?.name || 'TBD'}</span>
-                <span className="text-white/40 mx-1">vs</span>
+                <span className="text-white/40 mx-0.5">vs</span>
                 <span className="text-pink-400">{match.player2?.name || 'TBD'}</span>
               </div>
             ))}
             {playableMatches.length > 5 && (
-              <div className="text-white/40 text-sm self-center">
+              <div className="text-white/40 text-xs self-center">
                 +{playableMatches.length - 5} more
               </div>
             )}
