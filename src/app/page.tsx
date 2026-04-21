@@ -496,7 +496,7 @@ export default function KaraokeSuccessor() {
 
   return (
     <div
-      className="min-h-screen text-white theme-container"
+      className={`${IMMERSIVE_SCREENS.has(screen) ? 'h-screen overflow-hidden' : 'min-h-screen'} w-full text-white theme-container`}
       style={{
         background: `linear-gradient(135deg, var(--theme-background, #0a0a1a) 0%, var(--theme-background-secondary, #1a1a2e) 50%, color-mix(in srgb, var(--theme-primary, #00ffff) 15%, transparent) 100%)`,
         color: 'var(--theme-text, #ffffff)',
@@ -525,7 +525,7 @@ export default function KaraokeSuccessor() {
       {/* Main Content */}
       <main className={`${
         IMMERSIVE_SCREENS.has(screen)
-          ? 'pt-0 px-0 pb-0 h-screen'
+          ? 'pt-0 px-0 pb-0 w-full h-full'
           : isFullscreen
             ? 'pt-4 px-4 pb-8 min-h-screen'
             : 'pt-20 px-4 pb-8 min-h-screen'
