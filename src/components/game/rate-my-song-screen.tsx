@@ -13,8 +13,11 @@ import { PlayerProfile, Song, PLAYER_COLORS } from '@/types/game';
 import { getAllSongs } from '@/lib/game/song-library';
 import {
   addRateMySongEntry,
+  addDailyRateMySongEntry,
   getRateMySongTopN,
+  getDailyRateMySongTopN,
   type RateMySongEntry,
+  type RateMySongDailyEntry,
 } from '@/lib/game/rate-my-song-ranking';
 
 // ===================== TYPES =====================
@@ -623,12 +626,14 @@ interface RateMySongResultsScreenProps {
 
 export function RateMySongResultsScreen({ result, songId, onPlayAgain, onEnd }: RateMySongResultsScreenProps) {
   const [topRanking, setTopRanking] = useState<RateMySongEntry[]>([]);
+  const [dailyRanking, setDailyRanking] = useState<RateMySongDailyEntry[]>([]);
+  const [activeTab, setActiveTab] = useState<'daily' | 'alltime'>('daily');
 
   // Persist ratings and load ranking on mount
   useEffect(() => {
-    // Save each player's rating to the ranking
+    // Save each player's rating to both all-time and daily rankings
     for (const r of result.ratings) {
-      addRateMySongEntry({
+      const entryBase = {
         songId: songId || 'unknown',
         songTitle: result.songTitle,
         songArtist: '',
@@ -636,11 +641,14 @@ export function RateMySongResultsScreen({ result, songId, onPlayAgain, onEnd }: 
         playerName: r.playerName,
         playerColor: r.playerColor,
         rating: r.rating,
-        ratingCount: 1, // Each audience member counts
-      });
+        ratingCount: 1,
+      };
+      addRateMySongEntry(entryBase);
+      addDailyRateMySongEntry(entryBase);
     }
-    // Reload the top ranking
+    // Reload both rankings
     setTopRanking(getRateMySongTopN(5));
+    setDailyRanking(getDailyRateMySongTopN(5));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
@@ -679,37 +687,106 @@ export function RateMySongResultsScreen({ result, songId, onPlayAgain, onEnd }: 
           })}
         </div>
 
-        {/* Top Ranking */}
-        {topRanking.length > 0 && (
+        {/* Highscore Leaderboard */}
+        {(topRanking.length > 0 || dailyRanking.length > 0) && (
           <div className="mb-8 text-left">
-            <h3 className="text-lg font-semibold mb-3 text-center">🏅 Top-Ranking</h3>
-            <div className="space-y-2">
-              {topRanking.map((entry, i) => {
-                const score = entry.rating * Math.log2(entry.ratingCount + 1);
-                return (
-                  <div key={entry.id} className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10">
-                    <span className="text-lg w-6 text-center">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</span>
-                    <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                      style={{ backgroundColor: entry.playerColor }}
-                    >
-                      {entry.playerName.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm truncate">{entry.playerName}</div>
-                      <div className="text-[11px] text-gray-400 truncate">{entry.songTitle}</div>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <div className="text-sm font-bold text-amber-400">{entry.rating.toFixed(1)}</div>
-                      <div className="text-[10px] text-gray-500">Score: {score.toFixed(1)}</div>
-                    </div>
-                  </div>
-                );
-              })}
+            {/* Tab switcher */}
+            <div className="flex gap-2 mb-4 justify-center">
+              <button
+                onClick={() => setActiveTab('daily')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  activeTab === 'daily'
+                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
+                    : 'bg-white/5 text-gray-400 border border-transparent hover:bg-white/10'
+                }`}
+              >
+                📅 Tages-Highscore
+              </button>
+              <button
+                onClick={() => setActiveTab('alltime')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  activeTab === 'alltime'
+                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
+                    : 'bg-white/5 text-gray-400 border border-transparent hover:bg-white/10'
+                }`}
+              >
+                🏅 All-Time Highscore
+              </button>
             </div>
-            <p className="text-[10px] text-gray-500 text-center mt-2">
-              Score = Rating × log2(Bewertungen + 1)
-            </p>
+
+            {/* Daily Highscore */}
+            {activeTab === 'daily' && (
+              <>
+                {dailyRanking.length > 0 ? (
+                  <div className="space-y-2">
+                    {dailyRanking.map((entry, i) => (
+                      <div key={entry.id} className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10">
+                        <span className="text-lg w-6 text-center">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</span>
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                          style={{ backgroundColor: entry.playerColor }}
+                        >
+                          {entry.playerName.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm truncate">{entry.playerName}</div>
+                          <div className="text-[11px] text-gray-400 truncate">{entry.songTitle}</div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-sm font-bold text-amber-400">{entry.rating.toFixed(1)}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-gray-500 text-sm py-4">
+                    Noch keine Bewertungen heute. Sei der Erste!
+                  </p>
+                )}
+                <p className="text-[10px] text-gray-500 text-center mt-2">
+                  Tägliche Bestenliste — wird jeden Tag zurückgesetzt
+                </p>
+              </>
+            )}
+
+            {/* All-Time Highscore */}
+            {activeTab === 'alltime' && (
+              <>
+                {topRanking.length > 0 ? (
+                  <div className="space-y-2">
+                    {topRanking.map((entry, i) => {
+                      const score = entry.rating * Math.log2(entry.ratingCount + 1);
+                      return (
+                        <div key={entry.id} className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10">
+                          <span className="text-lg w-6 text-center">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</span>
+                          <div
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                            style={{ backgroundColor: entry.playerColor }}
+                          >
+                            {entry.playerName.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm truncate">{entry.playerName}</div>
+                            <div className="text-[11px] text-gray-400 truncate">{entry.songTitle}</div>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <div className="text-sm font-bold text-amber-400">{entry.rating.toFixed(1)}</div>
+                            <div className="text-[10px] text-gray-500">Score: {score.toFixed(1)}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-center text-gray-500 text-sm py-4">
+                    Noch keine Bewertungen vorhanden.
+                  </p>
+                )}
+                <p className="text-[10px] text-gray-500 text-center mt-2">
+                  Score = Rating × log2(Bewertungen + 1)
+                </p>
+              </>
+            )}
           </div>
         )}
 

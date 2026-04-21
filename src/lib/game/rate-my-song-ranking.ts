@@ -6,7 +6,8 @@
  * high ratings AND a larger number of evaluations.
  */
 
-const STORAGE_KEY = 'karaoke-rate-my-song-history';
+const STORAGE_KEY_ALLTIME = 'karaoke-rate-my-song-history';
+const STORAGE_KEY_DAILY = 'karaoke-rate-my-song-daily';
 
 export interface RateMySongEntry {
   id: string;              // unique entry id
@@ -21,6 +22,20 @@ export interface RateMySongEntry {
   timestamp: number;       // Date.now()
 }
 
+export interface RateMySongDailyEntry {
+  id: string;
+  songId: string;
+  songTitle: string;
+  songArtist: string;
+  playerId: string;
+  playerName: string;
+  playerColor: string;
+  rating: number;
+  ratingCount: number;
+  timestamp: number;
+  date: string;            // 'YYYY-MM-DD'
+}
+
 export interface RateMySongRanking {
   entries: RateMySongEntry[];
 }
@@ -28,7 +43,7 @@ export interface RateMySongRanking {
 function loadRanking(): RateMySongRanking {
   if (typeof window === 'undefined') return { entries: [] };
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY_ALLTIME);
     if (raw) return JSON.parse(raw);
   } catch { /* ignore */ }
   return { entries: [] };
@@ -37,7 +52,40 @@ function loadRanking(): RateMySongRanking {
 function saveRanking(ranking: RateMySongRanking) {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(ranking));
+    localStorage.setItem(STORAGE_KEY_ALLTIME, JSON.stringify(ranking));
+  } catch { /* ignore quota errors */ }
+}
+
+// ── Daily Highscore helpers ──
+
+function getTodayString(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+interface DailyRanking {
+  entries: RateMySongDailyEntry[];
+}
+
+function loadDailyRanking(): DailyRanking {
+  if (typeof window === 'undefined') return { entries: [] };
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_DAILY);
+    if (raw) {
+      const data: DailyRanking = JSON.parse(raw);
+      // Clean up entries older than today
+      const today = getTodayString();
+      data.entries = data.entries.filter(e => e.date === today);
+      return data;
+    }
+  } catch { /* ignore */ }
+  return { entries: [] };
+}
+
+function saveDailyRanking(data: DailyRanking) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(STORAGE_KEY_DAILY, JSON.stringify(data));
   } catch { /* ignore quota errors */ }
 }
 
@@ -94,6 +142,54 @@ export function getRateMySongTopN(n: number = 10): RateMySongEntry[] {
   return getRateMySongRanking().slice(0, n);
 }
 
+// ── Daily Highscore ──
+
+/** Add a daily entry — keeps the best rating per player+song for today */
+export function addDailyRateMySongEntry(entry: Omit<RateMySongDailyEntry, 'id' | 'timestamp' | 'date'>): RateMySongDailyEntry {
+  const daily = loadDailyRanking();
+  const today = getTodayString();
+
+  const existingIdx = daily.entries.findIndex(
+    e => e.playerId === entry.playerId && e.songId === entry.songId && e.date === today
+  );
+
+  const newEntry: RateMySongDailyEntry = {
+    ...entry,
+    id: existingIdx >= 0 ? daily.entries[existingIdx].id : crypto.randomUUID(),
+    timestamp: Date.now(),
+    date: today,
+  };
+
+  if (existingIdx >= 0) {
+    const old = daily.entries[existingIdx];
+    if (entry.rating > old.rating) {
+      newEntry.id = old.id;
+      daily.entries[existingIdx] = newEntry;
+    } else {
+      // Update rating count even if rating isn't better
+      daily.entries[existingIdx] = {
+        ...old,
+        ratingCount: old.ratingCount + entry.ratingCount,
+      };
+      saveDailyRanking(daily);
+      return daily.entries[existingIdx];
+    }
+  } else {
+    daily.entries.push(newEntry);
+  }
+
+  saveDailyRanking(daily);
+  return newEntry;
+}
+
+/** Get today's entries sorted by rating (descending) */
+export function getDailyRateMySongTopN(n: number = 10): RateMySongDailyEntry[] {
+  const daily = loadDailyRanking();
+  return daily.entries
+    .sort((a, b) => b.rating - a.rating)
+    .slice(0, n);
+}
+
 /** Get ranking for a specific player */
 export function getPlayerRateMySongRanking(playerId: string): RateMySongEntry[] {
   const ranking = loadRanking();
@@ -109,5 +205,6 @@ export function getPlayerRateMySongRanking(playerId: string): RateMySongEntry[] 
 /** Clear all rating history */
 export function clearRateMySongRanking() {
   if (typeof window === 'undefined') return;
-  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(STORAGE_KEY_ALLTIME);
+  localStorage.removeItem(STORAGE_KEY_DAILY);
 }
