@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { getAllSongs } from '@/lib/game/song-library';
@@ -29,10 +29,146 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
   const party = usePartyStore();
 
   // State for Rate my Song results
-  const [rateMySongResult, setRateMySongResult] = React.useState<RateMySongResult | null>(null);
+  const [rateMySongResult, setRateMySongResult] = useState<RateMySongResult | null>(null);
+
+  // ── Tournament mic assignment overlay state ──
+  const [micOverlay, setMicOverlay] = useState<{ p1Name: string; p2Name: string; p1Mic: string; p2Mic: string; countdown: number } | null>(null);
+  const micOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup timer on unmount
+  useEffect(() => () => {
+    if (micOverlayTimerRef.current) clearTimeout(micOverlayTimerRef.current);
+  }, []);
+
+  // Helper: fetch connected companion profiles and compute mic assignments
+  const startMatchWithMicOverlay = useCallback(async (
+    match: import('@/lib/game/tournament').TournamentMatch,
+  ) => {
+    if (!match.player1 || !match.player2) return;
+
+    // Set up mic assignments: check companion connections
+    let p1Mic = 'Mikrofon 1';
+    let p2Mic = 'Mikrofon 2';
+
+    try {
+      const res = await fetch('/api/mobile?action=getprofiles');
+      if (res.ok) {
+        const data = await res.json();
+        const connectedProfiles: Array<{ id: string; name: string; clientId?: string }> = Array.isArray(data) ? data : [];
+
+        const p1Companion = connectedProfiles.find(p =>
+          p.id === match.player1.id || p.name === match.player1.name
+        );
+        const p2Companion = connectedProfiles.find(p =>
+          p.id === match.player2.id || p.name === match.player2.name
+        );
+
+        // Companion-connected players sing via companion app
+        if (p1Companion) p1Mic = 'Companion';
+        if (p2Companion) p2Mic = 'Companion';
+
+        // If both players are companions, one still needs a mic (shouldn't happen in 1v1)
+        // If both use mics, that's the default
+      }
+    } catch {
+      // Silently fail — default to Mic 1 / Mic 2
+    }
+
+    // Show mic assignment overlay with countdown
+    setMicOverlay({
+      p1Name: match.player1.name,
+      p2Name: match.player2.name,
+      p1Mic,
+      p2Mic,
+      countdown: 3,
+    });
+  }, []);
+
+  // Countdown timer for mic assignment overlay
+  useEffect(() => {
+    if (!micOverlay) return;
+
+    if (micOverlayTimerRef.current) clearTimeout(micOverlayTimerRef.current);
+
+    if (micOverlay.countdown <= 0) {
+      // Time's up — actually start the match
+      micOverlayTimerRef.current = null;
+      const match = party.currentTournamentMatch;
+      if (!match) return;
+
+      setMicOverlay(null);
+
+      // Reset game state for new match
+      resetGame();
+
+      // Store mic assignments in unifiedSetupResult for MicIndicator display
+      const setupResult: GameSetupResult = {
+        players: [
+          { id: match.player1!.id, name: match.player1!.name, color: match.player1!.color || '#FF6B6B', playerType: micOverlay.p1Mic === 'Companion' ? 'companion' : 'microphone', micId: 'default', micName: micOverlay.p1Mic },
+          { id: match.player2!.id, name: match.player2!.name, color: match.player2!.color || '#4ECDC4', playerType: micOverlay.p2Mic === 'Companion' ? 'companion' : 'microphone', micId: 'default', micName: micOverlay.p2Mic },
+        ],
+        settings: {},
+        songSelection: 'random',
+        difficulty: 'medium',
+        inputMode: 'microphone',
+      };
+      party.setUnifiedSetupResult(setupResult);
+
+      // Add both players for the duel
+      addPlayer({ id: match.player1.id, name: match.player1.name, avatar: match.player1.avatar, color: match.player1.color });
+      addPlayer({ id: match.player2.id, name: match.player2.name, avatar: match.player2.avatar, color: match.player2.color });
+
+      setGameMode('duel');
+
+      const songs = getAllSongs();
+      if (songs.length > 0) {
+        const randomSong = songs[Math.floor(Math.random() * songs.length)];
+        setSong(randomSong);
+        setScreen('game');
+      }
+      return;
+    }
+
+    micOverlayTimerRef.current = setTimeout(() => {
+      setMicOverlay(prev => prev ? { ...prev, countdown: prev.countdown - 1 } : null);
+    }, 1000);
+
+    return () => { if (micOverlayTimerRef.current) clearTimeout(micOverlayTimerRef.current); };
+  }, [micOverlay, party.currentTournamentMatch, resetGame, addPlayer, setGameMode, setSong, setScreen, getAllSongs, party]);
 
   return (
     <>
+      {/* Tournament Mic Assignment Overlay */}
+      {micOverlay && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="bg-zinc-900 border border-amber-500/30 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl text-center">
+            <div className="text-4xl mb-4">🎤</div>
+            <h2 className="text-xl font-bold text-white mb-6">Mikrofon-Zuweisung</h2>
+            <div className="text-lg font-bold text-amber-400 animate-pulse mb-6">{micOverlay.countdown}</div>
+            <div className="space-y-3 text-left">
+              <div className="flex items-center gap-3 bg-white/5 rounded-lg p-3">
+                <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center text-lg font-bold text-cyan-400 shrink-0">
+                  1
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-white truncate">{micOverlay.p1Name}</div>
+                  <div className="text-sm text-cyan-400">singt mit <b>{micOverlay.p1Mic}</b></div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 bg-white/5 rounded-lg p-3">
+                <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-lg font-bold text-purple-400 shrink-0">
+                  2
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-white truncate">{micOverlay.p2Name}</div>
+                  <div className="text-sm text-purple-400">singt mit <b>{micOverlay.p2Mic}</b></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Pass the Mic Setup Screen */}
       {screen === 'pass-the-mic' && (
         <PassTheMicSetupScreen
@@ -88,38 +224,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           currentMatch={party.currentTournamentMatch}
           matchAborted={party.tournamentMatchAborted}
           onPlayMatch={(match) => {
-            if (!match.player1 || !match.player2) return;
-
-            party.setCurrentTournamentMatch(match);
-            party.setTournamentMatchAborted(false);
-
-            // Reset game state for new match
-            resetGame();
-
-            // Add both players for the duel (they sing simultaneously)
-            addPlayer({
-              id: match.player1.id,
-              name: match.player1.name,
-              avatar: match.player1.avatar,
-              color: match.player1.color,
-            });
-            addPlayer({
-              id: match.player2.id,
-              name: match.player2.name,
-              avatar: match.player2.avatar,
-              color: match.player2.color,
-            });
-
-            // Set game mode to 'duel' for simultaneous singing
-            setGameMode('duel');
-
-            // Set a random song for the match
-            const songs = getAllSongs();
-            if (songs.length > 0) {
-              const randomSong = songs[Math.floor(Math.random() * songs.length)];
-              setSong(randomSong);
-              setScreen('game');
-            }
+            startMatchWithMicOverlay(match);
           }}
           onManualWinner={(matchId, winnerId) => {
             if (!party.tournamentBracket || !party.currentTournamentMatch) return;
