@@ -139,7 +139,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         });
       }
     }
-  }, [currentRound?.songId, songs]);
+  }, [currentRound?.songId, songs, game.currentRound]);
 
   // Load media when song changes — handles both browser (IndexedDB) and Tauri (filesystem)
   useEffect(() => {
@@ -203,12 +203,16 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     };
     
     loadMedia();
-  }, [currentSong]);
+  }, [currentSong, game.currentRound]);
 
   // Reset audio-has-played guard when song changes
   useEffect(() => {
     audioHasPlayedRef.current = false;
-  }, [currentSong?.id]);
+    // Reset media loaded so the game re-initializes for each new round
+    setMediaLoaded(false);
+    resolvedAudioUrlRef.current = null;
+    resolvedVideoUrlRef.current = null;
+  }, [currentSong?.id, game.currentRound]);
 
   // Initialize pitch detection and start game loop when playing
   useEffect(() => {
@@ -257,7 +261,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         }
       };
     }
-  }, [game.status, mediaLoaded, currentSong, pitchInitialized, initPitch, startPitch, stopPitch]);
+  }, [game.status, mediaLoaded, currentSong, pitchInitialized, game.currentRound, initPitch, startPitch, stopPitch]);
 
   // Companion pitch data polling — fetch pitch results from companion phones
   // Companion apps detect pitch on-device and submit via /api/mobile?action=pitch
@@ -450,7 +454,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
       return () => clearInterval(interval);
     }
-  }, [game.status, currentRound?.duration]);
+  }, [game.status, currentRound?.duration, game.currentRound]);
 
   // Handle round end - eliminates lowest scoring player
   // Uses refs for game/activePlayers to avoid stale closures in the
