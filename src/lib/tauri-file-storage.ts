@@ -313,8 +313,8 @@ async function processFolder(
   // Normalize base folder separators to construct correct full path
   let txtContent: string | null = null;
   try {
-    const normalizedBase = baseFolder.replace(/\\/g, '/').replace(/\/+$/, '');
-    const fullPath = `${normalizedBase}/${txtFile.path}`;
+    const normalizedBase = normalizeFilePath(baseFolder);
+    const fullPath = `${normalizedBase}/${normalizeFilePath(txtFile.path)}`;
     txtContent = await nativeReadFileText(fullPath);
   } catch (e) {
     console.warn('[TauriScanner] Could not read TXT:', txtFile.path, e);
@@ -456,7 +456,7 @@ async function processFolder(
   
   // Get the folder containing the TXT file (relative to baseFolder)
   // Normalize to forward slashes first for consistent handling
-  const normalizedTxtPath = txtFile.path.replace(/\\/g, '/');
+  const normalizedTxtPath = normalizeFilePath(txtFile.path);
   const txtDir = normalizedTxtPath.includes('/') ? normalizedTxtPath.substring(0, normalizedTxtPath.lastIndexOf('/')) : '';
   
   // Helper to resolve file reference from TXT header
@@ -464,12 +464,12 @@ async function processFolder(
     if (refFile) {
       // Reference from TXT - combine with TXT directory
       // The reference is typically just a filename, relative to the TXT file location
-      const resolvedPath = txtDir ? `${txtDir}/${refFile}` : refFile;
+      const resolvedPath = txtDir ? normalizeFilePath(`${txtDir}/${refFile}`) : normalizeFilePath(refFile);
       console.log(`[TauriScanner] Resolved TXT reference: ${refFile} -> ${resolvedPath}`);
       return resolvedPath;
     }
     // Fallback to scanned file
-    return fallbackFile?.path;
+    return fallbackFile?.path ? normalizeFilePath(fallbackFile.path) : undefined;
   };
 
   // Determine audio and video paths
@@ -804,7 +804,7 @@ export async function getPlayableUrl(relativePath: string): Promise<string> {
     const appDataPath = await getAppDataPath();
     
     if (appDataPath) {
-      const fullPath = `${appDataPath}/${relativePath}`;
+      const fullPath = `${normalizeFilePath(appDataPath)}/${normalizeFilePath(relativePath)}`;
       
       // Check cache first
       const cachedUrl = blobUrlCache.get(fullPath);
@@ -958,7 +958,7 @@ async function findFileByScanningParentFolder(
     let parentDir: string;
     if (parentRelDir) {
       // Try both forward slashes and OS-native separators
-      parentDir = `${baseFolder}/${parentRelDir}`;
+      parentDir = `${normalizeFilePath(baseFolder)}/${normalizeFilePath(parentRelDir)}`;
     } else {
       return null; // File is in root, no parent to scan
     }

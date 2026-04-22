@@ -88,6 +88,23 @@ export function getCustomSongs(): Song[] {
     const stored = localStorage.getItem(CUSTOM_SONGS_KEY);
     if (stored) {
       const songs = JSON.parse(stored);
+      // One-time migration: normalize all path fields to fix HTML entities
+      // (e.g. &amp; → &) that may have been introduced during serialization
+      let needsResave = false;
+      for (const song of songs) {
+        const fields: (keyof Song)[] = ['baseFolder', 'relativeAudioPath', 'relativeVideoPath', 'relativeCoverPath', 'relativeTxtPath', 'folderPath', 'relativeBackgroundPath'];
+        for (const field of fields) {
+          const val = song[field];
+          if (typeof val === 'string' && (val.includes('&amp;') || val.includes('&lt;') || val.includes('&gt;'))) {
+            (song as any)[field] = normalizeFilePath(val);
+            needsResave = true;
+          }
+        }
+      }
+      if (needsResave) {
+        console.log('[SongLibrary] Fixed HTML entities in stored song paths, re-saving');
+        try { localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(songs)); } catch {}
+      }
       customSongsCache = songs;
       // Trigger background migration to IndexedDB
       if (typeof indexedDB !== 'undefined' && songs.length > 0) {
@@ -126,6 +143,22 @@ export async function loadCustomSongsFromStorage(): Promise<Song[]> {
     if (scanInProgress) {
       console.log('[SongLibrary] Skipping loadCustomSongsFromStorage — scan started during load');
       return getCustomSongs();
+    }
+    // Normalize path fields (fix HTML entities in stored data)
+    let needsResave = false;
+    for (const song of songs) {
+      const fields: (keyof Song)[] = ['baseFolder', 'relativeAudioPath', 'relativeVideoPath', 'relativeCoverPath', 'relativeTxtPath', 'folderPath', 'relativeBackgroundPath'];
+      for (const field of fields) {
+        const val = song[field];
+        if (typeof val === 'string' && (val.includes('&amp;') || val.includes('&lt;') || val.includes('&gt;'))) {
+          (song as any)[field] = normalizeFilePath(val);
+          needsResave = true;
+        }
+      }
+    }
+    if (needsResave) {
+      console.log('[SongLibrary] Fixed HTML entities in IndexedDB song paths, re-saving');
+      saveCustomSongsToDB(songs).catch(() => {});
     }
     // Only overwrite cache if it's empty or has fewer songs.
     if (songs.length > 0 && (!customSongsCache || customSongsCache.length < songs.length)) {
