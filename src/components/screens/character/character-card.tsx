@@ -34,12 +34,6 @@ export function CharacterCard({ profile, isSelected, isActiveProfile, onClick, i
         }
       `}
     >
-          {isClaimedByCompanion && (
-            <div className="absolute top-2 left-2 text-[10px] bg-purple-500/80 text-white px-1.5 py-0.5 rounded-full flex items-center gap-1" title={claimedByDevice ? `Verbunden: ${claimedByDevice}` : 'Von Companion belegt'}>
-              <span>📱</span>
-              <span>Verbunden</span>
-            </div>
-          )}
       {/* Active/Inactive Status Indicator */}
       <div
         className={`absolute top-2 right-2 w-3 h-3 rounded-full border border-black/30 ${
@@ -78,7 +72,15 @@ export function CharacterCard({ profile, isSelected, isActiveProfile, onClick, i
         <div className="text-xs text-white/50 mb-1">
           {rank?.icon} Lv.{level?.level || 1}
         </div>
-        
+
+        {/* Connection marker — below level display instead of overlaying avatar */}
+        {isClaimedByCompanion && (
+          <div className="text-[10px] bg-purple-500/80 text-white px-1.5 py-0.5 rounded-full flex items-center gap-1" title={claimedByDevice ? `Verbunden: ${claimedByDevice}` : 'Von Companion belegt'}>
+            <span>📱</span>
+            <span>Verbunden</span>
+          </div>
+        )}
+
         {/* Country flag */}
         {profile.country && (
           <div className="text-lg">
