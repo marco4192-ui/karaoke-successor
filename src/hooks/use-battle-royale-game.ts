@@ -142,6 +142,11 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   }, [currentRound?.songId, songs, game.currentRound]);
 
   // Load media when song changes — handles both browser (IndexedDB) and Tauri (filesystem)
+  // NOTE: Only depends on currentSong, NOT game.currentRound.
+  // When a new round starts, currentRound changes before currentSong is set,
+  // causing a race condition where media loads for the wrong (old) song.
+  // The reset effect (below) handles clearing state on round changes;
+  // this effect only fires once the correct song is available.
   useEffect(() => {
     const loadMedia = async () => {
       if (!currentSong) {
@@ -183,17 +188,28 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         }
       }
       
+      // Handle embedded audio: video and audio share the same file
+      // relativeAudioPath points to a video file, relativeVideoPath is undefined
+      if (currentSong.hasEmbeddedAudio && audioUrl && !videoUrl) {
+        videoUrl = audioUrl;
+        console.log('[BattleRoyale] Embedded audio detected — using audio URL as video URL');
+      }
+      
       // Store resolved URLs for the play check
       resolvedAudioUrlRef.current = audioUrl || null;
       resolvedVideoUrlRef.current = videoUrl || null;
       
-      // Set up audio element (always exists now — not conditional)
+      console.log('[BattleRoyale] Media resolved:', { audioUrl: audioUrl ? 'set' : 'missing', videoUrl: videoUrl ? 'set' : 'missing' });
+      
+      // Set up audio element
       if (audioRef.current && audioUrl) {
         audioRef.current.src = audioUrl;
         audioRef.current.load();
+      } else {
+        console.warn('[BattleRoyale] No audio URL available — audio will not play');
       }
       
-      // Set up video element (always exists now — not conditional)
+      // Set up video element
       if (videoRef.current && videoUrl) {
         videoRef.current.src = videoUrl;
         videoRef.current.load();
@@ -203,7 +219,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     };
     
     loadMedia();
-  }, [currentSong, game.currentRound]);
+  }, [currentSong]);
 
   // Reset audio-has-played guard when song changes
   useEffect(() => {
@@ -231,11 +247,25 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
         startPitch();
         
-        // Start audio/video playback — use resolved URLs, not the original song fields
-        if (audioRef.current && resolvedAudioUrlRef.current) {
-          audioRef.current.play()
-            .then(() => { audioHasPlayedRef.current = true; })
-            .catch(e => console.error('Audio play error:', e));
+        // Wait for audio element to be ready before playing
+        // This prevents play() failures when the source was just set
+        const audio = audioRef.current;
+        if (audio && resolvedAudioUrlRef.current) {
+          if (audio.readyState >= 3) { // HAVE_FUTURE_DATA or higher
+            audio.play()
+              .then(() => { audioHasPlayedRef.current = true; })
+              .catch(e => console.error('Audio play error:', e));
+          } else {
+            const onCanPlay = () => {
+              audio.removeEventListener('canplay', onCanPlay);
+              if (!cancelled) {
+                audio.play()
+                  .then(() => { audioHasPlayedRef.current = true; })
+                  .catch(e => console.error('Audio play error:', e));
+              }
+            };
+            audio.addEventListener('canplay', onCanPlay);
+          }
         } else {
           console.warn('[BattleRoyale] No audio URL resolved — starting without audio');
         }
@@ -261,7 +291,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         }
       };
     }
-  }, [game.status, mediaLoaded, currentSong, pitchInitialized, game.currentRound, initPitch, startPitch, stopPitch]);
+  }, [game.status, mediaLoaded, currentSong, pitchInitialized, initPitch, startPitch, stopPitch]);
 
   // Companion pitch data polling — fetch pitch results from companion phones
   // Companion apps detect pitch on-device and submit via /api/mobile?action=pitch
