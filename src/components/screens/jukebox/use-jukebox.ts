@@ -10,6 +10,10 @@ export function useJukebox() {
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [playlist, setPlaylist] = useState<Song[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  // Track which song IDs were manually added (via companion wishlist) vs random system picks
+  const manualIdsRef = useRef(new Set<string>());
+  // Track already-processed wishlist items to avoid re-inserting duplicates
+  const processedWishlistRef = useRef(new Set<string>());
   const [filterGenre, setFilterGenre] = useState<string>('all');
   const [filterArtist, setFilterArtist] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -96,7 +100,57 @@ export function useJukebox() {
     setPlaylist(newPlaylist);
     setCurrentIndex(0);
     setCurrentSong(newPlaylist[0] || null);
+    // Reset manual tracking — all songs in generated playlist are random
+    manualIdsRef.current = new Set();
+    processedWishlistRef.current = new Set();
   }, [filteredSongs, shuffle, prepareSong]);
+
+  // Insert a manually-added song after the last manual song (or after current) but before the first random song
+  const insertManualSong = useCallback((song: Song) => {
+    // Don't insert duplicates already in the playlist
+    if (playlist.some(s => s.id === song.id)) return;
+    setPlaylist(prev => {
+      const newPlaylist = [...prev];
+      // Find the first 'random' song after currentIndex
+      const insertIdx = newPlaylist.findIndex((s, idx) => idx > currentIndex && !manualIdsRef.current.has(s.id));
+      if (insertIdx === -1) {
+        // All songs after current are manual, or at end of list → append
+        newPlaylist.push(song);
+      } else {
+        newPlaylist.splice(insertIdx, 0, song);
+      }
+      manualIdsRef.current.add(song.id);
+      return newPlaylist;
+    });
+  }, [playlist, currentIndex]);
+
+  // Poll companion jukebox wishlist and insert new manual songs into the playlist
+  useEffect(() => {
+    if (!isPlaying) return;
+    let active = true;
+    const pollWishlist = async () => {
+      try {
+        const res = await fetch('/api/mobile?action=getjukebox');
+        const data = await res.json();
+        if (!active || !data.success || !Array.isArray(data.wishlist)) return;
+        for (const item of data.wishlist) {
+          const key = `${item.songId}-${item.addedBy}`;
+          if (processedWishlistRef.current.has(key)) continue;
+          processedWishlistRef.current.add(key);
+          // Resolve wishlist item to full Song object
+          const fullSong = songs.find(s => s.id === item.songId);
+          if (fullSong) {
+            insertManualSong(fullSong);
+          }
+        }
+      } catch {
+        // Ignore polling errors
+      }
+    };
+    pollWishlist();
+    const interval = setInterval(pollWishlist, 5000);
+    return () => { active = false; clearInterval(interval); };
+  }, [isPlaying, songs, insertManualSong]);
 
   // Play next song
   const playNext = useCallback(async () => {
@@ -212,6 +266,8 @@ export function useJukebox() {
       setCurrentSong(null);
       setCurrentIndex(0);
       setIsPlaying(false);
+      manualIdsRef.current = new Set();
+      processedWishlistRef.current = new Set();
     };
   }, []);
 
