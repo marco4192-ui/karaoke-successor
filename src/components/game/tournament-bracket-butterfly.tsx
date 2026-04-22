@@ -16,8 +16,7 @@ const MATCH_W_FIRST_ROUND = 210; // Wider for horizontal (side-by-side) layout
 const COL_GAP = 48;
 const FINAL_GAP = 56;
 const ROUND_LABEL_H = 24; // space for round labels above bracket
-const MIN_UNIT_SPACING = 90; // minimum vertical spacing between adjacent match centres (prevents card overlap)
-const FINAL_Y = 50; // Y-position for the final match card (near top)
+const MIN_UNIT_SPACING = 72; // minimum vertical spacing between adjacent match centres (prevents card overlap)
 
 interface ButterflyBracketProps {
   bracket: TournamentBracket;
@@ -69,6 +68,10 @@ export function TournamentBracketButterfly({
   const neededEffectiveH = firstRoundCount * MIN_UNIT_SPACING;
   const effectiveH = Math.max(rawEffectiveH, neededEffectiveH);
   const bracketH = effectiveH + ROUND_LABEL_H;
+
+  // Final match Y position: ~30% from top (not hardcoded pixel, relative to bracket height)
+  // This places the final roughly 20% lower than the previous fixed 50px
+  const FINAL_Y = bracketH * 0.30;
 
   // Memoised helper (adds top padding for round labels)
   const getCY = (round: number, pos: number) =>

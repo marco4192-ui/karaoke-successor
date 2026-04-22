@@ -326,11 +326,11 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
         </div>
       )}
 
-      {/* Bracket — fills remaining space, auto-scaled to fit */}
-      <div ref={bracketWrapperRef} className="flex-1 min-h-0 overflow-hidden flex items-start justify-center">
+      {/* Bracket — fills remaining space, auto-scaled and vertically centered */}
+      <div ref={bracketWrapperRef} className="flex-1 min-h-0 overflow-hidden flex items-center justify-center">
         <div
           ref={bracketInnerRef}
-          style={{ transform: `scale(${bracketScale})`, transformOrigin: 'top center' }}
+          style={{ transform: `scale(${bracketScale})`, transformOrigin: 'center center' }}
         >
           <TournamentBracketButterfly
             bracket={bracket}
