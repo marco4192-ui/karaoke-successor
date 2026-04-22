@@ -319,39 +319,38 @@ export function PassTheMicGameView({ players, song, segments, settings, onUpdate
     onUpdateGame(players, updatedSegments);
   }, []);
 
-  // Game loop
+  // Game loop — uses requestAnimationFrame for smooth timing
+  // NOTE: currentTime is driven ONLY by the audio element's onTimeUpdate.
+  // We do NOT manually increment it here — that would conflict with the audio
+  // source and cause erratic jumping / loop behaviour.
   useEffect(() => {
     if (!isPlaying) return;
 
-    const interval = setInterval(() => {
-      setCurrentTime(prev => {
-        const newTime = prev + 100;
-        
-        // Check if we need to switch segments
-        if (currentSegment && newTime >= currentSegment.endTime) {
-          if (currentSegmentIndex < segments.length - 1) {
-            setCurrentSegmentIndex(prev => prev + 1);
-            // Switch to next player in rotation
-            setCurrentPlayerIndex(prev => (prev + 1) % players.length);
-          } else {
-            // Game ended
-            setIsPlaying(false);
-          }
-        }
+    const checkSegmentSwitch = () => {
+      // Random switches
+      if (safeSettings.randomSwitches && Math.random() < 0.001) {
+        const nextPlayer = (currentPlayerIndex + 1 + Math.floor(Math.random() * (players.length - 1))) % players.length;
+        setCurrentPlayerIndex(nextPlayer);
+        setSwitchCountdown(3);
+      }
+    };
 
-        // Random switches
-        if (safeSettings.randomSwitches && Math.random() < 0.001) { // 0.1% chance per tick
-          const nextPlayer = (currentPlayerIndex + 1 + Math.floor(Math.random() * (players.length - 1))) % players.length;
-          setCurrentPlayerIndex(nextPlayer);
-          setSwitchCountdown(3);
-        }
-
-        return newTime;
-      });
-    }, 100);
-
+    const interval = setInterval(checkSegmentSwitch, 100);
     return () => clearInterval(interval);
-  }, [isPlaying, currentSegment, currentSegmentIndex, segments.length, safeSettings.randomSwitches, currentPlayerIndex, players.length]);
+  }, [isPlaying, safeSettings.randomSwitches, currentPlayerIndex, players.length]);
+
+  // Segment switching — driven by currentTime from audio onTimeUpdate
+  useEffect(() => {
+    if (!isPlaying) return;
+    if (currentSegment && currentTime >= currentSegment.endTime) {
+      if (currentSegmentIndex < segments.length - 1) {
+        setCurrentSegmentIndex(prev => prev + 1);
+        setCurrentPlayerIndex(prev => (prev + 1) % players.length);
+      } else {
+        setIsPlaying(false);
+      }
+    }
+  }, [isPlaying, currentTime, currentSegment, currentSegmentIndex, segments.length, players.length]);
 
   // Switch countdown
   useEffect(() => {
@@ -375,8 +374,13 @@ export function PassTheMicGameView({ players, song, segments, settings, onUpdate
         if (prev <= 1) {
           clearInterval(countdownInterval);
           setIsPlaying(true);
-          if (audioRef.current && song.audioUrl) {
-            audioRef.current.play().catch(() => {});
+          // Reset currentTime for clean start
+          setCurrentTime(0);
+          if (audioRef.current) {
+            audioRef.current.currentTime = 0;
+            audioRef.current.play().catch((e) => {
+              console.warn('[PassTheMic] Audio play failed:', e);
+            });
           }
           return 0;
         }
@@ -408,15 +412,15 @@ export function PassTheMicGameView({ players, song, segments, settings, onUpdate
   return (
     <div className="max-w-6xl mx-auto">
       {/* Audio Element */}
-      {song.audioUrl && (
-        <audio
-          ref={audioRef}
-          src={song.audioUrl}
-          onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime * 1000)}
-          onEnded={() => setIsPlaying(false)}
-          className="hidden"
-        />
-      )}
+      <audio
+        ref={audioRef}
+        src={song.audioUrl || song.videoBackground || ''}
+        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime * 1000)}
+        onEnded={() => setIsPlaying(false)}
+        onError={(e) => console.error('[PassTheMic] Audio error:', e)}
+        className="hidden"
+        preload="auto"
+      />
 
       {/* Quick Swap Overlay — shows when segment changes */}
       <QuickSwapOverlay

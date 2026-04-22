@@ -316,8 +316,11 @@ export function CompanionGameView({ players, song, settings, onUpdatePlayers, on
           setGamePhase('playing');
           // Set initial switch time
           setTimeUntilSwitch(generateSwitchTime());
-          if (audioRef.current && song.audioUrl) {
-            audioRef.current.play().catch(() => {});
+          if (audioRef.current) {
+            audioRef.current.currentTime = 0;
+            audioRef.current.play().catch((e) => {
+              console.warn('[CompanionSingAlong] Audio play failed:', e);
+            });
           }
           return 0;
         }
@@ -347,44 +350,40 @@ export function CompanionGameView({ players, song, settings, onUpdatePlayers, on
     }, 2000);
   }, [currentPlayerIndex, players.length, generateSwitchTime]);
 
-  // Game loop
+  // Game loop — currentTime is driven ONLY by the audio element's onTimeUpdate.
+  // We do NOT manually increment it — that would conflict with the audio
+  // source and cause erratic jumping / loop behaviour.
   useEffect(() => {
     if (!isPlaying || gamePhase !== 'playing') return;
 
-    const interval = setInterval(() => {
-      setCurrentTime(prev => {
-        const newTime = prev + 100;
-        
-        // Update switch countdown
-        setTimeUntilSwitch(prev => {
-          const newSwitchTime = prev - 100;
-          
-          // Warning blink
-          if (newSwitchTime <= settings.blinkWarning * 1000 && !switchWarning) {
-            setSwitchWarning(true);
-          }
-          
-          // Time to switch!
-          if (newSwitchTime <= 0) {
-            switchPlayer();
-            return generateSwitchTime();
-          }
-          
-          return newSwitchTime;
-        });
+    const checkSwitch = () => {
+      setTimeUntilSwitch(prev => {
+        const newSwitchTime = prev - 100;
 
-        // Check if song ended
-        if (newTime >= song.duration) {
-          setIsPlaying(false);
-          setGamePhase('ended');
+        // Warning blink
+        if (newSwitchTime <= settings.blinkWarning * 1000 && !switchWarning) {
+          setSwitchWarning(true);
         }
 
-        return newTime;
-      });
-    }, 100);
+        // Time to switch!
+        if (newSwitchTime <= 0) {
+          switchPlayer();
+          return generateSwitchTime();
+        }
 
+        return newSwitchTime;
+      });
+
+      // Check if song ended
+      if (currentTime >= song.duration) {
+        setIsPlaying(false);
+        setGamePhase('ended');
+      }
+    };
+
+    const interval = setInterval(checkSwitch, 100);
     return () => clearInterval(interval);
-  }, [isPlaying, gamePhase, switchWarning, settings.blinkWarning, song.duration, switchPlayer, generateSwitchTime]);
+  }, [isPlaying, gamePhase, switchWarning, settings.blinkWarning, song.duration, currentTime, switchPlayer, generateSwitchTime]);
 
   // Progress calculation
   const progress = (currentTime / song.duration) * 100;
@@ -407,15 +406,15 @@ export function CompanionGameView({ players, song, settings, onUpdatePlayers, on
   return (
     <div className="max-w-6xl mx-auto">
       {/* Audio Element */}
-      {song.audioUrl && (
-        <audio
-          ref={audioRef}
-          src={song.audioUrl}
-          onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime * 1000)}
-          onEnded={() => { setIsPlaying(false); setGamePhase('ended'); }}
-          className="hidden"
-        />
-      )}
+      <audio
+        ref={audioRef}
+        src={song.audioUrl || song.videoBackground || ''}
+        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime * 1000)}
+        onEnded={() => { setIsPlaying(false); setGamePhase('ended'); }}
+        onError={(e) => console.error('[CompanionSingAlong] Audio error:', e)}
+        className="hidden"
+        preload="auto"
+      />
 
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
