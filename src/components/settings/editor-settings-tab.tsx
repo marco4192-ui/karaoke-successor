@@ -163,7 +163,7 @@ export function EditorSettingsTab() {
           <p className="text-sm">Versuche andere Filterkriterien</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
           {filteredSongs.map(song => (
             <button
               key={song.id}
@@ -186,18 +186,18 @@ export function EditorSettingsTab() {
                   <img src={song.coverImage} alt={song.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-4xl opacity-50">🎵</span>
+                    <span className="text-2xl opacity-50">🎵</span>
                   </div>
                 )}
                 {/* Hover overlay */}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">Bearbeiten</span>
+                  <span className="text-white text-xs font-medium">Bearbeiten</span>
                 </div>
               </div>
               {/* Song Info */}
-              <div className="p-3">
-                <p className="font-medium truncate text-sm">{song.title}</p>
-                <p className="text-xs text-white/60 truncate">{song.artist}</p>
+              <div className="p-2">
+                <p className="font-medium truncate text-xs">{song.title}</p>
+                <p className="text-[10px] text-white/60 truncate">{song.artist}</p>
                 <div className="flex flex-wrap gap-1 mt-2">
                   <Badge variant="outline" className="text-[10px] px-1.5 py-0">{song.bpm} BPM</Badge>
                   {!song.genre && (
