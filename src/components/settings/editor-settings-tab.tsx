@@ -76,10 +76,10 @@ export function EditorSettingsTab() {
     getAllSongsAsync().then(setSongs);
   }, []);
   
-  // If a song is selected, show the editor (full height)
+  // If a song is selected, show the editor (full height, full width)
   if (selectedSong) {
     return (
-      <div className="h-[calc(100vh-8rem)] w-full">
+      <div className="h-[calc(100vh-8rem)] w-full -mx-4 md:-mx-6 overflow-hidden">
         <div className="h-full bg-slate-950 overflow-hidden">
           <KaraokeEditor
             song={selectedSong}

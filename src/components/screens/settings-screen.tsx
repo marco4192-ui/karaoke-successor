@@ -207,7 +207,7 @@ function SettingsScreen() {
   };
 
   return (
-    <div className={`theme-container w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8`}>
+    <div className={`theme-container w-full ${activeTab === 'editor' ? '' : 'max-w-7xl mx-auto px-4 md:px-6 lg:px-8'}`}>
       {/* Header */}
       {activeTab !== 'editor' && (
         <div className="mb-8">
@@ -217,7 +217,9 @@ function SettingsScreen() {
       )}
 
       {/* Tab Bar */}
-      <SettingsTabBar activeTab={activeTab} onTabChange={setActiveTab} tx={tx} />
+      <div className={activeTab === 'editor' ? 'px-4 md:px-6' : ''}>
+        <SettingsTabBar activeTab={activeTab} onTabChange={setActiveTab} tx={tx} />
+      </div>
 
       {/* Tab Content */}
       {activeTab === 'library' && (
