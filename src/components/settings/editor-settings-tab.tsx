@@ -101,6 +101,7 @@ export function EditorSettingsTab() {
   // Song selection view — matches styling of other settings tabs
   return (
     <div className="space-y-6">
+      <div className="mb-8"><h1 className="text-3xl font-bold mb-2 theme-adaptive-text">Settings</h1><p className="theme-adaptive-text-muted">Configure your karaoke experience</p></div>
       <Card className="bg-white/5 border-white/10">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
