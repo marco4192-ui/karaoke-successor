@@ -17,6 +17,7 @@ const COL_GAP = 48;
 const FINAL_GAP = 56;
 const ROUND_LABEL_H = 24; // space for round labels above bracket
 const MIN_UNIT_SPACING = 90; // minimum vertical spacing between adjacent match centres (prevents card overlap)
+const FINAL_Y = 50; // Y-position for the final match card (near top)
 
 interface ButterflyBracketProps {
   bracket: TournamentBracket;
@@ -153,12 +154,12 @@ export function TournamentBracketButterfly({
       }
     }
 
-    // ─ Left semi → Final ─
+    // ─ Left semi → Final (final at top) ─
     if (leftRounds.length > 0 && finalMatch) {
       const semi = leftRounds[nLeft - 1].matches[0];
       if (semi) {
         const sy = getCY(leftRounds[nLeft - 1].rn, semi.position);
-        const fy = bracketH / 2;
+        const fy = FINAL_Y;
         const semiW = colWidth(leftRounds[nLeft - 1].rn);
         p.push(`M ${leftX(nLeft - 1) + semiW} ${sy} L ${centerX} ${fy}`);
       }
@@ -194,12 +195,12 @@ export function TournamentBracketButterfly({
       }
     }
 
-    // ─ Right semi → Final ─
+    // ─ Right semi → Final (final at top) ─
     if (rightRounds.length > 0 && finalMatch) {
       const semi = rightRounds[0].matches[0];
       if (semi) {
         const sy = getCY(rightRounds[0].rn, semi.position - rightRounds[0].matches.length);
-        const fy = bracketH / 2;
+        const fy = FINAL_Y;
         p.push(`M ${centerX + MATCH_W_FINAL} ${fy} L ${rightX(0)} ${sy}`);
       }
     }
@@ -219,7 +220,7 @@ export function TournamentBracketButterfly({
 
   // ── Render ──────────────────────────────────────────────────
   return (
-    <div className="overflow-auto pb-4" style={{ maxHeight: '80vh' }}>
+    <div>
       <div
         className="relative mx-auto"
         style={{ width: totalW, height: bracketH }}
@@ -296,7 +297,7 @@ export function TournamentBracketButterfly({
             </div>
             <div
               className="absolute"
-              style={{ top: bracketH / 2, left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1 }}
+              style={{ top: FINAL_Y, left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1 }}
             >
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 via-yellow-500/20 to-amber-500/10 rounded-xl blur-xl -m-4" />
