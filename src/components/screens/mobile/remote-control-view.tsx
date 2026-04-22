@@ -131,7 +131,7 @@ export function RemoteControlView({
   };
   
   // Send command
-  const sendCommand = async (command: 'play' | 'pause' | 'stop' | 'next' | 'previous' | 'restart' | 'home' | 'library' | 'settings') => {
+  const sendCommand = async (command: 'play' | 'pause' | 'stop' | 'next' | 'previous' | 'restart' | 'home' | 'library' | 'settings' | 'up' | 'down' | 'left' | 'right') => {
     if (!clientId || !remoteState.hasControl) return;
     
     try {
@@ -337,7 +337,7 @@ export function RemoteControlView({
             <CardTitle className="text-sm">Navigation</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2 mb-2">
               <Button
                 onClick={() => sendCommand('home')}
                 variant="outline"
@@ -362,6 +362,39 @@ export function RemoteControlView({
                 <span className="text-xl">⚙️</span>
                 <span className="text-xs">Settings</span>
               </Button>
+            </div>
+            {/* Directional Controls */}
+            <div className="flex flex-col items-center gap-1 mt-2">
+              <Button
+                onClick={() => sendCommand('up')}
+                variant="outline"
+                className={`w-20 h-10 flex items-center justify-center border-white/20 ${commandSent === 'up' ? 'bg-cyan-500/30' : ''}`}
+              >
+                <span className="text-lg">⬆️</span>
+              </Button>
+              <div className="grid grid-cols-3 gap-1 w-36">
+                <Button
+                  onClick={() => sendCommand('left')}
+                  variant="outline"
+                  className={`h-10 flex items-center justify-center border-white/20 ${commandSent === 'left' ? 'bg-cyan-500/30' : ''}`}
+                >
+                  <span className="text-lg">⬅️</span>
+                </Button>
+                <Button
+                  onClick={() => sendCommand('down')}
+                  variant="outline"
+                  className={`h-10 flex items-center justify-center border-white/20 ${commandSent === 'down' ? 'bg-cyan-500/30' : ''}`}
+                >
+                  <span className="text-lg">⬇️</span>
+                </Button>
+                <Button
+                  onClick={() => sendCommand('right')}
+                  variant="outline"
+                  className={`h-10 flex items-center justify-center border-white/20 ${commandSent === 'right' ? 'bg-cyan-500/30' : ''}`}
+                >
+                  <span className="text-lg">➡️</span>
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
