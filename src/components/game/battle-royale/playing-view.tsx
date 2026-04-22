@@ -105,8 +105,8 @@ export function PlayingView({
 
       {/* ─────────── UPPER THIRD: Player Cards ─────────── */}
       <div className="flex-shrink-0 pt-3 px-3">
-        {/* Round Info Bar */}
-        <div className="flex items-center justify-between mb-3 px-2">
+        {/* Round Info Bar — offset left to avoid overlapping Back button */}
+        <div className="flex items-center justify-between mb-3 pl-16 pr-2">
           <div className="flex items-center gap-3">
             <h1 className="text-lg font-bold">Round {game.currentRound}</h1>
             <span className="text-sm text-white/50">{currentRound?.songName || '...'}</span>
