@@ -97,11 +97,14 @@ export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
 
       // Defensive: On Tauri/WebView, connecting the effect chain to
       // AudioContext.destination can cause <audio>/<video> elements to
-      // pause. Resume them immediately after initialization.
-      // Use a small delay to let the audio session settle.
-      setTimeout(() => {
-        resumeMediaElements();
-      }, 100);
+      // pause. Only resume them if the game is still playing — if we
+      // intentionally paused (e.g. audio effects panel), don't resume.
+      const currentStatus = useGameStore.getState().gameState.status;
+      if (currentStatus === 'playing') {
+        setTimeout(() => {
+          resumeMediaElements();
+        }, 100);
+      }
     } catch (error) {
       console.error('Failed to initialize audio effects:', error);
     }
@@ -112,10 +115,29 @@ export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
     if (!showAudioEffects) {
       // Opening the panel — pause the game first (saves current position)
       if (gameStatus === 'playing') {
+        // Save media positions BEFORE initAudioEffects (which may reset them
+        // on Tauri/WebView by stealing audio focus)
+        const savedAudioTime = audioRef?.current?.currentTime ?? null;
+        const savedVideoTime = videoRef?.current?.currentTime ?? null;
+
         pauseGame();
+        initAudioEffects();
+
+        // After initAudioEffects potentially resets media positions, restore them.
+        // Use a delay longer than the 100ms resumeMediaElements timeout inside init.
+        if (savedAudioTime !== null || savedVideoTime !== null) {
+          setTimeout(() => {
+            if (savedAudioTime !== null && audioRef?.current && !audioRef.current.ended) {
+              audioRef.current.currentTime = savedAudioTime;
+            }
+            if (savedVideoTime !== null && videoRef?.current && !videoRef.current.ended) {
+              videoRef.current.currentTime = savedVideoTime;
+            }
+          }, 150);
+        }
+      } else {
+        initAudioEffects();
       }
-      // Initialize audio effects if needed
-      initAudioEffects();
     } else {
       // Closing the panel — resume the game from where it was paused
       if (gameStatus === 'paused') {
@@ -123,7 +145,7 @@ export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
       }
     }
     setShowAudioEffects(prev => !prev);
-  }, [showAudioEffects, initAudioEffects, pauseGame, resumeGame, gameStatus]);
+  }, [showAudioEffects, initAudioEffects, pauseGame, resumeGame, gameStatus, audioRef, videoRef]);
 
   // Cleanup audio effects on unmount
   // NOTE: We do NOT stop the MediaStream tracks here because the PitchDetector
