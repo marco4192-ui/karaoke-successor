@@ -77,7 +77,9 @@ fn native_read_file_bytes(file_path: String) -> Result<String, String> {
         }
     }
 
-    Err(format!("File not found: {} (os error 3)", file_path))
+    // All attempts failed — report the last actual OS error for debugging
+    let last_err = fs::read(&path).err().unwrap_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "unknown"));
+    Err(format!("File not found: {} ({})", file_path, last_err))
 }
 
 /// Read a file as text (for TXT, config files, etc.)
@@ -121,7 +123,9 @@ fn native_read_file_text(file_path: String) -> Result<String, String> {
         }
     }
 
-    Err(format!("File not found: {} (os error 3)", file_path))
+    // All attempts failed — report the last actual OS error for debugging
+    let last_err = fs::read_to_string(&path).err().unwrap_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "unknown"));
+    Err(format!("File not found: {} ({})", file_path, last_err))
 }
 
 /// Check if a file or directory exists

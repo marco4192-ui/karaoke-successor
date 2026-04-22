@@ -47,7 +47,13 @@ export function useFolderScanner(): UseFolderScannerReturn {
   // Initialize folder and song count from localStorage
   const initializeFromStorage = useCallback(() => {
     try {
-      const savedFolder = localStorage.getItem('karaoke-songs-folder') || '';
+      let savedFolder = localStorage.getItem('karaoke-songs-folder') || '';
+      // CRITICAL: Normalize HTML entities in stored folder path
+      // (e.g. &amp; → &) that may have been introduced during serialization
+      if (savedFolder) {
+        savedFolder = normalizeFilePath(savedFolder);
+        localStorage.setItem('karaoke-songs-folder', savedFolder);
+      }
       setSongsFolder(savedFolder);
       setSongCount(getAllSongs().length);
 
@@ -73,9 +79,10 @@ export function useFolderScanner(): UseFolderScannerReturn {
     // CRITICAL: Set scan lock to prevent loadCustomSongsFromStorage race condition
     setScanInProgress(true);
 
-    // CRITICAL: Always save the songs folder to localStorage
-    localStorage.setItem('karaoke-songs-folder', folderPath);
-    console.log('[Import] Saved karaoke-songs-folder to localStorage:', folderPath);
+    // CRITICAL: Always save the songs folder to localStorage (normalized)
+    const normalizedFolder = normalizeFilePath(folderPath);
+    localStorage.setItem('karaoke-songs-folder', normalizedFolder);
+    console.log('[Import] Saved karaoke-songs-folder to localStorage:', normalizedFolder);
 
     try {
       // Import the Tauri scanner
@@ -87,8 +94,8 @@ export function useFolderScanner(): UseFolderScannerReturn {
         return;
       }
 
-      // Run the scan
-      const result = await scanSongsFolderTauri(folderPath);
+      // Run the scan with the normalized path
+      const result = await scanSongsFolderTauri(normalizedFolder);
 
       setScanProgress({
         stage: 'importing',
@@ -279,8 +286,9 @@ export function useFolderScanner(): UseFolderScannerReturn {
       return;
     }
 
-    localStorage.setItem('karaoke-songs-folder', songsFolder);
-    await performFolderScan(songsFolder);
+    const normalized = normalizeFilePath(songsFolder);
+    localStorage.setItem('karaoke-songs-folder', normalized);
+    await performFolderScan(normalized);
   }, [songsFolder, performFolderScan]);
 
   // Browse folder using native Tauri command (bypasses ACL restrictions)

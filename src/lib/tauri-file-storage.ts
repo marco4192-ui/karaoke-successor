@@ -261,9 +261,11 @@ async function collectAllFiles(
         const subFiles = await collectAllFiles(basePath, fullPath);
         files.push(...subFiles);
       } else if (entry.is_file) {
+        // CRITICAL: Normalize HTML entities that may have been introduced
+        // during Tauri IPC serialization (e.g. &amp; → &)
         files.push({
-          relativePath,
-          fullPath,
+          relativePath: normalizeFilePath(relativePath),
+          fullPath: normalizeFilePath(fullPath),
           name: entry.name,
         });
       }
@@ -841,11 +843,12 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
 
   try {
     // Priority 1: Use provided base folder
-    // Priority 2: Use localStorage 'karaoke-songs-folder'
+    // Priority 2: Use localStorage 'karaoke-songs-folder' (normalized)
     let songsFolder = baseFolder;
     
     if (!songsFolder) {
-      songsFolder = localStorage.getItem('karaoke-songs-folder') || undefined;
+      const raw = localStorage.getItem('karaoke-songs-folder');
+      songsFolder = raw ? normalizeFilePath(raw) : undefined;
       console.log('[TauriFS] Using localStorage folder:', songsFolder);
     }
     

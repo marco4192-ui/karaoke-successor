@@ -664,7 +664,8 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
   // We must validate that baseFolder is an absolute path.
   let localStorageFolder: string | null = null;
   try {
-    localStorageFolder = localStorage.getItem('karaoke-songs-folder');
+    const raw = localStorage.getItem('karaoke-songs-folder');
+    localStorageFolder = raw ? normalizeFilePath(raw) : null;
   } catch (e) {
     console.warn('[SongLibrary] Could not access localStorage:', e);
   }
@@ -804,7 +805,8 @@ export async function getAllSongsAsync(): Promise<Song[]> {
   // Debug: Check localStorage songs folder
   let localStorageFolder: string | null = null;
   try {
-    localStorageFolder = localStorage.getItem('karaoke-songs-folder');
+    const raw = localStorage.getItem('karaoke-songs-folder');
+    localStorageFolder = raw ? normalizeFilePath(raw) : null;
   } catch (e) {
     console.warn('[SongLibrary] Could not read localStorage:', e);
   }
@@ -942,9 +944,11 @@ export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
       
       // Use song.baseFolder as primary source, fallback to localStorage
       // IMPORTANT: Validate that baseFolder is absolute — relative paths won't work
-      let songsFolder = song.baseFolder || localStorage.getItem('karaoke-songs-folder');
+      // CRITICAL: Normalize all paths to fix HTML entities (e.g. &amp; → &)
+      const lsRaw = localStorage.getItem('karaoke-songs-folder');
+      const lsFolder = lsRaw ? normalizeFilePath(lsRaw) : null;
+      let songsFolder = normalizeFilePath(song.baseFolder || '') || lsFolder || undefined;
       if (songsFolder && !songsFolder.startsWith('/') && !/^[A-Za-z]:[\\/]/.test(songsFolder)) {
-        const lsFolder = localStorage.getItem('karaoke-songs-folder');
         if (lsFolder && (lsFolder.startsWith('/') || /^[A-Za-z]:[\\/]/.test(lsFolder))) {
           songsFolder = lsFolder;
         }

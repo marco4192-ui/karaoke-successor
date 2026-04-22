@@ -19,8 +19,9 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
     // Generate txt content
     const txtContent = generateUltraStarTxt(song);
     
-    // Get the songs folder from localStorage
-    const songsFolder = localStorage.getItem('karaoke-songs-folder');
+    // Get the songs folder from localStorage (normalized)
+    const raw = localStorage.getItem('karaoke-songs-folder');
+    const songsFolder = raw ? normalizeFilePath(raw) : null;
     
     if (!songsFolder) {
       return { 
