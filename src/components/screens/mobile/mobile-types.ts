@@ -38,6 +38,7 @@ export interface QueueItem {
   songArtist: string;
   addedBy: string;
   status: string;
+  companionCode?: string;
   partnerId?: string;
   partnerName?: string;
   gameMode?: 'single' | 'duel' | 'duet';

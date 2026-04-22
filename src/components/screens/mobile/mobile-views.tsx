@@ -461,10 +461,12 @@ interface QueueViewProps {
   queue: QueueItem[];
   slotsRemaining: number;
   queueError: string | null;
+  connectionCode?: string | null;
+  onRemoveFromQueue?: (itemId: string) => void;
   onNavigate: (view: MobileView) => void;
 }
 
-export function MobileQueueView({ queue, slotsRemaining, queueError, onNavigate }: QueueViewProps) {
+export function MobileQueueView({ queue, slotsRemaining, queueError, connectionCode, onRemoveFromQueue, onNavigate }: QueueViewProps) {
   return (
     <div className="p-4">
       {/* Queue Header with Slots */}
@@ -543,6 +545,17 @@ export function MobileQueueView({ queue, slotsRemaining, queueError, onNavigate 
               
               {item.status === 'playing' && (
                 <Badge className="bg-cyan-500 text-xs">Playing</Badge>
+              )}
+
+              {/* Remove button — only show for own songs (matching companionCode) and not currently playing */}
+              {onRemoveFromQueue && connectionCode && item.companionCode === connectionCode && item.status !== 'playing' && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onRemoveFromQueue(item.id); }}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-400 transition-colors shrink-0"
+                  aria-label="Remove song from queue"
+                >
+                  ✕
+                </button>
               )}
             </div>
           ))}

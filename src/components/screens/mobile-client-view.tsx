@@ -319,7 +319,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
               onLoadPartners={data.loadAvailablePartners} formatDuration={data.formatDuration}
             />
           )}
-          {currentView === 'queue' && <MobileQueueView queue={data.queue} slotsRemaining={data.slotsRemaining} queueError={data.queueError} onNavigate={setCurrentView} />}
+          {currentView === 'queue' && <MobileQueueView queue={data.queue} slotsRemaining={data.slotsRemaining} queueError={data.queueError} connectionCode={connectionCode} onRemoveFromQueue={data.removeFromQueue} onNavigate={setCurrentView} />}
           {currentView === 'results' && <MobileResultsView gameResults={data.gameResults} onNavigate={setCurrentView} />}
           {currentView === 'jukebox' && <MobileJukeboxView jukeboxWishlist={data.jukeboxWishlist} onNavigate={setCurrentView} />}
           {currentView === 'remote' && <RemoteControlView clientId={clientId} profile={profile} onBack={() => setCurrentView('home')} />}

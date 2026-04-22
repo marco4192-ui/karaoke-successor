@@ -192,6 +192,28 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
     }
   }, [profile, clientId, slotsRemaining, selectedGameMode, selectedPartner, onNavigateToProfile]);
 
+  const removeFromQueue = useCallback(async (itemId: string) => {
+    if (!clientId) return;
+    try {
+      const response = await fetch('/api/mobile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'removequeue', clientId, payload: { itemId } }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setQueue(prev => prev.filter(q => q.id !== itemId));
+        setSlotsRemaining(prev => Math.min(3, prev + 1));
+      } else {
+        setQueueError(data.message || 'Failed to remove song');
+        setTimeout(() => setQueueError(null), 3000);
+      }
+    } catch {
+      setQueueError('Failed to remove song');
+      setTimeout(() => setQueueError(null), 3000);
+    }
+  }, [clientId]);
+
   const loadQueue = useCallback(async () => {
     try {
       const response = await fetch('/api/mobile?action=getqueue');
@@ -272,6 +294,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
     slotsRemaining,
     queueError,
     addToQueue,
+    removeFromQueue,
     loadQueue,
     // Partners
     selectedPartner,

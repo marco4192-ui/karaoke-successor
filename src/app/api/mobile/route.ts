@@ -800,17 +800,29 @@ export async function POST(request: NextRequest) {
         });
 
       case 'removequeue':
-        // Remove song from queue
+        // Remove song from queue — only the creator (matching companionCode) can remove
         const removePayload = payload as { itemId: string };
+        const requestingClient = mobileClients.get(clientId);
+        if (!requestingClient) {
+          return Response.json({ success: false, message: 'Not connected' }, { status: 401 });
+        }
         const itemIndex = songQueue.findIndex(q => q.id === removePayload.itemId);
         
         if (itemIndex !== -1) {
           const item = songQueue[itemIndex];
-          const clientForRemove = Array.from(mobileClients.values()).find(c => c.connectionCode === item.companionCode);
-          if (clientForRemove && clientForRemove.queueCount > 0) {
-            clientForRemove.queueCount--;
+          // Ownership check: only the companion that added this song can remove it
+          if (item.companionCode !== requestingClient.connectionCode) {
+            return Response.json({ success: false, message: 'You can only remove your own songs' }, { status: 403 });
+          }
+          // Don't allow removing a song that is currently playing
+          if (item.status === 'playing') {
+            return Response.json({ success: false, message: 'Cannot remove a song that is currently playing' }, { status: 400 });
+          }
+          if (requestingClient.queueCount > 0) {
+            requestingClient.queueCount--;
           }
           songQueue.splice(itemIndex, 1);
+          mobileClients.set(clientId, requestingClient);
           return Response.json({ success: true, message: 'Song removed from queue' });
         }
         return Response.json({ success: false, message: 'Item not found' }, { status: 404 });
