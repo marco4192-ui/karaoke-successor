@@ -341,14 +341,22 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     isMountedRef.current = true;
 
     const initGame = async () => {
-      const success = await initialize();
+      // Rate My Song mode does not require pitch detection (manual ratings only).
+      // Skip microphone initialization so the game starts even if no mic is available.
+      const isNonScoringMode = gameMode === 'rate-my-song';
+
+      let success = true;
+      if (!isNonScoringMode) {
+        success = await initialize();
+      }
       if (!isMountedRef.current) return; // Check if still mounted after async
 
       if (success) {
         // Set pitch detector to current difficulty
-        setPitchDifficulty(difficulty);
-
-        start();
+        if (!isNonScoringMode) {
+          setPitchDifficulty(difficulty);
+          start();
+        }
 
         // Reset scoring state (note progress tracking is handled by the hook)
         resetScoring();
@@ -489,6 +497,8 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
 
             // Watchdog: if audio/video still isn't actually playing after 10 seconds,
             // end the game to prevent infinite hang (wall-clock fallback loop).
+            // For non-scoring modes (rate-my-song), we only log a warning — the game
+            // still progresses via wall-clock timing and the audio element's onEnded event.
             mediaPlayWatchdogRef.current = setTimeout(() => {
               const audioPlaying = audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2;
               const videoPlaying = videoRef.current && !videoRef.current.paused && videoRef.current.readyState >= 2;
@@ -499,9 +509,15 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
               const nativePlaying = isNativeAudio && nativeAudioTimeRef.current > 0;
 
               if (!audioPlaying && !videoPlaying && !youTubeActive && !nativePlaying) {
-                console.error('[GameLoop] Media playback watchdog: no media actually playing after 10s — ending game to prevent hang');
-                // Use ref to call the latest version (avoids stale closure)
-                endGameAndCleanupRef.current();
+                if (isNonScoringMode) {
+                  // Non-scoring modes: just warn, don't abort. Wall-clock fallback
+                  // and onEnded will handle song completion naturally.
+                  console.warn('[GameLoop] Media playback watchdog: no media playing after 10s in non-scoring mode — continuing with wall-clock timing');
+                } else {
+                  console.error('[GameLoop] Media playback watchdog: no media actually playing after 10s — ending game to prevent hang');
+                  // Use ref to call the latest version (avoids stale closure)
+                  endGameAndCleanupRef.current();
+                }
               }
             }, 10000);
           } else {
@@ -694,7 +710,10 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       // End song by time ONLY when #END: tag is explicitly defined.
       // When #END: is not defined, the audio/video element's natural
       // "ended" event (handled via onEnded prop) terminates the game.
-      if (effectiveSong.end && adjustedTime >= effectiveSong.end) {
+      // For non-scoring modes (rate-my-song), fall back to song.duration
+      // when no media is playing, so the game doesn't run forever.
+      const effectiveEnd = effectiveSong.end || (gameMode === 'rate-my-song' ? effectiveSong.duration : 0);
+      if (effectiveEnd && adjustedTime >= effectiveEnd) {
         endGameAndCleanupRef.current();
         return;
       }
