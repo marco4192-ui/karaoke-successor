@@ -595,14 +595,16 @@ export class PitchDetectorManager {
       try {
         const response = await fetch('/api/mobile?action=getpitch');
         const data = await response.json();
-        if (data.success && data.pitch?.data) {
+        // Server returns "pitches" array, not "pitch" object
+        if (data.success && Array.isArray(data.pitches) && data.pitches.length > 0) {
+          const pitchData = data.pitches[0].data;
           this.callbacks?.onPitchDetected(playerId, {
-            frequency: data.pitch.data.frequency,
-            note: data.pitch.data.note,
-            clarity: data.pitch.data.clarity || 0,
-            volume: data.pitch.data.volume || 0,
-            isSinging: data.pitch.data.isSinging,
-            singingConfidence: data.pitch.data.singingConfidence,
+            frequency: pitchData.frequency,
+            note: pitchData.note,
+            clarity: pitchData.clarity || 0,
+            volume: pitchData.volume || 0,
+            isSinging: pitchData.isSinging,
+            singingConfidence: pitchData.singingConfidence,
           });
         }
       } catch {

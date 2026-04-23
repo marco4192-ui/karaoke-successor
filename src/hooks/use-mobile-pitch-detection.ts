@@ -106,6 +106,20 @@ export function useMobilePitchDetection({
       mediaStreamRef.current = stream;
       
       audioContextRef.current = new AudioContext();
+
+      // CRITICAL: On iOS Safari and some Android browsers, the AudioContext
+      // starts in a "suspended" state and the AnalyserNode returns all-zeros.
+      // Must resume within the same user-gesture callback (tap on mic button).
+      if (audioContextRef.current.state === 'suspended') {
+        try {
+          await audioContextRef.current.resume();
+        } catch (resumeErr) {
+          console.warn('[MobilePitch] AudioContext.resume() failed, retrying…', resumeErr);
+          await new Promise<void>(resolve => setTimeout(resolve, 100));
+          await audioContextRef.current.resume();
+        }
+      }
+
       const source = audioContextRef.current.createMediaStreamSource(stream);
       analyserRef.current = audioContextRef.current.createAnalyser();
       analyserRef.current.fftSize = 4096;
@@ -122,6 +136,12 @@ export function useMobilePitchDetection({
       
       const detectPitch = () => {
         if (!analyserRef.current || !audioContextRef.current) return;
+
+        // Guard: if AudioContext was suspended (e.g. phone locked/unlocked),
+        // try to resume — otherwise getFloatTimeDomainData returns all zeros.
+        if (audioContextRef.current.state === 'suspended') {
+          audioContextRef.current.resume().catch(() => {});
+        }
         
         // STOP if song ended (read from ref to avoid stale closure)
         const currentlyPlaying = isPlayingRef.current;
