@@ -454,6 +454,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     isDuetMode,
     p2DetectedPitch,
     p2Volume,
+    p2IsSinging: mobilePitch?.isSinging,
     setP2Volume,
     onEnd: handleEnd,
     audioEffects,

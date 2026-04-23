@@ -41,6 +41,7 @@ export interface UseGameLoopOptions {
   isDuetMode: boolean;
   p2DetectedPitch: number | null;
   p2Volume: number;
+  p2IsSinging?: boolean;
   setP2Volume: (vol: number) => void;
   // Lifecycle callbacks
   onEnd: () => void;
@@ -112,6 +113,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     isDuetMode,
     p2DetectedPitch,
     p2Volume,
+    p2IsSinging,
     setP2Volume,
     onEnd,
     audioEffects,
@@ -155,6 +157,8 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   p2DetectedPitchRef.current = p2DetectedPitch;
   const p2VolumeRef = useRef(p2Volume);
   p2VolumeRef.current = p2Volume;
+  const p2IsSingingRef = useRef(p2IsSinging);
+  p2IsSingingRef.current = p2IsSinging;
   const youtubeTimeRef = useRef(youtubeTime);
   youtubeTimeRef.current = youtubeTime;
   const nativeAudioTimeRef = useRef(nativeAudioTime);
@@ -701,7 +705,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
           note: Math.round(12 * (Math.log2(currentP2Pitch / 440)) + 69),
           clarity: currentPitch?.clarity ?? 0,
           volume: currentP2Vol,
-          isSinging: true, // Companion pitch is not vetted by VocalDetector
+          isSinging: p2IsSingingRef.current ?? true,
         };
         checkP2NoteHitsRef.current(adjustedTime, p2PitchResult);
       } else if (isDuetMode) {
