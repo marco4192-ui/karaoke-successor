@@ -88,16 +88,19 @@ export function getCustomSongs(): Song[] {
     const stored = localStorage.getItem(CUSTOM_SONGS_KEY);
     if (stored) {
       const songs = JSON.parse(stored);
-      // One-time migration: normalize all path fields to fix HTML entities
-      // (e.g. &amp; → &) that may have been introduced during serialization
+      // One-time migration: normalize all path fields to fix HTML entities,
+      // percent-encoding, and Unicode normalization (NFC vs NFD)
       let needsResave = false;
       for (const song of songs) {
         const fields: (keyof Song)[] = ['baseFolder', 'relativeAudioPath', 'relativeVideoPath', 'relativeCoverPath', 'relativeTxtPath', 'folderPath', 'relativeBackgroundPath'];
         for (const field of fields) {
           const val = song[field];
-          if (typeof val === 'string' && (val.includes('&amp;') || val.includes('&lt;') || val.includes('&gt;'))) {
-            (song as any)[field] = normalizeFilePath(val);
-            needsResave = true;
+          if (typeof val === 'string' && val.length > 0) {
+            const normalized = normalizeFilePath(val);
+            if (normalized !== val) {
+              (song as any)[field] = normalized;
+              needsResave = true;
+            }
           }
         }
       }
@@ -144,15 +147,18 @@ export async function loadCustomSongsFromStorage(): Promise<Song[]> {
       console.log('[SongLibrary] Skipping loadCustomSongsFromStorage — scan started during load');
       return getCustomSongs();
     }
-    // Normalize path fields (fix HTML entities in stored data)
+    // Normalize path fields (fix HTML entities, percent-encoding, Unicode)
     let needsResave = false;
     for (const song of songs) {
       const fields: (keyof Song)[] = ['baseFolder', 'relativeAudioPath', 'relativeVideoPath', 'relativeCoverPath', 'relativeTxtPath', 'folderPath', 'relativeBackgroundPath'];
       for (const field of fields) {
         const val = song[field];
-        if (typeof val === 'string' && (val.includes('&amp;') || val.includes('&lt;') || val.includes('&gt;'))) {
-          (song as any)[field] = normalizeFilePath(val);
-          needsResave = true;
+        if (typeof val === 'string' && val.length > 0) {
+          const normalized = normalizeFilePath(val);
+          if (normalized !== val) {
+            (song as any)[field] = normalized;
+            needsResave = true;
+          }
         }
       }
     }

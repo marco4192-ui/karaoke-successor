@@ -6,6 +6,9 @@ import { Song } from '@/types/game';
 import { generateUltraStarTxt } from '@/lib/parsers/ultrastar-parser';
 import { normalizeFilePath } from '@/lib/tauri-file-storage';
 
+// Characters that are invalid in file paths on Windows
+const INVALID_PATH_CHARS = /[<>:"/\\|?*]/g;
+
 export interface SaveResult {
   success: boolean;
   message: string;
@@ -41,7 +44,7 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
     }
     // Priority 2: Use folderPath + constructed filename
     else if (song.folderPath) {
-      filePath = `${normalizeFilePath(songsFolder)}/${normalizeFilePath(song.folderPath)}/${song.title} - ${song.artist}.txt`;
+      filePath = `${normalizeFilePath(songsFolder)}/${normalizeFilePath(song.folderPath)}/${song.title.replace(INVALID_PATH_CHARS, '_')} - ${song.artist.replace(INVALID_PATH_CHARS, '_')}.txt`;
     }
     // Fallback: Ask user where to save (using native dialog)
     else {

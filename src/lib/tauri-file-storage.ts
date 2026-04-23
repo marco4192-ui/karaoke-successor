@@ -23,15 +23,41 @@ import {
  * all file path construction should use this function.
  */
 export function normalizeFilePath(path: string): string {
-  return path
+  let result = path
     .replace(/\\/g, '/')           // backslashes → forward slashes (Windows paths)
     .replace(/\/+$/, '')           // strip trailing slashes
-    .replace(/&amp;/g, '&')       // HTML entities → literal characters
+    // Named HTML entities → literal characters
+    .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    // Common numeric HTML entities
+    .replace(/&#x22;/g, '"')
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x3C;/g, '<')
+    .replace(/&#x3E;/g, '>')
     .replace(/&#39;/g, "'")
-    .replace(/&#x27;/g, "'");
+    // Catch-all for any remaining numeric HTML entities: &#NNN; or &#xHH;
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)))
+    .replace(/&#x([0-9a-fA-F]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+
+  // Decode percent-encoded characters (e.g. %20 → space, %C3%A4 → ä)
+  // Use segment-by-segment approach since decodeURIComponent throws on malformed input
+  try {
+    result = decodeURIComponent(result);
+  } catch {
+    result = result.split('/').map(segment => {
+      try { return decodeURIComponent(segment); }
+      catch { return segment; }
+    }).join('/');
+  }
+
+  // Normalize Unicode to NFC (precomposed form)
+  // This ensures é (U+00E9) matches e + combining acute (U+0065 U+0301)
+  // macOS uses NFD by default, Windows uses NFC — this avoids mismatches
+  return result.normalize('NFC');
 }
 
 // Check if running in Tauri
@@ -991,11 +1017,11 @@ async function findFileByScanningParentFolder(
       }
     }
 
-    // Case-insensitive filename matching
-    const targetLower = fileName.toLowerCase();
+    // Case-insensitive, Unicode-normalized filename matching
+    const targetLower = fileName.toLowerCase().normalize('NFC');
     for (const entry of entries) {
       if (!entry.is_file) continue;
-      if (entry.name.toLowerCase() === targetLower) {
+      if (entry.name.toLowerCase().normalize('NFC') === targetLower) {
         // Found it! Load using the actual filesystem path from the directory entry
         console.log('[TauriFS] Folder scan fallback: found matching file:', entry.path);
         const url = await loadFileAsBlobUrl(entry.path);
