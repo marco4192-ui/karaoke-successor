@@ -131,7 +131,7 @@ export function RemoteControlView({
   };
   
   // Send command
-  const sendCommand = async (command: 'play' | 'pause' | 'stop' | 'next' | 'previous' | 'restart' | 'home' | 'library' | 'settings' | 'up' | 'down' | 'left' | 'right') => {
+  const sendCommand = async (command: 'play' | 'pause' | 'stop' | 'next' | 'previous' | 'restart' | 'home' | 'library' | 'settings' | 'up' | 'down' | 'left' | 'right' | 'enter') => {
     if (!clientId || !remoteState.hasControl) return;
     
     try {
@@ -381,11 +381,11 @@ export function RemoteControlView({
                   <span className="text-lg">⬅️</span>
                 </Button>
                 <Button
-                  onClick={() => sendCommand('down')}
+                  onClick={() => sendCommand('enter')}
                   variant="outline"
-                  className={`h-10 flex items-center justify-center border-white/20 ${commandSent === 'down' ? 'bg-cyan-500/30' : ''}`}
+                  className={`h-10 flex items-center justify-center border-green-500/50 bg-green-500/10 ${commandSent === 'enter' ? 'bg-green-500/30' : ''}`}
                 >
-                  <span className="text-lg">⬇️</span>
+                  <span className="text-lg">✓</span>
                 </Button>
                 <Button
                   onClick={() => sendCommand('right')}
@@ -395,6 +395,13 @@ export function RemoteControlView({
                   <span className="text-lg">➡️</span>
                 </Button>
               </div>
+              <Button
+                onClick={() => sendCommand('down')}
+                variant="outline"
+                className={`w-20 h-10 flex items-center justify-center border-white/20 ${commandSent === 'down' ? 'bg-cyan-500/30' : ''}`}
+              >
+                <span className="text-lg">⬇️</span>
+              </Button>
             </div>
           </CardContent>
         </Card>

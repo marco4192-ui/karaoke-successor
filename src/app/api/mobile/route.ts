@@ -48,7 +48,7 @@ interface QueueItem {
 }
 
 interface RemoteCommand {
-  type: 'play' | 'pause' | 'stop' | 'next' | 'previous' | 'volume' | 'seek' | 'skip' | 'restart' | 'quit' | 'home' | 'library' | 'settings';
+  type: 'play' | 'pause' | 'stop' | 'next' | 'previous' | 'volume' | 'seek' | 'skip' | 'restart' | 'quit' | 'home' | 'library' | 'settings' | 'up' | 'down' | 'left' | 'right' | 'enter';
   data?: unknown;
   timestamp: number;
   fromClientId: string;
