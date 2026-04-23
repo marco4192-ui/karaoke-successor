@@ -183,6 +183,9 @@ export function useFolderScanner(): UseFolderScannerReturn {
               relativeVideoPath: scanned.relativeVideoPath,
               relativeCoverPath: scanned.relativeCoverPath,
               relativeBackgroundPath: scanned.relativeBackgroundPath,
+              videoBackground: scanned.videoFile &&
+                (scanned.videoFile.startsWith('http://') || scanned.videoFile.startsWith('https://'))
+                ? scanned.videoFile : undefined,
               coverImage,
               genre: scanned.genre,
               language: scanned.language,

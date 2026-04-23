@@ -318,6 +318,9 @@ export function useImportScreen(onImport: (song: Song) => void) {
               relativeAudioPath: scanned.relativeAudioPath,
               relativeVideoPath: scanned.relativeVideoPath,
               relativeCoverPath: scanned.relativeCoverPath,
+              videoBackground: scanned.videoFile &&
+                (scanned.videoFile.startsWith('http://') || scanned.videoFile.startsWith('https://'))
+                ? scanned.videoFile : undefined,
               relativeBackgroundPath: scanned.relativeBackgroundPath,
               coverImage,
               genre: scanned.genre,

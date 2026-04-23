@@ -464,6 +464,14 @@ async function processFolder(
   // Helper to resolve file reference from TXT header
   const resolveTxtReference = (refFile: string | undefined, fallbackFile: { path: string } | null): string | undefined => {
     if (refFile) {
+      // If the reference is a URL (http/https), it cannot be resolved as a
+      // filesystem path — skip resolution so it doesn't get baked into
+      // relativeVideoPath / relativeAudioPath (which would create invalid
+      // paths like baseFolder + "/https://...").
+      if (refFile.startsWith('http://') || refFile.startsWith('https://')) {
+        console.log(`[TauriScanner] TXT reference is a URL, skipping filesystem resolution: ${refFile}`);
+        return undefined;
+      }
       // Reference from TXT - combine with TXT directory
       // The reference is typically just a filename, relative to the TXT file location
       const resolvedPath = txtDir ? normalizeFilePath(`${txtDir}/${refFile}`) : normalizeFilePath(refFile);
@@ -498,7 +506,8 @@ async function processFolder(
   }
 
   // If #VIDEO: is set, it overrides the video path (but #MP3: as video takes precedence for audio)
-  if (txtVideoFile && !hasEmbeddedAudio) {
+  // Skip URLs — they belong in videoBackground, not relativeVideoPath.
+  if (txtVideoFile && !hasEmbeddedAudio && !txtVideoFile.startsWith('http://') && !txtVideoFile.startsWith('https://')) {
     finalVideoPath = resolveTxtReference(txtVideoFile, videoFile);
   } else if (!finalVideoPath) {
     finalVideoPath = videoFile?.path;
