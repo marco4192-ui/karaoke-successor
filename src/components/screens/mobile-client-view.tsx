@@ -43,7 +43,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Connection
-  const { clientId, connectionCode, isConnected, gameState, connect, syncProfile, cleanup } = useMobileConnection({
+  const { clientId, connectionCode, isConnected, gameState, connect, disconnect, syncProfile, cleanup } = useMobileConnection({
     profileId,
     onProfileLoaded: (p) => setProfile(p),
     onProfileFieldsLoaded: (name, color, avatar) => { setProfileName(name); setProfileColor(color); setAvatarPreview(avatar); },
@@ -167,6 +167,19 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     localStorage.setItem('karaoke-mobile-profile', JSON.stringify(switchedProfile));
     syncProfile(switchedProfile);
   }, [syncProfile]);
+
+  // Disconnect from server and reset local state
+  const handleDisconnect = useCallback(async () => {
+    await disconnect();
+    setProfile(null);
+    setProfileName('');
+    setProfileColor('#06B6D4');
+    setAvatarPreview(null);
+    localStorage.removeItem('karaoke-mobile-profile');
+    setCurrentView('home');
+    // Re-connect after a short delay to allow fresh profile creation
+    setTimeout(() => connect(), 500);
+  }, [disconnect, connect]);
 
   // Effects for lazy loading
   useEffect(() => {
@@ -306,7 +319,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
         />
       ) : (
         <div className="pb-20">
-          {currentView === 'home' && <MobileHomeView gameState={gameState} queue={data.queue} onNavigate={setCurrentView} />}
+          {currentView === 'home' && <MobileHomeView gameState={gameState} queue={data.queue} onNavigate={setCurrentView} onDisconnect={handleDisconnect} />}
           {currentView === 'mic' && (
             <MobileMicView gameState={gameState} clientId={clientId} currentPitch={currentPitch}
               isListening={isListening} micPermissionDenied={micPermissionDenied} onStartMic={startMicrophone} onStopMic={stopMicrophone} />

@@ -153,6 +153,27 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     }
   }, []);
 
+  // Disconnect from server: call API, clear local state, prepare for fresh reconnect
+  const disconnect = useCallback(async () => {
+    const currentClientId = clientIdRef.current;
+    // Stop heartbeat
+    cleanup();
+    // Notify server
+    try {
+      if (currentClientId) {
+        await fetch(`/api/mobile?action=disconnect&clientId=${currentClientId}`);
+      }
+    } catch { /* ignore */ }
+    // Clear local state
+    setClientId(null);
+    setConnectionCode('');
+    setIsConnected(false);
+    setGameState({ currentSong: null, isPlaying: false, songEnded: false, queueLength: 0, isAdPlaying: false });
+    localStorage.removeItem('karaoke-connection-code');
+    localStorage.removeItem('karaoke-client-id');
+    console.log('[MobileClient] Disconnected from server');
+  }, [cleanup]);
+
   // Auto-connect on mount
   useEffect(() => {
     queueMicrotask(() => connect());
@@ -290,6 +311,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     isConnected,
     gameState,
     connect,
+    disconnect,
     syncProfile,
     cleanup,
   };

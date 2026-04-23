@@ -15,9 +15,10 @@ interface HomeViewProps {
   gameState: GameState;
   queue: QueueItem[];
   onNavigate: (view: MobileView) => void;
+  onDisconnect?: () => void;
 }
 
-export function MobileHomeView({ gameState, queue, onNavigate }: HomeViewProps) {
+export function MobileHomeView({ gameState, queue, onNavigate, onDisconnect }: HomeViewProps) {
   return (
     <div className="p-4 space-y-4">
       {/* Now Playing */}
@@ -98,6 +99,19 @@ export function MobileHomeView({ gameState, queue, onNavigate }: HomeViewProps) 
             ))}
           </CardContent>
         </Card>
+      )}
+
+      {/* Disconnect Button */}
+      {onDisconnect && (
+        <div className="pt-4">
+          <Button
+            onClick={onDisconnect}
+            variant="outline"
+            className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+          >
+            Abmelden
+          </Button>
+        </div>
       )}
     </div>
   );
