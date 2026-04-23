@@ -78,9 +78,12 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   }, [clientId]);
 
   // When a profileId is provided via QR, auto-adopt the matching host profile
-  // once the connection is established and we have host profiles available.
+  // once the connection is established. This takes priority over any
+  // localStorage-restored profile (the user explicitly chose this character).
+  const autoAdoptDoneRef = useRef(false);
   useEffect(() => {
-    if (!profileId || !isConnected || profile) return;
+    if (!profileId || !isConnected || !clientId || autoAdoptDoneRef.current) return;
+    autoAdoptDoneRef.current = true;
     // Fetch host profiles and auto-select the matching one
     fetch('/api/mobile?action=hostprofiles&clientId=' + clientId)
       .then(r => r.json())
@@ -105,7 +108,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
         }
       })
       .catch(() => {});
-  }, [profileId, isConnected, clientId, profile, syncProfile]);
+  }, [profileId, isConnected, clientId, syncProfile]);
 
   // Profile callbacks
   const handleCreateProfile = useCallback((hostProfile?: MobileProfile) => {
