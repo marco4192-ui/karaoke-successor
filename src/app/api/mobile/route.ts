@@ -21,6 +21,8 @@ interface PitchData {
   clarity: number;
   volume: number;
   timestamp: number;
+  isSinging?: boolean;
+  singingConfidence?: number;
 }
 
 interface MobileProfile {

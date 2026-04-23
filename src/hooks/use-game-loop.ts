@@ -699,8 +699,9 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         const p2PitchResult = {
           frequency: currentP2Pitch,
           note: Math.round(12 * (Math.log2(currentP2Pitch / 440)) + 69),
-          clarity: currentPitch?.clarity || 0,
-          volume: currentP2Vol
+          clarity: currentPitch?.clarity ?? 0,
+          volume: currentP2Vol,
+          isSinging: true, // Companion pitch is not vetted by VocalDetector
         };
         checkP2NoteHitsRef.current(adjustedTime, p2PitchResult);
       } else if (isDuetMode) {

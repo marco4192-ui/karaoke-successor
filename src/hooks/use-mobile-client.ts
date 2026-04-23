@@ -70,9 +70,12 @@ export function useMobileClient({
       try {
         const response = await fetch('/api/mobile?action=getpitch');
         const data = await response.json();
-        if (data.success && data.pitch) {
-          setMobilePitch(data.pitch.data);
+        // Server returns pitch array ("pitches"), not "pitch"
+        if (data.success && Array.isArray(data.pitches) && data.pitches.length > 0) {
+          setMobilePitch(data.pitches[0].data);
           setHasMobileClient(true);
+        } else {
+          setHasMobileClient(false);
         }
       } catch {
         // Ignore polling errors

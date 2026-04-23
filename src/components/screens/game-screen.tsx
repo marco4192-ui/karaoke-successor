@@ -327,7 +327,7 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
   
   // Use mobile pitch for P2 in duet/duel mode
   useEffect(() => {
-    if (isDuetMode && mobilePitch?.frequency) {
+    if (isDuetMode && mobilePitch) {
       setP2DetectedPitch(mobilePitch.frequency);
       setP2Volume(mobilePitch.volume || 0);
     } else if (isDuetMode && !mobilePitch?.frequency) {
