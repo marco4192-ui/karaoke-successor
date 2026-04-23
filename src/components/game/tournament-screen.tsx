@@ -326,11 +326,11 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
         </div>
       )}
 
-      {/* Bracket — fills remaining space, auto-scaled and vertically centered */}
-      <div ref={bracketWrapperRef} className="flex-1 min-h-0 overflow-hidden flex items-center justify-center">
+      {/* Bracket — fills remaining space, auto-scaled and aligned to top */}
+      <div ref={bracketWrapperRef} className="flex-1 min-h-0 overflow-hidden flex items-start justify-center pt-1">
         <div
           ref={bracketInnerRef}
-          style={{ transform: `scale(${bracketScale})`, transformOrigin: 'center center' }}
+          style={{ transform: `scale(${bracketScale})`, transformOrigin: 'top center' }}
         >
           <TournamentBracketButterfly
             bracket={bracket}
@@ -340,7 +340,7 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
         </div>
       </div>
 
-      {/* Queue Display — compact row */}
+      {/* Upcoming Duels — compact overlay at bottom */}
       {playableMatches.length > 1 && !bracket.champion && (
         <div className="mt-1 bg-white/5 rounded-lg p-1.5 shrink-0">
           <h4 className="text-xs text-white/60 mb-1">📋 Upcoming Duels</h4>

@@ -10,13 +10,13 @@ import {
 } from '@/lib/game/tournament';
 
 // Layout constants — compact match cards with comfortable spacing between columns
-const MATCH_W = 110;
-const MATCH_W_FINAL = 130;
-const MATCH_W_FIRST_ROUND = 210; // Wider for horizontal (side-by-side) layout
-const COL_GAP = 48;
-const FINAL_GAP = 56;
-const ROUND_LABEL_H = 24; // space for round labels above bracket
-const MIN_UNIT_SPACING = 72; // minimum vertical spacing between adjacent match centres (prevents card overlap)
+const MATCH_W = 100;
+const MATCH_W_FINAL = 120;
+const MATCH_W_FIRST_ROUND = 195; // Wider for horizontal (side-by-side) layout
+const COL_GAP = 40;
+const FINAL_GAP = 44;
+const ROUND_LABEL_H = 22; // space for round labels above bracket
+const MIN_UNIT_SPACING = 50; // minimum vertical spacing between adjacent match centres (prevents card overlap)
 
 interface ButterflyBracketProps {
   bracket: TournamentBracket;
@@ -59,7 +59,7 @@ export function TournamentBracketButterfly({
   const firstRoundCount = Math.pow(2, bracket.totalRounds - 1);
 
   // Dynamic spacing – compact vertical spacing to prevent oversized brackets
-  const matchSpacing = Math.max(80, Math.min(130, 600 / (firstRoundCount / 2)));
+  const matchSpacing = Math.max(56, Math.min(110, 500 / (firstRoundCount / 2)));
 
   // The butterfly layout renders firstRoundCount/2 matches per side vertically.
   // computeCenterY uses unit = effectiveHeight / firstRoundCount, so effectiveHeight
@@ -391,10 +391,10 @@ function MatchCard({
   // BYE match
   if (match.isBye && match.player1) {
     return (
-      <div className="bg-white/5 border border-white/10 rounded-lg p-2">
-        <div className="text-[10px] text-white/40 mb-0.5">BYE</div>
+      <div className="bg-white/5 border border-white/10 rounded-md p-1.5">
+        <div className="text-[9px] text-white/40">BYE</div>
         <SmallPlayer player={match.player1} />
-        <div className="text-[10px] text-green-400 mt-0.5">Advanced →</div>
+        <div className="text-[9px] text-green-400">Advanced →</div>
       </div>
     );
   }
@@ -416,10 +416,10 @@ function MatchCard({
         } ${clickable ? 'hover:scale-105 cursor-pointer' : ''}`}
         onClick={clickable ? onPlay : undefined}
       >
-        <div className="flex items-center gap-1 px-2 py-2">
+        <div className="flex items-center gap-1 px-1.5 py-1.5">
           {/* Player 1 */}
           <div
-            className={`flex-1 flex items-center gap-1 rounded px-1.5 py-1 ${
+            className={`flex-1 flex items-center gap-1 rounded px-1 py-0.5 ${
               match.winner?.id === match.player1?.id ? 'bg-green-500/20' : ''
             }`}
           >
@@ -432,11 +432,11 @@ function MatchCard({
           </div>
 
           {/* VS divider */}
-          <div className="text-white/40 text-[10px] font-bold px-0.5 shrink-0">VS</div>
+          <div className="text-white/40 text-[9px] font-bold px-0.5 shrink-0">VS</div>
 
           {/* Player 2 */}
           <div
-            className={`flex-1 flex items-center gap-1 rounded px-1.5 py-1 ${
+            className={`flex-1 flex items-center gap-1 rounded px-1 py-0.5 ${
               match.winner?.id === match.player2?.id ? 'bg-green-500/20' : ''
             }`}
           >
@@ -451,14 +451,14 @@ function MatchCard({
 
         {/* Winner badge */}
         {match.winner && (
-          <div className="text-[10px] text-center text-amber-400 font-medium bg-amber-500/10 rounded py-0.5">
+          <div className="text-[9px] text-center text-amber-400 font-medium bg-amber-500/10 rounded py-0.5">
             🏆 {match.winner.name}
           </div>
         )}
 
         {/* Playable indicator */}
         {isPlayable && !match.completed && !done && (
-          <div className="text-[10px] text-center text-cyan-400 font-medium pb-1">
+          <div className="text-[9px] text-center text-cyan-400 font-medium pb-0.5">
             ▶ Play →
           </div>
         )}
@@ -469,7 +469,7 @@ function MatchCard({
   // Vertical layout (default for later rounds and final)
   return (
     <div
-      className={`rounded-lg p-2 transition-all overflow-hidden ${
+      className={`rounded-md p-1.5 transition-all overflow-hidden ${
         isCurrent && !done
           ? 'bg-gradient-to-r from-cyan-500/30 to-purple-500/30 border-2 border-cyan-500 shadow-lg shadow-cyan-500/20'
           : match.completed
@@ -482,7 +482,7 @@ function MatchCard({
     >
       {/* Player 1 */}
       <div
-        className={`flex items-center gap-1.5 p-1 rounded text-xs min-w-0 ${
+        className={`flex items-center gap-1 p-0.5 rounded text-xs min-w-0 ${
           match.winner?.id === match.player1?.id ? 'bg-green-500/20' : ''
         }`}
       >
@@ -501,7 +501,7 @@ function MatchCard({
       </div>
 
       {/* VS divider */}
-      <div className="text-center text-white/30 text-[10px] my-0.5 flex items-center justify-center gap-1">
+      <div className="text-center text-white/30 text-[9px] my-0.5 flex items-center justify-center gap-1">
         <div className="flex-1 h-px bg-white/10" />
         <span>VS</span>
         <div className="flex-1 h-px bg-white/10" />
@@ -509,7 +509,7 @@ function MatchCard({
 
       {/* Player 2 */}
       <div
-        className={`flex items-center gap-1.5 p-1 rounded text-xs min-w-0 ${
+        className={`flex items-center gap-1 p-0.5 rounded text-xs min-w-0 ${
           match.winner?.id === match.player2?.id ? 'bg-green-500/20' : ''
         }`}
       >
@@ -529,14 +529,14 @@ function MatchCard({
 
       {/* Winner badge */}
       {match.winner && (
-        <div className="mt-1 text-[10px] text-center text-amber-400 font-medium bg-amber-500/10 rounded py-0.5">
+        <div className="text-[9px] text-center text-amber-400 font-medium bg-amber-500/10 rounded py-0.5">
           🏆 {match.winner.name}
         </div>
       )}
 
       {/* Playable indicator */}
       {isPlayable && !match.completed && !done && (
-        <div className="mt-1 text-[10px] text-center text-cyan-400 font-medium">
+        <div className="text-[9px] text-center text-cyan-400 font-medium">
           ▶ Play →
         </div>
       )}
@@ -549,23 +549,23 @@ function MatchCard({
 function SmallPlayer({ player }: { player: TournamentPlayer | null }) {
   if (!player) {
     return (
-      <div className="flex items-center gap-1.5 text-xs">
-        <div className="w-6 h-6 rounded-full bg-white/10 shrink-0" />
+      <div className="flex items-center gap-1 text-[11px]">
+        <div className="w-5 h-5 rounded-full bg-white/10 shrink-0" />
         <span className="text-white/30 truncate">TBD</span>
       </div>
     );
   }
   return (
-    <div className="flex items-center gap-1.5 text-xs min-w-0">
+    <div className="flex items-center gap-1 text-[11px] min-w-0">
       {player.avatar ? (
         <img
           src={player.avatar}
           alt={player.name}
-          className="w-6 h-6 rounded-full object-cover shrink-0"
+          className="w-5 h-5 rounded-full object-cover shrink-0"
         />
       ) : (
         <div
-          className="w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-[10px] shrink-0"
+          className="w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-[9px] shrink-0"
           style={{ backgroundColor: player.color }}
         >
           {player.name.charAt(0).toUpperCase()}
