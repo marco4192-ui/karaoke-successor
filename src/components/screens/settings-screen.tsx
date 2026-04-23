@@ -209,12 +209,10 @@ function SettingsScreen() {
   return (
     <div className={`theme-container w-full ${activeTab === 'editor' ? '' : 'max-w-7xl mx-auto px-4 md:px-6 lg:px-8'}`}>
       {/* Header */}
-      {activeTab !== 'editor' && (
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 theme-adaptive-text">{tx('settings.title')}</h1>
-          <p className="theme-adaptive-text-muted">{tx('settings.subtitle')}</p>
-        </div>
-      )}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2 theme-adaptive-text">{tx('settings.title')}</h1>
+        <p className="theme-adaptive-text-muted">{tx('settings.subtitle')}</p>
+      </div>
 
       {/* Tab Bar */}
       <div className={activeTab === 'editor' ? 'px-4 md:px-6' : ''}>
