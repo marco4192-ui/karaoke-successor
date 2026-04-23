@@ -1,14 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import dynamic from "next/dynamic";
-
-// Dynamic import Toaster with ssr: false to avoid Radix portal hydration
-// issues in the Tauri webview environment (fixes React error #418).
-const Toaster = dynamic(
-  () => import("@/components/ui/toaster").then(m => ({ default: m.Toaster })),
-  { ssr: false }
-);
+import { ToasterClient } from "@/components/ui/toaster-client";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -88,7 +81,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         {children}
-        <Toaster />
+        <ToasterClient />
       </body>
     </html>
   );
