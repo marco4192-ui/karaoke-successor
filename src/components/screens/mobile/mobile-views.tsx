@@ -252,6 +252,7 @@ interface SongsViewProps {
   onSelectGameMode: (mode: 'single' | 'duel' | 'duet') => void;
   onSelectPartner: (partner: { id: string; name: string } | null) => void;
   onAddToQueue: (song: MobileSong) => void;
+  onAddToJukebox?: (song: MobileSong) => void;
   onLoadPartners: () => void;
   formatDuration: (ms: number) => string;
 }
@@ -269,6 +270,7 @@ export function MobileSongsView({
   onSelectGameMode,
   onSelectPartner,
   onAddToQueue,
+  onAddToJukebox,
   onLoadPartners,
   formatDuration,
 }: SongsViewProps) {
@@ -408,17 +410,29 @@ export function MobileSongsView({
               className="flex items-center gap-2 p-2 bg-white/5 rounded-xl hover:bg-white/10 transition-colors min-w-0"
             >
               {/* Add to Queue Button — always visible, rendered FIRST for guaranteed visibility */}
-              <button
-                onClick={() => {
-                  onShowSongOptions(song);
-                  onLoadPartners();
-                }}
-                className="bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 text-white flex items-center justify-center flex-shrink-0 text-xl font-bold rounded-lg transition-colors"
-                style={{ width: '2.25rem', height: '2.25rem', minWidth: '2.25rem', minHeight: '2.25rem' }}
-                aria-label="Song zur Warteschlange hinzufügen"
-              >
-                +
-              </button>
+              <div className="flex flex-col gap-0.5 flex-shrink-0">
+                <button
+                  onClick={() => {
+                    onShowSongOptions(song);
+                    onLoadPartners();
+                  }}
+                  className="bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 text-white flex items-center justify-center text-xl font-bold rounded-lg transition-colors"
+                  style={{ width: '2.25rem', height: '2.25rem', minWidth: '2.25rem', minHeight: '2.25rem' }}
+                  aria-label="Song zur Warteschlange hinzufügen"
+                >
+                  +
+                </button>
+                {onAddToJukebox && (
+                  <button
+                    onClick={() => onAddToJukebox(song)}
+                    className="bg-purple-500 hover:bg-purple-400 active:bg-purple-600 text-white flex items-center justify-center text-sm rounded-lg transition-colors"
+                    style={{ width: '2.25rem', height: '1.75rem', minWidth: '2.25rem', minHeight: '1.75rem' }}
+                    aria-label="Song zur Jukebox hinzufügen"
+                  >
+                    🎵
+                  </button>
+                )}
+              </div>
               
               {/* Cover */}
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600/50 to-blue-600/50 overflow-hidden flex-shrink-0">

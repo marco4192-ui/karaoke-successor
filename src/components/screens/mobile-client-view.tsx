@@ -319,6 +319,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
               selectedPartner={data.selectedPartner} availablePartners={data.availablePartners}
               onShowSongOptions={data.setShowSongOptions} onSelectGameMode={data.setSelectedGameMode}
               onSelectPartner={data.setSelectedPartner} onAddToQueue={data.addToQueue}
+              onAddToJukebox={data.addToJukeboxWishlist}
               onLoadPartners={data.loadAvailablePartners} formatDuration={data.formatDuration}
             />
           )}
