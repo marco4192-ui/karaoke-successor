@@ -6,9 +6,9 @@ import { getPitchDetector } from '@/lib/audio/pitch-detector';
 import { useGameStore } from '@/lib/game/store';
 
 interface UseGameAudioEffectsOptions {
-  /** Ref to the <audio> element playing the song. Used to resume after effects init. */
+  /** Ref to the <audio> element playing the song. */
   audioRef?: RefObject<HTMLAudioElement | null>;
-  /** Ref to the <video> element playing background video. Used to resume after effects init. */
+  /** Ref to the <video> element playing background video. */
   videoRef?: RefObject<HTMLVideoElement | null>;
 }
 
@@ -20,8 +20,13 @@ interface UseGameAudioEffectsOptions {
  * PitchDetector instead of calling getUserMedia() / new AudioContext().
  * On Tauri/WebView, creating a second AudioContext or a second
  * MediaStreamAudioSourceNode can steal audio focus from <audio>/<video>
- * elements, causing them to pause. We also resume any paused media elements
- * after initialization as a defensive measure.
+ * elements, causing them to pause/reset.
+ *
+ * When opening the panel during playback:
+ * 1. Pause the game (game loop saves position + pauses media)
+ * 2. Await AudioEffects initialization (which connects to AudioContext.destination)
+ * 3. After init completes, restore media positions (which may have been reset)
+ * 4. When closing the panel, resumeGame() plays audio from the correct position
  */
 export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
   const { audioRef, videoRef } = options || {};
@@ -34,51 +39,30 @@ export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
   const [reverbAmount, setReverbAmount] = useState(0);
   const [echoAmount, setEchoAmount] = useState(0);
 
-  /**
-   * Resume media elements that may have been paused by the WebView when
-   * the AudioContext graph was connected to its destination.
-   */
-  const resumeMediaElements = useCallback(() => {
-    if (audioRef?.current && audioRef.current.paused) {
-      audioRef.current.play().catch(() => {
-        // Silently ignore — the element may have ended or been unloaded
-      });
-    }
-    if (videoRef?.current && videoRef.current.paused) {
-      videoRef.current.play().catch(() => {
-        // Silently ignore
-      });
-    }
-  }, [audioRef, videoRef]);
+  // Store saved positions so we can restore them after init
+  const savedPositionsRef = useRef<{ audio: number | null; video: number | null }>({
+    audio: null, video: null,
+  });
 
   // Initialize audio effects lazily — only when the user opens the panel
-  const initAudioEffects = useCallback(async () => {
-    if (audioEffectsRef.current) return; // Already initialized
+  const initAudioEffects = useCallback(async (): Promise<boolean> => {
+    if (audioEffectsRef.current) return true; // Already initialized
     try {
       let stream: MediaStream | null = null;
       let existingAudioContext: AudioContext | null = null;
 
-      // Strategy 1: Reuse the existing MediaStream AND AudioContext from the
-      // PitchDetector. This avoids a second getUserMedia() call that would
-      // kill pitch detection AND a second AudioContext that would steal audio
-      // focus from <audio>/<video> media elements on Tauri/WebView.
       const pitchDetector = getPitchDetector();
       stream = pitchDetector.getMediaStream();
       existingAudioContext = pitchDetector.getAudioContext();
 
-      // Safety guard: If we don't have an existing AudioContext, creating a
-      // new one would steal audio focus on Tauri/WebView. Only proceed if
-      // there's already a shared context.
       if (!existingAudioContext) {
         console.warn(
           '[AudioEffects] PitchDetector AudioContext is not available. ' +
           'Refusing to create a new one to avoid stealing audio focus.'
         );
-        return;
+        return false;
       }
 
-      // Fallback: request a new stream if PitchDetector doesn't have one
-      // (shouldn't happen during gameplay)
       if (!stream) {
         console.warn('[AudioEffects] No existing mic stream found, requesting new one');
         stream = await navigator.mediaDevices.getUserMedia({
@@ -94,62 +78,71 @@ export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
       await engine.initialize(stream, existingAudioContext);
       audioEffectsRef.current = engine;
       setAudioEffects(engine);
-
-      // Defensive: On Tauri/WebView, connecting the effect chain to
-      // AudioContext.destination can cause <audio>/<video> elements to
-      // pause. Only resume them if the game is still playing — if we
-      // intentionally paused (e.g. audio effects panel), don't resume.
-      const currentStatus = useGameStore.getState().gameState.status;
-      if (currentStatus === 'playing') {
-        setTimeout(() => {
-          resumeMediaElements();
-        }, 100);
-      }
+      return true;
     } catch (error) {
       console.error('Failed to initialize audio effects:', error);
+      return false;
     }
-  }, [resumeMediaElements]);
+  }, []);
+
+  /**
+   * Restore media positions that may have been reset by AudioContext
+   * destination connection on Tauri/WebView.
+   */
+  const restoreMediaPositions = useCallback(() => {
+    const { audio, video } = savedPositionsRef.current;
+    if (audio !== null && audioRef?.current && !audioRef.current.ended) {
+      audioRef.current.currentTime = audio;
+    }
+    if (video !== null && videoRef?.current && !videoRef.current.ended) {
+      videoRef.current.currentTime = video;
+    }
+  }, [audioRef, videoRef]);
 
   // Toggle audio effects panel with lazy initialization
-  const toggleAudioEffects = useCallback(() => {
+  const toggleAudioEffects = useCallback(async () => {
     if (!showAudioEffects) {
-      // Opening the panel — pause the game first (saves current position)
+      // Opening the panel
       if (gameStatus === 'playing') {
-        // Save media positions BEFORE initAudioEffects (which may reset them
-        // on Tauri/WebView by stealing audio focus)
-        const savedAudioTime = audioRef?.current?.currentTime ?? null;
-        const savedVideoTime = videoRef?.current?.currentTime ?? null;
+        // Save media positions BEFORE pauseGame (which triggers the game loop
+        // to pause audio/video)
+        savedPositionsRef.current = {
+          audio: audioRef?.current?.currentTime ?? null,
+          video: videoRef?.current?.currentTime ?? null,
+        };
 
+        // Pause the game — the game loop's effect will:
+        // 1. Save pausedAtElapsedMsRef from audioRef.currentTime
+        // 2. Pause audio/video elements
+        // 3. Cancel the game loop
         pauseGame();
-        initAudioEffects();
 
-        // After initAudioEffects potentially resets media positions, restore them.
-        // Use a delay longer than the 100ms resumeMediaElements timeout inside init.
-        if (savedAudioTime !== null || savedVideoTime !== null) {
-          setTimeout(() => {
-            if (savedAudioTime !== null && audioRef?.current && !audioRef.current.ended) {
-              audioRef.current.currentTime = savedAudioTime;
-            }
-            if (savedVideoTime !== null && videoRef?.current && !videoRef.current.ended) {
-              videoRef.current.currentTime = savedVideoTime;
-            }
-          }, 150);
+        // Initialize audio effects (async — connects AudioContext.destination)
+        const initialized = await initAudioEffects();
+
+        // After init completes, restore media positions which may have been
+        // reset by the AudioContext destination connection on Tauri/WebView
+        if (initialized) {
+          // Small delay to ensure any async side effects settle
+          await new Promise(r => setTimeout(r, 50));
+          restoreMediaPositions();
         }
       } else {
-        initAudioEffects();
+        // Game is not playing, just initialize effects
+        await initAudioEffects();
       }
     } else {
       // Closing the panel — resume the game from where it was paused
       if (gameStatus === 'paused') {
+        // Before resuming, ensure media positions are correct
+        restoreMediaPositions();
         resumeGame();
       }
     }
     setShowAudioEffects(prev => !prev);
-  }, [showAudioEffects, initAudioEffects, pauseGame, resumeGame, gameStatus, audioRef, videoRef]);
+  }, [showAudioEffects, initAudioEffects, pauseGame, resumeGame, gameStatus, audioRef, videoRef, restoreMediaPositions]);
 
   // Cleanup audio effects on unmount
-  // NOTE: We do NOT stop the MediaStream tracks here because the PitchDetector
-  // still owns them. Only the AudioContext and effect nodes are cleaned up.
   useEffect(() => {
     return () => {
       if (audioEffectsRef.current) {
