@@ -378,6 +378,20 @@ export default function KaraokeSuccessor() {
     };
   }, []);
 
+  // ── Hydration guard for Tauri: skip SSR to avoid hydration mismatches ──
+  // In a Tauri app, SSR provides no benefit. Rendering a simple placeholder
+  // during server-side rendering and the initial client render ensures the
+  // DOM matches exactly, preventing React error #418.
+  if (!isMounted) {
+    return (
+      <div
+        className="h-screen w-full"
+        style={{ background: 'linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #0a0a2a 100%)' }}
+        suppressHydrationWarning
+      />
+    );
+  }
+
   // Party mode exit confirmation dialog
   if (pendingNavigation) {
     return (
