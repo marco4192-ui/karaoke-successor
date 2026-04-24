@@ -42,8 +42,13 @@ export default function KaraokeSuccessor() {
   const { gameState, setSong, setGameMode, profiles, queue, resetGame, addPlayer, setResults, pauseGame, resumeGame } = useGameStore();
   const party = usePartyStore();
 
-  // ── Game pause dialog state (Escape key during gameplay) ──
-  const [showGamePauseDialog, setShowGamePauseDialog] = useState(false);
+  // ── Pause / Leave dialog — driven by party store so components can trigger it too ──
+  // Local mirror of party.pauseDialogAction (used for rendering)
+  const [activeDialog, setActiveDialog] = useState<null | 'song-pause' | 'party-leave'>(null);
+
+  useEffect(() => {
+    setActiveDialog(party.pauseDialogAction);
+  }, [party.pauseDialogAction]);
 
   // ── Party mode active guard ──
   const isPartyModeActive = !!(
@@ -291,12 +296,15 @@ export default function KaraokeSuccessor() {
       if (isFullscreen) {
         document.exitFullscreen().catch(() => {});
       } else if (screen === 'game') {
-        // During gameplay, show pause dialog instead of immediately leaving
+        // Main game screen (tournament/medley/competitive/rate-my-song during song)
         pauseGame();
-        setShowGamePauseDialog(true);
+        party.setPauseDialogAction('song-pause');
+      } else if (isPartyModeActive && party.isSongPlaying) {
+        // Party mode with song playing (BR/PTM/Companion) — components will pause their audio
+        party.setPauseDialogAction('song-pause');
       } else if (isPartyModeActive) {
-        // In party modes, show confirmation dialog instead of immediately leaving
-        setShowGamePauseDialog(true);
+        // Party mode without song playing — show leave warning
+        party.setPauseDialogAction('party-leave');
       } else {
         setScreen('home');
       }
@@ -431,82 +439,162 @@ export default function KaraokeSuccessor() {
     );
   }
 
-  // Game pause dialog (Escape during gameplay)
-  const handleResumeGame = () => {
-    setShowGamePauseDialog(false);
+  // ──────────────────────────────────────────────────────
+  // Dialog handlers
+  // ──────────────────────────────────────────────────────
+
+  const closeDialog = useCallback(() => {
+    party.setPauseDialogAction(null);
+  }, [party]);
+
+  // Song-pause: Fortsetzen (resume)
+  const handleResumeGame = useCallback(() => {
+ closeDialog();
     resumeGame();
-  };
+  }, [closeDialog, resumeGame]);
 
-  const handleLeaveGame = () => {
-    setShowGamePauseDialog(false);
+  // Song-pause: Abbrechen (non-tournament modes — leave song, return to party mode settings)
+  const handleSongAbort = useCallback(() => {
+    closeDialog();
 
-    // ── Party mode cleanup: if NOT in gameplay screen, just clear party state and go home ──
-    if (isPartyModeActive && screen !== 'game') {
-      party.setTournamentBracket(null);
-      party.setCurrentTournamentMatch(null);
-      party.setTournamentSongDuration(0);
-      party.setBattleRoyaleGame(null);
-      party.setPassTheMicPlayers([]);
-      party.setPassTheMicSong(null);
-      party.setPassTheMicSegments([]);
-      party.setPassTheMicSettings(null);
-      party.setCompanionPlayers([]);
-      party.setCompanionSong(null);
-      party.setCompanionSettings(null);
-      party.setMedleyPlayers([]);
-      party.setMedleySongs([]);
-      party.setMedleySettings(null);
-      party.setCompetitiveGame(null);
-      party.setRateMySongSettings(null);
-      party.setRateMySongPlayerIds([]);
-      party.setUnifiedSetupResult(null);
+    if (screen === 'game') {
+      // Main game screen — mode-specific cleanup
+      if (party.currentTournamentMatch && party.tournamentBracket) {
+        party.setTournamentMatchAborted(true);
+        resetGame();
+        setScreen('tournament-game');
+        return;
+      }
+      if (party.competitiveGame) {
+        const cg = party.competitiveGame;
+        const cgRounds = [...cg.rounds];
+        if (cg.currentRoundIndex < cgRounds.length) {
+          cgRounds[cg.currentRoundIndex] = { ...cgRounds[cg.currentRoundIndex], completed: true, player1Score: 0, player1Bonus: 0, player2Score: 0, player2Bonus: 0 };
+        }
+        const cgAllDone = cgRounds.length >= cg.totalRounds && cgRounds.every(r => r.completed);
+        party.setCompetitiveGame({ ...cg, rounds: cgRounds, status: cgAllDone ? 'game-over' : 'round-end', winner: cgAllDone ? [...cg.players].sort((a, b) => b.totalScore - a.totalScore)[0] || null : null });
+        resetGame();
+        const modeScreen = gameState.gameMode === 'missing-words' ? 'missing-words-game' : 'blind-game';
+        setScreen(modeScreen as Screen);
+        return;
+      }
+      if ((gameState.gameMode === 'medley' || gameState.gameMode === 'duel') && party.medleySongs.length > 0) {
+        resetGame();
+        setScreen('medley-game');
+        return;
+      }
+      if (gameState.gameMode === 'rate-my-song') {
+        resetGame();
+        setScreen('rate-my-song-rating');
+        return;
+      }
+      if (gameState.gameMode === 'pass-the-mic' || gameState.gameMode === 'companion-singalong') {
+        // PTM / Companion during main game screen — return to party selection
+        if (gameState.gameMode === 'pass-the-mic') {
+          party.setPassTheMicPlayers([]);
+          party.setPassTheMicSong(null);
+          party.setPassTheMicSegments([]);
+          party.setPassTheMicSettings(null);
+        } else {
+          party.setCompanionPlayers([]);
+          party.setCompanionSong(null);
+          party.setCompanionSettings(null);
+        }
+        resetGame();
+        setScreen('party');
+        return;
+      }
       resetGame();
-      setScreen('home');
+      setScreen('library');
       return;
     }
 
-    // Execute the appropriate exit logic based on game mode
-    if (party.currentTournamentMatch && party.tournamentBracket) {
-      party.setTournamentMatchAborted(true);
+    // BR / PTM / Companion — their own screens (not main game screen)
+    if (party.battleRoyaleGame) {
+      party.setBattleRoyaleGame(null);
       resetGame();
-      setScreen('tournament-game');
-    } else if (party.competitiveGame) {
-      const cg = party.competitiveGame;
-      const cgRounds = [...cg.rounds];
-      if (cg.currentRoundIndex < cgRounds.length) {
-        cgRounds[cg.currentRoundIndex] = { ...cgRounds[cg.currentRoundIndex], completed: true, player1Score: 0, player1Bonus: 0, player2Score: 0, player2Bonus: 0 };
-      }
-      const cgAllDone = cgRounds.length >= cg.totalRounds && cgRounds.every(r => r.completed);
-      party.setCompetitiveGame({ ...cg, rounds: cgRounds, status: cgAllDone ? 'game-over' : 'round-end', winner: cgAllDone ? [...cg.players].sort((a, b) => b.totalScore - a.totalScore)[0] || null : null });
-      resetGame();
-      const modeScreen = gameState.gameMode === 'missing-words' ? 'missing-words-game' : 'blind-game';
-      setScreen(modeScreen as Screen);
-    } else if ((gameState.gameMode === 'medley' || gameState.gameMode === 'duel') && party.medleySongs.length > 0) {
-      resetGame();
-      setScreen('medley-game');
-    } else if (gameState.gameMode === 'pass-the-mic') {
+      setScreen('party');
+      return;
+    }
+    if (party.passTheMicPlayers.length > 0) {
       party.setPassTheMicPlayers([]);
       party.setPassTheMicSong(null);
       party.setPassTheMicSegments([]);
       party.setPassTheMicSettings(null);
       resetGame();
-      setScreen('home');
-    } else if (gameState.gameMode === 'companion-singalong') {
+      setScreen('party');
+      return;
+    }
+    if (party.companionPlayers.length > 0) {
       party.setCompanionPlayers([]);
       party.setCompanionSong(null);
       party.setCompanionSettings(null);
       resetGame();
-      setScreen('home');
-    } else if (gameState.gameMode === 'rate-my-song') {
-      party.setRateMySongSettings(null);
-      party.setRateMySongPlayerIds([]);
-      resetGame();
-      setScreen('home');
-    } else {
-      resetGame();
-      setScreen('library');
+      setScreen('party');
+      return;
     }
-  };
+
+    resetGame();
+    setScreen('library');
+  }, [closeDialog, screen, party, gameState, resetGame, setScreen]);
+
+  // Tournament song-pause: Game wiederholen
+  const handleTournamentRepeat = useCallback(() => {
+    closeDialog();
+    if (!party.currentTournamentMatch) return;
+    const match = party.currentTournamentMatch;
+
+    // Resume first so useGameLoop can clean up properly
+    resumeGame();
+
+    resetGame();
+    addPlayer({ id: match.player1!.id, name: match.player1!.name, avatar: match.player1!.avatar, color: match.player1!.color });
+    addPlayer({ id: match.player2!.id, name: match.player2!.name, avatar: match.player2!.avatar, color: match.player2!.color });
+    setGameMode('duel');
+    const songs = getAllSongs();
+    if (songs.length > 0) {
+      const randomSong = songs[Math.floor(Math.random() * songs.length)];
+      setSong(randomSong);
+      setScreen('game');
+    }
+  }, [closeDialog, party, resumeGame, resetGame, addPlayer, setGameMode, setSong, setScreen]);
+
+  // Tournament song-pause: Sieger automatisch festlegen (based on current scores)
+  const handleTournamentAutoWinner = useCallback(() => {
+    closeDialog();
+    if (!party.currentTournamentMatch || !party.tournamentBracket) return;
+
+    const match = party.currentTournamentMatch;
+    const results = gameState.results;
+    const players = gameState.players;
+
+    const score1 = results?.players?.[0]?.score || players?.[0]?.score || 0;
+    const score2 = results?.players?.[1]?.score || players?.[1]?.score || 0;
+
+    const updatedBracket = recordMatchResult(party.tournamentBracket, match.id, score1, score2);
+    party.setTournamentBracket(updatedBracket);
+    party.setCurrentTournamentMatch(null);
+    party.setTournamentMatchAborted(false);
+
+    resetGame();
+    setScreen('tournament-game');
+  }, [closeDialog, party, gameState, resetGame, setScreen]);
+
+  // Party-leave: Party-Mode beenden
+  const handlePartyModeEnd = useCallback(() => {
+    closeDialog();
+    party.resetPartyState();
+    resetGame();
+    setScreen('home');
+  }, [closeDialog, party, resetGame, setScreen]);
+
+  // Party-leave: Zurück (stay where you are)
+  const handlePartyLeaveBack = useCallback(() => {
+    closeDialog();
+  }, [closeDialog]);
+
+  // Is this a tournament match during song?
+  const isTournamentMatch = !!(party.currentTournamentMatch && party.tournamentBracket);
 
   return (
     <div
@@ -592,82 +680,10 @@ export default function KaraokeSuccessor() {
         {screen === 'game' && (
           <GameScreen
             onEnd={handleGameEnd}
-            onBack={() => {
-              // If in a medley snippet (cooperative 'medley' or competitive 'duel'), go back to medley flow
-              if ((gameState.gameMode === 'medley' || gameState.gameMode === 'duel') && party.medleySongs.length > 0) {
-                resetGame();
-                setScreen('medley-game');
-                return;
-              }
-              // If in a tournament match, go back to bracket view (not library)
-              if (party.currentTournamentMatch && party.tournamentBracket) {
-                party.setTournamentMatchAborted(true);
-                resetGame();
-                setScreen('tournament-game');
-                return;
-              }
-              // If in competitive MW/Blind match, go back to competitive view
-              if (party.competitiveGame) {
-                // Capture gameMode BEFORE resetGame() clears it
-                const modeScreen = gameState.gameMode === 'missing-words' ? 'missing-words-game' : 'blind-game';
-                // Mark the current round as forfeited (completed with 0 scores) so
-                // CompetitiveGameView shows the scoreboard instead of re-triggering onPlayMatch
-                const game = party.competitiveGame;
-                const updatedRounds = [...game.rounds];
-                if (game.currentRoundIndex < updatedRounds.length) {
-                  updatedRounds[game.currentRoundIndex] = {
-                    ...updatedRounds[game.currentRoundIndex],
-                    completed: true,
-                    player1Score: 0,
-                    player1Bonus: 0,
-                    player2Score: 0,
-                    player2Bonus: 0,
-                  };
-                }
-                const allComplete = updatedRounds.length >= game.totalRounds && updatedRounds.every(r => r.completed);
-                let winner: typeof game.players[0] | null = null;
-                if (allComplete) {
-                  const sorted = [...game.players].sort((a, b) => b.totalScore - a.totalScore);
-                  winner = sorted[0] || null;
-                }
-                party.setCompetitiveGame({
-                  ...game,
-                  rounds: updatedRounds,
-                  status: allComplete ? 'game-over' : 'round-end',
-                  winner,
-                });
-                // Reset game state FIRST (clears scoring/players), then navigate
-                resetGame();
-                setScreen(modeScreen as Screen);
-                return;
-              }
-              // If in pass-the-mic or companion-singalong, clean up party state and go home
-              if (gameState.gameMode === 'pass-the-mic') {
-                party.setPassTheMicPlayers([]);
-                party.setPassTheMicSong(null);
-                party.setPassTheMicSegments([]);
-                party.setPassTheMicSettings(null);
-                resetGame();
-                setScreen('home');
-                return;
-              }
-              if (gameState.gameMode === 'companion-singalong') {
-                party.setCompanionPlayers([]);
-                party.setCompanionSong(null);
-                party.setCompanionSettings(null);
-                resetGame();
-                setScreen('home');
-                return;
-              }
-              if (gameState.gameMode === 'rate-my-song') {
-                party.setRateMySongSettings(null);
-                party.setRateMySongPlayerIds([]);
-                resetGame();
-                setScreen('home');
-                return;
-              }
-              resetGame();
-              setScreen('library');
+            onBack={handleSongAbort}
+            onPause={() => {
+              pauseGame();
+              party.setPauseDialogAction('song-pause');
             }}
           />
         )}
@@ -745,29 +761,88 @@ export default function KaraokeSuccessor() {
         {screen === 'online' && <OnlineMultiplayerScreen onBack={() => setScreen('party')} />}
       </main>
 
-      {/* Pause dialog overlay — rendered ON TOP so GameScreen stays mounted */}
-      {showGamePauseDialog && (
+      {/* ── Song Pause Dialog (during gameplay in any mode) ── */}
+      {activeDialog === 'song-pause' && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
           <div className="bg-zinc-900 border border-white/15 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
             <div className="text-center mb-6">
               <div className="text-4xl mb-2">⏸️</div>
               <h2 className="text-xl font-bold text-white">Spiel pausiert</h2>
               <p className="text-sm text-white/50 mt-2">
-                Möchtest du das Spiel fortsetzen oder verlassen?
+                Möchtest du das Spiel fortsetzen oder abbrechen?
+              </p>
+            </div>
+            <div className="space-y-3">
+              {isTournamentMatch ? (
+                <>
+                  {/* Tournament: 3 options */}
+                  <button
+                    onClick={handleResumeGame}
+                    className="w-full py-3 rounded-lg font-medium bg-green-500/20 border border-green-500/40 text-green-300 hover:bg-green-500/30 transition-all"
+                  >
+                    Fortsetzen
+                  </button>
+                  <button
+                    onClick={handleTournamentRepeat}
+                    className="w-full py-3 rounded-lg font-medium bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/30 transition-all"
+                  >
+                    🔄 Game wiederholen
+                  </button>
+                  <button
+                    onClick={handleTournamentAutoWinner}
+                    className="w-full py-3 rounded-lg font-medium bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 transition-all"
+                  >
+                    🏆 Sieger automatisch festlegen
+                  </button>
+                </>
+              ) : (
+                <>
+                  {/* All other modes: Resume + Cancel */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleResumeGame}
+                      className="flex-1 py-3 rounded-lg font-medium bg-green-500/20 border border-green-500/40 text-green-300 hover:bg-green-500/30 transition-all"
+                    >
+                      Fortsetzen
+                    </button>
+                    <button
+                      onClick={handleSongAbort}
+                      className="flex-1 py-3 rounded-lg font-medium bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all"
+                    >
+                      Abbrechen
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Party Mode Leave Warning (non-song screens) ── */}
+      {activeDialog === 'party-leave' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="bg-zinc-900 border border-white/15 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="text-4xl mb-2">⚠️</div>
+              <h2 className="text-xl font-bold text-white">Party-Modus verlassen?</h2>
+              <p className="text-sm text-white/50 mt-2">
+                Du bist dabei, den Party-Modus zu verlassen.
+                Dein aktueller Spielfortschritt geht dabei verloren.
               </p>
             </div>
             <div className="flex gap-3">
               <button
-                onClick={handleResumeGame}
-                className="flex-1 py-3 rounded-lg font-medium bg-green-500/20 border border-green-500/40 text-green-300 hover:bg-green-500/30 transition-all"
+                onClick={handlePartyLeaveBack}
+                className="flex-1 py-3 rounded-lg font-medium bg-white/10 text-white hover:bg-white/20 transition-all"
               >
-                Fortsetzen
+                Zurück
               </button>
               <button
-                onClick={handleLeaveGame}
+                onClick={handlePartyModeEnd}
                 className="flex-1 py-3 rounded-lg font-medium bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all"
               >
-                Verlassen
+                Party-Modus beenden
               </button>
             </div>
           </div>

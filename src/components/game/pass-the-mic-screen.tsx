@@ -10,6 +10,7 @@ import { useGameStore } from '@/lib/game/store';
 import { getAllSongs } from '@/lib/game/song-library';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { DIFFICULTY_SETTINGS } from '@/types/game';
+import { usePartyStore } from '@/lib/game/party-store';
 import { QuickSwapOverlay } from '@/components/game/quick-swap-overlay';
 
 interface PassTheMicPlayer {
@@ -300,10 +301,29 @@ export function PassTheMicGameView({ players, song, segments, settings, onUpdate
   const [countdown, setCountdown] = useState(3);
   const [switchCountdown, setSwitchCountdown] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  
+  const party = usePartyStore();
+
   // Pitch detection for the active player only
   const { isInitialized, isListening, pitchResult, initialize, start, stop } = usePitchDetector();
-  
+
+  // ── Report song playing status to page.tsx for Escape handler ──
+  useEffect(() => {
+    party.setIsSongPlaying(!!isPlaying);
+  }, [isPlaying, party]);
+
+  // ── Pause / Resume when page.tsx shows/hides the song-pause dialog ──
+  useEffect(() => {
+    if (party.pauseDialogAction === 'song-pause') {
+      if (audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause();
+      }
+    } else if (party.pauseDialogAction === null && isPlaying) {
+      if (audioRef.current && audioRef.current.paused) {
+        audioRef.current.play().catch(() => {});
+      }
+    }
+  }, [party.pauseDialogAction, isPlaying]);
+
   // Track which notes have been processed to avoid double counting
   const processedNotesRef = useRef<Set<string>>(new Set());
 

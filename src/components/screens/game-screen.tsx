@@ -77,7 +77,7 @@ import { getPitchDetector } from '@/lib/audio/pitch-detector';
 import { cleanupOldReplays } from '@/lib/db/replay-db';
 
 // ===================== GAME SCREEN =====================
-function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }) {
+function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () => void; onPause?: () => void }) {
   const { gameState, setCurrentTime, setDetectedPitch, updatePlayer, endGame, resetGame, setResults, addPlayer, createProfile, profiles, setMissingWordsIndices, setBlindSection } = useGameStore();
   const party = usePartyStore();
   const { pitchResult, initialize, start, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
@@ -554,22 +554,23 @@ function GameScreen({ onEnd, onBack }: { onEnd: () => void; onBack: () => void }
     <div className="fixed inset-0 z-40 flex flex-col bg-black">
       {/* Header Overlay */}
       <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2 bg-gradient-to-b from-black/70 to-transparent">
-        {/* Left: Back Button */}
+        {/* Left: Back / Pause Button */}
         <Button variant="ghost" onClick={() => {
-          abortGameLoop();
-          stop();
-          if (audioEffects) audioEffects.disconnect();
-          if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
-          if (videoRef.current) { videoRef.current.pause(); videoRef.current.currentTime = 0; }
-          nativeAudio.stop().catch(() => {});
-          setIsPlaying(false);
-          // Reset scoring state so scores don't carry over to the next game
-          resetScoring();
-          // Don't call resetGame() here — onBack() handles navigation and cleanup.
-          // Calling resetGame() would clear the song/mode which breaks competitive mode navigation.
-          onBack();
+          if (onPause) {
+            onPause();
+          } else {
+            abortGameLoop();
+            stop();
+            if (audioEffects) audioEffects.disconnect();
+            if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
+            if (videoRef.current) { videoRef.current.pause(); videoRef.current.currentTime = 0; }
+            nativeAudio.stop().catch(() => {});
+            setIsPlaying(false);
+            resetScoring();
+            onBack();
+          }
         }} className="text-white/80 hover:text-white hover:bg-white/10">
-          ← Back
+          ⏸ Pause
         </Button>
         
         {/* Center: Webcam Controls — hidden in low-performance mode */}

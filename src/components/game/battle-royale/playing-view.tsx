@@ -1,12 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Song } from '@/types/game';
 import { BattleRoyaleGame, BattleRoyalePlayer, getBattleRoyaleStats, getPlayersByScore } from '@/lib/game/battle-royale';
 import { LyricsDisplay } from './lyrics-display';
+import { usePartyStore } from '@/lib/game/party-store';
 
 interface PlayingViewProps {
   game: BattleRoyaleGame;
@@ -42,6 +43,28 @@ export function PlayingView({
   const currentRound = game.rounds[game.rounds.length - 1];
   // Guard: only allow onEnded to fire if audio actually started playing
   const audioStartedRef = React.useRef(false);
+  const party = usePartyStore();
+
+  // ── Report song playing status to page.tsx for Escape handler ──
+  useEffect(() => {
+    party.setIsSongPlaying(true);
+    return () => { party.setIsSongPlaying(false); };
+  }, [party]);
+
+  // ── Pause / Resume when page.tsx shows/hides the song-pause dialog ──
+  useEffect(() => {
+    if (party.pauseDialogAction === 'song-pause') {
+      // Pause audio
+      if (audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause();
+      }
+    } else if (party.pauseDialogAction === null) {
+      // Resume audio (only if it was paused and we're still in playing state)
+      if (audioRef.current && audioRef.current.paused && game.status === 'playing' && audioStartedRef.current) {
+        audioRef.current.play().catch(() => {});
+      }
+    }
+  }, [party.pauseDialogAction, game.status]);
 
   // Determine the 3 lowest active players for danger pulsing (Fix 2f)
   const activeSorted = sortedPlayers.filter(p => !p.eliminated);
@@ -90,18 +113,23 @@ export function PlayingView({
       />
       <div className="fixed inset-0 bg-black/50 -z-10" />
 
-      {/* ─────────── Back Button ─────────── */}
-      {onBack && (
-        <div className="absolute top-3 left-3 z-20">
-          <Button
-            variant="ghost"
-            onClick={onBack}
-            className="text-white/60 hover:text-white hover:bg-white/10"
-          >
-            ← Back
-          </Button>
-        </div>
-      )}
+      {/* ─────────── Pause Button ─────────── */}
+      <div className="absolute top-3 left-3 z-20">
+        <Button
+          variant="ghost"
+          onClick={() => {
+            // Pause audio immediately
+            if (audioRef.current && !audioRef.current.paused) {
+              audioRef.current.pause();
+            }
+            // Trigger the song-pause dialog in page.tsx
+            party.setPauseDialogAction('song-pause');
+          }}
+          className="text-white/60 hover:text-white hover:bg-white/10"
+        >
+          ⏸ Pause
+        </Button>
+      </div>
 
       {/* ─────────── UPPER THIRD: Player Cards ─────────── */}
       <div className="flex-shrink-0 pt-3 px-3">

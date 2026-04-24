@@ -9,6 +9,7 @@ interface MatchAbortDialogProps {
   bracket: TournamentBracket;
   onManualWinner: (matchId: string, winnerId: string) => void;
   onRepeatMatch: () => void;
+  onAutoWinner: () => void;
   onDismiss: () => void;
 }
 

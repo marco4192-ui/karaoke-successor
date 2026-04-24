@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { BattleRoyaleGame, BattleRoyalePlayer, getBattleRoyaleStats } from '@/lib/game/battle-royale';
+import { usePartyStore } from '@/lib/game/party-store';
 
 interface RoundSetupViewProps {
   game: BattleRoyaleGame;
@@ -15,15 +16,22 @@ interface RoundSetupViewProps {
 }
 
 export function RoundSetupView({ game, stats, activePlayers, onStartRound, onBack }: RoundSetupViewProps) {
+  const party = usePartyStore();
+
+  const handleBack = () => {
+    if (onBack) {
+      // Trigger party-leave warning dialog instead of leaving directly
+      party.setPauseDialogAction('party-leave');
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto text-center">
-      {onBack && (
-        <div className="text-left mb-4">
-          <Button variant="ghost" onClick={onBack} className="text-white/60">
-            ← Back
-          </Button>
-        </div>
-      )}
+      <div className="text-left mb-4">
+        <Button variant="ghost" onClick={handleBack} className="text-white/60">
+          ← Back
+        </Button>
+      </div>
       <h1 className="text-3xl font-bold mb-2">Round {game.currentRound + 1}</h1>
       <p className="text-white/60 mb-6">
         {stats.activeMicPlayers} 🎤 Mic + {stats.activeCompanionPlayers} 📱 Companion = {activePlayers.length} players

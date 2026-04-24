@@ -73,6 +73,15 @@ interface PartyStore {
   votingSongs: Song[];
   setVotingSongs: (songs: Song[]) => void;
 
+  // Pause / Leave dialog management (shared between page.tsx and party components)
+  pauseDialogAction: null | 'song-pause' | 'party-leave';
+  setPauseDialogAction: (action: null | 'song-pause' | 'party-leave') => void;
+
+  // Flag set by party mode components to indicate a song is currently playing
+  // (used by page.tsx to decide which dialog to show on Escape)
+  isSongPlaying: boolean;
+  setIsSongPlaying: (v: boolean) => void;
+
   // Reset all party state
   resetPartyState: () => void;
 }
@@ -140,6 +149,12 @@ export const usePartyStore = create<PartyStore>((set) => ({
   votingSongs: [],
   setVotingSongs: (votingSongs) => set({ votingSongs }),
 
+  // Pause / Leave dialog
+  pauseDialogAction: null as null | 'song-pause' | 'party-leave',
+  setPauseDialogAction: (pauseDialogAction) => set({ pauseDialogAction }),
+  isSongPlaying: false,
+  setIsSongPlaying: (isSongPlaying) => set({ isSongPlaying }),
+
   // Reset all party state
   resetPartyState: () => set({
     tournamentBracket: null,
@@ -164,5 +179,7 @@ export const usePartyStore = create<PartyStore>((set) => ({
     selectedGameMode: null,
     unifiedSetupResult: null,
     votingSongs: [],
+    pauseDialogAction: null,
+    isSongPlaying: false,
   }),
 }));

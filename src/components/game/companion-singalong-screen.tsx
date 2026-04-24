@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Song, PlayerProfile, PLAYER_COLORS, LyricLine, Difficulty } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
 import { getAllSongs } from '@/lib/game/song-library';
+import { usePartyStore } from '@/lib/game/party-store';
 
 interface CompanionPlayer {
   id: string;
@@ -294,8 +295,27 @@ export function CompanionGameView({ players, song, settings, onUpdatePlayers, on
   const [timeUntilSwitch, setTimeUntilSwitch] = useState(0);
   const [gamePhase, setGamePhase] = useState<'setup' | 'playing' | 'switching' | 'ended'>('setup');
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const party = usePartyStore();
 
   const currentPlayer = players[currentPlayerIndex];
+
+  // ── Report song playing status to page.tsx for Escape handler ──
+  useEffect(() => {
+    party.setIsSongPlaying(!!isPlaying && gamePhase === 'playing');
+ }, [isPlaying, gamePhase, party]);
+
+  // ── Pause / Resume when page.tsx shows/hides the song-pause dialog ──
+ useEffect(() => {
+    if (party.pauseDialogAction === 'song-pause') {
+      if (audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause();
+      }
+    } else if (party.pauseDialogAction === null && isPlaying && gamePhase === 'playing') {
+      if (audioRef.current && audioRef.current.paused) {
+        audioRef.current.play().catch(() => {});
+      }
+ }
+  }, [party.pauseDialogAction, isPlaying, gamePhase]);
 
   // Generate random switch time
   const generateSwitchTime = useCallback(() => {
