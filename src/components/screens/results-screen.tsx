@@ -49,22 +49,31 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
   const results = gameState.results;
   const song = gameState.currentSong;
 
-  // Load last replay from IndexedDB (set by game-screen during recording)
+  // Load last replay from IndexedDB (set by game-screen during recording).
+  // The replay might still be saving when this component mounts, so poll
+  // with retries to handle the async save race condition.
   useEffect(() => {
-    const loadReplay = async () => {
+    let active = true;
+    const MAX_RETRIES = 10;
+    const RETRY_DELAY = 500; // ms
+
+    const loadReplay = async (attempt: number) => {
       const replayId = getLastReplayId();
-      if (replayId) {
-        try {
-          const record = await getReplay(replayId);
-          if (record) {
-            setReplayRecord(record);
-          }
-        } catch (err) {
-          console.warn('[ResultsScreen] Failed to load replay:', err);
+      if (!replayId || !active) return;
+      try {
+        const record = await getReplay(replayId);
+        if (record) {
+          setReplayRecord(record);
+        } else if (attempt < MAX_RETRIES) {
+          // Replay not yet saved — retry after delay
+          setTimeout(() => loadReplay(attempt + 1), RETRY_DELAY);
         }
+      } catch (err) {
+        console.warn('[ResultsScreen] Failed to load replay:', err);
       }
     };
-    loadReplay();
+    loadReplay(0);
+    return () => { active = false; };
   }, []);
 
   // Fetch next song from queue (both local and companion)

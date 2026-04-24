@@ -187,6 +187,10 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
     if (!recorder || recorder.state === 'inactive' || savedRef.current) return;
     savedRef.current = true;
 
+    // Generate ID immediately so the Results Screen can find the replay
+    // even before the async IndexedDB save completes.
+    const replayId = `replay-${songId}-${Date.now()}`;
+
     const stopAndSave = () => {
       const duration = Date.now() - startTimeRef.current;
       const chunks = chunksRef.current;
@@ -207,7 +211,7 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
 
       const mimeType = recorder.mimeType || (isWebcamActive ? 'video/webm' : 'audio/webm');
       const blob = new Blob(chunks, { type: mimeType });
-      const id = `replay-${songId}-${Date.now()}`;
+      const id = replayId;
 
       const playerResult = gameResult?.players?.[0] ?? null;
 
@@ -249,6 +253,10 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
           console.error('[ReplayRecorder] Failed to save replay:', err);
         });
     };
+
+    // Notify caller immediately with the replay ID so Results Screen
+    // can start polling IndexedDB before the async save finishes.
+    onReplaySaved({ id: replayId } as ReplayData);
 
     // If the recorder is still recording, wait for it to finish
     if (recorder.state === 'recording') {
