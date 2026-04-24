@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useGameStore } from '@/lib/game/store';
+import { usePartyStore } from '@/lib/game/party-store';
 import { safeAlert } from '@/lib/safe-dialog';
 import { getExtendedStats, updateStatsAfterGame, saveExtendedStats, calculateSongXP, getLevelForXP } from '@/lib/game/player-progression';
 
@@ -24,10 +25,12 @@ import { QueueNextSong } from '@/components/results/queue-next-song';
 import { ReplayModal } from '@/components/results/replay-modal';
 import { getLastReplayId } from '@/lib/replay-state';
 import { getReplay, type ReplayRecord } from '@/lib/db/replay-db';
+import { PassTheMicSegment } from '@/components/game/pass-the-mic-screen';
 
 // ===================== RESULTS SCREEN =====================
 export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void; onHome: () => void }) {
   const { gameState, resetGame, addHighscore, profiles, activeProfileId, onlineEnabled, updateProfile, highscores, setSong, setGameMode, addPlayer } = useGameStore();
+  const party = usePartyStore();
   const savedToHighscoreRef = useRef(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [uploadMessage, setUploadMessage] = useState('');
@@ -177,7 +180,36 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
       // Ignore
     }
     
-    // Set up game
+    // Check if a party game mode is currently active
+    const currentMode = useGameStore.getState().gameState.gameMode;
+
+    if (currentMode === 'pass-the-mic' && party.passTheMicPlayers?.length > 0) {
+      // Generate segments for pass-the-mic and launch game
+      const segmentDuration = party.passTheMicSettings?.segmentDuration || 30;
+      const segmentCount = Math.ceil(fullSong.duration / (segmentDuration * 1000));
+      const segments: PassTheMicSegment[] = [];
+      for (let i = 0; i < segmentCount; i++) {
+        segments.push({
+          startTime: i * segmentDuration * 1000,
+          endTime: Math.min((i + 1) * segmentDuration * 1000, fullSong.duration),
+          playerId: null,
+        });
+      }
+      party.setPassTheMicSegments(segments);
+      party.setPassTheMicSong(fullSong);
+      setSong(fullSong);
+      onPlayAgain();
+      return;
+    }
+
+    if (currentMode === 'companion-singalong' && party.companionPlayers?.length > 0) {
+      party.setCompanionSong(fullSong);
+      setSong(fullSong);
+      onPlayAgain();
+      return;
+    }
+
+    // Standard: set up game and navigate
     setSong(fullSong);
     if (nextQueueItem.gameMode === 'duel') {
       setGameMode('duel');
@@ -186,7 +218,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
     } else {
       setGameMode('standard');
     }
-    
+
     // Add active player
     if (activeProfileId) {
       const profile = profiles.find(p => p.id === activeProfileId);
@@ -194,8 +226,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
         addPlayer(profile);
       }
     }
-    
-    resetGame();
+
     onPlayAgain();
   };
 

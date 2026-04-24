@@ -680,6 +680,36 @@ export default function KaraokeSuccessor() {
         {screen === 'character' && <CharacterScreen />}
         {screen === 'queue' && (
           <QueueScreen onPlayFromQueue={(song, gameMode, players) => {
+            // Check if a party game mode is currently active and handle accordingly
+            const activeMode = gameState.gameMode;
+
+            if (activeMode === 'pass-the-mic' && party.passTheMicPlayers?.length > 0) {
+              // Generate segments for pass-the-mic and launch game
+              const segmentDuration = party.passTheMicSettings?.segmentDuration || 30;
+              const segmentCount = Math.ceil(song.duration / (segmentDuration * 1000));
+              const segments: PassTheMicSegment[] = [];
+              for (let i = 0; i < segmentCount; i++) {
+                segments.push({
+                  startTime: i * segmentDuration * 1000,
+                  endTime: Math.min((i + 1) * segmentDuration * 1000, song.duration),
+                  playerId: null,
+                });
+              }
+              party.setPassTheMicSegments(segments);
+              party.setPassTheMicSong(song);
+              setSong(song);
+              setScreen('pass-the-mic-game');
+              return;
+            }
+
+            if (activeMode === 'companion-singalong' && party.companionPlayers?.length > 0) {
+              party.setCompanionSong(song);
+              setSong(song);
+              setScreen('companion-singalong-game');
+              return;
+            }
+
+            // Default: standard/duel/duet handling
             resetGame();
             setSong(song);
             setGameMode(gameMode === 'duel' || gameMode === 'duet' ? 'duel' : 'standard');
