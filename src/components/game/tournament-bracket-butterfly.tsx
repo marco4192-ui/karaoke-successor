@@ -16,7 +16,7 @@ const MATCH_W_FIRST_ROUND = 195; // Wider for horizontal (side-by-side) layout
 const COL_GAP = 40;
 const FINAL_GAP = 44;
 const ROUND_LABEL_H = 22; // space for round labels above bracket
-const MIN_UNIT_SPACING = 50; // minimum vertical spacing between adjacent match centres (prevents card overlap)
+const MIN_UNIT_SPACING = 70; // minimum vertical spacing between adjacent first-round match centres (prevents card overlap)
 
 interface ButterflyBracketProps {
   bracket: TournamentBracket;
@@ -33,7 +33,10 @@ function getRoundName(round: number, totalRounds: number): string {
   return `Round ${round}`;
 }
 
-/** Recursively compute the vertical center Y for a match at (round, position) */
+/** Recursively compute the vertical center Y for a match at (round, position).
+ *  In the butterfly layout only firstRoundCount/2 round-1 matches are visible per side,
+ *  so round 1 uses matchesPerSide as the divisor to get adequate spacing.
+ *  Later rounds average their feeder centres automatically. */
 function computeCenterY(
   round: number,
   pos: number,
@@ -41,8 +44,11 @@ function computeCenterY(
   bracketH: number,
 ): number {
   const firstRoundCount = Math.pow(2, totalRounds - 1);
-  const unit = bracketH / firstRoundCount;
-  if (round === 1) return (pos + 0.5) * unit;
+  const matchesPerSide = firstRoundCount / 2;
+  if (round === 1) {
+    const unit = bracketH / matchesPerSide;
+    return (pos + 0.5) * unit;
+  }
   const c1 = computeCenterY(round - 1, pos * 2, totalRounds, bracketH);
   const c2 = computeCenterY(round - 1, pos * 2 + 1, totalRounds, bracketH);
   return (c1 + c2) / 2;
@@ -57,15 +63,16 @@ export function TournamentBracketButterfly({
 }: ButterflyBracketProps) {
   const playableMatches = getPlayableMatches(bracket);
   const firstRoundCount = Math.pow(2, bracket.totalRounds - 1);
+  const matchesPerSide = firstRoundCount / 2;
 
-  // Dynamic spacing – compact vertical spacing to prevent oversized brackets
-  const matchSpacing = Math.max(56, Math.min(110, 500 / (firstRoundCount / 2)));
+  // Dynamic spacing – compact vertical spacing to prevent oversized brackets.
+  // matchesPerSide drives both the spacing and the height calculation because
+  // computeCenterY now uses matchesPerSide as the divisor for round 1.
+  const matchSpacing = Math.max(70, Math.min(100, 500 / matchesPerSide));
 
-  // The butterfly layout renders firstRoundCount/2 matches per side vertically.
-  // computeCenterY uses unit = effectiveHeight / firstRoundCount, so effectiveHeight
-  // must be >= firstRoundCount * MIN_UNIT_SPACING to prevent card overlap.
-  const rawEffectiveH = (firstRoundCount / 2) * matchSpacing;
-  const neededEffectiveH = firstRoundCount * MIN_UNIT_SPACING;
+  // effectiveHeight must be >= matchesPerSide * MIN_UNIT_SPACING to prevent overlap.
+  const rawEffectiveH = matchesPerSide * matchSpacing;
+  const neededEffectiveH = matchesPerSide * MIN_UNIT_SPACING;
   const effectiveH = Math.max(rawEffectiveH, neededEffectiveH);
   const bracketH = effectiveH + ROUND_LABEL_H;
 
