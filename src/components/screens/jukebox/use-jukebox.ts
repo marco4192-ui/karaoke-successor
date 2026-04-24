@@ -92,6 +92,39 @@ export function useJukebox() {
         [newPlaylist[i], newPlaylist[j]] = [newPlaylist[j], newPlaylist[i]];
       }
     }
+
+    // Fetch companion wishlist and insert those songs after the first random
+    // song but before the remaining random songs (user wishes before system picks)
+    try {
+      const res = await fetch('/api/mobile?action=getjukebox');
+      const data = await res.json();
+      if (data.success && Array.isArray(data.wishlist) && data.wishlist.length > 0) {
+        const wishlistSongIds = new Set<string>();
+        const wishlistSongs: Song[] = [];
+        for (const item of data.wishlist) {
+          const key = `${item.songId}-${item.addedBy}`;
+          processedWishlistRef.current.add(key);
+          if (!wishlistSongIds.has(item.songId)) {
+            wishlistSongIds.add(item.songId);
+            const fullSong = newPlaylist.find(s => s.id === item.songId);
+            if (fullSong) {
+              wishlistSongs.push(fullSong);
+              manualIdsRef.current.add(fullSong.id);
+            }
+          }
+        }
+        if (wishlistSongs.length > 0) {
+          // Remove wishlist songs from random pool to avoid duplicates
+          const randomPool = newPlaylist.filter(s => !wishlistSongIds.has(s.id));
+          // Place one random song first, then all wishlist songs, then remaining random
+          const firstRandom = newPlaylist[0] && !wishlistSongIds.has(newPlaylist[0].id)
+            ? [newPlaylist[0]]
+            : (randomPool.length > 0 ? [randomPool.shift()!] : []);
+          newPlaylist = [...firstRandom, ...wishlistSongs, ...randomPool];
+        }
+      }
+    } catch { /* ignore */ }
+
     const firstSong = newPlaylist[0];
     if (firstSong) {
       const preparedSong = await prepareSong(firstSong);
@@ -100,9 +133,6 @@ export function useJukebox() {
     setPlaylist(newPlaylist);
     setCurrentIndex(0);
     setCurrentSong(newPlaylist[0] || null);
-    // Reset manual tracking — all songs in generated playlist are random
-    manualIdsRef.current = new Set();
-    processedWishlistRef.current = new Set();
   }, [filteredSongs, shuffle, prepareSong]);
 
   // Insert a manually-added song after the last manual song (or after current) but before the first random song
@@ -124,9 +154,10 @@ export function useJukebox() {
     });
   }, [playlist, currentIndex]);
 
-  // Poll companion jukebox wishlist and insert new manual songs into the playlist
+  // Poll companion jukebox wishlist and insert new manual songs into the playlist.
+  // Runs always (not only when playing) so wishlist items are ready before jukebox starts.
   useEffect(() => {
-    if (!isPlaying) return;
+    if (songs.length === 0) return; // Need songs loaded to resolve wishlist items
     let active = true;
     const pollWishlist = async () => {
       try {
@@ -140,7 +171,13 @@ export function useJukebox() {
           // Resolve wishlist item to full Song object
           const fullSong = songs.find(s => s.id === item.songId);
           if (fullSong) {
-            insertManualSong(fullSong);
+            if (playlist.length > 0) {
+              // Jukebox already running — insert after last manual song
+              insertManualSong(fullSong);
+            }
+            // If playlist is empty, the songs will be picked up when
+            // generatePlaylist creates the playlist (processedWishlistRef
+            // prevents duplicates).
           }
         }
       } catch {
@@ -150,7 +187,7 @@ export function useJukebox() {
     pollWishlist();
     const interval = setInterval(pollWishlist, 5000);
     return () => { active = false; clearInterval(interval); };
-  }, [isPlaying, songs, insertManualSong]);
+  }, [songs.length, songs, playlist.length, insertManualSong]);
 
   // Play next song
   const playNext = useCallback(async () => {
