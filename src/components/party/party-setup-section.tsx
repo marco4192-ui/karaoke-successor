@@ -10,6 +10,7 @@ import { Song, GameMode } from '@/types/game';
 import { createTournament, TournamentPlayer, TournamentSettings } from '@/lib/game/tournament';
 import { createBattleRoyale, BattleRoyaleSettings } from '@/lib/game/battle-royale';
 import { createCompetitiveGame, type CompetitiveModeType, type CompetitiveSettings } from '@/lib/game/competitive-words-blind';
+import { toast } from '@/hooks/use-toast';
 
 // Screen types (matches page.tsx)
 type Screen = 'home' | 'library' | 'game' | 'party' | 'character' | 'queue' | 'mobile' | 'results' | 'highscores' | 'import' | 'settings' | 'jukebox' | 'achievements' | 'dailyChallenge' | 'tournament' | 'tournament-game' | 'battle-royale' | 'battle-royale-game' | 'pass-the-mic' | 'pass-the-mic-game' | 'companion-singalong' | 'companion-singalong-game' | 'medley' | 'medley-game' | 'editor' | 'online' | 'party-setup' | 'song-voting' | 'missing-words' | 'missing-words-game' | 'blind' | 'blind-game' | 'rate-my-song' | 'rate-my-song-rating' | 'rate-my-song-results';
@@ -149,13 +150,35 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   randomSongs: true,
                   difficulty: result.difficulty,
                 };
+                // Validate player count before creating tournament
+                const playerCount = tournamentPlayers.length;
+                if (playerCount < 2) {
+                  toast({
+                    title: 'Tournament Error',
+                    description: `Mindestens 2 Spieler werden benötigt. Du hast ${playerCount} Spieler ausgewählt.`,
+                    variant: 'destructive',
+                  });
+                  break;
+                }
+                if (playerCount > maxPlayers) {
+                  toast({
+                    title: 'Tournament Error',
+                    description: `Das Turnier ist für maximal ${maxPlayers} Spieler konfiguriert (Bracket Size: ${maxPlayers}), aber du hast ${playerCount} Spieler ausgewählt. Reduziere die Anzahl der Spieler oder erhöhe die Bracket Size in den Einstellungen.`,
+                    variant: 'destructive',
+                  });
+                  break;
+                }
                 try {
                   const bracket = createTournament(tournamentPlayers, settings);
                   party.setTournamentBracket(bracket);
                   party.setTournamentSongDuration(settings.songDuration);
                   setScreen('tournament-game');
                 } catch (err) {
-                  console.error('[PartySetup] Failed to create tournament:', err);
+                  toast({
+                    title: 'Tournament Error',
+                    description: err instanceof Error ? err.message : 'Unbekannter Fehler beim Erstellen des Turniers.',
+                    variant: 'destructive',
+                  });
                 }
                 break;
               }
