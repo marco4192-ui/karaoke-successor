@@ -286,170 +286,18 @@ export default function KaraokeSuccessor() {
     };
   }, []);
 
-  // Global keyboard shortcuts
-  useGlobalKeyboardShortcuts({
-    onSearch: () => navigateWithGuard('library'),
-    onFullscreen: toggleFullscreen,
-    onLibrary: () => navigateWithGuard('library'),
-    onSettings: () => navigateWithGuard('settings'),
-    onEscape: () => {
-      if (isFullscreen) {
-        document.exitFullscreen().catch(() => {});
-      } else if (screen === 'game') {
-        // Main game screen (tournament/medley/competitive/rate-my-song during song)
-        pauseGame();
-        party.setPauseDialogAction('song-pause');
-      } else if (isPartyModeActive && party.isSongPlaying) {
-        // Party mode with song playing (BR/PTM/Companion) — components will pause their audio
-        party.setPauseDialogAction('song-pause');
-      } else if (isPartyModeActive) {
-        // Party mode without song playing — show leave warning
-        party.setPauseDialogAction('party-leave');
-      } else {
-        setScreen('home');
-      }
-    },
-  });
-
-  // Global remote control from mobile companions
-  // Navigation handler for remote commands
-  const handleRemoteNavigation = useCallback((targetScreen: string) => {
-    // Map remote command screens to app screens
-    const screenMap: Record<string, Screen> = {
-      'home': 'home',
-      'library': 'library',
-      'settings': 'settings',
-      'queue': 'queue',
-      'party': 'party',
-      'character': 'character',
-    };
-
-    const mappedScreen = screenMap[targetScreen] || 'home';
-    setScreen(mappedScreen);
+  // ── Dialog handlers (must be defined before any conditional return) ──
+  const setPauseDialogAction = useCallback((action: null | 'song-pause' | 'party-leave') => {
+    party.setPauseDialogAction(action);
   }, []);
-
-  useGlobalRemoteControl({
-    navigateToScreen: handleRemoteNavigation,
-    isPlaying: screen === 'game',
-  });
-
-  // Mobile client sync - syncs companion profiles and queue
-  const { syncSongLibrary } = useMobileClient({
-    song: gameState.currentSong,
-    isPlaying: screen === 'game',
-    currentTime: gameState.currentTime,
-    gameMode: gameState.gameMode,
-  });
-
-  // Sync song library on mount and when library screen is shown
-  useEffect(() => {
-    syncSongLibrary();
-  }, [syncSongLibrary, screen]);
-
-  useEffect(() => {
-    // Mark as mounted
-    setIsMounted(true);
-  }, []);
-
-  // Redirect ?mobile=1 to /mobile for the unified companion app
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('mobile') !== null) {
-      // Preserve profile parameter if present
-      const profile = params.get('profile');
-      const targetUrl = profile ? `/mobile?profile=${encodeURIComponent(profile)}` : '/mobile';
-      window.location.replace(targetUrl);
-    }
-  }, []);
-
-  // Apply stored theme on app start
-  useEffect(() => {
-    const storedTheme = getStoredTheme();
-    if (storedTheme) {
-      applyTheme(storedTheme);
-    }
-
-    // Listen for theme changes from settings
-    const handleThemeChange = () => {
-      const theme = getStoredTheme();
-      if (theme) {
-        applyTheme(theme);
-      }
-    };
-
-    window.addEventListener('themeChanged', handleThemeChange);
-    window.addEventListener('themeChange', handleThemeChange);
-
-    return () => {
-      window.removeEventListener('themeChanged', handleThemeChange);
-      window.removeEventListener('themeChange', handleThemeChange);
-    };
-  }, []);
-
-  // ── Hydration guard for Tauri: skip SSR to avoid hydration mismatches ──
-  // In a Tauri app, SSR provides no benefit. Rendering a simple placeholder
-  // during server-side rendering and the initial client render ensures the
-  // DOM matches exactly, preventing React error #418.
-  if (!isMounted) {
-    return (
-      <div
-        className="h-screen w-full"
-        style={{ background: 'linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #0a0a2a 100%)' }}
-        suppressHydrationWarning
-      />
-    );
-  }
-
-  // Party mode exit confirmation dialog
-  if (pendingNavigation) {
-    return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm">
-        <div className="bg-zinc-900 border border-white/15 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
-          <div className="text-center mb-6">
-            <div className="text-4xl mb-2">⚠️</div>
-            <h2 className="text-xl font-bold text-white">Party-Modus verlassen?</h2>
-            <p className="text-sm text-white/50 mt-2">
-              Ein Party-Modus läuft gerade. Wenn du die Seite verlässt,
-              wird dein aktueller Spielfortschritt verloren gehen.
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setPendingNavigation(null)}
-              className="flex-1 py-3 rounded-lg font-medium bg-white/10 text-white hover:bg-white/20 transition-all"
-            >
-              Zurück bleiben
-            </button>
-            <button
-              onClick={() => {
-                const target = pendingNavigation;
-                setPendingNavigation(null);
-                // Clean up all party state so the mode is fully terminated
-                party.resetPartyState();
-                resetGame();
-                setScreen(target);
-              }}
-              className="flex-1 py-3 rounded-lg font-medium bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all"
-            >
-              Verlassen
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ──────────────────────────────────────────────────────
-  // Dialog handlers
-  // ──────────────────────────────────────────────────────
 
   const closeDialog = useCallback(() => {
     party.setPauseDialogAction(null);
-  }, [party]);
+  }, []);
 
   // Song-pause: Fortsetzen (resume)
   const handleResumeGame = useCallback(() => {
- closeDialog();
+    closeDialog();
     resumeGame();
   }, [closeDialog, resumeGame]);
 
@@ -596,6 +444,166 @@ export default function KaraokeSuccessor() {
   // Is this a tournament match during song?
   const isTournamentMatch = !!(party.currentTournamentMatch && party.tournamentBracket);
 
+  // Global keyboard shortcuts
+  useGlobalKeyboardShortcuts({
+    onSearch: () => navigateWithGuard('library'),
+    onFullscreen: toggleFullscreen,
+    onLibrary: () => navigateWithGuard('library'),
+    onSettings: () => navigateWithGuard('settings'),
+    onEscape: () => {
+      if (isFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if (screen === 'game') {
+        // Main game screen (tournament/medley/competitive/rate-my-song during song)
+        pauseGame();
+        party.setPauseDialogAction('song-pause');
+      } else if (isPartyModeActive && party.isSongPlaying) {
+        // Party mode with song playing (BR/PTM/Companion) — components will pause their audio
+        setPauseDialogAction('song-pause');
+      } else if (isPartyModeActive) {
+        // Party mode without song playing — show leave warning
+        setPauseDialogAction('party-leave');
+      } else {
+        setScreen('home');
+      }
+    },
+  });
+
+  // Global remote control from mobile companions
+  // Navigation handler for remote commands
+  const handleRemoteNavigation = useCallback((targetScreen: string) => {
+    // Map remote command screens to app screens
+    const screenMap: Record<string, Screen> = {
+      'home': 'home',
+      'library': 'library',
+      'settings': 'settings',
+      'queue': 'queue',
+      'party': 'party',
+      'character': 'character',
+    };
+
+    const mappedScreen = screenMap[targetScreen] || 'home';
+    setScreen(mappedScreen);
+  }, []);
+
+  useGlobalRemoteControl({
+    navigateToScreen: handleRemoteNavigation,
+    isPlaying: screen === 'game',
+  });
+
+  // Mobile client sync - syncs companion profiles and queue
+  const { syncSongLibrary } = useMobileClient({
+    song: gameState.currentSong,
+    isPlaying: screen === 'game',
+    currentTime: gameState.currentTime,
+    gameMode: gameState.gameMode,
+  });
+
+  // Sync song library on mount and when library screen is shown
+  useEffect(() => {
+    syncSongLibrary();
+  }, [syncSongLibrary, screen]);
+
+  useEffect(() => {
+    // Mark as mounted
+    setIsMounted(true);
+  }, []);
+
+  // Redirect ?mobile=1 to /mobile for the unified companion app
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mobile') !== null) {
+      // Preserve profile parameter if present
+      const profile = params.get('profile');
+      const targetUrl = profile ? `/mobile?profile=${encodeURIComponent(profile)}` : '/mobile';
+      window.location.replace(targetUrl);
+    }
+  }, []);
+
+  // Apply stored theme on app start
+  useEffect(() => {
+    const storedTheme = getStoredTheme();
+    if (storedTheme) {
+      applyTheme(storedTheme);
+    }
+
+    // Listen for theme changes from settings
+    const handleThemeChange = () => {
+      const theme = getStoredTheme();
+      if (theme) {
+        applyTheme(theme);
+      }
+    };
+
+    window.addEventListener('themeChanged', handleThemeChange);
+    window.addEventListener('themeChange', handleThemeChange);
+
+    return () => {
+      window.removeEventListener('themeChanged', handleThemeChange);
+      window.removeEventListener('themeChange', handleThemeChange);
+    };
+  }, []);
+
+  // ── Hydration guard for Tauri: skip SSR to avoid hydration mismatches ──
+  // In a Tauri app, SSR provides no benefit. Rendering a simple placeholder
+  // during server-side rendering and the initial client render ensures the
+  // DOM matches exactly, preventing React error #418.
+  if (!isMounted) {
+    return (
+      <div
+        className="h-screen w-full"
+        style={{ background: 'linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #0a0a2a 100%)' }}
+        suppressHydrationWarning
+      />
+    );
+  }
+
+  // Party mode exit confirmation dialog
+  if (pendingNavigation) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+        <div className="bg-zinc-900 border border-white/15 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+          <div className="text-center mb-6">
+            <div className="text-4xl mb-2">⚠️</div>
+            <h2 className="text-xl font-bold text-white">Party-Modus verlassen?</h2>
+            <p className="text-sm text-white/50 mt-2">
+              Ein Party-Modus läuft gerade. Wenn du die Seite verlässt,
+              wird dein aktueller Spielfortschritt verloren gehen.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setPendingNavigation(null)}
+              className="flex-1 py-3 rounded-lg font-medium bg-white/10 text-white hover:bg-white/20 transition-all"
+            >
+              Zurück bleiben
+            </button>
+            <button
+              onClick={() => {
+                const target = pendingNavigation;
+                setPendingNavigation(null);
+                // Clean up all party state so the mode is fully terminated
+                party.resetPartyState();
+                resetGame();
+                setScreen(target);
+              }}
+              className="flex-1 py-3 rounded-lg font-medium bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all"
+            >
+              Verlassen
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Dialog handlers (moved above conditional returns to satisfy Rules of Hooks) ──
+  // All useCallback hooks are now defined BEFORE any conditional returns.
+  // setPauseDialogAction, closeDialog, handleResumeGame, handleSongAbort,
+  // handleTournamentRepeat, handleTournamentAutoWinner, handlePartyModeEnd,
+  // handlePartyLeaveBack — see definitions above before useGlobalKeyboardShortcuts.
+  // isTournamentMatch is also defined above.
+
   return (
     <div
       className={`${IMMERSIVE_SCREENS.has(screen) || screen === 'library' ? 'h-screen overflow-hidden' : 'min-h-screen'} w-full text-white theme-container`}
@@ -683,7 +691,7 @@ export default function KaraokeSuccessor() {
             onBack={handleSongAbort}
             onPause={() => {
               pauseGame();
-              party.setPauseDialogAction('song-pause');
+              setPauseDialogAction('song-pause');
             }}
           />
         )}
