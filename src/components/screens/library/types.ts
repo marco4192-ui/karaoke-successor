@@ -23,6 +23,10 @@ export interface StartOptions {
   partyMode?: GameMode;
   /** Assigned microphone ID for the selected player (Single mode) */
   micId?: string;
+  /** Assigned microphone ID for Player 1 (Duel/Duet mode) */
+  micIdP1?: string;
+  /** Assigned microphone ID for Player 2 (Duel/Duet mode) */
+  micIdP2?: string;
 }
 
 export interface SongCardProps {

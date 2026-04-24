@@ -8,8 +8,8 @@ import { SongStartModalProps } from './types';
 import { MusicIcon, MicIcon, StarIcon, TrophyIcon, QueueIcon, PlayIcon } from './icons';
 import { isDuetSong } from './utils';
 
-// ===================== MIC SELECTOR =====================
-function MicSelector({ micId, onMicChange }: { micId?: string; onMicChange: (id: string | undefined) => void }) {
+// ===================== MIC SELECTOR (Single mode) =====================
+function useSavedMics() {
   const [savedMics, setSavedMics] = useState<Array<{ id: string; customName: string; deviceName: string }>>([]);
 
   useEffect(() => {
@@ -25,6 +25,12 @@ function MicSelector({ micId, onMicChange }: { micId?: string; onMicChange: (id:
       }
     } catch { /* ignore */ }
   }, []);
+
+  return savedMics;
+}
+
+function MicSelector({ micId, onMicChange }: { micId?: string; onMicChange: (id: string | undefined) => void }) {
+  const savedMics = useSavedMics();
 
   if (savedMics.length === 0) return null;
 
@@ -43,6 +49,90 @@ function MicSelector({ micId, onMicChange }: { micId?: string; onMicChange: (id:
           </option>
         ))}
       </select>
+    </div>
+  );
+}
+
+// ===================== DUAL MIC SELECTOR (Duel/Duet mode) =====================
+function DualMicSelector({
+  p1Id, p2Id, profiles,
+  micIdP1, micIdP2,
+  onMicP1Change, onMicP2Change,
+  p1Label, p2Label,
+}: {
+  p1Id: string; p2Id: string;
+  profiles: { id: string; name: string; color: string; avatar?: string }[];
+  micIdP1?: string; micIdP2?: string;
+  onMicP1Change: (id: string | undefined) => void;
+  onMicP2Change: (id: string | undefined) => void;
+  p1Label?: string; p2Label?: string;
+}) {
+  const savedMics = useSavedMics();
+
+  if (savedMics.length === 0) return null;
+
+  const p1Profile = profiles.find(p => p.id === p1Id);
+  const p2Profile = profiles.find(p => p.id === p2Id);
+
+  return (
+    <div>
+      <label className="text-xs text-white/40 mb-2 block">🎤 Mikrofon-Zuweisung</label>
+      <div className="grid grid-cols-2 gap-3">
+        {/* Player 1 */}
+        <div className="bg-white/5 rounded-lg p-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <div
+              className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+              style={{ backgroundColor: p1Profile?.color || '#888' }}
+            >
+              {p1Profile?.avatar ? (
+                <img src={p1Profile.avatar} alt="" className="w-full h-full rounded-full object-cover" />
+              ) : p1Profile?.name?.[0] || '?'}
+            </div>
+            <span className="text-sm font-medium truncate">{p1Profile?.name || 'Player 1'}</span>
+            {p1Label && <span className="text-[10px] text-cyan-400 ml-auto">{p1Label}</span>}
+          </div>
+          <select
+            value={micIdP1 || ''}
+            onChange={(e) => onMicP1Change(e.target.value || undefined)}
+            className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+          >
+            <option value="">— Automatisch —</option>
+            {savedMics.map(mic => (
+              <option key={mic.id} value={mic.id}>
+                {mic.customName || mic.deviceName}
+              </option>
+            ))}
+          </select>
+        </div>
+        {/* Player 2 */}
+        <div className="bg-white/5 rounded-lg p-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <div
+              className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+              style={{ backgroundColor: p2Profile?.color || '#888' }}
+            >
+              {p2Profile?.avatar ? (
+                <img src={p2Profile.avatar} alt="" className="w-full h-full rounded-full object-cover" />
+              ) : p2Profile?.name?.[0] || '?'}
+            </div>
+            <span className="text-sm font-medium truncate">{p2Profile?.name || 'Player 2'}</span>
+            {p2Label && <span className="text-[10px] text-purple-400 ml-auto">{p2Label}</span>}
+          </div>
+          <select
+            value={micIdP2 || ''}
+            onChange={(e) => onMicP2Change(e.target.value || undefined)}
+            className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+          >
+            <option value="">— Automatisch —</option>
+            {savedMics.map(mic => (
+              <option key={mic.id} value={mic.id}>
+                {mic.customName || mic.deviceName}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
     </div>
   );
 }
@@ -121,13 +211,13 @@ export function SongStartModal({
 
   return (
     <Dialog open={showSongModal} onOpenChange={setShowSongModal}>
-      <DialogContent className="bg-gray-900 border-white/10 text-white max-w-md">
+      <DialogContent className="bg-gray-900 border-white/10 text-white max-w-md max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-xl">{selectedSong.title}</DialogTitle>
           <DialogDescription className="text-white/60">{selectedSong.artist}</DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-6 py-4">
+        <div className="space-y-6 py-4 overflow-y-auto flex-1">
           {/* Cover Preview */}
           <div className="aspect-video rounded-lg overflow-hidden bg-gradient-to-br from-purple-600/30 to-blue-600/30">
             {selectedSong.coverImage ? (
@@ -327,6 +417,20 @@ export function SongStartModal({
                   </button>
                 ))}
               </div>
+              {/* Mic Assignment for Duel */}
+              {startOptions.players.length === 2 && (
+                <DualMicSelector
+                  p1Id={startOptions.players[0]}
+                  p2Id={startOptions.players[1]}
+                  profiles={profiles}
+                  micIdP1={startOptions.micIdP1}
+                  micIdP2={startOptions.micIdP2}
+                  onMicP1Change={(id) => setStartOptions(prev => ({ ...prev, micIdP1: id }))}
+                  onMicP2Change={(id) => setStartOptions(prev => ({ ...prev, micIdP2: id }))}
+                  p1Label="P1"
+                  p2Label="P2"
+                />
+              )}
             </div>
           )}
 
@@ -384,7 +488,7 @@ export function SongStartModal({
                     {profiles.find(p => p.id === startOptions.players[0])?.name || 'Player 1'} → {selectedSong.duetPlayerNames?.[0] || 'P1'}
                   </div>
                   <button
-                    onClick={() => setStartOptions(prev => ({ ...prev, players: [prev.players[1], prev.players[0]] }))}
+                    onClick={() => setStartOptions(prev => ({ ...prev, players: [prev.players[1], prev.players[0]], micIdP1: prev.micIdP2, micIdP2: prev.micIdP1 }))}
                     className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-all"
                     title="Swap P1 / P2"
                   >
@@ -440,6 +544,20 @@ export function SongStartModal({
                   );
                 })}
               </div>
+              {/* Mic Assignment for Duet */}
+              {startOptions.players.length === 2 && (
+                <DualMicSelector
+                  p1Id={startOptions.players[0]}
+                  p2Id={startOptions.players[1]}
+                  profiles={profiles}
+                  micIdP1={startOptions.micIdP1}
+                  micIdP2={startOptions.micIdP2}
+                  onMicP1Change={(id) => setStartOptions(prev => ({ ...prev, micIdP1: id }))}
+                  onMicP2Change={(id) => setStartOptions(prev => ({ ...prev, micIdP2: id }))}
+                  p1Label={selectedSong.duetPlayerNames?.[0] || 'Part 1'}
+                  p2Label={selectedSong.duetPlayerNames?.[1] || 'Part 2'}
+                />
+              )}
             </div>
           )}
           
