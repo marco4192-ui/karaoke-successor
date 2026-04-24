@@ -40,8 +40,7 @@ export function NoteBlock({
   // Calculate position and dimensions
   const startX = (note.startTime / 1000) * pixelsPerSecond - scrollOffset;
   const width = Math.max(10, (note.duration / 1000) * pixelsPerSecond);
-  const pitchRange = maxPitch - minPitch;
-  const y = ((maxPitch - note.pitch) / pitchRange) * pitchHeight;
+  const y = (maxPitch - note.pitch) * pitchHeight;
 
   // Get note color based on type
   const getNoteColor = () => {
