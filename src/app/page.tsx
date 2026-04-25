@@ -175,52 +175,86 @@ export default function KaraokeSuccessor() {
   // Handle game end based on game mode
   const handleGameEnd = useCallback(() => {
     // Check if we're finishing a medley snippet — return to medley flow
-    // (medley mode uses 'medley' for cooperative, 'duel' for competitive)
-    if ((gameState.gameMode === 'medley' || gameState.gameMode === 'duel') && party.medleySongs.length > 0) {
-      // Read snippet results and accumulate into medley player scores
+    // FFA uses 'medley' mode, Team uses 'duel' mode for each snippet
+    if ((gameState.gameMode === 'medley' || gameState.gameMode === 'duel') && party.medleySongs.length > 0 && party.medleySettings) {
       const results = gameState.results;
       const players = gameState.players;
-      const isCooperative = party.medleySettings?.playMode !== 'competitive';
+      const isFFA = party.medleySettings.playMode === 'ffa';
+      const currentSnippetIdx = party.medleySettings.currentSnippetIndex ?? 0;
+      const snippet = party.medleySongs[currentSnippetIdx];
 
-      // Update medley player scores
-      if (isCooperative) {
-        // Cooperative: all players share the same score (single player sings)
-        const snippetScore = results?.players?.[0]?.score || players?.[0]?.score || 0;
-        const snippetNotesHit = results?.players?.[0]?.notesHit || players?.[0]?.notesHit || 0;
-        const snippetNotesMissed = results?.players?.[0]?.notesMissed || players?.[0]?.notesMissed || 0;
-        const snippetMaxCombo = results?.players?.[0]?.maxCombo || players?.[0]?.maxCombo || 0;
+      // Accumulate snippet scores into medley player scores
+      // Both FFA and Team: each player matched by ID gets their own score
+      const updatedPlayers = party.medleyPlayers.map(p => {
+        const gamePlayer = players?.find((gp: any) => gp.id === p.id);
+        const resultPlayer = results?.players?.find((rp: any) => rp.playerId === p.id);
 
-        const updatedPlayers = party.medleyPlayers.map((p: any) => ({
+        // In team duel mode, only the 2 singers who played this snippet should get scores
+        // In FFA mode, all 4 players are in the game, so everyone gets their score
+        if (!gamePlayer && !resultPlayer) return p;
+
+        const score = resultPlayer?.score || gamePlayer?.score || 0;
+        const notesHit = resultPlayer?.notesHit || gamePlayer?.notesHit || 0;
+        const notesMissed = resultPlayer?.notesMissed || gamePlayer?.notesMissed || 0;
+        const maxCombo = resultPlayer?.maxCombo || gamePlayer?.maxCombo || 0;
+
+        return {
           ...p,
-          score: p.score + snippetScore,
-          notesHit: p.notesHit + snippetNotesHit,
-          notesMissed: p.notesMissed + snippetNotesMissed,
-          maxCombo: Math.max(p.maxCombo, snippetMaxCombo),
-          songsCompleted: p.songsCompleted + 1,
-        }));
-        party.setMedleyPlayers(updatedPlayers);
-      } else {
-        // Competitive duel: each player keeps their own score
-        const updatedPlayers = party.medleyPlayers.map((p: any) => {
-          const gamePlayer = players?.find((gp: any) => gp.id === p.id);
-          const resultPlayer = results?.players?.find((rp: any) => rp.playerId === p.id);
-          if (!gamePlayer && !resultPlayer) return p;
+          score: p.score + score,
+          notesHit: p.notesHit + notesHit,
+          notesMissed: p.notesMissed + notesMissed,
+          maxCombo: Math.max(p.maxCombo, maxCombo),
+          snippetsSung: p.snippetsSung + 1,
+        };
+      });
+      party.setMedleyPlayers(updatedPlayers);
 
-          const score = resultPlayer?.score || gamePlayer?.score || 0;
-          const notesHit = resultPlayer?.notesHit || gamePlayer?.notesHit || 0;
-          const notesMissed = resultPlayer?.notesMissed || gamePlayer?.notesMissed || 0;
-          const maxCombo = resultPlayer?.maxCombo || gamePlayer?.maxCombo || 0;
+      // For Team mode: mark the current match as completed and record the round
+      if (!isFFA && party.medleyMatches.length > 0) {
+        const matchToUpdate = party.medleyMatches.find(m => m.snippetIndex === currentSnippetIdx);
+        if (matchToUpdate && !matchToUpdate.completed) {
+          // Record per-player scores for this match
+          const matchScores: Record<string, { score: number; notesHit: number; notesMissed: number; maxCombo: number }> = {};
+          for (const p of updatedPlayers) {
+            if (p.id === matchToUpdate.teamASingerId || p.id === matchToUpdate.teamBSingerId) {
+              const gameP = players?.find((gp: any) => gp.id === p.id);
+              const resP = results?.players?.find((rp: any) => rp.playerId === p.id);
+              matchScores[p.id] = {
+                score: resP?.score || gameP?.score || 0,
+                notesHit: resP?.notesHit || gameP?.notesHit || 0,
+                notesMissed: resP?.notesMissed || gameP?.notesMissed || 0,
+                maxCombo: resP?.maxCombo || gameP?.maxCombo || 0,
+              };
+            }
+          }
 
-          return {
-            ...p,
-            score: p.score + score,
-            notesHit: p.notesHit + notesHit,
-            notesMissed: p.notesMissed + notesMissed,
-            maxCombo: Math.max(p.maxCombo, maxCombo),
-            songsCompleted: p.songsCompleted + 1,
-          };
-        });
-        party.setMedleyPlayers(updatedPlayers);
+          const updatedMatch = { ...matchToUpdate, scores: matchScores, completed: true };
+          const updatedMatches = party.medleyMatches.map(m =>
+            m.snippetIndex === currentSnippetIdx ? updatedMatch : m,
+          );
+          party.setMedleyMatches(updatedMatches);
+
+          // Record round result for series history
+          const teamAScore = matchScores[matchToUpdate.teamASingerId]?.score || 0;
+          const teamBScore = matchScores[matchToUpdate.teamBSingerId]?.score || 0;
+          const teamASinger = updatedPlayers.find(p => p.id === matchToUpdate.teamASingerId);
+          const teamBSinger = updatedPlayers.find(p => p.id === matchToUpdate.teamBSingerId);
+          party.setMedleySeriesHistory([
+            ...party.medleySeriesHistory,
+            {
+              songTitle: snippet?.song.title || 'Unknown',
+              songArtist: snippet?.song.artist || 'Unknown',
+              playedAt: Date.now(),
+              teamASingerId: matchToUpdate.teamASingerId,
+              teamASingerName: teamASinger?.name || 'Team A',
+              teamBSingerId: matchToUpdate.teamBSingerId,
+              teamBSingerName: teamBSinger?.name || 'Team B',
+              teamAScore,
+              teamBScore,
+              playerScores: matchScores,
+            },
+          ]);
+        }
       }
 
       setScreen('medley-game');
