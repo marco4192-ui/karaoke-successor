@@ -87,6 +87,12 @@ let gameState: {
   songEnded: boolean;
   isAdPlaying: boolean;
   gameMode: string | null; // Current game mode (for pitch handling decision)
+  // Companion Sing-A-Long turn info: which profileId is currently singing
+  singalongTurn: {
+    profileId: string | null;
+    countdown: number | null; // 3 when switching, null when actively singing
+    isActive: boolean;
+  } | null;
 } = {
   currentSong: null,
   isPlaying: false,
@@ -94,6 +100,7 @@ let gameState: {
   songEnded: false,
   isAdPlaying: false,
   gameMode: null,
+  singalongTurn: null,
 };
 
 // Queue for song requests from mobile clients
@@ -568,6 +575,7 @@ export async function GET(request: NextRequest) {
         songEnded: false,
         isAdPlaying: false,
         gameMode: null,
+        singalongTurn: null,
       };
       // Reset remote control state
       remoteControlState = {
