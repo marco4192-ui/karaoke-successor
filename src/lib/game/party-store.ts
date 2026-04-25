@@ -9,6 +9,7 @@ import type { GameSetupResult } from '@/components/game/unified-party-setup';
 import type { BattleRoyaleGame } from '@/lib/game/battle-royale';
 import type { MedleySong } from '@/components/game/medley-contest-screen';
 import type { CompetitiveGame } from '@/lib/game/competitive-words-blind';
+import type { CompanionRoundResult } from '@/components/game/companion-singalong-screen';
 
 /** Per-player result for a single Pass-the-Mic round (song). */
 export interface PassTheMicRoundResult {
@@ -54,6 +55,9 @@ interface PartyStore {
   setCompanionSong: (song: Song | null) => void;
   companionSettings: any;
   setCompanionSettings: (settings: any) => void;
+  // Series history: accumulated scores across multiple Companion Sing-A-Long songs
+  companionSeriesHistory: CompanionRoundResult[];
+  setCompanionSeriesHistory: (history: CompanionRoundResult[]) => void;
 
   // Medley Contest
   medleyPlayers: any[];
@@ -132,6 +136,8 @@ export const usePartyStore = create<PartyStore>((set) => ({
   setCompanionSong: (companionSong) => set({ companionSong }),
   companionSettings: null,
   setCompanionSettings: (companionSettings) => set({ companionSettings }),
+  companionSeriesHistory: [] as CompanionRoundResult[],
+  setCompanionSeriesHistory: (companionSeriesHistory) => set({ companionSeriesHistory }),
 
   // Medley Contest
   medleyPlayers: [],
@@ -184,6 +190,7 @@ export const usePartyStore = create<PartyStore>((set) => ({
     companionPlayers: [],
     companionSong: null,
     companionSettings: null,
+    companionSeriesHistory: [] as CompanionRoundResult[],
     medleyPlayers: [],
     medleySongs: [] as MedleySong[],
     medleySettings: null,

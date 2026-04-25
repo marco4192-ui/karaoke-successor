@@ -354,6 +354,66 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       )}
 
       {isConnected && profile && <MobileBottomNav currentView={currentView} onNavigate={setCurrentView} />}
+
+      {/* ── Companion Sing-A-Long overlay ── */}
+      {isConnected && profile && gameState.singalongTurn?.isActive && gameState.singalongTurn.profileId === profile.id && (
+        <SingalongOverlay
+          isMyTurn={gameState.singalongTurn.countdown === null}
+          countdown={gameState.singalongTurn.countdown}
+        />
+      )}
     </div>
   );
+}
+
+// ===================== SINGALONG OVERLAY =====================
+interface SingalongOverlayProps {
+  isMyTurn: boolean;
+  countdown: number | null;
+}
+
+function SingalongOverlay({ isMyTurn, countdown }: SingalongOverlayProps) {
+  const [flashVisible, setFlashVisible] = useState(false);
+
+  // Flash briefly when countdown changes (new turn)
+  useEffect(() => {
+    if (countdown !== null && countdown > 0) {
+      // Flash the screen
+      setFlashVisible(true);
+      const flashTimer = setTimeout(() => setFlashVisible(false), 300);
+      return () => clearTimeout(flashTimer);
+    } else if (countdown === null && isMyTurn) {
+      // Brief flash when becoming the active singer
+      setFlashVisible(true);
+      const flashTimer = setTimeout(() => setFlashVisible(false), 500);
+      return () => clearTimeout(flashTimer);
+    }
+  }, [countdown, isMyTurn]);
+
+  // Countdown phase: show big numbers 3, 2, 1
+  if (countdown !== null && countdown > 0) {
+    return (
+      <div className={`fixed inset-0 z-50 flex items-center justify-center transition-all duration-100 ${flashVisible ? 'bg-emerald-500' : 'bg-emerald-900/95'}`}>
+        <div className="text-center">
+          <div className="text-[12rem] font-bold text-white leading-none animate-pulse">{countdown}</div>
+          <div className="text-2xl font-bold text-emerald-200 mt-4 animate-pulse">GET READY!</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Active singing phase
+  if (isMyTurn) {
+    return (
+      <div className={`fixed inset-0 z-50 flex items-center justify-center pointer-events-none transition-all duration-300 ${flashVisible ? 'bg-emerald-500/40' : 'bg-transparent'}`}>
+        <div className="absolute top-4 left-0 right-0 text-center">
+          <div className="inline-block bg-emerald-500/90 text-white px-6 py-2 rounded-full text-lg font-bold animate-pulse">
+            🎤 YOU&apos;RE SINGING!
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }

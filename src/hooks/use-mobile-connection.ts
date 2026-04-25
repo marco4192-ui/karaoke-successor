@@ -19,6 +19,7 @@ function parseGameState(raw: any): GameState {
     songEnded: raw.songEnded || false,
     queueLength: raw.queueLength || 0,
     isAdPlaying: raw.isAdPlaying || false,
+    singalongTurn: raw.singalongTurn || null,
   };
 }
 
@@ -31,7 +32,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
   const [connectionCode, setConnectionCode] = useState<string>('');
   const [isConnected, setIsConnected] = useState(false);
   const [gameState, setGameState] = useState<GameState>({ 
-    currentSong: null, isPlaying: false, songEnded: false, queueLength: 0, isAdPlaying: false 
+    currentSong: null, isPlaying: false, songEnded: false, queueLength: 0, isAdPlaying: false, singalongTurn: null
   });
 
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -168,7 +169,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     setClientId(null);
     setConnectionCode('');
     setIsConnected(false);
-    setGameState({ currentSong: null, isPlaying: false, songEnded: false, queueLength: 0, isAdPlaying: false });
+    setGameState({ currentSong: null, isPlaying: false, songEnded: false, queueLength: 0, isAdPlaying: false, singalongTurn: null });
     localStorage.removeItem('karaoke-connection-code');
     localStorage.removeItem('karaoke-client-id');
     console.log('[MobileClient] Disconnected from server');

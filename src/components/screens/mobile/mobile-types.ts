@@ -51,12 +51,20 @@ export interface JukeboxWishlistItem {
   addedBy: string;
 }
 
+export interface SingalongTurn {
+  profileId: string | null;
+  nextProfileId: string | null;
+  countdown: number | null; // 3, 2, 1 when switching, null when actively singing
+  isActive: boolean;
+}
+
 export interface GameState {
   currentSong: { title: string; artist: string } | null;
   isPlaying: boolean;
   songEnded: boolean;
   queueLength: number;
   isAdPlaying: boolean;
+  singalongTurn: SingalongTurn | null;
 }
 
 export interface PitchData {
