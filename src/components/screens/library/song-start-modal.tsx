@@ -35,8 +35,8 @@ function MicSelector({ micId, onMicChange }: { micId?: string; onMicChange: (id:
   if (savedMics.length === 0) return null;
 
   return (
-    <div className="mt-2">
-      <label className="text-xs text-white/40 mb-1 block">🎤 Mikrofon zuweisen</label>
+    <div>
+      <label className="text-xs text-white/60 mb-1 block">🎤 Mikrofon zuweisen</label>
       <select
         value={micId || ''}
         onChange={(e) => onMicChange(e.target.value || undefined)}
@@ -215,24 +215,24 @@ export function SongStartModal({
 
   return (
     <Dialog open={showSongModal} onOpenChange={setShowSongModal}>
-      <DialogContent className="bg-gray-900 border-white/10 text-white max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+      <DialogContent className="bg-gray-900 border-white/10 text-white max-w-xl max-h-[92vh] flex flex-col overflow-hidden">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-lg">{selectedSong.title}</DialogTitle>
           <DialogDescription className="text-white/60">{selectedSong.artist}</DialogDescription>
         </DialogHeader>
         
-        {/* Compact cover + info row */}
-        <div className="flex items-center gap-3 flex-shrink-0">
-          <div className="w-20 h-14 rounded-md overflow-hidden bg-gradient-to-br from-purple-600/30 to-blue-600/30 flex-shrink-0">
+        {/* Cover + info row */}
+        <div className="flex items-center gap-4 flex-shrink-0">
+          <div className="w-28 h-20 rounded-lg overflow-hidden bg-gradient-to-br from-purple-600/30 to-blue-600/30 flex-shrink-0">
             {selectedSong.coverImage ? (
               <img src={selectedSong.coverImage} alt={selectedSong.title} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <MusicIcon className="w-8 h-8 text-white/30" />
+                <MusicIcon className="w-10 h-10 text-white/30" />
               </div>
             )}
           </div>
-          <div className="text-xs text-white/40 space-y-0.5 min-w-0">
+          <div className="text-sm text-white/40 space-y-0.5 min-w-0">
             <p>BPM: {selectedSong.bpm} | Duration: {Math.floor(selectedSong.duration / 60000)}:{String(Math.floor((selectedSong.duration % 60000) / 1000)).padStart(2, '0')}</p>
             {selectedSong.genre && <p>Genre: {selectedSong.genre}</p>}
           </div>
@@ -243,12 +243,12 @@ export function SongStartModal({
             if (topScore) {
               return (
                 <button
-                  className="ml-auto flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 transition-colors flex-shrink-0"
+                  className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors flex-shrink-0"
                   onClick={() => { setHighscoreSong(selectedSong); setShowHighscoreModal(true); }}
                 >
-                  <TrophyIcon className="w-3.5 h-3.5 text-yellow-400" />
-                  <span className="text-sm font-bold text-cyan-400">{topScore.score.toLocaleString()}</span>
-                  <span className="text-[10px] text-white/40">{topScore.accuracy.toFixed(1)}%</span>
+                  <TrophyIcon className="w-4 h-4 text-yellow-400" />
+                  <span className="text-base font-bold text-cyan-400">{topScore.score.toLocaleString()}</span>
+                  <span className="text-xs text-white/40">{topScore.accuracy.toFixed(1)}%</span>
                 </button>
               );
             }
@@ -394,13 +394,7 @@ export function SongStartModal({
               </div>
             )}
 
-            {/* Mic Selector (for Single mode) */}
-            {!startOptions.partyMode && startOptions.mode === 'single' && startOptions.players.length === 1 && (
-              <MicSelector
-                micId={startOptions.micId}
-                onMicChange={(id) => setStartOptions(prev => ({ ...prev, micId: id }))}
-              />
-            )}
+
 
             {/* Player Selection (for Duel mode) */}
             {!startOptions.partyMode && startOptions.mode === 'duel' && activeProfiles.length >= 2 && (
@@ -438,19 +432,7 @@ export function SongStartModal({
                     </button>
                   ))}
                 </div>
-                {startOptions.players.length === 2 && (
-                  <DualMicSelector
-                    p1Id={startOptions.players[0]}
-                    p2Id={startOptions.players[1]}
-                    profiles={profiles}
-                    micIdP1={startOptions.micIdP1}
-                    micIdP2={startOptions.micIdP2}
-                    onMicP1Change={(id) => setStartOptions(prev => ({ ...prev, micIdP1: id }))}
-                    onMicP2Change={(id) => setStartOptions(prev => ({ ...prev, micIdP2: id }))}
-                    p1Label="P1"
-                    p2Label="P2"
-                  />
-                )}
+
               </div>
             )}
 
@@ -564,62 +546,85 @@ export function SongStartModal({
                     );
                   })}
                 </div>
-                {startOptions.players.length === 2 && (
-                  <DualMicSelector
-                    p1Id={startOptions.players[0]}
-                    p2Id={startOptions.players[1]}
-                    profiles={profiles}
-                    micIdP1={startOptions.micIdP1}
-                    micIdP2={startOptions.micIdP2}
-                    onMicP1Change={(id) => setStartOptions(prev => ({ ...prev, micIdP1: id }))}
-                    onMicP2Change={(id) => setStartOptions(prev => ({ ...prev, micIdP2: id }))}
-                    p1Label={selectedSong.duetPlayerNames?.[0] || 'Part 1'}
-                    p2Label={selectedSong.duetPlayerNames?.[1] || 'Part 2'}
-                  />
-                )}
+
               </div>
             )}
           </div>
         </div>
         
-        {/* Action Buttons — compact */}
-        <div className="flex flex-wrap gap-1.5 flex-shrink-0 pt-1 border-t border-white/10">
+        {/* Microphone Assignment — below scrollable area */}
+        <div className="flex-shrink-0 pt-2">
+          {/* Single mode mic selector */}
+          {!startOptions.partyMode && startOptions.mode === 'single' && startOptions.players.length === 1 && (
+            <MicSelector
+              micId={startOptions.micId}
+              onMicChange={(id) => setStartOptions(prev => ({ ...prev, micId: id }))}
+            />
+          )}
+          {/* Duel mode dual mic selector */}
+          {!startOptions.partyMode && startOptions.mode === 'duel' && startOptions.players.length === 2 && (
+            <DualMicSelector
+              p1Id={startOptions.players[0]}
+              p2Id={startOptions.players[1]}
+              profiles={profiles}
+              micIdP1={startOptions.micIdP1}
+              micIdP2={startOptions.micIdP2}
+              onMicP1Change={(id) => setStartOptions(prev => ({ ...prev, micIdP1: id }))}
+              onMicP2Change={(id) => setStartOptions(prev => ({ ...prev, micIdP2: id }))}
+              p1Label="P1"
+              p2Label="P2"
+            />
+          )}
+          {/* Duet mode dual mic selector */}
+          {!startOptions.partyMode && startOptions.mode === 'duet' && startOptions.players.length === 2 && (
+            <DualMicSelector
+              p1Id={startOptions.players[0]}
+              p2Id={startOptions.players[1]}
+              profiles={profiles}
+              micIdP1={startOptions.micIdP1}
+              micIdP2={startOptions.micIdP2}
+              onMicP1Change={(id) => setStartOptions(prev => ({ ...prev, micIdP1: id }))}
+              onMicP2Change={(id) => setStartOptions(prev => ({ ...prev, micIdP2: id }))}
+              p1Label={selectedSong.duetPlayerNames?.[0] || 'Part 1'}
+              p2Label={selectedSong.duetPlayerNames?.[1] || 'Part 2'}
+            />
+          )}
+        </div>
+        
+        {/* Action Buttons */}
+        <div className="flex flex-wrap gap-2 flex-shrink-0 pt-2 border-t border-white/10">
           <Button 
             variant="outline" 
-            size="sm"
             onClick={handleFavorite}
             className={favoriteSongIds.has(selectedSong.id) 
-              ? "bg-yellow-500/20 border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/30 h-8 px-2" 
-              : "border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 h-8 px-2"
+              ? "bg-yellow-500/20 border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/30 h-10 px-3" 
+              : "border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 h-10 px-3"
             }
           >
-            <StarIcon className="w-3.5 h-3.5 mr-1" filled={favoriteSongIds.has(selectedSong.id)} />
+            <StarIcon className="w-4 h-4 mr-1.5" filled={favoriteSongIds.has(selectedSong.id)} />
             {favoriteSongIds.has(selectedSong.id) ? 'Favorited' : 'Favorite'}
           </Button>
           <Button 
             variant="outline" 
-            size="sm"
             onClick={() => { setHighscoreSong(selectedSong); setShowHighscoreModal(true); }}
-            className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 h-8 px-2"
+            className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 h-10 px-3"
           >
-            <TrophyIcon className="w-3.5 h-3.5 mr-1" /> Scores
+            <TrophyIcon className="w-4 h-4 mr-1.5" /> Scores
           </Button>
           <Button 
             variant="outline" 
-            size="sm"
             onClick={handleAddToQueue}
             disabled={!(startOptions.players[0] || activeProfileId)}
-            className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10 disabled:opacity-50 disabled:cursor-not-allowed h-8 px-2"
+            className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10 disabled:opacity-50 disabled:cursor-not-allowed h-10 px-3"
           >
-            <QueueIcon className="w-3.5 h-3.5 mr-1" /> Queue
+            <QueueIcon className="w-4 h-4 mr-1.5" /> Queue
           </Button>
           <Button 
             variant="outline" 
-            size="sm"
             onClick={() => { setSongToAddToPlaylist(selectedSong); setShowAddToPlaylistModal(true); }}
-            className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 h-8 px-2"
+            className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 h-10 px-3"
           >
-            <svg className="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M9 18V5l12-2v13" />
               <circle cx="6" cy="18" r="3" />
               <circle cx="18" cy="16" r="3" />
@@ -628,14 +633,12 @@ export function SongStartModal({
           </Button>
           <Button 
             variant="outline" 
-            size="sm"
             onClick={() => setShowSongModal(false)}
-            className="border-white/20 text-white hover:bg-white/10 h-8 px-2"
+            className="border-white/20 text-white hover:bg-white/10 h-10 px-3"
           >
             Cancel
           </Button>
           <Button 
-            size="sm"
             onClick={onStartGame}
             disabled={
               (!startOptions.partyMode && startOptions.mode === 'single' && 
@@ -644,9 +647,9 @@ export function SongStartModal({
               (startOptions.mode === 'duet' && startOptions.players.length < 2) ||
               (startOptions.mode === 'duel' && startOptions.players.length < 2)
             }
-            className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 disabled:opacity-50 disabled:cursor-not-allowed h-8"
+            className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 disabled:opacity-50 disabled:cursor-not-allowed h-10"
           >
-            <PlayIcon className="w-3.5 h-3.5 mr-1" /> Start
+            <PlayIcon className="w-4 h-4 mr-1.5" /> Start
           </Button>
         </div>
       </DialogContent>
