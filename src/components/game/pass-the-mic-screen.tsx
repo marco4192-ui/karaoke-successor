@@ -12,6 +12,7 @@ import { DIFFICULTY_SETTINGS } from '@/types/game';
 import { usePartyStore } from '@/lib/game/party-store';
 import { evaluateTick, calculateTickPoints, calculateScoringMetadata } from '@/lib/game/scoring';
 import type { PassTheMicRoundResult } from '@/lib/game/party-store';
+import { useMobileGameSync } from '@/hooks/use-mobile-game-sync';
 
 // ===================== SHARED TYPES =====================
 
@@ -27,6 +28,7 @@ export interface PassTheMicPlayer {
   maxCombo: number;
   isActive: boolean;
   segmentsSung: number;
+  micId?: string;
 }
 
 export interface PassTheMicSegment {
@@ -238,7 +240,10 @@ export function PassTheMicGameView({
   const currentSegment = initialSegments[currentSegmentIndex];
 
   // ── Pitch detection ──
-  const { pitchResult, initialize, start, stop } = usePitchDetector();
+  const { pitchResult, initialize, start, stop, switchMicrophone } = usePitchDetector();
+
+  // ── Mobile game sync for Pass-the-Mic ──
+  useMobileGameSync(song, isPlaying && phase === 'playing', 'pass-the-mic');
 
   // ── Song playing status for Escape handler ──
   useEffect(() => {
@@ -377,11 +382,30 @@ export function PassTheMicGameView({
     return () => clearTimeout(timer);
   }, [switchCountdown]);
 
+  // ── Mic handoff: when active player switches, re-init pitch detector ──
+  useEffect(() => {
+    if (phase !== 'playing') return;
+    const player = playersRef.current[currentPlayerIndex];
+    if (!player) return;
+
+    // If this player has a specific mic assigned, switch to it
+    if (player.micId && player.micId !== 'default') {
+      switchMicrophone(player.micId).catch(() => {
+        console.warn('[PTM] Mic switch failed for player:', player.name);
+      });
+    }
+  }, [currentPlayerIndex, phase, switchMicrophone]);
+
   // ── Start game (countdown → playing) ──
   const startGame = async () => {
     setPhase('countdown');
     setCountdown(3);
-    try { await initialize(); start(); } catch { /* pitch may fail in some envs */ }
+    // Use assigned mic if set and not default
+    const micId = safeSettings.micId && safeSettings.micId !== 'default' ? safeSettings.micId : undefined;
+    try {
+      // switchMicrophone handles stop → destroy → re-init → start
+      await switchMicrophone(micId);
+    } catch { /* pitch may fail in some envs */ }
 
     const interval = setInterval(() => {
       setCountdown(prev => {
@@ -503,6 +527,9 @@ export function PassTheMicGameView({
               </div>
               <div className="text-sm text-white/40">
                 {playersRef.current.length} players • {safeSettings.segmentDuration}s segments
+                {safeSettings.micId && safeSettings.micId !== 'default' && (
+                  <span> • 🎤 {safeSettings.micName}</span>
+                )}
                 {party.passTheMicSeriesHistory.length > 0 && (
                   <span> • Round {party.passTheMicSeriesHistory.length + 1}</span>
                 )}

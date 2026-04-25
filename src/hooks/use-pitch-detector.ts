@@ -11,12 +11,12 @@ export function usePitchDetector() {
   const [pitchResult, setPitchResult] = useState<PitchDetectionResult | null>(null);
   const detectorRef = useRef<PitchDetector | null>(null);
 
-  const initialize = useCallback(async () => {
+  const initialize = useCallback(async (deviceId?: string) => {
     if (isInitialized) return true;
 
     try {
       const detector = getPitchDetector();
-      const success = await detector.initialize();
+      const success = await detector.initialize(deviceId);
 
       if (success) {
         detectorRef.current = detector;
@@ -31,6 +31,42 @@ export function usePitchDetector() {
       return false;
     }
   }, [isInitialized]);
+
+  /**
+   * Re-initialize the pitch detector with a different microphone device.
+   * Destroys the current instance and creates a new one with the given deviceId.
+   */
+  const switchMicrophone = useCallback(async (deviceId?: string) => {
+    try {
+      // Stop current detector
+      detectorRef.current?.stop();
+      // Destroy and reset singleton so a fresh instance is created
+      detectorRef.current?.destroy();
+      resetPitchDetector();
+      detectorRef.current = null;
+      setIsInitialized(false);
+      setIsListening(false);
+      setPitchResult(null);
+
+      // Re-initialize with new (or no) deviceId
+      const detector = getPitchDetector();
+      const success = await detector.initialize(deviceId);
+      if (success) {
+        detectorRef.current = detector;
+        setIsInitialized(true);
+        // Auto-start if we were listening before
+        detector.start((result) => {
+          setPitchResult(result);
+        });
+        setIsListening(true);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      return false;
+    }
+  }, []);
 
   const start = useCallback(() => {
     if (!detectorRef.current) {
@@ -74,6 +110,7 @@ export function usePitchDetector() {
     error,
     pitchResult,
     initialize,
+    switchMicrophone,
     start,
     stop,
     setDifficulty,
