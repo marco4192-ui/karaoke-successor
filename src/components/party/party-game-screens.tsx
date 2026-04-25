@@ -195,10 +195,21 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             party.setPassTheMicSegments(segments);
           }}
           onEndGame={() => {
-            party.setPassTheMicPlayers([]);
+            // Only clean up song/segments — keep players and series history
+            // so the "continue" flow can pick the next song.
             party.setPassTheMicSong(null);
             party.setPassTheMicSegments([]);
-            setScreen('home');
+            // If series is empty (user ended immediately), go home
+            if (party.passTheMicSeriesHistory.length === 0) {
+              party.setPassTheMicPlayers([]);
+              party.setPassTheMicSettings(null);
+              party.setPassTheMicSeriesHistory([]);
+              setScreen('home');
+            } else {
+              // Navigate to library for next song selection
+              setGameMode('pass-the-mic');
+              setScreen('library');
+            }
           }}
         />
       )}

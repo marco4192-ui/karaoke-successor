@@ -10,6 +10,15 @@ import type { BattleRoyaleGame } from '@/lib/game/battle-royale';
 import type { MedleySong } from '@/components/game/medley-contest-screen';
 import type { CompetitiveGame } from '@/lib/game/competitive-words-blind';
 
+/** Per-player result for a single Pass-the-Mic round (song). */
+export interface PassTheMicRoundResult {
+  songTitle: string;
+  songArtist: string;
+  playedAt: number;
+  /** Per-player scores keyed by player id. */
+  playerScores: Record<string, { score: number; notesHit: number; notesMissed: number; maxCombo: number }>;
+}
+
 interface PartyStore {
   // Tournament
   tournamentBracket: TournamentBracket | null;
@@ -34,6 +43,9 @@ interface PartyStore {
   setPassTheMicSegments: (segments: any[]) => void;
   passTheMicSettings: any;
   setPassTheMicSettings: (settings: any) => void;
+  // Series history: accumulated scores across multiple Pass-the-Mic songs
+  passTheMicSeriesHistory: PassTheMicRoundResult[];
+  setPassTheMicSeriesHistory: (history: PassTheMicRoundResult[]) => void;
 
   // Companion Sing-A-Long
   companionPlayers: any[];
@@ -110,6 +122,8 @@ export const usePartyStore = create<PartyStore>((set) => ({
   setPassTheMicSegments: (passTheMicSegments) => set({ passTheMicSegments }),
   passTheMicSettings: null,
   setPassTheMicSettings: (passTheMicSettings) => set({ passTheMicSettings }),
+  passTheMicSeriesHistory: [] as PassTheMicRoundResult[],
+  setPassTheMicSeriesHistory: (passTheMicSeriesHistory) => set({ passTheMicSeriesHistory }),
 
   // Companion Sing-A-Long
   companionPlayers: [],
@@ -166,6 +180,7 @@ export const usePartyStore = create<PartyStore>((set) => ({
     passTheMicSong: null,
     passTheMicSegments: [],
     passTheMicSettings: null,
+    passTheMicSeriesHistory: [] as PassTheMicRoundResult[],
     companionPlayers: [],
     companionSong: null,
     companionSettings: null,
