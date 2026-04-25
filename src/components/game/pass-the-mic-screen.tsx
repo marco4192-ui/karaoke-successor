@@ -222,6 +222,46 @@ export function PassTheMicGameView({
   const [countdown, setCountdown] = useState(3);
   const [switchCountdown, setSwitchCountdown] = useState<number | null>(null);
 
+  // ── URL restoration for Tauri ──
+  const [effectiveSong, setEffectiveSong] = useState<Song>(song);
+  const [mediaReady, setMediaReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const restoreUrls = async () => {
+      try {
+        const { ensureSongUrls } = await import('@/lib/game/song-library');
+        const restored = await ensureSongUrls(song);
+        if (cancelled) return;
+        setEffectiveSong(restored);
+
+        // Also check IndexedDB for stored media blobs
+        if (restored.storedMedia && !restored.audioUrl) {
+          const { getSongMediaUrls } = await import('@/lib/db/media-db');
+          const urls = await getSongMediaUrls(restored.id);
+          if (cancelled) return;
+          if (urls.audioUrl) restored.audioUrl = urls.audioUrl;
+          if (urls.videoUrl) restored.videoBackground = urls.videoUrl;
+          setEffectiveSong({ ...restored });
+        }
+
+        // Verify media is loadable
+        const testAudio = new Audio();
+        testAudio.preload = 'metadata';
+        testAudio.src = restored.audioUrl || restored.videoBackground || '';
+        testAudio.addEventListener('canplay', () => { if (!cancelled) setMediaReady(true); });
+        testAudio.addEventListener('error', () => { console.warn('[PTM] Media preload error'); if (!cancelled) setMediaReady(true); });
+        // Timeout fallback — proceed even if preload fails
+        setTimeout(() => { if (!cancelled) setMediaReady(true); }, 3000);
+      } catch (err) {
+        console.warn('[PTM] URL restoration failed:', err);
+        if (!cancelled) { setEffectiveSong(song); setMediaReady(true); }
+      }
+    };
+    restoreUrls();
+    return () => { cancelled = true; };
+  }, [song]);
+
   // ── Audio ──
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
@@ -243,7 +283,7 @@ export function PassTheMicGameView({
   const { pitchResult, initialize, start, stop, switchMicrophone } = usePitchDetector();
 
   // ── Mobile game sync for Pass-the-Mic ──
-  useMobileGameSync(song, isPlaying && phase === 'playing', 'pass-the-mic');
+  useMobileGameSync(effectiveSong, isPlaying && phase === 'playing', 'pass-the-mic');
 
   // ── Song playing status for Escape handler ──
   useEffect(() => {
@@ -272,12 +312,12 @@ export function PassTheMicGameView({
   // ── Pre-compute scoring metadata ──
   const scoringMeta = useRef<ReturnType<typeof calculateScoringMetadata> | null>(null);
   useEffect(() => {
-    if (song?.lyrics?.length) {
+    if (effectiveSong?.lyrics?.length) {
       const allNotes: Array<{ duration: number; isGolden: boolean }> = [];
-      song.lyrics.forEach(line => line.notes.forEach(note => {
+      effectiveSong.lyrics.forEach(line => line.notes.forEach(note => {
         allNotes.push({ duration: note.duration, isGolden: note.isGolden });
       }));
-      const beatDuration = song.bpm ? 15000 / song.bpm : 500;
+      const beatDuration = effectiveSong.bpm ? 15000 / effectiveSong.bpm : 500;
       scoringMeta.current = calculateScoringMetadata(allNotes, beatDuration);
     }
   }, [song]);
@@ -294,9 +334,9 @@ export function PassTheMicGameView({
 
     // Find the note that is currently active
     const ct = currentTime;
-    if (!song.lyrics) return;
+    if (!effectiveSong.lyrics) return;
 
-    for (const line of song.lyrics) {
+    for (const line of effectiveSong.lyrics) {
       for (const note of line.notes) {
         const noteEnd = note.startTime + note.duration;
         if (ct >= note.startTime && ct <= noteEnd) {
@@ -426,7 +466,7 @@ export function PassTheMicGameView({
   };
 
   // ── Helpers ──
-  const progress = song.duration > 0 ? (currentTime / song.duration) * 100 : 0;
+  const progress = effectiveSong.duration > 0 ? (currentTime / effectiveSong.duration) * 100 : 0;
   const segmentTimeLeft = currentSegment
     ? Math.max(0, (currentSegment.endTime - currentTime) / 1000)
     : 0;
@@ -435,9 +475,9 @@ export function PassTheMicGameView({
     : 0;
 
   const getCurrentLyrics = (): LyricLine | null => {
-    if (!song.lyrics || song.lyrics.length === 0) return null;
-    return song.lyrics.find((line, i) => {
-      const next = song.lyrics[i + 1];
+    if (!effectiveSong.lyrics || effectiveSong.lyrics.length === 0) return null;
+    return effectiveSong.lyrics.find((line, i) => {
+      const next = effectiveSong.lyrics[i + 1];
       return currentTime >= line.startTime && (!next || currentTime < next.startTime);
     }) || null;
   };
@@ -446,8 +486,8 @@ export function PassTheMicGameView({
   // ── Record this round to series history ──
   const recordRound = useCallback(() => {
     const round: PassTheMicRoundResult = {
-      songTitle: song.title,
-      songArtist: song.artist,
+      songTitle: effectiveSong.title,
+      songArtist: effectiveSong.artist,
       playedAt: Date.now(),
       playerScores: {},
     };
@@ -489,7 +529,7 @@ export function PassTheMicGameView({
       {/* Audio Element */}
       <audio
         ref={audioRef}
-        src={song.audioUrl || song.videoBackground || ''}
+        src={effectiveSong.audioUrl || effectiveSong.videoBackground || ''}
         onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime * 1000)}
         onEnded={() => {
           if (phase === 'playing') {
@@ -508,7 +548,7 @@ export function PassTheMicGameView({
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <div className="text-5xl mb-6">🎤</div>
           <h2 className="text-2xl font-bold mb-2">Pass the Mic</h2>
-          <p className="text-white/60 mb-8">{song.title} — {song.artist}</p>
+          <p className="text-white/60 mb-8">{effectiveSong.title} — {effectiveSong.artist}</p>
 
           <Card className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 max-w-md w-full mb-6">
             <CardContent className="py-8 text-center">
@@ -537,8 +577,14 @@ export function PassTheMicGameView({
             </CardContent>
           </Card>
 
-          <Button onClick={startGame}
-            className="px-12 py-4 text-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400">
+          {!mediaReady && (
+            <div className="mb-4 text-center">
+              <div className="animate-spin inline-block w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full" />
+              <p className="text-white/40 text-sm mt-2">Loading song...</p>
+            </div>
+          )}
+          <Button onClick={startGame} disabled={!mediaReady}
+            className="px-12 py-4 text-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 disabled:opacity-50">
             🎤 Start Singing!
           </Button>
         </div>
@@ -559,7 +605,7 @@ export function PassTheMicGameView({
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Badge className="bg-cyan-500/20 text-cyan-400 text-lg px-3 py-1">🎤 PASS THE MIC</Badge>
-              <span className="text-white/60 text-sm">{song.title}</span>
+              <span className="text-white/60 text-sm">{effectiveSong.title}</span>
             </div>
             <Badge className="bg-purple-500/20 text-purple-400">
               Segment {currentSegmentIndex + 1}/{initialSegments.length}
@@ -620,7 +666,7 @@ export function PassTheMicGameView({
           <div className="mb-3">
             <div className="flex justify-between text-xs text-white/40 mb-1">
               <span>Song Progress</span>
-              <span>{Math.floor(currentTime / 60000)}:{Math.floor((currentTime % 60000) / 1000).toString().padStart(2, '0')} / {Math.floor(song.duration / 60000)}:{Math.floor((song.duration % 60000) / 1000).toString().padStart(2, '0')}</span>
+              <span>{Math.floor(currentTime / 60000)}:{Math.floor((currentTime % 60000) / 1000).toString().padStart(2, '0')} / {Math.floor(effectiveSong.duration / 60000)}:{Math.floor((effectiveSong.duration % 60000) / 1000).toString().padStart(2, '0')}</span>
             </div>
             <Progress value={progress} className="h-2 bg-white/10" />
           </div>
@@ -672,8 +718,8 @@ export function PassTheMicGameView({
       {phase === 'song-results' && (
         <div className="flex flex-col items-center">
           <div className="text-5xl mb-4">🎤</div>
-          <h2 className="text-2xl font-bold mb-1">{song.title}</h2>
-          <p className="text-white/60 mb-6">{song.artist}</p>
+          <h2 className="text-2xl font-bold mb-1">{effectiveSong.title}</h2>
+          <p className="text-white/60 mb-6">{effectiveSong.artist}</p>
 
           <Card className="bg-white/5 border-white/10 w-full max-w-2xl mb-6">
             <CardHeader><CardTitle className="text-center">Round Results</CardTitle></CardHeader>
