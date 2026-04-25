@@ -76,6 +76,12 @@ function SettingsScreen() {
 
   // Active tab
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
+  // Track whether the editor is actively editing a song (to hide tab bar)
+  const [isEditorActive, setIsEditorActive] = useState(false);
+
+  const handleEditorActiveChange = useCallback((active: boolean) => {
+    setIsEditorActive(active);
+  }, []);
 
   // Helper to access nested translations with fallback
   const tx = useCallback((key: string): string => {
@@ -208,16 +214,20 @@ function SettingsScreen() {
 
   return (
     <div className={`theme-container w-full ${activeTab === 'editor' ? '' : 'max-w-7xl mx-auto px-4 md:px-6 lg:px-8'}`}>
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2 theme-adaptive-text">{tx('settings.title')}</h1>
-        <p className="theme-adaptive-text-muted">{tx('settings.subtitle')}</p>
-      </div>
+      {/* Header - hidden when editor is actively editing a song */}
+      {!isEditorActive && (
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2 theme-adaptive-text">{tx('settings.title')}</h1>
+          <p className="theme-adaptive-text-muted">{tx('settings.subtitle')}</p>
+        </div>
+      )}
 
-      {/* Tab Bar */}
-      <div className={activeTab === 'editor' ? 'px-4 md:px-6' : ''}>
-        <SettingsTabBar activeTab={activeTab} onTabChange={setActiveTab} tx={tx} />
-      </div>
+      {/* Tab Bar - hidden when editor is actively editing a song */}
+      {!isEditorActive && (
+        <div className={activeTab === 'editor' ? 'px-4 md:px-6' : ''}>
+          <SettingsTabBar activeTab={activeTab} onTabChange={setActiveTab} tx={tx} />
+        </div>
+      )}
 
       {/* Tab Content */}
       {activeTab === 'library' && (
@@ -297,7 +307,7 @@ function SettingsScreen() {
       )}
 
       {activeTab === 'editor' && (
-        <EditorSettingsView />
+        <EditorSettingsView onEditorActiveChange={handleEditorActiveChange} />
       )}
 
       {activeTab === 'about' && (

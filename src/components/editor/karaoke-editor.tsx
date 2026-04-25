@@ -35,7 +35,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | undefined>();
   const [isSaving, setIsSaving] = useState(false);
   const [saveResult, setSaveResult] = useState<SaveResult | null>(null);
-  const [showSidebar, setShowSidebar] = useState(false); // Sidebar collapsed by default
+  const [showSidebar, setShowSidebar] = useState(true); // Sidebar visible by default
 
   // ── Restore media URLs for Tauri (audioUrl from relativeAudioPath) ──
   useEffect(() => {

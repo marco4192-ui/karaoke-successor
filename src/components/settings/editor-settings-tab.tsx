@@ -12,7 +12,11 @@ import { KaraokeEditor } from '@/components/editor/karaoke-editor';
 import { NewSongDialog } from '@/components/editor/new-song-dialog';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
 
-export function EditorSettingsTab() {
+interface EditorSettingsTabProps {
+  onEditorActiveChange?: (active: boolean) => void;
+}
+
+export function EditorSettingsTab({ onEditorActiveChange }: EditorSettingsTabProps) {
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [songs, setSongs] = useState<Song[]>([]);
   const [filterMode, setFilterMode] = useState<'all' | 'no-genre' | 'no-language'>('all');
@@ -59,13 +63,18 @@ export function EditorSettingsTab() {
   const songsWithoutGenre = songs.filter(s => !s.genre).length;
   const songsWithoutLanguage = songs.filter(s => !s.language).length;
   
+  // Notify parent when editor opens/closes
+  useEffect(() => {
+    onEditorActiveChange?.(!!selectedSong);
+  }, [selectedSong, onEditorActiveChange]);
+
   // Handle save from editor
   const handleSave = useCallback((updatedSong: Song) => {
     updateSong(updatedSong.id, updatedSong);
     setSelectedSong(null);
     // Reload songs list
     getAllSongsAsync().then(setSongs);
-  }, []);
+  }, [onEditorActiveChange]);
 
   // Handle new song creation from dialog
   const handleNewSongSave = useCallback((song: Song) => {
@@ -79,7 +88,7 @@ export function EditorSettingsTab() {
   // If a song is selected, show the editor (full height, full width)
   if (selectedSong) {
     return (
-      <div className="h-[calc(100vh-8rem)] w-full -mx-4 md:-mx-6 overflow-hidden">
+      <div className="h-[calc(100vh-7rem)] w-full -mx-4 md:-mx-6 overflow-hidden">
         <div className="h-full bg-slate-950 overflow-hidden">
           <KaraokeEditor
             song={selectedSong}
