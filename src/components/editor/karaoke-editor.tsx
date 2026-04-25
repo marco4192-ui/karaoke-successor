@@ -7,7 +7,7 @@ import { saveSongToTxt, type SaveResult } from '@/lib/editor/save-to-file';
 import { Timeline } from './timeline/timeline';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Music, FileText, Settings, BookOpen, Waves, Sparkles } from 'lucide-react';
+import { Music, FileText, Settings, BookOpen, Waves, Sparkles, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { normalizeFilePath } from '@/lib/tauri-file-storage';
 import { useEditorHistory } from '@/hooks/use-editor-history';
 import { useEditorPlayback } from '@/hooks/use-editor-playback';
@@ -35,6 +35,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | undefined>();
   const [isSaving, setIsSaving] = useState(false);
   const [saveResult, setSaveResult] = useState<SaveResult | null>(null);
+  const [showSidebar, setShowSidebar] = useState(false); // Sidebar collapsed by default
 
   // ── Restore media URLs for Tauri (audioUrl from relativeAudioPath) ──
   useEffect(() => {
@@ -458,7 +459,18 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
           tapMode={tapPlacement}
         />
 
-        <main className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 flex flex-col overflow-hidden relative">
+          {/* Sidebar toggle button */}
+          <button
+            onClick={() => setShowSidebar(!showSidebar)}
+            className="absolute top-2 right-2 z-10 p-1.5 rounded-md bg-slate-800/80 hover:bg-slate-700 border border-slate-600 transition-colors"
+            title={showSidebar ? 'Panel ausblenden' : 'Panel einblenden'}
+          >
+            {showSidebar
+              ? <PanelRightClose className="w-4 h-4 text-slate-400" />
+              : <PanelRightOpen className="w-4 h-4 text-slate-400" />
+            }
+          </button>
           <Timeline
             song={currentSong}
             currentTime={currentTime}
@@ -477,91 +489,93 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
           />
         </main>
 
-        <aside className="w-72 bg-slate-900 border-l border-slate-700 flex flex-col overflow-hidden flex-shrink-0">
-          <Tabs defaultValue="note" className="flex flex-col h-full">
-            <TabsList className="grid w-full grid-cols-6 bg-slate-800 border-b border-slate-700 rounded-none h-10">
-              <TabsTrigger value="note" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
-                <Music className="w-3 h-3" />
-              </TabsTrigger>
-              <TabsTrigger value="info" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
-                <FileText className="w-3 h-3" />
-              </TabsTrigger>
-              <TabsTrigger value="lyrics" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
-                <BookOpen className="w-3 h-3" />
-              </TabsTrigger>
-              <TabsTrigger value="analysis" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
-                <Waves className="w-3 h-3" />
-              </TabsTrigger>
-              <TabsTrigger value="ai" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
-                <Sparkles className="w-3 h-3" />
-              </TabsTrigger>
-              <TabsTrigger value="metadata" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
-                <Settings className="w-3 h-3" />
-              </TabsTrigger>
-            </TabsList>
+        {showSidebar && (
+          <aside className="w-72 bg-slate-900 border-l border-slate-700 flex flex-col overflow-hidden flex-shrink-0">
+            <Tabs defaultValue="note" className="flex flex-col h-full">
+              <TabsList className="grid w-full grid-cols-6 bg-slate-800 border-b border-slate-700 rounded-none h-10">
+                <TabsTrigger value="note" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
+                  <Music className="w-3 h-3" />
+                </TabsTrigger>
+                <TabsTrigger value="info" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
+                  <FileText className="w-3 h-3" />
+                </TabsTrigger>
+                <TabsTrigger value="lyrics" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
+                  <BookOpen className="w-3 h-3" />
+                </TabsTrigger>
+                <TabsTrigger value="analysis" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
+                  <Waves className="w-3 h-3" />
+                </TabsTrigger>
+                <TabsTrigger value="ai" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
+                  <Sparkles className="w-3 h-3" />
+                </TabsTrigger>
+                <TabsTrigger value="metadata" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
+                  <Settings className="w-3 h-3" />
+                </TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="note" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
-              {selectedNote
-                ? <EditorNoteTab selectedNote={selectedNote} onUpdateSelectedNote={updateSelectedNote} />
-                : <EditorNoteTabPlaceholder />
-              }
-            </TabsContent>
+              <TabsContent value="note" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
+                {selectedNote
+                  ? <EditorNoteTab selectedNote={selectedNote} onUpdateSelectedNote={updateSelectedNote} />
+                  : <EditorNoteTabPlaceholder />
+                }
+              </TabsContent>
 
-            <TabsContent value="info" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
-              <EditorSongInfoTab
-                song={currentSong}
-                allNotesCount={allNotes.length}
-                onSongChange={setCurrentSong}
-                onSetUnsavedChanges={() => setHasUnsavedChanges(true)}
-              />
-            </TabsContent>
-
-            <TabsContent value="lyrics" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
-              <EditorLyricsTab
-                song={currentSong}
-                currentTime={currentTime}
-                selectedNoteId={selectedNoteId}
-                onNoteSelect={handleNoteSelect}
-                onTimeChange={handleTimeChange}
-              />
-            </TabsContent>
-
-            <TabsContent value="analysis" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
-              <ScrollArea className="h-full">
-                <AudioAnalysisPanel
-                  audioFilePath={analysisAudioPath}
-                  onApplyNotes={handleApplyDetectedNotes}
-                  onApplyBpm={handleApplyBpm}
-                />
-              </ScrollArea>
-            </TabsContent>
-
-            <TabsContent value="ai" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
-              <ScrollArea className="h-full">
-                <AIAssistantPanel
+              <TabsContent value="info" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
+                <EditorSongInfoTab
                   song={currentSong}
-                  onSongUpdate={(updates) => {
-                    setCurrentSong(prev => ({ ...prev, ...updates }));
-                    setHasUnsavedChanges(true);
-                  }}
-                  onLyricsUpdate={(lyrics) => {
-                    pushHistory(lyrics);
-                    setCurrentSong(prev => ({ ...prev, lyrics }));
-                    setHasUnsavedChanges(true);
-                  }}
+                  allNotesCount={allNotes.length}
+                  onSongChange={setCurrentSong}
+                  onSetUnsavedChanges={() => setHasUnsavedChanges(true)}
                 />
-              </ScrollArea>
-            </TabsContent>
+              </TabsContent>
 
-            <TabsContent value="metadata" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
-              <EditorMetadataTab
-                song={currentSong}
-                onSongChange={setCurrentSong}
-                onSetUnsavedChanges={() => setHasUnsavedChanges(true)}
-              />
-            </TabsContent>
-          </Tabs>
-        </aside>
+              <TabsContent value="lyrics" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
+                <EditorLyricsTab
+                  song={currentSong}
+                  currentTime={currentTime}
+                  selectedNoteId={selectedNoteId}
+                  onNoteSelect={handleNoteSelect}
+                  onTimeChange={handleTimeChange}
+                />
+              </TabsContent>
+
+              <TabsContent value="analysis" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
+                <ScrollArea className="h-full">
+                  <AudioAnalysisPanel
+                    audioFilePath={analysisAudioPath}
+                    onApplyNotes={handleApplyDetectedNotes}
+                    onApplyBpm={handleApplyBpm}
+                  />
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="ai" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
+                <ScrollArea className="h-full">
+                  <AIAssistantPanel
+                    song={currentSong}
+                    onSongUpdate={(updates) => {
+                      setCurrentSong(prev => ({ ...prev, ...updates }));
+                      setHasUnsavedChanges(true);
+                    }}
+                    onLyricsUpdate={(lyrics) => {
+                      pushHistory(lyrics);
+                      setCurrentSong(prev => ({ ...prev, lyrics }));
+                      setHasUnsavedChanges(true);
+                    }}
+                  />
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="metadata" className="flex-1 overflow-hidden m-0 data-[state=inactive]:hidden">
+                <EditorMetadataTab
+                  song={currentSong}
+                  onSongChange={setCurrentSong}
+                  onSetUnsavedChanges={() => setHasUnsavedChanges(true)}
+                />
+              </TabsContent>
+            </Tabs>
+          </aside>
+        )}
       </div>
 
       {currentSong.audioUrl && (
