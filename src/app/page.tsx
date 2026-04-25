@@ -699,9 +699,15 @@ export default function KaraokeSuccessor() {
                   // Series continuation: skip setup, go straight to game
                   setScreen('pass-the-mic-game');
                 } else {
-                  // First song: go to party setup to review settings
-                  party.setLibrarySelectedSong(song);
-                  setScreen('party-setup');
+                  // First song: go directly to game (skip unnecessary party-setup overlay)
+                  const ptmPlayers = party.passTheMicPlayers;
+                  resetGame();
+                  setPlayers([]);
+                  if (ptmPlayers.length > 0) {
+                    addPlayer({ id: ptmPlayers[0].id, name: ptmPlayers[0].name, color: ptmPlayers[0].color, avatar: ptmPlayers[0].avatar });
+                  }
+                  setSong(song); // After resetGame to avoid currentSong being cleared
+                  setScreen('game');
                 }
               } else if (gameState.gameMode === 'companion-singalong') {
                 party.setCompanionSong(song);
