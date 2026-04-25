@@ -445,18 +445,8 @@ export function PassTheMicGameView({
       ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, segmentsSung: 0,
     }));
     party.setPassTheMicPlayers(resetPlayers);
-    // Reset game state for next song selection
-    party.setPassTheMicSong(null);
-    party.setPassTheMicSegments([]);
-    // Navigate to library to pick next song
-    onEndGame(); // cleans up current game
-    // Use setGameMode to 'pass-the-mic' so library knows we're in PTM flow
-    useGameStore.getState().setGameMode('pass-the-mic');
-    // We need to navigate to library — the parent (party-game-screens) handles onEndGame
-    // by going to home, so we set a flag and let the library selection flow resume.
-    // Instead, directly navigate from here by modifying the screen.
-    // The simplest approach: use window event to signal "go to library for next PTM song"
-    window.dispatchEvent(new CustomEvent('ptm-next-song'));
+    // onEndGame will navigate to library (series history is preserved)
+    onEndGame();
   }, [party, onEndGame]);
 
   // ── End series ──
@@ -710,7 +700,17 @@ export function PassTheMicGameView({
       )}
 
       {/* ── PHASE: SERIES RESULTS ── */}
-      {phase === 'series-results' && <PassTheMicSeriesResults onBack={onEndGame} />}
+      {phase === 'series-results' && (
+        <PassTheMicSeriesResults onBack={() => {
+          // Clean up all PTM state
+          party.setPassTheMicPlayers([]);
+          party.setPassTheMicSong(null);
+          party.setPassTheMicSegments([]);
+          party.setPassTheMicSettings(null);
+          party.setPassTheMicSeriesHistory([]);
+          onEndGame();
+        }} />
+      )}
     </div>
   );
 }

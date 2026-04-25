@@ -660,10 +660,15 @@ export default function KaraokeSuccessor() {
                 }
                 party.setPassTheMicSegments(segments);
                 party.setPassTheMicSong(song);
-                // Store the pre-selected song and return to party setup
-                // so the user can review settings before starting
-                party.setLibrarySelectedSong(song);
-                setScreen('party-setup');
+
+                if (party.passTheMicSeriesHistory.length > 0) {
+                  // Series continuation: skip setup, go straight to game
+                  setScreen('pass-the-mic-game');
+                } else {
+                  // First song: go to party setup to review settings
+                  party.setLibrarySelectedSong(song);
+                  setScreen('party-setup');
+                }
               } else if (gameState.gameMode === 'companion-singalong') {
                 party.setCompanionSong(song);
                 // Store the pre-selected song and return to party setup
