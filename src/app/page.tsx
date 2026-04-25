@@ -371,19 +371,18 @@ export default function KaraokeSuccessor() {
         return;
       }
       if (gameState.gameMode === 'pass-the-mic' || gameState.gameMode === 'companion-singalong') {
-        // PTM / Companion during main game screen — return to party selection
+        // PTM / Companion during main game screen — return to mode settings
         if (gameState.gameMode === 'pass-the-mic') {
-          party.setPassTheMicPlayers([]);
+          // Keep players and settings so user can restart quickly
           party.setPassTheMicSong(null);
           party.setPassTheMicSegments([]);
-          party.setPassTheMicSettings(null);
         } else {
           party.setCompanionPlayers([]);
           party.setCompanionSong(null);
           party.setCompanionSettings(null);
         }
         resetGame();
-        setScreen('party');
+        setScreen('party-setup');
         return;
       }
       resetGame();
@@ -399,12 +398,11 @@ export default function KaraokeSuccessor() {
       return;
     }
     if (party.passTheMicPlayers.length > 0) {
-      party.setPassTheMicPlayers([]);
+      // Keep players and settings, just clear the song to allow restart
       party.setPassTheMicSong(null);
       party.setPassTheMicSegments([]);
-      party.setPassTheMicSettings(null);
       resetGame();
-      setScreen('party');
+      setScreen('party-setup');
       return;
     }
     if (party.companionPlayers.length > 0) {

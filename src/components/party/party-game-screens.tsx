@@ -201,12 +201,10 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             // so the "continue" flow can pick the next song.
             party.setPassTheMicSong(null);
             party.setPassTheMicSegments([]);
-            // If series is empty (user ended immediately), go home
+            // If series is empty (user ended immediately), go to PTM settings
             if (party.passTheMicSeriesHistory.length === 0) {
-              party.setPassTheMicPlayers([]);
-              party.setPassTheMicSettings(null);
-              party.setPassTheMicSeriesHistory([]);
-              setScreen('home');
+              // Keep players and settings so user can restart quickly
+              setScreen('party-setup');
             } else {
               // Navigate to library for next song selection
               setGameMode('pass-the-mic');
