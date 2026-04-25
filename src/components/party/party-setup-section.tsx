@@ -256,8 +256,42 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 break;
               }
 
-              // ── Pass the Mic: random song → generate segments → game view ──
+              // ── Pass the Mic: song selection (random, medley, or library-picked) ──
               case 'pass-the-mic': {
+                // When songSelection is 'medley', delegate to the medley game flow
+                // instead of playing a single random song
+                if (result.songSelection === 'medley') {
+                  const snippetCount = result.settings.snippetCount || 5;
+                  const snippetDuration = result.settings.snippetDuration || 30;
+                  const snippetDurationMs = snippetDuration * 1000;
+                  const shuffled = [...filteredSongs].sort(() => Math.random() - 0.5);
+                  const beatDurationMs = (bpm: number) => 15000 / bpm;
+                  const medleySongList = shuffled.slice(0, snippetCount).map(song => {
+                    if (song.medleyStartBeat !== undefined && song.medleyEndBeat !== undefined && song.bpm > 0) {
+                      const bd = beatDurationMs(song.bpm);
+                      const startTime = song.medleyStartBeat * bd;
+                      const endTime = song.medleyEndBeat * bd;
+                      return { song, startTime, endTime, duration: endTime - startTime };
+                    }
+                    if (song.medleyStartBeat !== undefined && song.bpm > 0) {
+                      const startTime = song.medleyStartBeat * beatDurationMs(song.bpm);
+                      return { song, startTime, endTime: startTime + snippetDurationMs, duration: snippetDurationMs };
+                    }
+                    const maxSafeTime = song.lyrics && song.lyrics.length > 0
+                      ? Math.max(...song.lyrics.map(l => l.endTime))
+                      : Math.min(song.duration, snippetDurationMs * 3);
+                    const maxStartTime = Math.max(0, maxSafeTime - snippetDurationMs);
+                    const startTime = Math.random() * maxStartTime;
+                    return { song, startTime, endTime: startTime + snippetDurationMs, duration: snippetDurationMs };
+                  });
+                  party.setMedleyPlayers(toMedleyPlayers(result.players));
+                  party.setMedleySongs(medleySongList);
+                  party.setMedleySettings(result.settings as unknown as MedleySettingsType);
+                  setScreen('medley-game');
+                  break;
+                }
+
+                // Default: single random song with segment-based pass-the-mic
                 const randomSong = pickRandomSong(filteredSongs);
                 if (randomSong) {
                   const segmentDuration = result.settings.segmentDuration || 30;
