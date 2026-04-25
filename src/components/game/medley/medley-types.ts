@@ -1,62 +1,30 @@
-// ===================== MEDLEY REDESIGN — TYPE DEFINITIONS =====================
+/**
+ * Medley Contest — Shared Types
+ *
+ * All type definitions for the rewritten Medley mode.
+ * Two modes: FFA (Free-For-All) and Team (1v1, 2v2).
+ */
 
-import type { Song, Difficulty, PlayerProfile } from '@/types/game';
+import type { Song, Difficulty } from '@/types/game';
 
-// ── Play Modes ──
-export type MedleyPlayMode = 'ffa' | 'team';
+// ===================== PLAYERS =====================
 
-// ── Team Configurations ──
-export type TeamSize = 1 | 2; // 1v1 or 2v2 (3v3 and 4v4 TBD)
-
-export interface TeamAssignment {
-  teamA: string[]; // Player IDs
-  teamB: string[]; // Player IDs
-}
-
-// ── Match (one snippet = one matchup) ──
-export interface MedleyMatch {
-  snippetIndex: number;
-  teamASingerId: string; // Which player from team A sings this snippet
-  teamBSingerId: string; // Which player from team B sings this snippet
-  snippet: MedleySong;
-  /** Per-player scores for this match (accumulated in handleGameEnd) */
-  scores?: Record<string, {
-    score: number;
-    notesHit: number;
-    notesMissed: number;
-    maxCombo: number;
-  }>;
-  completed: boolean;
-}
-
-// ── Round Result (for series tracking) ──
-export interface MedleyRoundResult {
-  songTitle: string;
-  songArtist: string;
-  playedAt: number;
-  teamASingerId: string;
-  teamASingerName: string;
-  teamBSingerId: string;
-  teamBSingerName: string;
-  teamAScore: number;
-  teamBScore: number;
-  /** Full per-player breakdown */
-  playerScores: Record<string, {
-    score: number;
-    notesHit: number;
-    notesMissed: number;
-    maxCombo: number;
-  }>;
-}
-
-// ── Player in medley context ──
 export interface MedleyPlayer {
   id: string;
   name: string;
   avatar?: string;
   color: string;
-  /** Team assignment: 'A' or 'B' (null for FFA) */
-  team: 'A' | 'B' | null;
+  /** Which team this player belongs to (0 = Team A, 1 = Team B) */
+  team: number;
+  /** 'local' = physical mic, 'mobile' = companion app */
+  inputType: 'local' | 'mobile';
+  /** Assigned microphone device ID (local only) */
+  micId?: string;
+  /** Assigned microphone display name (local only) */
+  micName?: string;
+  /** Companion mobile client ID (mobile only) */
+  mobileClientId?: string;
+  // Scoring — accumulated across all snippets
   score: number;
   notesHit: number;
   notesMissed: number;
@@ -65,93 +33,121 @@ export interface MedleyPlayer {
   snippetsSung: number;
 }
 
-// ── Snippet ──
+// ===================== SONGS =====================
+
 export interface MedleySong {
   song: Song;
-  startTime: number; // ms in the original song
-  endTime: number;   // ms in the original song
+  startTime: number; // ms — start time within the original song
+  endTime: number;   // ms — end time within the original song
   duration: number;  // ms
 }
 
-// ── Settings ──
+/** Defines which two players sing a given snippet in Team mode */
+export interface SnippetMatchup {
+  snippetIndex: number;
+  /** Player singing for Team A */
+  playerA: MedleyPlayer;
+  /** Player singing for Team B */
+  playerB: MedleyPlayer;
+}
+
+// ===================== SETTINGS =====================
+
+export type MedleyPlayMode = 'ffa' | 'team';
+
+export type TeamSize = 1 | 2; // 1 = 1v1, 2 = 2v2
+
 export interface MedleySettings {
   playMode: MedleyPlayMode;
   teamSize: TeamSize;
-  snippetDuration: number; // seconds
-  snippetCount: number;    // number of songs/snippets
-  transitionTime: number;  // seconds between snippets
+  snippetDuration: number; // seconds (15–60)
+  snippetCount: number;    // total snippets (varies by mode/teamSize)
   difficulty: Difficulty;
-  /** Track which snippet we're at (set during gameplay) */
-  currentSnippetIndex?: number;
-  /** Language filter (null = all) */
-  languageFilter: string | null;
-  /** Genre filter (null = all) */
-  genreFilter: string | null;
+  /** Optional genre filter for random song selection */
+  genre?: string;
+  /** Optional language filter for random song selection */
+  language?: string;
+  /** Transition time between snippets in seconds (fixed) */
+  transitionTime: 3;
 }
 
-// ── Match order generator ──
-// Team mode: round-robin matchups within and across teams
-// 1v1 = 5 snippets (A1vB1, A1vB1, A1vB1, A1vB1, A1vB1)
-// 2v2 = 4 snippets (A1vB1, A2vB2, A1vB2, A2vB1) — every pair sings once
+/** Default settings per mode */
+export function getDefaultSettings(mode: MedleyPlayMode, teamSize: TeamSize): MedleySettings {
+  const snippetCount = mode === 'ffa' ? 5 : teamSize * teamSize;
+  return {
+    playMode: mode,
+    teamSize,
+    snippetDuration: 30,
+    snippetCount,
+    difficulty: 'medium',
+    transitionTime: 3,
+  };
+}
 
-export function generateTeamMatches(
-  players: MedleyPlayer[],
-  snippets: MedleySong[],
-): MedleyMatch[] {
-  const teamA = players.filter(p => p.team === 'A');
-  const teamB = players.filter(p => p.team === 'B');
+/** Compute total snippet count for team mode */
+export function teamSnippetCount(teamSize: TeamSize): number {
+  return teamSize * teamSize;
+}
 
-  if (teamA.length === 0 || teamB.length === 0) return [];
+// ===================== SNIPPET GENERATION =====================
 
-  const teamSize = teamA.length; // Both teams have same size
+/**
+ * Generate snippet matchups for Team mode.
+ *
+ * 1v1 (1 snippet): P1_TeamA vs P1_TeamB
+ * 2v2 (4 snippets):
+ *   P1_A vs P1_B
+ *   P2_A vs P2_B
+ *   P2_A vs P1_B  (cross-match)
+ *   P1_A vs P2_B  (cross-match)
+ */
+export function generateTeamMatchups(
+  teamA: MedleyPlayer[],
+  teamB: MedleyPlayer[],
+): SnippetMatchup[] {
+  const size = teamA.length; // 1 or 2
+  const matchups: SnippetMatchup[] = [];
 
-  // Generate all cross-team pairings (round-robin)
-  const pairings: Array<{ a: MedleyPlayer; b: MedleyPlayer }> = [];
-  for (const a of teamA) {
-    for (const b of teamB) {
-      pairings.push({ a, b });
+  for (let a = 0; a < size; a++) {
+    for (let b = 0; b < size; b++) {
+      matchups.push({
+        snippetIndex: matchups.length,
+        playerA: teamA[a],
+        playerB: teamB[b],
+      });
     }
   }
 
-  const matches: MedleyMatch[] = [];
-
-  // For each snippet, cycle through pairings
-  for (let i = 0; i < snippets.length; i++) {
-    const pairing = pairings[i % pairings.length];
-    matches.push({
-      snippetIndex: i,
-      teamASingerId: pairing.a.id,
-      teamBSingerId: pairing.b.id,
-      snippet: snippets[i],
-      completed: false,
-    });
-  }
-
-  return matches;
+  return matchups;
 }
 
-// ── Calculate total snippets for team mode ──
-export function getTeamSnippetCount(teamSize: TeamSize): number {
-  switch (teamSize) {
-    case 1: return 5; // 1v1: 5 snippets
-    case 2: return 4; // 2v2: 4 snippets (all cross-pairs)
-    default: return 4;
-  }
+// ===================== SERIES HISTORY =====================
+
+/** Per-round result (one "medley compilation") */
+export interface MedleyRoundResult {
+  playedAt: number;
+  /** Per-player snippet scores keyed by player id */
+  playerScores: Record<string, MedleyPlayerRoundScore>;
+  /** Team totals (Team A score, Team B score) — team mode only */
+  teamScores?: { teamA: number; teamB: number };
+  /** Number of snippets played */
+  snippetCount: number;
 }
 
-// ── Default settings ──
-export const DEFAULT_MEDLEY_SETTINGS: MedleySettings = {
-  playMode: 'ffa',
-  teamSize: 1,
-  snippetDuration: 30,
-  snippetCount: 5,
-  transitionTime: 3,
-  difficulty: 'medium',
-  languageFilter: null,
-  genreFilter: null,
-};
-
-// ── FFA snippet count ──
-export function getFFASnippetCount(): number {
-  return 5; // FFA always 5 snippets, all 4 sing simultaneously
+export interface MedleyPlayerRoundScore {
+  score: number;
+  notesHit: number;
+  notesMissed: number;
+  maxCombo: number;
+  snippetsSung: number;
 }
+
+// ===================== GAME PHASES =====================
+
+export type MedleyGamePhase =
+  | 'intro'         // Show players, mic info, "Start" button
+  | 'countdown'     // 3-2-1 countdown
+  | 'playing'       // Active snippet playback
+  | 'transition'    // 3s pulse before next snippet
+  | 'round-results' // After last snippet: show round results
+  | 'final-results';// After multiple rounds: show final standings

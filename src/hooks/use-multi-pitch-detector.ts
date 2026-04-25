@@ -43,6 +43,8 @@ import { Difficulty } from '@/types/game';
 export interface PlayerPitchConfig {
   playerId: string;
   type: 'local' | 'mobile';
+  /** Specific microphone device ID (local only). If omitted, uses system default. */
+  deviceId?: string;
   mobileClientId?: string; // Required for mobile type
 }
 
@@ -135,7 +137,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
       const initPromises = players.map(async (playerConfig) => {
         try {
           if (playerConfig.type === 'local') {
-            const success = await manager.addLocalPlayer(playerConfig.playerId);
+            const success = await manager.addLocalPlayer(playerConfig.playerId, playerConfig.deviceId);
             if (!success) {
               setErrors(prev => {
                 const newMap = new Map(prev);
@@ -221,7 +223,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
 
     try {
       if (config.type === 'local') {
-        const success = await managerRef.current.addLocalPlayer(config.playerId);
+        const success = await managerRef.current.addLocalPlayer(config.playerId, config.deviceId);
         if (success) {
           setPlayerPitches(prev => {
             const newMap = new Map(prev);

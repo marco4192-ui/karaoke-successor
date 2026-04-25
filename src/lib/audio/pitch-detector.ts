@@ -98,17 +98,28 @@ export class PitchDetector {
     this.vocalDetector.setDifficulty(difficulty);
   }
 
-  async initialize(): Promise<boolean> {
+  /**
+   * Initialize the pitch detector with an optional specific microphone device.
+   * @param deviceId - If provided, requests this specific audio device (multi-mic support).
+   *                If omitted, uses the system default microphone.
+   */
+  async initialize(deviceId?: string): Promise<boolean> {
     try {
+      // Build audio constraints — optionally target a specific device
+      const audioConstraints: MediaTrackConstraints = {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      };
+      if (deviceId) {
+        audioConstraints.deviceId = { exact: deviceId };
+      }
+
       // Request high-quality audio for karaoke
       // Note: sampleRate and channelCount are NOT standard getUserMedia
       // constraints and cause issues in Tauri webviews — omit them.
       this.mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
+        audio: audioConstraints,
       });
 
       this.audioContext = new AudioContext();
@@ -489,7 +500,12 @@ export class PitchDetectorManager {
     });
   }
 
-  async addLocalPlayer(playerId: string): Promise<boolean> {
+  /**
+   * Add a local player with their own pitch detector.
+   * @param playerId - Unique identifier for this player
+   * @param deviceId - Optional specific microphone device ID (multi-mic support)
+   */
+  async addLocalPlayer(playerId: string, deviceId?: string): Promise<boolean> {
     if (this.players.has(playerId)) {
       return true; // Already exists
     }
@@ -497,7 +513,7 @@ export class PitchDetectorManager {
     const detector = new PitchDetector();
     detector.setDifficulty(this.difficulty);
 
-    const success = await detector.initialize();
+    const success = await detector.initialize(deviceId);
     if (success) {
       this.players.set(playerId, {
         id: playerId,

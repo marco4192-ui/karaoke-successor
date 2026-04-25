@@ -1,13 +1,14 @@
 // Barrel export for the new Medley module
-export { MedleySetupScreen } from './medley-setup-screen';
-export { MedleyGameView } from './medley-game-view';
+export { MedleySetup as MedleySetupScreen } from './medley-setup';
+export { MedleyGameScreen } from './medley-game-screen';
 export type {
   MedleyPlayMode,
   TeamSize,
-  TeamAssignment,
   MedleyPlayer,
   MedleySong,
   MedleySettings,
-  MedleyMatch,
+  SnippetMatchup,
   MedleyRoundResult,
+  MedleyPlayerRoundScore,
+  MedleyGamePhase,
 } from './medley-types';

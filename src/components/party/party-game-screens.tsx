@@ -9,9 +9,9 @@ import { TournamentSetupScreen, TournamentBracketView } from '@/components/game/
 import { BattleRoyaleSetupScreen, BattleRoyaleGameView } from '@/components/game/battle-royale-screen';
 import { PassTheMicSetupScreen, PassTheMicGameView } from '@/components/game/pass-the-mic-screen';
 import { CompanionSingAlongSetupScreen, CompanionGameView } from '@/components/game/companion-singalong-screen';
-import { MedleySetupScreen, MedleyGameView } from '@/components/game/medley';
-import { generateTeamMatches } from '@/components/game/medley/medley-types';
-import type { MedleyPlayer, MedleyMatch, MedleyRoundResult, MedleySettings } from '@/components/game/medley/medley-types';
+import { MedleySetupScreen } from '@/components/game/medley';
+import { MedleyGameScreen } from '@/components/game/medley/medley-game-screen';
+import type { MedleyPlayer, MedleySettings, SnippetMatchup, MedleyRoundResult } from '@/components/game/medley/medley-types';
 import { CompetitiveSetupScreen, CompetitiveGameView } from '@/components/game/competitive-words-blind-screen';
 import { RateMySongSetupScreen, RateMySongRatingScreen, RateMySongResultsScreen } from '@/components/game/rate-my-song-screen';
 import type { RateMySongResult } from '@/components/game/rate-my-song-screen';
@@ -345,102 +345,32 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
         />
       )}
 
-      {/* Medley Contest Setup Screen (redesigned: FFA + Team modes) */}
+            {/* Medley Contest Setup Screen (redesigned: FFA + Team modes) */}
       {screen === 'medley' && (
         <MedleySetupScreen
           profiles={profiles}
-          songs={getAllSongs()}
-          onStartGame={(players: MedleyPlayer[], medleySongList, settings: MedleySettings) => {
+          onStartGame={(players: MedleyPlayer[], medleySongList: any[], settings: MedleySettings) => {
             party.setMedleyPlayers(players);
             party.setMedleySongs(medleySongList);
             party.setMedleySettings(settings);
             party.setMedleySeriesHistory([]);
-
-            // Generate match order for team mode
-            if (settings.playMode === 'team') {
-              const matches = generateTeamMatches(players, medleySongList);
-              party.setMedleyMatches(matches);
-            } else {
-              party.setMedleyMatches([]);
-            }
-
             setScreen('medley-game');
           }}
           onBack={() => setScreen('party')}
         />
       )}
 
-      {/* Medley Contest Game Screen — redesigned flow controller */}
+      {/* Medley Contest Game Screen — dedicated screen with multi-pitch detection */}
       {screen === 'medley-game' && party.medleySongs.length > 0 && party.medleySettings && (
-        <MedleyGameView
+        <MedleyGameScreen
           players={party.medleyPlayers}
-          medleySongs={party.medleySongs}
+          songs={party.medleySongs}
           settings={party.medleySettings}
-          matches={party.medleyMatches}
+          matchups={party.medleyMatches}
           seriesHistory={party.medleySeriesHistory}
-          onUpdatePlayers={party.setMedleyPlayers}
-          onUpdateMatches={party.setMedleyMatches}
-          onRecordRound={(round: MedleyRoundResult) => {
-            party.setMedleySeriesHistory([...party.medleySeriesHistory, round]);
-          }}
-          onPlaySnippet={(teamASingerId, teamBSingerId, snippetIndex) => {
-            const snippet = party.medleySongs[snippetIndex];
-            if (!snippet || !party.medleySettings) return;
-
-            resetGame();
-
-            // Create modified song with snippet timing
-            const snippetSong = {
-              ...snippet.song,
-              start: snippet.startTime,
-              end: snippet.endTime,
-            };
-            setSong(snippetSong);
-
-            // Team mode: duel — add both singers
-            setGameMode('duel');
-            const p1 = party.medleyPlayers.find(p => p.id === teamASingerId);
-            const p2 = party.medleyPlayers.find(p => p.id === teamBSingerId);
-            if (p1) addPlayer({ id: p1.id, name: p1.name, avatar: p1.avatar, color: p1.color });
-            if (p2) addPlayer({ id: p2.id, name: p2.name, avatar: p2.avatar, color: p2.color });
-
-            // Set mic assignments for MicIndicator
-            const setupResult: GameSetupResult = {
-              players: [
-                { id: teamASingerId, name: p1?.name || 'A', color: p1?.color || '#FF6B6B', playerType: 'microphone', micId: 'default', micName: 'Mikrofon 1' },
-                { id: teamBSingerId, name: p2?.name || 'B', color: p2?.color || '#4ECDC4', playerType: 'microphone', micId: 'default', micName: 'Mikrofon 2' },
-              ],
-              settings: {},
-              songSelection: 'random',
-              difficulty: party.medleySettings.difficulty,
-              inputMode: 'microphone',
-            };
-            party.setUnifiedSetupResult(setupResult);
-
-            party.setMedleySettings({ ...party.medleySettings, currentSnippetIndex: snippetIndex });
-            setScreen('game');
-          }}
-          onPlayFFASnippet={(snippetIndex) => {
-            const snippet = party.medleySongs[snippetIndex];
-            if (!snippet || !party.medleySettings) return;
-
-            resetGame();
-
-            const snippetSong = {
-              ...snippet.song,
-              start: snippet.startTime,
-              end: snippet.endTime,
-            };
-            setSong(snippetSong);
-
-            // FFA: use 'medley' mode with all 4 players
-            setGameMode('medley');
-            for (const p of party.medleyPlayers) {
-              addPlayer({ id: p.id, name: p.name, avatar: p.avatar, color: p.color });
-            }
-
-            party.setMedleySettings({ ...party.medleySettings, currentSnippetIndex: snippetIndex });
-            setScreen('game');
+          onRoundComplete={(result, updatedPlayers) => {
+            party.setMedleyPlayers(updatedPlayers);
+            party.setMedleySeriesHistory([...party.medleySeriesHistory, result]);
           }}
           onEndGame={() => {
             party.setMedleyPlayers([]);
@@ -451,20 +381,10 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             party.setUnifiedSetupResult(null);
             setScreen('home');
           }}
-          onSecondRound={() => {
-            // Reset scores but keep players, settings, and regenerate songs
-            const resetPlayers = party.medleyPlayers.map(p => ({
-              ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, snippetsSung: 0,
-            }));
-            party.setMedleyPlayers(resetPlayers);
-            party.setMedleySeriesHistory([]);
-            // Re-trigger setup to generate new songs — go back to setup screen
-            setScreen('medley');
-          }}
         />
       )}
 
-      {/* Missing Words Competitive Setup */}
+{/* Missing Words Competitive Setup */}
       {screen === 'missing-words' && (
         <CompetitiveSetupScreen
           profiles={profiles}

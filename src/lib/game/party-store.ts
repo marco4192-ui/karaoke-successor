@@ -11,7 +11,7 @@ import type {
   MedleySong,
   MedleyPlayer,
   MedleySettings,
-  MedleyMatch,
+  SnippetMatchup,
   MedleyRoundResult,
 } from '@/components/game/medley/medley-types';
 import type { CompetitiveGame } from '@/lib/game/competitive-words-blind';
@@ -72,8 +72,8 @@ interface PartyStore {
   setMedleySongs: (songs: MedleySong[]) => void;
   medleySettings: MedleySettings | null;
   setMedleySettings: (settings: MedleySettings | null) => void;
-  medleyMatches: MedleyMatch[];
-  setMedleyMatches: (matches: MedleyMatch[]) => void;
+  medleyMatches: SnippetMatchup[];
+  setMedleyMatches: (matches: SnippetMatchup[]) => void;
   medleySeriesHistory: MedleyRoundResult[];
   setMedleySeriesHistory: (history: MedleyRoundResult[]) => void;
 
@@ -156,7 +156,7 @@ export const usePartyStore = create<PartyStore>((set) => ({
   setMedleySongs: (medleySongs) => set({ medleySongs }),
   medleySettings: null as MedleySettings | null,
   setMedleySettings: (medleySettings) => set({ medleySettings }),
-  medleyMatches: [] as MedleyMatch[],
+  medleyMatches: [] as SnippetMatchup[],
   setMedleyMatches: (medleyMatches) => set({ medleyMatches }),
   medleySeriesHistory: [] as MedleyRoundResult[],
   setMedleySeriesHistory: (medleySeriesHistory) => set({ medleySeriesHistory }),
@@ -208,7 +208,7 @@ export const usePartyStore = create<PartyStore>((set) => ({
     medleyPlayers: [] as MedleyPlayer[],
     medleySongs: [] as MedleySong[],
     medleySettings: null as MedleySettings | null,
-    medleyMatches: [] as MedleyMatch[],
+    medleyMatches: [] as SnippetMatchup[],
     medleySeriesHistory: [] as MedleyRoundResult[],
     competitiveGame: null,
     rateMySongSettings: null,
