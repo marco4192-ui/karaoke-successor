@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -738,6 +738,26 @@ export function SongVotingModal({ songs, players, onVote, onClose, gameColor }: 
 }) {
   const [votes, setVotes] = useState<Record<string, string>>({});
 
+  // Restore cover URLs for voting songs (Tauri: relative paths, Browser: IndexedDB)
+  const [enrichedSongs, setEnrichedSongs] = useState<Song[]>(songs);
+  useEffect(() => {
+    let cancelled = false;
+    const restoreCovers = async () => {
+      try {
+        const { ensureSongUrls } = await import('@/lib/game/song-library');
+        const restored = await Promise.all(
+          songs.map(async (s) => {
+            if (s.coverImage) return s; // Already has cover
+            try { return await ensureSongUrls(s); } catch { return s; }
+          })
+        );
+        if (!cancelled) setEnrichedSongs(restored);
+      } catch { /* non-critical */ }
+    };
+    restoreCovers();
+    return () => { cancelled = true; };
+  }, [songs]);
+
   const handleVote = (songId: string) => onVote(songId);
 
   const getVoteCount = (songId: string) =>
@@ -753,7 +773,7 @@ export function SongVotingModal({ songs, players, onVote, onClose, gameColor }: 
         <CardContent>
           <p className="text-white/60 mb-6">Click on a song to vote for it. The song with the most votes will be played!</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {songs.map((song, index) => (
+            {enrichedSongs.map((song, index) => (
               <div
                 key={song.id}
                 onClick={() => handleVote(song.id)}

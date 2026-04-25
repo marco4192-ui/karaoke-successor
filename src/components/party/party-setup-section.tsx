@@ -418,7 +418,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
           onVote={(songId) => {
             const selectedSong = party.votingSongs.find(s => s.id === songId);
             if (selectedSong) {
-              setSong(selectedSong);
+              // IMPORTANT: resetGame() clears currentSong, so setSong must come AFTER reset
               if (party.selectedGameMode) {
                 setGameMode(party.selectedGameMode);
                 setDifficulty(party.unifiedSetupResult?.difficulty || 'medium');
@@ -427,6 +427,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               // Handle game-specific setup
               resetGame();
               setPlayers([]);
+              setSong(selectedSong);
               if (party.selectedGameMode === 'pass-the-mic') {
                 const segmentDuration = party.unifiedSetupResult?.settings?.segmentDuration || 30;
                 const ptmPlayers = toPassTheMicPlayers(party.unifiedSetupResult?.players || []);
