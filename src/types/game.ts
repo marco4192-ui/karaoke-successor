@@ -263,12 +263,17 @@ export const DIFFICULTY_SETTINGS = {
   easy: {
     pitchTolerance: 3, // +/- 3 semitones - very lenient for beginners
     timingTolerance: 400, // ms - very lenient timing
-    noteScoreMultiplier: 0.8, // Lower points for easier difficulty
+    noteScoreMultiplier: 1.0, // Full points on Easy — difficulty is reflected in tolerance, not score penalty
     comboMultiplier: 1.5,
     visualNoteWidth: 1.3,
     // Karaoke-optimized settings - very sensitive for beginners
     volumeThreshold: 0.02, // Very low volume threshold - picks up quiet singing
     pitchStabilityFrames: 2, // Quick response for pitch detection
+    // Relaxed evaluation thresholds — being in-tolerance should feel rewarding
+    perfectThreshold: 0.85,
+    greatThreshold: 0.6,
+    goodThreshold: 0.3,
+    okayThreshold: 0.1,
   },
   medium: {
     pitchTolerance: 2, // +/- 2 semitones - standard karaoke tolerance
@@ -279,6 +284,11 @@ export const DIFFICULTY_SETTINGS = {
     // Standard settings
     volumeThreshold: 0.04, // Reasonable volume threshold
     pitchStabilityFrames: 3, // Quick but stable response
+    // Default evaluation thresholds
+    perfectThreshold: 0.95,
+    greatThreshold: 0.8,
+    goodThreshold: 0.6,
+    okayThreshold: 0.4,
   },
   hard: {
     pitchTolerance: 1, // +/- 1 semitone - stricter but still playable
@@ -289,6 +299,11 @@ export const DIFFICULTY_SETTINGS = {
     // Strict settings
     volumeThreshold: 0.06, // Moderate volume threshold
     pitchStabilityFrames: 5, // More stable pitch required
+    // Tighter thresholds — precision is rewarded
+    perfectThreshold: 0.97,
+    greatThreshold: 0.85,
+    goodThreshold: 0.65,
+    okayThreshold: 0.45,
   },
 } as const;
 

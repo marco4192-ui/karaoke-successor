@@ -105,14 +105,29 @@ export function evaluateTick(
     return { accuracy: 0, isHit: false, displayType: 'Miss' };
   }
 
-  const accuracy = 1 - (relativeDiff / (effectiveTolerance + 1));
+  // Normalize accuracy to 0-1 range within the tolerance window.
+  // Uses (effectiveTolerance) as denominator so that being exactly on-pitch
+  // yields accuracy=1.0 and being at the edge of tolerance yields accuracy=0.
+  const accuracy = effectiveTolerance > 0
+    ? 1 - (relativeDiff / effectiveTolerance)
+    : (relativeDiff === 0 ? 1 : 0);
+
+  // Use difficulty-specific evaluation thresholds.
+  // On Easy: being in-tolerance is already an achievement, so thresholds are relaxed.
+  // On Hard: precision matters, thresholds are tighter.
+  const thresholds = {
+    perfect: settings.perfectThreshold ?? 0.95,
+    great: settings.greatThreshold ?? 0.8,
+    good: settings.goodThreshold ?? 0.6,
+    okay: settings.okayThreshold ?? 0.4,
+  };
 
   let displayType: 'Perfect' | 'Great' | 'Good' | 'Okay' | 'Miss' = 'Miss';
 
-  if (accuracy > 0.95) displayType = 'Perfect';
-  else if (accuracy > 0.8) displayType = 'Great';
-  else if (accuracy > 0.6) displayType = 'Good';
-  else if (accuracy > 0.4) displayType = 'Okay';
+  if (accuracy > thresholds.perfect) displayType = 'Perfect';
+  else if (accuracy > thresholds.great) displayType = 'Great';
+  else if (accuracy > thresholds.good) displayType = 'Good';
+  else if (accuracy > thresholds.okay) displayType = 'Okay';
 
   return { accuracy, isHit: true, displayType };
 }
