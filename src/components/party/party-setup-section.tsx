@@ -6,6 +6,7 @@ import { usePartyStore } from '@/lib/game/party-store';
 import { getAllSongs, filterSongs } from '@/lib/game/song-library';
 import { UnifiedPartySetup, SongVotingModal, GameSetupResult, PARTY_GAME_CONFIGS } from '@/components/game/unified-party-setup';
 import { PassTheMicSegment } from '@/components/game/pass-the-mic-screen';
+import type { MedleyPlayer as MedleyPlayerType, MedleySettings as MedleySettingsType } from '@/components/game/medley/medley-types';
 import { Song, GameMode } from '@/types/game';
 import { createTournament, TournamentPlayer, TournamentSettings } from '@/lib/game/tournament';
 import { createBattleRoyale, BattleRoyaleSettings } from '@/lib/game/battle-royale';
@@ -42,8 +43,8 @@ function generatePassTheMicSegments(song: Song, segmentDuration: number): PassTh
 
 // ===================== PARTY SETUP + SONG VOTING SECTION =====================
 // ===================== HELPER: Convert SelectedPlayer to Medley/PassTheMic/Companion player =====================
-function toMedleyPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]) {
-  return players.map(p => ({ ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, songsCompleted: 0 }));
+function toMedleyPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]): MedleyPlayerType[] {
+  return players.map((p, i) => ({ ...p, team: null, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, snippetsSung: 0 }));
 }
 
 function toPassTheMicPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]) {
@@ -249,7 +250,8 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 });
                 party.setMedleyPlayers(toMedleyPlayers(result.players));
                 party.setMedleySongs(medleySongList);
-                party.setMedleySettings(result.settings);
+                // Cast unified setup settings to MedleySettings (the unified setup provides matching keys)
+                party.setMedleySettings(result.settings as unknown as MedleySettingsType);
                 setScreen('medley-game');
                 break;
               }
