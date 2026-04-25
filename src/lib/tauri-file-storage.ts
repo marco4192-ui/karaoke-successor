@@ -597,9 +597,8 @@ async function processFolder(
     mp3File: txtMp3File,
     coverFile: txtCoverFile,
     backgroundFile: txtBackgroundFile,
-    // videoFile: only store non-URL values (local file references)
-    videoFile: txtVideoFile && !txtVideoFile.startsWith('http://') && !txtVideoFile.startsWith('https://')
-      ? txtVideoFile : undefined,
+    // videoFile: store all values including URLs (needed for videoBackground in import)
+    videoFile: txtVideoFile ? txtVideoFile : undefined,
     // Duet
     isDuet,
     duetPlayerNames,

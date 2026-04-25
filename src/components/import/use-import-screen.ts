@@ -303,6 +303,11 @@ export function useImportScreen(onImport: (song: Song) => void) {
               calculatedDuration = Math.max(...scanned.lyrics.map(l => l.endTime)) + 5000;
             }
 
+            const isVideoUrl = scanned.videoFile &&
+              (scanned.videoFile.startsWith('http://') || scanned.videoFile.startsWith('https://'));
+            const isMp3Url = scanned.mp3File &&
+              (scanned.mp3File.startsWith('http://') || scanned.mp3File.startsWith('https://'));
+
             const song: Song = {
               id: songId,
               title: scanned.title,
@@ -318,9 +323,8 @@ export function useImportScreen(onImport: (song: Song) => void) {
               relativeAudioPath: scanned.relativeAudioPath,
               relativeVideoPath: scanned.relativeVideoPath,
               relativeCoverPath: scanned.relativeCoverPath,
-              videoBackground: scanned.videoFile &&
-                (scanned.videoFile.startsWith('http://') || scanned.videoFile.startsWith('https://'))
-                ? scanned.videoFile : undefined,
+              videoBackground: isVideoUrl ? scanned.videoFile : undefined,
+              audioUrl: isMp3Url ? scanned.mp3File : undefined,
               relativeBackgroundPath: scanned.relativeBackgroundPath,
               coverImage,
               genre: scanned.genre,
