@@ -15,10 +15,9 @@ interface HomeViewProps {
   gameState: GameState;
   queue: QueueItem[];
   onNavigate: (view: MobileView) => void;
-  onDisconnect?: () => void;
 }
 
-export function MobileHomeView({ gameState, queue, onNavigate, onDisconnect }: HomeViewProps) {
+export function MobileHomeView({ gameState, queue, onNavigate }: HomeViewProps) {
   return (
     <div className="p-4 space-y-4">
       {/* Now Playing */}
@@ -99,19 +98,6 @@ export function MobileHomeView({ gameState, queue, onNavigate, onDisconnect }: H
             ))}
           </CardContent>
         </Card>
-      )}
-
-      {/* Disconnect Button */}
-      {onDisconnect && (
-        <div className="pt-4">
-          <Button
-            onClick={onDisconnect}
-            variant="outline"
-            className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
-          >
-            Abmelden
-          </Button>
-        </div>
       )}
     </div>
   );
@@ -266,7 +252,6 @@ interface SongsViewProps {
   onSelectGameMode: (mode: 'single' | 'duel' | 'duet') => void;
   onSelectPartner: (partner: { id: string; name: string } | null) => void;
   onAddToQueue: (song: MobileSong) => void;
-  onAddToJukebox?: (song: MobileSong) => void;
   onLoadPartners: () => void;
   formatDuration: (ms: number) => string;
 }
@@ -284,7 +269,6 @@ export function MobileSongsView({
   onSelectGameMode,
   onSelectPartner,
   onAddToQueue,
-  onAddToJukebox,
   onLoadPartners,
   formatDuration,
 }: SongsViewProps) {
@@ -424,29 +408,17 @@ export function MobileSongsView({
               className="flex items-center gap-2 p-2 bg-white/5 rounded-xl hover:bg-white/10 transition-colors min-w-0"
             >
               {/* Add to Queue Button — always visible, rendered FIRST for guaranteed visibility */}
-              <div className="flex flex-col gap-0.5 flex-shrink-0">
-                <button
-                  onClick={() => {
-                    onShowSongOptions(song);
-                    onLoadPartners();
-                  }}
-                  className="bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 text-white flex items-center justify-center text-xl font-bold rounded-lg transition-colors"
-                  style={{ width: '2.25rem', height: '2.25rem', minWidth: '2.25rem', minHeight: '2.25rem' }}
-                  aria-label="Song zur Warteschlange hinzufügen"
-                >
-                  +
-                </button>
-                {onAddToJukebox && (
-                  <button
-                    onClick={() => onAddToJukebox(song)}
-                    className="bg-purple-500 hover:bg-purple-400 active:bg-purple-600 text-white flex items-center justify-center text-sm rounded-lg transition-colors"
-                    style={{ width: '2.25rem', height: '1.75rem', minWidth: '2.25rem', minHeight: '1.75rem' }}
-                    aria-label="Song zur Jukebox hinzufügen"
-                  >
-                    🎵
-                  </button>
-                )}
-              </div>
+              <button
+                onClick={() => {
+                  onShowSongOptions(song);
+                  onLoadPartners();
+                }}
+                className="bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 text-white flex items-center justify-center flex-shrink-0 text-xl font-bold rounded-lg transition-colors"
+                style={{ width: '2.25rem', height: '2.25rem', minWidth: '2.25rem', minHeight: '2.25rem' }}
+                aria-label="Song zur Warteschlange hinzufügen"
+              >
+                +
+              </button>
               
               {/* Cover */}
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600/50 to-blue-600/50 overflow-hidden flex-shrink-0">
@@ -489,12 +461,12 @@ interface QueueViewProps {
   queue: QueueItem[];
   slotsRemaining: number;
   queueError: string | null;
-  connectionCode?: string | null;
-  onRemoveFromQueue?: (itemId: string) => void;
   onNavigate: (view: MobileView) => void;
+  onRemoveFromQueue?: (itemId: string) => void;
+  clientId?: string | null;
 }
 
-export function MobileQueueView({ queue, slotsRemaining, queueError, connectionCode, onRemoveFromQueue, onNavigate }: QueueViewProps) {
+export function MobileQueueView({ queue, slotsRemaining, queueError, onNavigate, onRemoveFromQueue, clientId }: QueueViewProps) {
   return (
     <div className="p-4">
       {/* Queue Header with Slots */}
@@ -574,13 +546,13 @@ export function MobileQueueView({ queue, slotsRemaining, queueError, connectionC
               {item.status === 'playing' && (
                 <Badge className="bg-cyan-500 text-xs">Playing</Badge>
               )}
-
-              {/* Remove button — only show for own songs (matching companionCode) and not currently playing */}
-              {onRemoveFromQueue && connectionCode && item.companionCode === connectionCode && item.status !== 'playing' && (
+              
+              {/* Remove button — only shown for items added by this user and not currently playing */}
+              {item.status !== 'playing' && item.addedBy === clientId && onRemoveFromQueue && (
                 <button
-                  onClick={(e) => { e.stopPropagation(); onRemoveFromQueue(item.id); }}
-                  className="w-8 h-8 flex items-center justify-center rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-400 transition-colors shrink-0"
-                  aria-label="Remove song from queue"
+                  onClick={(e) => { e.stopPropagation(); onRemoveFromQueue(item.id || `${item.songTitle}`); }}
+                  className="ml-1 text-white/30 hover:text-red-400 transition-colors p-1"
+                  title="Aus der Queue entfernen"
                 >
                   ✕
                 </button>
