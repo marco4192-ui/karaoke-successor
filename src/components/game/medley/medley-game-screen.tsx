@@ -40,7 +40,11 @@ export function MedleyGameScreen({
   onRoundComplete,
   onEndGame,
 }: MedleyGameScreenProps) {
-  const party = usePartyStore();
+  // Subscribe to specific fields only (NOT the entire store) to minimize re-renders.
+  // Using the whole store (usePartyStore()) causes React #185 when any
+  // unrelated party state change triggers a re-render during the mount cycle.
+  const pauseDialogAction = usePartyStore(s => s.pauseDialogAction);
+  const setIsSongPlaying = usePartyStore(s => s.setIsSongPlaying);
   const isTeam = settings.playMode === 'team';
 
   // ── Phase ──
@@ -93,20 +97,33 @@ export function MedleyGameScreen({
   // Per-player last evaluation time for throttling
   const lastEvalTimeRef = useRef<Record<string, number>>({});
 
-  // ── Song playing status ──
-  const setIsSongPlaying = usePartyStore(s => s.setIsSongPlaying);
+  // ── Song playing status (ref-guarded to prevent React #185) ──
+  // Track last value to avoid calling setIsSongPlaying when value hasn't changed.
+  const lastIsSongPlayingRef = useRef(false);
   useEffect(() => {
-    setIsSongPlaying(isPlaying && phase === 'playing');
+    const newVal = isPlaying && phase === 'playing';
+    if (lastIsSongPlayingRef.current !== newVal) {
+      lastIsSongPlayingRef.current = newVal;
+      setIsSongPlaying(newVal);
+    }
   }, [isPlaying, phase, setIsSongPlaying]);
+
+  // ── Cleanup: reset isSongPlaying on unmount ──
+  useEffect(() => {
+    return () => {
+      setIsSongPlaying(false);
+      lastIsSongPlayingRef.current = false;
+    };
+  }, [setIsSongPlaying]);
 
   // ── Pause / Resume sync ──
   useEffect(() => {
-    if (party.pauseDialogAction === 'song-pause') {
+    if (pauseDialogAction === 'song-pause') {
       if (audioRef.current && !audioRef.current.paused) audioRef.current.pause();
-    } else if (party.pauseDialogAction === null && isPlaying && phase === 'playing') {
+    } else if (pauseDialogAction === null && isPlaying && phase === 'playing') {
       if (audioRef.current && audioRef.current.paused) audioRef.current.play().catch(() => {});
     }
-  }, [party.pauseDialogAction, isPlaying, phase]);
+  }, [pauseDialogAction, isPlaying, phase]);
 
   // ── Prepare snippet audio + notes ──
   useEffect(() => {
@@ -644,10 +661,14 @@ export function MedleyGameScreen({
             seriesHistory={seriesHistory}
             roundNumber={seriesHistory.length + 1}
             onNextRound={() => {
-              // Navigate back to setup for a new round
+              // Reset isSongPlaying before navigating away (prevents stale state)
+              setIsSongPlaying(false);
+              lastIsSongPlayingRef.current = false;
               onEndGame();
             }}
             onEndSeries={() => {
+              setIsSongPlaying(false);
+              lastIsSongPlayingRef.current = false;
               setPhase('final-results');
             }}
             onRecordAndEnd={handleRoundComplete}

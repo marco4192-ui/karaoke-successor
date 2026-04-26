@@ -252,6 +252,10 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 party.setMedleySongs(medleySongList);
                 // Cast unified setup settings to MedleySettings (the unified setup provides matching keys)
                 party.setMedleySettings(result.settings as unknown as MedleySettingsType);
+                party.setMedleySeriesHistory([]);
+                // Reset isSongPlaying BEFORE navigating to prevent React #185
+                // (MedleyGameScreen's useEffect would otherwise trigger during mount cycle)
+                party.setIsSongPlaying(false);
                 setScreen('medley-game');
                 break;
               }

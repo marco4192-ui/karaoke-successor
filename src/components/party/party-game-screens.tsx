@@ -352,6 +352,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             party.setMedleySongs(medleySongList);
             party.setMedleySettings(settings);
             party.setMedleySeriesHistory([]);
+            // Reset isSongPlaying BEFORE navigating to prevent React #185
+            party.setIsSongPlaying(false);
             setScreen('medley-game');
           }}
           onBack={() => setScreen('party')}
