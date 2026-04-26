@@ -54,7 +54,6 @@ interface PtmSegment {
 
 interface PtmSettings {
   segmentDuration: number;
-  randomSwitches: boolean;
   difficulty: Difficulty;
   micId: string;
   micName: string;
@@ -66,7 +65,6 @@ type GamePhase = 'intro' | 'countdown' | 'playing' | 'transitioning' | 'song-res
 
 const DEFAULT_SETTINGS: PtmSettings = {
   segmentDuration: 30,
-  randomSwitches: true,
   difficulty: 'medium',
   micId: 'default',
   micName: 'Standard',
@@ -94,8 +92,17 @@ export function PtmGameScreen({
   onPause,
 }: PtmGameScreenProps) {
   const safeSettings: PtmSettings = settings ?? DEFAULT_SETTINGS;
-  const party = usePartyStore();
+  const setIsSongPlaying = usePartyStore(s => s.setIsSongPlaying);
+  const pauseDialogAction = usePartyStore(s => s.pauseDialogAction);
+  const passTheMicSeriesHistory = usePartyStore(s => s.passTheMicSeriesHistory);
+  const setPassTheMicSeriesHistory = usePartyStore(s => s.setPassTheMicSeriesHistory);
+  const setPassTheMicPlayers = usePartyStore(s => s.setPassTheMicPlayers);
+  const setPassTheMicSong = usePartyStore(s => s.setPassTheMicSong);
+  const setPassTheMicSegments = usePartyStore(s => s.setPassTheMicSegments);
+  const setPassTheMicSettings = usePartyStore(s => s.setPassTheMicSettings);
+  const ptmMedleySnippets = usePartyStore(s => s.ptmMedleySnippets);
   const { setGameMode } = useGameStore();
+  const lastIsSongPlayingRef = useRef(false);
 
   // ── Phase management ──
   const [phase, setPhase] = useState<GamePhase>('intro');
@@ -157,6 +164,14 @@ export function PtmGameScreen({
   const currentPlayer = playersRef.current[currentPlayerIndex];
   const currentSegment = initialSegments[currentSegmentIndex];
 
+  // ── Medley mode support ──
+  const isMedleyMode = ptmMedleySnippets.length > 1;
+  const currentSnippet = isMedleyMode ? ptmMedleySnippets[currentSegmentIndex] : null;
+  // In medley mode, use the current snippet's song for audio; otherwise use effectiveSong
+  const audioSong = isMedleyMode && currentSnippet ? currentSnippet.song : effectiveSong;
+  // For notes/lyrics, use snippet song in medley mode
+  const notesSource = audioSong;
+
   // ── Transition state ──
   const [transitionVisible, setTransitionVisible] = useState(false);
   const [transitionNextPlayer, setTransitionNextPlayer] = useState<{
@@ -166,19 +181,31 @@ export function PtmGameScreen({
   // ── Mobile game sync ──
   useMobileGameSync(effectiveSong, isPlaying && phase === 'playing', 'pass-the-mic');
 
-  // ── Song playing status for Escape handler ──
+  // ── Song playing status for Escape handler (ref-guarded to prevent React #185) ──
   useEffect(() => {
-    party.setIsSongPlaying(isPlaying && phase === 'playing');
-  }, [isPlaying, phase, party]);
+    const newVal = isPlaying && phase === 'playing';
+    if (lastIsSongPlayingRef.current !== newVal) {
+      lastIsSongPlayingRef.current = newVal;
+      setIsSongPlaying(newVal);
+    }
+  }, [isPlaying, phase, setIsSongPlaying]);
+
+  // ── Cleanup: reset isSongPlaying on unmount ──
+  useEffect(() => {
+    return () => {
+      setIsSongPlaying(false);
+      lastIsSongPlayingRef.current = false;
+    };
+  }, [setIsSongPlaying]);
 
   // ── Pause / Resume sync ──
   useEffect(() => {
-    if (party.pauseDialogAction === 'song-pause') {
+    if (pauseDialogAction === 'song-pause') {
       if (audioRef.current && !audioRef.current.paused) audioRef.current.pause();
-    } else if (party.pauseDialogAction === null && isPlaying && phase === 'playing') {
+    } else if (pauseDialogAction === null && isPlaying && phase === 'playing') {
       if (audioRef.current && audioRef.current.paused) audioRef.current.play().catch(() => {});
     }
-  }, [party.pauseDialogAction, isPlaying, phase, audioRef]);
+  }, [pauseDialogAction, isPlaying, phase, audioRef]);
 
   // ── Assign segments to players (round-robin) ──
   useEffect(() => {
@@ -192,12 +219,12 @@ export function PtmGameScreen({
 
   // ── Pre-compute note data for highway ──
   const { allNotes, sortedLines, pitchStats, scoringMeta, beatDuration } = useMemo(() => {
-    if (!effectiveSong?.lyrics?.length) {
+    if (!notesSource?.lyrics?.length) {
       return { allNotes: [], sortedLines: [], pitchStats: { minPitch: 40, maxPitch: 80, pitchRange: 40 } as PitchStats, scoringMeta: null, beatDuration: 500 };
     }
 
     const notes: any[] = [];
-    const lines = [...effectiveSong.lyrics].sort((a, b) => a.startTime - b.startTime);
+    const lines = [...notesSource.lyrics].sort((a, b) => a.startTime - b.startTime);
 
     lines.forEach((line, lineIndex) => {
       line.notes.forEach(note => {
@@ -206,12 +233,12 @@ export function PtmGameScreen({
     });
     notes.sort((a, b) => a.startTime - b.startTime);
 
-    const bd = effectiveSong.bpm ? 15000 / effectiveSong.bpm : 500;
+    const bd = notesSource.bpm ? 15000 / notesSource.bpm : 500;
     const ps = calculatePitchStats(notes);
     const meta = calculateScoringMetadata(notes, bd);
 
     return { allNotes: notes, sortedLines: lines, pitchStats: ps, scoringMeta: meta, beatDuration: bd };
-  }, [effectiveSong]);
+  }, [notesSource]);
 
   const visibleNotes = useMemo(
     () => getVisibleNotes(allNotes, currentTime, NOTE_WINDOW),
@@ -227,9 +254,9 @@ export function PtmGameScreen({
     const diffSettings = DIFFICULTY_SETTINGS[difficulty];
     if (pitchResult.volume < diffSettings.volumeThreshold) return;
 
-    if (!effectiveSong?.lyrics) return;
+    if (!notesSource?.lyrics) return;
 
-    for (const line of effectiveSong.lyrics) {
+    for (const line of notesSource.lyrics) {
       for (const note of line.notes) {
         const noteEnd = note.startTime + note.duration;
         if (currentTime >= note.startTime && currentTime <= noteEnd) {
@@ -262,7 +289,7 @@ export function PtmGameScreen({
         }
       }
     }
-  }, [currentTime, pitchResult, effectiveSong, safeSettings.difficulty, currentPlayerIndex, scoringMeta, forceRender]);
+  }, [currentTime, pitchResult, notesSource, safeSettings.difficulty, currentPlayerIndex, scoringMeta, forceRender]);
 
   // ── Game loop: score during playing ──
   useEffect(() => {
@@ -350,7 +377,7 @@ export function PtmGameScreen({
 
   // ── Random switch (rare mid-segment) ──
   useEffect(() => {
-    if (phase !== 'playing' || !isPlaying || !safeSettings.randomSwitches) return;
+    if (phase !== 'playing' || !isPlaying) return;
     const interval = setInterval(() => {
       if (Math.random() < 0.003) {
         const next = (currentPlayerIndex + 1 + Math.floor(Math.random() * (playersRef.current.length - 1))) % playersRef.current.length;
@@ -360,7 +387,7 @@ export function PtmGameScreen({
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [phase, isPlaying, safeSettings.randomSwitches, currentPlayerIndex, showTransition]);
+  }, [phase, isPlaying, currentPlayerIndex, showTransition]);
 
   // ── Mic handoff ──
   useEffect(() => {
@@ -371,6 +398,33 @@ export function PtmGameScreen({
       switchMicrophone(player.micId).catch(() => {});
     }
   }, [currentPlayerIndex, phase, switchMicrophone]);
+
+  // ── Medley mode: seek to snippet start when segment changes ──
+  useEffect(() => {
+    if (!isMedleyMode || !currentSnippet || phase !== 'playing') return;
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const seekAndPlay = () => {
+      audio.currentTime = currentSnippet.startTime / 1000;
+      if (isPlaying) {
+        audio.play().catch(() => {});
+      }
+    };
+
+    // If audio is ready, seek immediately
+    if (audio.readyState >= 2) {
+      seekAndPlay();
+    } else {
+      // Wait for canplay
+      const onCanPlay = () => {
+        seekAndPlay();
+        audio.removeEventListener('canplay', onCanPlay);
+      };
+      audio.addEventListener('canplay', onCanPlay);
+      return () => audio.removeEventListener('canplay', onCanPlay);
+    }
+  }, [currentSegmentIndex, isMedleyMode, currentSnippet, phase, isPlaying]);
 
   // ── Start game (countdown → playing) ──
   const startGame = async () => {
@@ -394,7 +448,11 @@ export function PtmGameScreen({
           setIsPlaying(true);
           setCurrentTime(0);
           if (audioRef.current) {
-            audioRef.current.currentTime = 0;
+            // In medley mode, seek to the first snippet's start time
+            const seekTo = isMedleyMode && ptmMedleySnippets[0]
+              ? ptmMedleySnippets[0].startTime / 1000
+              : 0;
+            audioRef.current.currentTime = seekTo;
             audioRef.current.play().catch(e => console.warn('[PTM] Audio play failed:', e));
           }
           return 0;
@@ -416,8 +474,8 @@ export function PtmGameScreen({
   // ── Record round ──
   const recordRound = useCallback(() => {
     const round: PassTheMicRoundResult = {
-      songTitle: effectiveSong?.title || song.title,
-      songArtist: effectiveSong?.artist || song.artist,
+      songTitle: isMedleyMode ? `Medley (${ptmMedleySnippets.length} Songs)` : (effectiveSong?.title || song.title),
+      songArtist: isMedleyMode ? '' : (effectiveSong?.artist || song.artist),
       playedAt: Date.now(),
       playerScores: {},
     };
@@ -429,21 +487,21 @@ export function PtmGameScreen({
         maxCombo: p.maxCombo,
       };
     }
-    party.setPassTheMicSeriesHistory([...party.passTheMicSeriesHistory, round]);
-  }, [effectiveSong, song, party]);
+    setPassTheMicSeriesHistory([...passTheMicSeriesHistory, round]);
+  }, [effectiveSong, song, passTheMicSeriesHistory, setPassTheMicSeriesHistory]);
 
   // ── Continue series: reset per-song scores, pick next song ──
   const handleContinue = useCallback(() => {
     const resetPlayers = playersRef.current.map(p => ({
       ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, segmentsSung: 0,
     }));
-    party.setPassTheMicPlayers(resetPlayers);
-    party.setPassTheMicSong(null);
-    party.setPassTheMicSegments([]);
+    setPassTheMicPlayers(resetPlayers);
+    setPassTheMicSong(null);
+    setPassTheMicSegments([]);
     // Set game mode so library knows we're in PTM
     setGameMode('pass-the-mic');
     setScreen('library');
-  }, [party, setGameMode]);
+  }, [setPassTheMicPlayers, setPassTheMicSong, setPassTheMicSegments, setGameMode]);
 
   // ── End series ──
   const handleEndSeries = useCallback(() => {
@@ -452,25 +510,26 @@ export function PtmGameScreen({
 
   // ── End series completely: clean up ──
   const handleEndSeriesComplete = useCallback(() => {
-    party.setPassTheMicPlayers([]);
-    party.setPassTheMicSong(null);
-    party.setPassTheMicSegments([]);
-    party.setPassTheMicSettings(null);
-    party.setPassTheMicSeriesHistory([]);
-    party.setIsSongPlaying(false);
+    setPassTheMicPlayers([]);
+    setPassTheMicSong(null);
+    setPassTheMicSegments([]);
+    setPassTheMicSettings(null);
+    setPassTheMicSeriesHistory([]);
+    setIsSongPlaying(false);
+    lastIsSongPlayingRef.current = false;
     resetGame();
     setScreen('party-setup');
-  }, [party]);
+  }, [setPassTheMicPlayers, setPassTheMicSong, setPassTheMicSegments, setPassTheMicSettings, setPassTheMicSeriesHistory, setIsSongPlaying]);
 
   // ── Continue with same players (after winner ceremony) ──
   const handleContinueWithPlayers = useCallback(() => {
     // Reset series history but keep players
-    party.setPassTheMicSeriesHistory([]);
-    party.setPassTheMicSong(null);
-    party.setPassTheMicSegments([]);
+    setPassTheMicSeriesHistory([]);
+    setPassTheMicSong(null);
+    setPassTheMicSegments([]);
     setGameMode('pass-the-mic');
     setScreen('library');
-  }, [party, setGameMode]);
+  }, [setPassTheMicSeriesHistory, setPassTheMicSong, setPassTheMicSegments, setGameMode]);
 
   // ── Helper to set screen ──
   const { resetGame, setScreen } = useGameStore();
@@ -482,9 +541,9 @@ export function PtmGameScreen({
 
   // ── Get current lyrics line ──
   const getCurrentLyrics = (): LyricLine | null => {
-    if (!effectiveSong?.lyrics || effectiveSong.lyrics.length === 0) return null;
-    return effectiveSong.lyrics.find((line, i) => {
-      const next = effectiveSong.lyrics[i + 1];
+    if (!notesSource?.lyrics || notesSource.lyrics.length === 0) return null;
+    return notesSource.lyrics.find((line, i) => {
+      const next = notesSource.lyrics[i + 1];
       return currentTime >= line.startTime && (!next || currentTime < next.startTime);
     }) || null;
   };
@@ -508,7 +567,7 @@ export function PtmGameScreen({
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <div className="text-5xl mb-6">🎤</div>
           <h2 className="text-2xl font-bold mb-2">Pass the Mic</h2>
-          <p className="text-white/60 mb-8">{effectiveSong.title} — {effectiveSong.artist}</p>
+          <p className="text-white/60 mb-8">{isMedleyMode ? `🎵 Medley — ${ptmMedleySnippets.length} Songs` : `${effectiveSong.title} — ${effectiveSong.artist}`}</p>
 
           <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-xl max-w-md w-full mb-6 p-8 text-center">
             <div className="text-sm text-white/60 mb-2">STARTSPIELER</div>
@@ -525,12 +584,12 @@ export function PtmGameScreen({
               <span className="text-3xl font-bold">{currentPlayer?.name}</span>
             </div>
             <div className="text-sm text-white/40">
-              {playersRef.current.length} Spieler - {safeSettings.segmentDuration}s Segmente
+              {playersRef.current.length} Spieler{isMedleyMode ? ` - ${ptmMedleySnippets.length} Snippets` : ` - ${safeSettings.segmentDuration}s Segmente`}
               {safeSettings.sharedMicName && (
                 <span> - 🎤 {safeSettings.sharedMicName}</span>
               )}
-              {party.passTheMicSeriesHistory.length > 0 && (
-                <span> - Runde {party.passTheMicSeriesHistory.length + 1}</span>
+              {passTheMicSeriesHistory.length > 0 && (
+                <span> - Runde {passTheMicSeriesHistory.length + 1}</span>
               )}
             </div>
           </div>
@@ -554,8 +613,8 @@ export function PtmGameScreen({
   if (phase === 'song-results') {
     return (
       <PtmSongResults
-        songTitle={effectiveSong.title}
-        songArtist={effectiveSong.artist}
+        songTitle={isMedleyMode ? `Medley (${ptmMedleySnippets.length} Songs)` : effectiveSong.title}
+        songArtist={isMedleyMode ? '' : effectiveSong.artist}
         playerScores={playersRef.current.map(p => ({
           id: p.id,
           name: p.name,
@@ -568,8 +627,8 @@ export function PtmGameScreen({
           maxCombo: p.maxCombo,
           segmentsSung: p.segmentsSung,
         }))}
-        seriesHistory={party.passTheMicSeriesHistory}
-        roundNumber={party.passTheMicSeriesHistory.length + 1}
+        seriesHistory={passTheMicSeriesHistory}
+        roundNumber={passTheMicSeriesHistory.length + 1}
         onNextSong={handleContinue}
         onEndSeries={handleEndSeries}
       />
@@ -580,7 +639,7 @@ export function PtmGameScreen({
   if (phase === 'series-results') {
     return (
       <PtmSeriesResults
-        seriesHistory={party.passTheMicSeriesHistory}
+        seriesHistory={passTheMicSeriesHistory}
         players={playersRef.current.map(p => ({
           id: p.id,
           name: p.name,
@@ -597,11 +656,11 @@ export function PtmGameScreen({
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-black">
       {/* Audio Element */}
-      {effectiveSong?.audioUrl && (
+      {audioSong?.audioUrl && (
         <audio
-          key={effectiveSong.id}
+          key={audioSong.id}
           ref={audioRef}
-          src={effectiveSong.audioUrl}
+          src={audioSong.audioUrl}
           className="hidden"
           onEnded={() => {
             if (phase === 'playing' || phase === 'transitioning') {
@@ -615,11 +674,11 @@ export function PtmGameScreen({
       )}
 
       {/* Hidden Video Element for embedded audio */}
-      {effectiveSong?.hasEmbeddedAudio && effectiveSong?.videoBackground && !showBackgroundVideo && !isYouTube && !effectiveSong?.audioUrl && (
+      {audioSong?.hasEmbeddedAudio && audioSong?.videoBackground && !showBackgroundVideo && !isYouTube && !audioSong?.audioUrl && (
         <video
-          key={`video-${effectiveSong.id}`}
+          key={`video-${audioSong.id}`}
           ref={videoRef}
-          src={effectiveSong.videoBackground}
+          src={audioSong.videoBackground}
           className="hidden"
           muted={false}
           playsInline
@@ -638,7 +697,7 @@ export function PtmGameScreen({
       <div className="absolute inset-0 overflow-hidden">
         {/* Background */}
         <GameBackground
-          effectiveSong={effectiveSong}
+          effectiveSong={audioSong}
           showBackgroundVideo={showBackgroundVideo}
           useAnimatedBackground={useAnimatedBackground}
           isYouTube={isYouTube}

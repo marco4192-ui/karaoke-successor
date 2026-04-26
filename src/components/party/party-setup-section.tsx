@@ -3,7 +3,7 @@
 import React from 'react';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
-import { getAllSongs, filterSongs } from '@/lib/game/song-library';
+import { getAllSongs, filterSongs, ensureSongUrls } from '@/lib/game/song-library';
 import { UnifiedPartySetup, SongVotingModal, GameSetupResult, PARTY_GAME_CONFIGS } from '@/components/game/unified-party-setup';
 import { PassTheMicSegment } from '@/components/game/pass-the-mic-screen';
 import type { MedleyPlayer as MedleyPlayerType, MedleySettings as MedleySettingsType } from '@/components/game/medley/medley-types';
@@ -101,6 +101,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               }
               party.setPassTheMicSegments(segments);
               party.setPassTheMicSong(song);
+              party.setIsSongPlaying(false);
               setScreen('pass-the-mic-game');
             } else if (mode === 'companion-singalong') {
               // Add first companion player as the active singer
@@ -125,7 +126,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
             party.setLibrarySelectedSong(null);
             setScreen('library');
           }}
-          onStartGame={(result) => {
+          onStartGame={async (result) => {
             party.setUnifiedSetupResult(result);
             party.setLibrarySelectedSong(null); // clear any pre-selected library song
             const mode = party.selectedGameMode;
@@ -278,12 +279,12 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 // instead of playing a single random song.
                 // Construct proper MedleySettings from PTM context.
                 if (result.songSelection === 'medley') {
-                  const snippetDuration = result.settings.segmentDuration || 30;
+                  const snippetDuration = 30; // fixed 30s per snippet
                   const snippetCount = Math.max(3, Math.min(result.players.length * 2, 10));
                   const snippetDurationMs = snippetDuration * 1000;
                   const shuffled = [...filteredSongs].sort(() => Math.random() - 0.5);
                   const beatDurationMs = (bpm: number) => 15000 / bpm;
-                  const medleySongList = shuffled.slice(0, snippetCount).map(song => {
+                  const medleySnippets = shuffled.slice(0, snippetCount).map(song => {
                     if (song.medleyStartBeat !== undefined && song.medleyEndBeat !== undefined && song.bpm > 0) {
                       const bd = beatDurationMs(song.bpm);
                       const startTime = song.medleyStartBeat * bd;
@@ -301,24 +302,50 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                     const startTime = Math.random() * maxStartTime;
                     return { song, startTime, endTime: startTime + snippetDurationMs, duration: snippetDurationMs };
                   });
-                  // Use FFA mode so all players are scored independently (shared mic → sequential turns)
-                  const medleySettings: MedleySettingsType = {
-                    playMode: 'ffa',
-                    teamSize: 1 as const,
-                    snippetDuration,
-                    snippetCount,
-                    difficulty: result.difficulty,
-                    transitionTime: 3,
-                    // Preserve PTM filter settings
-                    genre: result.settings.filterGenre || undefined,
-                    language: result.settings.filterLanguage || undefined,
+
+                  // Pre-restore URLs for all snippet songs (needed for Tauri file:// paths)
+                  const preparedSnippets = await Promise.all(
+                    medleySnippets.map(async snippet => {
+                      try {
+                        const prepared = await ensureSongUrls(snippet.song);
+                        return { ...snippet, song: prepared };
+                      } catch {
+                        return snippet;
+                      }
+                    })
+                  );
+
+                  // Store snippets in party store
+                  party.setPtmMedleySnippets(preparedSnippets);
+
+                  // Use first snippet's song as the initial song (with trimmed start/end)
+                  const firstSnippet = preparedSnippets[0];
+                  const firstSong: Song = {
+                    ...firstSnippet.song,
+                    start: firstSnippet.startTime,
+                    end: firstSnippet.endTime,
                   };
-                  party.setMedleyPlayers(toMedleyPlayers(result.players));
-                  party.setMedleySongs(medleySongList);
-                  party.setMedleySettings(medleySettings);
-                  // Store PTM context so medley end can navigate back to PTM settings
-                  party.setUnifiedSetupResult(result);
-                  setScreen('medley-game');
+
+                  // Generate segments: one per snippet
+                  const segments: PassTheMicSegment[] = preparedSnippets.map(snippet => ({
+                    startTime: snippet.startTime,
+                    endTime: snippet.endTime,
+                    playerId: null,
+                  }));
+
+                  const ptmPlayers = toPassTheMicPlayers(result.players);
+                  party.setPassTheMicPlayers(ptmPlayers);
+                  party.setPassTheMicSegments(segments);
+                  party.setPassTheMicSong(firstSong);
+                  party.setPassTheMicSettings({
+                    ...result.settings,
+                    segmentDuration: snippetDuration,
+                    sharedMicId: result.settings.sharedMicId || null,
+                    sharedMicName: result.settings.sharedMicName || null,
+                  });
+                  // Prevent React #185
+                  party.setIsSongPlaying(false);
+                  setScreen('pass-the-mic-game');
                   break;
                 }
 
@@ -340,6 +367,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   party.setPassTheMicSegments(generatePassTheMicSegments(randomSong, segmentDuration));
                   party.setPassTheMicSong(randomSong);
                   party.setPassTheMicSettings(settingsWithMic);
+                  party.setIsSongPlaying(false);
                   // Use dedicated PTM game screen (not main game screen)
                   setScreen('pass-the-mic-game');
                 }
@@ -512,6 +540,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 sharedMicId: party.unifiedSetupResult?.settings?.sharedMicId || null,
                 sharedMicName: party.unifiedSetupResult?.settings?.sharedMicName || null,
               });
+              party.setIsSongPlaying(false);
               // Use dedicated PTM game screen
               setScreen('pass-the-mic-game');
             } else if (party.selectedGameMode === 'companion-singalong') {

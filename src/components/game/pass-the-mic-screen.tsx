@@ -111,26 +111,6 @@ export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTh
         <CardHeader><CardTitle>Game Settings</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="text-sm text-white/60 mb-2 block">Segment Duration: {settings.segmentDuration}s</label>
-            <input type="range" min={15} max={60} step={5} value={settings.segmentDuration}
-              onChange={(e) => setSettings(prev => ({ ...prev, segmentDuration: Number(e.target.value) }))}
-              className="w-full" />
-            <div className="flex justify-between text-xs text-white/40 mt-1">
-              <span>15s (Fast switches)</span><span>60s (Long segments)</span>
-            </div>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <label className="font-medium">Random Switches</label>
-              <p className="text-sm text-white/60">Randomly switch players mid-segment</p>
-            </div>
-            <Button variant={settings.randomSwitches ? 'default' : 'outline'}
-              onClick={() => setSettings(prev => ({ ...prev, randomSwitches: !prev.randomSwitches }))}
-              className={settings.randomSwitches ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}>
-              {settings.randomSwitches ? '✓ On' : 'Off'}
-            </Button>
-          </div>
-          <div>
             <label className="text-sm text-white/60 mb-2 block">Difficulty</label>
             <div className="flex gap-2">
               {(['easy', 'medium', 'hard'] as Difficulty[]).map(diff => (
@@ -181,7 +161,7 @@ export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTh
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-bold text-lg">Ready to Play!</h3>
-              <p className="text-sm text-white/60">{selectedPlayers.length} players • {settings.segmentDuration}s segments</p>
+              <p className="text-sm text-white/60">{selectedPlayers.length} players</p>
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-cyan-400">{selectedPlayers.length}</div>

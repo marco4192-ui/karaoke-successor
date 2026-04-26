@@ -11,16 +11,12 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     extendedDescription: [
       '🎵 Der Song wird in Segmente unterteilt',
       '🔄 Nach jedem Segment wechselt der Sänger',
-      '⚡ Mit Random Switches kann jederzeit gewechselt werden',
       '🏆 Der Team-Score wird am Ende zusammengezählt',
     ],
     color: 'from-cyan-500 to-blue-500',
     minPlayers: 2,
     maxPlayers: 8,
-    settings: [
-      { key: 'segmentDuration', label: 'Segment Duration', description: 'Duration of each singing segment', type: 'slider', min: 15, max: 60, step: 5, defaultValue: 30, unit: 's' },
-      { key: 'randomSwitches', label: 'Random Switches', description: 'Randomly switch players mid-segment', type: 'toggle', defaultValue: true },
-    ],
+    settings: [],
     songSelectionOptions: ['library', 'random', 'vote', 'medley'],
     supportsCompanionApp: false,
     forceInputMode: 'microphone',

@@ -53,6 +53,9 @@ interface PartyStore {
   // Series history: accumulated scores across multiple Pass-the-Mic songs
   passTheMicSeriesHistory: PassTheMicRoundResult[];
   setPassTheMicSeriesHistory: (history: PassTheMicRoundResult[]) => void;
+  // PTM Medley snippets (multiple songs for medley mode)
+  ptmMedleySnippets: Array<{ song: Song; startTime: number; endTime: number; duration: number }>;
+  setPtmMedleySnippets: (snippets: Array<{ song: Song; startTime: number; endTime: number; duration: number }>) => void;
 
   // Companion Sing-A-Long
   companionPlayers: any[];
@@ -138,6 +141,8 @@ export const usePartyStore = create<PartyStore>((set) => ({
   setPassTheMicSettings: (passTheMicSettings) => set({ passTheMicSettings }),
   passTheMicSeriesHistory: [] as PassTheMicRoundResult[],
   setPassTheMicSeriesHistory: (passTheMicSeriesHistory) => set({ passTheMicSeriesHistory }),
+  ptmMedleySnippets: [] as Array<{ song: Song; startTime: number; endTime: number; duration: number }>,
+  setPtmMedleySnippets: (ptmMedleySnippets) => set({ ptmMedleySnippets }),
 
   // Companion Sing-A-Long
   companionPlayers: [],
@@ -201,6 +206,7 @@ export const usePartyStore = create<PartyStore>((set) => ({
     passTheMicSegments: [],
     passTheMicSettings: null,
     passTheMicSeriesHistory: [] as PassTheMicRoundResult[],
+    ptmMedleySnippets: [],
     companionPlayers: [],
     companionSong: null,
     companionSettings: null,
