@@ -85,11 +85,23 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
             setSong(song);
 
             if (mode === 'pass-the-mic') {
-              // Add first pass-the-mic player as the active singer
+              // Generate segments and use dedicated PTM screen
               const ptmPlayers = party.passTheMicPlayers;
-              if (ptmPlayers.length > 0) {
-                addPlayer({ id: ptmPlayers[0].id, name: ptmPlayers[0].name, color: ptmPlayers[0].color, avatar: ptmPlayers[0].avatar });
+              const playerCount = ptmPlayers.length || 2;
+              const autoSegmentDuration = Math.min(45, Math.ceil(song.duration / (playerCount * 1000)));
+              const segmentDuration = party.passTheMicSettings?.segmentDuration || autoSegmentDuration;
+              const segments: import('@/components/game/pass-the-mic-screen').PassTheMicSegment[] = [];
+              const segCount = Math.ceil(song.duration / (segmentDuration * 1000));
+              for (let i = 0; i < segCount; i++) {
+                segments.push({
+                  startTime: i * segmentDuration * 1000,
+                  endTime: Math.min((i + 1) * segmentDuration * 1000, song.duration),
+                  playerId: null,
+                });
               }
+              party.setPassTheMicSegments(segments);
+              party.setPassTheMicSong(song);
+              setScreen('pass-the-mic-game');
             } else if (mode === 'companion-singalong') {
               // Add first companion player as the active singer
               const compPlayers = party.companionPlayers;
