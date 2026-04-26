@@ -238,14 +238,17 @@ export default function KaraokeSuccessor() {
     if (party.currentTournamentMatch && party.tournamentBracket) {
       handleTournamentGameEnd();
     } else if (gameState.gameMode === 'pass-the-mic' || gameState.gameMode === 'companion-singalong') {
-      // Pass the Mic / Companion: clean up party state and show results
+      // Pass the Mic / Companion: clean up party state and return to settings
+      // (NOT results — PTM has its own results in PassTheMicGameView;
+      //  the main game screen is only used for the first song of a series)
       if (gameState.gameMode === 'pass-the-mic') {
         party.setPassTheMicSong(null);
         party.setPassTheMicSegments([]);
       } else {
         party.setCompanionSong(null);
       }
-      setScreen('results');
+      resetGame();
+      setScreen('party-setup');
     } else if (gameState.gameMode === 'rate-my-song') {
       // Rate my Song: go to rating screen instead of results
       setScreen('rate-my-song-rating');
