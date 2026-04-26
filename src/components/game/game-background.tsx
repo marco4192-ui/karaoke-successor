@@ -53,6 +53,8 @@ export function GameBackground({
   onYoutubeError,
 }: GameBackgroundProps) {
   const videoGap = effectiveSong?.videoGap || 0;
+  // Fallback: use videoUrl if videoBackground is not set
+  const effectiveVideoUrl = effectiveSong?.videoBackground || effectiveSong?.videoUrl;
 
   // YouTube video (visible + audio)
   if (showBackgroundVideo && isYouTube && youtubeVideoId) {
@@ -94,12 +96,12 @@ export function GameBackground({
   }
 
   // Local video file — separate audio (video muted, audio plays separately)
-  if (showBackgroundVideo && effectiveSong?.videoBackground && !effectiveSong?.hasEmbeddedAudio && !isYouTube) {
+  if (showBackgroundVideo && effectiveVideoUrl && !effectiveSong?.hasEmbeddedAudio && !isYouTube) {
     return (
       <video
         key={`video-bg-${effectiveSong?.id}`}
         ref={videoRef}
-        src={effectiveSong.videoBackground}
+        src={effectiveVideoUrl}
         className="absolute inset-0 w-full h-full object-cover"
         muted={true}
         playsInline
@@ -111,12 +113,12 @@ export function GameBackground({
   }
 
   // Video with embedded audio — visible AND plays audio
-  if (showBackgroundVideo && effectiveSong?.videoBackground && effectiveSong?.hasEmbeddedAudio && !isYouTube) {
+  if (showBackgroundVideo && effectiveVideoUrl && effectiveSong?.hasEmbeddedAudio && !isYouTube) {
     return (
       <video
         key={`video-embedded-${effectiveSong?.id}`}
         ref={videoRef}
-        src={effectiveSong.videoBackground}
+        src={effectiveVideoUrl}
         className="absolute inset-0 w-full h-full object-cover"
         muted={false}
         playsInline

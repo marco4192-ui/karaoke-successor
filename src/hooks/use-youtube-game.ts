@@ -7,6 +7,7 @@ interface UseYouTubeGameParams {
   effectiveSong: {
     youtubeUrl?: string;
     videoBackground?: string;
+    videoUrl?: string;
     audioUrl?: string;
   } | null;
   isPlaying: boolean;
@@ -43,14 +44,17 @@ export function useYouTubeGame({
   const [isAdPlaying, setIsAdPlaying] = useState(false);
   const [adCountdown, setAdCountdown] = useState(0);
 
-  // Extract YouTube ID from song URL or videoBackground (only if it's a YouTube URL)
+  // Extract YouTube ID from youtubeUrl, videoBackground, or videoUrl (fallback)
   const songYoutubeUrl = effectiveSong?.youtubeUrl;
   const videoBackground = effectiveSong?.videoBackground;
+  const videoUrl = effectiveSong?.videoUrl;
   const songYoutubeId = songYoutubeUrl
     ? extractYouTubeId(songYoutubeUrl)
     : (videoBackground && isYouTubeUrl(videoBackground)
         ? extractYouTubeId(videoBackground)
-        : null);
+        : (videoUrl && isYouTubeUrl(videoUrl)
+          ? extractYouTubeId(videoUrl)
+          : null));
 
   // Use custom YouTube ID if set, otherwise use song's YouTube ID
   const youtubeVideoId = customYoutubeId || songYoutubeId;
