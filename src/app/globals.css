@@ -361,3 +361,19 @@
 .animate-perfect-sparkle {
   animation: perfectSparkle 0.5s ease-in-out infinite;
 }
+
+/* Pass-the-Mic transition animations */
+@keyframes ptm-pulse {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}
+
+@keyframes ptm-avatar-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@keyframes ptm-crown-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}

@@ -628,7 +628,9 @@ export default function KaraokeSuccessor() {
               // Check game mode and navigate accordingly
               if (gameState.gameMode === 'pass-the-mic') {
                 // Generate segments for pass the mic
-                const segmentDuration = party.passTheMicSettings?.segmentDuration || 30;
+                const playerCount = party.passTheMicPlayers?.length || 2;
+                const autoSegmentDuration = Math.min(45, Math.ceil(song.duration / (playerCount * 1000)));
+                const segmentDuration = party.passTheMicSettings?.segmentDuration || autoSegmentDuration;
                 const segmentCount = Math.ceil(song.duration / (segmentDuration * 1000));
                 const segments: PassTheMicSegment[] = [];
                 for (let i = 0; i < segmentCount; i++) {
@@ -640,21 +642,8 @@ export default function KaraokeSuccessor() {
                 }
                 party.setPassTheMicSegments(segments);
                 party.setPassTheMicSong(song);
-
-                if (party.passTheMicSeriesHistory.length > 0) {
-                  // Series continuation: skip setup, go straight to game
-                  setScreen('pass-the-mic-game');
-                } else {
-                  // First song: go directly to game (skip unnecessary party-setup overlay)
-                  const ptmPlayers = party.passTheMicPlayers;
-                  resetGame();
-                  setPlayers([]);
-                  if (ptmPlayers.length > 0) {
-                    addPlayer({ id: ptmPlayers[0].id, name: ptmPlayers[0].name, color: ptmPlayers[0].color, avatar: ptmPlayers[0].avatar });
-                  }
-                  setSong(song); // After resetGame to avoid currentSong being cleared
-                  setScreen('game');
-                }
+                // Always use dedicated PTM game screen (both first song and series)
+                setScreen('pass-the-mic-game');
               } else if (gameState.gameMode === 'companion-singalong') {
                 party.setCompanionSong(song);
                 // Store the pre-selected song and return to party setup
@@ -714,7 +703,9 @@ export default function KaraokeSuccessor() {
 
             if (activeMode === 'pass-the-mic' && party.passTheMicPlayers?.length > 0) {
               // Generate segments for pass-the-mic and launch game
-              const segmentDuration = party.passTheMicSettings?.segmentDuration || 30;
+              const playerCount = party.passTheMicPlayers.length || 2;
+              const autoSegmentDuration = Math.min(45, Math.ceil(song.duration / (playerCount * 1000)));
+              const segmentDuration = party.passTheMicSettings?.segmentDuration || autoSegmentDuration;
               const segmentCount = Math.ceil(song.duration / (segmentDuration * 1000));
               const segments: PassTheMicSegment[] = [];
               for (let i = 0; i < segmentCount; i++) {

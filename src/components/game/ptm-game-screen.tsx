@@ -1,0 +1,859 @@
+'use client';
+
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Song, PLAYER_COLORS, LyricLine, Difficulty } from '@/types/game';
+import { useGameStore } from '@/lib/game/store';
+import { usePartyStore } from '@/lib/game/party-store';
+import { usePitchDetector } from '@/hooks/use-pitch-detector';
+import { useGameMedia } from '@/hooks/use-game-media';
+import { useSmoothedPitch } from '@/hooks/use-smoothed-pitch';
+import { useGameSettings } from '@/hooks/use-game-settings';
+import { useYouTubeGame } from '@/hooks/use-youtube-game';
+import { useMobileGameSync } from '@/hooks/use-mobile-game-sync';
+import { DIFFICULTY_SETTINGS } from '@/types/game';
+import { evaluateTick, calculateTickPoints, calculateScoringMetadata } from '@/lib/game/scoring';
+import { calculatePitchStats, PitchStats, NOTE_WINDOW, VISIBLE_TOP, VISIBLE_RANGE, getVisibleNotes } from '@/lib/game/note-utils';
+import type { PassTheMicRoundResult } from '@/lib/game/party-store';
+import { GameBackground } from '@/components/game/game-background';
+import { NoteHighway } from '@/components/game/note-highway';
+import { SinglePlayerLyrics } from '@/components/game/single-player-lyrics';
+import { GameCountdown } from '@/components/game/game-countdown';
+import { GameProgressBar } from '@/components/game/game-hud';
+import { TimeDisplay } from '@/components/game/game-hud';
+import { PtmTransitionOverlay } from '@/components/game/ptm-transition-overlay';
+import { PtmSongResults, PtmSeriesResults } from '@/components/game/ptm-song-results';
+
+// Re-export types from pass-the-mic-screen for backward compatibility
+export type { PassTheMicPlayer, PassTheMicSegment } from '@/components/game/pass-the-mic-screen';
+
+// ===================== TYPES =====================
+
+interface PtmPlayer {
+  id: string;
+  name: string;
+  avatar?: string;
+  color: string;
+  score: number;
+  notesHit: number;
+  notesMissed: number;
+  combo: number;
+  maxCombo: number;
+  isActive: boolean;
+  segmentsSung: number;
+  micId?: string;
+}
+
+interface PtmSegment {
+  startTime: number;
+  endTime: number;
+  playerId: string | null;
+}
+
+interface PtmSettings {
+  segmentDuration: number;
+  randomSwitches: boolean;
+  difficulty: Difficulty;
+  micId: string;
+  micName: string;
+  sharedMicId?: string | null;
+  sharedMicName?: string | null;
+}
+
+type GamePhase = 'intro' | 'countdown' | 'playing' | 'transitioning' | 'song-results' | 'series-results';
+
+const DEFAULT_SETTINGS: PtmSettings = {
+  segmentDuration: 30,
+  randomSwitches: true,
+  difficulty: 'medium',
+  micId: 'default',
+  micName: 'Standard',
+};
+
+// ===================== MAIN COMPONENT =====================
+
+interface PtmGameScreenProps {
+  players: PtmPlayer[];
+  song: Song;
+  segments: PtmSegment[];
+  settings: PtmSettings | null;
+  onUpdateGame: (players: PtmPlayer[], segments: PtmSegment[]) => void;
+  onEndGame: () => void;
+  onPause?: () => void;
+}
+
+export function PtmGameScreen({
+  players: initialPlayers,
+  song,
+  segments: initialSegments,
+  settings,
+  onUpdateGame,
+  onEndGame,
+  onPause,
+}: PtmGameScreenProps) {
+  const safeSettings: PtmSettings = settings ?? DEFAULT_SETTINGS;
+  const party = usePartyStore();
+  const { setGameMode } = useGameStore();
+
+  // ── Phase management ──
+  const [phase, setPhase] = useState<GamePhase>('intro');
+  const [countdown, setCountdown] = useState(3);
+
+  // ── Media: URL restoration, lyrics, media element refs ──
+  const {
+    effectiveSong,
+    mediaLoaded,
+    audioRef,
+    videoRef,
+    audioLoadedRef,
+    videoLoadedRef,
+  } = useGameMedia(song);
+
+  // ── Game settings (display preferences) ──
+  const {
+    showBackgroundVideo,
+    showPitchGuide,
+    useAnimatedBackground,
+    noteDisplayStyle,
+    noteShapeStyle,
+  } = useGameSettings();
+
+  // ── YouTube handling ──
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [youtubeTime, setYoutubeTime] = useState(0);
+
+  const {
+    youtubeVideoId,
+    isYouTube,
+    useYouTubeAudio,
+    isAdPlaying,
+    handleAdStart,
+    handleAdEnd,
+  } = useYouTubeGame({
+    effectiveSong,
+    isPlaying,
+    setIsPlaying,
+  });
+
+  // ── Song energy (for animated background) ──
+  const [songEnergy, setSongEnergy] = useState(0);
+
+  // ── Smoothed pitch ──
+  const { pitchResult, initialize, start, stop, switchMicrophone } = usePitchDetector();
+  const smoothedPitch = useSmoothedPitch(pitchResult?.note ?? null, 0.3, 0.25);
+
+  // ── Player state (local, mutable for performance) ──
+  const playersRef = useRef<PtmPlayer[]>(
+    initialPlayers.map(p => ({ ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0 }))
+  );
+  const [, rerender] = useState(0);
+  const forceRender = useCallback(() => rerender(n => n + 1), []);
+
+  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
+  const [currentSegmentIndex, setCurrentSegmentIndex] = useState(0);
+  const currentPlayer = playersRef.current[currentPlayerIndex];
+  const currentSegment = initialSegments[currentSegmentIndex];
+
+  // ── Transition state ──
+  const [transitionVisible, setTransitionVisible] = useState(false);
+  const [transitionNextPlayer, setTransitionNextPlayer] = useState<{
+    id: string; name: string; avatar?: string; color: string;
+  } | null>(null);
+
+  // ── Mobile game sync ──
+  useMobileGameSync(effectiveSong, isPlaying && phase === 'playing', 'pass-the-mic');
+
+  // ── Song playing status for Escape handler ──
+  useEffect(() => {
+    party.setIsSongPlaying(isPlaying && phase === 'playing');
+  }, [isPlaying, phase, party]);
+
+  // ── Pause / Resume sync ──
+  useEffect(() => {
+    if (party.pauseDialogAction === 'song-pause') {
+      if (audioRef.current && !audioRef.current.paused) audioRef.current.pause();
+    } else if (party.pauseDialogAction === null && isPlaying && phase === 'playing') {
+      if (audioRef.current && audioRef.current.paused) audioRef.current.play().catch(() => {});
+    }
+  }, [party.pauseDialogAction, isPlaying, phase, audioRef]);
+
+  // ── Assign segments to players (round-robin) ──
+  useEffect(() => {
+    const assigned = initialSegments.map((seg, i) => ({
+      ...seg,
+      playerId: playersRef.current[i % playersRef.current.length].id,
+    }));
+    onUpdateGame(playersRef.current, assigned);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Pre-compute note data for highway ──
+  const { allNotes, sortedLines, pitchStats, scoringMeta, beatDuration } = useMemo(() => {
+    if (!effectiveSong?.lyrics?.length) {
+      return { allNotes: [], sortedLines: [], pitchStats: { minPitch: 40, maxPitch: 80, pitchRange: 40 } as PitchStats, scoringMeta: null, beatDuration: 500 };
+    }
+
+    const notes: any[] = [];
+    const lines = [...effectiveSong.lyrics].sort((a, b) => a.startTime - b.startTime);
+
+    lines.forEach((line, lineIndex) => {
+      line.notes.forEach(note => {
+        notes.push({ ...note, lineIndex, line });
+      });
+    });
+    notes.sort((a, b) => a.startTime - b.startTime);
+
+    const bd = effectiveSong.bpm ? 15000 / effectiveSong.bpm : 500;
+    const ps = calculatePitchStats(notes);
+    const meta = calculateScoringMetadata(notes, bd);
+
+    return { allNotes: notes, sortedLines: lines, pitchStats: ps, scoringMeta: meta, beatDuration: bd };
+  }, [effectiveSong]);
+
+  const visibleNotes = useMemo(
+    () => getVisibleNotes(allNotes, currentTime, NOTE_WINDOW),
+    [currentTime, allNotes]
+  );
+
+  // ── Scoring ──
+  const lastEvalTimeRef = useRef(0);
+
+  const scoreCurrentPlayer = useCallback(() => {
+    if (!pitchResult?.frequency || pitchResult.note === null) return;
+    const difficulty = safeSettings.difficulty;
+    const diffSettings = DIFFICULTY_SETTINGS[difficulty];
+    if (pitchResult.volume < diffSettings.volumeThreshold) return;
+
+    if (!effectiveSong?.lyrics) return;
+
+    for (const line of effectiveSong.lyrics) {
+      for (const note of line.notes) {
+        const noteEnd = note.startTime + note.duration;
+        if (currentTime >= note.startTime && currentTime <= noteEnd) {
+          if (currentTime - lastEvalTimeRef.current < 250) return;
+          lastEvalTimeRef.current = currentTime;
+
+          const result = evaluateTick(pitchResult.note, note.pitch, difficulty);
+          const p = playersRef.current[currentPlayerIndex];
+          const idx = currentPlayerIndex;
+
+          if (result.isHit) {
+            const meta = scoringMeta;
+            const tickPts = meta
+              ? calculateTickPoints(result.accuracy, note.isGolden, meta.pointsPerTick, difficulty)
+              : result.accuracy * 10;
+            const finalPoints = Math.max(1, Math.round(tickPts));
+
+            p.score += finalPoints;
+            p.notesHit++;
+            p.combo++;
+            if (p.combo > p.maxCombo) p.maxCombo = p.combo;
+          } else {
+            p.combo = 0;
+            p.notesMissed++;
+          }
+
+          playersRef.current[idx] = { ...p };
+          forceRender();
+          return;
+        }
+      }
+    }
+  }, [currentTime, pitchResult, effectiveSong, safeSettings.difficulty, currentPlayerIndex, scoringMeta, forceRender]);
+
+  // ── Game loop: score during playing ──
+  useEffect(() => {
+    if (phase !== 'playing' || !isPlaying) return;
+    const interval = setInterval(scoreCurrentPlayer, 80);
+    return () => clearInterval(interval);
+  }, [phase, isPlaying, scoreCurrentPlayer]);
+
+  // ── Audio time tracking ──
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleTimeUpdate = () => setCurrentTime(audio.currentTime * 1000);
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+
+    // Also handle YouTube time
+    if (isYouTube && youtubeTime > 0) {
+      setCurrentTime(youtubeTime * 1000);
+    }
+
+    return () => audio.removeEventListener('timeupdate', handleTimeUpdate);
+  }, [audioRef, isYouTube, youtubeTime]);
+
+  // ── Song energy tracking ──
+  useEffect(() => {
+    if (!isPlaying || phase !== 'playing') { setSongEnergy(0); return; }
+    const interval = setInterval(() => {
+      // Simple energy approximation based on note density
+      const nearbyNotes = allNotes.filter(n =>
+        Math.abs(n.startTime - currentTime) < 2000
+      ).length;
+      setSongEnergy(Math.min(1, nearbyNotes / 5));
+    }, 200);
+    return () => clearInterval(interval);
+  }, [isPlaying, phase, currentTime, allNotes]);
+
+  // ── Display duration ──
+  const displayDuration = useMemo(() => {
+    if (!effectiveSong) return 0;
+    if (effectiveSong.end) return effectiveSong.end;
+    return effectiveSong.duration;
+  }, [effectiveSong]);
+
+  // ── Show transition when segment ends ──
+  const showTransition = useCallback((nextPlayerIdx: number) => {
+    const nextPlayer = playersRef.current[nextPlayerIdx];
+    setTransitionNextPlayer({
+      id: nextPlayer.id,
+      name: nextPlayer.name,
+      avatar: nextPlayer.avatar,
+      color: nextPlayer.color,
+    });
+    setPhase('transitioning');
+    setTransitionVisible(true);
+  }, []);
+
+  const completeTransition = useCallback(() => {
+    setTransitionVisible(false);
+    setPhase('playing');
+  }, []);
+
+  // ── Segment switching ──
+  useEffect(() => {
+    if (phase !== 'playing' || !isPlaying || !currentSegment) return;
+    if (currentTime >= currentSegment.endTime) {
+      if (currentSegmentIndex < initialSegments.length - 1) {
+        const nextSegIdx = currentSegmentIndex + 1;
+        const nextPlayerIdx = (currentPlayerIndex + 1) % playersRef.current.length;
+
+        // Count segment as sung for the current player
+        playersRef.current[currentPlayerIndex].segmentsSung++;
+
+        setCurrentSegmentIndex(nextSegIdx);
+        setCurrentPlayerIndex(nextPlayerIdx);
+        showTransition(nextPlayerIdx);
+      } else {
+        // Song finished
+        setIsPlaying(false);
+        recordRound();
+        setPhase('song-results');
+      }
+    }
+  }, [phase, isPlaying, currentTime, currentSegment, currentSegmentIndex, initialSegments.length, currentPlayerIndex, showTransition]);
+
+  // ── Random switch (rare mid-segment) ──
+  useEffect(() => {
+    if (phase !== 'playing' || !isPlaying || !safeSettings.randomSwitches) return;
+    const interval = setInterval(() => {
+      if (Math.random() < 0.003) {
+        const next = (currentPlayerIndex + 1 + Math.floor(Math.random() * (playersRef.current.length - 1))) % playersRef.current.length;
+        playersRef.current[currentPlayerIndex].segmentsSung++;
+        setCurrentPlayerIndex(next);
+        showTransition(next);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [phase, isPlaying, safeSettings.randomSwitches, currentPlayerIndex, showTransition]);
+
+  // ── Mic handoff ──
+  useEffect(() => {
+    if (phase !== 'playing' && phase !== 'transitioning') return;
+    const player = playersRef.current[currentPlayerIndex];
+    if (!player) return;
+    if (player.micId && player.micId !== 'default') {
+      switchMicrophone(player.micId).catch(() => {});
+    }
+  }, [currentPlayerIndex, phase, switchMicrophone]);
+
+  // ── Start game (countdown → playing) ──
+  const startGame = async () => {
+    setPhase('countdown');
+    setCountdown(3);
+
+    // Initialize pitch detection with shared mic
+    const micId = safeSettings.sharedMicId && safeSettings.sharedMicId !== 'default'
+      ? safeSettings.sharedMicId
+      : (safeSettings.micId && safeSettings.micId !== 'default' ? safeSettings.micId : undefined);
+
+    try {
+      await switchMicrophone(micId);
+    } catch { /* pitch may fail */ }
+
+    const interval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setPhase('playing');
+          setIsPlaying(true);
+          setCurrentTime(0);
+          if (audioRef.current) {
+            audioRef.current.currentTime = 0;
+            audioRef.current.play().catch(e => console.warn('[PTM] Audio play failed:', e));
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  // ── Helpers ──
+  const progress = effectiveSong?.duration > 0 ? (currentTime / effectiveSong.duration) * 100 : 0;
+  const segmentTimeLeft = currentSegment
+    ? Math.max(0, (currentSegment.endTime - currentTime) / 1000)
+    : 0;
+  const segmentProgress = currentSegment
+    ? ((currentTime - currentSegment.startTime) / (currentSegment.endTime - currentSegment.startTime)) * 100
+    : 0;
+
+  // ── Record round ──
+  const recordRound = useCallback(() => {
+    const round: PassTheMicRoundResult = {
+      songTitle: effectiveSong?.title || song.title,
+      songArtist: effectiveSong?.artist || song.artist,
+      playedAt: Date.now(),
+      playerScores: {},
+    };
+    for (const p of playersRef.current) {
+      round.playerScores[p.id] = {
+        score: p.score,
+        notesHit: p.notesHit,
+        notesMissed: p.notesMissed,
+        maxCombo: p.maxCombo,
+      };
+    }
+    party.setPassTheMicSeriesHistory([...party.passTheMicSeriesHistory, round]);
+  }, [effectiveSong, song, party]);
+
+  // ── Continue series: reset per-song scores, pick next song ──
+  const handleContinue = useCallback(() => {
+    const resetPlayers = playersRef.current.map(p => ({
+      ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, segmentsSung: 0,
+    }));
+    party.setPassTheMicPlayers(resetPlayers);
+    party.setPassTheMicSong(null);
+    party.setPassTheMicSegments([]);
+    // Set game mode so library knows we're in PTM
+    setGameMode('pass-the-mic');
+    setScreen('library');
+  }, [party, setGameMode]);
+
+  // ── End series ──
+  const handleEndSeries = useCallback(() => {
+    setPhase('series-results');
+  }, []);
+
+  // ── End series completely: clean up ──
+  const handleEndSeriesComplete = useCallback(() => {
+    party.setPassTheMicPlayers([]);
+    party.setPassTheMicSong(null);
+    party.setPassTheMicSegments([]);
+    party.setPassTheMicSettings(null);
+    party.setPassTheMicSeriesHistory([]);
+    party.setIsSongPlaying(false);
+    resetGame();
+    setScreen('party-setup');
+  }, [party]);
+
+  // ── Continue with same players (after winner ceremony) ──
+  const handleContinueWithPlayers = useCallback(() => {
+    // Reset series history but keep players
+    party.setPassTheMicSeriesHistory([]);
+    party.setPassTheMicSong(null);
+    party.setPassTheMicSegments([]);
+    setGameMode('pass-the-mic');
+    setScreen('library');
+  }, [party, setGameMode]);
+
+  // ── Helper to set screen ──
+  const { resetGame, setScreen } = useGameStore();
+
+  // ── Cleanup on unmount ──
+  useEffect(() => {
+    return () => { stop(); };
+  }, [stop]);
+
+  // ── Get current lyrics line ──
+  const getCurrentLyrics = (): LyricLine | null => {
+    if (!effectiveSong?.lyrics || effectiveSong.lyrics.length === 0) return null;
+    return effectiveSong.lyrics.find((line, i) => {
+      const next = effectiveSong.lyrics[i + 1];
+      return currentTime >= line.startTime && (!next || currentTime < next.startTime);
+    }) || null;
+  };
+
+  // ===================== RENDER =====================
+
+  // Guard: no song
+  if (!effectiveSong) {
+    return (
+      <div className="max-w-4xl mx-auto text-center py-20">
+        <p className="text-white/60 mb-4">No song loaded</p>
+        <Button onClick={onEndGame}>Back</Button>
+      </div>
+    );
+  }
+
+  // ===================== INTRO PHASE =====================
+  if (phase === 'intro') {
+    return (
+      <div className="max-w-6xl mx-auto">
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+          <div className="text-5xl mb-6">🎤</div>
+          <h2 className="text-2xl font-bold mb-2">Pass the Mic</h2>
+          <p className="text-white/60 mb-8">{effectiveSong.title} — {effectiveSong.artist}</p>
+
+          <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-xl max-w-md w-full mb-6 p-8 text-center">
+            <div className="text-sm text-white/60 mb-2">STARTSPIELER</div>
+            <div className="flex items-center justify-center gap-4 mb-4">
+              {currentPlayer?.avatar ? (
+                <img src={currentPlayer.avatar} alt={currentPlayer.name}
+                  className="w-20 h-20 rounded-full object-cover border-4 border-cyan-500" />
+              ) : (
+                <div className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold border-4 border-cyan-500 text-white"
+                  style={{ backgroundColor: currentPlayer?.color }}>
+                  {currentPlayer?.name?.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <span className="text-3xl font-bold">{currentPlayer?.name}</span>
+            </div>
+            <div className="text-sm text-white/40">
+              {playersRef.current.length} Spieler - {safeSettings.segmentDuration}s Segmente
+              {safeSettings.sharedMicName && (
+                <span> - 🎤 {safeSettings.sharedMicName}</span>
+              )}
+              {party.passTheMicSeriesHistory.length > 0 && (
+                <span> - Runde {party.passTheMicSeriesHistory.length + 1}</span>
+              )}
+            </div>
+          </div>
+
+          {!mediaLoaded && (
+            <div className="mb-4 text-center">
+              <div className="animate-spin inline-block w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full" />
+              <p className="text-white/40 text-sm mt-2">Lied wird geladen...</p>
+            </div>
+          )}
+          <Button onClick={startGame} disabled={!mediaLoaded}
+            className="px-12 py-4 text-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 disabled:opacity-50">
+            🎤 Singen starten!
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // ===================== SONG RESULTS PHASE =====================
+  if (phase === 'song-results') {
+    return (
+      <PtmSongResults
+        songTitle={effectiveSong.title}
+        songArtist={effectiveSong.artist}
+        playerScores={playersRef.current.map(p => ({
+          id: p.id,
+          name: p.name,
+          avatar: p.avatar,
+          color: p.color,
+          score: p.score,
+          notesHit: p.notesHit,
+          notesMissed: p.notesMissed,
+          combo: p.combo,
+          maxCombo: p.maxCombo,
+          segmentsSung: p.segmentsSung,
+        }))}
+        seriesHistory={party.passTheMicSeriesHistory}
+        roundNumber={party.passTheMicSeriesHistory.length + 1}
+        onNextSong={handleContinue}
+        onEndSeries={handleEndSeries}
+      />
+    );
+  }
+
+  // ===================== SERIES RESULTS PHASE =====================
+  if (phase === 'series-results') {
+    return (
+      <PtmSeriesResults
+        seriesHistory={party.passTheMicSeriesHistory}
+        players={playersRef.current.map(p => ({
+          id: p.id,
+          name: p.name,
+          avatar: p.avatar,
+          color: p.color,
+        }))}
+        onContinue={handleContinueWithPlayers}
+        onBackToSetup={handleEndSeriesComplete}
+      />
+    );
+  }
+
+  // ===================== FULLSCREEN GAMEPLAY =====================
+  return (
+    <div className="fixed inset-0 z-40 flex flex-col bg-black">
+      {/* Audio Element */}
+      {effectiveSong?.audioUrl && (
+        <audio
+          key={effectiveSong.id}
+          ref={audioRef}
+          src={effectiveSong.audioUrl}
+          className="hidden"
+          onEnded={() => {
+            if (phase === 'playing' || phase === 'transitioning') {
+              setIsPlaying(false);
+              recordRound();
+              setPhase('song-results');
+            }
+          }}
+          preload="auto"
+        />
+      )}
+
+      {/* Hidden Video Element for embedded audio */}
+      {effectiveSong?.hasEmbeddedAudio && effectiveSong?.videoBackground && !showBackgroundVideo && !isYouTube && !effectiveSong?.audioUrl && (
+        <video
+          key={`video-${effectiveSong.id}`}
+          ref={videoRef}
+          src={effectiveSong.videoBackground}
+          className="hidden"
+          muted={false}
+          playsInline
+          onEnded={() => {
+            if (phase === 'playing' || phase === 'transitioning') {
+              setIsPlaying(false);
+              recordRound();
+              setPhase('song-results');
+            }
+          }}
+          preload="auto"
+        />
+      )}
+
+      {/* Game Area - Full Screen */}
+      <div className="absolute inset-0 overflow-hidden">
+        {/* Background */}
+        <GameBackground
+          effectiveSong={effectiveSong}
+          showBackgroundVideo={showBackgroundVideo}
+          useAnimatedBackground={useAnimatedBackground}
+          isYouTube={isYouTube}
+          youtubeVideoId={youtubeVideoId}
+          useYouTubeAudio={useYouTubeAudio}
+          isPlaying={isPlaying}
+          isAdPlaying={isAdPlaying}
+          songEnergy={songEnergy}
+          volume={0.8}
+          videoRef={videoRef}
+          onYoutubeTimeUpdate={setYoutubeTime}
+          onAdStart={handleAdStart}
+          onAdEnd={handleAdEnd}
+          onVideoEnded={() => {
+            if (phase === 'playing' || phase === 'transitioning') {
+              setIsPlaying(false);
+              recordRound();
+              setPhase('song-results');
+            }
+          }}
+          onVideoCanPlay={() => { videoLoadedRef.current = true; }}
+          onYoutubeError={() => {}}
+        />
+
+        {/* Dark Overlay for visibility */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50 z-5" />
+
+        {/* Countdown */}
+        {phase === 'countdown' && (
+          <GameCountdown countdown={countdown} />
+        )}
+
+        {/* Note Highway — single lane with current player color */}
+        {(phase === 'playing' || phase === 'transitioning') && allNotes.length > 0 && (
+          <NoteHighway
+            visibleNotes={visibleNotes}
+            currentTime={currentTime}
+            pitchStats={pitchStats}
+            detectedPitch={smoothedPitch}
+            noteShapeStyle={noteShapeStyle}
+            noteDisplayStyle={noteDisplayStyle as any}
+            notePerformance={undefined}
+            singLinePosition={75}
+            noteWindow={NOTE_WINDOW}
+            playerColor={currentPlayer?.color || PLAYER_COLORS[0]}
+            showPlayerLabel={false}
+            visibleTop={VISIBLE_TOP}
+            visibleRange={VISIBLE_RANGE}
+          />
+        )}
+
+        {/* Lyrics Display */}
+        {(phase === 'playing' || phase === 'transitioning') && sortedLines.length > 0 && (
+          <SinglePlayerLyrics
+            sortedLines={sortedLines}
+            currentTime={currentTime}
+            playerColor={currentPlayer?.color || PLAYER_COLORS[0]}
+            noteDisplayStyle={noteDisplayStyle as any}
+            notePerformance={undefined}
+            gameMode="pass-the-mic"
+          />
+        )}
+      </div>
+
+      {/* ═══════ PTM HUD OVERLAYS ═══════ */}
+
+      {/* Header: Pause + Mode Badge + Segment Info */}
+      {phase === 'playing' && (
+        <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2 bg-gradient-to-b from-black/70 to-transparent">
+          <Button
+            variant="ghost"
+            onClick={() => onPause?.()}
+            className="text-white/80 hover:text-white hover:bg-white/10"
+          >
+            ⏸ Pause
+          </Button>
+
+          <div className="flex items-center gap-2">
+            <Badge className="bg-cyan-500/20 text-cyan-400 text-lg px-3 py-1">
+              🎤 PASS THE MIC
+            </Badge>
+            <Badge className="bg-purple-500/20 text-purple-400">
+              Segment {currentSegmentIndex + 1}/{initialSegments.length}
+            </Badge>
+          </div>
+
+          {/* Current player score */}
+          <div className="text-right">
+            <div className="text-2xl font-bold text-cyan-400">
+              {currentPlayer?.score.toLocaleString()}
+            </div>
+            {currentPlayer && currentPlayer.combo > 0 && (
+              <div className="text-xs text-amber-400">🔥 {currentPlayer.combo}x</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Current Player Bar (below header) */}
+      {(phase === 'playing' || phase === 'transitioning') && (
+        <div className="absolute top-16 left-4 right-4 z-20">
+          <div className="flex items-center gap-3 bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/10">
+            {currentPlayer?.avatar ? (
+              <img
+                src={currentPlayer.avatar}
+                alt={currentPlayer.name}
+                className="w-10 h-10 rounded-full object-cover border-2"
+                style={{ borderColor: currentPlayer.color }}
+              />
+            ) : (
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold border-2 text-sm"
+                style={{ backgroundColor: currentPlayer?.color, borderColor: currentPlayer?.color }}
+              >
+                {currentPlayer?.name?.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-white/50">JETZT SINGT</div>
+              <div className="text-lg font-bold truncate" style={{ color: currentPlayer?.color }}>
+                {currentPlayer?.name}
+              </div>
+            </div>
+            {/* Segment Timer */}
+            <div className="text-right shrink-0">
+              <div className="text-xs text-white/40">Segment</div>
+              <div className="text-lg font-mono font-bold">
+                {Math.ceil(segmentTimeLeft)}s
+              </div>
+            </div>
+            {/* Segment Progress */}
+            <div className="w-16 h-2 bg-white/10 rounded-full overflow-hidden shrink-0">
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${Math.min(100, segmentProgress)}%`,
+                  backgroundColor: currentPlayer?.color || '#06b6d4',
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Player Queue (bottom-left) */}
+      {(phase === 'playing' || phase === 'transitioning') && (
+        <div className="absolute bottom-16 left-4 z-20">
+          <div className="flex flex-wrap gap-1.5">
+            {playersRef.current.map((player, index) => {
+              const isActive = index === currentPlayerIndex;
+              return (
+                <div
+                  key={player.id}
+                  className={`px-2.5 py-1.5 rounded-lg transition-all text-xs ${
+                    isActive
+                      ? 'bg-white/20 border-2 scale-110'
+                      : 'bg-black/40 border border-white/10'
+                  }`}
+                  style={isActive ? { borderColor: player.color } : {}}
+                >
+                  <div className="flex items-center gap-1.5">
+                    {player.avatar ? (
+                      <img src={player.avatar} alt={player.name} className="w-5 h-5 rounded-full object-cover" />
+                    ) : (
+                      <div
+                        className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                        style={{ backgroundColor: player.color }}
+                      >
+                        {player.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <span className={`font-medium ${isActive ? 'text-white' : 'text-white/60'}`}>
+                      {player.name}
+                    </span>
+                  </div>
+                  <div className={`text-[10px] ${isActive ? 'text-white/70' : 'text-white/30'}`}>
+                    {player.score.toLocaleString()} pts
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Progress Bar (bottom) */}
+      <GameProgressBar currentTime={currentTime} duration={displayDuration} />
+      <TimeDisplay currentTime={currentTime} duration={displayDuration} />
+
+      {/* End Song Early Button (bottom-right) */}
+      {phase === 'playing' && (
+        <div className="absolute bottom-16 right-4 z-20">
+          <Button
+            onClick={() => {
+              setIsPlaying(false);
+              recordRound();
+              setPhase('song-results');
+            }}
+            variant="ghost"
+            size="sm"
+            className="text-white/30 hover:text-white/60 text-xs"
+          >
+            Song beenden
+          </Button>
+        </div>
+      )}
+
+      {/* ═══════ TRANSITION OVERLAY ═══════ */}
+      <PtmTransitionOverlay
+        visible={transitionVisible}
+        nextPlayer={transitionNextPlayer}
+        segmentLabel={`Segment ${currentSegmentIndex + 2}/${initialSegments.length}`}
+        onComplete={completeTransition}
+        onSkip={completeTransition}
+      />
+    </div>
+  );
+}

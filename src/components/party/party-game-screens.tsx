@@ -7,7 +7,8 @@ import { getAllSongs } from '@/lib/game/song-library';
 import { recordMatchResult } from '@/lib/game/tournament';
 import { TournamentSetupScreen, TournamentBracketView } from '@/components/game/tournament-screen';
 import { BattleRoyaleSetupScreen, BattleRoyaleGameView } from '@/components/game/battle-royale-screen';
-import { PassTheMicSetupScreen, PassTheMicGameView } from '@/components/game/pass-the-mic-screen';
+import { PassTheMicSetupScreen } from '@/components/game/pass-the-mic-screen';
+import { PtmGameScreen } from '@/components/game/ptm-game-screen';
 import { CompanionSingAlongSetupScreen, CompanionGameView } from '@/components/game/companion-singalong-screen';
 import { MedleySetupScreen } from '@/components/game/medley';
 import { MedleyGameScreen } from '@/components/game/medley/medley-game-screen';
@@ -185,9 +186,9 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
         />
       )}
 
-      {/* Pass the Mic Game Screen */}
+      {/* Pass the Mic Game Screen — dedicated PTM screen with note highway */}
       {screen === 'pass-the-mic-game' && party.passTheMicSong && (
-        <PassTheMicGameView
+        <PtmGameScreen
           players={party.passTheMicPlayers}
           song={party.passTheMicSong}
           segments={party.passTheMicSegments}
@@ -197,19 +198,18 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             party.setPassTheMicSegments(segments);
           }}
           onEndGame={() => {
-            // Only clean up song/segments — keep players and series history
-            // so the "continue" flow can pick the next song.
             party.setPassTheMicSong(null);
             party.setPassTheMicSegments([]);
-            // If series is empty (user ended immediately), go to PTM settings
+            party.setIsSongPlaying(false);
             if (party.passTheMicSeriesHistory.length === 0) {
-              // Keep players and settings so user can restart quickly
               setScreen('party-setup');
             } else {
-              // Navigate to library for next song selection
               setGameMode('pass-the-mic');
               setScreen('library');
             }
+          }}
+          onPause={() => {
+            party.setPauseDialogAction('song-pause');
           }}
         />
       )}
