@@ -504,6 +504,16 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
             // For non-scoring modes (rate-my-song), we only log a warning — the game
             // still progresses via wall-clock timing and the audio element's onEnded event.
             mediaPlayWatchdogRef.current = setTimeout(() => {
+              // CRITICAL FIX: Do NOT abort if the game has been paused by the user
+              // (Escape key → pause dialog). The watchdog runs 10s after countdown
+              // ends; if the user pauses within that window, audio/video will be
+              // paused (paused === true) which looks like "not playing" to the
+              // watchdog. Without this guard, the game would be aborted.
+              if (wasPausedByStoreRef.current) {
+                console.log('[GameLoop] Watchdog: game is paused, skipping check');
+                return;
+              }
+
               const audioPlaying = audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2;
               const videoPlaying = videoRef.current && !videoRef.current.paused && videoRef.current.readyState >= 2;
               const youTubeActive = isYouTube;
