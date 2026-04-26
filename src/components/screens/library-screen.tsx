@@ -174,7 +174,21 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
     else { setCurrentFolder(folderBreadcrumb[index]); setFolderBreadcrumb(folderBreadcrumb.slice(0, index + 1)); }
   };
 
-  const handleSongClick = (song: Song) => {
+  const handleSongClick = async (song: Song) => {
+    // Pass-the-Mic: skip the song-start modal and go directly to the game.
+    // Players, mic, and settings are already configured in PTM setup.
+    if (isPartyMode && initialGameMode === 'pass-the-mic') {
+      try {
+        const songWithLyrics = await getSongByIdWithLyrics(song.id) || song;
+        const songWithUrls = await ensureSongUrls(songWithLyrics);
+        onSelectSong(songWithUrls);
+      } catch {
+        // Fallback: use song as-is (game view has its own URL restoration)
+        onSelectSong(song);
+      }
+      return;
+    }
+
     setSelectedSong(song);
     // Use the user's global default difficulty (from the store, which
     // reflects the Settings → Default Difficulty choice) instead of the
