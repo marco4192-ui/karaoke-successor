@@ -44,7 +44,7 @@ function generatePassTheMicSegments(song: Song, segmentDuration: number): PassTh
 // ===================== PARTY SETUP + SONG VOTING SECTION =====================
 // ===================== HELPER: Convert SelectedPlayer to Medley/PassTheMic/Companion player =====================
 function toMedleyPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]): MedleyPlayerType[] {
-  return players.map((p, i) => ({ ...p, team: null, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, snippetsSung: 0 }));
+  return players.map((p, i) => ({ ...p, team: null as number, inputType: (p.playerType === 'companion' ? 'mobile' : 'local') as 'local' | 'mobile', score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, snippetsSung: 0 }));
 }
 
 function toPassTheMicPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]) {
@@ -449,45 +449,52 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
           songs={party.votingSongs}
           players={party.unifiedSetupResult?.players || []}
           gameColor={PARTY_GAME_CONFIGS[party.selectedGameMode]?.color || 'from-cyan-500 to-blue-500'}
-          onVote={(songId) => {
+          onVote={async (songId) => {
             const selectedSong = party.votingSongs.find(s => s.id === songId);
-            if (selectedSong) {
-              // IMPORTANT: resetGame() clears currentSong, so setSong must come AFTER reset
-              if (party.selectedGameMode) {
-                setGameMode(party.selectedGameMode);
-                setDifficulty(party.unifiedSetupResult?.difficulty || 'medium');
-              }
+            if (!selectedSong) return;
 
-              // Handle game-specific setup
-              resetGame();
-              setPlayers([]);
-              setSong(selectedSong);
-              if (party.selectedGameMode === 'pass-the-mic') {
-                const segmentDuration = party.unifiedSetupResult?.settings?.segmentDuration || 30;
-                const ptmPlayers = toPassTheMicPlayers(party.unifiedSetupResult?.players || []);
-                party.setPassTheMicPlayers(ptmPlayers);
-                party.setPassTheMicSegments(generatePassTheMicSegments(selectedSong, segmentDuration));
-                party.setPassTheMicSong(selectedSong);
-                party.setPassTheMicSettings({
-                  ...party.unifiedSetupResult?.settings,
-                  sharedMicId: party.unifiedSetupResult?.settings?.sharedMicId || null,
-                  sharedMicName: party.unifiedSetupResult?.settings?.sharedMicName || null,
-                });
-                if (ptmPlayers.length > 0) {
-                  addPlayer({ id: ptmPlayers[0].id, name: ptmPlayers[0].name, color: ptmPlayers[0].color, avatar: ptmPlayers[0].avatar });
-                }
-                setScreen('game');
-              } else if (party.selectedGameMode === 'companion-singalong') {
-                const compPlayers = toCompanionPlayers(party.unifiedSetupResult?.players || []);
-                party.setCompanionPlayers(compPlayers);
-                party.setCompanionSong(selectedSong);
-                if (compPlayers.length > 0) {
-                  addPlayer({ id: compPlayers[0].id, name: compPlayers[0].name, color: compPlayers[0].color, avatar: compPlayers[0].avatar });
-                }
-                setScreen('game');
-              } else {
-                setScreen('game');
+            // Restore media URLs (audio/video) for the selected song before starting the game
+            let songWithUrls = selectedSong;
+            try {
+              const { ensureSongUrls } = await import('@/lib/game/song-library');
+              songWithUrls = await ensureSongUrls(selectedSong);
+            } catch { /* non-critical — game view has its own URL restoration */ }
+
+            // IMPORTANT: resetGame() clears currentSong AND gameMode,
+            // so setGameMode() and setSong() must come AFTER resetGame()
+            resetGame();
+            setPlayers([]);
+            if (party.selectedGameMode) {
+              setGameMode(party.selectedGameMode);
+              setDifficulty(party.unifiedSetupResult?.difficulty || 'medium');
+            }
+            setSong(songWithUrls);
+
+            if (party.selectedGameMode === 'pass-the-mic') {
+              const segmentDuration = party.unifiedSetupResult?.settings?.segmentDuration || 30;
+              const ptmPlayers = toPassTheMicPlayers(party.unifiedSetupResult?.players || []);
+              party.setPassTheMicPlayers(ptmPlayers);
+              party.setPassTheMicSegments(generatePassTheMicSegments(songWithUrls, segmentDuration));
+              party.setPassTheMicSong(songWithUrls);
+              party.setPassTheMicSettings({
+                ...party.unifiedSetupResult?.settings,
+                sharedMicId: party.unifiedSetupResult?.settings?.sharedMicId || null,
+                sharedMicName: party.unifiedSetupResult?.settings?.sharedMicName || null,
+              });
+              if (ptmPlayers.length > 0) {
+                addPlayer({ id: ptmPlayers[0].id, name: ptmPlayers[0].name, color: ptmPlayers[0].color, avatar: ptmPlayers[0].avatar });
               }
+              setScreen('game');
+            } else if (party.selectedGameMode === 'companion-singalong') {
+              const compPlayers = toCompanionPlayers(party.unifiedSetupResult?.players || []);
+              party.setCompanionPlayers(compPlayers);
+              party.setCompanionSong(songWithUrls);
+              if (compPlayers.length > 0) {
+                addPlayer({ id: compPlayers[0].id, name: compPlayers[0].name, color: compPlayers[0].color, avatar: compPlayers[0].avatar });
+              }
+              setScreen('game');
+            } else {
+              setScreen('game');
             }
           }}
           onClose={() => setScreen('party-setup')}

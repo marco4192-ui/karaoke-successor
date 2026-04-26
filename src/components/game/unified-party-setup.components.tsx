@@ -748,7 +748,34 @@ export function SongVotingModal({ songs, players, onVote, onClose, gameColor }: 
         const restored = await Promise.all(
           songs.map(async (s) => {
             if (s.coverImage) return s; // Already has cover
-            try { return await ensureSongUrls(s); } catch { return s; }
+            // Try ensureSongUrls first (handles Tauri relative paths)
+            try {
+              const withUrls = await ensureSongUrls(s);
+              if (withUrls.coverImage) return withUrls;
+            } catch { /* continue fallback */ }
+            // Fallback: check IndexedDB for stored media (browser mode)
+            try {
+              if (s.storedMedia) {
+                const { getSongMediaUrls } = await import('@/lib/db/media-db');
+                const urls = await getSongMediaUrls(s.id);
+                if (urls.coverUrl) return { ...s, coverImage: urls.coverUrl };
+              }
+            } catch { /* non-critical */ }
+            // Fallback: try constructing cover from coverFile and folderPath
+            if (s.coverFile && s.folderPath) {
+              try {
+                const { isTauri } = await import('@/lib/game/song-library');
+                if (isTauri()) {
+                  const { convertFileSrc } = await import('@tauri-apps/api/core');
+                  const path = s.baseFolder
+                    ? `${s.baseFolder}/${s.folderPath}/${s.coverFile}`
+                    : `${s.folderPath}/${s.coverFile}`;
+                  const url = convertFileSrc(path);
+                  return { ...s, coverImage: url };
+                }
+              } catch { /* non-critical */ }
+            }
+            return s;
           })
         );
         if (!cancelled) setEnrichedSongs(restored);

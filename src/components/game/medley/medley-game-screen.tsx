@@ -94,9 +94,10 @@ export function MedleyGameScreen({
   const lastEvalTimeRef = useRef<Record<string, number>>({});
 
   // ── Song playing status ──
+  const setIsSongPlaying = usePartyStore(s => s.setIsSongPlaying);
   useEffect(() => {
-    party.setIsSongPlaying(isPlaying && phase === 'playing');
-  }, [isPlaying, phase, party]);
+    setIsSongPlaying(isPlaying && phase === 'playing');
+  }, [isPlaying, phase, setIsSongPlaying]);
 
   // ── Pause / Resume sync ──
   useEffect(() => {
