@@ -259,10 +259,11 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               // ── Pass the Mic: song selection (random, medley, or library-picked) ──
               case 'pass-the-mic': {
                 // When songSelection is 'medley', delegate to the medley game flow
-                // instead of playing a single random song
+                // instead of playing a single random song.
+                // Construct proper MedleySettings from PTM context.
                 if (result.songSelection === 'medley') {
-                  const snippetCount = result.settings.snippetCount || 5;
-                  const snippetDuration = result.settings.snippetDuration || 30;
+                  const snippetDuration = result.settings.segmentDuration || 30;
+                  const snippetCount = Math.max(3, Math.min(result.players.length * 2, 10));
                   const snippetDurationMs = snippetDuration * 1000;
                   const shuffled = [...filteredSongs].sort(() => Math.random() - 0.5);
                   const beatDurationMs = (bpm: number) => 15000 / bpm;
@@ -284,9 +285,23 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                     const startTime = Math.random() * maxStartTime;
                     return { song, startTime, endTime: startTime + snippetDurationMs, duration: snippetDurationMs };
                   });
+                  // Use FFA mode so all players are scored independently (shared mic → sequential turns)
+                  const medleySettings: MedleySettingsType = {
+                    playMode: 'ffa',
+                    teamSize: 1 as const,
+                    snippetDuration,
+                    snippetCount,
+                    difficulty: result.difficulty,
+                    transitionTime: 3,
+                    // Preserve PTM filter settings
+                    genre: result.settings.filterGenre || undefined,
+                    language: result.settings.filterLanguage || undefined,
+                  };
                   party.setMedleyPlayers(toMedleyPlayers(result.players));
                   party.setMedleySongs(medleySongList);
-                  party.setMedleySettings(result.settings as unknown as MedleySettingsType);
+                  party.setMedleySettings(medleySettings);
+                  // Store PTM context so medley end can navigate back to PTM settings
+                  party.setUnifiedSetupResult(result);
                   setScreen('medley-game');
                   break;
                 }
