@@ -829,16 +829,17 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
       {!isLowPerf && <ScoreEventsDisplay events={scoreEvents} maxVisible={5} />}
       {!isLowPerf && <ParticleSystem particles={particles} />}
       
-      {/* Spectrogram Display — right edge, below pitch detection */}
+      {/* Spectrogram Display / Equalizer — left side, below pitch detection */}
       {showPitchGuide && isPlaying && !isLowPerf && (
         <SpectrogramDisplay
           audioElement={audioRef.current}
           isActive={isPlaying && !!audioRef.current}
           mode="bars"
-          position={{ x: 88, y: 35 }}
-          size={{ width: 200, height: 40 }}
+          position={{ x: 50, y: 50 }}
+          size={{ width: 256, height: 40 }}
           colorScheme="neon"
           numBars={24}
+          className="!absolute !left-4 !top-[17.5rem] !transform-none"
         />
       )}
       
