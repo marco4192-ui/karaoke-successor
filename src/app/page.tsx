@@ -627,16 +627,19 @@ export default function KaraokeSuccessor() {
               setSong(song);
               // Check game mode and navigate accordingly
               if (gameState.gameMode === 'pass-the-mic') {
-                // Generate segments for pass the mic
+                // Generate segments for pass the mic (auto 20-60s, equal per player)
                 const playerCount = party.passTheMicPlayers?.length || 2;
-                const autoSegmentDuration = Math.min(45, Math.ceil(song.duration / (playerCount * 1000)));
-                const segmentDuration = party.passTheMicSettings?.segmentDuration || autoSegmentDuration;
-                const segmentCount = Math.ceil(song.duration / (segmentDuration * 1000));
+                const segDurS = party.passTheMicSettings?.segmentDuration
+                  || Math.max(20, Math.min(60, Math.ceil(song.duration / (playerCount * 2 * 1000))));
+                const segDurMs = segDurS * 1000;
+                const rawCount = Math.ceil(song.duration / segDurMs);
+                const segCount = Math.max(playerCount, rawCount);
+                const adjustedDurMs = song.duration / segCount;
                 const segments: PassTheMicSegment[] = [];
-                for (let i = 0; i < segmentCount; i++) {
+                for (let i = 0; i < segCount; i++) {
                   segments.push({
-                    startTime: i * segmentDuration * 1000,
-                    endTime: Math.min((i + 1) * segmentDuration * 1000, song.duration),
+                    startTime: Math.round(i * adjustedDurMs),
+                    endTime: Math.round((i + 1) * adjustedDurMs),
                     playerId: null,
                   });
                 }
@@ -702,18 +705,16 @@ export default function KaraokeSuccessor() {
             const activeMode = gameState.gameMode;
 
             if (activeMode === 'pass-the-mic' && party.passTheMicPlayers?.length > 0) {
-              // Generate segments for pass-the-mic and launch game
               const playerCount = party.passTheMicPlayers.length || 2;
-              const autoSegmentDuration = Math.min(45, Math.ceil(song.duration / (playerCount * 1000)));
-              const segmentDuration = party.passTheMicSettings?.segmentDuration || autoSegmentDuration;
-              const segmentCount = Math.ceil(song.duration / (segmentDuration * 1000));
+              const segDurS = party.passTheMicSettings?.segmentDuration
+                || Math.max(20, Math.min(60, Math.ceil(song.duration / (playerCount * 2 * 1000))));
+              const segDurMs = segDurS * 1000;
+              const rawCount = Math.ceil(song.duration / segDurMs);
+              const segCount = Math.max(playerCount, rawCount);
+              const adjustedDurMs = song.duration / segCount;
               const segments: PassTheMicSegment[] = [];
-              for (let i = 0; i < segmentCount; i++) {
-                segments.push({
-                  startTime: i * segmentDuration * 1000,
-                  endTime: Math.min((i + 1) * segmentDuration * 1000, song.duration),
-                  playerId: null,
-                });
+              for (let i = 0; i < segCount; i++) {
+                segments.push({ startTime: Math.round(i * adjustedDurMs), endTime: Math.round((i + 1) * adjustedDurMs), playerId: null });
               }
               party.setPassTheMicSegments(segments);
               party.setPassTheMicSong(song);

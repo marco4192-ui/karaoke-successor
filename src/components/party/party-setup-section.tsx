@@ -28,13 +28,34 @@ function pickRandomSong(songs: Song[]): Song | null {
 }
 
 // ===================== HELPER: Generate pass-the-mic segments =====================
-function generatePassTheMicSegments(song: Song, segmentDuration: number): PassTheMicSegment[] {
-  const segmentCount = Math.ceil(song.duration / (segmentDuration * 1000));
+// Auto segment duration: 20-60s, at least 2 segments per player, equal segments per player
+function generatePassTheMicSegments(song: Song, playerCount: number, explicitDuration?: number): PassTheMicSegment[] {
+  const MIN_SONG_MS = 60_000; // Exclude songs shorter than 60s
+  if (song.duration < MIN_SONG_MS) return [];
+
+  const MIN_SEG_S = 20;
+  const MAX_SEG_S = 60;
+  const MIN_SEGS_PER_PLAYER = 2;
+
+  const durationMs = song.duration;
+  const rawAuto = Math.ceil(durationMs / (playerCount * MIN_SEGS_PER_PLAYER * 1000));
+  const clampedAuto = Math.max(MIN_SEG_S, Math.min(MAX_SEG_S, rawAuto));
+  const segDur = explicitDuration
+    ? Math.max(MIN_SEG_S, Math.min(MAX_SEG_S, explicitDuration))
+    : clampedAuto;
+  const segDurMs = segDur * 1000;
+
+  // Round up to ensure every player gets the same number of segments
+  const rawCount = Math.ceil(durationMs / segDurMs);
+  const segCount = Math.max(playerCount, rawCount);
+  // Adjust segment duration so all segments fit evenly
+  const adjustedDurMs = durationMs / segCount;
+
   const segments: PassTheMicSegment[] = [];
-  for (let i = 0; i < segmentCount; i++) {
+  for (let i = 0; i < segCount; i++) {
     segments.push({
-      startTime: i * segmentDuration * 1000,
-      endTime: Math.min((i + 1) * segmentDuration * 1000, song.duration),
+      startTime: Math.round(i * adjustedDurMs),
+      endTime: Math.round((i + 1) * adjustedDurMs),
       playerId: null,
     });
   }
@@ -88,16 +109,10 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               // Generate segments and use dedicated PTM screen
               const ptmPlayers = party.passTheMicPlayers;
               const playerCount = ptmPlayers.length || 2;
-              const autoSegmentDuration = Math.min(45, Math.ceil(song.duration / (playerCount * 1000)));
-              const segmentDuration = party.passTheMicSettings?.segmentDuration || autoSegmentDuration;
-              const segments: import('@/components/game/pass-the-mic-screen').PassTheMicSegment[] = [];
-              const segCount = Math.ceil(song.duration / (segmentDuration * 1000));
-              for (let i = 0; i < segCount; i++) {
-                segments.push({
-                  startTime: i * segmentDuration * 1000,
-                  endTime: Math.min((i + 1) * segmentDuration * 1000, song.duration),
-                  playerId: null,
-                });
+              const segments = generatePassTheMicSegments(song, playerCount, party.passTheMicSettings?.segmentDuration);
+              if (segments.length === 0) {
+                toast({ title: 'Song zu kurz', description: 'Der Song ist kürzer als 60 Sekunden und kann nicht für Pass the Mic verwendet werden.', variant: 'destructive' });
+                return;
               }
               party.setPassTheMicSegments(segments);
               party.setPassTheMicSong(song);
@@ -353,18 +368,21 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 const randomSong = pickRandomSong(filteredSongs);
                 if (randomSong) {
                   const playerCount = result.players.length || 2;
-                  // Auto segment duration: song length / player count, max 45s
-                  const autoSegmentDuration = Math.min(45, Math.ceil(randomSong.duration / (playerCount * 1000)));
-                  const segmentDuration = result.settings.segmentDuration || autoSegmentDuration;
+                  const segments = generatePassTheMicSegments(randomSong, playerCount, result.settings.segmentDuration);
+                  if (segments.length === 0) {
+                    toast({ title: 'Song zu kurz', description: 'Der gewählte Song ist kürzer als 60 Sekunden. Bitte erneut wählen.', variant: 'destructive' });
+                    break;
+                  }
+                  const segDur = (segments[1]?.startTime ?? segments[0]?.endTime ?? 30000) - (segments[0]?.startTime ?? 0);
                   const settingsWithMic = {
                     ...result.settings,
-                    segmentDuration,
+                    segmentDuration: Math.round(segDur / 1000),
                     sharedMicId: result.settings.sharedMicId || null,
                     sharedMicName: result.settings.sharedMicName || null,
                   };
                   const ptmPlayers = toPassTheMicPlayers(result.players);
                   party.setPassTheMicPlayers(ptmPlayers);
-                  party.setPassTheMicSegments(generatePassTheMicSegments(randomSong, segmentDuration));
+                  party.setPassTheMicSegments(segments);
                   party.setPassTheMicSong(randomSong);
                   party.setPassTheMicSettings(settingsWithMic);
                   party.setIsSongPlaying(false);
@@ -528,15 +546,19 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
 
             if (party.selectedGameMode === 'pass-the-mic') {
               const playerCount = (party.unifiedSetupResult?.players?.length) || 2;
-              const autoSegmentDuration = Math.min(45, Math.ceil(songWithUrls.duration / (playerCount * 1000)));
-              const segmentDuration = party.unifiedSetupResult?.settings?.segmentDuration || autoSegmentDuration;
+              const segments = generatePassTheMicSegments(songWithUrls, playerCount, party.unifiedSetupResult?.settings?.segmentDuration);
+              if (segments.length === 0) {
+                toast({ title: 'Song zu kurz', description: 'Der gewählte Song ist kürzer als 60 Sekunden.', variant: 'destructive' });
+                return;
+              }
+              const segDur = (segments[1]?.startTime ?? segments[0]?.endTime ?? 30000) - (segments[0]?.startTime ?? 0);
               const ptmPlayers = toPassTheMicPlayers(party.unifiedSetupResult?.players || []);
               party.setPassTheMicPlayers(ptmPlayers);
-              party.setPassTheMicSegments(generatePassTheMicSegments(songWithUrls, segmentDuration));
+              party.setPassTheMicSegments(segments);
               party.setPassTheMicSong(songWithUrls);
               party.setPassTheMicSettings({
                 ...party.unifiedSetupResult?.settings,
-                segmentDuration,
+                segmentDuration: Math.round(segDur / 1000),
                 sharedMicId: party.unifiedSetupResult?.settings?.sharedMicId || null,
                 sharedMicName: party.unifiedSetupResult?.settings?.sharedMicName || null,
               });
