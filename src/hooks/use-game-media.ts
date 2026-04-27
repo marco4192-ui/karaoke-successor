@@ -53,13 +53,16 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
         let preparedSong = await ensureSongUrls(song);
 
         // Browser: also restore audio/video from IndexedDB if storedMedia flag is set
-        // and URLs are missing (blob URLs may have expired)
-        if (preparedSong.storedMedia && (!preparedSong.audioUrl || !preparedSong.videoBackground)) {
+        // and URLs are missing or stale (blob URLs may have expired after page reload)
+        const isStaleBlob = (url: string | undefined) => url?.startsWith('blob:') ?? false;
+        const needsIdxDbAudio = !preparedSong.audioUrl || isStaleBlob(preparedSong.audioUrl);
+        const needsIdxDbVideo = !preparedSong.videoBackground || isStaleBlob(preparedSong.videoBackground);
+        if (preparedSong.storedMedia && (needsIdxDbAudio || needsIdxDbVideo)) {
           try {
             const { getSongMediaUrls } = await import('@/lib/db/media-db');
             const mediaUrls = await getSongMediaUrls(preparedSong.id);
-            if (mediaUrls.audioUrl) preparedSong = { ...preparedSong, audioUrl: mediaUrls.audioUrl };
-            if (mediaUrls.videoUrl && !preparedSong.videoBackground) preparedSong = { ...preparedSong, videoBackground: mediaUrls.videoUrl };
+            if (mediaUrls.audioUrl && needsIdxDbAudio) preparedSong = { ...preparedSong, audioUrl: mediaUrls.audioUrl };
+            if (mediaUrls.videoUrl && needsIdxDbVideo) preparedSong = { ...preparedSong, videoBackground: mediaUrls.videoUrl };
           } catch (e) {
             console.warn('[GameScreen] Failed to restore media from IndexedDB:', e);
           }
