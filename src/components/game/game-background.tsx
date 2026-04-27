@@ -53,8 +53,8 @@ export function GameBackground({
   onYoutubeError,
 }: GameBackgroundProps) {
   const videoGap = effectiveSong?.videoGap || 0;
-  // Fallback: use videoUrl if videoBackground is not set
-  const effectiveVideoUrl = effectiveSong?.videoBackground || effectiveSong?.videoUrl;
+  // Fallback: try videoBackground, then videoUrl, then youtubeUrl
+  const effectiveVideoUrl = effectiveSong?.videoBackground || effectiveSong?.videoUrl || effectiveSong?.youtubeUrl;
 
   // YouTube video (visible + audio)
   if (showBackgroundVideo && isYouTube && youtubeVideoId) {

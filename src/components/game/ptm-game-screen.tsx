@@ -423,6 +423,11 @@ export function PtmGameScreen({
       media.currentTime = currentSnippet.startTime / 1000;
       if (isPlaying) {
         media.play().catch(() => {});
+        // Also play background video (muted) when audio is a separate element
+        if (media !== videoRef.current && videoRef.current && !isYouTube && videoRef.current.paused) {
+          videoRef.current.currentTime = currentSnippet.startTime / 1000;
+          videoRef.current.play().catch(() => {});
+        }
       }
     };
 
@@ -482,6 +487,11 @@ export function PtmGameScreen({
           if (audioRef.current) {
             audioRef.current.currentTime = seekTo;
             audioRef.current.play().catch(e => console.warn('[PTM] Audio play failed:', e));
+            // Also play background video (muted) for visual effect when using separate audio
+            if (videoRef.current && videoRef.current !== audioRef.current && !isYouTube && videoRef.current.paused) {
+              videoRef.current.currentTime = seekTo;
+              videoRef.current.play().catch(() => {});
+            }
           } else if (videoRef.current && !isYouTube) {
             // Embedded audio: play the video element instead
             videoRef.current.currentTime = seekTo;
