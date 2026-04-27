@@ -667,7 +667,16 @@ export default function KaraokeSuccessor() {
                 const playerCount = party.passTheMicPlayers?.length || 2;
                 const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration);
                 party.setPassTheMicSegments(segments);
-                party.setPassTheMicSong(song);
+                // Ensure URLs are valid (blob URLs may expire in Tauri)
+                // The PtmGameScreen's useGameMedia will also restore, but pre-restoring
+                // here avoids a flash of "no media" on the game screen
+                import('@/lib/game/song-library').then(({ ensureSongUrls }) => {
+                  ensureSongUrls(song).then(songWithUrls => {
+                    party.setPassTheMicSong(songWithUrls);
+                  }).catch(() => {
+                    party.setPassTheMicSong(song); // fallback to original
+                  });
+                });
                 // Always use dedicated PTM game screen (both first song and series)
                 setScreen('pass-the-mic-game');
               } else if (gameState.gameMode === 'companion-singalong') {
