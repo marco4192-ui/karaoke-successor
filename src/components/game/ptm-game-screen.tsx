@@ -538,13 +538,15 @@ export function PtmGameScreen({
       ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, segmentsSung: 0,
     }));
     setPassTheMicPlayers(resetPlayers);
-    setPassTheMicSong(null);
+    // Do NOT set passTheMicSong(null) here — it unmounts PtmGameScreen
+    // while state updates are pending, causing React errors. The library
+    // screen's onSelectSong will set the new song when the user picks one.
     setPassTheMicSegments([]);
     setGameMode('pass-the-mic');
     setIsSongPlaying(false);
     lastIsSongPlayingRef.current = false;
     onNavigate?.('library');
-  }, [setPassTheMicPlayers, setPassTheMicSong, setPassTheMicSegments, setGameMode, onNavigate, setIsSongPlaying]);
+  }, [setPassTheMicPlayers, setPassTheMicSegments, setGameMode, onNavigate, setIsSongPlaying]);
 
   // ── End series ──
   const handleEndSeries = useCallback(() => {
@@ -554,27 +556,30 @@ export function PtmGameScreen({
   // ── End series completely: clean up ──
   const handleEndSeriesComplete = useCallback(() => {
     setPassTheMicPlayers([]);
-    setPassTheMicSong(null);
     setPassTheMicSegments([]);
     setPassTheMicSettings(null);
     setPassTheMicSeriesHistory([]);
     setIsSongPlaying(false);
     lastIsSongPlayingRef.current = false;
     resetGame();
-    onNavigate?.('party-setup');
+    // Navigate AFTER cleanup to avoid React unmount race condition
+    requestAnimationFrame(() => {
+      setPassTheMicSong(null);
+      onNavigate?.('party-setup');
+    });
   }, [setPassTheMicPlayers, setPassTheMicSong, setPassTheMicSegments, setPassTheMicSettings, setPassTheMicSeriesHistory, setIsSongPlaying, resetGame, onNavigate]);
 
   // ── Continue with same players (after winner ceremony) ──
   const handleContinueWithPlayers = useCallback(() => {
     // Reset series history but keep players
     setPassTheMicSeriesHistory([]);
-    setPassTheMicSong(null);
+    // Do NOT set passTheMicSong(null) — navigate first to avoid React unmount errors
     setPassTheMicSegments([]);
     setGameMode('pass-the-mic');
     setIsSongPlaying(false);
     lastIsSongPlayingRef.current = false;
     onNavigate?.('library');
-  }, [setPassTheMicSeriesHistory, setPassTheMicSong, setPassTheMicSegments, setGameMode, onNavigate, setIsSongPlaying]);
+  }, [setPassTheMicSeriesHistory, setPassTheMicSegments, setGameMode, onNavigate, setIsSongPlaying]);
 
   // ── Cleanup on unmount ──
   useEffect(() => {
