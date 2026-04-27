@@ -419,33 +419,55 @@ export function PtmGameScreen({
   // ── Medley mode: seek to snippet start when segment changes ──
   useEffect(() => {
     if (!isMedleyMode || !currentSnippet || phase !== 'playing') return;
-    const media = audioRef.current || (videoRef.current && !isYouTube ? videoRef.current : null);
-    if (!media) return;
 
-    const seekAndPlay = () => {
-      media.currentTime = currentSnippet.startTime / 1000;
-      if (isPlaying) {
-        media.play().catch(() => {});
-        // Also play background video (muted) when audio is a separate element
-        if (media !== videoRef.current && videoRef.current && !isYouTube && videoRef.current.paused) {
-          videoRef.current.currentTime = currentSnippet.startTime / 1000;
-          videoRef.current.play().catch(() => {});
-        }
+    // Use requestAnimationFrame to ensure the new audio/video element (from key change)
+    // has been committed to the DOM before we try to access it via refs.
+    const rafId = requestAnimationFrame(() => {
+      const media = audioRef.current || (videoRef.current && !isYouTube ? videoRef.current : null);
+      if (!media) {
+        // Media element not ready yet — retry after a short delay
+        const retryTimer = setTimeout(() => {
+          const m2 = audioRef.current || (videoRef.current && !isYouTube ? videoRef.current : null);
+          if (m2 && isPlaying) {
+            m2.currentTime = currentSnippet.startTime / 1000;
+            m2.play().catch(() => {});
+          }
+        }, 200);
+        return () => clearTimeout(retryTimer);
       }
-    };
 
-    // If media is ready, seek immediately
-    if (media.readyState >= 2) {
-      seekAndPlay();
-    } else {
-      // Wait for canplay
-      const onCanPlay = () => {
-        seekAndPlay();
-        media.removeEventListener('canplay', onCanPlay);
+      const seekAndPlay = () => {
+        media.currentTime = currentSnippet.startTime / 1000;
+        if (isPlaying) {
+          media.play().catch(() => {});
+          // Also play background video (muted) when audio is a separate element
+          if (media !== videoRef.current && videoRef.current && !isYouTube && videoRef.current.paused) {
+            videoRef.current.currentTime = currentSnippet.startTime / 1000;
+            videoRef.current.play().catch(() => {});
+          }
+        }
       };
-      media.addEventListener('canplay', onCanPlay);
-      return () => media.removeEventListener('canplay', onCanPlay);
-    }
+
+      // If media is ready, seek immediately
+      if (media.readyState >= 2) {
+        seekAndPlay();
+      } else {
+        // Wait for canplay
+        const onCanPlay = () => {
+          seekAndPlay();
+          media.removeEventListener('canplay', onCanPlay);
+        };
+        media.addEventListener('canplay', onCanPlay);
+        // Also clean up after timeout to avoid leaking listeners
+        const timeout = setTimeout(() => {
+          media.removeEventListener('canplay', onCanPlay);
+        }, 5000);
+        // Note: we can't easily clean up both in the effect cleanup since
+        // we're inside rAF. The timeout provides a safety net.
+      }
+    });
+
+    return () => cancelAnimationFrame(rafId);
   }, [currentSegmentIndex, isMedleyMode, currentSnippet, phase, isPlaying, audioRef, videoRef, isYouTube]);
 
   // ── Start game (countdown → playing) ──
@@ -487,19 +509,36 @@ export function PtmGameScreen({
           const seekTo = isMedleyMode && ptmMedleySnippets[0]
             ? ptmMedleySnippets[0].startTime / 1000
             : 0;
-          if (audioRef.current) {
-            audioRef.current.currentTime = seekTo;
-            audioRef.current.play().catch(e => console.warn('[PTM] Audio play failed:', e));
-            // Also play background video (muted) for visual effect when using separate audio
-            if (videoRef.current && videoRef.current !== audioRef.current && !isYouTube && videoRef.current.paused) {
+
+          // Use requestAnimationFrame to ensure media element is available
+          // after any key-based re-mounting (medley mode changes audioSong.id)
+          requestAnimationFrame(() => {
+            if (audioRef.current) {
+              audioRef.current.currentTime = seekTo;
+              audioRef.current.play().catch(e => console.warn('[PTM] Audio play failed:', e));
+              // Also play background video (muted) for visual effect when using separate audio
+              if (videoRef.current && videoRef.current !== audioRef.current && !isYouTube && videoRef.current.paused) {
+                videoRef.current.currentTime = seekTo;
+                videoRef.current.play().catch(() => {});
+              }
+            } else if (videoRef.current && !isYouTube) {
+              // Embedded audio: play the video element instead
               videoRef.current.currentTime = seekTo;
-              videoRef.current.play().catch(() => {});
+              videoRef.current.play().catch(e => console.warn('[PTM] Video play failed:', e));
+            } else {
+              // Media element not ready yet — retry shortly
+              console.warn('[PTM] No media element available at game start, retrying...');
+              setTimeout(() => {
+                if (audioRef.current) {
+                  audioRef.current.currentTime = seekTo;
+                  audioRef.current.play().catch(() => {});
+                } else if (videoRef.current && !isYouTube) {
+                  videoRef.current.currentTime = seekTo;
+                  videoRef.current.play().catch(() => {});
+                }
+              }, 300);
             }
-          } else if (videoRef.current && !isYouTube) {
-            // Embedded audio: play the video element instead
-            videoRef.current.currentTime = seekTo;
-            videoRef.current.play().catch(e => console.warn('[PTM] Video play failed:', e));
-          }
+          });
           return 0;
         }
         return prev - 1;
