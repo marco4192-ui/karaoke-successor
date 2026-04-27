@@ -204,10 +204,12 @@ export function PtmGameScreen({
   useEffect(() => {
     if (pauseDialogAction === 'song-pause') {
       if (audioRef.current && !audioRef.current.paused) audioRef.current.pause();
+      else if (videoRef.current && !videoRef.current.paused && !isYouTube) videoRef.current.pause();
     } else if (pauseDialogAction === null && isPlaying && phase === 'playing') {
       if (audioRef.current && audioRef.current.paused) audioRef.current.play().catch(() => {});
+      else if (videoRef.current && videoRef.current.paused && !isYouTube) videoRef.current.play().catch(() => {});
     }
-  }, [pauseDialogAction, isPlaying, phase, audioRef]);
+  }, [pauseDialogAction, isPlaying, phase, audioRef, videoRef, isYouTube]);
 
   // ── Assign segments to players (round-robin) ──
   useEffect(() => {
@@ -302,19 +304,29 @@ export function PtmGameScreen({
 
   // ── Audio time tracking ──
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const handleTimeUpdate = () => setCurrentTime(audio.currentTime * 1000);
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-
-    // Also handle YouTube time
+    // For YouTube, time comes from the YouTube player via onYoutubeTimeUpdate.
+    // For local audio, time comes from the <audio> element's timeupdate event.
+    // For embedded audio (video), time comes from the <video> element's timeupdate event.
     if (isYouTube && youtubeTime > 0) {
       setCurrentTime(youtubeTime * 1000);
+      return;
     }
 
-    return () => audio.removeEventListener('timeupdate', handleTimeUpdate);
-  }, [audioRef, isYouTube, youtubeTime]);
+    const audio = audioRef.current;
+    if (audio) {
+      const handleTimeUpdate = () => setCurrentTime(audio.currentTime * 1000);
+      audio.addEventListener('timeupdate', handleTimeUpdate);
+      return () => audio.removeEventListener('timeupdate', handleTimeUpdate);
+    }
+
+    // Embedded audio: fall back to video element for time tracking
+    const video = videoRef.current;
+    if (video) {
+      const handleTimeUpdate = () => setCurrentTime(video.currentTime * 1000);
+      video.addEventListener('timeupdate', handleTimeUpdate);
+      return () => video.removeEventListener('timeupdate', handleTimeUpdate);
+    }
+  }, [audioRef, videoRef, isYouTube, youtubeTime]);
 
   // ── Song energy tracking ──
   useEffect(() => {
@@ -404,43 +416,57 @@ export function PtmGameScreen({
   // ── Medley mode: seek to snippet start when segment changes ──
   useEffect(() => {
     if (!isMedleyMode || !currentSnippet || phase !== 'playing') return;
-    const audio = audioRef.current;
-    if (!audio) return;
+    const media = audioRef.current || (videoRef.current && !isYouTube ? videoRef.current : null);
+    if (!media) return;
 
     const seekAndPlay = () => {
-      audio.currentTime = currentSnippet.startTime / 1000;
+      media.currentTime = currentSnippet.startTime / 1000;
       if (isPlaying) {
-        audio.play().catch(() => {});
+        media.play().catch(() => {});
       }
     };
 
-    // If audio is ready, seek immediately
-    if (audio.readyState >= 2) {
+    // If media is ready, seek immediately
+    if (media.readyState >= 2) {
       seekAndPlay();
     } else {
       // Wait for canplay
       const onCanPlay = () => {
         seekAndPlay();
-        audio.removeEventListener('canplay', onCanPlay);
+        media.removeEventListener('canplay', onCanPlay);
       };
-      audio.addEventListener('canplay', onCanPlay);
-      return () => audio.removeEventListener('canplay', onCanPlay);
+      media.addEventListener('canplay', onCanPlay);
+      return () => media.removeEventListener('canplay', onCanPlay);
     }
-  }, [currentSegmentIndex, isMedleyMode, currentSnippet, phase, isPlaying]);
+  }, [currentSegmentIndex, isMedleyMode, currentSnippet, phase, isPlaying, audioRef, videoRef, isYouTube]);
 
   // ── Start game (countdown → playing) ──
   const startGame = async () => {
+    // Guard: ensure lyrics are available before starting
+    const songToCheck = isMedleyMode && currentSnippet ? currentSnippet.song : effectiveSong;
+    if (!songToCheck?.lyrics || songToCheck.lyrics.length === 0) {
+      console.warn('[PTM] No lyrics loaded, attempting reload...');
+      try {
+        const { loadSongLyrics } = await import('@/lib/game/song-library');
+        const lyrics = await loadSongLyrics(songToCheck);
+        if (lyrics.length > 0 && songToCheck) {
+          songToCheck.lyrics = lyrics;
+          forceRender();
+        }
+      } catch { /* non-critical */ }
+    }
+
     setPhase('countdown');
     setCountdown(3);
-
-    // Initialize pitch detection with shared mic
+    // Use assigned mic if set and not default
     const micId = safeSettings.sharedMicId && safeSettings.sharedMicId !== 'default'
       ? safeSettings.sharedMicId
       : (safeSettings.micId && safeSettings.micId !== 'default' ? safeSettings.micId : undefined);
 
     try {
+      // switchMicrophone handles stop → destroy → re-init → start
       await switchMicrophone(micId);
-    } catch { /* pitch may fail */ }
+    } catch { /* pitch may fail in some envs */ }
 
     const interval = setInterval(() => {
       setCountdown(prev => {
@@ -449,13 +475,17 @@ export function PtmGameScreen({
           setPhase('playing');
           setIsPlaying(true);
           setCurrentTime(0);
+          // In medley mode, seek to the first snippet's start time
+          const seekTo = isMedleyMode && ptmMedleySnippets[0]
+            ? ptmMedleySnippets[0].startTime / 1000
+            : 0;
           if (audioRef.current) {
-            // In medley mode, seek to the first snippet's start time
-            const seekTo = isMedleyMode && ptmMedleySnippets[0]
-              ? ptmMedleySnippets[0].startTime / 1000
-              : 0;
             audioRef.current.currentTime = seekTo;
             audioRef.current.play().catch(e => console.warn('[PTM] Audio play failed:', e));
+          } else if (videoRef.current && !isYouTube) {
+            // Embedded audio: play the video element instead
+            videoRef.current.currentTime = seekTo;
+            videoRef.current.play().catch(e => console.warn('[PTM] Video play failed:', e));
           }
           return 0;
         }
