@@ -283,12 +283,9 @@ export function PtmSeriesResults({
     return () => clearInterval(interval);
   }, [showCeremony]);
 
-  // Ceremony phase: auto-dismiss after 5 seconds
-  useEffect(() => {
-    if (!showCeremony) return;
-    const timer = setTimeout(() => setShowCeremony(false), 5000);
-    return () => clearTimeout(timer);
-  }, [showCeremony]);
+  // Ceremony phase: keep visible permanently (no auto-dismiss)
+  // The winner celebration with trophy and confetti stays visible until
+  // the user scrolls down to see the final standings or clicks the action buttons.
 
   return (
     <div className="max-w-3xl mx-auto py-8">
