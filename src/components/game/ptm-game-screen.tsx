@@ -576,19 +576,20 @@ export function PtmGameScreen({
 
   // ── Continue series: reset per-song scores, pick next song ──
   const handleContinue = useCallback(() => {
+    // Stop pitch detector BEFORE navigating to avoid unmount errors
+    try { stop(); } catch { /* ignore */ }
     const resetPlayers = playersRef.current.map(p => ({
       ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, segmentsSung: 0,
     }));
     setPassTheMicPlayers(resetPlayers);
-    // Do NOT set passTheMicSong(null) here — it unmounts PtmGameScreen
-    // while state updates are pending, causing React errors. The library
-    // screen's onSelectSong will set the new song when the user picks one.
     setPassTheMicSegments([]);
     setGameMode('pass-the-mic');
     setIsSongPlaying(false);
     lastIsSongPlayingRef.current = false;
-    onNavigate?.('library');
-  }, [setPassTheMicPlayers, setPassTheMicSegments, setGameMode, onNavigate, setIsSongPlaying]);
+    // Defer navigation to avoid React unmount race condition
+    // ("eH is not a function" error caused by state updates during unmount)
+    setTimeout(() => onNavigate?.('library'), 0);
+  }, [setPassTheMicPlayers, setPassTheMicSegments, setGameMode, onNavigate, setIsSongPlaying, stop]);
 
   // ── End series ──
   const handleEndSeries = useCallback(() => {
@@ -597,6 +598,8 @@ export function PtmGameScreen({
 
   // ── End series completely: clean up ──
   const handleEndSeriesComplete = useCallback(() => {
+    // Stop pitch detector BEFORE navigating to avoid unmount errors
+    try { stop(); } catch { /* ignore */ }
     setPassTheMicPlayers([]);
     setPassTheMicSegments([]);
     setPassTheMicSettings(null);
@@ -604,28 +607,30 @@ export function PtmGameScreen({
     setIsSongPlaying(false);
     lastIsSongPlayingRef.current = false;
     resetGame();
-    // Navigate AFTER cleanup to avoid React unmount race condition
-    requestAnimationFrame(() => {
+    // Defer navigation to avoid React unmount race condition
+    setTimeout(() => {
       setPassTheMicSong(null);
       onNavigate?.('party-setup');
-    });
-  }, [setPassTheMicPlayers, setPassTheMicSong, setPassTheMicSegments, setPassTheMicSettings, setPassTheMicSeriesHistory, setIsSongPlaying, resetGame, onNavigate]);
+    }, 0);
+  }, [setPassTheMicPlayers, setPassTheMicSong, setPassTheMicSegments, setPassTheMicSettings, setPassTheMicSeriesHistory, setIsSongPlaying, resetGame, onNavigate, stop]);
 
   // ── Continue with same players (after winner ceremony) ──
   const handleContinueWithPlayers = useCallback(() => {
+    // Stop pitch detector BEFORE navigating to avoid unmount errors
+    try { stop(); } catch { /* ignore */ }
     // Reset series history but keep players
     setPassTheMicSeriesHistory([]);
-    // Do NOT set passTheMicSong(null) — navigate first to avoid React unmount errors
     setPassTheMicSegments([]);
     setGameMode('pass-the-mic');
     setIsSongPlaying(false);
     lastIsSongPlayingRef.current = false;
-    onNavigate?.('library');
-  }, [setPassTheMicSeriesHistory, setPassTheMicSegments, setGameMode, onNavigate, setIsSongPlaying]);
+    // Defer navigation to avoid React unmount race condition
+    setTimeout(() => onNavigate?.('library'), 0);
+  }, [setPassTheMicSeriesHistory, setPassTheMicSegments, setGameMode, onNavigate, setIsSongPlaying, stop]);
 
   // ── Cleanup on unmount ──
   useEffect(() => {
-    return () => { stop(); };
+    return () => { try { stop(); } catch { /* already stopped */ } };
   }, [stop]);
 
   // ── Get current lyrics line ──
