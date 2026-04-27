@@ -663,6 +663,11 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
   
   const restored = { ...song };
   
+  // Clear stale blob URLs before restoring — they don't persist across page reloads
+  if (restored.audioUrl?.startsWith('blob:')) restored.audioUrl = undefined;
+  if (restored.videoBackground?.startsWith('blob:')) restored.videoBackground = undefined;
+  if (restored.coverImage?.startsWith('blob:')) restored.coverImage = undefined;
+  
   // Determine the base folder to use:
   // 1. Priority: song's own baseFolder (stored when scanned) — ONLY if absolute
   // 2. Fallback: localStorage 'karaoke-songs-folder'
@@ -782,13 +787,16 @@ export async function ensureSongUrls(song: Song): Promise<Song> {
     return song;
   }
   
-  // Check if any URL restoration is needed
-  const needsAudio = song.relativeAudioPath && !song.audioUrl;
-  const needsVideo = song.relativeVideoPath && !song.videoBackground;
-  const needsCover = song.relativeCoverPath && !song.coverImage;
+  // Check if any URL restoration is needed.
+  // Blob URLs (blob:...) don't persist across page reloads — treat them as stale
+  // and always re-resolve from the filesystem in Tauri mode.
+  const isStaleBlob = (url: string | undefined) => url?.startsWith('blob:') ?? false;
+  const needsAudio = song.relativeAudioPath && (!song.audioUrl || isStaleBlob(song.audioUrl));
+  const needsVideo = song.relativeVideoPath && (!song.videoBackground || isStaleBlob(song.videoBackground));
+  const needsCover = song.relativeCoverPath && (!song.coverImage || isStaleBlob(song.coverImage));
   
   if (!needsAudio && !needsVideo && !needsCover) {
-    // All URLs are already present
+    // All URLs are already present and valid
     return song;
   }
   
