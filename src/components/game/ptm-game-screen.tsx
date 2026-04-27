@@ -303,6 +303,9 @@ export function PtmGameScreen({
   }, [phase, isPlaying, scoreCurrentPlayer]);
 
   // ── Audio time tracking ──
+  // IMPORTANT: Must depend on audioSong (not just refs) because refs are stable objects.
+  // The <audio>/<video> DOM elements are only rendered after URL restoration sets
+  // audioSong?.audioUrl, so the effect must re-run when audioSong changes.
   useEffect(() => {
     // For YouTube, time comes from the YouTube player via onYoutubeTimeUpdate.
     // For local audio, time comes from the <audio> element's timeupdate event.
@@ -326,7 +329,7 @@ export function PtmGameScreen({
       video.addEventListener('timeupdate', handleTimeUpdate);
       return () => video.removeEventListener('timeupdate', handleTimeUpdate);
     }
-  }, [audioRef, videoRef, isYouTube, youtubeTime]);
+  }, [audioRef, videoRef, isYouTube, youtubeTime, audioSong]);
 
   // ── Song energy tracking ──
   useEffect(() => {
