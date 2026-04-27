@@ -79,6 +79,7 @@ interface PtmGameScreenProps {
   settings: PtmSettings | null;
   onUpdateGame: (players: PtmPlayer[], segments: PtmSegment[]) => void;
   onEndGame: () => void;
+  onNavigate?: (screen: string) => void;
   onPause?: () => void;
 }
 
@@ -89,6 +90,7 @@ export function PtmGameScreen({
   settings,
   onUpdateGame,
   onEndGame,
+  onNavigate,
   onPause,
 }: PtmGameScreenProps) {
   const safeSettings: PtmSettings = settings ?? DEFAULT_SETTINGS;
@@ -101,7 +103,7 @@ export function PtmGameScreen({
   const setPassTheMicSegments = usePartyStore(s => s.setPassTheMicSegments);
   const setPassTheMicSettings = usePartyStore(s => s.setPassTheMicSettings);
   const ptmMedleySnippets = usePartyStore(s => s.ptmMedleySnippets);
-  const { setGameMode } = useGameStore();
+  const { setGameMode, resetGame } = useGameStore();
   const lastIsSongPlayingRef = useRef(false);
 
   // ── Phase management ──
@@ -498,10 +500,11 @@ export function PtmGameScreen({
     setPassTheMicPlayers(resetPlayers);
     setPassTheMicSong(null);
     setPassTheMicSegments([]);
-    // Set game mode so library knows we're in PTM
     setGameMode('pass-the-mic');
-    setScreen('library');
-  }, [setPassTheMicPlayers, setPassTheMicSong, setPassTheMicSegments, setGameMode]);
+    setIsSongPlaying(false);
+    lastIsSongPlayingRef.current = false;
+    onNavigate?.('library');
+  }, [setPassTheMicPlayers, setPassTheMicSong, setPassTheMicSegments, setGameMode, onNavigate, setIsSongPlaying]);
 
   // ── End series ──
   const handleEndSeries = useCallback(() => {
@@ -518,8 +521,8 @@ export function PtmGameScreen({
     setIsSongPlaying(false);
     lastIsSongPlayingRef.current = false;
     resetGame();
-    setScreen('party-setup');
-  }, [setPassTheMicPlayers, setPassTheMicSong, setPassTheMicSegments, setPassTheMicSettings, setPassTheMicSeriesHistory, setIsSongPlaying]);
+    onNavigate?.('party-setup');
+  }, [setPassTheMicPlayers, setPassTheMicSong, setPassTheMicSegments, setPassTheMicSettings, setPassTheMicSeriesHistory, setIsSongPlaying, resetGame, onNavigate]);
 
   // ── Continue with same players (after winner ceremony) ──
   const handleContinueWithPlayers = useCallback(() => {
@@ -528,11 +531,10 @@ export function PtmGameScreen({
     setPassTheMicSong(null);
     setPassTheMicSegments([]);
     setGameMode('pass-the-mic');
-    setScreen('library');
-  }, [setPassTheMicSeriesHistory, setPassTheMicSong, setPassTheMicSegments, setGameMode]);
-
-  // ── Helper to set screen ──
-  const { resetGame, setScreen } = useGameStore();
+    setIsSongPlaying(false);
+    lastIsSongPlayingRef.current = false;
+    onNavigate?.('library');
+  }, [setPassTheMicSeriesHistory, setPassTheMicSong, setPassTheMicSegments, setGameMode, onNavigate, setIsSongPlaying]);
 
   // ── Cleanup on unmount ──
   useEffect(() => {

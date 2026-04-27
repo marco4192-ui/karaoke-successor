@@ -208,6 +208,9 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               setScreen('library');
             }
           }}
+          onNavigate={(targetScreen) => {
+            setScreen(targetScreen as Screen);
+          }}
           onPause={() => {
             party.setPauseDialogAction('song-pause');
           }}

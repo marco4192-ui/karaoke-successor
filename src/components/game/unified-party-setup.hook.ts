@@ -54,8 +54,26 @@ export function usePartySetup({
   });
 
   // ── Shared single mic (for modes like pass-the-mic) ──
-  const [selectedMicId, setSelectedMicId] = useState<string | null>(null);
-  const [selectedMicName, setSelectedMicName] = useState<string | null>(null);
+  const [selectedMicId, setSelectedMicId] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('karaoke-ptm-shared-mic-id') || null;
+    } catch { return null; }
+  });
+  const [selectedMicName, setSelectedMicName] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('karaoke-ptm-shared-mic-name') || null;
+    } catch { return null; }
+  });
+
+  // Persist shared mic selection to localStorage
+  useEffect(() => {
+    try {
+      if (selectedMicId) localStorage.setItem('karaoke-ptm-shared-mic-id', selectedMicId);
+      else localStorage.removeItem('karaoke-ptm-shared-mic-id');
+      if (selectedMicName) localStorage.setItem('karaoke-ptm-shared-mic-name', selectedMicName);
+      else localStorage.removeItem('karaoke-ptm-shared-mic-name');
+    } catch { /* ignore */ }
+  }, [selectedMicId, selectedMicName]);
 
   // ── Song filter state ──
   const [filterGenre, setFilterGenre] = useState('all');
