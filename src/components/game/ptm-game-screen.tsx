@@ -303,6 +303,9 @@ export function PtmGameScreen({
   }, [phase, isPlaying, scoreCurrentPlayer]);
 
   // ── Audio time tracking ──
+  // IMPORTANT: Must depend on audioSong (not just refs) because refs are stable objects.
+  // The <audio>/<video> DOM elements are only rendered after URL restoration sets
+  // audioSong?.audioUrl, so the effect must re-run when audioSong changes.
   useEffect(() => {
     // For YouTube, time comes from the YouTube player via onYoutubeTimeUpdate.
     // For local audio, time comes from the <audio> element's timeupdate event.
@@ -326,7 +329,7 @@ export function PtmGameScreen({
       video.addEventListener('timeupdate', handleTimeUpdate);
       return () => video.removeEventListener('timeupdate', handleTimeUpdate);
     }
-  }, [audioRef, videoRef, isYouTube, youtubeTime]);
+  }, [audioRef, videoRef, isYouTube, youtubeTime, audioSong]);
 
   // ── Song energy tracking ──
   useEffect(() => {
@@ -416,33 +419,55 @@ export function PtmGameScreen({
   // ── Medley mode: seek to snippet start when segment changes ──
   useEffect(() => {
     if (!isMedleyMode || !currentSnippet || phase !== 'playing') return;
-    const media = audioRef.current || (videoRef.current && !isYouTube ? videoRef.current : null);
-    if (!media) return;
 
-    const seekAndPlay = () => {
-      media.currentTime = currentSnippet.startTime / 1000;
-      if (isPlaying) {
-        media.play().catch(() => {});
-        // Also play background video (muted) when audio is a separate element
-        if (media !== videoRef.current && videoRef.current && !isYouTube && videoRef.current.paused) {
-          videoRef.current.currentTime = currentSnippet.startTime / 1000;
-          videoRef.current.play().catch(() => {});
-        }
+    // Use requestAnimationFrame to ensure the new audio/video element (from key change)
+    // has been committed to the DOM before we try to access it via refs.
+    const rafId = requestAnimationFrame(() => {
+      const media = audioRef.current || (videoRef.current && !isYouTube ? videoRef.current : null);
+      if (!media) {
+        // Media element not ready yet — retry after a short delay
+        const retryTimer = setTimeout(() => {
+          const m2 = audioRef.current || (videoRef.current && !isYouTube ? videoRef.current : null);
+          if (m2 && isPlaying) {
+            m2.currentTime = currentSnippet.startTime / 1000;
+            m2.play().catch(() => {});
+          }
+        }, 200);
+        return () => clearTimeout(retryTimer);
       }
-    };
 
-    // If media is ready, seek immediately
-    if (media.readyState >= 2) {
-      seekAndPlay();
-    } else {
-      // Wait for canplay
-      const onCanPlay = () => {
-        seekAndPlay();
-        media.removeEventListener('canplay', onCanPlay);
+      const seekAndPlay = () => {
+        media.currentTime = currentSnippet.startTime / 1000;
+        if (isPlaying) {
+          media.play().catch(() => {});
+          // Also play background video (muted) when audio is a separate element
+          if (media !== videoRef.current && videoRef.current && !isYouTube && videoRef.current.paused) {
+            videoRef.current.currentTime = currentSnippet.startTime / 1000;
+            videoRef.current.play().catch(() => {});
+          }
+        }
       };
-      media.addEventListener('canplay', onCanPlay);
-      return () => media.removeEventListener('canplay', onCanPlay);
-    }
+
+      // If media is ready, seek immediately
+      if (media.readyState >= 2) {
+        seekAndPlay();
+      } else {
+        // Wait for canplay
+        const onCanPlay = () => {
+          seekAndPlay();
+          media.removeEventListener('canplay', onCanPlay);
+        };
+        media.addEventListener('canplay', onCanPlay);
+        // Also clean up after timeout to avoid leaking listeners
+        const timeout = setTimeout(() => {
+          media.removeEventListener('canplay', onCanPlay);
+        }, 5000);
+        // Note: we can't easily clean up both in the effect cleanup since
+        // we're inside rAF. The timeout provides a safety net.
+      }
+    });
+
+    return () => cancelAnimationFrame(rafId);
   }, [currentSegmentIndex, isMedleyMode, currentSnippet, phase, isPlaying, audioRef, videoRef, isYouTube]);
 
   // ── Start game (countdown → playing) ──
@@ -484,19 +509,36 @@ export function PtmGameScreen({
           const seekTo = isMedleyMode && ptmMedleySnippets[0]
             ? ptmMedleySnippets[0].startTime / 1000
             : 0;
-          if (audioRef.current) {
-            audioRef.current.currentTime = seekTo;
-            audioRef.current.play().catch(e => console.warn('[PTM] Audio play failed:', e));
-            // Also play background video (muted) for visual effect when using separate audio
-            if (videoRef.current && videoRef.current !== audioRef.current && !isYouTube && videoRef.current.paused) {
+
+          // Use requestAnimationFrame to ensure media element is available
+          // after any key-based re-mounting (medley mode changes audioSong.id)
+          requestAnimationFrame(() => {
+            if (audioRef.current) {
+              audioRef.current.currentTime = seekTo;
+              audioRef.current.play().catch(e => console.warn('[PTM] Audio play failed:', e));
+              // Also play background video (muted) for visual effect when using separate audio
+              if (videoRef.current && videoRef.current !== audioRef.current && !isYouTube && videoRef.current.paused) {
+                videoRef.current.currentTime = seekTo;
+                videoRef.current.play().catch(() => {});
+              }
+            } else if (videoRef.current && !isYouTube) {
+              // Embedded audio: play the video element instead
               videoRef.current.currentTime = seekTo;
-              videoRef.current.play().catch(() => {});
+              videoRef.current.play().catch(e => console.warn('[PTM] Video play failed:', e));
+            } else {
+              // Media element not ready yet — retry shortly
+              console.warn('[PTM] No media element available at game start, retrying...');
+              setTimeout(() => {
+                if (audioRef.current) {
+                  audioRef.current.currentTime = seekTo;
+                  audioRef.current.play().catch(() => {});
+                } else if (videoRef.current && !isYouTube) {
+                  videoRef.current.currentTime = seekTo;
+                  videoRef.current.play().catch(() => {});
+                }
+              }, 300);
             }
-          } else if (videoRef.current && !isYouTube) {
-            // Embedded audio: play the video element instead
-            videoRef.current.currentTime = seekTo;
-            videoRef.current.play().catch(e => console.warn('[PTM] Video play failed:', e));
-          }
+          });
           return 0;
         }
         return prev - 1;
@@ -534,19 +576,20 @@ export function PtmGameScreen({
 
   // ── Continue series: reset per-song scores, pick next song ──
   const handleContinue = useCallback(() => {
+    // Stop pitch detector BEFORE navigating to avoid unmount errors
+    try { stop(); } catch { /* ignore */ }
     const resetPlayers = playersRef.current.map(p => ({
       ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, segmentsSung: 0,
     }));
     setPassTheMicPlayers(resetPlayers);
-    // Do NOT set passTheMicSong(null) here — it unmounts PtmGameScreen
-    // while state updates are pending, causing React errors. The library
-    // screen's onSelectSong will set the new song when the user picks one.
     setPassTheMicSegments([]);
     setGameMode('pass-the-mic');
     setIsSongPlaying(false);
     lastIsSongPlayingRef.current = false;
-    onNavigate?.('library');
-  }, [setPassTheMicPlayers, setPassTheMicSegments, setGameMode, onNavigate, setIsSongPlaying]);
+    // Defer navigation to avoid React unmount race condition
+    // ("eH is not a function" error caused by state updates during unmount)
+    setTimeout(() => onNavigate?.('library'), 0);
+  }, [setPassTheMicPlayers, setPassTheMicSegments, setGameMode, onNavigate, setIsSongPlaying, stop]);
 
   // ── End series ──
   const handleEndSeries = useCallback(() => {
@@ -555,6 +598,8 @@ export function PtmGameScreen({
 
   // ── End series completely: clean up ──
   const handleEndSeriesComplete = useCallback(() => {
+    // Stop pitch detector BEFORE navigating to avoid unmount errors
+    try { stop(); } catch { /* ignore */ }
     setPassTheMicPlayers([]);
     setPassTheMicSegments([]);
     setPassTheMicSettings(null);
@@ -562,28 +607,30 @@ export function PtmGameScreen({
     setIsSongPlaying(false);
     lastIsSongPlayingRef.current = false;
     resetGame();
-    // Navigate AFTER cleanup to avoid React unmount race condition
-    requestAnimationFrame(() => {
+    // Defer navigation to avoid React unmount race condition
+    setTimeout(() => {
       setPassTheMicSong(null);
       onNavigate?.('party-setup');
-    });
-  }, [setPassTheMicPlayers, setPassTheMicSong, setPassTheMicSegments, setPassTheMicSettings, setPassTheMicSeriesHistory, setIsSongPlaying, resetGame, onNavigate]);
+    }, 0);
+  }, [setPassTheMicPlayers, setPassTheMicSong, setPassTheMicSegments, setPassTheMicSettings, setPassTheMicSeriesHistory, setIsSongPlaying, resetGame, onNavigate, stop]);
 
   // ── Continue with same players (after winner ceremony) ──
   const handleContinueWithPlayers = useCallback(() => {
+    // Stop pitch detector BEFORE navigating to avoid unmount errors
+    try { stop(); } catch { /* ignore */ }
     // Reset series history but keep players
     setPassTheMicSeriesHistory([]);
-    // Do NOT set passTheMicSong(null) — navigate first to avoid React unmount errors
     setPassTheMicSegments([]);
     setGameMode('pass-the-mic');
     setIsSongPlaying(false);
     lastIsSongPlayingRef.current = false;
-    onNavigate?.('library');
-  }, [setPassTheMicSeriesHistory, setPassTheMicSegments, setGameMode, onNavigate, setIsSongPlaying]);
+    // Defer navigation to avoid React unmount race condition
+    setTimeout(() => onNavigate?.('library'), 0);
+  }, [setPassTheMicSeriesHistory, setPassTheMicSegments, setGameMode, onNavigate, setIsSongPlaying, stop]);
 
   // ── Cleanup on unmount ──
   useEffect(() => {
-    return () => { stop(); };
+    return () => { try { stop(); } catch { /* already stopped */ } };
   }, [stop]);
 
   // ── Get current lyrics line ──
@@ -811,79 +858,110 @@ export function PtmGameScreen({
 
       {/* ═══════ PTM HUD OVERLAYS ═══════ */}
 
-      {/* Header: Pause + Mode Badge + Segment Info */}
-      {phase === 'playing' && (
-        <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2 bg-gradient-to-b from-black/70 to-transparent">
-          <Button
-            variant="ghost"
-            onClick={() => onPause?.()}
-            className="text-white/80 hover:text-white hover:bg-white/10"
-          >
-            ⏸ Pause
-          </Button>
-
-          <div className="flex items-center gap-2">
-            <Badge className="bg-cyan-500/20 text-cyan-400 text-lg px-3 py-1">
-              🎤 PASS THE MIC
-            </Badge>
-            <Badge className="bg-purple-500/20 text-purple-400">
-              Segment {currentSegmentIndex + 1}/{initialSegments.length}
-            </Badge>
-          </div>
-
-          {/* Current player score */}
-          <div className="text-right">
-            <div className="text-2xl font-bold text-cyan-400">
-              {currentPlayer?.score.toLocaleString()}
-            </div>
-            {currentPlayer && currentPlayer.combo > 0 && (
-              <div className="text-xs text-amber-400">🔥 {currentPlayer.combo}x</div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Current Player Bar (below header) */}
+      {/* 8.1 Team-Score Mitte-Links | 8.2 Spieler-Score Links größer */}
       {(phase === 'playing' || phase === 'transitioning') && (
-        <div className="absolute top-16 left-4 right-4 z-20">
-          <div className="flex items-center gap-3 bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/10">
+        <div className="absolute top-4 left-4 z-20">
+          {/* Team total score (small, center-left) */}
+          <div className="bg-black/50 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/10 mb-2 text-center w-32">
+            <div className="text-[10px] text-white/40 uppercase tracking-wider">Team-Score</div>
+            <div className="text-lg font-bold text-cyan-400">
+              {playersRef.current.reduce((sum, p) => sum + p.score, 0).toLocaleString()}
+            </div>
+          </div>
+
+          {/* Active player score (larger, left side) */}
+          <div className="bg-black/50 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/10 w-40">
             {currentPlayer?.avatar ? (
               <img
                 src={currentPlayer.avatar}
                 alt={currentPlayer.name}
-                className="w-10 h-10 rounded-full object-cover border-2"
+                className="w-12 h-12 rounded-full object-cover border-2 mb-2"
                 style={{ borderColor: currentPlayer.color }}
               />
             ) : (
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold border-2 text-sm"
+                className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold border-2 text-xl mb-2"
                 style={{ backgroundColor: currentPlayer?.color, borderColor: currentPlayer?.color }}
               >
                 {currentPlayer?.name?.charAt(0).toUpperCase()}
               </div>
             )}
-            <div className="flex-1 min-w-0">
-              <div className="text-xs text-white/50">JETZT SINGT</div>
-              <div className="text-lg font-bold truncate" style={{ color: currentPlayer?.color }}>
-                {currentPlayer?.name}
-              </div>
+            <div className="text-[10px] text-white/50 uppercase tracking-wider">Jetzt singt</div>
+            <div className="text-base font-bold truncate" style={{ color: currentPlayer?.color }}>
+              {currentPlayer?.name}
             </div>
-            {/* Segment Timer */}
-            <div className="text-right shrink-0">
-              <div className="text-xs text-white/40">Segment</div>
-              <div className="text-lg font-mono font-bold">
-                {Math.ceil(segmentTimeLeft)}s
-              </div>
+            <div className="text-2xl font-bold text-cyan-400 mt-1">
+              {currentPlayer?.score.toLocaleString()}
             </div>
-            {/* Segment Progress */}
-            <div className="w-16 h-2 bg-white/10 rounded-full overflow-hidden shrink-0">
-              <div
-                className="h-full rounded-full transition-all duration-300"
-                style={{
-                  width: `${Math.min(100, segmentProgress)}%`,
-                  backgroundColor: currentPlayer?.color || '#06b6d4',
-                }}
-              />
+            {currentPlayer && currentPlayer.combo > 0 && (
+              <div className="text-xs text-amber-400 font-medium">🔥 {currentPlayer.combo}x Combo</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 8.4 Vollbild-Button | 8.5 Kamera-Button | Pause */}
+      {phase === 'playing' && (
+        <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
+          <Button
+            variant="ghost"
+            onClick={() => onPause?.()}
+            className="text-white/80 hover:text-white hover:bg-white/10 rounded-lg w-10 h-10 p-0"
+            title="Pause"
+          >
+            ⏸
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen?.catch(() => {});
+              } else {
+                document.exitFullscreen?.catch(() => {});
+              }
+            }}
+            className="text-white/80 hover:text-white hover:bg-white/10 rounded-lg w-10 h-10 p-0"
+            title="Vollbild"
+          >
+            ⛶
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              // Toggle camera/webcam if available
+              navigator.mediaDevices?.getUserMedia({ video: true })
+                .then(stream => {
+                  const video = document.createElement('video');
+                  video.srcObject = stream;
+                  video.style.cssText = 'position:fixed;bottom:80px;right:16px;width:200px;border-radius:12px;z-index:100;border:2px solid rgba(255,255,255,0.3);';
+                  document.body.appendChild(video);
+                  video.play();
+                  // Click to close
+                  video.addEventListener('click', () => {
+                    stream.getTracks().forEach(t => t.stop());
+                    video.remove();
+                  });
+                })
+                .catch(() => {});
+            }}
+            className="text-white/80 hover:text-white hover:bg-white/10 rounded-lg w-10 h-10 p-0"
+            title="Kamera"
+          >
+            📷
+          </Button>
+        </div>
+      )}
+
+      {/* 8.3 Gesangsindikator linkes Drittel */}
+      {(phase === 'playing' || phase === 'transitioning') && (
+        <div className="absolute left-4 top-1/3 -translate-y-1/2 z-20">
+          <div className="bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/10">
+            <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Gesangsindikator</div>
+            <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${pitchResult?.frequency ? 'bg-green-500 animate-pulse' : 'bg-white/20'}`} />
+              <span className="text-xs text-white/60">
+                {pitchResult?.frequency ? `${Math.round(pitchResult.note * 2) / 2} Hz` : 'Kein Ton'}
+              </span>
             </div>
           </div>
         </div>

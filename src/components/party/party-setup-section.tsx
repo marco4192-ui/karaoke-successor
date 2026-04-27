@@ -367,8 +367,14 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 // Default: single random song with segment-based pass-the-mic
                 const randomSong = pickRandomSong(filteredSongs);
                 if (randomSong) {
+                  // Pre-restore URLs for the random song (needed for Tauri file:// paths)
+                  let songWithUrls = randomSong;
+                  try {
+                    songWithUrls = await ensureSongUrls(randomSong);
+                  } catch { /* non-critical — game view has its own URL restoration */ }
+
                   const playerCount = result.players.length || 2;
-                  const segments = generatePassTheMicSegments(randomSong, playerCount, result.settings.segmentDuration);
+                  const segments = generatePassTheMicSegments(songWithUrls, playerCount, result.settings.segmentDuration);
                   if (segments.length === 0) {
                     toast({ title: 'Song zu kurz', description: 'Der gewählte Song ist kürzer als 60 Sekunden. Bitte erneut wählen.', variant: 'destructive' });
                     break;
@@ -383,7 +389,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   const ptmPlayers = toPassTheMicPlayers(result.players);
                   party.setPassTheMicPlayers(ptmPlayers);
                   party.setPassTheMicSegments(segments);
-                  party.setPassTheMicSong(randomSong);
+                  party.setPassTheMicSong(songWithUrls);
                   party.setPassTheMicSettings(settingsWithMic);
                   party.setIsSongPlaying(false);
                   // Use dedicated PTM game screen (not main game screen)

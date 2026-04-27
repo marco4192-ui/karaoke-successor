@@ -21,6 +21,43 @@ import { recordMatchResult } from '@/lib/game/tournament';
 import { finishCompetitiveRound } from '@/lib/game/competitive-words-blind';
 import { OfflineBanner } from '@/components/ui/offline-banner';
 
+// ── PTM segment generation helper ──
+// Auto 20-60s segments, equal per player, short songs excluded (< 60s)
+function generatePtmSegments(
+  songDurationMs: number,
+  playerCount: number,
+  settingsSegmentDuration?: number,
+): PassTheMicSegment[] {
+  // Exclude very short songs (< 60s) — not enough for meaningful gameplay
+  if (songDurationMs < 60000) {
+    // Return single segment covering the whole song as fallback
+    return [{ startTime: 0, endTime: Math.round(songDurationMs), playerId: null }];
+  }
+
+  // Calculate segment duration: use setting or auto-compute 20-60s
+  const rawDur = settingsSegmentDuration
+    || Math.max(20, Math.min(60, Math.ceil(songDurationMs / (playerCount * 2 * 1000))));
+  const segDurMs = Math.max(20000, Math.min(60000, rawDur)) * 1000;
+
+  // Calculate how many segments fit
+  const rawCount = Math.ceil(songDurationMs / segDurMs);
+
+  // Ensure segment count is divisible by playerCount for equal distribution
+  // Each player gets exactly (segCount / playerCount) segments
+  const segCount = Math.max(playerCount, Math.ceil(rawCount / playerCount) * playerCount);
+
+  const adjustedDurMs = songDurationMs / segCount;
+  const segments: PassTheMicSegment[] = [];
+  for (let i = 0; i < segCount; i++) {
+    segments.push({
+      startTime: Math.round(i * adjustedDurMs),
+      endTime: Math.round((i + 1) * adjustedDurMs),
+      playerId: null,
+    });
+  }
+  return segments;
+}
+
 // Screen types
 type Screen = 'home' | 'library' | 'game' | 'party' | 'character' | 'queue' | 'mobile' | 'results' | 'highscores' | 'import' | 'settings' | 'jukebox' | 'achievements' | 'dailyChallenge' | 'tournament' | 'tournament-game' | 'battle-royale' | 'battle-royale-game' | 'pass-the-mic' | 'pass-the-mic-game' | 'companion-singalong' | 'companion-singalong-game' | 'medley' | 'medley-game' | 'editor' | 'online' | 'party-setup' | 'song-voting' | 'missing-words' | 'missing-words-game' | 'blind' | 'blind-game' | 'rate-my-song' | 'rate-my-song-rating' | 'rate-my-song-results';
 
@@ -627,24 +664,19 @@ export default function KaraokeSuccessor() {
               setSong(song);
               // Check game mode and navigate accordingly
               if (gameState.gameMode === 'pass-the-mic') {
-                // Generate segments for pass the mic (auto 20-60s, equal per player)
                 const playerCount = party.passTheMicPlayers?.length || 2;
-                const segDurS = party.passTheMicSettings?.segmentDuration
-                  || Math.max(20, Math.min(60, Math.ceil(song.duration / (playerCount * 2 * 1000))));
-                const segDurMs = segDurS * 1000;
-                const rawCount = Math.ceil(song.duration / segDurMs);
-                const segCount = Math.max(playerCount, rawCount);
-                const adjustedDurMs = song.duration / segCount;
-                const segments: PassTheMicSegment[] = [];
-                for (let i = 0; i < segCount; i++) {
-                  segments.push({
-                    startTime: Math.round(i * adjustedDurMs),
-                    endTime: Math.round((i + 1) * adjustedDurMs),
-                    playerId: null,
-                  });
-                }
+                const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration);
                 party.setPassTheMicSegments(segments);
-                party.setPassTheMicSong(song);
+                // Ensure URLs are valid (blob URLs may expire in Tauri)
+                // The PtmGameScreen's useGameMedia will also restore, but pre-restoring
+                // here avoids a flash of "no media" on the game screen
+                import('@/lib/game/song-library').then(({ ensureSongUrls }) => {
+                  ensureSongUrls(song).then(songWithUrls => {
+                    party.setPassTheMicSong(songWithUrls);
+                  }).catch(() => {
+                    party.setPassTheMicSong(song); // fallback to original
+                  });
+                });
                 // Always use dedicated PTM game screen (both first song and series)
                 setScreen('pass-the-mic-game');
               } else if (gameState.gameMode === 'companion-singalong') {
@@ -706,16 +738,7 @@ export default function KaraokeSuccessor() {
 
             if (activeMode === 'pass-the-mic' && party.passTheMicPlayers?.length > 0) {
               const playerCount = party.passTheMicPlayers.length || 2;
-              const segDurS = party.passTheMicSettings?.segmentDuration
-                || Math.max(20, Math.min(60, Math.ceil(song.duration / (playerCount * 2 * 1000))));
-              const segDurMs = segDurS * 1000;
-              const rawCount = Math.ceil(song.duration / segDurMs);
-              const segCount = Math.max(playerCount, rawCount);
-              const adjustedDurMs = song.duration / segCount;
-              const segments: PassTheMicSegment[] = [];
-              for (let i = 0; i < segCount; i++) {
-                segments.push({ startTime: Math.round(i * adjustedDurMs), endTime: Math.round((i + 1) * adjustedDurMs), playerId: null });
-              }
+              const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration);
               party.setPassTheMicSegments(segments);
               party.setPassTheMicSong(song);
               setSong(song);

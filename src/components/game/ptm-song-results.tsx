@@ -96,10 +96,10 @@ export function PtmSongResults({
 
       {/* Current Round Ranking */}
       <div className="bg-white/5 border border-white/10 rounded-xl mb-6 overflow-hidden">
-        <div className="px-4 py-3 border-b border-white/10">
+        <div className="px-4 py-3 border-b border-white/10 sticky top-0 bg-zinc-900 z-10">
           <h3 className="font-bold text-center text-white/80">Runden-Ergebnis</h3>
         </div>
-        <div className="divide-y divide-white/5">
+        <div className="divide-y divide-white/5 max-h-[50vh] overflow-y-auto">
           {sorted.map((player, rank) => {
             const cumScore = cumulativeScores.get(player.id) || 0;
             return (
@@ -283,12 +283,9 @@ export function PtmSeriesResults({
     return () => clearInterval(interval);
   }, [showCeremony]);
 
-  // Ceremony phase: auto-dismiss after 5 seconds
-  useEffect(() => {
-    if (!showCeremony) return;
-    const timer = setTimeout(() => setShowCeremony(false), 5000);
-    return () => clearTimeout(timer);
-  }, [showCeremony]);
+  // Ceremony phase: keep visible permanently (no auto-dismiss)
+  // The winner celebration with trophy and confetti stays visible until
+  // the user scrolls down to see the final standings or clicks the action buttons.
 
   return (
     <div className="max-w-3xl mx-auto py-8">
@@ -351,10 +348,10 @@ export function PtmSeriesResults({
 
       {/* Final Standings */}
       <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-white/10">
+        <div className="px-4 py-3 border-b border-white/10 sticky top-0 bg-zinc-900 z-10">
           <h3 className="font-bold text-center text-white/80">Endstand</h3>
         </div>
-        <div className="divide-y divide-white/5">
+        <div className="divide-y divide-white/5 max-h-[50vh] overflow-y-auto">
           {sortedPlayers.map(([id, data], rank) => (
             <div
               key={id}
