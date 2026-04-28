@@ -1,6 +1,7 @@
 use std::net::TcpStream;
 use std::process::{Command, Child};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
 use std::env;
@@ -20,6 +21,64 @@ mod charts;
 // by default without ACL configuration. We use these as reliable
 // fallbacks for file system and dialog operations.
 // ============================================================
+
+// ============================================================
+// Path safety validation
+// Prevents access to critical system directories to mitigate
+// potential damage from injected or malicious frontend calls.
+// ============================================================
+
+/// Check whether a resolved path points to a critical system directory
+/// or its parent. Returns Ok(canonical path) if safe, Err otherwise.
+fn validate_safe_path(raw_path: &str) -> Result<PathBuf, String> {
+    let path = PathBuf::from(raw_path);
+
+    // Try to canonicalize; if the path doesn't exist yet (e.g. for writes),
+    // canonicalize the parent instead.
+    let canonical = if path.exists() {
+        path.canonicalize().map_err(|e| format!("Cannot resolve path '{}': {}", raw_path, e))?
+    } else if let Some(parent) = path.parent() {
+        if parent.exists() {
+            parent.canonicalize().map_err(|e| format!("Cannot resolve parent of '{}': {}", raw_path, e))?
+                .join(path.file_name().unwrap_or_default())
+        } else {
+            path.clone()
+        }
+    } else {
+        path.clone()
+    };
+
+    let path_str = canonical.to_string_lossy().to_lowercase();
+
+    // Block access to critical system directories
+    #[cfg(target_os = "windows")]
+    {
+        let forbidden = [
+            r"c:\windows",
+            r"c:\program files",
+            r"c:\program files (x86)",
+            r"c:\programdata",
+            r"\windows\system32",
+        ];
+        for dir in &forbidden {
+            if path_str.starts_with(dir) {
+                return Err(format!("Access denied: path '{}' is inside a system directory", raw_path));
+            }
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        let forbidden = ["/etc", "/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/lib", "/boot", "/dev", "/proc", "/sys"];
+        for dir in &forbidden {
+            if path_str.starts_with(dir) {
+                return Err(format!("Access denied: path '{}' is inside a system directory", raw_path));
+            }
+        }
+    }
+
+    Ok(canonical)
+}
 
 /// Read a file as raw bytes (for audio, video, images).
 /// Returns base64-encoded string to avoid IPC binary issues.
@@ -262,6 +321,7 @@ fn native_confirm(title: String, message: String) -> bool {
 /// Create a directory (recursive)
 #[tauri::command]
 fn native_mkdir(dir_path: String) -> Result<(), String> {
+    validate_safe_path(&dir_path)?;
     fs::create_dir_all(&dir_path)
         .map_err(|e| format!("Failed to create directory '{}': {}", dir_path, e))
 }
@@ -269,6 +329,7 @@ fn native_mkdir(dir_path: String) -> Result<(), String> {
 /// Write bytes to a file (decoded from base64)
 #[tauri::command]
 fn native_write_file_bytes(file_path: String, data_base64: String) -> Result<(), String> {
+    validate_safe_path(&file_path)?;
     let bytes = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &data_base64)
         .map_err(|e| format!("Failed to decode base64: {}", e))?;
 
@@ -284,6 +345,7 @@ fn native_write_file_bytes(file_path: String, data_base64: String) -> Result<(),
 /// Write text to a file
 #[tauri::command]
 fn native_write_file_text(file_path: String, content: String) -> Result<(), String> {
+    validate_safe_path(&file_path)?;
     if let Some(parent) = PathBuf::from(&file_path).parent() {
         fs::create_dir_all(parent)
             .map_err(|e| format!("Failed to create parent directory: {}", e))?;
@@ -296,6 +358,7 @@ fn native_write_file_text(file_path: String, content: String) -> Result<(), Stri
 /// Remove a file
 #[tauri::command]
 fn native_remove_file(file_path: String) -> Result<(), String> {
+    validate_safe_path(&file_path)?;
     fs::remove_file(&file_path)
         .map_err(|e| format!("Failed to remove '{}': {}", file_path, e))
 }
@@ -303,12 +366,15 @@ fn native_remove_file(file_path: String) -> Result<(), String> {
 /// Remove a directory (recursive)
 #[tauri::command]
 fn native_remove_dir(dir_path: String) -> Result<(), String> {
+    validate_safe_path(&dir_path)?;
     fs::remove_dir_all(&dir_path)
         .map_err(|e| format!("Failed to remove directory '{}': {}", dir_path, e))
 }
 
 static SERVER_STARTED: AtomicBool = AtomicBool::new(false);
-static mut SERVER_PROCESS: Option<Child> = None;
+/// Server process handle protected by a Mutex for thread-safe access.
+/// Replaces the previous `static mut` which was undefined behavior.
+static SERVER_PROCESS: Mutex<Option<Child>> = Mutex::new(None);
 
 fn check_server_running() -> bool {
     TcpStream::connect("127.0.0.1:3000").is_ok()
@@ -325,20 +391,9 @@ fn get_node_path(resource_dir: &PathBuf) -> Option<PathBuf> {
     None
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 fn get_node_path(resource_dir: &PathBuf) -> Option<PathBuf> {
-    // macOS: bundled/node/bin/node
-    let bundled_node = resource_dir.join("bundled").join("node").join("bin").join("node");
-    if bundled_node.exists() {
-        println!("Found bundled Node.js at: {:?}", bundled_node);
-        return Some(bundled_node);
-    }
-    None
-}
-
-#[cfg(target_os = "linux")]
-fn get_node_path(resource_dir: &PathBuf) -> Option<PathBuf> {
-    // Linux: bundled/node/bin/node
+    // macOS / Linux: bundled/node/bin/node
     let bundled_node = resource_dir.join("bundled").join("node").join("bin").join("node");
     if bundled_node.exists() {
         println!("Found bundled Node.js at: {:?}", bundled_node);
@@ -518,7 +573,9 @@ pub fn run() {
                         
                         match result {
                             Ok(child) => {
-                                unsafe { SERVER_PROCESS = Some(child); }
+                                if let Ok(mut proc) = SERVER_PROCESS.lock() {
+                                    *proc = Some(child);
+                                }
                                 server_started = true;
                                 println!("Server process started successfully");
                             }
@@ -558,7 +615,9 @@ pub fn run() {
                                     .env("PORT", "3000")
                                     .spawn()
                                 {
-                                    unsafe { SERVER_PROCESS = Some(child); }
+                                    if let Ok(mut proc) = SERVER_PROCESS.lock() {
+                                        *proc = Some(child);
+                                    }
                                     server_started = true;
                                     break;
                                 }
@@ -585,7 +644,9 @@ pub fn run() {
                             });
                         
                         if let Ok(child) = result {
-                            unsafe { SERVER_PROCESS = Some(child); }
+                            if let Ok(mut proc) = SERVER_PROCESS.lock() {
+                                *proc = Some(child);
+                            }
                             server_started = true;
                         }
                     }
@@ -617,8 +678,8 @@ pub fn run() {
         .on_window_event(|_window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
                 // Kill server process when window is closed
-                unsafe {
-                    if let Some(ref mut child) = SERVER_PROCESS {
+                if let Ok(mut proc) = SERVER_PROCESS.lock() {
+                    if let Some(ref mut child) = *proc {
                         let _ = child.kill();
                         println!("Server process killed");
                     }
