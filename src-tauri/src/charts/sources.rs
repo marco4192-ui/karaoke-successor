@@ -3,7 +3,17 @@
 //! Each function returns a list of `ChartEntry` structs. All HTTP calls are
 //! synchronous (the caller is expected to run them on a blocking thread).
 
+use std::sync::LazyLock;
+
 use serde::Deserialize;
+
+/// Shared HTTP client with connection pooling, reused across all chart fetches.
+static HTTP_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
+    reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .expect("Failed to build shared HTTP client")
+});
 
 /// A single chart entry fetched from an external source.
 #[derive(Debug, Clone, serde::Serialize)]
@@ -62,12 +72,7 @@ pub async fn fetch_apple_music_charts(
         APPLE_MUSIC_BASE, country, genre_path, count
     );
 
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(15))
-        .build()
-        .map_err(|e| format!("Failed to build HTTP client: {}", e))?;
-
-    let resp = client
+    let resp = HTTP_CLIENT
         .get(&url)
         .header("User-Agent", "KaraokeSuccessor/1.0")
         .send()
@@ -156,12 +161,7 @@ pub async fn fetch_deezer_charts(
         DEEZER_BASE, country_upper, limit
     );
 
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(15))
-        .build()
-        .map_err(|e| format!("Failed to build HTTP client: {}", e))?;
-
-    let resp = client
+    let resp = HTTP_CLIENT
         .get(&url)
         .header("User-Agent", "KaraokeSuccessor/1.0")
         .send()
@@ -226,7 +226,7 @@ struct ITunesTrack {
 
 /// Fetch top results from iTunes Search for a country.
 ///
-/// Uses the iTunes RSS top songs feed (no auth required).
+/// Uses the iTunes Search API (no auth required).
 pub async fn fetch_itunes_top_songs(
     country: &str,
     limit: u32,
@@ -236,12 +236,7 @@ pub async fn fetch_itunes_top_songs(
         ITUNES_BASE, country, limit
     );
 
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(15))
-        .build()
-        .map_err(|e| format!("Failed to build HTTP client: {}", e))?;
-
-    let resp = client
+    let resp = HTTP_CLIENT
         .get(&url)
         .header("User-Agent", "KaraokeSuccessor/1.0")
         .send()
