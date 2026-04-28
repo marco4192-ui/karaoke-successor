@@ -146,7 +146,7 @@ pub fn db_save_songs(app: AppHandle, songs_json: String) -> Result<DbResult, Str
                 song.get("videoFileName").and_then(|v| v.as_str()),
                 song.get("txtFileName").and_then(|v| v.as_str()),
                 song.get("coverFileName").and_then(|v| v.as_str()),
-                songs_json, // store full JSON as json_data
+                song.to_string(), // store individual song JSON as json_data
             ],
         ).map_err(|e| format!("Failed to insert song: {}", e))?;
         count += 1;
