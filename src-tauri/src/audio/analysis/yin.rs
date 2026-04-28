@@ -11,7 +11,7 @@
 pub struct YinDetectorSr {
     /// YIN absolute threshold — lower = more sensitive but more errors.
     threshold: f64,
-    /// Minimum period in samples (from min_frequency / sample_rate).
+    /// Minimum period in samples (from max_frequency / sample_rate).
     min_period: usize,
     /// Maximum period in samples (from min_frequency / sample_rate).
     max_period: usize,
