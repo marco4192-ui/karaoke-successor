@@ -170,8 +170,8 @@ pub fn db_load_songs(app: AppHandle) -> Result<Vec<serde_json::Value>, String> {
     let rows = stmt
         .query_map([], |row| row.get::<_, String>(0))
         .map_err(|e| format!("db_load_songs query failed: {}", e))?
-        .filter_map(|r| r.ok())
-        .filter_map(|json_str| serde_json::from_str(&json_str).ok())
+        .filter_map(|r| try_log(r, "db_load_songs row"))
+        .filter_map(|json_str| try_log(serde_json::from_str(&json_str), "db_load_songs JSON parse"))
         .collect();
     Ok(rows)
 }
@@ -207,8 +207,8 @@ pub fn db_search_songs(app: AppHandle, query: String, limit: Option<i64>) -> Res
     let rows = stmt
         .query_map(rusqlite::params![like_pattern, limit_val], |row| row.get::<_, String>(0))
         .map_err(|e| format!("db_search_songs query failed: {}", e))?
-        .filter_map(|r| r.ok())
-        .filter_map(|json_str| serde_json::from_str(&json_str).ok())
+        .filter_map(|r| try_log(r, "db_search_songs row"))
+        .filter_map(|json_str| try_log(serde_json::from_str(&json_str), "db_search_songs JSON parse"))
         .collect();
     Ok(rows)
 }
@@ -272,7 +272,7 @@ pub fn db_load_folders(app: AppHandle) -> Result<Vec<serde_json::Value>, String>
             }))
         })
         .map_err(|e| format!("db_load_folders query failed: {}", e))?
-        .filter_map(|r| r.ok())
+        .filter_map(|r| try_log(r, "db_load_folders row"))
         .collect();
     Ok(rows)
 }
@@ -313,7 +313,7 @@ pub fn db_load_root_folders(app: AppHandle) -> Result<Vec<String>, String> {
     let rows = stmt
         .query_map([], |row| row.get::<_, String>(0))
         .map_err(|e| format!("db_load_root_folders query failed: {}", e))?
-        .filter_map(|r| r.ok())
+        .filter_map(|r| try_log(r, "db_load_root_folders row"))
         .collect();
     Ok(rows)
 }
@@ -377,8 +377,8 @@ pub fn db_load_profiles(app: AppHandle) -> Result<Vec<serde_json::Value>, String
     let rows = stmt
         .query_map([], |row| row.get::<_, String>(0))
         .map_err(|e| format!("db_load_profiles query failed: {}", e))?
-        .filter_map(|r| r.ok())
-        .filter_map(|json_str| serde_json::from_str(&json_str).ok())
+        .filter_map(|r| try_log(r, "db_load_profiles row"))
+        .filter_map(|json_str| try_log(serde_json::from_str(&json_str), "db_load_profiles JSON parse"))
         .collect();
     Ok(rows)
 }
@@ -489,8 +489,8 @@ pub fn db_load_highscores(
     let rows = stmt
         .query_map(param_refs.as_slice(), |row| row.get::<_, String>(0))
         .map_err(|e| format!("db_load_highscores query failed: {}", e))?
-        .filter_map(|r| r.ok())
-        .filter_map(|json_str| serde_json::from_str(&json_str).ok())
+        .filter_map(|r| try_log(r, "db_load_highscores row"))
+        .filter_map(|json_str| try_log(serde_json::from_str(&json_str), "db_load_highscores JSON parse"))
         .collect();
     Ok(rows)
 }
@@ -551,7 +551,7 @@ pub fn db_load_playlists(app: AppHandle) -> Result<Vec<serde_json::Value>, Strin
             }))
         })
         .map_err(|e| format!("db_load_playlists query failed: {}", e))?
-        .filter_map(|r| r.ok())
+        .filter_map(|r| try_log(r, "db_load_playlists row"))
         .collect();
     Ok(rows)
 }
@@ -624,6 +624,18 @@ pub fn db_get_stats(app: AppHandle) -> Result<serde_json::Value, String> {
 // ====================================================================
 // Utility
 // ====================================================================
+
+/// Helper: try to convert a Result<T, E> into Option<T>, logging errors
+/// instead of silently discarding them via `.ok()`.
+fn try_log<T, E: std::fmt::Display>(result: Result<T, E>, context: &str) -> Option<T> {
+    match result {
+        Ok(v) => Some(v),
+        Err(e) => {
+            eprintln!("[db] {} failed: {}", context, e);
+            None
+        }
+    }
+}
 
 fn chrono_now_ms() -> u64 {
     std::time::SystemTime::now()
