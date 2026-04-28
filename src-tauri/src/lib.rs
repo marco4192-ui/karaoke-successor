@@ -227,31 +227,23 @@ fn native_pick_file_save(title: String, filter_name: String, extensions: Vec<Str
 }
 
 /// Show a native message dialog.
+/// Returns true if the user acknowledged the dialog, false if dismissed.
 #[tauri::command]
 fn native_message(title: String, message: String, kind: String) -> bool {
-    match kind.as_str() {
-        "info" => rfd::MessageDialog::new()
-            .set_title(&title)
-            .set_description(&message)
-            .set_level(rfd::MessageLevel::Info)
-            .show(),
-        "warning" => rfd::MessageDialog::new()
-            .set_title(&title)
-            .set_description(&message)
-            .set_level(rfd::MessageLevel::Warning)
-            .show(),
-        "error" => rfd::MessageDialog::new()
-            .set_title(&title)
-            .set_description(&message)
-            .set_level(rfd::MessageLevel::Error)
-            .show(),
-        _ => rfd::MessageDialog::new()
-            .set_title(&title)
-            .set_description(&message)
-            .set_level(rfd::MessageLevel::Info)
-            .show(),
+    let level = match kind.as_str() {
+        "warning" => rfd::MessageLevel::Warning,
+        "error" => rfd::MessageLevel::Error,
+        _ => rfd::MessageLevel::Info,
     };
-    true
+
+    let result = rfd::MessageDialog::new()
+        .set_title(&title)
+        .set_description(&message)
+        .set_level(level)
+        .show();
+
+    // Return true if the user acknowledged (Ok), false if dismissed (Cancel/Close)
+    !matches!(result, rfd::MessageDialogResult::Cancel | rfd::MessageDialogResult::Close)
 }
 
 /// Show a native confirm dialog.
