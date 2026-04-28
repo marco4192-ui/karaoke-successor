@@ -73,6 +73,13 @@ impl NativeAudioPlayer {
         }
     }
 
+    /// Lock the state, recovering data from a poisoned mutex.
+    /// This prevents a crash if the audio thread panicked while
+    /// holding the lock.
+    fn lock_state(&self) -> std::sync::MutexGuard<'_, PlaybackState> {
+        self.state.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
     /// Create a player that shares state with an external Arc (used by the audio thread).
     pub fn with_shared_state(state: Arc<Mutex<PlaybackState>>) -> Self {
         Self {
@@ -83,7 +90,7 @@ impl NativeAudioPlayer {
 
     /// Get a lock on the current state (for Tauri commands).
     pub fn state(&self) -> std::sync::MutexGuard<'_, PlaybackState> {
-        self.state.lock().unwrap()
+        self.lock_state()
     }
 
     /// Load an audio file, create an output stream on the given host/device,
@@ -97,7 +104,7 @@ impl NativeAudioPlayer {
 
         // Update state
         {
-            let mut state = self.state.lock().unwrap();
+            let mut state = self.lock_state();
             state.duration_ms = decoded.duration_ms;
             state.position_ms = 0;
             state.is_playing = true;
@@ -172,7 +179,7 @@ impl NativeAudioPlayer {
             .build_output_stream(
                 &config.into(),
                 move |data: &mut [T], _: &cpal::OutputCallbackInfo| {
-                    let mut state = state_clone.lock().unwrap();
+                    let mut state = state_clone.lock().unwrap_or_else(|e| e.into_inner());
 
                     // Handle stop
                     if state.stop_requested {
@@ -186,7 +193,7 @@ impl NativeAudioPlayer {
                     if let Some(target_ms) = state.seek_request.take() {
                         let target_frame =
                             (target_ms as f64 / 1000.0 * sample_rate as f64) as usize;
-                        *cursor_clone.lock().unwrap() = target_frame.min(total_frames);
+                        *cursor_clone.lock().unwrap_or_else(|e| e.into_inner()) = target_frame.min(total_frames);
                         state.position_ms = target_ms;
                     }
 
@@ -198,7 +205,7 @@ impl NativeAudioPlayer {
                         return;
                     }
 
-                    let mut cursor = cursor_clone.lock().unwrap();
+                    let mut cursor = cursor_clone.lock().unwrap_or_else(|e| e.into_inner());
                     let volume = state.volume;
 
                     let src = &*samples;
@@ -248,39 +255,39 @@ impl NativeAudioPlayer {
 
     /// Pause playback (stream continues but outputs silence).
     pub fn pause(&self) {
-        let mut state = self.state.lock().unwrap();
+        let mut state = self.lock_state();
         state.is_playing = false;
     }
 
     /// Resume playback.
     pub fn resume(&self) {
-        let mut state = self.state.lock().unwrap();
+        let mut state = self.lock_state();
         state.is_playing = true;
     }
 
     /// Seek to a position in milliseconds.
     pub fn seek(&self, position_ms: u64) {
-        let mut state = self.state.lock().unwrap();
+        let mut state = self.lock_state();
         state.seek_request = Some(position_ms);
     }
 
     /// Set volume (0.0 – 1.0).
     pub fn set_volume(&self, volume: f32) {
-        let mut state = self.state.lock().unwrap();
+        let mut state = self.lock_state();
         state.volume = volume.max(0.0).min(1.0);
     }
 
     /// Stop playback and clean up.
     pub fn stop(&mut self) {
         {
-            let mut state = self.state.lock().unwrap();
+            let mut state = self.lock_state();
             state.stop_requested = true;
             state.is_playing = false;
         }
         // Drop the stream to stop it
         self.stream = None;
         // Reset state
-        let mut state = self.state.lock().unwrap();
+        let mut state = self.lock_state();
         state.position_ms = 0;
         state.stop_requested = false;
         state.seek_request = None;
@@ -288,7 +295,7 @@ impl NativeAudioPlayer {
 
     /// Get current position in ms.
     pub fn get_position_ms(&self) -> u64 {
-        self.state.lock().unwrap().position_ms
+        self.lock_state().position_ms
     }
 }
 
