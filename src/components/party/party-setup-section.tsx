@@ -318,11 +318,24 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                     return { song, startTime, endTime: startTime + snippetDurationMs, duration: snippetDurationMs };
                   });
 
-                  // Pre-restore URLs for all snippet songs (needed for Tauri file:// paths)
+                  // Pre-restore URLs AND lyrics for all snippet songs (needed for
+                  // Tauri file:// paths and IndexedDB-stored lyrics)
                   const preparedSnippets = await Promise.all(
                     medleySnippets.map(async snippet => {
                       try {
-                        const prepared = await ensureSongUrls(snippet.song);
+                        let prepared = await ensureSongUrls(snippet.song);
+
+                        // Also load lyrics if not present (storedTxt / relativeTxtPath)
+                        if (!prepared.lyrics || prepared.lyrics.length === 0) {
+                          try {
+                            const { loadSongLyrics } = await import('@/lib/game/song-library');
+                            const lyrics = await loadSongLyrics(prepared);
+                            if (lyrics.length > 0) {
+                              prepared = { ...prepared, lyrics };
+                            }
+                          } catch { /* non-critical */ }
+                        }
+
                         return { ...snippet, song: prepared };
                       } catch {
                         return snippet;
