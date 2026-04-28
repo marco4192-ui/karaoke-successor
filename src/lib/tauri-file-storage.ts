@@ -73,8 +73,29 @@ async function getTauri() {
   return await import('@tauri-apps/api/core');
 }
 
-// In-memory cache for blob URLs to avoid recreating them
+// In-memory cache for blob URLs to avoid recreating them.
+// Eviction: capped at 200 entries — oldest entries are removed when full.
 const blobUrlCache = new Map<string, string>();
+const BLOB_CACHE_MAX = 200;
+
+/** Revoke an old blob URL and remove it from the cache. */
+function evictBlobUrl(key: string) {
+  const url = blobUrlCache.get(key);
+  if (url) {
+    try { URL.revokeObjectURL(url); } catch {}
+    blobUrlCache.delete(key);
+  }
+}
+
+/** Add a blob URL to the cache, evicting the oldest entry if full. */
+function cacheBlobUrl(key: string, url: string) {
+  if (blobUrlCache.size >= BLOB_CACHE_MAX) {
+    // Evict the oldest entry (first key in insertion order)
+    const oldest = blobUrlCache.keys().next().value;
+    if (oldest !== undefined) evictBlobUrl(oldest);
+  }
+  blobUrlCache.set(key, url);
+}
 
 // File extension patterns
 const AUDIO_EXTENSIONS = ['.mp3', '.ogg', '.wav', '.m4a', '.flac', '.aac', '.wma', '.opus', '.weba', '.aiff', '.aif'];
@@ -936,7 +957,7 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
       const fallback = await loadFileAsBlobUrl(backslashPath);
       if (fallback) {
         // Cache under both paths
-        blobUrlCache.set(backslashPath, fallback);
+        cacheBlobUrl(backslashPath, fallback);
         return fallback;
       }
     }
@@ -1075,7 +1096,7 @@ async function loadFileAsBlobUrl(fullPath: string): Promise<string | null> {
     const blobUrl = URL.createObjectURL(blob);
     
     // Cache the URL
-    blobUrlCache.set(fullPath, blobUrl);
+    cacheBlobUrl(fullPath, blobUrl);
     
     console.log('[TauriFS] Created blob URL for:', fullPath, 'MIME:', mimeType, 'Size:', bytes.length);
     return blobUrl;
