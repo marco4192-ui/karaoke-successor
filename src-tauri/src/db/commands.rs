@@ -584,7 +584,8 @@ pub fn db_clear_all(app: AppHandle) -> Result<DbResult, String> {
          DELETE FROM profiles;
          DELETE FROM highscores;
          DELETE FROM playlists;
-         DELETE FROM app_settings;"
+         DELETE FROM app_settings;
+         DELETE FROM viral_hits;"
     ).map_err(|e| format!("db_clear_all failed: {}", e))?;
     Ok(DbResult {
         success: true,
