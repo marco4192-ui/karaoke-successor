@@ -212,7 +212,7 @@ impl AudioAnalyzer {
 
         // ---- Convert frames to notes ----
         report(AnalysisStage::NoteConversion, 90.0, "Erstelle Noten...", &progress_callback);
-        let notes = self.frames_to_notes(&frames);
+        let notes = Self::frames_to_notes(&frames, hop_size, sr);
 
         report(AnalysisStage::Complete, 100.0, "Analyse abgeschlossen!", &progress_callback);
 
@@ -232,7 +232,7 @@ impl AudioAnalyzer {
     // ---- Note conversion ----------------------------------------------------
 
     /// Merge consecutive voiced frames into discrete notes.
-    fn frames_to_notes(&self, frames: &[AnalysisFrame]) -> Vec<DetectedNote> {
+    fn frames_to_notes(frames: &[AnalysisFrame], hop_size: usize, sr: f64) -> Vec<DetectedNote> {
         let mut notes: Vec<DetectedNote> = Vec::new();
         let pitch_tolerance = 1.0; // semitones
         let min_note_duration_ms = 60.0;
