@@ -66,7 +66,22 @@ impl AudioAnalyzer {
         };
 
         // ---- Configuration ----
-        let window_size = 2048;
+        // Use a larger window for CREPE so that resampling to 16 kHz yields
+        // at least 1024 samples (CREPE's native window).  For 44.1 kHz this
+        // means 2824 samples; for 48 kHz, 3072.
+        #[cfg(feature = "crepe")]
+        let use_crepe = self.options.algorithm == "crepe";
+        #[cfg(not(feature = "crepe"))]
+        let use_crepe = false;
+
+        let window_size = if use_crepe {
+            #[cfg(feature = "crepe")]
+            { super::crepe::crepe_window_size(sample_rate) }
+            #[cfg(not(feature = "crepe"))]
+            { 2048 }
+        } else {
+            2048
+        };
         let hop_size = self.options.hop_size_override.unwrap_or(1024);
 
         // Guard against usize underflow when audio is shorter than one window
@@ -102,8 +117,6 @@ impl AudioAnalyzer {
 
         // ---- Prepare algorithm-specific detectors ----
         report(AnalysisStage::PitchDetection, 10.0, "Initialisiere Pitch-Detektion...", &progress_callback);
-
-        let use_crepe = self.options.algorithm == "crepe";
 
         // YIN detector (used for "yin" algorithm and as fallback)
         let yin = YinDetectorSr::new(
