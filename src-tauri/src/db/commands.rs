@@ -191,12 +191,14 @@ pub fn db_search_songs(app: AppHandle, query: String, limit: Option<i64>) -> Res
     let state = app.state::<DbState>();
     let conn = state.conn.lock().map_err(|e| e.to_string())?;
     let limit_val = limit.unwrap_or(100);
-    let like_pattern = format!("%{}%", query);
+    // Escape LIKE wildcards (% and _) in user input to prevent pattern injection
+    let escaped_query = query.replace('%', r"\%").replace('_', r"\_");
+    let like_pattern = format!("%{}%", escaped_query);
 
     let mut stmt = conn
         .prepare(
             "SELECT json_data FROM songs
-             WHERE title LIKE ?1 OR artist LIKE ?1 OR album LIKE ?1
+             WHERE title LIKE ?1 ESCAPE '\\' OR artist LIKE ?1 ESCAPE '\\' OR album LIKE ?1 ESCAPE '\\'
              ORDER BY artist ASC, title ASC
              LIMIT ?2"
         )

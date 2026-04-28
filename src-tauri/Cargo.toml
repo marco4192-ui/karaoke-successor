@@ -13,7 +13,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["devtools"] }
+tauri = { version = "2", features = [] }
 tauri-plugin-shell = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-dialog = "2"
@@ -47,6 +47,7 @@ rusqlite = { version = "0.31", features = ["bundled"] }
 
 [features]
 default = ["crepe"]
+devtools = ["tauri/devtools"]
 asio = ["cpal/asio"]
 crepe = ["ort", "ndarray"]
 
