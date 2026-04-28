@@ -25,6 +25,7 @@ import { GameProgressBar } from '@/components/game/game-hud';
 import { TimeDisplay } from '@/components/game/game-hud';
 import { PtmTransitionOverlay } from '@/components/game/ptm-transition-overlay';
 import { PtmSongResults, PtmSeriesResults } from '@/components/game/ptm-song-results';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 // Re-export types from pass-the-mic-screen for backward compatibility
 export type { PassTheMicPlayer, PassTheMicSegment } from '@/components/game/pass-the-mic-screen';
@@ -938,11 +939,12 @@ export function PtmGameScreen({
           <Button
             variant="ghost"
             onClick={() => {
-              if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen?.catch(() => {});
-              } else {
-                document.exitFullscreen?.catch(() => {});
-              }
+              // Tauri uses its own Window API for fullscreen (DOM fullscreen API
+              // does not work reliably inside Tauri webviews)
+              const win = getCurrentWindow();
+              win.isFullscreen().then(isFs => {
+                win.setFullscreen(!isFs).catch(() => {});
+              }).catch(() => {});
             }}
             className="text-white/80 hover:text-white hover:bg-white/10 rounded-lg w-10 h-10 p-0"
             title="Vollbild"
