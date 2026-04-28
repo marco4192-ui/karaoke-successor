@@ -862,7 +862,7 @@ export function PtmGameScreen({
             noteShapeStyle={noteShapeStyle}
             noteDisplayStyle={noteDisplayStyle as any}
             notePerformance={undefined}
-            singLinePosition={75}
+            singLinePosition={20}
             noteWindow={NOTE_WINDOW}
             playerColor={currentPlayer?.color || PLAYER_COLORS[0]}
             showPlayerLabel={false}
@@ -928,9 +928,22 @@ export function PtmGameScreen({
         </div>
       )}
 
-      {/* 8.4 Vollbild-Button | 8.5 Kamera-Button | Pause */}
+      {/* Pause | Vollbild + Schwierigkeit | Kamera | Song beenden */}
       {phase === 'playing' && (
-        <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
+        <div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-2">
+          <div className="flex items-center gap-2">
+            {/* Difficulty badge */}
+            <Badge
+              variant="outline"
+              className={`text-[10px] px-2 py-0.5 border-white/20 ${
+                safeSettings.difficulty === 'easy' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                safeSettings.difficulty === 'hard' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+                'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+              }`}
+            >
+              {safeSettings.difficulty === 'easy' ? 'Leicht' : safeSettings.difficulty === 'hard' ? 'Schwer' : 'Mittel'}
+            </Badge>
+          </div>
           <Button
             variant="ghost"
             onClick={() => onPause?.()}
@@ -978,72 +991,7 @@ export function PtmGameScreen({
           >
             📷
           </Button>
-        </div>
-      )}
-
-      {/* 8.3 Gesangsindikator linkes Drittel */}
-      {(phase === 'playing' || phase === 'transitioning') && (
-        <div className="absolute left-4 top-1/3 -translate-y-1/2 z-20">
-          <div className="bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/10">
-            <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Gesangsindikator</div>
-            <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${pitchResult?.frequency ? 'bg-green-500 animate-pulse' : 'bg-white/20'}`} />
-              <span className="text-xs text-white/60">
-                {pitchResult?.frequency ? `${Math.round(pitchResult.note * 2) / 2} Hz` : 'Kein Ton'}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Player Queue (bottom-left) */}
-      {(phase === 'playing' || phase === 'transitioning') && (
-        <div className="absolute bottom-16 left-4 z-20">
-          <div className="flex flex-wrap gap-1.5">
-            {playersRef.current.map((player, index) => {
-              const isActive = index === currentPlayerIndex;
-              return (
-                <div
-                  key={player.id}
-                  className={`px-2.5 py-1.5 rounded-lg transition-all text-xs ${
-                    isActive
-                      ? 'bg-white/20 border-2 scale-110'
-                      : 'bg-black/40 border border-white/10'
-                  }`}
-                  style={isActive ? { borderColor: player.color } : {}}
-                >
-                  <div className="flex items-center gap-1.5">
-                    {player.avatar ? (
-                      <img src={player.avatar} alt={player.name} className="w-5 h-5 rounded-full object-cover" />
-                    ) : (
-                      <div
-                        className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-                        style={{ backgroundColor: player.color }}
-                      >
-                        {player.name.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <span className={`font-medium ${isActive ? 'text-white' : 'text-white/60'}`}>
-                      {player.name}
-                    </span>
-                  </div>
-                  <div className={`text-[10px] ${isActive ? 'text-white/70' : 'text-white/30'}`}>
-                    {player.score.toLocaleString()} pts
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Progress Bar (bottom) */}
-      <GameProgressBar currentTime={currentTime} duration={displayDuration} />
-      <TimeDisplay currentTime={currentTime} duration={displayDuration} />
-
-      {/* End Song Early Button (bottom-right) */}
-      {phase === 'playing' && (
-        <div className="absolute bottom-16 right-4 z-20">
+          {/* Stop button */}
           <Button
             onClick={() => {
               setIsPlaying(false);
@@ -1052,12 +1000,80 @@ export function PtmGameScreen({
             }}
             variant="ghost"
             size="sm"
-            className="text-white/30 hover:text-white/60 text-xs"
+            className="text-white/30 hover:text-red-400 text-xs"
+            title="Song beenden"
           >
-            Song beenden
+            ⏹ Beenden
           </Button>
         </div>
       )}
+
+      {/* Gesangsindikator entfernt — Pitch-Status ist im Note-Highway sichtbar */}
+
+      {/* Player Ranking — vertikal links, sortiert nach Score (active player oben) */}
+      {(phase === 'playing' || phase === 'transitioning') && (() => {
+        const ranked = [...playersRef.current]
+          .map((p, i) => ({ ...p, originalIndex: i }))
+          .sort((a, b) => b.score - a.score);
+        return (
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20">
+            <div className="flex flex-col gap-1.5">
+              {ranked.map((player, rank) => {
+                const isActive = player.originalIndex === currentPlayerIndex;
+                return (
+                  <div
+                    key={player.id}
+                    className={`flex items-center gap-2 px-2.5 py-2 rounded-lg transition-all ${
+                      isActive
+                        ? 'bg-white/15 border border-white/20 scale-105'
+                        : 'bg-black/40 border border-white/5'
+                    }`}
+                    style={isActive ? { borderColor: `${player.color}50` } : {}}
+                  >
+                    {/* Rank number */}
+                    <span className={`text-[10px] font-bold w-4 text-center ${
+                      rank === 0 ? 'text-yellow-400' : 'text-white/30'
+                    }`}>
+                      {rank + 1}
+                    </span>
+                    {/* Avatar */}
+                    {player.avatar ? (
+                      <img src={player.avatar} alt={player.name} className={`w-7 h-7 rounded-full object-cover ${isActive ? 'border-2' : 'border border-white/20'}`} style={isActive ? { borderColor: player.color } : {}} />
+                    ) : (
+                      <div
+                        className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${isActive ? 'border-2' : 'border border-white/20'}`}
+                        style={{ backgroundColor: `${player.color}80`, borderColor: isActive ? player.color : undefined }}
+                      >
+                        {player.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="flex flex-col min-w-0">
+                      <span className={`text-xs font-medium truncate max-w-[80px] ${isActive ? 'text-white' : 'text-white/50'}`}>
+                        {player.name}
+                      </span>
+                      <span className={`text-[10px] ${isActive ? 'text-cyan-400 font-semibold' : 'text-white/25'}`}>
+                        {player.score.toLocaleString()} pts
+                      </span>
+                    </div>
+                    {/* Combo for active player */}
+                    {isActive && player.combo > 1 && (
+                      <span className="text-[10px] text-amber-400 font-medium ml-auto">
+                        {player.combo}x
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Progress Bar (bottom) */}
+      <GameProgressBar currentTime={currentTime} duration={displayDuration} />
+      <TimeDisplay currentTime={currentTime} duration={displayDuration} />
+
+      {/* End Song Early — moved to top-right button stack */}
 
       {/* ═══════ TRANSITION OVERLAY ═══════ */}
       <PtmTransitionOverlay
