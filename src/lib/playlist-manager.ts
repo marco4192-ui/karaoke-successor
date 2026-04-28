@@ -297,6 +297,23 @@ export function recordSongPlay(songId: string): void {
     recentPlaylist.updatedAt = now;
   }
   
+  // Update Most Played — move to front to represent play count ranking
+  const mostPlayedPlaylist = playlists.find(p => p.id === SYSTEM_PLAYLISTS.MOST_PLAYED);
+  if (mostPlayedPlaylist) {
+    // Remove current position (if present) to re-rank
+    const existingIndex = mostPlayedPlaylist.songIds.indexOf(songId);
+    if (existingIndex !== -1) {
+      mostPlayedPlaylist.songIds.splice(existingIndex, 1);
+    }
+    // Re-insert at the front (most recently played = highest ranked)
+    mostPlayedPlaylist.songIds.unshift(songId);
+    // Keep only top 100
+    if (mostPlayedPlaylist.songIds.length > 100) {
+      mostPlayedPlaylist.songIds = mostPlayedPlaylist.songIds.slice(0, 100);
+    }
+    mostPlayedPlaylist.updatedAt = now;
+  }
+  
   savePlaylists(playlists);
 }
 
