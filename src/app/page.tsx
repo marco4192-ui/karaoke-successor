@@ -34,10 +34,10 @@ function generatePtmSegments(
     return [{ startTime: 0, endTime: Math.round(songDurationMs), playerId: null }];
   }
 
-  // Calculate segment duration: use setting or auto-compute 20-60s
-  const rawDur = settingsSegmentDuration
+  // Calculate segment duration in ms: use setting or auto-compute 20-60s
+  const rawDurSec = settingsSegmentDuration
     || Math.max(20, Math.min(60, Math.ceil(songDurationMs / (playerCount * 2 * 1000))));
-  const segDurMs = Math.max(20000, Math.min(60000, rawDur)) * 1000;
+  const segDurMs = Math.max(20000, Math.min(60000, rawDurSec * 1000));
 
   // Calculate how many segments fit
   const rawCount = Math.ceil(songDurationMs / segDurMs);
