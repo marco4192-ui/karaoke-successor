@@ -297,7 +297,11 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   const snippetDuration = 30; // fixed 30s per snippet
                   const snippetCount = Math.max(3, Math.min(result.players.length * 2, 10));
                   const snippetDurationMs = snippetDuration * 1000;
-                  const shuffled = [...filteredSongs].sort(() => Math.random() - 0.5);
+                  // Filter out songs shorter than 60 seconds — they cannot contain
+                  // a meaningful medley snippet and would cause errors.
+                  const MIN_MELODY_SONG_MS = 60 * 1000;
+                  const eligibleSongs = filteredSongs.filter(s => s.duration >= MIN_MELODY_SONG_MS);
+                  const shuffled = [...eligibleSongs].sort(() => Math.random() - 0.5);
                   const beatDurationMs = (bpm: number) => 15000 / bpm;
                   const medleySnippets = shuffled.slice(0, snippetCount).map(song => {
                     if (song.medleyStartBeat !== undefined && song.medleyEndBeat !== undefined && song.bpm > 0) {
