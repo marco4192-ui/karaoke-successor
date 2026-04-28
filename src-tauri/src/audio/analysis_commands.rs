@@ -48,7 +48,7 @@ impl AnalysisState {
 
         std::thread::Builder::new()
             .name("karaoke-analysis".into())
-            .spawn(move || run_analysis_thread(rx, app_handle))
+            .spawn(move || run_analysis_thread(rx))
             .expect("Failed to spawn analysis thread");
 
         Self {
@@ -71,7 +71,6 @@ impl Drop for AnalysisState {
 
 fn run_analysis_thread(
     rx: mpsc::Receiver<AnalysisCommand>,
-    _app_handle: AppHandle,
 ) {
     loop {
         match rx.recv_timeout(Duration::from_millis(100)) {

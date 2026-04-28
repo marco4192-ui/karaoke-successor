@@ -66,13 +66,6 @@ pub struct NativeAudioPlayer {
 }
 
 impl NativeAudioPlayer {
-    pub fn new() -> Self {
-        Self {
-            state: Arc::new(Mutex::new(PlaybackState::default())),
-            stream: None,
-        }
-    }
-
     /// Lock the state, recovering data from a poisoned mutex.
     /// This prevents a crash if the audio thread panicked while
     /// holding the lock.
@@ -293,10 +286,6 @@ impl NativeAudioPlayer {
         state.seek_request = None;
     }
 
-    /// Get current position in ms.
-    pub fn get_position_ms(&self) -> u64 {
-        self.lock_state().position_ms
-    }
 }
 
 impl Drop for NativeAudioPlayer {

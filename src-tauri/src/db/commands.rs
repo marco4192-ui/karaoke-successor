@@ -465,7 +465,7 @@ pub fn db_load_highscores(
 
     sql.push_str(" ORDER BY score DESC");
 
-    if let Some(_limit) = limit {
+    if limit.is_some() {
         param_count += 1;
         sql.push_str(&format!(" LIMIT ?{}", param_count));
     }
