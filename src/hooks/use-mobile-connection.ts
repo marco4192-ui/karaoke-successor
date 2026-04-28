@@ -287,13 +287,17 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
         const response = await fetch('/api/mobile?action=gamestate');
         const data = await response.json();
         if (data.success && data.gameState) {
-          const prevSongEnded = gameStateRef.current.songEnded;
-          const newSongEnded = data.gameState.songEnded || false;
+          // Capture previous state BEFORE updating the ref
+          const prevSongEnded = gameStateRef.current.songEnded || false;
           
           const parsed = parseGameState(data.gameState);
+          // Explicitly update ref so the next poll sees the latest state
+          // immediately, without depending on React render timing.
+          gameStateRef.current = parsed;
           setGameState(parsed);
           callbacksRef.current.onGameStateUpdate(parsed);
           
+          const newSongEnded = parsed.songEnded || false;
           if (newSongEnded && !prevSongEnded) {
             callbacksRef.current.onSongEnd();
           }
