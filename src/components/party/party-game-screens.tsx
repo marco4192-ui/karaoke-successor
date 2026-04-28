@@ -17,6 +17,8 @@ import { CompetitiveSetupScreen, CompetitiveGameView } from '@/components/game/c
 import { RateMySongSetupScreen, RateMySongRatingScreen, RateMySongResultsScreen } from '@/components/game/rate-my-song-screen';
 import type { RateMySongResult } from '@/components/game/rate-my-song-screen';
 import type { GameSetupResult } from '@/components/game/unified-party-setup';
+import { preparePtmNextSong } from '@/lib/game/ptm-next-song';
+import { toast } from '@/hooks/use-toast';
 
 // Screen types (matches page.tsx)
 type Screen = 'home' | 'library' | 'game' | 'party' | 'character' | 'queue' | 'mobile' | 'results' | 'highscores' | 'import' | 'settings' | 'jukebox' | 'achievements' | 'dailyChallenge' | 'tournament' | 'tournament-game' | 'battle-royale' | 'battle-royale-game' | 'pass-the-mic' | 'pass-the-mic-game' | 'companion-singalong' | 'companion-singalong-game' | 'medley' | 'medley-game' | 'editor' | 'online' | 'party-setup' | 'song-voting' | 'missing-words' | 'missing-words-game' | 'blind' | 'blind-game' | 'rate-my-song' | 'rate-my-song-game' | 'rate-my-song-rating' | 'rate-my-song-results';
@@ -33,6 +35,9 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
 
   // State for Rate my Song results
   const [rateMySongResult, setRateMySongResult] = useState<RateMySongResult | null>(null);
+
+  // State for PTM next-song loading
+  const [ptmNextLoading, setPtmNextLoading] = useState(false);
 
   // ── Tournament mic assignment overlay state ──
   const [micOverlay, setMicOverlay] = useState<{ p1Name: string; p2Name: string; p1Mic: string; p2Mic: string; countdown: number } | null>(null);
@@ -208,8 +213,62 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               setScreen('library');
             }
           }}
-          onNavigate={(targetScreen) => {
-            setScreen(targetScreen as Screen);
+          onNavigate={async (targetScreen) => {
+            // Handle special PTM next-song navigation
+            if (targetScreen === 'ptm-next-random' || targetScreen === 'ptm-next-medley') {
+              setPtmNextLoading(true);
+              try {
+                const playerCount = party.passTheMicPlayers.length || 2;
+                const segDur = party.passTheMicSettings?.segmentDuration;
+                const action = await preparePtmNextSong(
+                  targetScreen === 'ptm-next-random' ? 'random' : 'medley',
+                  playerCount,
+                  segDur,
+                );
+
+                if (action.mode === 'random') {
+                  party.setPassTheMicSegments(action.result.segments);
+                  party.setPassTheMicSong(action.result.song);
+                  party.setPassTheMicSettings({
+                    ...party.passTheMicSettings,
+                    segmentDuration: action.result.segmentDuration,
+                  });
+                  party.setPtmMedleySnippets([]);
+                  party.setIsSongPlaying(false);
+                  setScreen('pass-the-mic-game');
+                } else if (action.mode === 'medley') {
+                  party.setPtmMedleySnippets(action.result.medleySnippets);
+                  party.setPassTheMicSegments(action.result.segments);
+                  party.setPassTheMicSong(action.result.song);
+                  party.setPassTheMicSettings({
+                    ...party.passTheMicSettings,
+                    segmentDuration: action.result.segmentDuration,
+                  });
+                  party.setIsSongPlaying(false);
+                  setScreen('pass-the-mic-game');
+                } else {
+                  // Fallback to library
+                  setScreen('library');
+                }
+              } catch (err) {
+                console.error('[PTM] Failed to prepare next song:', err);
+                toast({ title: 'Fehler', description: 'Nächstes Lied konnte nicht geladen werden.', variant: 'destructive' });
+                setScreen('library');
+              } finally {
+                setPtmNextLoading(false);
+              }
+            } else if (targetScreen === 'song-voting') {
+              // Re-generate voting songs from filtered pool
+              const { getAllSongs, filterSongs } = await import('@/lib/game/song-library');
+              const songs = getAllSongs();
+              const filters = party.unifiedSetupResult?.settings || {};
+              const filtered = filterSongs(songs, filters.filterGenre, filters.filterLanguage, filters.filterCombined);
+              const suggested = filtered.sort(() => Math.random() - 0.5).slice(0, 5);
+              party.setVotingSongs(suggested);
+              setScreen('song-voting');
+            } else {
+              setScreen(targetScreen as Screen);
+            }
           }}
           onPause={() => {
             party.setPauseDialogAction('song-pause');

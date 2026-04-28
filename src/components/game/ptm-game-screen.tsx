@@ -104,6 +104,7 @@ export function PtmGameScreen({
   const setPassTheMicSegments = usePartyStore(s => s.setPassTheMicSegments);
   const setPassTheMicSettings = usePartyStore(s => s.setPassTheMicSettings);
   const ptmMedleySnippets = usePartyStore(s => s.ptmMedleySnippets);
+  const ptmSongSelection = usePartyStore(s => s.ptmSongSelection);
   const { setGameMode, resetGame } = useGameStore();
   const lastIsSongPlayingRef = useRef(false);
 
@@ -575,7 +576,7 @@ export function PtmGameScreen({
     setPassTheMicSeriesHistory([...passTheMicSeriesHistory, round]);
   }, [effectiveSong, song, passTheMicSeriesHistory, setPassTheMicSeriesHistory]);
 
-  // ── Continue series: reset per-song scores, pick next song ──
+  // ── Continue series: reset per-song scores, pick next song based on selection mode ──
   const handleContinue = useCallback(() => {
     // Stop pitch detector BEFORE navigating to avoid unmount errors
     try { stop(); } catch { /* ignore */ }
@@ -588,12 +589,19 @@ export function PtmGameScreen({
     setGameMode('pass-the-mic');
     setIsSongPlaying(false);
     lastIsSongPlayingRef.current = false;
-    // In Medley mode, navigate to party-setup so user can start a new medley.
-    // In normal mode, navigate to library to pick a new song.
-    const targetScreen = isMedleyMode ? 'party-setup' : 'library';
+    // Navigate based on how the user originally chose their song:
+    // - random → auto-pick next random song (handled in party-game-screens)
+    // - vote → show vote overlay again
+    // - medley → auto-generate new medley (handled in party-game-screens)
+    // - library → go to library for manual selection
+    const sel = ptmSongSelection || (isMedleyMode ? 'medley' : 'library');
+    const targetScreen = sel === 'random' ? 'ptm-next-random'
+      : sel === 'medley' ? 'ptm-next-medley'
+      : sel === 'vote' ? 'song-voting'
+      : 'library';
     // Defer navigation to avoid React unmount race condition
     setTimeout(() => onNavigate?.(targetScreen), 0);
-  }, [isMedleyMode, setPassTheMicPlayers, setPassTheMicSong, setPassTheMicSegments, setGameMode, onNavigate, setIsSongPlaying, stop]);
+  }, [ptmSongSelection, isMedleyMode, setPassTheMicPlayers, setPassTheMicSong, setPassTheMicSegments, setGameMode, onNavigate, setIsSongPlaying, stop]);
 
   // ── End series ──
   const handleEndSeries = useCallback(() => {
@@ -628,9 +636,15 @@ export function PtmGameScreen({
     setGameMode('pass-the-mic');
     setIsSongPlaying(false);
     lastIsSongPlayingRef.current = false;
+    // Navigate based on song selection mode (same as handleContinue)
+    const sel = ptmSongSelection || 'library';
+    const targetScreen = sel === 'random' ? 'ptm-next-random'
+      : sel === 'medley' ? 'ptm-next-medley'
+      : sel === 'vote' ? 'song-voting'
+      : 'library';
     // Defer navigation to avoid React unmount race condition
-    setTimeout(() => onNavigate?.('library'), 0);
-  }, [setPassTheMicSeriesHistory, setPassTheMicSegments, setGameMode, onNavigate, setIsSongPlaying, stop]);
+    setTimeout(() => onNavigate?.(targetScreen), 0);
+  }, [ptmSongSelection, setPassTheMicSeriesHistory, setPassTheMicSegments, setGameMode, onNavigate, setIsSongPlaying, stop]);
 
   // ── Cleanup on unmount ──
   useEffect(() => {

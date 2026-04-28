@@ -90,6 +90,11 @@ interface PartyStore {
   rateMySongPlayerIds: string[];
   setRateMySongPlayerIds: (ids: string[]) => void;
 
+  // PTM song selection mode (how the user originally chose their song: 'random' | 'vote' | 'medley' | 'library')
+  // Used to determine what happens when the user clicks "next song" after a round.
+  ptmSongSelection: string | null;
+  setPtmSongSelection: (mode: string | null) => void;
+
   // Pre-selected library song (set when user picks from library for pass-the-mic/companion-singalong)
   librarySelectedSong: Song | null;
   setLibrarySelectedSong: (song: Song | null) => void;
@@ -176,6 +181,10 @@ export const usePartyStore = create<PartyStore>((set) => ({
   rateMySongPlayerIds: [],
   setRateMySongPlayerIds: (rateMySongPlayerIds) => set({ rateMySongPlayerIds }),
 
+  // PTM song selection mode
+  ptmSongSelection: null as string | null,
+  setPtmSongSelection: (ptmSongSelection) => set({ ptmSongSelection }),
+
   // Pre-selected library song
   librarySelectedSong: null,
   setLibrarySelectedSong: (librarySelectedSong) => set({ librarySelectedSong }),
@@ -207,6 +216,7 @@ export const usePartyStore = create<PartyStore>((set) => ({
     passTheMicSettings: null,
     passTheMicSeriesHistory: [] as PassTheMicRoundResult[],
     ptmMedleySnippets: [],
+    ptmSongSelection: null,
     companionPlayers: [],
     companionSong: null,
     companionSettings: null,

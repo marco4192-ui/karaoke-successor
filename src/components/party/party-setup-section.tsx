@@ -11,6 +11,7 @@ import { Song, GameMode } from '@/types/game';
 import { createTournament, TournamentPlayer, TournamentSettings } from '@/lib/game/tournament';
 import { createBattleRoyale, BattleRoyaleSettings } from '@/lib/game/battle-royale';
 import { createCompetitiveGame, type CompetitiveModeType, type CompetitiveSettings } from '@/lib/game/competitive-words-blind';
+import { storeSongFilters } from '@/lib/game/ptm-next-song';
 import { toast } from '@/hooks/use-toast';
 
 // Screen types (matches page.tsx)
@@ -159,6 +160,14 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               result.settings.filterLanguage,
               result.settings.filterCombined
             );
+            // Store filters for next-round song selection in PTM
+            if (party.selectedGameMode === 'pass-the-mic') {
+              storeSongFilters({
+                filterGenre: result.settings.filterGenre,
+                filterLanguage: result.settings.filterLanguage,
+                filterCombined: result.settings.filterCombined,
+              });
+            }
 
             switch (mode) {
               // ── Tournament: create bracket → bracket view ──
@@ -290,6 +299,8 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
 
               // ── Pass the Mic: song selection (random, medley, or library-picked) ──
               case 'pass-the-mic': {
+                // Store song selection mode so handleContinue knows how to pick the next song
+                party.setPtmSongSelection(result.songSelection || 'random');
                 // When songSelection is 'medley', delegate to the medley game flow
                 // instead of playing a single random song.
                 // Construct proper MedleySettings from PTM context.
@@ -506,6 +517,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
 
             // Store settings based on game mode and navigate to library
             if (party.selectedGameMode === 'pass-the-mic') {
+              party.setPtmSongSelection('library');
               party.setPassTheMicPlayers(toPassTheMicPlayers(result.players));
               party.setPassTheMicSettings({
                 ...result.settings,
@@ -531,6 +543,9 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
           onVoteMode={(result, suggestedSongs) => {
             party.setUnifiedSetupResult(result);
             party.setVotingSongs(suggestedSongs);
+            if (party.selectedGameMode === 'pass-the-mic') {
+              party.setPtmSongSelection('vote');
+            }
             setScreen('song-voting');
           }}
           onBack={() => {
