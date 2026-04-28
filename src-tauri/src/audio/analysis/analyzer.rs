@@ -332,7 +332,7 @@ impl AudioAnalyzer {
         // Finalise the last note
         if let Some(builder) = current {
             let last_time = frames.last().map(|f| f.time_ms).unwrap_or(0.0);
-            let duration = last_time - builder.start_time_ms + 50.0;
+            let duration = last_time - builder.start_time_ms + hop_size as f64 / sr * 1000.0;
             if duration >= min_note_duration_ms {
                 let avg_midi = (builder.pitch_sum / builder.count as f64).round() as i32;
                 let avg_freq = builder.freq_sum / builder.count as f64;

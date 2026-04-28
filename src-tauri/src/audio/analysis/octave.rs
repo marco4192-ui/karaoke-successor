@@ -39,7 +39,7 @@ impl OctaveCorrector {
         let magnitude = self.magnitude_spectrum(samples);
 
         // ---- Step 2: Harmonic Product Spectrum ----
-        let hps = self.harmonic_product(&magnitude, sample_rate);
+        let hps = self.harmonic_product(&magnitude);
 
         // ---- Step 3: Find the peak in the HPS within the vocal range ----
         let min_bin = ((60.0 * self.fft_size as f64 / sample_rate) as usize).max(1);
@@ -105,7 +105,7 @@ impl OctaveCorrector {
 
     /// Compute the Harmonic Product Spectrum by downsampling the magnitude
     /// spectrum by factors 1, 2, ..., H and multiplying element-wise.
-    fn harmonic_product(&self, magnitude: &[f64], _sample_rate: f64) -> Vec<f64> {
+    fn harmonic_product(&self, magnitude: &[f64]) -> Vec<f64> {
         let n = magnitude.len();
         let mut hps = vec![0.0f64; n];
 
