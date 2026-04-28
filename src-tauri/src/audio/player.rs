@@ -81,11 +81,6 @@ impl NativeAudioPlayer {
         }
     }
 
-    /// Get a clone of the shared state Arc.
-    pub fn state_arc(&self) -> Arc<Mutex<PlaybackState>> {
-        self.state.clone()
-    }
-
     /// Get a lock on the current state (for Tauri commands).
     pub fn state(&self) -> std::sync::MutexGuard<'_, PlaybackState> {
         self.state.lock().unwrap()
@@ -351,7 +346,6 @@ pub(crate) fn decode_audio_file(file_path: &str) -> Result<DecodedAudio, String>
 
     let file = try_open(file_path)
         .ok_or_else(|| format!("Audio file not found: {}", file_path))?;
-    let file_size = file.metadata().map(|m| m.len()).unwrap_or(0);
 
     // Resolve the actual path used (for hint/extension detection)
     let resolved_path = if PathBuf::from(file_path).exists() {
@@ -470,7 +464,7 @@ pub(crate) fn decode_audio_file(file_path: &str) -> Result<DecodedAudio, String>
     let duration_ms = if decoded_frames > 0 && sample_rate > 0 {
         (decoded_frames * 1000) / sample_rate as u64
     } else {
-        0 // No fallback available without file_size after refactoring
+        0
     };
 
     Ok(DecodedAudio {
