@@ -55,11 +55,10 @@ pub struct ViralStatus {
 fn normalize(s: &str) -> String {
     let mut result = s.to_lowercase();
 
-    // Strip common prefixes/suffixes (before removing parentheses)
+    // Strip common non-parenthesized suffixes (parenthesized versions are
+    // handled by regex_removed below, so only hyphen-prefixed ones are needed)
     for &suffix in &["- remastered", "- remaster", "- radio edit", "- edit",
-                     "- single version", "- acoustic version", "- live",
-                     " (remastered)", " (remaster)", " (radio edit)", " (edit)",
-                     " (explicit)", " (clean)"] {
+                     "- single version", "- acoustic version", "- live"] {
         if result.ends_with(suffix) {
             result = result[..result.len() - suffix.len()].to_string();
         }
