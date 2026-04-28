@@ -634,11 +634,15 @@ pub fn run() {
                         
                         let result = Command::new("bun")
                             .args(["run", "dev"])
+                            .env("PORT", "3000")
+                            .env("HOSTNAME", "0.0.0.0")
                             .current_dir(&current_dir)
                             .spawn()
                             .or_else(|_| {
                                 Command::new("npm")
                                     .args(["run", "dev"])
+                                    .env("PORT", "3000")
+                                    .env("HOSTNAME", "0.0.0.0")
                                     .current_dir(&current_dir)
                                     .spawn()
                             });
