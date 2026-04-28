@@ -584,13 +584,16 @@ export function PtmGameScreen({
     }));
     setPassTheMicPlayers(resetPlayers);
     setPassTheMicSegments([]);
+    setPassTheMicSong(null);
     setGameMode('pass-the-mic');
     setIsSongPlaying(false);
     lastIsSongPlayingRef.current = false;
+    // In Medley mode, navigate to party-setup so user can start a new medley.
+    // In normal mode, navigate to library to pick a new song.
+    const targetScreen = isMedleyMode ? 'party-setup' : 'library';
     // Defer navigation to avoid React unmount race condition
-    // ("eH is not a function" error caused by state updates during unmount)
-    setTimeout(() => onNavigate?.('library'), 0);
-  }, [setPassTheMicPlayers, setPassTheMicSegments, setGameMode, onNavigate, setIsSongPlaying, stop]);
+    setTimeout(() => onNavigate?.(targetScreen), 0);
+  }, [isMedleyMode, setPassTheMicPlayers, setPassTheMicSong, setPassTheMicSegments, setGameMode, onNavigate, setIsSongPlaying, stop]);
 
   // ── End series ──
   const handleEndSeries = useCallback(() => {
