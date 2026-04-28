@@ -80,7 +80,7 @@ Rules:
           {
             role: 'user',
             content: `Analyze these lyrics for errors and issues:
-${body.lyrics.map((line, i) => `[${i}] ${line}`).join('\n')}
+${body.lyrics.map((line, i) => `[${i}] ${line.replace(/[{}[\]\\]/g, '')}`).join('\n')}
 
 Return ONLY the JSON object.`,
           },

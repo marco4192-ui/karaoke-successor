@@ -62,6 +62,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<CoverGene
       );
     }
 
+    // Sanitize user inputs to prevent prompt injection
+    const sanitize = (s: string) => s.replace(/[{}()\[\]\\]/g, '').slice(0, 200);
+    const safeTitle = sanitize(body.title);
+    const safeArtist = sanitize(body.artist);
+
     let zai;
     try {
       zai = await ZAI.create();
@@ -81,14 +86,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<CoverGene
     const stylePrompt = stylePrompts[style] || stylePrompts.modern;
 
     // Create a detailed prompt for image generation
-    const prompt = `Album cover art for the song "${body.title}" by ${body.artist}.
+    const prompt = `Album cover art for the song "${safeTitle}" by ${safeArtist}.
 Style: ${stylePrompt}
 Theme: ${genreTheme}
 Design requirements:
 - Professional music album cover design
 - Square format (1:1 aspect ratio)
-- Title "${body.title}" should be prominently featured
-- Artist name "${body.artist}" clearly visible
+- Title "${safeTitle}" should be prominently featured
+- Artist name "${safeArtist}" clearly visible
 - No text on faces or people
 - High quality, print-ready appearance
 - Visually striking and memorable
