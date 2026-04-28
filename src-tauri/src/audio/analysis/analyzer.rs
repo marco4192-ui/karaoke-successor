@@ -68,6 +68,20 @@ impl AudioAnalyzer {
         // ---- Configuration ----
         let window_size = 2048;
         let hop_size = self.options.hop_size_override.unwrap_or(1024);
+
+        // Guard against usize underflow when audio is shorter than one window
+        if samples.len() < window_size {
+            return PitchAnalysisResult {
+                frames: vec![],
+                notes: vec![],
+                bpm: 120.0,
+                algorithm: self.options.algorithm.clone(),
+                analysis_duration_ms: start.elapsed().as_millis() as u64,
+                sample_rate,
+                audio_duration_ms: total_duration_ms,
+            };
+        }
+
         let total_frames = (samples.len() - window_size) / hop_size;
 
         if total_frames == 0 {
