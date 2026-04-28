@@ -658,6 +658,30 @@ export function PtmGameScreen({
   if (phase === 'intro') {
     return (
       <div className="max-w-6xl mx-auto">
+        {/* Hidden audio/video elements — must be in DOM during intro so refs
+            are populated before startGame fires. Without these, audioRef.current
+            is null when the countdown reaches zero, causing
+            "No media element available at game start". */}
+        {audioSong?.audioUrl && (
+          <audio
+            key={audioSong.id}
+            ref={audioRef}
+            src={audioSong.audioUrl}
+            className="hidden"
+            preload="auto"
+          />
+        )}
+        {!audioSong?.audioUrl && audioSong?.videoBackground && !isYouTube && (
+          <video
+            key={`video-${audioSong.id}`}
+            ref={videoRef}
+            src={audioSong.videoBackground}
+            className="hidden"
+            muted={false}
+            playsInline
+            preload="auto"
+          />
+        )}
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <div className="text-5xl mb-6">🎤</div>
           <h2 className="text-2xl font-bold mb-2">Pass the Mic</h2>
@@ -767,8 +791,8 @@ export function PtmGameScreen({
         />
       )}
 
-      {/* Hidden Video Element for embedded audio */}
-      {audioSong?.hasEmbeddedAudio && audioSong?.videoBackground && !showBackgroundVideo && !isYouTube && !audioSong?.audioUrl && (
+      {/* Hidden Video Element for embedded audio (fallback when no separate audio) */}
+      {!audioSong?.audioUrl && audioSong?.videoBackground && !isYouTube && (
         <video
           key={`video-${audioSong.id}`}
           ref={videoRef}
