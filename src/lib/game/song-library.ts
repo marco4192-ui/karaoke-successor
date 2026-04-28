@@ -554,7 +554,10 @@ export function filterSongs(
   let filtered = songs;
 
   if (genre && genre !== 'all') {
-    filtered = filtered.filter(s => s.genre === genre);
+    const lowerGenre = genre.toLowerCase();
+    filtered = filtered.filter(s =>
+      s.genre?.toLowerCase().includes(lowerGenre)
+    );
   }
 
   if (language && language !== 'all') {
