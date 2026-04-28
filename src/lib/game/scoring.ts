@@ -9,7 +9,6 @@ import {
 
 // ===================== SCORING CONSTANTS =====================
 export const MAX_POINTS_PER_SONG = 10000;
-const SCORING_TICK_INTERVAL = 100;
 const GOLDEN_NOTE_MULTIPLIER = 5;
 const PERFECT_NOTE_MULTIPLIER = 2;
 const PERFECT_GOLDEN_MULTIPLIER = 10;

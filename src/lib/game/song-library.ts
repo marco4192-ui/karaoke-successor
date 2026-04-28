@@ -6,7 +6,6 @@ import { getSongMediaUrls, storeMedia, hasMedia, getTxtContent } from '@/lib/db/
 import { saveCustomSongsToDB, loadCustomSongsFromDB, migrateFromLocalStorage, clearCustomSongsFromDB } from '@/lib/db/custom-songs-db';
 import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
 
-const STORAGE_KEY = 'karaoke-successor-songs';
 const SETTINGS_KEY = 'karaoke-successor-settings';
 const CUSTOM_SONGS_KEY = 'karaoke-successor-custom-songs';
 

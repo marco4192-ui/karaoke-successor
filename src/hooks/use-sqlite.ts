@@ -185,21 +185,11 @@ export function useSqliteDb(): UseSqliteDb {
     }
   }, []);
 
-  // Initial stats fetch
-  if (!stats && !error && !isReady) {
+  // Initial stats fetch on mount
+  useEffect(() => {
     refreshStats();
-  }
-
-  // Cleanup
-  const prevRef = useRef(mountedRef);
-  prevRef.current = mountedRef;
-
-  // Simple mount/unmount tracking
-  if (typeof window !== 'undefined') {
-    if (!mountedRef.current) {
-      mountedRef.current = true;
-    }
-  }
+    return () => { mountedRef.current = false; };
+  }, [refreshStats]);
 
   return { isReady, stats, error, refreshStats };
 }
