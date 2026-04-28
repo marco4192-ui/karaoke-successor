@@ -78,6 +78,9 @@ export function useMobilePitchDetection({
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const vocalDetectorRef = useRef<VocalDetector | null>(null);
+  // Throttle pitch uploads to max ~20 requests/second (50ms interval)
+  const lastPitchSendRef = useRef<number>(0);
+  const PITCH_SEND_INTERVAL = 50;
 
   // Refs for values consumed inside the requestAnimationFrame loop.
   // Without these, detectPitch would capture stale snapshots of
@@ -182,8 +185,12 @@ export function useMobilePitchDetection({
         setCurrentPitch({ frequency, note, volume });
         
         // Only send pitch if song is playing and not ended (via refs)
+        // Throttled to max ~20 requests/second to avoid server overload
+        const now = performance.now();
         const activeClientId = clientIdRef.current;
-        if (activeClientId && currentlyPlaying && !currentlyEnded && (volume > 0.01 || frequency !== null)) {
+        if (activeClientId && currentlyPlaying && !currentlyEnded && (volume > 0.01 || frequency !== null)
+            && (now - lastPitchSendRef.current) >= PITCH_SEND_INTERVAL) {
+          lastPitchSendRef.current = now;
           fetch('/api/mobile', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
