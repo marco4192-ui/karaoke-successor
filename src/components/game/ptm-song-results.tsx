@@ -83,9 +83,9 @@ export function PtmSongResults({
   }, [seriesHistory, playerScores]);
 
   return (
-    <div className="max-w-3xl mx-auto py-8">
+    <div className="max-w-3xl mx-auto py-8 max-h-screen overflow-y-auto flex flex-col">
       {/* Song Header */}
-      <div className="text-center mb-6">
+      <div className="text-center mb-6 shrink-0">
         <div className="text-4xl mb-3">🎤</div>
         <h2 className="text-2xl font-bold">{songTitle}</h2>
         <p className="text-white/60">{songArtist}</p>
@@ -96,10 +96,10 @@ export function PtmSongResults({
 
       {/* Current Round Ranking */}
       <div className="bg-white/5 border border-white/10 rounded-xl mb-6 overflow-hidden">
-        <div className="px-4 py-3 border-b border-white/10 sticky top-0 bg-zinc-900 z-10">
+        <div className="px-4 py-3 border-b border-white/10 bg-zinc-900 z-10">
           <h3 className="font-bold text-center text-white/80">Runden-Ergebnis</h3>
         </div>
-        <div className="divide-y divide-white/5 max-h-[50vh] overflow-y-auto">
+        <div className="divide-y divide-white/5 max-h-[40vh] overflow-y-auto">
           {sorted.map((player, rank) => {
             const cumScore = cumulativeScores.get(player.id) || 0;
             return (
@@ -167,7 +167,7 @@ export function PtmSongResults({
           <div className="px-4 py-3 border-b border-white/10">
             <h3 className="font-bold text-center text-white/80">Gesamtwertung</h3>
           </div>
-          <div className="px-4 py-3">
+          <div className="px-4 py-3 max-h-[30vh] overflow-y-auto">
             <PtmCumulativeTable
               seriesHistory={seriesHistory}
               currentPlayerScores={playerScores}
@@ -182,8 +182,8 @@ export function PtmSongResults({
         </div>
       )}
 
-      {/* Action Buttons */}
-      <div className="flex gap-3">
+      {/* Action Buttons — sticky at bottom */}
+      <div className="flex gap-3 shrink-0 mt-auto pt-4 sticky bottom-0 bg-zinc-900/95 backdrop-blur-sm pb-4 -mx-2 px-2 rounded-xl">
         <Button
           onClick={onNextSong}
           className="flex-1 py-4 text-lg bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400"
@@ -288,7 +288,7 @@ export function PtmSeriesResults({
   // the user scrolls down to see the final standings or clicks the action buttons.
 
   return (
-    <div className="max-w-3xl mx-auto py-8">
+    <div className="max-w-3xl mx-auto py-8 max-h-screen overflow-y-auto flex flex-col">
       {/* Confetti (during ceremony) */}
       {showCeremony && confettiParticles.length > 0 && (
         <div className="fixed inset-0 z-50 pointer-events-none overflow-hidden">
@@ -351,7 +351,7 @@ export function PtmSeriesResults({
         <div className="px-4 py-3 border-b border-white/10 sticky top-0 bg-zinc-900 z-10">
           <h3 className="font-bold text-center text-white/80">Endstand</h3>
         </div>
-        <div className="divide-y divide-white/5 max-h-[50vh] overflow-y-auto">
+        <div className="divide-y divide-white/5 max-h-[40vh] overflow-y-auto">
           {sortedPlayers.map(([id, data], rank) => (
             <div
               key={id}
@@ -405,11 +405,11 @@ export function PtmSeriesResults({
 
       {/* Round History */}
       {seriesHistory.length > 1 && (
-        <div className="bg-white/5 border border-white/10 rounded-xl mt-6 overflow-hidden">
+        <div className="bg-white/5 border border-white/10 rounded-xl mt-6 overflow-hidden shrink-0">
           <div className="px-4 py-3 border-b border-white/10">
             <h3 className="font-bold text-center text-white/80">Rundenverlauf</h3>
           </div>
-          <div className="divide-y divide-white/5">
+          <div className="divide-y divide-white/5 max-h-[20vh] overflow-y-auto">
             {seriesHistory.map((round, i) => {
               const roundWinner = Object.entries(round.playerScores)
                 .sort(([, a], [, b]) => b.score - a.score)[0];
@@ -430,8 +430,8 @@ export function PtmSeriesResults({
         </div>
       )}
 
-      {/* Action Buttons */}
-      <div className="flex gap-3 mt-6">
+      {/* Action Buttons — sticky at bottom */}
+      <div className="flex gap-3 shrink-0 mt-auto pt-4 sticky bottom-0 bg-zinc-900/95 backdrop-blur-sm pb-4 -mx-2 px-2 rounded-xl">
         <Button
           onClick={onContinue}
           className="flex-1 py-4 text-lg bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400"
