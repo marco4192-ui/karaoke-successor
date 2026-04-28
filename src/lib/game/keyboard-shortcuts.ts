@@ -48,10 +48,12 @@ export class KeyboardShortcutManager {
   private enabled: boolean = true;
   private lastKeyTime: number = 0;
   private keySequence: string[] = [];
+  private boundKeyDown: ((e: KeyboardEvent) => void) | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
-      window.addEventListener('keydown', this.handleKeyDown.bind(this));
+      this.boundKeyDown = this.handleKeyDown.bind(this);
+      window.addEventListener('keydown', this.boundKeyDown);
     }
   }
 
@@ -147,8 +149,9 @@ export class KeyboardShortcutManager {
   }
 
   destroy(): void {
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('keydown', this.handleKeyDown.bind(this));
+    if (typeof window !== 'undefined' && this.boundKeyDown) {
+      window.removeEventListener('keydown', this.boundKeyDown);
+      this.boundKeyDown = null;
     }
     this.handlers.clear();
   }
