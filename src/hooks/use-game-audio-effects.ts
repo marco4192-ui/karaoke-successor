@@ -152,6 +152,18 @@ export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
     };
   }, []);
 
+  // Wire reverb/echo state changes to the audio effects engine
+  useEffect(() => {
+    if (!audioEffectsRef.current) return;
+    audioEffectsRef.current.setReverb(reverbAmount);
+  }, [reverbAmount]);
+
+  useEffect(() => {
+    if (!audioEffectsRef.current) return;
+    // echoAmount is 0-100 from the slider, normalize to 0-1 for mix
+    audioEffectsRef.current.setDelay(0.3, 0.4, echoAmount);
+  }, [echoAmount]);
+
   return {
     audioEffects,
     setAudioEffects,
