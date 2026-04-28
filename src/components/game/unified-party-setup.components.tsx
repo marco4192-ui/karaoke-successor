@@ -391,6 +391,29 @@ export function SingleMicSelector({
     } catch { /* ignore */ }
   }, []);
 
+  // Ensure the currently selected mic is in savedMics (may be missing if mic
+  // was configured in a different session or mic config was modified).
+  // If found, also update the display name from the mic config.
+  const micOptions = React.useMemo(() => {
+    const ids = new Set(savedMics.map(m => m.id));
+    if (selectedMicId && !ids.has(selectedMicId)) {
+      // Selected mic not in list — add a placeholder entry so the
+      // select dropdown shows the correct value instead of the placeholder.
+      return [
+        ...savedMics,
+        { id: selectedMicId, customName: '', deviceName: selectedMicId },
+      ];
+    }
+    return savedMics;
+  }, [savedMics, selectedMicId]);
+
+  // Derive display name for the currently selected mic
+  const selectedMicDisplayName = selectedMicId
+    ? savedMics.find(m => m.id === selectedMicId)?.customName
+      || savedMics.find(m => m.id === selectedMicId)?.deviceName
+      || selectedMicId
+    : null;
+
   return (
     <Card className="bg-white/5 border-white/10 mb-6">
       <CardHeader>
@@ -411,8 +434,12 @@ export function SingleMicSelector({
             }}
             className="flex-1 bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
           >
-            <option value="">— Mikrofon auswählen —</option>
-            {savedMics.map(mic => (
+            <option value="">
+              {selectedMicDisplayName
+                ? `${selectedMicDisplayName}`
+                : '— Mikrofon auswählen —'}
+            </option>
+            {micOptions.map(mic => (
               <option key={mic.id} value={mic.id}>
                 {mic.customName || mic.deviceName}
               </option>
