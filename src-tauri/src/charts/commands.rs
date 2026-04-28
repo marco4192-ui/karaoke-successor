@@ -55,10 +55,7 @@ pub struct ViralStatus {
 fn normalize(s: &str) -> String {
     let mut result = s.to_lowercase();
 
-    // Remove content in parentheses and brackets
-    let re = regex_removed(&mut result);
-
-    // Strip common prefixes/suffixes
+    // Strip common prefixes/suffixes (before removing parentheses)
     for &suffix in &["- remastered", "- remaster", "- radio edit", "- edit",
                      "- single version", "- acoustic version", "- live",
                      " (remastered)", " (remaster)", " (radio edit)", " (edit)",
@@ -75,9 +72,10 @@ fn normalize(s: &str) -> String {
         }
     }
 
-    // Collapse whitespace
-    re;
+    // Remove content in parentheses and brackets (after suffix stripping)
+    regex_removed(&mut result);
 
+    // Collapse whitespace
     result
         .split_whitespace()
         .collect::<Vec<_>>()
@@ -135,7 +133,7 @@ fn is_fuzzy_match(chart_title: &str, chart_artist: &str, lib_title: &str, lib_ar
     let title_overlap = word_overlap(&ct, &lt);
     let artist_overlap = word_overlap(&ca, &la);
 
-    // Require at least 60% title overlap AND 60% artist overlap
+    // Require at least 60% title overlap AND 50% artist overlap
     if title_overlap >= 0.6 && artist_overlap >= 0.5 {
         return true;
     }
