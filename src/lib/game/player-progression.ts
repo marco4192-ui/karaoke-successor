@@ -1,8 +1,6 @@
 // Player Progression System
 // XP, Levels, Ranks, Titles, and Extended Statistics
 
-import { Achievement } from '@/types/game';
-
 // ===================== RANKS & TITLES =====================
 
 export interface Rank {
@@ -381,6 +379,9 @@ export function getLevelForXP(xp: number): { level: number; currentXP: number; n
   // Level 26-50: 2000 XP each
   // Level 51-100: 4000 XP each
   // Level 101+: 8000 XP each
+  
+  // Guard: NaN would cause infinite loop (NaN < anything is always false)
+  if (typeof xp !== 'number' || isNaN(xp) || xp < 0) xp = 0;
   
   let level = 1;
   let xpRequired = 0;
