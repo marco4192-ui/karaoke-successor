@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-import { generateQRCodeUrl, buildCompanionUrl } from '@/lib/qr-code';
+import { buildCompanionUrl } from '@/lib/qr-code';
+import { useQRCode } from '@/hooks/use-qr-code';
 
 // ===================== ICONS =====================
 function PhoneIcon({ className }: { className?: string }) {
@@ -182,6 +183,7 @@ export function MobileScreen() {
   
   // Build connection URL with local IP
   const connectionUrl = localIP ? buildCompanionUrl(localIP) : '';
+  const qrCodeSrc = useQRCode(connectionUrl);
   
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
@@ -236,11 +238,11 @@ export function MobileScreen() {
             {localIP ? (
               <>
                 <div className="bg-white rounded-xl p-4 inline-block mb-4">
-                  <img 
-                    src={generateQRCodeUrl(connectionUrl)} 
-                    alt="QR Code" 
-                    className="w-48 h-48"
-                  />
+                  {qrCodeSrc ? (
+                    <img src={qrCodeSrc} alt="QR Code" className="w-48 h-48" />
+                  ) : (
+                    <div className="w-48 h-48 animate-pulse bg-gray-200 rounded-xl" />
+                  )}
                 </div>
                 <p className="text-sm text-white/60 mb-2">Scan this QR code with your phone</p>
                 <p className="text-xs text-white/40 break-all font-mono">{connectionUrl}</p>

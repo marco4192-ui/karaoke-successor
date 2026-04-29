@@ -1,11 +1,33 @@
 // Shared QR code generation utility
+import QRCode from 'qrcode';
+
+// Simple in-memory cache to avoid regenerating the same QR code on every render
+const qrCache = new Map<string, string>();
+const QR_CACHE_MAX = 50;
 
 /**
- * Generates a QR code image URL for the given data.
- * Uses the free qrserver.com API — works offline only if previously cached.
+ * Generates a QR code data URL (base64 PNG) for the given data.
+ * Works 100% offline — no external API dependency.
+ * Results are cached in memory (up to 50 entries) to avoid redundant canvas work.
  */
-export function generateQRCodeUrl(data: string, size = 200): string {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(data)}`;
+export async function generateQRCodeUrl(data: string, size = 200): Promise<string> {
+  const cacheKey = `${data}-${size}`;
+  const cached = qrCache.get(cacheKey);
+  if (cached) return cached;
+
+  const dataUrl = await QRCode.toDataURL(data, {
+    width: size,
+    margin: 1,
+    errorCorrectionLevel: 'M',
+  });
+
+  // Evict oldest entry if cache is full
+  if (qrCache.size >= QR_CACHE_MAX) {
+    const firstKey = qrCache.keys().next().value;
+    if (firstKey) qrCache.delete(firstKey);
+  }
+  qrCache.set(cacheKey, dataUrl);
+  return dataUrl;
 }
 
 /**

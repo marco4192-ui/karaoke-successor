@@ -162,8 +162,3 @@ export function CheckIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-
-// QR Code generator (simple version)
-export function generateQRCode(data: string): string {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data)}`;
-}

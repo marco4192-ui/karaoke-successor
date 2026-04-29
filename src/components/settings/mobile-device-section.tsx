@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { PhoneIcon } from '@/components/settings/settings-icons';
-import { generateQRCodeUrl, detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
+import { detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
+import { useQRCode } from '@/hooks/use-qr-code';
 
 interface ConnectedClient {
   id: string;
@@ -103,6 +104,7 @@ export function MobileDeviceMicrophoneSection() {
   }, []);
 
   const mobileUrl = localIP ? buildCompanionUrl(localIP) : '/mobile';
+  const qrCodeSrc = useQRCode(localIP ? buildCompanionUrl(localIP) : '');
   
   return (
     <Card className="bg-white/5 border-white/10">
@@ -122,11 +124,15 @@ export function MobileDeviceMicrophoneSection() {
               <p className="text-xs text-white/60">Open your phone&apos;s camera app</p>
             </div>
             <div className="w-48 h-48 bg-white rounded-lg p-2 mb-4">
-              <img 
-                src={generateQRCodeUrl(mobileUrl)}
-                alt="QR Code for mobile connection"
-                className="w-full h-full"
-              />
+              {qrCodeSrc ? (
+                <img
+                  src={qrCodeSrc}
+                  alt="QR Code for mobile connection"
+                  className="w-full h-full"
+                />
+              ) : (
+                <div className="w-full h-full animate-pulse bg-gray-200 rounded" />
+              )}
             </div>
             <p className="text-xs text-white/40 text-center">
               Point your phone camera at this QR code to connect

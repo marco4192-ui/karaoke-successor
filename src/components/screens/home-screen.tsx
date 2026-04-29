@@ -14,7 +14,8 @@ import {
   PhoneIcon
 } from '@/components/icons';
 import type { Screen } from '@/types/screens';
-import { generateQRCodeUrl, detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
+import { detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
+import { useQRCode } from '@/hooks/use-qr-code';
 
 interface HomeScreenProps {
   onNavigate: (screen: Screen) => void;
@@ -35,6 +36,8 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
     setIsMounted(true);
     detectLocalIP().then(ip => { if (ip) setLocalIP(ip); });
   }, []);
+  
+  const qrCodeSrc = useQRCode(localIP ? buildCompanionUrl(localIP) : '', 160);
   
   // Get song count from library - only on client
   const songCount = useMemo(() => {
@@ -159,7 +162,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
             {localIP ? (
               <div className="flex items-center gap-4">
                 <div className="bg-white rounded-lg p-2 flex-shrink-0">
-                  <img src={generateQRCodeUrl(buildCompanionUrl(localIP), 160)} alt="QR Code" className="w-32 h-32" />
+                  {qrCodeSrc ? <img src={qrCodeSrc} alt="QR Code" className="w-32 h-32" /> : <div className="w-32 h-32 animate-pulse bg-gray-200 rounded" />}
                 </div>
                 <div className="text-xs text-white/50 space-y-1">
                   <p>1. Same WiFi network</p>

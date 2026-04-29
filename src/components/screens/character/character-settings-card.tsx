@@ -9,7 +9,8 @@ import { useGameStore } from '@/lib/game/store';
 import { PlayerProfile } from '@/types/game';
 import { COUNTRY_OPTIONS } from './country-options';
 import { ProfileSyncSection } from './profile-sync-section';
-import { generateQRCodeUrl, detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
+import { detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
+import { useQRCode } from '@/hooks/use-qr-code';
 
 interface CharacterSettingsCardProps {
   profile: PlayerProfile;
@@ -29,6 +30,8 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
   useEffect(() => {
     detectLocalIP().then(ip => { if (ip) setLocalIP(ip); });
   }, []);
+
+  const qrCodeSrc = useQRCode(localIP ? buildCompanionUrl(localIP, 3000, profile.id) : '', 160);
 
   const handleUpdatePrivacy = (field: string, value: boolean) => {
     updateProfile(profile.id, {
@@ -288,7 +291,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
           {showQR && localIP && (
             <div className="mt-3 flex items-center gap-4">
               <div className="bg-white rounded-lg p-2">
-                <img src={generateQRCodeUrl(buildCompanionUrl(localIP, 3000, profile.id), 160)} alt="QR Code" className="w-32 h-32" />
+                {qrCodeSrc ? <img src={qrCodeSrc} alt="QR Code" className="w-32 h-32" /> : <div className="w-32 h-32 animate-pulse bg-gray-200 rounded" />}
               </div>
               <p className="text-xs text-white/40 font-mono break-all">
                 {buildCompanionUrl(localIP, 3000, profile.id)}
