@@ -3,17 +3,15 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { useGameStore } from '@/lib/game/store';
 import { getAllSongs } from '@/lib/game/song-library';
 import { PerformanceDisplay } from '@/components/game/game-enhancements';
-import { 
-  MusicIcon, 
-  PlayIcon, 
-  PartyIcon, 
-  MicIcon, 
-  PhoneIcon,
-  UserIcon
+import {
+  MusicIcon,
+  PlayIcon,
+  PartyIcon,
+  MicIcon,
+  PhoneIcon
 } from '@/components/icons';
 import type { Screen } from '@/types/screens';
 import { generateQRCodeUrl, detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';

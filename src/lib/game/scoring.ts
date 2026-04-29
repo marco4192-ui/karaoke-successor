@@ -1,9 +1,7 @@
 import {
   Note,
-  Player,
   Difficulty,
   DIFFICULTY_SETTINGS,
-  SCORE_VALUES,
 } from '@/types/game';
 
 // ===================== SCORING CONSTANTS =====================
@@ -139,7 +137,7 @@ export function calculateTickPoints(
   if (accuracy <= 0) return 0;
 
   const settings = DIFFICULTY_SETTINGS[difficulty];
- const multiplier = isGolden ? PERFECT_GOLDEN_MULTIPLIER : PERFECT_NOTE_MULTIPLIER;
+  const multiplier = isGolden ? PERFECT_GOLDEN_MULTIPLIER : PERFECT_NOTE_MULTIPLIER;
   const points = pointsPerTick * accuracy * settings.noteScoreMultiplier * multiplier;
 
   return points;

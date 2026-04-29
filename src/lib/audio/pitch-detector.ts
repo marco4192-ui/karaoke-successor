@@ -1,4 +1,4 @@
-import { PitchDetectionResult, frequencyToMidi, Difficulty, DIFFICULTY_SETTINGS } from '@/types/game';
+import { PitchDetectionResult, frequencyToMidi, Difficulty } from '@/types/game';
 import { VocalDetector, VocalDetectionResult } from './vocal-detector';
 
 // Karaoke-optimized pitch detection settings

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useGameStore } from '@/lib/game/store';
 import { QueueIcon } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
-import type { Song, GameMode } from '@/types/game';
+import type { Song } from '@/types/game';
 import { getAllSongsAsync } from '@/lib/game/song-library';
 
 interface CompanionQueueItem {

@@ -1,4 +1,3 @@
-// Playlist Manager - CRUD operations for user playlists
 import { Playlist, PlaylistFolder, PlaylistExport, SYSTEM_PLAYLISTS, DEFAULT_PLAYLIST_SETTINGS, Song } from '@/types/game';
 import { generateId } from '@/lib/utils';
 

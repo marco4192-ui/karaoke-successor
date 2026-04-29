@@ -16,8 +16,7 @@
  * - BLIND BONUS: Extra 30 points per note hit during a blind section
  */
 
-import { Song, Difficulty, Player } from '@/types/game';
-import { PLAYER_COLORS } from '@/types/game';
+import { Difficulty, PLAYER_COLORS } from '@/types/game';
 
 // ===================== TYPES =====================
 
