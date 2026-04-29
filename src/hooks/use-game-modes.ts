@@ -67,15 +67,17 @@ export function useGameModes({
       // Generate a deterministic blind pattern when the song starts
       // This ensures the same sections are blind every time, no flickering
       if (blindSeedRef.current.length === 0) {
-        // Pre-generate blind decisions for up to 100 sections (~20 minutes of music)
+        // Mulberry32 seeded PRNG — produces well-distributed values in [0, 1)
         const maxSections = 100;
-        const seed: number[] = [];
-        let rng = Math.random(); // Generate seed once
+        const seedValues: number[] = [];
+        let state = Math.floor(Math.random() * 2147483647); // Seed from Math.random()
         for (let i = 0; i < maxSections; i++) {
-          rng = (rng * 16807 + 0.5) % 1; // Simple LCG pseudo-random
-          seed.push(rng);
+          state = (state + 0x6D2B79F5) | 0;
+          let t = Math.imul(state ^ (state >>> 15), 1 | state);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          seedValues.push(((t ^ (t >>> 14)) >>> 0) / 4294967296);
         }
-        blindSeedRef.current = seed;
+        blindSeedRef.current = seedValues;
       }
 
       const sectionDuration = 12; // 12 seconds per section (in seconds, same unit as currentTime)
