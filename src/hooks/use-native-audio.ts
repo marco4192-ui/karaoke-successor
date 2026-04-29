@@ -90,7 +90,6 @@ export function useNativeAudio(): UseNativeAudioResult {
     try {
       const list = await listAudioDevices();
       setDevices(list);
-      console.log('[NativeAudio] Devices loaded:', list.length);
     } catch (err) {
       console.error('[NativeAudio] Failed to list devices:', err);
     } finally {

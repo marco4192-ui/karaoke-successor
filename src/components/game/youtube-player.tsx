@@ -159,7 +159,6 @@ export function YouTubePlayer({
     // CRITICAL: Set the callback BEFORE appending the script to prevent a race condition.
     // If the script loads very fast (e.g. from cache), the callback must already be registered.
     window.onYouTubeIframeAPIReady = () => {
-      console.log('[YouTube] IFrame API ready');
       setIsApiLoaded(true);
     };
     
@@ -221,13 +220,6 @@ export function YouTubePlayer({
     // postMessage communication. Omit it in non-standard environments.
     const origin = window.location.origin.startsWith('http') ? window.location.origin : undefined;
 
-    console.log('[YouTube] Creating player:', {
-      videoId,
-      adjustedStartTime: Math.floor(adjustedStartTime),
-      videoGap,
-      origin: origin || '(omitted for non-HTTP origin)',
-    });
-    
     // Small delay to ensure DOM is ready
     const initTimeout = setTimeout(() => {
       // Re-check that the container still exists (component may have unmounted)
@@ -252,7 +244,6 @@ export function YouTubePlayer({
         },
         events: {
           onReady: (event) => {
-            console.log('[YouTube] Player ready for video:', videoId);
             try {
               expectedDurationRef.current = playerRef.current?.getDuration() || 0;
             } catch { /* ignore */ }

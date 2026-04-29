@@ -173,18 +173,15 @@ export async function migrateFromLocalStorage(
     // Check if IndexedDB already has data
     const count = await getCustomSongCount();
     if (count > 0) {
-      console.log('[CustomSongsDB] IndexedDB already has', count, 'songs, skipping migration');
       return null;
     }
 
-    console.log('[CustomSongsDB] Migrating', localStorageSongs.length, 'songs from localStorage to IndexedDB');
     await saveCustomSongsToDB(localStorageSongs);
 
     // NOTE: Do NOT remove from localStorage! getCustomSongs() is synchronous
     // and needs localStorage as a fallback when the in-memory cache is null
     // (e.g., after page reload). Both storages stay in sync.
 
-    console.log('[CustomSongsDB] Migration complete');
     return localStorageSongs;
   } catch (e) {
     console.error('[CustomSongsDB] Migration failed:', e);

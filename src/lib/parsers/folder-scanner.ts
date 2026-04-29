@@ -310,7 +310,6 @@ export async function scanFilesFromFileList(files: FileList): Promise<ScanResult
     if (firstPath) {
       // The root folder is the first part of the path
       baseFolder = firstPath.split('/')[0];
-      console.log('[FolderScanner] Extracted baseFolder from FileList:', baseFolder);
     }
   }
 
@@ -489,7 +488,6 @@ export async function convertScannedSongToSong(scanned: ScannedSong): Promise<So
       if (txtContent && txtContent.length > 0) {
         const txtBlob = new Blob([txtContent], { type: 'text/plain' });
         await storeMedia(songId, 'txt', txtBlob);
-        console.log(`[FolderScanner] Cached TXT content (${txtContent.length} chars) for song ${songId}`);
         storedTxt = true;
       } else {
         console.warn(`[FolderScanner] TXT file is empty for song ${songId}`);
@@ -549,16 +547,6 @@ export async function convertScannedSongToSong(scanned: ScannedSong): Promise<So
       normalizedFolderPath = normalizedFolderPath.substring(scanned.baseFolder.length + 1);
     }
   }
-
-  // CRITICAL: Log paths for debugging
-  console.log(`[FolderScanner] Creating song ${scanned.title}`);
-  console.log(`[FolderScanner]   baseFolder: ${scanned.baseFolder || 'not set'}`);
-  console.log(`[FolderScanner]   folderPath (raw): ${scanned.folderPath}`);
-  console.log(`[FolderScanner]   folderPath (normalized): ${normalizedFolderPath}`);
-  console.log(`[FolderScanner]   relativeAudioPath: ${relativeAudioPath || 'none'}`);
-  console.log(`[FolderScanner]   relativeVideoPath: ${relativeVideoPath || 'none'}`);
-  console.log(`[FolderScanner]   relativeCoverPath: ${relativeCoverPath || 'none'}`);
-  console.log(`[FolderScanner]   relativeTxtPath: ${relativeTxtPath || 'none'}`);
 
   return {
     id: songId,

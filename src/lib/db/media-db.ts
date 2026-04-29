@@ -53,8 +53,6 @@ export async function storeMedia(
   type: 'audio' | 'video' | 'cover' | 'txt', 
   data: Blob
 ): Promise<void> {
-  console.log('[MediaDB] storeMedia called:', { songId, type, size: data.size, dataType: data.type });
-  
   if (data.size === 0) {
     console.warn('[MediaDB] Attempting to store empty blob for', type);
     return;
@@ -92,7 +90,6 @@ export async function storeMedia(
         const request = store.put(record);
         
         request.onsuccess = () => {
-          console.log('[MediaDB] Successfully stored', type, 'for song', songId, ', size:', blobToStore.size);
           resolve();
         };
         request.onerror = () => {
@@ -114,7 +111,6 @@ export async function getMedia(
   songId: string, 
   type: 'audio' | 'video' | 'cover' | 'txt'
 ): Promise<Blob | null> {
-  console.log('[MediaDB] getMedia called:', { songId, type });
   const db = await initMediaDB();
   
   return new Promise((resolve, reject) => {
@@ -125,7 +121,6 @@ export async function getMedia(
     request.onsuccess = () => {
       if (request.result) {
         const blob = request.result.data;
-        console.log('[MediaDB] Found', type, 'for song', songId, ', size:', blob.size);
         if (blob.size === 0) {
           console.warn('[MediaDB] Retrieved blob is empty for', type);
         }

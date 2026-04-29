@@ -169,7 +169,6 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
         s.artist.toLowerCase() === songArtist.toLowerCase()
       );
       if (fuzzyMatch) {
-        console.log('[QueueScreen] Song found via title+artist fallback:', songTitle);
         return fuzzyMatch;
       }
     }
@@ -211,7 +210,6 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
       const { getSongByIdWithLyrics, ensureSongUrls } = await import('@/lib/game/song-library');
       const withLyrics = await getSongByIdWithLyrics(song.id) || song;
       song = await ensureSongUrls(withLyrics);
-      console.log('[QueueScreen] Song prepared:', song.title, 'audioUrl:', song.audioUrl ? 'yes' : 'no', 'lyrics:', song.lyrics?.length || 0);
     } catch (err) {
       console.error('[QueueScreen] Failed to prepare song:', err);
     }

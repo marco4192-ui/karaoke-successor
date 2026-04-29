@@ -51,8 +51,6 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         
         // If a zombie with same IP exists, reuse its session instead of creating new
         if (zombieClient) {
-          console.log('[MobileAPI] IP-based reconnect: found zombie client', zombieClient.id,
-            'from IP', clientIp, '- reusing session');
           
           // Update the zombie's activity timestamp
           zombieClient.connected = Date.now();
@@ -83,8 +81,6 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         const persistedProfile = persistentProfileByIp.get(clientIp);
         if (persistedProfile) {
           persistentProfileByIp.delete(clientIp); // One-time restore
-          console.log('[MobileAPI] Persistent profile found for IP', clientIp,
-            '- profile:', persistedProfile.name);
         }
         
         // No zombie found — create fresh client
@@ -160,7 +156,6 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
           const client = removeClient(kickClientId, { purgeQueue: true });
           if (client) {
             const kickedName = client.profile?.name || client.name;
-            console.log(`[Mobile API] Kicked client: ${kickedName} (${client.connectionCode})`);
             return Response.json({ success: true, message: `Kicked ${kickedName}` });
           }
         }

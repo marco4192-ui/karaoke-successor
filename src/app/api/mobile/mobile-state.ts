@@ -141,7 +141,6 @@ export function cleanupInactiveClients() {
   for (const id of inactiveIds) {
     const removed = removeClient(id, { persistProfile: true, purgeQueue: true });
     if (removed) {
-      console.log(`[Mobile API] Cleaned up inactive client: ${removed.name} (${removed.connectionCode})`);
     }
   }
 }

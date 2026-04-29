@@ -43,7 +43,6 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
         }),
       });
 
-      console.log('[SongLibrarySync] Synced', simplifiedSongs.length, 'songs to server');
     } catch (error) {
       console.error('[SongLibrarySync] Error syncing songs:', error);
     }

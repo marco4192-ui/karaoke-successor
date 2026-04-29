@@ -63,7 +63,6 @@ export async function storeReplay(replay: ReplayRecord): Promise<void> {
     const request = store.put(replay);
 
     request.onsuccess = () => {
-      console.log('[ReplayDB] Stored replay', replay.id, 'size:', replay.data.size);
       resolve();
     };
     request.onerror = () => {
@@ -213,7 +212,6 @@ export async function cleanupOldReplays(): Promise<void> {
 
     const deletedCount = oldReplays.length + Math.max(0, remaining.length - 50);
     if (deletedCount > 0) {
-      console.log('[ReplayDB] Cleanup: deleted', deletedCount, 'old replays');
     }
   } catch (err) {
     console.warn('[ReplayDB] Cleanup failed (non-critical):', err);

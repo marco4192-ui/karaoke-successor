@@ -314,7 +314,6 @@ export function ShortsCreator({ song, score, gameResult, audioUrl, onClose }: Sh
         stream.addTrack(destination.stream.getAudioTracks()[0]);
         audioRef.current = audioElement;
       } catch {
-        console.log('Audio capture not available');
       }
     }
 
@@ -390,7 +389,6 @@ export function ShortsCreator({ song, score, gameResult, audioUrl, onClose }: Sh
           files: [file],
         });
       } catch {
-        console.log('Share cancelled');
       }
     } else {
       downloadVideo();

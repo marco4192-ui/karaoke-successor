@@ -57,12 +57,9 @@ export function useFolderScanner(): UseFolderScannerReturn {
       setSongsFolder(savedFolder);
       setSongCount(getAllSongs().length);
 
-      console.log('[Settings] Loaded karaoke-songs-folder from localStorage:', savedFolder);
-
       // Check if songs have baseFolder but localStorage is empty (migration needed)
       const songs = getAllSongs();
       if (songs.length > 0 && songs[0].baseFolder && !savedFolder) {
-        console.log('[Settings] Songs have baseFolder but localStorage is empty - setting localStorage from songs');
         localStorage.setItem('karaoke-songs-folder', songs[0].baseFolder);
         setSongsFolder(songs[0].baseFolder);
       }
@@ -82,8 +79,6 @@ export function useFolderScanner(): UseFolderScannerReturn {
     // CRITICAL: Always save the songs folder to localStorage (normalized)
     const normalizedFolder = normalizeFilePath(folderPath);
     localStorage.setItem('karaoke-songs-folder', normalizedFolder);
-    console.log('[Import] Saved karaoke-songs-folder to localStorage:', normalizedFolder);
-
     try {
       // Import the Tauri scanner
       const { scanSongsFolderTauri, isTauri: checkTauri } = await import('@/lib/tauri-file-storage');
@@ -310,12 +305,10 @@ export function useFolderScanner(): UseFolderScannerReturn {
       const selected = await nativePickFolder('Select Songs Folder');
 
       if (selected) {
-        console.log('[Settings] Folder selected:', selected);
         setSongsFolder(selected);
         localStorage.setItem('karaoke-songs-folder', selected);
         await performFolderScan(selected);
       } else {
-        console.log('[Settings] User cancelled the dialog');
       }
     } catch (e) {
       console.error('[Settings] Error in handleBrowseFolder:', e);

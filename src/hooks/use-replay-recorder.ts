@@ -128,7 +128,6 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
           });
           webcamStreamRef.current = webcamStream;
           webcamStream.getVideoTracks().forEach(track => stream.addTrack(track));
-          console.log('[ReplayRecorder] Webcam stream added to recording');
         } catch (err) {
           console.warn('[ReplayRecorder] Could not get webcam for replay:', err);
         }
@@ -168,7 +167,6 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
       setHasReplay(false);
       setLastReplay(null);
 
-      console.log('[ReplayRecorder] Recording started — mimeType:', recorder.mimeType);
     };
 
     startRecorderWithStream(combinedStream, useWebcam);
@@ -242,7 +240,6 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
           setHasReplay(true);
           setLastReplay(replayData);
           onReplaySaved(replayData);
-          console.log('[ReplayRecorder] Replay saved — id:', id, 'size:', blob.size, 'duration:', duration);
         })
         .catch(err => {
           console.error('[ReplayRecorder] Failed to save replay:', err);
@@ -268,7 +265,6 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
     if (recorder && recorder.state === 'recording') {
       try {
         recorder.pause();
-        console.log('[ReplayRecorder] Recording paused');
       } catch (err) {
         console.warn('[ReplayRecorder] Failed to pause:', err);
       }
@@ -281,7 +277,6 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
     if (recorder && recorder.state === 'paused') {
       try {
         recorder.resume();
-        console.log('[ReplayRecorder] Recording resumed');
       } catch (err) {
         console.warn('[ReplayRecorder] Failed to resume:', err);
       }

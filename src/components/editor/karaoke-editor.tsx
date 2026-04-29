@@ -44,7 +44,6 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
         const { ensureSongUrls } = await import('@/lib/game/song-library');
         const restored = await ensureSongUrls(initialSong);
         if (restored.audioUrl !== initialSong.audioUrl || restored.videoBackground !== initialSong.videoBackground) {
-          console.log('[Editor] URLs restored:', { audioUrl: !!restored.audioUrl });
           setCurrentSong(restored);
         }
       } catch (err) {

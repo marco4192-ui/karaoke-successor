@@ -68,12 +68,6 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
           }
         }
 
-        console.log('[GameScreen] Song URLs ensured:', {
-          title: preparedSong.title,
-          audioUrl: !!preparedSong.audioUrl,
-          videoBackground: !!preparedSong.videoBackground,
-          coverImage: !!preparedSong.coverImage
-        });
         if (cancelled) return;
         setRestoredSong(preparedSong);
       } catch (err) {
@@ -95,26 +89,17 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
   const [lyricsLoadError, setLyricsLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('[GameScreen] Lyrics loading effect triggered', {
-      songId: song?.id,
-      storedTxt: song?.storedTxt,
-      relativeTxtPath: song?.relativeTxtPath,
-      lyricsLength: song?.lyrics?.length || 0
-    });
-
     // Fix (#60): Cancellation flag to prevent stale lyrics from overwriting
     // when song changes rapidly during async lyrics loading.
     let cancelled = false;
 
     if (song && (!song.lyrics || song.lyrics.length === 0) && (song.storedTxt || song.relativeTxtPath)) {
       // Load lyrics on-demand from IndexedDB
-      console.log('[GameScreen] Loading lyrics from IndexedDB for song:', song.id);
       setLyricsLoadError(null);
 
       import('@/lib/game/song-library').then(({ loadSongLyrics }) => {
         loadSongLyrics(song).then(lyrics => {
           if (cancelled) return; // Song changed while loading — discard stale result
-          console.log('[GameScreen] Lyrics loaded, length:', lyrics.length);
           if (lyrics.length > 0) {
             setLoadedLyrics(lyrics);
             setLyricsLoadError(null);
@@ -141,13 +126,6 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
 
   // ── Compute effectiveSong: restored URLs + loaded lyrics ──
   const effectiveSong = useMemo(() => {
-    console.log('[GameScreen] Computing effectiveSong', {
-      hasSong: !!effectiveSongBase,
-      loadedLyricsLength: loadedLyrics.length,
-      songLyricsLength: effectiveSongBase?.lyrics?.length || 0,
-      lyricsLoadError
-    });
-
     if (!effectiveSongBase) return null;
     if (loadedLyrics.length > 0) {
       return { ...effectiveSongBase, lyrics: loadedLyrics };
@@ -217,7 +195,6 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
         audioLoadedRef.current = audioReady;
 
         if (audioReady) {
-          console.log('[GameScreen] Audio loaded successfully');
         } else {
           console.warn('[GameScreen] Audio load timeout, proceeding anyway');
         }
@@ -231,7 +208,6 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
           videoLoadedRef.current = videoReady;
 
           if (videoReady) {
-            console.log('[GameScreen] Video loaded successfully');
           } else {
             console.warn('[GameScreen] Video load timeout, proceeding anyway');
           }

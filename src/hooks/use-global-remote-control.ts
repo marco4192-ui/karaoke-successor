@@ -133,8 +133,6 @@ export function useGlobalRemoteControl({
     }
     lastCommandTimeRef.current = cmd.timestamp;
 
-    console.log('[GlobalRemoteControl] Processing command:', cmd.type, 'from:', cmd.fromClientName);
-
     switch (cmd.type) {
       case 'home':
         navigateToScreen('home');
@@ -199,7 +197,6 @@ export function useGlobalRemoteControl({
         break;
 
       default:
-        console.log('[GlobalRemoteControl] Unknown command:', cmd.type);
     }
   }, [navigateToScreen]);
 

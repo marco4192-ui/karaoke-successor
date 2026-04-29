@@ -60,8 +60,6 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        console.log('[AssetsAPI] Calling image generation API:', `${baseUrl}/images/generations`);
-        
         const response = await fetch(`${baseUrl}/images/generations`, {
           method: 'POST',
           headers,
@@ -133,8 +131,6 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        console.log('[AssetsAPI] Calling TTS API:', `${baseUrl}/audio/tts`);
-        
         const response = await fetch(`${baseUrl}/audio/tts`, {
           method: 'POST',
           headers,

@@ -78,7 +78,6 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
     const { nativeWriteFileText } = await import('@/lib/native-fs');
     await nativeWriteFileText(filePath!, txtContent);
     
-    console.log(`[SaveToFile] Successfully saved to: ${filePath}`);
     return { success: true, message: 'Datei gespeichert!', path: filePath! };
     
   } catch (error) {

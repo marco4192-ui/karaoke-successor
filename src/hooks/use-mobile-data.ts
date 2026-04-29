@@ -35,12 +35,10 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
   // ---- Song library ----
   const loadSongs = useCallback(async () => {
     setSongsLoading(true);
-    console.log('[MobileClient] Loading songs from API...');
     try {
       const response = await fetch('/api/songs');
       if (response.ok) {
         const data = await response.json();
-        console.log('[MobileClient] Songs loaded:', data.songs?.length || 0);
         setSongs(data.songs || []);
       } else {
         console.error('[MobileClient] Failed to load songs, status:', response.status);

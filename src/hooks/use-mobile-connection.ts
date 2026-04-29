@@ -65,7 +65,6 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
               setGameState(parsed);
               callbacksRef.current.onGameStateUpdate(parsed);
             }
-            console.log(`[MobileClient] Reconnected via code${isWakeUp ? ' (wake-up)' : ''}:`, savedCode);
             isConnectingRef.current = false;
             return;
           }
@@ -92,7 +91,6 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
         if (data.ipReconnected && data.profile) {
           callbacksRef.current.onProfileLoaded(data.profile);
           callbacksRef.current.onProfileFieldsLoaded(data.profile.name, data.profile.color, data.profile.avatar || null);
-          console.log('[MobileClient] IP-based reconnect, profile:', data.profile.name);
         } else if (!data.ipReconnected) {
           // Auto-restore profile from localStorage
           const savedProfile = localStorage.getItem('karaoke-mobile-profile');
@@ -110,7 +108,6 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
             } catch { /* ignore */ }
           }
         }
-        console.log(`[MobileClient] Connected${isWakeUp ? ' (wake-up)' : ''}:`, newCode);
       } else {
         callbacksRef.current.onError('Failed to connect to server');
       }
@@ -171,7 +168,6 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     setGameState({ currentSong: null, isPlaying: false, songEnded: false, queueLength: 0, isAdPlaying: false, singalongTurn: null });
     localStorage.removeItem('karaoke-connection-code');
     localStorage.removeItem('karaoke-client-id');
-    console.log('[MobileClient] Disconnected from server');
   }, [cleanup]);
 
   // Auto-connect on mount
@@ -204,7 +200,6 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
 
       // If too many missed heartbeats, try reconnecting
       if (missedHeartbeats >= MAX_MISSED) {
-        console.log('[MobileClient] Heartbeat failed', missedHeartbeats, 'times, reconnecting...');
         setIsConnected(false);
         reconnectInternal(true).catch(() => {});
       }
@@ -236,19 +231,16 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
 
     const currentClientId = clientIdRef.current;
     if (!currentClientId) return;
-    console.log('[MobileClient] Wake-up detected, verifying connection...');
     fetch('/api/mobile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'heartbeat', clientId: currentClientId }),
     }).then((r) => {
       if (!r.ok) {
-        console.log('[MobileClient] Heartbeat failed after wake, reconnecting...');
         setIsConnected(false);
         reconnectInternal(true).catch(() => {});
       }
     }).catch(() => {
-      console.log('[MobileClient] Heartbeat error after wake, reconnecting...');
       setIsConnected(false);
       reconnectInternal(true).catch(() => {});
     });
@@ -266,7 +258,6 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
   useEffect(() => {
     const handlePageShow = (e: PageTransitionEvent) => {
       if (e.persisted || document.visibilityState === 'visible') {
-        console.log('[MobileClient] pageshow event (iOS wake-up), reconnecting...');
         handleWakeUp();
       }
     };

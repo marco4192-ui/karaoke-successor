@@ -388,7 +388,6 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         // Set ad playing state (from main app)
         const adPayload = payload as { isAdPlaying: boolean };
         mutableState.gameState.isAdPlaying = adPayload.isAdPlaying;
-        console.log('[Mobile API] Ad state updated:', adPayload.isAdPlaying);
         return Response.json({ success: true, isAdPlaying: mutableState.gameState.isAdPlaying });
 
       case 'skipAd':
@@ -409,7 +408,6 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         };
         
         mutableState.remoteControlState.pendingCommands.push(skipCommand);
-        console.log('[Mobile API] Skip ad command queued from:', skipAdClient.profile?.name || skipAdClient.name);
         
         return Response.json({ 
           success: true, 
@@ -479,7 +477,6 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           }>;
           if (Array.isArray(profilesPayload)) {
             mutableState.hostProfiles = profilesPayload;
-            console.log('[Mobile API] Host profiles updated:', mutableState.hostProfiles.length, 'profiles');
             return Response.json({
               success: true,
               message: 'Host profiles updated',
@@ -503,7 +500,6 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         
         if (Array.isArray(songsPayload)) {
           mutableState.songLibrary = songsPayload;
-          console.log('[Mobile API] Song library updated:', mutableState.songLibrary.length, 'songs');
           return Response.json({ 
             success: true, 
             message: 'Song library updated',

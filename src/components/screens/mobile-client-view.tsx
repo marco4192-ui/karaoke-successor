@@ -99,7 +99,6 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
             color: match.color,
             createdAt: match.createdAt || Date.now(),
           };
-          console.log('[MobileClient] Auto-adopting host profile from QR:', hostProfile.name);
           setProfile(hostProfile);
           setProfileName(hostProfile.name);
           setProfileColor(hostProfile.color);
@@ -128,7 +127,6 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
           id: `profile-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
           name: profileName.trim(), avatar: avatarPreview || undefined, color: profileColor, createdAt: Date.now(),
         };
-    console.log('[MobileClient] Creating profile:', newProfile.name, newProfile.id);
     setProfile(newProfile);
     localStorage.setItem('karaoke-mobile-profile', JSON.stringify(newProfile));
     syncProfile(newProfile);
@@ -160,7 +158,6 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       color: hostProfile.color,
       createdAt: hostProfile.createdAt || Date.now(),
     };
-    console.log('[MobileClient] Switching to host profile:', switchedProfile.name, switchedProfile.id);
     setProfile(switchedProfile);
     setProfileName(switchedProfile.name);
     setProfileColor(switchedProfile.color);

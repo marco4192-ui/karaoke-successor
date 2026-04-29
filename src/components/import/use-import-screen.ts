@@ -121,7 +121,6 @@ export function useImportScreen(onImport: (song: Song) => void) {
             const txtBlob = new Blob([txtContent], { type: 'text/plain' });
             await storeMedia(song.id, 'txt', txtBlob);
             song.storedTxt = true;
-            console.log('[Import] Cached TXT content in IndexedDB');
           }
         }
         const { storeSongFiles, isTauri, generateSongFolderName } = await import('@/lib/tauri-file-storage');
@@ -136,7 +135,6 @@ export function useImportScreen(onImport: (song: Song) => void) {
           if (storedPaths.audioPath) song.relativeAudioPath = storedPaths.audioPath;
           if (storedPaths.videoPath) song.relativeVideoPath = storedPaths.videoPath;
           if (storedPaths.txtPath) song.relativeTxtPath = storedPaths.txtPath;
-          console.log('[Import] Stored files in AppData:', storedPaths);
         }
       } catch (mediaErr) {
         console.warn('[Import] Failed to store media:', mediaErr);
@@ -423,9 +421,6 @@ export function useImportScreen(onImport: (song: Song) => void) {
           const existingFolder = localStorage.getItem('karaoke-songs-folder');
           if (!existingFolder) {
             localStorage.setItem('karaoke-songs-folder', detectedBaseFolder);
-            console.log('[Import] Saved baseFolder to localStorage:', detectedBaseFolder);
-          } else {
-            console.log('[Import] localStorage already has karaoke-songs-folder:', existingFolder);
           }
         } catch (e) {
           console.warn('[Import] Could not save baseFolder to localStorage:', e);

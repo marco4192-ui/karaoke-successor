@@ -46,7 +46,6 @@ export function useCompanionSync(): {
       const response = await fetch('/api/mobile?action=getprofiles');
       const data = await response.json();
       if (data.success && data.profiles) {
-        console.log('[CompanionSync] Fetched', data.profiles.length, 'companion profiles');
         setCompanionProfiles(data.profiles);
       }
     } catch (error) {
@@ -65,7 +64,6 @@ export function useCompanionSync(): {
       const data = await response.json();
       if (data.success && data.profiles) {
         data.profiles.forEach((profile: CompanionProfile) => {
-          console.log('[CompanionSync] Importing profile:', profile.name);
           importProfileFromMobile(profile);
         });
       }
@@ -85,7 +83,6 @@ export function useCompanionSync(): {
   // Auto-sync profiles when they change
   useEffect(() => {
     if (companionProfiles.length > 0) {
-      console.log('[CompanionSync] Auto-importing', companionProfiles.length, 'profiles');
       companionProfiles.forEach((profile) => {
         importProfileFromMobile(profile);
       });

@@ -149,13 +149,6 @@ export class PitchDetector {
       this.buffer = new Float32Array(this.analyser.fftSize);
       this.frequencyBuffer = new Float32Array(this.analyser.frequencyBinCount);
 
-      console.log(
-        '[PitchDetector] Initialized — sampleRate:',
-        this.audioContext.sampleRate,
-        'fftSize:',
-        this.analyser.fftSize
-      );
-
       return true;
     } catch (error) {
       console.error('Failed to initialize pitch detector:', error);

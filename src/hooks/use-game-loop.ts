@@ -382,12 +382,6 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
             let currentAudioUrl = currentSong.audioUrl;
             let currentVideoUrl = currentSong.videoBackground;
 
-            console.log('[GameScreen] playMedia - using URLs from effectiveSong:', {
-              audioUrl: currentAudioUrl ? 'present' : 'missing',
-              videoUrl: currentVideoUrl ? 'present' : 'missing',
-              hasEmbeddedAudio: currentSong.hasEmbeddedAudio
-            });
-
             // PRIORITY 1: Separate audio file (most common case)
             if (audioRef.current && currentAudioUrl) {
               // Only set src if it differs — avoids resetting playback
@@ -408,7 +402,6 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
                 const normalizedBase = normalizeFilePath(currentSong.baseFolder);
                 const normalizedRelative = normalizeFilePath(currentSong.relativeAudioPath);
                 const nativePath = `${normalizedBase}/${normalizedRelative}`;
-                console.log('[GameScreen] Starting native audio playback:', nativePath);
                 nativeAudioPlay(nativePath).catch((err) => {
                   console.error('[GameScreen] Native audio play failed, falling back to browser:', err);
                   if (audioRef.current) audioRef.current.muted = false;
@@ -443,7 +436,6 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
 
             // PRIORITY 3: YouTube video
             else if (isYouTube && youtubeVideoId) {
-              console.log('[GameScreen] Starting YouTube playback for video:', youtubeVideoId);
             }
 
             // BACKGROUND VIDEO (muted, synced with audio)
@@ -516,7 +508,6 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
               // paused (paused === true) which looks like "not playing" to the
               // watchdog. Without this guard, the game would be aborted.
               if (wasPausedByStoreRef.current) {
-                console.log('[GameLoop] Watchdog: game is paused, skipping check');
                 return;
               }
 

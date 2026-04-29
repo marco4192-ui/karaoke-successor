@@ -137,7 +137,6 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
         s.artist.toLowerCase() === nextQueueItem.songArtist.toLowerCase()
       );
       if (fullSong) {
-        console.log('[ResultsScreen] Song found via title+artist fallback:', nextQueueItem.songTitle);
       }
     }
     
