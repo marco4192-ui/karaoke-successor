@@ -333,7 +333,7 @@ export class AudioEffectsEngine {
   }
 
   // Apply preset
-  applyPreset(preset: AudioEffectPreset): void {
+  async applyPreset(preset: AudioEffectPreset): Promise<void> {
     this.currentPreset = preset;
     const presetSettings = AUDIO_PRESETS[preset];
     
@@ -348,8 +348,8 @@ export class AudioEffectsEngine {
       master: { ...DEFAULT_EFFECTS_SETTINGS.master, ...presetSettings.master },
     };
     
-    // Apply all settings
-    this.applyAllSettings();
+    // Apply all settings — must await so reverb impulse buffer is ready before chain connects
+    await this.applyAllSettings();
   }
 
   private async applyAllSettings(): Promise<void> {
