@@ -33,6 +33,8 @@ export function useBattleRoyaleCompanionPolling({
 }: UseBattleRoyaleCompanionPollingParams): UseBattleRoyaleCompanionPollingReturn {
   const companionPollRef = useRef<NodeJS.Timeout | null>(null);
   const companionPitchCacheRef = useRef<Map<string, CompanionPitchEntry>>(new Map());
+  const playersRef = useRef(players);
+  playersRef.current = players;
 
   useEffect(() => {
     if (gameStatus !== 'playing') {
@@ -43,7 +45,7 @@ export function useBattleRoyaleCompanionPolling({
       return;
     }
 
-    const companionPlayers = players.filter(p => p.playerType === 'companion' && !p.eliminated);
+    const companionPlayers = playersRef.current.filter(p => p.playerType === 'companion' && !p.eliminated);
     if (companionPlayers.length === 0) return;
 
     let abortController: AbortController | null = null;
@@ -101,7 +103,7 @@ export function useBattleRoyaleCompanionPolling({
       }
       if (abortController) abortController.abort();
     };
-  }, [gameStatus, players]);
+  }, [gameStatus]);
 
   return { companionPitchCacheRef };
 }
