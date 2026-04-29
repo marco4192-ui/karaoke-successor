@@ -120,7 +120,8 @@ export function SinglePlayerNoteHighway({
         const distanceFromSingLine = (timeUntilNote / noteWindow) * (100 - singLinePosition + 20);
         const x = singLinePosition + distanceFromSingLine;
 
-        const pitchY = VISIBLE_TOP + VISIBLE_RANGE - ((note.pitch - pitchStats.minPitch) / pitchStats.pitchRange) * VISIBLE_RANGE;
+        const pr = pitchStats.pitchRange || 1;
+        const pitchY = VISIBLE_TOP + VISIBLE_RANGE - ((note.pitch - pitchStats.minPitch) / pr) * VISIBLE_RANGE;
 
         const noteWidthPercent = (note.duration / noteWindow) * (100 - singLinePosition + 20);
         const noteHeight = 32;

@@ -137,7 +137,8 @@ function NoteBlock({
   const x = singLinePosition + distanceFromSingLine;
 
   // Calculate vertical position based on pitch
-  const pitchY = visibleTop + visibleRange - ((note.pitch - pitchStats.minPitch) / pitchStats.pitchRange) * visibleRange;
+  const pr = pitchStats.pitchRange || 1;
+  const pitchY = visibleTop + visibleRange - ((note.pitch - pitchStats.minPitch) / pr) * visibleRange;
 
   // Calculate note dimensions
   const noteWidthPercent = (note.duration / noteWindow) * (100 - singLinePosition + noteWidthExtra);
