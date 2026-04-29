@@ -12,6 +12,7 @@ import type { Screen } from '@/types/screens';
 import { createTournament, TournamentPlayer, TournamentSettings } from '@/lib/game/tournament';
 import { createBattleRoyale, BattleRoyaleSettings } from '@/lib/game/battle-royale';
 import { createCompetitiveGame, type CompetitiveModeType, type CompetitiveSettings } from '@/lib/game/competitive-words-blind';
+import { generateMedleySnippets } from '@/components/game/medley/medley-snippet-generator';
 import { storeSongFilters } from '@/lib/game/ptm-next-song';
 import { toast } from '@/hooks/use-toast';
 
@@ -257,32 +258,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               case 'medley': {
                 const snippetCount = result.settings.snippetCount || 5;
                 const snippetDuration = result.settings.snippetDuration || 30;
-                const snippetDurationMs = snippetDuration * 1000;
-                const shuffled = [...filteredSongs].sort(() => Math.random() - 0.5);
-                // UltraStar beat duration: 15000 / BPM ms per beat
-                const beatDurationMs = (bpm: number) => 15000 / bpm;
-                const medleySongList = shuffled.slice(0, snippetCount).map(song => {
-                  // If both #MEDLEYSTARTBEAT: and #MEDLEYENDBEAT: are defined, use them
-                  if (song.medleyStartBeat !== undefined && song.medleyEndBeat !== undefined && song.bpm > 0) {
-                    const bd = beatDurationMs(song.bpm);
-                    const startTime = song.medleyStartBeat * bd;
-                    const endTime = song.medleyEndBeat * bd;
-                    return { song, startTime, endTime, duration: endTime - startTime };
-                  }
-                  // If only #MEDLEYSTARTBEAT: is defined, start there
-                  if (song.medleyStartBeat !== undefined && song.bpm > 0) {
-                    const startTime = song.medleyStartBeat * beatDurationMs(song.bpm);
-                    return { song, startTime, endTime: startTime + snippetDurationMs, duration: snippetDurationMs };
-                  }
-                  // Fallback: random start within song's actual note range
-                  // Use last lyric end time instead of song.duration (which includes buffer)
-                  const maxSafeTime = song.lyrics && song.lyrics.length > 0
-                    ? Math.max(...song.lyrics.map(l => l.endTime))
-                    : Math.min(song.duration, snippetDurationMs * 3);
-                  const maxStartTime = Math.max(0, maxSafeTime - snippetDurationMs);
-                  const startTime = Math.random() * maxStartTime;
-                  return { song, startTime, endTime: startTime + snippetDurationMs, duration: snippetDurationMs };
-                });
+                const medleySongList = generateMedleySnippets(filteredSongs, snippetCount, snippetDuration);
                 party.setMedleyPlayers(toMedleyPlayers(result.players));
                 party.setMedleySongs(medleySongList);
                 // Cast unified setup settings to MedleySettings (the unified setup provides matching keys)
@@ -305,31 +281,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 if (result.songSelection === 'medley') {
                   const snippetDuration = 30; // fixed 30s per snippet
                   const snippetCount = Math.max(3, Math.min(result.players.length * 2, 10));
-                  const snippetDurationMs = snippetDuration * 1000;
-                  // Filter out songs shorter than 60 seconds — they cannot contain
-                  // a meaningful medley snippet and would cause errors.
-                  const MIN_MELODY_SONG_MS = 60 * 1000;
-                  const eligibleSongs = filteredSongs.filter(s => s.duration >= MIN_MELODY_SONG_MS);
-                  const shuffled = [...eligibleSongs].sort(() => Math.random() - 0.5);
-                  const beatDurationMs = (bpm: number) => 15000 / bpm;
-                  const medleySnippets = shuffled.slice(0, snippetCount).map(song => {
-                    if (song.medleyStartBeat !== undefined && song.medleyEndBeat !== undefined && song.bpm > 0) {
-                      const bd = beatDurationMs(song.bpm);
-                      const startTime = song.medleyStartBeat * bd;
-                      const endTime = song.medleyEndBeat * bd;
-                      return { song, startTime, endTime, duration: endTime - startTime };
-                    }
-                    if (song.medleyStartBeat !== undefined && song.bpm > 0) {
-                      const startTime = song.medleyStartBeat * beatDurationMs(song.bpm);
-                      return { song, startTime, endTime: startTime + snippetDurationMs, duration: snippetDurationMs };
-                    }
-                    const maxSafeTime = song.lyrics && song.lyrics.length > 0
-                      ? Math.max(...song.lyrics.map(l => l.endTime))
-                      : Math.min(song.duration, snippetDurationMs * 3);
-                    const maxStartTime = Math.max(0, maxSafeTime - snippetDurationMs);
-                    const startTime = Math.random() * maxStartTime;
-                    return { song, startTime, endTime: startTime + snippetDurationMs, duration: snippetDurationMs };
-                  });
+                  const medleySnippets = generateMedleySnippets(filteredSongs, snippetCount, snippetDuration);
 
                   // Pre-restore URLs AND lyrics for all snippet songs (needed for
                   // Tauri file:// paths and IndexedDB-stored lyrics)
