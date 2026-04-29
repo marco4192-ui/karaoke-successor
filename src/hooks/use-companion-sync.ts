@@ -40,20 +40,7 @@ export function useCompanionSync(): {
   const [companionQueue, setCompanionQueue] = useState<CompanionQueueItem[]>([]);
   const importProfileFromMobile = useGameStore((state) => state.importProfileFromMobile);
 
-  // Fetch companion profiles from server
-  const fetchCompanionProfiles = useCallback(async () => {
-    try {
-      const response = await fetch('/api/mobile?action=getprofiles');
-      const data = await response.json();
-      if (data.success && data.profiles) {
-        setCompanionProfiles(data.profiles);
-      }
-    } catch (error) {
-      console.error('[CompanionSync] Error fetching profiles:', error);
-    }
-  }, []);
-
-  // Sync companion profiles to main app's character list
+  // Sync companion profiles: fetch from server AND import into main app's character list
   const syncCompanionProfiles = useCallback(async () => {
     try {
       const response = await fetch('/api/mobile?action=getprofiles');
@@ -63,6 +50,7 @@ export function useCompanionSync(): {
       }
       const data = await response.json();
       if (data.success && data.profiles) {
+        setCompanionProfiles(data.profiles);
         data.profiles.forEach((profile: CompanionProfile) => {
           importProfileFromMobile(profile);
         });
@@ -74,20 +62,11 @@ export function useCompanionSync(): {
 
   // Periodically fetch companion profiles (every 10 seconds)
   useEffect(() => {
-    const syncInterval = setInterval(fetchCompanionProfiles, 10000);
-    fetchCompanionProfiles(); // Initial fetch
+    const syncInterval = setInterval(syncCompanionProfiles, 10000);
+    syncCompanionProfiles(); // Initial sync (fetches AND imports profiles)
 
     return () => clearInterval(syncInterval);
-  }, [fetchCompanionProfiles]);
-
-  // Auto-sync profiles when they change
-  useEffect(() => {
-    if (companionProfiles.length > 0) {
-      companionProfiles.forEach((profile) => {
-        importProfileFromMobile(profile);
-      });
-    }
-  }, [companionProfiles, importProfileFromMobile]);
+  }, [syncCompanionProfiles]);
 
   // Fetch companion queue from server
   const fetchCompanionQueue = useCallback(async () => {

@@ -435,8 +435,11 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
             }
 
             // PRIORITY 3: YouTube video
-            else if (isYouTube && youtubeVideoId) {
-            }
+            // YouTube playback is handled by the YouTube IFrame Player API
+            // (use-youtube-game.ts), which manages its own play/pause/seek
+            // lifecycle independently. No action needed here — the game loop
+            // receives time via youtubeTimeRef.current from the YT player.
+            // else if (isYouTube && youtubeVideoId) { }
 
             // BACKGROUND VIDEO (muted, synced with audio)
             if (videoRef.current && currentVideoUrl && !currentSong.hasEmbeddedAudio) {
