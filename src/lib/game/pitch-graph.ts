@@ -38,11 +38,13 @@ export class PitchGraphRenderer {
     this.config = { ...DEFAULT_PITCH_GRAPH_CONFIG, ...config };
   }
 
-  attachCanvas(canvas: HTMLCanvasElement): void {
+  attachCanvas(canvas: HTMLCanvasElement, skipResize?: boolean): void {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
-    canvas.width = this.config.width;
-    canvas.height = this.config.height;
+    if (!skipResize) {
+      canvas.width = this.config.width;
+      canvas.height = this.config.height;
+    }
   }
 
   addPoint(pitch: number | null, time: number, isTarget: boolean, accuracy?: number): void {

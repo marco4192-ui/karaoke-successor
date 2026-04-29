@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import {
   PitchGraphRenderer,
   PitchGraphConfig,
@@ -23,7 +23,8 @@ export interface PitchGraphDisplayProps {
 
 /**
  * Pitch Graph Display Component
- * Uses the previously unused PitchGraphRenderer to show a real-time pitch curve
+ * Uses the previously unused PitchGraphRenderer to show a real-time pitch curve.
+ * Canvas resolution automatically adapts to container size and device pixel ratio.
  */
 export function PitchGraphDisplay({
   currentPitch,
@@ -39,29 +40,59 @@ export function PitchGraphDisplay({
   maxPitch = 72,
 }: PitchGraphDisplayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<PitchGraphRenderer | null>(null);
 
-  // Initialize renderer
+  // Measure container and resize canvas to match (with devicePixelRatio)
+  const resizeCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+
+    const rect = container.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const displayWidth = Math.round(rect.width);
+    const displayHeight = Math.round(rect.height);
+
+    // Only resize if dimensions actually changed
+    if (canvas.width !== displayWidth * dpr || canvas.height !== displayHeight * dpr) {
+      canvas.width = displayWidth * dpr;
+      canvas.height = displayHeight * dpr;
+      canvas.style.width = `${displayWidth}px`;
+      canvas.style.height = `${displayHeight}px`;
+
+      // Update renderer with new logical dimensions
+      const config: Partial<PitchGraphConfig> = {
+        width: displayWidth,
+        height: displayHeight,
+        minPitch,
+        maxPitch,
+        showTargetLine,
+        colorScheme,
+        timeWindow: 5000,
+      };
+      rendererRef.current = new PitchGraphRenderer(config);
+      rendererRef.current.attachCanvas(canvas, true);
+      // Apply DPR scaling so the renderer draws at the right resolution
+      const ctx = canvas.getContext('2d');
+      if (ctx) ctx.scale(dpr, dpr);
+    }
+  }, [minPitch, maxPitch, showTargetLine, colorScheme]);
+
+  // Initialize and handle resize
   useEffect(() => {
-    if (!canvasRef.current) return;
+    resizeCanvas();
 
-    const config: Partial<PitchGraphConfig> = {
-      width,
-      height,
-      minPitch,
-      maxPitch,
-      showTargetLine,
-      colorScheme,
-      timeWindow: 5000, // 5 seconds of history
-    };
-
-    rendererRef.current = new PitchGraphRenderer(config);
-    rendererRef.current.attachCanvas(canvasRef.current);
+    const observer = new ResizeObserver(resizeCanvas);
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
 
     return () => {
+      observer.disconnect();
       rendererRef.current?.destroy();
     };
-  }, [width, height, minPitch, maxPitch, showTargetLine, colorScheme]);
+  }, [resizeCanvas]);
 
   // Update pitch data
   useEffect(() => {
@@ -89,12 +120,14 @@ export function PitchGraphDisplay({
   }, [isPlaying]);
 
   return (
-    <div className="relative rounded-lg overflow-hidden bg-black/30 backdrop-blur-sm border border-white/10">
+    <div
+      ref={containerRef}
+      className="relative rounded-lg overflow-hidden bg-black/30 backdrop-blur-sm border border-white/10"
+      style={{ width, height, minHeight: height }}
+    >
       <canvas
         ref={canvasRef}
-        width={width}
-        height={height}
-        className="w-full h-full"
+        className="block"
       />
       {/* Current pitch indicator */}
       <div className="absolute bottom-1 right-2 text-xs text-white/60">
