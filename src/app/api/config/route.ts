@@ -40,11 +40,12 @@ export async function GET() {
       config: maskedConfig,
       message: 'Configuration loaded'
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error reading config:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({
       success: false,
-      error: error.message
+      error: message
     }, { status: 500 });
   }
 }
@@ -100,11 +101,12 @@ export async function POST(request: NextRequest) {
       message: 'Configuration saved successfully',
       configPath
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error saving config:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({
       success: false,
-      error: error.message
+      error: message
     }, { status: 500 });
   }
 }
@@ -150,18 +152,20 @@ export async function PUT(request: NextRequest) {
           error: `API returned status ${response.status}`
         }, { status: 400 });
       }
-    } catch (fetchError: any) {
+    } catch (fetchError) {
       // Connection failed
+      const message = fetchError instanceof Error ? fetchError.message : 'Connection failed';
       return NextResponse.json({
         success: false,
-        error: `Could not connect to API: ${fetchError.message}`
+        error: `Could not connect to API: ${message}`
       }, { status: 503 });
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error testing connection:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({
       success: false,
-      error: error.message
+      error: message
     }, { status: 500 });
   }
 }
@@ -183,10 +187,11 @@ export async function DELETE() {
       success: true,
       message: 'Configuration removed'
     });
-  } catch (error: any) {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({
       success: false,
-      error: error.message
+      error: message
     }, { status: 500 });
   }
 }
