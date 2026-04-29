@@ -411,13 +411,17 @@ export class AudioEffectsEngine {
   }
 
   // Individual effect controls
-  setReverb(amount: number, decay?: number): void {
+  async setReverb(amount: number, decay?: number): Promise<void> {
     this.settings.reverb.amount = Math.max(0, Math.min(1, amount));
     if (decay !== undefined) {
       this.settings.reverb.decay = Math.max(0.5, Math.min(5, decay));
       if (this.reverbNode) {
-        this.createReverbImpulse(this.settings.reverb.decay);
+        await this.createReverbImpulse(this.settings.reverb.decay);
       }
+    }
+    // Reconnect chain so the (possibly updated) reverb amount takes effect
+    if (this.isInitialized) {
+      this.connectEffectChain();
     }
   }
 
