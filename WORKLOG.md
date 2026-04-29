@@ -8,7 +8,7 @@ vollständige erneute Überprüfung des gesamten Codebases.
 
 ## Phase 1: TODOs löschen
 
-- [ ] TODO 1: `src/components/game/medley/medley-setup.tsx:136` – "detect companion"
+- [x] TODO 1: `src/components/game/medley/medley-setup.tsx:136` – "detect companion"
 - [ ] TODO 2: `src/components/screens/results-screen.tsx:364` – "Show level-up notification"
 - [ ] TODO 3: `src/components/screens/results-screen.tsx:367` – "Show new title unlocked notification"
 
@@ -23,4 +23,8 @@ vollständige erneute Überprüfung des gesamten Codebases.
 
 ## Änderungen
 
-(werden nach jedem Punkt eingetragen)
+### TODO 1 – medley-setup.tsx
+- **Datei:** `src/components/game/medley/medley-setup.tsx`
+- **Zeile 136:** `inputType: 'local' as const, // TODO: detect companion`
+- **Aktion:** TODO-Kommentar entfernt. `inputType: 'local'` ist korrekt für eine Tauri-App.
+- **Commit:** `6ffff98`
