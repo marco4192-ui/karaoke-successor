@@ -341,3 +341,128 @@ Stage Summary:
 - All 68/68 points are now COMPLETE
 - 10 commits pushed to origin/master
 - Key improvements: shared parsers, memory leak fix, client cleanup bugs fixed, Tauri compatibility, UI responsiveness
+
+---
+Task ID: FRESH-REVIEW
+Agent: Main
+Task: Umfassende Neubewertung der gesamten Codebasis — Fehler, Logik, Dead Code, Verbesserungen
+
+Work Log:
+- Komplettes Repo gepullt (origin/master, already up to date)
+- Projektstruktur analysiert: ~200+ Quelldateien (TS/TSX/RS)
+- 3 parallele Sub-Agenten gestartet für Types/Lib, Hooks, Komponenten
+- 2/3 Agents erfolgreich, 1 failed → manuelle Überprüfung der fehlenden Bereiche
+- ~30 Dateien direkt gelesen und verifiziert
+- Alle Ergebnisse mit Grep-Suchen verifiziert (Dead Code, Importe, Verwendungen)
+
+=== GEFUNDENE FEHLER (Bugs) ===
+
+**FB1: use-game-modes.ts:86 — Blind Mode sectionDuration Einheiten-Fehler**
+- `sectionDuration = 12` (Sekunden), aber `currentTime` wird in Millisekunden übergeben
+- Bei 30s Song: sectionIndex = 30000/12 = 2500 (erwartet: 2)
+- Folge: Blind Mode wechselt alle 12ms statt alle 12s → massives Flackern
+- Fix: `sectionDuration = 12000`
+
+**FB2: use-game-loop.ts:717 — Math.log2 mit P2-Pitch 0**
+- `Math.round(12 * (Math.log2(currentP2Pitch / 440)) + 69)` wenn P2-Pitch = 0
+- `Math.log2(0) = -Infinity`, MIDI-Note = NaN
+- Check `currentP2Pitch !== null` schützt nicht gegen 0
+- Fix: `if (currentP2Pitch > 0)` statt `if (currentP2Pitch !== null)`
+
+**FB3: use-game-loop.ts:437-439 — Leerer YouTube-Media-Block**
+- `else if (isYouTube && youtubeVideoId) { }` — komplett leerer Block
+- YouTube-Modus startet kein Media, Game läuft nur über Wall-Clock
+- Sollte YouTube-Player initialisieren oder Comment erklären warum leer
+
+**FB4: use-companion-sync.ts:84-90 — Doppelte Profil-Importierung**
+- fetchCompanionProfiles (alle 10s) setzt companionProfiles State
+- Separate useEffect überwacht companionProfiles und ruft importProfileFromMobile auf
+- Ergebnis: Profile werden bei jedem Fetch-Zyklus ZWEIMAL importiert
+- Fix: Auto-sync Effect entfernen (syncCompanionProfiles existiert bereits)
+
+=== LOGIK-PROBLEME ===
+
+**FL1: use-remote-control.ts:145-151 — library/queue/settings Commands navigieren nicht korrekt**
+- Alle drei Commands rufen nur `stop(); onBack()` — keine Unterscheidung
+- Sollten zu ihren jeweiligen Screens navigieren
+
+**FL2: use-multi-pitch-detector.ts:160 — Partielle Initialisierung als Erfolg gewertet**
+- `if (allSuccess || results.some(r => r))` — wenn nur 1 von 3 Playern klappt → "Erfolg"
+- Kann zu unerwartetem Verhalten führen (nur 1 Mikrofon aktiv, Spieler denkt alle wären bereit)
+
+**FL3: playlist-manager.ts — "Most Played" verfolgt keine Play-Counts**
+- recordSongPlay verschiebt Songs nach vorne (most-recently-played)
+- Name "Most Played" ist irreführend — keine tatsächliche Abspielzählung
+
+=== DEAD CODE ===
+
+**FD1: src/lib/db.ts — GANZE DATEI (13 Zeilen)**
+- Prisma-Client Import, aber keine schema.prisma im Projekt
+- Wird nirgendwo importiert (kein `from '@/lib/db'` im Codebase)
+- Vermutlich Überbleibsel einer geplanten/abgebrochenen DB-Integration
+
+**FD2: src/lib/native-fs.ts — 4 ungenutzte Funktionen**
+- `nativeRemoveFile()` — 0 externe Verwendungen
+- `nativeRemoveDir()` — 0 externe Verwendungen
+- `nativeMessage()` — 0 externe Verwendungen
+- `nativeConfirm()` — 0 externe Verwendungen (safe-dialog.ts nutzt window.confirm, nicht Tauri)
+
+**FD3: src/lib/tauri-file-storage.ts — 6 ungenutzte exportierte Funktionen**
+- `copyFileToAppData()` — nur intern definiert, 0 externe Aufrufer
+- `fileExistsInAppData()` — 0 externe Aufrufer
+- `getFileUrl()` — 0 externe Aufrufer
+- `readFileAsBase64()` — 0 externe Aufrufer
+- `listImportedSongs()` — 0 externe Aufrufer
+- `readStoredTextFile()` — 0 externe Aufrufer
+- (getAppDataPath wird intern verwendet → nicht dead)
+
+**FD4: src/lib/playlist-manager.ts — 12 ungenutzte exportierte Funktionen**
+- `moveAllSongs()`, `getPlaylistsContainingSong()`, `isSongInPlaylist()`
+- `exportPlaylist()`, `importPlaylist()`, `reorderPlaylistSongs()`
+- `incrementPlaylistPlayCount()`, `createFolder()`, `deleteFolder()`
+- `addPlaylistToFolder()`, `removePlaylistFromFolder()`, `renameFolder()`
+- `calculatePlaylistDuration()` — nur intern verwendet
+- (getPlaylistSongs WIRD verwendet in playlist-view.tsx → nicht dead)
+
+**FD5: src/lib/i18n/translations.ts — 1 ungenutzte Funktion**
+- `createTranslator()` — definiert aber nirgendwo aufgerufen
+- `getStoredLanguage()` und `setStoredLanguage()` — nur intern genutzt
+
+**FD6: src/hooks/use-multi-pitch-detector.ts:33 — Falsche JSDoc-Dokumentation**
+- Kommentar behauptet "Also exports useSinglePitchDetector()" — existiert aber nicht
+
+**FD7: src/hooks/use-network-status.ts — Tote Offline-Queue-Infrastruktur**
+- `PendingRequest` Typ, `loadQueue()`, `saveQueue()` definiert
+- Queue wird NIE befüllt (kein `addToOfflineQueue` existiert)
+- Nur `clearOfflineQueue()` wird exportiert (aber es gibt nichts zum leeren)
+
+**FD8: src/hooks/use-game-loop.ts:437-439 — Leerer YouTube-Block (siehe FB3)**
+
+**FD9: src/types/game.ts — 1 ungenutzter Typ + 1 ungenutzte Funktion**
+- `Leaderboard` Interface — nirgendwo importiert
+- `getRankTitle()` + `RANKING_TITLES` — nur intern in game.ts verwendet
+
+=== VERBESSERUNGSVORSCHLÄGE ===
+
+**FV1: src/types/screens.ts:80 — StartOptions.mode ist effektiv `string`**
+- `mode: 'single' | 'duel' | 'duet' | string` — `| string` macht Union nutzlos
+- Fix: `'single' | 'duel' | 'duet' | 'medley' | 'missing-words' | 'blind'`
+
+**FV2: src/lib/utils.ts:12 — generateId Kollisionsrisiko**
+- `Date.now() + Math.random()` nicht kollisionssicher
+- Besser: `crypto.randomUUID()`
+
+**FV3: src/lib/qr-code.ts — Externe API-Abhängigkeit**
+- `api.qrserver.com` für QR-Code — schlägt offline fehl
+- Besser: lokale QR-Code-Bibliothek (z.B. `qrcode` npm package)
+
+**FV4: src/hooks/use-battle-royale-game.ts:248 — O(n) Note-Suche pro Tick**
+- Alle Notes durchlaufen um aktive zu finden (bei 1000+ Notes langsam)
+- Besser: Binary Search oder pre-gefilterte aktive Notes
+
+**FV5: src/lib/tauri-file-storage.ts — Doppelte BOM-Entfernung**
+- processFolder entfernt BOM, parseLyricsFromTxt entfernt es nochmal
+
+Stage Summary:
+- 4 Bugs, 3 Logik-Probleme, 9 Dead-Code-Kategorien, 5 Verbesserungsvorschläge identifiziert
+- Nächster Schritt: Fixes nacheinander implementieren und pushen

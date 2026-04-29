@@ -83,7 +83,7 @@ export function useGameModes({
         blindSeedRef.current = seedValues;
       }
 
-      const sectionDuration = 12; // 12 seconds per section (in seconds, same unit as currentTime)
+      const sectionDuration = 12000; // 12 seconds per section (currentTime is in milliseconds)
       const blindChance = blindFrequency ?? 0.4; // Use override or default 40%
 
       const sectionIndex = Math.floor(currentTime / sectionDuration);
