@@ -63,7 +63,7 @@ export function LyricLineDisplay({
 
     window.addEventListener('storage', handleStyleChange);
     // Also check periodically for changes (since storage events only fire in other tabs)
-    const interval = setInterval(handleStyleChange, 1000);
+    const interval = setInterval(handleStyleChange, 5000);
     return () => {
       window.removeEventListener('storage', handleStyleChange);
       clearInterval(interval);

@@ -431,7 +431,7 @@ const deTranslations = {
   },
   home: {
     title: 'Karaoke Successor',
-    subtitle: 'Das ultimative Karaoke-Erlebnis. Singe dein Herz aus mit Echtzeit-Pitch-Erkennung, compete mit Freunden und genieße Party-Spiele!',
+    subtitle: 'Das ultimative Karaoke-Erlebnis. Singe dein Herz aus mit Echtzeit-Pitch-Erkennung, tritt gegen Freunde an und genieße Party-Spiele!',
     startSinging: 'Singen Starten',
     partyMode: 'Party-Modus',
     songsAvailable: 'Songs verfügbar',
