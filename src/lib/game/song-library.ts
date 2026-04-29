@@ -524,23 +524,33 @@ export function filterSongs(
   language?: string,
   combined?: boolean
 ): Song[] {
+  const hasGenre = genre && genre !== 'all';
+  const hasLanguage = language && language !== 'all';
+
+  // No filters active
+  if (!hasGenre && !hasLanguage) return songs;
+
+  // Independent mode (combined=false): OR logic — songs matching either filter are included
+  if (combined === false && hasGenre && hasLanguage) {
+    const lowerGenre = genre!.toLowerCase();
+    return songs.filter(s =>
+      s.genre?.toLowerCase().includes(lowerGenre) || s.language === language
+    );
+  }
+
+  // Default (combined=true or only one filter): AND logic — both must match
   let filtered = songs;
 
-  if (genre && genre !== 'all') {
-    const lowerGenre = genre.toLowerCase();
+  if (hasGenre) {
+    const lowerGenre = genre!.toLowerCase();
     filtered = filtered.filter(s =>
       s.genre?.toLowerCase().includes(lowerGenre)
     );
   }
 
-  if (language && language !== 'all') {
+  if (hasLanguage) {
     filtered = filtered.filter(s => s.language === language);
   }
-
-  // If combined=false (independent), songs matching EITHER genre OR language are included
-  // If combined=true (default) or both filters set, songs must match BOTH (AND logic)
-  // This is handled naturally above — when both filters are set, both must match.
-  // For independent mode (only one filter active), the active filter applies alone.
 
   return filtered;
 }
