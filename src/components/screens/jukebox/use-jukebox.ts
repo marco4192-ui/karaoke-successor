@@ -19,8 +19,6 @@ export function useJukebox() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [shuffle, setShuffle] = useState(true);
   const [repeat, setRepeat] = useState<RepeatMode>('all');
-  const [customYoutubeUrl, setCustomYoutubeUrl] = useState('');
-  const [customYoutubeId, setCustomYoutubeId] = useState<string | null>(null);
   const [youtubeTime, setYoutubeTime] = useState(0);
   const [isAdPlaying, setIsAdPlaying] = useState(false);
   const [volume, setVolume] = useState(0.7);
@@ -359,12 +357,12 @@ export function useJukebox() {
   return {
     isPlaying, currentSong, playlist, currentIndex, songs,
     filterGenre, filterArtist, searchQuery, shuffle, repeat,
-    customYoutubeUrl, customYoutubeId, youtubeTime, isAdPlaying,
+    youtubeTime, isAdPlaying,
     volume, isFullscreen, hidePlaylist, showLyrics, currentLyricIndex,
     genres, artists, filteredSongs, upNext,
     videoRef, audioRef, containerRef,
     setFilterGenre, setFilterArtist, setSearchQuery, setShuffle, setRepeat,
-    setCustomYoutubeUrl, setVolume, setHidePlaylist, setShowLyrics,
+    setVolume, setHidePlaylist, setShowLyrics,
     setCurrentLyricIndex, setCurrentSong, setCurrentIndex,
     setIsAdPlaying, setYoutubeTime,
     startJukebox, stopJukebox, playNext, playPrevious,

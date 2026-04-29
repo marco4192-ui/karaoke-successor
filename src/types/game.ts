@@ -243,22 +243,6 @@ export interface PitchDetectionResult {
   singingConfidence?: number; // 0-1 confidence of singing detection
 }
 
-export interface MobileMessage {
-  type: 'pitch' | 'join' | 'leave' | 'queue' | 'command' | 'status';
-  payload: unknown;
-  playerId?: string;
-}
-
-export interface PartyGameState {
-  mode: GameMode;
-  turnIndex: number;
-  currentSegment: number;
-  medleySongs: Song[];
-  medleyIndex: number;
-  duelPlayer1: Player | null;
-  duelPlayer2: Player | null;
-}
-
 export const DIFFICULTY_SETTINGS = {
   easy: {
     pitchTolerance: 3, // +/- 3 semitones - very lenient for beginners
@@ -448,16 +432,6 @@ export const SYSTEM_PLAYLISTS = {
   MOST_PLAYED: 'system-most-played',
 } as const;
 
-// Playlist sort options
-export type PlaylistSortOption = 
-  | 'name-asc' 
-  | 'name-desc' 
-  | 'created-desc' 
-  | 'created-asc' 
-  | 'updated-desc' 
-  | 'songs-count-desc';
-
-// Default playlist settings
 export const DEFAULT_PLAYLIST_SETTINGS = {
   maxSongsPerPlaylist: 500,
   maxPlaylists: 100,

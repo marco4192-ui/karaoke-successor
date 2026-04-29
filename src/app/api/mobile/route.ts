@@ -69,7 +69,6 @@ interface RemoteControlState {
 const mobileClients = new Map<string, MobileClient>();
 const connectionCodes = new Map<string, string>(); // code -> clientId
 const profileToClient = new Map<string, string>(); // profileId -> clientId (for duplicate detection)
-const profileAndIpToClient = new Map<string, string>(); // "profileId:ip" -> clientId (for IP-based reconnection)
 
 // Persistent profile by IP — survives client cleanup so profiles can be restored
 // after long standby periods where the server cleaned up the client session.
@@ -197,9 +196,6 @@ function cleanupInactiveClients() {
       connectionCodes.delete(client.connectionCode);
       if (client.profile) {
         profileToClient.delete(client.profile.id);
-        if (client.clientIp) {
-          profileAndIpToClient.delete(`${client.profile.id}:${client.clientIp}`);
-        }
       }
       latestPitchData.delete(clientId);
     }
@@ -292,7 +288,6 @@ export async function GET(request: NextRequest) {
         // Restore profile mappings if we have a persisted profile
         if (persistedProfile) {
           profileToClient.set(persistedProfile.id, newClientId);
-          profileAndIpToClient.set(`${persistedProfile.id}:${clientIp}`, newClientId);
         }
         
         return Response.json({ 
@@ -332,9 +327,6 @@ export async function GET(request: NextRequest) {
         connectionCodes.delete(client.connectionCode);
         if (client.profile) {
           profileToClient.delete(client.profile.id);
-          if (client.clientIp) {
-            profileAndIpToClient.delete(`${client.profile.id}:${client.clientIp}`);
-          }
         }
         // Release remote control if this client had it
         if (remoteControlState.lockedBy === clientId) {
@@ -356,11 +348,7 @@ export async function GET(request: NextRequest) {
           connectionCodes.delete(client.connectionCode);
           if (client.profile) {
             profileToClient.delete(client.profile.id);
-            if (client.clientIp) {
-              profileAndIpToClient.delete(`${client.profile.id}:${client.clientIp}`);
-            }
           }
-          // Release remote control if this client had it
           if (remoteControlState.lockedBy === kickClientId) {
             remoteControlState = { lockedBy: null, lockedByName: null, lockedAt: null, pendingCommands: [] };
           }
@@ -563,7 +551,6 @@ export async function GET(request: NextRequest) {
       mobileClients.clear();
       connectionCodes.clear();
       profileToClient.clear();
-      profileAndIpToClient.clear();
       persistentProfileByIp.clear();
       latestPitchData.clear();
       songQueue = [];
@@ -727,9 +714,6 @@ export async function POST(request: NextRequest) {
             const oldClient = mobileClients.get(oldClientId);
             if (oldClient) {
               connectionCodes.delete(oldClient.connectionCode);
-              if (oldClient.profile && oldClient.clientIp) {
-                profileAndIpToClient.delete(`${oldClient.profile.id}:${oldClient.clientIp}`);
-              }
               mobileClients.delete(oldClientId);
               latestPitchData.delete(oldClientId);
             }
@@ -739,11 +723,6 @@ export async function POST(request: NextRequest) {
           client.name = profilePayload.name;
           mobileClients.set(clientId, client);
           profileToClient.set(profilePayload.id, clientId);
-          
-          // Track profile + IP for IP-based reconnection
-          if (clientIp) {
-            profileAndIpToClient.set(`${profilePayload.id}:${clientIp}`, clientId);
-          }
           
           return Response.json({ 
             success: true, 

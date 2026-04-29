@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { isTauri } from '@/lib/tauri-file-storage';
 import { Song } from '@/types/game';
 
 // ============================================================================
@@ -74,15 +75,6 @@ async function viralClear() {
 
 async function viralSetCountry(country: string) {
   return invoke<Record<string, unknown>>('viral_set_country', { country });
-}
-
-// ============================================================================
-// Check if running in Tauri
-// ============================================================================
-
-function isTauri(): boolean {
-  return typeof window !== 'undefined' &&
-    ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
 }
 
 // ============================================================================

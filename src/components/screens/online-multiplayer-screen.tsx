@@ -22,18 +22,6 @@ function MicIcon({ className }: { className?: string }) {
   );
 }
 
-// Note progress tracking for scoring
-interface NoteProgress {
-  noteId: string;
-  totalTicks: number;
-  ticksHit: number;
-  ticksEvaluated: number;
-  isGolden: boolean;
-  lastEvaluatedTime: number;
-  isComplete: boolean;
-  wasPerfect: boolean;
-}
-
 // ===================== ONLINE MULTIPLAYER SCREEN =====================
 export function OnlineMultiplayerScreen({ onBack }: { onBack: () => void }) {
   const { setSong, setGameMode } = useGameStore();
@@ -82,10 +70,6 @@ function OnlineGameScreen({ room, socket, song, onEnd }: { room: any; socket: an
   
   const [isPlaying, setIsPlaying] = useState(false);
   const [countdown, setCountdown] = useState(3);
-  const [currentNoteIndex, setCurrentNoteIndex] = useState(0);
-  const [scoreEvents, setScoreEvents] = useState<Array<{ type: string; displayType: 'Perfect' | 'Great' | 'Good' | 'Okay' | 'Miss'; points: number; time: number }>>([]);
-  const [volume, setVolume] = useState(0);
-  const [mediaLoaded, setMediaLoaded] = useState(false);
   
   // Opponent state for real-time sync
   const [opponentScore, setOpponentScore] = useState(0);
@@ -110,9 +94,6 @@ function OnlineGameScreen({ room, socket, song, onEnd }: { room: any; socket: an
   const [localCombo, setLocalCombo] = useState(0);
   const [localAccuracy, setLocalAccuracy] = useState(0);
   
-  const noteProgressRef = useRef<Map<string, NoteProgress>>(new Map());
-  const gameLoopRef = useRef<number | null>(null);
-  const startTimeRef = useRef<number>(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   
@@ -123,9 +104,6 @@ function OnlineGameScreen({ room, socket, song, onEnd }: { room: any; socket: an
     
     return () => {
       stop();
-      if (gameLoopRef.current) {
-        cancelAnimationFrame(gameLoopRef.current);
-      }
     };
   }, [song, setSong, initialize, stop]);
   
@@ -188,23 +166,9 @@ function OnlineGameScreen({ room, socket, song, onEnd }: { room: any; socket: an
       if (count <= 0) {
         clearInterval(countdownInterval);
         setIsPlaying(true);
-        startTimeRef.current = Date.now();
       }
     }, 1000);
   }, [start]);
-  
-  // Send score update to server
-  const sendScoreUpdate = useCallback((score: number, combo: number, accuracy: number) => {
-    if (!socket || !isPlaying) return;
-    
-    socket.emit('score-update', {
-      score,
-      combo,
-      accuracy,
-      notesHit: 0,
-      notesMissed: 0
-    });
-  }, [socket, isPlaying]);
   
   // End game and send final score
   const endGameHandler = useCallback((score: number, combo: number, accuracy: number) => {
@@ -217,13 +181,6 @@ function OnlineGameScreen({ room, socket, song, onEnd }: { room: any; socket: an
     });
   }, [socket]);
   
-  // Format time as mm:ss
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
       {/* Header */}
@@ -359,7 +316,6 @@ function OnlineGameScreen({ room, socket, song, onEnd }: { room: any; socket: an
         <audio
           ref={audioRef}
           src={song.audioUrl}
-          onLoadedData={() => setMediaLoaded(true)}
           onEnded={() => endGameHandler(localScore, localCombo, localAccuracy)}
           className="hidden"
         />
@@ -369,7 +325,6 @@ function OnlineGameScreen({ room, socket, song, onEnd }: { room: any; socket: an
         <video
           ref={videoRef}
           src={song.videoUrl}
-          onLoadedData={() => setMediaLoaded(true)}
           className="w-full rounded-lg"
           controls
         />

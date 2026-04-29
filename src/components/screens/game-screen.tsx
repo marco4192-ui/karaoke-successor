@@ -322,8 +322,8 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
     onComboMilestone: useCallback((combo: number, x: number, y: number) => emitComboFirework(x, y, combo), [emitComboFirework]),
   });
 
-  // Timing synchronization - user adjustable offset
-  const [timingOffset, setTimingOffset] = useState(0);
+  // Timing synchronization - constant offset (user adjustable in future)
+  const timingOffset = 0;
   
   // Use mobile pitch for P2 in duet/duel mode
   useEffect(() => {

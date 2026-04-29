@@ -190,7 +190,7 @@ interface PassTheMicGameViewProps {
   onEndGame: () => void;
 }
 
-export function PassTheMicGameView({
+function PassTheMicGameView({
   players: initialPlayers, song, segments: initialSegments, settings,
   onUpdateGame, onEndGame,
 }: PassTheMicGameViewProps) {

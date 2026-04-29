@@ -73,10 +73,3 @@ export interface LibrarySettings {
   filterLanguage: string;
   filterDuet: boolean;
 }
-
-// Navigation button props
-export interface NavButtonProps {
-  children: React.ReactNode;
-  active: boolean;
-  onClick: () => void;
-}

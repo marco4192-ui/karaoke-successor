@@ -13,19 +13,19 @@ export interface NetworkStatus {
   isServerReachable: boolean | null;
 }
 
-export interface PendingRequest {
-  id: string;
-  type: string;
-  payload: unknown;
-  createdAt: number;
-}
-
 // ============================================================================
 // Pending requests queue — stores operations that failed due to being offline
 // Stored in localStorage for persistence across sessions.
 // ============================================================================
 
 const QUEUE_KEY = 'karaoke-offline-queue';
+
+interface PendingRequest {
+  id: string;
+  type: string;
+  payload: unknown;
+  createdAt: number;
+}
 
 function loadQueue(): PendingRequest[] {
   if (typeof window === 'undefined') return [];
@@ -40,32 +40,9 @@ function saveQueue(queue: PendingRequest[]): void {
   try { localStorage.setItem(QUEUE_KEY, JSON.stringify(queue)); } catch {}
 }
 
-/** Add a request to the offline queue. */
-export function enqueueOfflineRequest(type: string, payload: unknown): void {
-  const queue = loadQueue();
-  queue.push({
-    id: `offline-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-    type,
-    payload,
-    createdAt: Date.now(),
-  });
-  saveQueue(queue);
-}
-
-/** Remove a request from the queue by ID. */
-export function removeOfflineRequest(id: string): void {
-  const queue = loadQueue().filter(r => r.id !== id);
-  saveQueue(queue);
-}
-
 /** Clear all pending requests. */
 export function clearOfflineQueue(): void {
   saveQueue([]);
-}
-
-/** Get current pending queue. */
-export function getOfflineQueue(): PendingRequest[] {
-  return loadQueue();
 }
 
 // ============================================================================

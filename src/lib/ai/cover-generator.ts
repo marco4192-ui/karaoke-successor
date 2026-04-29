@@ -14,25 +14,6 @@ export interface CoverGenResult {
   error?: string;
 }
 
-// Genre-specific visual themes
-export const GENRE_THEMES: Record<string, string> = {
-  pop: 'bright colors, clean design, modern aesthetic',
-  rock: 'bold, gritty, electric energy, dark tones',
-  'hip-hop': 'urban, street art style, bold typography',
-  'r&b': 'smooth gradients, soulful vibes, elegant',
-  country: 'warm tones, rustic, americana elements',
-  electronic: 'neon lights, futuristic, digital art',
-  jazz: 'classic, sophisticated, art deco elements',
-  classical: 'elegant, timeless, minimalist',
-  latin: 'vibrant, tropical, energetic',
-  'k-pop': 'colorful, trendy, polished',
-  metal: 'dark, intense, dramatic',
-  indie: 'artistic, unique, lo-fi aesthetic',
-  soul: 'warm, emotive, vintage feel',
-  disco: 'glittery, retro 70s, funky',
-  reggae: 'rasta colors, tropical, laid back',
-};
-
 /**
  * Generate cover art for a song
  */

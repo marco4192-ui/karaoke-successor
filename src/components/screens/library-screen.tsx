@@ -39,7 +39,6 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
   const [highscoreSong, setHighscoreSong] = useState<Song | null>(null);
   const [songsLoading, setSongsLoading] = useState(true);
   const [loadedSongs, setLoadedSongs] = useState<Song[]>([]);
-  const [customYoutubeId, setCustomYoutubeId] = useState<string | null>(null);
   
   const { setDifficulty, gameState, addToQueue, queue, activeProfileId, profiles, setGameMode, highscores, setActiveProfile, addPlayer } = useGameStore();
   const storeDifficulty = gameState.difficulty;
@@ -219,7 +218,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
     setGameMode(startOptions.partyMode || (startOptions.mode === 'duel' ? 'duel' : startOptions.mode === 'duet' ? 'duet' : 'standard'));
     setShowSongModal(false);
     
-    onSelectSong(customYoutubeId ? { ...songWithUrls, videoBackground: `https://www.youtube.com/watch?v=${customYoutubeId}`, youtubeId: customYoutubeId } : songWithUrls);
+    onSelectSong(songWithUrls);
   };
 
   const handlePlaylistDelete = (id: string) => { deletePlaylist(id); setPlaylists(getPlaylists()); };

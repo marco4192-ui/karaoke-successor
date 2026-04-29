@@ -210,7 +210,6 @@ export function PtmSeriesResults({
   onContinue,
   onBackToSetup,
 }: PtmSeriesResultsProps) {
-  const [showCeremony, setShowCeremony] = useState(true);
   const [confettiParticles, setConfettiParticles] = useState<Array<{
     id: number; x: number; y: number; color: string; size: number; speed: number; rotation: number;
   }>>([]);
@@ -249,8 +248,6 @@ export function PtmSeriesResults({
 
   // Confetti animation
   useEffect(() => {
-    if (!showCeremony) return;
-
     const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'];
     const particles: typeof confettiParticles = [];
     for (let i = 0; i < 80; i++) {
@@ -281,7 +278,7 @@ export function PtmSeriesResults({
     }, 50);
 
     return () => clearInterval(interval);
-  }, [showCeremony]);
+  }, []);
 
   // Ceremony phase: keep visible permanently (no auto-dismiss)
   // The winner celebration with trophy and confetti stays visible until
@@ -290,7 +287,7 @@ export function PtmSeriesResults({
   return (
     <div className="max-w-3xl mx-auto py-8 max-h-screen overflow-y-auto flex flex-col">
       {/* Confetti (during ceremony) */}
-      {showCeremony && confettiParticles.length > 0 && (
+      {confettiParticles.length > 0 && (
         <div className="fixed inset-0 z-50 pointer-events-none overflow-hidden">
           {confettiParticles.map(p => (
             <div
@@ -312,7 +309,7 @@ export function PtmSeriesResults({
       )}
 
       {/* Winner Ceremony */}
-      {winner && showCeremony && (
+      {winner && (
         <div className="text-center mb-8 animate-in fade-in zoom-in-95 duration-500">
           <div className="text-7xl mb-4" style={{ animation: 'ptm-crown-bounce 1s ease-in-out infinite' }}>
             👑

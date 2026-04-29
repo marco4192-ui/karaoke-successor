@@ -104,19 +104,6 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
     });
   };
 
-  const moveToTeam = (id: string, targetTeam: 'a' | 'b') => {
-    const other = targetTeam === 'a' ? 'b' : 'a';
-    const otherIds = targetTeam === 'a' ? teamBIds : teamAIds;
-    const targetIds = targetTeam === 'a' ? teamAIds : teamBIds;
-    if (targetIds.length >= teamSize) return; // team full
-    if (otherIds.includes(id)) {
-      if (targetTeam === 'a') setTeamBIds(otherIds.filter(x => x !== id));
-      else setTeamAIds(otherIds.filter(x => x !== id));
-    }
-    if (targetTeam === 'a') setTeamAIds([...teamAIds, id]);
-    else setTeamBIds([...teamBIds, id]);
-  };
-
   const removeProfile = (id: string) => {
     setSelectedProfileIds(prev => prev.filter(x => x !== id));
     setTeamAIds(prev => prev.filter(x => x !== id));

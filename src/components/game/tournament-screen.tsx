@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { 
   createTournament, 
   getPlayableMatches, 
-  recordMatchResult, 
   getTournamentStats,
   TournamentBracket,
   TournamentPlayer,
@@ -242,7 +241,7 @@ interface TournamentBracketViewProps {
   shortMode: boolean;
 }
 
-export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onManualWinner, onRepeatMatch, matchAborted, onAbortHandled, songs, shortMode }: TournamentBracketViewProps) {
+export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onManualWinner, onRepeatMatch, matchAborted, onAbortHandled, shortMode }: TournamentBracketViewProps) {
   const stats = getTournamentStats(bracket);
 
   // Get next match to play

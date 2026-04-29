@@ -28,11 +28,6 @@ export async function listAudioDevices(): Promise<AudioDeviceInfo[]> {
   return invoke<AudioDeviceInfo[]>('audio_list_devices');
 }
 
-/** Get the system default output device. */
-export async function getDefaultAudioDevice(): Promise<AudioDeviceInfo> {
-  return invoke<AudioDeviceInfo>('audio_get_default_device');
-}
-
 // ---- Playback Control ----
 
 /** Play an audio file on the specified device. */
@@ -66,11 +61,6 @@ export async function setAudioVolume(volume: number): Promise<void> {
 /** Stop native audio playback. */
 export async function stopAudio(): Promise<void> {
   return invoke<void>('audio_stop');
-}
-
-/** Get current playback position in ms. */
-export async function getAudioPosition(): Promise<number> {
-  return invoke<number>('audio_get_position');
 }
 
 /** Get full playback state. */

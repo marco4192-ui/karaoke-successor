@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import type { MobileProfile, GameState } from '@/components/screens/mobile/mobile-types';
 
 interface UseMobileConnectionCallbacks {
-  profileId?: string;
   onProfileLoaded: (profile: MobileProfile) => void;
   onProfileFieldsLoaded: (name: string, color: string, avatar: string | null) => void;
   onGameStateUpdate: (gameState: GameState) => void;

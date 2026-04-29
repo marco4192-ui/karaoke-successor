@@ -45,7 +45,6 @@ export function useMobileClient({
 }: UseMobileClientOptions): {
   mobilePitch: MobilePitchData | null;
   hasMobileClient: boolean;
-  isRemoteControlEnabled: boolean;
   sendGameState: () => Promise<void>;
   sendAdState: (isAdPlaying: boolean) => Promise<void>;
   companionProfiles: CompanionProfile[];
@@ -56,7 +55,6 @@ export function useMobileClient({
 } {
   const [mobilePitch, setMobilePitch] = useState<MobilePitchData | null>(null);
   const [hasMobileClient, setHasMobileClient] = useState(false);
-  const [isRemoteControlEnabled, setIsRemoteControlEnabled] = useState(true);
   const [companionProfiles, setCompanionProfiles] = useState<CompanionProfile[]>([]);
   const [companionQueue, setCompanionQueue] = useState<CompanionQueueItem[]>([]);
   const importProfileFromMobile = useGameStore((state) => state.importProfileFromMobile);
@@ -304,7 +302,6 @@ export function useMobileClient({
   return {
     mobilePitch,
     hasMobileClient,
-    isRemoteControlEnabled,
     sendGameState,
     sendAdState,
     companionProfiles,

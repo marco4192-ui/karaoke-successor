@@ -16,8 +16,6 @@ export interface UseJukeboxReturn {
   searchQuery: string;
   shuffle: boolean;
   repeat: RepeatMode;
-  customYoutubeUrl: string;
-  customYoutubeId: string | null;
   youtubeTime: number;
   isAdPlaying: boolean;
   volume: number;
@@ -40,7 +38,6 @@ export interface UseJukeboxReturn {
   setSearchQuery: (q: string) => void;
   setShuffle: (s: boolean) => void;
   setRepeat: (r: RepeatMode) => void;
-  setCustomYoutubeUrl: (u: string) => void;
   setVolume: (v: number) => void;
   setHidePlaylist: (h: boolean) => void;
   setShowLyrics: (s: boolean) => void;
