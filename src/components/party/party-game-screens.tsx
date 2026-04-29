@@ -615,6 +615,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             const avg = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
             setRateMySongResult({
               songTitle: getAllSongs().find(s => s.id === party.rateMySongSettings.songId)?.title || '',
+              songArtist: getAllSongs().find(s => s.id === party.rateMySongSettings.songId)?.artist || '',
               ratings,
               averageRating: Math.round(avg * 10) / 10,
             });

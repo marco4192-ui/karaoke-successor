@@ -40,6 +40,7 @@ export interface RateMySongRating {
 
 export interface RateMySongResult {
   songTitle: string;
+  songArtist: string;
   ratings: RateMySongRating[];
   averageRating: number;
 }
@@ -636,7 +637,7 @@ export function RateMySongResultsScreen({ result, songId, onPlayAgain, onEnd }: 
       const entryBase = {
         songId: songId || 'unknown',
         songTitle: result.songTitle,
-        songArtist: '',
+        songArtist: result.songArtist,
         playerId: r.playerId,
         playerName: r.playerName,
         playerColor: r.playerColor,

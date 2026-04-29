@@ -13,6 +13,21 @@ export { ScoreVisualization } from '@/components/results/score-visualization';
 export type { VisualizationMode } from '@/components/results/score-visualization';
 export { getCountryFlag, TrophyIcon, MAX_POINTS_PER_SONG } from '@/components/results/constants';
 
+/**
+ * Estimate the number of "perfect" notes based on the rating.
+ * The game doesn't track per-note quality, so we derive it from the
+ * overall rating which reflects the ratio of excellent-perfect hits.
+ */
+function estimatePerfectNotes(notesHit: number, rating: string): number {
+  if (notesHit <= 0) return 0;
+  const ratio = rating === 'perfect' ? 0.85
+    : rating === 'excellent' ? 0.55
+    : rating === 'good' ? 0.25
+    : rating === 'okay' ? 0.08
+    : 0.02;
+  return Math.floor(notesHit * ratio);
+}
+
 // Internal imports from extracted components
 import { MAX_POINTS_PER_SONG } from '@/components/results/constants';
 import { TrophyIcon } from '@/components/results/constants';
@@ -296,7 +311,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
               player2Result.score,
               player2Result.accuracy,
               player2Result.maxCombo,
-              Math.floor(player2Result.notesHit * 0.6),
+              estimatePerfectNotes(player2Result.notesHit, player2Result.rating),
               0,
               undefined
             );
@@ -319,8 +334,8 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           score: playerResult.score,
           accuracy: playerResult.accuracy,
           maxCombo: playerResult.maxCombo,
-          perfectNotes: Math.floor(playerResult.notesHit * 0.6),
-          goldenNotes: 0, // Would need to track this during gameplay
+          perfectNotes: estimatePerfectNotes(playerResult.notesHit, playerResult.rating),
+          goldenNotes: 0, // Golden notes feature not yet implemented in scoring
           difficulty: gameState.difficulty,
           mode: gameState.gameMode,
           duration: song.duration,
@@ -332,8 +347,8 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           playerResult.score,
           playerResult.accuracy,
           playerResult.maxCombo,
-          Math.floor(playerResult.notesHit * 0.6),
-          0, // goldenNotes - would need to track during gameplay
+          estimatePerfectNotes(playerResult.notesHit, playerResult.rating),
+          0, // Golden notes feature not yet implemented in scoring
           undefined // challengeMode
         );
         const currentProfileXP = profile.xp || 0;
@@ -367,14 +382,14 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
             Promise.all([playerPromise, songPromise])
               .then(() => {
                 // Calculate notes stats from game state
-                const perfectNotes = Math.floor(playerResult.notesHit * 0.6); // Estimate
+                const perfectNotes = estimatePerfectNotes(playerResult.notesHit, playerResult.rating);
                 const goodNotes = Math.floor(playerResult.notesHit * 0.4); // Estimate
                 
                 return leaderboardService.submitScore(
                   profile,
                   song,
                   playerResult.score,
-                  10000, // maxScore baseline
+                  MAX_POINTS_PER_SONG,
                   {
                     perfectNotes,
                     goodNotes,
