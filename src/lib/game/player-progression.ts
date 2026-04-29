@@ -675,7 +675,7 @@ function updateDifficultyStats(stats: ExtendedPlayerStats, game: PlayerGameResul
 /** Record one-time milestone timestamps */
 function checkMilestones(stats: ExtendedPlayerStats, game: PlayerGameResult, now: number): void {
   if (!stats.milestones.firstSong) stats.milestones.firstSong = now;
-  if (game.accuracy === PERFECT_ACCURACY && !stats.milestones.firstPerfect) stats.milestones.firstPerfect = now;
+  if (game.accuracy >= PERFECT_ACCURACY && !stats.milestones.firstPerfect) stats.milestones.firstPerfect = now;
   if (game.goldenNotes > 0 && !stats.milestones.firstGolden) stats.milestones.firstGolden = now;
 }
 
@@ -708,7 +708,7 @@ function checkTitleUnlocks(
     }
   }
 
-  maybeUnlock('perfect-pitch', game.accuracy === PERFECT_ACCURACY);
+  maybeUnlock('perfect-pitch', game.accuracy >= PERFECT_ACCURACY);
   maybeUnlock('golden-voice', stats.totalGoldenNotesHit >= TITLE_GOLDEN_VOICE_NOTES);
   maybeUnlock('combo-master', game.maxCombo >= TITLE_COMBO_MASTER_COMBO);
   maybeUnlock('dedicated-singer', totalSongs >= TITLE_DEDICATED_SINGER_SONGS);
