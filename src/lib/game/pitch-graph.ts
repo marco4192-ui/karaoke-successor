@@ -63,7 +63,7 @@ export class PitchGraphRenderer {
   render(currentTime: number): void {
     if (!this.ctx || !this.canvas) return;
     
-    const { width, height, minPitch, maxPitch, timeWindow, showHistory, colorScheme } = this.config;
+    const { width, height, minPitch, maxPitch, timeWindow, showTargetLine, showHistory, colorScheme } = this.config;
     const ctx = this.ctx;
     
     // Clear canvas
@@ -76,8 +76,8 @@ export class PitchGraphRenderer {
     const endTime = currentTime;
     const startTime = endTime - timeWindow;
     
-    // Draw target notes (background)
-    if (showHistory) {
+    // Draw target notes (background) — only if showTargetLine is enabled
+    if (showHistory && showTargetLine) {
       ctx.globalAlpha = 0.3;
       this.drawPitchLine(ctx, this.history.filter(p => p.isTarget), startTime, endTime, minPitch, maxPitch, '#ffffff', 2);
       ctx.globalAlpha = 1;

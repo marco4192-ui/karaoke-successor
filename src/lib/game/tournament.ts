@@ -82,7 +82,7 @@ export function createTournament(
     throw new Error(`Tournament supports maximum ${settings.maxPlayers} players`);
   }
 
-  const totalRounds = calculateRounds(settings.maxPlayers);
+  const totalRounds = calculateRounds(players.length);
   const byesNeeded = calculateByes(players.length);
   
   // Shuffle and seed players
@@ -215,16 +215,21 @@ export function getMatchesForRound(bracket: TournamentBracket, round: number): T
   return bracket.matches.filter(m => m.round === round);
 }
 
-// Get all matches that are ready to play (any round where both players are assigned)
-// This allows clicking on any match in the bracket to start it out of order,
-// as long as both feeder matches have completed and assigned their winners.
+// Get all matches that are ready to play (both players assigned AND
+// both feeder matches have completed so the winner has been determined).
+// This allows clicking on any match in the bracket to start it out of order.
 export function getPlayableMatches(bracket: TournamentBracket): TournamentMatch[] {
   return bracket.matches.filter(
-    m =>
-      !m.completed &&
-      m.player1 &&
-      m.player2 &&
-      !m.isBye
+    m => {
+      if (m.completed || !m.player1 || !m.player2 || m.isBye) return false;
+      // For round 1 matches, no feeder matches exist — always playable
+      if (m.round === 1) return true;
+      // For round 2+, check that both feeder matches are completed
+      const pos = m.position;
+      const feeder1 = bracket.matches.find(f => f.round === m.round - 1 && f.position === pos * 2);
+      const feeder2 = bracket.matches.find(f => f.round === m.round - 1 && f.position === pos * 2 + 1);
+      return !!(feeder1 && feeder1.completed) && !!(feeder2 && feeder2.completed);
+    }
   );
 }
 

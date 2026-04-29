@@ -154,9 +154,10 @@ export async function copyScoreToClipboard(card: ShareableScoreCard): Promise<bo
 export async function copyScoreImageToClipboard(card: ShareableScoreCard): Promise<boolean> {
   try {
     const canvas = generateShareImage(card);
-    const blob = await new Promise<Blob>((resolve) => {
-      canvas.toBlob((b) => resolve(b!), 'image/png');
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((b) => resolve(b), 'image/png');
     });
+    if (!blob) return false;
     await navigator.clipboard.write([
       new ClipboardItem({ 'image/png': blob }),
     ]);
