@@ -117,66 +117,61 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
     // Add mic audio tracks
     micStream.getAudioTracks().forEach(track => combinedStream.addTrack(track));
 
-    // Add webcam video tracks if webcam is active
+    // Add webcam video tracks if webcam is active (must complete before starting recorder)
     const useWebcam = isWebcamActive;
-    if (useWebcam) {
-      // Request a new camera stream — browsers remember permission so this is instant.
-      // We can't reuse the WebcamBackground's stream (it's internal), so we request our own.
-      navigator.mediaDevices
-        .getUserMedia({
-          video: { width: 1280, height: 720, facingMode: 'user' },
-          audio: false,
-        })
-        .then(webcamStream => {
+    const startRecorderWithStream = async (stream: MediaStream, hasWebcam: boolean) => {
+      if (hasWebcam) {
+        try {
+          const webcamStream = await navigator.mediaDevices.getUserMedia({
+            video: { width: 1280, height: 720, facingMode: 'user' },
+            audio: false,
+          });
           webcamStreamRef.current = webcamStream;
-          webcamStream.getVideoTracks().forEach(track => combinedStream.addTrack(track));
-
-          // Update the recorder's stream (it's the same stream object, tracks are added in-place)
-          // No need to recreate the recorder since we already started it
+          webcamStream.getVideoTracks().forEach(track => stream.addTrack(track));
           console.log('[ReplayRecorder] Webcam stream added to recording');
-        })
-        .catch(err => {
+        } catch (err) {
           console.warn('[ReplayRecorder] Could not get webcam for replay:', err);
-          // Continue with audio-only recording
-        });
-    }
+        }
+      }
 
-    const mimeType = selectMimeType(useWebcam);
-    const recorderOptions: MediaRecorderOptions = {
-      mimeType,
-      videoBitsPerSecond: useWebcam ? 2_500_000 : undefined,
-    };
+      const mimeType = selectMimeType(hasWebcam && webcamStreamRef.current !== null);
+      const recorderOptions: MediaRecorderOptions = {
+        mimeType,
+        videoBitsPerSecond: hasWebcam ? 2_500_000 : undefined,
+      };
 
-    let recorder: MediaRecorder;
-    try {
-      recorder = new MediaRecorder(combinedStream, recorderOptions);
-    } catch (err) {
-      // Fallback: try without codec options
+      let recorder: MediaRecorder;
       try {
-        recorder = new MediaRecorder(combinedStream);
-      } catch (fallbackErr) {
-        console.error('[ReplayRecorder] Failed to create MediaRecorder:', fallbackErr);
-        return;
+        recorder = new MediaRecorder(stream, recorderOptions);
+      } catch (err) {
+        try {
+          recorder = new MediaRecorder(stream);
+        } catch (fallbackErr) {
+          console.error('[ReplayRecorder] Failed to create MediaRecorder:', fallbackErr);
+          return;
+        }
       }
-    }
 
-    chunksRef.current = [];
-    savedRef.current = false;
+      chunksRef.current = [];
+      savedRef.current = false;
 
-    recorder.ondataavailable = (e) => {
-      if (e.data && e.data.size > 0) {
-        chunksRef.current.push(e.data);
-      }
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          chunksRef.current.push(e.data);
+        }
+      };
+
+      recorder.start(1000); // Collect chunks every second
+      mediaRecorderRef.current = recorder;
+      startTimeRef.current = Date.now();
+      setIsRecording(true);
+      setHasReplay(false);
+      setLastReplay(null);
+
+      console.log('[ReplayRecorder] Recording started — mimeType:', recorder.mimeType);
     };
 
-    recorder.start(1000); // Collect chunks every second
-    mediaRecorderRef.current = recorder;
-    startTimeRef.current = Date.now();
-    setIsRecording(true);
-    setHasReplay(false);
-    setLastReplay(null);
-
-    console.log('[ReplayRecorder] Recording started — mimeType:', recorder.mimeType);
+    startRecorderWithStream(combinedStream, useWebcam);
   }, [enabled, songId, isWebcamActive, getMicStream]);
 
   /**
