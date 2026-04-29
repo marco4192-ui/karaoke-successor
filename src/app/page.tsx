@@ -347,7 +347,7 @@ export default function KaraokeSuccessor() {
       setScreen('party');
       return;
     }
-    if (party.passTheMicPlayers.length > 0) {
+    if (party.passTheMicPlayers?.length > 0) {
       // Keep players and settings, just clear the song to allow restart
       party.setPassTheMicSong(null);
       party.setPassTheMicSegments([]);
