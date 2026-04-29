@@ -211,7 +211,10 @@ export class PitchDetector {
       sum += this.buffer[i] * this.buffer[i];
     }
     const rms = Math.sqrt(sum / this.buffer.length);
-    const volume = Math.min(1, rms * 5); // Normalize to 0-1
+    // Amplify RMS for volume display: raw RMS is typically 0.001–0.2 for singing,
+    // so we multiply by 5 to map into a useful 0-1 range.
+    const VOLUME_AMPLIFICATION = 5;
+    const volume = Math.min(1, rms * VOLUME_AMPLIFICATION);
 
     // Noise gate check — convert dB threshold to RMS for comparison
     if (this.config.noiseGateEnabled) {
