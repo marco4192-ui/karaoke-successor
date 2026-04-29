@@ -30,7 +30,7 @@ export interface PassTheMicRoundResult {
   playerScores: Record<string, { score: number; notesHit: number; notesMissed: number; maxCombo: number }>;
 }
 
-interface PartyStore {
+export interface PartyStore {
   // Tournament
   tournamentBracket: TournamentBracket | null;
   setTournamentBracket: (bracket: TournamentBracket | null) => void;

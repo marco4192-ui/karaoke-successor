@@ -2,22 +2,20 @@
 
 import { useCallback } from 'react';
 import type { Screen } from '@/types/screens';
-import type { GameResult } from '@/types/game';
+import type { GameResult, GameState, Player } from '@/types/game';
+import type { PartyStore } from '@/lib/game/party-store';
 import { recordMatchResult } from '@/lib/game/tournament';
 import { finishCompetitiveRound } from '@/lib/game/competitive-words-blind';
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type PartyState = any;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type GameState = any;
 
 /**
  * Extracts a GameResult from the current game state if one hasn't
  * been persisted to the store yet.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function buildGameResultFromState(players: any[], currentSong: { id: string } | null, currentTime: number): GameResult | null {
+function buildGameResultFromState(
+  players: Player[],
+  currentSong: { id: string } | null,
+  currentTime: number,
+): GameResult | null {
   if (players.length < 2) return null;
   return {
     players: players.map(p => {
@@ -49,7 +47,7 @@ function buildGameResultFromState(players: any[], currentSong: { id: string } | 
  * and navigating to the appropriate next screen.
  */
 export function useGameFlowHandlers(
-  party: PartyState,
+  party: PartyStore,
   gameState: GameState,
   actions: {
     setResults: (results: GameResult) => void;
@@ -106,9 +104,9 @@ export function useGameFlowHandlers(
       const results = gameState.results;
       const players = gameState.players;
 
-      const updatedPlayers = party.medleyPlayers.map((p: any) => {
-        const gamePlayer = players?.find((gp: any) => gp.id === p.id);
-        const resultPlayer = results?.players?.find((rp: any) => rp.playerId === p.id);
+      const updatedPlayers = party.medleyPlayers.map(p => {
+        const gamePlayer = players?.find(gp => gp.id === p.id);
+        const resultPlayer = results?.players?.find(rp => rp.playerId === p.id);
         if (!gamePlayer && !resultPlayer) return p;
 
         const score = resultPlayer?.score || gamePlayer?.score || 0;

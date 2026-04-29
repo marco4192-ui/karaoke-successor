@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import type { Screen } from '@/types/screens';
+import type { PartyStore } from '@/lib/game/party-store';
 
 /**
  * Screens that are allowed without confirmation when a party mode is active.
@@ -17,15 +18,12 @@ const PARTY_SCREEN_WHITELIST: Screen[] = [
   'rate-my-song-game',
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type PartyState = any;
-
 /**
  * Returns true if any party game mode is currently active.
  * Used by the navigation guard to show a confirmation dialog
  * before leaving the party flow.
  */
-function computePartyModeActive(party: PartyState): boolean {
+function computePartyModeActive(party: PartyStore): boolean {
   return !!(
     party.tournamentBracket ||
     party.battleRoyaleGame ||
@@ -36,7 +34,7 @@ function computePartyModeActive(party: PartyState): boolean {
   );
 }
 
-export function useScreenNavigation(party: PartyState) {
+export function useScreenNavigation(party: PartyStore) {
   const [screen, setScreen] = useState<Screen>('home');
   const [pendingNavigation, setPendingNavigation] = useState<Screen | null>(null);
 
