@@ -43,6 +43,9 @@ export function useYouTubeGame({
   const [showYoutubeInput, setShowYoutubeInput] = useState(false);
   const [isAdPlaying, setIsAdPlaying] = useState(false);
   const [adCountdown, setAdCountdown] = useState(0);
+  // Track whether the game was playing before the ad started,
+  // so handleAdEnd only auto-resumes if the user didn't manually pause.
+  const wasPlayingBeforeAdRef = { current: false };
 
   // Extract YouTube ID from youtubeUrl, videoBackground, or videoUrl (fallback)
   const songYoutubeUrl = effectiveSong?.youtubeUrl;
@@ -84,6 +87,9 @@ export function useYouTubeGame({
     setIsAdPlaying(true);
     setAdCountdown(30); // Max 30 seconds for ad
 
+    // Remember whether the game was playing before the ad
+    wasPlayingBeforeAdRef.current = isPlaying;
+
     // Pause the game if playing
     if (isPlaying) {
       setIsPlaying(false);
@@ -104,8 +110,11 @@ export function useYouTubeGame({
     setIsAdPlaying(false);
     setAdCountdown(0);
 
-    // Resume the game
-    setIsPlaying(true);
+    // Only auto-resume if the game was playing before the ad started
+    // (don't resume if the user manually paused during the ad)
+    if (wasPlayingBeforeAdRef.current) {
+      setIsPlaying(true);
+    }
 
     // Sync ad state to mobile clients
     fetch('/api/mobile', {
