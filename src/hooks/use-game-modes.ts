@@ -61,6 +61,9 @@ export function useGameModes({
   // MISSING WORDS MODE: Generate hidden word note startTimes ONCE when game starts
   const missingWordsGeneratedRef = useRef(false);
 
+  // Track last blind section to avoid redundant state updates every frame
+  const lastBlindSectionRef = useRef(-1);
+
   // Generate blind pattern when blind mode game starts
   useEffect(() => {
     if (gameMode === 'blind' && status === 'playing') {
@@ -84,8 +87,13 @@ export function useGameModes({
       const blindChance = blindFrequency ?? 0.4; // Use override or default 40%
 
       const sectionIndex = Math.floor(currentTime / sectionDuration);
+
+      // Only update state when section actually changes (avoids ~60 setBlindSection calls/sec)
+      if (sectionIndex === lastBlindSectionRef.current) return;
+      lastBlindSectionRef.current = sectionIndex;
+
       const seedValue = blindSeedRef.current[sectionIndex % blindSeedRef.current.length] || 0;
-      const isBlind = (sectionIndex % 2 === 1) || (seedValue < blindChance && sectionIndex > 0);
+      const isBlind = sectionIndex > 0 && seedValue < blindChance;
 
       setBlindSection(isBlind);
     }
@@ -159,5 +167,6 @@ export function useGameModes({
   useEffect(() => {
     blindSeedRef.current = [];
     missingWordsGeneratedRef.current = false;
+    lastBlindSectionRef.current = -1;
   }, [songId]);
 }
