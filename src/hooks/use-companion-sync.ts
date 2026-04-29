@@ -56,13 +56,21 @@ export function useCompanionSync(): {
 
   // Sync companion profiles to main app's character list
   const syncCompanionProfiles = useCallback(async () => {
-    const response = await fetch('/api/mobile?action=getprofiles');
-    const data = await response.json();
-    if (data.success && data.profiles) {
-      data.profiles.forEach((profile: CompanionProfile) => {
-        console.log('[CompanionSync] Importing profile:', profile.name);
-        importProfileFromMobile(profile);
-      });
+    try {
+      const response = await fetch('/api/mobile?action=getprofiles');
+      if (!response.ok) {
+        console.error('[CompanionSync] Failed to fetch profiles:', response.status);
+        return;
+      }
+      const data = await response.json();
+      if (data.success && data.profiles) {
+        data.profiles.forEach((profile: CompanionProfile) => {
+          console.log('[CompanionSync] Importing profile:', profile.name);
+          importProfileFromMobile(profile);
+        });
+      }
+    } catch (error) {
+      console.error('[CompanionSync] Error syncing profiles:', error);
     }
   }, [importProfileFromMobile]);
 
