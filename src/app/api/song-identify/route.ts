@@ -53,9 +53,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<SongIdent
     }
     
     // Clean up filename/lyrics for extraction
+    const sanitizeLLMInput = (s: string, maxLen = 500) =>
+      s.replace(/[{}()\[\]\\]/g, '').substring(0, maxLen);
     const cleanInput = body.type === 'filename' 
-      ? body.input.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ').trim()
-      : body.input.substring(0, 200);
+      ? sanitizeLLMInput(body.input.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ').trim())
+      : sanitizeLLMInput(body.input, 200);
 
     // Use LLM to extract metadata directly (faster than web search)
     try {

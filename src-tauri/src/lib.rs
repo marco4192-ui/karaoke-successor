@@ -86,6 +86,7 @@ fn validate_safe_path(raw_path: &str) -> Result<PathBuf, String> {
 /// with special characters (&, parentheses, Unicode) in folder names.
 #[tauri::command]
 fn native_read_file_bytes(file_path: String) -> Result<String, String> {
+    validate_safe_path(&file_path)?;
     // Attempt 1: use the path exactly as received
     let path = PathBuf::from(&file_path);
     if let Ok(bytes) = fs::read(&path) {
@@ -144,6 +145,7 @@ fn native_read_file_bytes(file_path: String) -> Result<String, String> {
 /// Read a file as text (for TXT, config files, etc.)
 #[tauri::command]
 fn native_read_file_text(file_path: String) -> Result<String, String> {
+    validate_safe_path(&file_path)?;
     // Attempt 1: use the path exactly as received
     let path = PathBuf::from(&file_path);
     if let Ok(content) = fs::read_to_string(&path) {
@@ -190,6 +192,9 @@ fn native_read_file_text(file_path: String) -> Result<String, String> {
 /// Check if a file or directory exists
 #[tauri::command]
 fn native_file_exists(file_path: String) -> bool {
+    if validate_safe_path(&file_path).is_err() {
+        return false;
+    }
     let path = PathBuf::from(&file_path);
     if path.exists() {
         return true;
@@ -221,6 +226,7 @@ struct NativeDirEntry {
 
 #[tauri::command]
 fn native_read_dir(dir_path: String) -> Result<Vec<NativeDirEntry>, String> {
+    validate_safe_path(&dir_path)?;
     let path = PathBuf::from(&dir_path);
     if !path.exists() {
         return Err(format!("Directory not found: {}", dir_path));
@@ -567,7 +573,7 @@ pub fn run() {
                             .arg(server)
                             .current_dir(&cwd)
                             .env("PORT", "3000")
-                            .env("HOSTNAME", "0.0.0.0")
+                            .env("HOSTNAME", "127.0.0.1")
                             .env("NODE_ENV", "production")
                             .spawn();
                         
@@ -635,14 +641,14 @@ pub fn run() {
                         let result = Command::new("bun")
                             .args(["run", "dev"])
                             .env("PORT", "3000")
-                            .env("HOSTNAME", "0.0.0.0")
+                            .env("HOSTNAME", "127.0.0.1")
                             .current_dir(&current_dir)
                             .spawn()
                             .or_else(|_| {
                                 Command::new("npm")
                                     .args(["run", "dev"])
                                     .env("PORT", "3000")
-                                    .env("HOSTNAME", "0.0.0.0")
+                                    .env("HOSTNAME", "127.0.0.1")
                                     .current_dir(&current_dir)
                                     .spawn()
                             });
