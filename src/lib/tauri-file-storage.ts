@@ -222,14 +222,14 @@ export async function scanSongsFolderTauri(baseSongsFolder: string): Promise<Tau
     return result;
   }
 
-  console.log('[TauriScanner] Starting scan of folder:', baseSongsFolder);
+
 
   try {
     // Collect ALL files first, then group by folder
     const allFiles = await collectAllFiles(baseSongsFolder, baseSongsFolder);
     result.scannedFiles = allFiles.length;
     
-    console.log(`[TauriScanner] Found ${allFiles.length} files`);
+
     
     // Group files by their parent folder
     const folderMap = new Map<string, Map<string, { path: string; name: string }>>();
@@ -251,7 +251,7 @@ export async function scanSongsFolderTauri(baseSongsFolder: string): Promise<Tau
       folderFiles.set(file.name, { path: relativePath, name: file.name });
     }
     
-    console.log(`[TauriScanner] Found ${folderMap.size} folders with files`);
+
     
     // Process each folder
     // CRITICAL: Pass the absolute baseSongsFolder, NOT the relative songFolder from the map!
@@ -263,7 +263,7 @@ export async function scanSongsFolderTauri(baseSongsFolder: string): Promise<Tau
       }
     }
     
-    console.log(`[TauriScanner] Scan complete: ${result.songs.length} songs found`);
+
   } catch (error) {
     console.error('[TauriScanner] Scan failed:', error);
     result.errors.push(`Scan failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -515,13 +515,13 @@ async function processFolder(
       // relativeVideoPath / relativeAudioPath (which would create invalid
       // paths like baseFolder + "/https://...").
       if (refFile.startsWith('http://') || refFile.startsWith('https://')) {
-        console.log(`[TauriScanner] TXT reference is a URL, skipping filesystem resolution: ${refFile}`);
+
         return undefined;
       }
       // Reference from TXT - combine with TXT directory
       // The reference is typically just a filename, relative to the TXT file location
       const resolvedPath = txtDir ? normalizeFilePath(`${txtDir}/${refFile}`) : normalizeFilePath(refFile);
-      console.log(`[TauriScanner] Resolved TXT reference: ${refFile} -> ${resolvedPath}`);
+
       return resolvedPath;
     }
     // Fallback to scanned file
@@ -541,7 +541,7 @@ async function processFolder(
       // #MP3: points to a video file - this is the video with embedded audio
       finalVideoPath = resolveTxtReference(txtMp3File, videoFile);
       hasEmbeddedAudio = true;
-      console.log(`[TauriScanner] #MP3: points to video file: ${txtMp3File} -> hasEmbeddedAudio=true`);
+
     } else {
       // #MP3: points to an audio file
       finalAudioPath = resolveTxtReference(txtMp3File, audioFile);
@@ -569,15 +569,7 @@ async function processFolder(
     ? [p1Name || 'Player 1', p2Name || 'Player 2']
     : undefined;
 
-  console.log(`[TauriScanner] Created song: ${artist} - ${title}`);
-  console.log(`[TauriScanner]   baseFolder: ${baseFolder}`);
-  console.log(`[TauriScanner]   TXT dir: ${txtDir || '(root)'}`);
-  console.log(`[TauriScanner]   audio: ${finalAudioPath || 'none'}`);
-  console.log(`[TauriScanner]   video: ${finalVideoPath || 'none'}`);
-  console.log(`[TauriScanner]   cover: ${finalCoverPath || 'none'}`);
-  console.log(`[TauriScanner]   background: ${finalBackgroundPath || 'none'}`);
-  console.log(`[TauriScanner]   hasEmbeddedAudio: ${hasEmbeddedAudio}`);
-  console.log(`[TauriScanner]   isDuet: ${isDuet}`);
+
 
   // Parse lyrics from TXT content
   const lyrics = parseLyricsFromTxt(txtContent, bpm, gap);
@@ -887,11 +879,7 @@ export async function getPlayableUrl(relativePath: string): Promise<string> {
 // IMPORTANT: In Tauri v2 with dev server, we need to load files directly and create blob URLs
 // because convertFileSrc doesn't work well with http://localhost:3000 origin
 export async function getSongMediaUrl(relativePath: string, baseFolder?: string): Promise<string | null> {
-  console.log('[TauriFS] getSongMediaUrl called:', { relativePath, baseFolder, isTauri: isTauri() });
-  
   if (!isTauri()) {
-    // Browser mode - return the path as-is (should be a blob URL)
-    console.log('[TauriFS] Not in Tauri, returning path as-is');
     return relativePath;
   }
 
@@ -903,13 +891,12 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
     if (!songsFolder) {
       const raw = localStorage.getItem('karaoke-songs-folder');
       songsFolder = raw ? normalizeFilePath(raw) : undefined;
-      console.log('[TauriFS] Using localStorage folder:', songsFolder);
     }
     
     if (!songsFolder) {
       // No base folder available - try using the path as absolute path
       if (isAbsoluteFileSystemPath(relativePath)) {
-        console.log('[TauriFS] Using absolute path directly:', relativePath);
+
         return await loadFileAsBlobUrl(relativePath);
       }
       console.warn('[TauriFS] No songs folder configured and path is not absolute');
@@ -920,7 +907,7 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
     // as full path instead of relative), use it directly instead of concatenating.
     // Without this check, paths would double: "baseFolder/absolutePath" → broken path.
     if (isAbsoluteFileSystemPath(relativePath)) {
-      console.log('[TauriFS] relativePath is absolute despite having baseFolder, using directly:', relativePath);
+
       return await loadFileAsBlobUrl(relativePath);
     }
     
@@ -931,19 +918,19 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
     
     // Construct full path using forward slash (works on both Windows and Unix)
     const fullPath = `${normalizedBaseFolder}/${normalizedRelativePath}`;
-    console.log('[TauriFS] Loading media from:', fullPath);
+
     
     // Check cache first
     const cachedUrl = blobUrlCache.get(fullPath);
     if (cachedUrl) {
-      console.log('[TauriFS] Using cached blob URL for:', fullPath);
+
       return cachedUrl;
     }
     
     // Load file and create blob URL
     const result = await loadFileAsBlobUrl(fullPath);
     if (result) {
-      console.log('[TauriFS] loadFileAsBlobUrl result: success');
+
       return result;
     }
     
@@ -953,7 +940,7 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
     // PathBuf normally handles them. Using backslashes is the safest bet.
     if (fullPath.includes('/')) {
       const backslashPath = fullPath.replace(/\//g, '\\');
-      console.log('[TauriFS] Retrying with backslashes:', backslashPath);
+
       const fallback = await loadFileAsBlobUrl(backslashPath);
       if (fallback) {
         // Cache under both paths
@@ -962,7 +949,7 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
       }
     }
     
-    console.log('[TauriFS] loadFileAsBlobUrl result: failed');
+
 
     // FALLBACK 2: For cover/image files, scan the song's parent folder to find
     // the actual file. This handles cases where path encoding, Unicode
@@ -975,7 +962,7 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
         normalizedRelativePath,
       );
       if (folderResult) {
-        console.log('[TauriFS] Found file via folder scan fallback:', folderResult);
+
         return folderResult;
       }
     }
@@ -1020,7 +1007,7 @@ async function findFileByScanningParentFolder(
       return null; // File is in root, no parent to scan
     }
 
-    console.log('[TauriFS] Folder scan fallback: scanning directory:', parentDir, 'for file:', fileName);
+
 
     // Try to list the directory
     let entries: Awaited<ReturnType<typeof nativeReadDir>>;
@@ -1042,7 +1029,7 @@ async function findFileByScanningParentFolder(
       if (!entry.is_file) continue;
       if (entry.name.toLowerCase().normalize('NFC') === targetLower) {
         // Found it! Load using the actual filesystem path from the directory entry
-        console.log('[TauriFS] Folder scan fallback: found matching file:', entry.path);
+
         const url = await loadFileAsBlobUrl(entry.path);
         if (url) return url;
       }
@@ -1055,7 +1042,7 @@ async function findFileByScanningParentFolder(
         const entryExt = '.' + entry.name.split('.').pop()?.toLowerCase();
         if (!COVER_EXTENSIONS.includes(entryExt as typeof COVER_EXTENSIONS[number])) continue;
         if (COVER_PATTERNS.some(p => p.test(entry.name))) {
-          console.log('[TauriFS] Folder scan fallback: found cover by pattern:', entry.path);
+  
           const url = await loadFileAsBlobUrl(entry.path);
           if (url) return url;
         }
@@ -1073,7 +1060,7 @@ async function findFileByScanningParentFolder(
 // Load a file from the filesystem and return a blob URL
 // Uses native Tauri command to bypass plugin ACL restrictions.
 async function loadFileAsBlobUrl(fullPath: string): Promise<string | null> {
-  console.log('[TauriFS] loadFileAsBlobUrl called for:', fullPath);
+
   
   try {
     // Use native command — returns base64-encoded bytes (bypass ACL)
@@ -1085,7 +1072,7 @@ async function loadFileAsBlobUrl(fullPath: string): Promise<string | null> {
     for (let i = 0; i < binaryString.length; i++) {
       bytes[i] = binaryString.charCodeAt(i);
     }
-    console.log('[TauriFS] File read successfully (native), size:', bytes.length);
+
     
     // Determine MIME type from extension
     const ext = '.' + fullPath.split('.').pop()?.toLowerCase();
@@ -1098,7 +1085,7 @@ async function loadFileAsBlobUrl(fullPath: string): Promise<string | null> {
     // Cache the URL
     cacheBlobUrl(fullPath, blobUrl);
     
-    console.log('[TauriFS] Created blob URL for:', fullPath, 'MIME:', mimeType, 'Size:', bytes.length);
+
     return blobUrl;
   } catch (error) {
     console.error('[TauriFS] Failed to load file as blob:', fullPath, error);
@@ -1112,7 +1099,7 @@ export function clearBlobUrlCache(): void {
     URL.revokeObjectURL(url);
   }
   blobUrlCache.clear();
-  console.log('[TauriFS] Blob URL cache cleared');
+
 }
 
 // Read stored file content as text (for txt files)

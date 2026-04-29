@@ -5,7 +5,6 @@ import { DIFFICULTY_SETTINGS, Difficulty, Note, LyricLine } from '@/types/game';
 import {
   evaluateTick,
   calculateTickPoints,
-  calculateNoteCompletionBonus,
   NoteProgress,
   ScoringMetadata,
 } from '@/lib/game/scoring';
@@ -316,24 +315,6 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
 
             if (noteProgress.ticksHit >= noteProgress.totalTicks) {
               noteProgress.wasPerfect = true;
-              const bonusPoints = calculateNoteCompletionBonus(noteProgress, scoringMeta.pointsPerTick);
-
-              if (bonusPoints > 0) {
-                setPlayerState(prev => ({
-                  ...prev,
-                  score: prev.score + Math.floor(bonusPoints),
-                }));
-
-                setScoreEventsState(prev => [
-                  ...prev.slice(-10),
-                  {
-                    type: 'perfect',
-                    displayType: 'Perfect',
-                    points: Math.floor(bonusPoints),
-                    time: currentTime,
-                  },
-                ]);
-              }
             }
           }
         }
@@ -506,16 +487,6 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
 
             if (noteProgress.ticksHit >= noteProgress.totalTicks) {
               noteProgress.wasPerfect = true;
-              const bonusPoints = calculateNoteCompletionBonus(noteProgress, scoringMeta.pointsPerTick);
-
-              if (bonusPoints > 0) {
-                scoreDelta += Math.floor(bonusPoints);
-
-                setScoreEvents(prev => [
-                  ...prev.slice(-10),
-                  { type: 'perfect', displayType: 'Perfect', points: Math.floor(bonusPoints), time: currentTime },
-                ]);
-              }
             }
           }
         }

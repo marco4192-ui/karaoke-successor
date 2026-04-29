@@ -132,25 +132,31 @@ export function calculateTickPoints(
   accuracy: number,
   isGolden: boolean,
   pointsPerTick: number,
-  difficulty: Difficulty
+  _difficulty: Difficulty
 ): number {
   if (accuracy <= 0) return 0;
 
-  const settings = DIFFICULTY_SETTINGS[difficulty];
+  // NOTE: noteScoreMultiplier is intentionally NOT applied here.
+  // The scoring metadata (pointsPerTick) is normalized so that a perfect game
+  // yields exactly MAX_POINTS_PER_SONG. Applying an additional multiplier
+  // per difficulty would break this invariant and allow scores > 10000.
+  // Difficulty is reflected in pitch tolerance (stricter = harder to hit notes),
+  // not in score scaling.
   const multiplier = isGolden ? PERFECT_GOLDEN_MULTIPLIER : PERFECT_NOTE_MULTIPLIER;
-  const points = pointsPerTick * accuracy * settings.noteScoreMultiplier * multiplier;
+  const points = pointsPerTick * accuracy * multiplier;
 
   return points;
 }
 
-/** Calculate bonus points for completing a note. */
-export function calculateNoteCompletionBonus(
-  noteProgress: NoteProgress,
-  pointsPerTick: number
-): number {
-  if (noteProgress.ticksHit < noteProgress.totalTicks) return 0;
-
-  const basePoints = noteProgress.totalTicks * pointsPerTick;
-
-  return basePoints;
-}
+/**
+ * NOTE: calculateNoteCompletionBonus has been REMOVED.
+ *
+ * The old implementation added extra points when all ticks in a note were hit,
+ * but these bonus points were NOT accounted for in the scoring normalization
+ * (calculateScoringMetadata). This caused scores to exceed MAX_POINTS_PER_SONG
+ * on perfect games (~15000 instead of 10000).
+ *
+ * The tick-based scoring already rewards perfect accuracy through higher accuracy
+ * values (more points per tick when pitch is closer to target), so a separate
+ * completion bonus is redundant and mathematically incorrect.
+ */
