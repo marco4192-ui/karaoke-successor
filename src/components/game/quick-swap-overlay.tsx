@@ -38,7 +38,6 @@ export function QuickSwapOverlay({
   const [countdown, setCountdown] = useState(0);
   const [nextPlayer, setNextPlayer] = useState<SelectedPlayer | null>(null);
   const [currentIndex, setCurrentIndex] = useState(-1);
-  const timerRef = useState<ReturnType<typeof setTimeout> | null>(null);
 
   // Get the unified setup result for mic info
   const unifiedResult = usePartyStore((s) => s.unifiedSetupResult);

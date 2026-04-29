@@ -14,20 +14,6 @@ export function HighscoreScreen() {
   const [globalLeaderboard, setGlobalLeaderboard] = useState<typeof highscores>([]);
   const [isLoadingGlobal, setIsLoadingGlobal] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<'unknown' | 'connected' | 'failed'>('unknown');
-
-  // Test API connection
-  const testConnection = useCallback(async () => {
-    try {
-      const { leaderboardService } = await import('@/lib/api/leaderboard-service');
-      const isConnected = await leaderboardService.testConnection();
-      setConnectionStatus(isConnected ? 'connected' : 'failed');
-      return isConnected;
-    } catch {
-      setConnectionStatus('failed');
-      return false;
-    }
-  }, []);
 
   // Load global leaderboard when switched to global tab
   useEffect(() => {
