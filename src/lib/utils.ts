@@ -7,10 +7,10 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Generate a unique ID with an optional prefix.
- * Format: `{prefix}-{timestamp}-{random}` — safe for local-only use (no crypto overhead).
+ * Uses crypto.randomUUID() for collision-free 128-bit random IDs.
  */
 export function generateId(prefix: string): string {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+  return `${prefix}-${crypto.randomUUID()}`;
 }
 
 /** Shuffle an array using Fisher-Yates algorithm (returns new array). */
