@@ -361,10 +361,10 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
         
         // Show XP earned notification if leveled up or got new titles
         if (xpResult.leveledUp) {
-          // Level up happened
+          // TODO: Show level-up notification (e.g., confetti, banner)
         }
         if (xpResult.newTitles.length > 0) {
-          // New titles unlocked
+          // TODO: Show new title unlocked notification
         }
 
         // Upload to global leaderboard if enabled and player allows it

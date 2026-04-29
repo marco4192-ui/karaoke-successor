@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, readFile, access, unlink } from 'fs/promises';
-import { constants } from 'fs';
+import { writeFile, readFile, unlink } from 'fs/promises';
 import path from 'path';
+import { findAIConfigFile } from '@/app/api/lib/find-config';
 
 // Config file path - check multiple locations
 const getConfigPaths = () => {
@@ -12,23 +12,10 @@ const getConfigPaths = () => {
   ];
 };
 
-const findConfigFile = async (): Promise<string | null> => {
-  const paths = getConfigPaths();
-  for (const p of paths) {
-    try {
-      await access(p, constants.R_OK);
-      return p;
-    } catch {
-      // File doesn't exist or not readable
-    }
-  }
-  return null;
-};
-
 // GET - Read current config
 export async function GET() {
   try {
-    const configPath = await findConfigFile();
+    const configPath = await findAIConfigFile();
     
     if (!configPath) {
       return NextResponse.json({

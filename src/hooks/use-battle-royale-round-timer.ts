@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 interface UseBattleRoyaleRoundTimerParams {
   gameStatus: string;
   roundDuration: number | undefined;
+  /** Included in effect deps to restart timer when round changes */
   gameCurrentRound: number;
   /** Ref to the latest handleRoundEnd callback — avoids stale closure in interval */
   handleRoundEndRef: React.RefObject<() => void>;
@@ -21,7 +22,7 @@ interface UseBattleRoyaleRoundTimerReturn {
 export function useBattleRoyaleRoundTimer({
   gameStatus,
   roundDuration,
-  gameCurrentRound,
+  gameCurrentRound: _gameCurrentRound,
   handleRoundEndRef,
 }: UseBattleRoyaleRoundTimerParams): UseBattleRoyaleRoundTimerReturn {
   const [roundTimeLeft, setRoundTimeLeft] = useState(roundDuration || 0);
@@ -46,7 +47,7 @@ export function useBattleRoyaleRoundTimer({
 
       return () => clearInterval(interval);
     }
-  }, [gameStatus, roundDuration, gameCurrentRound, handleRoundEndRef]);
+  }, [gameStatus, roundDuration, _gameCurrentRound, handleRoundEndRef]);
 
   return { roundTimeLeft };
 }

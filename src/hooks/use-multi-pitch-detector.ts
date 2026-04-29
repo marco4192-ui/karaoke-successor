@@ -48,13 +48,6 @@ export interface PlayerPitchConfig {
   mobileClientId?: string; // Required for mobile type
 }
 
-export interface PlayerPitchState {
-  playerId: string;
-  pitch: PitchDetectionResult | null;
-  isInitialized: boolean;
-  error: string | null;
-}
-
 export interface UseMultiPitchDetectorOptions {
   players: PlayerPitchConfig[];
   difficulty: Difficulty;

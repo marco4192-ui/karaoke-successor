@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readFile, access } from 'fs/promises';
-import { constants } from 'fs';
-import path from 'path';
+import { readFile } from 'fs/promises';
+import { findAIConfigFile } from '@/app/api/lib/find-config';
 
 // API Configuration interface
 interface AIConfig {
@@ -11,28 +10,9 @@ interface AIConfig {
   userId?: string;
 }
 
-// Find config file
-async function findConfigFile(): Promise<string | null> {
-  const homeDir = process.env.HOME || process.env.USERPROFILE || '';
-  const paths = [
-    path.join(process.cwd(), '.z-ai-config'),
-    path.join(homeDir, '.z-ai-config'),
-  ];
-  
-  for (const p of paths) {
-    try {
-      await access(p, constants.R_OK);
-      return p;
-    } catch {
-      // File doesn't exist or not readable
-    }
-  }
-  return null;
-}
-
 // Load config from file
 async function loadConfig(): Promise<AIConfig | null> {
-  const configPath = await findConfigFile();
+  const configPath = await findAIConfigFile();
   if (!configPath) {
     return null;
   }

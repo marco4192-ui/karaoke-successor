@@ -1,7 +1,7 @@
 // Library Cache System - Persistent storage for song library data
 // Uses IndexedDB for browser persistence
 
-import { Song, Difficulty } from '@/types/game';
+import { Song } from '@/types/game';
 
 export interface CachedSong {
   id: string;
@@ -12,7 +12,7 @@ export interface CachedSong {
   genre?: string;
   duration: number;
   bpm: number;
-  difficulty: Difficulty; // Default difficulty (user can change)
+  difficulty: string; // Default difficulty (user can change)
   rating: number;
   gap: number;
   coverImage?: string;
