@@ -81,11 +81,6 @@ impl NativeAudioPlayer {
         }
     }
 
-    /// Get a lock on the current state (for Tauri commands).
-    pub fn state(&self) -> std::sync::MutexGuard<'_, PlaybackState> {
-        self.lock_state()
-    }
-
     /// Load an audio file, create an output stream on the given host/device,
     /// and start playback.  `device_id` is "<host_name>:<device_index>".
     pub fn play_file(&mut self, file_path: &str, device_id: &str) -> Result<(), String> {

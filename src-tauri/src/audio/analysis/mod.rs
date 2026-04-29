@@ -10,6 +10,7 @@
 //!
 //! Optional: CREPE deep-learning pitch detection (behind `crepe` feature).
 
+// Module declarations
 pub mod types;
 pub mod voicing;
 pub mod yin;
@@ -17,9 +18,3 @@ pub mod octave;
 pub mod bpm;
 pub mod analyzer;
 pub mod crepe;
-
-// Re-export main types for convenience
-#[allow(unused_imports)]
-pub use types::*;
-#[allow(unused_imports)]
-pub use analyzer::AudioAnalyzer;

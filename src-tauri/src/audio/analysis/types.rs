@@ -81,28 +81,6 @@ pub struct PitchAnalysisResult {
 }
 
 // ---------------------------------------------------------------------------
-// BPM result
-// ---------------------------------------------------------------------------
-
-/// BPM detection result.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BpmResult {
-    /// Detected BPM (most likely).
-    pub bpm: f64,
-    /// Confidence 0-1.
-    pub confidence: f64,
-    /// Alternative BPM candidates sorted by confidence.
-    pub alternatives: Vec<BpmCandidate>,
-}
-
-/// A single BPM candidate.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BpmCandidate {
-    pub bpm: f64,
-    pub confidence: f64,
-}
-
-// ---------------------------------------------------------------------------
 // Progress events (emitted to the frontend via Tauri events)
 // ---------------------------------------------------------------------------
 
@@ -194,7 +172,4 @@ pub fn frequency_to_midi(freq: f64) -> i32 {
     (69.0 + 12.0 * (freq / 440.0).log2()).round() as i32
 }
 
-/// Convert a MIDI note number to frequency in Hz.
-pub fn midi_to_frequency(midi: i32) -> f64 {
-    440.0 * 2.0_f64.powf((midi as f64 - 69.0) / 12.0)
-}
+
