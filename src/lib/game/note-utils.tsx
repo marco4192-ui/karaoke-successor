@@ -12,123 +12,83 @@ export const NOTE_HEIGHT = 52;
 export const PITCH_RANGE = 24;
 export const BASE_PITCH = 48; // C3 - lowest pitch to display
 
+// ---- Note shape configuration (shared between NoteBlock and NoteLane) ----
+
+interface NoteShapeConfig {
+  style: React.CSSProperties;
+  /** Active-class for standard note blocks */
+  activeClass: string;
+  /** Active-class for the lane (larger ring/offset) */
+  laneActiveClass: string;
+  /** Override for lane-specific borderRadius (if any) */
+  laneBorderRadius?: string;
+}
+
+const NOTE_SHAPE_CONFIGS: Record<NoteShapeStyle, NoteShapeConfig> = {
+  sharp: {
+    style: {
+      clipPath: 'polygon(4% 0%, 100% 0%, 96% 100%, 0% 100%)',
+      transition: 'clip-path 0.3s ease',
+    },
+    activeClass: 'ring-2 ring-white/80 brightness-110',
+    laneActiveClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent brightness-125',
+  },
+  pill: {
+    style: {
+      borderRadius: '9999px',
+      border: 'none',
+      transition: 'border-radius 0.3s ease',
+    },
+    activeClass: 'ring-2 ring-white/60 brightness-110',
+    laneActiveClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent brightness-110',
+  },
+  diamond: {
+    style: {
+      clipPath: 'polygon(10% 50%, 50% 5%, 90% 50%, 50% 95%)',
+      transition: 'clip-path 0.3s ease',
+    },
+    // NOTE: Do NOT use Tailwind scale-* — it overrides inline translateY(-50%)
+    activeClass: 'brightness-125',
+    laneActiveClass: 'brightness-125',
+  },
+  rounded: {
+    style: {
+      borderRadius: '10px',
+      border: '1.5px solid rgba(255,255,255,0.25)',
+      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.1)',
+      transition: 'border-radius 0.3s ease',
+    },
+    activeClass: 'ring-2 ring-white/80 brightness-125',
+    laneActiveClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent brightness-125',
+    laneBorderRadius: '14px',
+  },
+};
+
 /**
- * Get note shape classes based on theme setting
- * Used by both NoteLane and GameScreen components
- * Each shape produces a clearly distinct visual appearance.
+ * Get note shape classes based on theme setting.
+ * Used by NoteBlock (game screen notes).
  */
 export function getNoteShapeClasses(noteStyle: NoteShapeStyle): {
   baseClass: string;
   activeClass: string;
   style: React.CSSProperties;
 } {
-  switch (noteStyle) {
-    case 'sharp':
-      // Sharp corners with chamfered/angled edges for a distinctive look
-      return {
-        baseClass: '',
-        activeClass: 'ring-2 ring-white/80 brightness-110',
-        style: {
-          clipPath: 'polygon(4% 0%, 100% 0%, 96% 100%, 0% 100%)',
-          transition: 'clip-path 0.3s ease',
-        }
-      };
-    case 'pill':
-      // Pill/capsule shape — fully rounded ends, no border for a smooth clean look.
-      // Visually distinct from 'rounded' which has a visible frame.
-      return {
-        baseClass: '',
-        activeClass: 'ring-2 ring-white/60 brightness-110',
-        style: {
-          borderRadius: '9999px',
-          border: 'none',
-          transition: 'border-radius 0.3s ease',
-        }
-      };
-    case 'diamond':
-      // Diamond/rhombus shape — note shrinks to show diamond outline
-      // NOTE: Do NOT use Tailwind scale-* in activeClass — it sets `transform: scale(...)` via CSS
-      // which would override the inline `transform: translateY(-50%)` on NoteBlock, causing
-      // notes to jump vertically when becoming active. Use brightness only.
-      return {
-        baseClass: '',
-        activeClass: 'brightness-125',
-        style: {
-          clipPath: 'polygon(10% 50%, 50% 5%, 90% 50%, 50% 95%)',
-          transition: 'clip-path 0.3s ease',
-        }
-      };
-    case 'rounded':
-    default:
-      // Rounded rectangle with a visible border frame — clearly rectangular,
-      // distinguished from 'pill' capsule shape by the border + moderate radius.
-      return {
-        baseClass: '',
-        activeClass: 'ring-2 ring-white/80 brightness-125',
-        style: {
-          borderRadius: '10px',
-          border: '1.5px solid rgba(255,255,255,0.25)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.1)',
-          transition: 'border-radius 0.3s ease',
-        }
-      };
-  }
+  const cfg = NOTE_SHAPE_CONFIGS[noteStyle] ?? NOTE_SHAPE_CONFIGS.rounded;
+  return { baseClass: '', activeClass: cfg.activeClass, style: { ...cfg.style } };
 }
 
 /**
- * Get note shape classes for active note with larger scale
- * Used specifically in NoteLane for active notes
+ * Get note shape classes for the note lane (active notes with larger ring/offset).
  */
 export function getNoteShapeClassesForLane(noteStyle: NoteShapeStyle): {
   baseClass: string;
   activeClass: string;
   style: React.CSSProperties;
 } {
-  switch (noteStyle) {
-    case 'sharp':
-      return {
-        baseClass: '',
-        activeClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent brightness-125',
-        style: {
-          clipPath: 'polygon(4% 0%, 100% 0%, 96% 100%, 0% 100%)',
-          transition: 'clip-path 0.3s ease',
-        }
-      };
-    case 'pill':
-      // Pill/capsule shape — no border, smooth and clean (lane version)
-      return {
-        baseClass: '',
-        activeClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent brightness-110',
-        style: {
-          borderRadius: '9999px',
-          border: 'none',
-          transition: 'border-radius 0.3s ease',
-        }
-      };
-    case 'diamond':
-      // NOTE: Do NOT use Tailwind scale-* — it overrides inline translateY(-50%)
-      return {
-        baseClass: '',
-        activeClass: 'brightness-125',
-        style: {
-          clipPath: 'polygon(10% 50%, 50% 5%, 90% 50%, 50% 95%)',
-          transition: 'clip-path 0.3s ease',
-        }
-      };
-    case 'rounded':
-    default:
-      // Rounded rectangle with visible border frame (lane version)
-      return {
-        baseClass: '',
-        activeClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent brightness-125',
-        style: {
-          borderRadius: '14px',
-          border: '1.5px solid rgba(255,255,255,0.25)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.1)',
-          transition: 'border-radius 0.3s ease',
-        }
-      };
-  }
+  const cfg = NOTE_SHAPE_CONFIGS[noteStyle] ?? NOTE_SHAPE_CONFIGS.rounded;
+  const style: React.CSSProperties = { ...cfg.style };
+  if (cfg.laneBorderRadius) style.borderRadius = cfg.laneBorderRadius;
+  return { baseClass: '', activeClass: cfg.laneActiveClass, style };
 }
 
 /**
