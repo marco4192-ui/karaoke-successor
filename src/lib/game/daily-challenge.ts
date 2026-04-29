@@ -262,7 +262,7 @@ export function submitChallengeResult(
     
     if (stats.lastCompletedDate === yesterday.toDateString()) {
       stats.currentStreak++;
-    } else if (stats.lastCompletedDate !== today) {
+    } else {
       stats.currentStreak = 1;
     }
     
@@ -358,6 +358,16 @@ export function submitChallengeResult(
   // Save data
   saveDailyChallenge(challenge);
   savePlayerDailyStats(stats);
+
+  // Sync completion flag so isChallengeCompletedToday() returns true
+  // (isChallengeCompletedToday reads from DAILY_CHALLENGE_KEY, not the leaderboard)
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(DAILY_CHALLENGE_KEY, JSON.stringify({
+      date: today,
+      completed: true,
+      streak: stats.currentStreak,
+    }));
+  }
 
   return { challenge, stats, xpEarned, newBadges, rank: playerRank };
 }
