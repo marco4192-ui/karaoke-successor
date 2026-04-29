@@ -272,6 +272,7 @@ export function UnifiedVideoPlayer({
   const timeUpdateRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const playerIdRef = useRef<string>(`uvp-${++playerCounter}`);
   const adDetectedRef = useRef(false);
+  const [isAdDetected, setIsAdDetected] = useState(false);
   const initialVideoIdRef = useRef<string | null>(null);
 
   // Callbacks via refs to prevent re-initialization
@@ -344,6 +345,7 @@ export function UnifiedVideoPlayer({
 
     playerIdRef.current = `uvp-${++playerCounter}`;
     adDetectedRef.current = false;
+    setIsAdDetected(false);
     initialVideoIdRef.current = videoId;
 
     const videoGapSeconds = videoGap / 1000;
@@ -390,9 +392,11 @@ export function UnifiedVideoPlayer({
                 const isAd = videoData?.video_id && videoData.video_id !== initialVideoIdRef.current;
                 if (isAd && !adDetectedRef.current) {
                   adDetectedRef.current = true;
+                  setIsAdDetected(true);
                   onAdStartRef.current?.();
                 } else if (!isAd && adDetectedRef.current) {
                   adDetectedRef.current = false;
+                  setIsAdDetected(false);
                   onAdEndRef.current?.();
                 }
               } catch { /* ignore */ }
@@ -405,6 +409,7 @@ export function UnifiedVideoPlayer({
                     const videoData = ytPlayerRef.current.getVideoData();
                     if (videoData?.video_id === initialVideoIdRef.current && adDetectedRef.current) {
                       adDetectedRef.current = false;
+                      setIsAdDetected(false);
                       onAdEndRef.current?.();
                     }
                   } catch { /* ignore */ }
@@ -491,7 +496,7 @@ export function UnifiedVideoPlayer({
           }}
         />
         {showAdOverlay && (
-          <AdOverlay isVisible={!!adDetectedRef.current && showAdOverlay} />
+          <AdOverlay isVisible={isAdDetected && showAdOverlay} />
         )}
       </div>
     );
