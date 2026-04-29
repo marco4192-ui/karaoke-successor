@@ -711,7 +711,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       // Read P2 pitch from ref (not closure) to avoid stale values
       const currentP2Pitch = p2DetectedPitchRef.current;
       const currentP2Vol = p2VolumeRef.current;
-      if (isDuetMode && currentP2Pitch !== null) {
+      if (isDuetMode && currentP2Pitch !== null && currentP2Pitch > 0) {
         const p2PitchResult = {
           frequency: currentP2Pitch,
           note: Math.round(12 * (Math.log2(currentP2Pitch / 440)) + 69),
