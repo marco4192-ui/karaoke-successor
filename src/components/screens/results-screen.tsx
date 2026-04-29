@@ -383,7 +383,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
               .then(() => {
                 // Calculate notes stats from game state
                 const perfectNotes = estimatePerfectNotes(playerResult.notesHit, playerResult.rating);
-                const goodNotes = Math.floor(playerResult.notesHit * 0.4); // Estimate
+                const goodNotes = Math.max(0, playerResult.notesHit - perfectNotes - (playerResult.notesMissed ?? 0));
                 
                 return leaderboardService.submitScore(
                   profile,
