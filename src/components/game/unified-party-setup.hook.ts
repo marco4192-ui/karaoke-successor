@@ -286,7 +286,6 @@ export function usePartySetup({
     selectedPlayers,
     settings,
     setSettings,
-    songSelection,
     error,
     difficulty,
     setDifficulty,
