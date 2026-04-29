@@ -523,6 +523,7 @@ export function VoiceVisualizer({
         ctx.moveTo(0, canvas.height / 2);
         ctx.lineTo(canvas.width, canvas.height / 2);
         ctx.stroke();
+        animationRef.current = requestAnimationFrame(draw);
         return;
       }
 
