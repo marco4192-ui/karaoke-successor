@@ -167,8 +167,11 @@ export function MobileScreen() {
     
     pollClients();
     const interval = setInterval(pollClients, 2000);
-    
-    return () => clearInterval(interval);
+
+    return () => {
+      clearInterval(interval);
+      setIsPolling(false);
+    };
   }, []);
   
   // Retry IP detection
