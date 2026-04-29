@@ -90,6 +90,53 @@ interface GameStore {
   setOnlineEnabled: (enabled: boolean) => void;
 }
 
+function createDefaultPlayerProfile(overrides: {
+  id: string;
+  name: string;
+  avatar?: string;
+  color: string;
+}): PlayerProfile {
+  return {
+    ...overrides,
+    totalScore: 0,
+    gamesPlayed: 0,
+    songsCompleted: 0,
+    achievements: [],
+    stats: {
+      totalNotesHit: 0,
+      totalNotesMissed: 0,
+      bestCombo: 0,
+      perfectStreaks: 0,
+      goldenNotesHit: 0,
+      averageAccuracy: 0,
+      totalGamesPlayed: 0,
+      totalSongsCompleted: 0,
+      totalTimeSung: 0,
+      bestScore: 0,
+      worstScore: 0,
+      perfectGames: 0,
+      difficultyStats: {
+        easy: { games: 0, avgAccuracy: 0, bestScore: 0 },
+        medium: { games: 0, avgAccuracy: 0, bestScore: 0 },
+        hard: { games: 0, avgAccuracy: 0, bestScore: 0 },
+      },
+      lowestNote: null,
+      highestNote: null,
+      recentScores: [],
+      genreStats: {},
+      currentStreak: 0,
+      bestStreak: 0,
+      lastPlayedDate: null,
+    },
+    createdAt: Date.now(),
+    xp: 0,
+    level: 1,
+    isActive: true,
+    showRankInName: false,
+    rankDisplayStyle: 'suffix',
+  };
+}
+
 const initialGameState: GameState = {
   status: 'idle',
   currentSong: null,
@@ -254,47 +301,12 @@ export const useGameStore = create<GameStore>()(
         })),
 
       createProfile: (name, avatar) => {
-        const profile: PlayerProfile = {
+        const profile = createDefaultPlayerProfile({
           id: `profile-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
           name,
           avatar,
           color: PLAYER_COLORS[get().profiles.length % PLAYER_COLORS.length],
-          totalScore: 0,
-          gamesPlayed: 0,
-          songsCompleted: 0,
-          achievements: [],
-          stats: {
-            totalNotesHit: 0,
-            totalNotesMissed: 0,
-            bestCombo: 0,
-            perfectStreaks: 0,
-            goldenNotesHit: 0,
-            averageAccuracy: 0,
-            // Extended stats
-            totalGamesPlayed: 0,
-            totalSongsCompleted: 0,
-            totalTimeSung: 0,
-            bestScore: 0,
-            worstScore: 0,
-            perfectGames: 0,
-            difficultyStats: {
-              easy: { games: 0, avgAccuracy: 0, bestScore: 0 },
-              medium: { games: 0, avgAccuracy: 0, bestScore: 0 },
-              hard: { games: 0, avgAccuracy: 0, bestScore: 0 },
-            },
-            lowestNote: null,
-            highestNote: null,
-            recentScores: [],
-            genreStats: {},
-            currentStreak: 0,
-            bestStreak: 0,
-            lastPlayedDate: null,
-          },
-          createdAt: Date.now(),
-          xp: 0,
-          level: 1,
-          isActive: true, // Profiles are active by default
-        };
+        });
 
         set((state) => ({
           profiles: [...state.profiles, profile],
@@ -363,49 +375,12 @@ export const useGameStore = create<GameStore>()(
         }
         
         // Create new profile from mobile data
-        const newProfile: PlayerProfile = {
+        const newProfile = createDefaultPlayerProfile({
           id: mobileProfile.id,
           name: mobileProfile.name,
           avatar: mobileProfile.avatar,
           color: mobileProfile.color,
-          totalScore: 0,
-          gamesPlayed: 0,
-          songsCompleted: 0,
-          achievements: [],
-          stats: {
-            totalNotesHit: 0,
-            totalNotesMissed: 0,
-            bestCombo: 0,
-            perfectStreaks: 0,
-            goldenNotesHit: 0,
-            averageAccuracy: 0,
-            totalGamesPlayed: 0,
-            totalSongsCompleted: 0,
-            totalTimeSung: 0,
-            bestScore: 0,
-            worstScore: 0,
-            perfectGames: 0,
-            difficultyStats: {
-              easy: { games: 0, avgAccuracy: 0, bestScore: 0 },
-              medium: { games: 0, avgAccuracy: 0, bestScore: 0 },
-              hard: { games: 0, avgAccuracy: 0, bestScore: 0 },
-            },
-            lowestNote: null,
-            highestNote: null,
-            recentScores: [],
-            genreStats: {},
-            currentStreak: 0,
-            bestStreak: 0,
-            lastPlayedDate: null,
-          },
-          createdAt: Date.now(),
-          xp: 0,
-          level: 1,
-          isActive: true,
-          // Rank display options
-          showRankInName: false,
-          rankDisplayStyle: 'suffix',
-        };
+        });
         
         set((state) => ({
           profiles: [...state.profiles, newProfile],
