@@ -90,7 +90,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
         </Card>
         <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
           <CardContent className="pt-6">
-            <div className="text-3xl font-bold text-pink-400">5</div>
+            <div className="text-3xl font-bold text-pink-400">8</div>
             <div className="text-white/60 text-sm">Party Games</div>
           </CardContent>
         </Card>
