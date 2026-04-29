@@ -257,11 +257,6 @@ mod crepe_impl {
         pub fn is_loaded(&self) -> bool {
             self.loaded
         }
-
-        /// Returns the last error message, if any.
-        pub fn error_message(&self) -> Option<&str> {
-            self.error_msg.as_deref()
-        }
     }
 
     /// Check whether the CREPE feature is compiled in (always true with default features).

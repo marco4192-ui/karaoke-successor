@@ -1,6 +1,6 @@
 use std::net::TcpStream;
 use std::process::{Command, Child};
-use std::sync::atomic::{AtomicBool, Ordering};
+
 use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
@@ -388,7 +388,6 @@ fn native_remove_dir(dir_path: String) -> Result<(), String> {
         .map_err(|e| format!("Failed to remove directory '{}': {}", dir_path, e))
 }
 
-static SERVER_STARTED: AtomicBool = AtomicBool::new(false);
 /// Server process handle protected by a Mutex for thread-safe access.
 /// Replaces the previous `static mut` which was undefined behavior.
 static SERVER_PROCESS: Mutex<Option<Child>> = Mutex::new(None);
@@ -536,7 +535,6 @@ pub fn run() {
             // Check if server is already running
             if check_server_running() {
                 println!("Server already running on port 3000");
-                SERVER_STARTED.store(true, Ordering::SeqCst);
                 if let Some(window) = app.handle().get_webview_window("main") {
                     let _ = window.eval("window.location.href = 'http://localhost:3000'");
                 }
@@ -678,7 +676,6 @@ pub fn run() {
                     println!("Waiting for server to be ready...");
                     for i in 0..120 {
                         if check_server_running() {
-                            SERVER_STARTED.store(true, Ordering::SeqCst);
                             println!("Server is ready after {} attempts!", i);
                             
                             if let Some(window) = handle.get_webview_window("main") {

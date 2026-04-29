@@ -101,11 +101,9 @@ pub enum AnalysisStage {
     Loading,
     VoicingDetection,
     PitchDetection,
-    OctaveCorrection,
     BpmEstimation,
     NoteConversion,
     Complete,
-    Error,
 }
 
 // ---------------------------------------------------------------------------
