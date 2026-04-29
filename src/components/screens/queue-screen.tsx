@@ -45,13 +45,13 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
   const [companionQueue, setCompanionQueue] = useState<CompanionQueueItem[]>([]);
   const [songs, setSongs] = useState<Song[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const [needsPlayerSelection, setNeedsPlayerSelection] = useState<string | null>(null); // queue item ID
+  const [needsPlayerSelection, setNeedsPlayerSelection] = useState<string[]>([]); // queue item IDs
   const [reassignPlayer1, setReassignPlayer1] = useState<string>('');
   const [reassignPlayer2, setReassignPlayer2] = useState<string>('');
 
   // Reset reassignment state when dialog closes
   useEffect(() => {
-    if (!needsPlayerSelection) {
+    if (needsPlayerSelection.length === 0) {
       setReassignPlayer1('');
       setReassignPlayer2('');
     }
@@ -72,7 +72,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
   useEffect(() => {
     const activeIds = new Set(profiles.filter(p => p.isActive !== false).map(p => p.id));
     const toRemove: string[] = [];
-    let needsSelection: string | null = null;
+    const needsSelectionItems: string[] = [];
 
     queue.forEach((item) => {
       if (item.status !== 'pending') return;
@@ -82,18 +82,16 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
       if (mainInactive && item.gameMode === 'single') {
         toRemove.push(item.id);
       } else if ((mainInactive || partnerInactive) && (item.gameMode === 'duel' || item.gameMode === 'duet')) {
-        if (!needsSelection) {
-          needsSelection = item.id;
-        }
+        needsSelectionItems.push(item.id);
       }
     });
 
     // Batch-remove in a single operation to avoid infinite re-renders
     toRemove.forEach(id => removeFromQueue(id));
-    if (needsSelection && !needsPlayerSelection) {
-      setNeedsPlayerSelection(needsSelection);
+    if (needsSelectionItems.length > 0) {
+      setNeedsPlayerSelection(needsSelectionItems);
     }
-  }, [profiles, queue, removeFromQueue, needsPlayerSelection]);
+  }, [profiles, queue, removeFromQueue]);
 
   // Fetch companion queue from API
   const fetchCompanionQueue = useCallback(async () => {
@@ -510,8 +508,9 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
       )}
 
       {/* Player Re-selection Dialog for duel/duet with deactivated player */}
-      {needsPlayerSelection && (() => {
-        const item = queue.find(q => q.id === needsPlayerSelection);
+      {needsPlayerSelection.length > 0 && (() => {
+        const itemId = needsPlayerSelection[0];
+        const item = queue.find(q => q.id === itemId);
         if (!item) return null;
         const activeProfiles = profiles.filter(p => p.isActive !== false);
         const [sel1, setSel1] = [reassignPlayer1, setReassignPlayer1];
@@ -569,7 +568,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
                             gameMode: item.gameMode as 'single' | 'duel' | 'duet',
                           });
                         }
-                        setNeedsPlayerSelection(null);
+                        setNeedsPlayerSelection(prev => prev.filter(id => id !== itemId));
                       }}
                       className="bg-green-500 hover:bg-green-400 disabled:opacity-50"
                     >
@@ -579,7 +578,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
                       variant="outline"
                       onClick={() => {
                         removeFromQueue(item.id);
-                        setNeedsPlayerSelection(null);
+                        setNeedsPlayerSelection(prev => prev.filter(id => id !== itemId));
                       }}
                       className="border-red-500/50 text-red-400 hover:bg-red-500/10"
                     >
@@ -587,7 +586,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
                     </Button>
                     <Button
                       variant="outline"
-                      onClick={() => setNeedsPlayerSelection(null)}
+                      onClick={() => setNeedsPlayerSelection(prev => prev.filter(id => id !== itemId))}
                       className="border-white/20 text-white hover:bg-white/10"
                     >
                       Später
@@ -601,7 +600,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
                     variant="outline"
                     onClick={() => {
                       removeFromQueue(item.id);
-                      setNeedsPlayerSelection(null);
+                      setNeedsPlayerSelection(prev => prev.filter(id => id !== itemId));
                     }}
                     className="border-red-500/50 text-red-400 hover:bg-red-500/10"
                   >
