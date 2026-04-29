@@ -41,9 +41,13 @@ export type Screen =
 export const IMMERSIVE_SCREENS: Set<Screen> = new Set([
   'editor',
   'game',
+  'tournament-game',
   'pass-the-mic-game',
   'battle-royale-game',
   'companion-singalong-game',
+  'medley-game',
+  'missing-words-game',
+  'blind-game',
 ]);
 
 // Note shape style for theming — canonical definition in note-utils.tsx
