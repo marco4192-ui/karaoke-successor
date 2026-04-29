@@ -312,12 +312,12 @@ export function RemoteControlView({
             {/* Stop and Restart */}
             <div className="grid grid-cols-2 gap-2 mt-2">
               <Button
-                onClick={() => sendCommand('pause')}
+                onClick={() => sendCommand('stop')}
                 variant="outline"
-                className={`h-12 flex items-center gap-2 border-yellow-500/30 ${commandSent === 'pause' ? 'bg-yellow-500/30' : ''}`}
+                className={`h-12 flex items-center gap-2 border-red-500/30 ${commandSent === 'stop' ? 'bg-red-500/30' : ''}`}
               >
-                <span>⏸️</span>
-                <span>Pause / Stop</span>
+                <span>⏹️</span>
+                <span>Stop</span>
               </Button>
               <Button
                 onClick={() => sendCommand('restart')}
