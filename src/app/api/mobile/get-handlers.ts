@@ -15,14 +15,23 @@ import {
 } from './mobile-state';
 
 // ===================== GET HANDLER =====================
+
+// Throttle cleanup to run at most once every 30 seconds
+let lastCleanupTime = 0;
+const CLEANUP_INTERVAL_MS = 30_000;
+
 export async function handleGetRequest(request: NextRequest): Promise<Response> {
   const { searchParams } = request.nextUrl;
   const action = searchParams.get('action');
   const clientId = searchParams.get('clientId');
   const companionCode = searchParams.get('code');
 
-  // Periodic cleanup
-  cleanupInactiveClients();
+  // Throttled cleanup: only run once every 30 seconds
+  const now = Date.now();
+  if (now - lastCleanupTime >= CLEANUP_INTERVAL_MS) {
+    lastCleanupTime = now;
+    cleanupInactiveClients();
+  }
 
   switch (action) {
     case 'connect':

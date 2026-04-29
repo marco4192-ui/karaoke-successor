@@ -63,15 +63,25 @@ export function useBattleRoyaleCompanionPolling({
         // data is expected to be an array of { clientId, note, accuracy } objects
         const pitchEntries = Array.isArray(data) ? data : [];
 
-        // Update the cache
-        companionPitchCacheRef.current.clear();
+        // Build the set of active companion client IDs from the response
+        const activeClientIds = new Set<string>();
         for (const entry of pitchEntries) {
           if (entry.clientId && entry.note !== undefined) {
+            activeClientIds.add(entry.clientId);
             companionPitchCacheRef.current.set(entry.clientId, {
               note: entry.note,
               accuracy: entry.accuracy || 0,
               isSinging: entry.isSinging,
             });
+          }
+        }
+
+        // Only evict cached pitches for companions that are no longer active,
+        // instead of clearing the entire cache (which would lose data for
+        // companions that simply missed one poll cycle).
+        for (const cachedId of companionPitchCacheRef.current.keys()) {
+          if (!activeClientIds.has(cachedId)) {
+            companionPitchCacheRef.current.delete(cachedId);
           }
         }
       } catch (err) {
