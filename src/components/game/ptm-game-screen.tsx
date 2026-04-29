@@ -127,7 +127,6 @@ export function PtmGameScreen({
   // ── Game settings (display preferences) ──
   const {
     showBackgroundVideo,
-    showPitchGuide,
     useAnimatedBackground,
     noteDisplayStyle,
     noteShapeStyle,
@@ -226,9 +225,9 @@ export function PtmGameScreen({
   }, []);
 
   // ── Pre-compute note data for highway ──
-  const { allNotes, sortedLines, pitchStats, scoringMeta, beatDuration } = useMemo(() => {
+  const { allNotes, sortedLines, pitchStats, scoringMeta } = useMemo(() => {
     if (!notesSource?.lyrics?.length) {
-      return { allNotes: [], sortedLines: [], pitchStats: { minPitch: 40, maxPitch: 80, pitchRange: 40 } as PitchStats, scoringMeta: null, beatDuration: 500 };
+      return { allNotes: [], sortedLines: [], pitchStats: { minPitch: 40, maxPitch: 80, pitchRange: 40 } as PitchStats, scoringMeta: null };
     }
 
     const notes: any[] = [];
@@ -245,7 +244,7 @@ export function PtmGameScreen({
     const ps = calculatePitchStats(notes);
     const meta = calculateScoringMetadata(notes, bd);
 
-    return { allNotes: notes, sortedLines: lines, pitchStats: ps, scoringMeta: meta, beatDuration: bd };
+    return { allNotes: notes, sortedLines: lines, pitchStats: ps, scoringMeta: meta };
   }, [notesSource]);
 
   const visibleNotes = useMemo(
