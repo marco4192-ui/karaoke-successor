@@ -156,7 +156,6 @@ export default function KaraokeSuccessor() {
     if (!party.currentTournamentMatch) return;
     const match = party.currentTournamentMatch;
 
-    resumeGame();
     resetGame();
     addPlayer({ id: match.player1!.id, name: match.player1!.name, avatar: match.player1!.avatar, color: match.player1!.color });
     addPlayer({ id: match.player2!.id, name: match.player2!.name, avatar: match.player2!.avatar, color: match.player2!.color });
@@ -167,7 +166,7 @@ export default function KaraokeSuccessor() {
       setSong(randomSong);
       setScreen('game');
     }
-  }, [closeDialog, party, resumeGame, resetGame, addPlayer, setGameMode, setSong, setScreen]);
+  }, [closeDialog, party, resetGame, addPlayer, setGameMode, setSong, setScreen]);
 
   const handleTournamentAutoWinner = useCallback(() => {
     closeDialog();
