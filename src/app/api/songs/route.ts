@@ -1,33 +1,23 @@
 import { NextResponse } from 'next/server';
+import { mutableState } from '@/app/api/mobile/mobile-state';
 
-// This endpoint returns songs from the mobile API's cached song library
-// The main app syncs its songs to the mobile API when they change
-// This allows companion apps to access the song library
+// This endpoint returns songs from the mobile API's cached song library.
+// The main app syncs its songs to the mobile API when they change.
+// This allows companion apps to access the song library.
 
 export async function GET() {
   try {
-    // Fetch songs from the mobile API's cache
-    const response = await fetch('http://localhost:3000/api/mobile?action=getsongs');
-    const data = await response.json();
-    
-    if (data.success) {
-      console.log('[API /songs] Returning', data.songs?.length || 0, 'songs from cache');
-      return NextResponse.json({ 
-        success: true, 
-        songs: data.songs || [],
-        count: data.songs?.length || 0,
-      });
-    }
-    
-    return NextResponse.json({ 
-      success: true, 
-      songs: [],
-      count: 0,
+    const songs = mutableState.songLibrary;
+
+    return NextResponse.json({
+      success: true,
+      songs,
+      count: songs.length,
     });
   } catch (error) {
-    console.error('Error fetching songs:', error);
+    console.error('Error reading songs from cache:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch songs' },
+      { success: false, error: 'Failed to read songs' },
       { status: 500 }
     );
   }
