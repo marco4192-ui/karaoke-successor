@@ -87,8 +87,19 @@ fn validate_safe_path(raw_path: &str) -> Result<PathBuf, String> {
 #[tauri::command]
 fn native_read_file_bytes(file_path: String) -> Result<String, String> {
     validate_safe_path(&file_path)?;
+
     // Attempt 1: use the path exactly as received
     let path = PathBuf::from(&file_path);
+    if let Ok(metadata) = fs::metadata(&path) {
+        let file_size = metadata.len();
+        if file_size > 200 * 1024 * 1024 {
+            // 200 MB limit for in-memory base64 encoding
+            return Err(format!(
+                "File too large for in-memory reading ({} MB, max 200 MB)",
+                file_size / (1024 * 1024)
+            ));
+        }
+    }
     if let Ok(bytes) = fs::read(&path) {
         return Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes));
     }

@@ -51,7 +51,6 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       config: maskedConfig,
-      configPath,
       message: 'Configuration loaded'
     });
   } catch (error: any) {
@@ -69,11 +68,20 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { baseUrl, apiKey, chatId, userId } = body;
 
-    // Validate required fields
-    if (!baseUrl) {
+    if (!baseUrl || typeof baseUrl !== 'string') {
       return NextResponse.json({
         success: false,
-        error: 'Base URL is required'
+        error: 'Base URL is required and must be a string'
+      }, { status: 400 });
+    }
+
+    // Validate baseUrl is a valid URL format
+    try {
+      new URL(baseUrl);
+    } catch {
+      return NextResponse.json({
+        success: false,
+        error: 'Base URL must be a valid URL'
       }, { status: 400 });
     }
 
