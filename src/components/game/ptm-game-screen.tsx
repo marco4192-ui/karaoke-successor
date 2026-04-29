@@ -107,6 +107,7 @@ export function PtmGameScreen({
   const ptmSongSelection = usePartyStore(s => s.ptmSongSelection);
   const { setGameMode, resetGame } = useGameStore();
   const lastIsSongPlayingRef = useRef(false);
+  const activeWebcamStreamsRef = useRef<MediaStream[]>([]);
 
   // ── Phase management ──
   const [phase, setPhase] = useState<GamePhase>('intro');
@@ -648,7 +649,16 @@ export function PtmGameScreen({
 
   // ── Cleanup on unmount ──
   useEffect(() => {
-    return () => { try { stop(); } catch { /* already stopped */ } };
+    return () => {
+      try { stop(); } catch { /* already stopped */ }
+      // Clean up any active webcam streams
+      activeWebcamStreamsRef.current.forEach(stream => {
+        stream.getTracks().forEach(t => t.stop());
+      });
+      activeWebcamStreamsRef.current = [];
+      // Remove any orphaned webcam video elements
+      document.querySelectorAll('video[style*="z-index:100"]').forEach(el => el.remove());
+    };
   }, [stop]);
 
   // ── Get current lyrics line ──
@@ -987,6 +997,7 @@ export function PtmGameScreen({
               // Toggle camera/webcam if available
               navigator.mediaDevices?.getUserMedia({ video: true })
                 .then(stream => {
+                  activeWebcamStreamsRef.current.push(stream);
                   const video = document.createElement('video');
                   video.srcObject = stream;
                   video.style.cssText = 'position:fixed;bottom:80px;right:16px;width:200px;border-radius:12px;z-index:100;border:2px solid rgba(255,255,255,0.3);';
@@ -995,6 +1006,7 @@ export function PtmGameScreen({
                   // Click to close
                   video.addEventListener('click', () => {
                     stream.getTracks().forEach(t => t.stop());
+                    activeWebcamStreamsRef.current = activeWebcamStreamsRef.current.filter(s => s !== stream);
                     video.remove();
                   });
                 })
