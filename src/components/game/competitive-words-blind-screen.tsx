@@ -12,7 +12,7 @@
 
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { PlayerProfile, Song, PLAYER_COLORS, Difficulty } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
 import {
@@ -275,6 +275,39 @@ export function CompetitiveGameView({
 }: CompetitiveGameViewProps) {
   const currentRound = getCurrentRound(game);
   const ranked = getRankedPlayers(game);
+  const hasTriggeredSetup = useRef(false);
+  const hasTriggeredPlay = useRef(false);
+
+  // Automatically start first round when game enters 'setup' status
+  useEffect(() => {
+    if (game.status === 'setup' && !hasTriggeredSetup.current) {
+      hasTriggeredSetup.current = true;
+      if (songs.length === 0) return;
+      const randomSong = songs[Math.floor(Math.random() * songs.length)];
+      if (!randomSong) return;
+      const updated = startCompetitiveRound(game, randomSong.id, randomSong.title);
+      onUpdateGame(updated);
+    }
+    if (game.status !== 'setup') {
+      hasTriggeredSetup.current = false;
+    }
+  }, [game.status, songs, game, onUpdateGame]);
+
+  // Delegate to game screen when round is ready to play
+  useEffect(() => {
+    if (game.status === 'playing' && currentRound && !hasTriggeredPlay.current) {
+      const player1 = game.players.find(p => p.id === currentRound.player1Id);
+      const player2 = game.players.find(p => p.id === currentRound.player2Id);
+      const song = songs.find(s => s.id === currentRound.songId);
+      if (song && player1 && player2) {
+        hasTriggeredPlay.current = true;
+        onPlayMatch(player1.id, player2.id, player1.name, player2.name, song);
+      }
+    }
+    if (game.status !== 'playing') {
+      hasTriggeredPlay.current = false;
+    }
+  }, [game.status, game.players, currentRound, songs, onPlayMatch]);
 
   // Game Over screen
   if (game.status === 'game-over') {
@@ -306,36 +339,19 @@ export function CompetitiveGameView({
     );
   }
 
-  // Setup — waiting to start first round
+  // Setup — waiting for useEffect to start first round
   if (game.status === 'setup') {
-    const randomSong = songs[Math.floor(Math.random() * songs.length)];
-    if (!randomSong) {
+    if (songs.length === 0) {
       return (
         <div className="min-h-screen flex items-center justify-center text-white">
           <p className="text-xl">Keine Songs in der Bibliothek!</p>
         </div>
       );
     }
-
-    const updated = startCompetitiveRound(game, randomSong.id, randomSong.title);
-    onUpdateGame(updated);
     return null;
   }
 
-  // Playing — show current round info or delegate to game screen
-  if (!currentRound) return null;
-
-  const player1 = game.players.find(p => p.id === currentRound.player1Id);
-  const player2 = game.players.find(p => p.id === currentRound.player2Id);
-  const song = songs.find(s => s.id === currentRound.songId);
-
-  // If we have a song and players, this view is shown between rounds
-  // The actual gameplay is handled by the parent via onPlayMatch
-  if (song && player1 && player2) {
-    onPlayMatch(player1.id, player2.id, player1.name, player2.name, song);
-    return null;
-  }
-
+  // Playing — waiting for useEffect to delegate to game screen
   return null;
 }
 
