@@ -76,7 +76,7 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
   // Filtered songs based on search + filters
   const filteredSongs = useMemo(() => {
     let songs = allSongs;
-    if (filterGenre !== 'all') songs = songs.filter(s => s.genre === filterGenre);
+    if (filterGenre !== 'all') songs = songs.filter(s => s.genre?.toLowerCase().includes(filterGenre.toLowerCase()));
     if (filterDifficulty !== 'all') songs = songs.filter(s => s.difficulty === filterDifficulty);
     if (songSearch.trim()) {
       const q = songSearch.toLowerCase();

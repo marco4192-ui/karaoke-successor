@@ -28,7 +28,7 @@ export function generateMedleySnippets(
   // Filter songs
   let candidates = allSongs.filter(s => s.duration > snippetMs);
   if (genre && genre !== 'all') {
-    candidates = candidates.filter(s => s.genre === genre);
+    candidates = candidates.filter(s => s.genre?.toLowerCase().includes(genre.toLowerCase()));
   }
   if (language && language !== 'all') {
     candidates = candidates.filter(s => s.language === language);

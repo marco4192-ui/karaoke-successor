@@ -59,7 +59,7 @@ export function useJukebox() {
   const filteredSongs = useMemo(() => {
     let filtered = songs;
     if (filterGenre !== 'all') {
-      filtered = filtered.filter(s => s.genre === filterGenre);
+      filtered = filtered.filter(s => s.genre?.toLowerCase().includes(filterGenre.toLowerCase()));
     }
     if (filterArtist) {
       filtered = filtered.filter(s => s.artist === filterArtist);

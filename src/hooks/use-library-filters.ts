@@ -46,7 +46,9 @@ export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMod
     
     // Genre filter - reads from #Genre: tag in txt files
     if (settings.filterGenre && settings.filterGenre !== 'all') {
-      songs = songs.filter(s => s.genre === settings.filterGenre);
+      songs = songs.filter(s =>
+        s.genre?.toLowerCase().includes(settings.filterGenre.toLowerCase())
+      );
     }
     
     // Language filter - reads from #Language: tag in txt files
