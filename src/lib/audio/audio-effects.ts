@@ -126,6 +126,7 @@ export class AudioEffectsEngine {
   private delayNode: DelayNode | null = null;
   private delayFeedback: GainNode | null = null;
   private delayMix: GainNode | null = null;
+  private reverbMix: GainNode | null = null;
   private compressorNode: DynamicsCompressorNode | null = null;
   private eqLow: BiquadFilterNode | null = null;
   private eqMid: BiquadFilterNode | null = null;
@@ -266,11 +267,13 @@ export class AudioEffectsEngine {
     
     // Reverb
     if (this.settings.reverb.enabled && this.reverbNode) {
-      const reverbMix = this.audioContext.createGain();
-      reverbMix.gain.value = this.settings.reverb.amount;
+      if (!this.reverbMix) {
+        this.reverbMix = this.audioContext.createGain();
+      }
+      this.reverbMix.gain.value = this.settings.reverb.amount;
       wetChain.connect(this.reverbNode);
-      this.reverbNode.connect(reverbMix);
-      reverbMix.connect(this.wetGain!);
+      this.reverbNode.connect(this.reverbMix);
+      this.reverbMix.connect(this.wetGain!);
     }
     
     // Delay
