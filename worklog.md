@@ -260,3 +260,61 @@ Stage Summary:
 - song-library.ts: 1200 → ~620 Zeilen (Netto: -576 Zeilen, +501 in neuen Dateien)
 - 4 Dateien geändert, 0 neue TypeScript-Fehler
 - Push: 075bd02
+
+---
+Task ID: Q9+Q10
+Agent: Main
+Task: Split use-mobile-client.ts and deduplicate pitch polling
+
+Work Log:
+- use-mobile-client.ts (340 Zeilen) analysiert — 7 distinct responsibilities identifiziert:
+  1. Pitch polling (100ms interval, dedup, AbortController)
+  2. Game state sending (throttled 2 Hz)
+  3. Ad state sending
+  4. Companion profiles (fetch + sync + auto-import)
+  5. Companion queue (fetch + sync)
+  6. Song library sync (30s interval)
+  7. Host profiles publish (60s interval)
+- **Q10: Duplicated pitch polling identified and fixed:**
+  - use-mobile-client.ts lines 63-112 = copy-paste of use-mobile-pitch-polling.ts (already extracted)
+  - game-screen.tsx already uses useMobilePitchPolling directly
+  - Removed duplicated code, use-mobile-client.ts now delegates to useMobilePitchPolling
+- **Q9: Split into focused sub-hooks:**
+  - `use-companion-sync.ts` (119 lines) — companion profiles + queue management
+  - `use-song-library-sync.ts` (99 lines) — song library sync + host profiles publish
+  - `use-mobile-client.ts` (129 lines, down from 340) — thin facade composing sub-hooks
+- Types re-exported from use-mobile-client.ts for backward compatibility (MobilePitchData, CompanionProfile, CompanionQueueItem)
+- Only caller (page.tsx) only destructures `syncSongLibrary` — all return values preserved
+- TypeScript verification: 0 new errors in src/
+- All pre-existing errors in src/ are unrelated to changes
+
+Stage Summary:
+- use-mobile-client.ts: 340 → 129 lines (62% reduction)
+- 2 new focused hooks created (218 lines combined)
+- Q10: Eliminated duplicated pitch polling code
+- Q9: Hook now has clear single-responsibility composition pattern
+- Push: a30d095
+
+---
+Task ID: Q12+Q13
+Agent: Main
+Task: Throttle mobile cleanup + fix companion polling pitch cache clear
+
+Work Log:
+- **Q12: Throttled cleanupInactiveClients in /api/mobile GET handler:**
+  - get-handlers.ts called cleanupInactiveClients() on every GET request
+  - Added module-level `lastCleanupTime` timestamp and `CLEANUP_INTERVAL_MS = 30_000`
+  - Cleanup now only runs when ≥30 seconds have elapsed since last run
+  - Reduces unnecessary work from ~5 requests/sec (pitch polling) to once every 30s
+- **Q13: Fixed companion polling pitch cache clear in use-battle-royale-companion-polling.ts:**
+  - Poll callback called `companionPitchCacheRef.current.clear()` before re-populating
+  - This wiped ALL cached pitches on every 200ms poll, even for companions still active
+  - Fix: Build set of active client IDs from response, only evict cached entries not in active set
+  - Companions that miss one poll cycle no longer lose their pitch data
+- TypeScript verification: 0 new errors in modified files (pre-existing errors unrelated)
+
+Stage Summary:
+- Q12: Cleanup throttled to once per 30 seconds (was every GET request)
+- Q13: Cache now uses selective eviction instead of wholesale clear
+- 2 files changed, 23 insertions, 4 deletions
+- Push: 6271c16

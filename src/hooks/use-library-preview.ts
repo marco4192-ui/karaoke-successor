@@ -10,31 +10,39 @@ export function useLibraryPreview() {
   const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const previewDurationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const previewVideoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
+  // Track the active Audio object for proper cleanup
+  const activeAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  /** Safely dispose of an Audio element (remove src, release resources) */
+  const disposeAudio = useCallback((audio: HTMLAudioElement) => {
+    audio.pause();
+    audio.removeAttribute('src');
+    audio.load(); // Release media resources
+  }, []);
 
   /** Get the preview start time in seconds from the song's metadata */
   const getPreviewStartTime = useCallback((song: Song): number => {
-    // #PREVIEWSTART is stored in seconds directly
     if (song.previewStart && song.previewStart > 0) return song.previewStart;
-    // Fallback to preview.startTime which is in ms
     if (song.preview?.startTime) return song.preview.startTime / 1000;
     return 0;
   }, []);
 
   /** Get the preview duration in seconds from the song's metadata */
   const getPreviewDuration = useCallback((song: Song): number => {
-    // #PREVIEWDURATION is stored in seconds directly
     if (song.previewDuration && song.previewDuration > 0) return song.previewDuration;
-    // Fallback to preview.duration which is in ms
     if (song.preview?.duration) return song.preview.duration / 1000;
-    return 30; // default 30 seconds
+    return 30;
   }, []);
 
   /** Stop all active preview media */
   const stopAllMedia = useCallback(() => {
-    if (previewAudio) {
-      previewAudio.pause();
-      previewAudio.currentTime = 0;
+    // Clean up the tracked audio object
+    if (activeAudioRef.current) {
+      disposeAudio(activeAudioRef.current);
+      activeAudioRef.current = null;
     }
+    setPreviewAudio(null);
+
     previewVideoRefs.current.forEach((video) => {
       video.pause();
       video.currentTime = 0;
@@ -43,24 +51,23 @@ export function useLibraryPreview() {
       clearTimeout(previewDurationTimeoutRef.current);
       previewDurationTimeoutRef.current = null;
     }
-  }, [previewAudio]);
+  }, [disposeAudio]);
 
   const handlePreviewStart = useCallback((song: Song) => {
-    // Allow preview if song has any media (direct URLs, YouTube, or relative paths
-    // that will be resolved by ensureSongUrls for Tauri)
     const hasMedia = song.audioUrl || song.videoBackground || song.youtubeUrl || song.videoUrl
       || song.relativeAudioPath || song.relativeVideoPath;
     if (!hasMedia) return;
 
-    // Clear any existing delay timeout
     if (previewTimeoutRef.current) {
       clearTimeout(previewTimeoutRef.current);
     }
 
-    // Delay before starting preview (avoid instant playback on quick hovers)
     previewTimeoutRef.current = setTimeout(async () => {
-      // Stop any existing preview first
-      stopAllMedia();
+      // Dispose previous audio to free resources
+      if (activeAudioRef.current) {
+        disposeAudio(activeAudioRef.current);
+        activeAudioRef.current = null;
+      }
 
       // Restore media URLs if missing (Tauri needs relative paths resolved)
       let songToPlay = song;
@@ -73,21 +80,20 @@ export function useLibraryPreview() {
       const startTime = getPreviewStartTime(songToPlay);
       const duration = getPreviewDuration(songToPlay);
 
-      // Create new audio for preview
+      // Create new audio for preview and track it
       if (songToPlay.audioUrl) {
         const audio = new Audio();
         audio.volume = 0.3;
         audio.src = songToPlay.audioUrl;
+        activeAudioRef.current = audio;
 
         audio.addEventListener('loadedmetadata', () => {
-          // Set start time for audio preview
           if (startTime > 0 && audio.duration >= startTime) {
             audio.currentTime = startTime;
           }
           audio.play().catch(() => {});
         });
 
-        // Fallback if already loaded (cached)
         audio.addEventListener('canplaythrough', () => {
           if (audio.paused) {
             if (startTime > 0 && audio.duration >= startTime) {
@@ -105,7 +111,6 @@ export function useLibraryPreview() {
       if (videoSrc) {
         const videoEl = previewVideoRefs.current.get(songToPlay.id);
         if (videoEl) {
-          // If the video element has no src yet (Tauri: URLs resolved lazily), set it now
           if (!videoEl.src || videoEl.src === window.location.href) {
             videoEl.src = videoSrc;
           }
@@ -117,7 +122,6 @@ export function useLibraryPreview() {
             videoEl.play().catch(() => {});
           }, { once: true });
 
-          // Fallback if already loaded
           if (videoEl.readyState >= 1) {
             if (startTime > 0 && videoEl.duration >= startTime) {
               videoEl.currentTime = startTime;
@@ -134,8 +138,8 @@ export function useLibraryPreview() {
         stopAllMedia();
         setPreviewSong(null);
       }, duration * 1000);
-    }, 500); // 500ms delay before preview starts
-  }, [previewAudio, stopAllMedia, getPreviewStartTime, getPreviewDuration]);
+    }, 500);
+  }, [stopAllMedia, disposeAudio, getPreviewStartTime, getPreviewDuration]);
 
   const handlePreviewStop = useCallback(() => {
     if (previewTimeoutRef.current) {
@@ -148,18 +152,18 @@ export function useLibraryPreview() {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (previewAudio) {
-        previewAudio.pause();
-        previewAudio.src = '';
-      }
       if (previewTimeoutRef.current) {
         clearTimeout(previewTimeoutRef.current);
       }
       if (previewDurationTimeoutRef.current) {
         clearTimeout(previewDurationTimeoutRef.current);
       }
+      if (activeAudioRef.current) {
+        disposeAudio(activeAudioRef.current);
+        activeAudioRef.current = null;
+      }
     };
-  }, [previewAudio]);
+  }, [disposeAudio]);
 
   return {
     previewSong,
