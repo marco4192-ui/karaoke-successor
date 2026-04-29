@@ -40,6 +40,9 @@ export function useBattleRoyaleSongMedia({
   const resolvedVideoUrlRef = useRef<string | null>(null);
   const audioHasPlayedRef = useRef(false);
 
+  // Track the last round + song we handled to avoid redundant resets
+  const lastHandledRef = useRef<string>('');
+
   // Load full song data with lyrics + URLs when round changes
   useEffect(() => {
     if (currentRoundSongId) {
@@ -72,21 +75,27 @@ export function useBattleRoyaleSongMedia({
     }
   }, [currentRoundSongId, songs, gameCurrentRound]);
 
-  // Load media when song changes — handles both browser (IndexedDB) and Tauri (filesystem)
-  // NOTE: Only depends on currentSong, NOT game.currentRound.
-  // When a new round starts, currentRound changes before currentSong is set,
-  // causing a race condition where media loads for the wrong (old) song.
-  // The reset effect (below) handles clearing state on round changes;
-  // this effect only fires once the correct song is available.
+  // Load media when song changes — handles both browser (IndexedDB) and Tauri (filesystem).
+  // Merged with the reset logic to prevent race conditions between separate effects.
+  // When a new round starts, the previous song may still be in currentSong; the key
+  // `round:currentSongId` ensures we only act once per round+song combination.
   useEffect(() => {
-    const loadMedia = async () => {
-      if (!currentSong) {
-        setMediaLoaded(false);
-        resolvedAudioUrlRef.current = null;
-        resolvedVideoUrlRef.current = null;
-        return;
-      }
+    const songId = currentSong?.id ?? '';
+    const key = `${gameCurrentRound}:${songId}`;
 
+    // Skip if we already handled this exact round+song combo
+    if (key === lastHandledRef.current) return;
+    lastHandledRef.current = key;
+
+    // Reset state for the new song
+    audioHasPlayedRef.current = false;
+    setMediaLoaded(false);
+    resolvedAudioUrlRef.current = null;
+    resolvedVideoUrlRef.current = null;
+
+    if (!currentSong) return;
+
+    const loadMedia = async () => {
       let audioUrl: string | undefined = currentSong.audioUrl;
       let videoUrl: string | undefined = currentSong.videoBackground;
 
@@ -122,21 +131,16 @@ export function useBattleRoyaleSongMedia({
       // Handle embedded audio: video and audio share the same file
       if (currentSong.hasEmbeddedAudio && audioUrl && !videoUrl) {
         videoUrl = audioUrl;
-        console.log('[BattleRoyale] Embedded audio detected — using audio URL as video URL');
       }
 
       // Store resolved URLs for the play check
       resolvedAudioUrlRef.current = audioUrl || null;
       resolvedVideoUrlRef.current = videoUrl || null;
 
-      console.log('[BattleRoyale] Media resolved:', { audioUrl: audioUrl ? 'set' : 'missing', videoUrl: videoUrl ? 'set' : 'missing' });
-
       // Set up audio element
       if (audioRef.current && audioUrl) {
         audioRef.current.src = audioUrl;
         audioRef.current.load();
-      } else {
-        console.warn('[BattleRoyale] No audio URL available — audio will not play');
       }
 
       // Set up video element
@@ -149,16 +153,7 @@ export function useBattleRoyaleSongMedia({
     };
 
     loadMedia();
-  }, [currentSong]);
-
-  // Reset audio-has-played guard when song changes
-  useEffect(() => {
-    audioHasPlayedRef.current = false;
-    // Reset media loaded so the game re-initializes for each new round
-    setMediaLoaded(false);
-    resolvedAudioUrlRef.current = null;
-    resolvedVideoUrlRef.current = null;
-  }, [currentSong?.id, gameCurrentRound]);
+  }, [currentSong, gameCurrentRound]);
 
   return {
     currentSong,
