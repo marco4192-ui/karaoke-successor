@@ -206,7 +206,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     (
       currentTime: number,
       pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean },
-      playerIndex: number,
+      _playerIndex: number,
       notesToCheck: Array<Note & { lineIndex: number; line: LyricLine }> | undefined,
       scoringMeta: ScoringMetadata | undefined,
       noteProgressMap: React.MutableRefObject<Map<string, NoteProgress>>,

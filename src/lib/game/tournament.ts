@@ -1,6 +1,8 @@
 // Tournament Mode - Single Elimination Bracket System
 // Supports 4-32 players with BYE handling for odd numbers
 
+import { shuffleArray } from '@/lib/utils';
+
 export interface TournamentPlayer {
   id: string;
   name: string;
@@ -47,16 +49,6 @@ export interface TournamentSettings {
 // Generate a unique match ID
 function generateMatchId(round: number, position: number): string {
   return `R${round}M${position}`;
-}
-
-// Shuffle array using Fisher-Yates algorithm
-function shuffleArray<T>(array: T[]): T[] {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
 }
 
 // Calculate number of rounds needed

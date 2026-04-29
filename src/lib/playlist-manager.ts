@@ -1,16 +1,12 @@
 // Playlist Manager - CRUD operations for user playlists
 import { Playlist, PlaylistFolder, PlaylistExport, SYSTEM_PLAYLISTS, DEFAULT_PLAYLIST_SETTINGS, Song } from '@/types/game';
+import { generateId } from '@/lib/utils';
 
 // Re-export types for convenience
 export type { Playlist, PlaylistFolder, PlaylistExport } from '@/types/game';
 
 const STORAGE_KEY = 'karaoke-playlists';
 const FOLDERS_KEY = 'karaoke-playlist-folders';
-
-// Generate unique ID
-function generateId(): string {
-  return `playlist-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-}
 
 // Get all playlists from storage
 export function getPlaylists(): Playlist[] {
@@ -82,7 +78,7 @@ export function createPlaylist(name: string, description?: string): Playlist {
   
   const now = Date.now();
   const playlist: Playlist = {
-    id: generateId(),
+    id: generateId('playlist'),
     name: name.trim(),
     description: description?.trim(),
     songIds: [],

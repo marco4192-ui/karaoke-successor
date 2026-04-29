@@ -1,5 +1,5 @@
 // Song Library Store - Manages songs with persistent storage
-import type { Song, LyricLine } from '@/types/game';
+import type { Song } from '@/types/game';
 import { sampleSongs } from '@/data/songs/songs';
 import { isTauri, getSongMediaUrl, clearBlobUrlCache, normalizeFilePath } from '@/lib/tauri-file-storage';
 import { getSongMediaUrls } from '@/lib/db/media-db';
