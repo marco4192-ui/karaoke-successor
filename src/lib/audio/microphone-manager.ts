@@ -695,25 +695,32 @@ export class MultiMicrophoneManager {
         
         // Migration from old format
         if (config.assignedMics && Array.isArray(config.assignedMics)) {
+          let needsSave = false;
           config.assignedMics.forEach((mic: { config?: { latency?: string; }; playerIndex?: number }) => {
             // Migrate latency values
             if (mic.config?.latency) {
               if (mic.config.latency === 'low') {
                 mic.config.latency = 'interactive';
+                needsSave = true;
               } else if (mic.config.latency === 'normal') {
                 mic.config.latency = 'balanced';
+                needsSave = true;
               } else if (mic.config.latency === 'high') {
                 mic.config.latency = 'playback';
+                needsSave = true;
               }
             }
             // Ensure playerIndex
             if (mic.playerIndex === undefined) {
               mic.playerIndex = 0;
+              needsSave = true;
             }
           });
+          // Persist migration results so they are not re-run every load
+          if (needsSave) {
+            localStorage.setItem('karaoke-multi-mic-config', JSON.stringify(config));
+          }
         }
-        // Note: We don't restore mic instances on load, just the config
-        // The UI will need to re-request microphone permissions and reconnect
       }
     } catch (e) {
       console.warn('Failed to load multi-mic config:', e);
