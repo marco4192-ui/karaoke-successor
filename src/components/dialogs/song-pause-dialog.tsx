@@ -42,13 +42,13 @@ export function SongPauseDialog({
                 Fortsetzen
               </button>
               <button
-                onClick={onTournamentRepeat}
+                onClick={() => onTournamentRepeat?.()}
                 className="w-full py-3 rounded-lg font-medium bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/30 transition-all"
               >
                 🔄 Game wiederholen
               </button>
               <button
-                onClick={onTournamentAutoWinner}
+                onClick={() => onTournamentAutoWinner?.()}
                 className="w-full py-3 rounded-lg font-medium bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 transition-all"
               >
                 🏆 Sieger automatisch festlegen
