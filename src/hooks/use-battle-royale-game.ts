@@ -19,6 +19,39 @@ import { useBattleRoyaleCompanionPolling } from '@/hooks/use-battle-royale-compa
 import { useBattleRoyaleRoundTimer } from '@/hooks/use-battle-royale-round-timer';
 import { useBattleRoyaleRoundHandlers } from '@/hooks/use-battle-royale-round-handlers';
 
+/**
+ * Find all notes active at a given time using binary search.
+ * Notes are sorted by startTime — this is O(log n + k) instead of O(n)
+ * where k = number of active notes (typically 2-5).
+ */
+function getActiveNotesAtTime(notes: Note[], timeMs: number): Note[] {
+  if (notes.length === 0) return [];
+
+  // Binary search for the first note whose startTime + duration >= timeMs
+  let lo = 0;
+  let hi = notes.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >>> 1;
+    if (notes[mid].startTime + notes[mid].duration < timeMs) {
+      lo = mid + 1;
+    } else {
+      hi = mid;
+    }
+  }
+
+  const result: Note[] = [];
+  // Scan forward from the found index (notes starting before or at timeMs)
+  // and collect all notes whose time window includes timeMs
+  for (let i = lo; i < notes.length; i++) {
+    const note = notes[i];
+    if (note.startTime > timeMs) break; // past all possible active notes
+    if (timeMs >= note.startTime && timeMs <= note.startTime + note.duration) {
+      result.push(note);
+    }
+  }
+  return result;
+}
+
 interface UseBattleRoyaleGameParams {
   game: BattleRoyaleGame;
   songs: Song[];
@@ -245,16 +278,39 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         // intermediate results when multiple players score in the same tick.
         let batchedGame = gameRef.current;
 
-        td.allNotes.forEach(note => {
-          // Check if note is currently active (within its time window)
-          if (currentAudioTime >= note.startTime && currentAudioTime <= note.startTime + note.duration) {
-            // Score all active MICROPHONE players (local mic, shared pitch)
-            // Skip scoring if vocal detection classifies input as humming/noise
-            const micPlayers = activePlayersRef.current.filter(p => p.playerType === 'microphone' && !p.eliminated);
+        const activeNotes = getActiveNotesAtTime(td.allNotes, currentAudioTime);
 
-            micPlayers.forEach(player => {
-              if (isSinging === false) return; // Humming/noise detected
-              const tick = evaluateAndScoreTick(detectedPitch || 0, note, difficulty, td.scoringMetadata);
+        for (const note of activeNotes) {
+          // Score all active MICROPHONE players (local mic, shared pitch)
+          // Skip scoring if vocal detection classifies input as humming/noise
+          const micPlayers = activePlayersRef.current.filter(p => p.playerType === 'microphone' && !p.eliminated);
+
+          for (const player of micPlayers) {
+            if (isSinging === false) continue; // Humming/noise detected
+            const tick = evaluateAndScoreTick(detectedPitch || 0, note, difficulty, td.scoringMetadata);
+
+            if (tick.hit) {
+              batchedGame = updatePlayerScore(
+                batchedGame,
+                player.id,
+                tick.points,
+                tick.accuracy,
+                1, 0, 1
+              );
+            }
+          }
+
+          // Score all active COMPANION players (pitch from their phones)
+          const companionPlayers = activePlayersRef.current.filter(p => p.playerType === 'companion' && !p.eliminated);
+
+          for (const player of companionPlayers) {
+            // Look up companion's submitted pitch from cache
+            const cachedPitch = player.connectionCode
+              ? companionPitchCacheRef.current.get(player.connectionCode)
+              : null;
+
+            if (cachedPitch && cachedPitch.note > 0 && cachedPitch.isSinging === true) {
+              const tick = evaluateAndScoreTick(cachedPitch.note, note, difficulty, td.scoringMetadata);
 
               if (tick.hit) {
                 batchedGame = updatePlayerScore(
@@ -265,33 +321,9 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
                   1, 0, 1
                 );
               }
-            });
-
-            // Score all active COMPANION players (pitch from their phones)
-            const companionPlayers = activePlayersRef.current.filter(p => p.playerType === 'companion' && !p.eliminated);
-
-            companionPlayers.forEach(player => {
-              // Look up companion's submitted pitch from cache
-              const cachedPitch = player.connectionCode
-                ? companionPitchCacheRef.current.get(player.connectionCode)
-                : null;
-
-              if (cachedPitch && cachedPitch.note > 0 && cachedPitch.isSinging === true) {
-                const tick = evaluateAndScoreTick(cachedPitch.note, note, difficulty, td.scoringMetadata);
-
-                if (tick.hit) {
-                  batchedGame = updatePlayerScore(
-                    batchedGame,
-                    player.id,
-                    tick.points,
-                    tick.accuracy,
-                    1, 0, 1
-                  );
-                }
-              }
-            });
+            }
           }
-        });
+        }
 
         // Single state update per tick — avoids lost intermediate scores
         if (batchedGame !== gameRef.current) {
