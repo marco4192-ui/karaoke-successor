@@ -59,13 +59,14 @@ export interface NoteHighwayProps {
  * Pitch grid background lines
  */
 const PitchGrid = React.memo(function PitchGrid({ count = 7, color = 'cyan' }: { count?: number; color?: string }) {
+  const borderColor = color === 'pink' ? 'rgba(236, 72, 153, 0.1)' : 'rgba(6, 182, 212, 0.1)';
   return (
     <div className="absolute inset-0 pointer-events-none">
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className={`absolute w-full border-t border-${color}-500/10`}
-          style={{ top: `${(i / (count - 1)) * 100}%` }}
+          className="absolute w-full border-t"
+          style={{ top: `${(i / (count - 1)) * 100}%`, borderColor }}
         />
       ))}
     </div>
@@ -92,7 +93,10 @@ const SingLine = React.memo(function SingLine({
       className={`absolute top-0 bottom-0 z-20 w-1 bg-gradient-to-b ${colorClasses[color]} shadow-lg`}
       style={{ left: `${position}%` }}
     >
-      <div className={`absolute -left-1 top-0 bottom-0 w-0.5 bg-${color}-500/30`} />
+      <div
+        className="absolute -left-1 top-0 bottom-0 w-0.5"
+        style={{ backgroundColor: color === 'pink' ? 'rgba(236, 72, 153, 0.3)' : 'rgba(6, 182, 212, 0.3)' }}
+      />
     </div>
   );
 });
