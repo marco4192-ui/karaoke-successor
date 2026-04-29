@@ -724,7 +724,9 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         const p2PitchResult = {
           frequency: currentP2Pitch,
           note: Math.round(12 * (Math.log2(currentP2Pitch / 440)) + 69),
-          clarity: currentPitch?.clarity ?? 0,
+          // P2's clarity is not tracked by our local pitch detector (only frequency is).
+          // Use a moderate default — clarity is only used for display, not scoring.
+          clarity: 0.7,
           volume: currentP2Vol,
           isSinging: p2IsSingingRef.current ?? true,
         };
