@@ -129,17 +129,18 @@ export function evaluateTick(
   return { accuracy, isHit: true, displayType };
 }
 
-/** Calculate points for a single tick. */
+/** Calculate points for a single tick. Golden notes receive a higher multiplier. */
 export function calculateTickPoints(
   accuracy: number,
-  _isGolden: boolean,
+  isGolden: boolean,
   pointsPerTick: number,
   difficulty: Difficulty
 ): number {
   if (accuracy <= 0) return 0;
 
   const settings = DIFFICULTY_SETTINGS[difficulty];
-  let points = pointsPerTick * accuracy * settings.noteScoreMultiplier;
+ const multiplier = isGolden ? PERFECT_GOLDEN_MULTIPLIER : PERFECT_NOTE_MULTIPLIER;
+  const points = pointsPerTick * accuracy * settings.noteScoreMultiplier * multiplier;
 
   return points;
 }
