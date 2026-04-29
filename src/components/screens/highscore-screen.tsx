@@ -20,7 +20,7 @@ export function HighscoreScreen() {
     if (onlineEnabled && leaderboardType === 'global') {
       setIsLoadingGlobal(true);
       setGlobalError(null);
-      
+
       import('@/lib/api/leaderboard-service').then(({ leaderboardService }) => {
         // First test connection
         leaderboardService.testConnection()
@@ -28,7 +28,6 @@ export function HighscoreScreen() {
             if (!isConnected) {
               throw new Error('Cannot connect to leaderboard server. Please check your internet connection.');
             }
-            setConnectionStatus('connected');
             return leaderboardService.getGlobalLeaderboard(50);
           })
           .then(players => {
@@ -54,7 +53,6 @@ export function HighscoreScreen() {
             setGlobalLeaderboard(entries);
           })
           .catch(err => {
-            setConnectionStatus('failed');
             const errorMsg = err.message || 'Failed to load global leaderboard';
             if (errorMsg.includes('HTTP 500') || errorMsg.includes('500')) {
               setGlobalError('Server error (HTTP 500). The leaderboard service is temporarily unavailable. Please try again later.');
