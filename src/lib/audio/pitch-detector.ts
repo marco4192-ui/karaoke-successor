@@ -386,7 +386,10 @@ export class PitchDetector {
       const s0 = yinBuffer[x0];
       const s1 = yinBuffer[tauEstimate];
       const s2 = yinBuffer[x2];
-      betterTau = tauEstimate + (s2 - s0) / (2 * (2 * s1 - s2 - s0));
+      const denominator = 2 * s1 - s2 - s0;
+      betterTau = Math.abs(denominator) < 1e-10
+        ? tauEstimate
+        : tauEstimate + (s2 - s0) / (2 * denominator);
     }
 
     return sampleRate / betterTau;
