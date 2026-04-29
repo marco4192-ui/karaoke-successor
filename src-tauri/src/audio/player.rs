@@ -120,17 +120,21 @@ impl NativeAudioPlayer {
             decoded.channels,
         );
 
+        // Convert channel layout if decoded channels differ from device channels
+        // (e.g. stereo audio on a mono device, or mono audio on a stereo device)
+        let adapted = convert_channels(resampled, decoded.channels, config.channels);
+
         let channels = config.channels;
 
         match sample_format {
             SampleFormat::F32 => {
-                self.build_stream::<f32>(&device, config, resampled, channels, decoded.duration_ms)?;
+                self.build_stream::<f32>(&device, config, adapted, channels, decoded.duration_ms)?;
             }
             SampleFormat::I16 => {
-                self.build_stream::<i16>(&device, config, resampled, channels, decoded.duration_ms)?;
+                self.build_stream::<i16>(&device, config, adapted, channels, decoded.duration_ms)?;
             }
             SampleFormat::U16 => {
-                self.build_stream::<u16>(&device, config, resampled, channels, decoded.duration_ms)?;
+                self.build_stream::<u16>(&device, config, adapted, channels, decoded.duration_ms)?;
             }
             _ => return Err(format!("Unsupported sample format: {:?}", sample_format)),
         }
@@ -464,6 +468,55 @@ pub(crate) fn decode_audio_file(file_path: &str) -> Result<DecodedAudio, String>
         channels,
         duration_ms,
     })
+}
+
+/// Convert interleaved f32 samples from `src_channels` to `dst_channels`.
+///
+/// - Downmix (e.g. stereo → mono): averages all source channels.
+/// - Upmix  (e.g. mono → stereo): duplicates the single channel.
+/// - If channels match, returns the input unchanged.
+fn convert_channels(samples: Vec<f32>, src_channels: u16, dst_channels: u16) -> Vec<f32> {
+    if src_channels == dst_channels {
+        return samples;
+    }
+
+    let src = src_channels as usize;
+    let dst = dst_channels as usize;
+    let frames_in = samples.len() / src;
+
+    if frames_in == 0 {
+        return samples;
+    }
+
+    let mut output = Vec::with_capacity(frames_in * dst);
+
+    if dst < src {
+        // Downmix: average source channels into each destination channel.
+        // For stereo → mono, this is the standard (L+R)/2 approach.
+        for frame_idx in 0..frames_in {
+            for d in 0..dst {
+                // Evenly distribute source channels across destination channels.
+                let src_start = d * src / dst;
+                let src_end = ((d + 1) * src + dst - 1) / dst; // ceiling division
+                let mut sum = 0.0f32;
+                let count = src_end - src_start;
+                for s in src_start..src_end {
+                    sum += samples[frame_idx * src + s];
+                }
+                output.push(sum / count as f32);
+            }
+        }
+    } else {
+        // Upmix: duplicate source channels to fill destination channels.
+        for frame_idx in 0..frames_in {
+            for d in 0..dst {
+                let src_ch = if src == 1 { 0 } else { d * src / dst };
+                output.push(samples[frame_idx * src + src_ch]);
+            }
+        }
+    }
+
+    output
 }
 
 /// Resample interleaved f32 samples if the source rate differs from the target rate.
