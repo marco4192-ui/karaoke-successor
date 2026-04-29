@@ -7,11 +7,14 @@ import { usePartyStore } from '@/lib/game/party-store';
 import { safeAlert } from '@/lib/safe-dialog';
 import { getExtendedStats, updateStatsAfterGame, saveExtendedStats, calculateSongXP, getLevelForXP } from '@/lib/game/player-progression';
 
-// Re-export moved components for backward compatibility
-export { SongHighscoreModal } from '@/components/results/song-highscore-modal';
-export { ScoreVisualization } from '@/components/results/score-visualization';
-export type { VisualizationMode } from '@/components/results/score-visualization';
-export { getCountryFlag, TrophyIcon, MAX_POINTS_PER_SONG } from '@/components/results/constants';
+// Imports from extracted components (also re-exported for backward compatibility)
+import { SongHighscoreModal } from '@/components/results/song-highscore-modal';
+import { ScoreVisualization } from '@/components/results/score-visualization';
+import type { VisualizationMode } from '@/components/results/score-visualization';
+import { getCountryFlag, TrophyIcon, MAX_POINTS_PER_SONG } from '@/components/results/constants';
+export { SongHighscoreModal, ScoreVisualization };
+export type { VisualizationMode };
+export { getCountryFlag, TrophyIcon, MAX_POINTS_PER_SONG };
 
 /**
  * Estimate the number of "perfect" notes based on the rating.
@@ -29,10 +32,6 @@ function estimatePerfectNotes(notesHit: number, rating: string): number {
 }
 
 // Internal imports from extracted components
-import { MAX_POINTS_PER_SONG } from '@/components/results/constants';
-import { TrophyIcon } from '@/components/results/constants';
-import { SongHighscoreModal } from '@/components/results/song-highscore-modal';
-import { ScoreVisualization } from '@/components/results/score-visualization';
 import { UploadStatus } from '@/components/results/upload-status';
 import { SongLeaderboardPreview } from '@/components/results/song-leaderboard-preview';
 import { ShareSection } from '@/components/results/share-section';
