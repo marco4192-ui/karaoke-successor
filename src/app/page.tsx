@@ -110,7 +110,7 @@ export default function KaraokeSuccessor() {
     }
 
     // Get scores from game results
-    const results = gameState.results;
+    let results = gameState.results;
     if (!results || results.players.length < 2) {
       // If no results yet, create them from current game state
       const players = gameState.players;
@@ -143,10 +143,13 @@ export default function KaraokeSuccessor() {
         duration: gameState.currentTime,
       };
       setResults(gameResult);
+      // Use the local result directly — gameState.results in this closure
+      // won't be updated yet since the store update is asynchronous.
+      results = gameResult;
     }
 
-    // Get final results
-    const finalResults = gameState.results;
+    // Get final results (use local variable, not re-reading stale closure state)
+    const finalResults = results;
     if (!finalResults || finalResults.players.length < 2) {
       setScreen('results');
       return;
