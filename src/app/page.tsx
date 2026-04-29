@@ -468,7 +468,7 @@ export default function KaraokeSuccessor() {
     };
 
     const mappedScreen = screenMap[targetScreen] || 'home';
-    setScreen(mappedScreen);
+    navigateWithGuard(mappedScreen);
   }, []);
 
   useGlobalRemoteControl({

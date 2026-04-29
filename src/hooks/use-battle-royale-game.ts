@@ -415,7 +415,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
                 ? companionPitchCacheRef.current.get(player.connectionCode)
                 : null;
               
-              if (cachedPitch && cachedPitch.note > 0 && cachedPitch.isSinging !== false) {
+              if (cachedPitch && cachedPitch.note > 0 && cachedPitch.isSinging === true) {
                 const tickResult = evaluateTick(cachedPitch.note, note.pitch, difficulty);
                 
                 if (tickResult.isHit) {
