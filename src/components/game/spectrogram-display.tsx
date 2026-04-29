@@ -78,10 +78,11 @@ export function SpectrogramDisplay({
         analyser.maxDecibels = DEFAULT_SPECTROGRAM_CONFIG.maxDecibels;
 
         source.connect(analyser);
-        // Only connect analyser → destination for mic streams.
+        // Do NOT connect mic analysers to destination — this would route
+        // microphone input to speakers, creating a feedback loop.
         // For audio elements, useSongEnergy already handles the
         // destination connection; connecting again would double the output.
-        if (!audioElement) {
+        if (audioElement) {
           analyser.connect(audioContext.destination);
         }
 
@@ -220,7 +221,7 @@ export function SpectrogramDisplay({
 
   return (
     <div
-      className={`absolute pointer-events-none z-15 ${className}`}
+      className={`absolute pointer-events-none z-[15] ${className}`}
       style={{
         left: `${position.x}%`,
         top: `${position.y}%`,
