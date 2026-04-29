@@ -2,8 +2,6 @@ import { NextRequest } from 'next/server';
 import type { PitchData, MobileProfile } from './mobile-types';
 import {
   mobileClients,
-  connectionCodes,
-  profileToClient,
   persistentProfileByIp,
   latestPitchData,
   mutableState,
@@ -12,6 +10,7 @@ import {
   cleanupInactiveClients,
   getQueueByCompanion,
   resetAllState,
+  removeClient,
 } from './mobile-state';
 
 // ===================== GET HANDLER =====================
@@ -143,19 +142,11 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
       });
 
     case 'disconnect':
-      if (clientId && mobileClients.has(clientId)) {
-        const client = mobileClients.get(clientId)!;
-        connectionCodes.delete(client.connectionCode);
-        if (client.profile) {
-          profileToClient.delete(client.profile.id);
+      if (clientId) {
+        const client = removeClient(clientId);
+        if (client) {
+          return Response.json({ success: true, message: 'Disconnected' });
         }
-        // Release remote control if this client had it
-        if (mutableState.remoteControlState.lockedBy === clientId) {
-          mutableState.remoteControlState = { lockedBy: null, lockedByName: null, lockedAt: null, pendingCommands: [] };
-        }
-        mobileClients.delete(clientId);
-        latestPitchData.delete(clientId);
-        return Response.json({ success: true, message: 'Disconnected' });
       }
       return Response.json({ success: false, message: 'Client not found' }, { status: 404 });
 
@@ -163,22 +154,13 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
       // Admin kick: forcefully disconnect a client (called from settings)
       {
         const kickClientId = searchParams.get('kickClientId');
-        if (kickClientId && mobileClients.has(kickClientId)) {
-          const client = mobileClients.get(kickClientId)!;
-          const kickedName = client.profile?.name || client.name;
-          connectionCodes.delete(client.connectionCode);
-          if (client.profile) {
-            profileToClient.delete(client.profile.id);
+        if (kickClientId) {
+          const client = removeClient(kickClientId, { purgeQueue: true });
+          if (client) {
+            const kickedName = client.profile?.name || client.name;
+            console.log(`[Mobile API] Kicked client: ${kickedName} (${client.connectionCode})`);
+            return Response.json({ success: true, message: `Kicked ${kickedName}` });
           }
-          if (mutableState.remoteControlState.lockedBy === kickClientId) {
-            mutableState.remoteControlState = { lockedBy: null, lockedByName: null, lockedAt: null, pendingCommands: [] };
-          }
-          // Remove their queue items
-          mutableState.songQueue = mutableState.songQueue.filter(q => q.companionCode !== client.connectionCode);
-          mobileClients.delete(kickClientId);
-          latestPitchData.delete(kickClientId);
-          console.log(`[Mobile API] Kicked client: ${kickedName} (${client.connectionCode})`);
-          return Response.json({ success: true, message: `Kicked ${kickedName}` });
         }
         return Response.json({ success: false, message: 'Client not found' }, { status: 404 });
       }

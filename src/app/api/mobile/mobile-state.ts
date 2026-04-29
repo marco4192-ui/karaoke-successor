@@ -84,26 +84,66 @@ export function getUniqueConnectionCode(): string {
   return code;
 }
 
+// ===================== CLIENT CLEANUP =====================
+// Single source of truth for removing a client from all state stores.
+// Fixes: missing profileToClient.delete, missing remoteControlState reset,
+// missing songQueue purge that were inconsistent across 5 call sites.
+export interface RemoveClientOptions {
+  purgeQueue?: boolean;       // remove their songs from songQueue
+  persistProfile?: boolean;   // save profile to persistentProfileByIp (for inactive cleanup)
+}
+
+export function removeClient(
+  clientId: string,
+  options: RemoveClientOptions = {}
+): MobileClient | null {
+  const client = mobileClients.get(clientId);
+  if (!client) return null;
+
+  // Persist profile before cleanup (for inactive timeout)
+  if (options.persistProfile && client.profile && client.clientIp) {
+    persistentProfileByIp.set(client.clientIp, client.profile);
+  }
+
+  // Remove from all index maps
+  connectionCodes.delete(client.connectionCode);
+  if (client.profile) {
+    profileToClient.delete(client.profile.id);
+  }
+  mobileClients.delete(clientId);
+  latestPitchData.delete(clientId);
+
+  // Release remote control if this client held it
+  if (mutableState.remoteControlState.lockedBy === clientId) {
+    mutableState.remoteControlState = { lockedBy: null, lockedByName: null, lockedAt: null, pendingCommands: [] };
+  }
+
+  // Optionally purge queue
+  if (options.purgeQueue) {
+    mutableState.songQueue = mutableState.songQueue.filter(q => q.companionCode !== client.connectionCode);
+  }
+
+  return client;
+}
+
 // Clean up inactive clients (older than 5 minutes without activity)
 export function cleanupInactiveClients() {
   const now = Date.now();
   const timeout = 5 * 60 * 1000; // 5 minutes
-  
+
+  const inactiveIds: string[] = [];
   mobileClients.forEach((client, clientId) => {
     if (now - client.lastActivity > timeout) {
-      // Save profile to persistent IP store BEFORE cleaning up
-      if (client.profile && client.clientIp) {
-        persistentProfileByIp.set(client.clientIp, client.profile);
-      }
-      // Remove client
-      mobileClients.delete(clientId);
-      connectionCodes.delete(client.connectionCode);
-      if (client.profile) {
-        profileToClient.delete(client.profile.id);
-      }
-      latestPitchData.delete(clientId);
+      inactiveIds.push(clientId);
     }
   });
+  // Remove outside the forEach to avoid modifying Map during iteration
+  for (const id of inactiveIds) {
+    const removed = removeClient(id, { persistProfile: true, purgeQueue: true });
+    if (removed) {
+      console.log(`[Mobile API] Cleaned up inactive client: ${removed.name} (${removed.connectionCode})`);
+    }
+  }
 }
 
 // ===================== HELPER =====================

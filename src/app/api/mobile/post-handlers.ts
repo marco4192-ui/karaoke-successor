@@ -2,11 +2,11 @@ import { NextRequest } from 'next/server';
 import type { MobileClient, PitchData, MobileProfile, QueueItem, RemoteCommand } from './mobile-types';
 import {
   mobileClients,
-  connectionCodes,
   profileToClient,
   latestPitchData,
   mutableState,
   getUniqueConnectionCode,
+  removeClient,
 } from './mobile-state';
 
 // ===================== POST HANDLER =====================
@@ -23,14 +23,8 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         
         // Check for duplicate profile
         if (regPayload.profile && profileToClient.has(regPayload.profile.id)) {
-          // Terminate old connection
-          const oldClientId = profileToClient.get(regPayload.profile.id)!;
-          const oldClient = mobileClients.get(oldClientId);
-          if (oldClient) {
-            connectionCodes.delete(oldClient.connectionCode);
-            mobileClients.delete(oldClientId);
-            latestPitchData.delete(oldClientId);
-          }
+          // Terminate old connection (with full cleanup)
+          removeClient(profileToClient.get(regPayload.profile.id)!, { purgeQueue: true });
         }
         
         const newClient: MobileClient = {
@@ -116,13 +110,8 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           
           // Check for duplicate profile (different client using same profile)
           if (profileToClient.has(profilePayload.id) && profileToClient.get(profilePayload.id) !== clientId) {
-            const oldClientId = profileToClient.get(profilePayload.id)!;
-            const oldClient = mobileClients.get(oldClientId);
-            if (oldClient) {
-              connectionCodes.delete(oldClient.connectionCode);
-              mobileClients.delete(oldClientId);
-              latestPitchData.delete(oldClientId);
-            }
+            // Terminate old connection (with full cleanup)
+            removeClient(profileToClient.get(profilePayload.id)!, { purgeQueue: true });
           }
           
           client.profile = profilePayload;
