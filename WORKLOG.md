@@ -91,3 +91,84 @@ Diese Session: 7 neue reale Mängel gefunden (B1-B7).
 - **Datei:** `src/hooks/use-game-flow-handlers.ts`
 - `finishCompetitiveRound(score1, 0, score2, 0)` → `finishCompetitiveRound(score1, bonus1, score2, bonus2)`.
 - Bonus basierend auf Heuristik: Missing Words ≈ 25% der getroffenen Noten sind versteckt → `calculateMissingWordsBonus(hitNotes * 0.25)`. Blind ≈ 40% der getroffenen Noten sind in Blind-Sektionen → `calculateBlindBonus(hitNotes * 0.40)`.
+
+---
+
+# Code Review — Fresh Review #3
+
+**Datum:** 2026-04-30
+**Repo:** karaoke-successor
+**Branch:** origin/master
+**Stand:** Commit 03a2a03
+
+---
+
+## Zusammenfassung
+
+Vorherige Sessions: 68 + 7 Punkte umgesetzt (B1-B7, L1-L11, D1-D13, Q1-Q20).
+Diese Session: 2 kritische Bugs + 1 Dead Code + 3 Quality-Verbesserungen (B1, B2, D1, Q1, Q2, Q3).
+
+---
+
+## Gefundene Punkte
+
+### B1: `calculateNoteCompletionBonus` — Scores übersteigen MAX_POINTS_PER_SONG (~15000)
+- **Datei:** `src/lib/game/scoring.ts`, `src/hooks/use-note-scoring.ts`
+- **Beschreibung:** Wenn alle Ticks einer Note perfekt getroffen wurden, gab die Funktion `totalTicks * pointsPerTick` extra Bonus-Punkte. Diese Punkte waren in der `calculateScoringMetadata`-Normalisierung NICHT berücksichtigt. Bei einem perfekten Spiel erreichte man ~15000 statt 10000 Punkte (50% Overflow).
+- **Fix:** Funktion und alle 2 Aufrufstellen entfernt. Tick-basiertes Scoring belohnt bereits perfekte Genauigkeit durch höhere Accuracy-Werte, ein separater Bonus ist redundant und mathematisch falsch.
+
+### B2: Hard-Schwierigkeit `noteScoreMultiplier` (1.3x) — Scores > 10000
+- **Datei:** `src/lib/game/scoring.ts`, `src/types/game.ts`
+- **Beschreibung:** `calculateTickPoints` multiplizierte mit `settings.noteScoreMultiplier` (1.0 easy/medium, 1.3 hard). Aber `calculateScoringMetadata` war schwierigkeitsunabhängig. Auf Hard erreichte man ~13000 statt 10000 Punkte. Kombiniert mit B1 sogar ~19500.
+- **Fix:** `noteScoreMultiplier` aus `calculateTickPoints` entfernt. Schwierigkeit wird bereits durch engere Pitch-Toleranz reflektiert (stricter = harder to hit), nicht durch Score-Scaling.
+
+### D1: `SCORE_VALUES` Konstante ist Dead Code
+- **Datei:** `src/types/game.ts`, Zeile 294
+- **Beschreibung:** `SCORE_VALUES = { perfect: 100, good: 75, ... }` war definiert aber nie importiert oder verwendet. Das Scoring nutzt das tick-basierte System in `scoring.ts`.
+- **Fix:** Konstante entfernt.
+
+### Q1: 138 `console.log` Aufrufe im Produktionscode
+- **Datei:** 28 Dateien across hooks, components, lib, api
+- **Beschreibung:** Debug-`console.log` Aufrufe aus der Entwicklungszeit verblieben im Code. Verschwendet Performance und verschmutzt die Konsole im Tauri-WebView.
+- **Fix:** Alle `console.log` entfernt, `console.warn` und `console.error` beibehalten.
+
+### Q2: Unsichere `as any` Type Casts
+- **Datei:** `use-import-screen.ts`, `ptm-game-screen.tsx`
+- **Beschreibung:** Mehrere `as any` Casts umgingen TypeScript-Sicherheit unnötig.
+- **Fix:** `as any` → `as File` (4 casts), `any[]` → `Array<Note & { lineIndex: number; line: LyricLine }>`, `noteDisplayStyle as any` → union literal type cast (2 casts). Verbleibende `as any` in `song-paths.ts` (TS-Limitation) und `unified-party-setup` (absichtliche dynamische Settings) belassen.
+
+### Q3: `loadConfig` in MultiMicrophoneManager migriert aber speichert nicht
+- **Datei:** `src/lib/audio/microphone-manager.ts`
+- **Beschreibung:** `loadConfig()` parsed localStorage, führte Migrationen durch (latency values, playerIndex), aber schrieb die migrierten Daten nie zurück. Migrationen liefen bei jedem App-Start erfolglos.
+- **Fix:** Nach Migration `needsSave` Flag tracken und migrierte Config zurück nach localStorage schreiben.
+
+---
+
+## Umsetzungs-Log
+
+### ✅ B1+B2 — Scoring-Overflow gefixt
+- **Commit:** `03a2a03` fix(B1+B2): remove completion bonus and noteScoreMultiplier to prevent scores exceeding MAX_POINTS_PER_SONG
+- **Dateien:** `src/lib/game/scoring.ts`, `src/hooks/use-note-scoring.ts`
+- `calculateNoteCompletionBonus` Funktion und 2 Aufrufstellen entfernt.
+- `noteScoreMultiplier` aus `calculateTickPoints` entfernt.
+- Perfekte Spiele ergeben jetzt exakt 10000 Punkte auf allen Schwierigkeiten.
+
+### ✅ D1 — SCORE_VALUES entfernt
+- **Commit:** `99db36e` refactor(D1): remove unused SCORE_VALUES constant
+- **Datei:** `src/types/game.ts`
+- 10 Zeilen dead code entfernt.
+
+### ✅ Q1 — 138 console.log Aufrufe entfernt
+- **Commit:** `39819b7` refactor(Q1): remove 138 console.log calls from production code
+- **Dateien:** 28 Dateien (hooks, components, lib, api)
+- `console.warn` und `console.error` beibehalten.
+
+### ✅ Q2 — Unsichere as any Casts ersetzt
+- **Commit:** `269fe77` refactor(Q2): replace unsafe as any casts with proper types
+- **Dateien:** `use-import-screen.ts`, `ptm-game-screen.tsx`
+- 7 Casts durch korrekte Typen ersetzt.
+
+### ✅ Q3 — loadConfig Migration persistiert
+- **Commit:** `699e411` fix(Q3): persist migration results in loadConfig instead of discarding them
+- **Datei:** `src/lib/audio/microphone-manager.ts`
+- Migrierte Config wird jetzt nach localStorage zurückgeschrieben.
