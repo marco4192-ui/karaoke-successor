@@ -8,7 +8,6 @@ import {
 
 // ===================== SCORING CONSTANTS =====================
 export const MAX_POINTS_PER_SONG = 10000;
-const GOLDEN_NOTE_MULTIPLIER = 5;
 const PERFECT_NOTE_MULTIPLIER = 2;
 const PERFECT_GOLDEN_MULTIPLIER = 10;
 
@@ -133,7 +132,7 @@ export function evaluateTick(
 /** Calculate points for a single tick. */
 export function calculateTickPoints(
   accuracy: number,
-  isGolden: boolean,
+  _isGolden: boolean,
   pointsPerTick: number,
   difficulty: Difficulty
 ): number {
@@ -141,8 +140,6 @@ export function calculateTickPoints(
 
   const settings = DIFFICULTY_SETTINGS[difficulty];
   let points = pointsPerTick * accuracy * settings.noteScoreMultiplier;
-
-  if (isGolden) points *= GOLDEN_NOTE_MULTIPLIER;
 
   return points;
 }
@@ -156,5 +153,5 @@ export function calculateNoteCompletionBonus(
 
   const basePoints = noteProgress.totalTicks * pointsPerTick;
 
-  return noteProgress.isGolden ? basePoints * GOLDEN_NOTE_MULTIPLIER : basePoints;
+  return basePoints;
 }
