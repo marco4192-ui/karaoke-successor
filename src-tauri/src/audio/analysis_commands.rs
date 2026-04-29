@@ -78,7 +78,7 @@ fn run_analysis_thread(
                 let _ = on_progress.send(AnalysisProgress {
                     stage: super::analysis::types::AnalysisStage::Loading,
                     progress: 0.0,
-                    message: "Lade Audiodatei...".to_string(),
+                    message: "Loading audio file...".to_string(),
                 });
 
                 match decode_mono_f64(&file_path) {
@@ -86,7 +86,7 @@ fn run_analysis_thread(
                         let _ = on_progress.send(AnalysisProgress {
                             stage: super::analysis::types::AnalysisStage::Loading,
                             progress: 10.0,
-                            message: "Audio dekodiert, starte Analyse...".to_string(),
+                            message: "Audio decoded, starting analysis...".to_string(),
                         });
 
                         let mut analyzer = AudioAnalyzer::new(options);

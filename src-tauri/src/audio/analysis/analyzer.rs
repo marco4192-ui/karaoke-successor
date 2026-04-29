@@ -112,11 +112,11 @@ impl AudioAnalyzer {
         }
 
         // ---- Layer 1: Voicing Detector (always used) ----
-        report(AnalysisStage::VoicingDetection, 5.0, "Initialisiere Voicing-Detektion...", &progress_callback);
+        report(AnalysisStage::VoicingDetection, 5.0, "Initializing voicing detection...", &progress_callback);
         let voicing = VoicingDetector::new(self.options.voicing_threshold, window_size);
 
         // ---- Prepare algorithm-specific detectors ----
-        report(AnalysisStage::PitchDetection, 10.0, "Initialisiere Pitch-Detektion...", &progress_callback);
+        report(AnalysisStage::PitchDetection, 10.0, "Initializing pitch detection...", &progress_callback);
 
         // YIN detector (used for "yin" algorithm and as fallback)
         let yin = YinDetectorSr::new(
@@ -143,15 +143,15 @@ impl AudioAnalyzer {
             if let Some(ref model_path) = self.options.crepe_model_path {
                 match detector.load_model(model_path) {
                     Ok(()) => {
-                        report(AnalysisStage::PitchDetection, 12.0, "CREPE-Modell geladen — Hochpräzision aktiv!", &progress_callback);
+                        report(AnalysisStage::PitchDetection, 12.0, "CREPE model loaded — high precision active!", &progress_callback);
                         crepe = Some(detector);
                     }
                     Err(e) => {
-                        report(AnalysisStage::PitchDetection, 12.0, &format!("CREPE-Modell konnte nicht geladen werden: {}. Fallback auf YIN.", e), &progress_callback);
+                        report(AnalysisStage::PitchDetection, 12.0, &format!("CREPE model could not load: {}. Falling back to YIN.", e), &progress_callback);
                     }
                 }
             } else {
-                report(AnalysisStage::PitchDetection, 12.0, "CREPE ausgewählt, aber kein Modellpfad angegeben. Fallback auf YIN.", &progress_callback);
+                report(AnalysisStage::PitchDetection, 12.0, "CREPE selected but no model path specified. Falling back to YIN.", &progress_callback);
             }
         }
 
@@ -228,20 +228,20 @@ impl AudioAnalyzer {
             // Report progress periodically
             if i % 100 == 0 {
                 let prog = 10.0 + (i as f64 / total_frames as f64) * (analysis_end_progress - 10.0);
-                report(AnalysisStage::PitchDetection, prog, &format!("Analysiere... {}%", i * 100 / total_frames), &progress_callback);
+                report(AnalysisStage::PitchDetection, prog, &format!("Analyzing... {}%", i * 100 / total_frames), &progress_callback);
             }
         }
 
         // ---- BPM estimation ----
-        report(AnalysisStage::BpmEstimation, 82.0, "Erkenne BPM...", &progress_callback);
+        report(AnalysisStage::BpmEstimation, 82.0, "Detecting BPM...", &progress_callback);
         let bpm_det = BpmDetector::new(1024, 512, sample_rate);
         let bpm = bpm_det.detect(samples);
 
         // ---- Convert frames to notes ----
-        report(AnalysisStage::NoteConversion, 90.0, "Erstelle Noten...", &progress_callback);
+        report(AnalysisStage::NoteConversion, 90.0, "Creating notes...", &progress_callback);
         let notes = Self::frames_to_notes(&frames, hop_size, sr);
 
-        report(AnalysisStage::Complete, 100.0, "Analyse abgeschlossen!", &progress_callback);
+        report(AnalysisStage::Complete, 100.0, "Analysis complete!", &progress_callback);
 
         let elapsed = start.elapsed().as_millis() as u64;
 
