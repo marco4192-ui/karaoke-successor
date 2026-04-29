@@ -5,7 +5,7 @@ import type { Screen } from '@/types/screens';
 import type { GameResult, GameState, Player } from '@/types/game';
 import type { PartyStore } from '@/lib/game/party-store';
 import { recordMatchResult } from '@/lib/game/tournament';
-import { finishCompetitiveRound } from '@/lib/game/competitive-words-blind';
+import { finishCompetitiveRound, calculateMissingWordsBonus, calculateBlindBonus } from '@/lib/game/competitive-words-blind';
 
 /**
  * Extracts a GameResult from the current game state if one hasn't
@@ -135,10 +135,27 @@ export function useGameFlowHandlers(
 
       const score1 = results?.players?.[0]?.score || players?.[0]?.score || 0;
       const score2 = results?.players?.[1]?.score || players?.[1]?.score || 0;
+      const p1NotesHit = results?.players?.[0]?.notesHit || players?.[0]?.notesHit || 0;
+      const p2NotesHit = results?.players?.[1]?.notesHit || players?.[1]?.notesHit || 0;
+
+      // Estimate bonus points based on game mode and player accuracy:
+      // - Missing Words: ~25% of words hidden, accuracy on hidden words ≈ overall accuracy
+      //   Estimate: 25% of hit notes are on hidden words → bonus = hitNotes * 0.25 * 50
+      // - Blind: ~40% of time in blind sections, accuracy during blind ≈ overall accuracy
+      //   Estimate: 40% of hit notes are during blind → bonus = hitNotes * 0.40 * 30
+      let bonus1 = 0;
+      let bonus2 = 0;
+      if (gameState.gameMode === 'missing-words') {
+        bonus1 = calculateMissingWordsBonus(Math.round(p1NotesHit * 0.25));
+        bonus2 = calculateMissingWordsBonus(Math.round(p2NotesHit * 0.25));
+      } else if (gameState.gameMode === 'blind') {
+        bonus1 = calculateBlindBonus(Math.round(p1NotesHit * 0.40));
+        bonus2 = calculateBlindBonus(Math.round(p2NotesHit * 0.40));
+      }
 
       const updatedGame = finishCompetitiveRound(
         party.competitiveGame as Parameters<typeof finishCompetitiveRound>[0],
-        score1, 0, score2, 0,
+        score1, bonus1, score2, bonus2,
       );
       party.setCompetitiveGame(updatedGame);
 
