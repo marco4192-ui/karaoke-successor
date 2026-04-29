@@ -345,7 +345,7 @@ export interface ExtendedPlayerStats {
 // ===================== GAME RESULT INPUT =====================
 
 /** Input data from a completed game, used to update player stats */
-export interface GameResult {
+export interface PlayerGameResult {
   songId: string;
   songTitle: string;
   genre?: string;
@@ -636,7 +636,7 @@ function updateSessionStats(stats: ExtendedPlayerStats, today: string): void {
 }
 
 /** Update running averages and extrema for score, accuracy, and notes */
-function updatePerformanceStats(stats: ExtendedPlayerStats, game: GameResult, totalGames: number): void {
+function updatePerformanceStats(stats: ExtendedPlayerStats, game: PlayerGameResult, totalGames: number): void {
   stats.averageScore = ((stats.averageScore * (totalGames - 1)) + game.score) / totalGames;
   stats.averageAccuracy = ((stats.averageAccuracy * (totalGames - 1)) + game.accuracy) / totalGames;
   stats.highestScore = Math.max(stats.highestScore, game.score);
@@ -646,14 +646,14 @@ function updatePerformanceStats(stats: ExtendedPlayerStats, game: GameResult, to
 }
 
 /** Update cumulative play time and session length records */
-function updateTimeStats(stats: ExtendedPlayerStats, game: GameResult): void {
+function updateTimeStats(stats: ExtendedPlayerStats, game: PlayerGameResult): void {
   stats.totalPlayTime += game.duration;
   stats.longestSession = Math.max(stats.longestSession, game.duration);
   stats.averageSessionLength = stats.totalPlayTime / stats.totalSessions;
 }
 
 /** Track genre play counts, best scores, and favorite genre */
-function updateGenreStats(stats: ExtendedPlayerStats, game: GameResult): void {
+function updateGenreStats(stats: ExtendedPlayerStats, game: PlayerGameResult): void {
   if (!game.genre) return;
   stats.genrePlayCount[game.genre] = (stats.genrePlayCount[game.genre] || 0) + 1;
   stats.genreBestScores[game.genre] = Math.max(stats.genreBestScores[game.genre] || 0, game.score);
@@ -664,7 +664,7 @@ function updateGenreStats(stats: ExtendedPlayerStats, game: GameResult): void {
 }
 
 /** Track per-difficulty play counts, best scores, and average accuracy */
-function updateDifficultyStats(stats: ExtendedPlayerStats, game: GameResult): void {
+function updateDifficultyStats(stats: ExtendedPlayerStats, game: PlayerGameResult): void {
   const diff = stats.difficultyStats[game.difficulty];
   diff.played++;
   diff.completed++;
@@ -673,14 +673,14 @@ function updateDifficultyStats(stats: ExtendedPlayerStats, game: GameResult): vo
 }
 
 /** Record one-time milestone timestamps */
-function checkMilestones(stats: ExtendedPlayerStats, game: GameResult, now: number): void {
+function checkMilestones(stats: ExtendedPlayerStats, game: PlayerGameResult, now: number): void {
   if (!stats.milestones.firstSong) stats.milestones.firstSong = now;
   if (game.accuracy === PERFECT_ACCURACY && !stats.milestones.firstPerfect) stats.milestones.firstPerfect = now;
   if (game.goldenNotes > 0 && !stats.milestones.firstGolden) stats.milestones.firstGolden = now;
 }
 
 /** Add completed game to recent games list, trimming to the cap */
-function updateRecentGames(stats: ExtendedPlayerStats, game: GameResult, now: number): void {
+function updateRecentGames(stats: ExtendedPlayerStats, game: PlayerGameResult, now: number): void {
   stats.recentGames.unshift({
     songId: game.songId,
     songTitle: game.songTitle,
@@ -695,7 +695,7 @@ function updateRecentGames(stats: ExtendedPlayerStats, game: GameResult, now: nu
 /** Check and award title unlocks based on game performance; auto-select first title */
 function checkTitleUnlocks(
   stats: ExtendedPlayerStats,
-  game: GameResult,
+  game: PlayerGameResult,
   newLevel: number,
   totalSongs: number
 ): string[] {
@@ -732,7 +732,7 @@ function checkTitleUnlocks(
 /** Main coordinator: updates all player stats after a completed game */
 export function updateStatsAfterGame(
   stats: ExtendedPlayerStats,
-  gameData: GameResult
+  gameData: PlayerGameResult
 ): { stats: ExtendedPlayerStats; xpEarned: number; newTitles: string[]; leveledUp: boolean } {
   const now = Date.now();
   const today = new Date().toDateString();
