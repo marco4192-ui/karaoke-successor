@@ -8,14 +8,12 @@ import { UnifiedPartySetup, SongVotingModal, GameSetupResult, PARTY_GAME_CONFIGS
 import { PassTheMicSegment } from '@/components/game/pass-the-mic-screen';
 import type { MedleyPlayer as MedleyPlayerType, MedleySettings as MedleySettingsType } from '@/components/game/medley/medley-types';
 import { Song, GameMode } from '@/types/game';
+import type { Screen } from '@/types/screens';
 import { createTournament, TournamentPlayer, TournamentSettings } from '@/lib/game/tournament';
 import { createBattleRoyale, BattleRoyaleSettings } from '@/lib/game/battle-royale';
 import { createCompetitiveGame, type CompetitiveModeType, type CompetitiveSettings } from '@/lib/game/competitive-words-blind';
 import { storeSongFilters } from '@/lib/game/ptm-next-song';
 import { toast } from '@/hooks/use-toast';
-
-// Screen types (matches page.tsx)
-type Screen = 'home' | 'library' | 'game' | 'party' | 'character' | 'queue' | 'mobile' | 'results' | 'highscores' | 'import' | 'settings' | 'jukebox' | 'achievements' | 'dailyChallenge' | 'tournament' | 'tournament-game' | 'battle-royale' | 'battle-royale-game' | 'pass-the-mic' | 'pass-the-mic-game' | 'companion-singalong' | 'companion-singalong-game' | 'medley' | 'medley-game' | 'editor' | 'online' | 'party-setup' | 'song-voting' | 'missing-words' | 'missing-words-game' | 'blind' | 'blind-game' | 'rate-my-song' | 'rate-my-song-rating' | 'rate-my-song-results';
 
 interface PartySetupSectionProps {
   screen: Screen;

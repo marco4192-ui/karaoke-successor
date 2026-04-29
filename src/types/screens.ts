@@ -1,28 +1,50 @@
-// Screen types for the main app router
-export type Screen = 
-  | 'home' 
-  | 'library' 
-  | 'game' 
-  | 'party' 
-  | 'character' 
-  | 'queue' 
-  | 'mobile' 
-  | 'results' 
-  | 'highscores' 
-  | 'import' 
-  | 'settings' 
-  | 'jukebox' 
-  | 'achievements' 
-  | 'dailyChallenge' 
-  | 'tournament' 
-  | 'tournament-game' 
-  | 'battle-royale' 
-  | 'battle-royale-game' 
-  | 'editor' 
-  | 'online'
+// Canonical Screen type for the main app router
+export type Screen =
+  | 'home'
+  | 'library'
+  | 'game'
+  | 'party'
+  | 'character'
+  | 'queue'
+  | 'mobile'
+  | 'results'
+  | 'highscores'
+  | 'import'
+  | 'settings'
+  | 'jukebox'
+  | 'achievements'
+  | 'dailyChallenge'
+  | 'tournament'
+  | 'tournament-game'
+  | 'battle-royale'
+  | 'battle-royale-game'
+  | 'pass-the-mic'
+  | 'pass-the-mic-game'
   | 'companion-singalong'
   | 'companion-singalong-game'
-  | 'medley';
+  | 'medley'
+  | 'medley-game'
+  | 'editor'
+  | 'online'
+  | 'party-setup'
+  | 'song-voting'
+  | 'missing-words'
+  | 'missing-words-game'
+  | 'blind'
+  | 'blind-game'
+  | 'rate-my-song'
+  | 'rate-my-song-game'
+  | 'rate-my-song-rating'
+  | 'rate-my-song-results';
+
+// Screens where the navbar should be hidden (immersive / fullscreen experiences)
+export const IMMERSIVE_SCREENS: Set<Screen> = new Set([
+  'editor',
+  'game',
+  'pass-the-mic-game',
+  'battle-royale-game',
+  'companion-singalong-game',
+]);
 
 // Note shape style for theming — canonical definition in note-utils.tsx
 export type { NoteShapeStyle } from '@/lib/game/note-utils';

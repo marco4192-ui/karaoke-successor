@@ -19,9 +19,7 @@ import type { RateMySongResult } from '@/components/game/rate-my-song-screen';
 import type { GameSetupResult } from '@/components/game/unified-party-setup';
 import { preparePtmNextSong } from '@/lib/game/ptm-next-song';
 import { toast } from '@/hooks/use-toast';
-
-// Screen types (matches page.tsx)
-type Screen = 'home' | 'library' | 'game' | 'party' | 'character' | 'queue' | 'mobile' | 'results' | 'highscores' | 'import' | 'settings' | 'jukebox' | 'achievements' | 'dailyChallenge' | 'tournament' | 'tournament-game' | 'battle-royale' | 'battle-royale-game' | 'pass-the-mic' | 'pass-the-mic-game' | 'companion-singalong' | 'companion-singalong-game' | 'medley' | 'medley-game' | 'editor' | 'online' | 'party-setup' | 'song-voting' | 'missing-words' | 'missing-words-game' | 'blind' | 'blind-game' | 'rate-my-song' | 'rate-my-song-game' | 'rate-my-song-rating' | 'rate-my-song-results';
+import type { Screen } from '@/types/screens';
 
 interface PartyGameScreensProps {
   screen: Screen;
