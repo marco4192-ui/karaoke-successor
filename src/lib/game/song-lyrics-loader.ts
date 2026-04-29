@@ -4,6 +4,7 @@ import { normalizeFilePath } from '@/lib/tauri-file-storage';
 import { getTxtContent, storeMedia, getMedia } from '@/lib/db/media-db';
 import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
 import { isAbsolutePath, resolveSongsBaseFolder } from './song-paths';
+import { normalizeTxtContent } from '@/lib/utils';
 
 /**
  * Load lyrics on-demand from IndexedDB or filesystem.
@@ -129,14 +130,7 @@ export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
 // Parse UltraStar TXT content to lyrics
 // IMPORTANT: Don't trim lines or lyrics - trailing spaces are significant for word boundaries
 function parseUltraStarTxtContent(content: string, gap: number, bpm: number): LyricLine[] {
-  // Strip BOM if present (common on Windows)
-  let cleanContent = content;
-  if (cleanContent.charCodeAt(0) === 0xFEFF) {
-    cleanContent = cleanContent.substring(1);
-  }
-
-  // Also strip \r from all lines (Windows \r\n line endings)
-  cleanContent = cleanContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const cleanContent = normalizeTxtContent(content);
 
   const lines = cleanContent.split('\n').filter(l => l.trim().length > 0);
   const notes: Array<{ type: string; startBeat: number; duration: number; pitch: number; lyric: string; player?: 'P1' | 'P2' }> = [];

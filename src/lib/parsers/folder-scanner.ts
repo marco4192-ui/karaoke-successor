@@ -4,6 +4,7 @@
 import { Song, Note, LyricLine, midiToFrequency, Difficulty } from '@/types/game';
 import { CachedSong, CachedFolder, LibraryCache, createCachedSong, saveCache, loadCache } from '@/lib/game/library-cache';
 import { storeMedia } from '@/lib/db/media-db';
+import { normalizeTxtContent } from '@/lib/utils';
 
 export interface ScannedFile {
   name: string;
@@ -602,13 +603,7 @@ async function parseUltraStarFull(txtFile?: File): Promise<{
   }
 
   const content = await txtFile.text();
-  // Strip BOM if present (common on Windows)
-  let cleanContent = content;
-  if (cleanContent.charCodeAt(0) === 0xFEFF) {
-    cleanContent = cleanContent.substring(1);
-  }
-  // Normalize line endings (Windows \r\n → \n)
-  cleanContent = cleanContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const cleanContent = normalizeTxtContent(content);
   // DON'T trim lines! Trailing spaces in lyrics are significant for word boundaries.
   // Only filter out completely empty lines (after trimming for the check)
   const lines = cleanContent.split('\n').filter(l => l.trim().length > 0);
