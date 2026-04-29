@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { Song } from '@/types/game';
 
 /**
@@ -13,6 +13,13 @@ export function useMobileGameSync(
   gameMode: string,
   songEnded: boolean = false,
 ) {
+  const isPlayingRef = useRef(isPlaying);
+  const gameModeRef = useRef(gameMode);
+  const songEndedRef = useRef(songEnded);
+  isPlayingRef.current = isPlaying;
+  gameModeRef.current = gameMode;
+  songEndedRef.current = songEnded;
+
   useEffect(() => {
     if (!song) return;
 
@@ -25,9 +32,9 @@ export function useMobileGameSync(
             type: 'gamestate',
             payload: {
               currentSong: { id: song.id, title: song.title, artist: song.artist },
-              isPlaying: isPlaying,
-              gameMode: gameMode,
-              songEnded: songEnded,
+              isPlaying: isPlayingRef.current,
+              gameMode: gameModeRef.current,
+              songEnded: songEndedRef.current,
             },
           }),
         });
@@ -43,5 +50,5 @@ export function useMobileGameSync(
     const syncInterval = setInterval(syncGameState, 2000);
 
     return () => clearInterval(syncInterval);
-  }, [song, isPlaying, gameMode, songEnded]);
+  }, [song]);
 }
