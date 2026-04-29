@@ -46,7 +46,7 @@ export default function KaraokeSuccessor() {
   const { screen, setScreen, isPartyModeActive, navigateWithGuard, pendingNavigation, setPendingNavigation } = useScreenNavigation(party);
 
   // ── App initialization effects (theme, custom songs, fullscreen, mobile redirect) ──
-  const { isMounted, isFullscreen, toggleFullscreen } = useAppEffects(screen);
+  const { isMounted, isFullscreen, toggleFullscreen } = useAppEffects();
 
   // ── Game flow handlers (tournament end, medley end, competitive end, etc.) ──
   const { handleTournamentGameEnd, handleGameEnd } = useGameFlowHandlers(

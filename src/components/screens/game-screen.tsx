@@ -18,7 +18,6 @@ import {
   loadWebcamConfig,
   saveWebcamConfig,
 } from '@/components/game/webcam-background';
-import LyricLineDisplay from '@/components/game/lyric-line-display';
 import {
   calculateScoringMetadata,
 } from '@/lib/game/scoring';
@@ -345,7 +344,6 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
     status: gameState.status,
     currentTime: gameState.currentTime,
     songId: song?.id,
-    allNotes: timingData?.allNotes,
     sortedLines: timingData?.sortedLines,
     setBlindSection,
     setMissingWordsIndices,
@@ -856,5 +854,4 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
   );
 }
 
-
-export { GameScreen, LyricLineDisplay };
+export { GameScreen };

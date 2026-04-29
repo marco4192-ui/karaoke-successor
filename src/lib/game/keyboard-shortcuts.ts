@@ -39,10 +39,6 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
   { id: 'sys-help', key: '?', modifiers: ['shift'], action: 'system:help', description: 'Show Help', category: 'system', isGlobal: true },
 ];
 
-export interface KeyboardShortcutHandler {
-  (action: string, event: KeyboardEvent): void;
-}
-
 // Format shortcut for display
 export function formatShortcut(shortcut: KeyboardShortcut): string {
   const parts: string[] = [];

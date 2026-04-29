@@ -14,4 +14,4 @@ export { MobileClientView } from './mobile-client-view';
 export { ResultsScreen, ScoreVisualization, SongHighscoreModal, getCountryFlag } from './results-screen';
 export { LibraryScreen } from './library-screen';
 export { SettingsScreen, AIAssetsGenerator, EditorSettingsView, MobileDeviceMicrophoneSection } from './settings-screen';
-export { GameScreen, LyricLineDisplay } from './game-screen';
+export { GameScreen } from './game-screen';

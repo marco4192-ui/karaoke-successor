@@ -1,8 +1,8 @@
 // Song Library Store - Manages songs with persistent storage
 import { Song, LyricLine } from '@/types/game';
 import { sampleSongs } from '@/data/songs/songs';
-import { isTauri, getPlayableUrl, getSongMediaUrl, clearBlobUrlCache, normalizeFilePath } from '@/lib/tauri-file-storage';
-import { getSongMediaUrls, storeMedia, hasMedia, getTxtContent } from '@/lib/db/media-db';
+import { isTauri, getSongMediaUrl, clearBlobUrlCache, normalizeFilePath } from '@/lib/tauri-file-storage';
+import { getSongMediaUrls, storeMedia, getTxtContent } from '@/lib/db/media-db';
 import { saveCustomSongsToDB, loadCustomSongsFromDB, migrateFromLocalStorage, clearCustomSongsFromDB } from '@/lib/db/custom-songs-db';
 import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
 

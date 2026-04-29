@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import type { Screen } from '@/types/screens';
 import { loadCustomSongsFromStorage } from '@/lib/game/song-library';
 import { applyTheme, getStoredTheme } from '@/lib/game/themes';
 
@@ -12,7 +11,7 @@ import { applyTheme, getStoredTheme } from '@/lib/game/themes';
  * Returns `isMounted` (for Tauri hydration guard) and `isFullscreen` /
  * `toggleFullscreen` (for the navbar and fullscreen exit button).
  */
-export function useAppEffects(screen: Screen) {
+export function useAppEffects() {
   const [isMounted, setIsMounted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 

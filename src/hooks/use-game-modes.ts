@@ -8,7 +8,6 @@ interface UseGameModesParams {
   status: string;
   currentTime: number;
   songId?: string;
-  allNotes?: Array<Note & { lineIndex: number; line: LyricLine }>;
   sortedLines?: LyricLine[];
   setBlindSection: (isBlind: boolean) => void;
   setMissingWordsIndices: (indices: number[]) => void;
@@ -49,7 +48,6 @@ export function useGameModes({
   status,
   currentTime,
   songId,
-  allNotes,
   sortedLines,
   setBlindSection,
   setMissingWordsIndices,

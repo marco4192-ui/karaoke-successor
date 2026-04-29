@@ -4,7 +4,6 @@ import {
   Difficulty,
   DIFFICULTY_SETTINGS,
   SCORE_VALUES,
-  frequencyToMidi,
 } from '@/types/game';
 
 // ===================== SCORING CONSTANTS =====================

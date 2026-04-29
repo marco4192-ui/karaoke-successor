@@ -1,5 +1,4 @@
 // Achievement System for Karaoke Successor
-import { Achievement } from '@/types/game';
 
 export interface AchievementDefinition {
   id: string;
