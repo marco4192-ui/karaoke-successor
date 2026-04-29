@@ -352,7 +352,7 @@ export class AudioEffectsEngine {
     this.applyAllSettings();
   }
 
-  private applyAllSettings(): void {
+  private async applyAllSettings(): Promise<void> {
     if (!this.isInitialized) return;
     
     // Master
@@ -366,9 +366,9 @@ export class AudioEffectsEngine {
       this.wetGain.gain.value = this.settings.master.mix;
     }
     
-    // Reverb
+    // Reverb — await impulse generation so buffer is ready before chain connects
     if (this.settings.reverb.enabled && this.reverbNode) {
-      this.createReverbImpulse(this.settings.reverb.decay);
+      await this.createReverbImpulse(this.settings.reverb.decay);
     }
     
     // Delay
