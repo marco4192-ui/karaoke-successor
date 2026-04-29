@@ -291,16 +291,6 @@ export const DIFFICULTY_SETTINGS = {
   },
 } as const;
 
-export const SCORE_VALUES = {
-  perfect: 100,
-  good: 75,
-  okay: 50,
-  miss: 0,
-  goldenNoteBonus: 50,
-  holdNoteBonus: 10, // per 100ms held
-  comboBonus: 25, // per combo level
-} as const;
-
 // Musical constants
 export const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
 
