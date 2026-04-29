@@ -173,101 +173,10 @@ export function removeSongFromPlaylist(playlistId: string, songId: string): bool
   return true;
 }
 
-// Reorder songs in playlist
-export function reorderPlaylistSongs(playlistId: string, fromIndex: number, toIndex: number): boolean {
-  const playlists = getPlaylists();
-  const playlist = playlists.find(p => p.id === playlistId);
-  
-  if (!playlist) return false;
-  if (fromIndex < 0 || fromIndex >= playlist.songIds.length) return false;
-  if (toIndex < 0 || toIndex >= playlist.songIds.length) return false;
-  
-  const [songId] = playlist.songIds.splice(fromIndex, 1);
-  playlist.songIds.splice(toIndex, 0, songId);
-  playlist.updatedAt = Date.now();
-  
-  savePlaylists(playlists);
-  return true;
-}
 
-// Move all songs from one playlist to another
-export function moveAllSongs(sourceId: string, targetId: string): boolean {
-  const playlists = getPlaylists();
-  const source = playlists.find(p => p.id === sourceId);
-  const target = playlists.find(p => p.id === targetId);
-  
-  if (!source || !target) return false;
-  
-  // Add songs that aren't already in target
-  for (const songId of source.songIds) {
-    if (!target.songIds.includes(songId)) {
-      target.songIds.push(songId);
-    }
-  }
-  
-  source.songIds = [];
-  source.updatedAt = Date.now();
-  target.updatedAt = Date.now();
-  
-  savePlaylists(playlists);
-  return true;
-}
-
-// Get playlist by ID
 export function getPlaylistById(id: string): Playlist | null {
   const playlists = getPlaylists();
   return playlists.find(p => p.id === id) || null;
-}
-
-// Check if song is in playlist
-export function isSongInPlaylist(playlistId: string, songId: string): boolean {
-  const playlist = getPlaylistById(playlistId);
-  return playlist?.songIds.includes(songId) || false;
-}
-
-// Get all playlists containing a song
-export function getPlaylistsContainingSong(songId: string): Playlist[] {
-  const playlists = getPlaylists();
-  return playlists.filter(p => p.songIds.includes(songId));
-}
-
-// Export playlist
-export function exportPlaylist(id: string): PlaylistExport | null {
-  const playlist = getPlaylistById(id);
-  if (!playlist) return null;
-  
-  return {
-    version: 1,
-    exportedAt: Date.now(),
-    playlist: {
-      name: playlist.name,
-      description: playlist.description,
-      songIds: playlist.songIds,
-      tags: playlist.tags,
-    },
-  };
-}
-
-// Import playlist
-export function importPlaylist(data: PlaylistExport): Playlist | null {
-  try {
-    const playlist = createPlaylist(data.playlist.name, data.playlist.description);
-    
-    // Add songs
-    for (const songId of data.playlist.songIds) {
-      addSongToPlaylist(playlist.id, songId);
-    }
-    
-    // Add tags
-    if (data.playlist.tags) {
-      updatePlaylist(playlist.id, { tags: data.playlist.tags });
-    }
-    
-    return getPlaylistById(playlist.id);
-  } catch (e) {
-    console.error('Failed to import playlist:', e);
-    return null;
-  }
 }
 
 // Record song play (for Recently Played and Most Played)
@@ -351,24 +260,6 @@ export function getPlaylistSongs(playlistId: string, allSongs: Song[]): Song[] {
     .filter((s): s is Song => s !== undefined);
 }
 
-// Calculate playlist duration - requires songs to be passed in
-export function calculatePlaylistDuration(playlistId: string, allSongs: Song[]): number {
-  const songs = getPlaylistSongs(playlistId, allSongs);
-  return songs.reduce((sum, song) => sum + song.duration, 0);
-}
-
-// Increment play count
-export function incrementPlaylistPlayCount(playlistId: string): void {
-  const playlists = getPlaylists();
-  const playlist = playlists.find(p => p.id === playlistId);
-  
-  if (playlist) {
-    playlist.playCount = (playlist.playCount || 0) + 1;
-    playlist.updatedAt = Date.now();
-    savePlaylists(playlists);
-  }
-}
-
 // ============ FOLDER MANAGEMENT ============
 
 export function getFolders(): PlaylistFolder[] {
@@ -393,73 +284,10 @@ function saveFolders(folders: PlaylistFolder[]): void {
   }
 }
 
-export function createFolder(name: string): PlaylistFolder {
-  const folders = getFolders();
-  
-  if (folders.length >= DEFAULT_PLAYLIST_SETTINGS.maxFolders) {
-    throw new Error(`Maximum number of folders (${DEFAULT_PLAYLIST_SETTINGS.maxFolders}) reached`);
-  }
-  
-  const folder: PlaylistFolder = {
-    id: `folder-${Date.now()}`,
-    name: name.trim(),
-    playlistIds: [],
-    createdAt: Date.now(),
-  };
-  
-  folders.push(folder);
-  saveFolders(folders);
-  
-  return folder;
-}
-
-export function deleteFolder(id: string): boolean {
-  const folders = getFolders();
-  const index = folders.findIndex(f => f.id === id);
-  
-  if (index === -1) return false;
-  
-  folders.splice(index, 1);
-  saveFolders(folders);
-  return true;
-}
-
-export function addPlaylistToFolder(folderId: string, playlistId: string): boolean {
-  const folders = getFolders();
-  const folder = folders.find(f => f.id === folderId);
-  
-  if (!folder) return false;
-  if (folder.playlistIds.includes(playlistId)) return false;
-  
-  folder.playlistIds.push(playlistId);
-  saveFolders(folders);
-  return true;
-}
-
-export function removePlaylistFromFolder(folderId: string, playlistId: string): boolean {
-  const folders = getFolders();
-  const folder = folders.find(f => f.id === folderId);
-  
-  if (!folder) return false;
-  
-  const index = folder.playlistIds.indexOf(playlistId);
-  if (index === -1) return false;
-  
-  folder.playlistIds.splice(index, 1);
-  saveFolders(folders);
-  return true;
-}
-
-export function renameFolder(id: string, name: string): boolean {
-  const folders = getFolders();
-  const folder = folders.find(f => f.id === id);
-  
-  if (!folder) return false;
-  
-  folder.name = name.trim();
-  saveFolders(folders);
-  return true;
-}
+// NOTE: Folder CRUD functions (createFolder, deleteFolder, addPlaylistToFolder,
+// removePlaylistFromFolder, renameFolder) are not yet wired to the UI.
+// The folder data structure exists but management is not exposed to users.
+// getFolders() is used in library-screen.tsx for display purposes only.
 
 // Initialize playlists (call on app start)
 export function initializePlaylists(): void {
