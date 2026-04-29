@@ -133,7 +133,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
         avatar: profile?.avatar,
         color: profile?.color || `hsl(${(i * 90) % 360}, 70%, 60%)`,
         team,
-        inputType: 'local' as const, // TODO: detect companion
+        inputType: 'local' as const,
         score: 0,
         notesHit: 0,
         notesMissed: 0,
