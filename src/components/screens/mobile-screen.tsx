@@ -201,7 +201,7 @@ export function MobileScreen() {
             <div className="text-right flex items-center gap-3">
               <div>
                 <p className="text-xs text-white/60 mb-1">Port</p>
-                <p className="text-2xl font-mono font-bold">3000</p>
+                <p className="text-2xl font-mono font-bold">{typeof window !== 'undefined' ? window.location.port || '3000' : '3000'}</p>
               </div>
               {!localIP && (
                 <Button 

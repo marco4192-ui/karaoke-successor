@@ -50,7 +50,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
       const savedCode = localStorage.getItem('karaoke-connection-code');
       if (savedCode) {
         try {
-          const r = await fetch(`/api/mobile?action=reconnect&code=${savedCode}`);
+          const r = await fetch(`/api/mobile?action=reconnect&code=${encodeURIComponent(savedCode)}`);
           const d = await r.json();
           if (d.success) {
             setClientId(d.clientId);
