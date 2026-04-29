@@ -1,6 +1,65 @@
 // Player Progression System
 // XP, Levels, Ranks, Titles, and Extended Statistics
 
+// ===================== NAMED CONSTANTS =====================
+
+// --- Accuracy thresholds ---
+/** Accuracy percentage required for "perfect" rating */
+const PERFECT_ACCURACY = 100;
+/** Accuracy percentage required for "excellent" rating */
+const EXCELLENT_ACCURACY = 95;
+
+// --- Combo thresholds ---
+/** Combo count that awards the first combo milestone XP */
+const COMBO_MILESTONE_1 = 50;
+/** Combo count that awards the second combo milestone XP */
+const COMBO_MILESTONE_2 = 100;
+/** Combo count that awards the third combo milestone XP */
+const COMBO_MILESTONE_3 = 200;
+
+// --- Level XP requirements (per level within tier) ---
+/** XP required per level for levels 1 through TIER_1_MAX-1 */
+const XP_PER_LEVEL_TIER_1 = 500;
+/** XP required per level for levels TIER_1_MAX through TIER_2_MAX-1 */
+const XP_PER_LEVEL_TIER_2 = 1000;
+/** XP required per level for levels TIER_2_MAX through TIER_3_MAX-1 */
+const XP_PER_LEVEL_TIER_3 = 2000;
+/** XP required per level for levels TIER_3_MAX through TIER_4_MAX-1 */
+const XP_PER_LEVEL_TIER_4 = 4000;
+/** XP required per level for levels TIER_4_MAX and above */
+const XP_PER_LEVEL_TIER_5 = 8000;
+
+// --- Level tier boundaries (exclusive upper bound for the lower tier) ---
+const LEVEL_TIER_1_MAX = 10;
+const LEVEL_TIER_2_MAX = 25;
+const LEVEL_TIER_3_MAX = 50;
+const LEVEL_TIER_4_MAX = 100;
+
+// --- Title unlock thresholds ---
+/** Level required to unlock "Rising Star" title */
+const TITLE_RISING_STAR_LEVEL = 5;
+/** Level required to unlock "Veteran" title */
+const TITLE_VETERAN_LEVEL = 25;
+/** Level required to unlock "Elite" title */
+const TITLE_ELITE_LEVEL = 50;
+/** Level required to unlock "Master" title */
+const TITLE_MASTER_LEVEL = 100;
+
+/** Total golden notes to unlock "Golden Voice" title */
+const TITLE_GOLDEN_VOICE_NOTES = 100;
+/** Max combo to unlock "Combo Master" title */
+const TITLE_COMBO_MASTER_COMBO = 100;
+/** Songs completed to unlock "Dedicated Singer" title */
+const TITLE_DEDICATED_SINGER_SONGS = 100;
+/** Songs completed to unlock "Karaoke Addict" title */
+const TITLE_KARAOKE_ADDICT_SONGS = 500;
+/** Songs completed to unlock "Lifetime Achiever" title */
+const TITLE_LIFETIME_ACHIEVER_SONGS = 1000;
+
+// --- Miscellaneous ---
+/** Maximum number of recent games stored in history */
+const MAX_RECENT_GAMES = 20;
+
 // ===================== RANKS & TITLES =====================
 
 export interface Rank {
@@ -283,13 +342,30 @@ export interface ExtendedPlayerStats {
   weeklyProgress: Array<{ date: string; gamesPlayed: number; xpEarned: number }>;
 }
 
+// ===================== GAME RESULT INPUT =====================
+
+/** Input data from a completed game, used to update player stats */
+export interface GameResult {
+  songId: string;
+  songTitle: string;
+  genre?: string;
+  score: number;
+  accuracy: number;
+  maxCombo: number;
+  perfectNotes: number;
+  goldenNotes: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+  mode: string;
+  duration: number;
+}
+
 // ===================== XP CALCULATIONS =====================
 
 export const XP_SOURCES = {
   // Song completion
   SONG_COMPLETE: 50,
-  SONG_PERFECT: 150, // 100% accuracy bonus
-  SONG_EXCELLENT: 75, // 95%+ accuracy bonus
+  SONG_PERFECT: 150, // PERFECT_ACCURACY accuracy bonus
+  SONG_EXCELLENT: 75, // EXCELLENT_ACCURACY+ accuracy bonus
   
   // Performance
   PERFECT_NOTE: 2,
@@ -331,9 +407,9 @@ export function calculateSongXP(
   let xp = XP_SOURCES.SONG_COMPLETE;
   
   // Accuracy bonus
-  if (accuracy >= 100) {
+  if (accuracy >= PERFECT_ACCURACY) {
     xp += XP_SOURCES.SONG_PERFECT;
-  } else if (accuracy >= 95) {
+  } else if (accuracy >= EXCELLENT_ACCURACY) {
     xp += XP_SOURCES.SONG_EXCELLENT;
   }
   
@@ -344,11 +420,11 @@ export function calculateSongXP(
   xp += goldenNotes * XP_SOURCES.GOLDEN_NOTE;
   
   // Combo milestones
-  if (maxCombo >= 200) {
+  if (maxCombo >= COMBO_MILESTONE_3) {
     xp += XP_SOURCES.COMBO_MILESTONE_200;
-  } else if (maxCombo >= 100) {
+  } else if (maxCombo >= COMBO_MILESTONE_2) {
     xp += XP_SOURCES.COMBO_MILESTONE_100;
-  } else if (maxCombo >= 50) {
+  } else if (maxCombo >= COMBO_MILESTONE_1) {
     xp += XP_SOURCES.COMBO_MILESTONE_50;
   }
   
@@ -374,11 +450,11 @@ export function getRankForXP(xp: number): Rank {
 
 export function getLevelForXP(xp: number): { level: number; currentXP: number; nextLevelXP: number; progress: number } {
   // Level formula: Each level requires progressively more XP
-  // Level 1-10: 500 XP each
-  // Level 11-25: 1000 XP each
-  // Level 26-50: 2000 XP each
-  // Level 51-100: 4000 XP each
-  // Level 101+: 8000 XP each
+  // Level  1-9:  XP_PER_LEVEL_TIER_1 each
+  // Level 10-24: XP_PER_LEVEL_TIER_2 each
+  // Level 25-49: XP_PER_LEVEL_TIER_3 each
+  // Level 50-99: XP_PER_LEVEL_TIER_4 each
+  // Level 100+:  XP_PER_LEVEL_TIER_5 each
   
   // Guard: NaN would cause infinite loop (NaN < anything is always false)
   if (typeof xp !== 'number' || isNaN(xp) || xp < 0) xp = 0;
@@ -388,16 +464,16 @@ export function getLevelForXP(xp: number): { level: number; currentXP: number; n
   
   while (true) {
     let nextRequired: number;
-    if (level < 10) {
-      nextRequired = 500;
-    } else if (level < 25) {
-      nextRequired = 1000;
-    } else if (level < 50) {
-      nextRequired = 2000;
-    } else if (level < 100) {
-      nextRequired = 4000;
+    if (level < LEVEL_TIER_1_MAX) {
+      nextRequired = XP_PER_LEVEL_TIER_1;
+    } else if (level < LEVEL_TIER_2_MAX) {
+      nextRequired = XP_PER_LEVEL_TIER_2;
+    } else if (level < LEVEL_TIER_3_MAX) {
+      nextRequired = XP_PER_LEVEL_TIER_3;
+    } else if (level < LEVEL_TIER_4_MAX) {
+      nextRequired = XP_PER_LEVEL_TIER_4;
     } else {
-      nextRequired = 8000;
+      nextRequired = XP_PER_LEVEL_TIER_5;
     }
     
     if (xp < xpRequired + nextRequired) {
@@ -515,57 +591,41 @@ export function getDefaultStats(): ExtendedPlayerStats {
   };
 }
 
-// Update stats after a game
-export function updateStatsAfterGame(
+// ===================== updateStatsAfterGame HELPERS =====================
+
+/** Recalculate XP, level, rank, and record level-up milestones */
+function updateLevelProgression(
   stats: ExtendedPlayerStats,
-  gameData: {
-    songId: string;
-    songTitle: string;
-    genre?: string;
-    score: number;
-    accuracy: number;
-    maxCombo: number;
-    perfectNotes: number;
-    goldenNotes: number;
-    difficulty: 'easy' | 'medium' | 'hard';
-    mode: string;
-    duration: number;
-  }
-): { stats: ExtendedPlayerStats; xpEarned: number; newTitles: string[]; leveledUp: boolean } {
-  const now = Date.now();
-  const today = new Date().toDateString();
-  const newTitles: string[] = [];
-  let leveledUp = false;
-  
-  // Calculate XP
-  const xpEarned = calculateSongXP(
-    gameData.score,
-    gameData.accuracy,
-    gameData.maxCombo,
-    gameData.perfectNotes,
-    gameData.goldenNotes
-  );
-  
-  // Update XP and level
+  xpEarned: number,
+  now: number
+): { leveledUp: boolean; newLevel: number } {
   const oldLevel = getLevelForXP(stats.totalXP).level;
   stats.totalXP += xpEarned;
   const newLevel = getLevelForXP(stats.totalXP).level;
-  
+
   if (newLevel > oldLevel) {
-    leveledUp = true;
     stats.currentLevel = newLevel;
-    
-    // Check level milestones
-    if (newLevel >= 10 && !stats.milestones.levelTen) stats.milestones.levelTen = now;
-    if (newLevel >= 25 && !stats.milestones.levelTwentyFive) stats.milestones.levelTwentyFive = now;
-    if (newLevel >= 50 && !stats.milestones.levelFifty) stats.milestones.levelFifty = now;
-    if (newLevel >= 100 && !stats.milestones.levelHundred) stats.milestones.levelHundred = now;
+
+    if (newLevel >= LEVEL_TIER_1_MAX && !stats.milestones.levelTen) {
+      stats.milestones.levelTen = now;
+    }
+    if (newLevel >= LEVEL_TIER_2_MAX && !stats.milestones.levelTwentyFive) {
+      stats.milestones.levelTwentyFive = now;
+    }
+    if (newLevel >= LEVEL_TIER_3_MAX && !stats.milestones.levelFifty) {
+      stats.milestones.levelFifty = now;
+    }
+    if (newLevel >= LEVEL_TIER_4_MAX && !stats.milestones.levelHundred) {
+      stats.milestones.levelHundred = now;
+    }
   }
-  
-  // Update rank
+
   stats.currentRank = getRankForXP(stats.totalXP);
-  
-  // Update session stats
+  return { leveledUp: newLevel > oldLevel, newLevel };
+}
+
+/** Track session counts and dates */
+function updateSessionStats(stats: ExtendedPlayerStats, today: string): void {
   if (stats.lastSessionDate !== today) {
     stats.sessionsToday = 1;
     stats.lastSessionDate = today;
@@ -573,117 +633,145 @@ export function updateStatsAfterGame(
     stats.sessionsToday++;
   }
   stats.totalSessions++;
-  
-  // Update performance stats
-  const totalGames = stats.totalSessions;
-  stats.averageScore = ((stats.averageScore * (totalGames - 1)) + gameData.score) / totalGames;
-  stats.averageAccuracy = ((stats.averageAccuracy * (totalGames - 1)) + gameData.accuracy) / totalGames;
-  stats.highestScore = Math.max(stats.highestScore, gameData.score);
-  stats.lowestScore = stats.lowestScore === 0 ? gameData.score : Math.min(stats.lowestScore, gameData.score);
-  stats.totalPerfectNotes += gameData.perfectNotes;
-  stats.totalGoldenNotesHit += gameData.goldenNotes;
-  
-  // Update time stats
-  stats.totalPlayTime += gameData.duration;
-  stats.longestSession = Math.max(stats.longestSession, gameData.duration);
+}
+
+/** Update running averages and extrema for score, accuracy, and notes */
+function updatePerformanceStats(stats: ExtendedPlayerStats, game: GameResult, totalGames: number): void {
+  stats.averageScore = ((stats.averageScore * (totalGames - 1)) + game.score) / totalGames;
+  stats.averageAccuracy = ((stats.averageAccuracy * (totalGames - 1)) + game.accuracy) / totalGames;
+  stats.highestScore = Math.max(stats.highestScore, game.score);
+  stats.lowestScore = stats.lowestScore === 0 ? game.score : Math.min(stats.lowestScore, game.score);
+  stats.totalPerfectNotes += game.perfectNotes;
+  stats.totalGoldenNotesHit += game.goldenNotes;
+}
+
+/** Update cumulative play time and session length records */
+function updateTimeStats(stats: ExtendedPlayerStats, game: GameResult): void {
+  stats.totalPlayTime += game.duration;
+  stats.longestSession = Math.max(stats.longestSession, game.duration);
   stats.averageSessionLength = stats.totalPlayTime / stats.totalSessions;
-  
-  // Update genre stats
-  if (gameData.genre) {
-    stats.genrePlayCount[gameData.genre] = (stats.genrePlayCount[gameData.genre] || 0) + 1;
-    stats.genreBestScores[gameData.genre] = Math.max(
-      stats.genreBestScores[gameData.genre] || 0,
-      gameData.score
-    );
-    
-    // Find favorite genre
-    const genreEntries = Object.entries(stats.genrePlayCount);
-    if (genreEntries.length > 0) {
-      stats.favoriteGenre = genreEntries.sort((a, b) => b[1] - a[1])[0][0];
-    }
+}
+
+/** Track genre play counts, best scores, and favorite genre */
+function updateGenreStats(stats: ExtendedPlayerStats, game: GameResult): void {
+  if (!game.genre) return;
+  stats.genrePlayCount[game.genre] = (stats.genrePlayCount[game.genre] || 0) + 1;
+  stats.genreBestScores[game.genre] = Math.max(stats.genreBestScores[game.genre] || 0, game.score);
+  const genreEntries = Object.entries(stats.genrePlayCount);
+  if (genreEntries.length > 0) {
+    stats.favoriteGenre = genreEntries.sort((a, b) => b[1] - a[1])[0][0];
   }
-  
-  // Update difficulty stats
-  const diff = stats.difficultyStats[gameData.difficulty];
+}
+
+/** Track per-difficulty play counts, best scores, and average accuracy */
+function updateDifficultyStats(stats: ExtendedPlayerStats, game: GameResult): void {
+  const diff = stats.difficultyStats[game.difficulty];
   diff.played++;
   diff.completed++;
-  diff.bestScore = Math.max(diff.bestScore, gameData.score);
-  diff.avgAccuracy = ((diff.avgAccuracy * (diff.played - 1)) + gameData.accuracy) / diff.played;
-  
-  // Check milestones
+  diff.bestScore = Math.max(diff.bestScore, game.score);
+  diff.avgAccuracy = ((diff.avgAccuracy * (diff.played - 1)) + game.accuracy) / diff.played;
+}
+
+/** Record one-time milestone timestamps */
+function checkMilestones(stats: ExtendedPlayerStats, game: GameResult, now: number): void {
   if (!stats.milestones.firstSong) stats.milestones.firstSong = now;
-  if (gameData.accuracy === 100 && !stats.milestones.firstPerfect) stats.milestones.firstPerfect = now;
-  if (gameData.goldenNotes > 0 && !stats.milestones.firstGolden) stats.milestones.firstGolden = now;
-  
-  // Add to recent games
+  if (game.accuracy === PERFECT_ACCURACY && !stats.milestones.firstPerfect) stats.milestones.firstPerfect = now;
+  if (game.goldenNotes > 0 && !stats.milestones.firstGolden) stats.milestones.firstGolden = now;
+}
+
+/** Add completed game to recent games list, trimming to the cap */
+function updateRecentGames(stats: ExtendedPlayerStats, game: GameResult, now: number): void {
   stats.recentGames.unshift({
-    songId: gameData.songId,
-    songTitle: gameData.songTitle,
-    score: gameData.score,
-    accuracy: gameData.accuracy,
-    mode: gameData.mode,
+    songId: game.songId,
+    songTitle: game.songTitle,
+    score: game.score,
+    accuracy: game.accuracy,
+    mode: game.mode,
     date: now,
   });
-  stats.recentGames = stats.recentGames.slice(0, 20); // Keep last 20
-  
-  // Check for new titles
-  const totalSongs = stats.totalSessions;
-  
-  if (gameData.accuracy === 100 && !stats.unlockedTitles.includes('perfect-pitch')) {
-    stats.unlockedTitles.push('perfect-pitch');
-    newTitles.push('perfect-pitch');
+  stats.recentGames = stats.recentGames.slice(0, MAX_RECENT_GAMES);
+}
+
+/** Check and award title unlocks based on game performance; auto-select first title */
+function checkTitleUnlocks(
+  stats: ExtendedPlayerStats,
+  game: GameResult,
+  newLevel: number,
+  totalSongs: number
+): string[] {
+  const newlyUnlocked: string[] = [];
+
+  function maybeUnlock(titleId: string, condition: boolean): void {
+    if (condition && !stats.unlockedTitles.includes(titleId)) {
+      stats.unlockedTitles.push(titleId);
+      newlyUnlocked.push(titleId);
+    }
   }
-  
-  if (stats.totalGoldenNotesHit >= 100 && !stats.unlockedTitles.includes('golden-voice')) {
-    stats.unlockedTitles.push('golden-voice');
-    newTitles.push('golden-voice');
-  }
-  
-  if (gameData.maxCombo >= 100 && !stats.unlockedTitles.includes('combo-master')) {
-    stats.unlockedTitles.push('combo-master');
-    newTitles.push('combo-master');
-  }
-  
-  if (totalSongs >= 100 && !stats.unlockedTitles.includes('dedicated-singer')) {
-    stats.unlockedTitles.push('dedicated-singer');
-    newTitles.push('dedicated-singer');
-  }
-  
-  if (totalSongs >= 500 && !stats.unlockedTitles.includes('karaoke-addict')) {
-    stats.unlockedTitles.push('karaoke-addict');
-    newTitles.push('karaoke-addict');
-  }
-  
-  if (totalSongs >= 1000 && !stats.unlockedTitles.includes('lifetime-achiever')) {
-    stats.unlockedTitles.push('lifetime-achiever');
-    newTitles.push('lifetime-achiever');
-  }
-  
-  if (newLevel >= 5 && !stats.unlockedTitles.includes('rising-star')) {
-    stats.unlockedTitles.push('rising-star');
-    newTitles.push('rising-star');
-  }
-  
-  if (newLevel >= 25 && !stats.unlockedTitles.includes('veteran')) {
-    stats.unlockedTitles.push('veteran');
-    newTitles.push('veteran');
-  }
-  
-  if (newLevel >= 50 && !stats.unlockedTitles.includes('elite')) {
-    stats.unlockedTitles.push('elite');
-    newTitles.push('elite');
-  }
-  
-  if (newLevel >= 100 && !stats.unlockedTitles.includes('master')) {
-    stats.unlockedTitles.push('master');
-    newTitles.push('master');
-  }
-  
+
+  maybeUnlock('perfect-pitch', game.accuracy === PERFECT_ACCURACY);
+  maybeUnlock('golden-voice', stats.totalGoldenNotesHit >= TITLE_GOLDEN_VOICE_NOTES);
+  maybeUnlock('combo-master', game.maxCombo >= TITLE_COMBO_MASTER_COMBO);
+  maybeUnlock('dedicated-singer', totalSongs >= TITLE_DEDICATED_SINGER_SONGS);
+  maybeUnlock('karaoke-addict', totalSongs >= TITLE_KARAOKE_ADDICT_SONGS);
+  maybeUnlock('lifetime-achiever', totalSongs >= TITLE_LIFETIME_ACHIEVER_SONGS);
+  maybeUnlock('rising-star', newLevel >= TITLE_RISING_STAR_LEVEL);
+  maybeUnlock('veteran', newLevel >= TITLE_VETERAN_LEVEL);
+  maybeUnlock('elite', newLevel >= TITLE_ELITE_LEVEL);
+  maybeUnlock('master', newLevel >= TITLE_MASTER_LEVEL);
+
   // Auto-select first title if none selected
   if (!stats.selectedTitle && stats.unlockedTitles.length > 0) {
     stats.selectedTitle = stats.unlockedTitles[0];
   }
-  
-  return { stats, xpEarned, newTitles, leveledUp };
+
+  return newlyUnlocked;
 }
 
+// ===================== UPDATE STATS AFTER GAME =====================
+
+/** Main coordinator: updates all player stats after a completed game */
+export function updateStatsAfterGame(
+  stats: ExtendedPlayerStats,
+  gameData: GameResult
+): { stats: ExtendedPlayerStats; xpEarned: number; newTitles: string[]; leveledUp: boolean } {
+  const now = Date.now();
+  const today = new Date().toDateString();
+
+  // 1. Calculate XP earned from this game
+  const xpEarned = calculateSongXP(
+    gameData.score,
+    gameData.accuracy,
+    gameData.maxCombo,
+    gameData.perfectNotes,
+    gameData.goldenNotes,
+  );
+
+  // 2. Update level progression (XP, level, rank, level milestones)
+  const { leveledUp, newLevel } = updateLevelProgression(stats, xpEarned, now);
+
+  // 3. Update session tracking
+  updateSessionStats(stats, today);
+
+  // 4. Update performance stats (running averages, extrema, notes)
+  updatePerformanceStats(stats, gameData, stats.totalSessions);
+
+  // 5. Update time stats
+  updateTimeStats(stats, gameData);
+
+  // 6. Update genre stats
+  updateGenreStats(stats, gameData);
+
+  // 7. Update difficulty stats
+  updateDifficultyStats(stats, gameData);
+
+  // 8. Check one-time milestones
+  checkMilestones(stats, gameData, now);
+
+  // 9. Record in recent games
+  updateRecentGames(stats, gameData, now);
+
+  // 10. Check title unlocks
+  const newTitles = checkTitleUnlocks(stats, gameData, newLevel, stats.totalSessions);
+
+  return { stats, xpEarned, newTitles, leveledUp };
+}
