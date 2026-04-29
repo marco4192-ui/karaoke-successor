@@ -234,7 +234,7 @@ export function DailyChallengeScreen({ onPlayChallenge, onSelectSong }: { onPlay
                         {profile.avatar ? (
                           <img src={profile.avatar} alt={profile.name} className="w-full h-full rounded-full object-cover" />
                         ) : (
-                          profile.name[0]
+                          profile.name?.[0] || '?'
                         )}
                       </div>
                       <span className="text-sm truncate">{profile.name}</span>
@@ -303,7 +303,9 @@ export function DailyChallengeScreen({ onPlayChallenge, onSelectSong }: { onPlay
                 onClick={() => {
                   // Store challenge mode and go to library
                   localStorage.setItem('karaoke-challenge-mode', challenge.id);
-                  onPlayChallenge(getAllSongs()[0]);
+                  const songs = getAllSongs();
+                  if (songs.length === 0) return;
+                  onPlayChallenge(songs[0]);
                 }}
               >
                 <CardContent className="pt-4 pb-4">

@@ -630,7 +630,7 @@ export function RateMySongResultsScreen({ result, songId, onPlayAgain, onEnd }: 
   const [dailyRanking, setDailyRanking] = useState<RateMySongDailyEntry[]>([]);
   const [activeTab, setActiveTab] = useState<'daily' | 'alltime'>('daily');
 
-  // Persist ratings and load ranking on mount
+  // Persist ratings and load ranking on mount (with idempotency check to prevent duplicates)
   useEffect(() => {
     // Save each player's rating to both all-time and daily rankings
     for (const r of result.ratings) {

@@ -285,9 +285,10 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
         });
         savedToHighscoreRef.current = true;
 
-        // Also save P2 highscore for duel/duet if P2 has a registered profile
+        // Also save P2 highscore for duel/competitive modes if P2 has a registered profile
         const player2Result = results.players[1];
-        if (player2Result && player2Result.playerId) {
+        const isMultiplayerMode = ['duel', 'competitive-words', 'competitive-blind'].includes(gameState.gameMode);
+        if (player2Result && player2Result.playerId && isMultiplayerMode) {
           const p2Profile = profiles.find(p => p.id === player2Result.playerId);
           if (p2Profile) {
             addHighscore({

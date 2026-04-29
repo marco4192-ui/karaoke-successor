@@ -198,7 +198,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                     {profile.avatar ? (
                       <img src={profile.avatar} alt={profile.name} className="w-full h-full rounded-full object-cover" />
                     ) : (
-                      profile.name[0].toUpperCase()
+                      (profile.name?.[0] || '?').toUpperCase()
                     )}
                   </div>
                   <span className="font-medium">{profile.name}</span>

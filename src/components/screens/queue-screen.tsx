@@ -71,7 +71,8 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
   // - Duel/Duet songs: flag for re-selection (don't auto-remove)
   useEffect(() => {
     const activeIds = new Set(profiles.filter(p => p.isActive !== false).map(p => p.id));
-    let changed = false;
+    const toRemove: string[] = [];
+    let needsSelection: string | null = null;
 
     queue.forEach((item) => {
       if (item.status !== 'pending') return;
@@ -79,16 +80,19 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
       const partnerInactive = item.partnerId && !activeIds.has(item.partnerId);
 
       if (mainInactive && item.gameMode === 'single') {
-        // Remove single songs of deactivated players
-        removeFromQueue(item.id);
-        changed = true;
+        toRemove.push(item.id);
       } else if ((mainInactive || partnerInactive) && (item.gameMode === 'duel' || item.gameMode === 'duet')) {
-        // Flag duel/duet songs for re-selection (don't remove)
-        if (!needsPlayerSelection) {
-          setNeedsPlayerSelection(item.id);
+        if (!needsSelection) {
+          needsSelection = item.id;
         }
       }
     });
+
+    // Batch-remove in a single operation to avoid infinite re-renders
+    toRemove.forEach(id => removeFromQueue(id));
+    if (needsSelection && !needsPlayerSelection) {
+      setNeedsPlayerSelection(needsSelection);
+    }
   }, [profiles, queue, removeFromQueue, needsPlayerSelection]);
 
   // Fetch companion queue from API

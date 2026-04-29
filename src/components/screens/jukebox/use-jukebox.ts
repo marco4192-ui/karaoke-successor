@@ -237,8 +237,8 @@ export function useJukebox() {
   }, [repeat, currentSong, playNext]);
 
   // Start / Stop jukebox
-  const startJukebox = () => {
-    generatePlaylist();
+  const startJukebox = async () => {
+    await generatePlaylist();
     setIsPlaying(true);
   };
 

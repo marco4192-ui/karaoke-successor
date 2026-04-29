@@ -238,7 +238,7 @@ export function HighscoreScreen() {
                     {entry.playerAvatar ? (
                       <img src={entry.playerAvatar} alt={entry.playerName} className="w-full h-full object-cover" />
                     ) : (
-                      entry.playerName[0].toUpperCase()
+                      (entry.playerName?.[0] || '?').toUpperCase()
                     )}
                   </div>
 
