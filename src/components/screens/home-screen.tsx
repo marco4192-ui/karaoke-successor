@@ -22,6 +22,10 @@ interface HomeScreenProps {
   onNavigate: (screen: Screen) => void;
 }
 
+// Dynamic app stats (reflects actual game modes and difficulty levels)
+const PARTY_GAME_COUNT = 8; // battle-royale, tournament, pass-the-mic, companion-singalong, medley, rate-my-song, blind, missing-words
+const DIFFICULTY_LEVELS = 3; // easy, medium, hard
+
 export function HomeScreen({ onNavigate }: HomeScreenProps) {
   const { profiles, activeProfileId, setActiveProfile } = useGameStore();
   // Track if component is mounted (to avoid hydration mismatch)
@@ -90,13 +94,13 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
         </Card>
         <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
           <CardContent className="pt-6">
-            <div className="text-3xl font-bold text-pink-400">8</div>
+            <div className="text-3xl font-bold text-pink-400">{PARTY_GAME_COUNT}</div>
             <div className="text-white/60 text-sm">Party Games</div>
           </CardContent>
         </Card>
         <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
           <CardContent className="pt-6">
-            <div className="text-3xl font-bold text-yellow-400">3</div>
+            <div className="text-3xl font-bold text-yellow-400">{DIFFICULTY_LEVELS}</div>
             <div className="text-white/60 text-sm">Difficulty Levels</div>
           </CardContent>
         </Card>
