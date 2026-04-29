@@ -385,7 +385,7 @@ export function PtmGameScreen({
 
   // ── Random switch (rare mid-segment) ──
   useEffect(() => {
-    if (phase !== 'playing' || !isPlaying) return;
+    if (phase !== 'playing' || !isPlaying || !safeSettings.randomSwitches) return;
     const interval = setInterval(() => {
       if (Math.random() < 0.003) {
         const next = (currentPlayerIndex + 1 + Math.floor(Math.random() * (playersRef.current.length - 1))) % playersRef.current.length;
@@ -395,7 +395,7 @@ export function PtmGameScreen({
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [phase, isPlaying, currentPlayerIndex, showTransition]);
+  }, [phase, isPlaying, currentPlayerIndex, showTransition, safeSettings.randomSwitches]);
 
   // ── Mic handoff ──
   useEffect(() => {
