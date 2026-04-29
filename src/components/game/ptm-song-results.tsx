@@ -440,7 +440,7 @@ export function PtmSeriesResults({
           variant="outline"
           className="flex-1 py-4 text-lg border-white/20 text-white/60 hover:text-white"
         >
-          ← Zuruck zum Setup
+          ← Zurück zum Setup
         </Button>
       </div>
     </div>

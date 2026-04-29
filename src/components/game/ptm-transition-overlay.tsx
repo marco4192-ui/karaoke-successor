@@ -182,7 +182,7 @@ export function PtmTransitionOverlay({
 
         {/* Skip hint */}
         <div className="mt-8 text-white/20 text-xs">
-          Leertaste zum Uberspringen
+          Leertaste zum Überspringen
         </div>
       </div>
     </div>
