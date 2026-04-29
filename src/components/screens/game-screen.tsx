@@ -358,13 +358,15 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
   }, [timingData]);
   
   const p1PitchStats = useMemo<PitchStats>(() => {
-    const stats = calculatePitchStats(timingData?.p1Notes);
-    return stats === calculatePitchStats(null) ? pitchStats : stats;
+    const notes = timingData?.p1Notes;
+    if (!notes || notes.length === 0) return pitchStats;
+    return calculatePitchStats(notes);
   }, [timingData, pitchStats]);
   
   const p2PitchStats = useMemo<PitchStats>(() => {
-    const stats = calculatePitchStats(timingData?.p2Notes);
-    return stats === calculatePitchStats(null) ? pitchStats : stats;
+    const notes = timingData?.p2Notes;
+    if (!notes || notes.length === 0) return pitchStats;
+    return calculatePitchStats(notes);
   }, [timingData, pitchStats]);
 
   // ── Replay Recorder: mic + webcam during gameplay ──
