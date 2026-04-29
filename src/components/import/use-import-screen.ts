@@ -189,10 +189,10 @@ export function useImportScreen(onImport: (song: Song) => void) {
           folderPath: s.folderPath,
           baseFolder: s.baseFolder,
           // Fake File objects — display only checks truthiness and .name
-          audioFile: s.relativeAudioPath ? { name: s.relativeAudioPath.split('/').pop()! } as any : undefined,
-          videoFile: s.relativeVideoPath ? { name: s.relativeVideoPath.split('/').pop()! } as any : undefined,
-          txtFile: s.relativeTxtPath ? { name: s.relativeTxtPath.split('/').pop()! } as any : undefined,
-          coverFile: s.relativeCoverPath ? { name: s.relativeCoverPath.split('/').pop()! } as any : undefined,
+          audioFile: s.relativeAudioPath ? { name: s.relativeAudioPath.split('/').pop()! } as File : undefined,
+          videoFile: s.relativeVideoPath ? { name: s.relativeVideoPath.split('/').pop()! } as File : undefined,
+          txtFile: s.relativeTxtPath ? { name: s.relativeTxtPath.split('/').pop()! } as File : undefined,
+          coverFile: s.relativeCoverPath ? { name: s.relativeCoverPath.split('/').pop()! } as File : undefined,
         }));
 
         setScannedSongs(displaySongs);

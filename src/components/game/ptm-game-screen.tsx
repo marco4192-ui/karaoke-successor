@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Song, PLAYER_COLORS, LyricLine, Difficulty } from '@/types/game';
+import { Song, PLAYER_COLORS, LyricLine, Difficulty, Note } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
@@ -230,7 +230,7 @@ export function PtmGameScreen({
       return { allNotes: [], sortedLines: [], pitchStats: { minPitch: 40, maxPitch: 80, pitchRange: 40 } as PitchStats, scoringMeta: null };
     }
 
-    const notes: any[] = [];
+    const notes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
     const lines = [...notesSource.lyrics].sort((a, b) => a.startTime - b.startTime);
 
     lines.forEach((line, lineIndex) => {
@@ -870,7 +870,7 @@ export function PtmGameScreen({
             pitchStats={pitchStats}
             detectedPitch={smoothedPitch}
             noteShapeStyle={noteShapeStyle}
-            noteDisplayStyle={noteDisplayStyle as any}
+            noteDisplayStyle={noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
             notePerformance={undefined}
             singLinePosition={20}
             noteWindow={NOTE_WINDOW}
@@ -887,7 +887,7 @@ export function PtmGameScreen({
             sortedLines={sortedLines}
             currentTime={currentTime}
             playerColor={currentPlayer?.color || PLAYER_COLORS[0]}
-            noteDisplayStyle={noteDisplayStyle as any}
+            noteDisplayStyle={noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
             notePerformance={undefined}
             gameMode="pass-the-mic"
           />
