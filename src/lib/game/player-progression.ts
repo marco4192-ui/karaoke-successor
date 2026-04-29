@@ -263,7 +263,8 @@ export interface ExtendedPlayerStats {
   // Session stats
   sessionsToday: number;
   lastSessionDate: string | null;
-  totalSessions: number;
+ totalSessions: number;
+  songsCompleted: number; // Actual songs played to completion (not just sessions)
   totalPlayTime: number; // seconds
   longestSession: number; // seconds
   averageSessionLength: number; // seconds
@@ -539,7 +540,8 @@ export function getDefaultStats(): ExtendedPlayerStats {
     sessionsToday: 0,
     lastSessionDate: null,
     totalSessions: 0,
-    averageScore: 0,
+    songsCompleted: 0,
+  averageScore: 0,
     averageAccuracy: 0,
     highestScore: 0,
     lowestScore: Infinity,
@@ -752,6 +754,9 @@ export function updateStatsAfterGame(
   // 3. Update session tracking
   updateSessionStats(stats, today);
 
+  // 3b. Increment songs completed (actual played-to-completion songs)
+  stats.songsCompleted++;
+
   // 4. Update performance stats (running averages, extrema, notes)
   updatePerformanceStats(stats, gameData, stats.totalSessions);
 
@@ -770,8 +775,8 @@ export function updateStatsAfterGame(
   // 9. Record in recent games
   updateRecentGames(stats, gameData, now);
 
-  // 10. Check title unlocks
-  const newTitles = checkTitleUnlocks(stats, gameData, newLevel, stats.totalSessions);
+  // 10. Check title unlocks (use actual songs completed, not sessions)
+  const newTitles = checkTitleUnlocks(stats, gameData, newLevel, stats.songsCompleted);
 
   return { stats, xpEarned, newTitles, leveledUp };
 }
