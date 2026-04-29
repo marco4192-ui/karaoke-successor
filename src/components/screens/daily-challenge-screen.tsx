@@ -305,7 +305,7 @@ export function DailyChallengeScreen({ onPlayChallenge, onSelectSong }: { onPlay
                   localStorage.setItem('karaoke-challenge-mode', challenge.id);
                   const songs = getAllSongs();
                   if (songs.length === 0) return;
-                  onPlayChallenge(songs[0]);
+                  onPlayChallenge(songs[Math.floor(Math.random() * songs.length)]);
                 }}
               >
                 <CardContent className="pt-4 pb-4">
