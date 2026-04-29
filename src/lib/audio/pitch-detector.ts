@@ -626,7 +626,7 @@ export class PitchDetectorManager {
       } catch {
         // Ignore polling errors
       }
-    }, 50); // Poll every 50ms for real-time sync
+    }, 100); // Poll every 100ms — sufficient for real-time sync, reduces server load
   }
 
   async destroy(): Promise<void> {

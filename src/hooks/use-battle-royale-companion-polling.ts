@@ -22,6 +22,10 @@ interface UseBattleRoyaleCompanionPollingReturn {
  * Polls companion app pitch data during gameplay.
  * Companion apps detect pitch on-device and submit via /api/mobile?action=pitch.
  * We poll their results here and cache them for the scoring game loop.
+ *
+ * Polls at 200ms interval (5 polls/sec) — sufficient since scoring only
+ * evaluates every 100ms (TICK_INTERVAL). Uses AbortController to cancel
+ * in-flight requests on cleanup.
  */
 export function useBattleRoyaleCompanionPolling({
   gameStatus,
@@ -42,9 +46,17 @@ export function useBattleRoyaleCompanionPolling({
     const companionPlayers = players.filter(p => p.playerType === 'companion' && !p.eliminated);
     if (companionPlayers.length === 0) return;
 
+    let abortController: AbortController | null = null;
+
     const pollCompanionPitch = async () => {
+      // Cancel any in-flight request
+      if (abortController) abortController.abort();
+      abortController = new AbortController();
+
       try {
-        const res = await fetch('/api/mobile?action=getpitch');
+        const res = await fetch('/api/mobile?action=getpitch', {
+          signal: abortController.signal,
+        });
         if (!res.ok) return;
         const data = await res.json();
 
@@ -62,7 +74,8 @@ export function useBattleRoyaleCompanionPolling({
             });
           }
         }
-      } catch {
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
         // Silently ignore polling errors (companion API may not be available)
       }
     };
@@ -76,6 +89,7 @@ export function useBattleRoyaleCompanionPolling({
         clearInterval(companionPollRef.current);
         companionPollRef.current = null;
       }
+      if (abortController) abortController.abort();
     };
   }, [gameStatus, players]);
 

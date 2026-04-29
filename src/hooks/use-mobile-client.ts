@@ -60,29 +60,55 @@ export function useMobileClient({
   const importProfileFromMobile = useGameStore((state) => state.importProfileFromMobile);
   const profiles = useGameStore((state) => state.profiles);
 
-  // Poll for mobile pitch data
+  // Poll for mobile pitch data — optimized: 100ms interval + dedup + AbortController
+  const lastPitchRef = useRef<string>('');
+
   useEffect(() => {
-    if (!song) return;
+    if (!song) {
+      setMobilePitch(null);
+      setHasMobileClient(false);
+      lastPitchRef.current = '';
+      return;
+    }
+
+    let aborted = false;
+    let abortController: AbortController | null = null;
 
     const pollMobilePitch = async () => {
+      if (abortController) abortController.abort();
+      abortController = new AbortController();
+
       try {
-        const response = await fetch('/api/mobile?action=getpitch');
+        const response = await fetch('/api/mobile?action=getpitch', {
+          signal: abortController.signal,
+        });
+        if (aborted) return;
         const data = await response.json();
-        // Server returns pitch array ("pitches"), not "pitch"
+        if (aborted) return;
+
         if (data.success && Array.isArray(data.pitches) && data.pitches.length > 0) {
-          setMobilePitch(data.pitches[0].data);
+          const pitchData = data.pitches[0].data;
+          const serialized = JSON.stringify(pitchData);
+          if (serialized !== lastPitchRef.current) {
+            lastPitchRef.current = serialized;
+            setMobilePitch(pitchData);
+          }
           setHasMobileClient(true);
         } else {
           setHasMobileClient(false);
         }
-      } catch {
-        // Ignore polling errors
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
       }
     };
 
-    const pollInterval = setInterval(pollMobilePitch, 50);
+    const pollInterval = setInterval(pollMobilePitch, 100);
 
-    return () => clearInterval(pollInterval);
+    return () => {
+      aborted = true;
+      clearInterval(pollInterval);
+      if (abortController) abortController.abort();
+    };
   }, [song]);
 
   // Fix (Code Review #5): Throttled to max 2 Hz to avoid 60 HTTP requests/sec
