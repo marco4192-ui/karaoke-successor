@@ -13,19 +13,7 @@ import { Song } from '@/types/game';
 import { saveSongToTxt } from '@/lib/editor/save-to-file';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
 
-// Common genres and languages for quick selection
-const COMMON_GENRES = [
-  'Pop', 'Rock', 'Hip-Hop', 'R&B', 'Country', 'Electronic', 'Dance',
-  'Jazz', 'Blues', 'Soul', 'Funk', 'Reggae', 'Latin', 'Metal',
-  'Punk', 'Indie', 'Folk', 'Classical', 'Soundtrack', 'Musical',
-  'Schlager', 'Deutsch-Pop', 'Volksmusik', 'K-Pop', 'J-Pop'
-];
-
-const COMMON_LANGUAGES = [
-  'Englisch', 'Deutsch', 'Spanisch', 'Französisch', 'Italienisch',
-  'Portugiesisch', 'Japanisch', 'Koreanisch', 'Chinesisch', 'Russisch',
-  'Niederländisch', 'Polnisch', 'Türkisch', 'Arabisch', 'Schwedisch', 'Latein',
-];
+import { GENRES, LANGUAGES } from '@/lib/constants';
 
 // Genre/Language Editor Component
 function GenreLanguageEditor({ 
@@ -127,7 +115,7 @@ function GenreLanguageEditor({
               {showGenreDropdown && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-gray-900 border border-white/20 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
                   <div className="p-2 grid grid-cols-2 gap-1">
-                    {COMMON_GENRES.map(genre => (
+                    {GENRES.map(genre => (
                       <button
                         key={genre}
                         onClick={() => handleGenreSelect(genre)}
@@ -173,7 +161,7 @@ function GenreLanguageEditor({
               {showLanguageDropdown && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-gray-900 border border-white/20 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
                   <div className="p-2">
-                    {COMMON_LANGUAGES.map(lang => (
+                    {LANGUAGES.map(lang => (
                       <button
                         key={lang}
                         onClick={() => handleLanguageSelect(lang)}

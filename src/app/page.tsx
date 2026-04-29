@@ -21,42 +21,7 @@ import { recordMatchResult } from '@/lib/game/tournament';
 import { finishCompetitiveRound } from '@/lib/game/competitive-words-blind';
 import { OfflineBanner } from '@/components/ui/offline-banner';
 
-// ── PTM segment generation helper ──
-// Auto 20-60s segments, equal per player, short songs excluded (< 60s)
-function generatePtmSegments(
-  songDurationMs: number,
-  playerCount: number,
-  settingsSegmentDuration?: number,
-): PassTheMicSegment[] {
-  // Exclude very short songs (< 60s) — not enough for meaningful gameplay
-  if (songDurationMs < 60000) {
-    // Return single segment covering the whole song as fallback
-    return [{ startTime: 0, endTime: Math.round(songDurationMs), playerId: null }];
-  }
-
-  // Calculate segment duration in ms: use setting or auto-compute 20-60s
-  const rawDurSec = settingsSegmentDuration
-    || Math.max(20, Math.min(60, Math.ceil(songDurationMs / (playerCount * 2 * 1000))));
-  const segDurMs = Math.max(20000, Math.min(60000, rawDurSec * 1000));
-
-  // Calculate how many segments fit
-  const rawCount = Math.ceil(songDurationMs / segDurMs);
-
-  // Ensure segment count is divisible by playerCount for equal distribution
-  // Each player gets exactly (segCount / playerCount) segments
-  const segCount = Math.max(playerCount, Math.ceil(rawCount / playerCount) * playerCount);
-
-  const adjustedDurMs = songDurationMs / segCount;
-  const segments: PassTheMicSegment[] = [];
-  for (let i = 0; i < segCount; i++) {
-    segments.push({
-      startTime: Math.round(i * adjustedDurMs),
-      endTime: Math.round((i + 1) * adjustedDurMs),
-      playerId: null,
-    });
-  }
-  return segments;
-}
+import { generatePtmSegments } from '@/lib/game/ptm-segments';
 
 // Screen types
 type Screen = 'home' | 'library' | 'game' | 'party' | 'character' | 'queue' | 'mobile' | 'results' | 'highscores' | 'import' | 'settings' | 'jukebox' | 'achievements' | 'dailyChallenge' | 'tournament' | 'tournament-game' | 'battle-royale' | 'battle-royale-game' | 'pass-the-mic' | 'pass-the-mic-game' | 'companion-singalong' | 'companion-singalong-game' | 'medley' | 'medley-game' | 'editor' | 'online' | 'party-setup' | 'song-voting' | 'missing-words' | 'missing-words-game' | 'blind' | 'blind-game' | 'rate-my-song' | 'rate-my-song-rating' | 'rate-my-song-results';

@@ -22,18 +22,7 @@ interface NewSongDialogProps {
   onCancel: () => void;
 }
 
-const DEFAULT_GENRES = [
-  'Pop', 'Rock', 'Hip-Hop', 'R&B', 'Country', 'Electronic', 'Dance',
-  'Jazz', 'Blues', 'Soul', 'Funk', 'Reggae', 'Latin', 'Metal',
-  'Punk', 'Indie', 'Folk', 'Classical', 'Soundtrack', 'Schlager',
-  'Deutsch-Pop', 'Volksmusik', 'K-Pop', 'J-Pop',
-];
-
-const DEFAULT_LANGUAGES = [
-  'Deutsch', 'Englisch', 'Spanisch', 'Französisch', 'Italienisch',
-  'Portugiesisch', 'Japanisch', 'Koreanisch', 'Chinesisch', 'Russisch',
-  'Niederländisch', 'Polnisch', 'Türkisch', 'Arabisch', 'Schwedisch',
-];
+import { GENRES, LANGUAGES } from '@/lib/constants';
 
 /**
  * New Song Dialog
@@ -327,7 +316,7 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
                     <SelectValue placeholder="Genre wählen" />
                   </SelectTrigger>
                   <SelectContent>
-                    {DEFAULT_GENRES.map(g => (
+                    {GENRES.map(g => (
                       <SelectItem key={g} value={g}>{g}</SelectItem>
                     ))}
                   </SelectContent>
@@ -340,7 +329,7 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
                     <SelectValue placeholder="Sprache wählen" />
                   </SelectTrigger>
                   <SelectContent>
-                    {DEFAULT_LANGUAGES.map(l => (
+                    {LANGUAGES.map(l => (
                       <SelectItem key={l} value={l}>{l}</SelectItem>
                     ))}
                   </SelectContent>
