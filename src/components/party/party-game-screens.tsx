@@ -257,7 +257,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               }
             } else if (targetScreen === 'song-voting') {
               // Re-generate voting songs from filtered pool
-              const { getAllSongs, filterSongs } = await import('@/lib/game/song-library');
+              const { filterSongs } = await import('@/lib/game/song-library');
               const songs = getAllSongs();
               const filters = party.unifiedSetupResult?.settings || {};
               const filtered = filterSongs(songs, filters.filterGenre, filters.filterLanguage, filters.filterCombined);
