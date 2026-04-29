@@ -1,349 +1,227 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useGameStore } from '@/lib/game/store';
-import { usePitchDetector } from '@/hooks/use-pitch-detector';
-import { OnlineLobby } from '@/components/multiplayer/online-lobby';
-import { YouTubePlayer } from '@/components/game/youtube-player';
-import { Song, midiToNoteName } from '@/types/game';
 
 // ===================== ICONS =====================
-function MicIcon({ className }: { className?: string }) {
+function WifiIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-      <line x1="12" y1="19" x2="12" y2="23" />
-      <line x1="8" y1="23" x2="16" y2="23" />
+      <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+      <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+      <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+      <line x1="12" y1="20" x2="12.01" y2="20" />
     </svg>
   );
 }
 
-// ===================== ONLINE MULTIPLAYER SCREEN =====================
-export function OnlineMultiplayerScreen({ onBack }: { onBack: () => void }) {
-  const { setSong, setGameMode } = useGameStore();
-  const [showGame, setShowGame] = useState(false);
-  const [onlineRoom, setOnlineRoom] = useState<any>(null);
-  const [socketRef, setSocketRef] = useState<any>(null);
-  const [selectedSong, setSelectedSong] = useState<Song | null>(null);
-  
-  const handleStartGame = useCallback((room: any, socket: any, song: Song) => {
-    setOnlineRoom(room);
-    setSocketRef(socket);
-    setSelectedSong(song);
-    setSong(song);
-    setGameMode('duel');
-    setShowGame(true);
-  }, [setSong, setGameMode]);
-  
-  if (showGame && onlineRoom && selectedSong) {
-    return (
-      <OnlineGameScreen 
-        room={onlineRoom}
-        socket={socketRef}
-        song={selectedSong}
-        onEnd={() => {
-          setShowGame(false);
-          setOnlineRoom(null);
-          setSelectedSong(null);
-          onBack();
-        }}
-      />
-    );
-  }
-  
+function UsersIcon({ className }: { className?: string }) {
   return (
-    <OnlineLobby 
-      onStartGame={handleStartGame}
-      onBack={onBack}
-    />
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
   );
 }
 
-// Online game screen with real-time score synchronization
-function OnlineGameScreen({ room, socket, song, onEnd }: { room: any; socket: any; song: Song; onEnd: () => void }) {
-  const { gameState, setSong, setCurrentTime, setDetectedPitch, updatePlayer, endGame, setResults } = useGameStore();
-  const { isInitialized, isListening, pitchResult, initialize, start, stop } = usePitchDetector();
-  
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [countdown, setCountdown] = useState(3);
-  
-  // Opponent state for real-time sync
-  const [opponentScore, setOpponentScore] = useState(0);
-  const [opponentCombo, setOpponentCombo] = useState(0);
-  const [opponentAccuracy, setOpponentAccuracy] = useState(0);
-  const [opponentName, setOpponentName] = useState('');
-  const [gameEnded, setGameEnded] = useState(false);
-  const [winner, setWinner] = useState<any>(null);
-  
-  // Get opponent info
-  const myId = socket?.id;
-  const opponent = room.players?.find((p: any) => p.id !== myId);
-  
-  useEffect(() => {
-    if (opponent) {
-      setOpponentName(opponent.name);
-    }
-  }, [opponent]);
-  
-  // Local player state
-  const [localScore, setLocalScore] = useState(0);
-  const [localCombo, setLocalCombo] = useState(0);
-  const [localAccuracy, setLocalAccuracy] = useState(0);
-  
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  
-  // Initialize game
-  useEffect(() => {
-    setSong(song);
-    initialize();
-    
-    return () => {
-      stop();
-    };
-  }, [song, setSong, initialize, stop]);
-  
-  // Listen for opponent score updates
-  useEffect(() => {
-    if (!socket) return;
-    
-    socket.on('opponent-update', (data: { playerId: string; playerName: string; score: number; combo: number; accuracy: number }) => {
-      setOpponentScore(data.score);
-      setOpponentCombo(data.combo);
-      setOpponentAccuracy(data.accuracy);
-    });
-    
-    socket.on('game-ended', (data: { winner: any; players: any[] }) => {
-      setGameEnded(true);
-      setWinner(data.winner);
-      
-      // Stop the game
-      setIsPlaying(false);
-      stop();
-      
-      // Set results
-      const myResult = data.players.find((p: any) => p.id === myId);
-      const opponentResult = data.players.find((p: any) => p.id !== myId);
-      
-      if (myResult && song) {
-        setResults({
-          songId: song.id,
-          players: [{
-            playerId: myId,
-            score: myResult.score,
-            notesHit: 0,
-            notesMissed: 0,
-            accuracy: myResult.accuracy,
-            maxCombo: 0,
-            rating: 'okay',
-          }],
-          playedAt: Date.now(),
-          duration: song.duration,
-        });
-      }
-    });
-    
-    return () => {
-      socket.off('opponent-update');
-      socket.off('game-ended');
-    };
-  }, [socket, myId, stop, setResults]);
-  
-  // Start game with countdown
-  const startGame = useCallback(async () => {
-    await start();
-    
-    // Countdown
-    let count = 3;
-    setCountdown(count);
-    const countdownInterval = setInterval(() => {
-      count--;
-      setCountdown(count);
-      if (count <= 0) {
-        clearInterval(countdownInterval);
-        setIsPlaying(true);
-      }
-    }, 1000);
-  }, [start]);
-  
-  // End game and send final score
-  const endGameHandler = useCallback((score: number, combo: number, accuracy: number) => {
-    if (!socket) return;
-    
-    socket.emit('finish-song', {
-      score,
-      combo,
-      accuracy
-    });
-  }, [socket]);
-  
+function ClockIcon({ className }: { className?: string }) {
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-      {/* Header */}
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Badge className="bg-cyan-500/20 text-cyan-400 text-lg px-3 py-1">🌐 ONLINE</Badge>
-          <span className="text-white/60 text-sm">Room: {room.code}</span>
-        </div>
-        <Button onClick={onEnd} variant="outline" size="sm" className="border-white/20">
-          Leave Game
-        </Button>
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  );
+}
+
+function MusicIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M9 18V5l12-2v13" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="16" r="3" />
+    </svg>
+  );
+}
+
+function ShieldIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <polyline points="9 12 11 14 15 10" />
+    </svg>
+  );
+}
+
+function TrophyIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+      <path d="M4 22h16" />
+      <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+      <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+      <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+    </svg>
+  );
+}
+
+function ZapIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    </svg>
+  );
+}
+
+// ===================== COMING SOON SCREEN =====================
+export function OnlineMultiplayerScreen({ onBack }: { onBack: () => void }) {
+  return (
+    <div className="max-w-4xl mx-auto">
+      <div className="mb-6">
+        <button
+          onClick={onBack}
+          className="text-white/60 hover:text-white mb-4 flex items-center gap-2 transition-colors"
+        >
+          Back to Party
+        </button>
+        <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+          <WifiIcon className="w-8 h-8 text-cyan-400" />
+          Online Multiplayer
+        </h1>
       </div>
-      
-      {/* Song Info */}
-      <Card className="bg-white/5 border-white/10 mb-4">
-        <CardContent className="py-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-medium text-lg">{song.title}</div>
-              <div className="text-white/60">{song.artist}</div>
-            </div>
-            <Badge className="bg-purple-500/20 text-purple-400">
-              ⚔️ Duel Mode
-            </Badge>
-          </div>
+
+      {/* Coming Soon Hero Card */}
+      <Card className="bg-gradient-to-br from-cyan-500/10 via-purple-500/10 to-pink-500/10 border-white/10 mb-6 overflow-hidden">
+        <CardContent className="py-12 text-center">
+          <div className="text-7xl mb-6">🌐</div>
+          <h2 className="text-3xl font-bold mb-3 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+            Coming Soon
+          </h2>
+          <p className="text-white/60 text-lg max-w-md mx-auto mb-6">
+            Sing against friends and players worldwide in real-time online battles.
+            We are working hard to bring you the ultimate online karaoke experience!
+          </p>
+          <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-sm px-4 py-1.5">
+            In Development
+          </Badge>
         </CardContent>
       </Card>
-      
-      {/* Split Screen Score Display */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        {/* My Score */}
-        <Card className="bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border-cyan-500/30">
-          <CardContent className="py-4">
-            <div className="text-center">
-              <div className="text-sm text-white/60 mb-1">YOU</div>
-              <div className="text-4xl font-bold text-cyan-400">{Math.round(localScore).toLocaleString()}</div>
-              <div className="flex items-center justify-center gap-4 mt-2 text-sm">
-                <div>
-                  <span className="text-white/60">Combo: </span>
-                  <span className="text-yellow-400 font-medium">{localCombo}x</span>
-                </div>
-                <div>
-                  <span className="text-white/60">Accuracy: </span>
-                  <span className="text-green-400 font-medium">{localAccuracy.toFixed(1)}%</span>
-                </div>
+
+      {/* Planned Features */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <Card className="bg-white/5 border-white/10">
+          <CardContent className="py-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                <UsersIcon className="w-5 h-5 text-cyan-400" />
               </div>
+              <div className="font-medium">Duel Mode</div>
             </div>
+            <p className="text-sm text-white/50">
+              Challenge a friend to a 1v1 singing battle with real-time score synchronization and live pitch comparison.
+            </p>
           </CardContent>
         </Card>
-        
-        {/* Opponent Score */}
-        <Card className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-purple-500/30">
-          <CardContent className="py-4">
-            <div className="text-center">
-              <div className="text-sm text-white/60 mb-1">{opponentName || 'OPPONENT'}</div>
-              <div className="text-4xl font-bold text-purple-400">{Math.round(opponentScore).toLocaleString()}</div>
-              <div className="flex items-center justify-center gap-4 mt-2 text-sm">
-                <div>
-                  <span className="text-white/60">Combo: </span>
-                  <span className="text-yellow-400 font-medium">{opponentCombo}x</span>
-                </div>
-                <div>
-                  <span className="text-white/60">Accuracy: </span>
-                  <span className="text-green-400 font-medium">{opponentAccuracy.toFixed(1)}%</span>
-                </div>
+
+        <Card className="bg-white/5 border-white/10">
+          <CardContent className="py-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                <TrophyIcon className="w-5 h-5 text-purple-400" />
               </div>
+              <div className="font-medium">Battle Royale</div>
             </div>
+            <p className="text-sm text-white/50">
+              Compete with up to 8 players in elimination-style rounds. Last singer standing wins!
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/5 border-white/10">
+          <CardContent className="py-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-lg bg-pink-500/20 flex items-center justify-center">
+                <ClockIcon className="w-5 h-5 text-pink-400" />
+              </div>
+              <div className="font-medium">Quick Match</div>
+            </div>
+            <p className="text-sm text-white/50">
+              Jump right into a game with automatic matchmaking. No need to create or find a room manually.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/5 border-white/10">
+          <CardContent className="py-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                <MusicIcon className="w-5 h-5 text-amber-400" />
+              </div>
+              <div className="font-medium">Song Voting</div>
+            </div>
+            <p className="text-sm text-white/50">
+              Vote on songs together in the lobby. Both players agree on the song before the battle begins.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/5 border-white/10">
+          <CardContent className="py-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                <ShieldIcon className="w-5 h-5 text-green-400" />
+              </div>
+              <div className="font-medium">Ranking & Leaderboard</div>
+            </div>
+            <p className="text-sm text-white/50">
+              Climb the global leaderboard with an ELO-based ranking system. Track your progress over time.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/5 border-white/10">
+          <CardContent className="py-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                <ZapIcon className="w-5 h-5 text-blue-400" />
+              </div>
+              <div className="font-medium">Real-Time Scoring</div>
+            </div>
+            <p className="text-sm text-white/50">
+              See your opponent&apos;s score and pitch in real-time. Every note counts in the live comparison.
+            </p>
           </CardContent>
         </Card>
       </div>
-      
-      {/* Game Area */}
-      <Card className="bg-white/5 border-white/10 mb-4">
-        <CardContent className="py-6">
-          {!isPlaying && !gameEnded ? (
-            <div className="text-center py-8">
-              {countdown > 0 ? (
-                <div className="text-6xl font-bold text-cyan-400 animate-pulse">{countdown}</div>
-              ) : (
-                <>
-                  <div className="text-4xl mb-4">🎤</div>
-                  <h3 className="text-xl font-bold mb-2">Ready to Sing!</h3>
-                  <p className="text-white/60 mb-4">Click the button when you're ready to start</p>
-                  <Button 
-                    onClick={startGame}
-                    className="bg-gradient-to-r from-cyan-500 to-purple-500 px-8 py-3 text-lg"
-                    disabled={!isInitialized}
-                  >
-                    <MicIcon className="w-5 h-5 mr-2" /> Start Singing
-                  </Button>
-                </>
-              )}
-            </div>
-          ) : gameEnded ? (
-            <div className="text-center py-8">
-              <div className="text-6xl mb-4">{winner?.id === myId ? '🏆' : '😢'}</div>
-              <h3 className="text-2xl font-bold mb-2">
-                {winner?.id === myId ? 'You Win!' : `${winner?.name || 'Opponent'} Wins!`}
-              </h3>
-              <p className="text-white/60 mb-4">
-                Final Score: You {Math.round(localScore).toLocaleString()} - {Math.round(opponentScore).toLocaleString()} {opponentName}
-              </p>
-              <Button 
-                onClick={onEnd}
-                className="bg-gradient-to-r from-cyan-500 to-purple-500 px-8"
-              >
-                Back to Lobby
-              </Button>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <div className="text-6xl mb-4">🎤</div>
-              <h3 className="text-xl font-bold mb-2">Singing in Progress!</h3>
-              <p className="text-white/60">
-                Sing into your microphone. Your score is being synced in real-time!
-              </p>
-              <div className="mt-4">
-                <div className="text-sm text-white/40">Detected Pitch</div>
-                <div className="text-2xl font-mono text-cyan-400">
-                  {pitchResult?.note ? midiToNoteName(pitchResult.note) : '--'}
-                </div>
-                <div className="text-sm text-white/40">
-                  {pitchResult?.frequency ? `${Math.round(pitchResult.frequency)} Hz` : ''}
-                </div>
-              </div>
-            </div>
-          )}
+
+      {/* Technical Preview Notice */}
+      <Card className="bg-white/5 border-white/10 mb-6">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <ZapIcon className="w-5 h-5 text-amber-400" />
+            Technical Preview
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-white/60 leading-relaxed">
+            Online multiplayer requires a dedicated game server for real-time communication.
+            Since this is a Tauri desktop application, the server infrastructure needs to be
+            set up separately. The lobby UI, room management, and game synchronization code
+            already exist and will be activated once the backend is ready.
+          </p>
         </CardContent>
       </Card>
-      
-      {/* Media Player (if audio/video) */}
-      {song.audioUrl && (
-        <audio
-          ref={audioRef}
-          src={song.audioUrl}
-          onEnded={() => endGameHandler(localScore, localCombo, localAccuracy)}
-          className="hidden"
-        />
-      )}
-      
-      {song.videoUrl && (
-        <video
-          ref={videoRef}
-          src={song.videoUrl}
-          className="w-full rounded-lg"
-          controls
-        />
-      )}
-      
-      {/* YouTube Player */}
-      {song.youtubeId && (
-        <div className="aspect-video bg-black/50 rounded-lg overflow-hidden">
-          <YouTubePlayer
-            videoId={song.youtubeId}
-            isPlaying={isPlaying}
-            onTimeUpdate={(time) => {
-              setCurrentTime(time);
-              // Game logic would go here
-            }}
-            onEnded={() => endGameHandler(localScore, localCombo, localAccuracy)}
-          />
-        </div>
-      )}
+
+      {/* Back Button */}
+      <Button
+        onClick={onBack}
+        className="w-full py-5 text-lg bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400"
+      >
+        Back to Party Mode
+      </Button>
     </div>
   );
 }
