@@ -80,8 +80,8 @@ function VideoOverlay({ j }: { j: UseJukeboxReturn }) {
       <div className="flex items-end justify-between">
         <div>
           <p className="text-cyan-400 text-sm font-medium">NOW PLAYING</p>
-          <h2 className="text-3xl font-bold text-white">{j.currentSong!.title}</h2>
-          <p className="text-white/70 text-lg">{j.currentSong!.artist}</p>
+          <h2 className="text-3xl font-bold text-white">{j.currentSong?.title ?? ''}</h2>
+          <p className="text-white/70 text-lg">{j.currentSong?.artist ?? ''}</p>
         </div>
         <div className="flex items-center gap-3">
           <button onClick={j.playPrevious} className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
@@ -271,6 +271,15 @@ export function JukeboxPlayerView({ j }: { j: UseJukeboxReturn }) {
 
       <div className={`flex-1 flex min-h-0 ${j.isFullscreen ? 'flex-row' : 'flex-col space-y-6'}`}>
         {/* Video Player */}
+        {!j.currentSong ? (
+          <div className={`${j.isFullscreen ? (j.hidePlaylist ? 'flex-1 min-h-0' : 'w-[75%] h-full') : 'flex-1'}`}>
+            <Card className={`bg-black/50 border-white/10 overflow-hidden ${j.isFullscreen ? 'h-full rounded-none' : ''}`}>
+              <div className={`relative ${j.isFullscreen ? 'h-full' : 'aspect-video'} flex items-center justify-center`}>
+                <MusicIcon className="w-32 h-32 text-white/30" />
+              </div>
+            </Card>
+          </div>
+        ) : (
         <div className={`${j.isFullscreen ? (j.hidePlaylist ? 'flex-1 min-h-0' : 'w-[75%] h-full') : 'flex-1'}`}>
           <Card className={`bg-black/50 border-white/10 overflow-hidden ${j.isFullscreen ? 'h-full rounded-none' : ''}`}>
             <div className={`relative ${j.isFullscreen ? 'h-full' : 'aspect-video'}`}>
@@ -344,6 +353,7 @@ export function JukeboxPlayerView({ j }: { j: UseJukeboxReturn }) {
 
         {/* Playlist Sidebar */}
         <PlaylistSidebar j={j} />
+        )}
       </div>
     </>
   );
