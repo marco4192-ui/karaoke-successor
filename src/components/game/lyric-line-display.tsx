@@ -33,12 +33,15 @@ interface LyricLineDisplayProps {
  * - No space = syllable connected to next note
  * - Hyphen in lyric = word break / visual separator
  */
+// Shared empty Map to avoid creating a new one on every render (defeats React.memo)
+const EMPTY_NOTE_PERFORMANCE = new Map<string, Array<{ hit: boolean; accuracy: number }>>();
+
 export function LyricLineDisplay({
   line,
   currentTime,
   playerColor,
   noteDisplayStyle = 'classic',
-  notePerformance = new Map(),
+  notePerformance = EMPTY_NOTE_PERFORMANCE,
   gameMode = 'standard',
   missingWordsIndices = [],
   isBlindSection = false,
