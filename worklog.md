@@ -466,3 +466,85 @@ Work Log:
 Stage Summary:
 - 4 Bugs, 3 Logik-Probleme, 9 Dead-Code-Kategorien, 5 Verbesserungsvorschläge identifiziert
 - Nächster Schritt: Fixes nacheinander implementieren und pushen
+
+---
+Task ID: FV2
+Agent: Main
+Task: generateId() mit crypto.randomUUID() ersetzen
+
+Work Log:
+- utils.ts: `Date.now() + Math.random()` → `crypto.randomUUID()`
+- 128-bit Zufall statt Millisekunden + 9-stelliger Random-String
+
+Stage Summary:
+- Kollisionsrisiko eliminiert
+- Push: ef6904f
+
+---
+Task ID: FV5
+Agent: Main
+Task: Zentrale normalizeTxtContent() Utility für BOM-Entfernung
+
+Work Log:
+- Neue Funktion `normalizeTxtContent()` in utils.ts erstellt (BOM strip + Zeilenumbruch-Normalisierung)
+- 4 redundante BOM-Entfernungsstellen ersetzt:
+  - tauri-file-storage.ts:378 (parseLyricsFromTxt Metadaten)
+  - tauri-file-storage.ts:624 (parseLyricsFromTxt Notes)
+  - folder-scanner.ts:605
+  - song-lyrics-loader.ts:132
+- Verifiziert: Nur noch 1 BOM-Check im Codebase (in der Utility)
+
+Stage Summary:
+- 4 Dateien geändert, 20 insertions, 27 deletions
+- Push: 8e7b027
+
+---
+Task ID: FV4
+Agent: Main
+Task: Binary Search für aktive Notes in Battle Royale Game Loop
+
+Work Log:
+- Neue Funktion `getActiveNotesAtTime()` mit binary search implementiert
+- O(n) forEach über alle Notes → O(log n + k) wobei k = aktive Notes (2-5)
+- Gleichzeitig forEach → for..of umgebaut (erlaubt early continue)
+- nested forEach für micPlayers/companionPlayers → for..of
+
+Stage Summary:
+- 1 Datei geändert, 67 insertions, 35 deletions
+- Push: d99fc7d
+
+---
+Task ID: FL3
+Agent: Main
+Task: Most Played Playlist mit echtem Play-Counter
+
+Work Log:
+- Neuer localStorage Key `karaoke-song-play-counts` für `Record<songId, number>`
+- `getPlayCounts()` / `savePlayCounts()` interne Hilfsfunktionen
+- `getSongPlayCount()` exportiert für mögliche UI-Anzeige
+- `recordSongPlay()`: Counter incrementieren + Playlist nach Count absteigend sortieren
+- Playlist begrenzt auf Top 100
+
+Stage Summary:
+- "Most Played" zeigt jetzt tatsächlich meistgespielte Songs statt zuletzt gespielte
+- 1 Datei geändert, 44 insertions, 11 deletions
+- Push: fe05ff9
+
+---
+Task ID: FV3
+Agent: Main
+Task: QR-Code offline-fähig machen (lokale Bibliothek)
+
+Work Log:
+- `qrcode` ^1.5.4 zu package.json dependencies hinzugefügt
+- `generateQRCodeUrl()` neu geschrieben: async, nutzt `QRCode.toDataURL()`, mit In-Memory-Cache (50 Einträge)
+- Neuer Hook `use-qr-code.ts` für asynchrone QR-Code-Generierung in React-Komponenten
+- 4 Aufrufer aktualisiert (home-screen, character-settings-card, mobile-screen, mobile-device-section)
+  - Alle nutzen jetzt `useQRCode()` Hook mit Loading-Placeholder
+- Dead Code entfernt: `generateQRCode()` Duplikat in settings-icons.tsx
+
+Stage Summary:
+- QR-Codes funktionieren jetzt 100% offline
+- 8 Dateien geändert, 86 insertions, 25 deletions
+- Push: b07e27b
+- **ALLE Verbesserungsvorschläge (FV1-FV5, FL1-FL3) sind jetzt komplett implementiert!**
