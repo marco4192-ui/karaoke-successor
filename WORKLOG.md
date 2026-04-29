@@ -56,4 +56,38 @@ Diese Session: 7 neue reale Mängel gefunden (B1-B7).
 
 ## Umsetzungs-Log
 
-( wird nach jedem Punkt aktualisiert )
+### ✅ B1 — `applyPreset` async, `applyAllSettings()` awaited
+- **Commit:** `5c71a8b` fix(B1): await applyAllSettings in applyPreset to ensure reverb impulse buffer is ready
+- **Datei:** `src/lib/audio/audio-effects.ts`
+- `applyPreset` → `async applyPreset`, ruft nun `await this.applyAllSettings()` auf.
+
+### ✅ B2 — `setReverb` async, Impulse-Puffer awaited + Chain reconnect
+- **Commit:** `e32b4d5` fix(B2): await createReverbImpulse in setReverb and reconnect effect chain after decay change
+- **Datei:** `src/lib/audio/audio-effects.ts`
+- `setReverb` → `async setReverb`, awaitet `createReverbImpulse`, ruft danach `connectEffectChain()` auf.
+
+### ✅ B3 — P2-Pitch-Result clarity getrennt von P1
+- **Commit:** `9a2e78d` fix(B3): use independent clarity default for P2 pitch result instead of borrowing P1s clarity
+- **Datei:** `src/hooks/use-game-loop.ts`
+- `clarity: currentPitch?.clarity ?? 0` → `clarity: 0.7` mit Kommentar, warum P2 keine eigene clarity hat.
+
+### ✅ B4 — Golden-Note-Multiplikator aktiviert
+- **Commit:** `655a5b5` fix(B4): apply golden note multiplier in calculateTickPoints — golden notes now score 5x more
+- **Datei:** `src/lib/game/scoring.ts`
+- `_isGolden` → `isGolden`, `PERFECT_NOTE_MULTIPLIER` / `PERFECT_GOLDEN_MULTIPLIER` angewendet. `calculateScoringMetadata` berücksichtigte die Multiplikatoren bereits in `perfectScoreBase`, also bleibt MAX_POINTS_PER_SONG korrekt bei 10000.
+
+### ✅ B5 — `goodNotes` Berechnung korrigiert
+- **Commit:** `5606a7c` fix(B5): correct goodNotes calculation — notesMissed is independent from notesHit, do not subtract it
+- **Datei:** `src/components/screens/results-screen.tsx`
+- `notesHit - perfectNotes - notesMissed` → `notesHit - perfectNotes` (notesMissed ist eine unabhängige Zählung).
+
+### ✅ B6 — `songsCompleted` Zähler hinzugefügt
+- **Commit:** `bc1728b` fix(B6): track songsCompleted separately from sessions and use it for title unlock checks
+- **Datei:** `src/lib/game/player-progression.ts`
+- Neues Feld `songsCompleted: number` in `ExtendedPlayerStats` und `getDefaultStats()`. Wird bei jedem Spielabschluss inkrementiert. `checkTitleUnlocks` nutzt nun `stats.songsCompleted` statt `stats.totalSessions`.
+
+### ✅ B7 — Competitive Bonus-Funktionen in Spiel-Flow integriert
+- **Commit:** `f24d396` fix(B7): calculate competitive mode bonus points for missing-words and blind modes using estimated hit counts
+- **Datei:** `src/hooks/use-game-flow-handlers.ts`
+- `finishCompetitiveRound(score1, 0, score2, 0)` → `finishCompetitiveRound(score1, bonus1, score2, bonus2)`.
+- Bonus basierend auf Heuristik: Missing Words ≈ 25% der getroffenen Noten sind versteckt → `calculateMissingWordsBonus(hitNotes * 0.25)`. Blind ≈ 40% der getroffenen Noten sind in Blind-Sektionen → `calculateBlindBonus(hitNotes * 0.40)`.

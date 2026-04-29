@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server';
 import type { PitchData, MobileProfile } from './mobile-types';
 import {
   mobileClients,
+  connectionCodes,
+  profileToClient,
   persistentProfileByIp,
   latestPitchData,
   mutableState,
