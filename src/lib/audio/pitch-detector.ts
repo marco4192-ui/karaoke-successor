@@ -456,9 +456,9 @@ export function getPitchDetector(): PitchDetector {
 }
 
 // Function to reset the singleton (useful for testing or manual cleanup)
-export function resetPitchDetector(): void {
+export async function resetPitchDetector(): Promise<void> {
   if (pitchDetectorInstance) {
-    pitchDetectorInstance.destroy();
+    await pitchDetectorInstance.destroy();
     pitchDetectorInstance = null;
   }
 }
@@ -662,9 +662,9 @@ export function getPitchDetectorManager(): PitchDetectorManager {
   return pitchDetectorManagerInstance;
 }
 
-export function resetPitchDetectorManager(): void {
+export async function resetPitchDetectorManager(): Promise<void> {
   if (pitchDetectorManagerInstance) {
-    pitchDetectorManagerInstance.destroy();
+    await pitchDetectorManagerInstance.destroy();
     pitchDetectorManagerInstance = null;
   }
 }

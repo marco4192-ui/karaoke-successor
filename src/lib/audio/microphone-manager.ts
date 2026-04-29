@@ -298,8 +298,8 @@ class MicrophoneInstance {
     }
   }
 
-  destroy(): void {
-    this.disconnect();
+  async destroy(): Promise<void> {
+    await this.disconnect();
     this.onStatusChange = null;
   }
 }
@@ -443,7 +443,7 @@ export class MultiMicrophoneManager {
   async unassignMicrophone(id: string): Promise<void> {
     const instance = this.micInstances.get(id);
     if (instance) {
-      instance.destroy();
+      await instance.destroy();
       this.micInstances.delete(id);
     }
     this.assignedMics.delete(id);
@@ -570,7 +570,7 @@ export class MultiMicrophoneManager {
   // Disconnect all microphones
   async disconnectAll(): Promise<void> {
     for (const instance of this.micInstances.values()) {
-      instance.destroy();
+      await instance.destroy();
     }
     this.micInstances.clear();
     this.assignedMics.clear();
@@ -718,8 +718,8 @@ export class MultiMicrophoneManager {
   }
 
   // Cleanup
-  destroy(): void {
-    this.disconnectAll();
+  async destroy(): Promise<void> {
+    await this.disconnectAll();
     this.onDevicesChange = null;
     this.onAssignedMicsChange = null;
   }
@@ -964,8 +964,8 @@ export class MicrophoneManager {
     };
   }
 
-  destroy(): void {
-    this.disconnect();
+  async destroy(): Promise<void> {
+    await this.disconnect();
     this.onStatusChange = null;
     this.onDevicesChange = null;
     this.statusCallbackRegistered = false;
@@ -993,9 +993,9 @@ export function getMicrophoneManager(): MicrophoneManager {
 }
 
 // Function to reset the singleton (useful for testing or manual cleanup)
-export function resetMicrophoneManager(): void {
+export async function resetMicrophoneManager(): Promise<void> {
   if (micManagerInstance) {
-    micManagerInstance.destroy();
+    await micManagerInstance.destroy();
     micManagerInstance = null;
   }
 }
