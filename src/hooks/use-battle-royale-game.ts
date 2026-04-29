@@ -12,7 +12,8 @@ import {
 } from '@/lib/game/battle-royale';
 import { Song, Note, Difficulty } from '@/types/game';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
-import { evaluateTick, calculateTickPoints, calculateScoringMetadata } from '@/lib/game/scoring';
+import { calculateScoringMetadata } from '@/lib/game/scoring';
+import { evaluateAndScoreTick } from '@/lib/game/party-scoring';
 import { useBattleRoyaleSongMedia } from '@/hooks/use-battle-royale-song-media';
 import { useBattleRoyaleCompanionPolling } from '@/hooks/use-battle-royale-companion-polling';
 import { useBattleRoyaleRoundTimer } from '@/hooks/use-battle-royale-round-timer';
@@ -246,21 +247,14 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
             micPlayers.forEach(player => {
               if (isSinging === false) return; // Humming/noise detected
-              const tickResult = evaluateTick(detectedPitch || 0, note.pitch, difficulty);
+              const tick = evaluateAndScoreTick(detectedPitch || 0, note, difficulty, td.scoringMetadata);
 
-              if (tickResult.isHit) {
-                const points = calculateTickPoints(
-                  tickResult.accuracy,
-                  note.isGolden,
-                  td.scoringMetadata.pointsPerTick,
-                  difficulty
-                );
-
+              if (tick.hit) {
                 batchedGame = updatePlayerScore(
                   batchedGame,
                   player.id,
-                  points,
-                  tickResult.accuracy,
+                  tick.points,
+                  tick.accuracy,
                   1, 0, 1
                 );
               }
@@ -276,21 +270,14 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
                 : null;
 
               if (cachedPitch && cachedPitch.note > 0 && cachedPitch.isSinging === true) {
-                const tickResult = evaluateTick(cachedPitch.note, note.pitch, difficulty);
+                const tick = evaluateAndScoreTick(cachedPitch.note, note, difficulty, td.scoringMetadata);
 
-                if (tickResult.isHit) {
-                  const points = calculateTickPoints(
-                    tickResult.accuracy,
-                    note.isGolden,
-                    td.scoringMetadata.pointsPerTick,
-                    difficulty
-                  );
-
+                if (tick.hit) {
                   batchedGame = updatePlayerScore(
                     batchedGame,
                     player.id,
-                    points,
-                    tickResult.accuracy,
+                    tick.points,
+                    tick.accuracy,
                     1, 0, 1
                   );
                 }

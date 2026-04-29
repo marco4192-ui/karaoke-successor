@@ -14,7 +14,8 @@ import { useGameSettings } from '@/hooks/use-game-settings';
 import { useYouTubeGame } from '@/hooks/use-youtube-game';
 import { useMobileGameSync } from '@/hooks/use-mobile-game-sync';
 import { DIFFICULTY_SETTINGS } from '@/types/game';
-import { evaluateTick, calculateTickPoints, calculateScoringMetadata } from '@/lib/game/scoring';
+import { calculateScoringMetadata } from '@/lib/game/scoring';
+import { findActiveNote, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';
 import { calculatePitchStats, PitchStats, NOTE_WINDOW, VISIBLE_TOP, VISIBLE_RANGE, getVisibleNotes } from '@/lib/game/note-utils';
 import type { PassTheMicRoundResult } from '@/lib/game/party-store';
 import { GameBackground } from '@/components/game/game-background';
@@ -257,46 +258,32 @@ export function PtmGameScreen({
   const lastEvalTimeRef = useRef(0);
 
   const scoreCurrentPlayer = useCallback(() => {
-    if (!pitchResult?.frequency || pitchResult.note === null) return;
+    if (!pitchResult) return;
     const difficulty = safeSettings.difficulty;
-    const diffSettings = DIFFICULTY_SETTINGS[difficulty];
-    if (pitchResult.volume < diffSettings.volumeThreshold) return;
+    if (shouldSkipPitch(pitchResult, difficulty)) return;
 
-    if (!notesSource?.lyrics) return;
+    const activeNote = findActiveNote(notesSource?.lyrics, currentTime);
+    if (!activeNote) return;
 
-    for (const line of notesSource.lyrics) {
-      for (const note of line.notes) {
-        const noteEnd = note.startTime + note.duration;
-        if (currentTime >= note.startTime && currentTime <= noteEnd) {
-          if (currentTime - lastEvalTimeRef.current < 250) return;
-          lastEvalTimeRef.current = currentTime;
+    if (currentTime - lastEvalTimeRef.current < 250) return;
+    lastEvalTimeRef.current = currentTime;
 
-          const result = evaluateTick(pitchResult.note, note.pitch, difficulty);
-          const p = playersRef.current[currentPlayerIndex];
-          const idx = currentPlayerIndex;
+    const tick = evaluateAndScoreTick(pitchResult.note!, activeNote, difficulty, scoringMeta);
+    const p = playersRef.current[currentPlayerIndex];
+    const idx = currentPlayerIndex;
 
-          if (result.isHit) {
-            const meta = scoringMeta;
-            const tickPts = meta
-              ? calculateTickPoints(result.accuracy, note.isGolden, meta.pointsPerTick, difficulty)
-              : result.accuracy * 10;
-            const finalPoints = Math.max(1, Math.round(tickPts));
-
-            p.score += finalPoints;
-            p.notesHit++;
-            p.combo++;
-            if (p.combo > p.maxCombo) p.maxCombo = p.combo;
-          } else {
-            p.combo = 0;
-            p.notesMissed++;
-          }
-
-          playersRef.current[idx] = { ...p };
-          forceRender();
-          return;
-        }
-      }
+    if (tick.hit) {
+      p.score += tick.points;
+      p.notesHit++;
+      p.combo++;
+      if (p.combo > p.maxCombo) p.maxCombo = p.combo;
+    } else {
+      p.combo = 0;
+      p.notesMissed++;
     }
+
+    playersRef.current[idx] = { ...p };
+    forceRender();
   }, [currentTime, pitchResult, notesSource, safeSettings.difficulty, currentPlayerIndex, scoringMeta, forceRender]);
 
   // ── Game loop: score during playing ──

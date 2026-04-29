@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useMultiPitchDetector, type PlayerPitchConfig } from '@/hooks/use-multi-pitch-detector';
 import { usePartyStore } from '@/lib/game/party-store';
-import { evaluateTick, calculateTickPoints, calculateScoringMetadata } from '@/lib/game/scoring';
+import { calculateScoringMetadata } from '@/lib/game/scoring';
+import { findActiveNoteFlat, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';
 import { DIFFICULTY_SETTINGS } from '@/types/game';
 import { ensureSongUrls } from '@/lib/game/song-library';
 import type { Note, LyricLine, PitchDetectionResult } from '@/types/game';
@@ -228,42 +229,34 @@ export function MedleyGameScreen({
     pitch: PitchDetectionResult | null,
     absTime: number,
   ) => {
-    if (!pitch?.frequency || pitch.note === null) return;
-    if (pitch.volume < DIFFICULTY_SETTINGS[settings.difficulty].volumeThreshold) return;
-    if (pitch.isSinging === false) return;
+    if (!pitch) return;
+    if (shouldSkipPitch(pitch, settings.difficulty)) return;
     if (!scoringMetaRef.current || !currentSnippet) return;
 
-    const beatDuration = currentSnippet.song.bpm ? 15000 / currentSnippet.song.bpm : 500;
+    const activeNote = findActiveNoteFlat(snippetNotes, absTime);
+    if (!activeNote) return;
 
-    for (const note of snippetNotes) {
-      const noteEnd = note.startTime + note.duration;
-      if (absTime >= note.startTime && absTime <= noteEnd) {
-        // Throttle: evaluate every ~250ms per player
-        const lastEval = lastEvalTimeRef.current[playerId] || 0;
-        if (absTime - lastEval < 250) return;
-        lastEvalTimeRef.current[playerId] = absTime;
+    // Throttle: evaluate every ~250ms per player
+    const lastEval = lastEvalTimeRef.current[playerId] || 0;
+    if (absTime - lastEval < 250) return;
+    lastEvalTimeRef.current[playerId] = absTime;
 
-        const result = evaluateTick(pitch.note, note.pitch, settings.difficulty);
-        const pIdx = playersRef.current.findIndex(p => p.id === playerId);
-        if (pIdx === -1) return;
-        const p = playersRef.current[pIdx];
+    const tick = evaluateAndScoreTick(pitch.note!, activeNote, settings.difficulty, scoringMetaRef.current);
+    const pIdx = playersRef.current.findIndex(p => p.id === playerId);
+    if (pIdx === -1) return;
+    const p = playersRef.current[pIdx];
 
-        if (result.isHit) {
-          const tickPts = calculateTickPoints(result.accuracy, note.isGolden, scoringMetaRef.current!.pointsPerTick, settings.difficulty);
-          const pts = Math.max(1, Math.round(tickPts));
-          p.score += pts;
-          p.notesHit++;
-          p.combo++;
-          if (p.combo > p.maxCombo) p.maxCombo = p.combo;
-        } else {
-          p.combo = 0;
-          p.notesMissed++;
-        }
-
-        playersRef.current[pIdx] = { ...p };
-        return;
-      }
+    if (tick.hit) {
+      p.score += tick.points;
+      p.notesHit++;
+      p.combo++;
+      if (p.combo > p.maxCombo) p.maxCombo = p.combo;
+    } else {
+      p.combo = 0;
+      p.notesMissed++;
     }
+
+    playersRef.current[pIdx] = { ...p };
   }, [snippetNotes, currentSnippet, settings.difficulty]);
 
   // ── Game loop ──
