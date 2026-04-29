@@ -228,7 +228,7 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
   } = useParticleEmitter();
   
   // Song energy for visual effects intensity
-  const songEnergy = useSongEnergy(audioRef.current);
+  const songEnergy = useSongEnergy(audioRef);
   
   // Check if this is a duet song (use comprehensive detection, not just flag)
   // Also treat blind/missing-words competitive modes as duet when 2+ players are added

@@ -787,9 +787,25 @@ export function ComboFireEffect({ combo, isLarge = false }: ComboFireEffectProps
 
 // ===================== SONG ENERGY DETECTOR =====================
 
-export function useSongEnergy(audioElement?: HTMLAudioElement | null) {
+export function useSongEnergy(audioRef?: React.RefObject<HTMLAudioElement | null>) {
   const [energy, setEnergy] = useState(0.5);
+  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
+
+  // Sync ref.current into state so the effect re-runs when the element appears
+  useEffect(() => {
+    setAudioElement(audioRef?.current ?? null);
+    // Check periodically until element is available (audio loads async)
+    if (!audioRef?.current) {
+      const check = setInterval(() => {
+        if (audioRef?.current) {
+          setAudioElement(audioRef.current);
+          clearInterval(check);
+        }
+      }, 200);
+      return () => clearInterval(check);
+    }
+  }, [audioRef]);
 
   useEffect(() => {
     if (!audioElement) return;
