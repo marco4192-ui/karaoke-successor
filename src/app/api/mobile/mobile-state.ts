@@ -1,0 +1,148 @@
+import { NextRequest } from 'next/server';
+import type { MobileClient, PitchData, MobileProfile, QueueItem, RemoteControlState, MobileGameState, GameResults, SongSummary, HostProfile } from './mobile-types';
+
+// ===================== GLOBAL STATE =====================
+// Shared state for mobile clients (in-memory, resets on server restart)
+export const mobileClients = new Map<string, MobileClient>();
+export const connectionCodes = new Map<string, string>(); // code -> clientId
+export const profileToClient = new Map<string, string>(); // profileId -> clientId (for duplicate detection)
+
+// Persistent profile by IP — survives client cleanup so profiles can be restored
+// after long standby periods where the server cleaned up the client session.
+// Keyed by IP, stores the last known profile for each IP address.
+export const persistentProfileByIp = new Map<string, MobileProfile>(); // ip -> MobileProfile
+
+// Latest pitch data from all clients (for PC to poll)
+export const latestPitchData: Map<string, PitchData> = new Map();
+
+// Mutable state container — allows importing modules to reassign properties
+export const mutableState = {
+  // Game state to sync to mobile clients
+  gameState: {
+    currentSong: null,
+    isPlaying: false,
+    currentTime: 0,
+    songEnded: false,
+    isAdPlaying: false,
+    gameMode: null,
+    singalongTurn: null,
+  } as MobileGameState,
+
+  // Queue for song requests from mobile clients
+  songQueue: [] as QueueItem[],
+
+  // Jukebox wishlist
+  jukeboxWishlist: [] as QueueItem[],
+
+  // Game results for social features
+  lastGameResults: null as GameResults | null,
+
+  // Remote Control State - Only ONE client can have control at a time
+  remoteControlState: {
+    lockedBy: null,
+    lockedByName: null,
+    lockedAt: null,
+    pendingCommands: [],
+  } as RemoteControlState,
+
+  // Song Library - Cached songs from main app for companion clients
+  songLibrary: [] as SongSummary[],
+
+  // Host Profiles - Characters from main app for companion to choose from
+  // (Cannot use localStorage in API route - must store in server memory)
+  hostProfiles: [] as HostProfile[],
+};
+
+// ===================== HELPER FUNCTIONS =====================
+// Extract client IP from request headers (works with proxies and Tauri)
+export function getClientIp(request: NextRequest): string {
+  const forwarded = request.headers.get('x-forwarded-for');
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  const realIp = request.headers.get('x-real-ip');
+  if (realIp) return realIp;
+  return '127.0.0.1'; // Default for Tauri/localhost
+}
+
+export function generateConnectionCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed confusing chars
+  let code = '';
+  for (let i = 0; i < 4; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+export function getUniqueConnectionCode(): string {
+  let code = generateConnectionCode();
+  let attempts = 0;
+  while (connectionCodes.has(code) && attempts < 100) {
+    code = generateConnectionCode();
+    attempts++;
+  }
+  return code;
+}
+
+// Clean up inactive clients (older than 5 minutes without activity)
+export function cleanupInactiveClients() {
+  const now = Date.now();
+  const timeout = 5 * 60 * 1000; // 5 minutes
+  
+  mobileClients.forEach((client, clientId) => {
+    if (now - client.lastActivity > timeout) {
+      // Save profile to persistent IP store BEFORE cleaning up
+      if (client.profile && client.clientIp) {
+        persistentProfileByIp.set(client.clientIp, client.profile);
+      }
+      // Remove client
+      mobileClients.delete(clientId);
+      connectionCodes.delete(client.connectionCode);
+      if (client.profile) {
+        profileToClient.delete(client.profile.id);
+      }
+      latestPitchData.delete(clientId);
+    }
+  });
+}
+
+// ===================== HELPER =====================
+export function getQueueByCompanion(): Record<string, QueueItem[]> {
+  const result: Record<string, QueueItem[]> = {};
+  mutableState.songQueue.forEach(item => {
+    if (!result[item.companionCode]) {
+      result[item.companionCode] = [];
+    }
+    if (item.status !== 'completed') {
+      result[item.companionCode].push(item);
+    }
+  });
+  return result;
+}
+
+// Reset all state (used by clearall action)
+export function resetAllState() {
+  mobileClients.clear();
+  connectionCodes.clear();
+  profileToClient.clear();
+  persistentProfileByIp.clear();
+  latestPitchData.clear();
+  mutableState.songQueue = [];
+  mutableState.jukeboxWishlist = [];
+  mutableState.gameState = {
+    currentSong: null,
+    isPlaying: false,
+    currentTime: 0,
+    songEnded: false,
+    isAdPlaying: false,
+    gameMode: null,
+    singalongTurn: null,
+  };
+  // Reset remote control state
+  mutableState.remoteControlState = {
+    lockedBy: null,
+    lockedByName: null,
+    lockedAt: null,
+    pendingCommands: [],
+  };
+}
