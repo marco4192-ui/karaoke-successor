@@ -415,10 +415,6 @@ export function getLevelForXP(xp: number): { level: number; currentXP: number; n
   }
 }
 
-export function getTitleById(titleId: string): Title | undefined {
-  return TITLES.find(t => t.id === titleId);
-}
-
 export function getRarityColor(rarity: Title['rarity']): string {
   switch (rarity) {
     case 'common': return '#9CA3AF';
@@ -690,37 +686,3 @@ export function updateStatsAfterGame(
   return { stats, xpEarned, newTitles, leveledUp };
 }
 
-/**
- * Format player name with rank display options
- * @param name - Player name
- * @param xp - Player XP
- * @param options - Display options
- * @returns Formatted name string
- */
-export function formatPlayerNameWithRank(
-  name: string,
-  xp: number,
-  options?: {
-    showRankInName?: boolean;
-    rankDisplayStyle?: 'prefix' | 'suffix' | 'nickname' | 'none';
-  }
-): string {
-  const { showRankInName = false, rankDisplayStyle = 'suffix' } = options || {};
-  
-  if (!showRankInName || rankDisplayStyle === 'none') {
-    return name;
-  }
-  
-  const rank = getRankForXP(xp);
-  
-  switch (rankDisplayStyle) {
-    case 'prefix':
-      return `${rank.icon} ${name}`;
-    case 'suffix':
-      return `${name} ${rank.icon}`;
-    case 'nickname':
-      return `${rank.icon} ${name} (${rank.name})`;
-    default:
-      return name;
-  }
-}

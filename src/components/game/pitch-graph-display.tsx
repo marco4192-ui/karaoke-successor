@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   PitchGraphRenderer,
   PitchGraphConfig,
@@ -102,47 +102,4 @@ export function PitchGraphDisplay({
       </div>
     </div>
   );
-}
-
-/**
- * Hook to use the pitch graph renderer directly
- */
-export function usePitchGraphRenderer(config?: Partial<PitchGraphConfig>) {
-  const rendererRef = useRef<PitchGraphRenderer | null>(null);
-
-  const initialize = useCallback((canvas: HTMLCanvasElement) => {
-    const finalConfig = { ...DEFAULT_PITCH_GRAPH_CONFIG, ...config };
-    rendererRef.current = new PitchGraphRenderer(finalConfig);
-    rendererRef.current.attachCanvas(canvas);
-  }, [config]);
-
-  const addPoint = useCallback((pitch: number | null, time: number, isTarget: boolean, accuracy?: number) => {
-    rendererRef.current?.addPoint(pitch, time, isTarget, accuracy);
-  }, []);
-
-  const addTargetNote = useCallback((pitch: number, startTime: number, duration: number) => {
-    rendererRef.current?.addTargetNote(pitch, startTime, duration);
-  }, []);
-
-  const render = useCallback((currentTime: number) => {
-    rendererRef.current?.render(currentTime);
-  }, []);
-
-  const clear = useCallback(() => {
-    rendererRef.current?.clear();
-  }, []);
-
-  const destroy = useCallback(() => {
-    rendererRef.current?.destroy();
-    rendererRef.current = null;
-  }, []);
-
-  return {
-    initialize,
-    addPoint,
-    addTargetNote,
-    render,
-    clear,
-    destroy,
-  };
 }

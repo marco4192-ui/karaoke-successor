@@ -198,21 +198,3 @@ export async function shareScoreCard(card: ShareableScoreCard): Promise<boolean>
     }
   }
 }
-
-// Social media share URLs
-export function getShareUrls(card: ShareableScoreCard): {
-  twitter: string;
-  facebook: string;
-  reddit: string;
-  whatsapp: string;
-} {
-  const text = encodeURIComponent(generateShareText(card));
-  const url = encodeURIComponent(window.location.origin);
-  
-  return {
-    twitter: `https://twitter.com/intent/tweet?text=${text}`,
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`,
-    reddit: `https://www.reddit.com/submit?title=${encodeURIComponent(`My ${card.songTitle} score!`)}&text=${text}`,
-    whatsapp: `https://wa.me/?text=${text}`,
-  };
-}

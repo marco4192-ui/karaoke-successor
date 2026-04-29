@@ -280,55 +280,6 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   },
 ];
 
-// Convert definition to achievement with unlock timestamp
-export function unlockAchievement(def: AchievementDefinition): Achievement {
-  return {
-    id: def.id,
-    name: def.name,
-    description: def.description,
-    icon: def.icon,
-    unlockedAt: Date.now(),
-  };
-}
-
-// Check if achievement should be unlocked
-export function checkAchievement(
-  def: AchievementDefinition,
-  stats: {
-    currentScore?: number;
-    currentCombo?: number;
-    currentAccuracy?: number;
-    totalPerfects?: number;
-    totalGoldens?: number;
-    totalGames?: number;
-    totalSongs?: number;
-    specialFlags?: number[];
-  }
-): boolean {
-  const { requirement } = def;
-  
-  switch (requirement.type) {
-    case 'score':
-      return (stats.currentScore || 0) >= requirement.value;
-    case 'combo':
-      return (stats.currentCombo || 0) >= requirement.value;
-    case 'accuracy':
-      return (stats.currentAccuracy || 0) >= requirement.value;
-    case 'perfect':
-      return (stats.totalPerfects || 0) >= requirement.value;
-    case 'golden':
-      return (stats.totalGoldens || 0) >= requirement.value;
-    case 'games':
-      return (stats.totalGames || 0) >= requirement.value;
-    case 'songs':
-      return (stats.totalSongs || 0) >= requirement.value;
-    case 'special':
-      return (stats.specialFlags || []).includes(requirement.value);
-    default:
-      return false;
-  }
-}
-
 // Get rarity color
 export function getRarityColor(rarity: AchievementDefinition['rarity']): string {
   switch (rarity) {
@@ -338,16 +289,5 @@ export function getRarityColor(rarity: AchievementDefinition['rarity']): string 
     case 'epic': return '#a855f7';
     case 'legendary': return '#f59e0b';
     default: return '#9ca3af';
-  }
-}
-
-// Get category icon
-export function getCategoryIcon(category: AchievementDefinition['category']): string {
-  switch (category) {
-    case 'performance': return '🎤';
-    case 'social': return '👥';
-    case 'progression': return '📈';
-    case 'special': return '⭐';
-    default: return '🏅';
   }
 }

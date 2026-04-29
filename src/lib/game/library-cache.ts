@@ -161,28 +161,3 @@ export function createCachedSong(
     coverFileName: fileNames.cover,
   };
 }
-
-// Convert cached song back to Song format
-export function cachedSongToSong(cached: CachedSong): Song {
-  return {
-    id: cached.id,
-    title: cached.title,
-    artist: cached.artist,
-    album: cached.album,
-    year: cached.year,
-    genre: cached.genre,
-    duration: cached.duration,
-    bpm: cached.bpm,
-    difficulty: cached.difficulty,
-    rating: cached.rating,
-    gap: cached.gap,
-    coverImage: cached.coverImage,
-    videoBackground: cached.videoBackground,
-    audioUrl: cached.audioUrl,
-    hasEmbeddedAudio: cached.hasEmbeddedAudio,
-    preview: cached.preview,
-    lastPlayed: cached.lastPlayed,
-    dateAdded: cached.dateAdded,
-    lyrics: [], // Lyrics loaded separately when needed
-  };
-}
