@@ -77,7 +77,7 @@ export interface ScoringMetadata {
 // Song start options
 export interface StartOptions {
   difficulty: 'easy' | 'medium' | 'hard';
-  mode: 'single' | 'duel' | 'duet' | string;
+  mode: 'single' | 'duel' | 'duet' | 'medley' | 'missing-words' | 'blind' | 'rate-my-song' | 'pass-the-mic' | 'battle-royale' | 'competitive-words-blind' | string;
   players: string[];
   partyMode?: string;
   songSelectionMode?: 'random' | 'poll' | 'medley';

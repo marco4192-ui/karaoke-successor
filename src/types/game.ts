@@ -374,6 +374,8 @@ export function getRankTitle(accuracy: number): { title: string; emoji: string }
 }
 
 // Global highscore leaderboard (stored per song and globally)
+// NOTE (FD9): This interface is currently not imported anywhere.
+// The app uses online-leaderboard.tsx + leaderboard-service.ts instead.
 export interface Leaderboard {
   global: HighscoreEntry[];  // Top scores across all songs
   bySong: Record<string, HighscoreEntry[]>;  // Top scores per song
