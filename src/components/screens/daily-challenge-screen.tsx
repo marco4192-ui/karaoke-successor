@@ -258,8 +258,8 @@ export function DailyChallengeScreen({ onPlayChallenge, onSelectSong }: { onPlay
                       if (gameMode === 'single' && selectedPlayerIds[0]) {
                         setActiveProfile(selectedPlayerIds[0]);
                       }
-                      // Go to library for song/mode selection
-                      onSelectSong(randomSong);
+                      // Start the challenge directly
+                      onPlayChallenge(randomSong);
                     }
                   }}
                   disabled={gameMode === 'duel' && selectedPlayerIds.length < 2}
