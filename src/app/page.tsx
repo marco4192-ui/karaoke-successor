@@ -314,6 +314,7 @@ export default function KaraokeSuccessor() {
         {screen === 'library' && (
           <LibraryScreen
             onSelectSong={(song) => {
+              resetGame();
               setSong(song);
               if (gameState.gameMode === 'pass-the-mic') {
                 const playerCount = party.passTheMicPlayers?.length || 2;
@@ -374,6 +375,7 @@ export default function KaraokeSuccessor() {
         {screen === 'character' && <CharacterScreen />}
         {screen === 'queue' && (
           <QueueScreen onPlayFromQueue={(song, gameMode, players) => {
+            resetGame();
             const activeMode = gameState.gameMode;
 
             if (activeMode === 'pass-the-mic' && party.passTheMicPlayers?.length > 0) {
@@ -393,7 +395,6 @@ export default function KaraokeSuccessor() {
               return;
             }
 
-            resetGame();
             setSong(song);
             setGameMode(gameMode === 'duel' || gameMode === 'duet' ? 'duel' : 'standard');
             players.forEach(player => {
