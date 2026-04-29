@@ -1,9 +1,16 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import { useGameStore } from '@/lib/game/store';
-import { getAllSongs } from '@/lib/game/song-library';
 import type { Song, GameMode } from '@/types/game';
+
+// Re-export types for backward compatibility
+export type { MobilePitchData } from '@/hooks/use-mobile-pitch-polling';
+export type { CompanionProfile, CompanionQueueItem } from '@/hooks/use-companion-sync';
+
+import { useMobilePitchPolling } from '@/hooks/use-mobile-pitch-polling';
+import { useCompanionSync } from '@/hooks/use-companion-sync';
+import { useSongLibrarySync } from '@/hooks/use-song-library-sync';
 
 export interface UseMobileClientOptions {
   song: Song | null;
@@ -12,109 +19,45 @@ export interface UseMobileClientOptions {
   gameMode?: GameMode;
 }
 
-export interface MobilePitchData {
-  frequency: number | null;
-  note: number | null;
-  volume: number;
-}
-
-export interface CompanionProfile {
-  id: string;
-  name: string;
-  avatar?: string;
-  color: string;
-  createdAt: number;
-}
-
-export interface CompanionQueueItem {
-  id: string;
-  songId: string;
-  songTitle: string;
-  songArtist: string;
-  addedBy: string;
-  addedAt: number;
-  companionCode: string;
-  status: 'pending' | 'playing' | 'completed';
-}
-
+/**
+ * Main mobile client hook — facade that composes focused sub-hooks.
+ *
+ * Refactored from a monolithic 340-line hook (Q9) into:
+ * - useMobilePitchPolling — pitch data polling (deduped, was copy-pasted here)
+ * - useCompanionSync — companion profiles & queue management
+ * - useSongLibrarySync — song library & host profile sync
+ *
+ * Game state sending and ad state are kept inline because they're small
+ * and tightly coupled to the hook's caller-provided props.
+ */
 export function useMobileClient({
   song,
   isPlaying,
   currentTime,
   gameMode,
 }: UseMobileClientOptions): {
-  mobilePitch: MobilePitchData | null;
+  mobilePitch: import('@/hooks/use-mobile-pitch-polling').MobilePitchData | null;
   hasMobileClient: boolean;
   sendGameState: () => Promise<void>;
   sendAdState: (isAdPlaying: boolean) => Promise<void>;
-  companionProfiles: CompanionProfile[];
+  companionProfiles: import('@/hooks/use-companion-sync').CompanionProfile[];
   syncCompanionProfiles: () => Promise<void>;
-  companionQueue: CompanionQueueItem[];
+  companionQueue: import('@/hooks/use-companion-sync').CompanionQueueItem[];
   syncCompanionQueue: () => Promise<void>;
   syncSongLibrary: () => Promise<void>;
 } {
-  const [mobilePitch, setMobilePitch] = useState<MobilePitchData | null>(null);
-  const [hasMobileClient, setHasMobileClient] = useState(false);
-  const [companionProfiles, setCompanionProfiles] = useState<CompanionProfile[]>([]);
-  const [companionQueue, setCompanionQueue] = useState<CompanionQueueItem[]>([]);
-  const importProfileFromMobile = useGameStore((state) => state.importProfileFromMobile);
+  // ── Sub-hooks ──
+  const { mobilePitch, hasMobileClient } = useMobilePitchPolling(song);
+  const {
+    companionProfiles,
+    syncCompanionProfiles,
+    companionQueue,
+    syncCompanionQueue,
+  } = useCompanionSync();
   const profiles = useGameStore((state) => state.profiles);
+  const { syncSongLibrary } = useSongLibrarySync(profiles);
 
-  // Poll for mobile pitch data — optimized: 100ms interval + dedup + AbortController
-  const lastPitchRef = useRef<string>('');
-
-  useEffect(() => {
-    if (!song) {
-      setMobilePitch(null);
-      setHasMobileClient(false);
-      lastPitchRef.current = '';
-      return;
-    }
-
-    let aborted = false;
-    let abortController: AbortController | null = null;
-
-    const pollMobilePitch = async () => {
-      if (abortController) abortController.abort();
-      abortController = new AbortController();
-
-      try {
-        const response = await fetch('/api/mobile?action=getpitch', {
-          signal: abortController.signal,
-        });
-        if (aborted) return;
-        const data = await response.json();
-        if (aborted) return;
-
-        if (data.success && Array.isArray(data.pitches) && data.pitches.length > 0) {
-          const pitchData = data.pitches[0].data;
-          const serialized = JSON.stringify(pitchData);
-          if (serialized !== lastPitchRef.current) {
-            lastPitchRef.current = serialized;
-            setMobilePitch(pitchData);
-          }
-          setHasMobileClient(true);
-        } else {
-          setHasMobileClient(false);
-        }
-      } catch (err) {
-        if (err instanceof DOMException && err.name === 'AbortError') return;
-      }
-    };
-
-    const pollInterval = setInterval(pollMobilePitch, 100);
-
-    return () => {
-      aborted = true;
-      clearInterval(pollInterval);
-      if (abortController) abortController.abort();
-    };
-  }, [song]);
-
-  // Fix (Code Review #5): Throttled to max 2 Hz to avoid 60 HTTP requests/sec
-  // when currentTime updates at animation frame rate.
-  // Uses refs for currentTime/isPlaying/gameMode so the callback identity
-  // is stable — the throttle handles actual rate limiting.
+  // ── Game state sending (throttled to max 2 Hz) ──
   const currentTimeRef = useRef(currentTime);
   currentTimeRef.current = currentTime;
   const isPlayingRef = useRef(isPlaying);
@@ -148,9 +91,7 @@ export function useMobileClient({
     }
   }, [song]);
 
-  // Update game state for mobile clients — poll at throttle rate.
-  // sendGameState is now stable (only depends on song), so this effect
-  // runs once per song and then polls via interval at the throttled rate.
+  // Poll game state at throttle rate
   useEffect(() => {
     if (!song) return;
     sendGameState(); // immediate first send
@@ -158,7 +99,7 @@ export function useMobileClient({
     return () => clearInterval(interval);
   }, [sendGameState]);
 
-  // Send ad state to mobile clients
+  // ── Ad state sending ──
   const sendAdState = useCallback(async (isAdPlaying: boolean) => {
     try {
       await fetch('/api/mobile', {
@@ -173,157 +114,6 @@ export function useMobileClient({
       // Ignore errors
     }
   }, []);
-
-  // Fetch companion profiles from server
-  const fetchCompanionProfiles = useCallback(async () => {
-    try {
-      const response = await fetch('/api/mobile?action=getprofiles');
-      const data = await response.json();
-      if (data.success && data.profiles) {
-        console.log('[MobileClient] Fetched', data.profiles.length, 'companion profiles');
-        setCompanionProfiles(data.profiles);
-      }
-    } catch (error) {
-      console.error('[MobileClient] Error fetching profiles:', error);
-    }
-  }, []);
-
-  // Sync companion profiles to main app's character list
-  const syncCompanionProfiles = useCallback(async () => {
-    const response = await fetch('/api/mobile?action=getprofiles');
-    const data = await response.json();
-    if (data.success && data.profiles) {
-      // Import each profile directly from the response
-      data.profiles.forEach((profile: CompanionProfile) => {
-        console.log('[MobileClient] Importing profile:', profile.name);
-        importProfileFromMobile(profile);
-      });
-    }
-  }, [importProfileFromMobile]);
-
-  // Periodically fetch companion profiles (every 10 seconds)
-  useEffect(() => {
-    const syncInterval = setInterval(fetchCompanionProfiles, 10000);
-    fetchCompanionProfiles(); // Initial fetch
-    
-    return () => clearInterval(syncInterval);
-  }, [fetchCompanionProfiles]);
-
-  // Auto-sync profiles when they change
-  useEffect(() => {
-    if (companionProfiles.length > 0) {
-      console.log('[MobileClient] Auto-importing', companionProfiles.length, 'profiles');
-      companionProfiles.forEach((profile) => {
-        importProfileFromMobile(profile);
-      });
-    }
-  }, [companionProfiles, importProfileFromMobile]);
-
-  // Fetch companion queue from server
-  const fetchCompanionQueue = useCallback(async () => {
-    try {
-      const response = await fetch('/api/mobile?action=getqueue');
-      const data = await response.json();
-      if (data.success && data.queue) {
-        setCompanionQueue(data.queue);
-      }
-    } catch {
-      // Ignore errors
-    }
-  }, []);
-
-  // Sync companion queue - can be used by main app to show companion queue items
-  const syncCompanionQueue = useCallback(async () => {
-    await fetchCompanionQueue();
-  }, [fetchCompanionQueue]);
-
-  // Periodically fetch companion queue (every 5 seconds)
-  useEffect(() => {
-    const syncInterval = setInterval(fetchCompanionQueue, 5000);
-    fetchCompanionQueue(); // Initial fetch
-    
-    return () => clearInterval(syncInterval);
-  }, [fetchCompanionQueue]);
-
-  // Sync song library to server for companion clients
-  const syncSongLibrary = useCallback(async () => {
-    try {
-      const allSongs = getAllSongs();
-      const simplifiedSongs = allSongs
-        .filter(song => song.id && song.title) // Skip songs without id or title
-        .map(song => ({
-          id: song.id,
-          title: song.title,
-          artist: song.artist || 'Unknown',
-          duration: song.duration || 0,
-          genre: song.genre,
-          language: song.language,
-          // Don't send coverImage if it's a blob: URL — companions can't access main app blobs
-          coverImage: song.coverImage && !song.coverImage.startsWith('blob:')
-            ? song.coverImage
-            : undefined,
-        }));
-      
-      await fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'setsongs',
-          payload: simplifiedSongs,
-        }),
-      });
-      
-      console.log('[MobileClient] Synced', simplifiedSongs.length, 'songs to server');
-    } catch (error) {
-      console.error('[MobileClient] Error syncing songs:', error);
-    }
-  }, []);
-
-  // Sync songs on mount and when songs change
-  useEffect(() => {
-    syncSongLibrary();
-    
-    // Also sync periodically (every 30 seconds)
-    const syncInterval = setInterval(syncSongLibrary, 30000);
-    return () => clearInterval(syncInterval);
-  }, [syncSongLibrary]);
-
-  // Publish host profiles to server memory for companion app to fetch via API
-  // (localStorage is NOT available in API routes, so we POST to server)
-  // Also re-sync periodically (every 60s) to survive server restarts
-  useEffect(() => {
-    if (profiles.length === 0) return;
-
-    const hostProfiles = profiles.map(p => ({
-      id: p.id,
-      name: p.name,
-      avatar: p.avatar,
-      color: p.color,
-      createdAt: p.createdAt,
-    }));
-    // Also keep localStorage for any legacy use
-    try {
-      localStorage.setItem('karaoke-host-profiles', JSON.stringify(hostProfiles));
-    } catch { /* ignore */ }
-
-    const pushProfiles = () => {
-      fetch('/api/mobile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'sethostprofiles',
-          payload: hostProfiles,
-        }),
-      }).catch(() => { /* ignore */ });
-    };
-
-    // Push immediately when profiles change
-    pushProfiles();
-
-    // Re-push every 60s to survive server restarts (in-memory state is lost)
-    const interval = setInterval(pushProfiles, 60000);
-    return () => clearInterval(interval);
-  }, [profiles]);
 
   return {
     mobilePitch,
