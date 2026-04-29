@@ -40,6 +40,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const [profileColor, setProfileColor] = useState('#06B6D4');
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Connection
@@ -47,7 +48,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     profileId,
     onProfileLoaded: (p) => setProfile(p),
     onProfileFieldsLoaded: (name, color, avatar) => { setProfileName(name); setProfileColor(color); setAvatarPreview(avatar); },
-    onGameStateUpdate: () => {},
+    onGameStateUpdate: (_state) => {},
     onError: setError,
     onSongEnd: () => { data.loadGameResults(); data.loadQueue(); },
   });
@@ -178,10 +179,15 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     localStorage.removeItem('karaoke-mobile-profile');
     setCurrentView('home');
     // Re-connect after a short delay to allow fresh profile creation
-    setTimeout(() => connect(), 500);
+    reconnectTimerRef.current = setTimeout(() => connect(), 500);
   }, [disconnect, connect]);
 
   // Effects for lazy loading
+  useEffect(() => {
+    return () => {
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+    };
+  }, []);
   useEffect(() => {
     if (currentView === 'songs' && data.songs.length === 0) queueMicrotask(() => data.loadSongs());
   }, [currentView, data.songs.length, data.loadSongs]);
