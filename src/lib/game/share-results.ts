@@ -176,7 +176,7 @@ export async function shareScoreCard(card: ShareableScoreCard): Promise<boolean>
   
   try {
     const blob = await new Promise<Blob>((resolve) => {
-      canvas.toBlob((b) => resolve(b!), 'image/png');
+      canvas.toBlob((b) => resolve(b ?? new Blob()), 'image/png');
     });
     const file = new File([blob], 'score-card.png', { type: 'image/png' });
     
