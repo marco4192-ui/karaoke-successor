@@ -374,8 +374,9 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
             Promise.all([playerPromise, songPromise])
               .then(() => {
                 // Calculate notes stats from game state
+                // goodNotes = notes that were hit but weren't perfect (notesHit and notesMissed are independent counts)
                 const perfectNotes = estimatePerfectNotes(playerResult.notesHit, playerResult.rating);
-                const goodNotes = Math.max(0, playerResult.notesHit - perfectNotes - (playerResult.notesMissed ?? 0));
+                const goodNotes = Math.max(0, playerResult.notesHit - perfectNotes);
                 
                 return leaderboardService.submitScore(
                   profile,
