@@ -56,8 +56,8 @@ export function PerformanceDisplay() {
   }
   
   const totalGames = activeProfile.gamesPlayed;
-  const avgAccuracy = totalGames > 0 
-    ? Math.round(activeProfile.stats.totalNotesHit / (activeProfile.stats.totalNotesHit + activeProfile.stats.totalNotesMissed) * 100) 
+  const avgAccuracy = totalGames > 0
+    ? Math.round(activeProfile.stats.totalNotesHit / (activeProfile.stats.totalNotesHit + activeProfile.stats.totalNotesMissed || 1) * 100)
     : 0;
   
   return (
