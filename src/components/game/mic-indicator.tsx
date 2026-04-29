@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { usePartyStore } from '@/lib/game/party-store';
 import type { SelectedPlayer, InputMode } from './unified-party-setup.types';
 
@@ -37,7 +37,15 @@ export function MicIndicator({
   // Track player changes to re-trigger visibility
   const [lastPlayerId, setLastPlayerId] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(true);
-  const [fadeTimer, setFadeTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear fade timer helper
+  const clearFadeTimer = () => {
+    if (fadeTimerRef.current) {
+      clearTimeout(fadeTimerRef.current);
+      fadeTimerRef.current = null;
+    }
+  };
 
   const inputMode: InputMode = unifiedSetupResult?.inputMode || 'microphone';
   const players: SelectedPlayer[] = unifiedSetupResult?.players || [];
@@ -78,31 +86,25 @@ export function MicIndicator({
     if (currentId !== lastPlayerId) {
       setLastPlayerId(currentId);
       setIsVisible(true);
-      // Clear previous timer
-      if (fadeTimer) clearTimeout(fadeTimer);
-      // Set new fade timer
-      const timer = setTimeout(() => {
+      clearFadeTimer();
+      fadeTimerRef.current = setTimeout(() => {
         setIsVisible(false);
       }, VISIBLE_DURATION);
-      setFadeTimer(timer);
     }
-    return () => {
-      if (fadeTimer) clearTimeout(fadeTimer);
-    };
-  }, [activePlayer?.id, lastPlayerId, fadeTimer]);
+    return clearFadeTimer;
+  }, [activePlayer?.id, lastPlayerId]);
 
   // Also re-trigger when playback starts
   useEffect(() => {
     if (isPlaying) {
       setIsVisible(true);
-      if (fadeTimer) clearTimeout(fadeTimer);
-      const timer = setTimeout(() => {
+      clearFadeTimer();
+      fadeTimerRef.current = setTimeout(() => {
         setIsVisible(false);
       }, VISIBLE_DURATION);
-      setFadeTimer(timer);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPlaying]); // Only re-trigger on play state change
+    return clearFadeTimer;
+  }, [isPlaying]);
 
   // Don't render if:
   // - No setup result (e.g. quick play from library without party setup)
