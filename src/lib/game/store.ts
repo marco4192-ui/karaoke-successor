@@ -13,6 +13,7 @@ import {
   HighscoreEntry,
   getRankTitle,
 } from '@/types/game';
+import { generateId } from '@/lib/utils';
 
 interface GameStore {
   // Game state
@@ -302,7 +303,7 @@ export const useGameStore = create<GameStore>()(
 
       createProfile: (name, avatar) => {
         const profile = createDefaultPlayerProfile({
-          id: `profile-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+          id: generateId('profile'),
           name,
           avatar,
           color: PLAYER_COLORS[get().profiles.length % PLAYER_COLORS.length],
@@ -399,7 +400,7 @@ export const useGameStore = create<GameStore>()(
         if (playerQueueCount >= 3) return;
 
         const item: QueueItem = {
-          id: `queue-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+          id: generateId('queue'),
           song,
           playerId,
           playerName,
@@ -426,7 +427,7 @@ export const useGameStore = create<GameStore>()(
         if (companionQueueCount >= 3) return;
 
         const item: QueueItem = {
-          id: `queue-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+          id: generateId('queue'),
           ...queueItemData,
           addedAt: Date.now(),
           status: 'pending',
@@ -487,7 +488,7 @@ export const useGameStore = create<GameStore>()(
         const rankInfo = getRankTitle(entryData.accuracy);
         const entry: HighscoreEntry = {
           ...entryData,
-          id: `highscore-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+          id: generateId('highscore'),
           playedAt: Date.now(),
           rankTitle: rankInfo.title,
         };
