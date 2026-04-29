@@ -209,12 +209,13 @@ export function startRound(
     roundType: game.settings.medleyMode ? 'medley' : 'short',
   };
 
-  // Reset active players' round stats
+  // Reset active players' round stats (score/combo carry over, accuracy resets per round)
   const updatedPlayers = game.players.map(p => {
     if (!p.eliminated) {
       return {
         ...p,
         currentCombo: 0,
+        accuracy: 0, // Reset per-round accuracy to avoid meaningless accumulation
       };
     }
     return p;
@@ -273,10 +274,15 @@ export function endRoundAndEliminate(game: BattleRoyaleGame): BattleRoyaleGame {
     return game;
   }
 
-  // Find player with lowest score
-  const lowestScorer = activePlayers.reduce((min, p) => 
-    p.score < min.score ? p : min
-  );
+  // Find player with lowest score; use deterministic tiebreaker on tie:
+  // 1. Fewest notes hit (worse performer), 2. Lowest max combo, 3. player ID (stable)
+  const sorted = [...activePlayers].sort((a, b) => {
+    if (a.score !== b.score) return a.score - b.score;
+    if (a.notesHit !== b.notesHit) return a.notesHit - b.notesHit;
+    if (a.maxCombo !== b.maxCombo) return a.maxCombo - b.maxCombo;
+    return a.id.localeCompare(b.id);
+  });
+  const lowestScorer = sorted[0];
 
   // Mark as eliminated
   const updatedPlayers = game.players.map(p =>
