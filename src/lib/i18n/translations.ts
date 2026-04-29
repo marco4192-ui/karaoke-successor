@@ -964,11 +964,6 @@ export function t(key: string, language: Language = 'en'): string {
   return key;
 }
 
-// Create a translation function bound to a language
-export function createTranslator(language: Language) {
-  return (key: string): string => t(key, language);
-}
-
 // Create a nested translation object for object-style access (t.settings.title)
 export function createTranslationObject(language: Language): Record<string, unknown> {
   const langTranslations = translations[language];

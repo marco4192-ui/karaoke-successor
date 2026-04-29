@@ -16,6 +16,10 @@ export interface NetworkStatus {
 // ============================================================================
 // Pending requests queue — stores operations that failed due to being offline
 // Stored in localStorage for persistence across sessions.
+//
+// NOTE (FD7): This infrastructure is defined but the queue is never populated.
+// No addToOfflineQueue() function exists yet. The clearOfflineQueue() export
+// exists for future use. This is planned infrastructure for offline-first support.
 // ============================================================================
 
 const QUEUE_KEY = 'karaoke-offline-queue';
