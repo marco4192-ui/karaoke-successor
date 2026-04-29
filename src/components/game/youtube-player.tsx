@@ -135,6 +135,8 @@ export function YouTubePlayer({
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
+    const cleanupIntervals: ReturnType<typeof setInterval>[] = [];
+    
     // Check if API is already loaded
     if (window.YT && window.YT.Player) {
       setIsApiLoaded(true);
@@ -150,7 +152,8 @@ export function YouTubePlayer({
           setIsApiLoaded(true);
         }
       }, 100);
-      return;
+      cleanupIntervals.push(checkApi);
+      return () => { cleanupIntervals.forEach(clearInterval); };
     }
     
     // CRITICAL: Set the callback BEFORE appending the script to prevent a race condition.
@@ -176,12 +179,16 @@ export function YouTubePlayer({
             setIsApiLoaded(true);
           }
         }, 200);
+        cleanupIntervals.push(poll);
         // Give up after another 10 seconds
         setTimeout(() => clearInterval(poll), 10000);
       }
     }, 10000);
     
-    return () => clearTimeout(fallbackTimeout);
+    return () => {
+      clearTimeout(fallbackTimeout);
+      cleanupIntervals.forEach(clearInterval);
+    };
   }, []);
   
   // Initialize player when API is loaded and videoId changes
