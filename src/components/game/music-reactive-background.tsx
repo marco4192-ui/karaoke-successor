@@ -19,6 +19,17 @@ export function MusicReactiveBackground({
 }: MusicReactiveBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
+  const volumeRef = useRef(volume);
+  const intensityRef = useRef(intensity);
+  const isPlayingRef = useRef(isPlaying);
+  const bpmRef = useRef(bpm);
+
+  // Keep refs in sync with props
+  volumeRef.current = volume;
+  intensityRef.current = intensity;
+  isPlayingRef.current = isPlaying;
+  bpmRef.current = bpm;
+
   const particlesRef = useRef<Array<{
     x: number;
     y: number;
@@ -60,12 +71,14 @@ export function MusicReactiveBackground({
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         // Add new particles based on volume
-        if (isPlaying && volume > 0.05) {
-          const particleCount = Math.floor(volume * 5 * intensity);
-          
+        if (isPlayingRef.current && volumeRef.current > 0.05) {
+          const vol = volumeRef.current;
+          const inten = intensityRef.current;
+          const particleCount = Math.floor(vol * 5 * inten);
+
           for (let i = 0; i < particleCount; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const speed = (0.5 + Math.random() * 2) * volume * intensity;
+            const speed = (0.5 + Math.random() * 2) * vol * inten;
             const hue = (Date.now() / 50 + Math.random() * 60) % 360;
             
             particlesRef.current.push({
@@ -113,21 +126,23 @@ export function MusicReactiveBackground({
         });
         
         // Draw center glow based on volume
-        if (isPlaying && volume > 0.1) {
+        if (isPlayingRef.current && volumeRef.current > 0.1) {
+          const vol = volumeRef.current;
+          const inten = intensityRef.current;
           const gradient = ctx.createRadialGradient(
             canvas.width / 2, canvas.height / 2, 0,
-            canvas.width / 2, canvas.height / 2, 150 + volume * 100
+            canvas.width / 2, canvas.height / 2, 150 + vol * 100
           );
-          gradient.addColorStop(0, `rgba(34, 211, 238, ${volume * 0.2 * intensity})`);
-          gradient.addColorStop(0.5, `rgba(139, 92, 246, ${volume * 0.1 * intensity})`);
+          gradient.addColorStop(0, `rgba(34, 211, 238, ${vol * 0.2 * inten})`);
+          gradient.addColorStop(0.5, `rgba(139, 92, 246, ${vol * 0.1 * inten})`);
           gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
           ctx.fillStyle = gradient;
           ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
-        
+
         // Draw beat pulse effect based on BPM
-        if (isPlaying && bpm > 0) {
-          const beatPhase = (Date.now() / 1000) * (bpm / 60) * Math.PI * 2;
+        if (isPlayingRef.current && bpmRef.current > 0) {
+          const beatPhase = (Date.now() / 1000) * (bpmRef.current / 60) * Math.PI * 2;
           const beatIntensity = (Math.sin(beatPhase) + 1) / 2;
           
           if (beatIntensity > 0.9) {
@@ -150,14 +165,14 @@ export function MusicReactiveBackground({
     };
     
     animationRef.current = requestAnimationFrame(animate);
-    
+
     return () => {
       window.removeEventListener('resize', resizeCanvas);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isPlaying, bpm, intensity, volume]);
+  }, []); // Only set up once — all dynamic values are read from refs
   
   return (
     <canvas
