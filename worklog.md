@@ -318,3 +318,26 @@ Stage Summary:
 - Q13: Cache now uses selective eviction instead of wholesale clear
 - 2 files changed, 23 insertions, 4 deletions
 - Push: 6271c16
+
+---
+Task ID: Q1-Q18 (Session 2)
+Agent: Main
+Task: Complete remaining 10 Quality points (Q1,Q2,Q3,Q4,Q5,Q6,Q9,Q12,Q15,Q18)
+
+Work Log:
+- Session continued from previous context (55/68 points done)
+- Q1: Extracted duplicated UltraStar TXT note parser from tauri-file-storage.ts and song-lyrics-loader.ts into src/lib/parsers/parse-ultrastar-notes.ts
+- Q2: Confirmed use-battle-royale-media.ts was already deleted (dead code from D7)
+- Q3: Created removeClient() helper in mobile-state.ts, replaced 5 duplicated cleanup sites in get-handlers.ts and post-handlers.ts. Fixed bugs: missing profileToClient.delete, missing remoteControlState reset, missing songQueue purge
+- Q4: Changed reverbMix from local variable to class property in audio-effects.ts to prevent GainNode memory leak on every connectEffectChain() call
+- Q5: Added tournament-game, medley-game, missing-words-game, blind-game to IMMERSIVE_SCREENS
+- Q6: Removed non-standard sampleRate/channelCount from getUserMedia constraints in microphone-manager.ts (Tauri WebView compatibility)
+- Q9: Replaced duplicated medley snippet generation (~50 lines) with existing generateMedleySnippets() from medley-snippet-generator.ts
+- Q12: Changed second Pause button in remote control to actually send 'stop' command instead of duplicate 'pause'
+- Q15: Added refreshSongs callback and refresh button to editor-screen.tsx; songs list now updates after save
+- Q18: Rewrote pitch-graph-display.tsx to use ResizeObserver + devicePixelRatio for adaptive canvas resolution
+
+Stage Summary:
+- All 68/68 points are now COMPLETE
+- 10 commits pushed to origin/master
+- Key improvements: shared parsers, memory leak fix, client cleanup bugs fixed, Tauri compatibility, UI responsiveness
