@@ -98,7 +98,7 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
             type="number"
             value={song.start || 0}
             onChange={(e) => {
-              onSongChange(prev => ({ ...prev, start: parseInt(e.target.value) || undefined }));
+              onSongChange(prev => ({ ...prev, start: parseInt(e.target.value) ?? undefined }));
               onSetUnsavedChanges();
             }}
             className="bg-slate-800 border-slate-600"
@@ -148,7 +148,7 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
             type="number"
             value={song.videoGap || 0}
             onChange={(e) => {
-              onSongChange(prev => ({ ...prev, videoGap: parseInt(e.target.value) || undefined }));
+              onSongChange(prev => ({ ...prev, videoGap: parseInt(e.target.value) ?? undefined }));
               onSetUnsavedChanges();
             }}
             className="bg-slate-800 border-slate-600"

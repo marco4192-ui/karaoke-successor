@@ -157,7 +157,7 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
             type="number"
             value={song.medleyStartBeat ?? ''}
             onChange={(e) => {
-              onSongChange(prev => ({ ...prev, medleyStartBeat: parseInt(e.target.value) || undefined }));
+              onSongChange(prev => ({ ...prev, medleyStartBeat: parseInt(e.target.value) ?? undefined }));
               onSetUnsavedChanges();
             }}
             placeholder="Beat-Nummer"
@@ -173,7 +173,7 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
             type="number"
             value={song.medleyEndBeat ?? ''}
             onChange={(e) => {
-              onSongChange(prev => ({ ...prev, medleyEndBeat: parseInt(e.target.value) || undefined }));
+              onSongChange(prev => ({ ...prev, medleyEndBeat: parseInt(e.target.value) ?? undefined }));
               onSetUnsavedChanges();
             }}
             placeholder="Beat-Nummer"
@@ -191,7 +191,7 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
             type="number"
             value={song.end ?? ''}
             onChange={(e) => {
-              onSongChange(prev => ({ ...prev, end: parseInt(e.target.value) || undefined }));
+              onSongChange(prev => ({ ...prev, end: parseInt(e.target.value) ?? undefined }));
               onSetUnsavedChanges();
             }}
             placeholder="Song-Ende in ms"
