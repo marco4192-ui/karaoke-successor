@@ -1,6 +1,8 @@
 // Daily Challenge Leaderboard System
 // Global rankings, XP system, and streak rewards
 
+import { XP_LEVEL_THRESHOLDS } from './xp-config';
+
 export interface DailyChallengeEntry {
   playerId: string;
   playerName: string;
@@ -395,40 +397,27 @@ export function markChallengeCompleted(): void {
   }));
 }
 
-// Get XP level info
+// Get XP level info (uses shared threshold config)
 export function getXPLevel(xp: number): { level: number; title: string; progress: number; nextLevel: number } {
-  const levels = [
-    { xp: 0, title: 'Novice' },
-    { xp: 500, title: 'Beginner' },
-    { xp: 1500, title: 'Apprentice' },
-    { xp: 3000, title: 'Singer' },
-    { xp: 5000, title: 'Performer' },
-    { xp: 8000, title: 'Artist' },
-    { xp: 12000, title: 'Star' },
-    { xp: 18000, title: 'Superstar' },
-    { xp: 25000, title: 'Legend' },
-    { xp: 50000, title: 'Icon' },
-  ];
-
   let currentLevel = 0;
-  let nextLevelXP = levels[1].xp;
+  let nextLevelXP = XP_LEVEL_THRESHOLDS[1].xp;
 
-  for (let i = levels.length - 1; i >= 0; i--) {
-    if (xp >= levels[i].xp) {
+  for (let i = XP_LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (xp >= XP_LEVEL_THRESHOLDS[i].xp) {
       currentLevel = i;
-      nextLevelXP = levels[Math.min(i + 1, levels.length - 1)].xp;
+      nextLevelXP = XP_LEVEL_THRESHOLDS[Math.min(i + 1, XP_LEVEL_THRESHOLDS.length - 1)].xp;
       break;
     }
   }
 
-  const prevXP = levels[currentLevel].xp;
-  const progress = currentLevel === levels.length - 1 
+  const prevXP = XP_LEVEL_THRESHOLDS[currentLevel].xp;
+  const progress = currentLevel === XP_LEVEL_THRESHOLDS.length - 1 
     ? 100 
     : ((xp - prevXP) / (nextLevelXP - prevXP)) * 100;
 
   return {
     level: currentLevel + 1,
-    title: levels[currentLevel].title,
+    title: XP_LEVEL_THRESHOLDS[currentLevel].title,
     progress: Math.min(100, Math.max(0, progress)),
     nextLevel: nextLevelXP,
   };

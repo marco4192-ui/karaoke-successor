@@ -233,3 +233,30 @@ Stage Summary:
 - Push: c4a1a33
 - Alle Bugs (B1-B9), Logikfehler (L1-L16) und Dead-Code (D1-D21) sind jetzt erledigt.
 - Nur noch Q1-Q17 (Code-Qualität) übrig.
+
+---
+Task ID: Q3-Q5
+Agent: Main
+Task: Split song-library.ts into modules, remove debug logs, extract path utilities
+
+Work Log:
+- song-library.ts (1200 Zeilen) analysiert — identifiziert 3 Modularisierungsziele
+- **Q3: Modul-Split:**
+  - `song-paths.ts` erstellt: `isAbsolutePath()`, `resolveSongsBaseFolder()`, `normalizeSongPathFields()`, `SONG_PATH_FIELDS`
+  - `song-url-restore.ts` erstellt: `restoreSongUrls()`, `ensureSongUrls()` — importiert `updateSong` aus song-library (zirkulär, aber OK)
+  - `song-lyrics-loader.ts` erstellt: `loadSongLyrics()` (exportiert), `parseUltraStarTxtContent()` (intern), `createFallbackLyrics()` (intern)
+  - song-library.ts: Re-exports hinzugefügt (`export { restoreSongUrls, ensureSongUrls }` etc.) — alle 25+ bestehenden Imports weiterhin funktionieren
+- **Q4: Debug-Logs entfernt:**
+  - ~30 `console.log` Statements entfernt (Funktionseintritte, Status-Logs, Diagnose)
+  - Alle `console.error` und `console.warn` beibehalten
+- **Q5: Duplizierte Pfadnormalisierung extrahiert:**
+  - `isAbsolutePath` war 2× definiert (restoreSongUrls, getAllSongsAsync) → jetzt 1× in song-paths.ts
+  - baseFolder-Auflösung (localStorage fallback, normalize, absolute check) war 3× dupliziert → `resolveSongsBaseFolder()`
+  - Path-Field-Normalisierungsschleife war 2× dupliziert → `normalizeSongPathFields()`
+  - ID-Generierung mit `generateId('custom')` aus `@/lib/utils` ersetzt (3 Stellen: addSong, addSongs, replaceSong)
+- TypeScript-Verifizierung: Keine neuen Fehler eingeführt (1 pre-existing Fehler in unified-party-setup.components.tsx)
+
+Stage Summary:
+- song-library.ts: 1200 → ~620 Zeilen (Netto: -576 Zeilen, +501 in neuen Dateien)
+- 4 Dateien geändert, 0 neue TypeScript-Fehler
+- Push: 075bd02
