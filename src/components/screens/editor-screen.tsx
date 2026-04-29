@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -231,7 +231,8 @@ function GenreLanguageEditor({
 
 export function EditorScreen({ onBack }: { onBack: () => void }) {
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
-  const [songs] = useState<Song[]>(() => getAllSongs());
+  const [songs, setSongs] = useState<Song[]>(() => getAllSongs());
+  const refreshSongs = useCallback(() => setSongs(getAllSongs()), []);
   const { setSong } = useGameStore();
   const [filterMode, setFilterMode] = useState<'all' | 'no-genre' | 'no-language' | 'incomplete'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -309,6 +310,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
 
   const handleSave = (updatedSong: Song) => {
     updateSong(updatedSong.id, updatedSong);
+    refreshSongs();
     setSelectedSong(null);
   };
 
@@ -338,9 +340,14 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               <h1 className="text-3xl font-bold mb-2">Karaoke Editor</h1>
               <p className="text-white/60">Bearbeite deine Songs</p>
             </div>
-            <Button onClick={onBack} variant="outline" className="border-white/20 hover:bg-white/10">
-              ← Zurück
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={refreshSongs} variant="outline" className="border-white/20 hover:bg-white/10" title="Songliste neu laden">
+                🔄
+              </Button>
+              <Button onClick={onBack} variant="outline" className="border-white/20 hover:bg-white/10">
+                ← Zurück
+              </Button>
+            </div>
           </div>
 
           {/* Search and Filter Row */}
