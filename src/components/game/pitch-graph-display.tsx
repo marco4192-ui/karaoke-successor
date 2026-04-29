@@ -71,11 +71,13 @@ export function PitchGraphDisplay({
         colorScheme,
         timeWindow: 5000,
       };
+      // Destroy previous renderer before creating a new one
+      rendererRef.current?.destroy();
       rendererRef.current = new PitchGraphRenderer(config);
       rendererRef.current.attachCanvas(canvas, true);
-      // Apply DPR scaling so the renderer draws at the right resolution
+      // Apply DPR scaling — use setTransform to avoid cumulative scaling on resize
       const ctx = canvas.getContext('2d');
-      if (ctx) ctx.scale(dpr, dpr);
+      if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
   }, [minPitch, maxPitch, showTargetLine, colorScheme]);
 
