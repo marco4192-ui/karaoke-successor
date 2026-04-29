@@ -55,18 +55,6 @@ export async function nativeWriteFileText(filePath: string, content: string): Pr
   return invoke<void>('native_write_file_text', { filePath, content });
 }
 
-// ---- File Remove ----
-
-/** Remove a single file. */
-export async function nativeRemoveFile(filePath: string): Promise<void> {
-  return invoke<void>('native_remove_file', { filePath });
-}
-
-/** Remove a directory recursively. */
-export async function nativeRemoveDir(dirPath: string): Promise<void> {
-  return invoke<void>('native_remove_dir', { dirPath });
-}
-
 // ---- Dialogs ----
 
 /** Open a native folder picker. Returns the selected path or null. */
@@ -90,18 +78,4 @@ export async function nativePickFileSave(
   extensions: string[]
 ): Promise<string | null> {
   return invoke<string | null>('native_pick_file_save', { title, filterName, extensions });
-}
-
-/** Show a native message dialog. Returns true if acknowledged. */
-export async function nativeMessage(
-  title: string,
-  message: string,
-  kind: 'info' | 'warning' | 'error' = 'info'
-): Promise<boolean> {
-  return invoke<boolean>('native_message', { title, message, kind });
-}
-
-/** Show a native yes/no confirm dialog. Returns true if user chose Yes. */
-export async function nativeConfirm(title: string, message: string): Promise<boolean> {
-  return invoke<boolean>('native_confirm', { title, message });
 }
