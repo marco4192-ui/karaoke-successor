@@ -225,7 +225,15 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
   const clientIdRef = useRef(clientId);
   clientIdRef.current = clientId;
 
+  // Debounce wake-up handler: visibilitychange, pageshow, and focus can
+  // all fire within milliseconds of each other. We only need one reconnect.
+  const wakeUpTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleWakeUp = useCallback(() => {
+    // Debounce: ignore subsequent calls within 2 seconds
+    if (wakeUpTimerRef.current) return;
+    wakeUpTimerRef.current = setTimeout(() => { wakeUpTimerRef.current = null; }, 2000);
+
     const currentClientId = clientIdRef.current;
     if (!currentClientId) return;
     console.log('[MobileClient] Wake-up detected, verifying connection...');
