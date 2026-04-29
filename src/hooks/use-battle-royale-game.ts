@@ -85,6 +85,9 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   const [currentTime, setCurrentTime] = useState(0);
   const gameLoopRef = useRef<number | null>(null);
   const noteProgressRef = useRef<Map<string, { ticksHit: number; ticksTotal: number }>>(new Map());
+  // Throttle setCurrentTime to ~20fps (50ms) — UI display doesn't need 60fps.
+  // Scoring uses audioRef.current.currentTime directly, not the state value.
+  const lastCurrentTimeUpdateRef = useRef(0);
 
   // ── Pre-compute timing data for scoring when song is loaded ────────
   const timingData = useMemo(() => {
@@ -216,9 +219,13 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
       const deltaTime = timestamp - lastTickTime;
 
-      // Update current time from audio
+      // Update current time from audio (throttled to ~20fps)
       if (audioRef.current) {
-        setCurrentTime(audioRef.current.currentTime * 1000);
+        const now = performance.now();
+        if (now - lastCurrentTimeUpdateRef.current >= 50) {
+          setCurrentTime(audioRef.current.currentTime * 1000);
+          lastCurrentTimeUpdateRef.current = now;
+        }
       }
 
       // Evaluate scoring for all active players simultaneously
