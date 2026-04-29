@@ -668,27 +668,7 @@ function parseLyricsFromTxt(content: string, bpm: number, gap: number): LyricLin
   return convertNotesToLyricLines(notes, lineBreakBeats, bpm, gap);
 }
 
-// Copy a file to the app's persistent data directory
-export async function copyFileToAppData(
-  sourcePath: string,
-  relativePath: string
-): Promise<string | null> {
-  const tauri = await getTauri();
-  if (!tauri) return null;
-
-  try {
-    const result = await tauri.invoke<string>('copy_file_to_app_data', {
-      sourcePath,
-      relativePath,
-    });
-    return result;
-  } catch (error) {
-    console.error('Failed to copy file to app data:', error);
-    return null;
-  }
-}
-
-// Get the app data directory path
+// Get the app data directory path (used internally by getPlayableUrl)
 export async function getAppDataPath(): Promise<string | null> {
   const tauri = await getTauri();
   if (!tauri) return null;
@@ -698,61 +678,6 @@ export async function getAppDataPath(): Promise<string | null> {
   } catch (error) {
     console.error('Failed to get app data path:', error);
     return null;
-  }
-}
-
-// Check if a file exists in app data
-export async function fileExistsInAppData(relativePath: string): Promise<boolean> {
-  if (!isTauri()) return false;
-
-  try {
-    return await exists(relativePath, { baseDir: BaseDirectory.AppData });
-  } catch (error) {
-    console.error('Failed to check file existence:', error);
-    return false;
-  }
-}
-
-// Get a file URL for playback (file:// URL)
-export async function getFileUrl(relativePath: string): Promise<string | null> {
-  const tauri = await getTauri();
-  if (!tauri) return null;
-
-  try {
-    return await tauri.invoke<string>('get_file_url', {
-      relativePath,
-    });
-  } catch (error) {
-    console.error('Failed to get file URL:', error);
-    return null;
-  }
-}
-
-// Read file as base64 (for small files or fallback)
-export async function readFileAsBase64(relativePath: string): Promise<string | null> {
-  const tauri = await getTauri();
-  if (!tauri) return null;
-
-  try {
-    return await tauri.invoke<string>('read_file_as_base64', {
-      relativePath,
-    });
-  } catch (error) {
-    console.error('Failed to read file as base64:', error);
-    return null;
-  }
-}
-
-// List all imported song folders
-export async function listImportedSongs(): Promise<string[]> {
-  const tauri = await getTauri();
-  if (!tauri) return [];
-
-  try {
-    return await tauri.invoke<string[]>('list_imported_songs');
-  } catch (error) {
-    console.error('Failed to list imported songs:', error);
-    return [];
   }
 }
 
@@ -1102,19 +1027,4 @@ export function clearBlobUrlCache(): void {
 
 }
 
-// Read stored file content as text (for txt files)
-export async function readStoredTextFile(relativePath: string): Promise<string | null> {
-  if (!isTauri()) {
-    // Browser mode - can't read blob URLs as text easily
-    return null;
-  }
 
-  try {
-    return await readTextFile(relativePath, { 
-      baseDir: BaseDirectory.AppData 
-    });
-  } catch (error) {
-    console.error('Failed to read text file:', error);
-    return null;
-  }
-}
