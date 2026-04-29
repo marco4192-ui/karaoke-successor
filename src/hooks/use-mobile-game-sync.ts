@@ -11,6 +11,7 @@ export function useMobileGameSync(
   song: Song | null,
   isPlaying: boolean,
   gameMode: string,
+  songEnded: boolean = false,
 ) {
   useEffect(() => {
     if (!song) return;
@@ -25,10 +26,8 @@ export function useMobileGameSync(
             payload: {
               currentSong: { id: song.id, title: song.title, artist: song.artist },
               isPlaying: isPlaying,
-              // Note: currentTime is NOT included here to avoid stale closures.
-              // The sync runs on a 2-second interval — exact time isn't critical.
               gameMode: gameMode,
-              songEnded: false,
+              songEnded: songEnded,
             },
           }),
         });
@@ -44,5 +43,5 @@ export function useMobileGameSync(
     const syncInterval = setInterval(syncGameState, 2000);
 
     return () => clearInterval(syncInterval);
-  }, [song, isPlaying, gameMode]);
+  }, [song, isPlaying, gameMode, songEnded]);
 }

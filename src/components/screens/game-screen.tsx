@@ -337,7 +337,7 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
   }, [isDuetMode, mobilePitch, setP2DetectedPitch, setP2Volume]);
   
   // Mobile companion sync - periodic game state updates
-  useMobileGameSync(song, isPlaying, gameState.gameMode);
+  useMobileGameSync(song, isPlaying, gameState.gameMode, gameState.status === 'ended');
 
   // Special game modes (blind + missing words)
   useGameModes({

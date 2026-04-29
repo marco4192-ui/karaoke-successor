@@ -264,7 +264,7 @@ function PassTheMicGameView({
   const { pitchResult, initialize, start, stop, switchMicrophone } = usePitchDetector();
 
   // ── Mobile game sync for Pass-the-Mic ──
-  useMobileGameSync(effectiveSong, isPlaying && phase === 'playing', 'pass-the-mic');
+  useMobileGameSync(effectiveSong, isPlaying && phase === 'playing', 'pass-the-mic', phase === 'results');
 
   // ── Song playing status for Escape handler ──
   useEffect(() => {

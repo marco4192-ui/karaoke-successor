@@ -186,7 +186,7 @@ export function PtmGameScreen({
   } | null>(null);
 
   // ── Mobile game sync ──
-  useMobileGameSync(effectiveSong, isPlaying && phase === 'playing', 'pass-the-mic');
+  useMobileGameSync(effectiveSong, isPlaying && phase === 'playing', 'pass-the-mic', phase === 'results');
 
   // ── Song playing status for Escape handler (ref-guarded to prevent React #185) ──
   useEffect(() => {
