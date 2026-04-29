@@ -114,7 +114,10 @@ export async function preparePtmNextSong(
   songSelection: string,
   playerCount: number,
   explicitSegmentDuration?: number,
+  _retryCount: number = 0,
 ): Promise<PtmNextSongAction> {
+  const MAX_RETRIES = 20;
+
   const filteredSongs = getFilteredSongs();
 
   switch (songSelection) {
@@ -130,8 +133,12 @@ export async function preparePtmNextSong(
 
       const segments = generatePassTheMicSegments(songWithUrls, playerCount, explicitSegmentDuration);
       if (segments.length === 0) {
-        // Song too short, try another
-        return preparePtmNextSong(songSelection, playerCount, explicitSegmentDuration);
+        // Song too short — retry with another random song (up to MAX_RETRIES)
+        if (_retryCount < MAX_RETRIES) {
+          return preparePtmNextSong(songSelection, playerCount, explicitSegmentDuration, _retryCount + 1);
+        }
+        // All retries exhausted — fall back to library selection
+        return { mode: 'library' };
       }
       const segDur = (segments[1]?.startTime ?? segments[0]?.endTime ?? 30000) - (segments[0]?.startTime ?? 0);
 
