@@ -44,6 +44,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           profile: regPayload.profile || null,
           queueCount: 0,
           hasRemoteControl: false,
+          clientIp: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || null,
         };
         
         mobileClients.set(newClientId, newClient);
