@@ -50,8 +50,8 @@ export function WinnerView({ winner, sortedPlayers, onEndGame }: WinnerViewProps
         <h2 className="text-xl font-bold mb-4">Elimination Order</h2>
         <ScrollArea className="h-64">
           <div className="flex justify-center gap-3 flex-wrap">
-            {sortedPlayers.reverse().map((player, index) => (
-              <div 
+            {[...sortedPlayers].reverse().map((player, index) => (
+              <div
                 key={player.id}
                 className={`p-3 rounded-lg ${player.id === winner?.id ? 'bg-amber-500/20 border border-amber-500' : 'bg-white/5'}`}
               >
