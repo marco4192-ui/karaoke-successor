@@ -308,11 +308,14 @@ export function NoteHighway({
 
   // Determine color scheme based on player number
   const colorScheme = playerNumber === 1 ? 'cyan' : 'pink';
+  const bgGradientClass = playerNumber === 1
+    ? 'absolute inset-0 bg-gradient-to-b from-cyan-900/20 to-transparent pointer-events-none'
+    : 'absolute inset-0 bg-gradient-to-t from-pink-900/20 to-transparent pointer-events-none';
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${className}`}>
       {/* Background gradient */}
-      <div className={`absolute inset-0 bg-gradient-to-${playerNumber === 1 ? 'b' : 't'} from-${colorScheme}-900/20 to-transparent pointer-events-none`} />
+      <div className={bgGradientClass} />
 
       {/* Pitch grid lines */}
       <PitchGrid count={7} color={colorScheme} />
