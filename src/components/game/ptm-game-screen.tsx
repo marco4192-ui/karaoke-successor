@@ -53,18 +53,19 @@ interface PtmSegment {
   playerId: string | null;
 }
 
-interface PtmSettings {
+export interface PassTheMicSettings {
   segmentDuration: number;
   difficulty: Difficulty;
   micId: string;
   micName: string;
+  randomSwitches?: boolean;
   sharedMicId?: string | null;
   sharedMicName?: string | null;
 }
 
 type GamePhase = 'intro' | 'countdown' | 'playing' | 'transitioning' | 'song-results' | 'series-results';
 
-const DEFAULT_SETTINGS: PtmSettings = {
+const DEFAULT_SETTINGS: PassTheMicSettings = {
   segmentDuration: 30,
   difficulty: 'medium',
   micId: 'default',
@@ -77,7 +78,7 @@ interface PtmGameScreenProps {
   players: PtmPlayer[];
   song: Song;
   segments: PtmSegment[];
-  settings: PtmSettings | null;
+  settings: PassTheMicSettings | null;
   onUpdateGame: (players: PtmPlayer[], segments: PtmSegment[]) => void;
   onEndGame: () => void;
   onNavigate?: (screen: string) => void;
@@ -94,7 +95,7 @@ export function PtmGameScreen({
   onNavigate,
   onPause,
 }: PtmGameScreenProps) {
-  const safeSettings: PtmSettings = settings ?? DEFAULT_SETTINGS;
+  const safeSettings: PassTheMicSettings = settings ?? DEFAULT_SETTINGS;
   const setIsSongPlaying = usePartyStore(s => s.setIsSongPlaying);
   const pauseDialogAction = usePartyStore(s => s.pauseDialogAction);
   const passTheMicSeriesHistory = usePartyStore(s => s.passTheMicSeriesHistory);

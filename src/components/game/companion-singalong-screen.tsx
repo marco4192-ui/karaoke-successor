@@ -33,7 +33,7 @@ export interface CompanionRoundResult {
   playerScores: Record<string, { score: number; notesHit: number; notesMissed: number; maxCombo: number }>;
 }
 
-interface CompanionSingAlongSettings {
+export interface CompanionSingAlongSettings {
   difficulty: Difficulty;
 }
 

@@ -15,7 +15,11 @@ import type {
   MedleyRoundResult,
 } from '@/components/game/medley/medley-types';
 import type { CompetitiveGame } from '@/lib/game/competitive-words-blind';
-import type { CompanionRoundResult } from '@/components/game/companion-singalong-screen';
+import type { PassTheMicPlayer, PassTheMicSegment } from '@/components/game/ptm-game-screen';
+import type { PassTheMicSettings } from '@/components/game/ptm-game-screen';
+import type { CompanionPlayer, CompanionRoundResult } from '@/components/game/companion-singalong-screen';
+import type { CompanionSingAlongSettings } from '@/components/game/companion-singalong-screen';
+import type { RateMySongSettings } from '@/components/game/rate-my-song-screen';
 
 /** Per-player result for a single Pass-the-Mic round (song). */
 export interface PassTheMicRoundResult {
@@ -42,14 +46,14 @@ interface PartyStore {
   setBattleRoyaleGame: (game: BattleRoyaleGame | null) => void;
 
   // Pass the Mic
-  passTheMicPlayers: any[];
-  setPassTheMicPlayers: (players: any[]) => void;
+  passTheMicPlayers: PassTheMicPlayer[];
+  setPassTheMicPlayers: (players: PassTheMicPlayer[]) => void;
   passTheMicSong: Song | null;
   setPassTheMicSong: (song: Song | null) => void;
-  passTheMicSegments: any[];
-  setPassTheMicSegments: (segments: any[]) => void;
-  passTheMicSettings: any;
-  setPassTheMicSettings: (settings: any) => void;
+  passTheMicSegments: PassTheMicSegment[];
+  setPassTheMicSegments: (segments: PassTheMicSegment[]) => void;
+  passTheMicSettings: PassTheMicSettings | null;
+  setPassTheMicSettings: (settings: PassTheMicSettings | null) => void;
   // Series history: accumulated scores across multiple Pass-the-Mic songs
   passTheMicSeriesHistory: PassTheMicRoundResult[];
   setPassTheMicSeriesHistory: (history: PassTheMicRoundResult[]) => void;
@@ -58,12 +62,12 @@ interface PartyStore {
   setPtmMedleySnippets: (snippets: Array<{ song: Song; startTime: number; endTime: number; duration: number }>) => void;
 
   // Companion Sing-A-Long
-  companionPlayers: any[];
-  setCompanionPlayers: (players: any[]) => void;
+  companionPlayers: CompanionPlayer[];
+  setCompanionPlayers: (players: CompanionPlayer[]) => void;
   companionSong: Song | null;
   setCompanionSong: (song: Song | null) => void;
-  companionSettings: any;
-  setCompanionSettings: (settings: any) => void;
+  companionSettings: CompanionSingAlongSettings | null;
+  setCompanionSettings: (settings: CompanionSingAlongSettings | null) => void;
   // Series history: accumulated scores across multiple Companion Sing-A-Long songs
   companionSeriesHistory: CompanionRoundResult[];
   setCompanionSeriesHistory: (history: CompanionRoundResult[]) => void;
@@ -85,8 +89,8 @@ interface PartyStore {
   setCompetitiveGame: (game: CompetitiveGame | null) => void;
 
   // Rate my Song
-  rateMySongSettings: any;
-  setRateMySongSettings: (settings: any) => void;
+  rateMySongSettings: RateMySongSettings | null;
+  setRateMySongSettings: (settings: RateMySongSettings | null) => void;
   rateMySongPlayerIds: string[];
   setRateMySongPlayerIds: (ids: string[]) => void;
 
