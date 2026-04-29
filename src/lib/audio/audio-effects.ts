@@ -286,7 +286,15 @@ export class AudioEffectsEngine {
     }
     
     // Connect wet to master
-    wetChain.connect(this.wetGain!);
+    // Only connect wetChain directly if no parallel sends (reverb/delay) are active.
+    // When reverb or delay are enabled, they handle their own connection to wetGain
+    // via parallel sends. Connecting wetChain directly would double the signal.
+    const hasEffectSends =
+      (this.settings.reverb.enabled && this.reverbNode) ||
+      (this.settings.delay.enabled && this.delayNode);
+    if (!hasEffectSends) {
+      wetChain.connect(this.wetGain!);
+    }
     this.wetGain!.connect(this.masterGain!);
     
     // Output to speakers
