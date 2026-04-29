@@ -35,13 +35,20 @@ function checkRateLimit(ip: string, maxRequests: number): boolean {
 }
 
 // Periodic cleanup of stale entries (every 5 minutes)
-setInterval(() => {
+// Store timer ID so it can be cleared during HMR
+const cleanupTimer = setInterval(() => {
   const now = Date.now();
   for (const [ip, entry] of rateLimitMap) {
     entry.timestamps = entry.timestamps.filter(t => now - t < WINDOW_MS);
     if (entry.timestamps.length === 0) rateLimitMap.delete(ip);
   }
 }, 300_000);
+
+// Clean up on module disposal (HMR)
+if (typeof globalThis !== 'undefined') {
+  const originals = globalThis as Record<string, unknown>;
+  originals.__mobileRouteCleanup = () => clearInterval(cleanupTimer);
+}
 
 // ===================== ROUTE HANDLERS =====================
 
