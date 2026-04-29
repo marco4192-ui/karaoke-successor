@@ -213,18 +213,21 @@ export class PitchDetector {
     const rms = Math.sqrt(sum / this.buffer.length);
     const volume = Math.min(1, rms * 5); // Normalize to 0-1
 
-    // Noise gate check
-    if (this.config.noiseGateEnabled && rms < 0.01) {
-      this.onPitchDetected?.({
-        frequency: null,
-        note: null,
-        clarity: 0,
-        volume,
-        isSinging: false,
-        singingConfidence: 0,
-      });
-      this.animationFrame = requestAnimationFrame(() => this.detect());
-      return;
+    // Noise gate check — convert dB threshold to RMS for comparison
+    if (this.config.noiseGateEnabled) {
+      const rmsThreshold = Math.pow(10, this.config.noiseGateThreshold / 20);
+      if (rms < rmsThreshold) {
+        this.onPitchDetected?.({
+          frequency: null,
+          note: null,
+          clarity: 0,
+          volume,
+          isSinging: false,
+          singingConfidence: 0,
+        });
+        this.animationFrame = requestAnimationFrame(() => this.detect());
+        return;
+      }
     }
 
     // Volume threshold check (configurable)
