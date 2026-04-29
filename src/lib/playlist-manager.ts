@@ -6,6 +6,35 @@ export type { Playlist, PlaylistFolder, PlaylistExport } from '@/types/game';
 
 const STORAGE_KEY = 'karaoke-playlists';
 const FOLDERS_KEY = 'karaoke-playlist-folders';
+const PLAY_COUNTS_KEY = 'karaoke-song-play-counts';
+
+// ============ PLAY COUNT TRACKING ============
+
+/** Load play counts from localStorage. */
+function getPlayCounts(): Record<string, number> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const stored = localStorage.getItem(PLAY_COUNTS_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Persist play counts to localStorage. */
+function savePlayCounts(counts: Record<string, number>): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(PLAY_COUNTS_KEY, JSON.stringify(counts));
+  } catch (e) {
+    console.error('Failed to save play counts:', e);
+  }
+}
+
+/** Get the play count for a specific song. */
+export function getSongPlayCount(songId: string): number {
+  return getPlayCounts()[songId] || 0;
+}
 
 // Get all playlists from storage
 export function getPlaylists(): Playlist[] {
@@ -201,20 +230,24 @@ export function recordSongPlay(songId: string): void {
     recentPlaylist.updatedAt = now;
   }
   
-  // Update Most Played — move to front to represent play count ranking
+  // Update Most Played — track actual play counts and sort by count descending
   const mostPlayedPlaylist = playlists.find(p => p.id === SYSTEM_PLAYLISTS.MOST_PLAYED);
   if (mostPlayedPlaylist) {
-    // Remove current position (if present) to re-rank
-    const existingIndex = mostPlayedPlaylist.songIds.indexOf(songId);
-    if (existingIndex !== -1) {
-      mostPlayedPlaylist.songIds.splice(existingIndex, 1);
+    const counts = getPlayCounts();
+    counts[songId] = (counts[songId] || 0) + 1;
+    savePlayCounts(counts);
+
+    // Collect all unique song IDs with their counts (existing + current)
+    const countMap = new Map<string, number>();
+    for (const id of mostPlayedPlaylist.songIds) {
+      countMap.set(id, counts[id] || 0);
     }
-    // Re-insert at the front (most recently played = highest ranked)
-    mostPlayedPlaylist.songIds.unshift(songId);
-    // Keep only top 100
-    if (mostPlayedPlaylist.songIds.length > 100) {
-      mostPlayedPlaylist.songIds = mostPlayedPlaylist.songIds.slice(0, 100);
-    }
+    countMap.set(songId, counts[songId]);
+
+    // Sort by play count descending, then by last-updated recency
+    mostPlayedPlaylist.songIds = [...countMap.keys()]
+      .sort((a, b) => (countMap.get(b) || 0) - (countMap.get(a) || 0))
+      .slice(0, 100);
     mostPlayedPlaylist.updatedAt = now;
   }
   
