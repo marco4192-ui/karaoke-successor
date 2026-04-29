@@ -145,7 +145,10 @@ export function useRemoteControl({
               case 'library':
               case 'queue':
               case 'settings':
-                // Navigate to other screens
+                // NOTE: All three commands currently stop the game and go back.
+                // Navigation to specific screens is not available during gameplay
+                // (no navigate callback). The companion would need to send a
+                // separate command after the game ends to reach a specific screen.
                 stop();
                 onBack();
                 break;

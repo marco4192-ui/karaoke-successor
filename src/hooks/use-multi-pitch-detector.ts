@@ -29,8 +29,6 @@
  * // Get individual player pitch
  * const p1Pitch = multiPitch.getPlayerPitch('p1');
  * ```
- *
- * Also exports useSinglePitchDetector() for backward-compatible single-player mode.
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { 
@@ -158,6 +156,11 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
       const allSuccess = results.every(r => r);
 
       if (allSuccess || results.some(r => r)) {
+        // Log warning if some players failed to initialize
+        if (!allSuccess) {
+          const failedCount = results.filter(r => !r).length;
+          console.warn(`[useMultiPitchDetector] ${failedCount} player(s) failed to initialize, continuing with ${results.filter(r => r).length} active player(s)`);
+        }
         setIsInitialized(true);
         
         // Initialize pitch state for all players
