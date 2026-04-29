@@ -380,8 +380,12 @@ export function isChallengeCompletedToday(): boolean {
   
   const stored = localStorage.getItem(DAILY_CHALLENGE_KEY);
   if (stored) {
-    const data = JSON.parse(stored);
-    return data.date === new Date().toDateString() && data.completed;
+    try {
+      const data = JSON.parse(stored);
+      return data.date === new Date().toDateString() && data.completed;
+    } catch {
+      return false;
+    }
   }
   return false;
 }
