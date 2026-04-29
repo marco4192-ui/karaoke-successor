@@ -143,6 +143,7 @@ export class AudioEffectsEngine {
   private currentPreset: AudioEffectPreset | null = null;
   
   private ownsAudioContext = false; // true if we created it, false if reused
+  private isInitialized = false;
 
   /**
    * Initialize the audio effects engine.
