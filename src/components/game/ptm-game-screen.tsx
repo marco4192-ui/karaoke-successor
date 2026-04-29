@@ -13,7 +13,6 @@ import { useSmoothedPitch } from '@/hooks/use-smoothed-pitch';
 import { useGameSettings } from '@/hooks/use-game-settings';
 import { useYouTubeGame } from '@/hooks/use-youtube-game';
 import { useMobileGameSync } from '@/hooks/use-mobile-game-sync';
-import { DIFFICULTY_SETTINGS } from '@/types/game';
 import { calculateScoringMetadata } from '@/lib/game/scoring';
 import { findActiveNote, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';
 import { calculatePitchStats, PitchStats, NOTE_WINDOW, VISIBLE_TOP, VISIBLE_RANGE, getVisibleNotes } from '@/lib/game/note-utils';

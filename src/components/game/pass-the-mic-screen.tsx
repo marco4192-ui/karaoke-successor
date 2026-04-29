@@ -8,7 +8,6 @@ import { Progress } from '@/components/ui/progress';
 import { Song, PlayerProfile, PLAYER_COLORS, LyricLine, Difficulty } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
-import { DIFFICULTY_SETTINGS } from '@/types/game';
 import { usePartyStore } from '@/lib/game/party-store';
 import { calculateScoringMetadata } from '@/lib/game/scoring';
 import { findActiveNote, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';

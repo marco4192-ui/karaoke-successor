@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Song, PlayerProfile, PLAYER_COLORS, LyricLine, Difficulty, DIFFICULTY_SETTINGS } from '@/types/game';
+import { Song, PlayerProfile, PLAYER_COLORS, LyricLine, Difficulty } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';

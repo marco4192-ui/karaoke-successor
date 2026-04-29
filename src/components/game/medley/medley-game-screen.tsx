@@ -9,7 +9,6 @@ import { useMultiPitchDetector, type PlayerPitchConfig } from '@/hooks/use-multi
 import { usePartyStore } from '@/lib/game/party-store';
 import { calculateScoringMetadata } from '@/lib/game/scoring';
 import { findActiveNoteFlat, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';
-import { DIFFICULTY_SETTINGS } from '@/types/game';
 import { ensureSongUrls } from '@/lib/game/song-library';
 import type { Note, LyricLine, PitchDetectionResult } from '@/types/game';
 import type {
