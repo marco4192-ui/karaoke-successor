@@ -226,9 +226,10 @@ function PitchIndicator({
   visibleRange: number;
   color?: 'cyan' | 'pink';
 }) {
-  if (!detectedPitch) return null;
+  if (detectedPitch === null) return null;
 
-  const pitchY = visibleTop + visibleRange - ((detectedPitch - pitchStats.minPitch) / pitchStats.pitchRange) * visibleRange;
+  const pr = pitchStats.pitchRange || 1;
+  const pitchY = visibleTop + visibleRange - ((detectedPitch - pitchStats.minPitch) / pr) * visibleRange;
 
   const colorClasses = {
     cyan: 'from-cyan-400 to-cyan-600 shadow-cyan-500/70 ring-cyan-300',
