@@ -136,14 +136,17 @@ class MicrophoneInstance {
       });
 
       // Get microphone stream with constraints
+      // NOTE: sampleRate and channelCount are not reliably supported as
+      // required constraints in Tauri's WebView (WebView2/WebKitGTK).
+      // The AudioContext sampleRate handles rate conversion, and mono
+      // downmixing is done by the audio pipeline. Removing these avoids
+      // getUserMedia failures on certain Tauri platforms.
       const constraints: MediaStreamConstraints = {
         audio: {
           deviceId: this.config.deviceId !== 'default' ? { exact: this.config.deviceId } : undefined,
           echoCancellation: this.config.echoCancellation,
           noiseSuppression: this.config.noiseSuppression,
           autoGainControl: this.config.autoGainControl,
-          sampleRate: this.config.sampleRate,
-          channelCount: 1, // Mono for karaoke
         },
       };
 
