@@ -6,6 +6,7 @@ import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { safeAlert } from '@/lib/safe-dialog';
 import { getExtendedStats, updateStatsAfterGame, saveExtendedStats, calculateSongXP, getLevelForXP } from '@/lib/game/player-progression';
+import { recordSongPlay } from '@/lib/playlist-manager';
 
 // Imports from extracted components (also re-exported for backward compatibility)
 import { SongHighscoreModal } from '@/components/results/song-highscore-modal';
@@ -282,6 +283,9 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           rating: playerResult.rating,
         });
         savedToHighscoreRef.current = true;
+
+        // Record song play for Recently Played & Most Played system playlists
+        recordSongPlay(song.id);
 
         // Also save P2 highscore for duel/competitive modes if P2 has a registered profile
         const player2Result = results.players[1];
