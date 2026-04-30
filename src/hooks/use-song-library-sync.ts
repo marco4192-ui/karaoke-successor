@@ -15,10 +15,21 @@ import type { PlayerProfile } from '@/types/game';
 export function useSongLibrarySync(profiles: PlayerProfile[]): {
   syncSongLibrary: () => Promise<void>;
 } {
+  // Track last synced song count to avoid redundant syncs when library hasn't changed
+  const lastSyncedCountRef = { value: -1 };
+
   // Sync song library to server for companion clients
   const syncSongLibrary = useCallback(async () => {
     try {
       const allSongs = getAllSongs();
+
+      // Skip sync if song count hasn't changed since last sync.
+      // Companion clients get the full library on initial connect anyway.
+      if (allSongs.length === lastSyncedCountRef.value) {
+        return;
+      }
+      lastSyncedCountRef.value = allSongs.length;
+
       const simplifiedSongs = allSongs
         .filter(song => song.id && song.title) // Skip songs without id or title
         .map(song => ({
