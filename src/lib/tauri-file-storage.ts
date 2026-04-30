@@ -13,6 +13,19 @@ import {
 import { normalizeTxtContent } from '@/lib/utils';
 
 /**
+ * Sanitize a filename to prevent directory traversal attacks.
+ * Strips path separators, parent directory references (..), and
+ * null bytes from filenames before using them in path construction.
+ */
+function sanitizeFileName(name: string): string {
+  return name
+    .replace(/[\\/]/g, '_')    // path separators → underscore
+    .replace(/\.\./g, '_')     // parent directory references → underscore
+    .replace(/\0/g, '')        // null bytes (prevent injection)
+    .replace(/^\./, '_');      // leading dot (prevent hidden files)
+}
+
+/**
  * Normalize a file path for cross-platform use in Tauri.
  * - Converts backslashes to forward slashes
  * - Strips trailing slashes
@@ -727,7 +740,8 @@ export async function storeSongFiles(
     const saveFile = async (file: File, type: string): Promise<string> => {
       const arrayBuffer = await file.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
-      const relativePath = `songs/${songFolder}/${file.name}`;
+      const safeName = sanitizeFileName(file.name);
+      const relativePath = `songs/${songFolder}/${safeName}`;
       
       // Save using Tauri fs plugin (writeFile is the correct function name)
       await writeFile(relativePath, uint8Array, { 
