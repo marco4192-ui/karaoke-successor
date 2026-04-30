@@ -133,7 +133,10 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
 
 
   // Note performance tracking for visual display modes
+  // Ref-based for 60fps writes; synced to state at ~10Hz to reduce GC pressure
   const [notePerformance, setNotePerformance] = useState<Map<string, NotePerformanceSample[]>>(new Map());
+  const notePerformanceRef = useRef<Map<string, NotePerformanceSample[]>>(new Map());
+  const lastNotePerfSyncRef = useRef(0);
 
   // Additional player states (P2, P3, P4) - P1 uses the main store
   const [p2State, setP2State] = useState<PlayerScoringState>({ ...DEFAULT_PLAYER_SCORING_STATE });
@@ -163,6 +166,8 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     setP1ScoreEvents([]);
     setP2ScoreEvents([]);
     setNotePerformance(new Map());
+    notePerformanceRef.current = new Map();
+    lastNotePerfSyncRef.current = 0;
     setP2State({ ...DEFAULT_PLAYER_SCORING_STATE });
     setP2DetectedPitch(null);
     noteProgressRef.current.clear();
@@ -357,15 +362,20 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
             noteProgress.ticksEvaluated++;
             noteProgress.lastEvaluatedTime = currentTime;
 
-            setNotePerformance(prev => {
-              const newMap = new Map(prev);
-              const samples = newMap.get(noteId) || [];
-              const trimmed = samples.length >= MAX_SAMPLES_PER_NOTE
-                ? samples.slice(-MAX_SAMPLES_PER_NOTE + 1)
-                : samples;
-              newMap.set(noteId, [...trimmed, { time: currentTime, accuracy: tickResult.accuracy, hit: tickResult.isHit }]);
-              return newMap;
-            });
+            // Write to ref (no state update = no GC)
+            const perfRef = notePerformanceRef.current;
+            const samples = perfRef.get(noteId) || [];
+            const trimmed = samples.length >= MAX_SAMPLES_PER_NOTE
+              ? samples.slice(-MAX_SAMPLES_PER_NOTE + 1)
+              : samples;
+            perfRef.set(noteId, [...trimmed, { time: currentTime, accuracy: tickResult.accuracy, hit: tickResult.isHit }]);
+
+            // Throttled state sync: flush to React state at ~10Hz
+            const now = performance.now();
+            if (now - lastNotePerfSyncRef.current >= 100) {
+              lastNotePerfSyncRef.current = now;
+              setNotePerformance(new Map(perfRef));
+            }
 
             if (tickResult.isHit) {
               noteProgress.ticksHit++;
