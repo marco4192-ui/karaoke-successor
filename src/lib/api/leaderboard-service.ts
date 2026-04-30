@@ -8,31 +8,6 @@ import type { PlayerProfile, PlayerStats, HighscoreEntry, Song, Difficulty, Game
 // API Configuration - Update this to your hosted API URL
 const API_BASE_URL = 'https://hosting236176.ae88b.netcup.net/leaderboard-api';
 
-// Country codes for player profiles
-export const COUNTRIES: Record<string, string> = {
-  'DE': 'Deutschland',
-  'AT': 'Österreich',
-  'CH': 'Schweiz',
-  'US': 'United States',
-  'GB': 'United Kingdom',
-  'FR': 'France',
-  'IT': 'Italy',
-  'ES': 'Spain',
-  'NL': 'Netherlands',
-  'PL': 'Poland',
-  'CZ': 'Czech Republic',
-  'JP': 'Japan',
-  'KR': 'South Korea',
-  'AU': 'Australia',
-  'CA': 'Canada',
-  'BR': 'Brazil',
-  'MX': 'Mexico',
-  'RU': 'Russia',
-  'CN': 'China',
-  'IN': 'India',
-  // Add more as needed
-};
-
 export interface ApiPlayer {
   id: string;
   name: string;
@@ -78,13 +53,6 @@ class LeaderboardService {
 
   constructor(apiUrl: string = API_BASE_URL) {
     this.apiUrl = apiUrl;
-  }
-
-  /**
-   * Set API key for authenticated requests
-   */
-  setApiKey(key: string) {
-    this.apiKey = key;
   }
 
   /**
@@ -174,36 +142,6 @@ class LeaderboardService {
   }
 
   /**
-   * Get all players
-   */
-  async getPlayers(): Promise<ApiPlayer[]> {
-    const result = await this.request<{ players: ApiPlayer[] }>('/players');
-    return result.players;
-  }
-
-  /**
-   * Get player by ID
-   */
-  async getPlayer(playerId: string): Promise<ApiPlayer | null> {
-    try {
-      const result = await this.request<{ player: ApiPlayer }>(`/players/${playerId}`);
-      return result.player;
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * Get all songs a player has scores for
-   */
-  async getPlayerSongs(playerId: string): Promise<(ApiScore & { title: string; artist: string })[]> {
-    const result = await this.request<{ scores: (ApiScore & { title: string; artist: string })[] }>(
-      `/player/${playerId}/songs`
-    );
-    return result.scores;
-  }
-
-  /**
    * Register or update player
    */
   async savePlayer(profile: PlayerProfile): Promise<{ success: boolean; player_id: string }> {
@@ -268,14 +206,6 @@ class LeaderboardService {
         difficulty: song.rating,
       }),
     });
-  }
-
-  /**
-   * Get all songs
-   */
-  async getSongs(): Promise<ApiSong[]> {
-    const result = await this.request<{ songs: ApiSong[] }>('/songs');
-    return result.songs;
   }
 
   // ==================== PROFILE SYNC METHODS ====================
@@ -370,62 +300,7 @@ class LeaderboardService {
     }
   }
 
-  /**
-   * Convert API player to local PlayerProfile format
-   */
-  apiPlayerToLocal(apiPlayer: ApiPlayer): Partial<PlayerProfile> {
-    return {
-      id: apiPlayer.id,
-      name: apiPlayer.name,
-      avatar: apiPlayer.avatar,
-      totalScore: apiPlayer.total_score,
-      gamesPlayed: apiPlayer.games_played,
-      country: apiPlayer.country,
-      privacy: {
-        showOnLeaderboard: apiPlayer.show_on_leaderboard === 1,
-        showPhoto: apiPlayer.show_photo === 1,
-        showCountry: apiPlayer.show_country === 1,
-      },
-    };
-  }
-
-  /**
-   * Convert API score to local HighscoreEntry format
-   */
-  apiScoreToHighscore(apiScore: ApiScore, songTitle: string, artist: string): HighscoreEntry {
-    const accuracy = apiScore.max_score > 0
-      ? (apiScore.score / apiScore.max_score) * 100
-      : 0;
-
-    const rating = accuracy >= 95 ? 'perfect'
-      : accuracy >= 90 ? 'excellent'
-      : accuracy >= 80 ? 'good'
-      : accuracy >= 70 ? 'okay'
-      : 'poor';
-
-    return {
-      id: String(apiScore.id),
-      playerId: apiScore.player_id,
-      playerName: apiScore.player_name || 'Unknown',
-      playerAvatar: apiScore.player_avatar,
-      playerColor: '#FF6B6B',
-      songId: apiScore.song_id,
-      songTitle,
-      artist,
-      score: apiScore.score,
-      accuracy,
-      maxCombo: apiScore.max_combo,
-      difficulty: apiScore.difficulty === 1 ? 'easy' : apiScore.difficulty === 2 ? 'medium' : 'hard',
-      gameMode: apiScore.game_mode as GameMode,
-      rating,
-      rankTitle: '',
-      playedAt: new Date(apiScore.created_at).getTime(),
-    };
-  }
 }
 
 // Export singleton instance
 export const leaderboardService = new LeaderboardService();
-
-// Export class for custom instances
-export { LeaderboardService };
