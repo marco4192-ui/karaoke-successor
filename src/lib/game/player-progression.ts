@@ -275,10 +275,6 @@ export interface ExtendedPlayerStats {
   
   // Challenge stats
   challengesCompleted: number;
-  challengesWon: number;
-  topThreeFinishes: number;
-  topTenFinishes: number;
-  perfectChallenges: number; // 100% accuracy in challenge
   
   // Genre mastery
   genrePlayCount: Record<string, number>;
@@ -292,20 +288,8 @@ export interface ExtendedPlayerStats {
     hard: { played: number; completed: number; bestScore: number; avgAccuracy: number };
   };
   
-  // Vocal range
-  vocalRange: {
-    lowestNote: number | null;
-    highestNote: number | null;
-    comfortableLow: number | null;
-    comfortableHigh: number | null;
-  };
-  
-  // Social stats
-  duetsCompleted: number;
-  duelsWon: number;
-  duelsLost: number;
-  songsShared: number;
-  
+  // Genre mastery
+
   // Milestones
   milestones: {
     firstSong: number | null;
@@ -510,10 +494,6 @@ export function getDefaultStats(): ExtendedPlayerStats {
     currentPlayStreak: 0,
     longestPlayStreak: 0,
     challengesCompleted: 0,
-    challengesWon: 0,
-    topThreeFinishes: 0,
-    topTenFinishes: 0,
-    perfectChallenges: 0,
     genrePlayCount: {},
     genreBestScores: {},
     favoriteGenre: null,
@@ -522,16 +502,6 @@ export function getDefaultStats(): ExtendedPlayerStats {
       medium: { played: 0, completed: 0, bestScore: 0, avgAccuracy: 0 },
       hard: { played: 0, completed: 0, bestScore: 0, avgAccuracy: 0 },
     },
-    vocalRange: {
-      lowestNote: null,
-      highestNote: null,
-      comfortableLow: null,
-      comfortableHigh: null,
-    },
-    duetsCompleted: 0,
-    duelsWon: 0,
-    duelsLost: 0,
-    songsShared: 0,
     milestones: {
       firstSong: null,
       firstPerfect: null,
