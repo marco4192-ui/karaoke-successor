@@ -25,12 +25,24 @@ let songCacheTimestamp = 0;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 // Scan lock: prevents loadCustomSongsFromStorage from overwriting cache
-// while a Settings scan is in progress (avoids race condition)
-let scanInProgress = false;
+// while a Settings scan is in progress (avoids race condition).
+// Uses a Promise-based lock instead of a boolean for thread safety.
+let scanLock: Promise<void> = Promise.resolve();
 
-/** Mark that a scan is starting — prevents async IndexedDB load from overwriting. */
-export function setScanInProgress(inProgress: boolean): void {
-  scanInProgress = inProgress;
+/** Acquire the scan lock. Returns a release function that must be called when done. */
+export function acquireScanLock(): { release: () => void } {
+  let releaseLock!: () => void;
+  const nextLock = new Promise<void>(resolve => { releaseLock = resolve; });
+  const currentLock = scanLock;
+  scanLock = currentLock.then(() => nextLock);
+  return {
+    release: () => releaseLock(),
+  };
+}
+
+/** Wait for any in-progress scan to complete. */
+export function waitForScanLock(): Promise<void> {
+  return scanLock;
 }
 
 /** Invalidate all in-memory caches, forcing fresh reads from storage. */
@@ -105,24 +117,17 @@ export function getCustomSongs(): Song[] {
 }
 
 // Load custom songs from IndexedDB (async — call on app startup)
-// IMPORTANT: Skips entirely if a scan is in progress to prevent race conditions.
+// IMPORTANT: Waits for any in-progress scan to complete first to prevent race conditions.
 // A scan calls clearCustomSongs() → cache=[] → then loadCustomSongsFromStorage
 // could overwrite with old IndexedDB data during the async scan loop.
 export async function loadCustomSongsFromStorage(): Promise<Song[]> {
-  // CRITICAL: If a scan is in progress, DO NOT overwrite the cache.
-  // The scan will set the cache when it completes.
-  if (scanInProgress) {
-    return getCustomSongs();
-  }
+  // CRITICAL: Wait for any in-progress scan to finish before loading from IndexedDB.
+  await waitForScanLock();
 
   if (typeof indexedDB === 'undefined') return getCustomSongs();
 
   try {
     const songs = await loadCustomSongsFromDB();
-    // Re-check scan flag after async operation
-    if (scanInProgress) {
-      return getCustomSongs();
-    }
     // Normalize path fields (fix HTML entities, percent-encoding, Unicode)
     let needsResave = false;
     for (const song of songs) {

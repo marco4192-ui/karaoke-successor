@@ -10,7 +10,7 @@ import {
   isFileSystemAccessSupported,
   ScannedSong,
 } from '@/lib/parsers/folder-scanner';
-import { addSong, addSongs, getAllSongs, replaceCustomSongs, setScanInProgress, invalidateSongCache } from '@/lib/game/song-library';
+import { addSong, addSongs, getAllSongs, replaceCustomSongs, acquireScanLock, invalidateSongCache } from '@/lib/game/song-library';
 import { storeMedia } from '@/lib/db/media-db';
 import { Song } from '@/types/game';
 import { findDuplicates, DuplicateInfo, ProgressInfo } from './import-types';
@@ -255,7 +255,7 @@ export function useImportScreen(onImport: (song: Song) => void) {
       const folderPath = tauriScanFolderRef.current;
       const selectedArray = Array.from(selectedScanned);
 
-      setScanInProgress(true);
+      const scanLock = acquireScanLock();
       localStorage.setItem('karaoke-songs-folder', folderPath);
 
       try {
@@ -384,7 +384,7 @@ export function useImportScreen(onImport: (song: Song) => void) {
       } catch (err) {
         setError('Tauri import failed: ' + (err instanceof Error ? err.message : 'Unknown error'));
       } finally {
-        setScanInProgress(false);
+        scanLock.release();
         tauriScanResultRef.current = null;
         tauriScanFolderRef.current = null;
       }

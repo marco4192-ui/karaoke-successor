@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { getAllSongs, clearCustomSongs, replaceCustomSongs, setScanInProgress, invalidateSongCache, clearSongCache } from '@/lib/game/song-library';
+import { getAllSongs, clearCustomSongs, replaceCustomSongs, acquireScanLock, invalidateSongCache, clearSongCache } from '@/lib/game/song-library';
 import { clearCustomSongsFromDB } from '@/lib/db/custom-songs-db';
 import { Song } from '@/types/game';
 import { isTauri, normalizeFilePath } from '@/lib/tauri-file-storage';
@@ -73,8 +73,8 @@ export function useFolderScanner(): UseFolderScannerReturn {
     setIsScanning(true);
     setScanProgress({ stage: 'scanning', message: 'Scanning folder...', count: 0 });
 
-    // CRITICAL: Set scan lock to prevent loadCustomSongsFromStorage race condition
-    setScanInProgress(true);
+    // CRITICAL: Acquire scan lock to prevent loadCustomSongsFromStorage race condition
+    const scanLock = acquireScanLock();
 
     // CRITICAL: Always save the songs folder to localStorage (normalized)
     const normalizedFolder = normalizeFilePath(folderPath);
@@ -266,8 +266,8 @@ export function useFolderScanner(): UseFolderScannerReturn {
         count: 0
       });
     } finally {
-      // Always clear the scan lock
-      setScanInProgress(false);
+      // Always release the scan lock
+      scanLock.release();
     }
 
     setIsScanning(false);
