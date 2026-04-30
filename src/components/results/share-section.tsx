@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { safeAlert } from '@/lib/safe-dialog';
 import { Song, HighscoreEntry, GameMode, Difficulty } from '@/types/game';
-import { createShareableCard, downloadScoreCard, shareScoreCard } from '@/lib/game/share-results';
+import { createShareableCard, downloadScoreCard, shareScoreCard, copyScoreToClipboard, copyScoreImageToClipboard } from '@/lib/game/share-results';
 import { ScoreCard } from '@/components/social/score-card';
 import { ShortsCreator } from '@/components/social/shorts-creator';
 
@@ -98,7 +98,29 @@ export function ShareSection({
       </Card>
 
       {/* Share Buttons */}
-      <div className="flex gap-2 justify-center mb-4">
+      <div className="flex flex-wrap gap-2 justify-center mb-4">
+        <Button
+          variant="outline"
+          onClick={async () => {
+            const card = createShareableCard(buildScoreEntry());
+            const success = await copyScoreToClipboard(card);
+            safeAlert(success ? 'Score text copied!' : 'Failed to copy');
+          }}
+          className="border-green-500/50 text-green-400"
+        >
+          📋 Copy Text
+        </Button>
+        <Button
+          variant="outline"
+          onClick={async () => {
+            const card = createShareableCard(buildScoreEntry());
+            const success = await copyScoreImageToClipboard(card);
+            safeAlert(success ? 'Score image copied!' : 'Failed to copy image');
+          }}
+          className="border-green-500/50 text-green-400"
+        >
+          🖼️ Copy Image
+        </Button>
         <Button
           variant="outline"
           onClick={() => {
