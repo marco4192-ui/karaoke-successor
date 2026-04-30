@@ -41,16 +41,23 @@ export function ShortsCreator({ song, score, gameResult, audioUrl, onClose }: Sh
   const cameraVideoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
+  const autoStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
 
-  // Revoke blob URL on unmount to prevent memory leak
+  // Cleanup on unmount: revoke blob URL, close AudioContext, clear timers
   useEffect(() => {
     return () => {
       if (recordedUrl?.startsWith('blob:')) URL.revokeObjectURL(recordedUrl);
+      if (autoStopTimerRef.current) clearTimeout(autoStopTimerRef.current);
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {});
+        audioContextRef.current = null;
+      }
     };
   }, [recordedUrl]);
   const [duration, setDuration] = useState(15);
@@ -105,6 +112,8 @@ export function ShortsCreator({ song, score, gameResult, audioUrl, onClose }: Sh
     setHasCamera(false);
     setMobileCameraConnected(false);
   }, []);
+
+  const progressLastUpdateRef = useRef(0);
 
   // Draw frame on canvas
   const drawFrame = useCallback((timestamp: number) => {
@@ -273,7 +282,12 @@ export function ShortsCreator({ song, score, gameResult, audioUrl, onClose }: Sh
       ctx.fillStyle = styleConfig.accent;
       ctx.fillRect(0, height - 8, width * progressPercent, 8);
       
-      setProgress(progressPercent * 100);
+      // Throttle progress state updates to ~10fps to reduce re-renders
+      const now = performance.now();
+      if (now - progressLastUpdateRef.current > 100) {
+        progressLastUpdateRef.current = now;
+        setProgress(progressPercent * 100);
+      }
     }
   }, [song, score, style, styleConfig, cameraPosition, hasCamera, isRecording, duration, recordingStartTime]);
 
@@ -310,8 +324,14 @@ export function ShortsCreator({ song, score, gameResult, audioUrl, onClose }: Sh
     // Add audio if available
     if (audioUrl) {
       try {
+        // Close any previous AudioContext before creating a new one
+        if (audioContextRef.current) {
+          audioContextRef.current.close().catch(() => {});
+        }
         const audioContext = new AudioContext();
+        audioContextRef.current = audioContext;
         const audioElement = new Audio(audioUrl);
+        audioElement.crossOrigin = 'anonymous';
         audioElement.currentTime = song.preview?.startTime ? song.preview.startTime / 1000 : 0;
         const source = audioContext.createMediaElementSource(audioElement);
         const destination = audioContext.createMediaStreamDestination();
@@ -325,8 +345,15 @@ export function ShortsCreator({ song, score, gameResult, audioUrl, onClose }: Sh
       }
     }
 
+    // Select best supported mimeType
+    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+      ? 'video/webm;codecs=vp9'
+      : MediaRecorder.isTypeSupported('video/webm')
+        ? 'video/webm'
+        : 'video/mp4';
+
     const mediaRecorder = new MediaRecorder(stream, {
-      mimeType: 'video/webm;codecs=vp9',
+      mimeType,
       videoBitsPerSecond: 8000000,
     });
 
@@ -338,14 +365,25 @@ export function ShortsCreator({ song, score, gameResult, audioUrl, onClose }: Sh
     };
 
     mediaRecorder.onstop = () => {
-      const blob = new Blob(chunks, { type: 'video/webm' });
+      const blob = new Blob(chunks, { type: mimeType });
       setRecordedBlob(blob);
       setRecordedUrl(URL.createObjectURL(blob));
       setIsRecording(false);
       setProgress(0);
       
+      if (autoStopTimerRef.current) {
+        clearTimeout(autoStopTimerRef.current);
+        autoStopTimerRef.current = null;
+      }
+
       if (audioRef.current) {
         audioRef.current.pause();
+        audioRef.current = null;
+      }
+      // Close AudioContext after recording to free resources
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {});
+        audioContextRef.current = null;
       }
     };
 
@@ -354,11 +392,12 @@ export function ShortsCreator({ song, score, gameResult, audioUrl, onClose }: Sh
     mediaRecorder.start();
     setIsRecording(true);
 
-    // Auto-stop after duration
-    setTimeout(() => {
+    // Auto-stop after duration (track timer for cleanup)
+    autoStopTimerRef.current = setTimeout(() => {
       if (mediaRecorderRef.current?.state === 'recording') {
         mediaRecorderRef.current.stop();
       }
+      autoStopTimerRef.current = null;
     }, duration * 1000);
 
     if (audioRef.current) {
@@ -368,6 +407,10 @@ export function ShortsCreator({ song, score, gameResult, audioUrl, onClose }: Sh
 
   // Stop recording
   const stopRecording = useCallback(() => {
+    if (autoStopTimerRef.current) {
+      clearTimeout(autoStopTimerRef.current);
+      autoStopTimerRef.current = null;
+    }
     if (mediaRecorderRef.current?.state === 'recording') {
       mediaRecorderRef.current.stop();
     }
