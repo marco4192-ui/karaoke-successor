@@ -67,6 +67,9 @@ export class PitchDetector {
   private buffer: Float32Array | null = null;
   private frequencyBuffer: Float32Array | null = null;
 
+  // Pre-allocated YIN buffer to avoid ~8KB allocation per frame (GC pressure)
+  private yinBuffer: Float32Array | null = null;
+
   // Configuration
   private config: PitchDetectorConfig;
   
@@ -148,6 +151,7 @@ export class PitchDetector {
 
       this.buffer = new Float32Array(this.analyser.fftSize);
       this.frequencyBuffer = new Float32Array(this.analyser.frequencyBinCount);
+      this.yinBuffer = new Float32Array(Math.floor(this.analyser.fftSize / 2));
 
       return true;
     } catch (error) {
@@ -330,8 +334,8 @@ export class PitchDetector {
   }
 
   private yinPitchDetection(buffer: Float32Array<ArrayBufferLike>, sampleRate: number, threshold: number = 0.15): number | null {
-    const yinBuffer = new Float32Array(buffer.length / 2);
-    const yinBufferLength = buffer.length / 2;
+    const yinBuffer = this.yinBuffer!;
+    const yinBufferLength = yinBuffer.length;
 
     // Compute difference function
     for (let tau = 0; tau < yinBufferLength; tau++) {
@@ -434,6 +438,7 @@ export class PitchDetector {
     this.analyser = null;
     this.buffer = null;
     this.frequencyBuffer = null;
+    this.yinBuffer = null;
   }
 }
 
