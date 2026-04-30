@@ -198,9 +198,10 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ error: 'Invalid type. Use "image" or "audio"' }, { status: 400 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Asset generation error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -293,17 +294,18 @@ export async function PUT(request: NextRequest) {
             });
           }
         }
-      } catch (err: any) {
-        results.push({ 
-          filename: asset.filename, 
-          success: false, 
-          error: err.message 
+      } catch (err: unknown) {
+        results.push({
+          filename: asset.filename,
+          success: false,
+          error: err instanceof Error ? err.message : 'Unknown error'
         });
       }
     }
 
     return NextResponse.json({ success: true, results });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
