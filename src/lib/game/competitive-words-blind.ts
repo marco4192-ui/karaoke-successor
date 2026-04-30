@@ -124,19 +124,20 @@ export function createCompetitiveGame(
  * Tries to distribute singing time evenly: rotate through players.
  */
 export function getNextRoundPairing(game: CompetitiveGame): { player1Id: string; player2Id: string } | null {
-  const activePlayers = game.players;
-  const n = activePlayers.length;
+  // Filter out players who have already finished all their rounds
+  const eligiblePlayers = game.players.filter(p => !isPlayerFinished(game, p.id));
+  const n = eligiblePlayers.length;
 
   if (n < 2) return null;
 
   // Track how many times each player has sung
   const singCounts: Map<string, number> = new Map();
-  for (const player of activePlayers) {
+  for (const player of eligiblePlayers) {
     singCounts.set(player.id, player.roundsPlayed);
   }
 
   // Find the two players who have sung the least
-  const sorted = [...activePlayers].sort((a, b) => {
+  const sorted = [...eligiblePlayers].sort((a, b) => {
     const countA = singCounts.get(a.id) || 0;
     const countB = singCounts.get(b.id) || 0;
     return countA - countB;
