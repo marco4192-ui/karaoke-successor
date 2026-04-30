@@ -39,13 +39,11 @@ export interface TimingDataForScoring {
   allNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
   p1Notes?: Array<Note & { lineIndex: number; line: LyricLine }>;
   p2Notes?: Array<Note & { lineIndex: number; line: LyricLine }>;
-  p3Notes?: Array<Note & { lineIndex: number; line: LyricLine }>;
-  p4Notes?: Array<Note & { lineIndex: number; line: LyricLine }>;
+
   scoringMetadata?: ScoringMetadata;
   p1ScoringMetadata?: ScoringMetadata;
   p2ScoringMetadata?: ScoringMetadata;
-  p3ScoringMetadata?: ScoringMetadata;
-  p4ScoringMetadata?: ScoringMetadata;
+
   beatDuration: number;
 }
 
@@ -74,18 +72,15 @@ export interface UseNoteScoringReturn {
   scoreEvents: ScoreEvent[];
   p1ScoreEvents: ScoreEvent[];
   p2ScoreEvents: ScoreEvent[];
-  p3ScoreEvents: ScoreEvent[];
-  p4ScoreEvents: ScoreEvent[];
+  
   // Note performance for visual display modes
   notePerformance: Map<string, NotePerformanceSample[]>;
   // P2-P4 states (for duet/party modes)
   p2State: PlayerScoringState;
-  p3State: PlayerScoringState;
-  p4State: PlayerScoringState;
+  
   // Detected pitches for P2-P4
   p2DetectedPitch: number | null;
-  p3DetectedPitch: number | null;
-  p4DetectedPitch: number | null;
+  
   setP2DetectedPitch: (pitch: number | null) => void;
   setP3DetectedPitch: (pitch: number | null) => void;
   setP4DetectedPitch: (pitch: number | null) => void;
@@ -144,29 +139,23 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   const [scoreEvents, setScoreEvents] = useState<ScoreEvent[]>([]);
   const [p1ScoreEvents, setP1ScoreEvents] = useState<ScoreEvent[]>([]);
   const [p2ScoreEvents, setP2ScoreEvents] = useState<ScoreEvent[]>([]);
-  const [p3ScoreEvents, setP3ScoreEvents] = useState<ScoreEvent[]>([]);
-  const [p4ScoreEvents, setP4ScoreEvents] = useState<ScoreEvent[]>([]);
+
 
   // Note performance tracking for visual display modes
   const [notePerformance, setNotePerformance] = useState<Map<string, NotePerformanceSample[]>>(new Map());
 
   // Additional player states (P2, P3, P4) - P1 uses the main store
   const [p2State, setP2State] = useState<PlayerScoringState>({ ...DEFAULT_PLAYER_SCORING_STATE });
-  const [p3State, setP3State] = useState<PlayerScoringState>({ ...DEFAULT_PLAYER_SCORING_STATE });
-  const [p4State, setP4State] = useState<PlayerScoringState>({ ...DEFAULT_PLAYER_SCORING_STATE });
+
   
   // Refs for P2-P4 states to avoid stale closures in checkPlayerNoteHits
   const p2StateRef = useRef(p2State);
   p2StateRef.current = p2State;
-  const p3StateRef = useRef(p3State);
-  p3StateRef.current = p3State;
-  const p4StateRef = useRef(p4State);
-  p4StateRef.current = p4State;
+
   
   // Detected pitches for P2-P4
   const [p2DetectedPitch, setP2DetectedPitch] = useState<number | null>(null);
-  const [p3DetectedPitch, setP3DetectedPitch] = useState<number | null>(null);
-  const [p4DetectedPitch, setP4DetectedPitch] = useState<number | null>(null);
+
 
   // Refs for note progress tracking (one map per player)
   const noteProgressRef = useRef<Map<string, NoteProgress>>(new Map());
@@ -195,8 +184,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     setP4DetectedPitch(null);
     noteProgressRef.current.clear();
     p2NoteProgressRef.current.clear();
-    p3NoteProgressRef.current.clear();
-    p4NoteProgressRef.current.clear();
+    
   }, []);
 
   // Generic function to check note hits for any player

@@ -223,8 +223,7 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
     particles, 
     emitPerfectHit, 
     emitGoldenNote, 
-    emitComboFirework, 
-    emitConfetti 
+    emitComboFirework 
   } = useParticleEmitter();
   
   // Song energy for visual effects intensity
