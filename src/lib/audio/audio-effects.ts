@@ -142,6 +142,8 @@ export class AudioEffectsEngine {
   // Current settings
   private settings: AudioEffectSettings = { ...DEFAULT_EFFECTS_SETTINGS };
   private currentPreset: AudioEffectPreset | null = null;
+  // Track previous effect enable states to avoid unnecessary chain reconnects
+  private prevEnabledState = '';
   
   private ownsAudioContext = false; // true if we created it, false if reused
   private isInitialized = false;
@@ -226,6 +228,22 @@ export class AudioEffectsEngine {
     this.isInitialized = true;
     this.ownsAudioContext = !existingAudioContext; // only close what we created
     return this.audioContext;
+  }
+
+  /** Check if any effect enable/disable toggles changed since last chain connect.
+   *  Returns true on first call (no previous state recorded). */
+  private effectStateChanged(): boolean {
+    const state = `${this.settings.reverb.enabled}|${this.settings.delay.enabled}|${this.settings.compressor.enabled}|${this.settings.eq.enabled}|${this.settings.distortion.enabled}`;
+    if (this.prevEnabledState === '') {
+      // First call — always reconnect to establish initial chain
+      this.prevEnabledState = state;
+      return true;
+    }
+    if (state !== this.prevEnabledState) {
+      this.prevEnabledState = state;
+      return true;
+    }
+    return false;
   }
 
   private connectEffectChain(): void {
@@ -406,8 +424,12 @@ export class AudioEffectsEngine {
       this.distortionNode.curve = this.makeDistortionCurve(this.settings.distortion.amount) as Float32Array<ArrayBuffer>;
     }
     
-    // Reconnect chain
-    this.connectEffectChain();
+    // Only reconnect chain if effect enable/disable state changed —
+    // parameter-only changes (volume, decay, EQ gain etc.) don't need reconnect.
+    // Reconnecting the entire graph causes a brief audio interruption.
+    if (this.effectStateChanged()) {
+      this.connectEffectChain();
+    }
   }
 
   // Individual effect controls
@@ -419,9 +441,9 @@ export class AudioEffectsEngine {
         await this.createReverbImpulse(this.settings.reverb.decay);
       }
     }
-    // Reconnect chain so the (possibly updated) reverb amount takes effect
-    if (this.isInitialized) {
-      this.connectEffectChain();
+    // Update reverb mix gain without reconnecting entire chain
+    if (this.reverbMix && this.isInitialized) {
+      this.reverbMix.gain.value = this.settings.reverb.amount;
     }
   }
 
