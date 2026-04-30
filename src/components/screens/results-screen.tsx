@@ -286,6 +286,10 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
         // Record song play for Recently Played & Most Played system playlists
         recordSongPlay(song.id);
 
+        // Also get P2 result early — needed for achievement checking (isDuelWin) below
+        const player2Result = results.players[1];
+        const isMultiplayerMode = ['duel', 'duet', 'competitive-words', 'competitive-blind'].includes(gameState.gameMode);
+
         // CHECK AND UNLOCK ACHIEVEMENTS
         const currentExtendedStats = getExtendedStats();
         const perfectNotes = estimatePerfectNotes(playerResult.notesHit, playerResult.rating);
@@ -332,9 +336,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           });
         }
 
-        // Also save P2 highscore for duel/competitive modes if P2 has a registered profile
-        const player2Result = results.players[1];
-        const isMultiplayerMode = ['duel', 'duet', 'competitive-words', 'competitive-blind'].includes(gameState.gameMode);
+        // Save P2 highscore for duel/competitive modes if P2 has a registered profile
         if (player2Result && player2Result.playerId && isMultiplayerMode) {
           const p2Profile = profiles.find(p => p.id === player2Result.playerId);
           if (p2Profile) {
