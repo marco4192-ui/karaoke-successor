@@ -19,14 +19,19 @@ function buildGameResultFromState(
   if (players.length < 2) return null;
   return {
     players: players.map(p => {
+      // Calculate accuracy from notesHit/notesMissed instead of reading p.accuracy
+      // which is never updated during gameplay (always 0), causing tournament
+      // ratings to always be 'poor'.
+      const totalNotes = p.notesHit + p.notesMissed;
+      const accuracy = totalNotes > 0 ? (p.notesHit / totalNotes) * 100 : 0;
       let rating: GameResult['players'][0]['rating'];
-      if (p.accuracy >= 95) rating = 'perfect';
-      else if (p.accuracy >= 85) rating = 'excellent';
-      else if (p.accuracy >= 70) rating = 'good';
-      else if (p.accuracy >= 50) rating = 'okay';
+      if (accuracy >= 95) rating = 'perfect';
+      else if (accuracy >= 85) rating = 'excellent';
+      else if (accuracy >= 70) rating = 'good';
+      else if (accuracy >= 50) rating = 'okay';
       else rating = 'poor';
       return {
-        playerId: p.id, score: p.score, accuracy: p.accuracy,
+        playerId: p.id, score: p.score, accuracy: Math.round(accuracy * 10) / 10,
         notesHit: p.notesHit, notesMissed: p.notesMissed, maxCombo: p.maxCombo, rating,
       };
     }),
