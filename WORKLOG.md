@@ -652,3 +652,69 @@ Diese Session: 6 kritische Bugs + 6 Bugs gefixt. Dead Code und Verbesserungen do
 ### I15: `folder-scanner.ts` dupliziert UltraStar-Header-Parsing (3 Kopien)
 - **Beschreibung:** `parseUltraStarMetadata()`, `tauri-file-storage.ts:processFolder()`, und `ultrastar-parser.ts` parsen dieselben Header.
 - **Vorschlag:** Gemeinsame `parseUltraStarHeaders()` Utility extrahieren.
+
+---
+
+# Code Review — Fresh Review #7
+
+**Datum:** 2026-04-30
+**Repo:** karaoke-successor
+**Branch:** origin/master
+**Stand:** Commit 3bb17bf
+
+---
+
+## Zusammenfassung
+
+Dead Code Review (D1-D28): Die meisten Items waren bereits in vorherigen Sessions bereinigt oder werden tatsächlich verwendet. 6 echte Dead-Code-Items entfernt (D21-D27, exkl. D22).
+Verbesserungen (I1-I15): 11 von 15 umgesetzt. 4 übersprungen (I4, I7, I14, I15) wegen zu hohem Regressionsrisiko oder fehlender Relevanz für Tauri-only App.
+
+---
+
+## Dead Code — Umsetzungs-Log
+
+### D22 — emitConfetti aus game-screen.tsx entfernt
+Wurde destruktured aber nie aufgerufen.
+
+### D23 — onSelectSong Prop aus DailyChallengeScreen entfernt
+Deklariert als Prop aber im gesamten Component-Body nie verwendet.
+
+### D24 — folderMap Variable aus scanFilesFromFileList entfernt
+Map deklariert aber nie befüllt oder gelesen.
+
+### D21 — Dead P3/P4 Scoring State aus use-note-scoring.ts entfernt
+P3/P4 scoring functions, states, refs und return-Werte entfernt. Referenzierten undefinierte Variablen.
+
+### D27 — weeklyProgress Feld aus ExtendedPlayerStats entfernt
+Typ-Definition und Initialisierung entfernt. Wurde nie aktualisiert oder gelesen.
+
+## Verbesserungen — Umsetzungs-Log
+
+### I1 — YIN-Algorithmus Heap-Allokation optimiert
+yinBuffer in initialize() voralloziert. Spart ~480KB/s GC-Druck bei 60fps.
+
+### I2+I9 — Audio-Effect-Chain Reconnect minimiert
+effectStateChanged() trackt Enable/Disable-Toggles. Chain wird nur reconnectet bei Enable-State-Änderung.
+
+### I3 — Microphone-Permission-Prompt nur bei Bedarf
+Erst enumerateDevices(), getUserMedia nur wenn Labels leer.
+
+### I5 — notePerformance State-Updates 60fps auf 10Hz gedrosselt
+Ref-basierte Speicherung + throttled State-Sync (100ms).
+
+### I6 — Song-Library scanInProgress Thread-Safe
+Boolean-Lock durch Promise-basiertes Lock ersetzt.
+
+### I8 — ExtendedPlayerStats ungenutzte Felder entfernt
+challengesWon, topThreeFinishes, topTenFinishes, perfectChallenges, vocalRange, duetsCompleted, duelsWon, duelsLost, songsShared.
+
+### I11 — Mobile Pitch-Detection rAF-Loop stoppt bei Song-Ende
+cancelAnimationFrame statt endlos weiterlaufen.
+
+### I12 — Song-Library-Sync nur bei Änderungen
+Song-Count-Check vor Sync vermeidet redundante POSTs.
+
+### I13 — Playlist-Manager korrupte Daten bereinigt
+JSON.parse-Validierung + localStorage-Key-Löschung bei Parse-Fehler.
+
+### Übersprungen: I4 (zu riskant), I7 (Design-Thema), I14 (Tauri-only), I15 (3 verschiedene Kontexte)
