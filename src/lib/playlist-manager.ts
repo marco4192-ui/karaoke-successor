@@ -247,14 +247,20 @@ export function recordSongPlay(songId: string): void {
 
     // Collect all unique song IDs with their counts (existing + current)
     const countMap = new Map<string, number>();
-    for (const id of mostPlayedPlaylist.songIds) {
+    const existingIds = [...mostPlayedPlaylist.songIds];
+    for (const id of existingIds) {
       countMap.set(id, counts[id] || 0);
     }
     countMap.set(songId, counts[songId]);
 
-    // Sort by play count descending, then by last-updated recency
+    // Sort by play count descending, then by recency (existing order = more recent first)
     mostPlayedPlaylist.songIds = [...countMap.keys()]
-      .sort((a, b) => (countMap.get(b) || 0) - (countMap.get(a) || 0))
+      .sort((a, b) => {
+        const countDiff = (countMap.get(b) || 0) - (countMap.get(a) || 0);
+        if (countDiff !== 0) return countDiff;
+        // Tiebreaker: more recently played (earlier in existing list) first
+        return existingIds.indexOf(a) - existingIds.indexOf(b);
+      })
       .slice(0, 100);
     mostPlayedPlaylist.updatedAt = now;
   }

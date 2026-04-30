@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Music, FileText, Settings, BookOpen, Waves, Sparkles, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { normalizeFilePath } from '@/lib/tauri-file-storage';
+import { midiPitchToFrequency } from '@/lib/utils';
 import { useEditorHistory } from '@/hooks/use-editor-history';
 import { useEditorPlayback } from '@/hooks/use-editor-playback';
 import { useEditorKeyboardShortcuts } from '@/hooks/use-editor-keyboard-shortcuts';
@@ -113,7 +114,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   const handleNoteAdd = useCallback((startTime: number, pitch: number) => {
     const newNote: Note = {
       id: uuidv4(), pitch,
-      frequency: 440 * Math.pow(2, (pitch - 69) / 12),
+      frequency: midiPitchToFrequency(pitch),
       startTime, duration: 500, lyric: '---',
       isBonus: false, isGolden: false
     };
@@ -197,7 +198,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     const noteId = uuidv4();
     const newNote: Note = {
       id: noteId, pitch,
-      frequency: 440 * Math.pow(2, (pitch - 69) / 12),
+      frequency: midiPitchToFrequency(pitch),
       startTime, duration: 200, lyric,
       isBonus: false, isGolden: false,
     };

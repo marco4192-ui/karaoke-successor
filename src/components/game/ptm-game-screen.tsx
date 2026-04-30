@@ -326,17 +326,22 @@ export function PtmGameScreen({
   }, [audioRef, videoRef, isYouTube, youtubeTime, audioSong]);
 
   // ── Song energy tracking ──
+  // Use a ref for currentTime to avoid re-creating the interval every ~250ms
+  const currentTimeRef = useRef(currentTime);
+  currentTimeRef.current = currentTime;
+
   useEffect(() => {
     if (!isPlaying || phase !== 'playing') { setSongEnergy(0); return; }
     const interval = setInterval(() => {
       // Simple energy approximation based on note density
+      const t = currentTimeRef.current;
       const nearbyNotes = allNotes.filter(n =>
-        Math.abs(n.startTime - currentTime) < 2000
+        Math.abs(n.startTime - t) < 2000
       ).length;
       setSongEnergy(Math.min(1, nearbyNotes / 5));
     }, 200);
     return () => clearInterval(interval);
-  }, [isPlaying, phase, currentTime, allNotes]);
+  }, [isPlaying, phase, allNotes]);
 
   // ── Display duration ──
   const displayDuration = useMemo(() => {

@@ -65,20 +65,30 @@ export function VirtualizedSongGrid({ songs, songCardProps, renderSongCard }: Vi
   const [containerWidth, setContainerWidth] = useState(1200);
   const [containerHeight, setContainerHeight] = useState(600);
 
-  // Measure container dimensions
+  // Measure container dimensions dynamically
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
+
+    const updateHeight = () => {
+      const top = el.getBoundingClientRect().top;
+      setContainerHeight(Math.max(400, window.innerHeight - top));
+    };
 
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (!entry) return;
       setContainerWidth(entry.contentRect.width);
-      setContainerHeight(entry.contentRect.height);
+      updateHeight();
     });
 
+    updateHeight();
     observer.observe(el);
-    return () => observer.disconnect();
+    window.addEventListener('resize', updateHeight);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateHeight);
+    };
   }, []);
 
   const columns = getColumnCount(containerWidth);
@@ -116,9 +126,7 @@ export function VirtualizedSongGrid({ songs, songCardProps, renderSongCard }: Vi
       ref={containerRef}
       className="overflow-y-auto"
       style={{
-        // Fill remaining viewport: subtract header (~100px), title (~60px), filters (~50px), padding (~32px)
-        height: 'calc(100vh - 260px)',
-        minHeight: '400px',
+        height: containerHeight,
       }}
     >
       <div

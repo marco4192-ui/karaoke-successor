@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Music, Star, Zap, Users } from 'lucide-react';
 import type { Note, DuetPlayer } from '@/types/game';
 import { midiToNoteName } from '@/types/game';
+import { midiPitchToFrequency } from '@/lib/utils';
 
 interface EditorNoteTabProps {
   selectedNote: Note;
@@ -48,7 +49,7 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
                 const pitch = parseInt(e.target.value) || 0;
                 onUpdateSelectedNote({
                   pitch,
-                  frequency: 440 * Math.pow(2, (pitch - 69) / 12)
+                  frequency: midiPitchToFrequency(pitch)
                 });
               }}
               min={0}
@@ -66,7 +67,7 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
             step={1}
             onValueChange={([pitch]) => onUpdateSelectedNote({
               pitch,
-              frequency: 440 * Math.pow(2, (pitch - 69) / 12)
+              frequency: midiPitchToFrequency(pitch)
             })}
             className="mt-2"
           />

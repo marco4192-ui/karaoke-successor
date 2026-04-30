@@ -16,6 +16,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { parseLyricsToSyllables, syllablesToUltraStarNotes, type SyllableResult } from '@/lib/editor/syllable-separator';
 import { isTauri } from '@/lib/tauri-file-storage';
 import { nativePickFileOpen } from '@/lib/native-fs';
+import { midiPitchToFrequency } from '@/lib/utils';
 
 interface NewSongDialogProps {
   onSave: (song: Song) => void;
@@ -117,7 +118,7 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
             lineNotesArr.push({
               id: uuidv4(),
               pitch: basePitch + MIDI_BASE_OFFSET,
-              frequency: 440 * Math.pow(2, (basePitch + MIDI_BASE_OFFSET - 69) / 12),
+              frequency: midiPitchToFrequency(basePitch + MIDI_BASE_OFFSET),
               startTime: Math.round(startTime),
               duration: Math.round(duration),
               lyric,

@@ -26,6 +26,14 @@ export function normalizeTxtContent(content: string): string {
   return result.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 }
 
+/**
+ * Convert a MIDI pitch number to its frequency in Hz.
+ * Uses the standard equal-temperament tuning: A4 = 440 Hz = MIDI note 69.
+ */
+export function midiPitchToFrequency(pitch: number): number {
+  return 440 * Math.pow(2, (pitch - 69) / 12);
+}
+
 /** Shuffle an array using Fisher-Yates algorithm (returns new array). */
 export function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];

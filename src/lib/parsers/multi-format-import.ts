@@ -12,6 +12,7 @@
  */
 
 import { Song, LyricLine, Note } from '@/types/game';
+import { midiPitchToFrequency } from '@/lib/utils';
 
 // ─── Format Detection ────────────────────────────────────────────────
 
@@ -318,7 +319,7 @@ export function convertToSong(
         startTimeMs: Math.round(n.tick * tickDurationMs),
         durationMs: n.duration,
         pitch: n.pitch,
-        frequency: 440 * Math.pow(2, (n.pitch - 69) / 12),
+        frequency: midiPitchToFrequency(n.pitch),
       }));
 
       // Match lyrics to notes by tick proximity
@@ -400,7 +401,7 @@ export function convertToSong(
         currentLine.notes.push({
           id: `note-${currentLine.notes.length}`,
           pitch: note.pitch,
-          frequency: 440 * Math.pow(2, (note.pitch - 69) / 12),
+          frequency: midiPitchToFrequency(note.pitch),
           startTime: note.startTime, duration: note.duration,
           lyric: note.text, isBonus: false, isGolden: false,
         });
