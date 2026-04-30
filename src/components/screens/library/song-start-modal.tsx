@@ -17,7 +17,7 @@ function useSavedMics() {
       const saved = localStorage.getItem('karaoke-multi-mic-config');
       if (saved) {
         const parsed = JSON.parse(saved);
-        setSavedMics((parsed.assignedMics || []).map((m: any) => ({
+        setSavedMics((parsed.assignedMics || []).map((m: { id: string; customName?: string; deviceName?: string }) => ({
           id: m.id,
           customName: m.customName,
           deviceName: m.deviceName,

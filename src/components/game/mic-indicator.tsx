@@ -65,7 +65,7 @@ export function MicIndicator({
       const ptmPlayers = usePartyStore.getState().passTheMicPlayers;
       if (ptmPlayers && ptmPlayers.length > 0) {
         // Find the active player (isActive flag)
-        const active = ptmPlayers.find((p: any) => p.isActive);
+        const active = ptmPlayers.find((p: { isActive?: boolean }) => p.isActive);
         if (active) {
           // Match with mic player
           return micPlayers.find((mp) => mp.id === active.id) || {

@@ -43,7 +43,7 @@ export function UnifiedPartySetup({
     availableGenres, availableLanguages, filteredSongs,
   } = usePartySetup({ gameMode, profiles, songs, onStartGame, onSelectLibrary, onVoteMode });
 
-  const onSettingChange = (key: string, value: any) =>
+  const onSettingChange = (key: string, value: string | number | boolean) =>
     setSettings(prev => ({ ...prev, [key]: value }));
 
   return (

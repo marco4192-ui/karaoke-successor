@@ -67,7 +67,7 @@ export function QuickSwapOverlay({
       if (nextSegIndex < segments.length) {
         const nextSegPlayerId = segments[nextSegIndex].playerId;
         const match = allPlayers.find((p) => p.id === nextSegPlayerId);
-        const ptmMatch = ptmPlayers.find((p: any) => p.id === nextSegPlayerId);
+        const ptmMatch = ptmPlayers.find((p: { id: string }) => p.id === nextSegPlayerId);
 
         const player: SelectedPlayer | null = match || (ptmMatch
           ? {

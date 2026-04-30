@@ -17,8 +17,8 @@ function SettingControl({
   setting, value, onChange,
 }: {
   setting: GameSettingConfig;
-  value: any;
-  onChange: (key: string, value: any) => void;
+  value: string | number | boolean;
+  onChange: (key: string, value: string | number | boolean) => void;
 }) {
   switch (setting.type) {
     case 'slider':
@@ -136,7 +136,7 @@ function SettingsPanel({
   config: PartyGameConfig;
   settings: Record<string, any>;
   difficulty: Difficulty;
-  onSettingChange: (key: string, value: any) => void;
+  onSettingChange: (key: string, value: string | number | boolean) => void;
   onDifficultyChange: (d: Difficulty) => void;
 }) {
   if (config.settings.length === 0) return null;
@@ -253,7 +253,7 @@ function MicAssignmentPanel({
       const saved = localStorage.getItem('karaoke-multi-mic-config');
       if (saved) {
         const parsed = JSON.parse(saved);
-        setSavedMics((parsed.assignedMics || []).map((m: any) => ({
+        setSavedMics((parsed.assignedMics || []).map((m: { id: string; customName?: string; deviceName?: string }) => ({
           id: m.id,
           customName: m.customName,
           deviceName: m.deviceName,
@@ -362,7 +362,7 @@ export function SingleMicSelector({
       const saved = localStorage.getItem('karaoke-multi-mic-config');
       if (saved) {
         const parsed = JSON.parse(saved);
-        return (parsed.assignedMics || []).map((m: any) => ({
+        return (parsed.assignedMics || []).map((m: { id: string; customName?: string; deviceName?: string }) => ({
           id: m.id,
           customName: m.customName,
           deviceName: m.deviceName,
@@ -378,7 +378,7 @@ export function SingleMicSelector({
       const saved = localStorage.getItem('karaoke-multi-mic-config');
       if (saved) {
         const parsed = JSON.parse(saved);
-        const mics = (parsed.assignedMics || []).map((m: any) => ({
+        const mics = (parsed.assignedMics || []).map((m: { id: string; customName?: string; deviceName?: string }) => ({
           id: m.id,
           customName: m.customName,
           deviceName: m.deviceName,
