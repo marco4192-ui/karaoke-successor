@@ -245,8 +245,11 @@ export function submitChallengeResult(
     challenge.totalParticipants++;
   }
 
-  // Sort and assign ranks
-  challenge.entries.sort((a, b) => b.score - a.score);
+  // Sort by score descending, then by playerId for deterministic tiebreaker (stable sort)
+  challenge.entries.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return a.playerId.localeCompare(b.playerId);
+  });
   challenge.entries.forEach((entry, index) => {
     entry.rank = index + 1;
   });
