@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -784,6 +784,7 @@ export function SongVotingModal({ songs, players, onVote, onClose, gameColor }: 
   gameColor: string;
 }) {
   const [votes, setVotes] = useState<Record<string, string>>({});
+  const coverBlobUrlsRef = useRef<string[]>([]);
 
   // Restore cover URLs for voting songs (Tauri: relative paths, Browser: IndexedDB)
   const [enrichedSongs, setEnrichedSongs] = useState<Song[]>(songs);
@@ -803,9 +804,12 @@ export function SongVotingModal({ songs, players, onVote, onClose, gameColor }: 
             // Fallback: check IndexedDB for stored media (browser mode)
             try {
               if (s.storedMedia) {
-                const { getSongMediaUrls } = await import('@/lib/db/media-db');
+                const { getSongMediaUrls, revokeSongMediaUrls } = await import('@/lib/db/media-db');
                 const urls = await getSongMediaUrls(s.id);
-                if (urls.coverUrl) return { ...s, coverImage: urls.coverUrl };
+                if (urls.coverUrl) {
+                  coverBlobUrlsRef.current.push(urls.coverUrl);
+                  return { ...s, coverImage: urls.coverUrl };
+                }
               }
             } catch { /* non-critical */ }
             // Fallback: try constructing cover from coverFile and folderPath
@@ -829,7 +833,11 @@ export function SongVotingModal({ songs, players, onVote, onClose, gameColor }: 
       } catch { /* non-critical */ }
     };
     restoreCovers();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      coverBlobUrlsRef.current.forEach(url => { if (url.startsWith('blob:')) try { URL.revokeObjectURL(url); } catch {} });
+      coverBlobUrlsRef.current = [];
+    };
   }, [songs]);
 
   const handleVote = (songId: string) => onVote(songId);

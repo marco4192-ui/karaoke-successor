@@ -34,6 +34,8 @@ export interface UseGameMediaResult {
 export function useGameMedia(song: Song | null): UseGameMediaResult {
   // ── State for song with restored URLs (if needed) ──
   const [restoredSong, setRestoredSong] = useState<Song | null>(null);
+  // Track blob URLs created by getSongMediaUrls for cleanup
+  const lastIdxDbUrlsRef = useRef<{ audioUrl?: string; videoUrl?: string; coverUrl?: string; txtUrl?: string } | null>(null);
 
   // ── On-demand URL restoration for Tauri - ensure media URLs are valid ──
   useEffect(() => {
@@ -59,8 +61,11 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
         const needsIdxDbVideo = !preparedSong.videoBackground || isStaleBlob(preparedSong.videoBackground);
         if (preparedSong.storedMedia && (needsIdxDbAudio || needsIdxDbVideo)) {
           try {
-            const { getSongMediaUrls } = await import('@/lib/db/media-db');
+            // Revoke previous blob URLs before creating new ones
+            const { getSongMediaUrls, revokeSongMediaUrls } = await import('@/lib/db/media-db');
+            if (lastIdxDbUrlsRef.current) revokeSongMediaUrls(lastIdxDbUrlsRef.current);
             const mediaUrls = await getSongMediaUrls(preparedSong.id);
+            lastIdxDbUrlsRef.current = mediaUrls;
             if (mediaUrls.audioUrl && needsIdxDbAudio) preparedSong = { ...preparedSong, audioUrl: mediaUrls.audioUrl };
             if (mediaUrls.videoUrl && needsIdxDbVideo) preparedSong = { ...preparedSong, videoBackground: mediaUrls.videoUrl };
           } catch (e) {
@@ -78,7 +83,15 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
     };
 
     restoreUrls();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      // Revoke blob URLs from previous song to prevent memory leaks
+      if (lastIdxDbUrlsRef.current) {
+        import('@/lib/db/media-db').then(({ revokeSongMediaUrls }) => {
+          revokeSongMediaUrls(lastIdxDbUrlsRef.current!);
+        });
+      }
+    };
   }, [song?.id, song?.audioUrl, song?.videoBackground, song?.coverImage, song?.relativeAudioPath, song?.relativeVideoPath, song?.relativeCoverPath]);
 
   // Use restored song if available, otherwise use original song

@@ -205,6 +205,7 @@ function PassTheMicGameView({
   // ── URL restoration for Tauri ──
   const [effectiveSong, setEffectiveSong] = useState<Song>(song);
   const [mediaReady, setMediaReady] = useState(false);
+  const ptmMediaUrlsRef = useRef<{ audioUrl?: string; videoUrl?: string; coverUrl?: string; txtUrl?: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -217,8 +218,10 @@ function PassTheMicGameView({
 
         // Also check IndexedDB for stored media blobs
         if (restored.storedMedia && !restored.audioUrl) {
-          const { getSongMediaUrls } = await import('@/lib/db/media-db');
+          const { getSongMediaUrls, revokeSongMediaUrls } = await import('@/lib/db/media-db');
+          if (ptmMediaUrlsRef.current) revokeSongMediaUrls(ptmMediaUrlsRef.current);
           const urls = await getSongMediaUrls(restored.id);
+          ptmMediaUrlsRef.current = urls;
           if (cancelled) return;
           if (urls.audioUrl) restored.audioUrl = urls.audioUrl;
           if (urls.videoUrl) restored.videoBackground = urls.videoUrl;

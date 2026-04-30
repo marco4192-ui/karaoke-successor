@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Song } from '@/types/game';
-import { getSongMediaUrls } from '@/lib/db/media-db';
+import { getSongMediaUrls, revokeSongMediaUrls } from '@/lib/db/media-db';
 import { getSongMediaUrl, isTauri } from '@/lib/tauri-file-storage';
 
 interface UseBattleRoyaleSongMediaParams {
@@ -42,6 +42,8 @@ export function useBattleRoyaleSongMedia({
 
   // Track the last round + song we handled to avoid redundant resets
   const lastHandledRef = useRef<string>('');
+  // Track blob URLs created by getSongMediaUrls for cleanup
+  const lastMediaUrlsRef = useRef<{ audioUrl?: string; videoUrl?: string; coverUrl?: string; txtUrl?: string }>({});
 
   // Load full song data with lyrics + URLs when round changes
   useEffect(() => {
@@ -102,7 +104,10 @@ export function useBattleRoyaleSongMedia({
       // Browser: Load from IndexedDB if storedMedia flag is set
       if (currentSong.storedMedia) {
         try {
+          // Revoke previous round's blob URLs before creating new ones
+          revokeSongMediaUrls(lastMediaUrlsRef.current);
           const mediaUrls = await getSongMediaUrls(currentSong.id);
+          lastMediaUrlsRef.current = mediaUrls;
           if (mediaUrls.audioUrl) audioUrl = mediaUrls.audioUrl;
           if (mediaUrls.videoUrl) videoUrl = mediaUrls.videoUrl;
         } catch (e) {
@@ -154,6 +159,11 @@ export function useBattleRoyaleSongMedia({
 
     loadMedia();
   }, [currentSong, gameCurrentRound]);
+
+  // Cleanup: revoke blob URLs on unmount
+  useEffect(() => {
+    return () => { revokeSongMediaUrls(lastMediaUrlsRef.current); };
+  }, []);
 
   return {
     currentSong,

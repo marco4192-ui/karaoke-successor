@@ -11,3 +11,11 @@
 
 ---
 
+
+### C1: getSortedFolderKeys fehlt — FolderView Crash ✅
+- **Datei**: `src/components/screens/library/utils.ts`
+- **Problem**: `FolderView` importierte `getSortedFolderKeys` aus `./utils`, aber die Funktion existierte nicht
+- **Fix**: Funktion implementiert — A-Z Sortierung für Buchstaben-Gruppen mit `#` am Ende, alphabetisch für andere Gruppierungen
+- **Commit**: `9047cd8`
+
+---

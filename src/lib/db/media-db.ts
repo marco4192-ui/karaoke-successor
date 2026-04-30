@@ -53,10 +53,7 @@ export async function storeMedia(
   type: 'audio' | 'video' | 'cover' | 'txt', 
   data: Blob
 ): Promise<void> {
-  if (data.size === 0) {
-    console.warn('[MediaDB] Attempting to store empty blob for', type);
-    return;
-  }
+  if (data.size === 0) return;
   
   const db = await initMediaDB();
   
@@ -158,6 +155,21 @@ export async function getSongMediaUrls(songId: string): Promise<{
     coverUrl: cover && cover.size > 0 ? URL.createObjectURL(cover) : undefined,
     txtUrl: txt && txt.size > 0 ? URL.createObjectURL(txt) : undefined
   };
+}
+
+// Revoke blob URLs created by getSongMediaUrls to prevent memory leaks.
+// Safe to call even if the URLs were already revoked or weren't blob: URLs.
+export function revokeSongMediaUrls(urls: {
+  audioUrl?: string;
+  videoUrl?: string;
+  coverUrl?: string;
+  txtUrl?: string;
+}): void {
+  for (const url of [urls.audioUrl, urls.videoUrl, urls.coverUrl, urls.txtUrl]) {
+    if (url?.startsWith('blob:')) {
+      try { URL.revokeObjectURL(url); } catch {}
+    }
+  }
 }
 
 // Get TXT file content as text
