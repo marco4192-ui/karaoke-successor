@@ -15,26 +15,7 @@ export { loadSongLyrics } from './song-lyrics-loader';
 import { restoreSongUrls } from './song-url-restore';
 import { loadSongLyrics } from './song-lyrics-loader';
 
-const SETTINGS_KEY = 'karaoke-successor-settings';
 const CUSTOM_SONGS_KEY = 'karaoke-successor-custom-songs';
-
-export interface LibrarySettings {
-  sortBy: 'title' | 'artist' | 'difficulty' | 'rating' | 'lastPlayed' | 'dateAdded';
-  sortOrder: 'asc' | 'desc';
-  filterDifficulty: 'all' | 'easy' | 'medium' | 'hard';
-  filterGenre: string;
-  viewMode: 'grid' | 'list';
-  folders: string[]; // Scanned folders
-}
-
-const defaultSettings: LibrarySettings = {
-  sortBy: 'title',
-  sortOrder: 'asc',
-  filterDifficulty: 'all',
-  filterGenre: 'all',
-  viewMode: 'grid',
-  folders: [],
-};
 
 // In-memory song cache
 let songCache: Song[] | null = null;
@@ -326,110 +307,7 @@ function saveToLocalStorage(songs: Song[]): void {
   }
 }
 
-// Get library settings
-export function getLibrarySettings(): LibrarySettings {
-  try {
-    const stored = localStorage.getItem(SETTINGS_KEY);
-    if (stored) {
-      return { ...defaultSettings, ...JSON.parse(stored) };
-    }
-  } catch (e) {
-    console.error('Failed to load library settings:', e);
-  }
-  return defaultSettings;
-}
-
-// Save library settings
-export function saveLibrarySettings(settings: Partial<LibrarySettings>): void {
-  try {
-    const current = getLibrarySettings();
-    const updated = { ...current, ...settings };
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
-  } catch (e) {
-    console.error('Failed to save library settings:', e);
-  }
-}
-
-// Sort songs
-export function sortSongs(songs: Song[], settings: LibrarySettings): Song[] {
-  const { sortBy, sortOrder } = settings;
-
-  const sorted = [...songs].sort((a, b) => {
-    let comparison = 0;
-
-    switch (sortBy) {
-      case 'title':
-        comparison = a.title.localeCompare(b.title);
-        break;
-      case 'artist':
-        comparison = a.artist.localeCompare(b.artist);
-        break;
-      case 'difficulty':
-        const diffOrder = { easy: 1, medium: 2, hard: 3 };
-        comparison = diffOrder[a.difficulty] - diffOrder[b.difficulty];
-        break;
-      case 'rating':
-        comparison = (b.rating || 0) - (a.rating || 0);
-        break;
-      case 'lastPlayed':
-        comparison = (b.lastPlayed || 0) - (a.lastPlayed || 0);
-        break;
-      case 'dateAdded':
-        comparison = (b.dateAdded || 0) - (a.dateAdded || 0);
-        break;
-    }
-
-    return sortOrder === 'asc' ? comparison : -comparison;
-  });
-
-  return sorted;
-}
-
-// Filter songs by library settings (difficulty + genre from LibrarySettings object)
-export function filterSongsBySettings(songs: Song[], settings: LibrarySettings): Song[] {
-  let filtered = [...songs];
-
-  if (settings.filterDifficulty !== 'all') {
-    filtered = filtered.filter(s => s.difficulty === settings.filterDifficulty);
-  }
-
-  if (settings.filterGenre && settings.filterGenre !== 'all') {
-    filtered = filtered.filter(s =>
-      s.genre?.toLowerCase().includes(settings.filterGenre.toLowerCase())
-    );
-  }
-
-  return filtered;
-}
-
-// Search songs
-// Includes title, artist, genre, album, tags, and edition in search
-export function searchSongs(query: string): Song[] {
-  const songs = getAllSongs();
-  if (!query) return songs;
-
-  const lowerQuery = query.toLowerCase();
-  return songs.filter(song => {
-    // Search in basic fields
-    if (song.title.toLowerCase().includes(lowerQuery)) return true;
-    if (song.artist.toLowerCase().includes(lowerQuery)) return true;
-    if (song.genre?.toLowerCase().includes(lowerQuery)) return true;
-    if (song.album?.toLowerCase().includes(lowerQuery)) return true;
-
-    // Search in tags (comma-separated)
-    if (song.tags) {
-      const tags = song.tags.toLowerCase().split(',').map(t => t.trim());
-      if (tags.some(tag => tag.includes(lowerQuery))) return true;
-    }
-
-    // Search in edition
-    if (song.edition?.toLowerCase().includes(lowerQuery)) return true;
-
-    return false;
-  });
-}
-
-// Get song by ID
+// Get song by ID (used internally by getSongByIdWithLyrics)
 export function getSongById(id: string): Song | undefined {
   const songs = getAllSongs();
   return songs.find(song => song.id === id);
@@ -555,24 +433,6 @@ export function filterSongs(
   return filtered;
 }
 
-// Export songs for backup
-export function exportSongs(): string {
-  const customSongs = getCustomSongs();
-  return JSON.stringify(customSongs, null, 2);
-}
-
-// Import songs from backup
-export function importSongsFromBackup(json: string): number {
-  try {
-    const songs = JSON.parse(json) as Song[];
-    addSongs(songs);
-    return songs.length;
-  } catch (e) {
-    console.error('Failed to import songs:', e);
-    return 0;
-  }
-}
-
 // Clear all custom songs
 export function clearCustomSongs(): void {
   try { localStorage.removeItem(CUSTOM_SONGS_KEY); } catch {}
@@ -588,40 +448,6 @@ export function clearCustomSongs(): void {
       console.warn('[SongLibrary] Failed to clear IndexedDB:', e);
     });
   }
-}
-
-// Reload library - clear cache and force fresh load from localStorage
-export function reloadLibrary(): Song[] {
-  clearSongCache();
-  // Clear blob URL cache in Tauri to force fresh loads
-  if (isTauri()) {
-    clearBlobUrlCache();
-  }
-  return getAllSongs();
-}
-
-// Check if a song exists in custom songs (for update detection)
-export function songExists(title: string, artist: string): boolean {
-  const customSongs = getCustomSongs();
-  return customSongs.some(s => s.title === title && s.artist === artist);
-}
-
-// Replace a song (for updates)
-export function replaceSong(song: Song): void {
-  let customSongs = getCustomSongs();
-  const index = customSongs.findIndex(s => s.title === song.title && s.artist === song.artist);
-
-  if (index !== -1) {
-    customSongs[index] = { ...song, id: customSongs[index].id };
-  } else {
-    customSongs.push({
-      ...song,
-      id: song.id || generateId('custom'),
-    });
-  }
-
-  saveCustomSongs(customSongs);
-  songCache = null;
 }
 
 // Get all songs asynchronously (with URL restoration for Tauri and IndexedDB for browser)
