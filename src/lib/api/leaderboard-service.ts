@@ -5,8 +5,8 @@
 
 import type { PlayerProfile, PlayerStats, HighscoreEntry, Song, Difficulty, GameMode, Achievement } from '@/types/game';
 
-// API Configuration - Update this to your hosted API URL
-const API_BASE_URL = 'https://hosting236176.ae88b.netcup.net/leaderboard-api';
+// API Configuration — configurable via NEXT_PUBLIC_LEADERBOARD_URL env variable
+const API_BASE_URL = process.env.NEXT_PUBLIC_LEADERBOARD_URL || 'https://hosting236176.ae88b.netcup.net/leaderboard-api';
 
 export interface ApiPlayer {
   id: string;
