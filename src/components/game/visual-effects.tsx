@@ -688,6 +688,10 @@ export function LiveWaveform({
     }
     const source = sourceRef.current;
 
+    // Disconnect previous analyser if stream changed
+    if (analyserRef.current) {
+      try { analyserRef.current.disconnect(); } catch {}
+    }
     const analyser = audioContext.createAnalyser();
     analyser.fftSize = 2048;
     source.connect(analyser);
@@ -742,6 +746,20 @@ export function LiveWaveform({
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = undefined;
+      }
+      // Cleanup audio resources when component unmounts
+      if (analyserRef.current) {
+        try { analyserRef.current.disconnect(); } catch {}
+        analyserRef.current = null;
+      }
+      if (sourceRef.current) {
+        try { sourceRef.current.disconnect(); } catch {}
+        sourceRef.current = null;
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {});
+        audioContextRef.current = null;
       }
     };
   }, [audioStream, isActive, color, height]);

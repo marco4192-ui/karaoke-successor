@@ -421,6 +421,9 @@ export function PtmGameScreen({
 
     // Use requestAnimationFrame to ensure the new audio/video element (from key change)
     // has been committed to the DOM before we try to access it via refs.
+    const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const canplaySafetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     const rafId = requestAnimationFrame(() => {
       const media = audioRef.current || (videoRef.current && !isYouTube ? videoRef.current : null);
       if (!media) {
@@ -432,7 +435,8 @@ export function PtmGameScreen({
             m2.play().catch(() => {});
           }
         }, 200);
-        return () => clearTimeout(retryTimer);
+        retryTimerRef.current = retryTimer;
+        // Note: return value from rAF callback is ignored by requestAnimationFrame.
       }
 
       const seekAndPlay = () => {
@@ -458,7 +462,7 @@ export function PtmGameScreen({
         };
         media.addEventListener('canplay', onCanPlay);
         // Also clean up after timeout to avoid leaking listeners
-        const timeout = setTimeout(() => {
+        canplaySafetyTimerRef.current = setTimeout(() => {
           media.removeEventListener('canplay', onCanPlay);
         }, 5000);
         // Note: we can't easily clean up both in the effect cleanup since
@@ -466,7 +470,11 @@ export function PtmGameScreen({
       }
     });
 
-    return () => cancelAnimationFrame(rafId);
+    return () => {
+      cancelAnimationFrame(rafId);
+      if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); retryTimerRef.current = null; }
+      if (canplaySafetyTimerRef.current) { clearTimeout(canplaySafetyTimerRef.current); canplaySafetyTimerRef.current = null; }
+    };
   }, [currentSegmentIndex, isMedleyMode, currentSnippet, phase, isPlaying, audioRef, videoRef, isYouTube]);
 
   // ── Start game (countdown → playing) ──
@@ -530,7 +538,7 @@ export function PtmGameScreen({
             } else {
               // Media element not ready yet — retry shortly
               console.warn('[PTM] No media element available at game start, retrying...');
-              setTimeout(() => {
+              const retryId = setTimeout(() => {
                 if (audioRef.current) {
                   audioRef.current.currentTime = seekTo;
                   audioRef.current.play().catch(() => {});
@@ -539,6 +547,8 @@ export function PtmGameScreen({
                   videoRef.current.play().catch(() => {});
                 }
               }, 300);
+              // Store for cleanup (will be cleared by countdownIntervalRef cleanup or unmount)
+              return () => clearTimeout(retryId);
             }
           });
           return 0;
