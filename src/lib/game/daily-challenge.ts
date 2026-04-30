@@ -393,17 +393,6 @@ export function isChallengeCompletedToday(): boolean {
   return false;
 }
 
-// Mark challenge as completed (simple version without submission)
-export function markChallengeCompleted(): void {
-  if (typeof window === 'undefined') return;
-  
-  localStorage.setItem(DAILY_CHALLENGE_KEY, JSON.stringify({
-    date: new Date().toDateString(),
-    completed: true,
-    streak: getPlayerDailyStats().currentStreak,
-  }));
-}
-
 // Get XP level info (uses shared threshold config)
 export function getXPLevel(xp: number): { level: number; title: string; progress: number; nextLevel: number } {
   let currentLevel = 0;
