@@ -297,6 +297,17 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
                 tick.accuracy,
                 1, 0, 1
               );
+            } else {
+              // Miss: reset combo (but don't inflate notesMissed per tick)
+              const p = batchedGame.players.find(pl => pl.id === player.id);
+              if (p && p.currentCombo > 0) {
+                batchedGame = updatePlayerScore(
+                  batchedGame,
+                  player.id,
+                  0, 0, 0, 0,
+                  -(p.currentCombo) // Reset combo to 0
+                );
+              }
             }
           }
 
@@ -320,6 +331,17 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
                   tick.accuracy,
                   1, 0, 1
                 );
+              } else {
+                // Miss: reset combo (but don't inflate notesMissed per tick)
+                const p = batchedGame.players.find(pl => pl.id === player.id);
+                if (p && p.currentCombo > 0) {
+                  batchedGame = updatePlayerScore(
+                    batchedGame,
+                    player.id,
+                    0, 0, 0, 0,
+                    -(p.currentCombo) // Reset combo to 0
+                  );
+                }
               }
             }
           }
