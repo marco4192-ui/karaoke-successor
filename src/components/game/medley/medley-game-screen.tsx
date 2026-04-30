@@ -325,6 +325,9 @@ export function MedleyGameScreen({
     return () => clearInterval(interval);
   }, [phase, currentSnippetIdx]);
 
+  // ── Countdown interval ref for cleanup on unmount ──
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   // ── Start game ──
   const handleStart = useCallback(async () => {
     setPhase('countdown');
@@ -342,6 +345,7 @@ export function MedleyGameScreen({
       setCountdown(prev => {
         if (prev <= 1) {
           clearInterval(interval);
+          countdownIntervalRef.current = null;
           setPhase('playing');
           if (audioRef.current && currentSnippet) {
             audioRef.current.currentTime = currentSnippet.startTime / 1000;
@@ -354,6 +358,7 @@ export function MedleyGameScreen({
         return prev - 1;
       });
     }, 1000);
+    countdownIntervalRef.current = interval;
   }, [multiPitch, currentSnippet]);
 
   // ── Round complete ──
@@ -398,7 +403,10 @@ export function MedleyGameScreen({
 
   // ── Cleanup ──
   useEffect(() => {
-    return () => { multiPitch.stop(); };
+    return () => {
+      multiPitch.stop();
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    };
   }, [multiPitch]);
 
   // ── Helpers ──

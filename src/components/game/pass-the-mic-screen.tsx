@@ -401,6 +401,8 @@ function PassTheMicGameView({
   }, [currentPlayerIndex, phase, switchMicrophone]);
 
   // ── Start game (countdown → playing) ──
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const startGame = async () => {
     setPhase('countdown');
     setCountdown(3);
@@ -415,6 +417,7 @@ function PassTheMicGameView({
       setCountdown(prev => {
         if (prev <= 1) {
           clearInterval(interval);
+          countdownIntervalRef.current = null;
           setPhase('playing');
           setIsPlaying(true);
           setCurrentTime(0);
@@ -427,6 +430,7 @@ function PassTheMicGameView({
         return prev - 1;
       });
     }, 1000);
+    countdownIntervalRef.current = interval;
   };
 
   // ── Helpers ──
@@ -484,7 +488,10 @@ function PassTheMicGameView({
 
   // ── Cleanup on unmount ──
   useEffect(() => {
-    return () => { stop(); };
+    return () => {
+      stop();
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    };
   }, [stop]);
 
   // ===================== RENDER =====================

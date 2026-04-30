@@ -460,6 +460,8 @@ export function PtmGameScreen({
   }, [currentSegmentIndex, isMedleyMode, currentSnippet, phase, isPlaying, audioRef, videoRef, isYouTube]);
 
   // ── Start game (countdown → playing) ──
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const startGame = async () => {
     // Guard: ensure lyrics are available before starting
     const songToCheck = isMedleyMode && currentSnippet ? currentSnippet.song : effectiveSong;
@@ -491,6 +493,7 @@ export function PtmGameScreen({
       setCountdown(prev => {
         if (prev <= 1) {
           clearInterval(interval);
+          countdownIntervalRef.current = null;
           setPhase('playing');
           setIsPlaying(true);
           setCurrentTime(0);
@@ -533,6 +536,7 @@ export function PtmGameScreen({
         return prev - 1;
       });
     }, 1000);
+    countdownIntervalRef.current = interval;
   };
 
   // ── Helpers ──
@@ -644,6 +648,7 @@ export function PtmGameScreen({
       activeWebcamStreamsRef.current = [];
       // Remove any orphaned webcam video elements
       document.querySelectorAll('video[style*="z-index:100"]').forEach(el => el.remove());
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     };
   }, [stop]);
 
