@@ -381,3 +381,274 @@ Diese Session: Fokus auf aufwendigere Aufgaben — Dead-Code-Features implementi
 ### ✅ A8 — Dead Code Bereinigung
 - **Commit:** `b8f6b1b`
 - **Dateien:** 5 Dateien (results-screen, player-progression, song-library, media-db, medley-game-screen)
+
+---
+
+# Code Review — Fresh Review #6
+
+**Datum:** 2026-04-30
+**Repo:** karaoke-successor
+**Branch:** origin/master
+**Stand:** Commit adca7b5
+
+---
+
+## Zusammenfassung
+
+Vorherige Sessions: 68 + 7 + 6 + 13 + 8 = 102 Punkte umgesetzt.
+Diese Session: 6 kritische Bugs + 6 Bugs gefixt. Dead Code und Verbesserungen dokumentiert (nicht gelöscht).
+
+---
+
+## Gefundene & Gefixte Punkte
+
+### C1: TDZ-Crash in results-screen.tsx — `player2Result` vor Deklaration referenziert
+- **Datei:** `src/components/screens/results-screen.tsx`, Zeile 292/336
+- **Beschreibung:** Im useEffect wurde `player2Result` bei Zeile 292 referenziert (`isDuelWin = isDuel && player2Result && ...`), aber erst bei Zeile 336 mit `const player2Result = results.players[1]` deklariert. Da `const` in der Temporal Dead Zone ist, warf dies einen ReferenceError sobald `isDuel` truthy war. In Duel/Duet-Mode: P2-Highscore nie gespeichert, Achievements nie geprüft, XP nie aktualisiert, Daily Challenge nie submitted.
+- **Fix:** `player2Result` und `isMultiplayerMode` Deklaration vor die Achievement-Prüfung verschoben.
+
+### C2: (False Positive — `as const` Streak Milestones)
+- **Beschreibung:** Ursprünglich als Typ-Mismatch gemeldet. Bei genauerer Prüfung: `as const` ist ein reines TypeScript-Compiletime-Feature. Zur Laufzeit funktioniert `XP_REWARDS.STREAK_MILESTONES[7]` einwandfrei. Kein Bug.
+
+### C3: Performance-Stats verwenden `totalSessions` statt `songsCompleted`
+- **Datei:** `src/lib/game/player-progression.ts`, Zeile 740
+- **Beschreibung:** `updatePerformanceStats(stats, gameData, stats.totalSessions` nutzt Session-Anzahl (App-Öffnungen) als Divisor für Score/Accuracy-Durchschnitte statt der Anzahl tatsächlich gespielter Songs.
+- **Fix:** `stats.totalSessions` → `stats.songsCompleted`.
+
+### C4: YouTube `wasPlayingBeforeAdRef` ist Plain Object statt `useRef`
+- **Datei:** `src/hooks/use-youtube-game.ts`, Zeile 48
+- **Beschreibung:** `const wasPlayingBeforeAdRef = { current: false }` erzeugt bei jedem Render ein neues Objekt. `handleAdEnd` (stable via useCallback) captured das initiale Objekt, liest also immer den Initialwert `false`. Auto-Resume nach Werbepausen funktionierte nicht.
+- **Fix:** `{ current: false }` → `useRef(false)`, `useRef` zum Import hinzugefügt.
+
+### C5: PTM Mobile-Sync sendet falschen Phase-Wert
+- **Datei:** `src/components/game/ptm-game-screen.tsx`, Zeile 187
+- **Beschreibung:** `phase === 'results'` wird als `isEnded`-Flag an Mobile-Clients gesendet. Aber `GamePhase` definiert `'song-results' | 'series-results'`, nie `'results'`. Mobile-Companions wurden nie über Spielende informiert.
+- **Fix:** `phase === 'results'` → `phase === 'song-results' || phase === 'series-results'`.
+
+### C6: UltraStar-Parser fehlt BOM/Line-Ending-Normalisierung
+- **Datei:** `src/lib/parsers/ultrastar-parser.ts`, Zeile 74
+- **Beschreibung:** `parseUltraStarTxt()` splittet rohen Content auf `\n` ohne vorherige Normalisierung. Dateien mit UTF-8 BOM (`\uFEFF`) oder Windows-Zeilenenden (`\r\n`) parsen fehlerhaft — Titel beginnt mit BOM-Zeichen, `\r` bleibt in Lyrics.
+- **Fix:** `normalizeTxtContent(content)` (aus `utils.ts`) vor dem Split aufgerufen.
+
+### B1: VIDEOGAP/VIDEOSTART als `parseInt` statt `parseFloat` geparst
+- **Datei:** `src/lib/tauri-file-storage.ts`, Zeilen 473/475
+- **Beschreibung:** `#VIDEOGAP:` und `#VIDEOSTART:` unterstützen Sekundenbruchteile (z.B. `-1.5`), werden aber mit `parseInt` geparst → abgeschnitten auf `-1`. Falsches Video-Sync.
+- **Fix:** `parseInt` → `parseFloat` mit Komma-Replace.
+
+### B2: Editor-Animations-Loop wird bei Playback-Rate-Wechsel nicht neugestartet
+- **Datei:** `src/hooks/use-editor-playback.ts`, Zeile 87
+- **Beschreibung:** `playbackRate` fehlt im Dependency-Array des rAF-Effects. Bei Rate-Änderung während der Wiedergabe driftet die visuelle Timeline vom Audio.
+- **Fix:** `playbackRate` zum Dependency-Array hinzugefügt.
+
+### B3: `detectBpm` löscht vorheriges Pitch-Analyse-Ergebnis nicht
+- **Datei:** `src/hooks/use-audio-analysis.ts`
+- **Beschreibung:** Wechsel zwischen Pitch-Analyse und BPM-Erkennung lässt das alte Ergebnis stehen. Verwirrende UI-Anzeige.
+- **Fix:** `setResult(null)` in `detectBpm`, `setBpmResult(null)` in `analyzePitch`.
+
+### B4: Results-Screen ohne Guard für leere Players-Liste
+- **Datei:** `src/components/screens/results-screen.tsx`, Zeile 486
+- **Beschreibung:** Guard prüft nur `!results || !song`, nicht `!results.players?.length`. Zugriff auf `results.players[0]` crasht bei leerem Array.
+- **Fix:** `!results.players || results.players.length === 0` zum Guard hinzugefügt.
+
+### B5: Unused Import `getAllSongs` in tournament-screen.tsx
+- **Datei:** `src/components/game/tournament-screen.tsx`, Zeile 17
+- **Fix:** Import entfernt.
+
+### B6: Battle-Royale `duration` verwendet `||` statt `??`
+- **Datei:** `src/components/game/battle-royale-screen.tsx`, Zeile 79
+- **Beschreibung:** `duration || 60` würde auch bei `duration === 0` (möglicherweise gültig für "no limit") auf 60 fallen. Richtig: `duration ?? 60`.
+- **Fix:** `||` → `??`.
+
+---
+
+## Umsetzungs-Log
+
+### ✅ C1 — TDZ-Crash gefixt
+- **Commit:** `78d0e58`
+- **Datei:** `src/components/screens/results-screen.tsx`
+
+### ✅ C3 — Performance-Stats Divisor korrigiert
+- **Commit:** `95857d0`
+- **Datei:** `src/lib/game/player-progression.ts`
+
+### ✅ C4 — useRef statt Plain Object
+- **Commit:** `5de96e1`
+- **Datei:** `src/hooks/use-youtube-game.ts`
+
+### ✅ C5 — PTM Phase-Wert korrigiert
+- **Commit:** `808c946`
+- **Datei:** `src/components/game/ptm-game-screen.tsx`
+
+### ✅ C6 — BOM-Normalisierung hinzugefügt
+- **Commit:** `fba0157`
+- **Datei:** `src/lib/parsers/ultrastar-parser.ts`
+
+### ✅ B1 — VIDEOGAP/VIDEOSTART parseFloat
+- **Commit:** `ab9d95f`
+- **Datei:** `src/lib/tauri-file-storage.ts`
+
+### ✅ B2 — Editor Playback-Rate Dependency
+- **Commit:** `9b9b25c`
+- **Datei:** `src/hooks/use-editor-playback.ts`
+
+### ✅ B3 — Analyse-Ergebnis-Clearing
+- **Commit:** `2dc56a3`
+- **Datei:** `src/hooks/use-audio-analysis.ts`
+
+### ✅ B4 — Empty Players Guard
+- **Commit:** `460adce`
+- **Datei:** `src/components/screens/results-screen.tsx`
+
+### ✅ B5+B6 — Unused Import + Nullish Coalescing
+- **Commit:** `adca7b5`
+- **Dateien:** `tournament-screen.tsx`, `battle-royale-screen.tsx`
+
+---
+
+## Dead Code (nicht gelöscht — nur dokumentiert)
+
+### D1: `isPlayerFinished()` — competitive-words-blind.ts
+- **Wahrscheinliche Funktion:** Prüft, ob ein Spieler alle Runden absolviert hat. Wurde für Round-Management geplant, aber `getNextRoundPairing` nutzt `singCounts` direkt.
+
+### D2: `markChallengeCompleted()` — daily-challenge.ts
+- **Wahrscheinliche Funktion:** Einfache Alternative zu `submitChallengeResult()`, die nur den Abschluss-Flag setzt ohne Scoring. Nachdem `submitChallengeResult` eingebunden wurde, überflüssig.
+
+### D3: `getNextSong()` — battle-royale.ts
+- **Wahrscheinliche Funktion:** Nächsten Song aus der Warteschlange per Modulo-Index holen. Die Song-Auswahl läuft jetzt über andere Mechanismen.
+
+### D4: `getActivePlayersByType()` — battle-royale.ts
+- **Wahrscheinliche Funktion:** Aktive (nicht eliminierte) Spieler nach Typ (Mikrofon vs Companion) filtern.
+
+### D5: `setPlayerActive()` — battle-royale.ts
+- **Wahrscheinliche Funktion:** Spieler-Mikrofon mid-game stummschalten.
+
+### D6: `removeCompanionPlayer()` — battle-royale.ts
+- **Wahrscheinliche Funktion:** Companion bei Disconnect während Setup entfernen.
+
+### D7: `updateCompanionHeartbeat()` — battle-royale.ts
+- **Wahrscheinliche Funktion:** Heartbeat-Timestamp für Companion aktualisieren um Disconnects zu erkennen.
+
+### D8: `serializeBattleRoyale()` / `deserializeBattleRoyale()` — battle-royale.ts
+- **Wahrscheinliche Funktion:** Game-State für Persistenz über Page-Reload serialisieren.
+
+### D9: `getEliminationOrder()` — battle-royale.ts
+- **Wahrscheinliche Funktion:** Spieler nach Eliminierungs-Runde sortieren für Ergebnis-Anzeige.
+
+### D10: `calculateRounds()` — tournament.ts (nur intern genutzt)
+- **Wahrscheinliche Funktion:** Anzahl Runden aus Spielerzahl berechnen. Export unnötig.
+
+### D11: Viele `XP_SOURCES`-Einträge — player-progression.ts
+- **Wahrscheinliche Funktion:** `DAILY_COMPLETE`, `CHALLENGE_COMPLETE`, `DUET_COMPLETE`, `LEVEL_UP` etc. — definiert aber nie referenziert (Daily Challenge hat eigenes XP-System).
+
+### D12: `PERFECT_CHALLENGE: 50` — daily-challenge.ts
+- **Wahrscheinliche Funktion:** XP-Belohnung für 100% Accuracy in Accuracy-Challenge. Definiert aber nie vergeben.
+
+### D13: `VoiceRecorder` Klasse — audio-effects.ts (~40 Zeilen)
+- **Wahrscheinliche Funktion:** MediaRecorder-basiertes Voice-Recording für Share-Feature. Implementierung läuft über `use-replay-recorder`.
+
+### D14: `getSpectrogramData()`, `getAnalyser()`, `isActive()`, `getCurrentPreset()`, `getSettings()` — audio-effects.ts
+- **Wahrscheinliche Funktion:** Analyser-Daten für Visualisierung, Status-Abfrage, Preset-Abfrage, Settings-Serialisierung. Alles für eine geplante aber nicht implementierte Preset-Panel-UI.
+
+### D15: Sechs `*Enabled()` Setzer + Bulk-Setter — audio-effects.ts
+- **Wahrscheinliche Funktion:** Individuelle Effekt-Toggle (Reverb/Delay/EQ/Compressor/Distortion) und Master-Volume. Für geplante UI-Steuerelemente.
+
+### D16: `resetPitchDetectorManager()` — pitch-detector.ts
+- **Wahrscheinliche Funktion:** Singleton-Reset für Tests/Hot-Reload. Analog zu `resetPitchDetector` das verwendet wird.
+
+### D17: `resetMicrophoneManager()` — microphone-manager.ts
+- **Wahrscheinliche Funktion:** Singleton-Reset für Tests/Cleanup.
+
+### D18: `checkOptimalSettings()`, `getAllMicsSettingsStatus()`, `applyOptimalSettingsToAll()` — microphone-manager.ts
+- **Wahrscheinliche Funktion:** Mikrofon-Compliance-Check für alle Spieler, Ein-Klick-Optimal-Einstellungen.
+
+### D19: `getConnectedDevice()` — microphone-manager.ts
+- **Wahrscheinliche Funktion:** Aktuelle Mikrofon-Info für UI-Anzeige.
+
+### D20: `getMicrophoneForPlayer()` — microphone-manager.ts
+- **Wahrscheinliche Funktion:** Lookup welches Mikrofon welchem Spieler zugewiesen ist.
+
+### D21: P3/P4 Scoring State — use-note-scoring.ts
+- **Wahrscheinliche Funktion:** `p3ScoreEvents`, `p4ScoreEvents`, `p3State`, `p4State` etc. — geplant für 4-Spieler-Party-Mode. Architektur nutzt jetzt `useMultiPitchDetector`.
+
+### D22: `emitConfetti` — game-screen.tsx
+- **Wahrscheinliche Funktion:** Konfetti-Partikel bei Meilensteinen (Song-Abschluss, Highscore). Destructured aber nie aufgerufen.
+
+### D23: `onSelectSong` — daily-challenge-screen.tsx
+- **Wahrscheinliche Funktion:** Für geplante "Eigenen Song wählen"-Funktion. Deklariert aber nie aufgerufen.
+
+### D24: `folderMap` Variable — folder-scanner.ts
+- **Wahrscheinliche Funktion:** Map für Folder-Hierarchie. Deklariert aber nie befüllt oder gelesen.
+
+### D25: `hasMedia()` — media-db.ts (private)
+- **Wahrscheinliche Funktion:** Prüft ob Media für eine Song-ID existiert. Definiert aber nie aufgerufen.
+
+### D26: `clearAllMedia()` — media-db.ts (private)
+- **Wahrscheinliche Funktion:** Dev-Console-Hilfsfunktion. Unzugänglich da nicht exportiert.
+
+### D27: `weeklyProgress` Datenstruktur — player-progression.ts
+- **Wahrscheinliche Funktion:** Tracking der letzten 7 Tage. Initialisiert als leeres Array, nie befüllt, nie gelesen.
+
+### D28: `combinedScore` — use-mobile-data.ts
+- **Wahrscheinliche Funktion:** Alternative Scoring-Strategie für Song-Suche. Berechnet aber nie verwendet.
+
+---
+
+## Verbesserungsvorschläge
+
+### I1: YIN-Algorithmus Heap-Allokation in pitch-detector.ts
+- **Beschreibung:** `yinPitchDetection()` allokiert `new Float32Array(buffer.length / 2)` (~8KB) pro Frame bei 60fps = ~480KB/s GC-Druck.
+- **Vorschlag:** Puffer in `initialize()` vorallozieren und wiederverwenden.
+
+### I2: Audio-Effect-Chain reconnect bei jeder Setting-Änderung
+- **Beschreibung:** `connectEffectChain()` disconnectet/reconnectet die gesamte Audio-Graph bei JEDEM einzelnen Setting-Change → kurze Audio-Unterbrechungen.
+- **Vorschlag:** Per-Node-Connection-Management oder Gain-Node-Bypass (Gain=0 statt Disconnect).
+
+### I3: Microphone-Permission-Prompt bei jedem `getMicrophones()` Aufruf
+- **Beschreibung:** `navigator.mediaDevices.getUserMedia` wird nur für Permission-Prompt aufgerufen, triggert aber jedes Mal eine kurze Mikrofon-Aktivierung.
+- **Vorschlag:** Erst `enumerateDevices()` versuchen, nur bei leeren Labels `getUserMedia` aufrufen.
+
+### I4: `useGameLoop` Hook aufteilen (783 Zeilen)
+- **Beschreibung:** Ein einzelner Hook handhabt Countdown, Media, Game-Loop, Pause/Resume, Store-Sync und Results.
+- **Vorschlag:** Extrahieren in `useGameCountdown`, `useGamePauseSync`, `useGameResultsGeneration`.
+
+### I5: `notePerformance` State-Updates bei 60fps verursachen GC-Druck
+- **Beschreibung:** `setNotePerformance` erstellt bei jedem Tick neue Map + trimmed Array. Konsumiert aber nur bei ~10Hz von UI.
+- **Vorschlag:** Ref-basierte Speicherung mit 10Hz-Sync zu State.
+
+### I6: Song-Library `scanInProgress` Boolean ist nicht Thread-Safe
+- **Beschreibung:** TOCTOU Race Condition bei parallelen `loadCustomSongsFromStorage` Aufrufen.
+- **Vorschlag:** Promise-basierte Lock-Implementierung.
+
+### I7: Dual XP/Level-Systeme (Daily Challenge vs Main Progression)
+- **Beschreibung:** Daily Challenge nutzt 10-Level-System, Main Progression nutzt formelbasiertes unendliches System.
+- **Vorschlag:** Vereinheitlichen oder klar benennen (DailyChallengeTier vs PlayerLevel).
+
+### I8: Viele `ExtendedPlayerStats`-Felder initialisiert aber nie aktualisiert
+- **Beschreibung:** `duetsCompleted`, `duelsWon`, `challengesCompleted`, `vocalRange`, `milestones.hundredSongs` etc.
+- **Vorschlag:** Implementieren oder entfernen um Storage-Bloat zu vermeiden.
+
+### I9: `connectEffectChain()` mit Gain-Node-Bypass statt Disconnect/Reconnect
+- **Siehe I2.** Wichtig für flackerfreies Audio bei Effect-Toggle während der Wiedergabe.
+
+### I10: Battle-Royale: 9 exportierte Funktionen sind Dead Code
+- **Siehe D3-D9.** Entweder entfernen oder Companion-Disconnect/Persistenz implementieren.
+
+### I11: Mobile Pitch-Detection rAF-Loop stoppt nie bei Song-Ende
+- **Beschreibung:** Loop läuft weiter auf Stille, verschwendet CPU/Batterie auf Mobile.
+- **Vorschlag:** Early Return mit `cancelAnimationFrame` wenn Song endet.
+
+### I12: Song-Library-Sync sendet alle Songs alle 30 Sekunden
+- **Beschreibung:** Bei großen Libraries (>1000 Songs) riesige JSON-Payloads.
+- **Vorschlag:** Nur bei Änderungen syncen oder Hash/ETag-basiert.
+
+### I13: Playlist-Manager `initializePlaylists` behandelt korrupte Daten nicht
+- **Beschreibung:** `JSON.parse` Fehler wird geschluckt, aber korrupte Daten nie bereinigt.
+- **Vorschlag:** Try-Catch mit `localStorage.removeItem` bei Parse-Fehler.
+
+### I14: Library-Cache speichert Blob-URLs die nach Reload ungültig sind
+- **Beschreibung:** `URL.createObjectURL` Ergebnisse sind nicht persistent.
+- **Vorschlag:** Relative Dateipfade statt Blob-URLs speichern.
+
+### I15: `folder-scanner.ts` dupliziert UltraStar-Header-Parsing (3 Kopien)
+- **Beschreibung:** `parseUltraStarMetadata()`, `tauri-file-storage.ts:processFolder()`, und `ultrastar-parser.ts` parsen dieselben Header.
+- **Vorschlag:** Gemeinsame `parseUltraStarHeaders()` Utility extrahieren.
