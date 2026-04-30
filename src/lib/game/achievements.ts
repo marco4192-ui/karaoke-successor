@@ -279,6 +279,146 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   },
 ];
 
+// ===================== ACHIEVEMENT CHECKING =====================
+
+/** Context passed to the achievement checker after each game */
+export interface AchievementGameContext {
+  score: number;
+  accuracy: number;
+  maxCombo: number;
+  perfectNotes: number;
+  goldenNotes: number;
+  notesHit: number;
+  notesMissed: number;
+  gameMode: string;
+  difficulty: string;
+  // Cumulative stats from player-progression
+  totalSongsCompleted: number;
+  totalGamesPlayed: number;
+  totalGoldenNotes: number;
+  totalPerfectNotes: number;
+  // Special flags
+  isPartyMode: boolean;
+  isDuelWin: boolean;
+  isPassTheMic: boolean;
+  isBlindMode: boolean;
+  isSpeedMode: boolean;
+  playbackRate: number;
+  // Comeback detection: combo >= 50 after missing >= 10 notes
+  hadComeback: boolean;
+}
+
+/** Result of an achievement check pass */
+export interface AchievementCheckResult {
+  newlyUnlocked: Array<{
+    id: string;
+    name: string;
+    description: string;
+    icon: string;
+    xp: number;
+    title?: string;
+  }>;
+  totalXPBonus: number;
+}
+
+/**
+ * Check all achievement definitions against the current game context
+ * and cumulative player stats. Returns newly unlocked achievements.
+ *
+ * This is called once per game from results-screen.tsx after saveHighscore.
+ */
+export function checkAndUnlockAchievements(
+  alreadyUnlockedIds: string[],
+  ctx: AchievementGameContext,
+): AchievementCheckResult {
+  const result: AchievementCheckResult = { newlyUnlocked: [], totalXPBonus: 0 };
+
+  for (const def of ACHIEVEMENT_DEFINITIONS) {
+    // Skip already unlocked
+    if (alreadyUnlockedIds.includes(def.id)) continue;
+
+    if (meetsRequirement(def, ctx)) {
+      const entry = {
+        id: def.id,
+        name: def.name,
+        description: def.description,
+        icon: def.icon,
+        xp: def.reward?.xp || 0,
+        title: def.reward?.title,
+      };
+      result.newlyUnlocked.push(entry);
+      result.totalXPBonus += entry.xp;
+    }
+  }
+
+  return result;
+}
+
+/** Check whether a single achievement definition is met */
+function meetsRequirement(def: AchievementDefinition, ctx: AchievementGameContext): boolean {
+  const { type, value, cumulative } = def.requirement;
+
+  switch (type) {
+    // --- Per-game thresholds (non-cumulative) ---
+    case 'score':
+      return ctx.score >= value;
+
+    case 'combo':
+      return ctx.maxCombo >= value;
+
+    case 'accuracy': {
+      // 'shower_singer': accuracy <= 20, 'accuracy_90': accuracy >= 90, 'perfect_song': accuracy >= 100
+      if (def.id === 'shower_singer') {
+        return ctx.accuracy <= value;
+      }
+      return ctx.accuracy >= value;
+    }
+
+    case 'perfect':
+      // Cumulative perfect notes across all games
+      if (cumulative) {
+        return ctx.totalPerfectNotes >= value;
+      }
+      // Per-game: perfect notes in this single song
+      return ctx.perfectNotes >= value;
+
+    case 'golden':
+      if (cumulative) {
+        return ctx.totalGoldenNotes >= value;
+      }
+      return ctx.goldenNotes >= value;
+
+    // --- Cumulative progression ---
+    case 'songs':
+      return ctx.totalSongsCompleted >= value;
+
+    case 'games':
+      return ctx.totalGamesPlayed >= value;
+
+    // --- Special one-shot checks ---
+    case 'special':
+      switch (def.id) {
+        case 'party_time':
+          return ctx.isPartyMode;
+        case 'duel_winner':
+          return ctx.isDuelWin;
+        case 'pass_the_mic':
+          return ctx.isPassTheMic;
+        case 'comeback_king':
+          return ctx.hadComeback;
+        case 'speed_demon':
+          return ctx.playbackRate >= 1.5;
+        case 'blind_master':
+          return ctx.isBlindMode;
+        default:
+          return false;
+      }
+
+    default:
+      return false;
+  }
+}
+
 // Get rarity color
 export function getRarityColor(rarity: AchievementDefinition['rarity']): string {
   switch (rarity) {

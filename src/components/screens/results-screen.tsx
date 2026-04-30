@@ -6,6 +6,7 @@ import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { safeAlert } from '@/lib/safe-dialog';
 import { getExtendedStats, updateStatsAfterGame, saveExtendedStats, calculateSongXP, getLevelForXP } from '@/lib/game/player-progression';
+import { checkAndUnlockAchievements } from '@/lib/game/achievements';
 import { recordSongPlay } from '@/lib/playlist-manager';
 
 // Imports from extracted components (also re-exported for backward compatibility)
@@ -286,6 +287,52 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
 
         // Record song play for Recently Played & Most Played system playlists
         recordSongPlay(song.id);
+
+        // CHECK AND UNLOCK ACHIEVEMENTS
+        const currentExtendedStats = getExtendedStats();
+        const perfectNotes = estimatePerfectNotes(playerResult.notesHit, playerResult.rating);
+        const isDuelWin = isDuel && player2Result && playerResult.score > player2Result.score;
+        const isPartyMode = ['pass-the-mic', 'medley', 'battle-royale', 'competitive-words', 'competitive-blind', 'companion-singalong'].includes(gameState.gameMode);
+        const isPassTheMic = gameState.gameMode === 'pass-the-mic';
+        const achievementResult = checkAndUnlockAchievements(
+          profile.achievements.map(a => a.id),
+          {
+            score: playerResult.score,
+            accuracy: playerResult.accuracy,
+            maxCombo: playerResult.maxCombo,
+            perfectNotes,
+            goldenNotes: 0, // Golden notes tracking not yet in scoring
+            notesHit: playerResult.notesHit,
+            notesMissed: playerResult.notesMissed,
+            gameMode: gameState.gameMode,
+            difficulty: gameState.difficulty,
+            totalSongsCompleted: currentExtendedStats.songsCompleted,
+            totalGamesPlayed: currentExtendedStats.totalSessions,
+            totalGoldenNotes: currentExtendedStats.totalGoldenNotesHit,
+            totalPerfectNotes: currentExtendedStats.totalPerfectNotes + perfectNotes,
+            isPartyMode,
+            isDuelWin,
+            isPassTheMic,
+            isBlindMode: false, // Would need game state tracking for blind mode
+            isSpeedMode: false, // Would need playback rate tracking
+            playbackRate: 1.0,
+            hadComeback: false, // Would need mid-game tracking for comeback detection
+          },
+        );
+
+        // Add newly unlocked achievements to profile
+        if (achievementResult.newlyUnlocked.length > 0) {
+          const newAchievements = achievementResult.newlyUnlocked.map(a => ({
+            id: a.id,
+            name: a.name,
+            description: a.description,
+            icon: a.icon,
+            unlockedAt: Date.now(),
+          }));
+          updateProfile(profile.id, {
+            achievements: [...profile.achievements, ...newAchievements],
+          });
+        }
 
         // Also save P2 highscore for duel/competitive modes if P2 has a registered profile
         const player2Result = results.players[1];
