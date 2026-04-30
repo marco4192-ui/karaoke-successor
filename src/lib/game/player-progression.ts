@@ -328,9 +328,6 @@ export interface ExtendedPlayerStats {
     mode: string;
     date: number;
   }>;
-  
-  // Weekly progress (last 7 days)
-  weeklyProgress: Array<{ date: string; gamesPlayed: number; xpEarned: number }>;
 }
 
 // ===================== GAME RESULT INPUT =====================
@@ -547,7 +544,6 @@ export function getDefaultStats(): ExtendedPlayerStats {
       levelHundred: null,
     },
     recentGames: [],
-    weeklyProgress: [],
   };
 }
 
