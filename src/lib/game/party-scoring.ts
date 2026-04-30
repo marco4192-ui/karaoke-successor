@@ -121,7 +121,7 @@ export function evaluateAndScoreTick(
 
   let tickPts: number;
   if (scoringMeta) {
-    tickPts = calculateTickPoints(result.accuracy, note.isGolden, scoringMeta.pointsPerTick, difficulty);
+    tickPts = calculateTickPoints(result.accuracy, note.isGolden, scoringMeta.pointsPerTick);
   } else {
     // Fallback when no scoring metadata is available (e.g. missing BPM)
     tickPts = result.accuracy * 10;

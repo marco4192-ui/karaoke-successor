@@ -258,7 +258,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
             if (tickResult.isHit) {
               noteProgress.ticksHit++;
 
-              const tickPoints = calculateTickPoints(tickResult.accuracy, note.isGolden, scoringMeta.pointsPerTick, difficulty);
+              const tickPoints = calculateTickPoints(tickResult.accuracy, note.isGolden, scoringMeta.pointsPerTick);
               const finalPoints = Math.max(1, Math.round(tickPoints));
 
               if (finalPoints > 0) {
@@ -399,7 +399,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
             if (tickResult.isHit) {
               noteProgress.ticksHit++;
 
-              const tickPoints = calculateTickPoints(tickResult.accuracy, note.isGolden, scoringMeta.pointsPerTick, difficulty);
+              const tickPoints = calculateTickPoints(tickResult.accuracy, note.isGolden, scoringMeta.pointsPerTick);
               const finalPoints = Math.max(1, Math.round(tickPoints));
 
               if (finalPoints > 0) {

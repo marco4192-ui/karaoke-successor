@@ -132,7 +132,6 @@ export function calculateTickPoints(
   accuracy: number,
   isGolden: boolean,
   pointsPerTick: number,
-  _difficulty: Difficulty
 ): number {
   if (accuracy <= 0) return 0;
 
