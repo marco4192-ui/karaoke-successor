@@ -123,8 +123,11 @@ export function evaluateAndScoreTick(
   if (scoringMeta) {
     tickPts = calculateTickPoints(result.accuracy, note.isGolden, scoringMeta.pointsPerTick);
   } else {
-    // Fallback when no scoring metadata is available (e.g. missing BPM)
-    tickPts = result.accuracy * 10;
+    // Fallback when no scoring metadata is available (e.g. missing BPM).
+    // Cap at 3 points per tick to prevent scores from exceeding MAX_POINTS_PER_SONG
+    // on long songs. Without normalization, accuracy*10 could yield 20000+ on songs
+    // with 2000+ ticks.
+    tickPts = Math.min(result.accuracy * 10, 3);
   }
 
   const points = Math.max(1, Math.round(tickPts));
