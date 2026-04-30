@@ -736,8 +736,8 @@ export function updateStatsAfterGame(
   // 3b. Increment songs completed (actual played-to-completion songs)
   stats.songsCompleted++;
 
-  // 4. Update performance stats (running averages, extrema, notes)
-  updatePerformanceStats(stats, gameData, stats.totalSessions);
+  // 4. Update performance stats (running averages based on completed songs, not sessions)
+  updatePerformanceStats(stats, gameData, stats.songsCompleted);
 
   // 5. Update time stats
   updateTimeStats(stats, gameData);
