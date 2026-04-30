@@ -483,7 +483,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
     }
   }, [results, song, activeProfileId, profiles, addHighscore, gameState.difficulty, gameState.gameMode, onlineEnabled, updateProfile]);
 
-  if (!results || !song) {
+  if (!results || !song || !results.players || results.players.length === 0) {
     return (
       <div className="max-w-4xl mx-auto text-center py-20">
         <p className="text-white/60 mb-4">No results available</p>
