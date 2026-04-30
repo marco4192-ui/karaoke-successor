@@ -131,7 +131,7 @@ export function usePartySetup({
             const micConfig = localStorage.getItem('karaoke-multi-mic-config');
             if (micConfig) {
               const parsed = JSON.parse(micConfig);
-              const micExists = (parsed.assignedMics || []).some((m: any) => m.id === preferredMicId);
+              const micExists = (parsed.assignedMics || []).some((m: { id: string }) => m.id === preferredMicId);
               if (micExists) {
                 setMicAssignments(prevMic => {
                   const updated = { ...prevMic };

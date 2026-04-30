@@ -111,11 +111,12 @@ export async function POST(request: NextRequest) {
           image: base64,
           filename 
         });
-      } catch (fetchError: any) {
+      } catch (fetchError: unknown) {
         console.error('Image fetch error:', fetchError);
+        const msg = fetchError instanceof Error ? fetchError.message : String(fetchError);
         
         // Check if it's a network error
-        if (fetchError.message?.includes('fetch') || fetchError.message?.includes('ECONNREFUSED')) {
+        if (msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
           return NextResponse.json({ 
             error: `Could not connect to API at "${baseUrl}". Please check if the URL is correct and the server is running.`,
             needsConfig: true
@@ -123,7 +124,7 @@ export async function POST(request: NextRequest) {
         }
         
         return NextResponse.json({ 
-          error: `Connection failed: ${fetchError.message}. Check if API URL is correct.`
+          error: `Connection failed: ${msg}. Check if API URL is correct.`
         }, { status: 503 });
       }
     }
@@ -180,11 +181,12 @@ export async function POST(request: NextRequest) {
           audio: base64,
           filename 
         });
-      } catch (fetchError: any) {
+      } catch (fetchError: unknown) {
         console.error('TTS fetch error:', fetchError);
+        const msg = fetchError instanceof Error ? fetchError.message : String(fetchError);
         
         // Check if it's a network error
-        if (fetchError.message?.includes('fetch') || fetchError.message?.includes('ECONNREFUSED')) {
+        if (msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
           return NextResponse.json({ 
             error: `Could not connect to API at "${baseUrl}". Please check if the URL is correct and the server is running.`,
             needsConfig: true
@@ -192,7 +194,7 @@ export async function POST(request: NextRequest) {
         }
         
         return NextResponse.json({ 
-          error: `Connection failed: ${fetchError.message}. Check if API URL is correct.`
+          error: `Connection failed: ${msg}. Check if API URL is correct.`
         }, { status: 503 });
       }
     }
@@ -234,7 +236,7 @@ export async function PUT(request: NextRequest) {
       'X-Token': config.apiKey,
     };
 
-    const results: { filename: any; type?: string; success: boolean; data?: any; error?: string }[] = [];
+    const results: { filename: string; type?: string; success: boolean; data?: string; error?: string }[] = [];
 
     for (const asset of assets) {
       try {

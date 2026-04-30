@@ -11,14 +11,23 @@ interface UseMobileConnectionCallbacks {
   onSongEnd: () => void;
 }
 
-function parseGameState(raw: any): GameState {
+interface RawGameState {
+  currentSong?: GameState['currentSong'];
+  isPlaying?: boolean;
+  songEnded?: boolean;
+  queueLength?: number;
+  isAdPlaying?: boolean;
+  singalongTurn?: GameState['singalongTurn'];
+}
+
+function parseGameState(raw: RawGameState): GameState {
   return {
-    currentSong: raw.currentSong,
-    isPlaying: raw.isPlaying,
-    songEnded: raw.songEnded || false,
-    queueLength: raw.queueLength || 0,
-    isAdPlaying: raw.isAdPlaying || false,
-    singalongTurn: raw.singalongTurn || null,
+    currentSong: raw.currentSong ?? null,
+    isPlaying: raw.isPlaying ?? false,
+    songEnded: raw.songEnded ?? false,
+    queueLength: raw.queueLength ?? 0,
+    isAdPlaying: raw.isAdPlaying ?? false,
+    singalongTurn: raw.singalongTurn ?? null,
   };
 }
 

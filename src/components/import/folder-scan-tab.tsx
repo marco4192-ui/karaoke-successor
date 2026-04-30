@@ -47,7 +47,7 @@ export function FolderScanTab({
 
       for (const item of items) {
         // Try webkitGetAsEntry first (supports folders in Chromium/Tauri)
-        const entry = (item as any).webkitGetAsEntry?.();
+        const entry = item.webkitGetAsEntry?.();
         if (entry) {
           await collectFilesFromEntry(entry, '', files);
           continue;

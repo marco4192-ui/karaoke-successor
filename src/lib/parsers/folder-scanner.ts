@@ -116,7 +116,7 @@ async function scanDirectoryHandle(
   let hasSongFiles = false;
   const entries: Array<{ entry: FileSystemHandle; fullPath: string }> = [];
 
-  for await (const entry of (dirHandle as any).values() as AsyncIterable<FileSystemHandle>) {
+  for await (const entry of dirHandle.values()) {
     const fullPath = path ? `${path}/${entry.name}` : entry.name;
     entries.push({ entry, fullPath });
     
@@ -502,7 +502,7 @@ export async function convertScannedSongToSong(scanned: ScannedSong): Promise<So
   // Example: Songs/Artist/SongName/video.mp4 → relative path = Artist/SongName/video.mp4
   // The baseFolder is stored separately; the code reconstructs full paths at runtime.
   const getRelativePath = (file: File): string | undefined => {
-    const webkitPath = (file as any).webkitRelativePath;
+    const webkitPath = file.webkitRelativePath;
     if (webkitPath) {
       // webkitRelativePath starts with the root folder name (e.g. "Songs/Artist/Song/video.mp4")
       // Strip only the first segment (the root folder) to get the relative path

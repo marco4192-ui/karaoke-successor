@@ -64,7 +64,8 @@ export function normalizeSongPathFields(song: Song): { song: Song; changed: bool
     if (typeof val === 'string' && val.length > 0) {
       const normalized = normalizeFilePath(val);
       if (normalized !== val) {
-        (song as any)[field] = normalized;
+        // field is a known string-valued key of Song — safe targeted cast
+        (song as Record<typeof field, string | undefined>)[field] = normalized;
         changed = true;
       }
     }
