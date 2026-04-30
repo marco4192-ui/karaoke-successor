@@ -409,7 +409,7 @@ export default function KaraokeSuccessor() {
         {screen === 'settings' && <SettingsScreen />}
         {screen === 'jukebox' && <JukeboxScreen />}
         {screen === 'achievements' && <AchievementsScreen />}
-        {screen === 'dailyChallenge' && <DailyChallengeScreen onPlayChallenge={(song) => { setSong(song); setScreen('game'); }} onSelectSong={(song) => { setSong(song); setScreen('library'); }} />}
+        {screen === 'dailyChallenge' && <DailyChallengeScreen onPlayChallenge={(song) => { setSong(song); setScreen('game'); }} />}
         {screen === 'editor' && <EditorScreen onBack={() => setScreen('library')} />}
         {screen === 'online' && <OnlineMultiplayerScreen onBack={() => setScreen('party')} />}
       </main>
