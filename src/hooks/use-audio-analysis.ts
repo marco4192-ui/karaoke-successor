@@ -125,6 +125,7 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
     setStatus('loading');
     setError(null);
     setResult(null);
+    setBpmResult(null); // Clear stale BPM result
     setProgress(null);
 
     try {
@@ -174,6 +175,7 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
     setStatus('loading');
     setError(null);
     setBpmResult(null);
+    setResult(null); // Clear stale pitch analysis result
 
     try {
       const onComplete = new Channel<BpmDetectionResult>();
