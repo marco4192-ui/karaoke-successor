@@ -172,3 +172,116 @@ Diese Session: 2 kritische Bugs + 1 Dead Code + 3 Quality-Verbesserungen (B1, B2
 - **Commit:** `699e411` fix(Q3): persist migration results in loadConfig instead of discarding them
 - **Datei:** `src/lib/audio/microphone-manager.ts`
 - Migrierte Config wird jetzt nach localStorage zurückgeschrieben.
+
+---
+
+# Code Review — Fresh Review #4
+
+**Datum:** 2026-04-30
+**Repo:** karaoke-successor
+**Branch:** origin/master
+**Stand:** Commit d039b2b
+
+---
+
+## Zusammenfassung
+
+Vorherige Sessions: 68 + 7 + 6 Punkte umgesetzt.
+Diese Session: 0 TODOs (bereits sauber), 13 neue Punkte umgesetzt (R1-R13).
+
+---
+
+## Gefundene Punkte
+
+### R1+R2+R3: Dead Type-Exports in `screens.ts`
+- **Datei:** `src/types/screens.ts`
+- **Beschreibung:** `NoteProgress`, `ScoringMetadata`, `StartOptions`, `LibrarySettings` waren als Exporte in `screens.ts` definiert, aber von niemandem importiert. Die kanonischen Definitionen existierten bereits an den tatsächlichen Nutzungsorten.
+- **Fix:** Alle 4 Interfaces (46 Zeilen) entfernt. Verweis auf kanonische Orte.
+
+### R4+R5: Duplicate `MAX_POINTS_PER_SONG` und `TrophyIcon`
+- **Datei:** `src/components/results/constants.tsx`
+- **Beschreibung:** `MAX_POINTS_PER_SONG = 10000` identisch in `scoring.ts` und `constants.tsx`. `TrophyIcon` identisch in `icons.tsx` und `constants.tsx`. Bei Änderung an einer Stelle würde die andere veraltet sein.
+- **Fix:** `constants.tsx` re-exported jetzt aus den kanonischen Quellen.
+
+### R7: Dead Code Datei `components/library/song-card.tsx`
+- **Beschreibung:** Komplette Datei (148 Zeilen) nie importiert. Die aktive Komponente ist `components/screens/library/song-card.tsx`.
+- **Fix:** Datei gelöscht.
+
+### R8: Dead Code in `song-library.ts` (175 Zeilen)
+- **Datei:** `src/lib/game/song-library.ts`
+- **Beschreibung:** 11 Funktionen und 1 Interface nie importiert: `LibrarySettings`, `getLibrarySettings`, `saveLibrarySettings`, `sortSongs`, `filterSongsBySettings`, `searchSongs`, `exportSongs`, `importSongsFromBackup`, `reloadLibrary`, `songExists`, `replaceSong`.
+- **Fix:** Alle entfernt. `getSongById` und `clearCustomSongs` behalten (intern genutzt/importiert).
+
+### R9: Unused `_difficulty` Parameter
+- **Datei:** `src/lib/game/scoring.ts`, `use-note-scoring.ts`, `party-scoring.ts`
+- **Beschreibung:** `calculateTickPoints` hatte `_difficulty: Difficulty` Parameter der ignoriert wurde (Präfix `_`). Score-Scaling pro Schwierigkeit wurde in Review #3 entfernt.
+- **Fix:** Parameter aus Signatur entfernt, alle 3 Aufrufstellen aktualisiert.
+
+### R10: Countdown-Interval Cleanup bei Unmount
+- **Dateien:** `medley-game-screen.tsx`, `pass-the-mic-screen.tsx`, `ptm-game-screen.tsx`, `companion-singalong-screen.tsx`
+- **Beschreibung:** 4 Countdown-Intervalle in Click-Handlern (nicht useEffect) ohne Cleanup bei Unmount. Bei Unmount während des 3s Countdown würde das Interval leaken.
+- **Fix:** Ref-basierter Cleanup in allen 4 Dateien. `countdownIntervalRef` speichert ID, Cleanup-Effect löscht bei Unmount.
+
+### R11: Massive Dead Code in `use-sqlite.ts` (170 Zeilen)
+- **Datei:** `src/hooks/use-sqlite.ts`
+- **Beschreibung:** Nur `dbGetStats` und `DbStats` importiert (von `offline-banner.tsx`). Alle 17 anderen Funktionen + `useSqliteDb` Hook + `DbResult` Interface waren Dead Code (App nutzt IndexedDB statt SQLite).
+- **Fix:** File auf 22 Zeilen gekürzt. Nur `DbStats` und `dbGetStats` behalten.
+
+### R12: Pfad-Traversierung in `storeSongFiles()`
+- **Datei:** `src/lib/tauri-file-storage.ts`
+- **Beschreibung:** `file.name` aus hochgeladenen File-Objekten direkt in Pfad-Konstruktion genutzt. Bösartiger Dateiname `../../evil.txt` könnte das songs-Verzeichnis verlassen.
+- **Fix:** `sanitizeFileName()` Funktion hinzugefügt. Entfernt Path-Separatoren, `..`, Null-Bytes und führende Dots. Auf `file.name` in `saveFile()` angewandt.
+
+### R13: Unsichere `any` Casts in Party-Setup
+- **Dateien:** `unified-party-setup.types.ts`, `unified-party-setup.components.tsx`, `unified-party-setup.tsx`, `mic-indicator.tsx`, `quick-swap-overlay.tsx`, `song-start-modal.tsx`
+- **Beschreibung:** 10 `any` Casts in Party-Setup-Komponenten umgingen TypeScript-Sicherheit.
+- **Fix:** `any` → `string | number | boolean` für Settings. `(p: any)` / `(m: any)` → typisierte Object-Literale.
+
+---
+
+## Umsetzungs-Log
+
+### ✅ R1+R2+R3 — Dead Types aus screens.ts entfernt
+- **Commit:** `34e5235`
+- **Datei:** `src/types/screens.ts`
+- 46 Zeilen Dead-Type-Exports entfernt.
+
+### ✅ R4+R5 — MAX_POINTS_PER_SONG und TrophyIcon vereinheitlicht
+- **Commit:** `6d1bbde`
+- **Datei:** `src/components/results/constants.tsx`
+- Duplikate durch Re-Exports aus kanonischen Quellen ersetzt.
+
+### ✅ R7 — Dead song-card.tsx gelöscht
+- **Commit:** `57a94c4`
+- **Datei:** `src/components/library/song-card.tsx`
+- 148 Zeilen ungenutzter Code gelöscht.
+
+### ✅ R8 — song-library.ts Dead Functions entfernt
+- **Commit:** `487b397`
+- **Datei:** `src/lib/game/song-library.ts`
+- 175 Zeilen Dead Code entfernt (11 Funktionen + 1 Interface).
+
+### ✅ R9 — Unused _difficulty Parameter entfernt
+- **Commit:** `4edd1d4`
+- **Dateien:** `scoring.ts`, `use-note-scoring.ts`, `party-scoring.ts`
+- Parameter aus Signatur und allen 3 Aufrufstellen entfernt.
+
+### ✅ R10 — Countdown-Interval Cleanup
+- **Commit:** `ec83156`
+- **Dateien:** 4 Game-Screen-Dateien
+- Ref-basierter Cleanup für alle 4 Countdown-Intervalle.
+
+### ✅ R11 — use-sqlite.ts Dead Code Cleanup
+- **Commit:** `53d2f60`
+- **Datei:** `src/hooks/use-sqlite.ts`
+- 196 → 22 Zeilen. Nur `DbStats` + `dbGetStats` behalten.
+
+### ✅ R12 — Pfad-Traversierung-Sanitization
+- **Commit:** `edeca21`
+- **Datei:** `src/lib/tauri-file-storage.ts`
+- `sanitizeFileName()` hinzugefügt, auf `file.name` in `storeSongFiles()` angewandt.
+
+### ✅ R13 — any Casts durch Proper Types ersetzt
+- **Commit:** `d039b2b`
+- **Dateien:** 6 Dateien
+- 10 `any` Casts durch korrekte Typen ersetzt.
