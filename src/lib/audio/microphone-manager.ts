@@ -545,11 +545,6 @@ export class MultiMicrophoneManager {
     }
   }
 
-  // Get microphone for a specific player index
-  getMicrophoneForPlayer(playerIndex: number): AssignedMicrophone | null {
-    return Array.from(this.assignedMics.values()).find(m => m.playerIndex === playerIndex) || null;
-  }
-
   // Subscribe to device list changes
   onDevices(callback: (devices: MicrophoneDevice[]) => void): void {
     this.onDevicesChange = callback;
@@ -602,68 +597,6 @@ export class MultiMicrophoneManager {
   async applyOptimalSettingsToAll(): Promise<void> {
     const promises = Array.from(this.assignedMics.keys()).map(id => this.applyOptimalSettings(id));
     await Promise.all(promises);
-  }
-
-  // Check if a microphone has optimal settings
-  checkOptimalSettings(id: string): {
-    isOptimal: boolean;
-    issues: string[];
-    currentConfig: ExtendedMicConfig | null;
-  } {
-    const assigned = this.assignedMics.get(id);
-    if (!assigned) {
-      return { isOptimal: false, issues: ['Microphone not found'], currentConfig: null };
-    }
-
-    const issues: string[] = [];
-    const config = assigned.config;
-
-    if (config.autoGainControl !== false) {
-      issues.push('Auto Gain Control sollte AUS sein');
-    }
-    if (!config.echoCancellation) {
-      issues.push('Echo Cancellation sollte AN sein');
-    }
-    if (!config.noiseSuppression) {
-      issues.push('Noise Suppression sollte AN sein');
-    }
-    if (config.fftSize < 2048) {
-      issues.push('FFT Size zu klein für genaue Pitch-Detection');
-    }
-    if (config.yinThreshold > 0.25) {
-      issues.push('YIN Threshold zu hoch - könnte Töne verpassen');
-    }
-    if (config.yinThreshold < 0.08) {
-      issues.push('YIN Threshold zu niedrig - könnte falsche Töne erkennen');
-    }
-
-    return {
-      isOptimal: issues.length === 0,
-      issues,
-      currentConfig: { ...config }
-    };
-  }
-
-  // Get a summary of all microphones and their settings compliance
-  getAllMicsSettingsStatus(): Array<{
-    id: string;
-    deviceName: string;
-    customName: string;
-    playerIndex: number;
-    isOptimal: boolean;
-    issues: string[];
-  }> {
-    return Array.from(this.assignedMics.values()).map(mic => {
-      const check = this.checkOptimalSettings(mic.id);
-      return {
-        id: mic.id,
-        deviceName: mic.deviceName,
-        customName: mic.customName,
-        playerIndex: mic.playerIndex,
-        isOptimal: check.isOptimal,
-        issues: check.issues
-      };
-    });
   }
 
   // Save config to localStorage
@@ -850,21 +783,6 @@ export class MicrophoneManager {
     return { ...this.config };
   }
 
-  getConnectedDevice(): MicrophoneDevice | null {
-    if (!this.currentMicId) return null;
-    const assigned = this.multiMicManager.getAssignedMicrophones()
-      .find(m => m.id === this.currentMicId);
-    if (assigned) {
-      return {
-        deviceId: assigned.deviceId,
-        label: assigned.deviceName,
-        kind: 'audioinput',
-        groupId: '',
-      };
-    }
-    return null;
-  }
-
   onStatus(callback: (status: MicrophoneStatus) => void): void {
     this.onStatusChange = callback;
   }
@@ -1000,12 +918,4 @@ export function getMicrophoneManager(): MicrophoneManager {
     }
   }
   return micManagerInstance;
-}
-
-// Function to reset the singleton (useful for testing or manual cleanup)
-export async function resetMicrophoneManager(): Promise<void> {
-  if (micManagerInstance) {
-    await micManagerInstance.destroy();
-    micManagerInstance = null;
-  }
 }

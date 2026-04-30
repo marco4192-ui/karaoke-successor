@@ -663,10 +663,3 @@ export function getPitchDetectorManager(): PitchDetectorManager {
   }
   return pitchDetectorManagerInstance;
 }
-
-export async function resetPitchDetectorManager(): Promise<void> {
-  if (pitchDetectorManagerInstance) {
-    await pitchDetectorManagerInstance.destroy();
-    pitchDetectorManagerInstance = null;
-  }
-}
