@@ -39,6 +39,15 @@ export function useMobilePitchPolling(song: { id: string } | null): {
 
     let aborted = false;
     let abortController: AbortController | null = null;
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
+    // Exponential backoff: when no companion is connected, poll less frequently
+    let pollDelay = 100;
+    let backoffTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const startPolling = () => {
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(pollMobilePitch, pollDelay);
+    };
 
     const pollMobilePitch = async () => {
       // Cancel any in-flight request from the previous poll
@@ -65,8 +74,18 @@ export function useMobilePitchPolling(song: { id: string } | null): {
             setMobilePitch(pitchData);
           }
           setHasMobileClient(true);
+          // Companion connected: reset to fast polling
+          if (pollDelay > 100) {
+            pollDelay = 100;
+            startPolling();
+          }
         } else {
           setHasMobileClient(false);
+          // No companion: apply backoff (max 2s)
+          if (pollDelay < 2000) {
+            pollDelay = Math.min(pollDelay * 2, 2000);
+            startPolling();
+          }
         }
       } catch (err) {
         if (err instanceof DOMException && err.name === 'AbortError') return;
@@ -74,11 +93,11 @@ export function useMobilePitchPolling(song: { id: string } | null): {
       }
     };
 
-    const pollInterval = setInterval(pollMobilePitch, 100);
-
+    // Clear backoff timer on cleanup
     return () => {
       aborted = true;
-      clearInterval(pollInterval);
+      if (pollInterval) clearInterval(pollInterval);
+      if (backoffTimer) clearTimeout(backoffTimer);
       if (abortController) abortController.abort();
     };
   }, [song]);
