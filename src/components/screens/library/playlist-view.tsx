@@ -2,7 +2,7 @@
 
 import React, { useMemo, useCallback, useState } from 'react';
 import { Song } from '@/types/game';
-import { Playlist, getPlaylistSongs } from '@/lib/playlist-manager';
+import { Playlist, getPlaylistSongs, exportPlaylist, importPlaylist } from '@/lib/playlist-manager';
 import { SongCard } from './song-card';
 import { VirtualizedSongGrid } from './virtualized-song-grid';
 import { safeConfirm } from '@/lib/safe-dialog';
@@ -10,6 +10,7 @@ import { SongCardProps } from './types';
 import { MusicIcon, TrashIcon, QueueIcon, PlayIcon } from './icons';
 import { Button } from '@/components/ui/button';
 import { EditPlaylistModal } from './edit-playlist-modal';
+import { safeAlert } from '@/lib/safe-dialog';
 
 interface PlaylistViewProps {
   playlists: Playlist[];
@@ -71,6 +72,7 @@ export function PlaylistView({
             <h2 className="text-xl font-bold">
               {playlists.length} Playlist{playlists.length !== 1 ? 's' : ''}
             </h2>
+            <div className="flex gap-2">
             <Button
               onClick={onShowCreatePlaylist}
               className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400"
@@ -81,6 +83,41 @@ export function PlaylistView({
               </svg>
               Create Playlist
             </Button>
+            <Button
+              onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.onchange = async (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  if (!file) return;
+                  try {
+                    const text = await file.text();
+                    const data = JSON.parse(text);
+                    const result = importPlaylist(data);
+                    if (result) {
+                      onPlaylistSelect(null);
+                      window.location.reload();
+                    } else {
+                      safeAlert('Invalid playlist file format');
+                    }
+                  } catch {
+                    safeAlert('Failed to import playlist file');
+                  }
+                };
+                input.click();
+              }}
+              variant="outline"
+              className="border-green-500/50 text-green-400 hover:bg-green-500/20"
+            >
+              <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Import
+            </Button>
+            </div>
           </div>
           
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
@@ -158,6 +195,32 @@ export function PlaylistView({
               )}
             </div>
             <div className="flex gap-2">
+              {/* Export playlist */}
+              {!selectedPlaylist.isSystem && (
+                <Button
+                  onClick={() => {
+                    const data = exportPlaylist(selectedPlaylist.id);
+                    if (!data) { safeAlert('Export failed'); return; }
+                    const json = JSON.stringify(data, null, 2);
+                    const blob = new Blob([json], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${selectedPlaylist.name.replace(/[^a-zA-Z0-9äöüß]/g, '_')}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                  variant="outline"
+                  className="border-green-500/50 text-green-400 hover:bg-green-500/20"
+                >
+                  <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  Export
+                </Button>
+              )}
               <Button
                 onClick={() => {
                   const songs = getPlaylistSongs(selectedPlaylist.id, loadedSongs);

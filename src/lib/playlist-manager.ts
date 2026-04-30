@@ -293,6 +293,48 @@ export function getPlaylistSongs(playlistId: string, allSongs: Song[]): Song[] {
     .filter((s): s is Song => s !== undefined);
 }
 
+// ============ PLAYLIST IMPORT / EXPORT ============
+
+/** Export a playlist as a JSON-serializable object. */
+export function exportPlaylist(playlistId: string): PlaylistExport | null {
+  const playlist = getPlaylistById(playlistId);
+  if (!playlist) return null;
+
+  const payload: PlaylistExport = {
+    version: 1,
+    exportedAt: Date.now(),
+    playlist: {
+      name: playlist.name,
+      description: playlist.description,
+      songIds: playlist.songIds,
+      tags: playlist.tags,
+    },
+  };
+  return payload;
+}
+
+/** Import a playlist from a PlaylistExport JSON object. Returns the new playlist or null on failure. */
+export function importPlaylist(data: PlaylistExport): Playlist | null {
+  if (!data || data.version !== 1 || !data.playlist?.name) return null;
+
+  const created = createPlaylist(data.playlist.name, data.playlist.description);
+  if (!created) return null;
+
+  // If tags were exported, update them
+  if (data.playlist.tags?.length) {
+    updatePlaylist(created.id, { tags: data.playlist.tags });
+  }
+
+  // If song IDs are provided, add them one by one (skipping duplicates automatically)
+  if (data.playlist.songIds?.length) {
+    for (const songId of data.playlist.songIds) {
+      addSongToPlaylist(created.id, songId);
+    }
+  }
+
+  return getPlaylistById(created.id);
+}
+
 // ============ FOLDER MANAGEMENT ============
 
 export function getFolders(): PlaylistFolder[] {
