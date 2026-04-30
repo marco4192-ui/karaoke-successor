@@ -1,7 +1,7 @@
 // Song Library Store - Manages songs with persistent storage
 import type { Song } from '@/types/game';
 import { isTauri, getSongMediaUrl, clearBlobUrlCache, normalizeFilePath } from '@/lib/tauri-file-storage';
-import { getSongMediaUrls } from '@/lib/db/media-db';
+import { getSongMediaUrls, revokeSongMediaUrls } from '@/lib/db/media-db';
 import { saveCustomSongsToDB, loadCustomSongsFromDB, migrateFromLocalStorage, clearCustomSongsFromDB } from '@/lib/db/custom-songs-db';
 import { generateId } from '@/lib/utils';
 import { isAbsolutePath, resolveSongsBaseFolder, normalizeSongPathFields } from './song-paths';
@@ -22,6 +22,10 @@ let customSongsCache: Song[] | null = null;
 // Cache timestamp for automatic staleness detection
 let songCacheTimestamp = 0;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+// Track blob URLs created by getAllSongsAsync() browser-mode path for cleanup.
+// Without this, every library refresh leaks up to 4 blob URLs per storedMedia song.
+let lastBrowserBlobUrls: Array<{ audioUrl?: string; videoUrl?: string; coverUrl?: string; txtUrl?: string }> = [];
 
 // Scan lock: prevents loadCustomSongsFromStorage from overwriting cache
 // while a Settings scan is in progress (avoids race condition).
@@ -44,11 +48,20 @@ function waitForScanLock(): Promise<void> {
   return scanLock;
 }
 
+/** Revoke all blob URLs tracked by getAllSongsAsync browser-mode path. */
+function revokeBrowserBlobUrls(): void {
+  for (const urls of lastBrowserBlobUrls) {
+    revokeSongMediaUrls(urls);
+  }
+  lastBrowserBlobUrls = [];
+}
+
 /** Invalidate all in-memory caches, forcing fresh reads from storage. */
 export function clearSongCache(): void {
   songCache = null;
   customSongsCache = null;
   songCacheTimestamp = 0;
+  revokeBrowserBlobUrls();
 }
 
 /** Invalidate only the combined song cache, preserving customSongsCache.
@@ -506,12 +519,15 @@ export async function getAllSongsAsync(): Promise<Song[]> {
     });
   }
 
-  // In browser mode, restore URLs from IndexedDB for songs that have storedMedia flag
+  // In browser mode, restore URLs from IndexedDB for songs that have storedMedia flag.
+  // CRITICAL: Revoke previous blob URLs before creating new ones to prevent memory leaks.
+  revokeBrowserBlobUrls();
   const restoredSongs = await Promise.all(
     songs.map(async (song) => {
       if (song.storedMedia) {
         try {
           const mediaUrls = await getSongMediaUrls(song.id);
+          lastBrowserBlobUrls.push(mediaUrls);
           return {
             ...song,
             audioUrl: mediaUrls.audioUrl || song.audioUrl,

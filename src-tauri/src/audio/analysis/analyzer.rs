@@ -179,7 +179,10 @@ impl AudioAnalyzer {
 
                 if use_crepe_active {
                     // ---- CREPE pipeline ----
-                    let crepe_det = crepe.as_mut().unwrap();
+                    let crepe_det = match crepe.as_mut() {
+                        Some(det) => det,
+                        None => continue,
+                    };
                     let (freq, conf) = crepe_det.detect(&window, sr);
 
                     if freq <= 0.0 || conf < 0.1 {
@@ -303,8 +306,14 @@ impl AudioAnalyzer {
                 continue;
             }
 
-            let freq = frame.frequency.unwrap();
-            let midi = frame.midi_note.unwrap();
+            let freq = match frame.frequency {
+                Some(f) => f,
+                None => continue,
+            };
+            let midi = match frame.midi_note {
+                Some(m) => m,
+                None => continue,
+            };
 
             match &mut current {
                 None => {
