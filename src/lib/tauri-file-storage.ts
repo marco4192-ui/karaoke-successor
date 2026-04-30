@@ -672,56 +672,23 @@ function parseLyricsFromTxt(content: string, bpm: number, gap: number): LyricLin
   return convertNotesToLyricLines(notes, lineBreakBeats, bpm, gap);
 }
 
-// Get the app data directory path (used internally by getPlayableUrl)
-export async function getAppDataPath(): Promise<string | null> {
-  const tauri = await getTauri();
-  if (!tauri) return null;
-
-  try {
-    return await tauri.invoke<string>('get_app_data_path');
-  } catch (error) {
-    console.error('Failed to get app data path:', error);
-    return null;
-  }
-}
-
 // Generate a unique folder name for a song
 export function generateSongFolderName(title: string, artist: string): string {
-  // Sanitize and create a folder name
-  const sanitize = (str: string) => 
+  const sanitize = (str: string) =>
     str.replace(/[<>:"/\\|?*]/g, '_').trim().substring(0, 50);
-  
   const sanitizedTitle = sanitize(title);
   const sanitizedArtist = sanitize(artist);
-  const timestamp = Date.now();
-  
-  return `${sanitizedArtist} - ${sanitizedTitle} (${timestamp})`;
+  return `${sanitizedArtist} - ${sanitizedTitle} (${Date.now()})`;
 }
 
 // Store song files persistently using Tauri's fs plugin
 export async function storeSongFiles(
   songFolder: string,
-  files: {
-    audio?: File;
-    video?: File;
-    txt?: File;
-    cover?: File;
-  }
-): Promise<{
-  audioPath?: string;
-  videoPath?: string;
-  txtPath?: string;
-  coverPath?: string;
-}> {
-  const result: {
-    audioPath?: string;
-    videoPath?: string;
-    txtPath?: string;
-    coverPath?: string;
-  } = {};
+  files: { audio?: File; video?: File; txt?: File; cover?: File }
+): Promise<{ audioPath?: string; videoPath?: string; txtPath?: string; coverPath?: string }> {
+  const result: { audioPath?: string; videoPath?: string; txtPath?: string; coverPath?: string } = {};
 
   if (!isTauri()) {
-    // Browser mode: create blob URLs
     if (files.audio) result.audioPath = URL.createObjectURL(files.audio);
     if (files.video) result.videoPath = URL.createObjectURL(files.video);
     if (files.txt) result.txtPath = URL.createObjectURL(files.txt);
@@ -729,79 +696,26 @@ export async function storeSongFiles(
     return result;
   }
 
-  // Tauri mode: Save files to app data directory
   try {
-    // Create songs directory
-    await mkdir(`songs/${songFolder}`, { 
-      baseDir: BaseDirectory.AppData, 
-      recursive: true 
-    });
-    
-    const saveFile = async (file: File, type: string): Promise<string> => {
-      const arrayBuffer = await file.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
+    await mkdir(`songs/${songFolder}`, { baseDir: BaseDirectory.AppData, recursive: true });
+
+    const saveFile = async (file: File): Promise<string> => {
+      const uint8Array = new Uint8Array(await file.arrayBuffer());
       const safeName = sanitizeFileName(file.name);
       const relativePath = `songs/${songFolder}/${safeName}`;
-      
-      // Save using Tauri fs plugin (writeFile is the correct function name)
-      await writeFile(relativePath, uint8Array, { 
-        baseDir: BaseDirectory.AppData,
-      });
-      
+      await writeFile(relativePath, uint8Array, { baseDir: BaseDirectory.AppData });
       return relativePath;
     };
 
-    if (files.audio) {
-      result.audioPath = await saveFile(files.audio, 'audio');
-    }
-    if (files.video) {
-      result.videoPath = await saveFile(files.video, 'video');
-    }
-    if (files.txt) {
-      result.txtPath = await saveFile(files.txt, 'txt');
-    }
-    if (files.cover) {
-      result.coverPath = await saveFile(files.cover, 'cover');
-    }
+    if (files.audio) result.audioPath = await saveFile(files.audio);
+    if (files.video) result.videoPath = await saveFile(files.video);
+    if (files.txt) result.txtPath = await saveFile(files.txt);
+    if (files.cover) result.coverPath = await saveFile(files.cover);
   } catch (error) {
     console.error('Failed to store song files:', error);
   }
 
   return result;
-}
-
-// Get a playable URL for a stored file (from app data directory)
-export async function getPlayableUrl(relativePath: string): Promise<string> {
-  if (!isTauri()) {
-    // Browser mode - the path should already be a blob URL
-    return relativePath;
-  }
-
-  // In Tauri, load the file and create a blob URL
-  try {
-    const appDataPath = await getAppDataPath();
-    
-    if (appDataPath) {
-      const fullPath = `${normalizeFilePath(appDataPath)}/${normalizeFilePath(relativePath)}`;
-      
-      // Check cache first
-      const cachedUrl = blobUrlCache.get(fullPath);
-      if (cachedUrl) {
-        return cachedUrl;
-      }
-      
-      // Load file and create blob URL
-      const blobUrl = await loadFileAsBlobUrl(fullPath);
-      if (blobUrl) {
-        return blobUrl;
-      }
-    }
-  } catch (error) {
-    console.error('Failed to get playable URL:', error);
-  }
-
-  // Fallback: return the relative path
-  return relativePath;
 }
 
 // Get a playable URL for a song media file (from songs folder)
