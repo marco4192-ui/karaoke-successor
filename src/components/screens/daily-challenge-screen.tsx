@@ -60,8 +60,11 @@ export function DailyChallengeScreen({ onPlayChallenge, onSelectSong }: { onPlay
   // Check if already completed today
   const completedToday = isChallengeCompletedToday();
   
-  // Sort leaderboard by score
-  const sortedLeaderboard = [...challenge.entries].sort((a, b) => b.score - a.score);
+  // Sort leaderboard by score (with playerId tiebreaker for deterministic order)
+  const sortedLeaderboard = [...challenge.entries].sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return a.playerId.localeCompare(b.playerId);
+  });
   
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
