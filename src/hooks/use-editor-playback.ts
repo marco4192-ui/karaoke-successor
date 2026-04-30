@@ -45,7 +45,7 @@ export function useEditorPlayback(
     if (isPlaying) {
       const startTime = performance.now();
       const startOffset = currentTimeRef.current;
-      const rate = playbackRateRef.current;
+      const rate = playbackRate;
 
       const animate = () => {
         const elapsed = performance.now() - startTime;
@@ -84,7 +84,7 @@ export function useEditorPlayback(
         animationFrameRef.current = null;
       }
     };
-  }, [isPlaying, duration]);
+  }, [isPlaying, duration, playbackRate]);
 
   // Sync playbackRate to the audio element when changed during playback
   useEffect(() => {
