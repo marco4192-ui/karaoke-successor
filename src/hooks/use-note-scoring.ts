@@ -146,6 +146,11 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   const p2StateRef = useRef(p2State);
   p2StateRef.current = p2State;
 
+  // Ref for P1 combo to avoid stale closure when batched updates delay React re-render.
+  // Without this, two ticks firing before a re-render both read the same old combo value.
+  const p1ComboRef = useRef(0);
+  const p1MaxComboRef = useRef(0);
+
   
   // Detected pitches for P2-P4
   const [p2DetectedPitch, setP2DetectedPitch] = useState<number | null>(null);
@@ -169,6 +174,8 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     notePerformanceRef.current = new Map();
     lastNotePerfSyncRef.current = 0;
     setP2State({ ...DEFAULT_PLAYER_SCORING_STATE });
+    p1ComboRef.current = 0;
+    p1MaxComboRef.current = 0;
     setP2DetectedPitch(null);
     noteProgressRef.current.clear();
     p2NoteProgressRef.current.clear();
@@ -384,12 +391,14 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
               const finalPoints = Math.max(1, Math.round(tickPoints));
 
               if (finalPoints > 0) {
-                const newCombo = activePlayer.combo + 1;
+                const newCombo = p1ComboRef.current + 1;
                 const isPerfect = tickResult.accuracy > 0.95;
 
                 scoreDelta += finalPoints;
                 comboUpdate = newCombo;
-                maxComboUpdate = Math.max(activePlayer.maxCombo, newCombo);
+                maxComboUpdate = Math.max(p1MaxComboRef.current, newCombo);
+                p1ComboRef.current = newCombo;
+                p1MaxComboRef.current = maxComboUpdate;
                 hasPlayerUpdates = true;
 
                 setScoreEvents(prev => [
@@ -433,6 +442,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
               }
             } else {
               comboUpdate = 0;
+              p1ComboRef.current = 0;
               hasPlayerUpdates = true;
 
               setScoreEvents(prev => [
