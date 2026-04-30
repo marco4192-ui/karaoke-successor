@@ -215,8 +215,12 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     const p2 = p2ScoringState || null;
     const p2Player = players[1] || null;
     if (isDuetMode && p2 && (p2.notesHit > 0 || p2.notesMissed > 0)) {
-      // For P2, count only notes assigned to P2 (or all notes if no explicit assignment)
-      const p2TotalNotes = totalNotes; // In duel mode, P2 sings the same notes
+      // For P2, count only notes assigned to P2 in duet mode.
+      // In duel mode (no player assignment), P2 sings the same notes as P1.
+      const p2AssignedNotes = song.lyrics.reduce((acc, line) =>
+        acc + line.notes.filter(n => n.player === 'P2').length, 0);
+      const hasDuetAssignment = p2AssignedNotes > 0;
+      const p2TotalNotes = hasDuetAssignment ? p2AssignedNotes : totalNotes;
       const p2Accuracy = p2TotalNotes > 0 ? (p2.notesHit / p2TotalNotes) * 100 : 0;
       playerResults.push({
         playerId: p2Player?.id || 'p2',
