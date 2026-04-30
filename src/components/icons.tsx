@@ -219,7 +219,7 @@ export function SearchIcon({ className }: { className?: string }) {
   );
 }
 
-export function RefreshIcon({ className }: { className?: string }) {
+: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <polyline points="23 4 23 10 17 10" />
@@ -229,7 +229,7 @@ export function RefreshIcon({ className }: { className?: string }) {
   );
 }
 
-export function VolumeIcon({ className }: { className?: string }) {
+: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
@@ -238,7 +238,7 @@ export function VolumeIcon({ className }: { className?: string }) {
   );
 }
 
-export function VolumeMuteIcon({ className }: { className?: string }) {
+: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
@@ -325,7 +325,7 @@ export function PauseIcon({ className }: { className?: string }) {
   );
 }
 
-export function SkipForwardIcon({ className }: { className?: string }) {
+: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <polygon points="5 4 15 12 5 20 5 4" />
@@ -334,7 +334,7 @@ export function SkipForwardIcon({ className }: { className?: string }) {
   );
 }
 
-export function RewindIcon({ className }: { className?: string }) {
+: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <polygon points="11 19 2 12 11 5 11 19" />
