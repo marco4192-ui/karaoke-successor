@@ -53,49 +53,7 @@ export const IMMERSIVE_SCREENS: Set<Screen> = new Set([
 // Note shape style for theming — canonical definition in note-utils.tsx
 export type { NoteShapeStyle } from '@/lib/game/note-utils';
 
-// Note progress tracking for duration-based scoring
-export interface NoteProgress {
-  noteId: string;
-  totalTicks: number;
-  ticksHit: number;
-  ticksEvaluated: number;
-  isGolden: boolean;
-  lastEvaluatedTime: number;
-  isComplete: boolean;
-  wasPerfect: boolean; // All ticks hit
-}
-
-// Scoring metadata
-export interface ScoringMetadata {
-  totalNoteTicks: number;
-  goldenNoteTicks: number;
-  normalNoteTicks: number;
-  perfectScoreBase: number;
-  pointsPerTick: number;
-}
-
-// Song start options
-export interface StartOptions {
-  difficulty: 'easy' | 'medium' | 'hard';
-  mode: 'single' | 'duel' | 'duet' | 'medley' | 'missing-words' | 'blind' | 'rate-my-song' | 'pass-the-mic' | 'battle-royale' | 'competitive-words-blind' | string;
-  players: string[];
-  partyMode?: string;
-  songSelectionMode?: 'random' | 'poll' | 'medley';
-  songGenre?: string;
-  songLanguage?: string;
-  pollSongs?: import('@/types/game').Song[];
-  pollVotes?: Record<string, string[]>;
-  pollWinner?: import('@/types/game').Song;
-  medleyGenre?: string;
-  medleyLanguage?: string;
-}
-
-// Library settings
-export interface LibrarySettings {
-  sortBy: 'title' | 'artist' | 'difficulty' | 'rating' | 'dateAdded';
-  sortOrder: 'asc' | 'desc';
-  filterDifficulty: 'easy' | 'medium' | 'hard' | 'all';
-  filterGenre: string;
-  filterLanguage: string;
-  filterDuet: boolean;
-}
+// Note: NoteProgress, ScoringMetadata, StartOptions, and LibrarySettings have been
+// removed from this file. Their canonical definitions live in:
+// - NoteProgress / ScoringMetadata → @/lib/game/scoring.ts
+// - StartOptions / LibrarySettings → @/components/screens/library/types.ts
