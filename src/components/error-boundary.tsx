@@ -6,11 +6,21 @@ import React from 'react';
 // Client-side Error Boundary wrapper — wraps {children} from layout.tsx.
 // layout.tsx is a Server Component, so the actual error boundary must be here.
 // ─────────────────────────────────────────────────────────────────────────
+
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
 function ErrorFallback({
   error,
   reset,
 }: {
-  error: Error & { digest?: string };
+  error: Error;
   reset: () => void;
 }) {
   return (
@@ -35,13 +45,31 @@ function ErrorFallback({
   );
 }
 
-export function ErrorBoundary({ children }: { children: React.ReactNode }) {
-  return (
-    <ErrorBoundary
-      FallbackComponent={ErrorFallback}
-      onReset={() => window.location.reload()}
-    >
-      {children}
-    </ErrorBoundary>
-  );
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('[ErrorBoundary]', error, errorInfo);
+  }
+
+  handleReset = () => {
+    this.setState({ hasError: false, error: null });
+    window.location.reload();
+  };
+
+  render() {
+    if (this.state.hasError && this.state.error) {
+      return <ErrorFallback error={this.state.error} reset={this.handleReset} />;
+    }
+    return this.props.children;
+  }
 }
+
+export { ErrorBoundary };
