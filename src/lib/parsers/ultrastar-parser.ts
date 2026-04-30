@@ -20,6 +20,7 @@
 
 import { Song, Note, LyricLine, Difficulty, DuetPlayer, midiToFrequency } from '@/types/game';
 import { isYouTubeUrl, isDirectVideoUrl } from '@/components/game/youtube-player';
+import { normalizeTxtContent } from '@/lib/utils';
 
 export interface UltraStarNote {
   type: ':' | '*' | 'F' | 'R' | 'G';
@@ -71,7 +72,8 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
   // - Trailing space in lyric (e.g., "way ") = end of word
   // - No trailing space (e.g., "runa") = syllable connected to next note
   // Only filter out completely empty lines
-  const lines = content.split('\n').filter(l => l.trim().length > 0);
+  const normalized = normalizeTxtContent(content);
+  const lines = normalized.split('\n').filter(l => l.trim().length > 0);
   
   const song: UltraStarSong = {
     title: 'Unknown',
