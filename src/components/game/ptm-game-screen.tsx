@@ -379,7 +379,7 @@ export function PtmGameScreen({
         setPhase('song-results');
       }
     }
-  }, [phase, isPlaying, currentTime, currentSegment, currentSegmentIndex, initialSegments.length, currentPlayerIndex, showTransition]);
+  }, [phase, isPlaying, currentTime, currentSegment, currentSegmentIndex, initialSegments.length, currentPlayerIndex, showTransition, recordRound]);
 
   // ── Random switch (rare mid-segment) ──
   useEffect(() => {
