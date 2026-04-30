@@ -14,42 +14,6 @@ export interface NetworkStatus {
 }
 
 // ============================================================================
-// Pending requests queue — stores operations that failed due to being offline
-// Stored in localStorage for persistence across sessions.
-//
-// NOTE (FD7): This infrastructure is defined but the queue is never populated.
-// No addToOfflineQueue() function exists yet. The clearOfflineQueue() export
-// exists for future use. This is planned infrastructure for offline-first support.
-// ============================================================================
-
-const QUEUE_KEY = 'karaoke-offline-queue';
-
-interface PendingRequest {
-  id: string;
-  type: string;
-  payload: unknown;
-  createdAt: number;
-}
-
-function loadQueue(): PendingRequest[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const stored = localStorage.getItem(QUEUE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch { return []; }
-}
-
-function saveQueue(queue: PendingRequest[]): void {
-  if (typeof window === 'undefined') return;
-  try { localStorage.setItem(QUEUE_KEY, JSON.stringify(queue)); } catch {}
-}
-
-/** Clear all pending requests. */
-export function clearOfflineQueue(): void {
-  saveQueue([]);
-}
-
-// ============================================================================
 // Server reachability check
 // ============================================================================
 
@@ -70,18 +34,16 @@ async function checkServerReachable(): Promise<boolean> {
 // ============================================================================
 
 export interface UseNetworkStatusResult extends NetworkStatus {
-  /** Number of pending requests in the offline queue */
+  /** Number of pending requests in the offline queue (always 0 — placeholder for future offline-first support) */
   pendingCount: number;
 }
 
 /**
  * Hook that tracks network connectivity and server reachability.
- * Also provides access to the offline request queue.
  */
 export function useNetworkStatus(): UseNetworkStatusResult {
   const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [isServerReachable, setIsServerReachable] = useState<boolean | null>(null);
-  const [pendingCount, setPendingCount] = useState(0);
 
   // Browser online/offline events
   useEffect(() => {
@@ -107,12 +69,11 @@ export function useNetworkStatus(): UseNetworkStatusResult {
     };
   }, []);
 
-  // Poll pending queue count every 2 seconds (simple reactivity without custom events)
-  useEffect(() => {
-    setPendingCount(loadQueue().length);
-    const interval = setInterval(() => setPendingCount(loadQueue().length), 2000);
-    return () => clearInterval(interval);
-  }, []);
+  return { isOnline, isServerReachable, pendingCount: 0 };
+}
 
-  return { isOnline, isServerReachable, pendingCount };
+/** No-op placeholder for future offline-first support. */
+export function clearOfflineQueue(): void {
+  // Offline queue infrastructure was removed (queue was never populated).
+  // Kept as export for backward compatibility with OfflineBanner.
 }
