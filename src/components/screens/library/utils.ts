@@ -90,6 +90,22 @@ export function groupSongs(songs: Song[], groupBy: LibraryGroupBy): Map<string, 
   return groups;
 }
 
+export function getSortedFolderKeys(groupedSongs: Map<string, Song[]>, groupBy: LibraryGroupBy): string[] {
+  const keys = Array.from(groupedSongs.keys());
+
+  if (groupBy === 'artist' || groupBy === 'title') {
+    // Sort letter groups A–Z, then '#' at the end
+    return keys.sort((a, b) => {
+      if (a === '#') return 1;
+      if (b === '#') return -1;
+      return a.localeCompare(b);
+    });
+  }
+
+  // Alphabetical sort for genre, language, folder
+  return keys.sort((a, b) => a.localeCompare(b));
+}
+
 export function getGroupDisplayName(key: string, groupBy: LibraryGroupBy): string {
   if (groupBy === 'language') {
     return LANGUAGE_NAMES[key] || key;
