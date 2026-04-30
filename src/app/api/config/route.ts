@@ -12,6 +12,26 @@ const getConfigPaths = () => {
   ];
 };
 
+// Only allow requests from the Tauri webview or localhost
+const isLocalRequest = (request: NextRequest): boolean => {
+  const origin = request.headers.get('origin') || '';
+  const referer = request.headers.get('referer') || '';
+  const host = request.headers.get('host') || '';
+  return (
+    origin.startsWith('tauri://') ||
+    origin.startsWith('https://tauri.') ||
+    origin.startsWith('http://tauri.') ||
+    origin.startsWith('http://localhost') ||
+    origin.startsWith('http://127.0.0.1') ||
+    referer.startsWith('tauri://') ||
+    referer.startsWith('https://tauri.') ||
+    referer.startsWith('http://localhost') ||
+    referer.startsWith('http://127.0.0.1') ||
+    host.startsWith('localhost') ||
+    host.startsWith('127.0.0.1')
+  );
+};
+
 // GET - Read current config
 export async function GET() {
   try {
@@ -52,6 +72,9 @@ export async function GET() {
 
 // POST - Save config
 export async function POST(request: NextRequest) {
+  if (!isLocalRequest(request)) {
+    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+  }
   try {
     const body = await request.json();
     const { baseUrl, apiKey, chatId, userId } = body;
@@ -113,6 +136,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Test connection
 export async function PUT(request: NextRequest) {
+  if (!isLocalRequest(request)) {
+    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+  }
   try {
     const body = await request.json();
     const { baseUrl, apiKey } = body;
@@ -171,7 +197,10 @@ export async function PUT(request: NextRequest) {
 }
 
 // DELETE - Remove config
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
+  if (!isLocalRequest(request)) {
+    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+  }
   try {
     const paths = getConfigPaths();
     
