@@ -75,15 +75,13 @@ export interface UseNoteScoringReturn {
   
   // Note performance for visual display modes
   notePerformance: Map<string, NotePerformanceSample[]>;
-  // P2-P4 states (for duet/party modes)
+  // P2 state (for duet mode)
   p2State: PlayerScoringState;
   
-  // Detected pitches for P2-P4
+  // Detected pitch for P2
   p2DetectedPitch: number | null;
   
   setP2DetectedPitch: (pitch: number | null) => void;
-  setP3DetectedPitch: (pitch: number | null) => void;
-  setP4DetectedPitch: (pitch: number | null) => void;
   // Functions
   checkNoteHits: (
     currentTime: number,
@@ -93,14 +91,7 @@ export interface UseNoteScoringReturn {
     currentTime: number,
     pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }
   ) => void;
-  checkP3NoteHits: (
-    currentTime: number,
-    pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }
-  ) => void;
-  checkP4NoteHits: (
-    currentTime: number,
-    pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }
-  ) => void;
+
   resetScoring: () => void;
 }
 
@@ -160,8 +151,6 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   // Refs for note progress tracking (one map per player)
   const noteProgressRef = useRef<Map<string, NoteProgress>>(new Map());
   const p2NoteProgressRef = useRef<Map<string, NoteProgress>>(new Map());
-  const p3NoteProgressRef = useRef<Map<string, NoteProgress>>(new Map());
-  const p4NoteProgressRef = useRef<Map<string, NoteProgress>>(new Map());
 
   // Ref to always have the latest players array — prevents stale closure issues
   // when checkNoteHits is called from requestAnimationFrame
@@ -173,15 +162,9 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     setScoreEvents([]);
     setP1ScoreEvents([]);
     setP2ScoreEvents([]);
-    setP3ScoreEvents([]);
-    setP4ScoreEvents([]);
     setNotePerformance(new Map());
     setP2State({ ...DEFAULT_PLAYER_SCORING_STATE });
-    setP3State({ ...DEFAULT_PLAYER_SCORING_STATE });
-    setP4State({ ...DEFAULT_PLAYER_SCORING_STATE });
     setP2DetectedPitch(null);
-    setP3DetectedPitch(null);
-    setP4DetectedPitch(null);
     noteProgressRef.current.clear();
     p2NoteProgressRef.current.clear();
     
@@ -514,66 +497,18 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     [isDuetMode, isPartyMode, timingData, checkPlayerNoteHits]
   );
 
-  // Check P3 notes (party mode only)
-  const checkP3NoteHits = useCallback(
-    (currentTime: number, pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }) => {
-      if (!isPartyMode) return;
-      checkPlayerNoteHits(
-        currentTime,
-        pitch,
-        2,
-        timingData?.p3Notes,
-        timingData?.p3ScoringMetadata,
-        p3NoteProgressRef,
-        p3StateRef,
-        setP3State,
-        setP3ScoreEvents,
-        'p3-note'
-      );
-    },
-    [isPartyMode, timingData, checkPlayerNoteHits]
-  );
 
-  // Check P4 notes (party mode only)
-  const checkP4NoteHits = useCallback(
-    (currentTime: number, pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }) => {
-      if (!isPartyMode) return;
-      checkPlayerNoteHits(
-        currentTime,
-        pitch,
-        3,
-        timingData?.p4Notes,
-        timingData?.p4ScoringMetadata,
-        p4NoteProgressRef,
-        p4StateRef,
-        setP4State,
-        setP4ScoreEvents,
-        'p4-note'
-      );
-    },
-    [isPartyMode, timingData, checkPlayerNoteHits]
-  );
 
   return {
     scoreEvents,
     p1ScoreEvents,
     p2ScoreEvents,
-    p3ScoreEvents,
-    p4ScoreEvents,
     notePerformance,
     p2State,
-    p3State,
-    p4State,
     p2DetectedPitch,
-    p3DetectedPitch,
-    p4DetectedPitch,
     setP2DetectedPitch,
-    setP3DetectedPitch,
-    setP4DetectedPitch,
     checkNoteHits,
     checkP2NoteHits,
-    checkP3NoteHits,
-    checkP4NoteHits,
     resetScoring,
   };
 }
