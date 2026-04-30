@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Song } from '@/types/game';
 import {
@@ -50,6 +50,16 @@ export function AlternateFormatTab({
 
   const songInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
+
+  // Track blob URLs created in handleProcess for cleanup on unmount/cancel
+  const previewBlobUrlRef = useRef<string | null>(null);
+  useEffect(() => {
+    return () => {
+      if (previewBlobUrlRef.current?.startsWith('blob:')) {
+        URL.revokeObjectURL(previewBlobUrlRef.current);
+      }
+    };
+  }, []);
 
   const handleSongFileSelect = useCallback(async (file: File) => {
     setError(null);
@@ -129,6 +139,9 @@ export function AlternateFormatTab({
       }
 
       // Revoke previous preview blob URLs to prevent memory leaks
+      if (previewBlobUrlRef.current?.startsWith('blob:')) {
+        URL.revokeObjectURL(previewBlobUrlRef.current);
+      }
       if (previewSong?.audioUrl?.startsWith('blob:')) URL.revokeObjectURL(previewSong.audioUrl);
 
       // Build complete Song object
@@ -148,6 +161,9 @@ export function AlternateFormatTab({
       };
 
       setPreviewSong(song);
+      if (song.audioUrl?.startsWith('blob:')) {
+        previewBlobUrlRef.current = song.audioUrl;
+      }
       setStatusMessage(`Successfully imported "${song.title}" — ${song.lyrics.length} lyric lines`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error during import.');
@@ -254,7 +270,14 @@ export function AlternateFormatTab({
           </Button>
           <Button
             variant="ghost"
-            onClick={() => { setPreviewSong(null); setStatusMessage(null); }}
+            onClick={() => {
+              if (previewBlobUrlRef.current?.startsWith('blob:')) {
+                URL.revokeObjectURL(previewBlobUrlRef.current);
+                previewBlobUrlRef.current = null;
+              }
+              setPreviewSong(null);
+              setStatusMessage(null);
+            }}
             className="text-slate-500 text-xs"
           >
             Cancel
