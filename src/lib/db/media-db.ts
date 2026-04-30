@@ -191,8 +191,8 @@ export async function deleteSongMedia(songId: string): Promise<void> {
   }
 }
 
-// Check if media exists for a song
-export async function hasMedia(
+// Check if media exists for a song (internal utility)
+async function hasMedia(
   songId: string, 
   type: 'audio' | 'video' | 'cover' | 'txt'
 ): Promise<boolean> {
@@ -200,8 +200,8 @@ export async function hasMedia(
   return media !== null;
 }
 
-// Clear all media (for debugging)
-export async function clearAllMedia(): Promise<void> {
+// Clear all media (for debugging — not exported, call via dev console if needed)
+async function clearAllMedia(): Promise<void> {
   const db = await initMediaDB();
   
   return new Promise((resolve, reject) => {

@@ -308,7 +308,7 @@ function saveToLocalStorage(songs: Song[]): void {
 }
 
 // Get song by ID (used internally by getSongByIdWithLyrics)
-export function getSongById(id: string): Song | undefined {
+function getSongById(id: string): Song | undefined {
   const songs = getAllSongs();
   return songs.find(song => song.id === id);
 }

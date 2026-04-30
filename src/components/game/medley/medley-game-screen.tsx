@@ -934,7 +934,7 @@ function MedleyFinalResults({
                 <div className="text-2xl font-bold" style={{ color: w.color }}>{w.name}</div>
                 <div className="text-2xl font-bold text-amber-400 mt-1">{w.totalScore.toLocaleString()} pts</div>
                 <div className="text-sm text-white/40 mt-1">
-                  {w.roundsPlayed} Runde{w.roundsPlayed !== 1 ? 'n' : ''} · {w.bestCombo}x Best Combo
+                  {w.roundsPlayed} Runde{nrc_round(w.roundsPlayed)} · {w.bestCombo}x Best Combo
                 </div>
               </>
             );

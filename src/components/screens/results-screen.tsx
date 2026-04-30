@@ -138,8 +138,6 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
         s.title.toLowerCase() === nextQueueItem.songTitle.toLowerCase() &&
         s.artist.toLowerCase() === nextQueueItem.songArtist.toLowerCase()
       );
-      if (fullSong) {
-      }
     }
     
     if (!fullSong) {

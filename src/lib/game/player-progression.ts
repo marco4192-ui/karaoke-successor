@@ -240,16 +240,6 @@ export const CHALLENGE_MODES: ChallengeMode[] = [
   },
 ];
 
-// Daily challenge integration
-export interface DailyChallengeConfig {
-  date: string;
-  modeId: string;
-  songId?: string;
-  seed: number;
-  bonusXP: number;
-  globalGoal?: number;
-}
-
 // ===================== EXTENDED PLAYER STATISTICS =====================
 
 export interface ExtendedPlayerStats {
