@@ -135,7 +135,7 @@ const TITLES: Title[] = [
 
 // ===================== CHALLENGE MODES =====================
 
-export interface ChallengeMode {
+interface ChallengeMode {
   id: string;
   name: string;
   description: string;
@@ -242,7 +242,7 @@ export const CHALLENGE_MODES: ChallengeMode[] = [
 
 // ===================== EXTENDED PLAYER STATISTICS =====================
 
-export interface ExtendedPlayerStats {
+interface ExtendedPlayerStats {
   // Core stats
   totalXP: number;
   currentLevel: number;
@@ -317,7 +317,7 @@ export interface ExtendedPlayerStats {
 // ===================== GAME RESULT INPUT =====================
 
 /** Input data from a completed game, used to update player stats */
-export interface PlayerGameResult {
+interface PlayerGameResult {
   songId: string;
   songTitle: string;
   genre?: string;

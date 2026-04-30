@@ -39,7 +39,7 @@ export interface VocalDetectionResult {
   onsetRate: number;
 }
 
-export interface VocalDetectorConfig {
+interface VocalDetectorConfig {
   /** Minimum confidence to classify as singing (default: 0.35) */
   singingThreshold: number;
   /** Window size in frames for pitch variance (default: 24 ≈ 400 ms at 60 fps) */
@@ -66,7 +66,7 @@ export interface VocalDetectorConfig {
 
 // ===================== DEFAULTS =====================
 
-export const DEFAULT_VOCAL_CONFIG: VocalDetectorConfig = {
+const DEFAULT_VOCAL_CONFIG: VocalDetectorConfig = {
   singingThreshold: 0.35,
   pitchVarianceWindowSize: 24,
   minPitchVariance: 0.08,
@@ -81,7 +81,7 @@ export const DEFAULT_VOCAL_CONFIG: VocalDetectorConfig = {
 };
 
 /** Slightly relaxed config for 'easy' difficulty */
-export const VOCAL_CONFIG_EASY: VocalDetectorConfig = {
+const VOCAL_CONFIG_EASY: VocalDetectorConfig = {
   ...DEFAULT_VOCAL_CONFIG,
   singingThreshold: 0.25,
   minPitchVariance: 0.05,
@@ -92,19 +92,19 @@ export const VOCAL_CONFIG_EASY: VocalDetectorConfig = {
 };
 
 /** Default config for 'medium' difficulty */
-export const VOCAL_CONFIG_MEDIUM: VocalDetectorConfig = {
+const VOCAL_CONFIG_MEDIUM: VocalDetectorConfig = {
   ...DEFAULT_VOCAL_CONFIG,
 };
 
 /** Stricter config for 'hard' difficulty */
-export const VOCAL_CONFIG_HARD: VocalDetectorConfig = {
+const VOCAL_CONFIG_HARD: VocalDetectorConfig = {
   ...DEFAULT_VOCAL_CONFIG,
   singingThreshold: 0.45,
   minPitchVariance: 0.12,
   minOnsetRate: 2.0,
 };
 
-export const VOCAL_CONFIGS: Record<string, VocalDetectorConfig> = {
+const VOCAL_CONFIGS: Record<string, VocalDetectorConfig> = {
   easy: VOCAL_CONFIG_EASY,
   medium: VOCAL_CONFIG_MEDIUM,
   hard: VOCAL_CONFIG_HARD,

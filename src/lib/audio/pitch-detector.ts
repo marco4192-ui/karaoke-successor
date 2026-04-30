@@ -2,7 +2,7 @@ import { PitchDetectionResult, frequencyToMidi, Difficulty } from '@/types/game'
 import { VocalDetector, VocalDetectionResult } from './vocal-detector';
 
 // Karaoke-optimized pitch detection settings
-export interface PitchDetectorConfig {
+interface PitchDetectorConfig {
   volumeThreshold: number;        // Minimum volume to register (0-1)
   pitchStabilityFrames: number;   // Consecutive frames required for stable pitch
   yinThreshold: number;           // YIN algorithm threshold (0.1-0.3, lower = more sensitive)
@@ -13,7 +13,7 @@ export interface PitchDetectorConfig {
 }
 
 // Karaoke-optimized defaults - more lenient for casual singing
-export const KARAOKE_DEFAULT_CONFIG: PitchDetectorConfig = {
+const KARAOKE_DEFAULT_CONFIG: PitchDetectorConfig = {
   volumeThreshold: 0.03,          // Sensitive - picks up normal singing
   pitchStabilityFrames: 3,        // Quick response (~50ms at 60fps)
   yinThreshold: 0.12,             // Lenient YIN threshold for better detection
@@ -24,7 +24,7 @@ export const KARAOKE_DEFAULT_CONFIG: PitchDetectorConfig = {
 };
 
 // Difficulty-based configurations - optimized for karaoke
-export const DIFFICULTY_PITCH_CONFIGS: Record<Difficulty, PitchDetectorConfig> = {
+const DIFFICULTY_PITCH_CONFIGS: Record<Difficulty, PitchDetectorConfig> = {
   easy: {
     volumeThreshold: 0.02,        // Very sensitive - picks up quiet singing
     pitchStabilityFrames: 2,      // Quick response

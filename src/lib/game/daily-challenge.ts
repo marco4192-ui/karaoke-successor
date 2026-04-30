@@ -3,7 +3,7 @@
 
 import { XP_LEVEL_THRESHOLDS } from './xp-config';
 
-export interface DailyChallengeEntry {
+interface DailyChallengeEntry {
   playerId: string;
   playerName: string;
   playerAvatar?: string;
@@ -15,7 +15,7 @@ export interface DailyChallengeEntry {
   rank: number;
 }
 
-export interface DailyChallengeData {
+interface DailyChallengeData {
   date: string;
   type: 'score' | 'accuracy' | 'combo' | 'songs' | 'perfect_notes';
   target: number;
@@ -24,7 +24,7 @@ export interface DailyChallengeData {
   totalParticipants: number;
 }
 
-export interface PlayerDailyStats {
+interface PlayerDailyStats {
   currentStreak: number;
   longestStreak: number;
   totalCompleted: number;
@@ -148,7 +148,7 @@ export function getDailyChallenge(): DailyChallengeData {
 }
 
 // Save leaderboard
-export function saveDailyChallenge(data: DailyChallengeData): void {
+function saveDailyChallenge(data: DailyChallengeData): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(`${DAILY_LEADERBOARD_KEY}_${data.date}`, JSON.stringify(data));
 }
@@ -188,7 +188,7 @@ export function getPlayerDailyStats(): PlayerDailyStats {
 }
 
 // Save player's daily stats
-export function savePlayerDailyStats(stats: PlayerDailyStats): void {
+function savePlayerDailyStats(stats: PlayerDailyStats): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(PLAYER_DAILY_STATS_KEY, JSON.stringify(stats));
 }

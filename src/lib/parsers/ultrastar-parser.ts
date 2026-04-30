@@ -22,7 +22,7 @@ import { Song, Note, LyricLine, Difficulty, DuetPlayer, midiToFrequency } from '
 import { isYouTubeUrl, isDirectVideoUrl } from '@/components/game/youtube-player';
 import { normalizeTxtContent } from '@/lib/utils';
 
-export interface UltraStarNote {
+interface UltraStarNote {
   type: ':' | '*' | 'F' | 'R' | 'G';
   startBeat: number;
   duration: number;
@@ -31,7 +31,7 @@ export interface UltraStarNote {
   player?: DuetPlayer; // For duet mode: P1, P2, or undefined (both)
 }
 
-export interface UltraStarLineBreak {
+interface UltraStarLineBreak {
   beat: number;
 }
 

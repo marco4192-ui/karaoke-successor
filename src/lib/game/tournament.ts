@@ -57,7 +57,7 @@ function calculateRounds(numPlayers: number): number {
 }
 
 // Calculate number of BYEs needed for bracket balance
-export function calculateByes(numPlayers: number): number {
+function calculateByes(numPlayers: number): number {
   const nextPowerOfTwo = Math.pow(2, Math.ceil(Math.log2(numPlayers)));
   return nextPowerOfTwo - numPlayers;
 }

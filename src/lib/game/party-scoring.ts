@@ -19,7 +19,7 @@ import {
 // ===================== TYPES =====================
 
 /** Minimal pitch input expected by the scoring functions. */
-export interface PitchInput {
+interface PitchInput {
   note: number | null;
   frequency: number | null;
   volume: number;
@@ -27,7 +27,7 @@ export interface PitchInput {
 }
 
 /** Result of scoring a single tick against a note. */
-export interface TickScoreResult {
+interface TickScoreResult {
   hit: boolean;
   points: number;
   accuracy: number;

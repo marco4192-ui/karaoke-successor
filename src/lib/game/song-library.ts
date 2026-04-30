@@ -40,7 +40,7 @@ export function acquireScanLock(): { release: () => void } {
 }
 
 /** Wait for any in-progress scan to complete. */
-export function waitForScanLock(): Promise<void> {
+function waitForScanLock(): Promise<void> {
   return scanLock;
 }
 

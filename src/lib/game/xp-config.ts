@@ -6,7 +6,7 @@
  * The daily challenge display uses a curated 10-level system with named titles.
  */
 
-export interface XPLevelThreshold {
+interface XPLevelThreshold {
   xp: number;
   title: string;
 }

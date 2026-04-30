@@ -1,6 +1,6 @@
 // Achievement System for Karaoke Successor
 
-export interface AchievementDefinition {
+interface AchievementDefinition {
   id: string;
   name: string;
   description: string;
@@ -282,7 +282,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
 // ===================== ACHIEVEMENT CHECKING =====================
 
 /** Context passed to the achievement checker after each game */
-export interface AchievementGameContext {
+interface AchievementGameContext {
   score: number;
   accuracy: number;
   maxCombo: number;
@@ -309,7 +309,7 @@ export interface AchievementGameContext {
 }
 
 /** Result of an achievement check pass */
-export interface AchievementCheckResult {
+interface AchievementCheckResult {
   newlyUnlocked: Array<{
     id: string;
     name: string;

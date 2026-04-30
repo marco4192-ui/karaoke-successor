@@ -15,7 +15,7 @@ export const DEFAULT_SPECTROGRAM_CONFIG: SpectrogramConfig = {
   colorScheme: 'neon',
 };
 
-export function getColorFromValue(value: number, scheme: SpectrogramConfig['colorScheme']): string {
+function getColorFromValue(value: number, scheme: SpectrogramConfig['colorScheme']): string {
   const normalized = Math.max(0, Math.min(1, value));
   
   switch (scheme) {
@@ -52,7 +52,7 @@ export function getColorFromValue(value: number, scheme: SpectrogramConfig['colo
   }
 }
 
-export interface FrequencyBand {
+interface FrequencyBand {
   name: string;
   minHz: number;
   maxHz: number;
@@ -109,7 +109,7 @@ export function generateVisualBars(
 }
 
 // Create waveform path for visualization
-export function createWaveformPath(
+function createWaveformPath(
   timeData: Float32Array,
   width: number,
   height: number
@@ -133,7 +133,7 @@ export function createWaveformPath(
 }
 
 // Circular spectrogram for more artistic visualization
-export function createCircularSpectrogram(
+function createCircularSpectrogram(
   frequencyData: Uint8Array,
   centerX: number,
   centerY: number,

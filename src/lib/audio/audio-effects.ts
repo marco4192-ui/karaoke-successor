@@ -2,9 +2,9 @@
 // Includes: Reverb, Echo, Pitch Shift, Compressor, EQ, Distortion
 // With presets and real-time control
 
-export type AudioEffectPreset = 'pop' | 'rock' | 'concert' | 'studio' | 'vintage' | 'ethereal' | 'power' | 'intimate';
+type AudioEffectPreset = 'pop' | 'rock' | 'concert' | 'studio' | 'vintage' | 'ethereal' | 'power' | 'intimate';
 
-export interface AudioEffectSettings {
+interface AudioEffectSettings {
   reverb: {
     enabled: boolean;
     amount: number;      // 0-1
@@ -107,7 +107,7 @@ export const AUDIO_PRESETS: Record<AudioEffectPreset, Partial<AudioEffectSetting
 };
 
 // Default settings
-export const DEFAULT_EFFECTS_SETTINGS: AudioEffectSettings = {
+const DEFAULT_EFFECTS_SETTINGS: AudioEffectSettings = {
   reverb: { enabled: true, amount: 0.3, decay: 1.5, preDelay: 10 },
   delay: { enabled: false, time: 0.3, feedback: 0.3, mix: 0.2 },
   pitch: { enabled: false, shift: 0, formant: 0 },

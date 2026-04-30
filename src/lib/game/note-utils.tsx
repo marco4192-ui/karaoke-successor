@@ -278,7 +278,7 @@ export interface PitchStats {
 /**
  * Default pitch stats (fallback when no notes available)
  */
-export const DEFAULT_PITCH_STATS: PitchStats = {
+const DEFAULT_PITCH_STATS: PitchStats = {
   minPitch: 48,
   maxPitch: 72,
   pitchRange: 24,
@@ -323,7 +323,7 @@ export function calculatePitchStats(
 export const SING_LINE_POSITION = 25; // percentage from left (like UltraStar/Vocaluxe)
 export const NOTE_WINDOW = 4000; // Fixed 4 second window for upcoming notes
 export const VISIBLE_TOP = 8; // percentage from top (padding for header)
-export const VISIBLE_BOTTOM = 85; // percentage from bottom (padding for lyrics)
+const VISIBLE_BOTTOM = 85; // percentage from bottom (padding for lyrics)
 export const VISIBLE_RANGE = VISIBLE_BOTTOM - VISIBLE_TOP;
 
 /**

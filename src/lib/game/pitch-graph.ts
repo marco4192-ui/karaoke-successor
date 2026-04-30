@@ -1,5 +1,5 @@
 // Real-time Pitch Graph - Shows singer's pitch curve vs target notes
-export interface PitchGraphPoint {
+interface PitchGraphPoint {
   time: number;
   pitch: number | null;
   isTarget: boolean;

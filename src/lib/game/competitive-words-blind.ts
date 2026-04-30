@@ -21,7 +21,7 @@ import { Difficulty, PLAYER_COLORS } from '@/types/game';
 // ===================== TYPES =====================
 
 export type CompetitiveModeType = 'missing-words' | 'blind';
-export type BestOfSetting = 1 | 3 | 5 | 7;
+type BestOfSetting = 1 | 3 | 5 | 7;
 
 export interface CompetitiveSettings {
   difficulty: Difficulty;
@@ -33,7 +33,7 @@ export interface CompetitiveSettings {
   blindFrequency: number;
 }
 
-export interface CompetitivePlayer {
+interface CompetitivePlayer {
   id: string;
   name: string;
   avatar?: string;
@@ -266,7 +266,7 @@ export function getCurrentRound(game: CompetitiveGame): CompetitiveRound | null 
 }
 
 /** Check if a player has sung in all their required rounds */
-export function isPlayerFinished(game: CompetitiveGame, playerId: string): boolean {
+function isPlayerFinished(game: CompetitiveGame, playerId: string): boolean {
   return (game.players.find(p => p.id === playerId)?.roundsPlayed ?? 0) >= game.settings.bestOf;
 }
 

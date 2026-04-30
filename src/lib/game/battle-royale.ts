@@ -64,7 +64,7 @@ export interface BattleRoyaleSettings {
 export const MAX_LOCAL_MIC_PLAYERS = 4;    // Direct microphone at device
 export const MAX_COMPANION_PLAYERS = 20;   // Via companion app
 export const MAX_BATTLE_ROYALE_PLAYERS = MAX_LOCAL_MIC_PLAYERS + MAX_COMPANION_PLAYERS; // 24 total
-export const MIN_BATTLE_ROYALE_PLAYERS = 2;
+const MIN_BATTLE_ROYALE_PLAYERS = 2;
 
 // Default settings
 export const DEFAULT_BATTLE_ROYALE_SETTINGS: BattleRoyaleSettings = {
