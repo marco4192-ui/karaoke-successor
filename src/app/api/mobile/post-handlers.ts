@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import type { MobileClient, PitchData, MobileProfile, QueueItem, RemoteCommand } from './mobile-types';
 import {
   mobileClients,
+  connectionCodes,
   profileToClient,
   latestPitchData,
   mutableState,
