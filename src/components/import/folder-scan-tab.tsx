@@ -132,7 +132,7 @@ export function FolderScanTab({
               <input
                 ref={folderInputRef}
                 type="file"
-                // @ts-ignore
+                // @ts-expect-error - webkitdirectory is a non-standard HTML attribute
                 webkitdirectory="true"
                 directory=""
                 multiple

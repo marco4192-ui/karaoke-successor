@@ -83,7 +83,7 @@ export async function scanFolderWithPicker(): Promise<ScanResult> {
   }
 
   try {
-    // @ts-ignore - TypeScript doesn't know about showDirectoryPicker
+    // @ts-expect-error - TypeScript doesn't know about showDirectoryPicker (File System Access API)
     const dirHandle = await window.showDirectoryPicker({
       mode: 'read',
     });
@@ -132,7 +132,7 @@ async function scanDirectoryHandle(
   for (const { entry, fullPath } of entries) {
     if (entry.kind === 'directory') {
       try {
-        // @ts-ignore - Pass baseFolder to recursive calls
+        // @ts-expect-error - Pass baseFolder to recursive calls
         const subResult = await scanDirectoryHandle(entry, fullPath, path, baseFolder);
         result.songs.push(...subResult.songs);
         result.folders.push(...subResult.folders);
@@ -156,7 +156,7 @@ async function scanDirectoryHandle(
       const ext = '.' + entry.name.split('.').pop()?.toLowerCase();
       const folderName = path.split('/').pop() || 'Root';
       
-      // @ts-ignore
+      // @ts-expect-error - FileSystemFileHandle.getFile() not in standard TS lib
       const file = await entry.getFile();
 
       // If folder has song files, add to song folders
