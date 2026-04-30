@@ -170,8 +170,11 @@ export async function loadCustomSongsFromStorage(): Promise<Song[]> {
   }
 }
 
-// Add a song to the library
-export function addSong(song: Song): void {
+// Add a song to the library (async internally to await scan lock)
+export async function addSong(song: Song): Promise<void> {
+  // Wait for any in-progress scan to complete to avoid race condition
+  await waitForScanLock();
+
   const customSongs = getCustomSongs();
 
   // Check for duplicates
@@ -228,8 +231,9 @@ export function replaceCustomSongs(songs: Song[]): void {
   songCache = null;
 }
 
-// Remove a song
-export function removeSong(songId: string): void {
+// Remove a song (async internally to await scan lock)
+export async function removeSong(songId: string): Promise<void> {
+  await waitForScanLock();
   let customSongs = getCustomSongs();
   customSongs = customSongs.filter(s => s.id !== songId);
   saveCustomSongs(customSongs);
