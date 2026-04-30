@@ -481,6 +481,13 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         if (maxComboUpdate !== undefined) updates.maxCombo = maxComboUpdate;
         if (notesHitDelta > 0) updates.notesHit = activePlayer.notesHit + notesHitDelta;
         if (notesMissedDelta > 0) updates.notesMissed = activePlayer.notesMissed + notesMissedDelta;
+        // Update live accuracy whenever hit/miss counts change
+        if (notesHitDelta > 0 || notesMissedDelta > 0) {
+          const totalNotes = (activePlayer.notesHit + notesHitDelta) + (activePlayer.notesMissed + notesMissedDelta);
+          updates.accuracy = totalNotes > 0
+            ? Math.round(((activePlayer.notesHit + notesHitDelta) / totalNotes) * 1000) / 10
+            : 0;
+        }
         updatePlayer(activePlayer.id, updates);
       }
     },
