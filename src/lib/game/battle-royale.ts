@@ -164,11 +164,6 @@ export function getActivePlayers(game: BattleRoyaleGame): BattleRoyalePlayer[] {
   return game.players.filter(p => !p.eliminated);
 }
 
-// Get active players by type
-export function getActivePlayersByType(game: BattleRoyaleGame, type: PlayerType): BattleRoyalePlayer[] {
-  return game.players.filter(p => !p.eliminated && p.playerType === type);
-}
-
 // Get sorted players by score (descending)
 export function getPlayersByScore(game: BattleRoyaleGame): BattleRoyalePlayer[] {
   return [...game.players].sort((a, b) => {
@@ -318,12 +313,6 @@ export function advanceToNextRound(game: BattleRoyaleGame): BattleRoyaleGame {
   };
 }
 
-// Get next song from queue
-export function getNextSong(game: BattleRoyaleGame): string | null {
-  if (game.songQueue.length === 0) return null;
-  return game.songQueue[game.currentRound % game.songQueue.length] || null;
-}
-
 // Get elimination order (for final results display)
 export function getEliminationOrder(game: BattleRoyaleGame): BattleRoyalePlayer[] {
   return [...game.players]
@@ -361,24 +350,6 @@ export function getBattleRoyaleStats(game: BattleRoyaleGame) {
     maxMicPlayers: MAX_LOCAL_MIC_PLAYERS,
     maxCompanionPlayers: MAX_COMPANION_PLAYERS,
     maxTotalPlayers: MAX_BATTLE_ROYALE_PLAYERS,
-  };
-}
-
-// Disable a player's microphone (for companion app users or eliminated players)
-export function setPlayerActive(
-  game: BattleRoyaleGame,
-  playerId: string,
-  active: boolean
-): BattleRoyaleGame {
-  const updatedPlayers = game.players.map(p =>
-    p.id === playerId && !p.eliminated
-      ? { ...p, active }
-      : p
-  );
-
-  return {
-    ...game,
-    players: updatedPlayers,
   };
 }
 
@@ -441,51 +412,3 @@ export function addCompanionPlayer(
   };
 }
 
-// Remove a companion player (disconnected)
-export function removeCompanionPlayer(
-  game: BattleRoyaleGame,
-  playerId: string
-): BattleRoyaleGame {
-  // Only allow removal during setup phase
-  if (game.status !== 'setup') {
-    return game;
-  }
-  
-  const updatedPlayers = game.players.filter(p => p.id !== playerId);
-  
-  return {
-    ...game,
-    players: updatedPlayers,
-    connectedCompanions: Math.max(0, game.connectedCompanions - 1),
-  };
-}
-
-// Update companion heartbeat
-export function updateCompanionHeartbeat(
-  game: BattleRoyaleGame,
-  playerId: string
-): BattleRoyaleGame {
-  const updatedPlayers = game.players.map(p =>
-    p.id === playerId && p.playerType === 'companion'
-      ? { ...p, lastPing: Date.now() }
-      : p
-  );
-  
-  return {
-    ...game,
-    players: updatedPlayers,
-  };
-}
-
-// Export/import for saving
-export function serializeBattleRoyale(game: BattleRoyaleGame): string {
-  return JSON.stringify(game);
-}
-
-export function deserializeBattleRoyale(data: string): BattleRoyaleGame | null {
-  try {
-    return JSON.parse(data) as BattleRoyaleGame;
-  } catch {
-    return null;
-  }
-}

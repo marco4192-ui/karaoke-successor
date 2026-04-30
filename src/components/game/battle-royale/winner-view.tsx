@@ -8,11 +8,11 @@ import { BattleRoyalePlayer } from '@/lib/game/battle-royale';
 
 interface WinnerViewProps {
   winner: NonNullable<import('@/lib/game/battle-royale').BattleRoyaleGame['winner']>;
-  sortedPlayers: BattleRoyalePlayer[];
+  eliminationOrder: BattleRoyalePlayer[];
   onEndGame: () => void;
 }
 
-export function WinnerView({ winner, sortedPlayers, onEndGame }: WinnerViewProps) {
+export function WinnerView({ winner, eliminationOrder, onEndGame }: WinnerViewProps) {
   return (
     <div className="max-w-5xl mx-auto text-center">
       <div className="bg-gradient-to-r from-amber-500/30 to-yellow-500/30 border-2 border-amber-500 rounded-xl p-12">
@@ -50,12 +50,12 @@ export function WinnerView({ winner, sortedPlayers, onEndGame }: WinnerViewProps
         <h2 className="text-xl font-bold mb-4">Elimination Order</h2>
         <ScrollArea className="h-64">
           <div className="flex justify-center gap-3 flex-wrap">
-            {[...sortedPlayers].reverse().map((player, index) => (
+            {eliminationOrder.map((player, index) => (
               <div
                 key={player.id}
                 className={`p-3 rounded-lg ${player.id === winner?.id ? 'bg-amber-500/20 border border-amber-500' : 'bg-white/5'}`}
               >
-                <div className="text-sm text-white/40 mb-1">#{sortedPlayers.length - index}</div>
+                <div className="text-sm text-white/40 mb-1">#{index + 1}</div>
                 <div className="flex items-center gap-2">
                   {player.avatar ? (
                     <img src={player.avatar} alt={player.name} className="w-8 h-8 rounded-full object-cover" />

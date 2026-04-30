@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Song } from '@/types/game';
-import { BattleRoyaleGame } from '@/lib/game/battle-royale';
+import { BattleRoyaleGame, getEliminationOrder } from '@/lib/game/battle-royale';
 import { useBattleRoyaleGame } from '@/hooks/use-battle-royale-game';
 import { BattleRoyaleSetupScreen } from './battle-royale/setup-screen';
 import { WinnerView } from './battle-royale/winner-view';
@@ -39,7 +39,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
 
   // Winner celebration
   if (game.status === 'completed' && game.winner) {
-    return <WinnerView winner={game.winner} sortedPlayers={sortedPlayers} onEndGame={onEndGame} />;
+    return <WinnerView winner={game.winner} eliminationOrder={getEliminationOrder(game)} onEndGame={onEndGame} />;
   }
 
   // Elimination animation with "look up and turn gray" effect
