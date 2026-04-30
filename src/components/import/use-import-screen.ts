@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { parseUltraStarTxt, convertUltraStarToSong } from '@/lib/parsers/ultrastar-parser';
 import { normalizeFilePath } from '@/lib/tauri-file-storage';
 import {
@@ -33,6 +33,19 @@ export function useImportScreen(onImport: (song: Song) => void) {
   const [useVideoAudio, setUseVideoAudio] = useState(false);
 
   const [previewSong, setPreviewSong] = useState<Song | null>(null);
+
+  // Track current blob URLs for cleanup on unmount to prevent memory leaks.
+  // handleFileSelect already revokes previous URLs on re-selection, but if the
+  // component unmounts (user navigates away), those URLs stay allocated.
+  const blobUrlsRef = useRef({ audio: audioUrl, video: videoUrl });
+  useEffect(() => { blobUrlsRef.current = { audio: audioUrl, video: videoUrl }; }, [audioUrl, videoUrl]);
+  useEffect(() => {
+    return () => {
+      const { audio, video } = blobUrlsRef.current;
+      if (audio?.startsWith('blob:')) URL.revokeObjectURL(audio);
+      if (video?.startsWith('blob:')) URL.revokeObjectURL(video);
+    };
+  }, []);
 
   const [scannedSongs, setScannedSongs] = useState<ScannedSong[]>([]);
   const [selectedScanned, setSelectedScanned] = useState<Set<number>>(new Set());
