@@ -493,17 +493,6 @@ export function getLevelForXP(xp: number): { level: number; currentXP: number; n
   }
 }
 
-export function getRarityColor(rarity: Title['rarity']): string {
-  switch (rarity) {
-    case 'common': return '#9CA3AF';
-    case 'uncommon': return '#22C55E';
-    case 'rare': return '#3B82F6';
-    case 'epic': return '#8B5CF6';
-    case 'legendary': return '#F59E0B';
-    case 'mythic': return '#EC4899';
-  }
-}
-
 // ===================== STORAGE =====================
 
 const EXTENDED_STATS_KEY = 'karaoke_extended_stats';
