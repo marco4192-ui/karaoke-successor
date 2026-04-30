@@ -310,3 +310,74 @@ Diese Session: Fokus auf aufwendigere Aufgaben — Dead-Code-Features implementi
 - **Datei:** `src/lib/game/achievements.ts`, `src/components/screens/results-screen.tsx`
 - **Beschreibung:** 21 Achievements waren definiert mit Kriterien (score, combo, accuracy, etc.) und Belohnungen (XP, Titel), aber es gab keine Funktion, die nach einem Spiel prüft, ob Achievements freigeschaltet werden. Die Achievements-Anzeige zeigte immer 0/21. Das komplette System war definiert aber nie in den Spiel-Flow eingebunden.
 - **Fix:** `checkAndUnlockAchievements()` Funktion implementiert, die alle 21 Definitions gegen das Spielergebnis prüft. In `results-screen.tsx` nach jedem Spiel aufgerufen. Neue Achievements werden direkt im Profil gespeichert.
+
+### A2: Daily-Challenge-Submission war nie eingebunden (DEAD CODE → IMPLEMENTIERT)
+- **Datei:** `src/lib/game/daily-challenge.ts`, `src/components/screens/daily-challenge-screen.tsx`, `src/components/screens/results-screen.tsx`
+- **Beschreibung:** `submitChallengeResult()` existierte mit vollständiger Logik (XP, Streaks, Badges), wurde aber nie aufgerufen. Daily Challenges konnten gestartet aber nie abgeschlossen werden. Die Streak-Anzeige blieb immer bei 0.
+- **Fix:** Daily-Challenge-Screen setzt ein localStorage-Flag beim Start. Results Screen prüft das Flag und ruft `submitChallengeResult()` auf. Flag wird sofort gelöscht um Doppel-Submission zu verhindern.
+
+### A3: `accuracy` nie aktualisiert → Tournament-Ergebnisse immer 'poor'
+- **Datei:** `src/hooks/use-game-flow-handlers.ts`
+- **Beschreibung:** `buildGameResultFromState()` las `p.accuracy` aus dem Game Store, aber `use-note-scoring.ts` aktualisiert nur `score`, `combo`, `maxCombo`, `notesHit`, `notesMissed` — nie `accuracy` (immer 0). Tournament-Spiele hatten immer Rating 'poor'.
+- **Fix:** Accuracy wird jetzt aus `notesHit / (notesHit + notesMissed) * 100` berechnet statt den veralteten Store-Wert zu lesen.
+
+### A4: P2-Accuracy gegen Total Notes statt P2-Notes berechnet
+- **Datei:** `src/hooks/use-game-loop.ts`
+- **Beschreibung:** In `generateResults()` wurde P2-Accuracy mit `totalNotes` (alle Noten) als Nenner berechnet. In Duet-Mode singt P2 aber nur `player='P2'` zugewiesene Noten. P2-Accuracy war künstlich niedrig.
+- **Fix:** Zählt P2-assigned Notes aus den Lyrics. Falls keine Zuweisung existiert (Duel), Fallback auf `totalNotes`.
+
+### A5: Party-Scoring Fallback nicht normalisiert → unbeschränkte Scores
+- **Datei:** `src/lib/game/party-scoring.ts`
+- **Beschreibung:** Wenn `scoringMeta` null (kein BPM), gab der Fallback `accuracy * 10` Punkte pro Tick ohne Cap. Bei langen Songs (2000+ Ticks) erreichte man 20000+ statt 10000 Punkte.
+- **Fix:** Fallback auf `Math.min(accuracy * 10, 3)` pro Tick gecappt.
+
+### A6: Duet-Mode P2 bekommt keine Highscores/XP
+- **Datei:** `src/components/screens/results-screen.tsx`
+- **Beschreibung:** `isMultiplayerMode` enthielt `'duel'`, `'competitive-words'`, `'competitive-blind'` aber nicht `'duet'`. P2 im Duet-Modus bekam nie Highscores oder XP.
+- **Fix:** `'duet'` zur Liste hinzugefügt.
+
+### A7: `recordRound` fehlt in Dependency-Array
+- **Datei:** `src/components/game/ptm-game-screen.tsx`
+- **Beschreibung:** Das Segment-Switching useEffect rief `recordRound()` auf, aber die Funktion war nicht im Dependency-Array. Bei externer Änderung von `passTheMicSeriesHistory` wurde eine veraltete Closure verwendet.
+- **Fix:** `recordRound` zum Dependency-Array hinzugefügt.
+
+### A8: Dead Code Bereinigung
+- **Dateien:** 5 Dateien
+- **Beschreibung:** Leerer `if (fullSong) {}` Block, ungenutzte `DailyChallengeConfig`-Interface, unnötige Exports (`getSongById`, `hasMedia`, `clearAllMedia`), Duplikat der `nrc_round` Logik.
+- **Fix:** Leeren Block entfernt, `DailyChallengeConfig` gelöscht, unnötige Exports zu internen Funktionen gemacht, Inline-Logik durch Funktionsaufruf ersetzt.
+
+---
+
+## Umsetzungs-Log
+
+### ✅ A1 — Achievement-Checking-System implementiert
+- **Commit:** `c418aa4`
+- **Dateien:** `src/lib/game/achievements.ts`, `src/components/screens/results-screen.tsx`
+
+### ✅ A2 — Daily-Challenge-Submission eingebunden
+- **Commit:** `0e398a9`
+- **Dateien:** `src/lib/game/daily-challenge.ts`, `src/components/screens/daily-challenge-screen.tsx`, `src/components/screens/results-screen.tsx`
+
+### ✅ A3 — accuracy-Bug in Tournament-Ergebnissen gefixt
+- **Commit:** `98fddfc`
+- **Datei:** `src/hooks/use-game-flow-handlers.ts`
+
+### ✅ A4 — P2-Accuracy für Duet-Mode korrigiert
+- **Commit:** `ea55bb7`
+- **Datei:** `src/hooks/use-game-loop.ts`
+
+### ✅ A5 — Party-Scoring Fallback gecappt
+- **Commit:** `4b1e84d`
+- **Datei:** `src/lib/game/party-scoring.ts`
+
+### ✅ A6 — Duet P2 Highscores/XP aktiviert
+- **Commit:** `7d815ed`
+- **Datei:** `src/components/screens/results-screen.tsx`
+
+### ✅ A7 — Dependency-Array repariert
+- **Commit:** `e659d8a`
+- **Datei:** `src/components/game/ptm-game-screen.tsx`
+
+### ✅ A8 — Dead Code Bereinigung
+- **Commit:** `b8f6b1b`
+- **Dateien:** 5 Dateien (results-screen, player-progression, song-library, media-db, medley-game-screen)
