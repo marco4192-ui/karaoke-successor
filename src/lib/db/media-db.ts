@@ -15,34 +15,40 @@ export interface MediaRecord {
 }
 
 let dbInstance: IDBDatabase | null = null;
+let initPromise: Promise<IDBDatabase> | null = null;
 
-// Initialize the database
+// Initialize the database (with concurrency lock to prevent double-open)
 export async function initMediaDB(): Promise<IDBDatabase> {
   if (dbInstance) return dbInstance;
   
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    
-    request.onerror = () => {
-      console.error('[MediaDB] Failed to open database:', request.error);
-      reject(request.error);
-    };
-    
-    request.onsuccess = () => {
-      dbInstance = request.result;
-      resolve(dbInstance);
-    };
-    
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
+  if (!initPromise) {
+    initPromise = new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
       
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-        store.createIndex('songId', 'songId', { unique: false });
-        store.createIndex('type', 'type', { unique: false });
-      }
-    };
-  });
+      request.onerror = () => {
+        console.error('[MediaDB] Failed to open database:', request.error);
+        initPromise = null;
+        reject(request.error);
+      };
+      
+      request.onsuccess = () => {
+        dbInstance = request.result;
+        resolve(dbInstance);
+      };
+      
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+        
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+          store.createIndex('songId', 'songId', { unique: false });
+          store.createIndex('type', 'type', { unique: false });
+        }
+      };
+    });
+  }
+  
+  return initPromise;
 }
 
 // Store media blob
