@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ZAI from 'z-ai-web-dev-sdk';
+import { isLocalRequest } from '@/app/api/lib/is-local-request';
 
 // TypeScript types for lyrics suggestions
 interface LyricSuggestion {
@@ -24,6 +25,9 @@ interface LyricsSuggestionsResponse {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse<LyricsSuggestionsResponse>> {
+  if (!isLocalRequest(request)) {
+    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+  }
   try {
     const body: LyricsSuggestionsRequest = await request.json();
     

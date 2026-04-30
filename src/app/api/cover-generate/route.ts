@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ZAI from 'z-ai-web-dev-sdk';
+import { isLocalRequest } from '@/app/api/lib/is-local-request';
 
 // TypeScript types for cover generation
 interface CoverGenerateRequest {
@@ -45,6 +46,9 @@ const stylePrompts: Record<string, string> = {
 };
 
 export async function POST(request: NextRequest): Promise<NextResponse<CoverGenerateResponse>> {
+  if (!isLocalRequest(request)) {
+    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+  }
   try {
     const body: CoverGenerateRequest = await request.json();
     

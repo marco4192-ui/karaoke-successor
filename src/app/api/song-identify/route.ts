@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ZAI from 'z-ai-web-dev-sdk';
+import { isLocalRequest } from '@/app/api/lib/is-local-request';
 
 // TypeScript types for song identification
 interface SongIdentifyRequest {
@@ -24,6 +25,9 @@ interface SongIdentifyResponse {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse<SongIdentifyResponse>> {
+  if (!isLocalRequest(request)) {
+    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+  }
   try {
     const body: SongIdentifyRequest = await request.json();
     

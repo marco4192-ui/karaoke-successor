@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
 import { findAIConfigFile } from '@/app/api/lib/find-config';
+import { isLocalRequest } from '@/app/api/lib/is-local-request';
 
 // API Configuration interface
 interface AIConfig {
@@ -26,6 +27,9 @@ async function loadConfig(): Promise<AIConfig | null> {
 }
 
 export async function POST(request: NextRequest) {
+  if (!isLocalRequest(request)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
   try {
     const body = await request.json();
     const { type, prompt, filename, text, voice } = body;
@@ -202,6 +206,9 @@ export async function POST(request: NextRequest) {
 
 // Batch generation endpoint
 export async function PUT(request: NextRequest) {
+  if (!isLocalRequest(request)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
   try {
     const body = await request.json();
     const { assets } = body;
