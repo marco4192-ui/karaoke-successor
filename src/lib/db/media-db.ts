@@ -53,59 +53,53 @@ export async function initMediaDB(): Promise<IDBDatabase> {
 
 // Store media blob
 // IMPORTANT: Always converts File/Blob to a new Blob to ensure data persistence
-// In Tauri/WebView, File objects may be references that don't persist
+// In Tauri/WebView, File objects may be filesystem references
 export async function storeMedia(
-  songId: string, 
-  type: 'audio' | 'video' | 'cover' | 'txt', 
+  songId: string,
+  type: 'audio' | 'video' | 'cover' | 'txt',
   data: Blob
 ): Promise<void> {
   if (data.size === 0) return;
-  
+
+  // CRITICAL: Read the ArrayBuffer BEFORE opening the IndexedDB transaction.
+  // IndexedDB transactions auto-commit when the microtask queue is empty.
+  // If we await inside the transaction scope (e.g. data.arrayBuffer()), the
+  // engine may commit the transaction before store.put() runs, causing silent
+  // data loss.
+  let blobToStore: Blob;
+  if (type === 'txt') {
+    blobToStore = data;
+  } else {
+    const arrayBuffer = await data.arrayBuffer();
+    blobToStore = new Blob([arrayBuffer], { type: data.type || 'application/octet-stream' });
+  }
+
   const db = await initMediaDB();
-  
+
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([STORE_NAME], 'readwrite');
     const store = transaction.objectStore(STORE_NAME);
-    
-    // For non-txt files, read the content and create a new Blob to ensure persistence
-    // This is important in Tauri where File objects may be filesystem references
-    const storeData = async () => {
-      try {
-        let blobToStore: Blob;
-        
-        if (type === 'txt') {
-          // TXT is already converted to Blob in folder-scanner
-          blobToStore = data;
-        } else {
-          // For audio/video/cover, read as ArrayBuffer and create new Blob
-          const arrayBuffer = await data.arrayBuffer();
-          blobToStore = new Blob([arrayBuffer], { type: data.type || 'application/octet-stream' });
-        }
-        
-        const record: MediaRecord = {
-          id: `${songId}-${type}`,
-          songId,
-          type,
-          data: blobToStore,
-          createdAt: Date.now()
-        };
-        
-        const request = store.put(record);
-        
-        request.onsuccess = () => {
-          resolve();
-        };
-        request.onerror = () => {
-          console.error('[MediaDB] Failed to store', type, ':', request.error);
-          reject(request.error);
-        };
-      } catch (err) {
-        console.error('[MediaDB] Error processing data for', type, ':', err);
-        reject(err);
-      }
+
+    const record: MediaRecord = {
+      id: `${songId}-${type}`,
+      songId,
+      type,
+      data: blobToStore,
+      createdAt: Date.now()
     };
-    
-    storeData();
+
+    const request = store.put(record);
+
+    request.onsuccess = () => {
+      resolve();
+    };
+    request.onerror = () => {
+      console.error('[MediaDB] Failed to store', type, ':', request.error);
+      reject(request.error);
+    };
+    transaction.onerror = () => {
+      reject(transaction.error);
+    };
   });
 }
 
