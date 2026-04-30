@@ -49,7 +49,6 @@ interface GameStore {
   setMicActive: (active: boolean) => void;
   setBlindSection: (isBlind: boolean) => void;
   setMissingWordsIndices: (indices: number[]) => void;
-  startGame: () => void;
   pauseGame: () => void;
   resumeGame: () => void;
   endGame: () => void;
@@ -81,10 +80,6 @@ interface GameStore {
 
   // Highscore actions
   addHighscore: (entry: Omit<HighscoreEntry, 'id' | 'playedAt' | 'rankTitle'>) => HighscoreEntry;
-  getHighscores: (songId?: string, playerId?: string, limit?: number) => HighscoreEntry[];
-  getTopHighscores: (limit?: number) => HighscoreEntry[];
-  getPlayerBestScore: (playerId: string, songId: string) => HighscoreEntry | null;
-  clearHighscores: () => void;
 
   // Leaderboard actions
   setLeaderboardType: (type: 'local' | 'global') => void;
@@ -256,15 +251,6 @@ export const useGameStore = create<GameStore>()(
       setMissingWordsIndices: (indices) =>
         set((state) => ({
           gameState: { ...state.gameState, missingWordsIndices: indices },
-        })),
-
-      startGame: () =>
-        set((state) => ({
-          gameState: {
-            ...state.gameState,
-            status: 'countdown',
-            currentTime: 0,
-          },
         })),
 
       pauseGame: () =>
@@ -504,34 +490,6 @@ export const useGameStore = create<GameStore>()(
 
         return entry;
       },
-
-      getHighscores: (songId?, playerId?, limit = 10) => {
-        const { highscores } = get();
-        let filtered = highscores;
-
-        if (songId) {
-          filtered = filtered.filter(h => h.songId === songId);
-        }
-        if (playerId) {
-          filtered = filtered.filter(h => h.playerId === playerId);
-        }
-
-        return filtered.slice(0, limit);
-      },
-
-      getTopHighscores: (limit = 10) => {
-        return get().highscores.slice(0, limit);
-      },
-
-      getPlayerBestScore: (playerId, songId) => {
-        const { highscores } = get();
-        const playerScores = highscores.filter(
-          h => h.playerId === playerId && h.songId === songId
-        );
-        return playerScores.length > 0 ? playerScores[0] : null;
-      },
-
-      clearHighscores: () => set({ highscores: [] }),
 
       // Leaderboard actions
       setLeaderboardType: (type) => set({ leaderboardType: type }),
