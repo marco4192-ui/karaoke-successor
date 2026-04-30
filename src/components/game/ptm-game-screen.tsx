@@ -287,8 +287,13 @@ export function PtmGameScreen({
   // ── Game loop: score during playing ──
   useEffect(() => {
     if (phase !== 'playing' || !isPlaying) return;
-    const interval = setInterval(scoreCurrentPlayer, 80);
-    return () => clearInterval(interval);
+    let rafId: number;
+    const loop = () => {
+      scoreCurrentPlayer();
+      rafId = requestAnimationFrame(loop);
+    };
+    rafId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafId);
   }, [phase, isPlaying, scoreCurrentPlayer]);
 
   // ── Audio time tracking ──
