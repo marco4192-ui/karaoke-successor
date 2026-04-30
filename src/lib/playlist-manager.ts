@@ -42,13 +42,21 @@ export function getPlaylists(): Playlist[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      if (!Array.isArray(parsed)) {
+        throw new Error('Expected array, got ' + typeof parsed);
+      }
+      return parsed;
     }
   } catch (e) {
-    console.error('Failed to load playlists:', e);
+    console.error('Failed to load playlists — resetting to defaults:', e);
+    // Corrupt data — remove and recreate defaults
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch { /* ignore */ }
   }
   
-  // Return default playlists if none exist
+  // Return default playlists if none exist or data was corrupt
   return getDefaultPlaylists();
 }
 
@@ -342,10 +350,15 @@ export function getFolders(): PlaylistFolder[] {
   try {
     const stored = localStorage.getItem(FOLDERS_KEY);
     if (stored) {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      if (!Array.isArray(parsed)) {
+        throw new Error('Expected array, got ' + typeof parsed);
+      }
+      return parsed;
     }
   } catch (e) {
-    console.error('Failed to load folders:', e);
+    console.error('Failed to load folders — resetting:', e);
+    try { localStorage.removeItem(FOLDERS_KEY); } catch { /* ignore */ }
   }
   return [];
 }
