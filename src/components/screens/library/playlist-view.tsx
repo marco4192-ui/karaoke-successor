@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import { Song } from '@/types/game';
 import { Playlist, getPlaylistSongs } from '@/lib/playlist-manager';
 import { SongCard } from './song-card';
@@ -9,6 +9,7 @@ import { safeConfirm } from '@/lib/safe-dialog';
 import { SongCardProps } from './types';
 import { MusicIcon, TrashIcon, QueueIcon, PlayIcon } from './icons';
 import { Button } from '@/components/ui/button';
+import { EditPlaylistModal } from './edit-playlist-modal';
 
 interface PlaylistViewProps {
   playlists: Playlist[];
@@ -40,6 +41,14 @@ export function PlaylistView({
   addToQueue,
   activeProfileName,
 }: PlaylistViewProps) {
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editTarget, setEditTarget] = useState<Playlist | null>(null);
+
+  const handleEditPlaylist = (playlist: Playlist) => {
+    setEditTarget(playlist);
+    setShowEditModal(true);
+  };
+
   return (
     <div className="space-y-6">
       {/* Back button if viewing playlist songs */}
@@ -103,20 +112,35 @@ export function PlaylistView({
                   <h3 className="font-semibold text-white truncate">{playlist.name}</h3>
                   <p className="text-xs text-white/40">{playlistSongs.length} song{playlistSongs.length !== 1 ? 's' : ''}</p>
                   
-                  {/* Delete button for non-system playlists */}
+                  {/* Edit & Delete buttons for non-system playlists */}
                   {!playlist.isSystem && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (safeConfirm(`Delete "${playlist.name}"?`)) {
-                          onPlaylistDelete(playlist.id);
-                        }
-                      }}
-                      className="absolute top-2 left-2 p-1.5 rounded-lg bg-red-500/20 text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500/40 transition-all"
-                      title="Delete playlist"
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </button>
+                    <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditPlaylist(playlist);
+                        }}
+                        className="p-1.5 rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/40 transition-all"
+                        title="Edit playlist"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (safeConfirm(`Delete "${playlist.name}"?`)) {
+                            onPlaylistDelete(playlist.id);
+                          }
+                        }}
+                        className="p-1.5 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/40 transition-all"
+                        title="Delete playlist"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                      </button>
+                    </div>
                   )}
                 </button>
               );
@@ -202,6 +226,14 @@ export function PlaylistView({
           })()}
         </div>
       )}
+
+      {/* Edit Playlist Modal */}
+      <EditPlaylistModal
+        show={showEditModal}
+        onClose={setShowEditModal}
+        onSuccess={() => onPlaylistSelect(null)}
+        playlist={editTarget}
+      />
     </div>
   );
 }
