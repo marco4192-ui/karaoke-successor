@@ -353,6 +353,11 @@ export function submitChallengeResult(
       newBadges.push(badge);
     }
 
+    // Perfect challenge bonus: 100% accuracy on an accuracy challenge
+    if (challenge.type === 'accuracy' && result.accuracy === 100) {
+      xpEarned += XP_REWARDS.PERFECT_CHALLENGE;
+    }
+
     // Update weekly progress
     const dayOfWeek = new Date().getDay();
     stats.weeklyProgress[dayOfWeek] = 1;

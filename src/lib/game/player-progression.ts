@@ -364,27 +364,6 @@ export const XP_SOURCES = {
   COMBO_MILESTONE_50: 25,
   COMBO_MILESTONE_100: 50,
   COMBO_MILESTONE_200: 100,
-  
-  // Daily challenges
-  DAILY_COMPLETE: 100,
-  DAILY_TOP_3: [50, 30, 20],
-  DAILY_TOP_10: 10,
-  DAILY_WIN: 100,
-  
-  // Streaks
-  DAILY_STREAK_BONUS: 10, // per day
-  PLAY_STREAK_BONUS: 20, // per consecutive day
-  
-  // Challenge modes
-  CHALLENGE_COMPLETE: 100,
-  CHALLENGE_PERFECT: 200,
-  
-  // Social
-  DUET_COMPLETE: 75,
-  DUEL_WIN: 50,
-  
-  // Level bonuses
-  LEVEL_UP: 100,
 };
 
 export function calculateSongXP(

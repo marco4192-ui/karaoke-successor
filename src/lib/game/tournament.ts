@@ -52,7 +52,7 @@ function generateMatchId(round: number, position: number): string {
 }
 
 // Calculate number of rounds needed
-export function calculateRounds(numPlayers: number): number {
+function calculateRounds(numPlayers: number): number {
   return Math.ceil(Math.log2(numPlayers));
 }
 
