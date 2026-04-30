@@ -746,9 +746,9 @@ function CompanionSeriesResults({ onBack }: { onBack: () => void }) {
   const party = usePartyStore();
   const history = party.companionSeriesHistory;
 
-  const cumulative = useRef<Record<string, { name: string; avatar?: string; color: string; totalScore: number; totalHits: number; totalMisses: number; bestCombo: number; roundsPlayed: number }>>({});
+  const [cumulative, setCumulative] = useState<Record<string, { name: string; avatar?: string; color: string; totalScore: number; totalHits: number; totalMisses: number; bestCombo: number; roundsPlayed: number }>>({});
   useEffect(() => {
-    const agg: typeof cumulative.current = {};
+    const agg: Record<string, { name: string; avatar?: string; color: string; totalScore: number; totalHits: number; totalMisses: number; bestCombo: number; roundsPlayed: number }> = {};
     for (const p of party.companionPlayers) {
       agg[p.id] = { name: p.name, avatar: p.avatar, color: p.color, totalScore: 0, totalHits: 0, totalMisses: 0, bestCombo: 0, roundsPlayed: 0 };
     }
@@ -769,10 +769,10 @@ function CompanionSeriesResults({ onBack }: { onBack: () => void }) {
         agg[id].roundsPlayed++;
       }
     }
-    cumulative.current = agg;
+    setCumulative(agg);
   }, [history, party.companionPlayers]);
 
-  const sortedPlayers = Object.entries(cumulative.current)
+  const sortedPlayers = Object.entries(cumulative)
     .sort(([, a], [, b]) => b.totalScore - a.totalScore);
   const winner = sortedPlayers[0];
 
