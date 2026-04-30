@@ -44,10 +44,13 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
               name="note-pitch"
               type="number"
               value={selectedNote.pitch}
-              onChange={(e) => onUpdateSelectedNote({
-                pitch: parseInt(e.target.value),
-                frequency: 440 * Math.pow(2, (parseInt(e.target.value) - 69) / 12)
-              })}
+              onChange={(e) => {
+                const pitch = parseInt(e.target.value) || 0;
+                onUpdateSelectedNote({
+                  pitch,
+                  frequency: 440 * Math.pow(2, (pitch - 69) / 12)
+                });
+              }}
               min={0}
               max={127}
               className="bg-slate-800 border-slate-600 w-20"
@@ -77,7 +80,7 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
             name="note-start-time"
             type="number"
             value={Math.round(selectedNote.startTime)}
-            onChange={(e) => onUpdateSelectedNote({ startTime: parseInt(e.target.value) })}
+            onChange={(e) => onUpdateSelectedNote({ startTime: parseInt(e.target.value) || 0 })}
             className="bg-slate-800 border-slate-600"
           />
         </div>
@@ -90,7 +93,7 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
             name="note-duration"
             type="number"
             value={Math.round(selectedNote.duration)}
-            onChange={(e) => onUpdateSelectedNote({ duration: parseInt(e.target.value) })}
+            onChange={(e) => onUpdateSelectedNote({ duration: parseInt(e.target.value) || 50 })}
             min={50}
             className="bg-slate-800 border-slate-600"
           />
