@@ -11,6 +11,7 @@ import { MusicIcon, TrashIcon, QueueIcon, PlayIcon } from './icons';
 import { Button } from '@/components/ui/button';
 import { EditPlaylistModal } from './edit-playlist-modal';
 import { safeAlert } from '@/lib/safe-dialog';
+import { useGameStore } from '@/lib/game/store';
 
 interface PlaylistViewProps {
   playlists: Playlist[];
@@ -224,11 +225,12 @@ export function PlaylistView({
               <Button
                 onClick={() => {
                   const songs = getPlaylistSongs(selectedPlaylist.id, loadedSongs);
-                  songs.forEach(song => {
-                    if (activeProfileId && playerQueueCount < 3) {
-                      addToQueue(song, activeProfileId, activeProfileName);
-                    }
-                  });
+                  const { queue } = useGameStore.getState();
+                  for (const song of songs) {
+                    const currentCount = queue.filter(item => item.playerId === activeProfileId).length;
+                    if (!activeProfileId || currentCount >= 3) break;
+                    addToQueue(song, activeProfileId, activeProfileName);
+                  }
                 }}
                 variant="outline"
                 className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/20"
