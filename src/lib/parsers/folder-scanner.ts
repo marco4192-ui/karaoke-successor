@@ -302,7 +302,6 @@ function parseUltraStarMetadata(content: string): {
 export async function scanFilesFromFileList(files: FileList): Promise<ScanResult> {
   const result: ScanResult = { songs: [], folders: [], errors: [] };
   const songFolders: Map<string, ScannedSong> = new Map();
-  const folderMap: Map<string, { parentPath: string | null; songs: ScannedSong[] }> = new Map();
 
   // Extract baseFolder from the first file's path
   let baseFolder: string | undefined = undefined;
