@@ -239,9 +239,10 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
         const lastNote = line.notes[line.notes.length - 1];
         return { ...line, endTime: lastNote.startTime + lastNote.duration };
       });
+      pushHistory(fixedLyrics);
       return { ...prev, lyrics: fixedLyrics };
     });
-  }, []);
+  }, [pushHistory]);
 
   const tapPlacement = useTapNotePlacement({
     currentTimeRef,
