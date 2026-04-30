@@ -871,9 +871,9 @@ function MedleyFinalResults({
   const isTeam = settings.playMode === 'team';
 
   // Aggregate across all rounds (series history + current round)
-  const cumulative = useRef<Record<string, { name: string; avatar?: string; color: string; team: number; totalScore: number; totalHits: number; totalMisses: number; bestCombo: number; roundsPlayed: number }>>({});
+  const [cumulative, setCumulative] = useState<Record<string, { name: string; avatar?: string; color: string; team: number; totalScore: number; totalHits: number; totalMisses: number; bestCombo: number; roundsPlayed: number }>>({});
   useEffect(() => {
-    const agg: typeof cumulative.current = {};
+    const agg: Record<string, { name: string; avatar?: string; color: string; team: number; totalScore: number; totalHits: number; totalMisses: number; bestCombo: number; roundsPlayed: number }> = {};
     for (const p of players) {
       agg[p.id] = { name: p.name, avatar: p.avatar, color: p.color, team: p.team, totalScore: p.score, totalHits: p.notesHit, totalMisses: p.notesMissed, bestCombo: p.maxCombo, roundsPlayed: 1 };
     }
@@ -887,14 +887,14 @@ function MedleyFinalResults({
         agg[id].roundsPlayed++;
       }
     }
-    cumulative.current = agg;
+    setCumulative(agg);
   }, [players, seriesHistory]);
 
-  const sorted = Object.entries(cumulative.current).sort(([, a], [, b]) => b.totalScore - a.totalScore);
+  const sorted = Object.entries(cumulative).sort(([, a], [, b]) => b.totalScore - a.totalScore);
   const winner = sorted[0];
 
-  const teamATotal = Object.values(cumulative.current).filter(p => p.team === 0).reduce((s, p) => s + p.totalScore, 0);
-  const teamBTotal = Object.values(cumulative.current).filter(p => p.team === 1).reduce((s, p) => s + p.totalScore, 0);
+  const teamATotal = Object.values(cumulative).filter(p => p.team === 0).reduce((s, p) => s + p.totalScore, 0);
+  const teamBTotal = Object.values(cumulative).filter(p => p.team === 1).reduce((s, p) => s + p.totalScore, 0);
 
   return (
     <div className="max-w-2xl mx-auto">
