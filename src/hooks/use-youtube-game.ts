@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { extractYouTubeId, isYouTubeUrl } from '@/components/game/youtube-player';
 
 interface UseYouTubeGameParams {
@@ -45,7 +45,7 @@ export function useYouTubeGame({
   const [adCountdown, setAdCountdown] = useState(0);
   // Track whether the game was playing before the ad started,
   // so handleAdEnd only auto-resumes if the user didn't manually pause.
-  const wasPlayingBeforeAdRef = { current: false };
+  const wasPlayingBeforeAdRef = useRef(false);
 
   // Extract YouTube ID from youtubeUrl, videoBackground, or videoUrl (fallback)
   const songYoutubeUrl = effectiveSong?.youtubeUrl;
