@@ -418,6 +418,15 @@ export function convertToSong(
       return { title: ss.title, artist: ss.artist, genre: ss.genre, lyrics };
     }
 
+    case 'stepmania': {
+      // StepMania is a rhythm-game format without pitch data.
+      // Import metadata only — the user can add lyrics manually in the editor.
+      const sm = data as StepManiaData;
+      const bpm = sm.bpm?.[0] || 120;
+      const duration = bpm > 0 ? (sm.notes.length * (60000 / bpm * 4)) : 0;
+      return { title: sm.title, artist: sm.artist, bpm: Math.round(bpm), duration: Math.round(duration) };
+    }
+
     default:
       return {};
   }
