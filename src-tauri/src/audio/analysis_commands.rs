@@ -43,17 +43,17 @@ pub struct AnalysisState {
 }
 
 impl AnalysisState {
-    pub fn new(app_handle: AppHandle) -> Self {
+    pub fn new(_app_handle: AppHandle) -> Result<Self, String> {
         let (tx, rx) = mpsc::channel::<AnalysisCommand>();
 
         std::thread::Builder::new()
             .name("karaoke-analysis".into())
             .spawn(move || run_analysis_thread(rx))
-            .expect("Failed to spawn analysis thread");
+            .map_err(|e| format!("Failed to spawn analysis thread: {}", e))?;
 
-        Self {
+        Ok(Self {
             command_tx: Mutex::new(tx),
-        }
+        })
     }
 }
 

@@ -437,7 +437,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
                               style={{ backgroundColor: partnerProfile?.color || '#888', opacity: isPartnerInactive ? 0.4 : 1 }}
                               title={isPartnerInactive ? 'Player deactivated' : ''}
                             >
-                              {item.partnerName[0].toUpperCase()}
+                              {(item.partnerName || '?')[0]?.toUpperCase() || '?'}
                             </div>
                             {isPartnerInactive && (
                               <span className="text-[10px] text-red-400">⚠</span>

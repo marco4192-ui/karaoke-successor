@@ -42,7 +42,7 @@ pub struct AudioState {
 
 impl AudioState {
     /// Spawn the dedicated audio thread and return the managed state.
-    pub fn new(app_handle: AppHandle) -> Self {
+    pub fn new(app_handle: AppHandle) -> Result<Self, String> {
         let (tx, rx) = mpsc::channel::<AudioCommand>();
         let state = Arc::new(Mutex::new(PlaybackState::default()));
         let shared_state = state.clone();
@@ -52,12 +52,12 @@ impl AudioState {
             .spawn(move || {
                 run_audio_thread(rx, shared_state, app_handle);
             })
-            .expect("Failed to spawn audio thread");
+            .map_err(|e| format!("Failed to spawn audio thread: {}", e))?;
 
-        Self {
+        Ok(Self {
             command_tx: Mutex::new(tx),
             state,
-        }
+        })
     }
 }
 

@@ -259,6 +259,8 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
   }, [songHighscores, activeProfileId, song]);
 
   // Save highscore when results are shown (only once)
+  const isDuel = gameState.gameMode === 'duel' || gameState.gameMode === 'duet';
+
   useEffect(() => {
     if (results && song && activeProfileId && !savedToHighscoreRef.current) {
       const playerResult = results.players[0];
@@ -494,7 +496,6 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
 
   const playerResult = results.players[0];
   const player2Result = results.players[1] || null;
-  const isDuel = gameState.gameMode === 'duel' || gameState.gameMode === 'duet';
   const ratingColors: Record<string, string> = {
     perfect: 'from-yellow-400 to-orange-500',
     excellent: 'from-green-400 to-cyan-500',

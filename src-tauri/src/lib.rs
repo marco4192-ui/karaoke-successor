@@ -515,9 +515,13 @@ pub fn run() {
         ])
         .setup(|app| {
             // Register the audio state (needs AppHandle for the dedicated audio thread)
-            app.manage(audio::commands::AudioState::new(app.handle().clone()));
+            let audio_state = audio::commands::AudioState::new(app.handle().clone())
+                .expect("Failed to initialize audio state");
+            app.manage(audio_state);
             // Register the analysis state (needs AppHandle for the dedicated analysis thread)
-            app.manage(audio::analysis_commands::AnalysisState::new(app.handle().clone()));
+            let analysis_state = audio::analysis_commands::AnalysisState::new(app.handle().clone())
+                .expect("Failed to initialize analysis state");
+            app.manage(analysis_state);
             // Register the SQLite offline database
             let db_path = db::default_db_path(&app.handle().clone())?;
             app.manage(db::DbState::new(db_path)?);
