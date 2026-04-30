@@ -320,7 +320,8 @@ export function ShortsCreator({ song, score, gameResult, audioUrl, onClose }: Sh
         
         stream.addTrack(destination.stream.getAudioTracks()[0]);
         audioRef.current = audioElement;
-      } catch {
+      } catch (error) {
+        console.debug('[ShortsCreator] Audio setup for recording failed:', error);
       }
     }
 
@@ -395,7 +396,8 @@ export function ShortsCreator({ song, score, gameResult, audioUrl, onClose }: Sh
           text: `I scored ${score.score.toLocaleString()} points on "${song.title}"!`,
           files: [file],
         });
-      } catch {
+      } catch (error) {
+        console.debug('[ShortsCreator] Share cancelled or failed:', error);
       }
     } else {
       downloadVideo();

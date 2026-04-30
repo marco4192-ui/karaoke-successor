@@ -137,8 +137,8 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
           }));
         setAvailablePartners(partners);
       }
-    } catch {
-      // Ignore errors
+    } catch (error) {
+      console.debug('[useMobileData] loadAvailablePartners failed:', error);
     }
   }, [clientId]);
 
@@ -222,8 +222,8 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
         const pendingCount = serverQueue.filter((q: { status: string }) => q.status === 'pending').length;
         setSlotsRemaining(Math.max(0, 3 - pendingCount));
       }
-    } catch {
-      // Ignore errors
+    } catch (error) {
+      console.debug('[useMobileData] loadQueue failed:', error);
     }
   }, []);
 
@@ -234,8 +234,8 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
       if (data.success && data.results) {
         setGameResults(data.results);
       }
-    } catch {
-      // Ignore errors
+    } catch (error) {
+      console.debug('[useMobileData] loadGameResults failed:', error);
     }
   }, []);
 
@@ -255,8 +255,8 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
         }),
       });
       setJukeboxWishlist(prev => [...prev, { songId: song.id, songTitle: song.title, songArtist: song.artist, addedBy: profile.name }]);
-    } catch {
-      // Ignore errors
+    } catch (error) {
+      console.debug('[useMobileData] addToJukeboxWishlist failed:', error);
     }
   }, [profile, clientId, onNavigateToProfile]);
 
@@ -267,8 +267,8 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
       if (data.success) {
         setJukeboxWishlist(data.wishlist || []);
       }
-    } catch {
-      // Ignore errors
+    } catch (error) {
+      console.debug('[useMobileData] loadJukeboxWishlist failed:', error);
     }
   }, []);
 

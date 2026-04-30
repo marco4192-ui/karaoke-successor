@@ -115,8 +115,8 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
             });
           }
         }
-      } catch {
-        // Ignore errors
+      } catch (error) {
+        console.debug('[ResultsScreen] fetchNextInQueue failed:', error);
       }
     };
     
@@ -149,7 +149,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ type: 'queuecompleted', payload: { itemId: nextQueueItem.id } }),
         });
-      } catch { /* ignore */ }
+      } catch (error) { console.debug('[ResultsScreen] queuecompleted (song not found) failed:', error); }
       setNextQueueItem(null);
       return;
     }
@@ -174,7 +174,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ type: 'queuecompleted', payload: { itemId: nextQueueItem.id } }),
         });
-      } catch { /* ignore */ }
+      } catch (error) { console.debug('[ResultsScreen] queuecompleted (no media) failed:', error); }
       setNextQueueItem(null);
       return;
     }
@@ -189,8 +189,8 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           payload: { itemId: nextQueueItem.id },
         }),
       });
-    } catch {
-      // Ignore
+    } catch (error) {
+      console.debug('[ResultsScreen] markPlaying failed:', error);
     }
     
     // Check if a party game mode is currently active

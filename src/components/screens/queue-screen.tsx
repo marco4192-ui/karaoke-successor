@@ -101,8 +101,8 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
       if (data.success && data.queue) {
         setCompanionQueue(data.queue.filter((item: CompanionQueueItem) => item.status === 'pending'));
       }
-    } catch {
-      // Ignore errors
+    } catch (error) {
+      console.debug('[QueueScreen] fetchCompanionQueue failed:', error);
     }
   }, []);
 
@@ -124,8 +124,8 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
         }),
       });
       setCompanionQueue(prev => prev.filter(item => item.id !== itemId));
-    } catch {
-      // Ignore errors
+    } catch (error) {
+      console.debug('[QueueScreen] markQueueItemCompleted failed:', error);
     }
   };
 
@@ -231,7 +231,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
             }),
           });
           setCompanionQueue(prev => prev.filter(q => q.id !== item.id));
-        } catch { /* ignore */ }
+        } catch (error) { console.debug('[QueueScreen] queuecompleted (no media) failed:', error); }
       }
       return;
     }
@@ -280,8 +280,8 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
             payload: { itemId: item.id },
           }),
         });
-      } catch {
-        // Ignore
+      } catch (error) {
+        console.debug('[QueueScreen] markPlaying failed:', error);
       }
     } else {
       markQueueItemPlaying(item.id);

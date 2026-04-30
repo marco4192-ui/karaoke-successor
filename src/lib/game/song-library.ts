@@ -95,7 +95,7 @@ export function getCustomSongs(): Song[] {
         if (result.changed) needsResave = true;
       }
       if (needsResave) {
-        try { localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(songs)); } catch {}
+        try { localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(songs)); } catch (e) { console.debug('[SongLibrary] Failed to re-save normalized songs:', e); }
       }
       customSongsCache = songs;
       // Trigger background migration to IndexedDB
@@ -105,7 +105,7 @@ export function getCustomSongs(): Song[] {
             customSongsCache = migrated;
             songCache = null; // Force refresh
           }
-        }).catch(() => {});
+        }).catch(error => { console.debug('[SongLibrary] Background migration to IndexedDB failed:', error); });
       }
       return customSongsCache || [];
     }
@@ -351,7 +351,7 @@ export async function getSongByIdWithLyrics(id: string): Promise<Song | undefine
     if (lyrics.length > 0) {
       // Update storedTxt flag since we successfully loaded lyrics
       if (!restoredSong.storedTxt) {
-        try { updateSong(id, { storedTxt: true }); } catch {}
+        try { updateSong(id, { storedTxt: true }); } catch (e) { console.debug('[SongLibrary] Failed to update storedTxt flag:', e); }
       }
       return { ...restoredSong, lyrics, storedTxt: true };
     } else {
@@ -439,7 +439,7 @@ export function filterSongs(
 
 // Clear all custom songs
 export function clearCustomSongs(): void {
-  try { localStorage.removeItem(CUSTOM_SONGS_KEY); } catch {}
+  try { localStorage.removeItem(CUSTOM_SONGS_KEY); } catch (e) { console.debug('[SongLibrary] Failed to clear localStorage:', e); }
   customSongsCache = [];
   songCache = null;
   // Clear blob URL cache in Tauri to force fresh loads
