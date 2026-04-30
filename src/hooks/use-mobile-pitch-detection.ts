@@ -146,12 +146,18 @@ export function useMobilePitchDetection({
           audioContextRef.current.resume().catch(() => {});
         }
         
-        // STOP if song ended (read from ref to avoid stale closure)
+        // STOP loop if song ended or not playing (read from ref to avoid stale closure)
+        // Prevents wasting CPU/battery analysing silence after song finishes.
         const currentlyPlaying = isPlayingRef.current;
         const currentlyEnded = songEndedRef.current;
         if (currentlyEnded || !currentlyPlaying) {
-          // Don't stop immediately, just don't send data
-          // The effect will handle stopping
+          // Stop the animation frame loop — the effect will handle full cleanup
+          // when the component unmounts or a new song starts.
+          if (animationFrameRef.current) {
+            cancelAnimationFrame(animationFrameRef.current);
+            animationFrameRef.current = null;
+          }
+          return;
         }
         
         analyserRef.current.getFloatTimeDomainData(buffer);
