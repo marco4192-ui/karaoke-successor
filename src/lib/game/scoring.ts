@@ -94,7 +94,7 @@ export function evaluateTick(
 ): TickEvaluation {
   const settings = DIFFICULTY_SETTINGS[difficulty];
   const relativeDiff = getRelativePitchDiff(sungNote, targetNote);
-  const effectiveTolerance = difficulty === 'hard' ? 0 : settings.pitchTolerance;
+  const effectiveTolerance = settings.pitchTolerance;
 
   if (relativeDiff > effectiveTolerance) {
     return { accuracy: 0, isHit: false, displayType: 'Miss' };
