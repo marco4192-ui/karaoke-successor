@@ -470,9 +470,9 @@ async function processFolder(
     } else if (trimmed.startsWith('#END:')) {
       end = parseInt(trimmed.substring(5)) || undefined;
     } else if (trimmed.startsWith('#VIDEOGAP:')) {
-      videoGap = parseInt(trimmed.substring(10)) || undefined;
+      videoGap = parseFloat(trimmed.substring(10).replace(',', '.')) || undefined;
     } else if (trimmed.startsWith('#VIDEOSTART:')) {
-      videoStart = parseInt(trimmed.substring(12)) || undefined;
+      videoStart = parseFloat(trimmed.substring(12).replace(',', '.')) || undefined;
     }
 
     // Preview
