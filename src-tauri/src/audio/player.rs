@@ -118,7 +118,8 @@ impl NativeAudioPlayer {
             decoded.sample_rate,
             config.sample_rate.0,
             decoded.channels,
-        );
+        )
+        .map_err(|e| format!("Resampling failed: {}", e))?;
 
         // Convert channel layout if decoded channels differ from device channels
         // (e.g. stereo audio on a mono device, or mono audio on a stereo device)
@@ -525,9 +526,9 @@ fn resample_if_needed(
     source_rate: u32,
     target_rate: u32,
     channels: u16,
-) -> Vec<f32> {
+) -> Result<Vec<f32>, String> {
     if source_rate == target_rate {
-        return samples;
+        return Ok(samples);
     }
 
     let channels = channels as usize;
@@ -548,7 +549,7 @@ fn resample_if_needed(
         channels,    // number of channels
         chunk_size,  // processing chunk size
     )
-    .expect("Failed to create resampler");
+    .map_err(|e| format!("Failed to create resampler: {}", e))?;
 
     let frames_in = samples.len() / channels;
 
@@ -603,7 +604,7 @@ fn resample_if_needed(
         }
     }
 
-    output_samples
+    Ok(output_samples)
 }
 
 /// Resolve a device_id string ("<host_name>:<index>") to a cpal::Device.
