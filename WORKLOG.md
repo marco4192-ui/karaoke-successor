@@ -285,3 +285,28 @@ Diese Session: 0 TODOs (bereits sauber), 13 neue Punkte umgesetzt (R1-R13).
 - **Commit:** `d039b2b`
 - **Dateien:** 6 Dateien
 - 10 `any` Casts durch korrekte Typen ersetzt.
+
+---
+
+# Code Review — Fresh Review #5
+
+**Datum:** 2026-04-30
+**Repo:** karaoke-successor
+**Branch:** origin/master
+**Stand:** Commit c418aa4
+
+---
+
+## Zusammenfassung
+
+Vorherige Sessions: 68 + 7 + 6 + 13 Punkte umgesetzt.
+Diese Session: Fokus auf aufwendigere Aufgaben — Dead-Code-Features implementieren + kritische Bugs beheben.
+
+---
+
+## Gefundene Punkte
+
+### A1: Achievement-Checking-System war nie implementiert (DEAD CODE → IMPLEMENTIERT)
+- **Datei:** `src/lib/game/achievements.ts`, `src/components/screens/results-screen.tsx`
+- **Beschreibung:** 21 Achievements waren definiert mit Kriterien (score, combo, accuracy, etc.) und Belohnungen (XP, Titel), aber es gab keine Funktion, die nach einem Spiel prüft, ob Achievements freigeschaltet werden. Die Achievements-Anzeige zeigte immer 0/21. Das komplette System war definiert aber nie in den Spiel-Flow eingebunden.
+- **Fix:** `checkAndUnlockAchievements()` Funktion implementiert, die alle 21 Definitions gegen das Spielergebnis prüft. In `results-screen.tsx` nach jedem Spiel aufgerufen. Neue Achievements werden direkt im Profil gespeichert.

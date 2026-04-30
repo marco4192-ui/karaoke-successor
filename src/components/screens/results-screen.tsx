@@ -409,6 +409,28 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           level: levelInfo.level,
         });
         
+        // DAILY CHALLENGE SUBMISSION
+        // If this game was started from the daily challenge screen, submit the result
+        try {
+          const dailyFlag = localStorage.getItem('karaoke_daily_challenge_active');
+          if (dailyFlag) {
+            const parsed = JSON.parse(dailyFlag);
+            if (parsed.active) {
+              // Clear the flag first to avoid double-submission
+              localStorage.removeItem('karaoke_daily_challenge_active');
+              // Submit the challenge result (async, fire-and-forget — it persists to localStorage internally)
+              import('@/lib/game/daily-challenge').then(({ submitChallengeResult }) => {
+                submitChallengeResult(
+                  { id: profile.id, name: profile.name, avatar: profile.avatar, color: profile.color },
+                  { score: playerResult.score, accuracy: playerResult.accuracy, combo: playerResult.maxCombo },
+                );
+              });
+            }
+          }
+        } catch {
+          // Ignore daily challenge submission errors — not critical
+        }
+        
         // Upload to global leaderboard if enabled and player allows it
         if (onlineEnabled && (profile.privacy?.showOnLeaderboard ?? true)) {
           setUploadStatus('uploading');

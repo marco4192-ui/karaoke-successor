@@ -261,6 +261,8 @@ export function DailyChallengeScreen({ onPlayChallenge, onSelectSong }: { onPlay
                       if (gameMode === 'single' && selectedPlayerIds[0]) {
                         setActiveProfile(selectedPlayerIds[0]);
                       }
+                      // Mark this game as a daily challenge for results-screen submission
+                      localStorage.setItem('karaoke_daily_challenge_active', JSON.stringify({ active: true, startedAt: Date.now() }));
                       // Start the challenge directly
                       onPlayChallenge(randomSong);
                     }
