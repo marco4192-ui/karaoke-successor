@@ -1,6 +1,5 @@
 // Song Library Store - Manages songs with persistent storage
 import type { Song } from '@/types/game';
-import { sampleSongs } from '@/data/songs/songs';
 import { isTauri, getSongMediaUrl, clearBlobUrlCache, normalizeFilePath } from '@/lib/tauri-file-storage';
 import { getSongMediaUrls } from '@/lib/db/media-db';
 import { saveCustomSongsToDB, loadCustomSongsFromDB, migrateFromLocalStorage, clearCustomSongsFromDB } from '@/lib/db/custom-songs-db';
@@ -59,7 +58,7 @@ export function invalidateSongCache(): void {
   songCacheTimestamp = 0;
 }
 
-// Get all songs (sample + custom)
+// Get all songs (custom/imported)
 export function getAllSongs(): Song[] {
   // Auto-expire cache after TTL
   if (songCache && Date.now() - songCacheTimestamp > CACHE_TTL_MS) {
@@ -69,7 +68,7 @@ export function getAllSongs(): Song[] {
   if (songCache) return songCache;
 
   const customSongs = getCustomSongs();
-  songCache = [...sampleSongs, ...customSongs];
+  songCache = [...customSongs];
   songCacheTimestamp = Date.now();
   return songCache;
 }

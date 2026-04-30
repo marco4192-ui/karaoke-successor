@@ -372,11 +372,6 @@ function saveFolders(folders: PlaylistFolder[]): void {
   }
 }
 
-// NOTE: Folder CRUD functions (createFolder, deleteFolder, addPlaylistToFolder,
-// removePlaylistFromFolder, renameFolder) are not yet wired to the UI.
-// The folder data structure and getFolders() exist as infrastructure for
-// future folder-based playlist organization.
-
 // Initialize playlists (call on app start)
 export function initializePlaylists(): void {
   if (typeof window === 'undefined') return;
