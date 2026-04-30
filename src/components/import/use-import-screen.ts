@@ -67,11 +67,13 @@ export function useImportScreen(onImport: (song: Song) => void) {
     setPreviewSong(null);
     switch (type) {
       case 'audio':
+        if (audioUrl.startsWith('blob:')) URL.revokeObjectURL(audioUrl);
         setAudioFile(file);
         setAudioUrl(URL.createObjectURL(file));
         if (!title) setTitle(file.name.replace(/\.[^/.]+$/, ''));
         break;
       case 'video':
+        if (videoUrl.startsWith('blob:')) URL.revokeObjectURL(videoUrl);
         setVideoFile(file);
         setVideoUrl(URL.createObjectURL(file));
         if (!audioFile && !title) {

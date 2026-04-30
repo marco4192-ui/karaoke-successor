@@ -128,6 +128,9 @@ export function AlternateFormatTab({
         throw new Error('No lyric lines could be extracted from the file.');
       }
 
+      // Revoke previous preview blob URLs to prevent memory leaks
+      if (previewSong?.audioUrl?.startsWith('blob:')) URL.revokeObjectURL(previewSong.audioUrl);
+
       // Build complete Song object
       const song: Song = {
         id: uuidv4(),
@@ -152,7 +155,7 @@ export function AlternateFormatTab({
     } finally {
       setIsProcessing(false);
     }
-  }, [songFile, audioFile, selectedFormat, setError, setPreviewSong, setIsProcessing]);
+  }, [songFile, audioFile, selectedFormat, previewSong, setError, setPreviewSong, setIsProcessing]);
 
   return (
     <div className="space-y-4">

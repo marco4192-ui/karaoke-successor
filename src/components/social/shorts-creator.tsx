@@ -46,6 +46,13 @@ export function ShortsCreator({ song, score, gameResult, audioUrl, onClose }: Sh
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
+
+  // Revoke blob URL on unmount to prevent memory leak
+  useEffect(() => {
+    return () => {
+      if (recordedUrl?.startsWith('blob:')) URL.revokeObjectURL(recordedUrl);
+    };
+  }, [recordedUrl]);
   const [duration, setDuration] = useState(15);
   const [style, setStyle] = useState<VideoStyle>('neon');
   const [cameraPosition, setCameraPosition] = useState<CameraPosition>('pip-top-right');
