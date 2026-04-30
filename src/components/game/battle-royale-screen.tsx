@@ -76,7 +76,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
       currentSong={currentSong}
       currentTime={currentTime}
       roundTimeLeft={roundTimeLeft}
-      roundDuration={game.rounds[game.rounds.length - 1]?.duration || 60}
+      roundDuration={game.rounds[game.rounds.length - 1]?.duration ?? 60}
       audioRef={audioRef}
       videoRef={videoRef}
       setCurrentTime={setCurrentTime}

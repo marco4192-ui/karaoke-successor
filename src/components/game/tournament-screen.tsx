@@ -14,7 +14,6 @@ import {
   TournamentSettings,
 } from '@/lib/game/tournament';
 import { Song, PlayerProfile, PLAYER_COLORS, Difficulty } from '@/types/game';
-import { getAllSongs } from '@/lib/game/song-library';
 import { useGameStore } from '@/lib/game/store';
 import { TournamentBracketButterfly } from '@/components/game/tournament-bracket-butterfly';
 import { MatchAbortDialog } from '@/components/game/match-abort-dialog';
