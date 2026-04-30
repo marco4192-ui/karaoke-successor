@@ -336,7 +336,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
 
         // Also save P2 highscore for duel/competitive modes if P2 has a registered profile
         const player2Result = results.players[1];
-        const isMultiplayerMode = ['duel', 'competitive-words', 'competitive-blind'].includes(gameState.gameMode);
+        const isMultiplayerMode = ['duel', 'duet', 'competitive-words', 'competitive-blind'].includes(gameState.gameMode);
         if (player2Result && player2Result.playerId && isMultiplayerMode) {
           const p2Profile = profiles.find(p => p.id === player2Result.playerId);
           if (p2Profile) {
