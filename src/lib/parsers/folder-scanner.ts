@@ -2,7 +2,7 @@
 // Supports nested folder structure with categories
 
 import { Song, Note, LyricLine, midiToFrequency, Difficulty } from '@/types/game';
-import { CachedSong, CachedFolder, LibraryCache, createCachedSong, saveCache, loadCache } from '@/lib/game/library-cache';
+import { CachedFolder, LibraryCache, loadCache } from '@/lib/game/library-cache';
 import { storeMedia } from '@/lib/db/media-db';
 import { normalizeTxtContent } from '@/lib/utils';
 
@@ -808,47 +808,4 @@ function getVideoDuration(file: File): Promise<number> {
   });
 }
 
-// Revoke all blob URLs associated with a scanned song (cleanup memory)
-export function revokeScannedSongUrls(song: ScannedSong): void {
-  if (song.audioUrl?.startsWith('blob:')) URL.revokeObjectURL(song.audioUrl);
-  if (song.videoUrl?.startsWith('blob:')) URL.revokeObjectURL(song.videoUrl);
-  if (song.coverUrl?.startsWith('blob:')) URL.revokeObjectURL(song.coverUrl);
-  if (song.backgroundUrl?.startsWith('blob:')) URL.revokeObjectURL(song.backgroundUrl);
-}
 
-// Revoke all blob URLs for an array of scanned songs
-export function revokeAllScannedSongUrls(songs: ScannedSong[]): void {
-  for (const song of songs) {
-    revokeScannedSongUrls(song);
-  }
-}
-
-// Save scan result to cache
-export async function saveScanResultToCache(result: ScanResult): Promise<void> {
-  const cachedSongs: CachedSong[] = [];
-  
-  for (const song of result.songs) {
-    const fullSong = await convertScannedSongToSong(song);
-    cachedSongs.push(createCachedSong(
-      fullSong,
-      song.folder,
-      song.folderPath,
-      {
-        audio: song.audioFile?.name,
-        video: song.videoFile?.name,
-        txt: song.txtFile?.name,
-        cover: song.coverFile?.name,
-      }
-    ));
-  }
-
-  const cache: LibraryCache = {
-    version: 1,
-    lastScan: Date.now(),
-    songs: cachedSongs,
-    folders: result.folders,
-    rootFolders: result.folders.filter(f => !f.parentPath).map(f => f.path),
-  };
-
-  await saveCache(cache);
-}

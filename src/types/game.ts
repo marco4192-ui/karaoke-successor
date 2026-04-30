@@ -227,13 +227,6 @@ export interface QueueItem {
   status?: 'pending' | 'playing' | 'completed';
 }
 
-export interface ScoreEvent {
-  type: 'perfect' | 'good' | 'okay' | 'miss';
-  points: number;
-  time: number;
-  position: { x: number; y: number };
-}
-
 export interface PitchDetectionResult {
   frequency: number | null;
   note: number | null;

@@ -110,22 +110,3 @@ export function fuzzyMatch(query: string, text: string): boolean {
   return false;
 }
 
-/**
- * Filters an array of songs using fuzzy search across multiple fields.
- * Matches against title, artist, genre, and album.
- */
-export function fuzzyFilterSongs<T extends {
-  title: string;
-  artist: string;
-  genre?: string | null;
-  album?: string | null;
-}>(songs: T[], query: string): T[] {
-  if (!query.trim()) return songs;
-
-  return songs.filter(song =>
-    fuzzyMatch(query, song.title) ||
-    fuzzyMatch(query, song.artist) ||
-    (song.genre && fuzzyMatch(query, song.genre)) ||
-    (song.album && fuzzyMatch(query, song.album))
-  );
-}

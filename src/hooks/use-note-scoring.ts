@@ -11,7 +11,7 @@ import {
 import { Player } from '@/types/game';
 
 // Score event type for visual feedback
-export interface ScoreEvent {
+interface ScoreEvent {
   type: string;
   displayType: 'Perfect' | 'Great' | 'Good' | 'Okay' | 'Miss';
   points: number;
@@ -19,14 +19,14 @@ export interface ScoreEvent {
 }
 
 // Note performance sample for visual display modes
-export interface NotePerformanceSample {
+interface NotePerformanceSample {
   time: number;
   accuracy: number;
   hit: boolean;
 }
 
 // Player state for additional players (P2, P3, P4) not in the main store
-export interface PlayerScoringState {
+interface PlayerScoringState {
   score: number;
   combo: number;
   maxCombo: number;
@@ -35,7 +35,7 @@ export interface PlayerScoringState {
 }
 
 // Timing data structure (subset used by scoring)
-export interface TimingDataForScoring {
+interface TimingDataForScoring {
   allNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
   p1Notes?: Array<Note & { lineIndex: number; line: LyricLine }>;
   p2Notes?: Array<Note & { lineIndex: number; line: LyricLine }>;

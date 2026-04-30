@@ -62,39 +62,3 @@ export async function identifySong(
     };
   }
 }
-
-/**
- * Auto-fill song metadata with AI
- */
-export async function autoFillMetadata(
-  filename: string,
-  currentMetadata?: Partial<SongMetadata>
-): Promise<IdentifyResult> {
-  // Try to extract from filename first
-  const cleanName = filename
-    .replace(/\.[^/.]+$/, '') // Remove extension
-    .replace(/[_-]/g, ' ') // Replace underscores and dashes
-    .trim();
-
-  const result = await identifySong(cleanName, 'filename');
-
-  if (result.success && result.metadata) {
-    // Merge with existing metadata
-    return {
-      success: true,
-      metadata: {
-        ...result.metadata,
-        ...currentMetadata, // Keep existing values if AI couldn't determine
-      },
-    };
-  }
-
-  return result;
-}
-
-/**
- * Clear the identification cache
- */
-export function clearIdentificationCache(): void {
-  cache.clear();
-}

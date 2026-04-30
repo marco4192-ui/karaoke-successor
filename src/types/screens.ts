@@ -50,9 +50,6 @@ export const IMMERSIVE_SCREENS: Set<Screen> = new Set([
   'blind-game',
 ]);
 
-// Note shape style for theming — canonical definition in note-utils.tsx
-export type { NoteShapeStyle } from '@/lib/game/note-utils';
-
 // Note: NoteProgress, ScoringMetadata, StartOptions, and LibrarySettings have been
 // removed from this file. Their canonical definitions live in:
 // - NoteProgress / ScoringMetadata → @/lib/game/scoring.ts

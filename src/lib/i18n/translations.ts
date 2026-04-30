@@ -975,34 +975,23 @@ export function createTranslationObject(language: Language): Record<string, unkn
   return createNestedObject(merged);
 }
 
-// Get stored language from localStorage
-export function getStoredLanguage(): Language {
-  if (typeof window === 'undefined') return 'en';
-  const stored = localStorage.getItem('karaoke-language');
-  if (stored && (translations as Record<string, unknown>)[stored]) {
-    return stored as Language;
-  }
-  return 'en';
-}
-
-// Store language in localStorage
-export function setStoredLanguage(language: Language): void {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('karaoke-language', language);
-  }
-}
-
 // React hook for translations (for client components)
 // Supports cross-tab synchronization via StorageEvent
 export function useTranslation() {
   const [language, setLanguageState] = useState<Language>(() => {
     if (typeof window === 'undefined') return 'en';
-    return getStoredLanguage();
+    const stored = localStorage.getItem('karaoke-language');
+    if (stored && (translations as Record<string, unknown>)[stored]) {
+      return stored as Language;
+    }
+    return 'en';
   });
   
   const setLanguage = useCallback((newLang: Language) => {
     setLanguageState(newLang);
-    setStoredLanguage(newLang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('karaoke-language', newLang);
+    }
     // Dispatch event for other components to react (within same tab)
     window.dispatchEvent(new CustomEvent('languageChange', { detail: newLang }));
   }, []);
