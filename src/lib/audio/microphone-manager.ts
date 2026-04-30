@@ -324,11 +324,19 @@ export class MultiMicrophoneManager {
   // Get list of all available microphones
   async getMicrophones(): Promise<MicrophoneDevice[]> {
     try {
-      // Need to request permission first
-      const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      tempStream.getTracks().forEach(track => track.stop());
+      // Try enumerateDevices first — no permission prompt needed.
+      // If labels are present (permission already granted), we can skip getUserMedia entirely.
+      let allDevices = await navigator.mediaDevices.enumerateDevices();
+      const hasLabels = allDevices.some(d => d.kind === 'audioinput' && d.label);
 
-      const allDevices = await navigator.mediaDevices.enumerateDevices();
+      if (!hasLabels) {
+        // Labels are empty → permission not yet granted.
+        // Request a temporary stream to trigger the permission prompt,
+        // then release it immediately.
+        const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        tempStream.getTracks().forEach(track => track.stop());
+        allDevices = await navigator.mediaDevices.enumerateDevices();
+      }
       
       this.devices = allDevices
         .filter(device => device.kind === 'audioinput')
