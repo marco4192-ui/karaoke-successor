@@ -378,8 +378,7 @@ async function processFolder(
     const normalizedBase = normalizeFilePath(baseFolder);
     const fullPath = `${normalizedBase}/${normalizeFilePath(txtFile.path)}`;
     txtContent = await nativeReadFileText(fullPath);
-  } catch (e) {
-    console.warn('[TauriScanner] Could not read TXT:', txtFile.path, e);
+  } catch {
     return null;
   }
   
@@ -862,8 +861,7 @@ async function findFileByScanningParentFolder(
       try {
         entries = await nativeReadDir(parentDir.replace(/\//g, '\\'));
       } catch {
-        console.warn('[TauriFS] Folder scan fallback: could not read directory:', parentDir);
-        return null;
+          return null;
       }
     }
 
@@ -893,7 +891,6 @@ async function findFileByScanningParentFolder(
       }
     }
 
-    console.warn('[TauriFS] Folder scan fallback: no matching file found in:', parentDir);
     return null;
   } catch (error) {
     console.error('[TauriFS] Folder scan fallback error:', error);

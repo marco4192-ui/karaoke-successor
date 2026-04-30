@@ -621,8 +621,8 @@ export class MultiMicrophoneManager {
         })),
       };
       localStorage.setItem('karaoke-multi-mic-config', JSON.stringify(config));
-    } catch (e) {
-      console.warn('Failed to save multi-mic config:', e);
+    } catch {
+      // Non-critical: config will reset to defaults
     }
   }
 
@@ -663,8 +663,8 @@ export class MultiMicrophoneManager {
           }
         }
       }
-    } catch (e) {
-      console.warn('Failed to load multi-mic config:', e);
+    } catch {
+      // Non-critical: config will reset to defaults
     }
   }
 
@@ -833,8 +833,8 @@ export class MicrophoneManager {
     if (typeof window === 'undefined') return;
     try {
       localStorage.setItem('karaoke-mic-config', JSON.stringify(this.config));
-    } catch (e) {
-      console.warn('Failed to save mic config:', e);
+    } catch {
+      // Non-critical: config will reset to defaults
     }
   }
 
@@ -857,8 +857,8 @@ export class MicrophoneManager {
         this.config = { ...DEFAULT_CONFIG, ...parsed };
         this.saveConfig();
       }
-    } catch (e) {
-      console.warn('Failed to load mic config:', e);
+    } catch {
+      // Non-critical: config will reset to defaults
     }
   }
 
