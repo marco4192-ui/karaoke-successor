@@ -112,7 +112,7 @@ export class PitchDetector {
       const audioConstraints: MediaTrackConstraints = {
         echoCancellation: true,
         noiseSuppression: true,
-        autoGainControl: true,
+        autoGainControl: false,
       };
       if (deviceId) {
         audioConstraints.deviceId = { exact: deviceId };

@@ -8,18 +8,26 @@ import { NextRequest } from 'next/server';
  * Allowed origins:
  * - tauri://, https://tauri.*, http://tauri.* (Tauri v1/v2 webview)
  * - http://localhost, http://127.0.0.1 (dev server)
+ *
+ * SECURITY: Uses strict equality / regex instead of startsWith to prevent
+ * subdomain spoofing (e.g., http://localhost.evil.com bypassing startsWith).
  */
+const LOCALHOST_PATTERN = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+
+function isAllowed(value: string): boolean {
+  if (!value) return false;
+  return (
+    value.startsWith('tauri://') ||
+    value.startsWith('https://tauri.') ||
+    value.startsWith('http://tauri.') ||
+    LOCALHOST_PATTERN.test(value)
+  );
+}
+
 export function isLocalRequest(request: NextRequest): boolean {
   const origin = request.headers.get('origin') || '';
   const referer = request.headers.get('referer') || '';
   const host = request.headers.get('host') || '';
-
-  const isAllowed = (value: string) =>
-    value.startsWith('tauri://') ||
-    value.startsWith('https://tauri.') ||
-    value.startsWith('http://tauri.') ||
-    value.startsWith('http://localhost') ||
-    value.startsWith('http://127.0.0.1');
 
   return isAllowed(origin) || isAllowed(referer) || isAllowed(host);
 }

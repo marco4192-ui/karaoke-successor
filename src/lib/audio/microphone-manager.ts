@@ -227,7 +227,7 @@ class MicrophoneInstance {
       sum += data[i] * data[i];
     }
     const rms = Math.sqrt(sum / data.length);
-    return Math.min(1, rms * this.config.gain * 5);
+    return Math.min(1, rms * 5);
   }
 
   getPeak(): number {
@@ -238,7 +238,7 @@ class MicrophoneInstance {
     for (let i = 0; i < data.length; i++) {
       max = Math.max(max, Math.abs(data[i]));
     }
-    return Math.min(1, max * this.config.gain);
+    return Math.min(1, max);
   }
 
   setGain(gain: number): void {
@@ -768,7 +768,7 @@ export class MicrophoneManager {
       max = Math.max(max, Math.abs(data[i]));
     }
     
-    return Math.min(1, max * this.config.gain);
+    return Math.min(1, max);
   }
 
   setGain(gain: number): void {

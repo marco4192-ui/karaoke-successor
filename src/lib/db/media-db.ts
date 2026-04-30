@@ -67,12 +67,11 @@ export async function storeMedia(
   // engine may commit the transaction before store.put() runs, causing silent
   // data loss.
   let blobToStore: Blob;
-  if (type === 'txt') {
-    blobToStore = data;
-  } else {
-    const arrayBuffer = await data.arrayBuffer();
-    blobToStore = new Blob([arrayBuffer], { type: data.type || 'application/octet-stream' });
-  }
+  // IMPORTANT: Always materialize to a new Blob in Tauri/WebView.
+  // File objects may be filesystem references that become dead references
+  // after the user navigates away or the file handle is garbage-collected.
+  const arrayBuffer = await data.arrayBuffer();
+  blobToStore = new Blob([arrayBuffer], { type: data.type || (type === 'txt' ? 'text/plain' : 'application/octet-stream') });
 
   const db = await initMediaDB();
 
