@@ -425,11 +425,6 @@ export class AudioEffectsEngine {
     }
   }
 
-  setReverbEnabled(enabled: boolean): void {
-    this.settings.reverb.enabled = enabled;
-    this.connectEffectChain();
-  }
-
   setDelay(time: number, feedback: number, mix?: number): void {
     if (this.delayNode) {
       this.delayNode.delayTime.value = Math.max(0, Math.min(1, time));
@@ -440,115 +435,6 @@ export class AudioEffectsEngine {
     if (mix !== undefined && this.delayMix) {
       this.delayMix.gain.value = Math.max(0, Math.min(1, mix));
     }
-  }
-
-  setDelayEnabled(enabled: boolean): void {
-    this.settings.delay.enabled = enabled;
-    this.connectEffectChain();
-  }
-
-  setEQ(low: number, mid: number, high: number): void {
-    this.settings.eq.low = Math.max(-12, Math.min(12, low));
-    this.settings.eq.mid = Math.max(-12, Math.min(12, mid));
-    this.settings.eq.high = Math.max(-12, Math.min(12, high));
-    
-    if (this.eqLow) this.eqLow.gain.value = this.settings.eq.low;
-    if (this.eqMid) this.eqMid.gain.value = this.settings.eq.mid;
-    if (this.eqHigh) this.eqHigh.gain.value = this.settings.eq.high;
-  }
-
-  setEQEnabled(enabled: boolean): void {
-    this.settings.eq.enabled = enabled;
-    this.connectEffectChain();
-  }
-
-  setCompressor(threshold: number, ratio: number): void {
-    this.settings.compressor.threshold = Math.max(-60, Math.min(0, threshold));
-    this.settings.compressor.ratio = Math.max(1, Math.min(20, ratio));
-    
-    if (this.compressorNode) {
-      this.compressorNode.threshold.value = this.settings.compressor.threshold;
-      this.compressorNode.ratio.value = this.settings.compressor.ratio;
-    }
-  }
-
-  setCompressorEnabled(enabled: boolean): void {
-    this.settings.compressor.enabled = enabled;
-    this.connectEffectChain();
-  }
-
-  setDistortion(amount: number): void {
-    this.settings.distortion.amount = Math.max(0, Math.min(1, amount));
-    
-    if (this.distortionNode) {
-      this.distortionNode.curve = this.makeDistortionCurve(this.settings.distortion.amount) as Float32Array<ArrayBuffer>;
-    }
-  }
-
-  setDistortionEnabled(enabled: boolean): void {
-    this.settings.distortion.enabled = enabled;
-    this.connectEffectChain();
-  }
-
-  setMasterVolume(volume: number): void {
-    this.settings.master.volume = Math.max(0, Math.min(2, volume));
-    if (this.masterGain) {
-      this.masterGain.gain.value = this.settings.master.volume;
-    }
-  }
-
-  setDryWetMix(mix: number): void {
-    this.settings.master.mix = Math.max(0, Math.min(1, mix));
-    if (this.dryGain) {
-      this.dryGain.gain.value = 1 - this.settings.master.mix;
-    }
-    if (this.wetGain) {
-      this.wetGain.gain.value = this.settings.master.mix;
-    }
-  }
-
-  // Get current settings
-  getSettings(): AudioEffectSettings {
-    return { ...this.settings };
-  }
-
-  getCurrentPreset(): AudioEffectPreset | null {
-    return this.currentPreset;
-  }
-
-  getAnalyser(): AnalyserNode | null {
-    return this.analyserNode;
-  }
-
-  getFrequencyData(): Uint8Array {
-    if (!this.analyserNode) return new Uint8Array(0);
-    const data = new Uint8Array(this.analyserNode.frequencyBinCount);
-    this.analyserNode.getByteFrequencyData(data);
-    return data;
-  }
-
-  getTimeDomainData(): Float32Array {
-    if (!this.analyserNode) return new Float32Array(0);
-    const data = new Float32Array(this.analyserNode.fftSize);
-    this.analyserNode.getFloatTimeDomainData(data);
-    return data;
-  }
-
-  // Get spectrogram data for visualization
-  getSpectrogramData(): number[] {
-    const frequencyData = this.getFrequencyData();
-    const bands: number[] = [];
-    const bandSize = Math.floor(frequencyData.length / 64);
-    
-    for (let i = 0; i < 64; i++) {
-      let sum = 0;
-      for (let j = 0; j < bandSize; j++) {
-        sum += frequencyData[i * bandSize + j];
-      }
-      bands.push(sum / bandSize / 255);
-    }
-    
-    return bands;
   }
 
   disconnect(): void {
@@ -565,49 +451,4 @@ export class AudioEffectsEngine {
     this.isInitialized = false;
   }
 
-  isActive(): boolean {
-    return this.isInitialized;
-  }
-}
-
-// Voice recording for share feature
-export class VoiceRecorder {
-  private mediaRecorder: MediaRecorder | null = null;
-  private chunks: Blob[] = [];
-  private isRecording = false;
-
-  async startRecording(stream: MediaStream): Promise<void> {
-    this.chunks = [];
-    this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-    
-    this.mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) {
-        this.chunks.push(e.data);
-      }
-    };
-    
-    this.mediaRecorder.start();
-    this.isRecording = true;
-  }
-
-  stopRecording(): Promise<Blob> {
-    return new Promise((resolve) => {
-      if (!this.mediaRecorder) {
-        resolve(new Blob());
-        return;
-      }
-      
-      this.mediaRecorder.onstop = () => {
-        const blob = new Blob(this.chunks, { type: 'audio/webm' });
-        this.isRecording = false;
-        resolve(blob);
-      };
-      
-      this.mediaRecorder.stop();
-    });
-  }
-
-  getIsRecording(): boolean {
-    return this.isRecording;
-  }
 }
