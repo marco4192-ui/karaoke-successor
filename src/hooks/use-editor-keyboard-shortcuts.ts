@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { Note } from '@/types/game';
 
 interface UseEditorKeyboardShortcutsParams {
@@ -30,6 +30,20 @@ export function useEditorKeyboardShortcuts({
   setSelectedNoteId,
   tapModeActive = false,
 }: UseEditorKeyboardShortcutsParams) {
+  // Use refs for values that are read inside the handler but change frequently.
+  // This prevents the listener from being torn down and re-registered on every
+  // render (e.g., currentTime changes at 60fps during playback).
+  const selectedNoteIdRef = useRef(selectedNoteId);
+  const selectedNoteRef = useRef(selectedNote);
+  const currentTimeRef = useRef(currentTime);
+  const tapModeActiveRef = useRef(tapModeActive);
+
+  // Update refs when props change (cheap — no listener churn)
+  selectedNoteIdRef.current = selectedNoteId;
+  selectedNoteRef.current = selectedNote;
+  currentTimeRef.current = currentTime;
+  tapModeActiveRef.current = tapModeActive;
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if typing in input
@@ -38,16 +52,16 @@ export function useEditorKeyboardShortcuts({
       }
 
       // Space: Play/Pause (disabled in tap mode — Space is used for note placement)
-      if (e.code === 'Space' && !tapModeActive) {
+      if (e.code === 'Space' && !tapModeActiveRef.current) {
         e.preventDefault();
         handlePlayPause();
       }
 
       // Delete: Delete selected note
       if (e.code === 'Delete' || e.code === 'Backspace') {
-        if (selectedNoteId) {
+        if (selectedNoteIdRef.current) {
           e.preventDefault();
-          handleNoteDelete(selectedNoteId);
+          handleNoteDelete(selectedNoteIdRef.current);
         }
       }
 
@@ -70,9 +84,9 @@ export function useEditorKeyboardShortcuts({
       }
 
       // Ctrl+C: Copy selected note
-      if ((e.ctrlKey || e.metaKey) && e.code === 'KeyC' && selectedNote) {
+      if ((e.ctrlKey || e.metaKey) && e.code === 'KeyC' && selectedNoteRef.current) {
         e.preventDefault();
-        navigator.clipboard.writeText(JSON.stringify(selectedNote));
+        navigator.clipboard.writeText(JSON.stringify(selectedNoteRef.current));
       }
 
       // Ctrl+V: Paste note
@@ -81,7 +95,7 @@ export function useEditorKeyboardShortcuts({
         navigator.clipboard.readText().then(text => {
           try {
             const copiedNote = JSON.parse(text) as Note;
-            handleNoteAdd(currentTime, copiedNote.pitch);
+            handleNoteAdd(currentTimeRef.current, copiedNote.pitch);
           } catch {
             // Invalid clipboard data
           }
@@ -96,5 +110,5 @@ export function useEditorKeyboardShortcuts({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handlePlayPause, selectedNoteId, handleNoteDelete, handleSave, undo, redo, selectedNote, handleNoteAdd, currentTime, setSelectedNoteId, tapModeActive]);
+  }, [handlePlayPause, handleNoteDelete, handleSave, undo, redo, handleNoteAdd, setSelectedNoteId]);
 }
