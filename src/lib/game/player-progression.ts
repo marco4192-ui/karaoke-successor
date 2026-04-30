@@ -62,7 +62,7 @@ const MAX_RECENT_GAMES = 20;
 
 // ===================== RANKS & TITLES =====================
 
-export interface Rank {
+interface Rank {
   id: string;
   name: string;
   icon: string;
@@ -72,7 +72,7 @@ export interface Rank {
   titles: string[]; // Unlockable titles at this rank
 }
 
-export interface Title {
+interface Title {
   id: string;
   name: string;
   icon: string;
@@ -82,7 +82,7 @@ export interface Title {
   category: 'achievement' | 'skill' | 'dedication' | 'special' | 'challenge';
 }
 
-export const RANKS: Rank[] = [
+const RANKS: Rank[] = [
   { id: 'beginner', name: 'Beginner', icon: '🎵', minXP: 0, maxXP: 499, color: '#9CA3AF', titles: ['Newcomer'] },
   { id: 'novice', name: 'Novice', icon: '🎤', minXP: 500, maxXP: 1499, color: '#6B7280', titles: ['Rising Star'] },
   { id: 'apprentice', name: 'Apprentice', icon: '🌟', minXP: 1500, maxXP: 2999, color: '#22C55E', titles: ['Melody Maker'] },
@@ -97,7 +97,7 @@ export const RANKS: Rank[] = [
   { id: 'divine', name: 'Divine', icon: '🌟', minXP: 200000, maxXP: Infinity, color: '#FFD700', titles: ['Divine Voice'] },
 ];
 
-export const TITLES: Title[] = [
+const TITLES: Title[] = [
   // Skill-based titles
   { id: 'perfect-pitch', name: 'Perfect Pitch', icon: '🎯', description: 'Achieve 100% accuracy on a song', rarity: 'legendary', unlockCondition: 'Get 100% accuracy', category: 'skill' },
   { id: 'golden-voice', name: 'Golden Voice', icon: '✨', description: 'Hit 100 golden notes', rarity: 'epic', unlockCondition: 'Hit 100 golden notes', category: 'skill' },
@@ -147,13 +147,13 @@ export interface ChallengeMode {
   requirements?: ChallengeRequirement[];
 }
 
-export interface ChallengeModifier {
+interface ChallengeModifier {
   type: 'no_lyrics' | 'no_pitch_guide' | 'double_speed' | 'half_speed' | 'pitch_shift' | 'blind' | 'missing_words' | 'golden_only' | 'perfect_only';
   value?: number;
   description: string;
 }
 
-export interface ChallengeRequirement {
+interface ChallengeRequirement {
   type: 'min_level' | 'min_songs' | 'achievement' | 'rank';
   value: number | string;
 }
@@ -333,7 +333,7 @@ export interface PlayerGameResult {
 
 // ===================== XP CALCULATIONS =====================
 
-export const XP_SOURCES = {
+const XP_SOURCES = {
   // Song completion
   SONG_COMPLETE: 50,
   SONG_PERFECT: 150, // PERFECT_ACCURACY accuracy bonus
@@ -469,7 +469,7 @@ export function saveExtendedStats(stats: ExtendedPlayerStats): void {
   localStorage.setItem(EXTENDED_STATS_KEY, JSON.stringify(stats));
 }
 
-export function getDefaultStats(): ExtendedPlayerStats {
+function getDefaultStats(): ExtendedPlayerStats {
   return {
     totalXP: 0,
     currentLevel: 1,
