@@ -246,10 +246,6 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
         });
     };
 
-    // Notify caller immediately with the replay ID so Results Screen
-    // can start polling IndexedDB before the async save finishes.
-    onReplaySaved({ id: replayId } as ReplayData);
-
     // If the recorder is still recording, wait for it to finish
     if (recorder.state === 'recording') {
       recorder.onstop = stopAndSave;

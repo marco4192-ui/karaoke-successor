@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, RefObject } from 'react';
+import { useEffect, useRef, RefObject } from 'react';
 import { toast } from '@/hooks/use-toast';
 
 /**
@@ -51,6 +51,13 @@ export function useRemoteControl({
   onEnd,
   pollInterval = 500,
 }: UseRemoteControlProps) {
+  // Use refs so the polling interval isn't torn down and recreated
+  // every time isPlaying / isAdPlaying change.
+  const isPlayingRef = useRef(isPlaying);
+  isPlayingRef.current = isPlaying;
+  const isAdPlayingRef = useRef(isAdPlaying);
+  isAdPlayingRef.current = isAdPlaying;
+
   useEffect(() => {
     const pollRemoteCommands = async () => {
       try {
@@ -109,7 +116,7 @@ export function useRemoteControl({
                 
               case 'skip':
                 // If ad is playing, show toast to guide user
-                if (isAdPlaying) {
+                if (isAdPlayingRef.current) {
                   toast({
                     title: '⏭️ Werbung überspringen',
                     description: 'Klicke auf das Video, um den "Skip Ad" Button zu drücken!',
@@ -229,7 +236,7 @@ export function useRemoteControl({
     // Poll at the specified interval - always, not just when playing
     const interval = setInterval(pollRemoteCommands, pollInterval);
     return () => clearInterval(interval);
-  }, [audioRef, videoRef, isPlaying, isAdPlaying, setIsPlaying, stop, onBack, onEnd, pollInterval]);
+  }, [audioRef, videoRef, setIsPlaying, stop, onBack, onEnd, pollInterval]);
 }
 
 export default useRemoteControl;

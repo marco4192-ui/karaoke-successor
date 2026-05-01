@@ -147,6 +147,9 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // Ref for timing data — placed after declaration so TS is happy
   const timingDataRef = useRef(timingData);
   timingDataRef.current = timingData;
+  // Ref for currentSong — avoids stale closure in the game loop rAF
+  const currentSongRef = useRef(currentSong);
+  currentSongRef.current = currentSong;
 
   // ── Random song picker ─────────────────────────────────────────────
   const getRandomSong = useCallback((): Song | null => {
@@ -263,7 +266,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
       // Evaluate scoring for all active players simultaneously
       const td = timingDataRef.current;
-      if (deltaTime >= TICK_INTERVAL && td && currentSong) {
+      if (deltaTime >= TICK_INTERVAL && td && currentSongRef.current) {
         lastTickTime = timestamp;
 
         // Get the detected pitch from local microphone (via ref — avoids stale closure)

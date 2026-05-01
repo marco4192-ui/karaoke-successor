@@ -447,8 +447,11 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
 
             // BACKGROUND VIDEO (muted, synced with audio)
             if (videoRef.current && currentVideoUrl && !currentSong.hasEmbeddedAudio) {
+              // Only set src if it differs — avoids resetting playback
+              if (videoRef.current.src !== currentVideoUrl) {
+                videoRef.current.src = currentVideoUrl;
+              }
               const videoGapSeconds = (currentSong.videoGap || 0) / 1000;
-              videoRef.current.src = currentVideoUrl;
               videoRef.current.currentTime = Math.max(0, startPosition - videoGapSeconds);
               videoRef.current.muted = true;
               videoRef.current.play().catch(() => {});
@@ -571,7 +574,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       setIsPlaying(false);
       setCountdown(3);
     };
-  }, [effectiveSong, mediaLoaded, initialize, start, stop, setPitchDifficulty, difficulty, resetScoring, audioRef, videoRef, isYouTube, youtubeVideoId, setIsPlaying]);
+  }, [effectiveSong, mediaLoaded, initialize, start, stop, setPitchDifficulty, difficulty, resetScoring, audioRef, videoRef, isYouTube, youtubeVideoId, setIsPlaying, gameMode, nativeAudioPlay, nativeAudioSeek]);
 
   // ── CRITICAL: Cleanup on unmount ──
   useEffect(() => {

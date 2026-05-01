@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
@@ -124,7 +124,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
   }, []);
   
   // Play next song from queue
-  const handlePlayFromQueue = async () => {
+  const handlePlayFromQueue = useCallback(async () => {
     if (!nextQueueItem) return;
     
     // Get full song from library
@@ -241,7 +241,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
     }
 
     onPlayAgain();
-  };
+  }, [nextQueueItem, activeProfileId, profiles, party, setSong, setGameMode, addPlayer, onPlayAgain]);
 
   // Get song highscores for comparison
   const songHighscores = useMemo(() => {
