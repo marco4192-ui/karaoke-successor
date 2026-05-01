@@ -68,8 +68,8 @@ export function convertNotesToLyricLines(
     }
 
     // Check for line break: explicit "- <beat>" marker or BPM-dependent beat gap fallback
-    // At 120 BPM, 8 beats ≈ 10s; scale linearly with BPM so fast songs break sooner
-    const beatGapThreshold = Math.round(960000 / bpm); // 8 beats at 120 BPM = 10000ms baseline
+    // 8 beats at given BPM: 8 × (60000 / bpm) = 480000 / bpm ms
+    const beatGapThreshold = Math.round(480000 / bpm);
     const nextNoteStart = i < sortedNotes.length - 1 ? sortedNotes[i + 1].startBeat : -1;
     const nextNoteStartMs = i < sortedNotes.length - 1 ? gap + (sortedNotes[i + 1].startBeat * beatDuration) : -1;
     const noteEndMs = gap + (noteEndBeat * beatDuration);
