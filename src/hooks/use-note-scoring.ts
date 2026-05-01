@@ -249,7 +249,8 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
           const tickInterval = beatDurationMs;
 
           if (timeSinceLastEval >= tickInterval * 0.5) {
-            const tickResult = evaluateTick(pitch.note!, note.pitch, difficulty);
+            if (pitch.note == null) return;
+            const tickResult = evaluateTick(pitch.note, note.pitch, difficulty);
 
             noteProgress.ticksEvaluated++;
             noteProgress.lastEvaluatedTime = currentTime;
@@ -387,7 +388,8 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
           const tickInterval = beatDurationMs;
 
           if (timeSinceLastEval >= tickInterval * 0.5) {
-            const tickResult = evaluateTick(pitch.note!, note.pitch, difficulty);
+            if (pitch.note == null) return;
+            const tickResult = evaluateTick(pitch.note, note.pitch, difficulty);
 
             noteProgress.ticksEvaluated++;
             noteProgress.lastEvaluatedTime = currentTime;

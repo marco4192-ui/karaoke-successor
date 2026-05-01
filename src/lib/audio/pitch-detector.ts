@@ -194,6 +194,13 @@ export class PitchDetector {
       return;
     }
 
+    // M5: Guard against destroyed AudioContext — destroy() may set audioContext
+    // to null while a currently executing rAF callback is still running detect().
+    if (!this.audioContext || !this.isListening) {
+      this.animationFrame = requestAnimationFrame(() => this.detect());
+      return;
+    }
+
     // Guard: if AudioContext was suspended (e.g. Tauri window lost focus),
     // resume it — otherwise getFloatTimeDomainData returns all zeros.
     if (this.audioContext && this.audioContext.state === 'suspended') {
@@ -246,7 +253,8 @@ export class PitchDetector {
     }
 
     // Use YIN algorithm for pitch detection
-    const frequency = this.yinPitchDetection(this.buffer, this.audioContext!.sampleRate, this.config.yinThreshold);
+    const sampleRate = this.audioContext.sampleRate;
+    const frequency = this.yinPitchDetection(this.buffer, sampleRate, this.config.yinThreshold);
 
     // Re-run vocal detection now with known pitch for better accuracy
     const detectedNote = (frequency !== null && frequency >= this.config.minFrequency && frequency <= this.config.maxFrequency)
@@ -262,7 +270,7 @@ export class PitchDetector {
 
     if (frequency !== null && frequency >= this.config.minFrequency && frequency <= this.config.maxFrequency) {
       const note = frequencyToMidi(frequency);
-      const clarity = this.calculateClarity(this.buffer, frequency, this.audioContext!.sampleRate);
+      const clarity = this.calculateClarity(this.buffer, frequency, sampleRate);
       
       // Pitch stability check
       const stablePitch = this.checkPitchStability(note);

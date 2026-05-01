@@ -137,6 +137,7 @@ export function YouTubePlayer({
     if (typeof window === 'undefined') return;
     
     const cleanupIntervals: ReturnType<typeof setInterval>[] = [];
+    const cleanupTimeouts: ReturnType<typeof setTimeout>[] = [];
     
     // Check if API is already loaded
     if (window.YT && window.YT.Player) {
@@ -180,14 +181,16 @@ export function YouTubePlayer({
           }
         }, 200);
         cleanupIntervals.push(poll);
-        // Give up after another 10 seconds
-        setTimeout(() => clearInterval(poll), 10000);
+        // M3: Track the give-up timeout so it gets cleaned up on unmount
+        const giveUpTimeout = setTimeout(() => clearInterval(poll), 10000);
+        cleanupTimeouts.push(giveUpTimeout);
       }
     }, 10000);
     
     return () => {
       clearTimeout(fallbackTimeout);
       cleanupIntervals.forEach(clearInterval);
+      cleanupTimeouts.forEach(clearTimeout);
     };
   }, []);
   

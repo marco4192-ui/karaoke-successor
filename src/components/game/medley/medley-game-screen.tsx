@@ -244,7 +244,8 @@ export function MedleyGameScreen({
     if (absTime - lastEval < 250) return;
     lastEvalTimeRef.current[playerId] = absTime;
 
-    const tick = evaluateAndScoreTick(pitch.note!, activeNote, settings.difficulty, scoringMetaRef.current);
+    if (pitch.note == null) return;
+    const tick = evaluateAndScoreTick(pitch.note, activeNote, settings.difficulty, scoringMetaRef.current);
     const pIdx = playersRef.current.findIndex(p => p.id === playerId);
     if (pIdx === -1) return;
     const p = playersRef.current[pIdx];

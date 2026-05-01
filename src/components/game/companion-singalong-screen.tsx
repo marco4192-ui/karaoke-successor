@@ -329,7 +329,8 @@ export function CompanionGameView({
     if (ct - lastEvalTimeRef.current < 250) return;
     lastEvalTimeRef.current = ct;
 
-    const tick = evaluateAndScoreTick(pitchResult.note!, activeNote, difficulty, scoringMeta.current);
+    if (pitchResult.note == null) return;
+    const tick = evaluateAndScoreTick(pitchResult.note, activeNote, difficulty, scoringMeta.current);
     const p = playersRef.current[currentPlayerIndex];
     const idx = currentPlayerIndex;
 

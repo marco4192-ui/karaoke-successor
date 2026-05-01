@@ -88,6 +88,10 @@ export function WaveformBar({ audio, isActive }: { audio: HTMLAudioElement | nul
 
     return () => {
       cancelAnimationFrame(animFrameRef.current);
+      // M2: Also disconnect analyser and close AudioContext on normal unmount
+      // to prevent resource leaks when the song card disappears while active.
+      if (analyserRef.current) { analyserRef.current.disconnect(); analyserRef.current = null; }
+      if (ctxRef.current) { ctxRef.current.close().catch(() => {}); ctxRef.current = null; }
     };
   }, [audio, isActive]);
 

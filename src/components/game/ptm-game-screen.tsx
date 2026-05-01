@@ -240,7 +240,9 @@ export function PtmGameScreen({
     if (currentTime - lastEvalTimeRef.current < 250) return;
     lastEvalTimeRef.current = currentTime;
 
-    const tick = evaluateAndScoreTick(pitchResult.note!, activeNote, difficulty, scoringMeta);
+    const note = pitchResult.note;
+    if (note == null) return;
+    const tick = evaluateAndScoreTick(note, activeNote, difficulty, scoringMeta);
     const p = playersRef.current[currentPlayerIndex];
     const idx = currentPlayerIndex;
 

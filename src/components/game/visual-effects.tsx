@@ -167,6 +167,11 @@ export function useParticleEmitter() {
   const particlesRef = useRef<Particle[]>([]);
   const particleIdRef = useRef(0);
   const [, forceRender] = useState(0); // trigger re-render only when needed
+  // Track pending setTimeout IDs so we can clear them on unmount.
+  // Without this, emitComboFirework / emitConfetti timers keep firing
+  // after the component is gone, potentially calling stale emitParticles.
+  const pendingTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const activeRef = useRef(true);
 
   const emitParticles = useCallback((
     x: number,
@@ -181,6 +186,8 @@ export function useParticleEmitter() {
       life?: number;
     }
   ) => {
+    // Guard: if component unmounted, skip emission (pending timers may still fire)
+    if (!activeRef.current) return;
     const spread = options?.spread ?? 1;
     const speed = options?.speed ?? 1;
     const size = options?.size ?? 8;
@@ -223,7 +230,10 @@ export function useParticleEmitter() {
     const colors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#F38181'];
 
     for (let burst = 0; burst < Math.ceil(intensity); burst++) {
-      setTimeout(() => {
+      const id = setTimeout(() => {
+        // Remove this timer from tracking
+        pendingTimersRef.current = pendingTimersRef.current.filter(t => t !== id);
+        if (!activeRef.current) return;
         const offsetX = (Math.random() - 0.5) * 100;
         const offsetY = (Math.random() - 0.5) * 50;
         emitParticles(
@@ -238,13 +248,16 @@ export function useParticleEmitter() {
           }
         );
       }, burst * 150);
+      pendingTimersRef.current.push(id);
     }
   }, [emitParticles]);
 
   const emitConfetti = useCallback((x: number, y: number) => {
     const colors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#AA96DA', '#FF9F43'];
     for (let i = 0; i < 30; i++) { // Reduced from 50
-      setTimeout(() => {
+      const id = setTimeout(() => {
+        pendingTimersRef.current = pendingTimersRef.current.filter(t => t !== id);
+        if (!activeRef.current) return;
         emitParticles(
           Math.random() * window.innerWidth,
           -20,
@@ -258,6 +271,7 @@ export function useParticleEmitter() {
           }
         );
       }, i * 30);
+      pendingTimersRef.current.push(id);
     }
   }, [emitParticles]);
 
@@ -297,7 +311,13 @@ export function useParticleEmitter() {
     };
 
     animId = requestAnimationFrame(tick);
-    return () => { if (animId) cancelAnimationFrame(animId); };
+    return () => {
+      if (animId) cancelAnimationFrame(animId);
+      // M1: Clear any pending emission timers to prevent post-unmount fires
+      activeRef.current = false;
+      for (const t of pendingTimersRef.current) clearTimeout(t);
+      pendingTimersRef.current = [];
+    };
   }, []);
 
   // Expose a snapshot of particles for the canvas renderer
