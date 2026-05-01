@@ -209,7 +209,15 @@ export function CompanionGameView({
   players: initialPlayers, song, settings, onUpdatePlayers, onEndGame,
 }: CompanionGameViewProps) {
   const safeSettings: CompanionSingAlongSettings = settings ?? DEFAULT_SETTINGS;
-  const party = usePartyStore();
+  // H6: Use individual selectors to avoid re-renders on unrelated party state changes
+  const setIsSongPlaying = usePartyStore(s => s.setIsSongPlaying);
+  const pauseDialogAction = usePartyStore(s => s.pauseDialogAction);
+  const setCompanionSeriesHistory = usePartyStore(s => s.setCompanionSeriesHistory);
+  const companionSeriesHistory = usePartyStore(s => s.companionSeriesHistory);
+  const setCompanionPlayers = usePartyStore(s => s.setCompanionPlayers);
+  const companionPlayers = usePartyStore(s => s.companionPlayers);
+  const setCompanionSong = usePartyStore(s => s.setCompanionSong);
+  const setCompanionSettings = usePartyStore(s => s.setCompanionSettings);
 
   // ── Phase management ──
   const [phase, setPhase] = useState<GamePhase>('intro');
@@ -218,6 +226,8 @@ export function CompanionGameView({
   // ── Audio ──
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
+  const currentTimeRef = useRef(currentTime);
+  currentTimeRef.current = currentTime;
   const [isPlaying, setIsPlaying] = useState(false);
 
   // ── Player state (local, mutable for performance) ──
@@ -244,17 +254,17 @@ export function CompanionGameView({
 
   // ── Song playing status for Escape handler ──
   useEffect(() => {
-    party.setIsSongPlaying(isPlaying && (phase === 'playing' || phase === 'switching'));
-  }, [isPlaying, phase, party]);
+    setIsSongPlaying(isPlaying && (phase === 'playing' || phase === 'switching'));
+  }, [isPlaying, phase, setIsSongPlaying]);
 
   // ── Pause / Resume sync with page.tsx dialog ──
   useEffect(() => {
-    if (party.pauseDialogAction === 'song-pause') {
+    if (pauseDialogAction === 'song-pause') {
       if (audioRef.current && !audioRef.current.paused) audioRef.current.pause();
-    } else if (party.pauseDialogAction === null && isPlaying && (phase === 'playing' || phase === 'switching')) {
+    } else if (pauseDialogAction === null && isPlaying && (phase === 'playing' || phase === 'switching')) {
       if (audioRef.current && audioRef.current.paused) audioRef.current.play().catch(() => {});
     }
-  }, [party.pauseDialogAction, isPlaying, phase]);
+  }, [pauseDialogAction, isPlaying, phase]);
 
   // ── Pre-compute scoring metadata ──
   const scoringMeta = useRef<ReturnType<typeof calculateScoringMetadata> | null>(null);
@@ -306,12 +316,14 @@ export function CompanionGameView({
   }, [stop]);
 
   // ── Score the active player based on pitch ──
+  // H5: Use currentTimeRef to read latest time without recreating this callback
+  //     on every currentTime change. The 80ms interval stays stable.
   const scoreCurrentPlayer = useCallback(() => {
     if (!pitchResult) return;
     const difficulty = safeSettings.difficulty;
     if (shouldSkipPitch(pitchResult, difficulty)) return;
 
-    const ct = currentTime;
+    const ct = currentTimeRef.current;
     const activeNote = findActiveNote(song.lyrics, ct);
     if (!activeNote) return;
 
@@ -334,7 +346,7 @@ export function CompanionGameView({
 
     playersRef.current[idx] = { ...p };
     forceRender();
-  }, [currentTime, pitchResult, song, safeSettings.difficulty, currentPlayerIndex, forceRender]);
+  }, [pitchResult, song, safeSettings.difficulty, currentPlayerIndex, forceRender]);
 
   // ── Game loop: score during playing ──
   useEffect(() => {
@@ -468,7 +480,7 @@ export function CompanionGameView({
         notesMissed: p.notesMissed, maxCombo: p.maxCombo,
       };
     }
-    party.setCompanionSeriesHistory([...party.companionSeriesHistory, round]);
+    setCompanionSeriesHistory([...companionSeriesHistory, round]);
   }, [song, party]);
 
   // ── Continue series: pick next song ──
@@ -476,7 +488,7 @@ export function CompanionGameView({
     const resetPlayers = playersRef.current.map(p => ({
       ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, turnCount: 0,
     }));
-    party.setCompanionPlayers(resetPlayers);
+    setCompanionPlayers(resetPlayers);
     onEndGame();
   }, [party, onEndGame]);
 
@@ -537,8 +549,8 @@ export function CompanionGameView({
               </div>
               <div className="text-sm text-white/40">
                 {playersRef.current.length} players • 20–45s turns
-                {party.companionSeriesHistory.length > 0 && (
-                  <span> • Round {party.companionSeriesHistory.length + 1}</span>
+                {companionSeriesHistory.length > 0 && (
+                  <span> • Round {companionSeriesHistory.length + 1}</span>
                 )}
               </div>
               <p className="text-xs text-white/30 mt-2">
@@ -729,10 +741,10 @@ export function CompanionGameView({
       {/* ── PHASE: SERIES RESULTS ── */}
       {phase === 'series-results' && (
         <CompanionSeriesResults onBack={() => {
-          party.setCompanionPlayers([]);
-          party.setCompanionSong(null);
-          party.setCompanionSettings(null);
-          party.setCompanionSeriesHistory([]);
+          setCompanionPlayers([]);
+          setCompanionSong(null);
+          setCompanionSettings(null);
+          setCompanionSeriesHistory([]);
           onEndGame();
         }} />
       )}
@@ -744,12 +756,12 @@ export function CompanionGameView({
 
 function CompanionSeriesResults({ onBack }: { onBack: () => void }) {
   const party = usePartyStore();
-  const history = party.companionSeriesHistory;
+  const history = companionSeriesHistory;
 
   const [cumulative, setCumulative] = useState<Record<string, { name: string; avatar?: string; color: string; totalScore: number; totalHits: number; totalMisses: number; bestCombo: number; roundsPlayed: number }>>({});
   useEffect(() => {
     const agg: Record<string, { name: string; avatar?: string; color: string; totalScore: number; totalHits: number; totalMisses: number; bestCombo: number; roundsPlayed: number }> = {};
-    for (const p of party.companionPlayers) {
+    for (const p of companionPlayers) {
       agg[p.id] = { name: p.name, avatar: p.avatar, color: p.color, totalScore: 0, totalHits: 0, totalMisses: 0, bestCombo: 0, roundsPlayed: 0 };
     }
     if (Object.keys(agg).length === 0) {
@@ -770,7 +782,7 @@ function CompanionSeriesResults({ onBack }: { onBack: () => void }) {
       }
     }
     setCumulative(agg);
-  }, [history, party.companionPlayers]);
+  }, [history, companionPlayers]);
 
   const sortedPlayers = Object.entries(cumulative)
     .sort(([, a], [, b]) => b.totalScore - a.totalScore);
