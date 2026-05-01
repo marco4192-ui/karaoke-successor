@@ -442,7 +442,9 @@ function generateNotesFromText(text: string, startTime: number, endTime: number)
   const noteDuration = words.length > 0 ? totalDuration / words.length : totalDuration;
 
   return words.map((word, i) => {
-    const pitch = 60 + Math.floor(Math.random() * 12);
+    // Use a deterministic pitch based on word index (C4 = MIDI 60) instead of
+    // Math.random() so the same text always produces the same note layout.
+    const pitch = 60 + (i % 12);
     return {
       id: `note-${i}`,
       pitch,
