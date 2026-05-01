@@ -47,35 +47,49 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
   }
 
   try {
+    // Restore all URLs in parallel instead of sequentially
+    const urlPromises: Promise<void>[] = [];
+
     // Restore audio URL from songs folder — only if missing
     if (song.relativeAudioPath && !song.audioUrl) {
-      const url = await getSongMediaUrl(song.relativeAudioPath, resolvedFolder ?? undefined);
-      if (url) {
-        restored.audioUrl = url;
-      } else {
-        console.warn('[SongLibrary] Failed to restore audio URL for', song.title, '- file may not exist:', song.relativeAudioPath);
-      }
+      urlPromises.push(
+        getSongMediaUrl(song.relativeAudioPath, resolvedFolder ?? undefined).then(url => {
+          if (url) {
+            restored.audioUrl = url;
+          } else {
+            console.warn('[SongLibrary] Failed to restore audio URL for', song.title, '- file may not exist:', song.relativeAudioPath);
+          }
+        }),
+      );
     }
 
     // Restore video URL from songs folder — only if missing
     if (song.relativeVideoPath && !song.videoBackground) {
-      const url = await getSongMediaUrl(song.relativeVideoPath, resolvedFolder ?? undefined);
-      if (url) {
-        restored.videoBackground = url;
-      } else {
-        console.warn('[SongLibrary] Failed to restore video URL for', song.title, '- file may not exist:', song.relativeVideoPath);
-      }
+      urlPromises.push(
+        getSongMediaUrl(song.relativeVideoPath, resolvedFolder ?? undefined).then(url => {
+          if (url) {
+            restored.videoBackground = url;
+          } else {
+            console.warn('[SongLibrary] Failed to restore video URL for', song.title, '- file may not exist:', song.relativeVideoPath);
+          }
+        }),
+      );
     }
 
     // Restore cover URL from songs folder — only if missing
     if (song.relativeCoverPath && !song.coverImage) {
-      const url = await getSongMediaUrl(song.relativeCoverPath, resolvedFolder ?? undefined);
-      if (url) {
-        restored.coverImage = url;
-      } else {
-        console.warn('[SongLibrary] Failed to restore cover URL for', song.title, '- file may not exist:', song.relativeCoverPath);
-      }
+      urlPromises.push(
+        getSongMediaUrl(song.relativeCoverPath, resolvedFolder ?? undefined).then(url => {
+          if (url) {
+            restored.coverImage = url;
+          } else {
+            console.warn('[SongLibrary] Failed to restore cover URL for', song.title, '- file may not exist:', song.relativeCoverPath);
+          }
+        }),
+      );
     }
+
+    await Promise.all(urlPromises);
   } catch (error) {
     console.error('[SongLibrary] Failed to restore song URLs:', error);
   }

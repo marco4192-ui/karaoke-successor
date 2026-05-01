@@ -56,17 +56,32 @@ const CACHE_VERSION = 1;
 const DB_NAME = 'karaoke-successor-cache';
 const STORE_NAME = 'library';
 
-// Get IndexedDB instance
+// Cached DB connection to avoid opening IndexedDB on every call
+let cachedDB: IDBDatabase | null = null;
+let dbOpenPromise: Promise<IDBDatabase> | null = null;
+
+// Get IndexedDB instance — caches the connection for the app lifetime
 function openDatabase(): Promise<IDBDatabase> {
+  if (cachedDB) return Promise.resolve(cachedDB);
+  if (dbOpenPromise) return dbOpenPromise;
+
   if (typeof indexedDB === 'undefined') {
     return Promise.reject(new Error('[LibraryCache] IndexedDB not available'));
   }
-  return new Promise((resolve, reject) => {
+
+  dbOpenPromise = new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, CACHE_VERSION);
     
-    request.onerror = () => reject(request.error);
+    request.onerror = () => {
+      dbOpenPromise = null;
+      reject(request.error);
+    };
     
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = () => {
+      cachedDB = request.result;
+      dbOpenPromise = null;
+      resolve(cachedDB!);
+    };
     
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
@@ -75,6 +90,8 @@ function openDatabase(): Promise<IDBDatabase> {
       }
     };
   });
+
+  return dbOpenPromise;
 }
 
 // Save cache to IndexedDB

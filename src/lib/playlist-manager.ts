@@ -254,12 +254,14 @@ export function recordSongPlay(songId: string): void {
     countMap.set(songId, counts[songId]);
 
     // Sort by play count descending, then by recency (existing order = more recent first)
+    // Use a Map for O(1) index lookup instead of O(n) indexOf per comparison
+    const recencyMap = new Map(existingIds.map((id, idx) => [id, idx]));
     mostPlayedPlaylist.songIds = [...countMap.keys()]
       .sort((a, b) => {
         const countDiff = (countMap.get(b) || 0) - (countMap.get(a) || 0);
         if (countDiff !== 0) return countDiff;
         // Tiebreaker: more recently played (earlier in existing list) first
-        return existingIds.indexOf(a) - existingIds.indexOf(b);
+        return (recencyMap.get(a) ?? 0) - (recencyMap.get(b) ?? 0);
       })
       .slice(0, 100);
     mostPlayedPlaylist.updatedAt = now;

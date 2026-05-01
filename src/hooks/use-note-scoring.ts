@@ -160,6 +160,11 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   const noteProgressRef = useRef<Map<string, NoteProgress>>(new Map());
   const p2NoteProgressRef = useRef<Map<string, NoteProgress>>(new Map());
 
+  // Track last processed note index to avoid O(n) scan from start every frame
+  const lastProcessedNoteRef = useRef(0);
+  // Track last processed note index for P2 (checkPlayerNoteHits)
+  const lastProcessedNoteP2Ref = useRef(0);
+
   // Ref to always have the latest players array — prevents stale closure issues
   // when checkNoteHits is called from requestAnimationFrame
   const playersRef = useRef(players);
@@ -179,6 +184,8 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     setP2DetectedPitch(null);
     noteProgressRef.current.clear();
     p2NoteProgressRef.current.clear();
+    lastProcessedNoteRef.current = 0;
+    lastProcessedNoteP2Ref.current = 0;
     
   }, []);
 
@@ -206,12 +213,21 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       const beatDurationMs = timingData?.beatDuration || 500;
       const playerState = stateRef.current; // Always read latest from ref
 
-      for (const note of notesToCheck) {
+      // Start from last processed index for O(1) forward progression
+      // Reset to 0 if time went backward (e.g. seek)
+      const searchStartRef = _playerIndex === 1 ? lastProcessedNoteP2Ref : lastProcessedNoteRef;
+      if (searchStartRef.current > 0 && notesToCheck.length > 0 &&
+          notesToCheck[searchStartRef.current].startTime > currentTime) {
+        searchStartRef.current = 0;
+      }
+      for (let ni = searchStartRef.current; ni < notesToCheck.length; ni++) {
+        const note = notesToCheck[ni];
         const noteEnd = note.startTime + note.duration;
         const noteId = note.id || `${noteIdPrefix}-${note.startTime}`;
 
         // Check if we're in the note's time window
         if (currentTime >= note.startTime && currentTime <= noteEnd) {
+          searchStartRef.current = ni;
           let noteProgress = noteProgressMap.current.get(noteId);
 
           if (!noteProgress) {
@@ -284,20 +300,19 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
 
         // Check if we just passed a note
         if (currentTime > noteEnd) {
-          const noteId = note.id || `${noteIdPrefix}-${note.startTime}`;
-          const noteProgress = noteProgressMap.current.get(noteId);
+          const progress = noteProgressMap.current.get(noteId);
 
-          if (noteProgress && !noteProgress.isComplete) {
-            noteProgress.isComplete = true;
+          if (progress && !progress.isComplete) {
+            progress.isComplete = true;
 
-            if (noteProgress.ticksHit > 0) {
+            if (progress.ticksHit > 0) {
               setPlayerState(prev => ({ ...prev, notesHit: prev.notesHit + 1 }));
             } else {
               setPlayerState(prev => ({ ...prev, notesMissed: prev.notesMissed + 1 }));
             }
 
-            if (noteProgress.ticksHit >= noteProgress.totalTicks) {
-              noteProgress.wasPerfect = true;
+            if (progress.ticksHit >= progress.totalTicks) {
+              progress.wasPerfect = true;
             }
           }
         }
@@ -338,11 +353,19 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       let notesMissedDelta = 0;
       let hasPlayerUpdates = false;
 
-      for (const note of notesToCheck) {
+      // Start from last processed index for O(1) forward progression
+      // Reset to 0 if time went backward (e.g. seek)
+      if (lastProcessedNoteRef.current > 0 && notesToCheck.length > 0 &&
+          notesToCheck[lastProcessedNoteRef.current].startTime > currentTime) {
+        lastProcessedNoteRef.current = 0;
+      }
+      for (let ni = lastProcessedNoteRef.current; ni < notesToCheck.length; ni++) {
+        const note = notesToCheck[ni];
         const noteEnd = note.startTime + note.duration;
         const noteId = note.id || `note-${note.startTime}`;
 
         if (currentTime >= note.startTime && currentTime <= noteEnd) {
+          lastProcessedNoteRef.current = ni;
           let noteProgress = noteProgressRef.current.get(noteId);
 
           if (!noteProgress) {
@@ -463,7 +486,6 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         }
 
         if (currentTime > noteEnd) {
-          const noteId = note.id || `note-${note.startTime}`;
           const noteProgress = noteProgressRef.current.get(noteId);
 
           if (noteProgress && !noteProgress.isComplete) {

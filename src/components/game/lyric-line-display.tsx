@@ -36,6 +36,27 @@ interface LyricLineDisplayProps {
 // Shared empty Map to avoid creating a new one on every render (defeats React.memo)
 const EMPTY_NOTE_PERFORMANCE = new Map<string, Array<{ hit: boolean; accuracy: number }>>();
 
+// Shared interval for polling localStorage style changes.
+// Prevents 15-25 parallel 5s intervals when many LyricLineDisplay instances are mounted.
+let sharedStyleInterval: ReturnType<typeof setInterval> | null = null;
+const sharedStyleListeners = new Set<() => void>();
+
+function subscribeToLyricStyleChange(listener: () => void): () => void {
+  sharedStyleListeners.add(listener);
+  if (!sharedStyleInterval) {
+    sharedStyleInterval = setInterval(() => {
+      for (const fn of sharedStyleListeners) fn();
+    }, 5000);
+  }
+  return () => {
+    sharedStyleListeners.delete(listener);
+    if (sharedStyleListeners.size === 0 && sharedStyleInterval) {
+      clearInterval(sharedStyleInterval);
+      sharedStyleInterval = null;
+    }
+  };
+}
+
 export function LyricLineDisplay({
   line,
   currentTime,
@@ -65,11 +86,11 @@ export function LyricLineDisplay({
     }
 
     window.addEventListener('storage', handleStyleChange);
-    // Also check periodically for changes (since storage events only fire in other tabs)
-    const interval = setInterval(handleStyleChange, 5000);
+    // Use shared interval instead of per-instance interval
+    const unsubscribe = subscribeToLyricStyleChange(handleStyleChange);
     return () => {
       window.removeEventListener('storage', handleStyleChange);
-      clearInterval(interval);
+      unsubscribe();
     };
   }, []);
 

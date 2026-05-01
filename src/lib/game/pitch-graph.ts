@@ -50,9 +50,12 @@ export class PitchGraphRenderer {
   addPoint(pitch: number | null, time: number, isTarget: boolean, accuracy?: number): void {
     this.history.push({ time, pitch, isTarget, accuracy });
     
-    // Remove old points outside time window
+    // Remove old points outside time window — use findIndex+slice since history is time-ordered
     const cutoff = time - this.config.timeWindow;
-    this.history = this.history.filter(p => p.time >= cutoff);
+    const cutoffIdx = this.history.findIndex(p => p.time >= cutoff);
+    if (cutoffIdx > 0) {
+      this.history = this.history.slice(cutoffIdx);
+    }
   }
 
   addTargetNote(pitch: number, startTime: number, duration: number): void {

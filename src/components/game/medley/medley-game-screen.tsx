@@ -202,10 +202,14 @@ export function MedleyGameScreen({
     if (!snippetLyrics.length || !currentSnippet) return null;
     const songTime = currentTimeMs;
     const absoluteTime = currentSnippet.startTime + currentTimeMs;
-    return snippetLyrics.find(line => {
-      const nextLine = snippetLyrics[snippetLyrics.indexOf(line) + 1];
-      return absoluteTime >= line.startTime && (!nextLine || absoluteTime < nextLine.startTime);
-    }) || null;
+    for (let i = 0; i < snippetLyrics.length; i++) {
+      const line = snippetLyrics[i];
+      const nextLine = snippetLyrics[i + 1];
+      if (absoluteTime >= line.startTime && (!nextLine || absoluteTime < nextLine.startTime)) {
+        return line;
+      }
+    }
+    return null;
   }, [currentTimeMs, snippetLyrics, currentSnippet]);
 
   // ── Get active players for current snippet ──
