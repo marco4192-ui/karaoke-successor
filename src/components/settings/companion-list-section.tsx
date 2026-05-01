@@ -61,6 +61,12 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
   const [assigningId, setAssigningId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear success-message timer on unmount
+  useEffect(() => {
+    return () => { if (successTimerRef.current) clearTimeout(successTimerRef.current); };
+  }, []);
 
   // Get active profiles from store for character assignment dropdown
   const profiles = useGameStore((state) => state.profiles);
@@ -141,7 +147,8 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
   // Flash success message
   const showSuccess = (msg: string) => {
     setSuccessMessage(msg);
-    setTimeout(() => setSuccessMessage(null), 3000);
+    if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    successTimerRef.current = setTimeout(() => setSuccessMessage(null), 3000);
   };
 
   if (isLoading) {

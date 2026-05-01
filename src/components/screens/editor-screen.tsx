@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -29,6 +29,12 @@ function GenreLanguageEditor({
   const [customLanguage, setCustomLanguage] = useState(song.language || '');
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const saveMessageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear save-message timer on unmount
+  useEffect(() => {
+    return () => { if (saveMessageTimerRef.current) clearTimeout(saveMessageTimerRef.current); };
+  }, []);
 
   const handleGenreSelect = (genre: string) => {
     setCustomGenre(genre);
@@ -74,11 +80,13 @@ function GenreLanguageEditor({
         setSaveMessage(`❌ ${result.message}`);
       }
       
-      setTimeout(() => setSaveMessage(null), 3000);
+      if (saveMessageTimerRef.current) clearTimeout(saveMessageTimerRef.current);
+      saveMessageTimerRef.current = setTimeout(() => setSaveMessage(null), 3000);
     } catch (error) {
       console.error('Save error:', error);
       setSaveMessage('❌ Fehler beim Speichern');
-      setTimeout(() => setSaveMessage(null), 3000);
+      if (saveMessageTimerRef.current) clearTimeout(saveMessageTimerRef.current);
+      saveMessageTimerRef.current = setTimeout(() => setSaveMessage(null), 3000);
     } finally {
       setIsSaving(false);
     }

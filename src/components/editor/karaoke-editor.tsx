@@ -38,6 +38,9 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   const [saveResult, setSaveResult] = useState<SaveResult | null>(null);
   const [showSidebar, setShowSidebar] = useState(true); // Sidebar visible by default
 
+  // Ref to track save-result dismissal timer so it can be cleared on unmount
+  const saveResultTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // ── Restore media URLs for Tauri (audioUrl from relativeAudioPath) ──
   useEffect(() => {
     const restoreUrls = async () => {
@@ -53,6 +56,13 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     };
     restoreUrls();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Clear save-result timer on unmount to prevent state updates after unmount
+  useEffect(() => {
+    return () => {
+      if (saveResultTimerRef.current) clearTimeout(saveResultTimerRef.current);
+    };
+  }, []);
 
   const {
     pushHistory, undo: historyUndo, redo: historyRedo,
@@ -157,7 +167,8 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
       const result = await saveSongToTxt(currentSong);
       setSaveResult(result);
       setHasUnsavedChanges(false);
-      setTimeout(() => setSaveResult(null), 5000);
+      if (saveResultTimerRef.current) clearTimeout(saveResultTimerRef.current);
+      saveResultTimerRef.current = setTimeout(() => setSaveResult(null), 5000);
     } catch (error) {
       console.error('Save error:', error);
       setSaveResult({
@@ -180,7 +191,8 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
       const result = await saveSongToTxt(currentSong);
       setSaveResult(result);
       setHasUnsavedChanges(false);
-      setTimeout(() => setSaveResult(null), 5000);
+      if (saveResultTimerRef.current) clearTimeout(saveResultTimerRef.current);
+      saveResultTimerRef.current = setTimeout(() => setSaveResult(null), 5000);
     } catch (error) {
       console.error('Save error:', error);
       setSaveResult({

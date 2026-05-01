@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import type { MobileSong, MobileProfile, QueueItem, GameResults, JukeboxWishlistItem, GameMode } from '@/components/screens/mobile/mobile-types';
 
 interface UseMobileDataOptions {
@@ -19,6 +19,14 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [slotsRemaining, setSlotsRemaining] = useState(3);
   const [queueError, setQueueError] = useState<string | null>(null);
+
+  // Ref for queue-error dismissal timer
+  const queueErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear queue-error timer on unmount
+  useEffect(() => {
+    return () => { if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current); };
+  }, []);
 
   // Partner and game mode selection
   const [selectedPartner, setSelectedPartner] = useState<{ id: string; name: string } | null>(null);
@@ -150,7 +158,8 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
     }
     if (slotsRemaining <= 0) {
       setQueueError('Maximum 3 songs in queue. Wait for a song to finish!');
-      setTimeout(() => setQueueError(null), 3000);
+      if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);
+      queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
       return;
     }
     setQueueError(null);
@@ -182,11 +191,13 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
       } else if (data.queueFull) {
         setQueueError('Maximum 3 songs in queue!');
         setSlotsRemaining(0);
-        setTimeout(() => setQueueError(null), 3000);
+        if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);
+        queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
       }
     } catch {
       setQueueError('Failed to add song');
-      setTimeout(() => setQueueError(null), 3000);
+      if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);
+      queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
     }
   }, [profile, clientId, slotsRemaining, selectedGameMode, selectedPartner, onNavigateToProfile]);
 
@@ -204,11 +215,13 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
         setSlotsRemaining(prev => Math.min(3, prev + 1));
       } else {
         setQueueError(data.message || 'Failed to remove song');
-        setTimeout(() => setQueueError(null), 3000);
+        if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);
+        queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
       }
     } catch {
       setQueueError('Failed to remove song');
-      setTimeout(() => setQueueError(null), 3000);
+      if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);
+      queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
     }
   }, [clientId]);
 

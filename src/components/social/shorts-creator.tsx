@@ -291,21 +291,27 @@ export function ShortsCreator({ song, score, gameResult, audioUrl, onClose }: Sh
     }
   }, [song, score, style, styleConfig, cameraPosition, hasCamera, isRecording, duration, recordingStartTime]);
 
-  // Animation loop
+  // Animation loop — only run continuous rAF during recording; draw single static preview otherwise
   useEffect(() => {
     let animationId: number;
-    
+
+    if (!isRecording) {
+      // Draw a single preview frame when not recording
+      drawFrame(performance.now());
+      return undefined;
+    }
+
     const animate = (timestamp: number) => {
       drawFrame(timestamp);
       animationId = requestAnimationFrame(animate);
     };
-    
+
     animationId = requestAnimationFrame(animate);
-    
+
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [drawFrame]);
+  }, [drawFrame, isRecording]);
 
   // Cleanup camera on unmount
   useEffect(() => {

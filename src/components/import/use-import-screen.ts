@@ -59,6 +59,12 @@ export function useImportScreen(onImport: (song: Song) => void) {
   // Store Tauri scan result for native import path
   const tauriScanResultRef = useRef<any>(null);
   const tauriScanFolderRef = useRef<string | null>(null);
+  const autoNavTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear auto-navigation timer on unmount
+  useEffect(() => {
+    return () => { if (autoNavTimerRef.current) clearTimeout(autoNavTimerRef.current); };
+  }, []);
 
   // H20: Re-compute existingSongs on every render so re-scans detect duplicates correctly.
   // The empty dependency array caused stale data after songs were added.
@@ -399,7 +405,8 @@ export function useImportScreen(onImport: (song: Song) => void) {
         });
 
         if (songsToImport.length > 0) {
-          setTimeout(() => onImport(songsToImport[0]), 1500);
+          if (autoNavTimerRef.current) clearTimeout(autoNavTimerRef.current);
+          autoNavTimerRef.current = setTimeout(() => onImport(songsToImport[0]), 1500);
         }
       } catch (err) {
         setError('Tauri import failed: ' + (err instanceof Error ? err.message : 'Unknown error'));
@@ -452,7 +459,8 @@ export function useImportScreen(onImport: (song: Song) => void) {
     setIsProcessing(false);
 
     if (songsToImport.length > 0) {
-      setTimeout(() => onImport(songsToImport[0]), 1500);
+      if (autoNavTimerRef.current) clearTimeout(autoNavTimerRef.current);
+      autoNavTimerRef.current = setTimeout(() => onImport(songsToImport[0]), 1500);
     }
   };
 

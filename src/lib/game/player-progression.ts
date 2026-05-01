@@ -466,7 +466,11 @@ export function getExtendedStats(): ExtendedPlayerStats {
 
 export function saveExtendedStats(stats: ExtendedPlayerStats): void {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(EXTENDED_STATS_KEY, JSON.stringify(stats));
+  try {
+    localStorage.setItem(EXTENDED_STATS_KEY, JSON.stringify(stats));
+  } catch {
+    // localStorage may be full or unavailable — silently ignore
+  }
 }
 
 function getDefaultStats(): ExtendedPlayerStats {

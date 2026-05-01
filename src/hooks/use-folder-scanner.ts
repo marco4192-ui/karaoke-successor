@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { getAllSongs, clearCustomSongs, replaceCustomSongs, acquireScanLock, invalidateSongCache, clearSongCache } from '@/lib/game/song-library';
 import { clearCustomSongsFromDB } from '@/lib/db/custom-songs-db';
 import { Song } from '@/types/game';
@@ -43,6 +43,18 @@ export function useFolderScanner(): UseFolderScannerReturn {
   const [folderSaveComplete, setFolderSaveComplete] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [resetComplete, setResetComplete] = useState(false);
+
+  // Refs for setTimeout cleanup
+  const scanProgressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resetCompleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear timers on unmount
+  useEffect(() => {
+    return () => {
+      if (scanProgressTimerRef.current) clearTimeout(scanProgressTimerRef.current);
+      if (resetCompleteTimerRef.current) clearTimeout(resetCompleteTimerRef.current);
+    };
+  }, []);
 
   // Initialize folder and song count from localStorage
   const initializeFromStorage = useCallback(() => {
@@ -271,7 +283,8 @@ export function useFolderScanner(): UseFolderScannerReturn {
     }
 
     setIsScanning(false);
-    setTimeout(() => {
+    if (scanProgressTimerRef.current) clearTimeout(scanProgressTimerRef.current);
+    scanProgressTimerRef.current = setTimeout(() => {
       setFolderSaveComplete(false);
       setScanProgress(null);
     }, 5000);
@@ -364,7 +377,8 @@ export function useFolderScanner(): UseFolderScannerReturn {
       setSongCount(0);
       setResetComplete(true);
 
-      setTimeout(() => setResetComplete(false), 3000);
+      if (resetCompleteTimerRef.current) clearTimeout(resetCompleteTimerRef.current);
+      resetCompleteTimerRef.current = setTimeout(() => setResetComplete(false), 3000);
     } catch (error) {
       console.error('Failed to reset library:', error);
     } finally {
