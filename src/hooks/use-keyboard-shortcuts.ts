@@ -2,7 +2,7 @@
  * Custom hook for keyboard shortcuts
  */
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 
 export interface KeyboardShortcut {
   key: string;
@@ -14,6 +14,11 @@ export interface KeyboardShortcut {
 }
 
 export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]) {
+  // Use a ref to avoid re-registering the event listener on every render
+  // when the shortcuts array reference changes (inline construction).
+  const shortcutsRef = useRef(shortcuts);
+  shortcutsRef.current = shortcuts;
+
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     // Don't trigger shortcuts when typing in input fields
     const target = event.target as HTMLElement;
@@ -21,7 +26,7 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]) {
       return;
     }
 
-    for (const shortcut of shortcuts) {
+    for (const shortcut of shortcutsRef.current) {
       const keyMatch = event.key.toLowerCase() === shortcut.key.toLowerCase();
       const ctrlMatch = shortcut.ctrl ? event.ctrlKey || event.metaKey : !event.ctrlKey && !event.metaKey;
       const shiftMatch = shortcut.shift ? event.shiftKey : !event.shiftKey;
@@ -33,7 +38,7 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]) {
         break;
       }
     }
-  }, [shortcuts]);
+  }, []); // Stable - reads from ref, no deps needed
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
