@@ -25,7 +25,8 @@ function generatePassTheMicSegments(song: Song, playerCount: number, explicitDur
   const segDurMs = segDur * 1000;
 
   const rawCount = Math.ceil(durationMs / segDurMs);
-  const segCount = Math.max(playerCount, rawCount);
+  // Round up to a multiple of playerCount so segments can be distributed equally
+  const segCount = Math.max(playerCount, Math.ceil(rawCount / playerCount) * playerCount);
   const adjustedDurMs = durationMs / segCount;
 
   const segments: PassTheMicSegment[] = [];
