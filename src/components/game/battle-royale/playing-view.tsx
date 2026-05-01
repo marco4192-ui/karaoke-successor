@@ -43,28 +43,31 @@ export function PlayingView({
   const currentRound = game.rounds[game.rounds.length - 1];
   // Guard: only allow onEnded to fire if audio actually started playing
   const audioStartedRef = React.useRef(false);
-  const party = usePartyStore();
+  // H7: Use individual selectors to avoid re-renders on unrelated party state changes
+  const setIsSongPlaying = usePartyStore(s => s.setIsSongPlaying);
+  const pauseDialogAction = usePartyStore(s => s.pauseDialogAction);
+  const setPauseDialogAction = usePartyStore(s => s.setPauseDialogAction);
 
   // ── Report song playing status to page.tsx for Escape handler ──
   useEffect(() => {
-    party.setIsSongPlaying(true);
-    return () => { party.setIsSongPlaying(false); };
-  }, [party]);
+    setIsSongPlaying(true);
+    return () => { setIsSongPlaying(false); };
+  }, [setIsSongPlaying]);
 
   // ── Pause / Resume when page.tsx shows/hides the song-pause dialog ──
   useEffect(() => {
-    if (party.pauseDialogAction === 'song-pause') {
+    if (pauseDialogAction === 'song-pause') {
       // Pause audio
       if (audioRef.current && !audioRef.current.paused) {
         audioRef.current.pause();
       }
-    } else if (party.pauseDialogAction === null) {
+    } else if (pauseDialogAction === null) {
       // Resume audio (only if it was paused and we're still in playing state)
       if (audioRef.current && audioRef.current.paused && game.status === 'playing' && audioStartedRef.current) {
         audioRef.current.play().catch(() => {});
       }
     }
-  }, [party.pauseDialogAction, game.status]);
+  }, [pauseDialogAction, game.status]);
 
   // Determine the 3 lowest active players for danger pulsing (Fix 2f)
   const activeSorted = sortedPlayers.filter(p => !p.eliminated);
@@ -123,7 +126,7 @@ export function PlayingView({
               audioRef.current.pause();
             }
             // Trigger the song-pause dialog in page.tsx
-            party.setPauseDialogAction('song-pause');
+            setPauseDialogAction('song-pause');
           }}
           className="text-white/60 hover:text-white hover:bg-white/10"
         >
