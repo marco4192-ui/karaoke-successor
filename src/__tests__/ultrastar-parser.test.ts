@@ -170,10 +170,9 @@ E`;
 E`;
 
       const song = parseUltraStarTxt(content);
-      // The parser does: value.trim() !== '' ? parseInt(value) : undefined
-      // '0' is not empty, so parseInt('0') = 0... but the code checks !== ''
-      // So it would set song.end = 0, not undefined
-      expect(song.end).toBe(0);
+      // H16: #END:0 is treated as undefined — a song ending at 0ms is nonsensical.
+      // The parser checks endVal > 0 and maps 0 to undefined.
+      expect(song.end).toBeUndefined();
     });
 
     it('handles empty #END: value', () => {
