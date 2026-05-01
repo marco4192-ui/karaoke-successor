@@ -100,11 +100,20 @@ export function useNativeAudio(): UseNativeAudioResult {
   useEffect(() => {
     refreshDevices();
 
+    // H9: Track whether this effect is still active to prevent listener leaks.
+    // If the effect is cleaned up before the Promise resolves, the unlisten
+    // function would never be stored in the ref and the listener leaks permanently.
+    let cancelled = false;
+
     // Setup event listeners (gracefully degrade if event plugin is unavailable)
     onAudioTimeUpdate((pos) => {
       setCurrentPosition(pos);
     }).then((unlisten) => {
-      unlistenTimeRef.current = unlisten;
+      if (cancelled) {
+        unlisten();
+      } else {
+        unlistenTimeRef.current = unlisten;
+      }
     }).catch((err) => {
       console.warn('[NativeAudio] Could not register time-update listener (non-fatal):', err);
     });
@@ -114,14 +123,21 @@ export function useNativeAudio(): UseNativeAudioResult {
       setCurrentPosition(0);
       setPlaybackState(null);
     }).then((unlisten) => {
-      unlistenEndedRef.current = unlisten;
+      if (cancelled) {
+        unlisten();
+      } else {
+        unlistenEndedRef.current = unlisten;
+      }
     }).catch((err) => {
       console.warn('[NativeAudio] Could not register ended listener (non-fatal):', err);
     });
 
     return () => {
+      cancelled = true;
       unlistenTimeRef.current?.();
+      unlistenTimeRef.current = null;
       unlistenEndedRef.current?.();
+      unlistenEndedRef.current = null;
     };
   }, [refreshDevices]);
 
