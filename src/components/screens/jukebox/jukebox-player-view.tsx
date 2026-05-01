@@ -347,13 +347,13 @@ export function JukeboxPlayerView({ j }: { j: UseJukeboxReturn }) {
             </div>
           </Card>
         </div>
+        )}
 
         {/* Controls Bar (normal mode) */}
         {!j.isFullscreen && <ControlsBar j={j} />}
 
         {/* Playlist Sidebar */}
         <PlaylistSidebar j={j} />
-        )}
       </div>
     </>
   );
