@@ -573,7 +573,10 @@ function updatePerformanceStats(stats: ExtendedPlayerStats, game: PlayerGameResu
   stats.averageScore = ((stats.averageScore * (totalGames - 1)) + game.score) / totalGames;
   stats.averageAccuracy = ((stats.averageAccuracy * (totalGames - 1)) + game.accuracy) / totalGames;
   stats.highestScore = Math.max(stats.highestScore, game.score);
-  stats.lowestScore = Math.min(stats.lowestScore, game.score);
+  // lowestScore starts at 0 (default). Treat 0 as "not yet set" so the first
+  // game's score becomes the initial lowest.  This avoids lowestScore being
+  // permanently stuck at 0.
+  stats.lowestScore = stats.lowestScore === 0 ? game.score : Math.min(stats.lowestScore, game.score);
   stats.totalPerfectNotes += game.perfectNotes;
   stats.totalGoldenNotesHit += game.goldenNotes;
 }

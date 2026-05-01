@@ -306,8 +306,8 @@ export function NoteHighway({
   // Get note shape classes from style
   const noteShape = useMemo(() => getNoteShapeClasses(noteShapeStyle), [noteShapeStyle]);
 
-  // Determine color scheme based on playerColor prop
-  const colorScheme = playerColor === PLAYER_COLORS[1] ? 'pink' : 'cyan';
+  // Determine color scheme based on player number (P1=cyan, P2=pink for duet contrast)
+  const colorScheme = playerNumber === 2 ? 'pink' : 'cyan';
   const bgGradientClass = playerNumber === 1
     ? 'absolute inset-0 bg-gradient-to-b from-cyan-900/20 to-transparent pointer-events-none'
     : 'absolute inset-0 bg-gradient-to-t from-pink-900/20 to-transparent pointer-events-none';

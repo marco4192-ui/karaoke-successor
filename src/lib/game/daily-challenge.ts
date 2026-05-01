@@ -250,7 +250,7 @@ export function submitChallengeResult(
     switch (challenge.type) {
       case 'accuracy': return entry.accuracy;
       case 'combo': return entry.combo;
-      case 'perfect_notes': return entry.combo; // combo as proxy for perfect notes when not tracked
+      case 'perfect_notes': return entry.accuracy; // accuracy as proxy until perfectNotes is tracked
       default: return entry.score;
     }
   };

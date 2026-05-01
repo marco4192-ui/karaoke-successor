@@ -51,7 +51,8 @@ export function generateMedleySnippets(
     if (song.medleyStartBeat !== undefined && song.bpm > 0) {
       const bd = beatDurationMs(song.bpm);
       const startTime = song.medleyStartBeat * bd;
-      return { song, startTime, endTime: startTime + snippetMs, duration: snippetMs };
+      const endTime = Math.min(startTime + snippetMs, song.duration);
+      return { song, startTime, endTime, duration: endTime - startTime };
     }
 
     // Priority 3: Random within note range
@@ -64,7 +65,7 @@ export function generateMedleySnippets(
     return {
       song,
       startTime,
-      endTime: startTime + snippetMs,
+      endTime: Math.min(startTime + snippetMs, song.duration),
       duration: snippetMs,
     };
   });
