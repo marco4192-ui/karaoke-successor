@@ -234,12 +234,20 @@ export function finishCompetitiveRound(
     return updated;
   });
 
-  // Check if all rounds are complete
+  // Check if all rounds are complete, OR if we can't form any more pairs
+  // (happens with odd player counts when one player is left without a partner)
   const allRoundsComplete = updatedRounds.length >= game.totalRounds && updatedRounds.every(r => r.completed);
+  const canFormNextPair = getNextRoundPairing({
+    ...game,
+    rounds: updatedRounds,
+    players: updatedPlayers,
+  }) !== null;
+
+  const isGameOver = allRoundsComplete || !canFormNextPair;
 
   // Determine winner
   let winner: CompetitivePlayer | null = null;
-  if (allRoundsComplete) {
+  if (isGameOver) {
     const sorted = [...updatedPlayers].sort((a, b) => b.totalScore - a.totalScore);
     winner = sorted[0] || null;
   }
@@ -248,7 +256,7 @@ export function finishCompetitiveRound(
     ...game,
     rounds: updatedRounds,
     players: updatedPlayers,
-    status: allRoundsComplete ? 'game-over' : 'round-end',
+    status: isGameOver ? 'game-over' : 'round-end',
     winner,
   };
 }
