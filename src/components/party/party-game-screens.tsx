@@ -392,7 +392,6 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           players={party.companionPlayers}
           song={party.companionSong}
           settings={party.companionSettings}
-          onUpdatePlayers={party.setCompanionPlayers}
           onEndGame={() => {
             party.setCompanionPlayers([]);
             party.setCompanionSong(null);

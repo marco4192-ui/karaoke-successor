@@ -117,7 +117,6 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // ── Game State ─────────────────────────────────────────────────────
   const [currentTime, setCurrentTime] = useState(0);
   const gameLoopRef = useRef<number | null>(null);
-  const noteProgressRef = useRef<Map<string, { ticksHit: number; ticksTotal: number }>>(new Map());
   // Throttle setCurrentTime to ~20fps (50ms) — UI display doesn't need 60fps.
   // Scoring uses audioRef.current.currentTime directly, not the state value.
   const lastCurrentTimeUpdateRef = useRef(0);

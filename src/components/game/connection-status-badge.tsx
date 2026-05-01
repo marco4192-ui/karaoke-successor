@@ -74,26 +74,3 @@ export function ConnectionStatusBadge({
     </div>
   );
 }
-
-// ===================== INPUT TYPE BADGE =====================
-// Shows mic icon for microphone players, phone icon for companion players.
-
-interface InputTypeBadgeProps {
-  player: SelectedPlayer;
-}
-
-export function InputTypeBadge({ player }: InputTypeBadgeProps) {
-  if (player.playerType === 'companion') {
-    return (
-      <span className="text-xs" title="Companion-App">
-        📱
-      </span>
-    );
-  }
-
-  return (
-    <span className="text-xs" title={player.micName || 'Mikrofon'}>
-      🎤
-    </span>
-  );
-}

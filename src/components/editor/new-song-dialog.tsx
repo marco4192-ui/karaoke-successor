@@ -97,11 +97,9 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
 
     let lyrics: LyricLine[] = [];
     let lineIndex = 0;
-    let noteIndex = 0;
 
     if (syllableResult && syllableResult.lines.length > 0) {
       let currentBeat = 0;
-      const lineNotes: Note[] = [];
 
       for (const line of syllableResult.lines) {
         const lineStartBeat = currentBeat;
@@ -127,7 +125,6 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
             });
 
             currentBeat += beatsPerSyllable;
-            noteIndex++;
           }
         }
 

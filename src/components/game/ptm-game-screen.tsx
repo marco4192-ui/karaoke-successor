@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Song, PLAYER_COLORS, LyricLine, Difficulty, Note } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
@@ -567,16 +566,7 @@ export function PtmGameScreen({
     countdownIntervalRef.current = interval;
   };
 
-  // ── Helpers ──
-  const progress = effectiveSong?.duration > 0 ? (currentTime / effectiveSong.duration) * 100 : 0;
-  const segmentTimeLeft = currentSegment
-    ? Math.max(0, (currentSegment.endTime - currentTime) / 1000)
-    : 0;
-  const segmentProgress = currentSegment
-    ? ((currentTime - currentSegment.startTime) / (currentSegment.endTime - currentSegment.startTime)) * 100
-    : 0;
-
-  // ── Record round ──
+  // ===================== RENDER =====================
   const recordRound = useCallback(() => {
     const round: PassTheMicRoundResult = {
       songTitle: isMedleyMode ? `Medley (${ptmMedleySnippets.length} Songs)` : (effectiveSong?.title || song.title),
@@ -679,15 +669,6 @@ export function PtmGameScreen({
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     };
   }, [stop]);
-
-  // ── Get current lyrics line ──
-  const getCurrentLyrics = (): LyricLine | null => {
-    if (!notesSource?.lyrics || notesSource.lyrics.length === 0) return null;
-    return notesSource.lyrics.find((line, i) => {
-      const next = notesSource.lyrics[i + 1];
-      return currentTime >= line.startTime && (!next || currentTime < next.startTime);
-    }) || null;
-  };
 
   // ===================== RENDER =====================
 

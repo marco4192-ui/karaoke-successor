@@ -22,15 +22,3 @@ export const PRACTICE_MODE_DEFAULTS: PracticeModeConfig = {
   autoPlayEnabled: false,
   visualAidsEnabled: true,
 };
-
-// Playback rate options
-export const PLAYBACK_RATES = [
-  { value: 0.5, label: '50%', description: 'Very Slow' },
-  { value: 0.6, label: '60%', description: 'Slow' },
-  { value: 0.75, label: '75%', description: 'Moderately Slow' },
-  { value: 0.85, label: '85%', description: 'Slightly Slow' },
-  { value: 1.0, label: '100%', description: 'Normal' },
-  { value: 1.1, label: '110%', description: 'Slightly Fast' },
-  { value: 1.25, label: '125%', description: 'Fast' },
-  { value: 1.5, label: '150%', description: 'Very Fast' },
-];

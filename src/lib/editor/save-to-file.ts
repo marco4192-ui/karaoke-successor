@@ -88,10 +88,3 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
     };
   }
 }
-
-// Check if song can be saved to original location
-export function canSaveToOriginal(song: Song): boolean {
-  // Check if we have the original path info or songs folder
-  const songsFolder = localStorage.getItem('karaoke-songs-folder');
-  return !!(song.relativeTxtPath || (song.folderPath && songsFolder));
-}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface MusicReactiveBackgroundProps {
   volume?: number; // 0-1 volume level
@@ -180,55 +180,5 @@ export function MusicReactiveBackground({
       className="absolute inset-0 w-full h-full"
       style={{ background: 'linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #16213e 100%)' }}
     />
-  );
-}
-
-// Simpler animated gradient background for lower-end systems
-export function AnimatedGradientBackground({ 
-  volume = 0, 
-  isPlaying = false,
-  bpm = 120 
-}: MusicReactiveBackgroundProps) {
-  const [offset, setOffset] = useState(0);
-  
-  useEffect(() => {
-    if (!isPlaying) return;
-    
-    const interval = setInterval(() => {
-      setOffset(prev => (prev + 0.5) % 360);
-    }, 50);
-    
-    return () => clearInterval(interval);
-  }, [isPlaying]);
-  
-  const hue1 = (offset) % 360;
-  const hue2 = (offset + 120) % 360;
-  const hue3 = (offset + 240) % 360;
-  
-  return (
-    <div 
-      className="absolute inset-0 w-full h-full"
-      style={{
-        background: `linear-gradient(${offset}deg, 
-          hsl(${hue1}, 70%, 15%) 0%, 
-          hsl(${hue2}, 60%, 10%) 50%, 
-          hsl(${hue3}, 50%, 8%) 100%
-        )`,
-        transition: 'background 0.3s ease',
-      }}
-    >
-      {/* Animated overlay based on volume */}
-      {isPlaying && volume > 0.1 && (
-        <div 
-          className="absolute inset-0"
-          style={{
-            background: `radial-gradient(circle at 50% 50%, 
-              rgba(34, 211, 238, ${volume * 0.15}) 0%, 
-              transparent 50%
-            )`,
-          }}
-        />
-      )}
-    </div>
   );
 }

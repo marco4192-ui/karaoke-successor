@@ -5,7 +5,6 @@ import { generateId } from '@/lib/utils';
 export type { Playlist, PlaylistFolder, PlaylistExport } from '@/types/game';
 
 const STORAGE_KEY = 'karaoke-playlists';
-const FOLDERS_KEY = 'karaoke-playlist-folders';
 const PLAY_COUNTS_KEY = 'karaoke-song-play-counts';
 
 // ============ PLAY COUNT TRACKING ============
@@ -29,11 +28,6 @@ function savePlayCounts(counts: Record<string, number>): void {
   } catch (e) {
     console.error('Failed to save play counts:', e);
   }
-}
-
-/** Get the play count for a specific song. */
-export function getSongPlayCount(songId: string): number {
-  return getPlayCounts()[songId] || 0;
 }
 
 // Get all playlists from storage
@@ -291,13 +285,6 @@ export function toggleFavorite(songId: string): boolean {
   return index === -1; // Returns true if added, false if removed
 }
 
-// Check if song is favorite
-export function isFavorite(songId: string): boolean {
-  const playlists = getPlaylists();
-  const favorites = playlists.find(p => p.id === SYSTEM_PLAYLISTS.FAVORITES);
-  return favorites?.songIds.includes(songId) || false;
-}
-
 // Get playlist songs (full song objects) - requires songs to be passed in
 export function getPlaylistSongs(playlistId: string, allSongs: Song[]): Song[] {
   const playlist = getPlaylistById(playlistId);
@@ -350,35 +337,6 @@ export function importPlaylist(data: PlaylistExport): Playlist | null {
   }
 
   return getPlaylistById(created.id);
-}
-
-// ============ FOLDER MANAGEMENT ============
-
-export function getFolders(): PlaylistFolder[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const stored = localStorage.getItem(FOLDERS_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (!Array.isArray(parsed)) {
-        throw new Error('Expected array, got ' + typeof parsed);
-      }
-      return parsed;
-    }
-  } catch (e) {
-    console.error('Failed to load folders — resetting:', e);
-    try { localStorage.removeItem(FOLDERS_KEY); } catch { /* ignore */ }
-  }
-  return [];
-}
-
-function saveFolders(folders: PlaylistFolder[]): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(FOLDERS_KEY, JSON.stringify(folders));
-  } catch (e) {
-    console.error('Failed to save folders:', e);
-  }
 }
 
 // Initialize playlists (call on app start)

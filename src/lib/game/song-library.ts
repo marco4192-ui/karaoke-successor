@@ -231,15 +231,6 @@ export function replaceCustomSongs(songs: Song[]): void {
   songCache = null;
 }
 
-// Remove a song (async internally to await scan lock)
-export async function removeSong(songId: string): Promise<void> {
-  await waitForScanLock();
-  let customSongs = getCustomSongs();
-  customSongs = customSongs.filter(s => s.id !== songId);
-  saveCustomSongs(customSongs);
-  songCache = null;
-}
-
 // Save custom songs — primary storage is IndexedDB, localStorage is legacy fallback
 function saveCustomSongs(songs: Song[]): void {
   // PERFORMANCE: Keep blob URLs in the in-memory cache for the current session.

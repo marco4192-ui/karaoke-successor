@@ -190,21 +190,3 @@ export function getDailyRateMySongTopN(n: number = 10): RateMySongDailyEntry[] {
     .slice(0, n);
 }
 
-/** Get ranking for a specific player */
-export function getPlayerRateMySongRanking(playerId: string): RateMySongEntry[] {
-  const ranking = loadRanking();
-  return ranking.entries
-    .filter(e => e.playerId === playerId)
-    .sort((a, b) => {
-      const scoreA = a.rating * Math.log2(a.ratingCount + 1);
-      const scoreB = b.rating * Math.log2(b.ratingCount + 1);
-      return scoreB - scoreA;
-    });
-}
-
-/** Clear all rating history */
-export function clearRateMySongRanking() {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem(STORAGE_KEY_ALLTIME);
-  localStorage.removeItem(STORAGE_KEY_DAILY);
-}

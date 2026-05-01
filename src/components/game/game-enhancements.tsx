@@ -5,24 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useGameStore } from '@/lib/game/store';
 
-// Spectrogram visualization component
-export function SpectrogramVisualizer({ analyserData }: { analyserData: number[] }) {
-  return (
-    <div className="flex items-end gap-0.5 h-16">
-      {analyserData.map((value, i) => (
-        <div
-          key={i}
-          className="w-2 rounded-t transition-all duration-75"
-          style={{
-            height: `${value * 100}%`,
-            background: `hsl(${180 + i * 3}, 100%, ${50 + value * 30}%)`,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
 // Performance stats display
 export function PerformanceDisplay() {
   const { profiles, activeProfileId } = useGameStore();
