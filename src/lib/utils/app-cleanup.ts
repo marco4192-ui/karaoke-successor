@@ -30,11 +30,6 @@ export function registerCleanup(key: string, fn: CleanupFn): void {
   }
 }
 
-/** Remove a cleanup callback by key. */
-export function unregisterCleanup(key: string): void {
-  cleanupRegistry.delete(key);
-}
-
 /**
  * Run all registered cleanup callbacks synchronously.
  * Called automatically on beforeunload, but can also be called manually (e.g. in tests).
@@ -48,9 +43,4 @@ export function runAllCleanup(): void {
     }
   }
   cleanupRegistry.clear();
-}
-
-/** Get the number of registered cleanup callbacks (useful for debugging). */
-export function getCleanupCount(): number {
-  return cleanupRegistry.size;
 }

@@ -200,7 +200,6 @@ export function MedleyGameScreen({
   // ── Get current lyric line ──
   const currentLyricLine = useMemo(() => {
     if (!snippetLyrics.length || !currentSnippet) return null;
-    const songTime = currentTimeMs;
     const absoluteTime = currentSnippet.startTime + currentTimeMs;
     for (let i = 0; i < snippetLyrics.length; i++) {
       const line = snippetLyrics[i];

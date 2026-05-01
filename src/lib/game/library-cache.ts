@@ -143,38 +143,4 @@ export async function clearCache(): Promise<void> {
   });
 }
 
-// Create a cached song from scanned data
-export function createCachedSong(
-  song: Song, 
-  folder: string, 
-  folderPath: string,
-  fileNames: { audio?: string; video?: string; txt?: string; cover?: string }
-): CachedSong {
-  return {
-    id: song.id,
-    title: song.title,
-    artist: song.artist,
-    album: song.album,
-    year: song.year,
-    genre: song.genre,
-    duration: song.duration,
-    bpm: song.bpm,
-    difficulty: song.difficulty,
-    rating: song.rating,
-    gap: song.gap,
-    coverImage: song.coverImage,
-    videoBackground: song.videoBackground,
-    audioUrl: song.audioUrl,
-    hasEmbeddedAudio: song.hasEmbeddedAudio,
-    preview: song.preview,
-    folder,
-    folderPath,
-    dateAdded: song.dateAdded || Date.now(),
-    lastPlayed: song.lastPlayed,
-    playCount: 0,
-    audioFileName: fileNames.audio,
-    videoFileName: fileNames.video,
-    txtFileName: fileNames.txt,
-    coverFileName: fileNames.cover,
-  };
-}
+

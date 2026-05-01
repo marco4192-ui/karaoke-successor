@@ -910,16 +910,4 @@ export class MicrophoneManager {
   }
 }
 
-// Singleton instance for legacy compatibility
-let micManagerInstance: MicrophoneManager | null = null;
 
-export function getMicrophoneManager(): MicrophoneManager {
-  if (!micManagerInstance) {
-    micManagerInstance = new MicrophoneManager();
-    registerCleanup('microphone-manager', () => {
-      micManagerInstance?.destroy().catch(() => {});
-      micManagerInstance = null;
-    });
-  }
-  return micManagerInstance;
-}

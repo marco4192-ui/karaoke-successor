@@ -38,15 +38,6 @@ export interface ApiScore {
   player_country?: string;
 }
 
-export interface ApiSong {
-  id: string;
-  title: string;
-  artist: string;
-  duration: number;
-  difficulty: number;
-  play_count: number;
-}
-
 class LeaderboardService {
   private apiUrl: string;
   private apiKey: string | null = null;

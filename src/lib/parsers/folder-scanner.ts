@@ -24,14 +24,6 @@ export function revokeAllScanBlobUrls(): void {
   scanBlobUrls.clear();
 }
 
-export interface ScannedFile {
-  name: string;
-  path: string;
-  type: 'audio' | 'video' | 'txt' | 'cover';
-  file?: File;
-  url?: string;
-}
-
 export interface ScannedSong {
   title: string;
   artist: string;

@@ -218,7 +218,6 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       if (!notesToCheck || notesToCheck.length === 0 || !scoringMeta) return;
 
       const beatDurationMs = timingData?.beatDuration || 500;
-      const playerState = stateRef.current; // Always read latest from ref
 
       // Start from last processed index for O(1) forward progression
       // Reset to 0 if time went backward (e.g. seek)

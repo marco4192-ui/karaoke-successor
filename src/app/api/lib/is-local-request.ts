@@ -31,11 +31,3 @@ export function isLocalRequest(request: NextRequest): boolean {
 
   return isAllowed(origin) || isAllowed(referer) || isAllowed(host);
 }
-
-/** Reject non-local requests with 403 Forbidden. */
-export function requireLocalRequest(request: NextRequest): { forbidden: true } | { forbidden: false } {
-  if (!isLocalRequest(request)) {
-    return { forbidden: true };
-  }
-  return { forbidden: false };
-}

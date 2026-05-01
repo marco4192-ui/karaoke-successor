@@ -33,18 +33,6 @@ export interface ViralStatus {
   country: string;
 }
 
-export interface ViralEntry {
-  id: string;
-  title: string;
-  artist: string;
-  source: string;
-  playlistName: string;
-  chartPosition: number;
-  country: string;
-  fetchedAt: number;
-  matchedSongId: string | null;
-}
-
 // ============================================================================
 // Tauri invoke wrappers
 // ============================================================================
