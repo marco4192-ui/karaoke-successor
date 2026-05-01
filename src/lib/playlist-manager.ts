@@ -348,3 +348,77 @@ export function initializePlaylists(): void {
     savePlaylists(getDefaultPlaylists());
   }
 }
+
+// ============ CONSISTENCY CLEANUP ============
+
+/**
+ * Remove orphaned song IDs from all playlists — IDs that reference songs
+ * no longer in the library. Also removes duplicate entries within the same playlist.
+ * Call this after loading the song library to keep playlists in sync.
+ *
+ * @returns Number of orphaned IDs removed
+ */
+export function cleanupPlaylistSongIds(allSongIds: Set<string> | string[]): number {
+  const playlists = getPlaylists();
+  let totalRemoved = 0;
+
+  for (const playlist of playlists) {
+    if (playlist.songIds.length === 0) continue;
+
+    const seen = new Set<string>();
+    const cleaned: string[] = [];
+    let removed = 0;
+
+    for (const songId of playlist.songIds) {
+      // Skip duplicates within this playlist
+      if (seen.has(songId)) {
+        removed++;
+        continue;
+      }
+      seen.add(songId);
+
+      // Skip IDs not in the song library (orphaned)
+      if (!allSongIds.has(songId)) {
+        removed++;
+        continue;
+      }
+
+      cleaned.push(songId);
+    }
+
+    if (removed > 0) {
+      playlist.songIds = cleaned;
+      playlist.updatedAt = Date.now();
+      totalRemoved += removed;
+    }
+  }
+
+  if (totalRemoved > 0) {
+    savePlaylists(playlists);
+  }
+
+  return totalRemoved;
+}
+
+/**
+ * Clean up stale play counts — entries referencing songs no longer in the library.
+ * @returns Number of stale entries removed
+ */
+export function cleanupPlayCounts(allSongIds: Set<string> | string[]): number {
+  const counts = getPlayCounts();
+  const idSet = allSongIds instanceof Set ? allSongIds : new Set(allSongIds);
+  let removed = 0;
+
+  for (const key of Object.keys(counts)) {
+    if (!idSet.has(key)) {
+      delete counts[key];
+      removed++;
+    }
+  }
+
+  if (removed > 0) {
+    savePlayCounts(counts);
+  }
+
+  return removed;
+}

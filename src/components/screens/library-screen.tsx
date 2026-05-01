@@ -11,6 +11,8 @@ import {
   getPlaylistById,
   toggleFavorite,
   initializePlaylists,
+  cleanupPlaylistSongIds,
+  cleanupPlayCounts,
   Playlist
 } from '@/lib/playlist-manager';
 import { SongHighscoreModal } from './results-screen';
@@ -111,9 +113,22 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
   useEffect(() => {
     const loadSongs = async () => {
       setSongsLoading(true);
-      try { setLoadedSongs(await getAllSongsAsync()); }
-      catch { setLoadedSongs(getAllSongs()); }
-      finally { setSongsLoading(false); }
+      try {
+        const songs = await getAllSongsAsync();
+        setLoadedSongs(songs);
+        // One-time cleanup: remove orphaned song IDs from playlists and stale play counts
+        const allIds = new Set(songs);
+        cleanupPlaylistSongIds(allIds);
+        cleanupPlayCounts(allIds);
+      } catch {
+        const fallbackSongs = getAllSongs();
+        setLoadedSongs(fallbackSongs);
+        const allIds = new Set(fallbackSongs);
+        cleanupPlaylistSongIds(allIds);
+        cleanupPlayCounts(allIds);
+      } finally {
+        setSongsLoading(false);
+      }
     };
     loadSongs();
   }, []);
