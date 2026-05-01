@@ -324,7 +324,7 @@ export function useImportScreen(onImport: (song: Song) => void) {
             if (scanned.end && scanned.end > 0) {
               calculatedDuration = scanned.end;
             } else if (scanned.lyrics?.length > 0) {
-              calculatedDuration = Math.max(...scanned.lyrics.map(l => l.endTime)) + 5000;
+              calculatedDuration = Math.max(...scanned.lyrics.map((l: { endTime: number }) => l.endTime)) + 5000;
             }
 
             const isVideoUrl = scanned.videoFile &&

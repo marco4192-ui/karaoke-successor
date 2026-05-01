@@ -244,7 +244,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
       const mainInactive = item.playerId && !activeIds.has(item.playerId);
       const partnerInactive = item.partnerId && !activeIds.has(item.partnerId);
       if (mainInactive || partnerInactive) {
-        setNeedsPlayerSelection(item.id);
+        setNeedsPlayerSelection([item.id]);
         return; // Don't start — user must reassign players
       }
     }

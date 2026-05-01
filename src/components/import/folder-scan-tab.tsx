@@ -68,7 +68,7 @@ export function FolderScanTab({
       setScanErrors(result.errors);
       setSelectedScanned(new Set(result.songs.map((_, i) => i)));
     } catch (err) {
-      setScanErrors(prev => [...prev, `Drop failed: ${(err as Error).message}`]);
+      setScanErrors([...scanErrors, `Drop failed: ${(err as Error).message}`]);
     } finally {
       setIsProcessing(false);
     }

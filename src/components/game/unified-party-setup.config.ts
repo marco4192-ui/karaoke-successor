@@ -217,7 +217,6 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     ],
     songSelectionOptions: ['library', 'random'],
     supportsCompanionApp: true,
-    inputModeDefault: 'mixed',
   },
 };
 

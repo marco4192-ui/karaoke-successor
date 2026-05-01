@@ -115,7 +115,7 @@ export function useTapNotePlacement({
 
     const isInput = () => {
       const el = document.activeElement;
-      return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el?.isContentEditable;
+      return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || (el instanceof HTMLElement && el.isContentEditable);
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {

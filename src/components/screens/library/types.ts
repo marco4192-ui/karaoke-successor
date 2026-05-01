@@ -53,7 +53,11 @@ export interface SongStartModalProps {
   setShowSongModal: (open: boolean) => void;
   setShowHighscoreModal: (open: boolean) => void;
   setHighscoreSong: (song: Song | null) => void;
-  addToQueue: (song: Song, playerId: string, playerName: string) => void;
+  addToQueue: (song: Song, playerId: string, playerName: string, options?: {
+    partnerId?: string;
+    partnerName?: string;
+    gameMode?: 'single' | 'duel' | 'duet';
+  }) => void;
   toggleFavorite: (songId: string) => boolean;
   setPlaylists: (playlists: Playlist[]) => void;
   getPlaylists: () => Playlist[];

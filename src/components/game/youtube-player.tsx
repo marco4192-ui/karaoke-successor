@@ -245,7 +245,7 @@ export function YouTubePlayer({
           ...(origin ? { origin } : {}),
           // Enable JavaScript API (redundant with IFrame API but ensures compatibility)
           enablejsapi: 1,
-        },
+        } as unknown as Record<string, number>,
         events: {
           onReady: (event) => {
             try {

@@ -56,9 +56,9 @@ class LeaderboardService {
     const url = `${this.apiUrl}${endpoint}`;
     const timeout = 30000; // 30 second timeout
 
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers as Record<string, string>),
     };
 
     if (this.apiKey) {

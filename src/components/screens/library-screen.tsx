@@ -120,13 +120,13 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
         const songs = await getAllSongsAsync();
         setLoadedSongs(songs);
         // One-time cleanup: remove orphaned song IDs from playlists and stale play counts
-        const allIds = new Set(songs);
+        const allIds = new Set(songs.map(s => s.id));
         cleanupPlaylistSongIds(allIds);
         cleanupPlayCounts(allIds);
       } catch {
         const fallbackSongs = getAllSongs();
         setLoadedSongs(fallbackSongs);
-        const allIds = new Set(fallbackSongs);
+        const allIds = new Set(fallbackSongs.map(s => s.id));
         cleanupPlaylistSongIds(allIds);
         cleanupPlayCounts(allIds);
       } finally {

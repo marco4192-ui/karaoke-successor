@@ -45,21 +45,19 @@ export function useMediaSession({
       return;
     }
 
-    const metadata: MediaMetadata = {
+    const metadataInit: MediaMetadataInit = {
       title: `${song.title} — Karaoke`,
       artist: song.artist || 'Unknown Artist',
       album: 'Karaoke Successor',
+      artwork: song.coverImage
+        ? [
+            { src: song.coverImage, sizes: '512x512', type: 'image/jpeg' },
+            { src: song.coverImage, sizes: '256x256', type: 'image/jpeg' },
+          ]
+        : [],
     };
 
-    // Attach cover art if available
-    if (song.coverImage) {
-      metadata.artwork = [
-        { src: song.coverImage, sizes: '512x512', type: 'image/jpeg' },
-        { src: song.coverImage, sizes: '256x256', type: 'image/jpeg' },
-      ];
-    }
-
-    navigator.mediaSession.metadata = new MediaMetadata(metadata);
+    navigator.mediaSession.metadata = new MediaMetadata(metadataInit);
   }, [song]);
 
   // Set action handlers once on mount

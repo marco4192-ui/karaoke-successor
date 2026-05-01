@@ -378,7 +378,8 @@ export function cleanupPlaylistSongIds(allSongIds: Set<string> | string[]): numb
       seen.add(songId);
 
       // Skip IDs not in the song library (orphaned)
-      if (!allSongIds.has(songId)) {
+      const hasId = allSongIds instanceof Set ? allSongIds.has(songId) : allSongIds.includes(songId);
+      if (!hasId) {
         removed++;
         continue;
       }

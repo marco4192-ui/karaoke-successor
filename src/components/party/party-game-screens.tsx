@@ -63,10 +63,10 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
         const connectedProfiles: Array<{ id: string; name: string; clientId?: string }> = Array.isArray(data) ? data : [];
 
         const p1Companion = connectedProfiles.find(p =>
-          p.id === match.player1.id || p.name === match.player1.name
+          match.player1 && (p.id === match.player1.id || p.name === match.player1.name)
         );
         const p2Companion = connectedProfiles.find(p =>
-          p.id === match.player2.id || p.name === match.player2.name
+          match.player2 && (p.id === match.player2.id || p.name === match.player2.name)
         );
 
         // Companion-connected players sing via companion app
@@ -121,8 +121,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       party.setUnifiedSetupResult(setupResult);
 
       // Add both players for the duel
-      addPlayer({ id: match.player1.id, name: match.player1.name, avatar: match.player1.avatar, color: match.player1.color });
-      addPlayer({ id: match.player2.id, name: match.player2.name, avatar: match.player2.avatar, color: match.player2.color });
+      if (match.player1) addPlayer({ id: match.player1.id, name: match.player1.name, avatar: match.player1.avatar, color: match.player1.color });
+      if (match.player2) addPlayer({ id: match.player2.id, name: match.player2.name, avatar: match.player2.avatar, color: match.player2.color });
 
       setGameMode('duel');
 
@@ -228,7 +228,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                   party.setPassTheMicSegments(action.result.segments);
                   party.setPassTheMicSong(action.result.song);
                   party.setPassTheMicSettings({
-                    ...party.passTheMicSettings,
+                    ...(party.passTheMicSettings || { segmentDuration: 30, difficulty: 'medium', micId: '', micName: '' }),
                     segmentDuration: action.result.segmentDuration,
                   });
                   party.setPtmMedleySnippets([]);
@@ -239,7 +239,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                   party.setPassTheMicSegments(action.result.segments);
                   party.setPassTheMicSong(action.result.song);
                   party.setPassTheMicSettings({
-                    ...party.passTheMicSettings,
+                    ...(party.passTheMicSettings || { segmentDuration: 30, difficulty: 'medium', micId: '', micName: '' }),
                     segmentDuration: action.result.segmentDuration,
                   });
                   party.setIsSongPlaying(false);
@@ -338,6 +338,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           onAbortHandled={() => {
             party.setTournamentMatchAborted(false);
           }}
+          songs={getAllSongs()}
           shortMode={party.tournamentSongDuration === 60}
         />
       )}
@@ -387,7 +388,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       )}
 
       {/* Companion Sing-A-Long Game Screen */}
-      {screen === 'companion-singalong-game' && party.companionSong && (
+      {screen === 'companion-singalong-game' && party.companionSong && party.companionSettings && (
         <CompanionGameView
           players={party.companionPlayers}
           song={party.companionSong}
@@ -599,9 +600,13 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
 
       {/* Rate my Song — After song ends, go to rating screen */}
       {screen === 'rate-my-song-rating' && party.rateMySongSettings && (
+        (() => {
+          const rms = party.rateMySongSettings;
+          const rmsSong = getAllSongs().find(s => s.id === rms.songId);
+          return (
         <RateMySongRatingScreen
-          songTitle={getAllSongs().find(s => s.id === party.rateMySongSettings.songId)?.title || ''}
-          songArtist={getAllSongs().find(s => s.id === party.rateMySongSettings.songId)?.artist || ''}
+          songTitle={rmsSong?.title || ''}
+          songArtist={rmsSong?.artist || ''}
           singingPlayers={party.rateMySongPlayerIds.map(id => {
             const p = profiles.find(pr => pr.id === id);
             return { id, name: p?.name || 'Player', color: p?.color || '#FF6B6B' };
@@ -610,8 +615,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           onSubmit={(ratings) => {
             const avg = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
             setRateMySongResult({
-              songTitle: getAllSongs().find(s => s.id === party.rateMySongSettings.songId)?.title || '',
-              songArtist: getAllSongs().find(s => s.id === party.rateMySongSettings.songId)?.artist || '',
+              songTitle: rmsSong?.title || '',
+              songArtist: rmsSong?.artist || '',
               ratings,
               averageRating: Math.round(avg * 10) / 10,
             });
@@ -619,6 +624,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           }}
           onBack={() => setScreen('party')}
         />
+          );
+        })()
       )}
 
       {/* Rate my Song — Results */}

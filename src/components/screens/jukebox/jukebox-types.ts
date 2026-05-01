@@ -8,6 +8,7 @@ export interface UseJukeboxReturn {
   // State
   isPlaying: boolean;
   currentSong: Song | null;
+  customYoutubeId: string | null;
   playlist: Song[];
   currentIndex: number;
   songs: Song[];
