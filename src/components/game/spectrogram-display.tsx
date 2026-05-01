@@ -43,16 +43,19 @@ export function SpectrogramDisplay({
   useEffect(() => {
     if (!isActive || (!audioElement && !audioStream)) return;
 
+    let cancelled = false;
+    let analyser: AnalyserNode | null = null;
+
     const initAudio = async () => {
       try {
         let audioContext: AudioContext;
         let source: MediaElementAudioSourceNode | MediaStreamAudioSourceNode;
 
         if (audioElement) {
-          // Use the shared source — useSongEnergy may have already called
-          // createMediaElementSource on this element.  The shared cache
-          // guarantees we reuse the same AudioContext + source node.
-          const shared = getSharedMediaSource(audioElement);
+          // Use the shared source — getSharedMediaSource connects source →
+          // destination once. We only tap the signal with our analyser.
+          const shared = await getSharedMediaSource(audioElement);
+          if (cancelled) return;
           audioContext = shared.context;
           source = shared.source;
           audioContextRef.current = audioContext;
@@ -71,20 +74,18 @@ export function SpectrogramDisplay({
         }
 
         // Create analyser
-        const analyser = audioContext.createAnalyser();
+        analyser = audioContext.createAnalyser();
         analyser.fftSize = DEFAULT_SPECTROGRAM_CONFIG.fftSize;
         analyser.smoothingTimeConstant = DEFAULT_SPECTROGRAM_CONFIG.smoothing;
         analyser.minDecibels = DEFAULT_SPECTROGRAM_CONFIG.minDecibels;
         analyser.maxDecibels = DEFAULT_SPECTROGRAM_CONFIG.maxDecibels;
 
         source.connect(analyser);
-        // Do NOT connect mic analysers to destination — this would route
-        // microphone input to speakers, creating a feedback loop.
-        // For audio elements, useSongEnergy already handles the
-        // destination connection; connecting again would double the output.
-        if (audioElement) {
-          analyser.connect(audioContext.destination);
-        }
+        // Do NOT connect to destination:
+        // - For audio elements: getSharedMediaSource already connected
+        //   source → destination once.
+        // - For mic streams: connecting to destination would create a
+        //   feedback loop (mic → speakers → mic).
 
         analyserRef.current = analyser;
         setIsInitialized(true);
@@ -96,13 +97,14 @@ export function SpectrogramDisplay({
     initAudio();
 
     return () => {
+      cancelled = true;
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
       // Disconnect our analyser only — do NOT close the shared AudioContext
       // (useSongEnergy or other consumers may still need it).
-      if (analyserRef.current) {
-        try { analyserRef.current.disconnect(); } catch { /* already disconnected */ }
+      if (analyser) {
+        try { analyser.disconnect(); } catch { /* already disconnected */ }
         analyserRef.current = null;
       }
       // Mic stream source can be disconnected (not shared)

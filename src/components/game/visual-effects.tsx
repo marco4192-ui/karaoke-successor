@@ -535,44 +535,58 @@ export function useSongEnergy(audioRef?: React.RefObject<HTMLAudioElement | null
   useEffect(() => {
     if (!audioElement) return;
 
-    // Use shared source — avoids duplicate createMediaElementSource calls
-    // (SpectrogramDisplay and other consumers use the same source node).
-    const { context: audioContext, source } = getSharedMediaSource(audioElement);
+    let cancelled = false;
+    let analyser: AnalyserNode | null = null;
+    let interval: ReturnType<typeof setInterval> | undefined;
 
-    const analyser = audioContext.createAnalyser();
-    analyser.fftSize = 256;
-    source.connect(analyser);
-    // Connect to destination so the audio element still produces sound
-    // through the Web Audio graph after createMediaElementSource redirects it.
-    analyser.connect(audioContext.destination);
-    analyserRef.current = analyser;
+    const init = async () => {
+      try {
+        // Use shared source — avoids duplicate createMediaElementSource calls.
+        // getSharedMediaSource connects source → destination once, so we
+        // only need to tap the signal with our analyser.
+        const { source } = await getSharedMediaSource(audioElement);
+        if (cancelled) return;
 
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        analyser = source.context.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        // Do NOT connect analyser → destination — getSharedMediaSource already
+        // connected source → destination. Connecting again would duplicate audio.
+        analyserRef.current = analyser;
 
-    const updateEnergy = () => {
-      if (!analyserRef.current) return;
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
-      analyser.getByteFrequencyData(dataArray);
+        const updateEnergy = () => {
+          if (!analyserRef.current) return;
+          analyserRef.current.getByteFrequencyData(dataArray);
 
-      // Calculate average energy in bass frequencies (first 1/4 of spectrum)
-      let bassEnergy = 0;
-      const bassRange = Math.floor(dataArray.length / 4);
-      for (let i = 0; i < bassRange; i++) {
-        bassEnergy += dataArray[i];
+          // Calculate average energy in bass frequencies (first 1/4 of spectrum)
+          let bassEnergy = 0;
+          const bassRange = Math.floor(dataArray.length / 4);
+          for (let i = 0; i < bassRange; i++) {
+            bassEnergy += dataArray[i];
+          }
+          bassEnergy /= bassRange * 255;
+
+          setEnergy((prev) => prev * 0.9 + bassEnergy * 0.1); // Smooth transition
+        };
+
+        interval = setInterval(updateEnergy, 100);
+      } catch (error) {
+        console.error('[useSongEnergy] Failed to initialize:', error);
       }
-      bassEnergy /= bassRange * 255;
-
-      setEnergy((prev) => prev * 0.9 + bassEnergy * 0.1); // Smooth transition
     };
 
-    // Reduced from 50ms to 100ms — less state updates, still smooth enough
-    const interval = setInterval(updateEnergy, 100);
+    init();
 
     return () => {
-      clearInterval(interval);
+      cancelled = true;
+      if (interval) clearInterval(interval);
       // Disconnect old analyser to prevent AudioNode leak.
       // Do NOT close the shared AudioContext — other consumers may still use it.
-      try { analyser.disconnect(); } catch { /* already disconnected */ }
+      if (analyser) {
+        try { analyser.disconnect(); } catch { /* already disconnected */ }
+      }
       analyserRef.current = null;
     };
   }, [audioElement]);
