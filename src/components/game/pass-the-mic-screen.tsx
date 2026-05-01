@@ -1,18 +1,11 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Song, PlayerProfile, PLAYER_COLORS, LyricLine, Difficulty } from '@/types/game';
+import { Song, PlayerProfile, PLAYER_COLORS, Difficulty } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
-import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { usePartyStore } from '@/lib/game/party-store';
-import { calculateScoringMetadata } from '@/lib/game/scoring';
-import { findActiveNote, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';
-import type { PassTheMicRoundResult } from '@/lib/game/party-store';
-import { useMobileGameSync } from '@/hooks/use-mobile-game-sync';
 
 // ===================== SHARED TYPES =====================
 

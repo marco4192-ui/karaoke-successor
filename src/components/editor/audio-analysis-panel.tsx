@@ -2,9 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -17,7 +15,6 @@ import {
   useAudioAnalysis,
   CONFIDENCE_COLORS,
   type ConfidenceLevel,
-  type PitchAnalysisResult,
   type DetectedNote,
 } from '@/hooks/use-audio-analysis';
 

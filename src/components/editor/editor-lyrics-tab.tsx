@@ -3,7 +3,7 @@
 import React, { useRef, useEffect, useMemo } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import type { Song, Note, LyricLine } from '@/types/game';
+import type { Song, Note } from '@/types/game';
 import { BookOpen } from 'lucide-react';
 
 interface EditorLyricsTabProps {

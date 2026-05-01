@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Save, XCircle, Undo, Redo, CheckCircle, AlertCircle } from 'lucide-react';
+import { Save, Undo, Redo, CheckCircle, AlertCircle } from 'lucide-react';
 import type { SaveResult } from '@/lib/editor/save-to-file';
 
 interface EditorHeaderProps {

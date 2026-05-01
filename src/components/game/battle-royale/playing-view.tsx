@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Song } from '@/types/game';
-import { BattleRoyaleGame, BattleRoyalePlayer, getBattleRoyaleStats, getPlayersByScore } from '@/lib/game/battle-royale';
+import { BattleRoyaleGame, BattleRoyalePlayer, getBattleRoyaleStats } from '@/lib/game/battle-royale';
 import { LyricsDisplay } from './lyrics-display';
 import { usePartyStore } from '@/lib/game/party-store';
 
