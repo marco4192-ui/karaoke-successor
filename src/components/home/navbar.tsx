@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from '@/lib/i18n/translations';
 import { MusicIcon, LibraryIcon, PartyIcon, UserIcon, QueueIcon, StarIcon, TrophyIcon, SettingsIcon } from '@/components/icons';
 import type { Screen } from '@/types/screens';
 
@@ -16,6 +17,7 @@ interface NavBarProps {
 
 // ===================== NAVIGATION BAR =====================
 export function NavBar({ screen, setScreen, queueLength, isMounted, isFullscreen, toggleFullscreen }: NavBarProps) {
+  const { t } = useTranslation();
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-black/30 backdrop-blur-xl border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -30,34 +32,34 @@ export function NavBar({ screen, setScreen, queueLength, isMounted, isFullscreen
 
         <div className="flex items-center gap-2">
           <NavButton active={screen === 'library'} onClick={() => setScreen('library')}>
-            <LibraryIcon className="w-5 h-5" /> Library
+            <LibraryIcon className="w-5 h-5" /> {t('nav.library')}
           </NavButton>
           <NavButton active={screen === 'party'} onClick={() => setScreen('party')}>
-            <PartyIcon className="w-5 h-5" /> Party
+            <PartyIcon className="w-5 h-5" /> {t('nav.party')}
           </NavButton>
           <NavButton active={screen === 'dailyChallenge'} onClick={() => setScreen('dailyChallenge')}>
             <StarIcon className="w-5 h-5" /> Challenges
           </NavButton>
           <NavButton active={screen === 'queue'} onClick={() => setScreen('queue')}>
-            <QueueIcon className="w-5 h-5" /> Queue
+            <QueueIcon className="w-5 h-5" /> {t('nav.queue')}
             {isMounted && queueLength > 0 && (
               <Badge variant="secondary" className="ml-1 px-1.5 py-0.5 text-xs">{queueLength}</Badge>
             )}
           </NavButton>
           <NavButton active={screen === 'character'} onClick={() => setScreen('character')}>
-            <UserIcon className="w-5 h-5" /> Characters
+            <UserIcon className="w-5 h-5" /> {t('nav.characters')}
           </NavButton>
           <NavButton active={screen === 'highscores'} onClick={() => setScreen('highscores')}>
-            <TrophyIcon className="w-5 h-5" /> Highscores
+            <TrophyIcon className="w-5 h-5" /> {t('nav.highscores')}
           </NavButton>
           <NavButton active={screen === 'achievements'} onClick={() => setScreen('achievements')}>
-            <TrophyIcon className="w-5 h-5" /> Achievements
+            <TrophyIcon className="w-5 h-5" /> {t('nav.achievements')}
           </NavButton>
           <NavButton active={screen === 'jukebox'} onClick={() => setScreen('jukebox')}>
-            <MusicIcon className="w-5 h-5" /> Jukebox
+            <MusicIcon className="w-5 h-5" /> {t('nav.jukebox')}
           </NavButton>
           <NavButton active={screen === 'settings'} onClick={() => setScreen('settings')}>
-            <SettingsIcon className="w-5 h-5" /> Settings
+            <SettingsIcon className="w-5 h-5" /> {t('nav.settings')}
           </NavButton>
           {/* Fullscreen Toggle Button */}
           <button

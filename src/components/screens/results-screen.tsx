@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Button } from '@/components/ui/button';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
+import { useTranslation } from '@/lib/i18n/translations';
 import { safeAlert } from '@/lib/safe-dialog';
 import { getExtendedStats, updateStatsAfterGame, saveExtendedStats, calculateSongXP, getLevelForXP } from '@/lib/game/player-progression';
 import { checkAndUnlockAchievements } from '@/lib/game/achievements';
@@ -45,6 +46,7 @@ import { PassTheMicSegment } from '@/components/game/pass-the-mic-screen';
 
 // ===================== RESULTS SCREEN =====================
 export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void; onHome: () => void }) {
+  const { t } = useTranslation();
   const { gameState, resetGame, addHighscore, profiles, activeProfileId, onlineEnabled, updateProfile, highscores, setSong, setGameMode, addPlayer } = useGameStore();
   const party = usePartyStore();
   const savedToHighscoreRef = useRef(false);
@@ -489,7 +491,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
     return (
       <div className="max-w-4xl mx-auto text-center py-20">
         <p className="text-white/60 mb-4">No results available</p>
-        <Button onClick={onHome} className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white">Back to Home</Button>
+        <Button onClick={onHome} className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white">{t('results.backToHome')}</Button>
       </div>
     );
   }
@@ -643,10 +645,10 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           </Button>
         )}
         <Button onClick={() => { resetGame(); onPlayAgain(); }} className="bg-gradient-to-r from-cyan-500 to-purple-500 px-8">
-          Play Again
+          {t('results.playAgain')}
         </Button>
         <Button variant="outline" onClick={() => { resetGame(); onHome(); }} className="border-white/20 text-white px-8">
-          Back to Home
+          {t('results.backToHome')}
         </Button>
       </div>
 

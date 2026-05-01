@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useTranslation } from '@/lib/i18n/translations';
 import { Song, Difficulty, GameMode } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
 import { getAllSongs, getAllSongsAsync, getSongByIdWithLyrics, ensureSongUrls } from '@/lib/game/song-library';
@@ -33,6 +34,8 @@ import { useLibraryPreview } from '@/hooks/use-library-preview';
 import { useViralCharts } from '@/hooks/use-viral-charts';
 
 export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong: (song: Song) => void; initialGameMode?: GameMode }) {
+  const { t } = useTranslation();
+
   // Core state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
@@ -250,14 +253,14 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
   return (
     <div className="w-full px-4 md:px-6 lg:px-8">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Music Library</h1>
-        <p className="text-white/60">{songsLoading ? 'Loading songs...' : `${loadedSongs.length} songs available`}</p>
+        <h1 className="text-3xl font-bold mb-2">{t('library.title')}</h1>
+        <p className="text-white/60">{songsLoading ? t('library.loadingSongs') : `${loadedSongs.length} ${t('library.songsAvailable')}`}</p>
       </div>
 
       {songsLoading && (
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full mr-3" />
-          <span className="text-white/60">Loading songs...</span>
+          <span className="text-white/60">{t('library.loadingSongs')}</span>
         </div>
       )}
 
@@ -290,7 +293,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
             />
           ) : filteredSongs.length === 0 ? (
             <div className="text-center py-20">
-              <p className="text-white/60 mb-4">No songs found</p>
+              <p className="text-white/60 mb-4">{t('library.noSongs')}</p>
               <p className="text-white/40 text-sm">Try a different search or import some songs</p>
             </div>
           ) : viewMode === 'grid' || (viewMode === 'folder' && currentFolder) ? (
