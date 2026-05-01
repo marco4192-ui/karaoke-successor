@@ -201,17 +201,18 @@ export function addSongs(songs: Song[]): void {
   const customSongs = getCustomSongs();
   let added = false;
 
-  for (const song of songs) {
-    const exists = customSongs.some(s =>
-      s.id === song.id ||
-      (s.title === song.title && s.artist === song.artist)
-    );
+  // Build lookup sets for O(1) duplicate detection instead of O(n) per song
+  const existingIds = new Set(customSongs.map(s => s.id));
+  const existingTitles = new Set(customSongs.map(s => `${s.title}||${s.artist}`));
 
-    if (!exists) {
-      customSongs.push({
-        ...song,
-        id: song.id || crypto.randomUUID(),
-      });
+  for (const song of songs) {
+    const isDuplicate = existingIds.has(song.id) || existingTitles.has(`${song.title}||${song.artist}`);
+
+    if (!isDuplicate) {
+      const newId = song.id || crypto.randomUUID();
+      customSongs.push({ ...song, id: newId });
+      existingIds.add(newId);
+      existingTitles.add(`${song.title}||${song.artist}`);
       added = true;
     }
   }

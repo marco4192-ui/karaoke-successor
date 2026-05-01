@@ -392,13 +392,17 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
             noteProgress.ticksEvaluated++;
             noteProgress.lastEvaluatedTime = currentTime;
 
-            // Write to ref (no state update = no GC)
+            // Write to ref — mutate in-place to avoid array spread allocation on every tick
             const perfRef = notePerformanceRef.current;
-            const samples = perfRef.get(noteId) || [];
-            const trimmed = samples.length >= MAX_SAMPLES_PER_NOTE
-              ? samples.slice(-MAX_SAMPLES_PER_NOTE + 1)
-              : samples;
-            perfRef.set(noteId, [...trimmed, { time: currentTime, accuracy: tickResult.accuracy, hit: tickResult.isHit }]);
+            let samples = perfRef.get(noteId);
+            if (!samples) {
+              samples = [];
+              perfRef.set(noteId, samples);
+            }
+            samples.push({ time: currentTime, accuracy: tickResult.accuracy, hit: tickResult.isHit });
+            if (samples.length > MAX_SAMPLES_PER_NOTE) {
+              samples.splice(0, samples.length - MAX_SAMPLES_PER_NOTE);
+            }
 
             // Throttled state sync: flush to React state at ~10Hz
             const now = performance.now();

@@ -56,7 +56,7 @@ export function generateMedleySnippets(
 
     // Priority 3: Random within note range
     const maxSafeTime = song.lyrics && song.lyrics.length > 0
-      ? Math.max(...song.lyrics.map(l => l.endTime))
+      ? song.lyrics.reduce((max, l) => Math.max(max, l.endTime), 0)
       : Math.min(song.duration, snippetMs * 3);
     const maxStartTime = Math.max(0, maxSafeTime - snippetMs);
     const startTime = Math.random() * maxStartTime;
