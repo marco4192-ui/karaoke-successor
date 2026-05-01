@@ -669,7 +669,7 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
           useYouTubeAudio={useYouTubeAudio}
           isPlaying={isPlaying}
           isAdPlaying={isAdPlaying}
-          songEnergy={isLowPerf ? undefined : songEnergy}
+          songEnergy={isLowPerf ? 0 : (songEnergy ?? 0)}
           volume={volume}
           videoRef={videoRef}
           onYoutubeTimeUpdate={setYoutubeTime}
@@ -818,13 +818,8 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
       <PracticePanel
         practiceMode={practiceMode}
         showControls={showPracticeControls}
-        loopCount={loopCount}
-        currentTimeMs={gameState.currentTime * 1000}
         onToggleControls={() => setShowPracticeControls(!showPracticeControls)}
         onPracticeModeChange={(config) => setPracticeMode(p => ({ ...p, ...config }))}
-        onSetLoopStart={setLoopStart}
-        onSetLoopEnd={setLoopEnd}
-        onResetLoopCount={resetLoopCount}
       />
 
       {/* Score Events & Particles — disabled in low-performance mode */}

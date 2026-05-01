@@ -45,7 +45,6 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
 
   // Connection
   const { clientId, connectionCode, isConnected, gameState, connect, disconnect, syncProfile, cleanup } = useMobileConnection({
-    profileId,
     onProfileLoaded: (p) => setProfile(p),
     onProfileFieldsLoaded: (name, color, avatar) => { setProfileName(name); setProfileColor(color); setAvatarPreview(avatar); },
     onGameStateUpdate: (_state) => {},
@@ -322,7 +321,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
         />
       ) : (
         <div className="pb-20">
-          {currentView === 'home' && <MobileHomeView gameState={gameState} queue={data.queue} onNavigate={setCurrentView} onDisconnect={handleDisconnect} />}
+          {currentView === 'home' && <MobileHomeView gameState={gameState} queue={data.queue} onNavigate={setCurrentView} />}
           {currentView === 'mic' && (
             <MobileMicView gameState={gameState} clientId={clientId} currentPitch={currentPitch}
               isListening={isListening} micPermissionDenied={micPermissionDenied} onStartMic={startMicrophone} onStopMic={stopMicrophone} />
@@ -335,11 +334,10 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
               selectedPartner={data.selectedPartner} availablePartners={data.availablePartners}
               onShowSongOptions={data.setShowSongOptions} onSelectGameMode={data.setSelectedGameMode}
               onSelectPartner={data.setSelectedPartner} onAddToQueue={data.addToQueue}
-              onAddToJukebox={data.addToJukeboxWishlist}
               onLoadPartners={data.loadAvailablePartners} formatDuration={data.formatDuration}
             />
           )}
-          {currentView === 'queue' && <MobileQueueView queue={data.queue} slotsRemaining={data.slotsRemaining} queueError={data.queueError} connectionCode={connectionCode} onRemoveFromQueue={data.removeFromQueue} onNavigate={setCurrentView} />}
+          {currentView === 'queue' && <MobileQueueView queue={data.queue} slotsRemaining={data.slotsRemaining} queueError={data.queueError} onRemoveFromQueue={data.removeFromQueue} onNavigate={setCurrentView} clientId={clientId} />}
           {currentView === 'results' && <MobileResultsView gameResults={data.gameResults} onNavigate={setCurrentView} />}
           {currentView === 'jukebox' && <MobileJukeboxView jukeboxWishlist={data.jukeboxWishlist} onNavigate={setCurrentView} />}
           {currentView === 'remote' && <RemoteControlView clientId={clientId} profile={profile} onBack={() => setCurrentView('home')} />}

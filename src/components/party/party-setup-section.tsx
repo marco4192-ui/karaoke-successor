@@ -475,7 +475,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 sharedMicName: result.settings.sharedMicName || null,
               } as any);
             } else if (party.selectedGameMode === 'companion-singalong') {
-              party.setCompanionPlayers(toCompanionPlayers(result.players));
+              party.setCompanionPlayers(toCompanionPlayers(result.players) as any);
               party.setCompanionSettings(result.settings as any);
             } else if (party.selectedGameMode === 'rate-my-song') {
               // Pre-store player IDs and settings; songId will be set when user picks from library

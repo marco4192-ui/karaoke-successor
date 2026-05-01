@@ -227,7 +227,7 @@ export function MobileProfileCreateView({
           
           {/* Create Button */}
           <Button 
-            onClick={onCreateProfile}
+            onClick={() => onCreateProfile()}
             disabled={!profileName.trim()}
             className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 disabled:opacity-50"
           >
