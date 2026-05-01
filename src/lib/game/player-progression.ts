@@ -283,9 +283,9 @@ interface ExtendedPlayerStats {
   
   // Difficulty stats
   difficultyStats: {
-    easy: { played: number; completed: number; bestScore: number; avgAccuracy: number };
-    medium: { played: number; completed: number; bestScore: number; avgAccuracy: number };
-    hard: { played: number; completed: number; bestScore: number; avgAccuracy: number };
+    easy: { played: number; bestScore: number; avgAccuracy: number };
+    medium: { played: number; bestScore: number; avgAccuracy: number };
+    hard: { played: number; bestScore: number; avgAccuracy: number };
   };
   
   // Genre mastery
@@ -505,9 +505,9 @@ function getDefaultStats(): ExtendedPlayerStats {
     genreBestScores: {},
     favoriteGenre: null,
     difficultyStats: {
-      easy: { played: 0, completed: 0, bestScore: 0, avgAccuracy: 0 },
-      medium: { played: 0, completed: 0, bestScore: 0, avgAccuracy: 0 },
-      hard: { played: 0, completed: 0, bestScore: 0, avgAccuracy: 0 },
+      easy: { played: 0, bestScore: 0, avgAccuracy: 0 },
+      medium: { played: 0, bestScore: 0, avgAccuracy: 0 },
+      hard: { played: 0, bestScore: 0, avgAccuracy: 0 },
     },
     milestones: {
       firstSong: null,
@@ -603,7 +603,6 @@ function updateGenreStats(stats: ExtendedPlayerStats, game: PlayerGameResult): v
 function updateDifficultyStats(stats: ExtendedPlayerStats, game: PlayerGameResult): void {
   const diff = stats.difficultyStats[game.difficulty];
   diff.played++;
-  diff.completed++;
   diff.bestScore = Math.max(diff.bestScore, game.score);
   diff.avgAccuracy = ((diff.avgAccuracy * (diff.played - 1)) + game.accuracy) / diff.played;
 }
