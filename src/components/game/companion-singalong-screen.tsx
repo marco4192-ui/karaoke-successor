@@ -480,7 +480,7 @@ export function CompanionGameView({
       };
     }
     setCompanionSeriesHistory([...companionSeriesHistory, round]);
-  }, [song, party]);
+  }, [song, companionSeriesHistory, setCompanionSeriesHistory]);
 
   // ── Continue series: pick next song ──
   const handleContinue = useCallback(() => {
@@ -489,7 +489,7 @@ export function CompanionGameView({
     }));
     setCompanionPlayers(resetPlayers);
     onEndGame();
-  }, [party, onEndGame]);
+  }, [onEndGame]);
 
   // ── End series ──
   const handleEndSeries = useCallback(() => {
@@ -754,8 +754,10 @@ export function CompanionGameView({
 // ===================== SERIES RESULTS =====================
 
 function CompanionSeriesResults({ onBack }: { onBack: () => void }) {
-  const party = usePartyStore();
-  const history = companionSeriesHistory;
+  // Use individual selectors — this is a separate component, so it must
+  // fetch its own store values (not rely on CompanionGameView's scope).
+  const history = usePartyStore(s => s.companionSeriesHistory);
+  const companionPlayers = usePartyStore(s => s.companionPlayers);
 
   const [cumulative, setCumulative] = useState<Record<string, { name: string; avatar?: string; color: string; totalScore: number; totalHits: number; totalMisses: number; bestCombo: number; roundsPlayed: number }>>({});
   useEffect(() => {
