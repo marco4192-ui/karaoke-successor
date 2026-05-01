@@ -141,7 +141,10 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
             song.start = parseInt(value) || 0;
             break;
           case 'END':
-            song.end = value.trim() !== '' ? parseInt(value) : undefined;
+            // parseInt returns 0 for "#END:0" — treat 0 as undefined since
+            // a song ending at 0ms makes no sense (song creator mistake).
+            const endVal = parseInt(value);
+            song.end = endVal > 0 ? endVal : undefined;
             break;
           case 'PREVIEWSTART':
             song.previewStart = parseFloat(value) || 0;
