@@ -11,6 +11,7 @@ interface DailyChallengeEntry {
   score: number;
   accuracy: number;
   combo: number;
+  perfectNotesCount: number;
   completedAt: number;
   rank: number;
 }
@@ -205,6 +206,7 @@ export function submitChallengeResult(
     score: number;
     accuracy: number;
     combo: number;
+    perfectNotesCount?: number;
   }
 ): { 
   challenge: DailyChallengeData; 
@@ -227,6 +229,7 @@ export function submitChallengeResult(
       existingEntry.score = result.score;
       existingEntry.accuracy = result.accuracy;
       existingEntry.combo = result.combo;
+      existingEntry.perfectNotesCount = result.perfectNotesCount ?? 0;
       existingEntry.completedAt = Date.now();
     }
   } else {
@@ -239,6 +242,7 @@ export function submitChallengeResult(
       score: result.score,
       accuracy: result.accuracy,
       combo: result.combo,
+      perfectNotesCount: result.perfectNotesCount ?? 0,
       completedAt: Date.now(),
       rank: 0,
     });
@@ -246,16 +250,11 @@ export function submitChallengeResult(
   }
 
   // Sort by the challenge type's metric descending, then by playerId for deterministic tiebreaker
-  // TODO: perfect_notes should track the actual count of Perfect-rated ticks (>95% accuracy)
-  // from the scoring engine rather than using accuracy as a proxy. This requires:
-  //   1. Adding perfectNotesCount to GameResult in types/game.ts
-  //   2. Accumulating perfect ticks in the scoring engine (use-note-scoring.ts)
-  //   3. Passing perfectNotesCount through the result chain
   const sortMetric = (entry: DailyChallengeEntry): number => {
     switch (challenge.type) {
       case 'accuracy': return entry.accuracy;
       case 'combo': return entry.combo;
-      case 'perfect_notes': return entry.accuracy; // Proxy: higher accuracy correlates with more Perfect-rated ticks
+      case 'perfect_notes': return entry.perfectNotesCount;
       default: return entry.score;
     }
   };

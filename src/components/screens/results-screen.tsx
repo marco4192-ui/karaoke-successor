@@ -426,7 +426,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
               import('@/lib/game/daily-challenge').then(({ submitChallengeResult }) => {
                 submitChallengeResult(
                   { id: profile.id, name: profile.name, avatar: profile.avatar, color: profile.color },
-                  { score: playerResult.score, accuracy: playerResult.accuracy, combo: playerResult.maxCombo },
+                  { score: playerResult.score, accuracy: playerResult.accuracy, combo: playerResult.maxCombo, perfectNotesCount: playerResult.perfectNotesCount },
                 );
               });
             }

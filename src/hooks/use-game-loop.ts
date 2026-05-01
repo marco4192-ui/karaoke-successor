@@ -52,7 +52,9 @@ export interface UseGameLoopOptions {
   song: Song | null;
   players: Array<{ id: string; score: number; notesHit: number; notesMissed: number; maxCombo: number }>;
   // P2 scoring state (for duel/duet results)
-  p2ScoringState?: { score: number; notesHit: number; notesMissed: number; maxCombo: number } | null;
+  p2ScoringState?: { score: number; notesHit: number; notesMissed: number; maxCombo: number; perfectNotesCount?: number } | null;
+  // P1 perfect notes count (for daily challenge / leaderboard)
+  p1PerfectNotesCount?: number;
   // Native audio (ASIO / WASAPI)
   isNativeAudio?: boolean;
   nativeAudioTime?: number;
@@ -163,6 +165,9 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   youtubeTimeRef.current = youtubeTime;
   const nativeAudioTimeRef = useRef(nativeAudioTime);
   nativeAudioTimeRef.current = nativeAudioTime;
+  // Ref for p1PerfectNotesCount — ensure generateResults reads the latest value
+  const p1PerfectNotesCountRef = useRef(p1PerfectNotesCount);
+  p1PerfectNotesCountRef.current = p1PerfectNotesCount;
   // Refs for checkNoteHits / checkP2NoteHits — prevents game loop restart
   // when these callbacks are recreated (e.g. inline arrow functions in caller).
   const checkNoteHitsRef = useRef(checkNoteHits);
@@ -208,6 +213,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       notesMissed: activePlayer.notesMissed,
       accuracy: p1Accuracy,
       maxCombo: activePlayer.maxCombo,
+      perfectNotesCount: p1PerfectNotesCountRef.current || 0,
       rating: calcRating(p1Accuracy),
     }];
 
@@ -229,6 +235,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         notesMissed: p2.notesMissed,
         accuracy: p2Accuracy,
         maxCombo: p2.maxCombo,
+        perfectNotesCount: p2.perfectNotesCount || 0,
         rating: calcRating(p2Accuracy),
       });
     }

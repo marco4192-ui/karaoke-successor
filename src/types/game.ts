@@ -203,6 +203,7 @@ export interface GameResult {
     notesMissed: number;
     accuracy: number;
     maxCombo: number;
+    perfectNotesCount: number;
     rating: 'perfect' | 'excellent' | 'good' | 'okay' | 'poor';
   }[];
   playedAt: number;

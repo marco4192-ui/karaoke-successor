@@ -32,6 +32,7 @@ interface PlayerScoringState {
   maxCombo: number;
   notesHit: number;
   notesMissed: number;
+  perfectNotesCount: number;
 }
 
 // Timing data structure (subset used by scoring)
@@ -75,6 +76,8 @@ export interface UseNoteScoringReturn {
   
   // Note performance for visual display modes
   notePerformance: Map<string, NotePerformanceSample[]>;
+  // P1 perfect notes count (all ticks hit) — updated via ref for 60fps accuracy
+  p1PerfectNotesCount: number;
   // P2 state (for duet mode)
   p2State: PlayerScoringState;
   
@@ -105,6 +108,7 @@ const DEFAULT_PLAYER_SCORING_STATE: PlayerScoringState = {
   maxCombo: 0,
   notesHit: 0,
   notesMissed: 0,
+  perfectNotesCount: 0,
 };
 
 /**
@@ -150,6 +154,8 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   // Without this, two ticks firing before a re-render both read the same old combo value.
   const p1ComboRef = useRef(0);
   const p1MaxComboRef = useRef(0);
+  // Ref for P1 perfect notes count — incremented when all ticks of a note are hit
+  const p1PerfectNotesCountRef = useRef(0);
 
   
   // Detected pitches for P2-P4
@@ -181,6 +187,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     setP2State({ ...DEFAULT_PLAYER_SCORING_STATE });
     p1ComboRef.current = 0;
     p1MaxComboRef.current = 0;
+    p1PerfectNotesCountRef.current = 0;
     setP2DetectedPitch(null);
     noteProgressRef.current.clear();
     p2NoteProgressRef.current.clear();
@@ -314,6 +321,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
 
             if (progress.ticksHit >= progress.totalTicks) {
               progress.wasPerfect = true;
+              setPlayerState(prev => ({ ...prev, perfectNotesCount: prev.perfectNotesCount + 1 }));
             }
           }
         }
@@ -505,6 +513,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
 
             if (noteProgress.ticksHit >= noteProgress.totalTicks) {
               noteProgress.wasPerfect = true;
+              p1PerfectNotesCountRef.current++;
             }
           }
         }
@@ -560,6 +569,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     notePerformance,
     p2State,
     p2DetectedPitch,
+    p1PerfectNotesCount: p1PerfectNotesCountRef.current,
     setP2DetectedPitch,
     checkNoteHits,
     checkP2NoteHits,

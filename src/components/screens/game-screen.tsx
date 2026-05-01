@@ -307,6 +307,7 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
     checkNoteHits,
     checkP2NoteHits,
     resetScoring,
+    p1PerfectNotesCount,
   } = useNoteScoring({
     song,
     difficulty: gameState.difficulty,
@@ -462,6 +463,8 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
     players: gameState.players,
     // P2 scoring state for duel/duet results
     p2ScoringState: p2State,
+    // P1 perfect notes count for daily challenge / leaderboard
+    p1PerfectNotesCount,
     // Native audio support
     isNativeAudio: nativeAudio.enabled,
     nativeAudioTime: nativeAudio.currentPosition,
