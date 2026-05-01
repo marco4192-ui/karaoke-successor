@@ -47,34 +47,39 @@ export function useBattleRoyaleSongMedia({
 
   // Load full song data with lyrics + URLs when round changes
   useEffect(() => {
-    if (currentRoundSongId) {
-      const song = songs.find(s => s.id === currentRoundSongId);
-      if (song) {
-        // Ensure full song data: resolve URLs (Tauri) + load lyrics (IndexedDB/filesystem)
-        import('@/lib/game/song-library').then(async ({ ensureSongUrls, loadSongLyrics }) => {
-          let preparedSong = song;
-          // Restore media URLs for Tauri filesystem access
-          try {
-            preparedSong = await ensureSongUrls(song);
-          } catch (e) {
-            console.warn('[BattleRoyale] Failed to ensure song URLs:', e);
-          }
-          // Load lyrics if missing (storedTxt or relativeTxtPath)
-          if ((!preparedSong.lyrics || preparedSong.lyrics.length === 0) &&
-              (preparedSong.storedTxt || preparedSong.relativeTxtPath)) {
-            try {
-              const lyrics = await loadSongLyrics(preparedSong);
-              if (lyrics.length > 0) {
-                preparedSong = { ...preparedSong, lyrics };
-              }
-            } catch (e) {
-              console.warn('[BattleRoyale] Failed to load lyrics:', e);
-            }
-          }
-          setCurrentSong(preparedSong);
-        });
+    if (!currentRoundSongId) return;
+    const song = songs.find(s => s.id === currentRoundSongId);
+    if (!song) return;
+
+    let cancelled = false;
+
+    // Ensure full song data: resolve URLs (Tauri) + load lyrics (IndexedDB/filesystem)
+    import('@/lib/game/song-library').then(async ({ ensureSongUrls, loadSongLyrics }) => {
+      let preparedSong = song;
+      // Restore media URLs for Tauri filesystem access
+      try {
+        preparedSong = await ensureSongUrls(song);
+      } catch (e) {
+        console.warn('[BattleRoyale] Failed to ensure song URLs:', e);
       }
-    }
+      // Load lyrics if missing (storedTxt or relativeTxtPath)
+      if ((!preparedSong.lyrics || preparedSong.lyrics.length === 0) &&
+          (preparedSong.storedTxt || preparedSong.relativeTxtPath)) {
+        try {
+          const lyrics = await loadSongLyrics(preparedSong);
+          if (lyrics.length > 0) {
+            preparedSong = { ...preparedSong, lyrics };
+          }
+        } catch (e) {
+          console.warn('[BattleRoyale] Failed to load lyrics:', e);
+        }
+      }
+      if (!cancelled) {
+        setCurrentSong(preparedSong);
+      }
+    });
+
+    return () => { cancelled = true; };
   }, [currentRoundSongId, songs, gameCurrentRound]);
 
   // Load media when song changes — handles both browser (IndexedDB) and Tauri (filesystem).
@@ -96,6 +101,8 @@ export function useBattleRoyaleSongMedia({
     resolvedVideoUrlRef.current = null;
 
     if (!currentSong) return;
+
+    let cancelled = false;
 
     const loadMedia = async () => {
       let audioUrl: string | undefined = currentSong.audioUrl;
@@ -154,10 +161,14 @@ export function useBattleRoyaleSongMedia({
         videoRef.current.load();
       }
 
+      if (cancelled) return;
+
       setMediaLoaded(true);
     };
 
     loadMedia();
+
+    return () => { cancelled = true; };
   }, [currentSong, gameCurrentRound]);
 
   // Cleanup: revoke blob URLs on unmount
