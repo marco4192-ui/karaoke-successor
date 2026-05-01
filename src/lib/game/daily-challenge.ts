@@ -246,11 +246,16 @@ export function submitChallengeResult(
   }
 
   // Sort by the challenge type's metric descending, then by playerId for deterministic tiebreaker
+  // TODO: perfect_notes should track the actual count of Perfect-rated ticks (>95% accuracy)
+  // from the scoring engine rather than using accuracy as a proxy. This requires:
+  //   1. Adding perfectNotesCount to GameResult in types/game.ts
+  //   2. Accumulating perfect ticks in the scoring engine (use-note-scoring.ts)
+  //   3. Passing perfectNotesCount through the result chain
   const sortMetric = (entry: DailyChallengeEntry): number => {
     switch (challenge.type) {
       case 'accuracy': return entry.accuracy;
       case 'combo': return entry.combo;
-      case 'perfect_notes': return entry.accuracy; // accuracy as proxy until perfectNotes is tracked
+      case 'perfect_notes': return entry.accuracy; // Proxy: higher accuracy correlates with more Perfect-rated ticks
       default: return entry.score;
     }
   };
