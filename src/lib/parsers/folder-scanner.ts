@@ -11,7 +11,7 @@ const scanBlobUrls = new Set<string>();
 
 /** Create a blob URL and track it for later cleanup */
 function createTrackedBlobUrl(file: File | Blob): string {
-  const url = createTrackedBlobUrl(file);
+  const url = URL.createObjectURL(file);
   scanBlobUrls.add(url);
   return url;
 }
