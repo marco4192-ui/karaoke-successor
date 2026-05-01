@@ -413,7 +413,8 @@ export function getLevelForXP(xp: number): { level: number; currentXP: number; n
   let level = 1;
   let xpRequired = 0;
   
-  while (true) {
+  let iterations = 0;
+  while (iterations++ < 1000) {
     let nextRequired: number;
     if (level < LEVEL_TIER_1_MAX) {
       nextRequired = XP_PER_LEVEL_TIER_1;
@@ -441,6 +442,8 @@ export function getLevelForXP(xp: number): { level: number; currentXP: number; n
     xpRequired += nextRequired;
     level++;
   }
+  // Safety fallback: if we exceeded max iterations, return a reasonable default
+  return { level, currentXP: xp, nextLevelXP: xpRequired + XP_PER_LEVEL_TIER_5, progress: 100 };
 }
 
 // ===================== STORAGE =====================
@@ -487,7 +490,7 @@ function getDefaultStats(): ExtendedPlayerStats {
   averageScore: 0,
     averageAccuracy: 0,
     highestScore: 0,
-    lowestScore: Infinity,
+    lowestScore: 0,
     totalPerfectNotes: 0,
     totalGoldenNotesHit: 0,
     totalPlayTime: 0,

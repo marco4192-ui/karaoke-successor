@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { Note, LyricLine } from '@/types/game';
+import { Note, LyricLine, PLAYER_COLORS } from '@/types/game';
 import { getNoteShapeClasses, getNoteDisplayStyleClasses, NoteShapeStyle, NoteDisplayStyle } from '@/lib/game/note-utils';
 import { MicIcon } from '@/components/icons';
 
@@ -306,8 +306,8 @@ export function NoteHighway({
   // Get note shape classes from style
   const noteShape = useMemo(() => getNoteShapeClasses(noteShapeStyle), [noteShapeStyle]);
 
-  // Determine color scheme based on player number
-  const colorScheme = playerNumber === 1 ? 'cyan' : 'pink';
+  // Determine color scheme based on playerColor prop
+  const colorScheme = playerColor === PLAYER_COLORS[1] ? 'pink' : 'cyan';
   const bgGradientClass = playerNumber === 1
     ? 'absolute inset-0 bg-gradient-to-b from-cyan-900/20 to-transparent pointer-events-none'
     : 'absolute inset-0 bg-gradient-to-t from-pink-900/20 to-transparent pointer-events-none';

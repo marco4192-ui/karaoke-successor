@@ -53,8 +53,10 @@ export function normalizeFilePath(path: string): string {
     .replace(/&#x3E;/g, '>')
     .replace(/&#39;/g, "'")
     // Catch-all for any remaining numeric HTML entities: &#NNN; or &#xHH;
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)))
-    .replace(/&#x([0-9a-fA-F]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+    // Limit to valid Unicode code points (1-65535) to avoid corrupting
+    // legitimate content that happens to match &digits; patterns (e.g. in filenames)
+    .replace(/&#(\d+);/g, (_, n) => { const cp = parseInt(n, 10); return cp >= 1 && cp <= 65535 ? String.fromCharCode(cp) : _; })
+    .replace(/&#x([0-9a-fA-F]+);/gi, (_, hex) => { const cp = parseInt(hex, 16); return cp >= 1 && cp <= 65535 ? String.fromCharCode(cp) : _; });
 
   // Decode percent-encoded characters (e.g. %20 → space, %C3%A4 → ä)
   // Use segment-by-segment approach since decodeURIComponent throws on malformed input

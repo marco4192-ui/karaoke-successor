@@ -590,7 +590,7 @@ export function RateMySongRatingScreen({
           <div className="text-center mb-6 bg-purple-500/10 rounded-xl p-3 border border-purple-500/20">
             <span className="text-purple-300 font-medium">Gesamtdurchschnitt: </span>
             <span className="text-xl font-bold text-white">
-              {singingPlayers.reduce((sum, s) => sum + getAverageForSinger(s.id), 0) / singingPlayers.length}
+              {(singingPlayers.reduce((sum, s) => sum + getAverageForSinger(s.id), 0) / singingPlayers.length).toFixed(1)}
             </span>
             <span className="text-purple-300"> / 10</span>
           </div>

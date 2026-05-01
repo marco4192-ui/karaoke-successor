@@ -43,7 +43,7 @@ export function generateMedleySnippets(
     if (song.medleyStartBeat !== undefined && song.medleyEndBeat !== undefined && song.bpm > 0) {
       const bd = beatDurationMs(song.bpm);
       const startTime = song.medleyStartBeat * bd;
-      const endTime = song.medleyEndBeat * bd;
+      const endTime = Math.min(song.medleyEndBeat * bd, song.duration);
       return { song, startTime, endTime, duration: endTime - startTime };
     }
 

@@ -1013,23 +1013,33 @@ export function PtmGameScreen({
           <Button
             variant="ghost"
             onClick={() => {
-              // Toggle camera/webcam if available
-              navigator.mediaDevices?.getUserMedia({ video: true })
-                .then(stream => {
-                  activeWebcamStreamsRef.current.push(stream);
-                  const video = document.createElement('video');
-                  video.srcObject = stream;
-                  video.style.cssText = 'position:fixed;bottom:80px;right:16px;width:200px;border-radius:12px;z-index:100;border:2px solid rgba(255,255,255,0.3);';
-                  document.body.appendChild(video);
-                  video.play();
-                  // Click to close
-                  video.addEventListener('click', () => {
-                    stream.getTracks().forEach(t => t.stop());
-                    activeWebcamStreamsRef.current = activeWebcamStreamsRef.current.filter(s => s !== stream);
-                    video.remove();
-                  });
-                })
-                .catch(() => {});
+              // Toggle camera/webcam: stop all existing streams, or start a new one
+              if (activeWebcamStreamsRef.current.length > 0) {
+                // Turn off: stop all streams and remove video elements
+                activeWebcamStreamsRef.current.forEach(stream => {
+                  stream.getTracks().forEach(t => t.stop());
+                });
+                activeWebcamStreamsRef.current = [];
+                document.querySelectorAll('video[style*="z-index:100"]').forEach(el => el.remove());
+              } else {
+                // Turn on: request camera
+                navigator.mediaDevices?.getUserMedia({ video: true })
+                  .then(stream => {
+                    activeWebcamStreamsRef.current.push(stream);
+                    const video = document.createElement('video');
+                    video.srcObject = stream;
+                    video.style.cssText = 'position:fixed;bottom:80px;right:16px;width:200px;border-radius:12px;z-index:100;border:2px solid rgba(255,255,255,0.3);';
+                    document.body.appendChild(video);
+                    video.play();
+                    // Click to close
+                    video.addEventListener('click', () => {
+                      stream.getTracks().forEach(t => t.stop());
+                      activeWebcamStreamsRef.current = activeWebcamStreamsRef.current.filter(s => s !== stream);
+                      video.remove();
+                    });
+                  })
+                  .catch(() => {});
+              }
             }}
             className="text-white/80 hover:text-white hover:bg-white/10 rounded-lg w-10 h-10 p-0"
             title="Kamera"

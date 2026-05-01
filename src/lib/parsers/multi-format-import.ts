@@ -268,10 +268,11 @@ export function parseStepMania(data: string): StepManiaData | null {
 
     for (const line of lines) {
       const trimmed = line.trim();
-      if (trimmed.startsWith('#TITLE:')) result.title = trimmed.slice(7, -1);
-      else if (trimmed.startsWith('#ARTIST:')) result.artist = trimmed.slice(8, -1);
+      if (trimmed.startsWith('#TITLE:')) result.title = trimmed.endsWith(';') ? trimmed.slice(7, -1) : trimmed.slice(7);
+      else if (trimmed.startsWith('#ARTIST:')) result.artist = trimmed.endsWith(';') ? trimmed.slice(8, -1) : trimmed.slice(8);
       else if (trimmed.startsWith('#BPMS:')) {
-        result.bpm = trimmed.slice(6, -1).split(',').map(b => parseFloat(b.split('=')[1]));
+        const bpmStr = trimmed.endsWith(';') ? trimmed.slice(6, -1) : trimmed.slice(6);
+        result.bpm = bpmStr.split(',').map(b => parseFloat(b.split('=')[1]));
       }
     }
 

@@ -333,58 +333,61 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   // Only updates pitch/frequency of existing notes that match detected notes.
   // Song text, timing, and note durations are NEVER changed.
   const handleApplyDetectedNotes = useCallback((detectedNotes: DetectedNote[]) => {
-    // Collect all existing notes
-    const existingNotes = currentSong.lyrics.flatMap(line => line.notes);
+    // Use functional state update to avoid stale closure over currentSong.lyrics
+    setCurrentSong(prev => {
+      // Collect all existing notes from latest state
+      const existingNotes = prev.lyrics.flatMap(line => line.notes);
 
-    // Build a map: existingNote.id → best matching detected note (by time overlap)
-    const pitchMap = new Map<string, { pitch: number; frequency: number; confidence: number }>();
+      // Build a map: existingNote.id → best matching detected note (by time overlap)
+      const pitchMap = new Map<string, { pitch: number; frequency: number; confidence: number }>();
 
-    for (const en of existingNotes) {
-      let bestOverlap = 0;
-      let bestDetected: DetectedNote | null = null;
-      const enEnd = en.startTime + en.duration;
+      for (const en of existingNotes) {
+        let bestOverlap = 0;
+        let bestDetected: DetectedNote | null = null;
+        const enEnd = en.startTime + en.duration;
 
-      for (const dn of detectedNotes) {
-        const dnEnd = dn.start_time_ms + dn.duration_ms;
-        const overlap = Math.max(0, Math.min(enEnd, dnEnd) - Math.max(en.startTime, dn.start_time_ms));
-        if (overlap > bestOverlap) {
-          bestOverlap = overlap;
-          bestDetected = dn;
+        for (const dn of detectedNotes) {
+          const dnEnd = dn.start_time_ms + dn.duration_ms;
+          const overlap = Math.max(0, Math.min(enEnd, dnEnd) - Math.max(en.startTime, dn.start_time_ms));
+          if (overlap > bestOverlap) {
+            bestOverlap = overlap;
+            bestDetected = dn;
+          }
+        }
+
+        // Only update if overlap is significant (at least 20% of the existing note)
+        if (bestDetected && bestOverlap > en.duration * 0.2) {
+          pitchMap.set(en.id, {
+            pitch: bestDetected.midi_note,
+            frequency: bestDetected.frequency,
+            confidence: bestDetected.confidence,
+          });
         }
       }
 
-      // Only update if overlap is significant (at least 20% of the existing note)
-      if (bestDetected && bestOverlap > en.duration * 0.2) {
-        pitchMap.set(en.id, {
-          pitch: bestDetected.midi_note,
-          frequency: bestDetected.frequency,
-          confidence: bestDetected.confidence,
-        });
-      }
-    }
+      if (pitchMap.size === 0) return prev; // Nothing to update
 
-    if (pitchMap.size === 0) return; // Nothing to update
+      // Update only pitch/frequency on matching existing notes — preserve everything else
+      const newLyrics = prev.lyrics.map(line => ({
+        ...line,
+        notes: line.notes.map(note => {
+          const update = pitchMap.get(note.id);
+          if (!update) return note;
+          return {
+            ...note,
+            pitch: update.pitch,
+            frequency: update.frequency,
+            analysisConfidence: update.confidence,
+            isGolden: update.confidence >= 0.8 ? true : note.isGolden,
+          };
+        }),
+      }));
 
-    // Update only pitch/frequency on matching existing notes — preserve everything else
-    const newLyrics = currentSong.lyrics.map(line => ({
-      ...line,
-      notes: line.notes.map(note => {
-        const update = pitchMap.get(note.id);
-        if (!update) return note;
-        return {
-          ...note,
-          pitch: update.pitch,
-          frequency: update.frequency,
-          analysisConfidence: update.confidence,
-          isGolden: update.confidence >= 0.8 ? true : note.isGolden,
-        };
-      }),
-    }));
-
-    pushHistory(newLyrics);
-    setCurrentSong(prev => ({ ...prev, lyrics: newLyrics }));
-    setHasUnsavedChanges(true);
-  }, [pushHistory, setHasUnsavedChanges, currentSong.lyrics]);
+      pushHistory(newLyrics);
+      setHasUnsavedChanges(true);
+      return { ...prev, lyrics: newLyrics };
+    });
+  }, [pushHistory, setHasUnsavedChanges]);
 
   // --- Audio Analysis: Apply detected BPM ---
   const handleApplyBpm = useCallback((bpm: number) => {

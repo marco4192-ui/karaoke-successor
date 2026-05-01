@@ -245,9 +245,18 @@ export function submitChallengeResult(
     challenge.totalParticipants++;
   }
 
-  // Sort by score descending, then by playerId for deterministic tiebreaker (stable sort)
+  // Sort by the challenge type's metric descending, then by playerId for deterministic tiebreaker
+  const sortMetric = (entry: DailyChallengeEntry): number => {
+    switch (challenge.type) {
+      case 'accuracy': return entry.accuracy;
+      case 'combo': return entry.combo;
+      case 'perfect_notes': return entry.combo; // combo as proxy for perfect notes when not tracked
+      default: return entry.score;
+    }
+  };
   challenge.entries.sort((a, b) => {
-    if (b.score !== a.score) return b.score - a.score;
+    const diff = sortMetric(b) - sortMetric(a);
+    if (diff !== 0) return diff;
     return a.playerId.localeCompare(b.playerId);
   });
   challenge.entries.forEach((entry, index) => {
