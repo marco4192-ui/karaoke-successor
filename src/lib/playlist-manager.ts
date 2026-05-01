@@ -1,5 +1,5 @@
 import { Playlist, PlaylistFolder, PlaylistExport, SYSTEM_PLAYLISTS, DEFAULT_PLAYLIST_SETTINGS, Song } from '@/types/game';
-import { generateId } from '@/lib/utils';
+// IDs use crypto.randomUUID() for collision-free 128-bit random IDs
 
 // Re-export types for convenience
 export type { Playlist, PlaylistFolder, PlaylistExport } from '@/types/game';
@@ -109,7 +109,7 @@ export function createPlaylist(name: string, description?: string): Playlist {
   
   const now = Date.now();
   const playlist: Playlist = {
-    id: generateId('playlist'),
+    id: crypto.randomUUID(),
     name: name.trim(),
     description: description?.trim(),
     songIds: [],

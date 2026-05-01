@@ -3,7 +3,7 @@ import type { Song } from '@/types/game';
 import { isTauri, getSongMediaUrl, clearBlobUrlCache, normalizeFilePath } from '@/lib/tauri-file-storage';
 import { getSongMediaUrls, revokeSongMediaUrls } from '@/lib/db/media-db';
 import { saveCustomSongsToDB, loadCustomSongsFromDB, migrateFromLocalStorage, clearCustomSongsFromDB } from '@/lib/db/custom-songs-db';
-import { generateId } from '@/lib/utils';
+// IDs use crypto.randomUUID() for collision-free 128-bit random IDs
 import { isAbsolutePath, resolveSongsBaseFolder, normalizeSongPathFields } from './song-paths';
 
 // Re-export moved functions so existing imports don't break
@@ -186,7 +186,7 @@ export async function addSong(song: Song): Promise<void> {
   if (!exists) {
     const newSong = {
       ...song,
-      id: song.id || generateId('custom'),
+      id: song.id || crypto.randomUUID(),
     };
     customSongs.push(newSong);
     saveCustomSongs(customSongs);
@@ -210,7 +210,7 @@ export function addSongs(songs: Song[]): void {
     if (!exists) {
       customSongs.push({
         ...song,
-        id: song.id || generateId('custom'),
+        id: song.id || crypto.randomUUID(),
       });
       added = true;
     }

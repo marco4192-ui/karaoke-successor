@@ -13,7 +13,7 @@ import {
   HighscoreEntry,
   getRankTitle,
 } from '@/types/game';
-import { generateId } from '@/lib/utils';
+// IDs use crypto.randomUUID() for collision-free 128-bit random IDs
 
 interface GameStore {
   // Game state
@@ -289,7 +289,7 @@ export const useGameStore = create<GameStore>()(
 
       createProfile: (name, avatar) => {
         const profile = createDefaultPlayerProfile({
-          id: generateId('profile'),
+          id: crypto.randomUUID(),
           name,
           avatar,
           color: PLAYER_COLORS[get().profiles.length % PLAYER_COLORS.length],
@@ -386,7 +386,7 @@ export const useGameStore = create<GameStore>()(
         if (playerQueueCount >= 3) return;
 
         const item: QueueItem = {
-          id: generateId('queue'),
+          id: crypto.randomUUID(),
           song,
           playerId,
           playerName,
@@ -413,7 +413,7 @@ export const useGameStore = create<GameStore>()(
         if (companionQueueCount >= 3) return;
 
         const item: QueueItem = {
-          id: generateId('queue'),
+          id: crypto.randomUUID(),
           ...queueItemData,
           addedAt: Date.now(),
           status: 'pending',
@@ -474,7 +474,7 @@ export const useGameStore = create<GameStore>()(
         const rankInfo = getRankTitle(entryData.accuracy);
         const entry: HighscoreEntry = {
           ...entryData,
-          id: generateId('highscore'),
+          id: crypto.randomUUID(),
           playedAt: Date.now(),
           rankTitle: rankInfo.title,
         };
