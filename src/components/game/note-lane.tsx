@@ -335,5 +335,3 @@ export function NoteLane({
   );
 }
 
-// Export sub-components for potential reuse
-export { PitchGrid, TargetLine, NoteBlock, PitchIndicator, CurrentLyrics };
