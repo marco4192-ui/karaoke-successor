@@ -44,3 +44,28 @@ Stage Summary:
 - i18n system now active in main navigation and screen components
 - Users can switch languages via localStorage 'karaoke-language'
 - Remaining components can be migrated incrementally
+
+---
+Task ID: L2
+Agent: main
+Task: Fix perfect_notes daily challenge sorting by accuracy instead of actual perfect notes count
+
+Work Log:
+- Added `perfectNotesCount: number` to `GameResult.players[]` in types/game.ts
+- Added `perfectNotesCount` to `PlayerScoringState` in use-note-scoring.ts
+- Added `p1PerfectNotesCountRef` to track P1's perfect notes count during gameplay
+- Incremented perfect notes count when `ticksHit >= totalTicks` for both P1 (checkNoteHits) and P2 (checkPlayerNoteHits)
+- Added `p1PerfectNotesCount` to hook return type and destructured in game-screen.tsx
+- Passed `p1PerfectNotesCount` through `useGameLoop` options with ref pattern to avoid stale closure
+- Included `perfectNotesCount` in generateResults for both P1 and P2 in use-game-loop.ts
+- Added `perfectNotesCount` to `DailyChallengeEntry` interface and `submitChallengeResult` parameter
+- Changed perfect_notes challenge sort metric from `entry.accuracy` to `entry.perfectNotesCount`
+- Updated results-screen.tsx to pass `perfectNotesCount` from GameResult to submitChallengeResult
+- Removed TODO comment that documented the missing feature
+- TypeScript compilation verified (no new errors in changed files)
+- Commit: 0d9c467
+
+Stage Summary:
+- perfect_notes daily challenge now correctly sorts by actual perfect notes count
+- Perfect notes = notes where all ticks were hit (100% hit rate on individual note)
+- Data flows: scoring engine → GameResult → submitChallengeResult → leaderboard sort
