@@ -249,8 +249,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
           const tickInterval = beatDurationMs;
 
           if (timeSinceLastEval >= tickInterval * 0.5) {
-            if (pitch.note == null) return;
-            const tickResult = evaluateTick(pitch.note, note.pitch, difficulty);
+            const tickResult = evaluateTick(pitch.note!, note.pitch, difficulty);
 
             noteProgress.ticksEvaluated++;
             noteProgress.lastEvaluatedTime = currentTime;
@@ -262,14 +261,15 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
               const finalPoints = Math.max(1, Math.round(tickPoints));
 
               if (finalPoints > 0) {
-                const newCombo = playerState.combo + 1;
-
-                setPlayerState(prev => ({
-                  ...prev,
-                  score: prev.score + finalPoints,
-                  combo: newCombo,
-                  maxCombo: Math.max(prev.maxCombo, newCombo),
-                }));
+                setPlayerState(prev => {
+                  const newCombo = prev.combo + 1;
+                  return {
+                    ...prev,
+                    score: prev.score + finalPoints,
+                    combo: newCombo,
+                    maxCombo: Math.max(prev.maxCombo, newCombo),
+                  };
+                });
 
                 setScoreEventsState(prev => [
                   ...prev.slice(-10),
@@ -388,8 +388,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
           const tickInterval = beatDurationMs;
 
           if (timeSinceLastEval >= tickInterval * 0.5) {
-            if (pitch.note == null) return;
-            const tickResult = evaluateTick(pitch.note, note.pitch, difficulty);
+            const tickResult = evaluateTick(pitch.note!, note.pitch, difficulty);
 
             noteProgress.ticksEvaluated++;
             noteProgress.lastEvaluatedTime = currentTime;
