@@ -113,7 +113,11 @@ fn run_audio_thread(
             }
             Err(RecvTimeoutError::Timeout) => {
                 // Poll shared state for event emission
-                let state = shared_state.lock().unwrap();
+                let Ok(state) = shared_state.lock() else {
+                    // Mutex poisoned — another thread panicked. Exit audio thread gracefully.
+                    eprintln!("[audio] Shared state mutex poisoned, exiting audio thread");
+                    break;
+                };
 
                 // Emit periodic time-update while playing
                 if state.is_playing {
