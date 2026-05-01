@@ -528,8 +528,12 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
               // The closure captures nativeAudioTime before native audio starts (value: 0),
               // so the watchdog always evaluates nativePlaying = false incorrectly.
               const nativePlaying = isNativeAudio && nativeAudioTimeRef.current > 0;
+              // YouTube active: check if youtubeTimeRef has been updated (non-zero means
+              // the YouTube player is reporting playback progress). This is more reliable
+              // than the static isYouTube flag which stays true even if YT fails to load.
+              const youTubePlaying = youTubeActive && youtubeTimeRef.current > 0;
 
-              if (!audioPlaying && !videoPlaying && !youTubeActive && !nativePlaying) {
+              if (!audioPlaying && !videoPlaying && !youTubePlaying && !nativePlaying) {
                 if (isNonScoringMode) {
                   // Non-scoring modes: just warn, don't abort. Wall-clock fallback
                   // and onEnded will handle song completion naturally.
