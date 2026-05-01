@@ -34,7 +34,7 @@ interface LyricLineDisplayProps {
  * - Hyphen in lyric = word break / visual separator
  */
 // Shared empty Map to avoid creating a new one on every render (defeats React.memo)
-const EMPTY_NOTE_PERFORMANCE = new Map<string, Array<{ hit: boolean; accuracy: number }>>();
+const EMPTY_NOTE_PERFORMANCE = new Map<string, Array<{ time: number; hit: boolean; accuracy: number }>>();
 
 // Shared interval for polling localStorage style changes.
 // Prevents 15-25 parallel 5s intervals when many LyricLineDisplay instances are mounted.

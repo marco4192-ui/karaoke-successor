@@ -201,7 +201,7 @@ function PassTheMicSeriesResults({ onBack }: { onBack: () => void }) {
         if (!agg[id]) agg[id] = { name: id, color: '#888', totalScore: 0, totalHits: 0, totalMisses: 0, bestCombo: 0, roundsPlayed: 0 };
         agg[id].totalScore += scores.score;
         agg[id].totalHits += scores.notesHit;
-        agg[id].totalMisses += scores.notesMisses;
+        agg[id].totalMisses += scores.notesMissed;
         if (scores.maxCombo > agg[id].bestCombo) agg[id].bestCombo = scores.maxCombo;
         agg[id].roundsPlayed++;
       }

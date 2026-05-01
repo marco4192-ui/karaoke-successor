@@ -30,7 +30,7 @@ export interface SinglePlayerLyricsProps {
 // ===================== MAIN COMPONENT =====================
 
 // Shared empty Map to avoid creating a new one on every render (defeats React.memo)
-const EMPTY_NOTE_PERFORMANCE = new Map<string, Array<{ hit: boolean; accuracy: number }>>();
+const EMPTY_NOTE_PERFORMANCE = new Map<string, Array<{ time: number; hit: boolean; accuracy: number }>>();
 
 export function SinglePlayerLyrics({
   sortedLines,

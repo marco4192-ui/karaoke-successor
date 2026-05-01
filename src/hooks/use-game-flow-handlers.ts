@@ -32,7 +32,8 @@ function buildGameResultFromState(
       else rating = 'poor';
       return {
         playerId: p.id, score: p.score, accuracy: Math.round(accuracy * 10) / 10,
-        notesHit: p.notesHit, notesMissed: p.notesMissed, maxCombo: p.maxCombo, rating,
+        notesHit: p.notesHit, notesMissed: p.notesMissed, maxCombo: p.maxCombo,
+        perfectNotesCount: 0, rating,
       };
     }),
     songId: currentSong?.id || '',

@@ -427,11 +427,11 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
     // then videoBackground only if it's an absolute filesystem path (not blob/http).
     // A blob videoBackground from playback would shadow a valid relativeVideoPath.
     const videoRelative = currentSong.relativeVideoPath;
-    const videoAbsolute = currentSong.videoBackground &&
+    const isVideoAbsolute = currentSong.videoBackground &&
       isAbsolute(currentSong.videoBackground) &&
       !currentSong.videoBackground.startsWith('blob:') &&
       !currentSong.videoBackground.startsWith('http');
-    const videoPath = videoRelative || videoAbsolute;
+    const videoPath = videoRelative || (isVideoAbsolute ? currentSong.videoBackground : undefined);
     if (videoPath && !currentSong.youtubeUrl) {
       const normalizedPath = normalizeFilePath(videoPath);
       if (isAbsolute(normalizedPath)) {

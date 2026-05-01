@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   reactStrictMode: true,
+  turbopack: {
+    root: __dirname,
+  },
 };
 
 export default nextConfig;

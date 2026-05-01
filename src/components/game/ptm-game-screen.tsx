@@ -432,6 +432,7 @@ export function PtmGameScreen({
           }
         }, 200);
         retryTimerRef.current = retryTimer;
+        return;
       }
 
       const seekAndPlay = () => {
@@ -484,6 +485,7 @@ export function PtmGameScreen({
       console.warn('[PTM] No lyrics loaded, attempting reload...');
       try {
         const { loadSongLyrics } = await import('@/lib/game/song-library');
+        if (!songToCheck) return;
         const lyrics = await loadSongLyrics(songToCheck);
         if (lyrics.length > 0 && songToCheck) {
           songToCheck.lyrics = lyrics;
@@ -671,7 +673,7 @@ export function PtmGameScreen({
         seriesHistory={passTheMicSeriesHistory}
         mediaLoaded={mediaLoaded}
         startGame={startGame}
-        audioSong={audioSong}
+        audioSong={audioSong ?? undefined}
         isYouTube={isYouTube}
         audioRef={audioRef}
         videoRef={videoRef}
