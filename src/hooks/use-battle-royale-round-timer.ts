@@ -29,16 +29,12 @@ export function useBattleRoyaleRoundTimer({
 
   useEffect(() => {
     if (gameStatus === 'playing' && roundDuration) {
-      queueMicrotask(() => setRoundTimeLeft(roundDuration));
+      setRoundTimeLeft(roundDuration);
 
       const interval = setInterval(() => {
         setRoundTimeLeft(prev => {
           if (prev <= 1) {
             clearInterval(interval);
-            // AUTO ELIMINATION - trigger when time runs out.
-            // Use ref to always call the latest handleRoundEnd version
-            // (avoids stale closure when handleRoundEnd's deps change).
-            handleRoundEndRef.current();
             return 0;
           }
           return prev - 1;
@@ -47,7 +43,17 @@ export function useBattleRoyaleRoundTimer({
 
       return () => clearInterval(interval);
     }
-  }, [gameStatus, roundDuration, _gameCurrentRound, handleRoundEndRef]);
+  }, [gameStatus, roundDuration, _gameCurrentRound]);
+
+  // Trigger auto-elimination when the timer reaches zero.
+  // Kept separate from the setRoundTimeLeft updater to avoid
+  // side effects inside a React state updater function, which
+  // can be called multiple times in Concurrent Mode.
+  useEffect(() => {
+    if (gameStatus === 'playing' && roundTimeLeft === 0 && roundDuration !== undefined && roundDuration > 0) {
+      handleRoundEndRef.current();
+    }
+  }, [gameStatus, roundTimeLeft, roundDuration, handleRoundEndRef]);
 
   return { roundTimeLeft };
 }
