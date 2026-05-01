@@ -442,7 +442,7 @@ export function useImportScreen(onImport: (song: Song) => void) {
     }
 
     if (songsToImport.length > 0) {
-      addSongs(songsToImport);
+      await addSongs(songsToImport);
       if (detectedBaseFolder) {
         try {
           const existingFolder = localStorage.getItem('karaoke-songs-folder');

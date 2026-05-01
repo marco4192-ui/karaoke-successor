@@ -197,7 +197,10 @@ export async function addSong(song: Song): Promise<void> {
 }
 
 // Add multiple songs
-export function addSongs(songs: Song[]): void {
+export async function addSongs(songs: Song[]): Promise<void> {
+  // Wait for any in-progress scan to complete to avoid race condition
+  await waitForScanLock();
+
   const customSongs = getCustomSongs();
   let added = false;
 
