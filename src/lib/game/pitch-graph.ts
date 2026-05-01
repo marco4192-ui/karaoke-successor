@@ -192,10 +192,12 @@ export class PitchGraphRenderer {
   }
 
   private timeToX(time: number, startTime: number, endTime: number, width: number): number {
+    if (endTime === startTime) return 0;
     return ((time - startTime) / (endTime - startTime)) * width;
   }
 
   private pitchToY(pitch: number, minPitch: number, maxPitch: number, height: number): number {
+    if (maxPitch === minPitch) return height / 2;
     return height - ((pitch - minPitch) / (maxPitch - minPitch)) * height;
   }
 
