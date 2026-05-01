@@ -3,6 +3,13 @@ import { readFile } from 'fs/promises';
 import { findAIConfigFile } from '@/app/api/lib/find-config';
 import { isLocalRequest } from '@/app/api/lib/is-local-request';
 
+// Input limits for safety
+const MAX_PROMPT_LENGTH = 2000;
+const MAX_TTS_TEXT_LENGTH = 5000;
+const MAX_IMAGE_DIMENSION = 2048;
+const MAX_BATCH_SIZE = 10;
+const MAX_REQUEST_BODY_SIZE = 1024 * 1024; // 1MB
+
 // API Configuration interface
 interface AIConfig {
   baseUrl: string;
@@ -31,7 +38,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
   try {
-    const body = await request.json();
+    // Check request body size
+    const bodyBuffer = await request.arrayBuffer();
+    if (bodyBuffer.byteLength > MAX_REQUEST_BODY_SIZE) {
+      return NextResponse.json({ error: 'Request body too large' }, { status: 413 });
+    }
+    const body = JSON.parse(new TextDecoder().decode(bodyBuffer));
     const { type, prompt, filename, text, voice } = body;
 
     // Load configuration
@@ -61,6 +73,15 @@ export async function POST(request: NextRequest) {
     if (type === 'image') {
       if (!prompt || !filename) {
         return NextResponse.json({ error: 'prompt and filename required' }, { status: 400 });
+      }
+      if (prompt.length > MAX_PROMPT_LENGTH) {
+        return NextResponse.json({ error: `Prompt too long (max ${MAX_PROMPT_LENGTH} characters)` }, { status: 400 });
+      }
+      // Validate image dimensions
+      const sizeStr = body.size || '1024x1024';
+      const [width, height] = sizeStr.split('x').map(Number);
+      if (isNaN(width) || isNaN(height) || width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION || width < 1 || height < 1) {
+        return NextResponse.json({ error: `Invalid image dimensions (max ${MAX_IMAGE_DIMENSION}x${MAX_IMAGE_DIMENSION})` }, { status: 400 });
       }
 
       try {
@@ -133,6 +154,9 @@ export async function POST(request: NextRequest) {
     if (type === 'audio') {
       if (!text || !filename) {
         return NextResponse.json({ error: 'text and filename required' }, { status: 400 });
+      }
+      if (text.length > MAX_TTS_TEXT_LENGTH) {
+        return NextResponse.json({ error: `Text too long (max ${MAX_TTS_TEXT_LENGTH} characters)` }, { status: 400 });
       }
 
       try {
@@ -213,11 +237,15 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
   try {
-    const body = await request.json();
+    const bodyBuffer = await request.arrayBuffer();
+    if (bodyBuffer.byteLength > MAX_REQUEST_BODY_SIZE) {
+      return NextResponse.json({ error: 'Request body too large' }, { status: 413 });
+    }
+    const body = JSON.parse(new TextDecoder().decode(bodyBuffer));
     const { assets } = body;
 
-    if (!Array.isArray(assets)) {
-      return NextResponse.json({ error: 'assets array required' }, { status: 400 });
+    if (!Array.isArray(assets) || assets.length > MAX_BATCH_SIZE) {
+      return NextResponse.json({ error: `assets array required (max ${MAX_BATCH_SIZE} items)` }, { status: 400 });
     }
 
     // Load configuration

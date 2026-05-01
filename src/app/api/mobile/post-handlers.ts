@@ -8,6 +8,7 @@ import {
   mutableState,
   getUniqueConnectionCode,
   removeClient,
+  requireAuth,
 } from './mobile-state';
 
 // ===================== POST HANDLER =====================
@@ -417,6 +418,10 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
 
       case 'assigncharacter':
         // Assign a character profile to a companion (called from settings)
+        // Auth required: this is a privileged admin action
+        if (!requireAuth(request)) {
+          return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN.' }, { status: 401 });
+        }
         {
           const assignPayload = payload as { targetClientId: string; profile: MobileProfile | null };
           const targetClientId = assignPayload.targetClientId;
@@ -489,6 +494,10 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
 
       case 'setsongs':
         // Main app syncs its song library for companion clients
+        // Auth required: this is a privileged admin action
+        if (!requireAuth(request)) {
+          return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN.' }, { status: 401 });
+        }
         const songsPayload = payload as Array<{
           id: string;
           title: string;

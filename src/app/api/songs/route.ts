@@ -13,6 +13,25 @@ import { mutableState } from '@/app/api/mobile/mobile-state';
 const rateLimitMap = new Map<string, number[]>();
 const WINDOW_MS = 60_000;
 
+// Periodic cleanup of stale entries (every 5 minutes)
+const rateLimitCleanupTimer = setInterval(() => {
+  const now = Date.now();
+  for (const [ip, timestamps] of rateLimitMap) {
+    const filtered = timestamps.filter(t => now - t < WINDOW_MS);
+    if (filtered.length === 0) {
+      rateLimitMap.delete(ip);
+    } else {
+      rateLimitMap.set(ip, filtered);
+    }
+  }
+}, 300_000);
+
+// Clean up on module disposal (HMR)
+if (typeof globalThis !== 'undefined') {
+  const originals = globalThis as Record<string, unknown>;
+  originals.__songsRateLimitCleanup = () => clearInterval(rateLimitCleanupTimer);
+}
+
 function checkRateLimit(ip: string, maxPerWindow: number): boolean {
   const now = Date.now();
   let timestamps = rateLimitMap.get(ip);

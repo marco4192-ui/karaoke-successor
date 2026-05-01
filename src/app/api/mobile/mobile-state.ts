@@ -1,6 +1,56 @@
 import { NextRequest } from 'next/server';
 import type { MobileClient, PitchData, MobileProfile, QueueItem, RemoteControlState, MobileGameState, GameResults, SongSummary, HostProfile } from './mobile-types';
 
+// ===================== ADMIN PIN AUTH =====================
+// Configurable game PIN for protecting privileged endpoints.
+// Set via POST 'setpin' action or environment variable GAME_PIN.
+// If no PIN is configured, all requests are allowed (backward compatible).
+let adminPin: string | null = process.env.GAME_PIN || null;
+
+/** Set the admin PIN (called from main app). */
+export function setAdminPin(pin: string | null): void {
+  adminPin = pin;
+}
+
+/** Get the current admin PIN (for display purposes). */
+export function getAdminPin(): string | null {
+  return adminPin;
+}
+
+/**
+ * Check if a request is authorized for privileged actions.
+ * Returns true if authorized, false if not.
+ * - If no PIN is configured, always returns true (backward compatible).
+ * - Checks for 'pin' header or 'pin' query parameter.
+ */
+export function requireAuth(req: NextRequest): boolean {
+  if (!adminPin) return true; // No PIN configured → allow all
+  const headerPin = req.headers.get('pin');
+  const queryPin = req.nextUrl.searchParams.get('pin');
+  const providedPin = headerPin || queryPin;
+  return providedPin === adminPin;
+}
+
+// ===================== PERSISTENT PROFILE CLEANUP =====================
+// Periodically clean up persistentProfileByIp entries older than 24 hours
+let persistentProfileCleanupTimer: ReturnType<typeof setInterval> | null = null;
+if (typeof globalThis !== 'undefined') {
+  persistentProfileCleanupTimer = setInterval(() => {
+    const now = Date.now();
+    const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+    for (const [ip, entry] of persistentProfileByIp) {
+      if (now - entry.storedAt > TTL_MS) {
+        persistentProfileByIp.delete(ip);
+      }
+    }
+  }, 60 * 60 * 1000); // Check every hour
+  // Store for HMR cleanup
+  const originals = globalThis as Record<string, unknown>;
+  originals.__persistentProfileCleanup = () => {
+    if (persistentProfileCleanupTimer) clearInterval(persistentProfileCleanupTimer);
+  };
+}
+
 // ===================== GLOBAL STATE =====================
 // Shared state for mobile clients (in-memory, resets on server restart)
 export const mobileClients = new Map<string, MobileClient>();
@@ -10,7 +60,7 @@ export const profileToClient = new Map<string, string>(); // profileId -> client
 // Persistent profile by IP — survives client cleanup so profiles can be restored
 // after long standby periods where the server cleaned up the client session.
 // Keyed by IP, stores the last known profile for each IP address.
-export const persistentProfileByIp = new Map<string, MobileProfile>(); // ip -> MobileProfile
+export const persistentProfileByIp = new Map<string, { profile: MobileProfile; storedAt: number }>(); // ip -> { profile, storedAt }
 
 // Latest pitch data from all clients (for PC to poll)
 export const latestPitchData: Map<string, PitchData> = new Map();
@@ -102,7 +152,7 @@ export function removeClient(
 
   // Persist profile before cleanup (for inactive timeout)
   if (options.persistProfile && client.profile && client.clientIp) {
-    persistentProfileByIp.set(client.clientIp, client.profile);
+    persistentProfileByIp.set(client.clientIp, { profile: client.profile, storedAt: Date.now() });
   }
 
   // Remove from all index maps

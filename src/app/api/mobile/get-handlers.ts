@@ -13,6 +13,7 @@ import {
   getQueueByCompanion,
   resetAllState,
   removeClient,
+  requireAuth,
 } from './mobile-state';
 
 // ===================== GET HANDLER =====================
@@ -78,8 +79,9 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         
         // No zombie found — check persistent profile store for this IP
         // (survives cleanup after long standby >5 min)
-        const persistedProfile = persistentProfileByIp.get(clientIp);
-        if (persistedProfile) {
+        const persistedEntry = persistentProfileByIp.get(clientIp);
+        const persistedProfile = persistedEntry?.profile || null;
+        if (persistedEntry) {
           persistentProfileByIp.delete(clientIp); // One-time restore
         }
         
@@ -150,6 +152,10 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
 
     case 'kick':
       // Admin kick: forcefully disconnect a client (called from settings)
+      // Auth required: this is a privileged admin action
+      if (!requireAuth(request)) {
+        return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN.' }, { status: 401 });
+      }
       {
         const kickClientId = searchParams.get('kickClientId');
         if (kickClientId) {
@@ -333,6 +339,10 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
 
     case 'getcommands':
       // Main app polls this to get pending remote commands
+      // Auth required: this exposes all queued commands
+      if (!requireAuth(request)) {
+        return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN.' }, { status: 401 });
+      }
       const commands = [...mutableState.remoteControlState.pendingCommands];
       // Clear commands after they're fetched
       mutableState.remoteControlState.pendingCommands = [];
@@ -348,6 +358,10 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
 
     case 'clearall':
       // Clear all connections (when main app closes)
+      // Auth required: destructive admin action
+      if (!requireAuth(request)) {
+        return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN.' }, { status: 401 });
+      }
       resetAllState();
       return Response.json({ 
         success: true, 

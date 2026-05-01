@@ -46,10 +46,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error reading config:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({
       success: false,
-      error: message
+      error: 'Internal error reading configuration'
     }, { status: 500 });
   }
 }
@@ -108,10 +107,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error saving config:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({
       success: false,
-      error: message
+      error: 'Internal error saving configuration'
     }, { status: 500 });
   }
 }
@@ -159,19 +157,17 @@ export async function PUT(request: NextRequest) {
         }, { status: 400 });
       }
     } catch (fetchError) {
-      // Connection failed
-      const message = fetchError instanceof Error ? fetchError.message : 'Connection failed';
+      console.error('Connection test failed:', fetchError);
       return NextResponse.json({
         success: false,
-        error: `Could not connect to API: ${message}`
+        error: 'Could not connect to API. Please check the URL and try again.'
       }, { status: 503 });
     }
   } catch (error) {
     console.error('Error testing connection:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({
       success: false,
-      error: message
+      error: 'Internal error testing connection'
     }, { status: 500 });
   }
 }
@@ -195,10 +191,10 @@ export async function DELETE(request: NextRequest) {
       message: 'Configuration removed'
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error deleting config:', error);
     return NextResponse.json({
       success: false,
-      error: message
+      error: 'Internal error deleting configuration'
     }, { status: 500 });
   }
 }
