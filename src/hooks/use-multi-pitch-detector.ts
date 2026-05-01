@@ -103,7 +103,14 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
    * Initialize all players
    */
   const initialize = useCallback(async (): Promise<boolean> => {
-    if (isInitialized) return true;
+    // H10: Allow re-initialization (e.g., player switch). Stop old manager first.
+    if (managerRef.current && isInitialized) {
+      try { managerRef.current.stop(); } catch { /* ignore */ }
+      try { await managerRef.current.destroy(); } catch { /* ignore */ }
+      managerRef.current = null;
+      setIsInitialized(false);
+      setIsRunning(false);
+    }
 
     try {
       // Get or create manager
