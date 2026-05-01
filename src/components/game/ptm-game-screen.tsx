@@ -109,6 +109,8 @@ export function PtmGameScreen({
   const { setGameMode, resetGame } = useGameStore();
   const lastIsSongPlayingRef = useRef(false);
   const activeWebcamStreamsRef = useRef<MediaStream[]>([]);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const countdownRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Phase management ──
   const [phase, setPhase] = useState<GamePhase>('intro');
@@ -200,6 +202,14 @@ export function PtmGameScreen({
     return () => {
       setIsSongPlaying(false);
       lastIsSongPlayingRef.current = false;
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+      if (countdownRetryRef.current) {
+        clearTimeout(countdownRetryRef.current);
+        countdownRetryRef.current = null;
+      }
     };
   }, [setIsSongPlaying]);
 
@@ -478,7 +488,6 @@ export function PtmGameScreen({
   }, [currentSegmentIndex, isMedleyMode, currentSnippet, phase, isPlaying, audioRef, videoRef, isYouTube]);
 
   // ── Start game (countdown → playing) ──
-  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const startGame = async () => {
     // Guard: ensure lyrics are available before starting
@@ -538,7 +547,8 @@ export function PtmGameScreen({
             } else {
               // Media element not ready yet — retry shortly
               console.warn('[PTM] No media element available at game start, retrying...');
-              const retryId = setTimeout(() => {
+              countdownRetryRef.current = setTimeout(() => {
+                countdownRetryRef.current = null;
                 if (audioRef.current) {
                   audioRef.current.currentTime = seekTo;
                   audioRef.current.play().catch(() => {});
@@ -547,8 +557,6 @@ export function PtmGameScreen({
                   videoRef.current.play().catch(() => {});
                 }
               }, 300);
-              // Store for cleanup (will be cleared by countdownIntervalRef cleanup or unmount)
-              return () => clearTimeout(retryId);
             }
           });
           return 0;

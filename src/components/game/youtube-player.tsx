@@ -130,6 +130,7 @@ export function YouTubePlayer({
   const lastStateRef = useRef<number>(-1);
   const expectedDurationRef = useRef<number>(0);
   const initialVideoIdRef = useRef<string>(videoId);
+  const adEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Load YouTube IFrame API (once globally)
   useEffect(() => {
@@ -289,7 +290,9 @@ export function YouTubePlayer({
             
             // Detect ad end when buffering returns to our video
             if (state === window.YT.PlayerState.BUFFERING && adDetectedRef.current) {
-              setTimeout(() => {
+              if (adEndTimerRef.current) clearTimeout(adEndTimerRef.current);
+              adEndTimerRef.current = setTimeout(() => {
+                adEndTimerRef.current = null;
                 if (playerRef.current) {
                   try {
                     const videoData = playerRef.current.getVideoData();
@@ -332,6 +335,10 @@ export function YouTubePlayer({
     
     return () => {
       clearTimeout(initTimeout);
+      if (adEndTimerRef.current) {
+        clearTimeout(adEndTimerRef.current);
+        adEndTimerRef.current = null;
+      }
       if (playerRef.current) {
         try { playerRef.current.destroy(); } catch { /* ignore */ }
         playerRef.current = null;
