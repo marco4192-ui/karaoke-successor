@@ -13,7 +13,7 @@ interface SpectrogramDisplayProps {
   audioElement?: HTMLAudioElement | null;
   audioStream?: MediaStream | null;
   isActive: boolean;
-  mode?: 'bars' | 'circular' | 'waveform';
+  mode?: 'bars' | 'circular';
   position?: { x: number; y: number };
   size?: { width: number; height: number };
   colorScheme?: SpectrogramConfig['colorScheme'];
