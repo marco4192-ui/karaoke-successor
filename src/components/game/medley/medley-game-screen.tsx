@@ -613,7 +613,7 @@ export function MedleyGameScreen({
             <Progress value={snippetProgress} className="h-2 bg-white/10" />
             <div className="flex justify-between text-xs text-white/40 mt-1">
               <span>Snippet {currentSnippetIdx + 1}/{medleySongs.length}</span>
-              <button onClick={handleEndEarly} className="text-red-400/60 hover:text-red-400 transition-colors">
+              <button onClick={handleEndEarly} aria-label="Beenden" className="text-red-400/60 hover:text-red-400 transition-colors">
                 Beenden
               </button>
             </div>
