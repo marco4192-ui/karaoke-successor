@@ -222,49 +222,55 @@ pub async fn viral_refresh_charts(
     });
 
     // Store in SQLite
-    let state = app.state::<DbState>();
-    let conn = state.conn.lock().map_err(|e| e.to_string())?;
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_secs() as i64)
-        .unwrap_or(0);
+    // H14: Use block_in_place to avoid blocking the Tokio runtime while holding
+    // the std::sync::Mutex across the insert loop. This moves the blocking work
+    // off the Tokio worker thread pool.
+    let count = tokio::task::block_in_place(|| {
+        let state = app.state::<DbState>();
+        let conn = state.conn.lock().map_err(|e| e.to_string())?;
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
 
-    // Clear old entries for this country
-    conn.execute("DELETE FROM viral_hits WHERE country = ?1", [&country])
-        .map_err(|e| format!("Failed to clear old viral hits: {}", e))?;
+        // Clear old entries for this country
+        conn.execute("DELETE FROM viral_hits WHERE country = ?1", [&country])
+            .map_err(|e| format!("Failed to clear old viral hits: {}", e))?;
 
-    // Insert new entries
-    let tx = conn.unchecked_transaction()
-        .map_err(|e| format!("Transaction failed: {}", e))?;
+        // Insert new entries
+        let tx = conn.transaction()
+            .map_err(|e| format!("Transaction failed: {}", e))?;
 
-    let mut count = 0u32;
-    for entry in &all_entries {
-        let id = format!("viral-{}-{}-{}",
-            entry.source,
-            entry.country.to_lowercase(),
-            count
-        );
-
-        tx.execute(
-            "INSERT OR REPLACE INTO viral_hits (id, title, artist, source, playlist_name, chart_position, country, fetched_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-            rusqlite::params![
-                id,
-                entry.title,
-                entry.artist,
+        let mut c = 0u32;
+        for entry in &all_entries {
+            let id = format!("viral-{}-{}-{}",
                 entry.source,
-                entry.playlist_name,
-                entry.chart_position,
-                entry.country,
-                now,
-            ],
-        ).map_err(|e| format!("Failed to insert viral hit: {}", e))?;
-        count += 1;
-    }
+                entry.country.to_lowercase(),
+                c
+            );
 
-    tx.commit().map_err(|e| format!("Commit failed: {}", e))?;
+            tx.execute(
+                "INSERT OR REPLACE INTO viral_hits (id, title, artist, source, playlist_name, chart_position, country, fetched_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                rusqlite::params![
+                    id,
+                    entry.title,
+                    entry.artist,
+                    entry.source,
+                    entry.playlist_name,
+                    entry.chart_position,
+                    entry.country,
+                    now,
+                ],
+            ).map_err(|e| format!("Failed to insert viral hit: {}", e))?;
+            c += 1;
+        }
 
-    println!("[ViralCharts] Stored {} unique entries for country {}", count, country);
+        tx.commit().map_err(|e| format!("Commit failed: {}", e))?;
+
+        println!("[ViralCharts] Stored {} unique entries for country {}", c, country);
+        Ok::<u32, String>(c)
+    })?;
 
     Ok(serde_json::json!({
         "totalEntries": count,
@@ -370,7 +376,7 @@ pub fn viral_match_library(
 
     // Update matched_song_id in SQLite for caching
     if !matched_ids.is_empty() {
-        let tx = conn.unchecked_transaction()
+        let tx = conn.transaction()
             .map_err(|e| format!("Transaction failed: {}", e))?;
 
         // Clear old matches

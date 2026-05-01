@@ -440,14 +440,17 @@ function generateNotesFromText(text: string, startTime: number, endTime: number)
   const totalDuration = endTime - startTime;
   const noteDuration = words.length > 0 ? totalDuration / words.length : totalDuration;
 
-  return words.map((word, i) => ({
-    id: `note-${i}`,
-    pitch: 60 + Math.floor(Math.random() * 12), // placeholder pitch
-    frequency: 440,
-    startTime: startTime + i * noteDuration,
-    duration: noteDuration,
-    lyric: word,
-    isBonus: false,
-    isGolden: false,
-  }));
+  return words.map((word, i) => {
+    const pitch = 60 + Math.floor(Math.random() * 12);
+    return {
+      id: `note-${i}`,
+      pitch,
+      frequency: midiPitchToFrequency(pitch),
+      startTime: startTime + i * noteDuration,
+      duration: noteDuration,
+      lyric: word,
+      isBonus: false,
+      isGolden: false,
+    };
+  });
 }

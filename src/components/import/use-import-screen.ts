@@ -8,6 +8,7 @@ import {
   scanFilesFromFileList,
   convertScannedSongToSong,
   isFileSystemAccessSupported,
+  revokeAllScanBlobUrls,
   ScannedSong,
 } from '@/lib/parsers/folder-scanner';
 import { addSong, addSongs, getAllSongs, replaceCustomSongs, acquireScanLock, invalidateSongCache } from '@/lib/game/song-library';
@@ -44,6 +45,8 @@ export function useImportScreen(onImport: (song: Song) => void) {
       const { audio, video } = blobUrlsRef.current;
       if (audio?.startsWith('blob:')) URL.revokeObjectURL(audio);
       if (video?.startsWith('blob:')) URL.revokeObjectURL(video);
+      // H17: Revoke all blob URLs created during folder scanning
+      revokeAllScanBlobUrls();
     };
   }, []);
 
@@ -57,7 +60,9 @@ export function useImportScreen(onImport: (song: Song) => void) {
   const tauriScanResultRef = useRef<any>(null);
   const tauriScanFolderRef = useRef<string | null>(null);
 
-  const existingSongs = useMemo(() => getAllSongs(), []);
+  // H20: Re-compute existingSongs on every render so re-scans detect duplicates correctly.
+  // The empty dependency array caused stale data after songs were added.
+  const existingSongs = useMemo(() => getAllSongs(), [scannedSongs]);
 
   const audioInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);

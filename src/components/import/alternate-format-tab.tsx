@@ -97,6 +97,9 @@ export function AlternateFormatTab({
     setError(null);
     setStatusMessage('Parsing file...');
 
+    // H19: Track blob URLs created during import so they can be revoked on error
+    let tempBlobUrl: string | undefined;
+
     try {
       let partialSong: Partial<Song> | null = null;
 
@@ -105,7 +108,8 @@ export function AlternateFormatTab({
           const text = await songFile.text();
           const data = parseKaraokeMugen(text);
           if (!data) throw new Error('Failed to parse Karaoke Mugen JSON.');
-          partialSong = convertToSong(data, 'karaoke-mugen', audioFile ? URL.createObjectURL(audioFile) : undefined);
+          tempBlobUrl = audioFile ? URL.createObjectURL(audioFile) : undefined;
+          partialSong = convertToSong(data, 'karaoke-mugen', tempBlobUrl);
           break;
         }
         case 'midi': {
@@ -113,7 +117,8 @@ export function AlternateFormatTab({
           const data = parseMIDIKaraoke(buffer);
           if (!data) throw new Error('Failed to parse MIDI file. Not a valid MIDI/KAR file.');
           if (data.notes.length === 0 && data.lyrics.length === 0) throw new Error('MIDI file contains no notes or lyrics.');
-          partialSong = convertToSong(data, 'midi', audioFile ? URL.createObjectURL(audioFile) : undefined);
+          tempBlobUrl = audioFile ? URL.createObjectURL(audioFile) : undefined;
+          partialSong = convertToSong(data, 'midi', tempBlobUrl);
           break;
         }
         case 'singstar': {
@@ -166,6 +171,8 @@ export function AlternateFormatTab({
       }
       setStatusMessage(`Successfully imported "${song.title}" — ${song.lyrics.length} lyric lines`);
     } catch (err) {
+      // H19: Revoke temporary blob URL on error
+      if (tempBlobUrl) URL.revokeObjectURL(tempBlobUrl);
       setError(err instanceof Error ? err.message : 'Unknown error during import.');
       setStatusMessage(null);
     } finally {

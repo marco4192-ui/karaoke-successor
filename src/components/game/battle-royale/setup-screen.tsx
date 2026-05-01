@@ -46,39 +46,42 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
   const totalPlayers = micPlayers.length + companionPlayers.length;
 
   const toggleMicPlayer = (playerId: string) => {
-    setMicPlayers(prev => {
-      if (prev.includes(playerId)) {
-        return prev.filter(id => id !== playerId);
-      }
-      if (prev.length >= MAX_LOCAL_MIC_PLAYERS) {
-        setError(`Maximum ${MAX_LOCAL_MIC_PLAYERS} local microphone players`);
-        return prev;
-      }
-      // Remove from companion if present
-      setCompanionPlayers(cp => cp.filter(id => id !== playerId));
-      setError(null);
-      return [...prev, playerId];
-    });
+    // H12: Don't call setState inside setState updater. Instead, compute the new
+    // companion players list here and set both states sequentially.
+    if (micPlayers.includes(playerId)) {
+      setMicPlayers(prev => prev.filter(id => id !== playerId));
+      return;
+    }
+    if (micPlayers.length >= MAX_LOCAL_MIC_PLAYERS) {
+      setError(`Maximum ${MAX_LOCAL_MIC_PLAYERS} local microphone players`);
+      return;
+    }
+    // Remove from companion if present
+    setCompanionPlayers(cp => cp.filter(id => id !== playerId));
+    setError(null);
+    setMicPlayers(prev => [...prev, playerId]);
   };
 
   const toggleCompanionPlayer = (playerId: string) => {
-    setCompanionPlayers(prev => {
-      if (prev.includes(playerId)) {
-        return prev.filter(id => id !== playerId);
-      }
-      if (prev.length >= MAX_COMPANION_PLAYERS) {
-        setError(`Maximum ${MAX_COMPANION_PLAYERS} companion players`);
-        return prev;
-      }
-      if (totalPlayers >= MAX_BATTLE_ROYALE_PLAYERS) {
-        setError(`Maximum ${MAX_BATTLE_ROYALE_PLAYERS} total players`);
-        return prev;
-      }
-      // Remove from mic if present
-      setMicPlayers(mp => mp.filter(id => id !== playerId));
-      setError(null);
-      return [...prev, playerId];
-    });
+    // H11: Calculate total using micPlayers.length + prev.length inside the updater
+    // to avoid stale totalPlayers value.
+    if (companionPlayers.includes(playerId)) {
+      setCompanionPlayers(prev => prev.filter(id => id !== playerId));
+      return;
+    }
+    if (companionPlayers.length >= MAX_COMPANION_PLAYERS) {
+      setError(`Maximum ${MAX_COMPANION_PLAYERS} companion players`);
+      return;
+    }
+    // Check total limit using current micPlayers + new companion count
+    if (micPlayers.length + companionPlayers.length >= MAX_BATTLE_ROYALE_PLAYERS) {
+      setError(`Maximum ${MAX_BATTLE_ROYALE_PLAYERS} total players`);
+      return;
+    }
+    // Remove from mic if present
+    setMicPlayers(mp => mp.filter(id => id !== playerId));
+    setError(null);
+    setCompanionPlayers(prev => [...prev, playerId]);
   };
 
   const handleStartGame = () => {

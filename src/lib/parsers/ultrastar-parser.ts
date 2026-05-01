@@ -141,7 +141,7 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
             song.start = parseInt(value) || 0;
             break;
           case 'END':
-            song.end = parseInt(value) || undefined;
+            song.end = value.trim() !== '' ? parseInt(value) : undefined;
             break;
           case 'PREVIEWSTART':
             song.previewStart = parseFloat(value) || 0;

@@ -6,6 +6,24 @@ import { CachedFolder, LibraryCache, loadCache } from '@/lib/game/library-cache'
 import { storeMedia } from '@/lib/db/media-db';
 import { normalizeTxtContent } from '@/lib/utils';
 
+// H17: Track all blob URLs created during scanning so they can be revoked on unmount
+const scanBlobUrls = new Set<string>();
+
+/** Create a blob URL and track it for later cleanup */
+function createTrackedBlobUrl(file: File | Blob): string {
+  const url = createTrackedBlobUrl(file);
+  scanBlobUrls.add(url);
+  return url;
+}
+
+/** Revoke all blob URLs created during scanning */
+export function revokeAllScanBlobUrls(): void {
+  for (const url of scanBlobUrls) {
+    URL.revokeObjectURL(url);
+  }
+  scanBlobUrls.clear();
+}
+
 export interface ScannedFile {
   name: string;
   path: string;
@@ -175,10 +193,10 @@ async function scanDirectoryHandle(
 
         if (AUDIO_EXTENSIONS.includes(ext)) {
           songData.audioFile = file;
-          songData.audioUrl = URL.createObjectURL(file);
+          songData.audioUrl = createTrackedBlobUrl(file);
         } else if (VIDEO_EXTENSIONS.includes(ext)) {
           songData.videoFile = file;
-          songData.videoUrl = URL.createObjectURL(file);
+          songData.videoUrl = createTrackedBlobUrl(file);
         } else if (TXT_EXTENSIONS.includes(ext)) {
           songData.txtFile = file;
         } else if (COVER_EXTENSIONS.includes(ext)) {
@@ -189,20 +207,20 @@ async function scanDirectoryHandle(
           // If it matches background patterns, use as background
           if (isPriorityBackground && !songData.backgroundFile) {
             songData.backgroundFile = file;
-            songData.backgroundUrl = URL.createObjectURL(file);
+            songData.backgroundUrl = createTrackedBlobUrl(file);
           }
           
           // If it matches cover patterns or no cover exists yet, use as cover
           if (isPriorityCover || !songData.coverFile) {
             songData.coverFile = file;
-            songData.coverUrl = URL.createObjectURL(file);
+            songData.coverUrl = createTrackedBlobUrl(file);
           }
         } else if (BACKGROUND_EXTENSIONS.includes(ext)) {
           // Explicitly check for background images
           const isPriorityBackground = BACKGROUND_PATTERNS.some(p => p.test(file.name));
           if (!songData.backgroundFile || isPriorityBackground) {
             songData.backgroundFile = file;
-            songData.backgroundUrl = URL.createObjectURL(file);
+            songData.backgroundUrl = createTrackedBlobUrl(file);
           }
         }
       }
@@ -349,17 +367,17 @@ export async function scanFilesFromFileList(files: FileList): Promise<ScanResult
 
     if (AUDIO_EXTENSIONS.includes(ext)) {
       songData.audioFile = file;
-      songData.audioUrl = URL.createObjectURL(file);
+      songData.audioUrl = createTrackedBlobUrl(file);
     } else if (VIDEO_EXTENSIONS.includes(ext)) {
       songData.videoFile = file;
-      songData.videoUrl = URL.createObjectURL(file);
+      songData.videoUrl = createTrackedBlobUrl(file);
     } else if (TXT_EXTENSIONS.includes(ext)) {
       songData.txtFile = file;
     } else if (COVER_EXTENSIONS.includes(ext)) {
       const isPriorityCover = COVER_PATTERNS.some(p => p.test(file.name));
       if (!songData.coverFile || isPriorityCover) {
         songData.coverFile = file;
-        songData.coverUrl = URL.createObjectURL(file);
+        songData.coverUrl = createTrackedBlobUrl(file);
       }
     }
   }
@@ -778,7 +796,7 @@ function getAudioDuration(file: File): Promise<number> {
       reject(new Error('Failed to load audio'));
     };
     
-    blobUrl = URL.createObjectURL(file);
+    blobUrl = createTrackedBlobUrl(file);
     audio.src = blobUrl;
   });
 }
@@ -803,7 +821,7 @@ function getVideoDuration(file: File): Promise<number> {
       reject(new Error('Failed to load video'));
     };
     
-    blobUrl = URL.createObjectURL(file);
+    blobUrl = createTrackedBlobUrl(file);
     video.src = blobUrl;
   });
 }

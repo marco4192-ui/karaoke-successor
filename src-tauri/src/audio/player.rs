@@ -481,6 +481,11 @@ fn convert_channels(samples: Vec<f32>, src_channels: u16, dst_channels: u16) -> 
         return samples;
     }
 
+    // H15: Guard against division by zero when src_channels is 0
+    if src_channels == 0 {
+        return samples;
+    }
+
     let src = src_channels as usize;
     let dst = dst_channels as usize;
     let frames_in = samples.len() / src;
