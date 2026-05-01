@@ -69,3 +69,37 @@ Stage Summary:
 - perfect_notes daily challenge now correctly sorts by actual perfect notes count
 - Perfect notes = notes where all ticks were hit (100% hit rate on individual note)
 - Data flows: scoring engine → GameResult → submitChallengeResult → leaderboard sort
+
+---
+Task ID: dead-code-cleanup
+Agent: main
+Task: Remove dead code (orphan files, unused exports, unused imports)
+
+Work Log:
+- Verified MicrophoneManager is NOT dead code (used in 4 files) — skipped
+- Verified use-mobile.ts is NOT dead code (used in 8 files) — skipped
+- Deleted orphan file checkbox.tsx (33 lines) — never imported
+- Deleted orphan file popover.tsx (49 lines) — never imported
+- Deleted orphan file logger.ts (87 lines) — never imported
+- Deleted getMicrophoneManager() legacy singleton from microphone-manager.ts (14 lines)
+- Deleted requireLocalRequest() wrapper from is-local-request.ts (7 lines)
+- Deleted unregisterCleanup() and getCleanupCount() from app-cleanup.ts (9 lines)
+- Deleted createCachedSong() factory from library-cache.ts (34 lines)
+- Deleted ViralEntry interface from use-viral-charts.ts (11 lines)
+- Deleted ApiSong interface from leaderboard-service.ts (8 lines)
+- Deleted ScannedFile interface from folder-scanner.ts (6 lines)
+- Removed unused playerState variable in use-note-scoring.ts (1 line)
+- Removed unused songTime variable in medley-game-screen.tsx (1 line)
+- Cleaned up 16 unused imports across 5 files:
+  - pass-the-mic-screen.tsx: 11 imports removed
+  - audio-analysis-panel.tsx: 3 imports removed
+  - editor-header.tsx: 1 import removed
+  - editor-lyrics-tab.tsx: 1 import removed
+  - battle-royale/playing-view.tsx: 1 import removed
+- Commits: f5466a7, e827393, 47c312d, dcf1c3a
+
+Stage Summary:
+- Total ~264 lines of dead code removed in this session
+- 3 orphan files deleted, 8 dead exports/functions removed, 2 unused variables removed
+- ~16 unused imports cleaned across 5 files
+- Remaining unused imports (~40) are low priority and can be cleaned up incrementally
