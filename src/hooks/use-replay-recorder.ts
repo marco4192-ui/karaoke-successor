@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import type { GameResult } from '@/types/game';
 import { storeReplay, type ReplayRecord } from '@/lib/db/replay-db';
 
@@ -281,6 +281,21 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
         console.warn('[ReplayRecorder] Failed to resume:', err);
       }
     }
+  }, []);
+
+  // H8: Cleanup on unmount — stop recorder and release webcam+mic streams
+  useEffect(() => {
+    return () => {
+      const recorder = mediaRecorderRef.current;
+      if (recorder && recorder.state !== 'inactive') {
+        try { recorder.stop(); } catch { /* already stopped */ }
+      }
+      mediaRecorderRef.current = null;
+      if (webcamStreamRef.current) {
+        webcamStreamRef.current.getTracks().forEach(t => t.stop());
+        webcamStreamRef.current = null;
+      }
+    };
   }, []);
 
   return {
