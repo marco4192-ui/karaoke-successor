@@ -105,7 +105,7 @@ impl AudioAnalyzer {
                 notes: vec![],
                 bpm: 120.0,
                 algorithm: self.options.algorithm.clone(),
-                analysis_duration_ms: 0,
+                analysis_duration_ms: start.elapsed().as_millis() as u64,
                 sample_rate,
                 audio_duration_ms: total_duration_ms,
             };
@@ -181,7 +181,19 @@ impl AudioAnalyzer {
                     // ---- CREPE pipeline ----
                     let crepe_det = match crepe.as_mut() {
                         Some(det) => det,
-                        None => continue,
+                        None => {
+                            // CREPE selected but model not loaded — push a silent
+                            // frame so the timeline stays contiguous.
+                            frames.push(AnalysisFrame {
+                                time_ms,
+                                frequency: None,
+                                midi_note: None,
+                                voicing_confidence: voicing_conf,
+                                pitch_confidence: 0.0,
+                                overall_confidence: voicing_conf * 0.5,
+                            });
+                            continue;
+                        }
                     };
                     let (freq, conf) = crepe_det.detect(&window, sr);
 

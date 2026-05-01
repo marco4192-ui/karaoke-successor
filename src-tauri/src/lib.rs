@@ -42,10 +42,10 @@ fn validate_safe_path(raw_path: &str) -> Result<PathBuf, String> {
             parent.canonicalize().map_err(|e| format!("Cannot resolve parent of '{}': {}", raw_path, e))?
                 .join(path.file_name().unwrap_or_default())
         } else {
-            path.clone()
+            return Err(format!("Cannot resolve path '{}': parent directory does not exist", raw_path));
         }
     } else {
-        path.clone()
+        return Err(format!("Cannot resolve path '{}': path has no parent and does not exist", raw_path));
     };
 
     let path_str = canonical.to_string_lossy().to_lowercase();
@@ -88,20 +88,22 @@ fn validate_safe_path(raw_path: &str) -> Result<PathBuf, String> {
 fn native_read_file_bytes(file_path: String) -> Result<String, String> {
     validate_safe_path(&file_path)?;
 
-    // Attempt 1: use the path exactly as received
-    let path = PathBuf::from(&file_path);
-    if let Ok(metadata) = fs::metadata(&path) {
-        let file_size = metadata.len();
-        if file_size > 200 * 1024 * 1024 {
-            // 200 MB limit for in-memory base64 encoding
+    // Helper: enforce 200 MB size limit before base64-encoding.
+    // Checked after every successful read so no path attempt bypasses the limit.
+    let encode_bytes = |bytes: Vec<u8>| -> Result<String, String> {
+        if bytes.len() > 200 * 1024 * 1024 {
             return Err(format!(
                 "File too large for in-memory reading ({} MB, max 200 MB)",
-                file_size / (1024 * 1024)
+                bytes.len() / (1024 * 1024)
             ));
         }
-    }
+        Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes))
+    };
+
+    // Attempt 1: use the path exactly as received
+    let path = PathBuf::from(&file_path);
     if let Ok(bytes) = fs::read(&path) {
-        return Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes));
+        return encode_bytes(bytes);
     }
 
     // Attempt 2: normalize separators to OS-native and retry.
@@ -111,7 +113,7 @@ fn native_read_file_bytes(file_path: String) -> Result<String, String> {
     let normalized = file_path.replace('/', &std::path::MAIN_SEPARATOR.to_string());
     let path2 = PathBuf::from(&normalized);
     if let Ok(bytes) = fs::read(&path2) {
-        return Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes));
+        return encode_bytes(bytes);
     }
 
     // Attempt 3: On Windows, use the extended-length path prefix (\\?\)
@@ -122,11 +124,11 @@ fn native_read_file_bytes(file_path: String) -> Result<String, String> {
         let backslash_path = file_path.replace('/', r"\");
         let verbatim = format!(r"\\?\{}", backslash_path);
         if let Ok(bytes) = fs::read(&verbatim) {
-            return Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes));
+            return encode_bytes(bytes);
         }
         let verbatim_norm = format!(r"\\?\{}", normalized);
         if let Ok(bytes) = fs::read(&verbatim_norm) {
-            return Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes));
+            return encode_bytes(bytes);
         }
         // Attempt 3c: Canonicalize the parent directory to resolve any
         // symlinks, junctions, or case mismatches, then re-read the file.
@@ -136,12 +138,12 @@ fn native_read_file_bytes(file_path: String) -> Result<String, String> {
                     let canonical_path = canonical_parent.join(file_name);
                     if let Ok(bytes) = fs::read(&canonical_path) {
                         println!("[native_read_file_bytes] Found via canonical parent: {:?}", canonical_path);
-                        return Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes));
+                        return encode_bytes(bytes);
                     }
                     let canonical_verbatim = format!(r"\\?\{}", canonical_path.to_string_lossy());
                     if let Ok(bytes) = fs::read(&canonical_verbatim) {
                         println!("[native_read_file_bytes] Found via canonical+verbatim: {:?}", canonical_verbatim);
-                        return Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes));
+                        return encode_bytes(bytes);
                     }
                 }
             }
@@ -519,7 +521,7 @@ pub fn run() {
                 .expect("Failed to initialize audio state");
             app.manage(audio_state);
             // Register the analysis state (needs AppHandle for the dedicated analysis thread)
-            let analysis_state = audio::analysis_commands::AnalysisState::new(app.handle().clone())
+            let analysis_state = audio::analysis_commands::AnalysisState::new()
                 .expect("Failed to initialize analysis state");
             app.manage(analysis_state);
             // Register the SQLite offline database

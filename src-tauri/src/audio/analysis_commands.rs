@@ -43,7 +43,7 @@ pub struct AnalysisState {
 }
 
 impl AnalysisState {
-    pub fn new(_app_handle: AppHandle) -> Result<Self, String> {
+    pub fn new() -> Result<Self, String> {
         let (tx, rx) = mpsc::channel::<AnalysisCommand>();
 
         std::thread::Builder::new()

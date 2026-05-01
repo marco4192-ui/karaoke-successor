@@ -582,7 +582,7 @@ fn resample_if_needed(
                         }
                     }
                 }
-                Err(e) => eprintln!("Resampling error: {}", e),
+                Err(e) => return Err(format!("Resampling error: {}", e)),
             }
             for ch in &mut deinterleaved {
                 ch.clear();
@@ -605,7 +605,7 @@ fn resample_if_needed(
                     }
                 }
             }
-            Err(e) => eprintln!("Resampling error: {}", e),
+            Err(e) => return Err(format!("Resampling error: {}", e)),
         }
     }
 
