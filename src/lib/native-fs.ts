@@ -4,6 +4,13 @@
 
 import { invoke } from '@tauri-apps/api/core';
 
+/** Reject paths containing directory traversal sequences (`..`). */
+function validatePath(path: string): void {
+  if (path.includes('..')) {
+    throw new Error(`[NativeFS] Path traversal detected — rejecting path: ${path}`);
+  }
+}
+
 // ---- Directory Entry ----
 export interface NativeDirEntry {
   name: string;
@@ -16,11 +23,13 @@ export interface NativeDirEntry {
 
 /** Read a file as base64-encoded bytes. Ideal for binary files (audio, video, images). */
 export async function nativeReadFileBytes(filePath: string): Promise<string> {
+  validatePath(filePath);
   return invoke<string>('native_read_file_bytes', { filePath });
 }
 
 /** Read a file as a UTF-8 text string. */
 export async function nativeReadFileText(filePath: string): Promise<string> {
+  validatePath(filePath);
   return invoke<string>('native_read_file_text', { filePath });
 }
 
@@ -28,6 +37,7 @@ export async function nativeReadFileText(filePath: string): Promise<string> {
 
 /** Check if a file or directory exists. */
 export async function nativeFileExists(filePath: string): Promise<boolean> {
+  validatePath(filePath);
   return invoke<boolean>('native_file_exists', { filePath });
 }
 
@@ -35,11 +45,13 @@ export async function nativeFileExists(filePath: string): Promise<boolean> {
 
 /** List directory contents. */
 export async function nativeReadDir(dirPath: string): Promise<NativeDirEntry[]> {
+  validatePath(dirPath);
   return invoke<NativeDirEntry[]>('native_read_dir', { dirPath });
 }
 
 /** Create a directory (recursive). */
 export async function nativeMkdir(dirPath: string): Promise<void> {
+  validatePath(dirPath);
   return invoke<void>('native_mkdir', { dirPath });
 }
 
@@ -47,11 +59,13 @@ export async function nativeMkdir(dirPath: string): Promise<void> {
 
 /** Write base64-encoded bytes to a file. Parent directories are created automatically. */
 export async function nativeWriteFileBytes(filePath: string, dataBase64: string): Promise<void> {
+  validatePath(filePath);
   return invoke<void>('native_write_file_bytes', { filePath, dataBase64 });
 }
 
 /** Write a text string to a file. Parent directories are created automatically. */
 export async function nativeWriteFileText(filePath: string, content: string): Promise<void> {
+  validatePath(filePath);
   return invoke<void>('native_write_file_text', { filePath, content });
 }
 

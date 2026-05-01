@@ -24,15 +24,18 @@ export interface ReplayRecord {
 }
 
 let dbInstance: IDBDatabase | null = null;
+let initPromise: Promise<IDBDatabase> | null = null;
 
 function openDB(): Promise<IDBDatabase> {
   if (dbInstance) return Promise.resolve(dbInstance);
+  if (initPromise) return initPromise;
 
-  return new Promise((resolve, reject) => {
+  initPromise = new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onerror = () => {
       console.error('[ReplayDB] Failed to open database:', request.error);
+      initPromise = null;
       reject(request.error);
     };
 
@@ -51,6 +54,8 @@ function openDB(): Promise<IDBDatabase> {
       }
     };
   });
+
+  return initPromise;
 }
 
 /** Store a replay recording in IndexedDB. */
@@ -193,25 +198,41 @@ export async function cleanupOldReplays(): Promise<void> {
   try {
     const allReplays = await getAllReplays();
 
-    // Delete replays older than 30 days
+    // Collect IDs to delete
     const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
     const now = Date.now();
+    const idsToDelete = new Set<string>();
+
+    // Delete replays older than 30 days
     const oldReplays = allReplays.filter(r => now - r.recordedAt > thirtyDaysMs);
     for (const replay of oldReplays) {
-      await deleteReplay(replay.id);
+      idsToDelete.add(replay.id);
     }
 
     // Keep max 50 replays (delete oldest)
-    const remaining = allReplays.filter(r => !oldReplays.find(or => or.id === r.id));
+    const remaining = allReplays.filter(r => !idsToDelete.has(r.id));
     if (remaining.length > 50) {
       const toDelete = remaining.slice(50);
       for (const replay of toDelete) {
-        await deleteReplay(replay.id);
+        idsToDelete.add(replay.id);
       }
     }
 
-    const deletedCount = oldReplays.length + Math.max(0, remaining.length - 50);
-    if (deletedCount > 0) {
+    // Batch delete in a single transaction
+    if (idsToDelete.size > 0) {
+      const db = await openDB();
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction([STORE_NAME], 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        for (const id of idsToDelete) {
+          store.delete(id);
+        }
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => {
+          console.error('[ReplayDB] Cleanup batch delete failed:', tx.error);
+          reject(tx.error);
+        };
+      });
     }
   } catch (err) {
     console.warn('[ReplayDB] Cleanup failed (non-critical):', err);

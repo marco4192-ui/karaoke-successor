@@ -509,10 +509,16 @@ export const useGameStore = create<GameStore>()(
       onRehydrateStorage: () => (state) => {
         // Restore difficulty on app start
         if (state?.persistedDifficulty) {
-          // Use queueMicrotask to avoid setState during render
-          queueMicrotask(() => {
-            state.setDifficulty(state.persistedDifficulty as Difficulty);
-          });
+          const VALID_DIFFICULTIES: readonly Difficulty[] = ['easy', 'medium', 'hard'];
+          const diff = state.persistedDifficulty;
+          if (VALID_DIFFICULTIES.includes(diff)) {
+            // Use queueMicrotask to avoid setState during render
+            queueMicrotask(() => {
+              state.setDifficulty(diff);
+            });
+          } else {
+            console.warn('[GameStore] Ignoring invalid persisted difficulty:', diff);
+          }
         }
       },
     }

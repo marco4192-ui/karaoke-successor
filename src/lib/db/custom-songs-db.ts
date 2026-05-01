@@ -83,7 +83,7 @@ export async function saveCustomSongsToDB(songs: Song[]): Promise<void> {
   });
 }
 
-/** Load all custom songs from IndexedDB. */
+/** Load all custom songs from IndexedDB, reconciling with localStorage. */
 export async function loadCustomSongsFromDB(): Promise<Song[]> {
   const db = await openDB();
 
@@ -92,8 +92,39 @@ export async function loadCustomSongsFromDB(): Promise<Song[]> {
     const store = tx.objectStore(STORE_NAME);
     const request = store.getAll();
 
-    request.onsuccess = () => {
-      resolve(request.result || []);
+    request.onsuccess = async () => {
+      const indexedDBSongs: Song[] = request.result || [];
+
+      // Reconciliation: check localStorage for songs missing from IndexedDB
+      try {
+        const idIndexRaw = localStorage.getItem(ID_INDEX_KEY);
+        if (idIndexRaw) {
+          const idIndex: string[] = JSON.parse(idIndexRaw);
+          const indexedDBIds = new Set(indexedDBSongs.map(s => s.id));
+          const missingIds = idIndex.filter(id => !indexedDBIds.has(id));
+
+          if (missingIds.length > 0) {
+            // Try to load full song data from the legacy localStorage key
+            const missingSongs = loadMissingSongsFromLocalStorage(missingIds);
+            if (missingSongs.length > 0) {
+              const merged = [...indexedDBSongs, ...missingSongs];
+              // Persist merged result back to IndexedDB
+              try {
+                await saveCustomSongsToDB(merged);
+                console.info(`[CustomSongsDB] Reconciled ${missingSongs.length} song(s) from localStorage into IndexedDB`);
+              } catch (e) {
+                console.warn('[CustomSongsDB] Failed to persist reconciled songs:', e);
+              }
+              resolve(merged);
+              return;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[CustomSongsDB] localStorage reconciliation check failed:', e);
+      }
+
+      resolve(indexedDBSongs);
     };
 
     request.onerror = () => {
@@ -101,6 +132,19 @@ export async function loadCustomSongsFromDB(): Promise<Song[]> {
       reject(request.error);
     };
   });
+}
+
+/** Attempt to load songs from localStorage by their IDs (legacy fallback). */
+function loadMissingSongsFromLocalStorage(missingIds: string[]): Song[] {
+  try {
+    const stored = localStorage.getItem('karaoke-custom-songs');
+    if (!stored) return [];
+    const allLocal: Song[] = JSON.parse(stored);
+    if (!Array.isArray(allLocal)) return [];
+    return allLocal.filter(s => missingIds.includes(s.id));
+  } catch {
+    return [];
+  }
 }
 
 /** Check if a song exists in IndexedDB by ID. */

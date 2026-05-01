@@ -101,6 +101,7 @@ function savePlaylists(playlists: Playlist[]): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(playlists));
   } catch (e) {
     console.error('Failed to save playlists:', e);
+    throw e;
   }
 }
 
