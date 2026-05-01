@@ -289,7 +289,10 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
           for (const player of micPlayers) {
             if (isSinging === false) continue; // Humming/noise detected
-            const tick = evaluateAndScoreTick(detectedPitch || 0, note, difficulty, td.scoringMetadata);
+            // Skip scoring entirely when no pitch is detected - passing MIDI 0
+            // would cause false misses and incorrect combo resets
+            if (detectedPitch == null) continue;
+            const tick = evaluateAndScoreTick(detectedPitch, note, difficulty, td.scoringMetadata);
 
             if (tick.hit) {
               batchedGame = updatePlayerScore(
