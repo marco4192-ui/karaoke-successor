@@ -92,7 +92,7 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
         });
       }
     };
-  }, [song?.id, song?.audioUrl, song?.videoBackground, song?.coverImage, song?.relativeAudioPath, song?.relativeVideoPath, song?.relativeCoverPath]);
+  }, [song?.id, song?.audioUrl, song?.videoBackground, song?.coverImage, song?.relativeAudioPath, song?.relativeVideoPath, song?.relativeCoverPath, song?.storedMedia]);
 
   // Use restored song if available, otherwise use original song
   const effectiveSongBase = restoredSong || song;
@@ -196,6 +196,8 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
       });
     };
 
+    let cancelled = false;
+
     const loadMedia = async () => {
       let audioReady = true;
       let videoReady = true;
@@ -207,8 +209,7 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
         audioReady = await waitForMediaEvent(audioRef.current, 'canplay', 5000);
         audioLoadedRef.current = audioReady;
 
-        if (audioReady) {
-        } else {
+        if (!audioReady) {
           console.warn('[GameScreen] Audio load timeout, proceeding anyway');
         }
       }
@@ -220,8 +221,7 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
           videoReady = await waitForMediaEvent(videoRef.current, 'canplay', 5000);
           videoLoadedRef.current = videoReady;
 
-          if (videoReady) {
-          } else {
+          if (!videoReady) {
             console.warn('[GameScreen] Video load timeout, proceeding anyway');
           }
         }
@@ -232,6 +232,8 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
         anyMedia = true;
         await new Promise(resolve => setTimeout(resolve, 500));
       }
+
+      if (cancelled) return;
 
       // Only mark as loaded if no media was needed, or all media loaded successfully
       // If a timeout occurred, still proceed but log the warning
@@ -244,6 +246,8 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
     };
 
     loadMedia();
+
+    return () => { cancelled = true; };
   }, [effectiveSong]);
 
   return {
