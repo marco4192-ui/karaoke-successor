@@ -363,7 +363,8 @@ export function submitChallengeResult(
     }
 
     // Perfect challenge bonus: 100% accuracy on an accuracy challenge
-    if (challenge.type === 'accuracy' && result.accuracy === 100) {
+    // Use >= 99.5 to account for floating-point arithmetic (e.g. 99.999999999)
+    if (challenge.type === 'accuracy' && result.accuracy >= 99.5) {
       xpEarned += XP_REWARDS.PERFECT_CHALLENGE;
     }
 
