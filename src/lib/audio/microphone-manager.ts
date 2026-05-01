@@ -1,3 +1,5 @@
+import { registerCleanup } from '@/lib/utils/app-cleanup';
+
 // Multi-Microphone Manager - Handles multiple microphone input devices simultaneously
 // Supports USB mics, SingStar mics, 3.5mm jack mics, Bluetooth audio
 // Each microphone has its own individual extended settings
@@ -910,20 +912,14 @@ export class MicrophoneManager {
 
 // Singleton instance for legacy compatibility
 let micManagerInstance: MicrophoneManager | null = null;
-let micManagerCleanupRegistered = false;
 
 export function getMicrophoneManager(): MicrophoneManager {
   if (!micManagerInstance) {
     micManagerInstance = new MicrophoneManager();
-
-    // Cleanup on page unload (only register once)
-    if (typeof window !== 'undefined' && !micManagerCleanupRegistered) {
-      micManagerCleanupRegistered = true;
-      window.addEventListener('beforeunload', () => {
-        micManagerInstance?.destroy();
-        micManagerInstance = null;
-      });
-    }
+    registerCleanup('microphone-manager', () => {
+      micManagerInstance?.destroy().catch(() => {});
+      micManagerInstance = null;
+    });
   }
   return micManagerInstance;
 }

@@ -1,5 +1,6 @@
 import { PitchDetectionResult, frequencyToMidi, Difficulty } from '@/types/game';
 import { VocalDetector, VocalDetectionResult } from './vocal-detector';
+import { registerCleanup } from '@/lib/utils/app-cleanup';
 
 // Karaoke-optimized pitch detection settings
 interface PitchDetectorConfig {
@@ -419,45 +420,38 @@ export class PitchDetector {
     return this.audioContext;
   }
 
-  async destroy(): Promise<void> {
+  /** Synchronous cleanup — stops monitoring, releases tracks, nulls refs. Safe for beforeunload. */
+  destroySync(): void {
     this.stop();
     if (this.mediaStream) {
       this.mediaStream.getTracks().forEach(track => track.stop());
       this.mediaStream = null;
     }
     if (this.audioContext) {
-      // Set to null BEFORE closing to prevent double-close race condition
-      const ctx = this.audioContext;
+      try { this.audioContext.close(); } catch { /* already closed */ }
       this.audioContext = null;
-      try {
-        await ctx.close();
-      } catch {
-        // Already closed or closing — safe to ignore
-      }
     }
     this.analyser = null;
     this.buffer = null;
     this.frequencyBuffer = null;
     this.yinBuffer = null;
   }
+
+  async destroy(): Promise<void> {
+    this.destroySync();
+  }
 }
 
 // Singleton instance
 let pitchDetectorInstance: PitchDetector | null = null;
-let pitchDetectorCleanupRegistered = false;
 
 export function getPitchDetector(): PitchDetector {
   if (!pitchDetectorInstance) {
     pitchDetectorInstance = new PitchDetector();
-
-    // Cleanup on page unload (only register once)
-    if (typeof window !== 'undefined' && !pitchDetectorCleanupRegistered) {
-      pitchDetectorCleanupRegistered = true;
-      window.addEventListener('beforeunload', () => {
-        pitchDetectorInstance?.destroy();
-        pitchDetectorInstance = null;
-      });
-    }
+    registerCleanup('pitch-detector', () => {
+      pitchDetectorInstance?.destroySync();
+      pitchDetectorInstance = null;
+    });
   }
   return pitchDetectorInstance;
 }
@@ -651,20 +645,16 @@ export class PitchDetectorManager {
 
 // Singleton instance for PitchDetectorManager
 let pitchDetectorManagerInstance: PitchDetectorManager | null = null;
-let pitchDetectorManagerCleanupRegistered = false;
 
 export function getPitchDetectorManager(): PitchDetectorManager {
   if (!pitchDetectorManagerInstance) {
     pitchDetectorManagerInstance = new PitchDetectorManager();
-
-    // Cleanup on page unload (only register once)
-    if (typeof window !== 'undefined' && !pitchDetectorManagerCleanupRegistered) {
-      pitchDetectorManagerCleanupRegistered = true;
-      window.addEventListener('beforeunload', () => {
-        pitchDetectorManagerInstance?.destroy();
-        pitchDetectorManagerInstance = null;
-      });
-    }
+    registerCleanup('pitch-detector-manager', () => {
+      pitchDetectorManagerInstance?.stop();
+      // Fire-and-forget async destroy for individual detectors
+      pitchDetectorManagerInstance?.destroy().catch(() => {});
+      pitchDetectorManagerInstance = null;
+    });
   }
   return pitchDetectorManagerInstance;
 }
