@@ -9,6 +9,7 @@ import { SONG_SELECTION_CONFIG } from './unified-party-setup.config';
 import type { PartyGameConfig, GameSettingConfig, SelectedPlayer, SongSelectionOption, InputMode } from './unified-party-setup.types';
 import { INPUT_MODE_CONFIG } from './unified-party-setup.types';
 import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
+import type { Language } from '@/lib/i18n/translations';
 import { ConnectionStatusBadge } from './connection-status-badge';
 
 // ===================== SETTING CONTROL =====================
@@ -29,7 +30,7 @@ function SettingControl({
           </label>
           <input
             type="range" min={setting.min} max={setting.max} step={setting.step}
-            value={value}
+            value={typeof value === 'boolean' ? (value ? 1 : 0) : value}
             onChange={(e) => onChange(setting.key, Number(e.target.value))}
             className="w-full accent-cyan-500"
           />
@@ -638,7 +639,7 @@ function SongFilterSection({
             >
               <option value="all">Alle Sprachen</option>
               {availableLanguages.map(l => (
-                <option key={l} value={l}>{LANGUAGE_NAMES[l] || l}</option>
+                <option key={l} value={l}>{LANGUAGE_NAMES[l as Language] || l}</option>
               ))}
             </select>
           </div>
@@ -815,7 +816,7 @@ export function SongVotingModal({ songs, players, onVote, onClose, gameColor }: 
             // Fallback: try constructing cover from coverFile and folderPath
             if (s.coverFile && s.folderPath) {
               try {
-                const { isTauri } = await import('@/lib/game/song-library');
+                const { isTauri } = await import('@/lib/tauri-file-storage');
                 if (isTauri()) {
                   const { convertFileSrc } = await import('@tauri-apps/api/core');
                   const path = s.baseFolder
@@ -890,4 +891,4 @@ export function SongVotingModal({ songs, players, onVote, onClose, gameColor }: 
 
 // ===================== EXPORT ALL SUB-COMPONENTS =====================
 
-export { GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, InputModeSelector, MicAssignmentPanel, SingleMicSelector };
+export { GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, InputModeSelector, MicAssignmentPanel };

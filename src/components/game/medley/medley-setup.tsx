@@ -13,6 +13,7 @@ import type {
 } from './medley-types';
 import { getDefaultSettings, generateTeamMatchups, teamSnippetCount } from './medley-types';
 import { generateMedleySnippets, getAvailableGenres, getAvailableLanguages } from './medley-snippet-generator';
+import type { Language } from '@/lib/i18n/translations';
 import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
 
 // ===================== PROPS =====================
@@ -292,7 +293,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
               >
                 {availableLanguages.map(l => (
                   <option key={l} value={l} className="bg-gray-800 text-white">
-                    {l === 'all' ? 'Alle Sprachen' : (LANGUAGE_NAMES[l] || l)}
+                    {l === 'all' ? 'Alle Sprachen' : (LANGUAGE_NAMES[l as Language] || l)}
                   </option>
                 ))}
               </select>

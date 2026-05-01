@@ -2,6 +2,7 @@
 
 import { Song } from '@/types/game';
 import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
+import type { Language } from '@/lib/i18n/translations';
 import { LibraryGroupBy } from './types';
 
 export function getLetterGroup(name: string): string {
@@ -108,7 +109,7 @@ export function getSortedFolderKeys(groupedSongs: Map<string, Song[]>, groupBy: 
 
 export function getGroupDisplayName(key: string, groupBy: LibraryGroupBy): string {
   if (groupBy === 'language') {
-    return LANGUAGE_NAMES[key] || key;
+    return LANGUAGE_NAMES[key as Language] || key;
   }
   return key;
 }

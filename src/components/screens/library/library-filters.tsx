@@ -4,6 +4,7 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { LibrarySettings, LibraryViewMode, LibraryGroupBy } from './types';
 import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
+import type { Language } from '@/lib/i18n/translations';
 
 interface LibraryFiltersProps {
   searchQuery: string;
@@ -124,7 +125,7 @@ export function LibraryFilters({
             style={smallSelectStyle}
           >
             {availableLanguages.map(l => (
-              <option key={l} value={l} className="bg-gray-800 text-white">{l === 'all' ? 'All Languages' : (LANGUAGE_NAMES[l] || l)}</option>
+              <option key={l} value={l} className="bg-gray-800 text-white">{l === 'all' ? 'All Languages' : (LANGUAGE_NAMES[l as Language] || l)}</option>
             ))}
           </select>
         </div>
