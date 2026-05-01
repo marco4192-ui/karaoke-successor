@@ -72,6 +72,7 @@ export function PtmGameScreen({
   const activeWebcamStreamsRef = useRef<MediaStream[]>([]);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const unmountGuardRef = useRef(false);
 
   // ── Phase management ──
   const [phase, setPhase] = useState<GamePhase>('intro');
@@ -160,7 +161,9 @@ export function PtmGameScreen({
 
   // ── Cleanup: reset isSongPlaying on unmount ──
   useEffect(() => {
+    unmountGuardRef.current = false;
     return () => {
+      unmountGuardRef.current = true;
       setIsSongPlaying(false);
       lastIsSongPlayingRef.current = false;
       if (countdownIntervalRef.current) {
@@ -419,6 +422,7 @@ export function PtmGameScreen({
       if (!media) {
         // Media element not ready yet — retry after a short delay
         const retryTimer = setTimeout(() => {
+          if (unmountGuardRef.current) return;
           const m2 = audioRef.current || (videoRef.current && !isYouTube ? videoRef.current : null);
           if (m2 && isPlaying) {
             m2.currentTime = currentSnippet.startTime / 1000;
@@ -426,10 +430,10 @@ export function PtmGameScreen({
           }
         }, 200);
         retryTimerRef.current = retryTimer;
-        // Note: return value from rAF callback is ignored by requestAnimationFrame.
       }
 
       const seekAndPlay = () => {
+        if (unmountGuardRef.current) return;
         media.currentTime = currentSnippet.startTime / 1000;
         if (isPlaying) {
           media.play().catch(() => {});
@@ -447,6 +451,10 @@ export function PtmGameScreen({
       } else {
         // Wait for canplay
         const onCanPlay = () => {
+          if (unmountGuardRef.current) {
+            media.removeEventListener('canplay', onCanPlay);
+            return;
+          }
           seekAndPlay();
           media.removeEventListener('canplay', onCanPlay);
         };
@@ -455,8 +463,6 @@ export function PtmGameScreen({
         canplaySafetyTimerRef.current = setTimeout(() => {
           media.removeEventListener('canplay', onCanPlay);
         }, 5000);
-        // Note: we can't easily clean up both in the effect cleanup since
-        // we're inside rAF. The timeout provides a safety net.
       }
     });
 
@@ -529,6 +535,7 @@ export function PtmGameScreen({
               console.warn('[PTM] No media element available at game start, retrying...');
               countdownRetryRef.current = setTimeout(() => {
                 countdownRetryRef.current = null;
+                if (unmountGuardRef.current) return; // component already unmounted
                 if (audioRef.current) {
                   audioRef.current.currentTime = seekTo;
                   audioRef.current.play().catch(() => {});
