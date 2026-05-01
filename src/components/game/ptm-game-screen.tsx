@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Song, PLAYER_COLORS, LyricLine, Difficulty, Note } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
@@ -24,52 +23,15 @@ import { GameProgressBar } from '@/components/game/game-hud';
 import { TimeDisplay } from '@/components/game/game-hud';
 import { PtmTransitionOverlay } from '@/components/game/ptm-transition-overlay';
 import { PtmSongResults, PtmSeriesResults } from '@/components/game/ptm-song-results';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 
-// Re-export types from pass-the-mic-screen for backward compatibility
-export type { PassTheMicPlayer, PassTheMicSegment } from '@/components/game/pass-the-mic-screen';
-
-// ===================== TYPES =====================
-
-interface PtmPlayer {
-  id: string;
-  name: string;
-  avatar?: string;
-  color: string;
-  score: number;
-  notesHit: number;
-  notesMissed: number;
-  combo: number;
-  maxCombo: number;
-  isActive: boolean;
-  segmentsSung: number;
-  micId?: string;
-}
-
-interface PtmSegment {
-  startTime: number;
-  endTime: number;
-  playerId: string | null;
-}
-
-export interface PassTheMicSettings {
-  segmentDuration: number;
-  difficulty: Difficulty;
-  micId: string;
-  micName: string;
-  randomSwitches?: boolean;
-  sharedMicId?: string | null;
-  sharedMicName?: string | null;
-}
-
-type GamePhase = 'intro' | 'countdown' | 'playing' | 'transitioning' | 'song-results' | 'series-results';
-
-const DEFAULT_SETTINGS: PassTheMicSettings = {
-  segmentDuration: 30,
-  difficulty: 'medium',
-  micId: 'default',
-  micName: 'Standard',
-};
+// Extracted modules
+import type { PtmPlayer, PtmSegment, PassTheMicSettings, GamePhase } from '@/components/game/ptm-types';
+import { DEFAULT_SETTINGS } from '@/components/game/ptm-types';
+export type { PassTheMicPlayer, PassTheMicSegment, PassTheMicSettings } from '@/components/game/ptm-types';
+import { PtmIntroScreen } from '@/components/game/ptm-intro-screen';
+import { PtmPlayerRanking } from '@/components/game/ptm-player-ranking';
+import { PtmHudPlayerScore } from '@/components/game/ptm-hud-player-score';
+import { PtmHudControls } from '@/components/game/ptm-hud-controls';
 
 // ===================== MAIN COMPONENT =====================
 
@@ -377,6 +339,25 @@ export function PtmGameScreen({
     setPhase('playing');
   }, []);
 
+  // ── Record round results ──
+  const recordRound = useCallback(() => {
+    const round: PassTheMicRoundResult = {
+      songTitle: isMedleyMode ? `Medley (${ptmMedleySnippets.length} Songs)` : (effectiveSong?.title || song.title),
+      songArtist: isMedleyMode ? '' : (effectiveSong?.artist || song.artist),
+      playedAt: Date.now(),
+      playerScores: {},
+    };
+    for (const p of playersRef.current) {
+      round.playerScores[p.id] = {
+        score: p.score,
+        notesHit: p.notesHit,
+        notesMissed: p.notesMissed,
+        maxCombo: p.maxCombo,
+      };
+    }
+    setPassTheMicSeriesHistory([...passTheMicSeriesHistory, round]);
+  }, [effectiveSong, song, passTheMicSeriesHistory, setPassTheMicSeriesHistory]);
+
   // ── Segment switching ──
   useEffect(() => {
     if (phase !== 'playing' || !isPlaying || !currentSegment) return;
@@ -566,25 +547,6 @@ export function PtmGameScreen({
     countdownIntervalRef.current = interval;
   };
 
-  // ===================== RENDER =====================
-  const recordRound = useCallback(() => {
-    const round: PassTheMicRoundResult = {
-      songTitle: isMedleyMode ? `Medley (${ptmMedleySnippets.length} Songs)` : (effectiveSong?.title || song.title),
-      songArtist: isMedleyMode ? '' : (effectiveSong?.artist || song.artist),
-      playedAt: Date.now(),
-      playerScores: {},
-    };
-    for (const p of playersRef.current) {
-      round.playerScores[p.id] = {
-        score: p.score,
-        notesHit: p.notesHit,
-        notesMissed: p.notesMissed,
-        maxCombo: p.maxCombo,
-      };
-    }
-    setPassTheMicSeriesHistory([...passTheMicSeriesHistory, round]);
-  }, [effectiveSong, song, passTheMicSeriesHistory, setPassTheMicSeriesHistory]);
-
   // ── Continue series: reset per-song scores, pick next song based on selection mode ──
   const handleContinue = useCallback(() => {
     // Stop pitch detector BEFORE navigating to avoid unmount errors
@@ -670,6 +632,13 @@ export function PtmGameScreen({
     };
   }, [stop]);
 
+  // ── Handle ending the song early ──
+  const handleEndSong = useCallback(() => {
+    setIsPlaying(false);
+    recordRound();
+    setPhase('song-results');
+  }, [recordRound]);
+
   // ===================== RENDER =====================
 
   // Guard: no song
@@ -685,73 +654,20 @@ export function PtmGameScreen({
   // ===================== INTRO PHASE =====================
   if (phase === 'intro') {
     return (
-      <div className="max-w-6xl mx-auto">
-        {/* Hidden audio/video elements — must be in DOM during intro so refs
-            are populated before startGame fires. Without these, audioRef.current
-            is null when the countdown reaches zero, causing
-            "No media element available at game start". */}
-        {audioSong?.audioUrl && (
-          <audio
-            key={audioSong.id}
-            ref={audioRef}
-            src={audioSong.audioUrl}
-            className="hidden"
-            preload="auto"
-          />
-        )}
-        {!audioSong?.audioUrl && audioSong?.videoBackground && !isYouTube && (
-          <video
-            key={`video-${audioSong.id}`}
-            ref={videoRef}
-            src={audioSong.videoBackground}
-            className="hidden"
-            muted={false}
-            playsInline
-            preload="auto"
-          />
-        )}
-        <div className="flex flex-col items-center justify-center min-h-[60vh]">
-          <div className="text-5xl mb-6">🎤</div>
-          <h2 className="text-2xl font-bold mb-2">Pass the Mic</h2>
-          <p className="text-white/60 mb-8">{isMedleyMode ? `🎵 Medley — ${ptmMedleySnippets.length} Songs` : `${effectiveSong.title} — ${effectiveSong.artist}`}</p>
-
-          <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-xl max-w-md w-full mb-6 p-8 text-center">
-            <div className="text-sm text-white/60 mb-2">STARTSPIELER</div>
-            <div className="flex items-center justify-center gap-4 mb-4">
-              {currentPlayer?.avatar ? (
-                <img src={currentPlayer.avatar} alt={currentPlayer.name}
-                  className="w-20 h-20 rounded-full object-cover border-4 border-cyan-500" />
-              ) : (
-                <div className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold border-4 border-cyan-500 text-white"
-                  style={{ backgroundColor: currentPlayer?.color }}>
-                  {currentPlayer?.name?.charAt(0).toUpperCase()}
-                </div>
-              )}
-              <span className="text-3xl font-bold">{currentPlayer?.name}</span>
-            </div>
-            <div className="text-sm text-white/40">
-              {playersRef.current.length} Spieler{isMedleyMode ? ` - ${ptmMedleySnippets.length} Snippets` : ` - ${safeSettings.segmentDuration}s Segmente`}
-              {safeSettings.sharedMicName && (
-                <span> - 🎤 {safeSettings.sharedMicName}</span>
-              )}
-              {passTheMicSeriesHistory.length > 0 && (
-                <span> - Runde {passTheMicSeriesHistory.length + 1}</span>
-              )}
-            </div>
-          </div>
-
-          {!mediaLoaded && (
-            <div className="mb-4 text-center">
-              <div className="animate-spin inline-block w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full" />
-              <p className="text-white/40 text-sm mt-2">Lied wird geladen...</p>
-            </div>
-          )}
-          <Button onClick={startGame} disabled={!mediaLoaded}
-            className="px-12 py-4 text-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 disabled:opacity-50">
-            🎤 Singen starten!
-          </Button>
-        </div>
-      </div>
+      <PtmIntroScreen
+        currentPlayer={currentPlayer}
+        isMedleyMode={isMedleyMode}
+        medleySnippetCount={ptmMedleySnippets.length}
+        safeSettings={safeSettings}
+        seriesHistory={passTheMicSeriesHistory}
+        mediaLoaded={mediaLoaded}
+        startGame={startGame}
+        audioSong={audioSong}
+        isYouTube={isYouTube}
+        audioRef={audioRef}
+        videoRef={videoRef}
+        playersCount={playersRef.current.length}
+      />
     );
   }
 
@@ -910,206 +826,35 @@ export function PtmGameScreen({
 
       {/* ═══════ PTM HUD OVERLAYS ═══════ */}
 
-      {/* 8.1 Team-Score Mitte-Links | 8.2 Spieler-Score Links größer */}
+      {/* Player score (top-left) */}
       {(phase === 'playing' || phase === 'transitioning') && (
-        <div className="absolute top-4 left-4 z-20">
-          {/* Team total score (small, center-left) */}
-          <div className="bg-black/50 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/10 mb-2 text-center w-32">
-            <div className="text-[10px] text-white/40 uppercase tracking-wider">Team-Score</div>
-            <div className="text-lg font-bold text-cyan-400">
-              {playersRef.current.reduce((sum, p) => sum + p.score, 0).toLocaleString()}
-            </div>
-          </div>
-
-          {/* Active player score (larger, left side) */}
-          <div className="bg-black/50 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/10 w-40">
-            {currentPlayer?.avatar ? (
-              <img
-                src={currentPlayer.avatar}
-                alt={currentPlayer.name}
-                className="w-12 h-12 rounded-full object-cover border-2 mb-2"
-                style={{ borderColor: currentPlayer.color }}
-              />
-            ) : (
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold border-2 text-xl mb-2"
-                style={{ backgroundColor: currentPlayer?.color, borderColor: currentPlayer?.color }}
-              >
-                {currentPlayer?.name?.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <div className="text-[10px] text-white/50 uppercase tracking-wider">Jetzt singt</div>
-            <div className="text-base font-bold truncate" style={{ color: currentPlayer?.color }}>
-              {currentPlayer?.name}
-            </div>
-            <div className="text-2xl font-bold text-cyan-400 mt-1">
-              {currentPlayer?.score.toLocaleString()}
-            </div>
-            {currentPlayer && currentPlayer.combo > 0 && (
-              <div className="text-xs text-amber-400 font-medium">🔥 {currentPlayer.combo}x Combo</div>
-            )}
-          </div>
-        </div>
+        <PtmHudPlayerScore
+          players={playersRef.current}
+          currentPlayer={currentPlayer}
+        />
       )}
 
-      {/* Pause | Vollbild + Schwierigkeit | Kamera | Song beenden */}
+      {/* Controls (top-right) */}
       {phase === 'playing' && (
-        <div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-2">
-          <div className="flex items-center gap-2">
-            {/* Difficulty badge */}
-            <Badge
-              variant="outline"
-              className={`text-[10px] px-2 py-0.5 border-white/20 ${
-                safeSettings.difficulty === 'easy' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
-                safeSettings.difficulty === 'hard' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
-                'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-              }`}
-            >
-              {safeSettings.difficulty === 'easy' ? 'Leicht' : safeSettings.difficulty === 'hard' ? 'Schwer' : 'Mittel'}
-            </Badge>
-          </div>
-          <Button
-            variant="ghost"
-            onClick={() => onPause?.()}
-            className="text-white/80 hover:text-white hover:bg-white/10 rounded-lg w-10 h-10 p-0"
-            title="Pause"
-          >
-            ⏸
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() => {
-              // Tauri uses its own Window API for fullscreen (DOM fullscreen API
-              // does not work reliably inside Tauri webviews)
-              const win = getCurrentWindow();
-              win.isFullscreen().then(isFs => {
-                win.setFullscreen(!isFs).catch(() => {});
-              }).catch(() => {});
-            }}
-            className="text-white/80 hover:text-white hover:bg-white/10 rounded-lg w-10 h-10 p-0"
-            title="Vollbild"
-          >
-            ⛶
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() => {
-              // Toggle camera/webcam: stop all existing streams, or start a new one
-              if (activeWebcamStreamsRef.current.length > 0) {
-                // Turn off: stop all streams and remove video elements
-                activeWebcamStreamsRef.current.forEach(stream => {
-                  stream.getTracks().forEach(t => t.stop());
-                });
-                activeWebcamStreamsRef.current = [];
-                document.querySelectorAll('video[style*="z-index:100"]').forEach(el => el.remove());
-              } else {
-                // Turn on: request camera
-                navigator.mediaDevices?.getUserMedia({ video: true })
-                  .then(stream => {
-                    activeWebcamStreamsRef.current.push(stream);
-                    const video = document.createElement('video');
-                    video.srcObject = stream;
-                    video.style.cssText = 'position:fixed;bottom:80px;right:16px;width:200px;border-radius:12px;z-index:100;border:2px solid rgba(255,255,255,0.3);';
-                    document.body.appendChild(video);
-                    video.play();
-                    // Click to close
-                    video.addEventListener('click', () => {
-                      stream.getTracks().forEach(t => t.stop());
-                      activeWebcamStreamsRef.current = activeWebcamStreamsRef.current.filter(s => s !== stream);
-                      video.remove();
-                    });
-                  })
-                  .catch(() => {});
-              }
-            }}
-            className="text-white/80 hover:text-white hover:bg-white/10 rounded-lg w-10 h-10 p-0"
-            title="Kamera"
-          >
-            📷
-          </Button>
-          {/* Stop button */}
-          <Button
-            onClick={() => {
-              setIsPlaying(false);
-              recordRound();
-              setPhase('song-results');
-            }}
-            variant="ghost"
-            size="sm"
-            className="text-white/30 hover:text-red-400 text-xs"
-            title="Song beenden"
-          >
-            ⏹ Beenden
-          </Button>
-        </div>
+        <PtmHudControls
+          safeSettings={safeSettings}
+          onPause={onPause}
+          activeWebcamStreamsRef={activeWebcamStreamsRef}
+          onEndSong={handleEndSong}
+        />
       )}
-
-      {/* Gesangsindikator entfernt — Pitch-Status ist im Note-Highway sichtbar */}
 
       {/* Player Ranking — vertikal links, sortiert nach Score (active player oben) */}
-      {(phase === 'playing' || phase === 'transitioning') && (() => {
-        const ranked = [...playersRef.current]
-          .map((p, i) => ({ ...p, originalIndex: i }))
-          .sort((a, b) => b.score - a.score);
-        return (
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20">
-            <div className="flex flex-col gap-1.5">
-              {ranked.map((player, rank) => {
-                const isActive = player.originalIndex === currentPlayerIndex;
-                return (
-                  <div
-                    key={player.id}
-                    className={`flex items-center gap-2 px-2.5 py-2 rounded-lg transition-all ${
-                      isActive
-                        ? 'bg-white/15 border border-white/20 scale-105'
-                        : 'bg-black/40 border border-white/5'
-                    }`}
-                    style={isActive ? { borderColor: `${player.color}50` } : {}}
-                  >
-                    {/* Rank number */}
-                    <span className={`text-[10px] font-bold w-4 text-center ${
-                      rank === 0 ? 'text-yellow-400' : 'text-white/30'
-                    }`}>
-                      {rank + 1}
-                    </span>
-                    {/* Avatar */}
-                    {player.avatar ? (
-                      <img src={player.avatar} alt={player.name} className={`w-7 h-7 rounded-full object-cover ${isActive ? 'border-2' : 'border border-white/20'}`} style={isActive ? { borderColor: player.color } : {}} />
-                    ) : (
-                      <div
-                        className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${isActive ? 'border-2' : 'border border-white/20'}`}
-                        style={{ backgroundColor: `${player.color}80`, borderColor: isActive ? player.color : undefined }}
-                      >
-                        {player.name.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <div className="flex flex-col min-w-0">
-                      <span className={`text-xs font-medium truncate max-w-[80px] ${isActive ? 'text-white' : 'text-white/50'}`}>
-                        {player.name}
-                      </span>
-                      <span className={`text-[10px] ${isActive ? 'text-cyan-400 font-semibold' : 'text-white/25'}`}>
-                        {player.score.toLocaleString()} pts
-                      </span>
-                    </div>
-                    {/* Combo for active player */}
-                    {isActive && player.combo > 1 && (
-                      <span className="text-[10px] text-amber-400 font-medium ml-auto">
-                        {player.combo}x
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })()}
+      {(phase === 'playing' || phase === 'transitioning') && (
+        <PtmPlayerRanking
+          players={playersRef.current}
+          currentPlayerIndex={currentPlayerIndex}
+        />
+      )}
 
       {/* Progress Bar (bottom) */}
       <GameProgressBar currentTime={currentTime} duration={displayDuration} />
       <TimeDisplay currentTime={currentTime} duration={displayDuration} />
-
-      {/* End Song Early — moved to top-right button stack */}
 
       {/* ═══════ TRANSITION OVERLAY ═══════ */}
       <PtmTransitionOverlay
