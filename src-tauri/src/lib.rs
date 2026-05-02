@@ -518,7 +518,7 @@ pub fn run() {
         .setup(|app| {
             // Register the audio state (needs AppHandle for the dedicated audio thread)
             let audio_state = audio::commands::AudioState::new(app.handle().clone())
-                .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, e))?;
+                .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
             app.manage(audio_state);
             // Register the analysis state (needs AppHandle for the dedicated analysis thread)
             let analysis_state = audio::analysis_commands::AnalysisState::new()
