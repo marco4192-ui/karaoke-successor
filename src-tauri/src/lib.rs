@@ -441,6 +441,66 @@ fn get_server_path(resource_dir: &PathBuf) -> Option<PathBuf> {
     None
 }
 
+/// Try to find any available Node.js runtime: bundled node, system node, or bun.
+/// Returns (path_to_runtime, runtime_name) for logging.
+fn find_node_runtime(resource_dir: &PathBuf) -> Option<PathBuf> {
+    // 1. Bundled Node.js (portable)
+    if let Some(p) = get_node_path(resource_dir) {
+        return Some(p);
+    }
+    // 2. System Node.js
+    if let Ok(output) = Command::new("where").arg("node.exe").output() {
+        if output.status.success() {
+            let path_str = String::from_utf8_lossy(&output.stdout);
+            if let Some(first_line) = path_str.lines().next() {
+                let p = PathBuf::from(first_line.trim());
+                if p.exists() {
+                    println!("Found system Node.js at: {:?}", p);
+                    return Some(p);
+                }
+            }
+        }
+    }
+    if let Ok(output) = Command::new("which").arg("node").output() {
+        if output.status.success() {
+            let path_str = String::from_utf8_lossy(&output.stdout);
+            if let Some(first_line) = path_str.lines().next() {
+                let p = PathBuf::from(first_line.trim());
+                if p.exists() {
+                    println!("Found system Node.js at: {:?}", p);
+                    return Some(p);
+                }
+            }
+        }
+    }
+    // 3. System Bun (can run Node.js scripts)
+    if let Ok(output) = Command::new("where").arg("bun.exe").output() {
+        if output.status.success() {
+            let path_str = String::from_utf8_lossy(&output.stdout);
+            if let Some(first_line) = path_str.lines().next() {
+                let p = PathBuf::from(first_line.trim());
+                if p.exists() {
+                    println!("Found system Bun at: {:?}", p);
+                    return Some(p);
+                }
+            }
+        }
+    }
+    if let Ok(output) = Command::new("which").arg("bun").output() {
+        if output.status.success() {
+            let path_str = String::from_utf8_lossy(&output.stdout);
+            if let Some(first_line) = path_str.lines().next() {
+                let p = PathBuf::from(first_line.trim());
+                if p.exists() {
+                    println!("Found system Bun at: {:?}", p);
+                    return Some(p);
+                }
+            }
+        }
+    }
+    None
+}
+
 fn get_server_cwd(server_path: &PathBuf) -> PathBuf {
     // The working directory should be the server directory
     server_path.parent().unwrap_or(server_path).to_path_buf()
@@ -563,55 +623,45 @@ pub fn run() {
                 
                 let mut server_started = false;
                 
-                // Try bundled Node.js + server
+                // Try bundled server with any available runtime (bundled node > system node > system bun)
                 if let Ok(ref res_dir) = resource_dir {
-                    let node_path = get_node_path(res_dir);
-                    let server_path = get_server_path(res_dir);
-                    
-                    if let (Some(node), Some(server)) = (&node_path, &server_path) {
-                        let cwd = get_server_cwd(server);
+                    if let Some(server_path) = get_server_path(res_dir) {
+                        let cwd = get_server_cwd(&server_path);
                         
-                        println!("Starting bundled server...");
-                        println!("Node: {:?}", node);
-                        println!("Server: {:?}", server);
-                        println!("Working dir: {:?}", cwd);
+                        // Find the best available runtime
+                        let runtime = find_node_runtime(res_dir);
                         
-                        // List files in cwd for debugging
-                        if let Ok(entries) = fs::read_dir(&cwd) {
-                            println!("Files in working directory:");
-                            for entry in entries.flatten() {
-                                println!("  - {:?}", entry.path());
-                            }
-                        }
-                        
-                        let result = Command::new(node)
-                            .arg(server)
-                            .current_dir(&cwd)
-                            .env("PORT", "3000")
-                            .env("HOSTNAME", "127.0.0.1")
-                            .env("NODE_ENV", "production")
-                            .spawn();
-                        
-                        match result {
-                            Ok(child) => {
-                                if let Ok(mut proc) = SERVER_PROCESS.lock() {
-                                    *proc = Some(child);
+                        if let Some(node) = runtime {
+                            println!("Starting server with runtime...");
+                            println!("Runtime: {:?}", node);
+                            println!("Server: {:?}", server_path);
+                            println!("Working dir: {:?}", cwd);
+                            
+                            let result = Command::new(&node)
+                                .arg(&server_path)
+                                .current_dir(&cwd)
+                                .env("PORT", "3000")
+                                .env("HOSTNAME", "127.0.0.1")
+                                .env("NODE_ENV", "production")
+                                .spawn();
+                            
+                            match result {
+                                Ok(child) => {
+                                    if let Ok(mut proc) = SERVER_PROCESS.lock() {
+                                        *proc = Some(child);
+                                    }
+                                    server_started = true;
+                                    println!("Server process started successfully");
                                 }
-                                server_started = true;
-                                println!("Server process started successfully");
+                                Err(e) => {
+                                    println!("Failed to start server: {:?}", e);
+                                }
                             }
-                            Err(e) => {
-                                println!("Failed to start bundled server: {:?}", e);
-                            }
+                        } else {
+                            println!("No Node.js/Bun runtime found — bundled server available but no runtime");
                         }
                     } else {
-                        println!("Could not find Node.js or server");
-                        if node_path.is_none() {
-                            println!("Node.js not found in bundled resources");
-                        }
-                        if server_path.is_none() {
-                            println!("Server not found in bundled resources");
-                        }
+                        println!("Server not found in bundled resources");
                     }
                 }
                 

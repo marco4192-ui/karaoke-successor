@@ -51,6 +51,15 @@ server.log
 # Rust/Cargo
 src-tauri/target/
 
+# Bundled build artifacts (large binaries, generated during build)
+src-tauri/bundled/server/
+src-tauri/bundled/node/
+portable-node/bin/
+portable-node/node.exe
+!portable-node/.gitkeep
+!src-tauri/bundled/server/standalone-server.js
+!src-tauri/bundled/node/.gitkeep
+
 # Skills directory
 /skills/src-tauri/target/
 repo
