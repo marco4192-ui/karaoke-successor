@@ -321,7 +321,7 @@ fn native_message(title: String, message: String, kind: String) -> bool {
         .show();
 
     // Return true if the user acknowledged (Ok), false if dismissed (Cancel/Close)
-    !matches!(result, rfd::MessageDialogResult::Cancel | rfd::MessageDialogResult::Close)
+    !matches!(result, rfd::MessageDialogResult::Cancel)
 }
 
 /// Show a native confirm dialog.

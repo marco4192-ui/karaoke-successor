@@ -225,13 +225,14 @@ pub async fn viral_refresh_charts(
     // H14: Use block_in_place to avoid blocking the Tokio runtime while holding
     // the std::sync::Mutex across the insert loop. This moves the blocking work
     // off the Tokio worker thread pool.
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0);
+
     let count = tokio::task::block_in_place(|| {
         let state = app.state::<DbState>();
         let conn = state.conn.lock().map_err(|e| e.to_string())?;
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_secs() as i64)
-            .unwrap_or(0);
 
         // Clear old entries for this country
         conn.execute("DELETE FROM viral_hits WHERE country = ?1", [&country])
@@ -298,7 +299,7 @@ pub fn viral_match_library(
         .map_err(|e| format!("Failed to parse songs JSON: {}", e))?;
 
     let state = app.state::<DbState>();
-    let conn = state.conn.lock().map_err(|e| e.to_string())?;
+    let mut conn = state.conn.lock().map_err(|e| e.to_string())?;
 
     // Load all chart entries
     let mut stmt = conn
@@ -376,6 +377,7 @@ pub fn viral_match_library(
 
     // Update matched_song_id in SQLite for caching
     if !matched_ids.is_empty() {
+        drop(stmt); // release immutable borrow on conn before mutable borrow
         let tx = conn.transaction()
             .map_err(|e| format!("Transaction failed: {}", e))?;
 

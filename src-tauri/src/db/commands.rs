@@ -92,7 +92,7 @@ pub fn db_get_all_settings(app: AppHandle) -> Result<Vec<(String, String)>, Stri
 #[tauri::command]
 pub fn db_save_songs(app: AppHandle, songs_json: String) -> Result<DbResult, String> {
     let state = app.state::<DbState>();
-    let conn = state.conn.lock().map_err(|e| e.to_string())?;
+    let mut conn = state.conn.lock().map_err(|e| e.to_string())?;
 
     // Parse the JSON array of songs
     let songs: Vec<serde_json::Value> = serde_json::from_str(&songs_json)
@@ -220,7 +220,7 @@ pub fn db_search_songs(app: AppHandle, query: String, limit: Option<i64>) -> Res
 #[tauri::command]
 pub fn db_save_folders(app: AppHandle, folders_json: String) -> Result<DbResult, String> {
     let state = app.state::<DbState>();
-    let conn = state.conn.lock().map_err(|e| e.to_string())?;
+    let mut conn = state.conn.lock().map_err(|e| e.to_string())?;
     let folders: Vec<serde_json::Value> = serde_json::from_str(&folders_json)
         .map_err(|e| format!("Failed to parse folders JSON: {}", e))?;
 
@@ -284,7 +284,7 @@ pub fn db_load_folders(app: AppHandle) -> Result<Vec<serde_json::Value>, String>
 #[tauri::command]
 pub fn db_save_root_folders(app: AppHandle, paths: Vec<String>) -> Result<DbResult, String> {
     let state = app.state::<DbState>();
-    let conn = state.conn.lock().map_err(|e| e.to_string())?;
+    let mut conn = state.conn.lock().map_err(|e| e.to_string())?;
     let tx = conn.transaction()
         .map_err(|e| format!("Transaction failed: {}", e))?;
     tx.execute("DELETE FROM root_folders", [])
