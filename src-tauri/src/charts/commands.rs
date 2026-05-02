@@ -232,7 +232,7 @@ pub async fn viral_refresh_charts(
 
     let count = tokio::task::block_in_place(|| {
         let state = app.state::<DbState>();
-        let conn = state.conn.lock().map_err(|e| e.to_string())?;
+        let mut conn = state.conn.lock().map_err(|e| e.to_string())?;
 
         // Clear old entries for this country
         conn.execute("DELETE FROM viral_hits WHERE country = ?1", [&country])
