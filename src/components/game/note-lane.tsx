@@ -24,7 +24,6 @@ import { getStoredTheme } from '@/lib/game/themes';
 import {
   NOTE_HEIGHT,
   PITCH_RANGE,
-  BASE_PITCH,
   NoteShapeStyle,
   getNoteShapeClassesForLane,
   getNoteBackgroundClasses,
