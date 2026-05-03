@@ -33,6 +33,13 @@ mod charts;
 fn validate_safe_path(raw_path: &str) -> Result<PathBuf, String> {
     let path = PathBuf::from(raw_path);
 
+    // Reject paths containing traversal components (..) before canonicalization.
+    // This prevents symlink-based or non-existent path traversal attacks where
+    // canonicalization alone might not catch the exploit.
+    if path.components().any(|c| matches!(c, std::path::Component::ParentDir)) {
+        return Err(format!("Path traversal not allowed: {}", raw_path));
+    }
+
     // Try to canonicalize; if the path doesn't exist yet (e.g. for writes),
     // canonicalize the parent instead.
     let canonical = if path.exists() {
@@ -47,6 +54,11 @@ fn validate_safe_path(raw_path: &str) -> Result<PathBuf, String> {
     } else {
         return Err(format!("Cannot resolve path '{}': path has no parent and does not exist", raw_path));
     };
+
+    // Double-check that the canonical path also doesn't escape (belt-and-suspenders)
+    if canonical.components().any(|c| matches!(c, std::path::Component::ParentDir)) {
+        return Err(format!("Path traversal not allowed (canonical): {}", raw_path));
+    }
 
     let path_str = canonical.to_string_lossy().to_lowercase();
 
@@ -340,54 +352,54 @@ fn native_confirm(title: String, message: String) -> bool {
 /// Create a directory (recursive)
 #[tauri::command]
 fn native_mkdir(dir_path: String) -> Result<(), String> {
-    validate_safe_path(&dir_path)?;
-    fs::create_dir_all(&dir_path)
-        .map_err(|e| format!("Failed to create directory '{}': {}", dir_path, e))
+    let validated = validate_safe_path(&dir_path)?;
+    fs::create_dir_all(&validated)
+        .map_err(|e| format!("Failed to create directory '{}': {}", validated.display(), e))
 }
 
 /// Write bytes to a file (decoded from base64)
 #[tauri::command]
 fn native_write_file_bytes(file_path: String, data_base64: String) -> Result<(), String> {
-    validate_safe_path(&file_path)?;
+    let validated = validate_safe_path(&file_path)?;
     let bytes = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &data_base64)
         .map_err(|e| format!("Failed to decode base64: {}", e))?;
 
-    if let Some(parent) = PathBuf::from(&file_path).parent() {
+    if let Some(parent) = validated.parent() {
         fs::create_dir_all(parent)
             .map_err(|e| format!("Failed to create parent directory: {}", e))?;
     }
 
-    fs::write(&file_path, &bytes)
-        .map_err(|e| format!("Failed to write '{}': {}", file_path, e))
+    fs::write(&validated, &bytes)
+        .map_err(|e| format!("Failed to write '{}': {}", validated.display(), e))
 }
 
 /// Write text to a file
 #[tauri::command]
 fn native_write_file_text(file_path: String, content: String) -> Result<(), String> {
-    validate_safe_path(&file_path)?;
-    if let Some(parent) = PathBuf::from(&file_path).parent() {
+    let validated = validate_safe_path(&file_path)?;
+    if let Some(parent) = validated.parent() {
         fs::create_dir_all(parent)
             .map_err(|e| format!("Failed to create parent directory: {}", e))?;
     }
 
-    fs::write(&file_path, &content)
-        .map_err(|e| format!("Failed to write '{}': {}", file_path, e))
+    fs::write(&validated, &content)
+        .map_err(|e| format!("Failed to write '{}': {}", validated.display(), e))
 }
 
 /// Remove a file
 #[tauri::command]
 fn native_remove_file(file_path: String) -> Result<(), String> {
-    validate_safe_path(&file_path)?;
-    fs::remove_file(&file_path)
-        .map_err(|e| format!("Failed to remove '{}': {}", file_path, e))
+    let validated = validate_safe_path(&file_path)?;
+    fs::remove_file(&validated)
+        .map_err(|e| format!("Failed to remove '{}': {}", validated.display(), e))
 }
 
 /// Remove a directory (recursive)
 #[tauri::command]
 fn native_remove_dir(dir_path: String) -> Result<(), String> {
-    validate_safe_path(&dir_path)?;
-    fs::remove_dir_all(&dir_path)
-        .map_err(|e| format!("Failed to remove directory '{}': {}", dir_path, e))
+    let validated = validate_safe_path(&dir_path)?;
+    fs::remove_dir_all(&validated)
+        .map_err(|e| format!("Failed to remove directory '{}': {}", validated.display(), e))
 }
 
 /// Server process handle protected by a Mutex for thread-safe access.
