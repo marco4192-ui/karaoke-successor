@@ -631,18 +631,19 @@ export function MedleyGameScreen({
           {/* Preview next players */}
           {isTeam && currentSnippetIdx + 1 < matchups.length && (() => {
             const next = matchups[currentSnippetIdx + 1];
-            return (
+            const nextSong = medleySongs[currentSnippetIdx + 1]?.song;
+            return nextSong ? (
               <div className="bg-black/30 rounded-xl p-4 text-center">
                 <p className="text-sm text-white/40 mb-1">NÄCHSTER SONG</p>
-                <h3 className="text-lg font-bold">{medleySongs[currentSnippetIdx + 1]?.song.title}</h3>
-                <p className="text-white/60 text-sm">{medleySongs[currentSnippetIdx + 1]?.song.artist}</p>
+                <h3 className="text-lg font-bold">{nextSong.title}</h3>
+                <p className="text-white/60 text-sm">{nextSong.artist}</p>
                 <div className="flex items-center justify-center gap-3 mt-2">
                   <span className="text-sm" style={{ color: next.playerA.color }}>{next.playerA.name}</span>
                   <span className="text-white/40">vs</span>
                   <span className="text-sm" style={{ color: next.playerB.color }}>{next.playerB.name}</span>
                 </div>
               </div>
-            );
+            ) : null;
           })()}
 
           {!isTeam && currentSnippetIdx + 1 < medleySongs.length && (
