@@ -5,47 +5,19 @@
 import { Song } from '@/types/game';
 import { getAllSongs, filterSongs, ensureSongUrls } from '@/lib/game/song-library';
 import { PassTheMicSegment } from '@/components/game/pass-the-mic-screen';
-
-// ===================== SEGMENT GENERATION =====================
-// Auto segment duration: 20-60s, at least 2 segments per player, equal segments per player
-function generatePassTheMicSegments(song: Song, playerCount: number, explicitDuration?: number): PassTheMicSegment[] {
-  const MIN_SONG_MS = 60_000;
-  if (song.duration < MIN_SONG_MS) return [];
-
-  const MIN_SEG_S = 20;
-  const MAX_SEG_S = 60;
-  const MIN_SEGS_PER_PLAYER = 2;
-
-  const durationMs = song.duration;
-  const rawAuto = Math.ceil(durationMs / (playerCount * MIN_SEGS_PER_PLAYER * 1000));
-  const clampedAuto = Math.max(MIN_SEG_S, Math.min(MAX_SEG_S, rawAuto));
-  const segDur = explicitDuration
-    ? Math.max(MIN_SEG_S, Math.min(MAX_SEG_S, explicitDuration))
-    : clampedAuto;
-  const segDurMs = segDur * 1000;
-
-  const rawCount = Math.ceil(durationMs / segDurMs);
-  // Round up to a multiple of playerCount so segments can be distributed equally
-  const segCount = Math.max(playerCount, Math.ceil(rawCount / playerCount) * playerCount);
-  const adjustedDurMs = durationMs / segCount;
-
-  const segments: PassTheMicSegment[] = [];
-  for (let i = 0; i < segCount; i++) {
-    segments.push({
-      startTime: Math.round(i * adjustedDurMs),
-      endTime: Math.round((i + 1) * adjustedDurMs),
-      playerId: null,
-    });
-  }
-  return segments;
-}
+import { generatePtmSegments } from '@/lib/game/ptm-segments';
 
 // ===================== MEDLEY SNIPPET GENERATION =====================
 function generateMedleySnippets(songs: Song[], snippetCount: number, snippetDuration: number) {
   const snippetDurationMs = snippetDuration * 1000;
   const MIN_MELODY_SONG_MS = 60 * 1000;
   const eligibleSongs = songs.filter(s => s.duration >= MIN_MELODY_SONG_MS);
-  const shuffled = [...eligibleSongs].sort(() => Math.random() - 0.5);
+  // Fisher-Yates shuffle for fair randomization
+  const shuffled = [...eligibleSongs];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
   const beatDurationMs = (bpm: number) => 15000 / bpm;
 
   return shuffled.slice(0, snippetCount).map(song => {
@@ -132,7 +104,7 @@ export async function preparePtmNextSong(
         songWithUrls = await ensureSongUrls(randomSong);
       } catch { /* non-critical */ }
 
-      const segments = generatePassTheMicSegments(songWithUrls, playerCount, explicitSegmentDuration);
+      const segments = generatePtmSegments(songWithUrls.duration, playerCount, explicitSegmentDuration);
       if (segments.length === 0) {
         // Song too short — retry with another random song (up to MAX_RETRIES)
         if (_retryCount < MAX_RETRIES) {
