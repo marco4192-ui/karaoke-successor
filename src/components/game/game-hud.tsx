@@ -15,7 +15,7 @@ export function VolumeMeter({ volume }: VolumeMeterProps) {
       <div className="w-3 h-24 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm">
         <div
           className="w-full bg-gradient-to-t from-green-500 via-yellow-500 to-red-500 transition-all duration-75"
-          style={{ height: `${volume * 100}%`, marginTop: `${(1 - volume) * 100}%` }}
+          style={{ height: `${Math.min(volume, 1) * 100}%`, marginTop: `${(1 - Math.min(volume, 1)) * 100}%` }}
         />
       </div>
     </div>

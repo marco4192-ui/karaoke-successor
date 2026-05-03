@@ -63,7 +63,7 @@ const PitchGrid = React.memo(function PitchGrid({ count = 7, color = 'cyan' }: {
         <div
           key={i}
           className="absolute w-full border-t"
-          style={{ top: `${(i / (count - 1)) * 100}%`, borderColor }}
+          style={{ top: count <= 1 ? '50%' : `${(i / (count - 1)) * 100}%`, borderColor }}
         />
       ))}
     </div>
