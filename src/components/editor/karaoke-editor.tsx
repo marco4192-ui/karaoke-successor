@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import type { Song, Note, LyricLine } from '@/types/game';
 import { v4 as uuidv4 } from 'uuid';
 import { saveSongToTxt, type SaveResult } from '@/lib/editor/save-to-file';

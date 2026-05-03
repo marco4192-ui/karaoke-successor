@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { YTPlayer } from '@/types/youtube';
 
 // Extract YouTube video ID from various URL formats

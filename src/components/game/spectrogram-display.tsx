@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   SpectrogramConfig,
   DEFAULT_SPECTROGRAM_CONFIG,

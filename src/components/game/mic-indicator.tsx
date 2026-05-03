@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { usePartyStore } from '@/lib/game/party-store';
 import type { SelectedPlayer, InputMode } from './unified-party-setup.types';
 

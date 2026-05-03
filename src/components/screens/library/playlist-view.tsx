@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useCallback, useState } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 import { Song } from '@/types/game';
 import { Playlist, getPlaylistSongs, exportPlaylist, importPlaylist } from '@/lib/playlist-manager';
 import { SongCard } from './song-card';

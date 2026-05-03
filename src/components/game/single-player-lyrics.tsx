@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useRef, useState, useCallback, useLayoutEffect } from 'react';
+import { useMemo, useRef, useState, useCallback, useLayoutEffect } from 'react';
 import { LyricLine } from '@/types/game';
 import { LyricLineDisplay } from './lyric-line-display';
 
