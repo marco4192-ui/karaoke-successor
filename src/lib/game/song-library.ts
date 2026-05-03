@@ -6,11 +6,8 @@ import { saveCustomSongsToDB, loadCustomSongsFromDB, migrateFromLocalStorage, cl
 // IDs use crypto.randomUUID() for collision-free 128-bit random IDs
 import { isAbsolutePath, resolveSongsBaseFolder, normalizeSongPathFields } from './song-paths';
 
-// Re-export moved functions so existing imports don't break
-export { restoreSongUrls, ensureSongUrls } from './song-url-restore';
-export { loadSongLyrics } from './song-lyrics-loader';
-
-// Import moved functions for internal use (avoid circular re-export)
+// Internal imports (not re-exported — consumers import directly from the source modules)
+export { ensureSongUrls } from './song-url-restore';
 import { restoreSongUrls } from './song-url-restore';
 import { loadSongLyrics } from './song-lyrics-loader';
 

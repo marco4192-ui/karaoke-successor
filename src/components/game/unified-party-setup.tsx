@@ -5,10 +5,10 @@ import { Song, PlayerProfile, GameMode } from '@/types/game';
 import { usePartySetup } from './unified-party-setup.hook';
 import { SongVotingModal, GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, InputModeSelector, MicAssignmentPanel, SingleMicSelector } from './unified-party-setup.components';
 
-// Re-export public API for backward compatibility
+// Re-export public API (only exports actually consumed by other modules)
 export { SongVotingModal } from './unified-party-setup.components';
-export { PARTY_GAME_CONFIGS, SONG_SELECTION_CONFIG } from './unified-party-setup.config';
-export type { GameSettingConfig, PartyGameConfig, SongSelectionOption, SelectedPlayer, GameSetupResult, InputMode } from './unified-party-setup.types';
+export { PARTY_GAME_CONFIGS } from './unified-party-setup.config';
+export type { GameSetupResult } from './unified-party-setup.types';
 
 // ===================== UNIFIED PARTY SETUP COMPONENT =====================
 

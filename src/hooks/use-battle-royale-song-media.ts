@@ -54,7 +54,7 @@ export function useBattleRoyaleSongMedia({
     let cancelled = false;
 
     // Ensure full song data: resolve URLs (Tauri) + load lyrics (IndexedDB/filesystem)
-    import('@/lib/game/song-library').then(async ({ ensureSongUrls, loadSongLyrics }) => {
+    import('@/lib/game/song-library').then(async ({ ensureSongUrls }) => {
       let preparedSong = song;
       // Restore media URLs for Tauri filesystem access
       try {
@@ -66,6 +66,7 @@ export function useBattleRoyaleSongMedia({
       if ((!preparedSong.lyrics || preparedSong.lyrics.length === 0) &&
           (preparedSong.storedTxt || preparedSong.relativeTxtPath)) {
         try {
+          const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
           const lyrics = await loadSongLyrics(preparedSong);
           if (lyrics.length > 0) {
             preparedSong = { ...preparedSong, lyrics };

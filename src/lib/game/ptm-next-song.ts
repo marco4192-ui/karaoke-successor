@@ -171,7 +171,7 @@ export async function preparePtmNextSong(
             let prepared = await ensureSongUrls(snippet.song);
             if (!prepared.lyrics || prepared.lyrics.length === 0) {
               try {
-                const { loadSongLyrics } = await import('@/lib/game/song-library');
+                const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
                 const lyrics = await loadSongLyrics(prepared);
                 if (lyrics.length > 0) {
                   prepared = { ...prepared, lyrics };

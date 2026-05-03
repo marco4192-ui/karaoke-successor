@@ -4,10 +4,6 @@ import { useCallback, useRef, useEffect } from 'react';
 import { useGameStore } from '@/lib/game/store';
 import type { Song, GameMode } from '@/types/game';
 
-// Re-export types for backward compatibility
-export type { MobilePitchData } from '@/hooks/use-mobile-pitch-polling';
-export type { CompanionProfile, CompanionQueueItem } from '@/hooks/use-companion-sync';
-
 import { useMobilePitchPolling } from '@/hooks/use-mobile-pitch-polling';
 import { useCompanionSync } from '@/hooks/use-companion-sync';
 import { useSongLibrarySync } from '@/hooks/use-song-library-sync';

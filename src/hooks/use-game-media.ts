@@ -110,7 +110,7 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
       // Load lyrics on-demand from IndexedDB
       setLyricsLoadError(null);
 
-      import('@/lib/game/song-library').then(({ loadSongLyrics }) => {
+      import('@/lib/game/song-lyrics-loader').then(({ loadSongLyrics }) => {
         loadSongLyrics(song).then(lyrics => {
           if (cancelled) return; // Song changed while loading — discard stale result
           if (lyrics.length > 0) {

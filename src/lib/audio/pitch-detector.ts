@@ -472,9 +472,6 @@ export async function resetPitchDetector(): Promise<void> {
   }
 }
 
-// Re-export PitchDetectionResult for convenience
-export type { PitchDetectionResult } from '@/types/game';
-
 // ===================== PITCH DETECTOR MANAGER =====================
 // Manages multiple PitchDetector instances for multi-player karaoke
 

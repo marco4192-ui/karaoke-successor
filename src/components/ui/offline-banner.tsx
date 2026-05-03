@@ -1,7 +1,7 @@
 'use client';
 
-import { WifiOff, Wifi, Upload, Database } from 'lucide-react';
-import { useNetworkStatus, clearOfflineQueue } from '@/hooks/use-network-status';
+import { WifiOff, Wifi, Database } from 'lucide-react';
+import { useNetworkStatus } from '@/hooks/use-network-status';
 import { dbGetStats, type DbStats } from '@/hooks/use-sqlite';
 import { useEffect, useState } from 'react';
 
@@ -9,14 +9,13 @@ import { useEffect, useState } from 'react';
  * Offline banner that shows when:
  * 1. No network connectivity (orange banner) — shows SQLite local data stats
  * 2. Network is up but server is unreachable (yellow banner)
- * 3. There are pending queued requests (blue badge)
  *
  * When offline, core karaoke features (library, playback, scoring) remain
  * fully functional because all data is stored in a local SQLite database
  * via Tauri native commands.
  */
 export function OfflineBanner() {
-  const { isOnline, isServerReachable, pendingCount } = useNetworkStatus();
+  const { isOnline, isServerReachable } = useNetworkStatus();
   const [dbStats, setDbStats] = useState<DbStats | null>(null);
 
   // Fetch SQLite stats when offline to show what's available locally
@@ -29,7 +28,7 @@ export function OfflineBanner() {
   }, [isOnline]);
 
   // Don't show anything if online and server is reachable
-  if (isOnline && isServerReachable === true && pendingCount === 0) {
+  if (isOnline && isServerReachable === true) {
     return null;
   }
 
@@ -52,7 +51,7 @@ export function OfflineBanner() {
   }
 
   // Online but server unreachable
-  if (isServerReachable === false && pendingCount === 0) {
+  if (isServerReachable === false) {
     return (
       <div className="fixed top-0 left-0 right-0 z-[100] bg-yellow-600/90 text-white text-center text-xs py-1.5 px-4 flex items-center justify-center gap-2">
         <Wifi className="w-3.5 h-3.5 flex-shrink-0" />
@@ -61,26 +60,6 @@ export function OfflineBanner() {
     );
   }
 
-  // Pending queue (online but have queued requests from offline period)
-  if (pendingCount > 0) {
-    return (
-      <div className="fixed top-0 left-0 right-0 z-[100] bg-blue-600/90 text-white text-center text-xs py-1.5 px-4 flex items-center justify-center gap-2">
-        <Upload className="w-3.5 h-3.5 flex-shrink-0" />
-        <span>{pendingCount} ausstehende Anfrage{pendingCount > 1 ? 'n' : ''} in der Warteschlange</span>
-        <button
-          onClick={clearOfflineQueue}
-          className="ml-2 underline hover:no-underline text-blue-200"
-        >
-          Verwerfen
-        </button>
-      </div>
-    );
-  }
-
   // Server check still in progress
-  if (isServerReachable === null) {
-    return null;
-  }
-
   return null;
 }

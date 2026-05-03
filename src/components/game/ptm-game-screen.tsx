@@ -484,7 +484,7 @@ export function PtmGameScreen({
     if (!songToCheck?.lyrics || songToCheck.lyrics.length === 0) {
       console.warn('[PTM] No lyrics loaded, attempting reload...');
       try {
-        const { loadSongLyrics } = await import('@/lib/game/song-library');
+        const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
         if (!songToCheck) return;
         const lyrics = await loadSongLyrics(songToCheck);
         if (lyrics.length > 0 && songToCheck) {

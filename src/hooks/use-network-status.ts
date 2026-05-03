@@ -33,15 +33,10 @@ async function checkServerReachable(): Promise<boolean> {
 // Hook
 // ============================================================================
 
-export interface UseNetworkStatusResult extends NetworkStatus {
-  /** Number of pending requests in the offline queue (always 0 — placeholder for future offline-first support) */
-  pendingCount: number;
-}
-
 /**
  * Hook that tracks network connectivity and server reachability.
  */
-export function useNetworkStatus(): UseNetworkStatusResult {
+export function useNetworkStatus(): NetworkStatus {
   const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [isServerReachable, setIsServerReachable] = useState<boolean | null>(null);
 
@@ -69,11 +64,5 @@ export function useNetworkStatus(): UseNetworkStatusResult {
     };
   }, []);
 
-  return { isOnline, isServerReachable, pendingCount: 0 };
-}
-
-/** No-op placeholder for future offline-first support. */
-export function clearOfflineQueue(): void {
-  // Offline queue infrastructure was removed (queue was never populated).
-  // Kept as export for backward compatibility with OfflineBanner.
+  return { isOnline, isServerReachable };
 }

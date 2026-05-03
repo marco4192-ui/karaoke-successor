@@ -293,7 +293,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                         // Also load lyrics if not present (storedTxt / relativeTxtPath)
                         if (!prepared.lyrics || prepared.lyrics.length === 0) {
                           try {
-                            const { loadSongLyrics } = await import('@/lib/game/song-library');
+                            const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
                             const lyrics = await loadSongLyrics(prepared);
                             if (lyrics.length > 0) {
                               prepared = { ...prepared, lyrics };
