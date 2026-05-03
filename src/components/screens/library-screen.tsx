@@ -95,7 +95,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
         viralCharts.matchLibrary(loadedSongs);
       }).catch(() => {});
     }
-  }, [songsLoading, loadedSongs.length]);
+  }, [songsLoading, loadedSongs.length, viralCharts.status?.lastFetchedAt, viralCharts]);
 
   // Re-match when songs change (e.g. after import)
   useEffect(() => {
