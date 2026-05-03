@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { Note, LyricLine, PLAYER_COLORS } from '@/types/game';
-import { getNoteShapeClasses, getNoteDisplayStyleClasses, NoteShapeStyle, NoteDisplayStyle } from '@/lib/game/note-utils';
+import { getNoteShapeClasses, getNoteDisplayStyleClasses, NoteShapeStyle, NoteDisplayStyle, PitchStats } from '@/lib/game/note-utils';
 import { MicIcon } from '@/components/icons';
 
 // ===================== TYPES =====================
@@ -12,11 +12,8 @@ export interface NoteWithLine extends Note {
   line: LyricLine;
 }
 
-export interface PitchStats {
-  minPitch: number;
-  maxPitch: number;
-  pitchRange: number;
-}
+// PitchStats is imported from @/lib/game/note-utils (re-exported for backward compatibility)
+export type { PitchStats } from '@/lib/game/note-utils';
 
 export interface NoteHighwayProps {
   /** All visible notes to render */
