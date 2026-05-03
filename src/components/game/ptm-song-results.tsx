@@ -408,8 +408,9 @@ export function PtmSeriesResults({
           </div>
           <div className="divide-y divide-white/5 max-h-[20vh] overflow-y-auto">
             {seriesHistory.map((round, i) => {
-              const roundWinner = Object.entries(round.playerScores)
-                .sort(([, a], [, b]) => b.score - a.score)[0];
+              const scoreEntries = Object.entries(round.playerScores).sort(([, a], [, b]) => b.score - a.score);
+              const roundWinner = scoreEntries[0];
+              if (!roundWinner) return null;
               const winnerPlayer = players.find(p => p.id === roundWinner[0]);
               return (
                 <div key={i} className="flex items-center justify-between px-4 py-2 text-sm">
