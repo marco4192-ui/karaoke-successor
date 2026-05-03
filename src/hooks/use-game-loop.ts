@@ -68,8 +68,6 @@ export interface UseGameLoopOptions {
 export interface UseGameLoopResult {
   countdown: number;
   volume: number;
-  startTimeRef: React.RefObject<number>;
-  gameLoopRef: React.RefObject<number | null>;
   pauseGame: () => void;
   resumeGame: () => void;
   endGameAndCleanup: () => void;
@@ -810,8 +808,6 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   return {
     countdown,
     volume,
-    startTimeRef,
-    gameLoopRef,
     pauseGame,
     resumeGame,
     endGameAndCleanup,
