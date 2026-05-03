@@ -261,7 +261,11 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
   }, [songHighscores, activeProfileId, song]);
 
   // Save highscore when results are shown (only once)
-  const isDuel = gameState.gameMode === 'duel' || gameState.gameMode === 'duet';
+  // Duel is competitive (P1 vs P2); Duet is cooperative (P1 + P2 together).
+  // Only duel should trigger win/lose comparisons and duel-win achievements.
+  const isDuel = gameState.gameMode === 'duel';
+  const isDuet = gameState.gameMode === 'duet';
+  const isMultiplayer = isDuel || isDuet;
 
   useEffect(() => {
     if (results && song && activeProfileId && !savedToHighscoreRef.current) {
@@ -510,7 +514,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
   const activeProfile = profiles.find(p => p.id === activeProfileId);
   const player2Profile = player2Result ? profiles.find(p => p.id === player2Result.playerId) : null;
 
-  // Determine winner for duel/duet
+  // Determine winner for duel only (duet is cooperative — no winner)
   const winnerSide = isDuel && player2Result
     ? playerResult.score > player2Result.score ? 'p1' : playerResult.score < player2Result.score ? 'p2' : 'draw'
     : null;
@@ -533,7 +537,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
       )}
 
       {/* Rating header - Duel / Duet: show both players */}
-      {isDuel && player2Result && (
+      {isMultiplayer && player2Result && (
         <div className="flex justify-center items-stretch gap-6 mb-8">
           {/* Player 1 rating card */}
           <div className={`flex-1 max-w-xs rounded-2xl p-6 text-center ${
@@ -550,7 +554,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
 
           {/* VS / Duet indicator */}
           <div className="flex flex-col items-center justify-center">
-            <span className="text-4xl font-black text-white/30">{gameState.gameMode === 'duet' ? '🎤' : '⚔️'}</span>
+            <span className="text-4xl font-black text-white/30">{isDuet ? '🎤' : '⚔️'}</span>
             {winnerSide === 'draw' && <span className="mt-2 text-sm text-purple-400 font-bold">UNENTSCHIEDEN</span>}
           </div>
 

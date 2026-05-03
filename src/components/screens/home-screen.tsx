@@ -22,7 +22,7 @@ interface HomeScreenProps {
 }
 
 // Dynamic app stats (reflects actual game modes and difficulty levels)
-const PARTY_GAME_COUNT = 8; // battle-royale, tournament, pass-the-mic, companion-singalong, medley, rate-my-song, blind, missing-words
+const PARTY_GAME_COUNT = 9; // battle-royale, tournament, pass-the-mic, companion-singalong, medley, rate-my-song, blind, missing-words, online
 const DIFFICULTY_LEVELS = 3; // easy, medium, hard
 
 export function HomeScreen({ onNavigate }: HomeScreenProps) {
