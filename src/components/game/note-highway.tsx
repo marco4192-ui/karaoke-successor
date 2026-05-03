@@ -199,7 +199,7 @@ function NoteBlock({
         height: `${noteHeight}px`,
         transform: 'translateY(-50%)',
         boxShadow: isActive ? `0 0 15px ${glowColor}` : 'none',
-        opacity: x > 120 || x < -30 ? 0 : isPast ? 0.6 : 1,
+        opacity: isPast ? 0.6 : 1,
         ...noteShape.style,
         ...displayStyle.inlineStyle,
       }}

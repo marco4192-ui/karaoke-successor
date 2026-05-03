@@ -97,6 +97,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
   const fetchCompanionQueue = useCallback(async () => {
     try {
       const response = await fetch('/api/mobile?action=getqueue');
+      if (!response.ok) return;
       const data = await response.json();
       if (data.success && data.queue) {
         setCompanionQueue(data.queue.filter((item: CompanionQueueItem) => item.status === 'pending'));
