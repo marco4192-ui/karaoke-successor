@@ -32,10 +32,13 @@ export async function GET(request: NextRequest) {
     const content = await readFile(configPath, 'utf-8');
     const config = JSON.parse(content);
     
-    // Mask the API key for security
+    // Mask the API key for security — only show last 4 chars if key is long enough
+    const maskedKey = config.apiKey
+      ? (config.apiKey.length <= 4 ? '••••••••' : '••••••••' + config.apiKey.slice(-4))
+      : '';
     const maskedConfig = {
       ...config,
-      apiKey: config.apiKey ? '••••••••' + config.apiKey.slice(-4) : '',
+      apiKey: maskedKey,
       hasApiKey: !!config.apiKey,
     };
 
