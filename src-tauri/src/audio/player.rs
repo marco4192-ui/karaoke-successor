@@ -68,9 +68,15 @@ pub struct NativeAudioPlayer {
 impl NativeAudioPlayer {
     /// Lock the state, recovering data from a poisoned mutex.
     /// This prevents a crash if the audio thread panicked while
-    /// holding the lock.
+    /// holding the lock. On recovery, resets the state to defaults
+    /// to avoid leaving stale playback flags.
     fn lock_state(&self) -> std::sync::MutexGuard<'_, PlaybackState> {
-        self.state.lock().unwrap_or_else(|e| e.into_inner())
+        self.state.lock().unwrap_or_else(|poisoned| {
+            eprintln!("[audio] Recovering from poisoned mutex — resetting playback state");
+            let mut guard = poisoned.into_inner();
+            *guard = PlaybackState::default();
+            guard
+        })
     }
 
     /// Create a player that shares state with an external Arc (used by the audio thread).
