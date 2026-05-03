@@ -319,10 +319,10 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
             isPartyMode,
             isDuelWin,
             isPassTheMic,
-            isBlindMode: false, // Would need game state tracking for blind mode
-            isSpeedMode: false, // Would need playback rate tracking
-            playbackRate: 1.0,
-            hadComeback: false, // Would need mid-game tracking for comeback detection
+            isBlindMode: results.isBlindMode ?? false,
+            isSpeedMode: (results.playbackRate ?? 1.0) >= 1.5,
+            playbackRate: results.playbackRate ?? 1.0,
+            hadComeback: results.hadComeback ?? false,
           },
         );
 

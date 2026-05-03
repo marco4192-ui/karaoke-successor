@@ -148,6 +148,8 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   const isMountedRef = useRef(true);
   const hasEndedRef = useRef(false); // Guard against double endGameAndCleanup
   const abortedRef = useRef(false);   // Set when user aborts to prevent endGameAndCleanup
+  const comebackRef = useRef(false);  // Tracks if player had a comeback (combo >= 50 after missing >= 10)
+  const missedBeforeBigComboRef = useRef(0); // Tracks missed notes before current big combo
   const mediaPlayWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // ── Pause position tracking ──
   // ── Refs for frequently-changing values (pitch, YouTube, native audio) ──
@@ -169,6 +171,8 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   // Ref for p1PerfectNotesCount — ensure generateResults reads the latest value
   const p1PerfectNotesCountRef = useRef(p1PerfectNotesCount);
   p1PerfectNotesCountRef.current = p1PerfectNotesCount;
+  const playersRef = useRef(players);
+  playersRef.current = players;
   // Refs for checkNoteHits / checkP2NoteHits — prevents game loop restart
   // when these callbacks are recreated (e.g. inline arrow functions in caller).
   const checkNoteHitsRef = useRef(checkNoteHits);
@@ -246,6 +250,8 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       players: playerResults,
       playedAt: Date.now(),
       duration: song.duration,
+      isBlindMode: gameMode === 'blind',
+      hadComeback: comebackRef.current ?? false,
     };
 
     setResults(results);
@@ -728,6 +734,16 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
           lastPitchStoreUpdateRef.current = now;
         }
         checkNoteHitsRef.current(adjustedTime, currentPitch);
+
+        // Comeback detection for achievement: combo >= 50 after missing >= 10 notes
+        const activePlayer = playersRef.current[0];
+        if (activePlayer && !comebackRef.current) {
+          const currentCombo = activePlayer.maxCombo;
+          const totalMissed = activePlayer.notesMissed;
+          if (currentCombo >= 50 && totalMissed >= 10) {
+            comebackRef.current = true;
+          }
+        }
       }
 
       // Read P2 pitch from ref (not closure) to avoid stale values

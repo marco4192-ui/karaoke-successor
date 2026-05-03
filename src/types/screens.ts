@@ -48,6 +48,7 @@ export const IMMERSIVE_SCREENS: Set<Screen> = new Set([
   'medley-game',
   'missing-words-game',
   'blind-game',
+  'rate-my-song-game',
 ]);
 
 // Note: NoteProgress, ScoringMetadata, StartOptions, and LibrarySettings have been

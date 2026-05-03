@@ -208,6 +208,12 @@ export interface GameResult {
   }[];
   playedAt: number;
   duration: number;
+  /** Whether the song was played in blind karaoke mode */
+  isBlindMode?: boolean;
+  /** Playback rate used during the game (1.0 = normal) */
+  playbackRate?: number;
+  /** Whether the player had a comeback (combo >= 50 after missing >= 10 notes) */
+  hadComeback?: boolean;
 }
 
 export interface QueueItem {
