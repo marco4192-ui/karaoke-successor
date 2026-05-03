@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { Note, LyricLine, PLAYER_COLORS } from '@/types/game';
+import { Note, LyricLine } from '@/types/game';
 import { getNoteShapeClasses, getNoteDisplayStyleClasses, NoteShapeStyle, NoteDisplayStyle, PitchStats } from '@/lib/game/note-utils';
 import { MicIcon } from '@/components/icons';
 

@@ -340,7 +340,6 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           onAbortHandled={() => {
             party.setTournamentMatchAborted(false);
           }}
-          songs={getAllSongs()}
           shortMode={party.tournamentSongDuration === 60}
         />
       )}

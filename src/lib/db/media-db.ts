@@ -202,25 +202,4 @@ export async function deleteSongMedia(songId: string): Promise<void> {
   }
 }
 
-// Check if media exists for a song (internal utility)
-async function hasMedia(
-  songId: string, 
-  type: 'audio' | 'video' | 'cover' | 'txt'
-): Promise<boolean> {
-  const media = await getMedia(songId, type);
-  return media !== null;
-}
 
-// Clear all media (for debugging — not exported, call via dev console if needed)
-async function clearAllMedia(): Promise<void> {
-  const db = await initMediaDB();
-  
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([STORE_NAME], 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.clear();
-    
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
-  });
-}

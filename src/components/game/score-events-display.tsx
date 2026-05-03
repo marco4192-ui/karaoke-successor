@@ -3,7 +3,6 @@
 import React from 'react';
 
 export interface ScoreEvent {
-  type: string;
   displayType: 'Perfect' | 'Great' | 'Good' | 'Okay' | 'Miss';
   points: number;
   time: number;

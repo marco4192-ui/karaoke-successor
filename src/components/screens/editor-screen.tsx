@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useGameStore } from '@/lib/game/store';
 import { getAllSongs, addSong, updateSong, getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { KaraokeEditor } from '@/components/editor/karaoke-editor';
 import { NewSongDialog } from '@/components/editor/new-song-dialog';
@@ -241,7 +240,6 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [songs, setSongs] = useState<Song[]>(() => getAllSongs());
   const refreshSongs = useCallback(() => setSongs(getAllSongs()), []);
-  const { setSong } = useGameStore();
   const [filterMode, setFilterMode] = useState<'all' | 'no-genre' | 'no-language' | 'incomplete'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showMetadataPanel, setShowMetadataPanel] = useState(false); // Collapsible metadata panel
@@ -279,7 +277,6 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   // Count songs without genre/language
   const songsWithoutGenre = songs.filter(s => !s.genre).length;
   const songsWithoutLanguage = songs.filter(s => !s.language).length;
-  const incompleteSongs = songs.filter(s => !s.genre || !s.language).length;
 
   // Handle song selection - load lyrics from IndexedDB/filesystem if needed
   const handleSelectSong = async (song: Song) => {

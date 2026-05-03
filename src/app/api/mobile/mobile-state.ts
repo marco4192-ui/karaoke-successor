@@ -7,16 +7,6 @@ import type { MobileClient, PitchData, MobileProfile, QueueItem, RemoteControlSt
 // If no PIN is configured, all requests are allowed (backward compatible).
 let adminPin: string | null = process.env.GAME_PIN || null;
 
-/** Set the admin PIN (called from main app). */
-export function setAdminPin(pin: string | null): void {
-  adminPin = pin;
-}
-
-/** Get the current admin PIN (for display purposes). */
-export function getAdminPin(): string | null {
-  return adminPin;
-}
-
 /**
  * Check if a request is authorized for privileged actions.
  * Returns true if authorized, false if not.
@@ -189,9 +179,7 @@ export function cleanupInactiveClients() {
   });
   // Remove outside the forEach to avoid modifying Map during iteration
   for (const id of inactiveIds) {
-    const removed = removeClient(id, { persistProfile: true, purgeQueue: true });
-    if (removed) {
-    }
+    removeClient(id, { persistProfile: true, purgeQueue: true });
   }
 }
 

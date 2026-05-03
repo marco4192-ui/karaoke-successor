@@ -1,5 +1,3 @@
-import { registerCleanup } from '@/lib/utils/app-cleanup';
-
 // Multi-Microphone Manager - Handles multiple microphone input devices simultaneously
 // Supports USB mics, SingStar mics, 3.5mm jack mics, Bluetooth audio
 // Each microphone has its own individual extended settings

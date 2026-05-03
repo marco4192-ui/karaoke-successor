@@ -13,7 +13,7 @@ import { ensureSongUrls } from '@/lib/game/song-library';
 import type { Note, LyricLine, PitchDetectionResult } from '@/types/game';
 import type {
   MedleyPlayer, MedleySong, MedleySettings, SnippetMatchup,
-  MedleyGamePhase, MedleyRoundResult, MedleyPlayerRoundScore,
+  MedleyGamePhase, MedleyRoundResult,
 } from './medley-types';
 
 // ===================== PROPS =====================

@@ -2,11 +2,10 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import type { TournamentBracket, TournamentMatch } from '@/lib/game/tournament';
+import type { TournamentMatch } from '@/lib/game/tournament';
 
 interface MatchAbortDialogProps {
   match: TournamentMatch;
-  bracket: TournamentBracket;
   onManualWinner: (matchId: string, winnerId: string) => void;
   onRepeatMatch: () => void;
   onDismiss: () => void;
@@ -21,7 +20,6 @@ interface MatchAbortDialogProps {
  */
 export function MatchAbortDialog({
   match,
-  bracket,
   onManualWinner,
   onRepeatMatch,
   onDismiss,

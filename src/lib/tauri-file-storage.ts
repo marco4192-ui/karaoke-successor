@@ -2,7 +2,7 @@
 // This module handles copying imported files to app data directory
 // so they persist across app restarts
 
-import { writeFile, readTextFile, BaseDirectory, exists, mkdir } from '@tauri-apps/plugin-fs';
+import { writeFile, BaseDirectory, mkdir } from '@tauri-apps/plugin-fs';
 import { LyricLine } from '@/types/game';
 import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
 import {
@@ -81,12 +81,6 @@ export function isTauri(): boolean {
   if (typeof window === 'undefined') return false;
   // Check for both Tauri v1 and v2
   return '__TAURI__' in window || '__TAURI_INTERNALS__' in window;
-}
-
-// Dynamic import for Tauri APIs
-async function getTauri() {
-  if (!isTauri()) return null;
-  return await import('@tauri-apps/api/core');
 }
 
 // In-memory cache for blob URLs to avoid recreating them.

@@ -31,6 +31,15 @@ function parseGameState(raw: RawGameState): GameState {
   };
 }
 
+const INITIAL_GAME_STATE: GameState = {
+  currentSong: null,
+  isPlaying: false,
+  songEnded: false,
+  queueLength: 0,
+  isAdPlaying: false,
+  singalongTurn: null,
+};
+
 export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
   // Store callbacks in refs so connect() stays stable across renders
   const callbacksRef = useRef(callbacks);
@@ -39,9 +48,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
   const [clientId, setClientId] = useState<string | null>(null);
   const [connectionCode, setConnectionCode] = useState<string>('');
   const [isConnected, setIsConnected] = useState(false);
-  const [gameState, setGameState] = useState<GameState>({ 
-    currentSong: null, isPlaying: false, songEnded: false, queueLength: 0, isAdPlaying: false, singalongTurn: null
-  });
+  const [gameState, setGameState] = useState<GameState>(INITIAL_GAME_STATE);
 
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isConnectingRef = useRef(false); // True while a connect attempt is in progress
@@ -174,7 +181,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     setClientId(null);
     setConnectionCode('');
     setIsConnected(false);
-    setGameState({ currentSong: null, isPlaying: false, songEnded: false, queueLength: 0, isAdPlaying: false, singalongTurn: null });
+    setGameState(INITIAL_GAME_STATE);
     localStorage.removeItem('karaoke-connection-code');
     localStorage.removeItem('karaoke-client-id');
   }, [cleanup]);

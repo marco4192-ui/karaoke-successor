@@ -236,7 +236,6 @@ interface TournamentBracketViewProps {
   onRepeatMatch?: () => void;
   matchAborted?: boolean;
   onAbortHandled?: () => void;
-  songs: Song[];
   shortMode: boolean;
 }
 
@@ -364,7 +363,6 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
       {matchAborted && currentMatch && onManualWinner && onRepeatMatch && onAbortHandled && (
         <MatchAbortDialog
           match={currentMatch}
-          bracket={bracket}
           onManualWinner={(matchId, winnerId) => {
             onManualWinner(matchId, winnerId);
             onAbortHandled();
