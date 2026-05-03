@@ -15,6 +15,17 @@ use tauri::{AppHandle, Manager};
 use super::sources::{self, ChartEntry};
 use crate::db::DbState;
 
+/// Log and discard a failed result instead of silently swallowing it.
+fn try_log<T, E: std::fmt::Display>(result: Result<T, E>, context: &str) -> Option<T> {
+    match result {
+        Ok(v) => Some(v),
+        Err(e) => {
+            eprintln!("[charts] {} failed: {}", context, e);
+            None
+        }
+    }
+}
+
 // ====================================================================
 // Response types
 // ====================================================================
@@ -322,8 +333,7 @@ pub fn viral_match_library(
                 row.get::<_, String>(6)?, // country
             ))
         })
-        .map_err(|e| format!("Failed to map viral hits: {}", e))?
-        .filter_map(|r| r.ok())
+        .filter_map(|r| try_log(r, "map viral hit"))
         .collect();
 
     if chart_entries.is_empty() {
@@ -412,7 +422,7 @@ pub fn viral_get_matched_ids(app: AppHandle) -> Result<Vec<String>, String> {
     let ids: Vec<String> = stmt
         .query_map([], |row| row.get::<_, String>(0))
         .map_err(|e| format!("Failed to map matched IDs: {}", e))?
-        .filter_map(|r| r.ok())
+        .filter_map(|r| try_log(r, "query row"))
         .collect();
 
     Ok(ids)
@@ -447,7 +457,7 @@ pub fn viral_get_entries(app: AppHandle) -> Result<Vec<serde_json::Value>, Strin
             }))
         })
         .map_err(|e| format!("Failed to map viral entries: {}", e))?
-        .filter_map(|r| r.ok())
+        .filter_map(|r| try_log(r, "query row"))
         .collect();
 
     Ok(rows)
@@ -494,7 +504,7 @@ pub fn viral_get_status(app: AppHandle) -> Result<ViralStatus, String> {
     let sources: Vec<String> = src_stmt
         .query_map([], |row| row.get::<_, String>(0))
         .map_err(|e| format!("Failed to map sources: {}", e))?
-        .filter_map(|r| r.ok())
+        .filter_map(|r| try_log(r, "query row"))
         .collect();
 
     Ok(ViralStatus {
