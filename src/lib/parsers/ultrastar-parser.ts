@@ -19,6 +19,8 @@
 // - A hyphen "-" as lyric text is just normal text, NOT a line break
 
 import { Song, Note, LyricLine, Difficulty, DuetPlayer, midiToFrequency } from '@/types/game';
+// TODO(ARCH): Reverse dependency — lib/parser should not import from components.
+// These URL helpers should be moved to a shared lib/util module.
 import { isYouTubeUrl, isDirectVideoUrl } from '@/components/game/youtube-player';
 import { normalizeTxtContent } from '@/lib/utils';
 

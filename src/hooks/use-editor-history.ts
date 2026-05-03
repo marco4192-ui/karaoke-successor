@@ -45,7 +45,9 @@ export function useEditorHistory(initialLyrics: LyricLine[]): UseEditorHistoryRe
       // Limit history to MAX_HISTORY entries
       if (newHistory.length > MAX_HISTORY) {
         newHistory.shift();
-        // Adjust index since we removed the oldest entry
+        // Nested setState inside updater: setHistoryIndex is called here so that
+        // historyIndex stays in sync with the shifted array. React batches these
+        // updates automatically — the index will be correct by the next render.
         setHistoryIndex(prev => Math.max(prev, MAX_HISTORY - 1));
       } else {
         setHistoryIndex(prev => prev + 1);

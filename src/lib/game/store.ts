@@ -15,6 +15,9 @@ import {
 } from '@/types/game';
 // IDs use crypto.randomUUID() for collision-free 128-bit random IDs
 
+/** Maximum number of highscore entries retained (oldest trimmed first). */
+const MAX_HIGHSCORES = 1000;
+
 interface GameStore {
   // Game state
   gameState: GameState;
@@ -483,7 +486,7 @@ export const useGameStore = create<GameStore>()(
           // Add new highscore and sort by score
           const newHighscores = [...state.highscores, entry]
             .sort((a, b) => b.score - a.score)
-            .slice(0, 1000); // Keep top 1000 scores
+            .slice(0, MAX_HIGHSCORES); // Keep top N scores
 
           return { highscores: newHighscores };
         });

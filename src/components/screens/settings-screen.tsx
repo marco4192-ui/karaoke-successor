@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useReducer } from 'react';
 import { Button } from '@/components/ui/button';
 import { useGameStore } from '@/lib/game/store';
 import { useTranslation, Language } from '@/lib/i18n/translations';
@@ -28,9 +28,7 @@ import { SettingsTabBar, SettingsTab } from '@/components/settings/settings-tab-
 // Hooks
 import { useFolderScanner } from '@/hooks/use-folder-scanner';
 
-// Aliases for refactored tab components
-const AIAssetsGenerator = AIAssetsGeneratorTab;
-const EditorSettingsView = EditorSettingsTab;
+
 
 // ===================== SETTINGS SCREEN =====================
 function SettingsScreen() {
@@ -43,7 +41,10 @@ function SettingsScreen() {
   const [initialDifficultyLoaded, setInitialDifficultyLoaded] = useState(false);
   const [isTauriDetected, setIsTauriDetected] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  const [, forceUpdate] = useState(0);
+  // useReducer is the idiomatic React replacement for the useState(0) force-update trick.
+  // The language change may not trigger a re-render via useTranslation alone,
+  // so we increment a counter to guarantee the component re-renders with the new locale.
+  const [, forceUpdate] = useReducer((c: number) => c + 1, 0);
 
   // Audio/Game settings state
   const [previewVolume, setPreviewVolume] = useState(30);
@@ -162,7 +163,7 @@ function SettingsScreen() {
   // Settings change handlers
   const handleLanguageChange = (newLang: Language) => {
     setLanguage(newLang);
-    forceUpdate(n => n + 1);
+    forceUpdate();
   };
 
   const handleThemeChange = (theme: Theme) => {
@@ -264,7 +265,7 @@ function SettingsScreen() {
         />
       )}
 
-      {activeTab === 'assets' && <AIAssetsGenerator />}
+      {activeTab === 'assets' && <AIAssetsGeneratorTab />}
 
       {activeTab === 'viral' && <ViralChartsSettings />}
 
@@ -307,7 +308,7 @@ function SettingsScreen() {
       )}
 
       {activeTab === 'editor' && (
-        <EditorSettingsView onEditorActiveChange={handleEditorActiveChange} />
+        <EditorSettingsTab onEditorActiveChange={handleEditorActiveChange} />
       )}
 
       {activeTab === 'about' && (
@@ -336,4 +337,4 @@ function SettingsScreen() {
   );
 }
 
-export { SettingsScreen, AIAssetsGenerator, EditorSettingsView, MobileDeviceMicrophoneSection, CompanionListSection };
+export { SettingsScreen, AIAssetsGeneratorTab, EditorSettingsTab, MobileDeviceMicrophoneSection, CompanionListSection };

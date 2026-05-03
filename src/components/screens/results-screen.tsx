@@ -384,8 +384,8 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
         }
         
         // UPDATE PLAYER PROGRESSION (XP, Level, Rank, Titles)
-        const currentStats = getExtendedStats();
-        const xpResult = updateStatsAfterGame(currentStats, {
+        // Reuse currentExtendedStats from above — avoids redundant getExtendedStats() call
+        const xpResult = updateStatsAfterGame(currentExtendedStats, {
           songId: song.id,
           songTitle: song.title,
           genre: song.genre,

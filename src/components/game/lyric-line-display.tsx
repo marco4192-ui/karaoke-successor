@@ -36,27 +36,6 @@ interface LyricLineDisplayProps {
 // Shared empty Map to avoid creating a new one on every render (defeats React.memo)
 const EMPTY_NOTE_PERFORMANCE = new Map<string, Array<{ time: number; hit: boolean; accuracy: number }>>();
 
-// Shared interval for polling localStorage style changes.
-// Prevents 15-25 parallel 5s intervals when many LyricLineDisplay instances are mounted.
-let sharedStyleInterval: ReturnType<typeof setInterval> | null = null;
-const sharedStyleListeners = new Set<() => void>();
-
-function subscribeToLyricStyleChange(listener: () => void): () => void {
-  sharedStyleListeners.add(listener);
-  if (!sharedStyleInterval) {
-    sharedStyleInterval = setInterval(() => {
-      for (const fn of sharedStyleListeners) fn();
-    }, 5000);
-  }
-  return () => {
-    sharedStyleListeners.delete(listener);
-    if (sharedStyleListeners.size === 0 && sharedStyleInterval) {
-      clearInterval(sharedStyleInterval);
-      sharedStyleInterval = null;
-    }
-  };
-}
-
 export function LyricLineDisplay({
   line,
   currentTime,
@@ -71,6 +50,8 @@ export function LyricLineDisplay({
   // Get lyrics style from localStorage - initialize with default to avoid hydration mismatch
   const [lyricsStyle, setLyricsStyle] = useState<string>('classic');
   const initialLoadDone = useRef(false);
+  // Per-instance interval ref for polling localStorage style changes (replaces module-level singleton)
+  const styleIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load initial value and listen for style changes
   useEffect(() => {
@@ -86,11 +67,11 @@ export function LyricLineDisplay({
     }
 
     window.addEventListener('storage', handleStyleChange);
-    // Use shared interval instead of per-instance interval
-    const unsubscribe = subscribeToLyricStyleChange(handleStyleChange);
+    // Poll for cross-tab style changes
+    styleIntervalRef.current = setInterval(handleStyleChange, 5000);
     return () => {
       window.removeEventListener('storage', handleStyleChange);
-      unsubscribe();
+      if (styleIntervalRef.current) clearInterval(styleIntervalRef.current);
     };
   }, []);
 

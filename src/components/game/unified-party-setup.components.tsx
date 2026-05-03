@@ -263,9 +263,7 @@ function MicAssignmentPanel({
     } catch { /* ignore */ }
   }, []);
 
-  const micPlayers = inputMode === 'mixed'
-    ? selectedPlayers // In mixed mode, all players could use mics
-    : selectedPlayers;
+  const micPlayers = selectedPlayers;
 
   const usedMicIds = new Set(Object.keys(micAssignments));
 

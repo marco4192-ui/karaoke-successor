@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useGameStore } from '@/lib/game/store';
 import { getAllSongs } from '@/lib/game/song-library';
-import type { PlayerProfile, Difficulty, PLAYER_COLORS } from '@/types/game';
+import type { PlayerProfile, Difficulty } from '@/types/game';
 import type {
   MedleyPlayer, MedleySong, MedleySettings,
   MedleyPlayMode, TeamSize, SnippetMatchup,

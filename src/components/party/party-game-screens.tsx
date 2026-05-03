@@ -140,7 +140,9 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
     }, 1000);
 
     return () => { if (micOverlayTimerRef.current) clearTimeout(micOverlayTimerRef.current); };
-  }, [micOverlay, party.currentTournamentMatch, resetGame, addPlayer, setGameMode, setSong, setScreen, getAllSongs, party]);
+  // Note: Only specific party fields in deps — avoids re-running on every store change.
+  // setUnifiedSetupResult is a stable Zustand action; currentTournamentMatch is the data dep.
+  }, [micOverlay, party.currentTournamentMatch, resetGame, addPlayer, setGameMode, setSong, setScreen, getAllSongs, party.setUnifiedSetupResult]);
 
   return (
     <>

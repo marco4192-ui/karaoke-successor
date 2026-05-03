@@ -730,6 +730,15 @@ export function PtmGameScreen({
   }
 
   // ===================== FULLSCREEN GAMEPLAY =====================
+  // Shared handler for audio/video/background end — avoids triplicated logic
+  const handleMediaEnded = useCallback(() => {
+    if (phase === 'playing' || phase === 'transitioning') {
+      setIsPlaying(false);
+      recordRound();
+      setPhase('song-results');
+    }
+  }, [phase]);
+
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-black">
       {/* Audio Element */}
@@ -739,13 +748,7 @@ export function PtmGameScreen({
           ref={audioRef}
           src={audioSong.audioUrl}
           className="hidden"
-          onEnded={() => {
-            if (phase === 'playing' || phase === 'transitioning') {
-              setIsPlaying(false);
-              recordRound();
-              setPhase('song-results');
-            }
-          }}
+          onEnded={handleMediaEnded}
           preload="auto"
         />
       )}
@@ -759,13 +762,7 @@ export function PtmGameScreen({
           className="hidden"
           muted={false}
           playsInline
-          onEnded={() => {
-            if (phase === 'playing' || phase === 'transitioning') {
-              setIsPlaying(false);
-              recordRound();
-              setPhase('song-results');
-            }
-          }}
+          onEnded={handleMediaEnded}
           preload="auto"
         />
       )}
@@ -788,13 +785,7 @@ export function PtmGameScreen({
           onYoutubeTimeUpdate={setYoutubeTime}
           onAdStart={handleAdStart}
           onAdEnd={handleAdEnd}
-          onVideoEnded={() => {
-            if (phase === 'playing' || phase === 'transitioning') {
-              setIsPlaying(false);
-              recordRound();
-              setPhase('song-results');
-            }
-          }}
+          onVideoEnded={handleMediaEnded}
           onVideoCanPlay={() => { videoLoadedRef.current = true; }}
           onYoutubeError={() => {}}
         />

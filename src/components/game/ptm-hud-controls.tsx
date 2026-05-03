@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { PassTheMicSettings } from '@/components/game/ptm-types';
@@ -17,8 +18,50 @@ export function PtmHudControls({
   activeWebcamStreamsRef,
   onEndSong,
 }: PtmHudControlsProps) {
+  // React-driven webcam state (replaces imperative document.createElement / document.body.appendChild)
+  const [webcamStream, setWebcamStream] = useState<MediaStream | null>(null);
+
+  const toggleWebcam = useCallback(() => {
+    if (webcamStream) {
+      // Turn off
+      webcamStream.getTracks().forEach(t => t.stop());
+      activeWebcamStreamsRef.current = activeWebcamStreamsRef.current.filter(s => s !== webcamStream);
+      setWebcamStream(null);
+    } else {
+      // Turn on
+      navigator.mediaDevices?.getUserMedia({ video: true })
+        .then(stream => {
+          activeWebcamStreamsRef.current.push(stream);
+          setWebcamStream(stream);
+        })
+        .catch(() => {});
+    }
+  }, [webcamStream, activeWebcamStreamsRef]);
+
+  // Clean up webcam stream on unmount
+  useEffect(() => {
+    return () => {
+      if (webcamStream) {
+        webcamStream.getTracks().forEach(t => t.stop());
+      }
+    };
+  }, [webcamStream]);
+
   return (
-    <div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-2">
+    <div className="fixed inset-0 z-0 pointer-events-none">
+      {/* Webcam preview overlay — rendered via React instead of imperative DOM */}
+      {webcamStream && (
+        <video
+          autoPlay
+          playsInline
+          muted
+          ref={(el) => { if (el) el.srcObject = webcamStream; }}
+          className="pointer-events-auto fixed bottom-20 right-4 w-[200px] rounded-xl z-[100] border-2 border-white/30 cursor-pointer"
+          onClick={toggleWebcam}
+          title="Kamera schließen"
+        />
+      )}
+      <div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-2 pointer-events-auto">
       <div className="flex items-center gap-2">
         {/* Difficulty badge */}
         <Badge
@@ -65,35 +108,7 @@ export function PtmHudControls({
       </Button>
       <Button
         variant="ghost"
-        onClick={() => {
-          // Toggle camera/webcam: stop all existing streams, or start a new one
-          if (activeWebcamStreamsRef.current.length > 0) {
-            // Turn off: stop all streams and remove video elements
-            activeWebcamStreamsRef.current.forEach(stream => {
-              stream.getTracks().forEach(t => t.stop());
-            });
-            activeWebcamStreamsRef.current = [];
-            document.querySelectorAll('video[style*="z-index:100"]').forEach(el => el.remove());
-          } else {
-            // Turn on: request camera
-            navigator.mediaDevices?.getUserMedia({ video: true })
-              .then(stream => {
-                activeWebcamStreamsRef.current.push(stream);
-                const video = document.createElement('video');
-                video.srcObject = stream;
-                video.style.cssText = 'position:fixed;bottom:80px;right:16px;width:200px;border-radius:12px;z-index:100;border:2px solid rgba(255,255,255,0.3);';
-                document.body.appendChild(video);
-                video.play();
-                // Click to close
-                video.addEventListener('click', () => {
-                  stream.getTracks().forEach(t => t.stop());
-                  activeWebcamStreamsRef.current = activeWebcamStreamsRef.current.filter(s => s !== stream);
-                  video.remove();
-                });
-              })
-              .catch(() => {});
-          }
-        }}
+        onClick={toggleWebcam}
         className="text-white/80 hover:text-white hover:bg-white/10 rounded-lg w-10 h-10 p-0"
         title="Kamera"
       >
@@ -109,6 +124,7 @@ export function PtmHudControls({
       >
         ⏹ Beenden
       </Button>
+      </div>
     </div>
   );
 }
