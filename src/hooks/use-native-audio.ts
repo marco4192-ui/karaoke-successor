@@ -192,12 +192,12 @@ export function useNativeAudio(): UseNativeAudioResult {
   const stop = useCallback(async () => {
     try {
       await stopAudio();
+      setIsPlaying(false);
+      setCurrentPosition(0);
+      setPlaybackState(null);
     } catch (err) {
       console.error('[NativeAudio] Stop failed:', err);
     }
-    setIsPlaying(false);
-    setCurrentPosition(0);
-    setPlaybackState(null);
   }, []);
 
   return {

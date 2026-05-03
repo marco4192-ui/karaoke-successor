@@ -460,10 +460,45 @@ export class AudioEffectsEngine {
   }
 
   disconnect(): void {
-    if (this.inputNode) {
-      this.inputNode.disconnect();
-      this.inputNode = null;
+    // Disconnect all effect nodes to prevent dangling references
+    const nodesToDisconnect: (AudioNode | null)[] = [
+      this.inputNode,
+      this.reverbNode,
+      this.delayNode,
+      this.delayFeedback,
+      this.delayMix,
+      this.reverbMix,
+      this.compressorNode,
+      this.eqLow,
+      this.eqMid,
+      this.eqHigh,
+      this.distortionNode,
+      this.dryGain,
+      this.wetGain,
+      this.masterGain,
+      this.analyserNode,
+    ];
+    for (const node of nodesToDisconnect) {
+      if (node) {
+        try { node.disconnect(); } catch { /* already disconnected */ }
+      }
     }
+    // Clear all node references
+    this.inputNode = null;
+    this.reverbNode = null;
+    this.delayNode = null;
+    this.delayFeedback = null;
+    this.delayMix = null;
+    this.reverbMix = null;
+    this.compressorNode = null;
+    this.eqLow = null;
+    this.eqMid = null;
+    this.eqHigh = null;
+    this.distortionNode = null;
+    this.dryGain = null;
+    this.wetGain = null;
+    this.masterGain = null;
+    this.analyserNode = null;
     // Only close the AudioContext if we created it ourselves.
     // If it was reused from PitchDetector, it must stay alive.
     if (this.audioContext && this.ownsAudioContext) {

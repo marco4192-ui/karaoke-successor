@@ -650,7 +650,7 @@ export function RateMySongResultsScreen({ result, songId, onPlayAgain, onEnd }: 
     // Reload both rankings
     setTopRanking(getRateMySongTopN(5));
     setDailyRanking(getDailyRateMySongTopN(5));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [result, songId]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-amber-900/10 to-gray-900 text-white p-4 md:p-8 flex items-center justify-center">
