@@ -555,6 +555,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           {/* VS / Duet indicator */}
           <div className="flex flex-col items-center justify-center">
             <span className="text-4xl font-black text-white/30">{isDuet ? '🎤' : '⚔️'}</span>
+            {/* TODO: Add 'draw' key to translation files and use t('draw') here */}
             {winnerSide === 'draw' && <span className="mt-2 text-sm text-purple-400 font-bold">UNENTSCHIEDEN</span>}
           </div>
 

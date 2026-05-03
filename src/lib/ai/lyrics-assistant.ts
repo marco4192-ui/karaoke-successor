@@ -49,8 +49,14 @@ export async function analyzeLyrics(
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      return { success: false, error: error.error || 'Failed to analyze lyrics' };
+      let error = 'Failed to analyze lyrics';
+      try {
+        const errorData = await response.json();
+        error = errorData.error || error;
+      } catch {
+        // Error body is not valid JSON
+      }
+      return { success: false, error };
     }
 
     const result = await response.json();

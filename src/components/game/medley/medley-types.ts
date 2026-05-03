@@ -67,8 +67,8 @@ export interface MedleySettings {
   genre?: string;
   /** Optional language filter for random song selection */
   language?: string;
-  /** Transition time between snippets in seconds (fixed) */
-  transitionTime: 3;
+  /** Transition time between snippets in seconds */
+  transitionTime: number;
 }
 
 /** Default settings per mode */

@@ -365,12 +365,8 @@ export const RANKING_TITLES = [
 ];
 
 export function getRankTitle(accuracy: number): { title: string; emoji: string } {
-  for (const rank of RANKING_TITLES) {
-    if (accuracy >= rank.minScore) {
-      return { title: rank.title, emoji: rank.emoji };
-    }
-  }
-  return { title: '🔇 Silent Scream', emoji: '🔇' };
+  return RANKING_TITLES.find(rank => accuracy >= rank.minScore)
+    ?? { title: '🔇 Silent Scream', emoji: '🔇' };
 }
 
 // Global highscore leaderboard (stored per song and globally)

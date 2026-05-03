@@ -28,8 +28,8 @@ export function extractYouTubeId(url: string): string | null {
   return null;
 }
 
-// Video file extensions supported by HTML5 <video> element
-const DIRECT_VIDEO_EXTENSIONS = ['.mp4', '.webm', '.ogg', '.ogv', '.m3u8', '.mpd'];
+// Video file extensions supported by HTML5 <video> element (not playlist/manifest files)
+const DIRECT_VIDEO_EXTENSIONS = ['.mp4', '.webm', '.ogg', '.ogv'];
 
 /**
  * Check if a URL points to a YouTube video.
@@ -245,6 +245,9 @@ export function YouTubePlayer({
           ...(origin ? { origin } : {}),
           // Enable JavaScript API (redundant with IFrame API but ensures compatibility)
           enablejsapi: 1,
+        // Double assertion needed: YT.PlayerOptions.playerVars uses a branded type
+        // that only accepts specific string keys, but the YouTube IFrame API actually
+        // accepts arbitrary key-value pairs for player variables.
         } as unknown as Record<string, number>,
         events: {
           onReady: (event) => {

@@ -222,5 +222,3 @@ export function useGlobalRemoteControl({
     return () => clearInterval(interval);
   }, [processCommand, pollInterval]);
 }
-
-export default useGlobalRemoteControl;

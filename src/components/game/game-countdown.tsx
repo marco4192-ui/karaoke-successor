@@ -18,6 +18,7 @@ export function GameCountdown({ countdown }: GameCountdownProps) {
       <div
         className="text-9xl font-black text-white drop-shadow-2xl"
         style={{
+          // Note: "countdownPop" animation is defined in the global CSS (index.css / globals.css)
           animation: 'countdownPop 0.3s ease-out'
         }}
       >

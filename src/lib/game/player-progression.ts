@@ -475,7 +475,7 @@ export function getLevelForXP(xp: number): { level: number; currentXP: number; n
   // Level 100+:  XP_PER_LEVEL_TIER_5 each
   
   // Guard: NaN would cause infinite loop (NaN < anything is always false)
-  if (typeof xp !== 'number' || isNaN(xp) || xp < 0) xp = 0;
+  const safeXP = (typeof xp !== 'number' || isNaN(xp) || xp < 0) ? 0 : xp;
   
   let level = 1;
   let xpRequired = 0;
@@ -495,22 +495,22 @@ export function getLevelForXP(xp: number): { level: number; currentXP: number; n
       nextRequired = XP_PER_LEVEL_TIER_5;
     }
     
-    if (xp < xpRequired + nextRequired) {
-      const currentLevelXP = xp - xpRequired;
+    if (safeXP < xpRequired + nextRequired) {
+      const currentLevelXP = safeXP - xpRequired;
       const progress = (currentLevelXP / nextRequired) * 100;
       return {
         level,
-        currentXP: xp,
+        currentXP: safeXP,
         nextLevelXP: xpRequired + nextRequired,
         progress: Math.min(100, Math.max(0, progress)),
       };
     }
-    
+
     xpRequired += nextRequired;
     level++;
   }
   // Safety fallback: if we exceeded max iterations, return a reasonable default
-  return { level, currentXP: xp, nextLevelXP: xpRequired + XP_PER_LEVEL_TIER_5, progress: 100 };
+  return { level, currentXP: safeXP, nextLevelXP: xpRequired + XP_PER_LEVEL_TIER_5, progress: 100 };
 }
 
 // ===================== STORAGE =====================
@@ -737,6 +737,8 @@ export function updateStatsAfterGame(
   gameData: PlayerGameResult
 ): { stats: ExtendedPlayerStats; xpEarned: number; newTitles: string[]; leveledUp: boolean } {
   const now = Date.now();
+  // NOTE: toDateString() is locale-dependent, but acceptable here since this is a desktop
+  // app where the user's locale matches the displayed date format.
   const today = new Date().toDateString();
 
   // 1. Calculate XP earned from this game

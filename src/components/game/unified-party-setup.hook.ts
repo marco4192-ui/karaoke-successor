@@ -26,6 +26,9 @@ export function usePartySetup({
 
   const activeProfiles = useMemo(() => profiles.filter(p => p.isActive !== false), [profiles]);
 
+  // NOTE: Settings use Record<string, any> to accommodate dynamic game-mode configs
+  // whose keys and value types vary at runtime. This trades compile-time type safety
+  // for flexibility; individual consumers should validate specific settings as needed.
   const initialSettings = useMemo(() => {
     const s: Record<string, any> = {};
     config.settings.forEach(setting => { s[setting.key] = setting.defaultValue; });

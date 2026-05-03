@@ -27,7 +27,7 @@ export const ProminentScoreDisplay = React.memo(function ProminentScoreDisplay({
           <div className="flex flex-col items-center gap-1">
             {/* Main Score */}
             <div className="flex items-baseline gap-3">
-              <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 drop-shadow-lg">
+              <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400">
                 {score.toLocaleString()}
               </span>
               <span className="text-white/40 text-lg">/ {MAX_POINTS_PER_SONG.toLocaleString()}</span>

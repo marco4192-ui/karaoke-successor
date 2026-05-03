@@ -3,6 +3,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { extractYouTubeId, isYouTubeUrl } from '@/components/game/youtube-player';
 
+/** Maximum ad countdown duration in seconds */
+const MAX_AD_COUNTDOWN_SECONDS = 30;
+
 interface UseYouTubeGameParams {
   effectiveSong: {
     youtubeUrl?: string;
@@ -85,7 +88,7 @@ export function useYouTubeGame({
   // Handle ad detection callbacks
   const handleAdStart = useCallback(() => {
     setIsAdPlaying(true);
-    setAdCountdown(30); // Max 30 seconds for ad
+    setAdCountdown(MAX_AD_COUNTDOWN_SECONDS);
 
     // Remember whether the game was playing before the ad
     wasPlayingBeforeAdRef.current = isPlaying;

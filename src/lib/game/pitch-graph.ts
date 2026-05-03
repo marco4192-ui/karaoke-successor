@@ -201,7 +201,7 @@ export class PitchGraphRenderer {
     return height - ((pitch - minPitch) / (maxPitch - minPitch)) * height;
   }
 
-  private getAccuracyColor(accuracy: number | undefined, scheme: string): string {
+  private getAccuracyColor(accuracy: number | undefined, scheme: PitchGraphConfig['colorScheme']): string {
     if (accuracy === undefined) return '#00ffff';
     
     switch (scheme) {

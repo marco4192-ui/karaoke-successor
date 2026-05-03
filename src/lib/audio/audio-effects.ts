@@ -308,8 +308,8 @@ export class AudioEffectsEngine {
     // When reverb or delay are enabled, they handle their own connection to wetGain
     // via parallel sends. Connecting wetChain directly would double the signal.
     const hasEffectSends =
-      (this.settings.reverb.enabled && this.reverbNode) ||
-      (this.settings.delay.enabled && this.delayNode);
+      (this.settings.reverb.enabled && this.reverbNode != null) ||
+      (this.settings.delay.enabled && this.delayNode != null);
     if (!hasEffectSends) {
       wetChain.connect(this.wetGain!);
     }

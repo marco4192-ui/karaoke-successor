@@ -291,7 +291,7 @@ export function CompetitiveGameView({
     if (game.status !== 'setup') {
       hasTriggeredSetup.current = false;
     }
-  }, [game.status, songs, game, onUpdateGame]);
+  }, [game.status, songs, game.players, game.rounds, onUpdateGame]);
 
   // Delegate to game screen when round is ready to play
   useEffect(() => {

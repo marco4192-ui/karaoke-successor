@@ -1,5 +1,8 @@
 'use client';
 
+// TODO: German strings are hardcoded throughout this file. These should be migrated
+// to use an i18n system (e.g. next-intl) for multi-language support.
+
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

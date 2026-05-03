@@ -234,6 +234,9 @@ export function SpectrogramDisplay({
         ref={canvasRef}
         width={size.width}
         height={size.height}
+        // NOTE: Canvas pixel dimensions (width/height attributes) set the drawing buffer
+        // size, while CSS classes may scale the element independently. Ensure these stay
+        // in sync with the container to avoid blurry or stretched rendering.
         className="rounded-lg"
         style={{
           background: 'rgba(0, 0, 0, 0.3)',

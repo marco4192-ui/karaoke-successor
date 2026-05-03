@@ -636,9 +636,11 @@ async function parseUltraStarFull(txtFile?: File): Promise<{
     } else if (trimmedLine.startsWith('#GAP:')) {
       gap = parseInt(trimmedLine.substring(5)) || 0;
     } else if (trimmedLine.startsWith('#PREVIEWSTART:')) {
-      previewStart = parseFloat(trimmedLine.substring(13));
+      const val = parseFloat(trimmedLine.substring(13));
+      previewStart = isNaN(val) ? undefined : val;
     } else if (trimmedLine.startsWith('#PREVIEWDURATION:')) {
-      previewDuration = parseFloat(trimmedLine.substring(16));
+      const val = parseFloat(trimmedLine.substring(16));
+      previewDuration = isNaN(val) ? undefined : val;
     } else if (trimmedLine.startsWith('#')) {
       continue;
     } else if (trimmedLine === 'E') {

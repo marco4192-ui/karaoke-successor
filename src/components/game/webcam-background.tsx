@@ -376,6 +376,9 @@ interface WebcamSettingsPanelProps {
 }
 
 export function WebcamSettingsPanel({ config, onConfigChange, compact = false }: WebcamSettingsPanelProps) {
+  // TODO: This creates an independent hook instance separate from the actual
+  // webcam background being rendered. Device list and permission state may
+  // diverge from the active WebcamBackground. Consider passing these as props instead.
   const { devices, hasPermission, refreshDevices } = useWebcamBackground();
   
   const sizeOptions: { value: WebcamSizeMode; label: string; description: string }[] = [

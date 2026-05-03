@@ -379,6 +379,11 @@ export function AnimatedBackground({
   useEffect(() => { songEnergyRef.current = songEnergy; }, [songEnergy]);
   useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
 
+  // Reset bgImageRef when backgroundImage changes so the new image gets loaded
+  useEffect(() => {
+    bgImageRef.current = null;
+  }, [backgroundImage]);
+
   useEffect(() => {
     if (hasVideo) return;
 

@@ -85,7 +85,7 @@ const CenterScoreBar = React.memo(function CenterScoreBar({
         </div>
         <div className="flex flex-col">
           <span className="text-xl font-bold text-cyan-400 leading-tight" suppressHydrationWarning>
-            {p1State?.score?.toLocaleString() ?? 0}
+            {p1State?.score?.toLocaleString?.() ?? 0}
           </span>
           <span className="text-xs text-cyan-300/60 leading-tight" suppressHydrationWarning>
             {p1State?.combo ?? 0}x

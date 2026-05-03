@@ -94,8 +94,10 @@ export function useEditorKeyboardShortcuts({
         e.preventDefault();
         navigator.clipboard.readText().then(text => {
           try {
-            const copiedNote = JSON.parse(text) as Note;
-            handleNoteAdd(currentTimeRef.current, copiedNote.pitch);
+            const parsed = JSON.parse(text);
+            if (parsed && typeof parsed.pitch === 'number') {
+              handleNoteAdd(currentTimeRef.current, parsed.pitch);
+            }
           } catch {
             // Invalid clipboard data
           }

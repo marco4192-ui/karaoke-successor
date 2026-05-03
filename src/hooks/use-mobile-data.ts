@@ -9,6 +9,56 @@ interface UseMobileDataOptions {
   onNavigateToProfile: () => void;
 }
 
+/**
+ * Simple fuzzy match: checks if all query chars appear in order in the target.
+ * Returns a score (0 = no match, higher = better match).
+ * Scores word-boundary matches and consecutive matches higher.
+ */
+function fuzzyScore(query: string, text: string): number {
+  if (!query || !text) return 0;
+  // Normalize for diacritics: ä→a, ö→o, ü→u, é→e, etc.
+  const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const q = normalize(query);
+  const t = normalize(text);
+  const tOriginal = text.toLowerCase(); // Keep original for exact substring check
+
+  // Exact substring match gets highest priority
+  const idx = tOriginal.indexOf(q) !== -1 ? tOriginal.indexOf(q) : t.indexOf(q);
+  if (idx !== -1) {
+    // Bonus for match at start of string or after a space
+    const startsWord = idx === 0 || tOriginal[idx - 1] === ' ' || t[idx - 1] === ' ';
+    return startsWord ? 1000 + (100 - idx) : 500 + (100 - idx);
+  }
+
+  // Fuzzy character-by-character matching
+  let qi = 0; // query index
+  let score = 0;
+  let lastMatchIdx = -2;
+  let consecutiveBonus = 0;
+
+  for (let ti = 0; ti < t.length && qi < q.length; ti++) {
+    if (t[ti] === q[qi]) {
+      score += 1;
+      // Consecutive matches get bonus
+      if (ti === lastMatchIdx + 1) {
+        consecutiveBonus += 2;
+        score += consecutiveBonus;
+      } else {
+        consecutiveBonus = 0;
+      }
+      // Match at word boundary gets bonus
+      if (ti === 0 || t[ti - 1] === ' ') {
+        score += 5;
+      }
+      lastMatchIdx = ti;
+      qi++;
+    }
+  }
+
+  // All query chars must be found
+  return qi === q.length ? score : 0;
+}
+
 export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMobileDataOptions) {
   // Song library state
   const [songs, setSongs] = useState<MobileSong[]>([]);
@@ -58,54 +108,6 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
     }
     setSongsLoading(false);
   }, []);
-
-  // Simple fuzzy match: checks if all query chars appear in order in the target.
-  // Returns a score (0 = no match, higher = better match).
-  // Scores word-boundary matches and consecutive matches higher.
-  function fuzzyScore(query: string, text: string): number {
-    if (!query || !text) return 0;
-    // Normalize for diacritics: ä→a, ö→o, ü→u, é→e, etc.
-    const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-    const q = normalize(query);
-    const t = normalize(text);
-    const tOriginal = text.toLowerCase(); // Keep original for exact substring check
-
-    // Exact substring match gets highest priority
-    const idx = tOriginal.indexOf(q) !== -1 ? tOriginal.indexOf(q) : t.indexOf(q);
-    if (idx !== -1) {
-      // Bonus for match at start of string or after a space
-      const startsWord = idx === 0 || tOriginal[idx - 1] === ' ' || t[idx - 1] === ' ';
-      return startsWord ? 1000 + (100 - idx) : 500 + (100 - idx);
-    }
-
-    // Fuzzy character-by-character matching
-    let qi = 0; // query index
-    let score = 0;
-    let lastMatchIdx = -2;
-    let consecutiveBonus = 0;
-
-    for (let ti = 0; ti < t.length && qi < q.length; ti++) {
-      if (t[ti] === q[qi]) {
-        score += 1;
-        // Consecutive matches get bonus
-        if (ti === lastMatchIdx + 1) {
-          consecutiveBonus += 2;
-          score += consecutiveBonus;
-        } else {
-          consecutiveBonus = 0;
-        }
-        // Match at word boundary gets bonus
-        if (ti === 0 || t[ti - 1] === ' ') {
-          score += 5;
-        }
-        lastMatchIdx = ti;
-        qi++;
-      }
-    }
-
-    // All query chars must be found
-    return qi === q.length ? score : 0;
-  }
 
   const filteredSongs = useMemo(() => {
     if (!songSearch) return songs;

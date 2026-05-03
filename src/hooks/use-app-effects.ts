@@ -52,6 +52,9 @@ export function useAppEffects() {
       }
     };
 
+    // Both event names are registered for backward compatibility:
+    // "themeChange" is the original event name; "themeChanged" was added later.
+    // The Tauri backend may dispatch either depending on the version.
     window.addEventListener('themeChanged', handleThemeChange);
     window.addEventListener('themeChange', handleThemeChange);
 

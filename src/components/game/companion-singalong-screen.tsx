@@ -54,7 +54,6 @@ interface CompanionSingAlongSetupProps {
 
 export function CompanionSingAlongSetupScreen({ profiles, onSelectSong, onBack }: CompanionSingAlongSetupProps) {
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
-  const [settings] = useState<CompanionSingAlongSettings>(DEFAULT_SETTINGS);
   const [error, setError] = useState<string | null>(null);
 
   const activeProfiles = useMemo(() =>
@@ -87,7 +86,7 @@ export function CompanionSingAlongSetupScreen({ profiles, onSelectSong, onBack }
       };
     });
 
-    onSelectSong(players, { ...settings, difficulty: globalDifficulty });
+    onSelectSong(players, { ...DEFAULT_SETTINGS, difficulty: globalDifficulty });
   };
 
   return (

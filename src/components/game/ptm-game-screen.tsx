@@ -3,6 +3,9 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Song, PLAYER_COLORS, LyricLine, Difficulty, Note } from '@/types/game';
+
+/** Minimum interval (ms) between scoring evaluations to avoid excessive recalculation */
+const SCORING_THROTTLE_MS = 250;
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
@@ -126,10 +129,12 @@ export function PtmGameScreen({
     initialPlayers.map(p => ({ ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0 }))
   );
   const [, rerender] = useState(0);
+  // Force-render is needed because score updates mutate refs (for performance) instead of state.
+  // Calling forceRender() triggers a re-render to pick up the latest ref values.
+  const forceRender = useCallback(() => rerender(n => n + 1), []);
   const fallbackLyricsRef = useRef<LyricLine[] | null>(null);
   const medleyRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const medleyCanplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const forceRender = useCallback(() => rerender(n => n + 1), []);
 
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [currentSegmentIndex, setCurrentSegmentIndex] = useState(0);
@@ -241,7 +246,7 @@ export function PtmGameScreen({
     const activeNote = findActiveNote(notesSource?.lyrics, currentTime);
     if (!activeNote) return;
 
-    if (currentTime - lastEvalTimeRef.current < 250) return;
+    if (currentTime - lastEvalTimeRef.current < SCORING_THROTTLE_MS) return;
     lastEvalTimeRef.current = currentTime;
 
     const note = pitchResult.note;
@@ -850,7 +855,7 @@ export function PtmGameScreen({
         />
       )}
 
-      {/* Player Ranking — vertikal links, sortiert nach Score (active player oben) */}
+      {/* Player Ranking — vertical left side, sorted by score (active player on top) */}
       {(phase === 'playing' || phase === 'transitioning') && (
         <PtmPlayerRanking
           players={playersRef.current}
