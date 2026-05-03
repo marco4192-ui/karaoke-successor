@@ -78,7 +78,8 @@ import { cleanupOldReplays } from '@/lib/db/replay-db';
 // ===================== GAME SCREEN =====================
 function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () => void; onPause?: () => void }) {
   const { gameState, setCurrentTime, setDetectedPitch, updatePlayer, endGame, resetGame, setResults, addPlayer, createProfile, profiles, setMissingWordsIndices, setBlindSection } = useGameStore();
-  const party = usePartyStore();
+  const blindFrequency = usePartyStore(s => s.competitiveGame?.settings?.blindFrequency);
+  const missingWordFrequency = usePartyStore(s => s.competitiveGame?.settings?.missingWordFrequency);
   const { pitchResult, initialize, start, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
 
   // Smoothed pitch for visual display (prevents flickering/jitter)
@@ -348,8 +349,8 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
     setBlindSection,
     setMissingWordsIndices,
     // Pass competitive settings frequencies if available
-    blindFrequency: party.competitiveGame?.settings?.blindFrequency,
-    missingWordFrequency: party.competitiveGame?.settings?.missingWordFrequency,
+    blindFrequency,
+    missingWordFrequency,
   });
 
   // Calculate pitch ranges
