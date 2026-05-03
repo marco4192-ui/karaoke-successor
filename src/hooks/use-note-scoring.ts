@@ -58,7 +58,6 @@ export interface UseNoteScoringOptions {
   players: Player[];
   timingData: TimingDataForScoring | null;
   isDuetMode: boolean;
-  isPartyMode?: boolean; // 4-player mode
   beatDuration: number;
   updatePlayer: (playerId: string, updates: Partial<Player>) => void;
   // Optional callbacks for visual effects
@@ -121,8 +120,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     difficulty, 
     players, 
     timingData, 
-    isDuetMode, 
-    isPartyMode = false,
+    isDuetMode,
     beatDuration, 
     updatePlayer, 
     onPerfectHit, 
@@ -383,10 +381,10 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       if (!activePlayer) return;
 
       // In duet/party mode, only check P1 notes
-      const notesToCheck = (isDuetMode || isPartyMode) && timingData?.p1Notes ? timingData.p1Notes : timingData?.allNotes;
+      const notesToCheck = isDuetMode && timingData?.p1Notes ? timingData.p1Notes : timingData?.allNotes;
       if (!notesToCheck || notesToCheck.length === 0) return;
 
-      const scoringMeta = (isDuetMode || isPartyMode) ? timingData?.p1ScoringMetadata : timingData?.scoringMetadata;
+      const scoringMeta = isDuetMode ? timingData?.p1ScoringMetadata : timingData?.scoringMetadata;
       if (!scoringMeta) return;
 
       const beatDurationMs = timingData?.beatDuration || 500;
@@ -501,7 +499,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
                   }
                 }
 
-                if (isDuetMode || isPartyMode) {
+                if (isDuetMode) {
                   setP1ScoreEvents(prev => [
                     ...prev.slice(-10),
                     {
@@ -523,7 +521,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
                 { type: 'miss', displayType: 'Miss', points: 0, time: currentTime },
               ]);
 
-              if (isDuetMode || isPartyMode) {
+              if (isDuetMode) {
                 setP1ScoreEvents(prev => [
                   ...prev.slice(-10),
                   { type: 'miss', displayType: 'Miss', points: 0, time: currentTime },
@@ -574,13 +572,13 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         updatePlayer(activePlayer.id, updates);
       }
     },
-    [song, difficulty, updatePlayer, timingData, isDuetMode, isPartyMode, beatDuration, onPerfectHit, onGoldenNote, onComboMilestone]
+    [song, difficulty, updatePlayer, timingData, isDuetMode, beatDuration, onPerfectHit, onGoldenNote, onComboMilestone]
   );
 
   // Check P2 notes (duet/party mode)
   const checkP2NoteHits = useCallback(
     (currentTime: number, pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }) => {
-      if (!isDuetMode && !isPartyMode) return;
+      if (!isDuetMode) return;
       checkPlayerNoteHits(
         currentTime,
         pitch,
@@ -594,7 +592,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         'p2-note'
       );
     },
-    [isDuetMode, isPartyMode, timingData, checkPlayerNoteHits]
+    [isDuetMode, timingData, checkPlayerNoteHits]
   );
 
 
