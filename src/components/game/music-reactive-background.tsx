@@ -86,8 +86,8 @@ export function MusicReactiveBackground({
               y: canvas.height / 2 + (Math.random() - 0.5) * 200,
               vx: Math.cos(angle) * speed,
               vy: Math.sin(angle) * speed,
-              size: 2 + Math.random() * 4 * volume,
-              color: `hsla(${hue}, 80%, 60%, ${0.5 + volume * 0.5})`,
+              size: 2 + Math.random() * 4 * vol,
+              color: `hsla(${hue}, 80%, 60%, ${0.5 + vol * 0.5})`,
               life: 0,
               maxLife: 60 + Math.random() * 60,
             });
