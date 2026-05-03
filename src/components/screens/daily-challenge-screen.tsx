@@ -15,7 +15,8 @@ import {
   XP_REWARDS,
   DAILY_BADGES,
 } from '@/lib/game/daily-challenge';
-import { CHALLENGE_MODES } from '@/lib/game/player-progression';
+import { CHALLENGE_MODES, getChallengeRequirementStatus } from '@/lib/game/player-progression';
+import { getExtendedStats } from '@/lib/game/player-progression';
 import { Song } from '@/types/game';
 
 // ===================== ICONS =====================
@@ -297,39 +298,60 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (so
           </Card>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {CHALLENGE_MODES.map((challenge) => (
-              <Card 
-                key={challenge.id}
-                className={`bg-white/5 border-white/10 cursor-pointer hover:bg-white/10 transition-all relative ${
-                  challenge.difficulty === 'extreme' ? 'border-red-500/30' :
-                  challenge.difficulty === 'hard' ? 'border-orange-500/30' :
-                  challenge.difficulty === 'medium' ? 'border-yellow-500/30' : 'border-green-500/30'
-                }`}
-                onClick={() => {
-                  // Store challenge mode and go to library
-                  localStorage.setItem('karaoke-challenge-mode', challenge.id);
-                  const songs = getAllSongs();
-                  if (songs.length === 0) return;
-                  onPlayChallenge(songs[Math.floor(Math.random() * songs.length)]);
-                }}
-              >
-                <CardContent className="pt-4 pb-4">
-                  <div className="text-3xl mb-2">{challenge.icon}</div>
-                  <h4 className="font-bold text-white mb-1">{challenge.name}</h4>
-                  <p className="text-xs text-white/60 mb-3 line-clamp-2">{challenge.description}</p>
-                  <div className="flex items-center justify-between">
-                    <Badge variant="outline" className={`text-xs ${
-                      challenge.difficulty === 'extreme' ? 'border-red-500 text-red-400' :
-                      challenge.difficulty === 'hard' ? 'border-orange-500 text-orange-400' :
-                      challenge.difficulty === 'medium' ? 'border-yellow-500 text-yellow-400' : 'border-green-500 text-green-400'
-                    }`}>
-                      {challenge.difficulty.toUpperCase()}
-                    </Badge>
-                    <span className="text-cyan-400 font-bold text-sm">+{challenge.xpReward} XP</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {CHALLENGE_MODES.map((challenge) => {
+              // Check if the player meets the challenge requirements
+              const extendedStats = getExtendedStats();
+              const requirementStatus = getChallengeRequirementStatus(
+                challenge.id,
+                profileLevel,
+                extendedStats.songsCompleted,
+                extendedStats.unlockedTitles,
+              );
+              const locked = requirementStatus !== null;
+
+              return (
+                <Card 
+                  key={challenge.id}
+                  className={`bg-white/5 border-white/10 transition-all relative ${
+                    locked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-white/10'
+                  } ${
+                    challenge.difficulty === 'extreme' ? 'border-red-500/30' :
+                    challenge.difficulty === 'hard' ? 'border-orange-500/30' :
+                    challenge.difficulty === 'medium' ? 'border-yellow-500/30' : 'border-green-500/30'
+                  }`}
+                  onClick={() => {
+                    if (locked) return;
+                    // Store challenge mode and go to library
+                    localStorage.setItem('karaoke-challenge-mode', challenge.id);
+                    const songs = getAllSongs();
+                    if (songs.length === 0) return;
+                    onPlayChallenge(songs[Math.floor(Math.random() * songs.length)]);
+                  }}
+                >
+                  <CardContent className="pt-4 pb-4">
+                    {locked && (
+                      <div className="absolute top-2 right-2 text-lg" title={requirementStatus || ''}>🔒</div>
+                    )}
+                    <div className="text-3xl mb-2">{challenge.icon}</div>
+                    <h4 className="font-bold text-white mb-1">{challenge.name}</h4>
+                    <p className="text-xs text-white/60 mb-3 line-clamp-2">{challenge.description}</p>
+                    {locked && requirementStatus && (
+                      <p className="text-xs text-red-400 mb-2">{requirementStatus}</p>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className={`text-xs ${
+                        challenge.difficulty === 'extreme' ? 'border-red-500 text-red-400' :
+                        challenge.difficulty === 'hard' ? 'border-orange-500 text-orange-400' :
+                        challenge.difficulty === 'medium' ? 'border-yellow-500 text-yellow-400' : 'border-green-500 text-green-400'
+                      }`}>
+                        {challenge.difficulty.toUpperCase()}
+                      </Badge>
+                      <span className="text-cyan-400 font-bold text-sm">+{challenge.xpReward} XP</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       )}

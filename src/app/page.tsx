@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
+import { CHALLENGE_GAME_MODE_MAP } from '@/lib/game/player-progression';
 import { useGlobalKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useGlobalRemoteControl } from '@/hooks/use-global-remote-control';
 import { useMobileClient } from '@/hooks/use-mobile-client';
@@ -409,7 +410,14 @@ export default function KaraokeSuccessor() {
         {screen === 'settings' && <SettingsScreen />}
         {screen === 'jukebox' && <JukeboxScreen />}
         {screen === 'achievements' && <AchievementsScreen />}
-        {screen === 'dailyChallenge' && <DailyChallengeScreen onPlayChallenge={(song) => { setSong(song); setScreen('game'); }} />}
+        {screen === 'dailyChallenge' && <DailyChallengeScreen onPlayChallenge={(song) => {
+          // Look up the stored challenge mode ID and map it to a built-in game mode
+          const challengeId = typeof window !== 'undefined' ? localStorage.getItem('karaoke-challenge-mode') : null;
+          const mappedMode = challengeId ? CHALLENGE_GAME_MODE_MAP[challengeId] : undefined;
+          setGameMode((mappedMode as any) || 'standard');
+          setSong(song);
+          setScreen('game');
+        }} />}
         {screen === 'editor' && <EditorScreen onBack={() => setScreen('library')} />}
         {screen === 'online' && <OnlineMultiplayerScreen onBack={() => setScreen('party')} />}
       </main>

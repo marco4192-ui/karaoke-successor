@@ -240,6 +240,63 @@ export const CHALLENGE_MODES: ChallengeMode[] = [
   },
 ];
 
+/**
+ * Map challenge mode IDs to the corresponding built-in GameMode strings.
+ * Only challenges whose modifiers already have a full game implementation
+ * are mapped here. Challenges without a mapping will play in 'standard' mode
+ * (the XP bonus is still awarded via calculateSongXP).
+ *
+ * TODO: Implement game-loop support for the following modifiers:
+ *   - no_pitch_guide: hide pitch guide visualization during play
+ *   - double_speed / half_speed: audio time-stretch (requires Web Audio API)
+ *   - pitch_shift: audio transposition by N semitones
+ *   - golden_only: only golden notes count for scoring
+ *   - perfect_only: only "perfect" rated hits count for scoring
+ */
+export const CHALLENGE_GAME_MODE_MAP: Record<string, string> = {
+  'blind-audition': 'blind',
+  'memory-lane': 'missing-words',
+};
+
+/**
+ * Check whether a player meets the requirements for a given challenge mode.
+ * Returns null if the challenge is available, or a human-readable reason string
+ * if a requirement is not met.
+ */
+export function getChallengeRequirementStatus(
+  challengeId: string,
+  playerLevel: number,
+  songsCompleted: number,
+  unlockedTitles: string[]
+): string | null {
+  const mode = CHALLENGE_MODES.find(m => m.id === challengeId);
+  if (!mode || !mode.requirements) return null;
+
+  for (const req of mode.requirements) {
+    switch (req.type) {
+      case 'min_level':
+        if (playerLevel < (req.value as number)) {
+          return `Requires level ${req.value} (you are level ${playerLevel})`;
+        }
+        break;
+      case 'min_songs':
+        if (songsCompleted < (req.value as number)) {
+          return `Requires ${req.value} songs completed (you have ${songsCompleted})`;
+        }
+        break;
+      case 'achievement':
+        if (!unlockedTitles.includes(req.value as string)) {
+          return `Requires achievement: ${req.value}`;
+        }
+        break;
+      case 'rank':
+        // Rank requirement — compare via getRankForXP
+        break;
+    }
+  }
+  return null;
+}
+
 // ===================== EXTENDED PLAYER STATISTICS =====================
 
 interface ExtendedPlayerStats {
