@@ -100,10 +100,14 @@ export function createCompetitiveGame(
 
   // Calculate total rounds needed
   // With N players, each round has 2 players singing simultaneously.
-  // For Best-of-X, each player sings X rounds minimum.
-  // Total rounds = ceil(N * X / 2)
+  // For Best-of-X, each player should ideally sing X rounds.
+  // For odd N, one player sits out per round — so each player gets
+  // totalRounds * 2 / N turns. We ensure this is >= bestOf.
   const n = players.length;
   const x = settings.bestOf;
+  // Minimum rounds so every player gets at least bestOf turns:
+  // playerTurns = floor(totalRounds * 2 / n) >= bestOf
+  // => totalRounds >= ceil(n * bestOf / 2)
   const totalRounds = Math.ceil((n * x) / 2);
 
   return {
@@ -273,9 +277,20 @@ export function getCurrentRound(game: CompetitiveGame): CompetitiveRound | null 
   return game.rounds[game.currentRoundIndex] || null;
 }
 
-/** Check if a player has sung in all their required rounds */
+/** Check if a player has sung in all their required rounds.
+ *  A player is finished only when they've reached bestOf AND no other
+ *  player has fewer rounds than them (ensures even distribution when
+ *  totalRounds doesn't divide evenly among players). */
 function isPlayerFinished(game: CompetitiveGame, playerId: string): boolean {
-  return (game.players.find(p => p.id === playerId)?.roundsPlayed ?? 0) >= game.settings.bestOf;
+  const player = game.players.find(p => p.id === playerId);
+  if (!player) return true;
+  if (player.roundsPlayed < game.settings.bestOf) return false;
+  // Even if this player hit bestOf, don't mark them finished if any
+  // other eligible player has strictly fewer rounds.
+  const minRounds = Math.min(
+    ...game.players.map(p => p.roundsPlayed)
+  );
+  return player.roundsPlayed <= minRounds && player.roundsPlayed >= game.settings.bestOf;
 }
 
 /** Calculate bonus points for missing words: 50 per correct hidden word hit */
