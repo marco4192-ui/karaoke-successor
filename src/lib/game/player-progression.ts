@@ -4,8 +4,10 @@
 // ===================== NAMED CONSTANTS =====================
 
 // --- Accuracy thresholds ---
-/** Accuracy percentage required for "perfect" rating */
-const PERFECT_ACCURACY = 100;
+/** Accuracy percentage required for "perfect" rating.
+ *  Uses 99.5 (not 100) because tick-based scoring with floating-point
+ *  arithmetic makes exact 100.0% practically impossible. */
+const PERFECT_ACCURACY = 99.5;
 /** Accuracy percentage required for "excellent" rating */
 const EXCELLENT_ACCURACY = 95;
 
