@@ -142,6 +142,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   // ── Internal state (not needed outside the hook) ──
   const [countdown, setCountdown] = useState(3);
   const [volume, setVolume] = useState(0);
+  const lastVolumeUpdateRef = useRef(0);
   const gameLoopRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -725,10 +726,15 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       // Read pitch from ref (not closure) to avoid stale values
       const currentPitch = pitchResultRef.current;
       if (currentPitch) {
-        setVolume(currentPitch.volume);
+        const pitchNow = performance.now();
+        // Throttle volume update to ~30fps (same as pitch store) to avoid
+        // excessive React re-renders from the VolumeMeter component.
+        if (pitchNow - lastVolumeUpdateRef.current >= 33) {
+          setVolume(currentPitch.volume);
+          lastVolumeUpdateRef.current = pitchNow;
+        }
         // Throttle detectedPitch store update to ~30fps (33ms interval).
         // Scoring uses currentPitch directly (not the store), so accuracy is unaffected.
-        const pitchNow = performance.now();
         if (pitchNow - lastPitchStoreUpdateRef.current >= 33) {
           setDetectedPitch(currentPitch.frequency);
           lastPitchStoreUpdateRef.current = pitchNow;
