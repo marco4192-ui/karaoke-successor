@@ -74,23 +74,11 @@ export function usePracticePlayback({
     }
   }, [currentTime, practiceMode, isPlaying, audioRef, videoRef]);
 
-  // Set current time as loop start
-  const setLoopStart = useCallback(() => {
-    const timeMs = Math.round((audioRef.current?.currentTime ?? 0) * 1000);
-    return timeMs;
-  }, [audioRef]);
-
-  // Set current time as loop end
-  const setLoopEnd = useCallback(() => {
-    const timeMs = Math.round((audioRef.current?.currentTime ?? 0) * 1000);
-    return timeMs;
-  }, [audioRef]);
-
   // Reset loop counter (call when loop region changes)
   const resetLoopCount = useCallback(() => {
     loopIterationRef.current = 0;
     setLoopCount(0);
   }, []);
 
-  return { loopCount, setLoopStart, setLoopEnd, resetLoopCount };
+  return { loopCount, resetLoopCount };
 }

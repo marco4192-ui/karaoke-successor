@@ -1,5 +1,4 @@
 import {
-  Note,
   Difficulty,
   DIFFICULTY_SETTINGS,
 } from '@/types/game';

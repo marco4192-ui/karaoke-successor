@@ -76,7 +76,7 @@ interface Rank {
   titles: string[]; // Unlockable titles at this rank
 }
 
-interface Title {
+export interface Title {
   id: string;
   name: string;
   icon: string;
@@ -101,7 +101,7 @@ const RANKS: Rank[] = [
   { id: 'divine', name: 'Divine', icon: '🌟', minXP: 200000, maxXP: Infinity, color: '#FFD700', titles: ['Divine Voice'] },
 ];
 
-const TITLES: Title[] = [
+export const TITLES: Title[] = [
   // Skill-based titles
   { id: 'perfect-pitch', name: 'Perfect Pitch', icon: '🎯', description: 'Achieve 100% accuracy on a song', rarity: 'legendary', unlockCondition: 'Get 100% accuracy', category: 'skill' },
   { id: 'golden-voice', name: 'Golden Voice', icon: '✨', description: 'Hit 100 golden notes', rarity: 'epic', unlockCondition: 'Hit 100 golden notes', category: 'skill' },
