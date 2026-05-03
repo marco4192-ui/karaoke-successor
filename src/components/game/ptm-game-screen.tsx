@@ -127,6 +127,8 @@ export function PtmGameScreen({
   );
   const [, rerender] = useState(0);
   const fallbackLyricsRef = useRef<LyricLine[] | null>(null);
+  const medleyRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const medleyCanplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const forceRender = useCallback(() => rerender(n => n + 1), []);
 
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
@@ -418,8 +420,8 @@ export function PtmGameScreen({
 
     // Use requestAnimationFrame to ensure the new audio/video element (from key change)
     // has been committed to the DOM before we try to access it via refs.
-    const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const canplaySafetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    medleyRetryTimerRef.current = null;
+    medleyCanplayTimerRef.current = null;
 
     const rafId = requestAnimationFrame(() => {
       const media = audioRef.current || (videoRef.current && !isYouTube ? videoRef.current : null);
@@ -433,7 +435,7 @@ export function PtmGameScreen({
             m2.play().catch(() => {});
           }
         }, 200);
-        retryTimerRef.current = retryTimer;
+        medleyRetryTimerRef.current = retryTimer;
         return;
       }
 
@@ -465,7 +467,7 @@ export function PtmGameScreen({
         };
         media.addEventListener('canplay', onCanPlay);
         // Also clean up after timeout to avoid leaking listeners
-        canplaySafetyTimerRef.current = setTimeout(() => {
+        medleyCanplayTimerRef.current = setTimeout(() => {
           media.removeEventListener('canplay', onCanPlay);
         }, 5000);
       }
@@ -473,8 +475,8 @@ export function PtmGameScreen({
 
     return () => {
       cancelAnimationFrame(rafId);
-      if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); retryTimerRef.current = null; }
-      if (canplaySafetyTimerRef.current) { clearTimeout(canplaySafetyTimerRef.current); canplaySafetyTimerRef.current = null; }
+      if (medleyRetryTimerRef.current) { clearTimeout(medleyRetryTimerRef.current); medleyRetryTimerRef.current = null; }
+      if (medleyCanplayTimerRef.current) { clearTimeout(medleyCanplayTimerRef.current); medleyCanplayTimerRef.current = null; }
     };
   }, [currentSegmentIndex, isMedleyMode, currentSnippet, phase, isPlaying, audioRef, videoRef, isYouTube]);
 
