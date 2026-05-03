@@ -280,6 +280,9 @@ export function CompanionGameView({
 
   // ── Scoring tick tracking ──
   const lastEvalTimeRef = useRef(0);
+  // Track last active note's startTime to count notesMissed per-note, not per-tick
+  const lastActiveNoteStartRef = useRef<number | null>(null);
+  const lastNoteWasHitRef = useRef(false);
 
   // ── Send singalong turn info to companion apps via server ──
   const sendSingalongTurn = useCallback(async (profileId: string | null, nextProfileId: string | null, countdown: number | null) => {
@@ -334,14 +337,28 @@ export function CompanionGameView({
     const p = playersRef.current[currentPlayerIndex];
     const idx = currentPlayerIndex;
 
+    // Track note transitions for per-note hit/miss counting
+    const noteStart = activeNote.startTime;
+    if (noteStart !== lastActiveNoteStartRef.current) {
+      // We moved to a new note — count the previous note's result
+      if (lastActiveNoteStartRef.current !== null) {
+        if (lastNoteWasHitRef.current) {
+          p.notesHit++;
+        } else {
+          p.notesMissed++;
+        }
+      }
+      lastActiveNoteStartRef.current = noteStart;
+      lastNoteWasHitRef.current = false;
+    }
+
     if (tick.hit) {
       p.score += tick.points;
-      p.notesHit++;
       p.combo++;
       if (p.combo > p.maxCombo) p.maxCombo = p.combo;
+      lastNoteWasHitRef.current = true;
     } else {
       p.combo = 0;
-      p.notesMissed++;
     }
 
     playersRef.current[idx] = { ...p };

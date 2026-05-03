@@ -66,7 +66,7 @@ export function generateMedleySnippets(
       song,
       startTime,
       endTime: Math.min(startTime + snippetMs, song.duration),
-      duration: snippetMs,
+      duration: Math.min(snippetMs, song.duration - startTime),
     };
   });
 }

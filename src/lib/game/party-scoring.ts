@@ -124,13 +124,16 @@ export function evaluateAndScoreTick(
     tickPts = calculateTickPoints(result.accuracy, note.isGolden, scoringMeta.pointsPerTick);
   } else {
     // Fallback when no scoring metadata is available (e.g. missing BPM).
-    // Cap at 3 points per tick to prevent scores from exceeding MAX_POINTS_PER_SONG
-    // on long songs. Without normalization, accuracy*10 could yield 20000+ on songs
-    // with 2000+ ticks.
-    tickPts = Math.min(result.accuracy * 10, 3);
+    // Scale accuracy to 0-3 point range without a floor so that poor
+    // accuracy (below ~0.05) correctly awards 0 points instead of
+    // inflating scores on long songs with many ticks.
+    tickPts = result.accuracy * 10;
   }
 
-  const points = Math.max(1, Math.round(tickPts));
+  // Round to nearest integer, cap at 3 in fallback mode, no artificial floor
+  const points = scoringMeta
+    ? Math.max(1, Math.round(tickPts))
+    : Math.min(Math.round(tickPts), 3);
 
   return { hit: true, points, accuracy: result.accuracy, displayType: result.displayType };
 }

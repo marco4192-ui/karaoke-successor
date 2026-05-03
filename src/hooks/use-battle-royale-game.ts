@@ -13,7 +13,7 @@ import {
 import { Song, Note, Difficulty } from '@/types/game';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { calculateScoringMetadata } from '@/lib/game/scoring';
-import { evaluateAndScoreTick } from '@/lib/game/party-scoring';
+import { evaluateAndScoreTick, findActiveNoteFlat } from '@/lib/game/party-scoring';
 import { useBattleRoyaleSongMedia } from '@/hooks/use-battle-royale-song-media';
 import { useBattleRoyaleCompanionPolling } from '@/hooks/use-battle-royale-companion-polling';
 import { useBattleRoyaleRoundTimer } from '@/hooks/use-battle-royale-round-timer';
@@ -283,7 +283,12 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
         const activeNotes = getActiveNotesAtTime(td.allNotes, currentAudioTime);
 
-        for (const note of activeNotes) {
+        // Only use the FIRST active note for scoring to prevent score inflation
+        // when multiple notes overlap (e.g., duet sections). Each player should
+        // only be scored once per tick against the best matching note.
+        const activeNote = activeNotes.length > 0 ? activeNotes[0] : null;
+
+        if (activeNote) {
           // Score all active MICROPHONE players (local mic, shared pitch)
           // Skip scoring if vocal detection classifies input as humming/noise
           const micPlayers = activePlayersRef.current.filter(p => p.playerType === 'microphone' && !p.eliminated);
@@ -293,7 +298,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
             // Skip scoring entirely when no pitch is detected - passing MIDI 0
             // would cause false misses and incorrect combo resets
             if (detectedPitch == null) continue;
-            const tick = evaluateAndScoreTick(detectedPitch, note, difficulty, td.scoringMetadata);
+            const tick = evaluateAndScoreTick(detectedPitch, activeNote, difficulty, td.scoringMetadata);
 
             if (tick.hit) {
               batchedGame = updatePlayerScore(
@@ -329,7 +334,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
               : null;
 
             if (cachedPitch && cachedPitch.note > 0 && cachedPitch.isSinging === true) {
-              const tick = evaluateAndScoreTick(cachedPitch.note, note, difficulty, td.scoringMetadata);
+              const tick = evaluateAndScoreTick(cachedPitch.note, activeNote, difficulty, td.scoringMetadata);
 
               if (tick.hit) {
                 batchedGame = updatePlayerScore(
