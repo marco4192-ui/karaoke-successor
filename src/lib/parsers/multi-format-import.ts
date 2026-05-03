@@ -306,6 +306,9 @@ export function convertToSong(
 
     case 'midi': {
       const midi = data as MIDIKaraokeData;
+      if (!midi.ticksPerBeat || !midi.tempo) {
+        throw new Error('MIDI file has invalid ticksPerBeat or tempo — cannot calculate note timings.');
+      }
       const tickDurationMs = 60000 / (midi.tempo * midi.ticksPerBeat);
 
       // Build lyric lines from MIDI lyrics + notes
