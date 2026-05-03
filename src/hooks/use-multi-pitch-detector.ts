@@ -92,6 +92,11 @@ export interface UseMultiPitchDetectorReturn {
 export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): UseMultiPitchDetectorReturn {
   const { players, difficulty, autoStart = false } = options;
 
+  // Keep players in a ref so the initialize callback doesn't need it as a dependency
+  // (array reference changes every render, which would cause unnecessary re-initialization)
+  const playersRef = useRef(players);
+  playersRef.current = players;
+
   const [isInitialized, setIsInitialized] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [playerPitches, setPlayerPitches] = useState<Map<string, PitchDetectionResult | null>>(new Map());
@@ -131,8 +136,9 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
       // Set difficulty
       manager.setDifficulty(difficulty);
 
-      // Add all players
-      const initPromises = players.map(async (playerConfig) => {
+      // Add all players (read from ref to avoid stale closure)
+      const playersList = playersRef.current;
+      const initPromises = playersList.map(async (playerConfig) => {
         try {
           if (playerConfig.type === 'local') {
             const success = await manager.addLocalPlayer(playerConfig.playerId, playerConfig.deviceId);
@@ -189,7 +195,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
       console.error('[useMultiPitchDetector] Initialization failed:', error);
       return false;
     }
-  }, [isInitialized, players, difficulty, autoStart]);
+  }, [isInitialized, difficulty, autoStart]);
 
   /**
    * Start pitch detection
