@@ -193,7 +193,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
             switch (mode) {
               // ── Tournament: create bracket → bracket view ──
               case 'tournament': {
-                const maxPlayers = result.settings.maxPlayers || 8;
+                const rawMaxPlayers = result.settings.maxPlayers || 8;
                 const shortMode = result.settings.shortMode !== false;
                 const tournamentPlayers: TournamentPlayer[] = result.players.map((p, i) => ({
                   id: p.id,
@@ -203,8 +203,13 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   eliminated: false,
                   seed: i + 1,
                 }));
+                // Clamp to nearest valid tournament size: 2, 4, 8, 16, or 32
+                const validSizes = [2, 4, 8, 16, 32] as const;
+                const maxPlayers = validSizes.reduce((prev, curr) =>
+                  Math.abs(curr - rawMaxPlayers) < Math.abs(prev - rawMaxPlayers) ? curr : prev
+                );
                 const settings: TournamentSettings = {
-                  maxPlayers: maxPlayers as 2 | 4 | 8 | 16 | 32,
+                  maxPlayers,
                   songDuration: shortMode ? 60 : 180,
                   randomSongs: true,
                   difficulty: result.difficulty,
@@ -428,7 +433,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 const compSettings: CompetitiveSettings = {
                   difficulty: result.difficulty,
                   modeType,
-                  bestOf: (result.settings.bestOf ?? 3) as 1 | 3 | 5 | 7,
+                  bestOf: ([1, 3, 5, 7].includes(result.settings.bestOf) ? result.settings.bestOf : 3) as 1 | 3 | 5 | 7,
                   missingWordFrequency: modeType === 'missing-words'
                     ? (mwFreqMap[freqSetting] ?? 0.25)
                     : 0.25,

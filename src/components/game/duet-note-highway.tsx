@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import { Note, LyricLine, Player } from '@/types/game';
 import { NoteHighway, NoteWithLine, PitchStats } from './note-highway';
-import { LyricLineDisplay } from './lyric-line-display';
+import { LyricLineDisplay, type GameModeType } from './lyric-line-display';
 import { NoteShapeStyle, NoteDisplayStyle } from '@/lib/game/note-utils';
 
 // ===================== TYPES =====================
@@ -172,7 +172,7 @@ function PlayerLyrics({
           playerColor={playerColor}
           noteDisplayStyle={noteDisplayStyle}
           notePerformance={notePerformance}
-          gameMode={gameMode as 'standard' | 'missing-words' | 'duel' | 'blind' | 'duet'}
+          gameMode={gameMode as GameModeType}
           missingWordsIndices={missingWordsIndices}
           isBlindSection={isBlindSection}
         />
@@ -241,7 +241,7 @@ export function DuetNoteHighway({
           playerColor="#22d3ee"
           noteDisplayStyle={noteDisplayStyle}
           notePerformance={notePerformance}
-          gameMode={gameMode as 'standard' | 'missing-words' | 'duel' | 'blind' | 'duet'}
+          gameMode={gameMode as GameModeType}
           missingWordsIndices={missingWordsIndices}
           isBlindSection={isBlindSection}
         />
@@ -277,7 +277,7 @@ export function DuetNoteHighway({
           playerColor="#ec4899"
           noteDisplayStyle={noteDisplayStyle}
           notePerformance={notePerformance}
-          gameMode={gameMode as 'standard' | 'missing-words' | 'duel' | 'blind' | 'duet'}
+          gameMode={gameMode as GameModeType}
           missingWordsIndices={missingWordsIndices}
           isBlindSection={isBlindSection}
         />

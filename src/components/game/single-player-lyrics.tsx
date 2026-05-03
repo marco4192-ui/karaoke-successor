@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState, useCallback, useLayoutEffect } from 'react';
 import { LyricLine } from '@/types/game';
-import { LyricLineDisplay } from './lyric-line-display';
+import { LyricLineDisplay, type GameModeType } from './lyric-line-display';
 
 // ===================== TYPES =====================
 
@@ -188,7 +188,7 @@ export function SinglePlayerLyrics({
             playerColor={playerColor}
             noteDisplayStyle={noteDisplayStyle}
             notePerformance={notePerformance}
-            gameMode={gameMode as 'standard' | 'missing-words' | 'duel' | 'blind' | 'duet'}
+            gameMode={gameMode as GameModeType}
             missingWordsIndices={missingWordsIndices}
             isBlindSection={isBlindSection}
             firstNoteRef={firstNoteRefCallback}
