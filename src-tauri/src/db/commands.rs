@@ -107,6 +107,12 @@ pub fn db_save_songs(app: AppHandle, songs_json: String) -> Result<DbResult, Str
 
     let mut count = 0;
     for song in &songs {
+        // Validate: reject songs with empty IDs (would cause last-write-wins with INSERT OR REPLACE)
+        let song_id = song.get("id").and_then(|v| v.as_str()).unwrap_or("");
+        if song_id.is_empty() {
+            continue;
+        }
+
         tx.execute(
             "INSERT OR REPLACE INTO songs (
                 id, title, artist, album, year, genre, duration, bpm,
