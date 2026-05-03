@@ -2,7 +2,6 @@
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 import type { PassTheMicSettings } from '@/components/game/ptm-types';
 
 interface PtmHudControlsProps {
@@ -52,9 +51,11 @@ export function PtmHudControls({
         onClick={() => {
           // Tauri uses its own Window API for fullscreen (DOM fullscreen API
           // does not work reliably inside Tauri webviews)
-          const win = getCurrentWindow();
-          win.isFullscreen().then(isFs => {
-            win.setFullscreen(!isFs).catch(() => {});
+          import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+            const win = getCurrentWindow();
+            win.isFullscreen().then(isFs => {
+              win.setFullscreen(!isFs).catch(() => {});
+            }).catch(() => {});
           }).catch(() => {});
         }}
         className="text-white/80 hover:text-white hover:bg-white/10 rounded-lg w-10 h-10 p-0"
