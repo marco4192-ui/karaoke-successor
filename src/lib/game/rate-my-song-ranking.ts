@@ -36,7 +36,7 @@ export interface RateMySongDailyEntry {
   date: string;            // 'YYYY-MM-DD'
 }
 
-export interface RateMySongRanking {
+interface RateMySongRanking {
   entries: RateMySongEntry[];
 }
 
@@ -128,7 +128,7 @@ export function addRateMySongEntry(entry: Omit<RateMySongEntry, 'id' | 'timestam
 }
 
 /** Get all entries sorted by weighted score (descending) */
-export function getRateMySongRanking(): RateMySongEntry[] {
+function getRateMySongRanking(): RateMySongEntry[] {
   const ranking = loadRanking();
   return ranking.entries.sort((a, b) => {
     const scoreA = a.rating * Math.log2(a.ratingCount + 1);

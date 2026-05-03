@@ -12,7 +12,7 @@ function validatePath(path: string): void {
 }
 
 // ---- Directory Entry ----
-export interface NativeDirEntry {
+interface NativeDirEntry {
   name: string;
   is_directory: boolean;
   is_file: boolean;

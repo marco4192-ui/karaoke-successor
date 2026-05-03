@@ -6,7 +6,7 @@ const DB_NAME = 'karaoke-successor-media';
 const DB_VERSION = 2; // Bumped for txt support
 const STORE_NAME = 'media';
 
-export interface MediaRecord {
+interface MediaRecord {
   id: string; // songId + type (e.g., "song-123-audio")
   songId: string;
   type: 'audio' | 'video' | 'cover' | 'txt';
