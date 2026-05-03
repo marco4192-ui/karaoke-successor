@@ -728,10 +728,10 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         setVolume(currentPitch.volume);
         // Throttle detectedPitch store update to ~30fps (33ms interval).
         // Scoring uses currentPitch directly (not the store), so accuracy is unaffected.
-        const now = performance.now();
-        if (now - lastPitchStoreUpdateRef.current >= 33) {
+        const pitchNow = performance.now();
+        if (pitchNow - lastPitchStoreUpdateRef.current >= 33) {
           setDetectedPitch(currentPitch.frequency);
-          lastPitchStoreUpdateRef.current = now;
+          lastPitchStoreUpdateRef.current = pitchNow;
         }
         checkNoteHitsRef.current(adjustedTime, currentPitch);
 
