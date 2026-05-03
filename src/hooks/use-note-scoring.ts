@@ -58,7 +58,7 @@ export interface UseNoteScoringOptions {
   players: Player[];
   timingData: TimingDataForScoring | null;
   isDuetMode: boolean;
-  beatDuration: number;
+  beatDuration: number;  // Kept for interface compat; actual value from timingData
   updatePlayer: (playerId: string, updates: Partial<Player>) => void;
   // Optional callbacks for visual effects
   onPerfectHit?: (x: number, y: number) => void;
@@ -115,17 +115,17 @@ const DEFAULT_PLAYER_SCORING_STATE: PlayerScoringState = {
  * Handles duration-based scoring for single player, duet mode, and 4-player party mode
  */
 export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringReturn {
-  const { 
-    song, 
-    difficulty, 
-    players, 
-    timingData, 
+  const {
+    song,
+    difficulty,
+    players,
+    timingData,
     isDuetMode,
-    beatDuration, 
-    updatePlayer, 
-    onPerfectHit, 
-    onGoldenNote, 
-    onComboMilestone 
+    // beatDuration is unused — actual value read from timingData.beatDuration
+    updatePlayer,
+    onPerfectHit,
+    onGoldenNote,
+    onComboMilestone
   } = options;
 
   // Score events state
@@ -584,7 +584,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         }
       }
     },
-    [song, difficulty, updatePlayer, timingData, isDuetMode, beatDuration, onPerfectHit, onGoldenNote, onComboMilestone]
+    [song, difficulty, updatePlayer, timingData, isDuetMode, onPerfectHit, onGoldenNote, onComboMilestone]
   );
 
   // Check P2 notes (duet/party mode)
