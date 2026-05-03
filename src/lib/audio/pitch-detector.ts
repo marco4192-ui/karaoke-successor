@@ -347,7 +347,8 @@ export class PitchDetector {
   }
 
   private yinPitchDetection(buffer: Float32Array<ArrayBufferLike>, sampleRate: number, threshold: number = 0.15): number | null {
-    const yinBuffer = this.yinBuffer!;
+    if (!this.yinBuffer) return null;
+    const yinBuffer = this.yinBuffer;
     const yinBufferLength = yinBuffer.length;
 
     // Compute difference function
