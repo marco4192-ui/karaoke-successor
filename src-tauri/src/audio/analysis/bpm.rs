@@ -5,6 +5,13 @@
 
 use rustfft::{FftPlanner, num_complex::Complex};
 
+/// Default BPM returned when detection fails (not enough data).
+const DEFAULT_BPM: f64 = 120.0;
+/// Default FFT size for BPM detection.
+const DEFAULT_FFT_SIZE: usize = 1024;
+/// Default hop size for BPM detection.
+const DEFAULT_HOP_SIZE: usize = 512;
+
 // ---------------------------------------------------------------------------
 // BpmDetector
 // ---------------------------------------------------------------------------
@@ -13,6 +20,7 @@ pub struct BpmDetector {
     fft_size: usize,
     hop_size: usize,
     sample_rate: f64,
+    planner: FftPlanner<f64>,
 }
 
 impl BpmDetector {
@@ -21,6 +29,7 @@ impl BpmDetector {
             fft_size,
             hop_size,
             sample_rate: sample_rate as f64,
+            planner: FftPlanner::new(),
         }
     }
 
@@ -29,14 +38,14 @@ impl BpmDetector {
     /// Returns the estimated BPM.
     pub fn detect(&self, samples: &[f64]) -> f64 {
         if samples.len() < self.fft_size * 4 {
-            return 120.0; // fallback
+            return DEFAULT_BPM;
         }
 
         // ---- Step 1: Compute onset strength signal ----
         let onset = self.onset_strength(samples);
 
         if onset.len() < 8 {
-            return 120.0;
+            return DEFAULT_BPM;
         }
 
         // ---- Step 2: Autocorrelation of the onset signal ----
@@ -50,8 +59,7 @@ impl BpmDetector {
     /// Compute the onset strength envelope using spectral flux.
     fn onset_strength(&self, samples: &[f64]) -> Vec<f64> {
         let n = self.fft_size;
-        let mut planner = FftPlanner::new();
-        let fft = planner.plan_fft_forward(n);
+        let fft = self.planner.plan_fft_forward(n);
 
         let num_frames = (samples.len() - n) / self.hop_size + 1;
         let mut onset = Vec::with_capacity(num_frames.max(1));
@@ -119,7 +127,7 @@ impl BpmDetector {
         let max_lag = ((frames_per_second * 60.0 / min_bpm) as usize).min(onset.len() / 2);
 
         if max_lag <= min_lag {
-            return 120.0;
+            return DEFAULT_BPM;
         }
 
         // Compute mean and variance for normalisation
@@ -127,7 +135,7 @@ impl BpmDetector {
         let variance: f64 = onset.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / onset.len() as f64;
 
         if variance < 1e-10 {
-            return 120.0;
+            return DEFAULT_BPM;
         }
 
         // Helper: normalised autocorrelation at a given lag

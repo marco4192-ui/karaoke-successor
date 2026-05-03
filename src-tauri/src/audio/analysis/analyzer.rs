@@ -22,6 +22,8 @@ use super::bpm::BpmDetector;
 #[cfg(feature = "crepe")]
 use super::crepe::CrepeDetector;
 
+use super::bpm::DEFAULT_BPM;
+
 // ---------------------------------------------------------------------------
 // AudioAnalyzer
 // ---------------------------------------------------------------------------
@@ -89,7 +91,7 @@ impl AudioAnalyzer {
             return PitchAnalysisResult {
                 frames: vec![],
                 notes: vec![],
-                bpm: 120.0,
+                bpm: DEFAULT_BPM,
                 algorithm: self.options.algorithm.clone(),
                 analysis_duration_ms: start.elapsed().as_millis() as u64,
                 sample_rate,
@@ -103,7 +105,7 @@ impl AudioAnalyzer {
             return PitchAnalysisResult {
                 frames: vec![],
                 notes: vec![],
-                bpm: 120.0,
+                bpm: DEFAULT_BPM,
                 algorithm: self.options.algorithm.clone(),
                 analysis_duration_ms: start.elapsed().as_millis() as u64,
                 sample_rate,
