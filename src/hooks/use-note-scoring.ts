@@ -157,6 +157,10 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   // Ref for P1 perfect notes count — incremented when all ticks of a note are hit
   const p1PerfectNotesCountRef = useRef(0);
 
+  // Ref for P2 combo — same pattern as P1, prevents stale closure in batched updates
+  const p2ComboRef = useRef(0);
+  const p2MaxComboRef = useRef(0);
+
   
   // Detected pitches for P2-P4
   const [p2DetectedPitch, setP2DetectedPitch] = useState<number | null>(null);
@@ -193,11 +197,13 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     p2NoteProgressRef.current.clear();
     lastProcessedNoteRef.current = 0;
     lastProcessedNoteP2Ref.current = 0;
-    
+    p2ComboRef.current = 0;
+    p2MaxComboRef.current = 0;
   }, []);
 
   // Generic function to check note hits for any player
-  // Uses stateRef to always get the latest player state (avoids stale closure)
+  // Uses ref-based combo tracking and batched state updates (same pattern as P1's checkNoteHits)
+  // to prevent stale-state race conditions when multiple ticks fire in the same frame.
   const checkPlayerNoteHits = useCallback(
     (
       currentTime: number,
@@ -218,6 +224,20 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       if (!notesToCheck || notesToCheck.length === 0 || !scoringMeta) return;
 
       const beatDurationMs = timingData?.beatDuration || 500;
+
+      // Select the correct combo refs based on player index
+      const comboRef = _playerIndex === 1 ? p2ComboRef : p1ComboRef;
+      const maxComboRef = _playerIndex === 1 ? p2MaxComboRef : p1MaxComboRef;
+
+      // Batch accumulator — all state deltas collected here, flushed once at end
+      let scoreDelta = 0;
+      let comboUpdate: number | undefined;
+      let maxComboUpdate: number | undefined;
+      let notesHitDelta = 0;
+      let notesMissedDelta = 0;
+      let perfectNotesDelta = 0;
+      let hasPlayerUpdates = false;
+      const pendingEvents: ScoreEvent[] = [];
 
       // Start from last processed index for O(1) forward progression
       // Reset to 0 if time went backward (e.g. seek)
@@ -267,38 +287,33 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
               const finalPoints = Math.max(1, Math.round(tickPoints));
 
               if (finalPoints > 0) {
-                setPlayerState(prev => {
-                  const newCombo = prev.combo + 1;
-                  return {
-                    ...prev,
-                    score: prev.score + finalPoints,
-                    combo: newCombo,
-                    maxCombo: Math.max(prev.maxCombo, newCombo),
-                  };
-                });
+                const newCombo = comboRef.current + 1;
 
-                setScoreEventsState(prev => [
-                  ...prev.slice(-10),
-                  {
-                    type: tickResult.accuracy > 0.95 ? 'perfect' : 'good',
-                    displayType: tickResult.displayType,
-                    points: finalPoints,
-                    time: currentTime,
-                  },
-                ]);
+                scoreDelta += finalPoints;
+                comboUpdate = newCombo;
+                maxComboUpdate = Math.max(maxComboRef.current, newCombo);
+                comboRef.current = newCombo;
+                maxComboRef.current = maxComboUpdate;
+                hasPlayerUpdates = true;
+
+                pendingEvents.push({
+                  type: tickResult.accuracy > 0.95 ? 'perfect' : 'good',
+                  displayType: tickResult.displayType,
+                  points: finalPoints,
+                  time: currentTime,
+                });
               }
             } else {
-              setPlayerState(prev => ({ ...prev, combo: 0 }));
+              comboUpdate = 0;
+              comboRef.current = 0;
+              hasPlayerUpdates = true;
 
-              setScoreEventsState(prev => [
-                ...prev.slice(-10),
-                {
-                  type: 'miss',
-                  displayType: 'Miss',
-                  points: 0,
-                  time: currentTime,
-                },
-              ]);
+              pendingEvents.push({
+                type: 'miss',
+                displayType: 'Miss',
+                points: 0,
+                time: currentTime,
+              });
             }
           }
 
@@ -313,16 +328,39 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
             progress.isComplete = true;
 
             if (progress.ticksHit > 0) {
-              setPlayerState(prev => ({ ...prev, notesHit: prev.notesHit + 1 }));
+              notesHitDelta++;
             } else {
-              setPlayerState(prev => ({ ...prev, notesMissed: prev.notesMissed + 1 }));
+              notesMissedDelta++;
             }
+            hasPlayerUpdates = true;
 
             if (progress.ticksHit >= progress.totalTicks) {
               progress.wasPerfect = true;
-              setPlayerState(prev => ({ ...prev, perfectNotesCount: prev.perfectNotesCount + 1 }));
+              perfectNotesDelta++;
             }
           }
+        }
+      }
+
+      // Flush: single setPlayerState call with all accumulated deltas
+      if (hasPlayerUpdates) {
+        setPlayerState(prev => {
+          const next = { ...prev };
+          if (scoreDelta !== 0) next.score = prev.score + scoreDelta;
+          if (comboUpdate !== undefined) next.combo = comboUpdate;
+          if (maxComboUpdate !== undefined) next.maxCombo = Math.max(prev.maxCombo, maxComboUpdate);
+          if (notesHitDelta > 0) next.notesHit = prev.notesHit + notesHitDelta;
+          if (notesMissedDelta > 0) next.notesMissed = prev.notesMissed + notesMissedDelta;
+          if (perfectNotesDelta > 0) next.perfectNotesCount = prev.perfectNotesCount + perfectNotesDelta;
+          return next;
+        });
+
+        // Flush score events in a single batch
+        if (pendingEvents.length > 0) {
+          setScoreEventsState(prev => [
+            ...prev.slice(-10),
+            ...pendingEvents.slice(-10),
+          ]);
         }
       }
     },
