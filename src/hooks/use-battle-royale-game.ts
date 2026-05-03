@@ -279,6 +279,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         // Accumulate all score updates into a single batch to avoid losing
         // intermediate results when multiple players score in the same tick.
         let batchedGame = gameRef.current;
+        let scoreChanged = false;
 
         const activeNotes = getActiveNotesAtTime(td.allNotes, currentAudioTime);
 
@@ -302,6 +303,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
                 tick.accuracy,
                 1, 0, 1
               );
+              scoreChanged = true;
             } else {
               // Miss: reset combo (but don't inflate notesMissed per tick)
               const p = batchedGame.players.find(pl => pl.id === player.id);
@@ -312,6 +314,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
                   0, 0, 0, 0,
                   -(p.currentCombo) // Reset combo to 0
                 );
+                scoreChanged = true;
               }
             }
           }
@@ -352,8 +355,8 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
           }
         }
 
-        // Single state update per tick — avoids lost intermediate scores
-        if (batchedGame !== gameRef.current) {
+        // Single state update per tick — only when scores actually changed
+        if (scoreChanged) {
           onUpdateGame(batchedGame);
         }
       }

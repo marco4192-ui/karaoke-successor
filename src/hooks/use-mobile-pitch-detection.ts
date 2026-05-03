@@ -53,7 +53,7 @@ function yinPitchDetection(buffer: Float32Array, sampleRate: number): number | n
     betterTau = tauEstimate + (s2 - s0) / (2 * (2 * s1 - s2 - s0));
   }
 
-  return sampleRate / betterTau;
+  return betterTau > 0 ? sampleRate / betterTau : 0;
 }
 
 interface UseMobilePitchDetectionOptions {
