@@ -15,10 +15,32 @@ import { createCompetitiveGame, type CompetitiveModeType, type CompetitiveSettin
 import { generateMedleySnippets } from '@/components/game/medley/medley-snippet-generator';
 import { storeSongFilters } from '@/lib/game/ptm-next-song';
 import { toast } from '@/hooks/use-toast';
+import type { PassTheMicSettings } from '@/components/game/ptm-types';
+import type { CompanionSingAlongSettings } from '@/components/game/companion-singalong-screen';
 
 interface PartySetupSectionProps {
   screen: Screen;
   setScreen: (s: Screen) => void;
+}
+
+// ===================== HELPER: Convert unified setup settings to typed settings =====================
+function toPassTheMicSettings(s: Record<string, any>, overrides?: Partial<PassTheMicSettings>): PassTheMicSettings {
+  return {
+    segmentDuration: s.segmentDuration ?? 30,
+    difficulty: s.difficulty ?? 'medium',
+    micId: s.micId ?? 'default',
+    micName: s.micName ?? 'Standard',
+    randomSwitches: s.randomSwitches,
+    sharedMicId: s.sharedMicId ?? null,
+    sharedMicName: s.sharedMicName ?? null,
+    ...overrides,
+  };
+}
+
+function toCompanionSettings(s: Record<string, any>): CompanionSingAlongSettings {
+  return {
+    difficulty: s.difficulty ?? 'medium',
+  };
 }
 
 // ===================== HELPER: Pick a random song =====================
@@ -73,7 +95,7 @@ function toPassTheMicPlayers(players: { id: string; name: string; avatar?: strin
 }
 
 function toCompanionPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]) {
-  return players.map(p => ({ ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, isActive: false, turnsSung: 0 }));
+  return players.map(p => ({ ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, isActive: false, turnCount: 0 }));
 }
 
 // ===================== PARTY SETUP + SONG VOTING SECTION =====================
@@ -330,12 +352,11 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   party.setPassTheMicPlayers(ptmPlayers);
                   party.setPassTheMicSegments(segments);
                   party.setPassTheMicSong(firstSong);
-                  party.setPassTheMicSettings({
-                    ...result.settings,
+                  party.setPassTheMicSettings(toPassTheMicSettings(result.settings, {
                     segmentDuration: snippetDuration,
                     sharedMicId: result.settings.sharedMicId || null,
                     sharedMicName: result.settings.sharedMicName || null,
-                  } as any);
+                  }));
                   // Prevent React #185
                   party.setIsSongPlaying(false);
                   setScreen('pass-the-mic-game');
@@ -368,7 +389,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   party.setPassTheMicPlayers(ptmPlayers);
                   party.setPassTheMicSegments(segments);
                   party.setPassTheMicSong(songWithUrls);
-                  party.setPassTheMicSettings(settingsWithMic as any);
+                  party.setPassTheMicSettings(toPassTheMicSettings(settingsWithMic));
                   party.setIsSongPlaying(false);
                   // Use dedicated PTM game screen (not main game screen)
                   setScreen('pass-the-mic-game');
@@ -381,9 +402,9 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 const randomSong = pickRandomSong(filteredSongs);
                 if (randomSong) {
                   const compPlayers = toCompanionPlayers(result.players);
-                  party.setCompanionPlayers(compPlayers as any);
+                  party.setCompanionPlayers(compPlayers);
                   party.setCompanionSong(randomSong);
-                  party.setCompanionSettings(result.settings as any);
+                  party.setCompanionSettings(toCompanionSettings(result.settings));
                   // Reset game and add first player as the active singer
                   resetGame();
                   setPlayers([]);
@@ -469,14 +490,13 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
             if (party.selectedGameMode === 'pass-the-mic') {
               party.setPtmSongSelection('library');
               party.setPassTheMicPlayers(toPassTheMicPlayers(result.players));
-              party.setPassTheMicSettings({
-                ...result.settings,
+              party.setPassTheMicSettings(toPassTheMicSettings(result.settings, {
                 sharedMicId: result.settings.sharedMicId || null,
                 sharedMicName: result.settings.sharedMicName || null,
-              } as any);
+              }));
             } else if (party.selectedGameMode === 'companion-singalong') {
-              party.setCompanionPlayers(toCompanionPlayers(result.players) as any);
-              party.setCompanionSettings(result.settings as any);
+              party.setCompanionPlayers(toCompanionPlayers(result.players));
+              party.setCompanionSettings(toCompanionSettings(result.settings));
             } else if (party.selectedGameMode === 'rate-my-song') {
               // Pre-store player IDs and settings; songId will be set when user picks from library
               const duration = result.settings.duration || 'normal';
@@ -544,18 +564,17 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               party.setPassTheMicPlayers(ptmPlayers);
               party.setPassTheMicSegments(segments);
               party.setPassTheMicSong(songWithUrls);
-              party.setPassTheMicSettings({
-                ...party.unifiedSetupResult?.settings,
+              party.setPassTheMicSettings(toPassTheMicSettings(party.unifiedSetupResult?.settings ?? {}, {
                 segmentDuration: Math.round(segDur / 1000),
                 sharedMicId: party.unifiedSetupResult?.settings?.sharedMicId || null,
                 sharedMicName: party.unifiedSetupResult?.settings?.sharedMicName || null,
-              } as any);
+              }));
               party.setIsSongPlaying(false);
               // Use dedicated PTM game screen
               setScreen('pass-the-mic-game');
             } else if (party.selectedGameMode === 'companion-singalong') {
               const compPlayers = toCompanionPlayers(party.unifiedSetupResult?.players || []);
-              party.setCompanionPlayers(compPlayers as any);
+              party.setCompanionPlayers(compPlayers);
               party.setCompanionSong(songWithUrls);
               if (compPlayers.length > 0) {
                 addPlayer({ id: compPlayers[0].id, name: compPlayers[0].name, color: compPlayers[0].color, avatar: compPlayers[0].avatar });
