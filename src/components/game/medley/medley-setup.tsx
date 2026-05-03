@@ -86,23 +86,28 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
 
   const toggleProfile = (id: string) => {
     setSelectedProfileIds(prev => {
-      if (prev.includes(id)) return prev.filter(x => x !== id);
+      if (prev.includes(id)) {
+        // Also remove from teams
+        setTeamAIds(ta => ta.filter(x => x !== id));
+        setTeamBIds(tb => tb.filter(x => x !== id));
+        return prev.filter(x => x !== id);
+      }
       if (prev.length >= maxPlayers) {
         setError(`Maximal ${maxPlayers} Spieler erlaubt`);
         return prev;
       }
       setError(null);
-      // Auto-assign to teams in team mode
-      if (playMode === 'team') {
-        const teamANeeded = teamSize;
-        if (teamAIds.length < teamANeeded) {
-          setTeamAIds([...teamAIds, id]);
-        } else {
-          setTeamBIds([...teamBIds, id]);
-        }
-      }
       return [...prev, id];
     });
+    // Auto-assign to teams in team mode (outside updater to avoid nested setState)
+    if (playMode === 'team') {
+      setTeamAIds(ta => {
+        if (ta.length < teamSize) return [...ta, id];
+        // Team A full — assign to B
+        setTeamBIds(tb => [...tb, id]);
+        return ta;
+      });
+    }
   };
 
   const removeProfile = (id: string) => {
