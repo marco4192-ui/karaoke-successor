@@ -178,7 +178,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
         
         // Initialize pitch state for all players
         const initialPitches = new Map<string, PitchDetectionResult | null>();
-        players.forEach(p => initialPitches.set(p.playerId, null));
+        playersRef.current.forEach(p => initialPitches.set(p.playerId, null));
         setPlayerPitches(initialPitches);
 
         // Auto-start if requested

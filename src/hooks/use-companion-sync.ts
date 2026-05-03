@@ -72,12 +72,13 @@ export function useCompanionSync(): {
   const fetchCompanionQueue = useCallback(async () => {
     try {
       const response = await fetch('/api/mobile?action=getqueue');
+      if (!response.ok) return;
       const data = await response.json();
       if (data.success && data.queue) {
         setCompanionQueue(data.queue);
       }
     } catch {
-      // Ignore errors
+      // Ignore network errors
     }
   }, []);
 
