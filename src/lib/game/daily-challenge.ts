@@ -227,11 +227,29 @@ export function submitChallengeResult(
   let xpEarned = XP_REWARDS.CHALLENGE_COMPLETE;
   const newBadges: DailyBadge[] = [];
 
+  // Determine the metric for comparison based on challenge type
+  const sortMetric = (entry: DailyChallengeEntry): number => {
+    switch (challenge.type) {
+      case 'accuracy': return entry.accuracy;
+      case 'combo': return entry.combo;
+      case 'perfect_notes': return entry.perfectNotesCount;
+      default: return entry.score;
+    }
+  };
+  const resultMetric = (): number => {
+    switch (challenge.type) {
+      case 'accuracy': return result.accuracy;
+      case 'combo': return result.combo;
+      case 'perfect_notes': return result.perfectNotesCount ?? 0;
+      default: return result.score;
+    }
+  };
+
   // Check if already completed today
   const existingEntry = challenge.entries.find(e => e.playerId === player.id);
   if (existingEntry) {
-    // Update if better score
-    if (result.score > existingEntry.score) {
+    // Update if the challenge-type-specific metric improved
+    if (resultMetric() > sortMetric(existingEntry)) {
       existingEntry.score = result.score;
       existingEntry.accuracy = result.accuracy;
       existingEntry.combo = result.combo;
@@ -256,14 +274,6 @@ export function submitChallengeResult(
   }
 
   // Sort by the challenge type's metric descending, then by playerId for deterministic tiebreaker
-  const sortMetric = (entry: DailyChallengeEntry): number => {
-    switch (challenge.type) {
-      case 'accuracy': return entry.accuracy;
-      case 'combo': return entry.combo;
-      case 'perfect_notes': return entry.perfectNotesCount;
-      default: return entry.score;
-    }
-  };
   challenge.entries.sort((a, b) => {
     const diff = sortMetric(b) - sortMetric(a);
     if (diff !== 0) return diff;
