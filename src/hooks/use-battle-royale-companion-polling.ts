@@ -7,6 +7,8 @@ interface CompanionPitchEntry {
   note: number;
   accuracy: number;
   isSinging?: boolean;
+  /** Timestamp when this pitch was last updated from the companion API */
+  lastUpdated: number;
 }
 
 interface UseBattleRoyaleCompanionPollingParams {
@@ -18,6 +20,9 @@ interface UseBattleRoyaleCompanionPollingReturn {
   companionPitchCacheRef: React.RefObject<Map<string, CompanionPitchEntry>>;
 }
 
+/** Maximum age (ms) before a cached pitch is considered stale and evicted. */
+const STALE_PITCH_MS = 1000; // 5 poll cycles at 200ms interval
+
 /**
  * Polls companion app pitch data during gameplay.
  * Companion apps detect pitch on-device and submit via /api/mobile?action=pitch.
@@ -26,6 +31,9 @@ interface UseBattleRoyaleCompanionPollingReturn {
  * Polls at 200ms interval (5 polls/sec) — sufficient since scoring only
  * evaluates every 100ms (TICK_INTERVAL). Uses AbortController to cancel
  * in-flight requests on cleanup.
+ *
+ * Cached pitches have a 1-second grace period before eviction to tolerate
+ * occasional missed poll cycles from companions with slower connections.
  */
 export function useBattleRoyaleCompanionPolling({
   gameStatus,
@@ -65,6 +73,8 @@ export function useBattleRoyaleCompanionPolling({
         // data is expected to be an array of { clientId, note, accuracy } objects
         const pitchEntries = Array.isArray(data) ? data : [];
 
+        const now = Date.now();
+
         // Build the set of active companion client IDs from the response
         const activeClientIds = new Set<string>();
         for (const entry of pitchEntries) {
@@ -74,15 +84,16 @@ export function useBattleRoyaleCompanionPolling({
               note: entry.note,
               accuracy: entry.accuracy || 0,
               isSinging: entry.isSinging,
+              lastUpdated: now,
             });
           }
         }
 
-        // Only evict cached pitches for companions that are no longer active,
-        // instead of clearing the entire cache (which would lose data for
-        // companions that simply missed one poll cycle).
-        for (const cachedId of companionPitchCacheRef.current.keys()) {
-          if (!activeClientIds.has(cachedId)) {
+        // Only evict cached pitches that are stale (not updated within
+        // the grace period). Companions that simply missed one poll cycle
+        // retain their cached pitch data for up to STALE_PITCH_MS.
+        for (const [cachedId, cachedEntry] of companionPitchCacheRef.current.entries()) {
+          if (!activeClientIds.has(cachedId) && (now - cachedEntry.lastUpdated) > STALE_PITCH_MS) {
             companionPitchCacheRef.current.delete(cachedId);
           }
         }

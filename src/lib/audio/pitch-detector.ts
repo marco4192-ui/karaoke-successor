@@ -608,7 +608,7 @@ export class PitchDetectorManager {
     return Array.from(this.players.keys());
   }
 
-  private startMobilePolling(playerId: string, _mobileClientId: string): void {
+  private startMobilePolling(playerId: string, mobileClientId: string): void {
     const player = this.players.get(playerId);
     if (!player) return;
 
@@ -621,17 +621,24 @@ export class PitchDetectorManager {
       try {
         const response = await fetch('/api/mobile?action=getpitch');
         const data = await response.json();
-        // Server returns "pitches" array, not "pitch" object
+        // Server returns "pitches" array — find the pitch for THIS specific
+        // mobile client instead of blindly using pitches[0] (which could be
+        // another player's data when multiple companions are connected).
         if (data.success && Array.isArray(data.pitches) && data.pitches.length > 0) {
-          const pitchData = data.pitches[0].data;
-          this.callbacks?.onPitchDetected(playerId, {
-            frequency: pitchData.frequency,
-            note: pitchData.note,
-            clarity: pitchData.clarity || 0,
-            volume: pitchData.volume || 0,
-            isSinging: pitchData.isSinging,
-            singingConfidence: pitchData.singingConfidence,
-          });
+          const matchingEntry = data.pitches.find(
+            (p: { clientId?: string }) => p.clientId === mobileClientId
+          );
+          if (matchingEntry?.data) {
+            const pitchData = matchingEntry.data;
+            this.callbacks?.onPitchDetected(playerId, {
+              frequency: pitchData.frequency,
+              note: pitchData.note,
+              clarity: pitchData.clarity || 0,
+              volume: pitchData.volume || 0,
+              isSinging: pitchData.isSinging,
+              singingConfidence: pitchData.singingConfidence,
+            });
+          }
         }
       } catch {
         // Ignore polling errors
