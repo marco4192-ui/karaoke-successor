@@ -156,25 +156,45 @@ export function useNativeAudio(): UseNativeAudioResult {
   }, [deviceId]);
 
   const pause = useCallback(async () => {
-    await pauseAudio();
-    setIsPlaying(false);
+    try {
+      await pauseAudio();
+      setIsPlaying(false);
+    } catch (err) {
+      console.error('[NativeAudio] Pause failed:', err);
+    }
   }, []);
 
   const resume = useCallback(async () => {
-    await resumeAudio();
-    setIsPlaying(true);
+    try {
+      await resumeAudio();
+      setIsPlaying(true);
+    } catch (err) {
+      console.error('[NativeAudio] Resume failed:', err);
+    }
   }, []);
 
   const seek = useCallback(async (positionMs: number) => {
-    await seekAudio(positionMs);
+    try {
+      await seekAudio(positionMs);
+    } catch (err) {
+      console.error('[NativeAudio] Seek failed:', err);
+    }
   }, []);
 
   const setVolume = useCallback(async (volume: number) => {
-    await setAudioVolume(volume);
+    try {
+      await setAudioVolume(volume);
+    } catch (err) {
+      console.error('[NativeAudio] Set volume failed:', err);
+    }
   }, []);
 
   const stop = useCallback(async () => {
-    await stopAudio();
+    try {
+      await stopAudio();
+    } catch (err) {
+      console.error('[NativeAudio] Stop failed:', err);
+    }
     setIsPlaying(false);
     setCurrentPosition(0);
     setPlaybackState(null);
