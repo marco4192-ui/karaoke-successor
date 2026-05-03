@@ -6,20 +6,22 @@ import { NextRequest } from 'next/server';
  * or handle sensitive operations.
  *
  * Allowed origins:
- * - tauri://, https://tauri.*, http://tauri.* (Tauri v1/v2 webview)
+ * - tauri://localhost (Tauri v1 webview)
+ * - https://tauri.localhost, http://tauri.localhost (Tauri v2 webview)
  * - http://localhost, http://127.0.0.1 (dev server)
  *
- * SECURITY: Uses strict equality / regex instead of startsWith to prevent
- * subdomain spoofing (e.g., http://localhost.evil.com bypassing startsWith).
+ * SECURITY: Uses strict regex matching instead of startsWith to prevent
+ * subdomain spoofing (e.g., https://tauri.evil.com would bypass startsWith).
  */
 const LOCALHOST_PATTERN = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+const TAURI_V1_PATTERN = /^tauri:\/\/localhost$/;
+const TAURI_V2_PATTERN = /^https?:\/\/tauri\.localhost(:\d+)?$/;
 
 function isAllowed(value: string): boolean {
   if (!value) return false;
   return (
-    value.startsWith('tauri://') ||
-    value.startsWith('https://tauri.') ||
-    value.startsWith('http://tauri.') ||
+    TAURI_V1_PATTERN.test(value) ||
+    TAURI_V2_PATTERN.test(value) ||
     LOCALHOST_PATTERN.test(value)
   );
 }
