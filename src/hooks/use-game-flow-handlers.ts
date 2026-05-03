@@ -30,10 +30,20 @@ function buildGameResultFromState(
       else if (accuracy >= 70) rating = 'good';
       else if (accuracy >= 50) rating = 'okay';
       else rating = 'poor';
+      // Estimate perfect notes from accuracy-based rating — the Player interface
+      // does not carry per-note quality, so we apply the same ratio used by
+      // results-screen.tsx to stay consistent.
+      const perfectNotes = totalNotes > 0 ? Math.floor(p.notesHit * (
+        rating === 'perfect' ? 0.85
+        : rating === 'excellent' ? 0.55
+        : rating === 'good' ? 0.25
+        : rating === 'okay' ? 0.08
+        : 0.02
+      )) : 0;
       return {
         playerId: p.id, score: p.score, accuracy: Math.round(accuracy * 10) / 10,
         notesHit: p.notesHit, notesMissed: p.notesMissed, maxCombo: p.maxCombo,
-        perfectNotesCount: 0, rating,
+        perfectNotesCount: perfectNotes, rating,
       };
     }),
     songId: currentSong?.id || '',
