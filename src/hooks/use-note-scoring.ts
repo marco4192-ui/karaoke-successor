@@ -152,8 +152,11 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   // Without this, two ticks firing before a re-render both read the same old combo value.
   const p1ComboRef = useRef(0);
   const p1MaxComboRef = useRef(0);
-  // Ref for P1 perfect notes count — incremented when all ticks of a note are hit
+  // P1 perfect notes count — incremented when all ticks of a note are hit.
+  // Ref for 60fps reads in checkNoteHits; synced to state on note-complete flush so
+  // useGameLoop's generateResults() reads the correct value at song end.
   const p1PerfectNotesCountRef = useRef(0);
+  const [p1PerfectNotesCount, setP1PerfectNotesCount] = useState(0);
 
   // Ref for P2 combo — same pattern as P1, prevents stale closure in batched updates
   const p2ComboRef = useRef(0);
@@ -190,6 +193,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     p1ComboRef.current = 0;
     p1MaxComboRef.current = 0;
     p1PerfectNotesCountRef.current = 0;
+    setP1PerfectNotesCount(0);
     setP2DetectedPitch(null);
     noteProgressRef.current.clear();
     p2NoteProgressRef.current.clear();
@@ -395,6 +399,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       let maxComboUpdate: number | undefined;
       let notesHitDelta = 0;
       let notesMissedDelta = 0;
+      let perfectNotesInc = 0;
       let hasPlayerUpdates = false;
 
       // Start from last processed index for O(1) forward progression
@@ -549,6 +554,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
             if (noteProgress.ticksHit >= noteProgress.totalTicks) {
               noteProgress.wasPerfect = true;
               p1PerfectNotesCountRef.current++;
+              perfectNotesInc++;
             }
           }
         }
@@ -570,6 +576,12 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
             : 0;
         }
         updatePlayer(activePlayer.id, updates);
+
+        // Sync perfectNotesCount to state so useGameLoop's ref picks it up at next render.
+        // This only fires on note-complete (rare), not every tick, so it's cheap.
+        if (perfectNotesInc > 0) {
+          setP1PerfectNotesCount(p1PerfectNotesCountRef.current);
+        }
       }
     },
     [song, difficulty, updatePlayer, timingData, isDuetMode, beatDuration, onPerfectHit, onGoldenNote, onComboMilestone]
@@ -604,7 +616,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     notePerformance,
     p2State,
     p2DetectedPitch,
-    p1PerfectNotesCount: p1PerfectNotesCountRef.current,
+    p1PerfectNotesCount,
     setP2DetectedPitch,
     checkNoteHits,
     checkP2NoteHits,

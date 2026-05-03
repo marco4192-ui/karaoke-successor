@@ -17,7 +17,8 @@ export interface IdentifyResult {
   error?: string;
 }
 
-// Cache for repeated requests
+// Cache for repeated requests — bounded at 500 entries with LRU-style eviction
+const MAX_CACHE_SIZE = 500;
 const cache = new Map<string, { data: SongMetadata; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -49,8 +50,12 @@ export async function identifySong(
 
     const result = await response.json();
     
-    // Cache the result
+    // Cache the result — evict oldest if at capacity
     if (result.metadata) {
+      if (cache.size >= MAX_CACHE_SIZE) {
+        const oldestKey = cache.keys().next().value;
+        if (oldestKey) cache.delete(oldestKey);
+      }
       cache.set(cacheKey, { data: result.metadata, timestamp: Date.now() });
     }
 

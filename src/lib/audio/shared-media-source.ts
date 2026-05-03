@@ -18,7 +18,7 @@
 
 const cache = new WeakMap<
   HTMLAudioElement,
-  { context: AudioContext; source: MediaElementAudioSourceNode; connected: boolean }
+  { context: AudioContext; source: MediaElementAudioSourceNode }
 >();
 
 /**
@@ -56,6 +56,6 @@ export async function getSharedMediaSource(element: HTMLAudioElement): Promise<{
   // (which would duplicate/amplify the audio).
   source.connect(context.destination);
 
-  cache.set(element, { context, source, connected: true });
+  cache.set(element, { context, source });
   return { context, source };
 }
