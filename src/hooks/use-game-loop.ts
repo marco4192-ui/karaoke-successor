@@ -594,12 +594,16 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   }, [effectiveSong, mediaLoaded, initialize, start, stop, setPitchDifficulty, difficulty, resetScoring, audioRef, videoRef, isYouTube, youtubeVideoId, setIsPlaying, gameMode, nativeAudioPlay, nativeAudioSeek]);
 
   // ── CRITICAL: Cleanup on unmount ──
+  const audioEffectsRef = useRef(audioEffects);
+  audioEffectsRef.current = audioEffects;
+
   useEffect(() => {
     return () => {
       stop();
 
-      if (audioEffects) {
-        audioEffects.disconnect();
+      const effects = audioEffectsRef.current;
+      if (effects) {
+        effects.disconnect();
       }
 
       if (audioRef.current) {
@@ -616,7 +620,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [stop, audioEffects, setAudioEffects, audioRef, videoRef]);
+  }, [stop, audioRef, videoRef]);
 
   // ── Sync media playback to store's pause status ──
   // When the Escape key sets gameState.status = 'paused' we must actually
