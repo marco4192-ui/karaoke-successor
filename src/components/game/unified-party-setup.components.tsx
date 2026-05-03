@@ -841,8 +841,6 @@ export function SongVotingModal({ songs, players, onVote, onClose, gameColor }: 
     };
   }, [songs]);
 
-  const handleVote = (songId: string) => onVote(songId);
-
   const getVoteCount = (songId: string) =>
     Object.values(votes).filter(v => v === songId).length;
 
@@ -859,7 +857,7 @@ export function SongVotingModal({ songs, players, onVote, onClose, gameColor }: 
             {enrichedSongs.map((song, index) => (
               <div
                 key={song.id}
-                onClick={() => handleVote(song.id)}
+                onClick={() => onVote(song.id)}
                 className={`relative p-4 rounded-xl cursor-pointer transition-all hover:scale-105 bg-gradient-to-br ${gameColor} border-2 border-transparent hover:border-white/50`}
               >
                 <div className="absolute top-2 left-2 w-8 h-8 rounded-full bg-black/30 flex items-center justify-center font-bold">

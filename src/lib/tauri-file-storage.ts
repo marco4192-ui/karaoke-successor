@@ -621,7 +621,7 @@ async function processFolder(
     coverFile: txtCoverFile,
     backgroundFile: txtBackgroundFile,
     // videoFile: store all values including URLs (needed for videoBackground in import)
-    videoFile: txtVideoFile ? txtVideoFile : undefined,
+    videoFile: txtVideoFile || undefined,
     // Duet
     isDuet,
     duetPlayerNames,

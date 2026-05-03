@@ -165,7 +165,7 @@ export function MicIndicator({
             {micPlayers.slice(0, 2).map((player, i) => (
               <div key={player.id} className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-xs">
-                  {i === 0 ? '🎤' : '🎤'}
+                  {'🎤'}
                 </div>
                 <span className="text-white/80 text-xs font-medium">
                   P{i + 1}: {player.micName || player.name}
