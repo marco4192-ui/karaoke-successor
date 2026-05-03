@@ -254,8 +254,13 @@ export function recordMatchResult(
   }
   
   // Determine winner (Sudden Death - higher score wins)
-  const winner = score1 >= score2 ? match.player1 : match.player2;
-  const loser = score1 >= score2 ? match.player2 : match.player1;
+  // Tie: random coin flip to avoid systematic advantage for player1's bracket position
+  const winner = score1 > score2
+    ? match.player1
+    : score2 > score1
+      ? match.player2
+      : Math.random() < 0.5 ? match.player1 : match.player2;
+  const loser = winner.id === match.player1.id ? match.player2 : match.player1;
   
   match.score1 = score1;
   match.score2 = score2;

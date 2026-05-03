@@ -119,7 +119,10 @@ const PLAYER_DAILY_STATS_KEY = 'playerDailyStats';
 
 // Generate daily challenge based on date seed
 export function getDailyChallenge(): DailyChallengeData {
-  const today = new Date().toDateString();
+  // Use locale-independent ISO date string (YYYY-MM-DD) so all users
+  // get the same challenge regardless of browser locale
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const seed = today.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
   const types: Array<'score' | 'accuracy' | 'combo' | 'songs' | 'perfect_notes'> = 
     ['score', 'accuracy', 'combo', 'songs', 'perfect_notes'];

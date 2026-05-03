@@ -10,7 +10,8 @@ export type PlayerType = 'microphone' | 'companion';
 
 export interface BattleRoyalePlayer extends TournamentPlayer {
   score: number;
-  accuracy: number;
+  accuracy: number; // Running average accuracy (0.0 to 1.0)
+  totalEvaluatedTicks: number; // Total ticks evaluated this round (for accuracy calc)
   notesHit: number;
   notesMissed: number;
   currentCombo: number;
@@ -127,6 +128,7 @@ export function createBattleRoyale(
     eliminated: false,
     score: 0,
     accuracy: 0,
+    totalEvaluatedTicks: 0,
     notesHit: 0,
     notesMissed: 0,
     currentCombo: 0,
@@ -201,7 +203,8 @@ export function startRound(
       return {
         ...p,
         currentCombo: 0,
-        accuracy: 0, // Reset per-round accuracy to avoid meaningless accumulation
+        accuracy: 0,
+        totalEvaluatedTicks: 0,
       };
     }
     return p;
@@ -232,10 +235,17 @@ export function updatePlayerScore(
   }
 
   const player = game.players[playerIndex];
+  // Calculate accuracy as running average: newAvg = oldAvg + (newValue - oldAvg) / newCount
+  const newTickCount = player.totalEvaluatedTicks + 1;
+  const newAccuracy = player.totalEvaluatedTicks === 0
+    ? accuracyDelta
+    : player.accuracy + (accuracyDelta - player.accuracy) / newTickCount;
+
   const updatedPlayer = {
     ...player,
     score: player.score + scoreDelta,
-    accuracy: player.accuracy + accuracyDelta,
+    accuracy: newAccuracy,
+    totalEvaluatedTicks: newTickCount,
     notesHit: player.notesHit + notesHitDelta,
     notesMissed: player.notesMissed + notesMissedDelta,
     currentCombo: player.currentCombo + comboDelta,

@@ -194,10 +194,10 @@ export class PitchDetector {
       return;
     }
 
-    // M5: Guard against destroyed AudioContext — destroy() may set audioContext
+    // Guard against destroyed AudioContext — destroy() may set audioContext
     // to null while a currently executing rAF callback is still running detect().
-    if (!this.audioContext || !this.isListening) {
-      this.animationFrame = requestAnimationFrame(() => this.detect());
+    // Just return without scheduling — stop() has already set isListening=false.
+    if (!this.audioContext) {
       return;
     }
 
@@ -312,7 +312,11 @@ export class PitchDetector {
       this.recentPitches = [];
     }
 
-    this.animationFrame = requestAnimationFrame(() => this.detect());
+    // Only schedule next frame if still listening — prevents infinite rAF chains
+    // after stop()/destroy() is called during an active detect() cycle.
+    if (this.isListening) {
+      this.animationFrame = requestAnimationFrame(() => this.detect());
+    }
   }
 
   // Check if pitch has been stable for required frames
