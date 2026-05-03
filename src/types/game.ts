@@ -292,7 +292,7 @@ export const DIFFICULTY_SETTINGS = {
 } as const;
 
 // Musical constants
-export const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
+const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
 
 export function midiToFrequency(midi: number): number {
   return 440 * Math.pow(2, (midi - 69) / 12);
