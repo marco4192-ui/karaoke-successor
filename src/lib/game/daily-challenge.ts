@@ -117,12 +117,15 @@ const DAILY_CHALLENGE_KEY = 'dailyChallenge';
 const DAILY_LEADERBOARD_KEY = 'dailyChallengeLeaderboard';
 const PLAYER_DAILY_STATS_KEY = 'playerDailyStats';
 
+/** Returns today's date as a locale-independent ISO string (YYYY-MM-DD). */
+function todayISO(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
 // Generate daily challenge based on date seed
 export function getDailyChallenge(): DailyChallengeData {
-  // Use locale-independent ISO date string (YYYY-MM-DD) so all users
-  // get the same challenge regardless of browser locale
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const today = todayISO();
   const seed = today.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
   const types: Array<'score' | 'accuracy' | 'combo' | 'songs' | 'perfect_notes'> = 
     ['score', 'accuracy', 'combo', 'songs', 'perfect_notes'];
@@ -220,7 +223,7 @@ export function submitChallengeResult(
 } {
   const challenge = getDailyChallenge();
   let stats = getPlayerDailyStats();
-  const today = new Date().toDateString();
+  const today = todayISO();
   let xpEarned = XP_REWARDS.CHALLENGE_COMPLETE;
   const newBadges: DailyBadge[] = [];
 
@@ -280,8 +283,9 @@ export function submitChallengeResult(
     // Streak calculation
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayISO = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
     
-    if (stats.lastCompletedDate === yesterday.toDateString()) {
+    if (stats.lastCompletedDate === yesterdayISO) {
       stats.currentStreak++;
     } else {
       stats.currentStreak = 1;
@@ -407,7 +411,7 @@ export function isChallengeCompletedToday(): boolean {
   if (stored) {
     try {
       const data = JSON.parse(stored);
-      return data.date === new Date().toDateString() && data.completed;
+      return data.date === todayISO() && data.completed;
     } catch {
       return false;
     }
