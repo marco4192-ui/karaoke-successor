@@ -414,7 +414,7 @@ export default function KaraokeSuccessor() {
           // Look up the stored challenge mode ID and map it to a built-in game mode
           const challengeId = typeof window !== 'undefined' ? localStorage.getItem('karaoke-challenge-mode') : null;
           const mappedMode = challengeId ? CHALLENGE_GAME_MODE_MAP[challengeId] : undefined;
-          setGameMode((mappedMode as any) || 'standard');
+          setGameMode(mappedMode || 'standard');
           setSong(song);
           setScreen('game');
         }} />}

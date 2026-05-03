@@ -15,3 +15,9 @@ interface DataTransferItem {
 interface FileSystemDirectoryHandle {
   values(): AsyncIterableIterator<FileSystemHandle>;
 }
+
+/** Tauri v1 global — injected by Tauri runtime */
+interface Window {
+  __TAURI__?: Record<string, unknown>;
+  __TAURI_INTERNALS__?: Record<string, unknown>;
+}

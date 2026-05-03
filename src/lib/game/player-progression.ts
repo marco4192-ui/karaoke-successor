@@ -1,6 +1,8 @@
 // Player Progression System
 // XP, Levels, Ranks, Titles, and Extended Statistics
 
+import type { GameMode } from '@/types/game';
+
 // ===================== NAMED CONSTANTS =====================
 
 // --- Accuracy thresholds ---
@@ -255,7 +257,7 @@ export const CHALLENGE_MODES: ChallengeMode[] = [
  *   - golden_only: only golden notes count for scoring
  *   - perfect_only: only "perfect" rated hits count for scoring
  */
-export const CHALLENGE_GAME_MODE_MAP: Record<string, string> = {
+export const CHALLENGE_GAME_MODE_MAP: Record<string, GameMode> = {
   'blind-audition': 'blind',
   'memory-lane': 'missing-words',
 };
