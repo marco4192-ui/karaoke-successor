@@ -79,8 +79,10 @@ export function PlayingView({
     isDangerZone && !player.eliminated && dangerZone.some(d => d.id === player.id);
 
   // Check if a player is the lowest scorer (about to be eliminated)
+  // sortedPlayers is sorted descending (highest first) by getPlayersByScore,
+  // so the lowest active player is the last element of activeSorted.
   const isLowest = (player: BattleRoyalePlayer) =>
-    !player.eliminated && activeSorted.length > 0 && activeSorted[0].id === player.id;
+    !player.eliminated && activeSorted.length > 0 && activeSorted[activeSorted.length - 1].id === player.id;
 
   return (
     <div className="h-screen flex flex-col relative overflow-hidden">
