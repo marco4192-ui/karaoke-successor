@@ -179,7 +179,6 @@ mod crepe_impl {
             } else {
                 // Pad: center the signal, surround with silence
                 let pad_left = (1024 - resampled.len()) / 2;
-                let _pad_right = 1024 - resampled.len() - pad_left;
                 let mut padded = vec![0.0; pad_left];
                 padded.extend_from_slice(&resampled);
                 padded.resize(1024, 0.0);

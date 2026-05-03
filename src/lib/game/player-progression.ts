@@ -347,8 +347,6 @@ interface ExtendedPlayerStats {
     hard: { played: number; bestScore: number; avgAccuracy: number };
   };
   
-  // Genre mastery
-
   // Milestones
   milestones: {
     firstSong: number | null;
