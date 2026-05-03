@@ -33,6 +33,7 @@ interface PlayerDailyStats {
   lastCompletedDate: string | null;
   badges: DailyBadge[];
   weeklyProgress: number[]; // 7 days of completion
+  lastWeekStart: string | null; // ISO date of Monday of current week, for weekly reset
 }
 
 export interface DailyBadge {
@@ -171,6 +172,7 @@ export function getPlayerDailyStats(): PlayerDailyStats {
       lastCompletedDate: null,
       badges: [],
       weeklyProgress: [0, 0, 0, 0, 0, 0, 0],
+      lastWeekStart: null,
     };
   }
 
@@ -191,6 +193,7 @@ export function getPlayerDailyStats(): PlayerDailyStats {
     lastCompletedDate: null,
     badges: [],
     weeklyProgress: [0, 0, 0, 0, 0, 0, 0],
+    lastWeekStart: null,
   };
 }
 
@@ -389,8 +392,18 @@ export function submitChallengeResult(
       xpEarned += XP_REWARDS.PERFECT_CHALLENGE;
     }
 
-    // Update weekly progress
-    const dayOfWeek = new Date().getDay();
+    // Update weekly progress — reset at week boundary
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + mondayOffset);
+    const weekStartISO = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+
+    if (stats.lastWeekStart !== weekStartISO) {
+      stats.weeklyProgress = [0, 0, 0, 0, 0, 0, 0];
+      stats.lastWeekStart = weekStartISO;
+    }
     stats.weeklyProgress[dayOfWeek] = 1;
 
     stats.totalXP += xpEarned;
