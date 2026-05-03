@@ -15,6 +15,9 @@ mod audio;
 mod db;
 mod charts;
 
+/// Maximum allowed size for file read/write operations (200 MB).
+const MAX_FILE_SIZE: usize = 200 * 1024 * 1024;
+
 // ============================================================
 // Custom Tauri Commands — bypass plugin ACL restrictions
 // In Tauri v2, custom #[tauri::command] functions are allowed
@@ -103,10 +106,11 @@ fn native_read_file_bytes(file_path: String) -> Result<String, String> {
     // Helper: enforce 200 MB size limit before base64-encoding.
     // Checked after every successful read so no path attempt bypasses the limit.
     let encode_bytes = |bytes: Vec<u8>| -> Result<String, String> {
-        if bytes.len() > 200 * 1024 * 1024 {
+        if bytes.len() > MAX_FILE_SIZE {
             return Err(format!(
-                "File too large for in-memory reading ({} MB, max 200 MB)",
-                bytes.len() / (1024 * 1024)
+                "File too large for in-memory reading ({} MB, max {} MB)",
+                bytes.len() / (1024 * 1024),
+                MAX_FILE_SIZE / (1024 * 1024)
             ));
         }
         Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes))
@@ -364,6 +368,14 @@ fn native_write_file_bytes(file_path: String, data_base64: String) -> Result<(),
     let bytes = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &data_base64)
         .map_err(|e| format!("Failed to decode base64: {}", e))?;
 
+    if bytes.len() > MAX_FILE_SIZE {
+        return Err(format!(
+            "Data too large for writing ({} MB, max {} MB)",
+            bytes.len() / (1024 * 1024),
+            MAX_FILE_SIZE / (1024 * 1024)
+        ));
+    }
+
     if let Some(parent) = validated.parent() {
         fs::create_dir_all(parent)
             .map_err(|e| format!("Failed to create parent directory: {}", e))?;
@@ -377,6 +389,15 @@ fn native_write_file_bytes(file_path: String, data_base64: String) -> Result<(),
 #[tauri::command]
 fn native_write_file_text(file_path: String, content: String) -> Result<(), String> {
     let validated = validate_safe_path(&file_path)?;
+
+    if content.len() > MAX_FILE_SIZE {
+        return Err(format!(
+            "Text content too large for writing ({} MB, max {} MB)",
+            content.len() / (1024 * 1024),
+            MAX_FILE_SIZE / (1024 * 1024)
+        ));
+    }
+
     if let Some(parent) = validated.parent() {
         fs::create_dir_all(parent)
             .map_err(|e| format!("Failed to create parent directory: {}", e))?;
