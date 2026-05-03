@@ -1,7 +1,7 @@
 // Daily Challenge Leaderboard System
 // Global rankings, XP system, and streak rewards
 
-import { XP_LEVEL_THRESHOLDS } from './xp-config';
+import { getRankForXP } from './player-progression';
 
 interface DailyChallengeEntry {
   playerId: string;
@@ -415,29 +415,21 @@ export function isChallengeCompletedToday(): boolean {
   return false;
 }
 
-// Get XP level info (uses shared threshold config)
+// Get XP level info — delegates to the unified rank system from player-progression.ts.
+// This ensures the daily challenge display shows the same rank/title as the
+// player's profile progression screen.
 export function getXPLevel(xp: number): { level: number; title: string; progress: number; nextLevel: number } {
-  let currentLevel = 0;
-  let nextLevelXP = XP_LEVEL_THRESHOLDS[1].xp;
-
-  for (let i = XP_LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
-    if (xp >= XP_LEVEL_THRESHOLDS[i].xp) {
-      currentLevel = i;
-      nextLevelXP = XP_LEVEL_THRESHOLDS[Math.min(i + 1, XP_LEVEL_THRESHOLDS.length - 1)].xp;
-      break;
-    }
-  }
-
-  const prevXP = XP_LEVEL_THRESHOLDS[currentLevel].xp;
-  const progress = currentLevel === XP_LEVEL_THRESHOLDS.length - 1 
-    ? 100 
-    : ((xp - prevXP) / (nextLevelXP - prevXP)) * 100;
+  const rank = getRankForXP(xp);
+  const rankXP = rank.maxXP - rank.minXP;
+  const progress = rankXP === Infinity
+    ? 100
+    : Math.min(100, Math.max(0, ((xp - rank.minXP) / rankXP) * 100));
 
   return {
-    level: currentLevel + 1,
-    title: XP_LEVEL_THRESHOLDS[currentLevel].title,
-    progress: Math.min(100, Math.max(0, progress)),
-    nextLevel: nextLevelXP,
+    level: xp,            // Raw XP — kept for backward compatibility (not displayed in UI)
+    title: rank.name,
+    progress,
+    nextLevel: rank.maxXP === Infinity ? xp : rank.maxXP,
   };
 }
 
