@@ -126,6 +126,7 @@ export function PtmGameScreen({
     initialPlayers.map(p => ({ ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0 }))
   );
   const [, rerender] = useState(0);
+  const fallbackLyricsRef = useRef<LyricLine[] | null>(null);
   const forceRender = useCallback(() => rerender(n => n + 1), []);
 
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
@@ -138,8 +139,9 @@ export function PtmGameScreen({
   const currentSnippet = isMedleyMode ? ptmMedleySnippets[currentSegmentIndex] : null;
   // In medley mode, use the current snippet's song for audio; otherwise use effectiveSong
   const audioSong = isMedleyMode && currentSnippet ? currentSnippet.song : effectiveSong;
-  // For notes/lyrics, use snippet song in medley mode
-  const notesSource = audioSong;
+  // For notes/lyrics, use snippet song in medley mode, or fallback lyrics if loaded
+  const notesSource = (audioSong?.lyrics?.length ? audioSong : null)
+    ?? (fallbackLyricsRef.current ? { ...audioSong!, lyrics: fallbackLyricsRef.current } : audioSong);
 
   // ── Transition state ──
   const [transitionVisible, setTransitionVisible] = useState(false);
@@ -487,8 +489,8 @@ export function PtmGameScreen({
         const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
         if (!songToCheck) return;
         const lyrics = await loadSongLyrics(songToCheck);
-        if (lyrics.length > 0 && songToCheck) {
-          songToCheck.lyrics = lyrics;
+        if (lyrics.length > 0) {
+          fallbackLyricsRef.current = lyrics;
           forceRender();
         }
       } catch { /* non-critical */ }
