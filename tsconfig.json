@@ -37,6 +37,10 @@
   ],
   "exclude": [
     "node_modules",
-    "examples"
+    "examples",
+    "skills",
+    "scripts",
+    "portable-node",
+    "src-tauri/bundled"
   ]
 }
