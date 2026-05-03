@@ -306,6 +306,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (so
                 profileLevel,
                 extendedStats.songsCompleted,
                 extendedStats.unlockedTitles,
+                extendedStats.totalXP,
               );
               const locked = requirementStatus !== null;
 

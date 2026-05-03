@@ -271,7 +271,8 @@ export function getChallengeRequirementStatus(
   challengeId: string,
   playerLevel: number,
   songsCompleted: number,
-  unlockedTitles: string[]
+  unlockedTitles: string[],
+  totalXP?: number
 ): string | null {
   const mode = CHALLENGE_MODES.find(m => m.id === challengeId);
   if (!mode || !mode.requirements) return null;
@@ -293,9 +294,16 @@ export function getChallengeRequirementStatus(
           return `Requires achievement: ${req.value}`;
         }
         break;
-      case 'rank':
-        // Rank requirement — compare via getRankForXP
+      case 'rank': {
+        if (totalXP === undefined) break;
+        const requiredRankIndex = RANKS.findIndex(r => r.name === req.value);
+        if (requiredRankIndex < 0) break;
+        const playerRankIndex = RANKS.findIndex(r => totalXP >= r.minXP) - 1;
+        if (playerRankIndex < requiredRankIndex) {
+          return `Requires rank "${req.value}" (you are "${RANKS[Math.max(0, playerRankIndex + 1)].name}")`;
+        }
         break;
+      }
     }
   }
   return null;
