@@ -50,7 +50,7 @@ export interface UseGameLoopOptions {
   setAudioEffects: (engine: AudioEffectsEngine | null) => void;
   // Song + players (for results generation)
   song: Song | null;
-  players: Array<{ id: string; score: number; notesHit: number; notesMissed: number; maxCombo: number }>;
+  players: Array<{ id: string; score: number; notesHit: number; notesMissed: number; combo: number; maxCombo: number }>;
   // P2 scoring state (for duel/duet results)
   p2ScoringState?: { score: number; notesHit: number; notesMissed: number; maxCombo: number; perfectNotesCount?: number } | null;
   // P1 perfect notes count (for daily challenge / leaderboard)
@@ -739,10 +739,10 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         }
         checkNoteHitsRef.current(adjustedTime, currentPitch);
 
-        // Comeback detection for achievement: combo >= 50 after missing >= 10 notes
+        // Comeback detection for achievement: current combo >= 50 after missing >= 10 notes
         const activePlayer = playersRef.current[0];
         if (activePlayer && !comebackRef.current) {
-          const currentCombo = activePlayer.maxCombo;
+          const currentCombo = activePlayer.combo;
           const totalMissed = activePlayer.notesMissed;
           if (currentCombo >= 50 && totalMissed >= 10) {
             comebackRef.current = true;
