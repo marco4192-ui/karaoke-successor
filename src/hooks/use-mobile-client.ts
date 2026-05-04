@@ -8,7 +8,7 @@ import { useMobilePitchPolling } from '@/hooks/use-mobile-pitch-polling';
 import { useCompanionSync } from '@/hooks/use-companion-sync';
 import { useSongLibrarySync } from '@/hooks/use-song-library-sync';
 
-export interface UseMobileClientOptions {
+interface UseMobileClientOptions {
   song: Song | null;
   isPlaying: boolean;
   currentTime: number;
