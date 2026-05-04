@@ -8,7 +8,7 @@ import type { PlayerProfile, PlayerStats, HighscoreEntry, Song, Difficulty, Game
 // API Configuration — configurable via NEXT_PUBLIC_LEADERBOARD_URL env variable
 const API_BASE_URL = process.env.NEXT_PUBLIC_LEADERBOARD_URL || 'https://hosting236176.ae88b.netcup.net/leaderboard-api';
 
-export interface ApiPlayer {
+interface ApiPlayer {
   id: string;
   name: string;
   avatar?: string;
@@ -20,7 +20,7 @@ export interface ApiPlayer {
   show_country: number;
 }
 
-export interface ApiScore {
+interface ApiScore {
   id: number;
   player_id: string;
   song_id: string;
