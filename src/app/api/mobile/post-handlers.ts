@@ -118,7 +118,6 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           const profilePayload = payload as MobileProfile;
           const client = mobileClients.get(clientId);
           if (!client) return Response.json({ success: false, message: 'Client not found' }, { status: 404 });
-          const __clientIp = client.clientIp;
           
           // Check for duplicate profile (different client using same profile)
           const duplicateClientId = profileToClient.get(profilePayload.id);
