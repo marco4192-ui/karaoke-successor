@@ -64,10 +64,9 @@ export function MedleyGameScreen({
   const [isPlaying, setIsPlaying] = useState(false);
 
   // ── Players (mutable ref for performance) ──
-  const playersRef = useRef<MedleyPlayer[]>(
-    initialPlayers.map(p => ({ ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, snippetsSung: 0 })),
-  );
-  const [___playersDisplay, setPlayersDisplay] = useState<MedleyPlayer[]>(playersRef.current);
+  const initialMappedPlayers = initialPlayers.map(p => ({ ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, snippetsSung: 0 }));
+  const playersRef = useRef<MedleyPlayer[]>(initialMappedPlayers);
+  const [___playersDisplay, setPlayersDisplay] = useState<MedleyPlayer[]>(initialMappedPlayers);
   const forceRender = useCallback(() => setPlayersDisplay([...playersRef.current]), []);
 
   // ── Snippet notes (for lyrics display) ──
@@ -302,6 +301,8 @@ export function MedleyGameScreen({
         const playerPitch = multiPitch.getPlayerPitch(pid);
         scorePlayer(pid, playerPitch, absTime);
       }
+      // Keep display state in sync with ref mutations for live score updates
+      forceRender();
     }, 80);
 
     return () => clearInterval(loop);
@@ -456,7 +457,7 @@ export function MedleyGameScreen({
                 <div>
                   <Badge className="bg-blue-500/30 text-blue-300 mb-2">Team A</Badge>
                   <div className="space-y-2">
-                    {playersRef.current.filter(p => p.team === 0).map(p => (
+                    {___playersDisplay.filter(p => p.team === 0).map(p => (
                       <PlayerIntroCard key={p.id} player={p} inputLabel={p.inputType === 'local' ? (p.micName || 'Mic') : 'Companion'} />
                     ))}
                   </div>
@@ -464,7 +465,7 @@ export function MedleyGameScreen({
                 <div>
                   <Badge className="bg-red-500/30 text-red-300 mb-2">Team B</Badge>
                   <div className="space-y-2">
-                    {playersRef.current.filter(p => p.team === 1).map(p => (
+                    {___playersDisplay.filter(p => p.team === 1).map(p => (
                       <PlayerIntroCard key={p.id} player={p} inputLabel={p.inputType === 'local' ? (p.micName || 'Mic') : 'Companion'} />
                     ))}
                   </div>
@@ -472,7 +473,7 @@ export function MedleyGameScreen({
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {playersRef.current.map(p => (
+                {___playersDisplay.map(p => (
                   <PlayerIntroCard key={p.id} player={p} inputLabel={p.inputType === 'local' ? (p.micName || 'Mic') : 'Companion'} />
                 ))}
               </div>
@@ -530,7 +531,7 @@ export function MedleyGameScreen({
             </div>
             {/* Per-player live scores */}
             <div className="flex items-center gap-3">
-              {[...playersRef.current].sort((a, b) => b.score - a.score).map((p) => (
+              {[...___playersDisplay].sort((a, b) => b.score - a.score).map((p) => (
                 <div key={p.id} className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: p.color }} />
                   <span className="text-xs font-medium" style={{ color: p.color }}>{p.name}: {p.score}</span>
@@ -598,7 +599,7 @@ export function MedleyGameScreen({
             <div className="flex gap-6 items-center justify-center">
               {(isTeam && currentMatchup
                 ? [currentMatchup.playerA, currentMatchup.playerB]
-                : playersRef.current
+                : ___playersDisplay
               ).map(p => (
                 <PitchIndicator
                   key={p.id}
@@ -662,7 +663,7 @@ export function MedleyGameScreen({
       {phase === 'round-results' && (
         <div className="flex-1 overflow-y-auto p-4">
           <MedleyRoundResults
-            players={playersRef.current}
+            players={___playersDisplay}
             settings={settings}
             seriesHistory={seriesHistory}
             roundNumber={seriesHistory.length + 1}
@@ -686,7 +687,7 @@ export function MedleyGameScreen({
       {phase === 'final-results' && (
         <div className="flex-1 overflow-y-auto p-4">
           <MedleyFinalResults
-            players={playersRef.current}
+            players={___playersDisplay}
             settings={settings}
             seriesHistory={seriesHistory}
             onBack={onEndGame}
