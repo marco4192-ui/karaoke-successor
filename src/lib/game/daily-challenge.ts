@@ -131,7 +131,8 @@ export function getDailyChallenge(): DailyChallengeData {
   const types: Array<'score' | 'accuracy' | 'combo' | 'songs' | 'perfect_notes'> = 
     ['score', 'accuracy', 'combo', 'songs', 'perfect_notes'];
   const type = types[seed % types.length];
-  const targets = { score: 80000, accuracy: 85, combo: 50, songs: 3, perfect_notes: 20 };
+  // score: 80% of MAX_POINTS_PER_SONG (10000) — achievable with "Excellent" rating
+  const targets = { score: 8000, accuracy: 85, combo: 50, songs: 3, perfect_notes: 20 };
   
   // Try to load existing leaderboard
   if (typeof window !== 'undefined') {
