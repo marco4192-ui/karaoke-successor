@@ -965,7 +965,7 @@ export function t(key: string, language: Language = 'en'): string {
 }
 
 // Create a nested translation object for object-style access (t.settings.title)
-export function createTranslationObject(language: Language): Record<string, unknown> {
+function createTranslationObject(language: Language): Record<string, unknown> {
   const langTranslations = translations[language];
   const enTranslationsFlat = translations.en;
   
