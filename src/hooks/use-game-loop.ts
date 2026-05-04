@@ -55,6 +55,8 @@ interface UseGameLoopOptions {
   p2ScoringState?: { score: number; notesHit: number; notesMissed: number; maxCombo: number; perfectNotesCount?: number } | null;
   // P1 perfect notes count (for daily challenge / leaderboard)
   p1PerfectNotesCount?: number;
+  // Practice mode playback rate (for achievements that track speed)
+  playbackRate?: number;
   // Native audio (ASIO / WASAPI)
   isNativeAudio?: boolean;
   nativeAudioTime?: number;
@@ -122,6 +124,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     players,
     p2ScoringState,
     p1PerfectNotesCount = 0,
+    playbackRate = 1.0,
     isNativeAudio = false,
     nativeAudioTime = 0,
     nativeAudioPlay,
@@ -252,6 +255,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       playedAt: Date.now(),
       duration: song.duration,
       isBlindMode: gameMode === 'blind',
+      playbackRate: playbackRate,
       hadComeback: comebackRef.current ?? false,
     };
 

@@ -473,6 +473,8 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
     p2ScoringState: p2State,
     // P1 perfect notes count for daily challenge / leaderboard
     p1PerfectNotesCount,
+    // Practice mode playback rate (for speed_demon achievement)
+    playbackRate: practiceMode.playbackRate,
     // Native audio support
     isNativeAudio: nativeAudio.enabled,
     nativeAudioTime: nativeAudio.currentPosition,
