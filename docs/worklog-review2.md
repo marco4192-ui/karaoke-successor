@@ -17,3 +17,21 @@
 - **Fix:** invoke bekommt jetzt `{ country }`, Interface-Parameter auf korrekte Namen korrigiert
 - **Verifikation:** Rust-Backend erwartet `country: String` — Passt
 
+### Bug #3-10: Merge-Artefakte in Parameternamen (ALL FIXED)
+- **Bug #3:** `src/lib/audio/vocal-detector.ts:174` — `_sampleRatesampleRate` → `_sampleRate`
+- **Bug #4:** `src/lib/db/custom-songs-db.ts:219` — `_localStorageKeylocalStorageKey` → `_localStorageKey`
+- **Bug #5:** `src/lib/audio/microphone-manager.ts:312` — `_micsmics` → `_mics` (Typdeklaration)
+- **Bug #6:** `src/components/game/pass-the-mic-screen.tsx:52` — `_playersplayers`, `_settingssettings` → `_players`, `_settings`
+- **Bug #7:** `src/components/screens/home-screen.tsx:21` — `_screenscreen` → `_screen`
+- **Bug #8:** `src/components/game/tournament-screen.tsx:24` — `_bracketbracket`, `_songDurationsongDuration` → `_bracket`, `_songDuration`
+- **Bug #9:** `src/types/qrcode.d.ts:12` — `_texttext` → `_text`
+- **Bug #10:** `src/types/youtube.d.ts:7,14,16,45` — 4 doppelte Parameternamen korrigiert
+
+### Bug #12: __mobileCameraConnected toter State (FIXED → Feature implementiert)
+- **Datei:** `src/components/social/shorts-creator.tsx`
+- **Problem:** State `__mobileCameraConnected` wurde gesetzt (true/false) aber nie im UI angezeigt
+- **Fix:** State renamed zu `mobileCameraConnected`, UI zeigt jetzt:
+  - Badge "Mobile Connected" wenn verbunden
+  - "Disconnect Mobile" Button wenn Kamera aktiv
+  - Mobile Camera Button auch verfügbar wenn lokale Kamera läuft
+
