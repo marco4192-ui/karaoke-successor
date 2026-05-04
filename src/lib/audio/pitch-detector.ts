@@ -644,8 +644,8 @@ export class PitchDetectorManager {
             });
           }
         }
-      } catch {
-        // Ignore polling errors
+      } catch (error) {
+        console.debug('[pitch-detector]: mobile pitch polling error', error);
       }
     }, 100); // Poll every 100ms — sufficient for real-time sync, reduces server load
   }

@@ -444,7 +444,8 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
               try {
                 videoRef.current.muted = false;
                 await videoRef.current.play();
-              } catch {
+              } catch (error) {
+                console.debug('[useGameLoop]: video autoplay failed, retrying muted', error);
                 videoRef.current.muted = true;
                 await videoRef.current.play();
                 setTimeout(() => {

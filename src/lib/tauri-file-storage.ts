@@ -371,7 +371,8 @@ async function processFolder(
     const normalizedBase = normalizeFilePath(baseFolder);
     const fullPath = `${normalizedBase}/${normalizeFilePath(txtFile.path)}`;
     txtContent = await nativeReadFileText(fullPath);
-  } catch {
+  } catch (error) {
+    console.debug('[tauri-file-storage]: failed to read TXT content', error);
     return null;
   }
   
@@ -856,7 +857,8 @@ async function findFileByScanningParentFolder(
       // Directory itself might not be readable — try with backslashes
       try {
         entries = await nativeReadDir(parentDir.replace(/\//g, '\\'));
-      } catch {
+      } catch (error) {
+          console.debug('[tauri-file-storage]: failed to list directory with backslashes', error);
           return null;
       }
     }

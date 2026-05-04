@@ -84,8 +84,8 @@ export function useMobileClient({
           },
         }),
       });
-    } catch {
-      // Ignore sync errors
+    } catch (error) {
+      console.debug('[useMobileClient]: sendGameState failed', error);
     }
   }, [song]);
 
@@ -109,8 +109,8 @@ export function useMobileClient({
           payload: {},
         }),
       });
-    } catch {
-      // Ignore errors
+    } catch (error) {
+      console.debug('[useMobileClient]: sendAdState failed', error);
     }
   }, []);
 

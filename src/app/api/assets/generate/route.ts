@@ -28,7 +28,8 @@ async function loadConfig(): Promise<AIConfig | null> {
   try {
     const content = await readFile(configPath, 'utf-8');
     return JSON.parse(content);
-  } catch {
+  } catch (error) {
+    console.debug('[api/assets/generate]: failed to load AI config file', error);
     return null;
   }
 }

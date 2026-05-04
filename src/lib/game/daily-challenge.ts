@@ -435,7 +435,8 @@ export function isChallengeCompletedToday(): boolean {
     try {
       const data = JSON.parse(stored);
       return data.date === todayISO() && data.completed;
-    } catch {
+    } catch (error) {
+      console.debug('[daily-challenge]: failed to parse challenge completion data', error);
       return false;
     }
   }

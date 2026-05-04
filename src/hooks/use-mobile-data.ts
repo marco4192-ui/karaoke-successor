@@ -199,7 +199,8 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
         if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);
         queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
       }
-    } catch {
+    } catch (error) {
+      console.debug('[useMobileData]: addToQueue failed', error);
       setQueueError('Failed to add song');
       if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);
       queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
@@ -223,7 +224,8 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
         if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);
         queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
       }
-    } catch {
+    } catch (error) {
+      console.debug('[useMobileData]: removeFromQueue failed', error);
       setQueueError('Failed to remove song');
       if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);
       queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);

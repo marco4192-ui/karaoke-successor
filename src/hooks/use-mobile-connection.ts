@@ -121,7 +121,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ type: 'profile', clientId: newClientId, payload: profileToRestore }),
               }).catch(() => {});
-            } catch { /* ignore */ }
+            } catch (error) { console.debug('[useMobileConnection]: profile restore failed', error); }
           }
         }
       } else {
@@ -177,7 +177,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
       if (currentClientId) {
         await fetch(`/api/mobile?action=disconnect&clientId=${currentClientId}`);
       }
-    } catch { /* ignore */ }
+    } catch (error) { console.debug('[useMobileConnection]: disconnect API call failed', error); }
     // Clear local state
     setClientId(null);
     setConnectionCode('');
@@ -317,8 +317,8 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
             callbacksRef.current.onSongEnd();
           }
         }
-      } catch {
-        // Ignore sync errors
+      } catch (error) {
+        console.debug('[useMobileConnection]: game state sync failed', error);
       }
     }, 1000);
     

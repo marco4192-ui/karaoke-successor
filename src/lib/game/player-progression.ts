@@ -480,7 +480,8 @@ export function getExtendedStats(): ExtendedPlayerStats {
   if (stored) {
     try {
       return { ...getDefaultStats(), ...JSON.parse(stored) };
-    } catch {
+    } catch (error) {
+      console.debug('[player-progression]: failed to load extended stats, using defaults', error);
       return getDefaultStats();
     }
   }

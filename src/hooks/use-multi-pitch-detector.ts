@@ -110,8 +110,8 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
   const initialize = useCallback(async (): Promise<boolean> => {
     // H10: Allow re-initialization (e.g., player switch). Stop old manager first.
     if (managerRef.current && isInitialized) {
-      try { managerRef.current.stop(); } catch { /* ignore */ }
-      try { await managerRef.current.destroy(); } catch { /* ignore */ }
+      try { managerRef.current.stop(); } catch (error) { console.debug('[useMultiPitchDetector]: stop failed during re-init', error); }
+      try { await managerRef.current.destroy(); } catch (error) { console.debug('[useMultiPitchDetector]: destroy failed during re-init', error); }
       managerRef.current = null;
       setIsInitialized(false);
       setIsRunning(false);

@@ -107,7 +107,8 @@ class LeaderboardService {
     try {
       const result = await this.request<{ name: string }>('/');
       return result.name === 'Karaoke Leaderboard API';
-    } catch {
+    } catch (error) {
+      console.debug('[leaderboard-service]: testConnection failed', error);
       return false;
     }
   }
@@ -252,7 +253,8 @@ class LeaderboardService {
         settings: { privacy: PlayerProfile['privacy'] };
       } }>(`/profiles/${profileId}`);
       return result.profile;
-    } catch {
+    } catch (error) {
+      console.debug('[leaderboard-service]: downloadProfile failed', error);
       return null;
     }
   }
@@ -286,7 +288,8 @@ class LeaderboardService {
         settings: { privacy: PlayerProfile['privacy'] };
       } }>(`/profiles/code/${syncCode.toUpperCase()}`);
       return result.profile;
-    } catch {
+    } catch (error) {
+      console.debug('[leaderboard-service]: downloadProfileByCode failed', error);
       return null;
     }
   }

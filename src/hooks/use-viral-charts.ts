@@ -122,8 +122,8 @@ export function useViralCharts(): UseViralCharts {
       if (mountedRef.current) {
         setStatus(s);
       }
-    } catch {
-      // Silently fail
+    } catch (error) {
+      console.debug('[useViralCharts]: loadStatus failed', error);
     }
   }, []);
 

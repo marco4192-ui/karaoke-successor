@@ -188,8 +188,8 @@ export async function DELETE(request: NextRequest) {
     for (const p of paths) {
       try {
         await unlink(p);
-      } catch {
-        // Ignore errors
+      } catch (error) {
+        console.debug('[api/config]: failed to delete config file', error);
       }
     }
 

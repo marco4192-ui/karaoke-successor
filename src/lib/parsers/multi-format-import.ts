@@ -66,7 +66,8 @@ export function parseKaraokeMugen(data: string): KaraokeMugenSong | null {
       audioFile: parsed.audioFile,
       videoFile: parsed.videoFile,
     };
-  } catch {
+  } catch (error) {
+    console.debug('[multi-format-import]: failed to parse KaraokeMugen JSON', error);
     return null;
   }
 }
@@ -247,7 +248,8 @@ export function parseSingStarData(data: string): SingStarSongData | null {
 
     if (!songData.title || !songData.artist) return null;
     return { ...songData, notes } as SingStarSongData;
-  } catch {
+  } catch (error) {
+    console.debug('[multi-format-import]: failed to parse SingStar data', error);
     return null;
   }
 }
@@ -279,7 +281,8 @@ export function parseStepMania(data: string): StepManiaData | null {
 
     if (!result.title || !result.artist) return null;
     return result as StepManiaData;
-  } catch {
+  } catch (error) {
+    console.debug('[multi-format-import]: failed to parse StepMania data', error);
     return null;
   }
 }
