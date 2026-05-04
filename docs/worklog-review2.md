@@ -35,3 +35,46 @@
   - "Disconnect Mobile" Button wenn Kamera aktiv
   - Mobile Camera Button auch verfügbar wenn lokale Kamera läuft
 
+---
+
+## Session 2 — Verbesserungen & Dead Code (2026-05-04, Fortsetzung)
+
+### Verbesserung 1: ratingColors konsolidiert (FIXED)
+- **Problem:** 3 identische `ratingColors` Definitionen in score-card.tsx, shorts-creator.tsx, results-screen.tsx
+- **Fix:** Neues Shared-Modul `src/lib/game/rating-utils.ts` mit `RATING_HEX_COLORS` (Canvas) und `RATING_TAILWIND_CLASSES` (HTML)
+- **Commit:** `refactor(imp1): consolidate ratingColors`
+
+### Verbesserung 2: generateConnectionCode() konsolidiert (FIXED)
+- **Problem:** 2 ähnliche Code-Generatoren in mobile-state.ts (4 chars, unambiguous) und battle-royale.ts (6 chars, full alpha-num)
+- **Fix:** Neues Shared-Modul `generateCode(length, chars)` in `src/lib/utils.ts` mit `COMPANION_CODE_CHARS` und `FULL_CODE_CHARS` Presets
+- **Commit:** `refactor(imp2): consolidate generateConnectionCode()`
+
+### Verbesserung 3: AUDIO_EXTENSIONS/VIDEO_EXTENSIONS konsolidiert (FIXED)
+- **Problem:** Identische Extension-Listen in folder-scanner.ts und tauri-file-storage.ts
+- **Fix:** Neues Shared-Modul `src/lib/media-extensions.ts` mit AUDIO_EXTENSIONS, VIDEO_EXTENSIONS, TXT_EXTENSIONS, COVER_EXTENSIONS, BACKGROUND_EXTENSIONS
+- **Commit:** `refactor(imp3): consolidate AUDIO_EXTENSIONS/VIDEO_EXTENSIONS`
+
+### Verbesserung 4: Doppelte Mobile-Typen (ÜBERSPRUNGEN)
+- **Problem:** `MobileProfile`, `QueueItem`, `GameResults`, `PitchData`, `GameState` doppelt definiert
+- **Analyse:** Die Typen dienen verschiedenen Schichten (Server-API vs Client-UI) mit strukturell verschiedenen Shapes
+  - `QueueItem`: API hat `addedAt`, `companionCode: string` (required); Client hat `companionCode?: string` (optional), `status: string` (loose)
+  - `PitchData`: API hat `clarity`, `timestamp`, `isSinging?`; Client hat nur `frequency`, `note`, `volume`
+  - `GameState`: API hat `currentTime`, `gameMode`; Client hat `queueLength`, `singalongTurn.nextProfileId`
+- **Entscheidung:** Konsolidierung zu riskant — verschiedene Datenmodelle für verschiedene Schichten
+
+### Verbesserung 5: Reverse-Abhängigkeit behoben (FIXED)
+- **Problem:** `lib/parsers/ultrastar-parser.ts` importierte `isYouTubeUrl`/`isDirectVideoUrl` von `components/game/youtube-player.tsx`
+- **Fix:** Neue `src/lib/url-utils.ts` mit beiden Funktionen; youtube-player.tsx re-exported für Abwärtskompatibilität
+- **Bonus:** 2 zusätzliche Merge-Artefakte in youtube-player.tsx gefunden und gefixt: `_currentTimecurrentTime`, `_errorCodeerrorCode`
+- **Commit:** `refactor(imp5): fix reverse dependency`
+
+### Verbesserung 6: UltraStar TXT Parsing Duplikation (ÜBERSPRUNGEN)
+- **Problem:** 3 ähnliche TXT-Parser (ultrastar-parser.ts, song-lyrics-loader.ts, tauri-file-storage.ts)
+- **Analyse:** Drei verschiedene Use-Cases (Import/Konvertierung, Runtime-Laden, Tauri-Scanning) mit unterschiedlichen Input/Output-Anforderungen
+- **Entscheidung:** `convertNotesToLyricLines` bereits geteilt; vollständige Konsolidierung zu riskant
+
+### Final Cleanup: ESLint auf 0 Warnings
+- `replay-db.ts`: `deleteReplaysForSong` → `_deleteReplaysForSong` (reserved für future delete-song UI)
+- `native-fs.ts`: `nativeWriteFileBytes` → `_nativeWriteFileBytes` (reserved für future import features)
+- **Ergebnis:** 0 ESLint errors, 0 ESLint warnings
+
