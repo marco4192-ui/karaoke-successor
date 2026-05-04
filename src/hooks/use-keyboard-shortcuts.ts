@@ -15,7 +15,7 @@ export interface KeyboardShortcut {
   description?: string;
 }
 
-export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]) {
+function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]) {
   // Use a ref to avoid re-registering the event listener on every render
   // when the shortcuts array reference changes (inline construction).
   const shortcutsRef = useRef(shortcuts);
