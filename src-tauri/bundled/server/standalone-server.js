@@ -62,7 +62,7 @@ if (serverPath) {
     const publicDir = path.join(serverDir, 'public');
     
     const server = http.createServer((req, res) => {
-        let filePath = path.join(publicDir, req.url === '/' ? 'index.html' : req.url);
+        const filePath = path.join(publicDir, req.url === '/' ? 'index.html' : req.url);
         
         // Security: prevent directory traversal
         if (!filePath.startsWith(publicDir)) {

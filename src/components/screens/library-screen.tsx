@@ -216,7 +216,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
 
   const handleStartGame = async () => {
     if (!selectedSong) return;
-    let songWithLyrics = await getSongByIdWithLyrics(selectedSong.id) || selectedSong;
+    const songWithLyrics = await getSongByIdWithLyrics(selectedSong.id) || selectedSong;
     const songWithUrls = await ensureSongUrls(songWithLyrics);
     const activeProfiles = profiles.filter(p => p.isActive !== false);
     

@@ -95,7 +95,7 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
     const beatDuration = 15000 / bpm;
     const MIDI_BASE_OFFSET = 48;
 
-    let lyrics: LyricLine[] = [];
+    const lyrics: LyricLine[] = [];
     let lineIndex = 0;
 
     if (syllableResult && syllableResult.lines.length > 0) {

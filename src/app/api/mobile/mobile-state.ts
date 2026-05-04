@@ -5,7 +5,7 @@ import type { MobileClient, PitchData, MobileProfile, QueueItem, RemoteControlSt
 // Configurable game PIN for protecting privileged endpoints.
 // Set via POST 'setpin' action or environment variable GAME_PIN.
 // If no PIN is configured, all requests are allowed (backward compatible).
-let adminPin: string | null = process.env.GAME_PIN || null;
+const adminPin: string | null = process.env.GAME_PIN || null;
 
 /**
  * Check if a request is authorized for privileged actions.

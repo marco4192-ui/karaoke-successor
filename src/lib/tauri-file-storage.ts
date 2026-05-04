@@ -626,7 +626,7 @@ async function processFolder(
 
 // Parse lyrics (notes) from UltraStar TXT content
 function parseLyricsFromTxt(content: string, bpm: number, gap: number): LyricLine[] {
-  let cleanContent = normalizeTxtContent(content);
+  const cleanContent = normalizeTxtContent(content);
 
   const lines = cleanContent.split('\n').filter(l => l.trim().length > 0);
   const notes: Array<{ type: string; startBeat: number; duration: number; pitch: number; lyric: string; player?: 'P1' | 'P2' }> = [];

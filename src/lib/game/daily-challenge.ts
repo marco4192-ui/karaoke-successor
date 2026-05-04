@@ -225,7 +225,7 @@ export function submitChallengeResult(
   rank: number;
 } {
   const challenge = getDailyChallenge();
-  let stats = getPlayerDailyStats();
+  const stats = getPlayerDailyStats();
   const today = todayISO();
   let xpEarned = XP_REWARDS.CHALLENGE_COMPLETE;
   const newBadges: DailyBadge[] = [];

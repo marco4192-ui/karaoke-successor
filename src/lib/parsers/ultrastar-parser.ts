@@ -364,7 +364,7 @@ export function convertUltraStarToSong(
 
       // Build line text: PRESERVE SPACES between words
       // Only trim leading whitespace, keep internal and trailing spaces
-      let finalLineText = currentLineText.replace(/^\s+/, '');
+      const finalLineText = currentLineText.replace(/^\s+/, '');
 
       if (finalLineText) {
         lyricLines.push({
@@ -607,7 +607,7 @@ export function generateUltraStarTxt(song: Song): string {
       const type = note.isGolden ? '*' : note.isBonus ? 'F' : ':';
       
       // Add P1/P2 prefix for duet mode if player changes
-      let noteLine = `${type} ${startBeat} ${duration} ${relativePitch} ${note.lyric}`;
+      const noteLine = `${type} ${startBeat} ${duration} ${relativePitch} ${note.lyric}`;
       
       if (song.isDuet && note.player) {
         if (currentPlayer !== note.player) {

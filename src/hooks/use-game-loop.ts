@@ -396,8 +396,8 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
 
             const startPosition = (currentSong.start || 0) / 1000;
 
-            let currentAudioUrl = currentSong.audioUrl;
-            let currentVideoUrl = currentSong.videoBackground;
+            const currentAudioUrl = currentSong.audioUrl;
+            const currentVideoUrl = currentSong.videoBackground;
 
             // PRIORITY 1: Separate audio file (most common case)
             if (audioRef.current && currentAudioUrl) {

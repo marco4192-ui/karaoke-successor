@@ -747,7 +747,7 @@ async function parseUltraStarFull(txtFile?: File): Promise<{
         
         // Build line text: PRESERVE SPACES between words
         // Only trim leading whitespace, keep internal and trailing spaces
-        let finalLineText = currentLineText.replace(/^\s+/, '');
+        const finalLineText = currentLineText.replace(/^\s+/, '');
         
         if (finalLineText) {
           lyricLines.push({

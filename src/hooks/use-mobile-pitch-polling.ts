@@ -42,7 +42,7 @@ export function useMobilePitchPolling(song: { id: string } | null): {
     let pollInterval: ReturnType<typeof setInterval> | null = null;
     // Exponential backoff: when no companion is connected, poll less frequently
     let pollDelay = 100;
-    let backoffTimer: ReturnType<typeof setTimeout> | null = null;
+    const backoffTimer: ReturnType<typeof setTimeout> | null = null;
 
     const startPolling = () => {
       if (pollInterval) clearInterval(pollInterval);

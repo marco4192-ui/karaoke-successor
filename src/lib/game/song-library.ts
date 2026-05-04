@@ -374,7 +374,7 @@ export async function getSongByIdWithLyrics(id: string): Promise<Song | undefine
 
 // Update a song
 export function updateSong(songId: string, updates: Partial<Song>): void {
-  let customSongs = getCustomSongs();
+  const customSongs = getCustomSongs();
   const index = customSongs.findIndex(s => s.id === songId);
 
   if (index !== -1) {

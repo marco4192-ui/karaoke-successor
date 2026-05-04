@@ -210,7 +210,7 @@ export function LyricLineDisplay({
 
         // Render the lyric text exactly as stored (spaces preserved by whiteSpace: 'pre-wrap')
         // Handle hyphenated syllables: if lyric ends with hyphen, it's a syllable break
-        let displayLyric = note.lyric || '';
+        const displayLyric = note.lyric || '';
 
         // Check if this lyric is ONLY a hyphen - force a line break after it
         const isHyphenOnly = displayLyric.trim() === '-';
