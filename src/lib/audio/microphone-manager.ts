@@ -309,7 +309,7 @@ export class MultiMicrophoneManager {
   private assignedMics: Map<string, AssignedMicrophone> = new Map();
   private micInstances: Map<string, MicrophoneInstance> = new Map();
   private onDevicesChange: ((_devices: MicrophoneDevice[]) => void) | null = null;
-  private onAssignedMicsChange: ((_micsmics: AssignedMicrophone[]) => void) | null = null;
+  private onAssignedMicsChange: ((_mics: AssignedMicrophone[]) => void) | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
