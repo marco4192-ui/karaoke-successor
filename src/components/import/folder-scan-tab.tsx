@@ -171,7 +171,7 @@ export function FolderScanTab({
             )}
 
             <div className="max-h-64 overflow-y-auto space-y-2">
-              {scannedSongs.map((song, _index) => (
+              {scannedSongs.map((song, index) => (
                 <SongListItem
                   key={index} song={song} index={index}
                   dupInfo={duplicates[index]}

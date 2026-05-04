@@ -231,15 +231,15 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
 interface TournamentBracketViewProps {
   bracket: TournamentBracket;
   currentMatch: TournamentMatch | null;
-  onPlayMatch: (_matchmatch: TournamentMatch) => void;
-  onManualWinner?: (_matchIdmatchId: string, _winnerIdwinnerId: string) => void;
+  onPlayMatch: (_match: TournamentMatch) => void;
+  onManualWinner?: (_matchId: string, _winnerId: string) => void;
   onRepeatMatch?: () => void;
   matchAborted?: boolean;
   onAbortHandled?: () => void;
   shortMode: boolean;
 }
 
-export function TournamentBracketView({ currentMatch, onPlayMatch, onManualWinner, onRepeatMatch, matchAborted, onAbortHandled, shortMode }: TournamentBracketViewProps) {
+export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onManualWinner, onRepeatMatch, matchAborted, onAbortHandled, shortMode }: TournamentBracketViewProps) {
   const stats = getTournamentStats(bracket);
 
   // Get next match to play

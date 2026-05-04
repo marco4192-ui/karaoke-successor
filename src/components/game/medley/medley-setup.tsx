@@ -21,10 +21,10 @@ import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
 interface MedleySetupProps {
   profiles: PlayerProfile[];
   onStartGame: (
-    _playersplayers: MedleyPlayer[],
-    _songssongs: MedleySong[],
-    _settingssettings: MedleySettings,
-    _matchupsmatchups: SnippetMatchup[],
+    _players: MedleyPlayer[],
+    _songs: MedleySong[],
+    _settings: MedleySettings,
+    _matchups: SnippetMatchup[],
   ) => void;
   onBack: () => void;
 }
@@ -177,7 +177,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
       ? generateTeamMatchups(teamAPlayers, teamBPlayers)
       : [];
 
-    onStartGame(players, finalSettings, matchups);
+    onStartGame(players, songs, finalSettings, matchups);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- settings is computed from multiple state vars; excluded to avoid excessive deps
   }, [playMode, teamSize, selectedProfileIds, teamAIds, teamBIds, profiles, globalDifficulty, filterGenre, filterLanguage, allSongs, snippetCount, onStartGame]);
 

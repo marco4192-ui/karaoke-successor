@@ -8,19 +8,19 @@ import type { Language } from '@/lib/i18n/translations';
 
 interface LibraryFiltersProps {
   searchQuery: string;
-  setSearchQuery: (_queryquery: string) => void;
+  setSearchQuery: (_query: string) => void;
   settings: LibrarySettings;
   setSettings: React.Dispatch<React.SetStateAction<LibrarySettings>>;
   viewMode: LibraryViewMode;
   groupBy: LibraryGroupBy;
   availableGenres: string[];
   availableLanguages: string[];
-  onSetViewMode: (_modemode: LibraryViewMode) => void;
+  onSetViewMode: (_mode: LibraryViewMode) => void;
   onSetGroupBy: (_groupBy: LibraryGroupBy) => void;
   onClearFolder: () => void;
   folderBreadcrumb: string[];
-  onBreadcrumbClick: (_indexindex: number) => void;
-  getGroupDisplayName: (_keykey: string) => string;
+  onBreadcrumbClick: (_index: number) => void;
+  getGroupDisplayName: (_key: string) => string;
   /** Current game start mode (e.g. 'duel', 'duet', 'single') — affects filtering */
   startMode: string;
   /** Reset start mode back to 'single' (called when duet filter is explicitly removed) */
@@ -33,6 +33,7 @@ export function LibraryFilters({
   settings,
   setSettings,
   viewMode,
+  groupBy,
   availableGenres,
   availableLanguages,
   onSetViewMode,
@@ -261,7 +262,7 @@ export function LibraryFilters({
             All
           </button>
           {folderBreadcrumb.map((folder, index) => (
-            <React.Fragment key={}>
+            <React.Fragment key={index}>
               <span className="text-white/30">/</span>
               <button
                 onClick={() => onBreadcrumbClick(index)}

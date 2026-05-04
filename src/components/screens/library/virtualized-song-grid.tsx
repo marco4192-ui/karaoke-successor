@@ -158,7 +158,7 @@ export function VirtualizedSongGrid({ songs, songCardProps, renderSongCard }: Vi
                 ) : (
                   <SongCard
                     key={song.id}
-                    song={}
+                    song={song}
                     {...songCardProps}
                   />
                 )

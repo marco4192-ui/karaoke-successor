@@ -63,7 +63,7 @@ export interface UseMultiPitchDetectorReturn {
   initialize: () => Promise<boolean>;
   start: () => void;
   stop: () => void;
-  addPlayer: (_configconfig: PlayerPitchConfig) => Promise<boolean>;
+  addPlayer: (_config: PlayerPitchConfig) => Promise<boolean>;
   removePlayer: (_playerId: string) => Promise<void>;
   setDifficulty: (_difficulty: Difficulty) => void;
   getPlayerPitch: (_playerId: string) => PitchDetectionResult | null;
@@ -90,7 +90,7 @@ export interface UseMultiPitchDetectorReturn {
  * ```
  */
 export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): UseMultiPitchDetectorReturn {
-  const { players, autoStart = false } = options;
+  const { players, difficulty, autoStart = false } = options;
 
   // Keep players in a ref so the initialize callback doesn't need it as a dependency
   // (array reference changes every render, which would cause unnecessary re-initialization)
@@ -127,7 +127,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
         onPitchDetected: (playerId: string, result: PitchDetectionResult) => {
           setPlayerPitches(prev => {
             const newMap = new Map(prev);
-            newMap.set(_playerId, result);
+            newMap.set(playerId, result);
             return newMap;
           });
         },

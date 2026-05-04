@@ -279,7 +279,7 @@ export function usePartySetup({
         break;
       case 'vote': {
         const shuffled = [...filteredSongs].sort(() => Math.random() - 0.5);
-        onVoteMode(_result, shuffled.slice(0, 3));
+        onVoteMode(result, shuffled.slice(0, 3));
         break;
       }
     }

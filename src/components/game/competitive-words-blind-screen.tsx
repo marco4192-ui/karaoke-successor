@@ -263,10 +263,11 @@ interface CompetitiveGameViewProps {
   modeType: CompetitiveModeType;
   onUpdateGame: (_game: CompetitiveGame) => void;
   onEndGame: () => void;
-  onPlayMatch: (_player1Idplayer1Id: string, _player2Idplayer2Id: string, _player1Nameplayer1Name: string, _player2Nameplayer2Name: string, _songsong: Song) => void;
+  onPlayMatch: (_player1Id: string, _player2Id: string, _player1Name: string, _player2Name: string, _song: Song) => void;
 }
 
 export function CompetitiveGameView({
+  game,
   songs,
   modeType,
   onUpdateGame,
@@ -285,7 +286,7 @@ export function CompetitiveGameView({
       if (songs.length === 0) return;
       const randomSong = songs[Math.floor(Math.random() * songs.length)];
       if (!randomSong) return;
-      const updated = startCompetitiveRound(_game, randomSong.id, randomSong.title);
+      const updated = startCompetitiveRound(game, randomSong.id, randomSong.title);
       onUpdateGame(updated);
     }
     if (game.status !== 'setup') {

@@ -4,10 +4,10 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import type { MobileProfile, GameState } from '@/components/screens/mobile/mobile-types';
 
 interface UseMobileConnectionCallbacks {
-  onProfileLoaded: (_profileprofile: MobileProfile) => void;
-  onProfileFieldsLoaded: (_namename: string, _colorcolor: string, _avataravatar: string | null) => void;
-  onGameStateUpdate: (_gameStategameState: GameState) => void;
-  onError: (_errorerror: string) => void;
+  onProfileLoaded: (_profile: MobileProfile) => void;
+  onProfileFieldsLoaded: (_name: string, _color: string, _avatar: string | null) => void;
+  onGameStateUpdate: (_gameState: GameState) => void;
+  onError: (_error: string) => void;
   onSongEnd: () => void;
 }
 
@@ -329,6 +329,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     clientId,
     connectionCode,
     isConnected,
+    gameState,
     connect,
     disconnect,
     syncProfile,

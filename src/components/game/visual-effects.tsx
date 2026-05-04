@@ -199,6 +199,8 @@ export function useParticleEmitter() {
 
       particlesRef.current.push({
         id: particleIdRef.current++,
+        x,
+        y,
         vx: Math.cos(angle) * velocity,
         vy: Math.sin(angle) * velocity - 2,
         size: size + Math.random() * 4,
@@ -214,7 +216,7 @@ export function useParticleEmitter() {
   }, []);
 
   const emitPerfectHit = useCallback((x: number, y: number) => {
-    emitParticles(_x, _y, 'spark', 8, { color: '#22D3EE', speed: 1.5 });
+    emitParticles(x, y, 'spark', 8, { color: '#22D3EE', speed: 1.5 });
     emitParticles(x, y, 'star', 3, { color: '#FFD700', size: 12, life: 40 });
   }, [emitParticles]);
 

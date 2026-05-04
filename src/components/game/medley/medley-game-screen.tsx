@@ -786,7 +786,7 @@ interface MedleyRoundResultsProps {
 }
 
 function MedleyRoundResults({
-  players, settings, _seriesHistory, roundNumber,
+  players, settings, seriesHistory, roundNumber,
   onNextRound, onEndSeries, onRecordAndEnd,
 }: MedleyRoundResultsProps) {
   const isTeam = settings.playMode === 'team';

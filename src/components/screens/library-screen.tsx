@@ -203,7 +203,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
         onSelectSong(songWithUrls);
       } catch {
         // Fallback: use song as-is (game view has its own URL restoration)
-        onSelectSong(_song);
+        onSelectSong(song);
       }
       return;
     }
@@ -247,7 +247,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
   const songCardBaseProps = useMemo<Omit<SongCardProps, 'song'>>(() => ({ previewSong, previewAudio, onSongClick: handleSongClick, onPreviewStart: handlePreviewStart, onPreviewStop: handlePreviewStop, previewVideoRefs }), [previewSong, previewAudio, handleSongClick, handlePreviewStart, handlePreviewStop, previewVideoRefs]);
 
   const renderViralSongCard = useCallback((song: Song) => (
-    <SongCard key={song.id} song={} {...songCardBaseProps} isViralHit={viralCharts.viralSongIds.has(song.id)} />
+    <SongCard key={song.id} song={song} {...songCardBaseProps} isViralHit={viralCharts.viralSongIds.has(song.id)} />
   ), [songCardBaseProps, viralCharts.viralSongIds]);
 
   // --- Render ---

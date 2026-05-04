@@ -107,7 +107,7 @@ export function MobileSongsView({
                 </label>
                 {availablePartners.length > 0 ? (
                   <div className="space-y-2 max-h-32 overflow-y-auto">
-                    {availablePartners.map((_partner) => (
+                    {availablePartners.map((partner) => (
                       <button
                         key={partner.id}
                         onClick={() => onSelectPartner(

@@ -2,7 +2,7 @@ import { Playlist, PlaylistExport, SYSTEM_PLAYLISTS, DEFAULT_PLAYLIST_SETTINGS, 
 // IDs use crypto.randomUUID() for collision-free 128-bit random IDs
 
 // Re-export types for convenience
-export type { Playlist, _PlaylistFolder, PlaylistExport } from '@/types/game';
+export type { Playlist, PlaylistFolder, PlaylistExport } from '@/types/game';
 
 const STORAGE_KEY = 'karaoke-playlists';
 const PLAY_COUNTS_KEY = 'karaoke-song-play-counts';

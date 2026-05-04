@@ -3,7 +3,7 @@
 import React, { ReactNode } from 'react';
 
 interface DropZoneProps {
-  _filefile: File | null;
+  file: File | null;
   accept: string;
   inputRef: React.RefObject<HTMLInputElement | null>;
   icon: string;
@@ -18,7 +18,7 @@ interface DropZoneProps {
   tauriPickerTitle?: string;
 }
 
-export function DropZone({ accept, inputRef, icon, label, description, accentColor = 'cyan', extra, onDrop, onFileChange,
+export function DropZone({ file, accept, inputRef, icon, label, description, accentColor = 'cyan', extra, onDrop, onFileChange,
   tauriFilter, tauriPickerTitle,
 }: DropZoneProps) {
   const hoverBorder = accentColor === 'purple' ? 'hover:border-purple-500/50' : 'hover:border-cyan-500/50';

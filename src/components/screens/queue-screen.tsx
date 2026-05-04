@@ -24,7 +24,7 @@ interface CompanionQueueItem {
 }
 
 interface QueueScreenProps {
-  onPlayFromQueue?: (_songsong: Song, gameMode: 'single' | 'duel' | 'duet', players: { id: string; name: string }[]) => void;
+  onPlayFromQueue?: (_song: Song, gameMode: 'single' | 'duel' | 'duet', players: { id: string; name: string }[]) => void;
 }
 
 export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
@@ -152,7 +152,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
       addedAt: item.addedAt,
       partnerId: item.partnerId,
       partnerName: item.partnerName,
-      _gameModegameMode: item.gameMode || 'single',
+      gameMode: item.gameMode || 'single',
       isFromCompanion: true,
       companionCode: item.companionCode,
       status: item.status,
@@ -297,7 +297,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
     
     // Call parent handler or handle internally
     if (onPlayFromQueue) {
-      onPlayFromQueue(song, _players);
+      onPlayFromQueue(song, gameMode, players);
     } else {
       // Default behavior: set up game state
       setSong(song);

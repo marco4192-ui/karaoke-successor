@@ -67,7 +67,7 @@ export function GeneralTab({
             <div className="flex gap-2">
               {(['easy', 'medium', 'hard'] as Difficulty[]).map((diff) => (
                 <button
-                  key={}
+                  key={diff}
                   type="button"
                   onClick={() => handleDifficultyChange(diff)}
                   className={`flex-1 py-2 px-4 rounded-lg border-2 transition-all capitalize cursor-pointer ${

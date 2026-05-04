@@ -6,7 +6,7 @@ import type { TournamentMatch } from '@/lib/game/tournament';
 
 interface MatchAbortDialogProps {
   match: TournamentMatch;
-  onManualWinner: (_matchIdmatchId: string, _winnerIdwinnerId: string) => void;
+  onManualWinner: (_matchId: string, _winnerId: string) => void;
   onRepeatMatch: () => void;
   onDismiss: () => void;
 }

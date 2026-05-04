@@ -578,7 +578,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             // Add players
             setPlayers([]);
             const setupResult: GameSetupResult = {
-              players: playerIds.map((id, _i) => {
+              players: playerIds.map((id, i) => {
                 const p = profiles.find(pr => pr.id === id);
                 return {
                   id,

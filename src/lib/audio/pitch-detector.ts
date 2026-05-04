@@ -529,7 +529,7 @@ export class PitchDetectorManager {
 
     const success = await detector.initialize(deviceId);
     if (success) {
-      this.players.set(_playerId, {
+      this.players.set(playerId, {
         id: playerId,
         type: 'local',
         detector,

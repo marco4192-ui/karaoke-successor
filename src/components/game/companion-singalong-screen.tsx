@@ -204,7 +204,7 @@ function randomTurnDuration(): number {
 }
 
 export function CompanionGameView({
-  players: initialPlayers, song, onEndGame,
+  players: initialPlayers, song, settings, onEndGame,
 }: CompanionGameViewProps) {
   const safeSettings: CompanionSingAlongSettings = settings ?? DEFAULT_SETTINGS;
   // H6: Use individual selectors to avoid re-renders on unrelated party state changes

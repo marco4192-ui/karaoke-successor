@@ -379,6 +379,7 @@ export function TournamentBracketButterfly({
 // ─── Match Card (compact) ──────────────────────────────────────
 
 function MatchCard({
+  match,
   isCurrent,
   isPlayable,
   onPlay,

@@ -216,7 +216,7 @@ export function MobileProfileCreateView({
             <div className="flex flex-wrap gap-2">
               {profileColors.map((color) => (
                 <button
-                  key={}
+                  key={color}
                   onClick={() => onProfileColorChange(color)}
                   className={`w-10 h-10 rounded-full transition-transform ${profileColor === color ? 'ring-2 ring-white scale-110' : ''}`}
                   style={{ backgroundColor: color }}
