@@ -7,3 +7,11 @@
 
 ---
 
+### Fix 1: Bug 2 — Unsafe Type-Assertion in folder-scan-tab.tsx
+**Datei:** `src/components/import/folder-scan-tab.tsx`, `src/lib/parsers/folder-scanner.ts`
+**Problem:** `files as unknown as FileList` — `File[]` wurde unsicher zu `FileList` gecastet
+**Lösung:** `scanFilesFromFileList()` Parameter-Typ von `FileList` zu `FileList | File[]` geändert
+**Commit:** `3860890`
+
+---
+
