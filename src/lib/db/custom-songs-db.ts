@@ -216,7 +216,7 @@ export async function clearCustomSongsFromDB(): Promise<void> {
  */
 export async function migrateFromLocalStorage(
   localStorageSongs: Song[],
-  _localStorageKeylocalStorageKey: string
+  _localStorageKey: string
 ): Promise<Song[] | null> {
   if (localStorageSongs.length === 0) return null;
 
