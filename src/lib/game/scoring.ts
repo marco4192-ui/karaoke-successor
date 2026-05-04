@@ -126,7 +126,12 @@ export function evaluateTick(
   return { accuracy, isHit: true, displayType };
 }
 
-/** Calculate points for a single tick. Golden notes receive a higher multiplier. */
+/** Calculate points for a single tick. Golden notes receive a higher weight.
+ *  The per-tick base (pointsPerTick) is pre-normalized in calculateScoringMetadata
+ *  so that a perfect game yields exactly MAX_POINTS_PER_SONG. The golden/normal
+ *  weight is already factored into that normalization — multiplying again here
+ *  preserves the 10 000 invariant.
+ */
 export function calculateTickPoints(
   accuracy: number,
   isGolden: boolean,
@@ -134,14 +139,8 @@ export function calculateTickPoints(
 ): number {
   if (accuracy <= 0) return 0;
 
-  // NOTE: noteScoreMultiplier is intentionally NOT applied here.
-  // The scoring metadata (pointsPerTick) is normalized so that a perfect game
-  // yields exactly MAX_POINTS_PER_SONG. Applying an additional multiplier
-  // per difficulty would break this invariant and allow scores > 10000.
-  // Difficulty is reflected in pitch tolerance (stricter = harder to hit notes),
-  // not in score scaling.
-  const multiplier = isGolden ? PERFECT_GOLDEN_MULTIPLIER : PERFECT_NOTE_MULTIPLIER;
-  const points = pointsPerTick * accuracy * multiplier;
+  const weight = isGolden ? PERFECT_GOLDEN_MULTIPLIER : PERFECT_NOTE_MULTIPLIER;
+  const points = pointsPerTick * accuracy * weight;
 
   return points;
 }
