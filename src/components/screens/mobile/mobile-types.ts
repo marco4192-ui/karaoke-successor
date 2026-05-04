@@ -1,14 +1,9 @@
 // ===================== MOBILE CLIENT TYPES =====================
 
-export type MobileView = 'home' | 'profile' | 'songs' | 'queue' | 'mic' | 'results' | 'jukebox' | 'remote';
+// Re-export shared types from canonical API definitions
+export type { MobileProfile, GameResults } from '@/app/api/mobile/mobile-types';
 
-export interface MobileProfile {
-  id: string;
-  name: string;
-  avatar?: string;
-  color: string;
-  createdAt: number;
-}
+export type MobileView = 'home' | 'profile' | 'songs' | 'queue' | 'mic' | 'results' | 'jukebox' | 'remote';
 
 export interface MobileSong {
   id: string;
@@ -18,17 +13,6 @@ export interface MobileSong {
   genre?: string;
   language?: string;
   coverImage?: string;
-}
-
-export interface GameResults {
-  songId: string;
-  songTitle: string;
-  songArtist: string;
-  score: number;
-  accuracy: number;
-  maxCombo: number;
-  rating: string;
-  playedAt: number;
 }
 
 export interface QueueItem {
