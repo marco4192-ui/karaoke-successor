@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { midiToNoteName } from '@/types/game';
-import { MicIcon } from './mobile-icons';
+import { MicIcon } from '@/components/icons';
 import type { GameState} from './mobile-types';
 
 interface MicViewProps {

@@ -3,7 +3,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { SongCardProps } from './types';
-import { MusicIcon, PlayIcon } from './icons';
+import { MusicIcon, PlayIcon } from '@/components/icons';
 import { extractYouTubeId } from '@/components/game/youtube-player';
 import { WaveformBar } from './waveform-bar';
 

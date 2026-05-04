@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MusicIcon } from './mobile-icons';
+import { MusicIcon } from '@/components/icons';
 import type { MobileSong} from './mobile-types';
 
 interface SongsViewProps {

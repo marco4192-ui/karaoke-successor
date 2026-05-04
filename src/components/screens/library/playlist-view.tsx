@@ -7,7 +7,7 @@ import { SongCard } from './song-card';
 import { VirtualizedSongGrid } from './virtualized-song-grid';
 import { safeConfirm } from '@/lib/safe-dialog';
 import { SongCardProps } from './types';
-import { MusicIcon, TrashIcon, QueueIcon, PlayIcon } from './icons';
+import { MusicIcon, TrashIcon, QueueIcon, PlayIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { EditPlaylistModal } from './edit-playlist-modal';
 import { safeAlert } from '@/lib/safe-dialog';

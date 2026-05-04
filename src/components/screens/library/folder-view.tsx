@@ -4,7 +4,7 @@ import React from 'react';
 import { Song } from '@/types/game';
 import { LibraryGroupBy } from './types';
 import { getSortedFolderKeys } from './utils';
-import { FolderIcon, MusicIcon } from './icons';
+import { FolderIcon, MusicIcon } from '@/components/icons';
 
 interface FolderViewProps {
   groupedSongs: Map<string, Song[]>;

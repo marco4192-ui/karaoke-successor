@@ -5,7 +5,7 @@ import { Song } from '@/types/game';
 import { Playlist, addSongToPlaylist } from '@/lib/playlist-manager';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { MusicIcon } from './icons';
+import { MusicIcon } from '@/components/icons';
 
 interface AddToPlaylistModalProps {
   show: boolean;

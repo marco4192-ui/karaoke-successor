@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { SongStartModalProps } from './types';
-import { MusicIcon, MicIcon, StarIcon, TrophyIcon, QueueIcon, PlayIcon } from './icons';
+import { MusicIcon, MicIcon, StarIcon, TrophyIcon, QueueIcon, PlayIcon } from '@/components/icons';
 import { isDuetSong } from './utils';
 
 // ===================== MIC SELECTOR (Single mode) =====================
