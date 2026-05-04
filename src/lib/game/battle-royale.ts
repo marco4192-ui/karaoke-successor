@@ -3,7 +3,7 @@
 // 4 local microphone players + 20 companion app players
 
 import { TournamentPlayer } from './tournament';
-import { shuffleArray } from '@/lib/utils';
+import { shuffleArray, generateCode, FULL_CODE_CHARS } from '@/lib/utils';
 
 // Player type enum
 export type PlayerType = 'microphone' | 'companion';
@@ -80,12 +80,7 @@ export const DEFAULT_BATTLE_ROYALE_SETTINGS: BattleRoyaleSettings = {
 
 // Generate a unique connection code for the game
 function generateConnectionCode(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
+  return generateCode(6, FULL_CODE_CHARS);
 }
 
 // Create a new Battle Royale game

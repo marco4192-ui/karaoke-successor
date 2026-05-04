@@ -35,3 +35,23 @@ export function shuffleArray<T>(array: T[]): T[] {
   }
   return shuffled;
 }
+
+/**
+ * Generate a random alphanumeric code of the given length.
+ * @param length  Number of characters in the code.
+ * @param chars   Character pool to draw from (defaults to unambiguous alphanumerics).
+ *
+ * Two presets are provided as named constants for common use-cases:
+ * - COMPANION_CODE_CHARS: 30 chars, excludes 0/O/1/I to avoid user confusion (mobile companion codes).
+ * - FULL_CODE_CHARS: 36 chars, full alphanumeric (battle-royale game codes).
+ */
+export const COMPANION_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+export const FULL_CODE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+export function generateCode(length: number, chars: string = COMPANION_CODE_CHARS): string {
+  let code = '';
+  for (let i = 0; i < length; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}

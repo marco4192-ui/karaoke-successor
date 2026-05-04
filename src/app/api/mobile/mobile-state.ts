@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { generateCode, COMPANION_CODE_CHARS } from '@/lib/utils';
 import type { MobileClient, PitchData, MobileProfile, QueueItem, RemoteControlState, MobileGameState, GameResults, SongSummary, HostProfile } from './mobile-types';
 
 // ===================== ADMIN PIN AUTH =====================
@@ -106,12 +107,7 @@ export function getClientIp(request: NextRequest): string {
 }
 
 export function generateConnectionCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed confusing chars
-  let code = '';
-  for (let i = 0; i < 4; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
+  return generateCode(4, COMPANION_CODE_CHARS);
 }
 
 export function getUniqueConnectionCode(): string {
