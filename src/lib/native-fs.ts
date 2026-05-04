@@ -58,7 +58,7 @@ export async function nativeMkdir(dirPath: string): Promise<void> {
 // ---- File Write ----
 
 /** Write base64-encoded bytes to a file. Parent directories are created automatically. */
-export async function nativeWriteFileBytes(filePath: string, dataBase64: string): Promise<void> {
+async function nativeWriteFileBytes(filePath: string, dataBase64: string): Promise<void> {
   validatePath(filePath);
   return invoke<void>('native_write_file_bytes', { filePath, dataBase64 });
 }
