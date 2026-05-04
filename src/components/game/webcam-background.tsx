@@ -228,13 +228,13 @@ interface WebcamBackgroundProps {
   className?: string;
 }
 
-export function WebcamBackground({ config, onConfigChange, className }: WebcamBackgroundProps) {
+export function WebcamBackground({ config, onConfigChange: _onConfigChange, className }: WebcamBackgroundProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { 
     stream, 
     isLoading, 
     error, 
-    devices,
+    _devices,
     startWebcam, 
     stopWebcam, 
     switchDevice 
@@ -254,7 +254,6 @@ export function WebcamBackground({ config, onConfigChange, className }: WebcamBa
     } else if (!config.enabled && stream) {
       stopWebcam();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- config.deviceId/config.enabled are outer scope values; tracking via stream/startWebcam/stopWebcam
   }, [config.enabled, config.deviceId, stream, isLoading, startWebcam, stopWebcam]);
   
   // Handle device changes
@@ -265,7 +264,7 @@ export function WebcamBackground({ config, onConfigChange, className }: WebcamBa
         switchDevice(config.deviceId);
       }
     }
-  }, [stream, switchDevice]);
+  }, [config.deviceId, config.enabled, stream, switchDevice]);
   
   // Calculate position and size based on mode
   const getPositionStyles = (): React.CSSProperties => {
@@ -383,7 +382,7 @@ export function WebcamSettingsPanel({ config, onConfigChange, compact = false }:
   // TODO: This creates an independent hook instance separate from the actual
   // webcam background being rendered. Device list and permission state may
   // diverge from the active WebcamBackground. Consider passing these as props instead.
-  const { devices, hasPermission, refreshDevices } = useWebcamBackground();
+  const { devices, hasPermission: _hasPermission, refreshDevices: _refreshDevices } = useWebcamBackground();
   
   const sizeOptions: { value: WebcamSizeMode; label: string; description: string }[] = [
     { value: 'fullscreen', label: 'Fullscreen', description: 'Fill entire background' },
@@ -574,7 +573,7 @@ interface WebcamQuickControlsProps {
 }
 
 export function WebcamQuickControls({ config, onConfigChange }: WebcamQuickControlsProps) {
-  const { devices, refreshDevices } = useWebcamBackground();
+  const { devices, refreshDevices: _refreshDevices } = useWebcamBackground();
   
   return (
     <div className="flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-lg p-2 border border-white/10">

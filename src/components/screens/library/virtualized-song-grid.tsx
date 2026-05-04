@@ -99,6 +99,7 @@ export function VirtualizedSongGrid({ songs, songCardProps, renderSongCard }: Vi
   const cardHeight = columnWidth + INFO_SECTION_HEIGHT;
   const rowHeight = cardHeight + GAP; // card + gap
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const rowVirtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => containerRef.current,

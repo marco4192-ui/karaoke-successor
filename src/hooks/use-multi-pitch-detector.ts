@@ -197,7 +197,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
       console.error('[useMultiPitchDetector] Initialization failed:', error);
       return false;
     }
-  }, [isInitialized, autoStart]);
+  }, [difficulty, isInitialized, autoStart]);
 
   /**
    * Start pitch detection
@@ -318,7 +318,6 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
     if (managerRef.current) {
       managerRef.current.setDifficulty(difficulty);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- difficulty is an outer scope value mutated via ref-based approach
   }, [difficulty]);
 
   /**

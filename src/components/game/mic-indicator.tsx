@@ -27,7 +27,7 @@ const VISIBLE_DURATION = 8000;
 const FADE_DURATION = 1500;
 
 export function MicIndicator({
-  currentTime = 0,
+  _currentTime = 0,
   isPlaying = false,
   isDuetMode = false,
   gameMode = '',

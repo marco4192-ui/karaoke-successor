@@ -309,7 +309,6 @@ export function CompetitiveGameView({
     if (game.status !== 'playing') {
       hasTriggeredPlay.current = false;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- game.players read inside but tracked via game.status
   }, [game.status, game.players, currentRound, songs, onPlayMatch]);
 
   // Game Over screen

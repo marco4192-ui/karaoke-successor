@@ -126,7 +126,7 @@ export function useBattleRoyaleRoundHandlers({
 
     const updatedGame = startRound(game, song.id, song.title);
     onUpdateGame(updatedGame);
-  }, [onUpdateGame, getRandomSong]);
+  }, [game, onUpdateGame, getRandomSong]);
 
   return {
     handleRoundEnd,
