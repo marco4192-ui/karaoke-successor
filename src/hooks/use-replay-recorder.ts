@@ -144,7 +144,7 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
       let recorder: MediaRecorder;
       try {
         recorder = new MediaRecorder(stream, recorderOptions);
-      } catch (_err) {
+      } catch {
         try {
           recorder = new MediaRecorder(stream);
         } catch (fallbackErr) {

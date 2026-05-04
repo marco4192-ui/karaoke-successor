@@ -4,7 +4,7 @@
  */
 
 const path = require('path');
-const { spawn } = require('child_process');
+const { spawn: _spawn } = require('child_process');
 const http = require('http');
 
 // Configuration
@@ -13,7 +13,7 @@ const HOST = process.env.HOSTNAME || '0.0.0.0';
 
 // Resolve paths relative to this script location
 const serverDir = __dirname;
-const standaloneServerPath = path.join(serverDir, '.next', 'standalone', 'server.js');
+const _standaloneServerPath = path.join(serverDir, '.next', 'standalone', 'server.js');
 
 // Check if running as standalone (bundled with Tauri)
 const isBundled = process.env.TAURI_BUNDLED === 'true' || 

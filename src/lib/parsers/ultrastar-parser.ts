@@ -33,10 +33,6 @@ interface UltraStarNote {
   player?: DuetPlayer; // For duet mode: P1, P2, or undefined (both)
 }
 
-interface UltraStarLineBreak {
-  beat: number;
-}
-
 export interface UltraStarSong {
   title: string;
   artist: string;

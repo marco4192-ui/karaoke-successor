@@ -57,7 +57,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
 
   // Internal reconnect function — bypasses the isConnecting guard.
   // Used by visibilitychange handler to force reconnect after wake from sleep.
-  const reconnectInternal = useCallback(async (isWakeUp = false) => {
+  const reconnectInternal = useCallback(async (_isWakeUp = false) => {
     if (isConnectingRef.current) return; // Don't double-connect
     isConnectingRef.current = true;
 

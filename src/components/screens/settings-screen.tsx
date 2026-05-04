@@ -32,7 +32,7 @@ import { useFolderScanner } from '@/hooks/use-folder-scanner';
 
 // ===================== SETTINGS SCREEN =====================
 function SettingsScreen() {
-  const { t, language, setLanguage, translations } = useTranslation();
+  const { t: _t, language, setLanguage, translations } = useTranslation();
   const { setDifficulty, gameState } = useGameStore();
 
   // Folder scanning hook — encapsulates all library management logic

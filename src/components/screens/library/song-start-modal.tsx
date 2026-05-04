@@ -170,7 +170,7 @@ export function SongStartModal({
   // Auto-remove deactivated players from selection to prevent blocked slots
   useEffect(() => {
     const activeIds = new Set(profiles.filter(p => p.isActive !== false).map(p => p.id));
-    const cleanedPlayers = startOptions.players.filter(id => activeIds.has(_id));
+    const cleanedPlayers = startOptions.players.filter(_id => activeIds.has(_id));
     if (cleanedPlayers.length !== startOptions.players.length) {
       setStartOptions(prev => ({ ...prev, players: cleanedPlayers }));
     }

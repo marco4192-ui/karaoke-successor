@@ -197,7 +197,7 @@ export async function clearCustomSongsFromDB(): Promise<void> {
     tx.oncomplete = () => {
       try {
         localStorage.removeItem(ID_INDEX_KEY);
-      } catch (_e) {
+      } catch {
         // Ignore
       }
       resolve();

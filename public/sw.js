@@ -1,6 +1,5 @@
 /* eslint-disable no-console */
 // Karaoke Successor - Service Worker
-const CACHE_NAME = 'karaoke-successor-v1';
 const STATIC_CACHE = 'karaoke-static-v1';
 const DYNAMIC_CACHE = 'karaoke-dynamic-v1';
 

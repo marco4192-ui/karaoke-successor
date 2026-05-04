@@ -13,9 +13,6 @@ import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { platform, arch } from 'os';
 import { get } from 'https';
-import { createUnzip } from 'zlib';
-import { pipeline } from 'stream/promises';
-import { createReadStream, createWriteStream as createWS } from 'fs';
 import { tmpdir } from 'os';
 import { execSync } from 'child_process';
 

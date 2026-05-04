@@ -271,7 +271,7 @@ class MicrophoneInstance {
     const monitor = () => {
       if (!this.isListening) return;
 
-      const status: MicrophoneStatus = {
+      const _status: MicrophoneStatus = {
         isConnected: this.mediaStream !== null,
         isMuted: false,
         volume: this.getVolume(),

@@ -15,43 +15,6 @@ export const DEFAULT_SPECTROGRAM_CONFIG: SpectrogramConfig = {
   colorScheme: 'neon',
 };
 
-function getColorFromValue(value: number, scheme: SpectrogramConfig['colorScheme']): string {
-  const normalized = Math.max(0, Math.min(1, value));
-  
-  switch (scheme) {
-    case 'rainbow': {
-      const hue = (1 - normalized) * 270; // Purple to red
-      return `hsl(${hue}, 100%, ${50 + normalized * 30}%)`;
-    }
-    case 'heat': {
-      if (normalized < 0.33) {
-        return `rgb(0, ${Math.floor(normalized * 3 * 255)}, 0)`;
-      } else if (normalized < 0.66) {
-        return `rgb(${Math.floor((normalized - 0.33) * 3 * 255)}, 255, 0)`;
-      } else {
-        return `rgb(255, ${255 - Math.floor((normalized - 0.66) * 3 * 255)}, 0)`;
-      }
-    }
-    case 'neon': {
-      const neonHue = 180 + normalized * 120; // Cyan to pink
-      return `hsl(${neonHue}, 100%, ${50 + normalized * 30}%)`;
-    }
-    case 'ocean': {
-      const oceanHue = 200 + normalized * 60; // Blue to cyan
-      return `hsl(${oceanHue}, ${70 + normalized * 30}%, ${30 + normalized * 40}%)`;
-    }
-    case 'fire': {
-      if (normalized < 0.5) {
-        return `rgb(${Math.floor(normalized * 2 * 255)}, 0, 0)`;
-      } else {
-        return `rgb(255, ${Math.floor((normalized - 0.5) * 2 * 255)}, 0)`;
-      }
-    }
-    default:
-      return `rgb(${normalized * 255}, ${normalized * 255}, ${normalized * 255})`;
-  }
-}
-
 interface FrequencyBand {
   name: string;
   minHz: number;

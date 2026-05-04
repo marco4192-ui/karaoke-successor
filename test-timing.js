@@ -74,10 +74,10 @@ console.log("there's an issue with the parser or display logic.");
 // Simulate what should happen during playback
 console.log("\n=== Playback Simulation (RAYE song) ===");
 const bpm = 464;
-const gap = 3100;
-const beatDuration = 60000 / bpm;
+const _gap = 3100;
+const _beatDuration = 60000 / bpm;
 
-const notes = [
+const _notes = [
   { startBeat: 0, duration: 6, lyric: "Ba" },
   { startBeat: 8, duration: 6, lyric: "by," },
 ];

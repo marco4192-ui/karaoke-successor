@@ -121,7 +121,7 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
     };
   }, []);
 
-  const analyzePitch = useCallback((_filePath: string, options?: AnalysisOptions) => {
+  const analyzePitch = useCallback((_filePath: string, _options?: AnalysisOptions) => {
     setStatus('loading');
     setError(null);
     setResult(null);

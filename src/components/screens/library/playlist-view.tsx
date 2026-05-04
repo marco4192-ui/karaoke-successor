@@ -39,7 +39,7 @@ export function PlaylistView({
   onShowCreatePlaylist,
   songCardProps,
   activeProfileId,
-  _playerQueueCount: playerQueueCount,
+  playerQueueCount: _playerQueueCount,
   addToQueue,
   activeProfileName,
 }: PlaylistViewProps) {

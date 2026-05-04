@@ -537,7 +537,7 @@ export class PitchDetectorManager {
 
       // If already running, start this detector immediately
       if (this.isRunning) {
-        detector.start((result) => {
+        detector.start((_result) => {
           this.callbacks?.onPitchDetected(playerId, _result);
         });
       }

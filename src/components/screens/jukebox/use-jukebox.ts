@@ -8,7 +8,7 @@ import { RepeatMode } from './jukebox-types';
 export function useJukebox() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
-  const [customYoutubeId, setCustomYoutubeId] = useState<string | null>(null);
+  const [customYoutubeId, _setCustomYoutubeId] = useState<string | null>(null);
   const [playlist, setPlaylist] = useState<Song[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   // Track which song IDs were manually added (via companion wishlist) vs random system picks

@@ -143,7 +143,7 @@ export function useViralCharts(): UseViralCharts {
   }, []);
 
   // Refresh charts from external sources
-  const refreshCharts = useCallback(async (country?: string) => {
+  const refreshCharts = useCallback(async (_country?: string) => {
     if (!isTauri()) return;
     setIsRefreshing(true);
     setError(null);

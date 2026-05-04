@@ -25,7 +25,7 @@ interface UseEditorPlaybackReturn {
 
 export function useEditorPlayback(
   duration: number,
-  audioUrl?: string
+  _audioUrl?: string
 ): UseEditorPlaybackReturn {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
