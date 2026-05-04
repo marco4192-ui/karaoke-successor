@@ -41,8 +41,8 @@ export function ScoreVisualization({
 }) {
   const [mode, setMode] = useState<VisualizationMode>('barometer');
   
-  const percentage = (score / maxScore) * 100;
-  const player2Percentage = player2Score ? (player2Score / maxScore) * 100 : 0;
+  const percentage = maxScore > 0 ? (score / maxScore) * 100 : 0;
+  const player2Percentage = player2Score != null && maxScore > 0 ? (player2Score / maxScore) * 100 : 0;
   
   return (
     <Card className="bg-white/5 border-white/10">
@@ -412,7 +412,7 @@ export function ScoreVisualization({
         )}
         
         {/* MODE: Comparison (Duel focused) */}
-        {mode === 'comparison' && (
+        {mode === 'comparison' && isDuel && (
           <div className="space-y-4">
             {/* Score comparison bar */}
             <div>
@@ -464,10 +464,10 @@ export function ScoreVisualization({
                     {player2Accuracy?.toFixed(1)}%
                   </div>
                   <div className={`py-1 rounded ${(player2MaxCombo || 0) > maxCombo ? 'bg-pink-500/20 text-pink-300' : 'bg-white/5 text-white/40'}`}>
-                    {player2MaxCombo}x
+                    {player2MaxCombo ?? 0}x
                   </div>
                   <div className={`py-1 rounded ${(player2NotesHit || 0) > notesHit ? 'bg-pink-500/20 text-pink-300' : 'bg-white/5 text-white/40'}`}>
-                    {player2NotesHit}
+                    {player2NotesHit ?? 0}
                   </div>
                 </div>
               </div>
