@@ -68,7 +68,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
   const [hasCamera, setHasCamera] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isRequestingMobileCamera, setIsRequestingMobileCamera] = useState(false);
-  const [__mobileCameraConnected, setMobileCameraConnected] = useState(false);
+  const [mobileCameraConnected, setMobileCameraConnected] = useState(false);
 
   const styleConfig = VIDEO_STYLES.find(s => s.id === style) || VIDEO_STYLES[0];
 
@@ -500,6 +500,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
             <CardTitle className="text-sm flex items-center gap-2">
               📹 Camera
               {hasCamera && <Badge className="bg-green-500/30 text-green-400">Active</Badge>}
+              {mobileCameraConnected && <Badge className="bg-blue-500/30 text-blue-400">Mobile Connected</Badge>}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -529,6 +530,27 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
                   <Button onClick={stopCamera} size="sm" variant="outline" className="flex-1 border-white/20 text-white">
                     Turn Off
                   </Button>
+                  {!mobileCameraConnected && (
+                    <Button
+                      onClick={requestMobileCamera}
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 border-white/20 text-white"
+                      disabled={isRequestingMobileCamera}
+                    >
+                      {isRequestingMobileCamera ? 'Connecting...' : '📲 Mobile Camera'}
+                    </Button>
+                  )}
+                  {mobileCameraConnected && (
+                    <Button
+                      onClick={() => setMobileCameraConnected(false)}
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 border-red-500/30 text-red-400"
+                    >
+                      Disconnect Mobile
+                    </Button>
+                  )}
                 </>
               )}
             </div>
