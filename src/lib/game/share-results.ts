@@ -1,7 +1,7 @@
 // Share Results Feature - Export score cards to social media
 import { HighscoreEntry } from '@/types/game';
 
-export interface ShareableScoreCard {
+interface ShareableScoreCard {
   playerName: string;
   songTitle: string;
   artist: string;
@@ -32,7 +32,7 @@ export function createShareableCard(entry: HighscoreEntry): ShareableScoreCard {
 }
 
 // Generate shareable text
-export function generateShareText(card: ShareableScoreCard): string {
+function generateShareText(card: ShareableScoreCard): string {
   return `🎤 I just scored ${card.score.toLocaleString()} points on "${card.songTitle}" by ${card.artist}!
 
 ${card.rankTitle}
@@ -45,7 +45,7 @@ Play Karaoke Successor and try to beat my score!`;
 }
 
 // Generate shareable image (returns canvas)
-export function generateShareImage(card: ShareableScoreCard): HTMLCanvasElement {
+function generateShareImage(card: ShareableScoreCard): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = 600;
   canvas.height = 400;
