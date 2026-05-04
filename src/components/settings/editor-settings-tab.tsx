@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import {} from '@/components/ui/scroll-area';
 import { getAllSongsAsync, updateSong, addSong, getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { Song } from '@/types/game';
 import { KaraokeEditor } from '@/components/editor/karaoke-editor';

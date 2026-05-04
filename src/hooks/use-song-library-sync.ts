@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useCallback, useRef } from 'react';
-import {} from '@/lib/game/store';
 import { getAllSongs } from '@/lib/game/song-library';
 import type { PlayerProfile } from '@/types/game';
 

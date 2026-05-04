@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ImportScreen } from '@/components/import/import-screen';
-import {} from '@/lib/game/song-library';
 import { FolderIcon, CloudUploadIcon, TrashIcon } from '@/components/settings/settings-icons';
 
 interface LibraryTabProps {
