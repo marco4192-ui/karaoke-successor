@@ -4,16 +4,16 @@ export interface YTPlayer {
   playVideo(): void;
   pauseVideo(): void;
   stopVideo(): void;
-  seekTo(_secondsseconds: number, allowSeekAhead?: boolean): void;
+  seekTo(_seconds: number, allowSeekAhead?: boolean): void;
   getCurrentTime(): number;
   getDuration(): number;
   getPlayerState(): number;
   mute(): void;
   unMute(): void;
   isMuted(): boolean;
-  setVolume(_volumevolume: number): void;
+  setVolume(_volume: number): void;
   getVolume(): number;
-  setPlaybackRate(_raterate: number): void;
+  setPlaybackRate(_rate: number): void;
   getPlaybackRate(): number;
   destroy(): void;
   getVideoData(): { video_id: string; title: string; author: string };
@@ -42,7 +42,7 @@ export interface YTPlayerOptions {
 }
 
 export interface YTStatic {
-  Player: new (_idid: string | HTMLElement, _optionsoptions: YTPlayerOptions) => YTPlayer;
+  Player: new (_id: string | HTMLElement, _options: YTPlayerOptions) => YTPlayer;
   PlayerState: {
     UNSTARTED: number;
     ENDED: number;
