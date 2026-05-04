@@ -6,7 +6,7 @@ import type { AudioEffectsEngine } from '@/lib/audio/audio-effects';
 import { normalizeFilePath } from '@/lib/tauri-file-storage';
 import { useGameStore } from '@/lib/game/store';
 
-export interface UseGameLoopOptions {
+interface UseGameLoopOptions {
   // Song / media
   effectiveSong: Song | null;
   mediaLoaded: boolean;
@@ -65,7 +65,7 @@ export interface UseGameLoopOptions {
   nativeAudioSeek?: (_positionMs: number) => Promise<void>;
 }
 
-export interface UseGameLoopResult {
+interface UseGameLoopResult {
   countdown: number;
   volume: number;
   pauseGame: () => void;
