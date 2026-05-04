@@ -41,7 +41,6 @@ export function useYouTubeGame({
   isPlaying,
   setIsPlaying,
 }: UseYouTubeGameParams): UseYouTubeGameReturn {
-  const [__customYoutubeUrl, setCustomYoutubeUrl] = useState('');
   const [customYoutubeId, setCustomYoutubeId] = useState<string | null>(null);
   const [showYoutubeInput, setShowYoutubeInput] = useState(false);
   const [isAdPlaying, setIsAdPlaying] = useState(false);
@@ -74,7 +73,6 @@ export function useYouTubeGame({
     const extractedId = extractYouTubeId(url);
     if (extractedId) {
       setCustomYoutubeId(extractedId);
-      setCustomYoutubeUrl(url);
       setShowYoutubeInput(false);
     }
   }, []);
@@ -82,7 +80,6 @@ export function useYouTubeGame({
   // Clear custom YouTube video
   const clearCustomYoutube = useCallback(() => {
     setCustomYoutubeId(null);
-    setCustomYoutubeUrl('');
   }, []);
 
   // Handle ad detection callbacks
