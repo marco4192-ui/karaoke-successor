@@ -50,7 +50,7 @@ export default function KaraokeSuccessor() {
   const { isMounted, isFullscreen, toggleFullscreen } = useAppEffects();
 
   // ── Game flow handlers (tournament end, medley end, competitive end, etc.) ──
-  const { handleTournamentGameEnd: _handleTournamentGameEnd, handleGameEnd } = useGameFlowHandlers(
+  const { handleGameEnd } = useGameFlowHandlers(
     party, gameState, { setResults, resetGame }, setScreen,
   );
 
