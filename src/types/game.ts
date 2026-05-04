@@ -247,7 +247,8 @@ export const DIFFICULTY_SETTINGS = {
   easy: {
     pitchTolerance: 3, // +/- 3 semitones - very lenient for beginners
     timingTolerance: 400, // ms - very lenient timing
-    noteScoreMultiplier: 1.0, // Full points on Easy — difficulty is reflected in tolerance, not score penalty
+    // Difficulty is reflected in pitch tolerance (stricter = harder to hit notes),
+    // not in score scaling. All difficulties yield the same max score on perfect play.
     comboMultiplier: 1.5,
     visualNoteWidth: 1.3,
     // Karaoke-optimized settings - very sensitive for beginners
@@ -262,7 +263,7 @@ export const DIFFICULTY_SETTINGS = {
   medium: {
     pitchTolerance: 2, // +/- 2 semitones - standard karaoke tolerance
     timingTolerance: 300, // ms - lenient timing
-    noteScoreMultiplier: 1.0, // Standard points
+    // Same scoring as all difficulties — harder to hit, but same max on perfect play.
     comboMultiplier: 2,
     visualNoteWidth: 1,
     // Standard settings
@@ -277,7 +278,7 @@ export const DIFFICULTY_SETTINGS = {
   hard: {
     pitchTolerance: 1, // +/- 1 semitone - stricter but still playable
     timingTolerance: 150, // ms - stricter timing
-    noteScoreMultiplier: 1.3, // Higher points for harder difficulty
+    // Same scoring as all difficulties — harder to hit, but same max on perfect play.
     comboMultiplier: 2.5,
     visualNoteWidth: 0.8,
     // Strict settings
