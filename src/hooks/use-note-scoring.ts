@@ -49,7 +49,7 @@ interface TimingDataForScoring {
 }
 
 // Hook options
-export interface UseNoteScoringOptions {
+interface UseNoteScoringOptions {
   song: {
     id: string;
     lyrics: LyricLine[];
@@ -67,7 +67,7 @@ export interface UseNoteScoringOptions {
 }
 
 // Hook return type
-export interface UseNoteScoringReturn {
+interface UseNoteScoringReturn {
   // Score events for visual feedback
   scoreEvents: ScoreEvent[];
   p1ScoreEvents: ScoreEvent[];
