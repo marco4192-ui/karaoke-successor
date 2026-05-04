@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Song, PlayerProfile, PLAYER_COLORS, LyricLine, Difficulty } from '@/types/game';
+import { Song, PlayerProfile, PLAYER_COLORS, LyricLine, Difficulty, EMPTY_PLAYER_SCORE } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
@@ -82,7 +82,7 @@ export function CompanionSingAlongSetupScreen({ profiles, onSelectSong, onBack }
       return {
         id, name: profile?.name || 'Unknown', avatar: profile?.avatar,
         color: profile?.color || PLAYER_COLORS[index % PLAYER_COLORS.length],
-        score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, turnCount: 0,
+        ...EMPTY_PLAYER_SCORE, turnCount: 0,
       };
     });
 
@@ -230,10 +230,10 @@ export function CompanionGameView({
 
   // ── Player state (local, mutable for performance) ──
   const playersRef = useRef<CompanionPlayer[]>(initialPlayers.map(p => ({
-    ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, turnCount: 0,
+    ...p, ...EMPTY_PLAYER_SCORE, turnCount: 0,
   })));
   const [playersSnapshot, setPlayersSnapshot] = useState<CompanionPlayer[]>(() => initialPlayers.map(p => ({
-    ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, turnCount: 0,
+    ...p, ...EMPTY_PLAYER_SCORE, turnCount: 0,
   })));
   const [, rerender] = useState(0);
   const forceRender = useCallback(() => {
@@ -516,7 +516,7 @@ export function CompanionGameView({
   // ── Continue series: pick next song ──
   const handleContinue = useCallback(() => {
     const resetPlayers = playersRef.current.map(p => ({
-      ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, turnCount: 0,
+      ...p, ...EMPTY_PLAYER_SCORE, turnCount: 0,
     }));
     setCompanionPlayers(resetPlayers);
     onEndGame();

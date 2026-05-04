@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlayerProfile, PLAYER_COLORS, Difficulty } from '@/types/game';
+import { PlayerProfile, PLAYER_COLORS, Difficulty, EMPTY_PLAYER_SCORE } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
 
 // ===================== SHARED TYPES =====================
@@ -79,7 +79,7 @@ export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTh
       return {
         id, name: profile?.name || 'Unknown', avatar: profile?.avatar,
         color: profile?.color || PLAYER_COLORS[index % PLAYER_COLORS.length],
-        score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0,
+        ...EMPTY_PLAYER_SCORE,
         isActive: index === 0, segmentsSung: 0,
       };
     });

@@ -106,6 +106,15 @@ export interface Player {
   totalNotes?: number; // Total notes count for display
 }
 
+/** Base score object used to initialize player scores at the start of each round/game */
+export const EMPTY_PLAYER_SCORE = {
+  score: 0,
+  notesHit: 0,
+  notesMissed: 0,
+  combo: 0,
+  maxCombo: 0,
+} as const;
+
 export interface PlayerProfile {
   id: string;
   name: string;

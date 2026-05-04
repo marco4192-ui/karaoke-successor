@@ -10,6 +10,7 @@ import { calculateScoringMetadata } from '@/lib/game/scoring';
 import { findActiveNoteFlat, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';
 import { ensureSongUrls } from '@/lib/game/song-library';
 import type { Note, LyricLine, PitchDetectionResult } from '@/types/game';
+import { EMPTY_PLAYER_SCORE } from '@/types/game';
 import type {
   MedleyPlayer, MedleySong, MedleySettings, SnippetMatchup,
   MedleyGamePhase, MedleyRoundResult,
@@ -64,7 +65,7 @@ export function MedleyGameScreen({
   const [isPlaying, setIsPlaying] = useState(false);
 
   // ── Players (mutable ref for performance) ──
-  const initialMappedPlayers = initialPlayers.map(p => ({ ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, snippetsSung: 0 }));
+  const initialMappedPlayers = initialPlayers.map(p => ({ ...p, ...EMPTY_PLAYER_SCORE, snippetsSung: 0 }));
   const playersRef = useRef<MedleyPlayer[]>(initialMappedPlayers);
   const [___playersDisplay, setPlayersDisplay] = useState<MedleyPlayer[]>(initialMappedPlayers);
   const forceRender = useCallback(() => setPlayersDisplay([...playersRef.current]), []);

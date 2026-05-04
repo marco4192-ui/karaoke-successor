@@ -7,7 +7,7 @@ import { getAllSongs, filterSongs, ensureSongUrls } from '@/lib/game/song-librar
 import { UnifiedPartySetup, SongVotingModal, PARTY_GAME_CONFIGS } from '@/components/game/unified-party-setup';
 import { PassTheMicSegment } from '@/components/game/pass-the-mic-screen';
 import type { MedleyPlayer as MedleyPlayerType, MedleySettings as MedleySettingsType } from '@/components/game/medley/medley-types';
-import { Song} from '@/types/game';
+import { Song, EMPTY_PLAYER_SCORE } from '@/types/game';
 import type { Screen } from '@/types/screens';
 import { createTournament, TournamentPlayer, TournamentSettings } from '@/lib/game/tournament';
 import { createBattleRoyale, BattleRoyaleSettings } from '@/lib/game/battle-royale';
@@ -89,15 +89,15 @@ function generatePassTheMicSegments(song: Song, playerCount: number, explicitDur
 // ===================== PARTY SETUP + SONG VOTING SECTION =====================
 // ===================== HELPER: Convert SelectedPlayer to Medley/PassTheMic/Companion player =====================
 function toMedleyPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]): MedleyPlayerType[] {
-  return players.map((p, _i) => ({ ...p, team: null as unknown as number, inputType: (p.playerType === 'companion' ? 'mobile' : 'local') as 'local' | 'mobile', score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, snippetsSung: 0 }));
+  return players.map((p, _i) => ({ ...p, team: null as unknown as number, inputType: (p.playerType === 'companion' ? 'mobile' : 'local') as 'local' | 'mobile', ...EMPTY_PLAYER_SCORE, snippetsSung: 0 }));
 }
 
 function toPassTheMicPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]) {
-  return players.map(p => ({ ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, isActive: false, segmentsSung: 0 }));
+  return players.map(p => ({ ...p, ...EMPTY_PLAYER_SCORE, isActive: false, segmentsSung: 0 }));
 }
 
 function toCompanionPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]) {
-  return players.map(p => ({ ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, isActive: false, turnCount: 0 }));
+  return players.map(p => ({ ...p, ...EMPTY_PLAYER_SCORE, isActive: false, turnCount: 0 }));
 }
 
 // ===================== PARTY SETUP + SONG VOTING SECTION =====================

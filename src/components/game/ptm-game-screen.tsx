@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Song, PLAYER_COLORS, LyricLine, Note } from '@/types/game';
+import { Song, PLAYER_COLORS, LyricLine, Note, EMPTY_PLAYER_SCORE } from '@/types/game';
 
 /** Minimum interval (ms) between scoring evaluations to avoid excessive recalculation */
 const SCORING_THROTTLE_MS = 250;
@@ -125,7 +125,7 @@ export function PtmGameScreen({
 
   // ── Player state (local, mutable for performance) ──
   const playersRef = useRef<PtmPlayer[]>(
-    initialPlayers.map(p => ({ ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0 }))
+    initialPlayers.map(p => ({ ...p, ...EMPTY_PLAYER_SCORE }))
   );
   const [, rerender] = useState(0);
   // Force-render is needed because score updates mutate refs (for performance) instead of state.
@@ -575,7 +575,7 @@ export function PtmGameScreen({
     // Stop pitch detector BEFORE navigating to avoid unmount errors
     try { stop(); } catch { /* ignore */ }
     const resetPlayers = playersRef.current.map(p => ({
-      ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, segmentsSung: 0,
+      ...p, ...EMPTY_PLAYER_SCORE, segmentsSung: 0,
     }));
     setPassTheMicPlayers(resetPlayers);
     setPassTheMicSegments([]);
