@@ -6,7 +6,7 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     // TypeScript rules — enabled as warnings to avoid breaking the build
     // while surfacing issues for gradual cleanup
     "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+    "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
     "@typescript-eslint/no-non-null-assertion": "warn",
     "@typescript-eslint/ban-ts-comment": "warn",
     "@typescript-eslint/prefer-as-const": "warn",
@@ -25,7 +25,7 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
 
     // General JavaScript rules
     "prefer-const": "warn",
-    "no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+    "no-unused-vars": "off",
     "no-console": "warn",
     "no-debugger": "error",
     "no-empty": "warn",

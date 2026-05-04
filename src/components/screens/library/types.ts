@@ -32,8 +32,8 @@ export interface StartOptions {
 export interface SongCardProps {
   song: Song;
   previewSong: Song | null;
-  onSongClick: (song: Song) => void;
-  onPreviewStart: (song: Song) => void;
+  onSongClick: (_song: Song) => void;
+  onPreviewStart: (_song: Song) => void;
   onPreviewStop: () => void;
   previewVideoRefs: React.MutableRefObject<Map<string, HTMLVideoElement>>;
   /** Audio element currently playing preview — used for waveform visualization */
@@ -50,10 +50,10 @@ export interface SongStartModalProps {
   activeProfileId: string | null;
   playerQueueCount: number;
   showSongModal: boolean;
-  setShowSongModal: (open: boolean) => void;
-  setShowHighscoreModal: (open: boolean) => void;
-  setHighscoreSong: (song: Song | null) => void;
-  addToQueue: (song: Song, _playerIdplayerId: string, _playerNameplayerName: string, options?: {
+  setShowSongModal: (_open: boolean) => void;
+  setShowHighscoreModal: (_open: boolean) => void;
+  setHighscoreSong: (_song: Song | null) => void;
+  addToQueue: (_song: Song, _playerIdplayerId: string, _playerNameplayerName: string, options?: {
     partnerId?: string;
     partnerName?: string;
     gameMode?: 'single' | 'duel' | 'duet';
@@ -61,8 +61,8 @@ export interface SongStartModalProps {
   toggleFavorite: (_songIdsongId: string) => boolean;
   setPlaylists: (_playlistsplaylists: Playlist[]) => void;
   getPlaylists: () => Playlist[];
-  setShowAddToPlaylistModal: (open: boolean) => void;
-  setSongToAddToPlaylist: (song: Song | null) => void;
+  setShowAddToPlaylistModal: (_open: boolean) => void;
+  setSongToAddToPlaylist: (_song: Song | null) => void;
   onStartGame: () => void;
   profiles: { id: string; name: string; color: string; avatar?: string; isActive?: boolean }[];
   highscores: { songId: string; score: number; accuracy: number }[];

@@ -9,9 +9,9 @@ interface UsePartySetupArgs {
   gameMode: GameMode;
   profiles: PlayerProfile[];
   songs: Song[];
-  onStartGame: (result: GameSetupResult) => void;
-  onSelectLibrary: (result: GameSetupResult) => void;
-  onVoteMode: (result: GameSetupResult, _suggestedSongssuggestedSongs: Song[]) => void;
+  onStartGame: (_result: GameSetupResult) => void;
+  onSelectLibrary: (_result: GameSetupResult) => void;
+  onVoteMode: (_result: GameSetupResult, _suggestedSongssuggestedSongs: Song[]) => void;
 }
 
 export function usePartySetup({
@@ -37,7 +37,7 @@ export function usePartySetup({
 
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [settings, setSettings] = useState<Record<string, any>>(initialSettings);
-  const [_songSelection, setSongSelection] = useState<SongSelectionOption | null>(null);
+  const [__songSelection, setSongSelection] = useState<SongSelectionOption | null>(null);
   const [error, setError] = useState<string | null>(null);
   const storeDifficulty = useGameStore((state) => state.gameState.difficulty);
   const [difficulty, setDifficulty] = useState<Difficulty>(storeDifficulty || 'medium');
@@ -159,7 +159,7 @@ export function usePartySetup({
     setMicAssignments(prev => {
       const updated = { ...prev };
       // Remove any existing assignment for this mic (from a different player)
-      for (const [m, p] of Object.entries(updated)) {
+      for (const [m, _p] of Object.entries(updated)) {
         if (m === micId) delete updated[m];
       }
       // Remove any existing mic assignment for this player (player switches mic)

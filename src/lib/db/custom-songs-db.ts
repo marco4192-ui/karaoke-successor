@@ -71,7 +71,7 @@ export async function saveCustomSongsToDB(songs: Song[]): Promise<void> {
       try {
         const ids = songs.map(s => s.id);
         localStorage.setItem(ID_INDEX_KEY, JSON.stringify(ids));
-      } catch (e) {
+      } catch (_e) {
         // eslint-disable-next-line no-console
         console.warn('[CustomSongsDB] Failed to update ID index:', _e);
       }
@@ -197,7 +197,7 @@ export async function clearCustomSongsFromDB(): Promise<void> {
     tx.oncomplete = () => {
       try {
         localStorage.removeItem(ID_INDEX_KEY);
-      } catch (e) {
+      } catch (_e) {
         // Ignore
       }
       resolve();

@@ -44,7 +44,7 @@ export function SinglePlayerLyrics({
   previewTime = 2000,
 }: SinglePlayerLyricsProps) {
   // ── Find current and next lines ──
-  const { currentLine, nextLine, timeUntilSing, isSinging, isFlying } = useMemo(() => {
+  const { currentLine, nextLine, timeUntilSing, isSinging: _isSinging, isFlying } = useMemo(() => {
     // Find current line
     let currentLine = sortedLines.find(line =>
       currentTime >= line.startTime && currentTime <= line.endTime

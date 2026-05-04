@@ -68,7 +68,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
   const [hasCamera, setHasCamera] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isRequestingMobileCamera, setIsRequestingMobileCamera] = useState(false);
-  const [_mobileCameraConnected, setMobileCameraConnected] = useState(false);
+  const [__mobileCameraConnected, setMobileCameraConnected] = useState(false);
 
   const styleConfig = VIDEO_STYLES.find(s => s.id === style) || VIDEO_STYLES[0];
 

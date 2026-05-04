@@ -16,7 +16,7 @@ interface SongsViewProps {
   onShowSongOptions: (_songsong: MobileSong | null) => void;
   onSelectGameMode: (mode: 'single' | 'duel' | 'duet') => void;
   onSelectPartner: (partner: { id: string; name: string } | null) => void;
-  onAddToQueue: (song: MobileSong) => void;
+  onAddToQueue: (_song: MobileSong) => void;
   onLoadPartners: () => void;
   formatDuration: (_msms: number) => string;
 }

@@ -166,7 +166,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   }, [syncProfile]);
 
   // Disconnect from server and reset local state
-  const handleDisconnect = useCallback(async () => {
+  const __handleDisconnect = useCallback(async () => {
     await disconnect();
     setProfile(null);
     setProfileName('');

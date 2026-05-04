@@ -382,7 +382,7 @@ function MatchCard({
   isPlayable,
   onPlay,
   done,
-  isFinal = false,
+  isFinal: _isFinal = false,
   isFirstRound = false,
 }: {
   match: TournamentMatch;

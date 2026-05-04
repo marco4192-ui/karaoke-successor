@@ -37,7 +37,7 @@ export function UnifiedPartySetup({
     error, difficulty, setDifficulty, togglePlayer, handleSongSelection,
     inputMode, setInputMode,
     micAssignments, assignMic, removeMicAssignment,
-    selectedMicId, selectedMicName, setSelectedMicId, setSelectedMicName,
+    selectedMicId, selectedMicName: _selectedMicName, setSelectedMicId, setSelectedMicName,
     filterGenre, filterLanguage, filterCombined,
     setFilterGenre, setFilterLanguage, setFilterCombined,
     availableGenres, availableLanguages, filteredSongs,

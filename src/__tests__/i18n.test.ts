@@ -21,7 +21,7 @@ describe('i18n translation system', () => {
 
     it('falls back to English when key is missing in other language', () => {
       // Some languages may not have settings.technologyStack — should fall back to English
-      const enValue = t('settings.technologyStack', 'en');
+      const __enValue = t('settings.technologyStack', 'en');
       // Even if the key exists, the fallback mechanism should produce the same English value
       const otherLangValue = t('settings.technologyStack', 'de');
       // Both should be non-empty (either translated or English fallback)
@@ -115,13 +115,13 @@ describe('i18n translation system', () => {
 
   describe('translation value types', () => {
     it('English translations contain string values', () => {
-      for (const [_key, value] of Object.entries(translations.en)) {
+      for (const [__key, value] of Object.entries(translations.en)) {
         expect(typeof value).toBe('string');
       }
     });
 
     it('German translations contain string values', () => {
-      for (const [key, value] of Object.entries(translations.de)) {
+      for (const [_key, value] of Object.entries(translations.de)) {
         expect(typeof value).toBe('string');
       }
     });

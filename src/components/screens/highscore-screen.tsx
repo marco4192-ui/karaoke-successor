@@ -9,7 +9,7 @@ import { TrophyIcon } from '@/components/icons';
 import { HighscoreEntry, RANKING_TITLES } from '@/types/game';
 
 export function HighscoreScreen() {
-  const { highscores, profiles, activeProfileId, onlineEnabled, leaderboardType, setLeaderboardType } = useGameStore();
+  const { highscores, profiles: _profiles, activeProfileId, onlineEnabled, leaderboardType, setLeaderboardType } = useGameStore();
   const [filter, setFilter] = useState<'all' | 'mine'>('all');
   const [globalLeaderboard, setGlobalLeaderboard] = useState<typeof highscores>([]);
   const [isLoadingGlobal, setIsLoadingGlobal] = useState(false);

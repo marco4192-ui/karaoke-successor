@@ -64,7 +64,7 @@ export function PtmSongResults({
     [playerScores]
   );
 
-  const winner = sorted[0];
+  const __winner = sorted[0];
 
   // Compute cumulative scores (previous rounds + current)
   const cumulativeScores = useMemo(() => {

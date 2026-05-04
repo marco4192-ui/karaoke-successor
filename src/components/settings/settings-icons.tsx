@@ -1,4 +1,3 @@
-import React from 'react';
 
 // D1: Pure re-exports from canonical icon source.
 // Previously this file had local CloudUploadIcon and KeyboardIcon definitions

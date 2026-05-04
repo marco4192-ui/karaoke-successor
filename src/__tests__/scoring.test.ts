@@ -209,12 +209,12 @@ describe('Scoring system', () => {
       const meta = calculateScoringMetadata(notes, beatDuration);
 
       let total = 0;
-      let tickIndex = 0;
+      let _tickIndex = 0;
       for (const note of notes) {
         const ticksInNote = Math.max(1, Math.round(note.duration / beatDuration));
         for (let i = 0; i < ticksInNote; i++) {
           total += calculateTickPoints(1.0, note.isGolden, meta.pointsPerTick);
-          tickIndex++;
+          _tickIndex++;
         }
       }
       expect(total).toBeCloseTo(MAX_POINTS_PER_SONG, 0);

@@ -61,7 +61,7 @@ export class PitchDetector {
   private mediaStream: MediaStream | null = null;
   private isListening = false;
   private animationFrame: number | null = null;
-  private onPitchDetected: ((result: PitchDetectionResult) => void) | null = null;
+  private onPitchDetected: ((_result: PitchDetectionResult) => void) | null = null;
 
   // FFT buffer
   private bufferSize = 4096;
@@ -163,7 +163,7 @@ export class PitchDetector {
     }
   }
 
-  start(callback: (result: PitchDetectionResult) => void): void {
+  start(callback: (_result: PitchDetectionResult) => void): void {
     if (!this.analyser || !this.buffer) {
       // eslint-disable-next-line no-console
       console.error('Pitch detector not initialized');

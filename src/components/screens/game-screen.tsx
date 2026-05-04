@@ -77,7 +77,7 @@ import { cleanupOldReplays } from '@/lib/db/replay-db';
 
 // ===================== GAME SCREEN =====================
 function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () => void; onPause?: () => void }) {
-  const { gameState, setCurrentTime, setDetectedPitch, updatePlayer, endGame, resetGame, setResults, addPlayer, createProfile, profiles, setMissingWordsIndices, setBlindSection } = useGameStore();
+  const { gameState, setCurrentTime, setDetectedPitch, updatePlayer, endGame, setResults, addPlayer, createProfile, profiles, setMissingWordsIndices, setBlindSection } = useGameStore();
   const blindFrequency = usePartyStore(s => s.competitiveGame?.settings?.blindFrequency);
   const missingWordFrequency = usePartyStore(s => s.competitiveGame?.settings?.missingWordFrequency);
   const { pitchResult, initialize, start, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
@@ -130,7 +130,7 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
   const [showPracticeControls, setShowPracticeControls] = useState(false);
 
   // Practice playback: apply playbackRate to audio/video, loop detection
-  const { loopCount, resetLoopCount } = usePracticePlayback({
+  const { loopCount: _loopCount, _resetLoopCount } = usePracticePlayback({
     practiceMode,
     isPlaying,
     currentTime: gameState.currentTime,
@@ -373,7 +373,6 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
     stopRecording: replayStop,
     pauseRecording: replayPause,
     resumeRecording: replayResume,
-    isRecording: isReplayRecording,
   } = useReplayRecorder({
     enabled: replayEnabled,
     songId: song?.id ?? null,
@@ -497,8 +496,6 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
     }
     wasPlayingRef.current = isPlaying;
   }, [isPlaying, replayStart, replayPause, replayResume]);
-
-
 
   // Get visible notes using shared utility
   const visibleNotes = useMemo(() =>

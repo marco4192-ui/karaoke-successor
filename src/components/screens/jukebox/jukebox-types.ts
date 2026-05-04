@@ -37,15 +37,15 @@ export interface UseJukeboxReturn {
   setFilterGenre: (_gg: string) => void;
   setFilterArtist: (_aa: string) => void;
   setSearchQuery: (_qq: string) => void;
-  setShuffle: (s: boolean) => void;
+  setShuffle: (_s: boolean) => void;
   setRepeat: (_rr: RepeatMode) => void;
   setVolume: (_vv: number) => void;
   setHidePlaylist: (_hh: boolean) => void;
-  setShowLyrics: (s: boolean) => void;
+  setShowLyrics: (_s: boolean) => void;
   setCurrentLyricIndex: (_ii: number) => void;
-  setCurrentSong: (s: Song | null) => void;
-  setCurrentIndex: (i: number) => void;
-  setIsAdPlaying: (a: boolean) => void;
+  setCurrentSong: (_s: Song | null) => void;
+  setCurrentIndex: (_i: number) => void;
+  setIsAdPlaying: (_a: boolean) => void;
   setYoutubeTime: (_tt: number) => void;
   // Actions
   startJukebox: () => void;

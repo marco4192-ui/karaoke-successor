@@ -35,7 +35,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
   const [rateMySongResult, setRateMySongResult] = useState<RateMySongResult | null>(null);
 
   // State for PTM next-song loading
-  const [_ptmNextLoading, setPtmNextLoading] = useState(false);
+  const [__ptmNextLoading, setPtmNextLoading] = useState(false);
 
   // ── Tournament mic assignment overlay state ──
   const [micOverlay, setMicOverlay] = useState<{ p1Name: string; p2Name: string; p1Mic: string; p2Mic: string; countdown: number } | null>(null);
@@ -593,7 +593,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               inputMode: 'mixed',
             };
             party.setUnifiedSetupResult(setupResult);
-            playerIds.forEach((id, i) => {
+            playerIds.forEach((id, _i) => {
               const p = profiles.find(pr => pr.id === id);
               if (p) addPlayer({ id: p.id, name: p.name, color: p.color });
             });

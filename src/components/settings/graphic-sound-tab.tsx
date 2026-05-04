@@ -9,25 +9,25 @@ import { AudioOutputSection } from '@/components/settings/audio-output-section';
 
 interface GraphicSoundTabProps {
   bgVideo: boolean;
-  setBgVideo: (value: boolean) => void;
+  setBgVideo: (_value: boolean) => void;
   useAnimatedBg: boolean;
-  setUseAnimatedBg: (value: boolean) => void;
+  setUseAnimatedBg: (_value: boolean) => void;
   currentThemeId: string;
   handleThemeChange: (_themetheme: Theme) => void;
   noteDisplayStyle: string;
-  setNoteDisplayStyle: (value: string) => void;
+  setNoteDisplayStyle: (_value: string) => void;
   noteShapeStyle: string;
-  setNoteShapeStyle: (value: string) => void;
+  setNoteShapeStyle: (_value: string) => void;
   previewVolume: number;
-  setPreviewVolume: (value: number) => void;
+  setPreviewVolume: (_value: number) => void;
   micSensitivity: number;
-  setMicSensitivity: (value: number) => void;
+  setMicSensitivity: (_value: number) => void;
   lyricsStyle: string;
-  setLyricsStyle: (value: string) => void;
+  setLyricsStyle: (_value: string) => void;
   performanceMode: 'full' | 'low';
   setPerformanceMode: (value: 'full' | 'low') => void;
   tx: (_keykey: string) => string;
-  setHasChanges: (value: boolean) => void;
+  setHasChanges: (_value: boolean) => void;
 }
 
 export function GraphicSoundTab({

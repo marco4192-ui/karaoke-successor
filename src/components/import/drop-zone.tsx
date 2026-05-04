@@ -12,7 +12,7 @@ interface DropZoneProps {
   accentColor?: 'cyan' | 'purple';
   extra?: ReactNode;
   onDrop: (_ee: React.DragEvent) => void;
-  onFileChange: (file: File) => void;
+  onFileChange: (_file: File) => void;
   /** Tauri native file picker config. When set, uses native dialog instead of browser input. */
   tauriFilter?: { name: string; extensions: string[] };
   tauriPickerTitle?: string;

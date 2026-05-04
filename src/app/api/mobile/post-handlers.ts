@@ -112,7 +112,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         if (clientId && mobileClients.has(clientId)) {
           const profilePayload = payload as MobileProfile;
           const client = mobileClients.get(clientId)!;
-          const clientIp = client.clientIp;
+          const __clientIp = client.clientIp;
           
           // Check for duplicate profile (different client using same profile)
           if (profileToClient.has(profilePayload.id) && profileToClient.get(profilePayload.id) !== clientId) {

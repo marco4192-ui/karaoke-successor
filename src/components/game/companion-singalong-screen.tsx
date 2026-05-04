@@ -48,7 +48,7 @@ type GamePhase = 'intro' | 'countdown' | 'playing' | 'switching' | 'song-results
 
 interface CompanionSingAlongSetupProps {
   profiles: PlayerProfile[];
-  onSelectSong: (players: CompanionPlayer[], _settingssettings: CompanionSingAlongSettings) => void;
+  onSelectSong: (_players: CompanionPlayer[], _settingssettings: CompanionSingAlongSettings) => void;
   onBack: () => void;
 }
 
@@ -77,7 +77,7 @@ export function CompanionSingAlongSetupScreen({ profiles, onSelectSong, onBack }
     if (selectedPlayers.length < 2) { setError('Minimum 2 players required'); return; }
     setError(null);
 
-    const players: CompanionPlayer[] = selectedPlayers.map((id, index) => {
+    const _players: CompanionPlayer[] = selectedPlayers.map((id, index) => {
       const profile = profiles.find(p => p.id === id);
       return {
         id, name: profile?.name || 'Unknown', avatar: profile?.avatar,
@@ -213,7 +213,7 @@ export function CompanionGameView({
   const setCompanionSeriesHistory = usePartyStore(s => s.setCompanionSeriesHistory);
   const companionSeriesHistory = usePartyStore(s => s.companionSeriesHistory);
   const setCompanionPlayers = usePartyStore(s => s.setCompanionPlayers);
-  const companionPlayers = usePartyStore(s => s.companionPlayers);
+  const __companionPlayers = usePartyStore(s => s.companionPlayers);
   const setCompanionSong = usePartyStore(s => s.setCompanionSong);
   const setCompanionSettings = usePartyStore(s => s.setCompanionSettings);
 

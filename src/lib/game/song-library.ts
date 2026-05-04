@@ -106,7 +106,7 @@ export function getCustomSongs(): Song[] {
       }
       if (needsResave) {
         // eslint-disable-next-line no-console
-        try { localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(songs)); } catch (e) { console.debug('[SongLibrary] Failed to re-save normalized songs:', _e); }
+        try { localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(songs)); } catch (e) { console.debug('[SongLibrary] Failed to re-save normalized songs:', e); }
       }
       customSongsCache = songs;
       // Trigger background migration to IndexedDB
@@ -519,7 +519,7 @@ export async function getAllSongsAsync(): Promise<Song[]> {
           try {
             const url = await getSongMediaUrl(song.relativeCoverPath, song.baseFolder);
             if (url) coverUrlMap.set(song.id, url);
-          } catch (e) {
+          } catch {
             // Non-critical — cover just won't show
           }
         }

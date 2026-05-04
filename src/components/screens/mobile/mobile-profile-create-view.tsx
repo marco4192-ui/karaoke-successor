@@ -31,7 +31,7 @@ export function MobileProfileCreateView({
 }: ProfileCreateViewProps) {
   const [hostProfiles, setHostProfiles] = useState<MobileProfile[]>([]);
   const [claimedProfileIds, setClaimedProfileIds] = useState<string[]>([]);
-  const [_isLoading, setIsLoading] = useState(false);
+  const [__isLoading, setIsLoading] = useState(false);
   // Track a selected host profile before confirming — allows deselection
   const [selectedHostProfile, setSelectedHostProfile] = useState<MobileProfile | null>(null);
 

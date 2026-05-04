@@ -55,7 +55,7 @@ function getActiveNotesAtTime(notes: Note[], timeMs: number): Note[] {
 interface UseBattleRoyaleGameParams {
   game: BattleRoyaleGame;
   songs: Song[];
-  onUpdateGame: (game: BattleRoyaleGame) => void;
+  onUpdateGame: (_game: BattleRoyaleGame) => void;
 }
 
 interface UseBattleRoyaleGameReturn {

@@ -36,7 +36,7 @@ interface AIAssistantPanelProps {
   onLyricsUpdate: (_lyricslyrics: LyricLine[]) => void;
 }
 
-interface SuggestionItem {
+interface _SuggestionItem {
   id: string;
   type: 'metadata' | 'lyrics' | 'cover';
   title: string;
@@ -218,11 +218,11 @@ export function AIAssistantPanel({ song, onSongUpdate, onLyricsUpdate }: AIAssis
     if (line) {
       // Update the lyric text
       const words = suggestion.suggested.split(' ');
-      let charIndex = 0;
+      let _charIndex = 0;
       
       line.notes = line.notes.map((note, i) => {
         const newLyric = words[i] || note.lyric;
-        charIndex += newLyric.length + 1;
+        _charIndex += newLyric.length + 1;
         return { ...note, lyric: newLyric };
       });
       

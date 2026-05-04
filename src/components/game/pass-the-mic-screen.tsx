@@ -55,7 +55,7 @@ interface PassTheMicSetupProps {
 
 export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTheMicSetupProps) {
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
-  const [settings, setSettings] = useState<PassTheMicSettings>(DEFAULT_SETTINGS);
+  const [settings, _setSettings] = useState<PassTheMicSettings>(DEFAULT_SETTINGS);
   const [error, setError] = useState<string | null>(null);
 
   const activeProfiles = profiles.filter(p => p.isActive !== false);

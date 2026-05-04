@@ -28,7 +28,7 @@ export function SpectrogramDisplay({
   mode = 'bars',
   position = { x: 50, y: 80 },
   size = { width: 300, height: 80 },
-  colorScheme = 'neon',
+  colorScheme: _colorScheme = 'neon',
   numBars = 32,
   className = '',
 }: SpectrogramDisplayProps) {

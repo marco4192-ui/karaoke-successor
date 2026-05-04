@@ -129,7 +129,7 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
           });
           webcamStreamRef.current = webcamStream;
           webcamStream.getVideoTracks().forEach(track => stream.addTrack(track));
-        } catch (err) {
+        } catch (_err) {
           // eslint-disable-next-line no-console
           console.warn('[ReplayRecorder] Could not get webcam for replay:', _err);
         }
@@ -144,7 +144,7 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
       let recorder: MediaRecorder;
       try {
         recorder = new MediaRecorder(stream, recorderOptions);
-      } catch (err) {
+      } catch (_err) {
         try {
           recorder = new MediaRecorder(stream);
         } catch (fallbackErr) {

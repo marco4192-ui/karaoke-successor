@@ -41,7 +41,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
     addPlayer,
   } = useGameStore();
   
-  const activeProfile = profiles.find(p => p.id === activeProfileId);
+  const __activeProfile = profiles.find(p => p.id === activeProfileId);
   const [companionQueue, setCompanionQueue] = useState<CompanionQueueItem[]>([]);
   const [songs, setSongs] = useState<Song[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);

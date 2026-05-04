@@ -252,8 +252,8 @@ interface CompanionCardProps {
   activeProfiles: PlayerProfile[];
   isKicking: boolean;
   isAssigning: boolean;
-  onKick: (id: string, name: string) => void;
-  onAssignCharacter: (id: string, profile: PlayerProfile | null) => void;
+  onKick: (_id: string, _name: string) => void;
+  onAssignCharacter: (_id: string, _profile: PlayerProfile | null) => void;
 }
 
 function CompanionCard({
@@ -269,7 +269,7 @@ function CompanionCard({
   const companionColor = companion.profile?.color || '#6B7280';
 
   // Check if current character is used by another companion (to prevent assignment to two companions)
-  const assignedProfileIds = new Set<string>(); // We don't have the full list here, so allow any assignment
+  const __assignedProfileIds = new Set<string>(); // We don't have the full list here, so allow any assignment
 
   return (
     <div className="bg-white/5 border border-white/10 rounded-lg p-4 hover:border-white/20 transition-colors">

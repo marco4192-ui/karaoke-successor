@@ -41,7 +41,7 @@ export function useYouTubeGame({
   isPlaying,
   setIsPlaying,
 }: UseYouTubeGameParams): UseYouTubeGameReturn {
-  const [_customYoutubeUrl, setCustomYoutubeUrl] = useState('');
+  const [__customYoutubeUrl, setCustomYoutubeUrl] = useState('');
   const [customYoutubeId, setCustomYoutubeId] = useState<string | null>(null);
   const [showYoutubeInput, setShowYoutubeInput] = useState(false);
   const [isAdPlaying, setIsAdPlaying] = useState(false);

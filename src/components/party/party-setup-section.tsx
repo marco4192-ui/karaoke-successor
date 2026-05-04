@@ -20,7 +20,7 @@ import type { CompanionSingAlongSettings } from '@/components/game/companion-sin
 
 interface PartySetupSectionProps {
   screen: Screen;
-  setScreen: (s: Screen) => void;
+  setScreen: (_s: Screen) => void;
 }
 
 // ===================== HELPER: Convert unified setup settings to typed settings =====================
@@ -468,7 +468,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 resetGame();
                 setGameMode(mode);
                 setPlayers([]);
-                result.players.forEach((p, i) => {
+                result.players.forEach((p, _i) => {
                   addPlayer({ id: p.id, name: p.name, color: p.color, avatar: p.avatar });
                 });
                 if (duration === 'short') {

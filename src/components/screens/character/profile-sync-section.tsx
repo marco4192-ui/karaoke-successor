@@ -17,7 +17,7 @@ function generateSyncCode(): string {
 }
 
 export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
-  const [_syncCode, setSyncCode] = useState<string>('');
+  const [__syncCode, setSyncCode] = useState<string>('');
   const [inputCode, setInputCode] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);

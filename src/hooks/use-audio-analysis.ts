@@ -83,8 +83,8 @@ interface UseAudioAnalysisReturn {
   bpmResult: BpmDetectionResult | null;
   error: string | null;
   crepeAvailable: boolean;
-  analyzePitch: (filePath: string, options?: AnalysisOptions) => void;
-  detectBpm: (filePath: string) => void;
+  analyzePitch: (_filePath: string, options?: AnalysisOptions) => void;
+  detectBpm: (_filePath: string) => void;
   reset: () => void;
 }
 
@@ -121,7 +121,7 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
     };
   }, []);
 
-  const analyzePitch = useCallback((filePath: string, options?: AnalysisOptions) => {
+  const analyzePitch = useCallback((_filePath: string, options?: AnalysisOptions) => {
     setStatus('loading');
     setError(null);
     setResult(null);

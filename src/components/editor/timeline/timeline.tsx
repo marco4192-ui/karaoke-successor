@@ -40,7 +40,6 @@ export function Timeline({
   onPlayPause,
   onNoteSelect,
   onNoteUpdate,
-  _onNoteDelete: onNoteDelete,
   onNoteAdd,
   onLyricChange
 }: TimelineProps) {

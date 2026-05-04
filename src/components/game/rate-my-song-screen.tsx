@@ -389,7 +389,7 @@ interface RateMySongRatingScreenProps {
   singingPlayers: Array<{ id: string; name: string; color: string }>;
   /** All active profiles (audience + singers) — used to determine who can rate */
   allProfiles: PlayerProfile[];
-  onSubmit: (ratings: RateMySongRating[]) => void;
+  onSubmit: (_ratings: RateMySongRating[]) => void;
   onBack: () => void;
 }
 
@@ -453,7 +453,7 @@ export function RateMySongRatingScreen({
       playerColor: singer.color,
       rating: getAverageForSinger(singer.id),
     }));
-    onSubmit(_ratings);
+    onSubmit(ratings);
   };
 
   // If no audience exists, allow a single combined rating screen (fallback)

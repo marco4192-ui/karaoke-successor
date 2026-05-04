@@ -69,7 +69,7 @@ export function AudioAnalysisPanel({
     };
   }, [result]);
 
-  const isIdle = status === 'idle';
+  const __isIdle = status === 'idle';
   const isWorking = status === 'loading' || status === 'analyzing';
   const isComplete = status === 'complete';
   const isError = status === 'error';

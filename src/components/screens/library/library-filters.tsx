@@ -16,7 +16,7 @@ interface LibraryFiltersProps {
   availableGenres: string[];
   availableLanguages: string[];
   onSetViewMode: (_modemode: LibraryViewMode) => void;
-  onSetGroupBy: (groupBy: LibraryGroupBy) => void;
+  onSetGroupBy: (_groupBy: LibraryGroupBy) => void;
   onClearFolder: () => void;
   folderBreadcrumb: string[];
   onBreadcrumbClick: (_indexindex: number) => void;

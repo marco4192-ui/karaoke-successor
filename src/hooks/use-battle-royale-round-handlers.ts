@@ -13,7 +13,7 @@ import { Song } from '@/types/game';
 interface UseBattleRoyaleRoundHandlersParams {
   game: BattleRoyaleGame;
   activePlayers: BattleRoyalePlayer[];
-  onUpdateGame: (game: BattleRoyaleGame) => void;
+  onUpdateGame: (_game: BattleRoyaleGame) => void;
   stopPitch: () => void;
   audioRef: React.RefObject<HTMLAudioElement | null>;
   videoRef: React.RefObject<HTMLVideoElement | null>;

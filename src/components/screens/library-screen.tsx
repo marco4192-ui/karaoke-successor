@@ -33,7 +33,7 @@ import { useLibraryFilters } from '@/hooks/use-library-filters';
 import { useLibraryPreview } from '@/hooks/use-library-preview';
 import { useViralCharts } from '@/hooks/use-viral-charts';
 
-export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong: (song: Song) => void; initialGameMode?: GameMode }) {
+export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong: (_song: Song) => void; initialGameMode?: GameMode }) {
   const { t } = useTranslation();
 
   // Core state

@@ -94,7 +94,7 @@ const partyGames: PartyGame[] = [
 ];
 
 interface PartyScreenProps {
-  onSelectMode: (mode: GameMode) => void;
+  onSelectMode: (_mode: GameMode) => void;
 }
 
 export function PartyScreen({ onSelectMode }: PartyScreenProps) {

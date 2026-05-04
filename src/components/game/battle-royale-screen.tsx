@@ -16,7 +16,7 @@ export { BattleRoyaleSetupScreen };
 interface BattleRoyaleGameViewProps {
   game: BattleRoyaleGame;
   songs: Song[];
-  onUpdateGame: (game: BattleRoyaleGame) => void;
+  onUpdateGame: (_game: BattleRoyaleGame) => void;
   onEndGame: () => void;
   onBack?: () => void;
 }

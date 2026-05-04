@@ -15,7 +15,7 @@ interface FolderScanTabProps {
   setSelectedScanned: (_ss: Set<number>) => void;
   scanErrors: string[];
   setScanErrors: (_ee: string[]) => void;
-  setScannedSongs: (s: ScannedSong[]) => void;
+  setScannedSongs: (_s: ScannedSong[]) => void;
   setIsProcessing: (_vv: boolean) => void;
   duplicates: DuplicateInfo[];
   folderInputRef: React.RefObject<HTMLInputElement | null>;

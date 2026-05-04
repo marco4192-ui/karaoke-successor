@@ -8,7 +8,7 @@ import type { Song } from '@/types/game';
 import type {} from '@/components/game/medley/medley-types';
 
 // Mock Math.random for deterministic tests
-const originalRandom = Math.random;
+const __originalRandom = Math.random;
 
 function createMockSong(overrides: Partial<Song> = {}): Song {
   return {

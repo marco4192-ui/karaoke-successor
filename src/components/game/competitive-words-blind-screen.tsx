@@ -31,7 +31,7 @@ interface CompetitiveSetupScreenProps {
   profiles: PlayerProfile[];
   songs: Song[];
   modeType: CompetitiveModeType;
-  onStartGame: (game: CompetitiveGame) => void;
+  onStartGame: (_game: CompetitiveGame) => void;
   onBack: () => void;
 }
 
@@ -260,7 +260,7 @@ interface CompetitiveGameViewProps {
   game: CompetitiveGame;
   songs: Song[];
   modeType: CompetitiveModeType;
-  onUpdateGame: (game: CompetitiveGame) => void;
+  onUpdateGame: (_game: CompetitiveGame) => void;
   onEndGame: () => void;
   onPlayMatch: (_player1Idplayer1Id: string, _player2Idplayer2Id: string, _player1Nameplayer1Name: string, _player2Nameplayer2Name: string, _songsong: Song) => void;
 }
@@ -460,7 +460,7 @@ function CompetitiveScoreboard({ game, ranked, modeType, onNextRound }: Competit
 // ===================== WINNER SCREEN =====================
 
 function CompetitiveWinnerScreen({
-  game,
+  game: _game,
   ranked,
   modeType,
   onEndGame,

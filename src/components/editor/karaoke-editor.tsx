@@ -26,14 +26,14 @@ import type { DetectedNote } from '@/hooks/use-audio-analysis';
 
 interface KaraokeEditorProps {
   song: Song;
-  onSave: (song: Song) => void;
+  onSave: (_song: Song) => void;
   onCancel: () => void;
 }
 
 export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEditorProps) {
   const [currentSong, setCurrentSong] = useState<Song>(initialSong);
   const [selectedNoteId, setSelectedNoteId] = useState<string | undefined>();
-  const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | undefined>();
+  const [audioBuffer, _setAudioBuffer] = useState<AudioBuffer | undefined>();
   const [isSaving, setIsSaving] = useState(false);
   const [saveResult, setSaveResult] = useState<SaveResult | null>(null);
   const [showSidebar, setShowSidebar] = useState(true); // Sidebar visible by default

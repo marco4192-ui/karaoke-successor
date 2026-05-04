@@ -29,7 +29,7 @@ function useSavedMics() {
   return savedMics;
 }
 
-function MicSelector({ micId, onMicChange }: { micId?: string; onMicChange: (id: string | undefined) => void }) {
+function MicSelector({ micId, onMicChange }: { micId?: string; onMicChange: (_id: string | undefined) => void }) {
   const savedMics = useSavedMics();
 
   if (savedMics.length === 0) return null;
@@ -63,8 +63,8 @@ function DualMicSelector({
   p1Id: string; p2Id: string;
   profiles: { id: string; name: string; color: string; avatar?: string }[];
   micIdP1?: string; micIdP2?: string;
-  onMicP1Change: (id: string | undefined) => void;
-  onMicP2Change: (id: string | undefined) => void;
+  onMicP1Change: (_id: string | undefined) => void;
+  onMicP2Change: (_id: string | undefined) => void;
   p1Label?: string; p2Label?: string;
 }) {
   const savedMics = useSavedMics();
@@ -157,7 +157,7 @@ export function SongStartModal({
   profiles,
   highscores,
 }: SongStartModalProps) {
-  const isPartyMode = startOptions.partyMode && startOptions.partyMode !== 'standard' && startOptions.partyMode !== 'duel' && startOptions.partyMode !== 'duet';
+  const __isPartyMode = startOptions.partyMode && startOptions.partyMode !== 'standard' && startOptions.partyMode !== 'duel' && startOptions.partyMode !== 'duet';
   const songIsDuet = isDuetSong(selectedSong);
 
   // Auto-fix mode mismatch: if current mode is duet/duel but song is not a duet, reset to single

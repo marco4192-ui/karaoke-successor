@@ -96,7 +96,7 @@ export function useMobileClient({
   }, [sendGameState]);
 
   // ── Ad state sending ──
-  const sendAdState = useCallback(async (isAdPlaying: boolean) => {
+  const sendAdState = useCallback(async (_isAdPlaying: boolean) => {
     try {
       await fetch('/api/mobile', {
         method: 'POST',

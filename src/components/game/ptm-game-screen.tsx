@@ -43,7 +43,7 @@ interface PtmGameScreenProps {
   song: Song;
   segments: PtmSegment[];
   settings: PassTheMicSettings | null;
-  onUpdateGame: (players: PtmPlayer[], segments: PtmSegment[]) => void;
+  onUpdateGame: (_players: PtmPlayer[], _segments: PtmSegment[]) => void;
   onEndGame: () => void;
   onNavigate?: (_screenscreen: string) => void;
   onPause?: () => void;
@@ -87,7 +87,6 @@ export function PtmGameScreen({
     mediaLoaded,
     audioRef,
     videoRef,
-    audioLoadedRef,
     videoLoadedRef,
   } = useGameMedia(song);
 
@@ -121,7 +120,7 @@ export function PtmGameScreen({
   const [songEnergy, setSongEnergy] = useState(0);
 
   // ── Smoothed pitch ──
-  const { pitchResult, initialize, start, stop, switchMicrophone } = usePitchDetector();
+  const { pitchResult, stop, switchMicrophone } = usePitchDetector();
   const smoothedPitch = useSmoothedPitch(pitchResult?.note ?? null, 0.3, 0.25);
 
   // ── Player state (local, mutable for performance) ──

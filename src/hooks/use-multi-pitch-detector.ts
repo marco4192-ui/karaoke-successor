@@ -64,9 +64,9 @@ export interface UseMultiPitchDetectorReturn {
   start: () => void;
   stop: () => void;
   addPlayer: (_configconfig: PlayerPitchConfig) => Promise<boolean>;
-  removePlayer: (playerId: string) => Promise<void>;
-  setDifficulty: (difficulty: Difficulty) => void;
-  getPlayerPitch: (playerId: string) => PitchDetectionResult | null;
+  removePlayer: (_playerId: string) => Promise<void>;
+  setDifficulty: (_difficulty: Difficulty) => void;
+  getPlayerPitch: (_playerId: string) => PitchDetectionResult | null;
 }
 
 /**

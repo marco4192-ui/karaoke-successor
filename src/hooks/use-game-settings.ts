@@ -30,12 +30,12 @@ export interface GameSettings {
 }
 
 export function useGameSettings(): GameSettings & {
-  setShowBackgroundVideo: (value: boolean) => void;
-  setShowPitchGuide: (value: boolean) => void;
-  setUseAnimatedBackground: (value: boolean) => void;
-  setNoteDisplayStyle: (value: string) => void;
-  setNoteShapeStyle: (value: NoteShapeStyle) => void;
-  setPerformanceMode: (value: PerformanceMode) => void;
+  setShowBackgroundVideo: (_value: boolean) => void;
+  setShowPitchGuide: (_value: boolean) => void;
+  setUseAnimatedBackground: (_value: boolean) => void;
+  setNoteDisplayStyle: (_value: string) => void;
+  setNoteShapeStyle: (_value: NoteShapeStyle) => void;
+  setPerformanceMode: (_value: PerformanceMode) => void;
 } {
   // Helper to safely read localStorage (returns null in SSR)
   const getStored = (key: string): string | null => {

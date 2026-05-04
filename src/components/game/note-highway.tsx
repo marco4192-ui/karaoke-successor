@@ -292,7 +292,7 @@ export function NoteHighway({
   notePerformance,
   singLinePosition = 25,
   noteWindow = 4000,
-  playerColor = '#22d3ee',
+  playerColor: _playerColor = '#22d3ee',
   showPlayerLabel = false,
   playerName = 'Player 1',
   playerNumber = 1,

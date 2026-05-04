@@ -63,7 +63,7 @@ export const DEFAULT_WEBCAM_CONFIG: WebcamBackgroundConfig = {
 const WEBCAM_CONFIG_KEY = 'karaoke-webcam-config';
 
 // Save webcam config to localStorage
-export function saveWebcamConfig(config: WebcamBackgroundConfig): void {
+export function saveWebcamConfig(_config: WebcamBackgroundConfig): void {
   try {
     localStorage.setItem(WEBCAM_CONFIG_KEY, JSON.stringify(_config));
   } catch (e) {
@@ -98,8 +98,8 @@ export function useWebcamBackground(deviceId: string | null = null) {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [_devices, setDevices] = useState<MediaDeviceInfo[]>([]);
-  const [_hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [__devices, setDevices] = useState<MediaDeviceInfo[]>([]);
+  const [__hasPermission, setHasPermission] = useState<boolean | null>(null);
   
   // Get available video devices
   const refreshDevices = useCallback(async () => {
@@ -224,7 +224,7 @@ function getFilterStyle(filter: WebcamFilter): string {
 
 interface WebcamBackgroundProps {
   config: WebcamBackgroundConfig;
-  onConfigChange?: (config: Partial<WebcamBackgroundConfig>) => void;
+  onConfigChange?: (_config: Partial<WebcamBackgroundConfig>) => void;
   className?: string;
 }
 
@@ -234,7 +234,7 @@ export function WebcamBackground({ className }: WebcamBackgroundProps) {
     stream, 
     isLoading, 
     error, 
-    devices, 
+    devices: _devices,
     startWebcam, 
     stopWebcam, 
     switchDevice 
@@ -374,7 +374,7 @@ export function WebcamBackground({ className }: WebcamBackgroundProps) {
 
 interface WebcamSettingsPanelProps {
   config: WebcamBackgroundConfig;
-  onConfigChange: (config: Partial<WebcamBackgroundConfig>) => void;
+  onConfigChange: (_config: Partial<WebcamBackgroundConfig>) => void;
   compact?: boolean;
 }
 
@@ -382,7 +382,7 @@ export function WebcamSettingsPanel({ config, _onConfigChange, compact = false }
   // TODO: This creates an independent hook instance separate from the actual
   // webcam background being rendered. Device list and permission state may
   // diverge from the active WebcamBackground. Consider passing these as props instead.
-  const { devices, hasPermission, refreshDevices } = useWebcamBackground();
+  const { devices, hasPermission: _hasPermission, refreshDevices } = useWebcamBackground();
   
   const sizeOptions: { value: WebcamSizeMode; label: string; description: string }[] = [
     { value: 'fullscreen', label: 'Fullscreen', description: 'Fill entire background' },
@@ -569,11 +569,11 @@ export function WebcamSettingsPanel({ config, _onConfigChange, compact = false }
 
 interface WebcamQuickControlsProps {
   config: WebcamBackgroundConfig;
-  onConfigChange: (config: Partial<WebcamBackgroundConfig>) => void;
+  onConfigChange: (_config: Partial<WebcamBackgroundConfig>) => void;
 }
 
 export function WebcamQuickControls({ config, onConfigChange }: WebcamQuickControlsProps) {
-  const { devices, refreshDevices } = useWebcamBackground();
+  const { devices, _refreshDevices } = useWebcamBackground();
   
   return (
     <div className="flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-lg p-2 border border-white/10">

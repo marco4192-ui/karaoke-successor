@@ -72,7 +72,7 @@ export async function getAudioState(): Promise<AudioPlaybackState> {
 
 /** Subscribe to time-update events from native audio. */
 export async function onAudioTimeUpdate(
-  callback: (positionMs: number) => void
+  callback: (_positionMs: number) => void
 ): Promise<UnlistenFn> {
   return listen<number>('audio:time-update', (event) => {
     callback(event.payload);

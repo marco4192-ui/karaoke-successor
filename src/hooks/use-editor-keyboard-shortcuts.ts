@@ -13,7 +13,7 @@ interface UseEditorKeyboardShortcutsParams {
   undo: () => void;
   redo: () => void;
   handleNoteAdd: (_startTimestartTime: number, _pitchpitch: number) => void;
-  setSelectedNoteId: (noteId: string | undefined) => void;
+  setSelectedNoteId: (_noteId: string | undefined) => void;
   tapModeActive?: boolean;
 }
 

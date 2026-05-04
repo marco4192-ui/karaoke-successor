@@ -250,7 +250,7 @@ export function useParticleEmitter() {
     }
   }, [emitParticles]);
 
-  const emitConfetti = useCallback((x: number, y: number) => {
+  const emitConfetti = useCallback((_x: number, _y: number) => {
     const colors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#AA96DA', '#FF9F43'];
     for (let i = 0; i < 30; i++) { // Reduced from 50
       const id = setTimeout(() => {

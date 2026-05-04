@@ -109,7 +109,7 @@ class MicrophoneInstance {
   private gainNode: GainNode | null = null;
   private sourceNode: MediaStreamAudioSourceNode | null = null;
   private config: ExtendedMicConfig;
-  private onStatusChange: ((status: MicrophoneStatus) => void) | null = null;
+  private onStatusChange: ((_status: MicrophoneStatus) => void) | null = null;
   private animationFrame: number | null = null;
   private isListening = false;
   private deviceName: string = 'Unknown';
@@ -260,7 +260,7 @@ class MicrophoneInstance {
     return this.mediaStream !== null;
   }
 
-  onStatus(callback: (status: MicrophoneStatus) => void): void {
+  onStatus(callback: (_status: MicrophoneStatus) => void): void {
     this.onStatusChange = callback;
   }
 
@@ -308,7 +308,7 @@ export class MultiMicrophoneManager {
   private devices: MicrophoneDevice[] = [];
   private assignedMics: Map<string, AssignedMicrophone> = new Map();
   private micInstances: Map<string, MicrophoneInstance> = new Map();
-  private onDevicesChange: ((devices: MicrophoneDevice[]) => void) | null = null;
+  private onDevicesChange: ((_devices: MicrophoneDevice[]) => void) | null = null;
   private onAssignedMicsChange: ((_micsmics: AssignedMicrophone[]) => void) | null = null;
 
   constructor() {
@@ -552,7 +552,7 @@ export class MultiMicrophoneManager {
   }
 
   // Subscribe to device list changes
-  onDevices(callback: (devices: MicrophoneDevice[]) => void): void {
+  onDevices(callback: (_devices: MicrophoneDevice[]) => void): void {
     this.onDevicesChange = callback;
   }
 
@@ -562,7 +562,7 @@ export class MultiMicrophoneManager {
   }
 
   // Subscribe to assigned mics changes
-  onAssignedMics(callback: (mics: AssignedMicrophone[]) => void): void {
+  onAssignedMics(callback: (_mics: AssignedMicrophone[]) => void): void {
     this.onAssignedMicsChange = callback;
   }
 
