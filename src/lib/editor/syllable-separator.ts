@@ -1,6 +1,6 @@
 // Syllable Separator for UltraStar TXT format
 // Splits song lyrics into syllables suitable for note placement
-// 
+//
 // UltraStar format rules:
 // - Each syllable becomes a note: `: <beat> <duration> <pitch> <syllable>`
 // - Trailing space = word boundary (displayed)
