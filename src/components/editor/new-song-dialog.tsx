@@ -143,12 +143,7 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
           notes: lineNotesArr,
         });
 
-        // Line break
-        const lastNote = lineNotesArr[lineNotesArr.length - 1];
-        if (lastNote) {
-          const __lineBreakBeat = Math.round((lastNote.startTime + lastNote.duration - gap) / beatDuration);
-          // Already accounted for in the beat progression
-        }
+        // Line break — beat progression already accounts for the gap
         currentBeat += beatsBetweenLines;
         lineIndex++;
       }

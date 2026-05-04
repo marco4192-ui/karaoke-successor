@@ -158,7 +158,6 @@ export function SongStartModal({
   profiles,
   highscores,
 }: SongStartModalProps) {
-  const __isPartyMode = startOptions.partyMode && startOptions.partyMode !== 'standard' && startOptions.partyMode !== 'duel' && startOptions.partyMode !== 'duet';
   const songIsDuet = isDuetSong(selectedSong);
 
   // Auto-fix mode mismatch: if current mode is duet/duel but song is not a duet, reset to single

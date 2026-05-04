@@ -222,7 +222,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       notesToCheck: Array<Note & { lineIndex: number; line: LyricLine }> | undefined,
       scoringMeta: ScoringMetadata | undefined,
       noteProgressMap: React.MutableRefObject<Map<string, NoteProgress>>,
-      stateRef: React.MutableRefObject<PlayerScoringState>,
+      _stateRef: React.MutableRefObject<PlayerScoringState>,
       setPlayerState: React.Dispatch<React.SetStateAction<PlayerScoringState>>,
       setScoreEventsState: React.Dispatch<React.SetStateAction<ScoreEvent[]>>,
       noteIdPrefix: string
