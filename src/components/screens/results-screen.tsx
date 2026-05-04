@@ -390,6 +390,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           goldenNotes: 0, // Golden notes feature not yet implemented in scoring
           difficulty: gameState.difficulty,
           mode: gameState.gameMode,
+          challengeMode: gameState.challengeMode,
           duration: song.duration,
         });
         saveExtendedStats(xpResult.stats);
@@ -401,7 +402,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           playerResult.maxCombo,
           estimatePerfectNotes(playerResult.notesHit, playerResult.rating),
           0, // Golden notes feature not yet implemented in scoring
-          undefined // challengeMode
+          gameState.challengeMode
         );
         const currentProfileXP = profile.xp || 0;
         const newTotalXP = currentProfileXP + earnedXP;

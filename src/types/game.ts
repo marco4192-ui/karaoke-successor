@@ -195,6 +195,8 @@ export interface GameState {
   players: Player[];
   difficulty: Difficulty;
   gameMode: GameMode;
+  /** Daily challenge mode ID (e.g. 'blind-audition'), set when game starts from daily challenge */
+  challengeMode?: string;
   currentTime: number;
   isMicActive: boolean;
   detectedPitch: number | null;

@@ -43,6 +43,7 @@ interface GameStore {
   setSong: (_song: Song | null) => void;
   setDifficulty: (_difficulty: Difficulty) => void;
   setGameMode: (_mode: GameMode) => void;
+  setChallengeMode: (_mode: string | undefined) => void;
   addPlayer: (_profile: Pick<PlayerProfile, 'id' | 'name' | 'avatar' | 'color'>) => void;
   removePlayer: (_playerId: string) => void;
   updatePlayer: (_playerId: string, _updates: Partial<Player>) => void;
@@ -175,6 +176,11 @@ export const useGameStore = create<GameStore>()(
       setGameMode: (mode) =>
         set((state) => ({
           gameState: { ...state.gameState, gameMode: mode },
+        })),
+
+      setChallengeMode: (mode) =>
+        set((state) => ({
+          gameState: { ...state.gameState, challengeMode: mode },
         })),
 
       addPlayer: (profile) =>

@@ -40,7 +40,7 @@ import { OfflineBanner } from '@/components/ui/offline-banner';
 // ===================== MAIN APP =====================
 export default function KaraokeSuccessor() {
   // ── Store hooks (must be called before any conditional returns) ──
-  const { gameState, setSong, setGameMode, profiles, queue, resetGame, addPlayer, setResults, pauseGame, resumeGame } = useGameStore();
+  const { gameState, setSong, setGameMode, setChallengeMode, profiles, queue, resetGame, addPlayer, setResults, pauseGame, resumeGame } = useGameStore();
   const party = usePartyStore();
 
   // ── Screen navigation (screen state + party-mode guard) ──
@@ -418,6 +418,7 @@ export default function KaraokeSuccessor() {
           const challengeId = typeof window !== 'undefined' ? localStorage.getItem('karaoke-challenge-mode') : null;
           const mappedMode = challengeId ? CHALLENGE_GAME_MODE_MAP[challengeId] : undefined;
           setGameMode(mappedMode || 'standard');
+          setChallengeMode(challengeId || undefined);
           setSong(song);
           setScreen('game');
         }} />}

@@ -344,6 +344,7 @@ interface PlayerGameResult {
   goldenNotes: number;
   difficulty: 'easy' | 'medium' | 'hard';
   mode: string;
+  challengeMode?: string;
   duration: number;
 }
 
@@ -706,6 +707,7 @@ export function updateStatsAfterGame(
     gameData.maxCombo,
     gameData.perfectNotes,
     gameData.goldenNotes,
+    gameData.challengeMode,
   );
 
   // 2. Update level progression (XP, level, rank, level milestones)
