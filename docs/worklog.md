@@ -27,4 +27,11 @@
 **Verifikation:** TSC 0 Errors
 **Commit:** `2265440`
 
+### Fix 2: DC-A+B — Duplizierte PTM-Typen konsolidiert
+**Dateien:** `ptm-types.ts`, `pass-the-mic-screen.tsx`, `ptm-next-song.ts`, `ptm-segments.ts`, `party-setup-section.tsx`, `results-screen.tsx`
+**Problem:** `PassTheMicPlayer`, `PassTheMicSegment`, `PassTheMicSettings`, und `DEFAULT_SETTINGS` waren doppelt definiert (in `pass-the-mic-screen.tsx` lokal und in `ptm-types.ts` kanonisch). Die lokale `DEFAULT_SETTINGS` hatte `randomSwitches: true`, die kanonische nicht. Die lokale `PassTheMicSettings` fehlten `sharedMicId`/`sharedMicName`.
+**Lösung:** Duplikate aus `pass-the-mic-screen.tsx` entfernt, Import von `ptm-types.ts`. `randomSwitches: true` zur kanonischen `DEFAULT_SETTINGS` hinzugefügt. 4 Verbraucher aktualisiert.
+**Verifikation:** TSC 0 Errors
+**Commit:** `516cf67`
+
 ---

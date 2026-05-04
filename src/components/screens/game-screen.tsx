@@ -164,7 +164,7 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
   });
 
   // Practice playback: apply playbackRate to audio/video, loop detection
-  const { loopCount: _loopCount, resetLoopCount: _resetLoopCount } = usePracticePlayback({
+  usePracticePlayback({
     practiceMode,
     isPlaying,
     currentTime: gameState.currentTime,
