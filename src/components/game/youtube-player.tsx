@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { YTPlayer } from '@/types/youtube';
+export { isYouTubeUrl, isDirectVideoUrl } from '@/lib/url-utils';
 
 // Extract YouTube video ID from various URL formats
 export function extractYouTubeId(url: string): string | null {
@@ -28,50 +29,17 @@ export function extractYouTubeId(url: string): string | null {
   return null;
 }
 
-// Video file extensions supported by HTML5 <video> element (not playlist/manifest files)
-const DIRECT_VIDEO_EXTENSIONS = ['.mp4', '.webm', '.ogg', '.ogv'];
-
-/**
- * Check if a URL points to a YouTube video.
- * Matches youtube.com, youtu.be, music.youtube.com, and youtube-nocookie.com.
- */
-export function isYouTubeUrl(url: string): boolean {
-  if (!url) return false;
-  const lower = url.toLowerCase();
-  return (
-    lower.includes('youtube.com') ||
-    lower.includes('youtu.be') ||
-    lower.includes('youtube-nocookie.com')
-  );
-}
-
-/**
- * Check if a URL points directly to a video file (MP4, WebM, OGG, etc.).
- * Used to distinguish direct video URLs from YouTube or other platform URLs.
- */
-export function isDirectVideoUrl(url: string): boolean {
-  if (!url) return false;
-  try {
-    // Extract the path part of the URL and check the file extension
-    const parsed = new URL(url);
-    const pathname = parsed.pathname.toLowerCase();
-    return DIRECT_VIDEO_EXTENSIONS.some(ext => pathname.endsWith(ext));
-  } catch {
-    // Not a valid URL — check raw string as fallback
-    const lower = url.toLowerCase();
-    return DIRECT_VIDEO_EXTENSIONS.some(ext => lower.endsWith(ext));
-  }
-}
+export { isYouTubeUrl, isDirectVideoUrl } from '@/lib/url-utils';
 
 interface YouTubePlayerProps {
   videoId: string;
   videoGap?: number; // Offset in MILLISECONDS (positive = video starts AFTER audio)
   onReady?: () => void;
-  onTimeUpdate?: (_currentTimecurrentTime: number) => void;
+  onTimeUpdate?: (_currentTime: number) => void;
   onEnded?: () => void;
   onAdStart?: () => void;
   onAdEnd?: () => void;
-  onError?: (_errorCodeerrorCode: number) => void;
+  onError?: (_errorCode: number) => void;
   isPlaying?: boolean;
   startTime?: number; // Start position in milliseconds
   interactive?: boolean; // Allow user interaction with the player
