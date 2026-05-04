@@ -474,7 +474,8 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
           {/* Right Sidebar - Genre/Language Editor - Collapsible */}
           {showMetadataPanel && (
             <div className="w-80 flex-shrink-0 overflow-y-auto border-l border-white/10 p-4">
-              <GenreLanguageEditor 
+              <GenreLanguageEditor
+                key={selectedSong?.id ?? 'none'}
                 song={selectedSong}
                 onUpdate={handleSongMetadataUpdate}
               />

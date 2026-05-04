@@ -448,10 +448,9 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
             // Wait for both, then submit score
             Promise.all([playerPromise, songPromise])
               .then(() => {
-                // Calculate notes stats from game state
-                // goodNotes = notes that were hit but weren't perfect (notesHit and notesMissed are independent counts)
-                const perfectNotes = estimatePerfectNotes(playerResult.notesHit, playerResult.rating);
-                const goodNotes = Math.max(0, playerResult.notesHit - perfectNotes);
+                // Calculate notes stats from game state (recompute to avoid stale closure)
+                const submitPerfectNotes = estimatePerfectNotes(playerResult.notesHit, playerResult.rating);
+                const goodNotes = Math.max(0, playerResult.notesHit - submitPerfectNotes);
                 
                 return leaderboardService.submitScore(
                   profile,
@@ -459,7 +458,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
                   playerResult.score,
                   MAX_POINTS_PER_SONG,
                   {
-                    perfectNotes,
+                    perfectNotes: submitPerfectNotes,
                     goodNotes,
                     missedNotes: playerResult.notesMissed,
                     maxCombo: playerResult.maxCombo,
