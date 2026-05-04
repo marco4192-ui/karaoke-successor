@@ -9,6 +9,7 @@ import {
   ScoringMetadata,
 } from '@/lib/game/scoring';
 import { Player } from '@/types/game';
+import type { ChallengeModifier } from '@/lib/game/player-progression';
 
 // Score event type for visual feedback
 interface ScoreEvent {
@@ -60,6 +61,8 @@ interface UseNoteScoringOptions {
   isDuetMode: boolean;
   beatDuration: number;  // Kept for interface compat; actual value from timingData
   updatePlayer: (_playerId: string, _updates: Partial<Player>) => void;
+  // Challenge modifiers (e.g. perfect_only, golden_only from challenge modes)
+  challengeModifiers?: ChallengeModifier[];
   // Optional callbacks for visual effects
   onPerfectHit?: (_x: number, _y: number) => void;
   onGoldenNote?: (_x: number, _y: number) => void;
@@ -123,10 +126,15 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     isDuetMode,
     // beatDuration is unused — actual value read from timingData.beatDuration
     updatePlayer,
+    challengeModifiers = [],
     onPerfectHit,
     onGoldenNote,
     onComboMilestone
   } = options;
+
+  // Pre-compute challenge modifier flags for fast lookups during scoring ticks
+  const hasPerfectOnly = challengeModifiers.some(m => m.type === 'perfect_only');
+  const hasGoldenOnly = challengeModifiers.some(m => m.type === 'golden_only');
 
   // Score events state
   const [scoreEvents, setScoreEvents] = useState<ScoreEvent[]>([]);
@@ -289,7 +297,17 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
             if (tickResult.isHit) {
               noteProgress.ticksHit++;
 
-              const tickPoints = calculateTickPoints(tickResult.accuracy, note.isGolden, scoringMeta.pointsPerTick);
+              let tickPoints = calculateTickPoints(tickResult.accuracy, note.isGolden, scoringMeta.pointsPerTick);
+
+              // Challenge modifier: perfect_only — only "Perfect" hits score
+              if (hasPerfectOnly && tickResult.accuracy <= 0.95) {
+                tickPoints = 0;
+              }
+              // Challenge modifier: golden_only — only golden notes score
+              if (hasGoldenOnly && !note.isGolden) {
+                tickPoints = 0;
+              }
+
               const finalPoints = Math.max(1, Math.round(tickPoints));
 
               if (finalPoints > 0) {
@@ -471,12 +489,22 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
             if (tickResult.isHit) {
               noteProgress.ticksHit++;
 
-              const tickPoints = calculateTickPoints(tickResult.accuracy, note.isGolden, scoringMeta.pointsPerTick);
+              let tickPoints = calculateTickPoints(tickResult.accuracy, note.isGolden, scoringMeta.pointsPerTick);
+              const isPerfect = tickResult.accuracy > 0.95;
+
+              // Challenge modifier: perfect_only — only "Perfect" hits score
+              if (hasPerfectOnly && !isPerfect) {
+                tickPoints = 0;
+              }
+              // Challenge modifier: golden_only — only golden notes score
+              if (hasGoldenOnly && !note.isGolden) {
+                tickPoints = 0;
+              }
+
               const finalPoints = Math.max(1, Math.round(tickPoints));
 
               if (finalPoints > 0) {
                 const newCombo = p1ComboRef.current + 1;
-                const isPerfect = tickResult.accuracy > 0.95;
 
                 scoreDelta += finalPoints;
                 comboUpdate = newCombo;

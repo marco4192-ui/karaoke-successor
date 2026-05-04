@@ -93,7 +93,13 @@ const RANKS: Rank[] = [
 
 // ===================== CHALLENGE MODES =====================
 
-interface ChallengeMode {
+export interface ChallengeModifier {
+  type: 'no_lyrics' | 'no_pitch_guide' | 'double_speed' | 'half_speed' | 'pitch_shift' | 'blind' | 'missing_words' | 'golden_only' | 'perfect_only';
+  value?: number;
+  description: string;
+}
+
+export interface ChallengeMode {
   id: string;
   name: string;
   description: string;
@@ -103,12 +109,6 @@ interface ChallengeMode {
   xpReward: number;
   timeLimit?: number; // seconds
   requirements?: ChallengeRequirement[];
-}
-
-interface ChallengeModifier {
-  type: 'no_lyrics' | 'no_pitch_guide' | 'double_speed' | 'half_speed' | 'pitch_shift' | 'blind' | 'missing_words' | 'golden_only' | 'perfect_only';
-  value?: number;
-  description: string;
 }
 
 interface ChallengeRequirement {
@@ -200,16 +200,11 @@ export const CHALLENGE_MODES: ChallengeMode[] = [
 
 /**
  * Map challenge mode IDs to the corresponding built-in GameMode strings.
- * Only challenges whose modifiers already have a full game implementation
- * are mapped here. Challenges without a mapping will play in 'standard' mode
- * (the XP bonus is still awarded via calculateSongXP).
+ * Challenges listed here use native game-mode implementations.
  *
- * TODO: Implement game-loop support for the following modifiers:
- *   - no_pitch_guide: hide pitch guide visualization during play
- *   - double_speed / half_speed: audio time-stretch (requires Web Audio API)
- *   - pitch_shift: audio transposition by N semitones
- *   - golden_only: only golden notes count for scoring
- *   - perfect_only: only "perfect" rated hits count for scoring
+ * Other challenge modifiers (no_pitch_guide, double_speed, perfect_only,
+ * golden_only) are applied at the scoring/UI level via the challenge
+ * modifiers system, not via game-mode mapping.
  */
 export const CHALLENGE_GAME_MODE_MAP: Record<string, GameMode> = {
   'blind-audition': 'blind',

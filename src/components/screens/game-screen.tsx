@@ -131,19 +131,9 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
 
   // Derived: is low-performance mode?
   const isLowPerf = performanceMode === 'low';
-  
-  // Practice mode state
-  const [practiceMode, setPracticeMode] = useState<PracticeModeConfig>(PRACTICE_MODE_DEFAULTS);
-  const [showPracticeControls, setShowPracticeControls] = useState(false);
 
-  // Practice playback: apply playbackRate to audio/video, loop detection
-  const { loopCount: _loopCount, resetLoopCount: _resetLoopCount } = usePracticePlayback({
-    practiceMode,
-    isPlaying,
-    currentTime: gameState.currentTime,
-    audioRef,
-    videoRef,
-  });
+  // Practice mode UI controls
+  const [showPracticeControls, setShowPracticeControls] = useState(false);
   
   // Challenge mode state - read from localStorage when game starts
   const [activeChallenge] = useState<typeof CHALLENGE_MODES[0] | null>(() => {
@@ -158,6 +148,28 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
       }
     }
     return null;
+  });
+
+  // Derive challenge modifier flags for use throughout the component
+  const hasChallengeNoPitchGuide = activeChallenge?.modifiers.some(m => m.type === 'no_pitch_guide') ?? false;
+  const challengeSpeedModifier = activeChallenge?.modifiers.find(m => m.type === 'double_speed');
+  
+  // Practice mode state - initialize with challenge speed modifier if present
+  const [practiceMode, setPracticeMode] = useState<PracticeModeConfig>(() => {
+    const speedValue = challengeSpeedModifier?.value;
+    if (speedValue && speedValue > 1.0) {
+      return { ...PRACTICE_MODE_DEFAULTS, playbackRate: speedValue, enabled: true };
+    }
+    return { ...PRACTICE_MODE_DEFAULTS };
+  });
+
+  // Practice playback: apply playbackRate to audio/video, loop detection
+  const { loopCount: _loopCount, resetLoopCount: _resetLoopCount } = usePracticePlayback({
+    practiceMode,
+    isPlaying,
+    currentTime: gameState.currentTime,
+    audioRef,
+    videoRef,
   });
   
   // Mobile client state - pitch polling extracted to dedicated hook
@@ -324,6 +336,7 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
     isDuetMode,
     beatDuration,
     updatePlayer,
+    challengeModifiers: activeChallenge?.modifiers,
     onPerfectHit: emitPerfectHit,
     onGoldenNote: emitGoldenNote,
     onComboMilestone: useCallback((combo: number, x: number, y: number) => emitComboFirework(x, y, combo), [emitComboFirework]),
@@ -609,8 +622,8 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
         />
       </div>
 
-      {/* Pitch Graph Display — disabled in low-performance mode */}
-      {isPlaying && showPitchGuide && !isLowPerf && (
+      {/* Pitch Graph Display — disabled in low-performance mode and no_pitch_guide challenge */}
+      {isPlaying && showPitchGuide && !isLowPerf && !hasChallengeNoPitchGuide && (
         <div className="absolute top-44 left-4 z-20 w-64">
           <PitchGraphDisplay
             currentPitch={smoothedPitch}
@@ -839,7 +852,7 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
       {!isLowPerf && <ParticleSystem particles={particles} />}
       
       {/* Spectrogram Display / Equalizer — left side, below pitch detection */}
-      {showPitchGuide && isPlaying && !isLowPerf && (
+      {showPitchGuide && isPlaying && !isLowPerf && !hasChallengeNoPitchGuide && (
         <SpectrogramDisplay
           audioElement={spectrogramAudioEl}
           isActive={isPlaying && !!spectrogramAudioEl}
