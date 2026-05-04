@@ -222,7 +222,6 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       notesToCheck: Array<Note & { lineIndex: number; line: LyricLine }> | undefined,
       scoringMeta: ScoringMetadata | undefined,
       noteProgressMap: React.MutableRefObject<Map<string, NoteProgress>>,
-      _stateRef: React.MutableRefObject<PlayerScoringState>,
       setPlayerState: React.Dispatch<React.SetStateAction<PlayerScoringState>>,
       setScoreEventsState: React.Dispatch<React.SetStateAction<ScoreEvent[]>>,
       noteIdPrefix: string
@@ -388,7 +387,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         }
       }
     },
-    [song, difficulty, timingData]
+    [song, difficulty, timingData, hasPerfectOnly, hasGoldenOnly]
   );
 
   // Check if P1 hits notes - using duration-based scoring
@@ -620,7 +619,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         }
       }
     },
-    [song, difficulty, updatePlayer, timingData, isDuetMode, onPerfectHit, onGoldenNote, onComboMilestone]
+    [song, difficulty, updatePlayer, timingData, isDuetMode, onPerfectHit, onGoldenNote, onComboMilestone, hasPerfectOnly, hasGoldenOnly]
   );
 
   // Check P2 notes (duet/party mode)
@@ -634,7 +633,6 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         timingData?.p2Notes,
         timingData?.p2ScoringMetadata,
         p2NoteProgressRef,
-        p2StateRef,
         setP2State,
         setP2ScoreEvents,
         'p2-note'

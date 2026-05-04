@@ -34,4 +34,11 @@
 **Verifikation:** TSC 0 Errors
 **Commit:** `516cf67`
 
+### Fix 3: DC-C — Unbenutzte _loopCount/_resetLoopCount entfernt
+**Datei:** `src/components/screens/game-screen.tsx`
+**Problem:** `_loopCount` und `_resetLoopCount` wurden destrukturiert aber nie verwendet.
+**Lösung:** Hook-Aufruf ohne Destrukturierung beibehalten (hat essentielle Seiteneffekte: playbackRate, Loop-Detection).
+**Verifikation:** TSC 0 Errors
+**Commit:** `a26dc53`
+
 ---
