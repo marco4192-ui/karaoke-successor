@@ -76,16 +76,6 @@ interface Rank {
   titles: string[]; // Unlockable titles at this rank
 }
 
-export interface Title {
-  id: string;
-  name: string;
-  icon: string;
-  description: string;
-  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic';
-  unlockCondition: string;
-  category: 'achievement' | 'skill' | 'dedication' | 'special' | 'challenge';
-}
-
 const RANKS: Rank[] = [
   { id: 'beginner', name: 'Beginner', icon: '🎵', minXP: 0, maxXP: 499, color: '#9CA3AF', titles: ['Newcomer'] },
   { id: 'novice', name: 'Novice', icon: '🎤', minXP: 500, maxXP: 1499, color: '#6B7280', titles: ['Rising Star'] },
@@ -99,42 +89,6 @@ const RANKS: Rank[] = [
   { id: 'icon', name: 'Icon', icon: '💎', minXP: 50000, maxXP: 99999, color: '#F97316', titles: ['Musical Icon'] },
   { id: 'mythic', name: 'Mythic', icon: '🔮', minXP: 100000, maxXP: 199999, color: '#A855F7', titles: ['Mythic Singer'] },
   { id: 'divine', name: 'Divine', icon: '🌟', minXP: 200000, maxXP: Infinity, color: '#FFD700', titles: ['Divine Voice'] },
-];
-
-export const TITLES: Title[] = [
-  // Skill-based titles
-  { id: 'perfect-pitch', name: 'Perfect Pitch', icon: '🎯', description: 'Achieve 100% accuracy on a song', rarity: 'legendary', unlockCondition: 'Get 100% accuracy', category: 'skill' },
-  { id: 'golden-voice', name: 'Golden Voice', icon: '✨', description: 'Hit 100 golden notes', rarity: 'epic', unlockCondition: 'Hit 100 golden notes', category: 'skill' },
-  { id: 'combo-master', name: 'Combo Master', icon: '⚡', description: 'Achieve a 100x combo', rarity: 'rare', unlockCondition: 'Get 100x combo', category: 'skill' },
-  { id: 'pitch-perfect', name: 'Pitch Perfect', icon: '🎼', description: 'Hit 50 perfect notes in a row', rarity: 'rare', unlockCondition: '50 consecutive perfect notes', category: 'skill' },
-  
-  // Dedication titles
-  { id: 'dedicated-singer', name: 'Dedicated Singer', icon: '🎤', description: 'Complete 100 songs', rarity: 'uncommon', unlockCondition: 'Complete 100 songs', category: 'dedication' },
-  { id: 'karaoke-addict', name: 'Karaoke Addict', icon: '🎵', description: 'Complete 500 songs', rarity: 'rare', unlockCondition: 'Complete 500 songs', category: 'dedication' },
-  { id: 'lifetime-achiever', name: 'Lifetime Achiever', icon: '🏆', description: 'Complete 1000 songs', rarity: 'legendary', unlockCondition: 'Complete 1000 songs', category: 'dedication' },
-  { id: 'weekly-warrior', name: 'Weekly Warrior', icon: '📅', description: '7-day daily challenge streak', rarity: 'uncommon', unlockCondition: '7-day streak', category: 'dedication' },
-  { id: 'monthly-master', name: 'Monthly Master', icon: '🗓️', description: '30-day daily challenge streak', rarity: 'epic', unlockCondition: '30-day streak', category: 'dedication' },
-  { id: 'yearly-legend', name: 'Yearly Legend', icon: '⭐', description: '365-day daily challenge streak', rarity: 'mythic', unlockCondition: '365-day streak', category: 'dedication' },
-  
-  // Achievement titles
-  { id: 'first-steps', name: 'First Steps', icon: '👣', description: 'Complete your first song', rarity: 'common', unlockCondition: 'Complete first song', category: 'achievement' },
-  { id: 'rising-star', name: 'Rising Star', icon: '🌟', description: 'Reach level 5', rarity: 'uncommon', unlockCondition: 'Reach level 5', category: 'achievement' },
-  { id: 'veteran', name: 'Veteran', icon: '🎖️', description: 'Reach level 25', rarity: 'rare', unlockCondition: 'Reach level 25', category: 'achievement' },
-  { id: 'elite', name: 'Elite', icon: '🏅', description: 'Reach level 50', rarity: 'epic', unlockCondition: 'Reach level 50', category: 'achievement' },
-  { id: 'master', name: 'Master', icon: '👑', description: 'Reach level 100', rarity: 'legendary', unlockCondition: 'Reach level 100', category: 'achievement' },
-  
-  // Challenge titles
-  { id: 'challenge-champion', name: 'Challenge Champion', icon: '🏆', description: 'Win 10 daily challenges', rarity: 'epic', unlockCondition: 'Win 10 daily challenges', category: 'challenge' },
-  { id: 'top-10-regular', name: 'Top 10 Regular', icon: '📊', description: 'Finish top 10 fifty times', rarity: 'rare', unlockCondition: 'Top 10 fifty times', category: 'challenge' },
-  { id: 'challenger', name: 'Challenger', icon: '⚔️', description: 'Complete 50 challenges', rarity: 'uncommon', unlockCondition: 'Complete 50 challenges', category: 'challenge' },
-  
-  // Special titles
-  { id: 'night-owl', name: 'Night Owl', icon: '🦉', description: 'Sing 50 songs between midnight and 4am', rarity: 'rare', unlockCondition: 'Sing late at night', category: 'special' },
-  { id: 'early-bird', name: 'Early Bird', icon: '🐦', description: 'Sing 50 songs between 5am and 8am', rarity: 'rare', unlockCondition: 'Sing early morning', category: 'special' },
-  { id: 'marathon-runner', name: 'Marathon Runner', icon: '🏃', description: 'Sing for 5 hours total', rarity: 'epic', unlockCondition: '5 hours total sing time', category: 'special' },
-  { id: 'iron-lungs', name: 'Iron Lungs', icon: '💪', description: 'Sing for 24 hours total', rarity: 'legendary', unlockCondition: '24 hours total sing time', category: 'special' },
-  { id: 'genre-hopper', name: 'Genre Hopper', icon: '🎭', description: 'Sing songs from 10 different genres', rarity: 'rare', unlockCondition: '10 different genres', category: 'special' },
-  { id: 'duet-expert', name: 'Duet Expert', icon: '👥', description: 'Complete 50 duets', rarity: 'rare', unlockCondition: 'Complete 50 duets', category: 'special' },
 ];
 
 // ===================== CHALLENGE MODES =====================
