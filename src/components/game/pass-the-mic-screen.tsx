@@ -49,7 +49,7 @@ const DEFAULT_SETTINGS: PassTheMicSettings = {
 
 interface PassTheMicSetupProps {
   profiles: PlayerProfile[];
-  onSelectSong: (_playersplayers: PassTheMicPlayer[], _settingssettings: PassTheMicSettings) => void;
+  onSelectSong: (_players: PassTheMicPlayer[], _settings: PassTheMicSettings) => void;
   onBack: () => void;
 }
 
