@@ -775,7 +775,6 @@ export function SongVotingModal({ songs, onVote, onClose, gameColor }: {
   onClose: () => void;
   gameColor: string;
 }) {
-  const [votes] = useState<Record<string, string>>({});
   const coverBlobUrlsRef = useRef<string[]>([]);
 
   // Restore cover URLs for voting songs (Tauri: relative paths, Browser: IndexedDB)
@@ -832,18 +831,15 @@ export function SongVotingModal({ songs, onVote, onClose, gameColor }: {
     };
   }, [songs]);
 
-  const getVoteCount = (songId: string) =>
-    Object.values(votes).filter(v => v === songId).length;
-
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <Card className="bg-gray-900 border-white/20 max-w-4xl w-full max-h-[90vh] overflow-auto">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-2xl">🗳️ Vote for a Song!</CardTitle>
+          <CardTitle className="text-2xl">🎵 Choose a Song!</CardTitle>
           <Button variant="ghost" onClick={onClose} className="text-white/60">✕</Button>
         </CardHeader>
         <CardContent>
-          <p className="text-white/60 mb-6">Click on a song to vote for it. The song with the most votes will be played!</p>
+          <p className="text-white/60 mb-6">Click on a song to start playing!</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {enrichedSongs.map((song, index) => (
               <div
@@ -861,16 +857,8 @@ export function SongVotingModal({ songs, onVote, onClose, gameColor }: {
                 )}
                 <h3 className="font-bold text-white truncate">{song.title}</h3>
                 <p className="text-white/70 text-sm truncate">{song.artist}</p>
-                {getVoteCount(song.id) > 0 && (
-                  <div className="absolute bottom-2 right-2 bg-white/20 rounded-full px-2 py-1 text-sm">
-                    {getVoteCount(song.id)} vote{getVoteCount(song.id) > 1 ? 's' : ''}
-                  </div>
-                )}
               </div>
             ))}
-          </div>
-          <div className="mt-6 text-center text-white/40 text-sm">
-            💡 In future, players can vote via the Companion App!
           </div>
         </CardContent>
       </Card>
