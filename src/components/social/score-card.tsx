@@ -9,10 +9,9 @@ interface ScoreCardProps {
   score: HighscoreEntry;
   playerName: string;
   playerAvatar?: string;
-  onClose?: () => void;
 }
 
-export function ScoreCard({ song, score, playerName}: ScoreCardProps) {
+export function ScoreCard({ song, score, playerName, playerAvatar }: ScoreCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const generateCard = useCallback(() => {
@@ -180,9 +179,13 @@ export function ScoreCard({ song, score, playerName}: ScoreCardProps) {
           
           <div className="mt-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
-                {playerName[0].toUpperCase()}
-              </div>
+              {playerAvatar ? (
+                <img src={playerAvatar} alt={playerName} className="w-8 h-8 rounded-full object-cover" />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
+                  {playerName[0].toUpperCase()}
+                </div>
+              )}
               <span className="text-white font-medium">{playerName}</span>
             </div>
             <div className="text-lg font-bold text-yellow-400 uppercase">{score.rating}!</div>
