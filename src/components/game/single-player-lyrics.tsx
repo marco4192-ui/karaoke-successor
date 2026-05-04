@@ -61,7 +61,7 @@ export function SinglePlayerLyrics({
     }
 
     if (!currentLine) {
-      return { currentLine: null, nextLine: null, timeUntilSing: 0, _isSingingisSinging: false, isFlying: false };
+      return { currentLine: null, nextLine: null, timeUntilSing: 0, isSinging: false, isFlying: false };
     }
 
     // Calculate timing
