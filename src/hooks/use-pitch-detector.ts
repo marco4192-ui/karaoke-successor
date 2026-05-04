@@ -40,9 +40,11 @@ export function usePitchDetector() {
     try {
       // Stop current detector
       detectorRef.current?.stop();
-      // Destroy and reset singleton so a fresh instance is created
-      detectorRef.current?.destroy();
-      resetPitchDetector();
+      // Destroy and reset singleton so a fresh instance is created.
+      // MUST await resetPitchDetector() — it is async and sets the module-level
+      // singleton to null. Without awaiting, getPitchDetector() on the next line
+      // returns the still-non-null (destroying) instance.
+      await resetPitchDetector();
       detectorRef.current = null;
       setIsInitialized(false);
       setIsListening(false);
