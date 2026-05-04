@@ -127,7 +127,7 @@ export function createCompetitiveGame(
  * Get the pairings for the current round.
  * Tries to distribute singing time evenly: rotate through players.
  */
-export function getNextRoundPairing(game: CompetitiveGame): { player1Id: string; player2Id: string } | null {
+function getNextRoundPairing(game: CompetitiveGame): { player1Id: string; player2Id: string } | null {
   // Filter out players who have already finished all their rounds
   const eligiblePlayers = game.players.filter(p => !isPlayerFinished(game, p.id));
   const n = eligiblePlayers.length;
