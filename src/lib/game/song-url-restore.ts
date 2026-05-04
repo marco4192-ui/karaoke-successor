@@ -52,9 +52,9 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
     const urlPromises: Promise<void>[] = [];
 
     // Restore audio URL from songs folder — only if missing
-    if (song.relativeAudioPath && !song.audioUrl) {
+    if (restored.relativeAudioPath && !restored.audioUrl) {
       urlPromises.push(
-        getSongMediaUrl(song.relativeAudioPath, resolvedFolder ?? undefined).then(url => {
+        getSongMediaUrl(restored.relativeAudioPath, resolvedFolder ?? undefined).then(url => {
           if (url) {
             restored.audioUrl = url;
           } else {
@@ -66,9 +66,9 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
     }
 
     // Restore video URL from songs folder — only if missing
-    if (song.relativeVideoPath && !song.videoBackground) {
+    if (restored.relativeVideoPath && !restored.videoBackground) {
       urlPromises.push(
-        getSongMediaUrl(song.relativeVideoPath, resolvedFolder ?? undefined).then(url => {
+        getSongMediaUrl(restored.relativeVideoPath, resolvedFolder ?? undefined).then(url => {
           if (url) {
             restored.videoBackground = url;
           } else {
@@ -80,9 +80,9 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
     }
 
     // Restore cover URL from songs folder — only if missing
-    if (song.relativeCoverPath && !song.coverImage) {
+    if (restored.relativeCoverPath && !restored.coverImage) {
       urlPromises.push(
-        getSongMediaUrl(song.relativeCoverPath, resolvedFolder ?? undefined).then(url => {
+        getSongMediaUrl(restored.relativeCoverPath, resolvedFolder ?? undefined).then(url => {
           if (url) {
             restored.coverImage = url;
           } else {
