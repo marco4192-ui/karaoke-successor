@@ -39,7 +39,8 @@ ${card.rankTitle}
 📊 Accuracy: ${card.accuracy.toFixed(1)}%
 🔥 Max Combo: ${card.maxCombo}x
 ⭐ Rating: ${card.rating.toUpperCase()}
-🎮 Mode: ${card.difficulty.toUpperCase()}
+🎮 Mode: ${card.gameMode.toUpperCase()}
+💬 Difficulty: ${card.difficulty.toUpperCase()}
 
 Play Karaoke Successor and try to beat my score!`;
 }
