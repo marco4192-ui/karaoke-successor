@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Song } from '@/types/game';
 import { getAllSongsAsync, ensureSongUrls, getSongByIdWithLyrics } from '@/lib/game/song-library';
+import { extractYouTubeId } from '@/components/game/youtube-player';
 import { RepeatMode } from './jukebox-types';
 
 export function useJukebox(refs?: {
@@ -12,7 +13,7 @@ export function useJukebox(refs?: {
 }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
-  const [customYoutubeId, _setCustomYoutubeId] = useState<string | null>(null);
+  const [customYoutubeId, setCustomYoutubeId] = useState<string | null>(null);
   const [playlist, setPlaylist] = useState<Song[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   // Track which song IDs were manually added (via companion wishlist) vs random system picks
@@ -363,6 +364,19 @@ export function useJukebox(refs?: {
     return playlist.slice(currentIndex + 1, currentIndex + 6);
   }, [playlist, currentIndex]);
 
+  // Handle custom YouTube URL input
+  const handleYoutubeUrlSubmit = useCallback((url: string) => {
+    const extractedId = extractYouTubeId(url);
+    if (extractedId) {
+      setCustomYoutubeId(extractedId);
+    }
+  }, []);
+
+  // Clear custom YouTube video
+  const clearCustomYoutube = useCallback(() => {
+    setCustomYoutubeId(null);
+  }, []);
+
   return {
     isPlaying, currentSong, customYoutubeId, playlist, currentIndex, songs,
     filterGenre, filterArtist, searchQuery, shuffle, repeat,
@@ -373,6 +387,7 @@ export function useJukebox(refs?: {
     setVolume, setHidePlaylist, setShowLyrics,
     setCurrentLyricIndex, setCurrentSong, setCurrentIndex,
     setIsAdPlaying, setYoutubeTime,
+    handleYoutubeUrlSubmit, clearCustomYoutube,
     startJukebox, stopJukebox, playNext, playPrevious,
     handleMediaEnd, toggleFullscreen, togglePlayPause,
   };

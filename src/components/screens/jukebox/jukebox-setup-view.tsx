@@ -1,13 +1,29 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { PlayIcon } from '@/components/icons';
+import { extractYouTubeId } from '@/components/game/youtube-player';
 import type { UseJukeboxReturn } from './jukebox-types';
 
 export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [youtubeError, setYoutubeError] = useState('');
+
+  const handleYoutubeSubmit = () => {
+    if (!youtubeUrl.trim()) return;
+    const id = extractYouTubeId(youtubeUrl.trim());
+    if (!id) {
+      setYoutubeError('Ungültige YouTube URL');
+      return;
+    }
+    setYoutubeError('');
+    setYoutubeUrl('');
+    j.handleYoutubeUrlSubmit(youtubeUrl.trim());
+  };
+
   return (
     <>
       {/* Search and Filters */}
@@ -141,6 +157,45 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
               <p className="text-2xl font-bold text-cyan-400">{j.filteredSongs.length}</p>
               <p className="text-white/60 text-sm">songs available</p>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* YouTube URL Input */}
+        <Card className="bg-white/5 border-white/10">
+          <CardHeader>
+            <CardTitle>YouTube Video</CardTitle>
+            <CardDescription>Optionales YouTube-Video als Hintergrund</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                placeholder="https://www.youtube.com/watch?v=..."
+                value={youtubeUrl}
+                onChange={(e) => { setYoutubeUrl(e.target.value); setYoutubeError(''); }}
+                onKeyDown={(e) => e.key === 'Enter' && handleYoutubeSubmit()}
+                className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40"
+              />
+              <Button
+                onClick={handleYoutubeSubmit}
+                variant="outline"
+                className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
+              >
+                Setzen
+              </Button>
+            </div>
+            {youtubeError && <p className="text-red-400 text-sm">{youtubeError}</p>}
+            {j.customYoutubeId && (
+              <div className="flex items-center gap-2 text-cyan-400 text-sm">
+                <span>Aktiv: {j.customYoutubeId}</span>
+                <button
+                  onClick={j.clearCustomYoutube}
+                  className="text-white/60 hover:text-white underline"
+                >
+                  Entfernen
+                </button>
+              </div>
+            )}
           </CardContent>
         </Card>
 

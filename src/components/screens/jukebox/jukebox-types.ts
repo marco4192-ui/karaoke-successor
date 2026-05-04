@@ -43,6 +43,9 @@ export interface UseJukeboxReturn {
   setCurrentIndex: (_i: number) => void;
   setIsAdPlaying: (_a: boolean) => void;
   setYoutubeTime: (_t: number) => void;
+  // YouTube
+  handleYoutubeUrlSubmit: (_url: string) => void;
+  clearCustomYoutube: () => void;
   // Actions
   startJukebox: () => void;
   stopJukebox: () => void;

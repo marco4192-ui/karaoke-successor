@@ -342,9 +342,20 @@ export function JukeboxPlayerView({ j, videoRef, audioRef }: { j: UseJukeboxRetu
 
               {/* Fullscreen button (normal mode) */}
               {!j.isFullscreen && (
-                <button onClick={j.toggleFullscreen} className="absolute top-4 right-4 p-2 rounded-lg bg-black/50 hover:bg-black/70 text-white transition-colors">
-                  ⤢ Fullscreen
-                </button>
+                <div className="absolute top-4 right-4 flex items-center gap-2">
+                  {j.customYoutubeId && (
+                    <button
+                      onClick={j.clearCustomYoutube}
+                      className="p-2 rounded-lg bg-black/50 hover:bg-black/70 text-red-400 transition-colors text-xs"
+                      title="YouTube Video entfernen"
+                    >
+                      YouTube
+                    </button>
+                  )}
+                  <button onClick={j.toggleFullscreen} className="p-2 rounded-lg bg-black/50 hover:bg-black/70 text-white transition-colors">
+                    ⤢ Fullscreen
+                  </button>
+                </div>
               )}
             </div>
           </Card>
