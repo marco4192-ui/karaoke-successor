@@ -16,6 +16,14 @@ import {
   ScoringMetadata,
 } from './scoring';
 
+// ===================== CONSTANTS =====================
+
+/** Multiplier for converting accuracy (0-1) to fallback tick points when no BPM metadata is available. */
+const FALLBACK_TICK_MULTIPLIER = 10;
+
+/** Maximum points per tick in fallback mode — prevents score inflation on long songs. */
+const FALLBACK_MAX_TICK_PTS = 3;
+
 // ===================== TYPES =====================
 
 /** Minimal pitch input expected by the scoring functions. */
@@ -127,13 +135,13 @@ export function evaluateAndScoreTick(
     // Scale accuracy to 0-3 point range without a floor so that poor
     // accuracy (below ~0.05) correctly awards 0 points instead of
     // inflating scores on long songs with many ticks.
-    tickPts = result.accuracy * 10;
+    tickPts = result.accuracy * FALLBACK_TICK_MULTIPLIER;
   }
 
   // Round to nearest integer, cap at 3 in fallback mode, no artificial floor
   const points = scoringMeta
     ? Math.max(1, Math.round(tickPts))
-    : Math.min(Math.round(tickPts), 3);
+    : Math.min(Math.round(tickPts), FALLBACK_MAX_TICK_PTS);
 
   return { hit: true, points, accuracy: result.accuracy, displayType: result.displayType };
 }
