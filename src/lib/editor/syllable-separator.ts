@@ -16,7 +16,7 @@
  * 3. For each word, split into syllables using heuristics
  * 4. Mark the last syllable of each word with a trailing space
  */
-export interface SyllableWord {
+interface SyllableWord {
   text: string;           // The word
   syllables: string[];    // Individual syllables
 }
@@ -108,7 +108,7 @@ export function syllablesToUltraStarNotes(
  * 4. Split at common prefixes/suffixes
  * 5. Fallback: split in half for long words
  */
-export function splitIntoSyllables(word: string): string[] {
+function splitIntoSyllables(word: string): string[] {
   if (!word || word.length <= 3) {
     return [word];
   }
