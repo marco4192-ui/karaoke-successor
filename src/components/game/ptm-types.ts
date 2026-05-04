@@ -1,5 +1,11 @@
 import { Difficulty } from '@/types/game';
 
+// Backward-compatible aliases — some consumers still reference the old names.
+/** @deprecated Use PtmPlayer instead */
+export type PassTheMicPlayer = PtmPlayer;
+/** @deprecated Use PtmSegment instead */
+export type PassTheMicSegment = PtmSegment;
+
 export interface PtmPlayer {
   id: string;
   name: string;
