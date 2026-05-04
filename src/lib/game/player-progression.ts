@@ -349,6 +349,9 @@ interface PlayerGameResult {
 
 // ===================== XP CALCULATIONS =====================
 
+// Maximum score achievable in a single song (matches scoring.ts MAX_POINTS_PER_SONG)
+const MAX_SCORE = 10000;
+
 const XP_SOURCES = {
   // Song completion
   SONG_COMPLETE: 50,
@@ -372,6 +375,11 @@ export function calculateSongXP(
   challengeMode?: string
 ): number {
   let xp = XP_SOURCES.SONG_COMPLETE;
+  
+  // Score-based XP: up to 100 bonus XP proportional to score/MAX_SCORE.
+  // This rewards overall performance (hitting more notes) beyond just accuracy %.
+  const scoreRatio = Math.min(1, Math.max(0, score / MAX_SCORE));
+  xp += Math.round(scoreRatio * 100);
   
   // Accuracy bonus
   if (accuracy >= PERFECT_ACCURACY) {

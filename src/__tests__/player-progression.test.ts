@@ -145,17 +145,17 @@ describe('Player Progression System', () => {
 
     it('adds accuracy bonus for perfect accuracy', () => {
       const xp = calculateSongXP(10000, 100, 0, 0, 0);
-      expect(xp).toBe(200); // 50 base + 150 perfect bonus
+      expect(xp).toBe(300); // 50 base + 100 score bonus + 150 perfect bonus
     });
 
     it('adds accuracy bonus for excellent accuracy (95+)', () => {
       const xp = calculateSongXP(9000, 95, 0, 0, 0);
-      expect(xp).toBe(125); // 50 base + 75 excellent bonus
+      expect(xp).toBe(215); // 50 base + 90 score bonus + 75 excellent bonus
     });
 
     it('does not add accuracy bonus below 95', () => {
       const xp = calculateSongXP(8000, 94, 0, 0, 0);
-      expect(xp).toBe(50); // 50 base only
+      expect(xp).toBe(130); // 50 base + 80 score bonus
     });
 
     it('adds XP for perfect notes', () => {
@@ -201,13 +201,15 @@ describe('Player Progression System', () => {
     it('combines all XP sources correctly', () => {
       // Perfect accuracy, 5 perfect notes, 2 golden notes, 100 combo, blind-audition challenge
       const xp = calculateSongXP(10000, 100, 100, 5, 2, 'blind-audition');
-      // 50 (base) + 150 (perfect) + 10 (5*2 perfect notes) + 20 (2*10 golden) + 50 (100 combo) + 200 (challenge)
-      expect(xp).toBe(480);
+      // 50 (base) + 100 (score bonus) + 150 (perfect) + 10 (5*2 perfect notes) + 20 (2*10 golden) + 50 (100 combo) + 200 (challenge)
+      expect(xp).toBe(580);
     });
 
     it('returns rounded integer', () => {
       const xp = calculateSongXP(5000, 50.5, 10, 3, 1);
       expect(Number.isInteger(xp)).toBe(true);
+      // 50 (base) + 50 (score bonus) + 6 (3*2 perfect notes) + 10 (1*10 golden) + 0 (combo below 50)
+      expect(xp).toBe(116);
     });
   });
 });
