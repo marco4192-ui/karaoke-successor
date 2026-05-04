@@ -328,6 +328,7 @@ export function convertUltraStarToSong(
       lyric: rawLyric,
       isBonus: note.type === 'F', // Freestyle notes are bonus
       isGolden: note.type === '*' || note.type === 'G', // Golden notes
+      isRap: note.type === 'R' || note.type === 'G', // Rap notes
       player: note.player, // Preserve player assignment for duet mode
     };
 
@@ -600,7 +601,9 @@ export function generateUltraStarTxt(song: Song): string {
       const startBeat = Math.round((note.startTime - song.gap) / beatDuration);
       const duration = Math.round(note.duration / beatDuration);
       const relativePitch = note.pitch - MIDI_BASE_OFFSET;
-      const type = note.isGolden ? '*' : note.isBonus ? 'F' : ':';
+      const type = note.isRap
+        ? (note.isGolden ? 'G' : 'R')
+        : note.isGolden ? '*' : note.isBonus ? 'F' : ':';
       
       // Add P1/P2 prefix for duet mode if player changes
       const noteLine = `${type} ${startBeat} ${duration} ${relativePitch} ${note.lyric}`;

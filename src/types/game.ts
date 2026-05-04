@@ -16,6 +16,7 @@ export interface Note {
   lyric: string;
   isBonus: boolean;
   isGolden: boolean; // Star power note
+  isRap?: boolean; // Rap note ('R'/'G' types in UltraStar)
   player?: DuetPlayer; // For duet mode - which player sings this note
   analysisConfidence?: number; // 0-1 confidence from pitch analysis (editor-only, not serialized)
 }
