@@ -125,8 +125,7 @@ export function useJukebox(refs?: {
           // Place one random song first, then all wishlist songs, then remaining random
           const firstRandom = newPlaylist[0] && !wishlistSongIds.has(newPlaylist[0].id)
             ? [newPlaylist[0]]
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            : (randomPool.length > 0 ? [randomPool.shift()!] : []);
+            : (randomPool.length > 0 ? [randomPool.shift() ?? randomPool[0]] : []);
           newPlaylist = [...firstRandom, ...wishlistSongs, ...randomPool];
         }
       }
