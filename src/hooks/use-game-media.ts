@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import type { Song, LyricLine } from '@/types/game';
 
-export interface UseGameMediaResult {
+interface UseGameMediaResult {
   /** Song with URLs restored via ensureSongUrls (for Tauri compatibility) */
   restoredSong: Song | null;
   /** Song with restored URLs AND on-demand loaded lyrics */
