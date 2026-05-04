@@ -8,15 +8,15 @@ import { isTauri, normalizeFilePath } from '@/lib/tauri-file-storage';
 import { safeAlert, safeConfirm, safePrompt } from '@/lib/safe-dialog';
 import { nativePickFolder } from '@/lib/native-fs';
 
-export interface ScanProgress {
+interface ScanProgress {
   stage: 'scanning' | 'importing' | 'complete' | 'error';
   message: string;
   count: number;
 }
 
-export interface UseFolderScannerReturn {
+interface UseFolderScannerReturn {
   songsFolder: string;
-  setSongsFolder: (_folderfolder: string) => void;
+  setSongsFolder: (_folder: string) => void;
   songCount: number;
   setSongCount: (_count: number) => void;
   isScanning: boolean;
