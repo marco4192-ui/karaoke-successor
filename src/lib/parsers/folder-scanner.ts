@@ -5,6 +5,7 @@ import { Song, Note, LyricLine, midiToFrequency, Difficulty } from '@/types/game
 import { CachedFolder, LibraryCache, loadCache } from '@/lib/game/library-cache';
 import { storeMedia } from '@/lib/db/media-db';
 import { normalizeTxtContent } from '@/lib/utils';
+import { AUDIO_EXTENSIONS, VIDEO_EXTENSIONS, TXT_EXTENSIONS, COVER_EXTENSIONS, BACKGROUND_EXTENSIONS } from '@/lib/media-extensions';
 
 // H17: Track all blob URLs created during scanning so they can be revoked on unmount
 const scanBlobUrls = new Set<string>();
@@ -52,12 +53,8 @@ export interface ScanResult {
   errors: string[];
 }
 
-// Supported file extensions - expanded for broader compatibility
-const AUDIO_EXTENSIONS = ['.mp3', '.ogg', '.wav', '.m4a', '.flac', '.aac', '.wma', '.opus', '.weba', '.aiff', '.aif'];
-const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.m4v', '.3gp', '.ogv', '.ts'];
-const TXT_EXTENSIONS = ['.txt'];
-const COVER_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
-const BACKGROUND_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
+// Supported file extensions — shared via media-extensions.ts
+// Re-assign to mutable arrays for .includes() compatibility with const tuples
 
 // Cover file name patterns (in order of priority)
 const COVER_PATTERNS = [

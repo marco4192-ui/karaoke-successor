@@ -11,6 +11,7 @@ import {
   nativeReadDir,
 } from '@/lib/native-fs';
 import { normalizeTxtContent } from '@/lib/utils';
+import { AUDIO_EXTENSIONS, VIDEO_EXTENSIONS, TXT_EXTENSIONS, COVER_EXTENSIONS } from '@/lib/media-extensions';
 
 /**
  * Sanitize a filename to prevent directory traversal attacks.
@@ -107,13 +108,7 @@ function cacheBlobUrl(key: string, url: string) {
   blobUrlCache.set(key, url);
 }
 
-// File extension patterns
-const AUDIO_EXTENSIONS = ['.mp3', '.ogg', '.wav', '.m4a', '.flac', '.aac', '.wma', '.opus', '.weba', '.aiff', '.aif'];
-const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.m4v', '.3gp', '.ogv', '.ts'];
-const TXT_EXTENSIONS = ['.txt'];
-const COVER_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
-
-// MIME types for file extensions
+// MIME types for file extensions (supplements media-extensions.ts)
 const MIME_TYPES: Record<string, string> = {
   '.mp3': 'audio/mpeg',
   '.ogg': 'audio/ogg',
