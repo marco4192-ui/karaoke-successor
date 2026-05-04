@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -25,7 +24,7 @@ interface MedleyGameScreenProps {
   matchups: SnippetMatchup[];
   /** Cumulative series history (from previous rounds) */
   seriesHistory: MedleyRoundResult[];
-  onRoundComplete: (result: MedleyRoundResult, updatedPlayers: MedleyPlayer[]) => void;
+  onRoundComplete: (_result: MedleyRoundResult, _updatedPlayers: MedleyPlayer[]) => void;
   onEndGame: () => void;
 }
 
@@ -59,7 +58,7 @@ export function MedleyGameScreen({
   // ── Audio ──
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [audioReady, setAudioReady] = useState(false);
+  const [_audioReady, setAudioReady] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
   const [currentTimeMs, setCurrentTimeMs] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -68,7 +67,7 @@ export function MedleyGameScreen({
   const playersRef = useRef<MedleyPlayer[]>(
     initialPlayers.map(p => ({ ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, snippetsSung: 0 })),
   );
-  const [playersDisplay, setPlayersDisplay] = useState<MedleyPlayer[]>(playersRef.current);
+  const [_playersDisplay, setPlayersDisplay] = useState<MedleyPlayer[]>(playersRef.current);
   const forceRender = useCallback(() => setPlayersDisplay([...playersRef.current]), []);
 
   // ── Snippet notes (for lyrics display) ──
@@ -170,7 +169,7 @@ export function MedleyGameScreen({
         } else {
           scoringMetaRef.current = null;
         }
-      } catch (err) {
+      } catch (_err) {
         if (!cancelled) setAudioError('Audio-Laden fehlgeschlagen');
       }
     };
@@ -784,7 +783,7 @@ interface MedleyRoundResultsProps {
 }
 
 function MedleyRoundResults({
-  players, settings, seriesHistory, roundNumber,
+  players, settings, _seriesHistory, roundNumber,
   onNextRound, onEndSeries, onRecordAndEnd,
 }: MedleyRoundResultsProps) {
   const isTeam = settings.playMode === 'team';

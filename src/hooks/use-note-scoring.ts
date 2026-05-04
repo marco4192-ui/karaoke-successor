@@ -59,11 +59,11 @@ export interface UseNoteScoringOptions {
   timingData: TimingDataForScoring | null;
   isDuetMode: boolean;
   beatDuration: number;  // Kept for interface compat; actual value from timingData
-  updatePlayer: (playerId: string, updates: Partial<Player>) => void;
+  updatePlayer: (_playerId: string, _updates: Partial<Player>) => void;
   // Optional callbacks for visual effects
-  onPerfectHit?: (x: number, y: number) => void;
-  onGoldenNote?: (x: number, y: number) => void;
-  onComboMilestone?: (combo: number, x: number, y: number) => void;
+  onPerfectHit?: (_x: number, _y: number) => void;
+  onGoldenNote?: (_x: number, _y: number) => void;
+  onComboMilestone?: (_combo: number, _x: number, _y: number) => void;
 }
 
 // Hook return type
@@ -83,14 +83,14 @@ export interface UseNoteScoringReturn {
   // Detected pitch for P2
   p2DetectedPitch: number | null;
   
-  setP2DetectedPitch: (pitch: number | null) => void;
+  setP2DetectedPitch: (_pitch: number | null) => void;
   // Functions
   checkNoteHits: (
-    currentTime: number,
+    _currentTime: number,
     pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }
   ) => void;
   checkP2NoteHits: (
-    currentTime: number,
+    _currentTime: number,
     pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }
   ) => void;
 

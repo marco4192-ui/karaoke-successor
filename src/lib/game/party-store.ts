@@ -33,92 +33,92 @@ export interface PassTheMicRoundResult {
 export interface PartyStore {
   // Tournament
   tournamentBracket: TournamentBracket | null;
-  setTournamentBracket: (bracket: TournamentBracket | null) => void;
+  setTournamentBracket: (_bracket: TournamentBracket | null) => void;
   tournamentSongDuration: number;
-  setTournamentSongDuration: (duration: number) => void;
+  setTournamentSongDuration: (_duration: number) => void;
   currentTournamentMatch: TournamentMatch | null;
-  setCurrentTournamentMatch: (match: TournamentMatch | null) => void;
+  setCurrentTournamentMatch: (_match: TournamentMatch | null) => void;
   tournamentMatchAborted: boolean;
-  setTournamentMatchAborted: (aborted: boolean) => void;
+  setTournamentMatchAborted: (_aborted: boolean) => void;
 
   // Battle Royale
   battleRoyaleGame: BattleRoyaleGame | null;
-  setBattleRoyaleGame: (game: BattleRoyaleGame | null) => void;
+  setBattleRoyaleGame: (_game: BattleRoyaleGame | null) => void;
 
   // Pass the Mic
   passTheMicPlayers: PassTheMicPlayer[];
-  setPassTheMicPlayers: (players: PassTheMicPlayer[]) => void;
+  setPassTheMicPlayers: (_players: PassTheMicPlayer[]) => void;
   passTheMicSong: Song | null;
-  setPassTheMicSong: (song: Song | null) => void;
+  setPassTheMicSong: (_song: Song | null) => void;
   passTheMicSegments: PassTheMicSegment[];
-  setPassTheMicSegments: (segments: PassTheMicSegment[]) => void;
+  setPassTheMicSegments: (_segments: PassTheMicSegment[]) => void;
   passTheMicSettings: PassTheMicSettings | null;
-  setPassTheMicSettings: (settings: PassTheMicSettings | null) => void;
+  setPassTheMicSettings: (_settings: PassTheMicSettings | null) => void;
   // Series history: accumulated scores across multiple Pass-the-Mic songs
   passTheMicSeriesHistory: PassTheMicRoundResult[];
-  setPassTheMicSeriesHistory: (history: PassTheMicRoundResult[]) => void;
+  setPassTheMicSeriesHistory: (_history: PassTheMicRoundResult[]) => void;
   // PTM Medley snippets (multiple songs for medley mode)
   ptmMedleySnippets: Array<{ song: Song; startTime: number; endTime: number; duration: number }>;
-  setPtmMedleySnippets: (snippets: Array<{ song: Song; startTime: number; endTime: number; duration: number }>) => void;
+  setPtmMedleySnippets: (_snippets: Array<{ song: Song; startTime: number; endTime: number; duration: number }>) => void;
 
   // Companion Sing-A-Long
   companionPlayers: CompanionPlayer[];
-  setCompanionPlayers: (players: CompanionPlayer[]) => void;
+  setCompanionPlayers: (_players: CompanionPlayer[]) => void;
   companionSong: Song | null;
-  setCompanionSong: (song: Song | null) => void;
+  setCompanionSong: (_song: Song | null) => void;
   companionSettings: CompanionSingAlongSettings | null;
-  setCompanionSettings: (settings: CompanionSingAlongSettings | null) => void;
+  setCompanionSettings: (_settings: CompanionSingAlongSettings | null) => void;
   // Series history: accumulated scores across multiple Companion Sing-A-Long songs
   companionSeriesHistory: CompanionRoundResult[];
-  setCompanionSeriesHistory: (history: CompanionRoundResult[]) => void;
+  setCompanionSeriesHistory: (_history: CompanionRoundResult[]) => void;
 
   // Medley Contest
   medleyPlayers: MedleyPlayer[];
-  setMedleyPlayers: (players: MedleyPlayer[]) => void;
+  setMedleyPlayers: (_players: MedleyPlayer[]) => void;
   medleySongs: MedleySong[];
-  setMedleySongs: (songs: MedleySong[]) => void;
+  setMedleySongs: (_songs: MedleySong[]) => void;
   medleySettings: MedleySettings | null;
-  setMedleySettings: (settings: MedleySettings | null) => void;
+  setMedleySettings: (_settings: MedleySettings | null) => void;
   medleyMatches: SnippetMatchup[];
-  setMedleyMatches: (matches: SnippetMatchup[]) => void;
+  setMedleyMatches: (_matches: SnippetMatchup[]) => void;
   medleySeriesHistory: MedleyRoundResult[];
-  setMedleySeriesHistory: (history: MedleyRoundResult[]) => void;
+  setMedleySeriesHistory: (_history: MedleyRoundResult[]) => void;
 
   // Competitive Words/Blind
   competitiveGame: CompetitiveGame | null;
-  setCompetitiveGame: (game: CompetitiveGame | null) => void;
+  setCompetitiveGame: (_game: CompetitiveGame | null) => void;
 
   // Rate my Song
   rateMySongSettings: RateMySongSettings | null;
-  setRateMySongSettings: (settings: RateMySongSettings | null) => void;
+  setRateMySongSettings: (_settings: RateMySongSettings | null) => void;
   rateMySongPlayerIds: string[];
-  setRateMySongPlayerIds: (ids: string[]) => void;
+  setRateMySongPlayerIds: (_ids: string[]) => void;
 
   // PTM song selection mode (how the user originally chose their song: 'random' | 'vote' | 'medley' | 'library')
   // Used to determine what happens when the user clicks "next song" after a round.
   ptmSongSelection: string | null;
-  setPtmSongSelection: (mode: string | null) => void;
+  setPtmSongSelection: (_mode: string | null) => void;
 
   // Pre-selected library song (set when user picks from library for pass-the-mic/companion-singalong)
   librarySelectedSong: Song | null;
-  setLibrarySelectedSong: (song: Song | null) => void;
+  setLibrarySelectedSong: (_song: Song | null) => void;
 
   // Unified Party Setup
   selectedGameMode: GameMode | null;
-  setSelectedGameMode: (mode: GameMode | null) => void;
+  setSelectedGameMode: (_mode: GameMode | null) => void;
   unifiedSetupResult: GameSetupResult | null;
-  setUnifiedSetupResult: (result: GameSetupResult | null) => void;
+  setUnifiedSetupResult: (_result: GameSetupResult | null) => void;
   votingSongs: Song[];
-  setVotingSongs: (songs: Song[]) => void;
+  setVotingSongs: (_songs: Song[]) => void;
 
   // Pause / Leave dialog management (shared between page.tsx and party components)
   pauseDialogAction: null | 'song-pause' | 'party-leave';
-  setPauseDialogAction: (action: null | 'song-pause' | 'party-leave') => void;
+  setPauseDialogAction: (_action: null | 'song-pause' | 'party-leave') => void;
 
   // Flag set by party mode components to indicate a song is currently playing
   // (used by page.tsx to decide which dialog to show on Escape)
   isSongPlaying: boolean;
-  setIsSongPlaying: (v: boolean) => void;
+  setIsSongPlaying: (_v: boolean) => void;
 
   // Reset all party state
   resetPartyState: () => void;

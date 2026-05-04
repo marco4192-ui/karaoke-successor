@@ -23,16 +23,16 @@ export interface UseGameLoopOptions {
   initialize: () => Promise<boolean>;
   start: () => void;
   stop: () => void;
-  setPitchDifficulty: (diff: Difficulty) => void;
+  setPitchDifficulty: (_diff: Difficulty) => void;
   // Game store
-  setCurrentTime: (time: number) => void;
-  setDetectedPitch: (pitch: number | null) => void;
+  setCurrentTime: (_time: number) => void;
+  setDetectedPitch: (_pitch: number | null) => void;
   endGame: () => void;
-  setResults: (results: GameResult) => void;
+  setResults: (_results: GameResult) => void;
   // Note scoring
   resetScoring: () => void;
-  checkNoteHits: (time: number, pitch: PitchDetectionResult) => void;
-  checkP2NoteHits: (time: number, pitch: PitchDetectionResult) => void;
+  checkNoteHits: (_time: number, _pitch: PitchDetectionResult) => void;
+  checkP2NoteHits: (_time: number, _pitch: PitchDetectionResult) => void;
   // Game mode / state
   difficulty: Difficulty;
   gameMode: GameMode;
@@ -42,12 +42,12 @@ export interface UseGameLoopOptions {
   p2DetectedPitch: number | null;
   p2Volume: number;
   p2IsSinging?: boolean;
-  setP2Volume: (vol: number) => void;
+  setP2Volume: (_vol: number) => void;
   // Lifecycle callbacks
   onEnd: () => void;
   // Audio effects (for cleanup)
   audioEffects: AudioEffectsEngine | null;
-  setAudioEffects: (engine: AudioEffectsEngine | null) => void;
+  setAudioEffects: (_engine: AudioEffectsEngine | null) => void;
   // Song + players (for results generation)
   song: Song | null;
   players: Array<{ id: string; score: number; notesHit: number; notesMissed: number; combo: number; maxCombo: number }>;
@@ -58,11 +58,11 @@ export interface UseGameLoopOptions {
   // Native audio (ASIO / WASAPI)
   isNativeAudio?: boolean;
   nativeAudioTime?: number;
-  nativeAudioPlay?: (filePath: string) => Promise<void>;
+  nativeAudioPlay?: (_filePath: string) => Promise<void>;
   nativeAudioPause?: () => Promise<void>;
   nativeAudioResume?: () => Promise<void>;
   nativeAudioStop?: () => Promise<void>;
-  nativeAudioSeek?: (positionMs: number) => Promise<void>;
+  nativeAudioSeek?: (_positionMs: number) => Promise<void>;
 }
 
 export interface UseGameLoopResult {
@@ -148,7 +148,6 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   const hasEndedRef = useRef(false); // Guard against double endGameAndCleanup
   const abortedRef = useRef(false);   // Set when user aborts to prevent endGameAndCleanup
   const comebackRef = useRef(false);  // Tracks if player had a comeback (combo >= 50 after missing >= 10)
-  const missedBeforeBigComboRef = useRef(0); // Tracks missed notes before current big combo
   const mediaPlayWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // ── Pause position tracking ──
   // ── Refs for frequently-changing values (pitch, YouTube, native audio) ──
@@ -441,7 +440,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
               try {
                 videoRef.current.muted = false;
                 await videoRef.current.play();
-              } catch (autoplayError) {
+              } catch (_autoplayError) {
                 videoRef.current.muted = true;
                 await videoRef.current.play();
                 setTimeout(() => {

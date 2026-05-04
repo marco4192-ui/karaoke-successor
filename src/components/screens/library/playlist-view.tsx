@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useCallback, useState } from 'react';
+import { useState } from 'react';
 import { Song } from '@/types/game';
 import { Playlist, getPlaylistSongs, exportPlaylist, importPlaylist } from '@/lib/playlist-manager';
 import { SongCard } from './song-card';
@@ -17,15 +17,15 @@ interface PlaylistViewProps {
   playlists: Playlist[];
   selectedPlaylist: Playlist | null;
   loadedSongs: Song[];
-  onPlaylistSelect: (playlist: Playlist | null) => void;
-  onPlaylistDelete: (playlistId: string) => void;
-  onRemoveSongFromPlaylist: (playlistId: string, songId: string) => void;
-  onSongClick: (song: Song) => void;
+  onPlaylistSelect: (_playlist: Playlist | null) => void;
+  onPlaylistDelete: (_playlistId: string) => void;
+  onRemoveSongFromPlaylist: (_playlistId: string, _songId: string) => void;
+  onSongClick: (_song: Song) => void;
   onShowCreatePlaylist: () => void;
   songCardProps: Omit<SongCardProps, 'song'>;
   activeProfileId: string | null;
   playerQueueCount: number;
-  addToQueue: (song: Song, playerId: string, playerName: string) => void;
+  addToQueue: (_song: Song, _playerId: string, _playerName: string) => void;
   activeProfileName: string;
 }
 
@@ -39,7 +39,7 @@ export function PlaylistView({
   onShowCreatePlaylist,
   songCardProps,
   activeProfileId,
-  playerQueueCount,
+  _playerQueueCount: playerQueueCount,
   addToQueue,
   activeProfileName,
 }: PlaylistViewProps) {

@@ -40,53 +40,53 @@ interface GameStore {
   onlineEnabled: boolean;
 
   // Actions
-  setSong: (song: Song | null) => void;
-  setDifficulty: (difficulty: Difficulty) => void;
-  setGameMode: (mode: GameMode) => void;
-  addPlayer: (profile: Pick<PlayerProfile, 'id' | 'name' | 'avatar' | 'color'>) => void;
-  removePlayer: (playerId: string) => void;
-  updatePlayer: (playerId: string, updates: Partial<Player>) => void;
-  setPlayers: (players: Player[]) => void;
-  setCurrentTime: (time: number) => void;
-  setDetectedPitch: (pitch: number | null) => void;
-  setMicActive: (active: boolean) => void;
-  setBlindSection: (isBlind: boolean) => void;
-  setMissingWordsIndices: (indices: number[]) => void;
+  setSong: (_song: Song | null) => void;
+  setDifficulty: (_difficulty: Difficulty) => void;
+  setGameMode: (_mode: GameMode) => void;
+  addPlayer: (_profile: Pick<PlayerProfile, 'id' | 'name' | 'avatar' | 'color'>) => void;
+  removePlayer: (_playerId: string) => void;
+  updatePlayer: (_playerId: string, _updates: Partial<Player>) => void;
+  setPlayers: (_players: Player[]) => void;
+  setCurrentTime: (_time: number) => void;
+  setDetectedPitch: (_pitch: number | null) => void;
+  setMicActive: (_active: boolean) => void;
+  setBlindSection: (_isBlind: boolean) => void;
+  setMissingWordsIndices: (_indices: number[]) => void;
   pauseGame: () => void;
   resumeGame: () => void;
   endGame: () => void;
   resetGame: () => void;
 
   // Profile actions
-  createProfile: (name: string, avatar?: string) => PlayerProfile;
-  updateProfile: (id: string, updates: Partial<PlayerProfile>) => void;
-  deleteProfile: (id: string) => void;
-  setActiveProfile: (id: string | null) => void;
-  importProfileFromMobile: (mobileProfile: { id: string; name: string; avatar?: string; color: string }) => PlayerProfile;
+  createProfile: (_name: string, _avatar?: string) => PlayerProfile;
+  updateProfile: (_id: string, _updates: Partial<PlayerProfile>) => void;
+  deleteProfile: (_id: string) => void;
+  setActiveProfile: (_id: string | null) => void;
+  importProfileFromMobile: (_mobileProfile: { id: string; name: string; avatar?: string; color: string }) => PlayerProfile;
 
   // Queue actions
-  addToQueue: (song: Song, playerId: string, playerName: string, options?: {
+  addToQueue: (_song: Song, _playerId: string, _playerName: string, _options?: {
     partnerId?: string;
     partnerName?: string;
     gameMode?: 'single' | 'duel' | 'duet';
   }) => void;
-  addCompanionToQueue: (item: Omit<QueueItem, 'id' | 'addedAt'>) => void;
-  removeFromQueue: (itemId: string) => void;
-  markQueueItemPlaying: (itemId: string) => void;
-  markQueueItemCompleted: (itemId: string) => void;
+  addCompanionToQueue: (_item: Omit<QueueItem, 'id' | 'addedAt'>) => void;
+  removeFromQueue: (_itemId: string) => void;
+  markQueueItemPlaying: (_itemId: string) => void;
+  markQueueItemCompleted: (_itemId: string) => void;
   getNextQueueItem: () => QueueItem | null;
-  reorderQueue: (fromIndex: number, toIndex: number) => void;
+  reorderQueue: (_fromIndex: number, _toIndex: number) => void;
   clearQueue: () => void;
 
   // Results
-  setResults: (results: GameResult) => void;
+  setResults: (_results: GameResult) => void;
 
   // Highscore actions
-  addHighscore: (entry: Omit<HighscoreEntry, 'id' | 'playedAt' | 'rankTitle'>) => HighscoreEntry;
+  addHighscore: (_entry: Omit<HighscoreEntry, 'id' | 'playedAt' | 'rankTitle'>) => HighscoreEntry;
 
   // Leaderboard actions
-  setLeaderboardType: (type: 'local' | 'global') => void;
-  setOnlineEnabled: (enabled: boolean) => void;
+  setLeaderboardType: (_type: 'local' | 'global') => void;
+  setOnlineEnabled: (_enabled: boolean) => void;
 }
 
 function createDefaultPlayerProfile(overrides: {

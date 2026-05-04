@@ -19,7 +19,7 @@ function SettingControl({
 }: {
   setting: GameSettingConfig;
   value: string | number | boolean;
-  onChange: (key: string, value: string | number | boolean) => void;
+  onChange: (_key: string, _value: string | number | boolean) => void;
 }) {
   switch (setting.type) {
     case 'slider':
@@ -137,8 +137,8 @@ function SettingsPanel({
   config: PartyGameConfig;
   settings: Record<string, any>;
   difficulty: Difficulty;
-  onSettingChange: (key: string, value: string | number | boolean) => void;
-  onDifficultyChange: (d: Difficulty) => void;
+  onSettingChange: (_key: string, _value: string | number | boolean) => void;
+  onDifficultyChange: (_d: Difficulty) => void;
 }) {
   if (config.settings.length === 0) return null;
 
@@ -182,7 +182,7 @@ function InputModeSelector({
   forceInputMode,
 }: {
   inputMode: InputMode;
-  onInputModeChange: (mode: InputMode) => void;
+  onInputModeChange: (_mode: InputMode) => void;
   supportsCompanionApp?: boolean;
   forceInputMode?: InputMode;
 }) {
@@ -237,14 +237,13 @@ function MicAssignmentPanel({
   micAssignments,
   onAssignMic,
   onRemoveMic,
-  inputMode,
 }: {
   selectedPlayers: string[];
   profiles: PlayerProfile[];
   micAssignments: Record<string, string>;
-  onAssignMic: (micId: string, playerId: string) => void;
-  onRemoveMic: (micId: string) => void;
-  inputMode: InputMode;
+  onAssignMic: (_micId: string, _playerId: string) => void;
+  onRemoveMic: (_micId: string) => void;
+  inputMode?: InputMode;
 }) {
   // Load saved mic configs from localStorage
   const [savedMics, setSavedMics] = useState<Array<{ id: string; customName: string; deviceName: string }>>([]);
@@ -277,7 +276,7 @@ function MicAssignmentPanel({
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {micPlayers.map((playerId, index) => {
+          {micPlayers.map((playerId) => {
             const profile = profiles.find(p => p.id === playerId);
             if (!profile) return null;
 
@@ -352,7 +351,7 @@ export function SingleMicSelector({
   onMicChange,
 }: {
   selectedMicId: string | null;
-  onMicChange: (micId: string, micName: string) => void;
+  onMicChange: (_micId: string, _micName: string) => void;
 }) {
   // Load savedMics synchronously from localStorage to avoid initial render
   // with empty list (which resets the selectedMicId to default)
@@ -466,15 +465,10 @@ function PlayerGrid({
   config: PartyGameConfig;
   activeProfiles: PlayerProfile[];
   selectedPlayers: string[];
-  togglePlayer: (id: string) => void;
+  togglePlayer: (_id: string) => void;
   inputMode?: InputMode;
 }) {
-  const getTypeIcon = (profile: PlayerProfile) => {
-    if (!inputMode || inputMode === 'microphone') return '🎤';
-    if (inputMode === 'companion') return '📱';
-    // mixed: show mic by default
-    return '🎤';
-  };
+
 
   // Check if any input mode involves companion app
   const showConnectionStatus = inputMode === 'companion' || inputMode === 'mixed';
@@ -496,7 +490,6 @@ function PlayerGrid({
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {activeProfiles.map((profile, profileIndex) => {
             const isSelected = selectedPlayers.includes(profile.id);
-            const typeIcon = getTypeIcon(profile);
             // In mixed mode, first half uses mic, second half uses companion
             const isCompanionInMixed = inputMode === 'mixed' && profileIndex >= Math.ceil(activeProfiles.length / 2);
             const isCompanionPlayer = inputMode === 'companion' || isCompanionInMixed;
@@ -579,9 +572,9 @@ interface SongFilterSectionProps {
   availableLanguages: string[];
   totalSongs: number;
   filteredSongs: number;
-  onFilterGenreChange: (genre: string) => void;
-  onFilterLanguageChange: (language: string) => void;
-  onFilterCombinedChange: (combined: boolean) => void;
+  onFilterGenreChange: (_genre: string) => void;
+  onFilterLanguageChange: (_language: string) => void;
+  onFilterCombinedChange: (_combined: boolean) => void;
 }
 
 function SongFilterSection({
@@ -707,7 +700,7 @@ function SongSelectionGrid({
 }: {
   config: PartyGameConfig;
   selectedPlayerCount: number;
-  onSongSelection: (option: SongSelectionOption) => void;
+  onSongSelection: (_option: SongSelectionOption) => void;
 }) {
   return (
     <Card className="bg-white/5 border-white/10 mb-6">
@@ -775,14 +768,14 @@ function ReadySummary({
 
 // ===================== SONG VOTING MODAL =====================
 
-export function SongVotingModal({ songs, players, onVote, onClose, gameColor }: {
+export function SongVotingModal({ songs, onVote, onClose, gameColor }: {
   songs: Song[];
-  players: SelectedPlayer[];
+  players?: SelectedPlayer[];
   onVote: (songId: string) => void;
   onClose: () => void;
   gameColor: string;
 }) {
-  const [votes, setVotes] = useState<Record<string, string>>({});
+  const [votes] = useState<Record<string, string>>({});
   const coverBlobUrlsRef = useRef<string[]>([]);
 
   // Restore cover URLs for voting songs (Tauri: relative paths, Browser: IndexedDB)
@@ -803,7 +796,7 @@ export function SongVotingModal({ songs, players, onVote, onClose, gameColor }: 
             // Fallback: check IndexedDB for stored media (browser mode)
             try {
               if (s.storedMedia) {
-                const { getSongMediaUrls, revokeSongMediaUrls } = await import('@/lib/db/media-db');
+                const { getSongMediaUrls } = await import('@/lib/db/media-db');
                 const urls = await getSongMediaUrls(s.id);
                 if (urls.coverUrl) {
                   coverBlobUrlsRef.current.push(urls.coverUrl);

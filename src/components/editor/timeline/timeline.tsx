@@ -18,14 +18,14 @@ interface TimelineProps {
   selectedNoteId?: string;
   audioBuffer?: AudioBuffer;
   playbackRate?: number;
-  onPlaybackRateChange?: (rate: number) => void;
-  onTimeChange: (time: number) => void;
+  onPlaybackRateChange?: (_rate: number) => void;
+  onTimeChange: (_time: number) => void;
   onPlayPause: () => void;
-  onNoteSelect: (noteId: string | undefined) => void;
-  onNoteUpdate: (noteId: string, updates: Partial<Note>) => void;
-  onNoteDelete: (noteId: string) => void;
-  onNoteAdd: (startTime: number, pitch: number) => void;
-  onLyricChange: (noteId: string, newLyric: string) => void;
+  onNoteSelect: (_noteId: string | undefined) => void;
+  onNoteUpdate: (_noteId: string, _updates: Partial<Note>) => void;
+  onNoteDelete: (_noteId: string) => void;
+  onNoteAdd: (_startTime: number, _pitch: number) => void;
+  onLyricChange: (_noteId: string, _newLyric: string) => void;
 }
 
 export function Timeline({
@@ -40,7 +40,7 @@ export function Timeline({
   onPlayPause,
   onNoteSelect,
   onNoteUpdate,
-  onNoteDelete,
+  _onNoteDelete: onNoteDelete,
   onNoteAdd,
   onLyricChange
 }: TimelineProps) {
@@ -494,8 +494,8 @@ export function Timeline({
 
 // Timeline grid component
 function TimelineGrid({
-  width,
-  height,
+  width: _width,
+  height: _height,
   pixelsPerSecond,
   scrollOffset,
   bpm,
