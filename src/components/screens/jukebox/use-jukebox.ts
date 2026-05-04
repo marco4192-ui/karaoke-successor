@@ -32,9 +32,12 @@ export function useJukebox(refs?: {
   const [showLyrics, setShowLyrics] = useState(false);
   const [currentLyricIndex, setCurrentLyricIndex] = useState(0);
   const [songs, setSongs] = useState<Song[]>([]);
-  const containerRef = refs?.containerRef ?? useRef<HTMLDivElement | null>(null);
-  const videoRef = refs?.videoRef ?? useRef<HTMLVideoElement | null>(null);
-  const audioRef = refs?.audioRef ?? useRef<HTMLAudioElement | null>(null);
+  const _internalContainerRef = useRef<HTMLDivElement | null>(null);
+  const _internalVideoRef = useRef<HTMLVideoElement | null>(null);
+  const _internalAudioRef = useRef<HTMLAudioElement | null>(null);
+  const containerRef = refs?.containerRef ?? _internalContainerRef;
+  const videoRef = refs?.videoRef ?? _internalVideoRef;
+  const audioRef = refs?.audioRef ?? _internalAudioRef;
 
   // Load songs asynchronously
   useEffect(() => {
@@ -122,6 +125,7 @@ export function useJukebox(refs?: {
           // Place one random song first, then all wishlist songs, then remaining random
           const firstRandom = newPlaylist[0] && !wishlistSongIds.has(newPlaylist[0].id)
             ? [newPlaylist[0]]
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             : (randomPool.length > 0 ? [randomPool.shift()!] : []);
           newPlaylist = [...firstRandom, ...wishlistSongs, ...randomPool];
         }
@@ -237,6 +241,7 @@ export function useJukebox(refs?: {
     } else {
       playNext();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- audioRef/videoRef are stable refs; phase guards prevent stale calls
   }, [repeat, currentSong, playNext]);
 
   // Start / Stop jukebox
@@ -289,18 +294,17 @@ export function useJukebox(refs?: {
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- containerRef is a stable ref
   }, []);
 
-  // Cleanup on unmount
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- ref.current access in cleanup is intentional; refs are stable objects
   useEffect(() => {
     return () => {
-      if (videoRef.current) {
-        videoRef.current.pause();
-        videoRef.current.currentTime = 0;
-      }
       if (audioRef.current) {
         audioRef.current.pause();
-        audioRef.current.currentTime = 0;
+      }
+      if (videoRef.current) {
+        videoRef.current.pause();
       }
       setPlaylist([]);
       setCurrentSong(null);
@@ -312,12 +316,14 @@ export function useJukebox(refs?: {
   }, []);
 
   // Update volume
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- audioRef/videoRef are stable refs
   useEffect(() => {
     if (videoRef.current) videoRef.current.volume = volume;
     if (audioRef.current) audioRef.current.volume = volume;
-  }, [volume, currentSong]);
+  }, [volume]);
 
   // Auto-play when song changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- audioRef/videoRef are stable refs; youtubeTime read in interval via ref
   useEffect(() => {
     if (isPlaying && currentSong) {
       const playTimer = setTimeout(() => {
@@ -336,6 +342,7 @@ export function useJukebox(refs?: {
   }, [isPlaying, currentSong]);
 
   // Track current lyric line based on time
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- audioRef/videoRef are stable refs; youtubeTime read via ref in interval
   useEffect(() => {
     if (!showLyrics || !currentSong || !currentSong.lyrics?.length) return;
     const updateCurrentLyric = () => {
@@ -352,7 +359,7 @@ export function useJukebox(refs?: {
     };
     const interval = setInterval(updateCurrentLyric, 100);
     return () => clearInterval(interval);
-  }, [showLyrics, currentSong, youtubeTime]);
+  }, [showLyrics, currentSong]);
 
   // Up next songs
   const upNext = useMemo(() => {

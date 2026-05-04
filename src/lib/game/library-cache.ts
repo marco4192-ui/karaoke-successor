@@ -78,9 +78,10 @@ function openDatabase(): Promise<IDBDatabase> {
     };
     
     request.onsuccess = () => {
-      cachedDB = request.result;
+      const db = request.result;
+      cachedDB = db;
       dbOpenPromise = null;
-      resolve(cachedDB!);
+      resolve(db);
     };
     
     request.onupgradeneeded = (event) => {

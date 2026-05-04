@@ -247,17 +247,17 @@ export class AudioEffectsEngine {
   }
 
   private connectEffectChain(): void {
-    if (!this.audioContext || !this.inputNode) return;
+    if (!this.audioContext || !this.inputNode || !this.analyserNode || !this.dryGain || !this.wetGain || !this.masterGain) return;
     
     // Disconnect all existing connections
     this.inputNode.disconnect();
     
     // Connect to analyser for visualization
-    this.inputNode.connect(this.analyserNode!);
+    this.inputNode.connect(this.analyserNode);
     
     // Dry path (direct to output)
-    this.inputNode.connect(this.dryGain!);
-    this.dryGain!.connect(this.masterGain!);
+    this.inputNode.connect(this.dryGain);
+    this.dryGain.connect(this.masterGain);
     
     // Wet path through effects
     let wetChain: AudioNode = this.inputNode;
@@ -291,7 +291,7 @@ export class AudioEffectsEngine {
       this.reverbMix.gain.value = this.settings.reverb.amount;
       wetChain.connect(this.reverbNode);
       this.reverbNode.connect(this.reverbMix);
-      this.reverbMix.connect(this.wetGain!);
+      this.reverbMix.connect(this.wetGain);
     }
     
     // Delay
@@ -300,7 +300,7 @@ export class AudioEffectsEngine {
       this.delayNode.connect(this.delayFeedback);
       this.delayFeedback.connect(this.delayNode);
       this.delayNode.connect(this.delayMix);
-      this.delayMix.connect(this.wetGain!);
+      this.delayMix.connect(this.wetGain);
     }
     
     // Connect wet to master
@@ -311,12 +311,12 @@ export class AudioEffectsEngine {
       (this.settings.reverb.enabled && this.reverbNode != null) ||
       (this.settings.delay.enabled && this.delayNode != null);
     if (!hasEffectSends) {
-      wetChain.connect(this.wetGain!);
+      wetChain.connect(this.wetGain);
     }
-    this.wetGain!.connect(this.masterGain!);
+    this.wetGain.connect(this.masterGain);
     
     // Output to speakers
-    this.masterGain!.connect(this.audioContext.destination);
+    this.masterGain.connect(this.audioContext.destination);
   }
 
   private async createReverbImpulse(decay: number): Promise<void> {

@@ -89,11 +89,13 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
       cancelled = true;
       // Revoke blob URLs from previous song to prevent memory leaks
       if (lastIdxDbUrlsRef.current) {
+        const urls = lastIdxDbUrlsRef.current;
         import('@/lib/db/media-db').then(({ revokeSongMediaUrls }) => {
-          revokeSongMediaUrls(lastIdxDbUrlsRef.current!);
+          revokeSongMediaUrls(urls);
         });
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- song sub-properties are destructured to avoid infinite loops with full song object
   }, [song?.id, song?.audioUrl, song?.videoBackground, song?.coverImage, song?.relativeAudioPath, song?.relativeVideoPath, song?.relativeCoverPath, song?.storedMedia]);
 
   // Use restored song if available, otherwise use original song
@@ -139,6 +141,7 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
     }
 
     return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- song sub-properties are destructured for stability
   }, [song?.id, song?.storedTxt, song?.relativeTxtPath, song?.lyrics]);
 
   // ── Compute effectiveSong: restored URLs + loaded lyrics ──
@@ -148,7 +151,8 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
       return { ...effectiveSongBase, lyrics: loadedLyrics };
     }
     return effectiveSongBase;
-  }, [effectiveSongBase, loadedLyrics, lyricsLoadError]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- lyricsLoadError excluded to avoid re-computing when only error message changes
+  }, [effectiveSongBase, loadedLyrics]);
 
   // ── Media element refs ──
   const audioRef = useRef<HTMLAudioElement | null>(null);

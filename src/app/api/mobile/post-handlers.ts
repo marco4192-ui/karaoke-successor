@@ -24,9 +24,12 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         const regPayload = payload as { type?: string; name?: string; profile?: MobileProfile };
         
         // Check for duplicate profile
-        if (regPayload.profile && profileToClient.has(regPayload.profile.id)) {
-          // Terminate old connection (with full cleanup)
-          removeClient(profileToClient.get(regPayload.profile.id)!, { purgeQueue: true });
+        if (regPayload.profile) {
+          const existingClientId = profileToClient.get(regPayload.profile.id);
+          if (existingClientId) {
+            // Terminate old connection (with full cleanup)
+            removeClient(existingClientId, { purgeQueue: true });
+          }
         }
         
         const newClient: MobileClient = {
@@ -62,8 +65,9 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
       case 'pitch': {
         // Mobile client sends pitch data
         const pitchPayload = payload as PitchData;
-        if (clientId && mobileClients.has(clientId)) {
-          const client = mobileClients.get(clientId)!;
+        if (clientId) {
+          const client = mobileClients.get(clientId);
+          if (!client) return Response.json({ success: true, received: true });
           client.lastActivity = Date.now();
           client.pitchData = pitchPayload;
           mobileClients.set(clientId, client);
@@ -73,8 +77,9 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
       }
 
       case 'volume':
-        if (clientId && mobileClients.has(clientId)) {
-          const client = mobileClients.get(clientId)!;
+        if (clientId) {
+          const client = mobileClients.get(clientId);
+          if (!client) return Response.json({ success: true });
           client.lastActivity = Date.now();
           mobileClients.set(clientId, client);
         }
@@ -109,15 +114,17 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
 
       case 'profile':
         // Update profile for a client
-        if (clientId && mobileClients.has(clientId)) {
+        if (clientId) {
           const profilePayload = payload as MobileProfile;
-          const client = mobileClients.get(clientId)!;
+          const client = mobileClients.get(clientId);
+          if (!client) return Response.json({ success: false, message: 'Client not found' }, { status: 404 });
           const __clientIp = client.clientIp;
           
           // Check for duplicate profile (different client using same profile)
-          if (profileToClient.has(profilePayload.id) && profileToClient.get(profilePayload.id) !== clientId) {
+          const duplicateClientId = profileToClient.get(profilePayload.id);
+          if (duplicateClientId && duplicateClientId !== clientId) {
             // Terminate old connection (with full cleanup)
-            removeClient(profileToClient.get(profilePayload.id)!, { purgeQueue: true });
+            removeClient(duplicateClientId, { purgeQueue: true });
           }
           
           client.profile = profilePayload;
@@ -135,7 +142,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
 
       case 'queue': {
         // Add song to queue (with max 3 per companion limit)
-        if (!clientId || !mobileClients.has(clientId)) {
+        if (!clientId) {
           return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         }
         
@@ -147,7 +154,8 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           partnerName?: string;
           gameMode?: 'single' | 'duel' | 'duet';
         };
-        const clientForQueue = mobileClients.get(clientId)!;
+        const clientForQueue = mobileClients.get(clientId);
+        if (!clientForQueue) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         
         // Check queue limit (max 3 pending songs per companion)
         const clientPendingCount = mutableState.songQueue.filter(
@@ -267,12 +275,13 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
 
       case 'jukebox': {
         // Add song to jukebox wishlist
-        if (!clientId || !mobileClients.has(clientId)) {
+        if (!clientId) {
           return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         }
         
         const jukeboxPayload = payload as { songId: string; songTitle: string; songArtist: string };
-        const clientForJukebox = mobileClients.get(clientId)!;
+        const clientForJukebox = mobileClients.get(clientId);
+        if (!clientForJukebox) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         
         const wishlistItem: QueueItem = {
           id: `wish-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
@@ -299,11 +308,12 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
 
       case 'remote_acquire': {
         // Acquire remote control lock
-        if (!clientId || !mobileClients.has(clientId)) {
+        if (!clientId) {
           return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         }
         
-        const acquireClient = mobileClients.get(clientId)!;
+        const acquireClient = mobileClients.get(clientId);
+        if (!acquireClient) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         
         // Check if already locked by someone else
         if (mutableState.remoteControlState.lockedBy && mutableState.remoteControlState.lockedBy !== clientId) {
@@ -334,7 +344,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
 
       case 'remote_release': {
         // Release remote control lock
-        if (!clientId || !mobileClients.has(clientId)) {
+        if (!clientId) {
           return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         }
         
@@ -346,7 +356,8 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           }, { status: 403 });
         }
         
-        const releaseClient = mobileClients.get(clientId)!;
+        const releaseClient = mobileClients.get(clientId);
+        if (!releaseClient) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         releaseClient.hasRemoteControl = false;
         mobileClients.set(clientId, releaseClient);
         
@@ -363,12 +374,13 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
 
       case 'remote_command': {
         // Send a remote control command
-        if (!clientId || !mobileClients.has(clientId)) {
+        if (!clientId) {
           return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         }
         
         const commandPayload = payload as { command: RemoteCommand['type']; data?: unknown };
-        const commandClient = mobileClients.get(clientId)!;
+        const commandClient = mobileClients.get(clientId);
+        if (!commandClient) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         
         // Must have the lock to send commands
         if (mutableState.remoteControlState.lockedBy !== clientId) {
@@ -408,11 +420,12 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
       case 'skipAd': {
         // Request to skip ad (from mobile client)
         // This will be picked up by the main app polling for commands
-        if (!clientId || !mobileClients.has(clientId)) {
+        if (!clientId) {
           return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         }
         
-        const skipAdClient = mobileClients.get(clientId)!;
+        const skipAdClient = mobileClients.get(clientId);
+        if (!skipAdClient) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         
         // Add skip command to pending queue
         const skipCommand: RemoteCommand = {
@@ -440,8 +453,9 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           const assignPayload = payload as { targetClientId: string; profile: MobileProfile | null };
           const targetClientId = assignPayload.targetClientId;
           
-          if (targetClientId && mobileClients.has(targetClientId)) {
-            const targetClient = mobileClients.get(targetClientId)!;
+          if (targetClientId) {
+            const targetClient = mobileClients.get(targetClientId);
+            if (!targetClient) return Response.json({ success: false, message: 'Client not found' }, { status: 404 });
             
             // Clear old profile mapping
             if (targetClient.profile) {
@@ -477,8 +491,9 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
 
       case 'heartbeat':
         // Keep connection alive
-        if (clientId && mobileClients.has(clientId)) {
-          const client = mobileClients.get(clientId)!;
+        if (clientId) {
+          const client = mobileClients.get(clientId);
+          if (!client) return Response.json({ success: false, message: 'Client not found' }, { status: 404 });
           client.lastActivity = Date.now();
           mobileClients.set(clientId, client);
           return Response.json({ success: true, timestamp: Date.now() });

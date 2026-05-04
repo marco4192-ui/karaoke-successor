@@ -64,10 +64,14 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
       filePath = userPath;
     }
     
+    if (!filePath) {
+      return { success: false, message: 'Kein Dateipfad ermittelt' };
+    }
+    
     // Verify the file exists before writing (using native command)
     if (song.relativeTxtPath || song.folderPath) {
       const { nativeFileExists } = await import('@/lib/native-fs');
-      const fileExists = await nativeFileExists(filePath!);
+      const fileExists = await nativeFileExists(filePath);
       
       if (!fileExists) {
         // eslint-disable-next-line no-console
@@ -78,9 +82,9 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
     
     // Write the file using native command (bypasses ACL)
     const { nativeWriteFileText } = await import('@/lib/native-fs');
-    await nativeWriteFileText(filePath!, txtContent);
+    await nativeWriteFileText(filePath, txtContent);
     
-    return { success: true, message: 'Datei gespeichert!', path: filePath! };
+    return { success: true, message: 'Datei gespeichert!', path: filePath };
     
   } catch (error) {
     // eslint-disable-next-line no-console

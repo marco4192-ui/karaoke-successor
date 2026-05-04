@@ -247,8 +247,9 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
 
     case 'profile':
       // Get profile for a client
-      if (clientId && mobileClients.has(clientId)) {
-        const client = mobileClients.get(clientId)!;
+      if (clientId) {
+        const client = mobileClients.get(clientId);
+        if (!client) return Response.json({ success: false, message: 'Client not found' }, { status: 404 });
         return Response.json({
           success: true,
           profile: client.profile || null,
@@ -260,8 +261,9 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
 
     case 'reconnect':
       // Reconnect using companion code
-      if (companionCode && connectionCodes.has(companionCode)) {
-        const existingClientId = connectionCodes.get(companionCode)!;
+      if (companionCode) {
+        const existingClientId = connectionCodes.get(companionCode);
+        if (!existingClientId) return Response.json({ success: false, message: 'Code not found' }, { status: 404 });
         const client = mobileClients.get(existingClientId);
         if (client) {
           client.lastActivity = Date.now();

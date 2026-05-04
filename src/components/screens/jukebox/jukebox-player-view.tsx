@@ -279,7 +279,9 @@ export function JukeboxPlayerView({ j, videoRef, audioRef }: { j: UseJukeboxRetu
               </div>
             </Card>
           </div>
-        ) : (
+        ) : (() => {
+          const song = j.currentSong;
+          return (
         <div className={`${j.isFullscreen ? (j.hidePlaylist ? 'flex-1 min-h-0' : 'w-[75%] h-full') : 'flex-1'}`}>
           <Card className={`bg-black/50 border-white/10 overflow-hidden ${j.isFullscreen ? 'h-full rounded-none' : ''}`}>
             <div className={`relative ${j.isFullscreen ? 'h-full' : 'aspect-video'}`}>
@@ -296,10 +298,10 @@ export function JukeboxPlayerView({ j, videoRef, audioRef }: { j: UseJukeboxRetu
                   isPlaying={j.isPlaying}
                   startTime={0}
                 />
-              ) : j.currentSong!.youtubeUrl ? (
+              ) : song.youtubeUrl ? (
                 <YouTubePlayer
-                  videoId={extractYouTubeId(j.currentSong!.youtubeUrl) || ''}
-                  videoGap={j.currentSong!.videoGap || 0}
+                  videoId={extractYouTubeId(song.youtubeUrl) || ''}
+                  videoGap={song.videoGap || 0}
                   onReady={() => {}}
                   onTimeUpdate={(time) => j.setYoutubeTime(time)}
                   onEnded={j.handleMediaEnd}
@@ -308,20 +310,20 @@ export function JukeboxPlayerView({ j, videoRef, audioRef }: { j: UseJukeboxRetu
                   isPlaying={j.isPlaying}
                   startTime={0}
                 />
-              ) : j.currentSong!.videoBackground ? (
+              ) : song.videoBackground ? (
                 <video
                   ref={videoRef}
-                  src={j.currentSong!.videoBackground}
+                  src={song.videoBackground}
                   className="absolute inset-0 w-full h-full object-cover"
-                  muted={!!j.currentSong!.audioUrl && !j.currentSong!.hasEmbeddedAudio}
+                  muted={!!song.audioUrl && !song.hasEmbeddedAudio}
                   loop={false}
                   onEnded={j.handleMediaEnd}
                   playsInline
                 />
               ) : (
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-600/30 to-blue-600/30 flex items-center justify-center">
-                  {j.currentSong!.coverImage ? (
-                    <img src={j.currentSong!.coverImage} alt={j.currentSong!.title} className="max-h-full max-w-full object-contain" />
+                  {song.coverImage ? (
+                    <img src={song.coverImage} alt={song.title} className="max-h-full max-w-full object-contain" />
                   ) : (
                     <MusicIcon className="w-32 h-32 text-white/30" />
                   )}
@@ -329,8 +331,8 @@ export function JukeboxPlayerView({ j, videoRef, audioRef }: { j: UseJukeboxRetu
               )}
 
               {/* Audio element for songs with separate audio file */}
-              {j.currentSong!.audioUrl && !j.currentSong!.hasEmbeddedAudio && (
-                <audio ref={audioRef} src={j.currentSong!.audioUrl} onEnded={j.handleMediaEnd} />
+              {song.audioUrl && !song.hasEmbeddedAudio && (
+                <audio ref={audioRef} src={song.audioUrl} onEnded={j.handleMediaEnd} />
               )}
 
               <LyricsOverlay j={j} />
@@ -347,7 +349,8 @@ export function JukeboxPlayerView({ j, videoRef, audioRef }: { j: UseJukeboxRetu
             </div>
           </Card>
         </div>
-        )}
+          );
+        })()}
 
         {/* Controls Bar (normal mode) */}
         {!j.isFullscreen && <ControlsBar j={j} />}

@@ -181,7 +181,8 @@ async function scanDirectoryHandle(
           });
         }
 
-        const songData = songFolders.get(path)!;
+        const songData = songFolders.get(path);
+        if (!songData) continue;
 
         if (AUDIO_EXTENSIONS.includes(ext)) {
           songData.audioFile = file;
@@ -355,7 +356,8 @@ export async function scanFilesFromFileList(files: FileList): Promise<ScanResult
       });
     }
 
-    const songData = songFolders.get(songFolderPath)!;
+    const songData = songFolders.get(songFolderPath);
+    if (!songData) continue;
 
     if (AUDIO_EXTENSIONS.includes(ext)) {
       songData.audioFile = file;

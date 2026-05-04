@@ -206,6 +206,12 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
         return;
       }
 
+      if (!songId) {
+        // eslint-disable-next-line no-console
+        console.warn('[ReplayRecorder] No songId — skipping save');
+        return;
+      }
+
       const mimeType = recorder.mimeType || (isWebcamActive ? 'video/webm' : 'audio/webm');
       const blob = new Blob(chunks, { type: mimeType });
       const id = replayId;
@@ -214,7 +220,7 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
 
       const record: ReplayRecord = {
         id,
-        songId: songId!,
+        songId,
         songTitle,
         songArtist,
         recordedAt: Date.now(),
@@ -231,7 +237,7 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
         .then(() => {
           const replayData: ReplayData = {
             id,
-            songId: songId!,
+            songId,
             songTitle,
             songArtist,
             recordedAt: record.recordedAt,

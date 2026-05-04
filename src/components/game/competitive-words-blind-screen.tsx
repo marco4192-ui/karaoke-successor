@@ -49,6 +49,7 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
 
   // Sync difficulty when global store changes (e.g. changed in Settings)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
     if (globalDifficulty) {
       setDifficulty(globalDifficulty);
     }
@@ -97,7 +98,7 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
         : 0.25,
     };
 
-    const playerObjs = selectedPlayers.map(id => profiles.find(p => p.id === id)!);
+    const playerObjs = selectedPlayers.map(id => profiles.find(p => p.id === id));
     const game = createCompetitiveGame(
       selectedPlayers,
       playerObjs.map(p => p?.name || 'Unknown'),
@@ -290,6 +291,7 @@ export function CompetitiveGameView({
     if (game.status !== 'setup') {
       hasTriggeredSetup.current = false;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- game.players and game.rounds are read inside but changes tracked via game.status
   }, [game.status, songs, game.players, game.rounds, onUpdateGame]);
 
   // Delegate to game screen when round is ready to play
@@ -306,6 +308,7 @@ export function CompetitiveGameView({
     if (game.status !== 'playing') {
       hasTriggeredPlay.current = false;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- game.players read inside but tracked via game.status
   }, [game.status, game.players, currentRound, songs, onPlayMatch]);
 
   // Game Over screen

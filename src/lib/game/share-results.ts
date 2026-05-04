@@ -49,7 +49,8 @@ export function generateShareImage(card: ShareableScoreCard): HTMLCanvasElement 
   const canvas = document.createElement('canvas');
   canvas.width = 600;
   canvas.height = 400;
-  const ctx = canvas.getContext('2d')!;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Failed to get 2D canvas context');
   
   // Background gradient
   const gradient = ctx.createLinearGradient(0, 0, 600, 400);

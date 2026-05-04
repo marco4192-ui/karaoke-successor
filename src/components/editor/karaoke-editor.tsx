@@ -134,7 +134,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
       let newLyrics: LyricLine[];
       if (targetLine) {
         newLyrics = prev.lyrics.map(line =>
-          line.id === targetLine!.id
+          line.id === targetLine.id
             ? { ...line, notes: [...line.notes, newNote].sort((a, b) => a.startTime - b.startTime) }
             : line
         );
@@ -222,7 +222,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
       let newLyrics: LyricLine[];
       if (targetLine) {
         newLyrics = prev.lyrics.map(line =>
-          line.id === targetLine!.id
+          line.id === targetLine.id
             ? { ...line, notes: [...line.notes, newNote].sort((a, b) => a.startTime - b.startTime) }
             : line
         );

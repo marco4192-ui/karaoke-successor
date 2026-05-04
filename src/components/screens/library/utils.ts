@@ -85,7 +85,8 @@ export function groupSongs(songs: Song[], groupBy: LibraryGroupBy): Map<string, 
     if (!groups.has(key)) {
       groups.set(key, []);
     }
-    groups.get(key)!.push(song);
+    const group = groups.get(key);
+    if (group) group.push(song);
   });
   
   return groups;

@@ -296,6 +296,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
     let animationId: number;
 
     if (!isRecording) {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
       // Draw a single preview frame when not recording
       drawFrame(performance.now());
       return undefined;
@@ -425,10 +426,10 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
 
   // Download video
   const downloadVideo = useCallback(() => {
-    if (!recordedBlob) return;
+    if (!recordedBlob || !recordedUrl) return;
 
     const link = document.createElement('a');
-    link.href = recordedUrl!;
+    link.href = recordedUrl;
     link.download = `karaoke-${song.title.replace(/[^a-z0-9]/gi, '-')}.webm`;
     link.click();
   }, [recordedBlob, recordedUrl, song.title]);

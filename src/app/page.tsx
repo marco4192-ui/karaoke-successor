@@ -67,6 +67,7 @@ export default function KaraokeSuccessor() {
   // ── Dialog handlers (defined before conditional returns for Rules of Hooks) ──
   const closeDialog = useCallback(() => {
     party.setPauseDialogAction(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- party excluded; setPauseDialogAction is the stable dependency
   }, [party.setPauseDialogAction]);
 
   const handleResumeGame = useCallback(() => {
@@ -156,10 +157,11 @@ export default function KaraokeSuccessor() {
     closeDialog();
     if (!party.currentTournamentMatch) return;
     const match = party.currentTournamentMatch;
+    if (!match.player1 || !match.player2) return;
 
     resetGame();
-    addPlayer({ id: match.player1!.id, name: match.player1!.name, avatar: match.player1!.avatar, color: match.player1!.color });
-    addPlayer({ id: match.player2!.id, name: match.player2!.name, avatar: match.player2!.avatar, color: match.player2!.color });
+    addPlayer({ id: match.player1.id, name: match.player1.name, avatar: match.player1.avatar, color: match.player1.color });
+    addPlayer({ id: match.player2.id, name: match.player2.name, avatar: match.player2.avatar, color: match.player2.color });
     setGameMode('duel');
     const songs = getAllSongs();
     if (songs.length > 0) {
@@ -194,6 +196,7 @@ export default function KaraokeSuccessor() {
     party.resetPartyState();
     resetGame();
     setScreen('home');
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- party excluded; sub-properties are the stable deps
   }, [closeDialog, party.resetPartyState, resetGame, setScreen]);
 
   const handlePartyLeaveBack = useCallback(() => {

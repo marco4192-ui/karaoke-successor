@@ -433,8 +433,8 @@ export function filterSongs(
 
   // Independent mode (combined=false): OR logic — songs matching either filter are included
   if (combined === false && hasGenre && hasLanguage) {
-    const lowerGenre = genre!.toLowerCase();
-    const lowerLanguage = language!.toLowerCase();
+    const lowerGenre = (genre ?? '').toLowerCase();
+    const lowerLanguage = (language ?? '').toLowerCase();
     return songs.filter(s =>
       s.genre?.toLowerCase().includes(lowerGenre) ||
       s.language?.toLowerCase().includes(lowerLanguage)
@@ -445,14 +445,14 @@ export function filterSongs(
   let filtered = songs;
 
   if (hasGenre) {
-    const lowerGenre = genre!.toLowerCase();
+    const lowerGenre = (genre ?? '').toLowerCase();
     filtered = filtered.filter(s =>
       s.genre?.toLowerCase().includes(lowerGenre)
     );
   }
 
   if (hasLanguage) {
-    const lowerLanguage = language!.toLowerCase();
+    const lowerLanguage = (language ?? '').toLowerCase();
     filtered = filtered.filter(s =>
       s.language?.toLowerCase().includes(lowerLanguage)
     );

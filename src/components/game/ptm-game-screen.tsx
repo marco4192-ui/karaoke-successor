@@ -146,8 +146,9 @@ export function PtmGameScreen({
   // In medley mode, use the current snippet's song for audio; otherwise use effectiveSong
   const audioSong = isMedleyMode && currentSnippet ? currentSnippet.song : effectiveSong;
   // For notes/lyrics, use snippet song in medley mode, or fallback lyrics if loaded
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- notesSource logical expression is fine; wrapping would be over-engineering
   const notesSource = (audioSong?.lyrics?.length ? audioSong : null)
-    ?? (fallbackLyricsRef.current ? { ...audioSong!, lyrics: fallbackLyricsRef.current } : audioSong);
+    ?? (fallbackLyricsRef.current && audioSong ? { ...audioSong, lyrics: fallbackLyricsRef.current } : audioSong);
 
   // ── Transition state ──
   const [transitionVisible, setTransitionVisible] = useState(false);
@@ -369,6 +370,7 @@ export function PtmGameScreen({
       };
     }
     setPassTheMicSeriesHistory([...passTheMicSeriesHistory, round]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- isMedleyMode/ptmMedleySnippets.length excluded; recordRound uses refs
   }, [effectiveSong, song, passTheMicSeriesHistory, setPassTheMicSeriesHistory]);
 
   // ── Segment switching ──
@@ -660,6 +662,15 @@ export function PtmGameScreen({
     setPhase('song-results');
   }, [recordRound]);
 
+  // ── Shared handler for audio/video/background end — avoids triplicated logic ──
+  const handleMediaEnded = useCallback(() => {
+    if (phase === 'playing' || phase === 'transitioning') {
+      setIsPlaying(false);
+      recordRound();
+      setPhase('song-results');
+    }
+  }, [phase, recordRound]);
+
   // ===================== RENDER =====================
 
   // Guard: no song
@@ -736,14 +747,6 @@ export function PtmGameScreen({
   }
 
   // ===================== FULLSCREEN GAMEPLAY =====================
-  // Shared handler for audio/video/background end — avoids triplicated logic
-  const handleMediaEnded = useCallback(() => {
-    if (phase === 'playing' || phase === 'transitioning') {
-      setIsPlaying(false);
-      recordRound();
-      setPhase('song-results');
-    }
-  }, [phase]);
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-black">

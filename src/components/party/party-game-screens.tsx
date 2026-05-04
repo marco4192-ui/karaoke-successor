@@ -102,6 +102,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       const match = party.currentTournamentMatch;
       if (!match) return;
 
+      if (!match.player1 || !match.player2) return;
+
       setMicOverlay(null);
 
       // Reset game state for new match
@@ -110,8 +112,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       // Store mic assignments in unifiedSetupResult for MicIndicator display
       const setupResult: GameSetupResult = {
         players: [
-          { id: match.player1!.id, name: match.player1!.name, color: match.player1!.color || '#FF6B6B', playerType: micOverlay.p1Mic === 'Companion' ? 'companion' : 'microphone', micId: 'default', micName: micOverlay.p1Mic },
-          { id: match.player2!.id, name: match.player2!.name, color: match.player2!.color || '#4ECDC4', playerType: micOverlay.p2Mic === 'Companion' ? 'companion' : 'microphone', micId: 'default', micName: micOverlay.p2Mic },
+          { id: match.player1.id, name: match.player1.name, color: match.player1.color || '#FF6B6B', playerType: micOverlay.p1Mic === 'Companion' ? 'companion' : 'microphone', micId: 'default', micName: micOverlay.p1Mic },
+          { id: match.player2.id, name: match.player2.name, color: match.player2.color || '#4ECDC4', playerType: micOverlay.p2Mic === 'Companion' ? 'companion' : 'microphone', micId: 'default', micName: micOverlay.p2Mic },
         ],
         settings: {},
         songSelection: 'random',
@@ -140,8 +142,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
     }, 1000);
 
     return () => { if (micOverlayTimerRef.current) clearTimeout(micOverlayTimerRef.current); };
-  // Note: Only specific party fields in deps — avoids re-running on every store change.
-  // setUnifiedSetupResult is a stable Zustand action; currentTournamentMatch is the data dep.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- party is a stable Zustand store; getAllSongs is from static import; specific fields used in body
   }, [micOverlay, party.currentTournamentMatch, resetGame, addPlayer, setGameMode, setSong, setScreen, getAllSongs, party.setUnifiedSetupResult]);
 
   return (
@@ -317,18 +318,19 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           onRepeatMatch={() => {
             if (!party.currentTournamentMatch) return;
             const match = party.currentTournamentMatch;
+            if (!match.player1 || !match.player2) return;
             resetGame();
             addPlayer({
-              id: match.player1!.id,
-              name: match.player1!.name,
-              avatar: match.player1!.avatar,
-              color: match.player1!.color,
+              id: match.player1.id,
+              name: match.player1.name,
+              avatar: match.player1.avatar,
+              color: match.player1.color,
             });
             addPlayer({
-              id: match.player2!.id,
-              name: match.player2!.name,
-              avatar: match.player2!.avatar,
-              color: match.player2!.color,
+              id: match.player2.id,
+              name: match.player2.name,
+              avatar: match.player2.avatar,
+              color: match.player2.color,
             });
             setGameMode('duel');
             const songs = getAllSongs();
