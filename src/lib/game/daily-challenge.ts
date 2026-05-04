@@ -405,7 +405,10 @@ export function submitChallengeResult(
       stats.weeklyProgress = [0, 0, 0, 0, 0, 0, 0];
       stats.lastWeekStart = weekStartISO;
     }
-    stats.weeklyProgress[dayOfWeek] = 1;
+    // Convert JS day (0=Sun) to Monday-based index (0=Mon, 6=Sun)
+    // to match the Monday-starting weekly reset above.
+    const weekIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    stats.weeklyProgress[weekIndex] = 1;
 
     stats.totalXP += xpEarned;
   }
