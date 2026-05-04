@@ -33,12 +33,13 @@ export function useJukebox(refs?: {
   const [showLyrics, setShowLyrics] = useState(false);
   const [currentLyricIndex, setCurrentLyricIndex] = useState(0);
   const [songs, setSongs] = useState<Song[]>([]);
-  const _internalContainerRef = useRef<HTMLDivElement | null>(null);
-  const _internalVideoRef = useRef<HTMLVideoElement | null>(null);
-  const _internalAudioRef = useRef<HTMLAudioElement | null>(null);
-  const containerRef = refs?.containerRef ?? _internalContainerRef;
-  const videoRef = refs?.videoRef ?? _internalVideoRef;
-  const audioRef = refs?.audioRef ?? _internalAudioRef;
+  // Default refs used when caller doesn't provide its own (defensive fallback)
+  const defaultContainerRef = useRef<HTMLDivElement | null>(null);
+  const defaultVideoRef = useRef<HTMLVideoElement | null>(null);
+  const defaultAudioRef = useRef<HTMLAudioElement | null>(null);
+  const containerRef = refs?.containerRef ?? defaultContainerRef;
+  const videoRef = refs?.videoRef ?? defaultVideoRef;
+  const audioRef = refs?.audioRef ?? defaultAudioRef;
 
   // Load songs asynchronously
   useEffect(() => {

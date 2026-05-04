@@ -41,4 +41,17 @@
 **Verifikation:** TSC 0 Errors
 **Commit:** `a26dc53`
 
+### Fix 4: DC-D — Unbenutzter Parameter _stateRef entfernt
+**Datei:** `src/hooks/use-note-scoring.ts`
+**Problem:** `checkPlayerNoteHits` empfing `_stateRef` (p2StateRef) als Parameter, las aber nie davon. State wird via `setPlayerState` und ref-basiertem Combo-Tracking verwaltet.
+**Lösung:** Parameter und Argument am Aufrufort entfernt.
+**Commit:** `e42898e`
+
+### Fix 5: L-1 — react-hooks/exhaustive-deps Warnungen behoben
+**Datei:** `src/hooks/use-note-scoring.ts`
+**Problem:** `checkPlayerNoteHits` und `checkNoteHits` verwendeten `hasPerfectOnly`/`hasGoldenOnly` im Body, aber diese standen nicht im useCallback-Dependenz-Array → Risiko von stale closures.
+**Lösung:** `hasPerfectOnly` und `hasGoldenOnly` zu beiden Dep-Arrays hinzugefügt.
+**Verifikation:** ESLint 0 Warnings für die Datei
+**Commit:** `e42898e`
+
 ---
