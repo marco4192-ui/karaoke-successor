@@ -196,5 +196,3 @@ export function storeSongFilters(filters: { filterGenre?: string; filterLanguage
     localStorage.setItem('ptm-song-filters', JSON.stringify(filters));
   } catch { /* ignore */ }
 }
-
-export { getFilteredSongs };
