@@ -49,6 +49,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<SongIdent
     try {
       zai = await ZAI.create();
     } catch (initError) {
+      // eslint-disable-next-line no-console
       console.error('[SongIdentify] Failed to initialize ZAI SDK:', initError);
       return NextResponse.json(
         { success: false, error: 'AI service unavailable' },
@@ -118,6 +119,7 @@ Extract the song metadata and return ONLY the JSON object.`,
         }
         metadata = JSON.parse(jsonMatch[0]) as SongMetadata;
       } catch {
+        // eslint-disable-next-line no-console
         console.error('[SongIdentify] Failed to parse LLM response:', responseContent);
         return NextResponse.json(
           { success: false, error: 'Failed to parse metadata response' },
@@ -155,6 +157,7 @@ Extract the song metadata and return ONLY the JSON object.`,
         },
       });
     } catch (llmError) {
+      // eslint-disable-next-line no-console
       console.error('[SongIdentify] LLM error:', llmError);
       return NextResponse.json(
         { success: false, error: 'AI processing failed' },
@@ -162,6 +165,7 @@ Extract the song metadata and return ONLY the JSON object.`,
       );
     }
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('[SongIdentify] Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return NextResponse.json(

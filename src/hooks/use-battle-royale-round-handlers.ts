@@ -117,6 +117,7 @@ export function useBattleRoyaleRoundHandlers({
   const handleStartRound = useCallback(() => {
     const song = getRandomSong();
     if (!song) {
+      // eslint-disable-next-line no-console
       console.error('[BattleRoyale] No playable songs found in library. Cannot start round.');
       return;
     }

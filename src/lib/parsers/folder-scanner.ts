@@ -458,12 +458,14 @@ export async function convertScannedSongToSong(scanned: ScannedSong): Promise<So
     try {
       duration = await getAudioDuration(scanned.audioFile);
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error('Failed to get audio duration:', e);
     }
   } else if (scanned.videoFile) {
     try {
       duration = await getVideoDuration(scanned.videoFile);
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error('Failed to get video duration:', e);
     }
   }
@@ -500,9 +502,11 @@ export async function convertScannedSongToSong(scanned: ScannedSong): Promise<So
         await storeMedia(songId, 'txt', txtBlob);
         storedTxt = true;
       } else {
+        // eslint-disable-next-line no-console
         console.warn(`[FolderScanner] TXT file is empty for song ${songId}`);
       }
     } catch (txtErr) {
+      // eslint-disable-next-line no-console
       console.error(`[FolderScanner] Failed to cache TXT for ${songId}:`, txtErr);
     }
   }

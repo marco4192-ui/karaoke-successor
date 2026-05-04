@@ -347,6 +347,7 @@ export function ShortsCreator({ song, score, gameResult, audioUrl, onClose }: Sh
         stream.addTrack(destination.stream.getAudioTracks()[0]);
         audioRef.current = audioElement;
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.debug('[ShortsCreator] Audio setup for recording failed:', error);
       }
     }
@@ -446,6 +447,7 @@ export function ShortsCreator({ song, score, gameResult, audioUrl, onClose }: Sh
           files: [file],
         });
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.debug('[ShortsCreator] Share cancelled or failed:', error);
       }
     } else {

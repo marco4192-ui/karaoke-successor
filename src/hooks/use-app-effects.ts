@@ -23,6 +23,7 @@ export function useAppEffects() {
   // Load custom songs from IndexedDB on mount
   useEffect(() => {
     loadCustomSongsFromStorage().catch(err => {
+      // eslint-disable-next-line no-console
       console.warn('[App] Failed to load custom songs from IndexedDB:', err);
     });
   }, []);

@@ -139,6 +139,7 @@ export function ScoreCard({ song, score, playerName, playerAvatar, onClose }: Sc
         downloadCard();
       }
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Share failed:', err);
       downloadCard();
     }

@@ -598,6 +598,7 @@ export function useSongEnergy(audioRef?: React.RefObject<HTMLAudioElement | null
 
         interval = setInterval(updateEnergy, 100);
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('[useSongEnergy] Failed to initialize:', error);
       }
     };

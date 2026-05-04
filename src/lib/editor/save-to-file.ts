@@ -48,6 +48,7 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
     }
     // Fallback: Ask user where to save (using native dialog)
     else {
+      // eslint-disable-next-line no-console
       console.warn('[SaveToFile] No path info available, asking user...');
       const { nativePickFileSave } = await import('@/lib/native-fs');
       const userPath = await nativePickFileSave(
@@ -69,6 +70,7 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
       const fileExists = await nativeFileExists(filePath!);
       
       if (!fileExists) {
+        // eslint-disable-next-line no-console
         console.warn('[SaveToFile] Original file does not exist:', filePath);
         // File doesn't exist - this might be a new file, that's OK
       }
@@ -81,6 +83,7 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
     return { success: true, message: 'Datei gespeichert!', path: filePath! };
     
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('[SaveToFile] Error saving song:', error);
     return {
       success: false,

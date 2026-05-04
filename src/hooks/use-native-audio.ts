@@ -91,6 +91,7 @@ export function useNativeAudio(): UseNativeAudioResult {
       const list = await listAudioDevices();
       setDevices(list);
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('[NativeAudio] Failed to list devices:', err);
     } finally {
       setLoading(false);
@@ -115,6 +116,7 @@ export function useNativeAudio(): UseNativeAudioResult {
         unlistenTimeRef.current = unlisten;
       }
     }).catch((err) => {
+      // eslint-disable-next-line no-console
       console.warn('[NativeAudio] Could not register time-update listener (non-fatal):', err);
     });
 
@@ -129,6 +131,7 @@ export function useNativeAudio(): UseNativeAudioResult {
         unlistenEndedRef.current = unlisten;
       }
     }).catch((err) => {
+      // eslint-disable-next-line no-console
       console.warn('[NativeAudio] Could not register ended listener (non-fatal):', err);
     });
 
@@ -150,6 +153,7 @@ export function useNativeAudio(): UseNativeAudioResult {
       const state = await getAudioState();
       setPlaybackState(state);
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('[NativeAudio] Play failed:', err);
       throw err;
     }
@@ -160,6 +164,7 @@ export function useNativeAudio(): UseNativeAudioResult {
       await pauseAudio();
       setIsPlaying(false);
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('[NativeAudio] Pause failed:', err);
     }
   }, []);
@@ -169,6 +174,7 @@ export function useNativeAudio(): UseNativeAudioResult {
       await resumeAudio();
       setIsPlaying(true);
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('[NativeAudio] Resume failed:', err);
     }
   }, []);
@@ -177,6 +183,7 @@ export function useNativeAudio(): UseNativeAudioResult {
     try {
       await seekAudio(positionMs);
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('[NativeAudio] Seek failed:', err);
     }
   }, []);
@@ -185,6 +192,7 @@ export function useNativeAudio(): UseNativeAudioResult {
     try {
       await setAudioVolume(volume);
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('[NativeAudio] Set volume failed:', err);
     }
   }, []);
@@ -196,6 +204,7 @@ export function useNativeAudio(): UseNativeAudioResult {
       setCurrentPosition(0);
       setPlaybackState(null);
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('[NativeAudio] Stop failed:', err);
     }
   }, []);

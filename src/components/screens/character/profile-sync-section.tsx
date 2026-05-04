@@ -52,6 +52,7 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
         throw new Error('Upload failed');
       }
     } catch (error: unknown) {
+      // eslint-disable-next-line no-console
       console.error('Profile upload error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to upload profile';
       setMessage({ type: 'error', text: errorMessage });
@@ -91,6 +92,7 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
         throw new Error('Profile not found');
       }
     } catch (error: unknown) {
+      // eslint-disable-next-line no-console
       console.error('Profile download error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to download profile. Check the sync code.';
       setMessage({ type: 'error', text: errorMessage });

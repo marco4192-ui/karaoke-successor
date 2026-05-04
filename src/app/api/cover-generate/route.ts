@@ -75,6 +75,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<CoverGene
     try {
       zai = await ZAI.create();
     } catch (initError) {
+      // eslint-disable-next-line no-console
       console.error('[CoverGenerate] Failed to initialize ZAI SDK:', initError);
       return NextResponse.json(
         { success: false, error: 'AI service unavailable' },
@@ -124,6 +125,7 @@ Design requirements:
         image: base64Image,
       });
     } catch (imageError) {
+      // eslint-disable-next-line no-console
       console.error('[CoverGenerate] Image generation error:', imageError);
       return NextResponse.json(
         { success: false, error: 'Image generation failed' },
@@ -131,6 +133,7 @@ Design requirements:
       );
     }
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('[CoverGenerate] Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return NextResponse.json(

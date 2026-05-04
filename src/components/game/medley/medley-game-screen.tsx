@@ -342,6 +342,7 @@ export function MedleyGameScreen({
       const ok = await multiPitch.initialize();
       if (ok) multiPitch.start();
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.warn('[Medley] Multi-pitch init failed:', e);
     }
 
@@ -353,6 +354,7 @@ export function MedleyGameScreen({
           setPhase('playing');
           if (audioRef.current && currentSnippet) {
             audioRef.current.currentTime = currentSnippet.startTime / 1000;
+            // eslint-disable-next-line no-console
             audioRef.current.play().catch(e => console.warn('[Medley] Play failed:', e));
             setIsPlaying(true);
             setCurrentTimeMs(0);

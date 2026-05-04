@@ -39,6 +39,7 @@ export function runAllCleanup(): void {
     try {
       fn();
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.warn('Cleanup callback failed:', e);
     }
   }

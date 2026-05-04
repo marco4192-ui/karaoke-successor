@@ -275,6 +275,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   party.setBattleRoyaleGame(game);
                   setScreen('battle-royale-game');
                 } catch (err) {
+                  // eslint-disable-next-line no-console
                   console.error('[PartySetup] Failed to create battle royale:', err);
                   alert(`Fehler beim Starten von Battle Royale: ${err instanceof Error ? err.message : String(err)}`);
                 }

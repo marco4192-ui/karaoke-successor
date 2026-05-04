@@ -154,9 +154,11 @@ export function useFolderScanner(): UseFolderScannerReturn {
             ]);
 
             if (txtResult.status === 'fulfilled') storedTxt = txtResult.value;
+            // eslint-disable-next-line no-console
             else console.warn('Could not cache TXT for', scanned.title);
 
             if (coverResult.status === 'fulfilled') coverImage = coverResult.value;
+            // eslint-disable-next-line no-console
             else console.warn(`[Import] Failed to create cover URL for ${scanned.title}`);
 
             // Calculate actual song duration:
@@ -236,6 +238,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
               count: imported
             });
           } catch (e) {
+            // eslint-disable-next-line no-console
             console.error('Failed to import song:', scanned.title, e);
           }
         }
@@ -267,10 +270,12 @@ export function useFolderScanner(): UseFolderScannerReturn {
       }
 
       if (result.errors.length > 0) {
+        // eslint-disable-next-line no-console
         console.warn('Scan errors:', result.errors);
       }
 
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Folder scan failed:', error);
       setScanProgress({
         stage: 'error',
@@ -324,6 +329,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
       } else {
       }
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error('[Settings] Error in handleBrowseFolder:', e);
       const errorMessage = e instanceof Error ? e.message : String(e);
       safeAlert(
@@ -363,6 +369,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
       try {
         await clearCustomSongsFromDB();
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.warn('[Settings] Failed to clear custom songs from IndexedDB:', e);
       }
 
@@ -371,6 +378,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
         const { clearCache: clearLibraryCache } = await import('@/lib/game/library-cache');
         await clearLibraryCache();
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.warn('[Settings] Failed to clear library cache:', e);
       }
 
@@ -380,6 +388,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
       if (resetCompleteTimerRef.current) clearTimeout(resetCompleteTimerRef.current);
       resetCompleteTimerRef.current = setTimeout(() => setResetComplete(false), 3000);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to reset library:', error);
     } finally {
       setIsResetting(false);
@@ -403,6 +412,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
       localStorage.clear();
       window.location.reload();
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to clear data:', error);
       setIsResetting(false);
     }

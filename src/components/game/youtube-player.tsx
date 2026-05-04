@@ -173,6 +173,7 @@ export function YouTubePlayer({
     // Timeout fallback: if the API doesn't load within 10 seconds, try polling
     const fallbackTimeout = setTimeout(() => {
       if (!window.YT?.Player) {
+        // eslint-disable-next-line no-console
         console.warn('[YouTube] API load timeout — starting polling fallback');
         const poll = setInterval(() => {
           if (window.YT?.Player) {
@@ -228,6 +229,7 @@ export function YouTubePlayer({
     const initTimeout = setTimeout(() => {
       // Re-check that the container still exists (component may have unmounted)
       if (!containerRef.current || !document.getElementById(playerIdRef.current)) {
+        // eslint-disable-next-line no-console
         console.warn('[YouTube] Container disappeared before player init — skipping');
         return;
       }
@@ -314,6 +316,7 @@ export function YouTubePlayer({
           onError: (event) => {
             const errorCode = event.data as number;
             const message = YOUTUBE_ERROR_MESSAGES[errorCode] || `Unbekannter YouTube-Fehler (Code: ${errorCode})`;
+            // eslint-disable-next-line no-console
             console.error('[YouTube] Player error:', errorCode, message);
             onErrorRef.current?.(errorCode);
           },

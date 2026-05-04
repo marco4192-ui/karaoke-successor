@@ -229,6 +229,7 @@ export function useRemoteControl({
           }
         }
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('[useRemoteControl] Error polling remote commands:', error);
       }
     };

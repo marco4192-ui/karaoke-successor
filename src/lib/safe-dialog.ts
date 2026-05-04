@@ -16,6 +16,7 @@ export function safeAlert(message: string): void {
     alert(message);
   } catch (e) {
     // Tauri dialog plugin failed (ACL error, etc.) — fall back to native
+    // eslint-disable-next-line no-console
     console.warn('[SafeDialog] alert() failed, using native fallback:', e);
     _nativeAlert?.(message);
   }
@@ -29,6 +30,7 @@ export function safeConfirm(message: string): boolean {
     return confirm(message);
   } catch (e) {
     // Tauri dialog plugin failed (ACL error, etc.) — fall back to native
+    // eslint-disable-next-line no-console
     console.warn('[SafeDialog] confirm() failed, using native fallback:', e);
     return _nativeConfirm?.(message) ?? false;
   }
@@ -42,6 +44,7 @@ export function safePrompt(message: string, defaultText?: string): string | null
     return prompt(message, defaultText);
   } catch (e) {
     // Tauri dialog plugin failed (ACL error, etc.) — fall back to native
+    // eslint-disable-next-line no-console
     console.warn('[SafeDialog] prompt() failed, using native fallback:', e);
     return _nativePrompt?.(message, defaultText) ?? null;
   }

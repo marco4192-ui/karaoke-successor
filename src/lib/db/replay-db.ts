@@ -34,6 +34,7 @@ function openDB(): Promise<IDBDatabase> {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onerror = () => {
+      // eslint-disable-next-line no-console
       console.error('[ReplayDB] Failed to open database:', request.error);
       initPromise = null;
       reject(request.error);
@@ -71,6 +72,7 @@ export async function storeReplay(replay: ReplayRecord): Promise<void> {
       resolve();
     };
     request.onerror = () => {
+      // eslint-disable-next-line no-console
       console.error('[ReplayDB] Failed to store replay:', request.error);
       reject(request.error);
     };
@@ -90,6 +92,7 @@ export async function getReplay(id: string): Promise<ReplayRecord | null> {
       resolve(request.result ?? null);
     };
     request.onerror = () => {
+      // eslint-disable-next-line no-console
       console.error('[ReplayDB] Failed to get replay:', request.error);
       reject(request.error);
     };
@@ -112,6 +115,7 @@ export async function getReplaysForSong(songId: string): Promise<ReplayRecord[]>
       resolve(results);
     };
     request.onerror = () => {
+      // eslint-disable-next-line no-console
       console.error('[ReplayDB] Failed to get replays for song:', request.error);
       reject(request.error);
     };
@@ -133,6 +137,7 @@ export async function getAllReplays(): Promise<ReplayRecord[]> {
       resolve(results);
     };
     request.onerror = () => {
+      // eslint-disable-next-line no-console
       console.error('[ReplayDB] Failed to get all replays:', request.error);
       reject(request.error);
     };
@@ -150,6 +155,7 @@ export async function deleteReplay(id: string): Promise<void> {
 
     request.onsuccess = () => resolve();
     request.onerror = () => {
+      // eslint-disable-next-line no-console
       console.error('[ReplayDB] Failed to delete replay:', request.error);
       reject(request.error);
     };
@@ -182,6 +188,7 @@ export async function deleteReplaysForSong(songId: string): Promise<void> {
       request.onerror = () => {
         if (!errored) {
           errored = true;
+          // eslint-disable-next-line no-console
           console.error('[ReplayDB] Failed to delete replay for song:', request.error);
           reject(request.error);
         }
@@ -229,12 +236,14 @@ export async function cleanupOldReplays(): Promise<void> {
         }
         tx.oncomplete = () => resolve();
         tx.onerror = () => {
+          // eslint-disable-next-line no-console
           console.error('[ReplayDB] Cleanup batch delete failed:', tx.error);
           reject(tx.error);
         };
       });
     }
   } catch (err) {
+    // eslint-disable-next-line no-console
     console.warn('[ReplayDB] Cleanup failed (non-critical):', err);
   }
 }

@@ -103,6 +103,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
         setCompanionQueue(data.queue.filter((item: CompanionQueueItem) => item.status === 'pending'));
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.debug('[QueueScreen] fetchCompanionQueue failed:', error);
     }
   }, []);
@@ -126,6 +127,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
       });
       setCompanionQueue(prev => prev.filter(item => item.id !== itemId));
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.debug('[QueueScreen] markQueueItemCompleted failed:', error);
     }
   };
@@ -199,6 +201,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
     // If song not found in local library (companion song with ID mismatch),
     // create a fallback Song so karaoke can at least start with available data
     if (!song) {
+      // eslint-disable-next-line no-console
       console.warn('[QueueScreen] Song not found in library, creating fallback:', item.song.id, item.song.title);
       song = createFallbackSong(item);
     }
@@ -212,6 +215,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
       const withLyrics = await getSongByIdWithLyrics(song.id) || song;
       song = await ensureSongUrls(withLyrics);
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('[QueueScreen] Failed to prepare song:', err);
     }
 
@@ -219,6 +223,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
     // If not, don't start the game (watchdog would kill it after 10s anyway).
     const hasMedia = song.audioUrl || song.videoUrl || song.relativeVideoPath || song.relativeAudioPath;
     if (!hasMedia) {
+      // eslint-disable-next-line no-console
       console.warn('[QueueScreen] No playable media found for song:', song.title, '- skipping to prevent watchdog timeout');
       // Mark the companion item as completed so it doesn't block the queue
       if (item.isFromCompanion) {
@@ -232,6 +237,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
             }),
           });
           setCompanionQueue(prev => prev.filter(q => q.id !== item.id));
+        // eslint-disable-next-line no-console
         } catch (error) { console.debug('[QueueScreen] queuecompleted (no media) failed:', error); }
       }
       return;
@@ -282,6 +288,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
           }),
         });
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.debug('[QueueScreen] markPlaying failed:', error);
       }
     } else {

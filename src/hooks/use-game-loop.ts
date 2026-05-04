@@ -420,6 +420,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
                 const normalizedRelative = normalizeFilePath(currentSong.relativeAudioPath);
                 const nativePath = `${normalizedBase}/${normalizedRelative}`;
                 nativeAudioPlay(nativePath).catch((err) => {
+                  // eslint-disable-next-line no-console
                   console.error('[GameScreen] Native audio play failed, falling back to browser:', err);
                   if (audioRef.current) audioRef.current.muted = false;
                 });
@@ -470,6 +471,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
               videoRef.current.play().catch(() => {});
             }
           } catch (error) {
+            // eslint-disable-next-line no-console
             console.error('[GameScreen] Media playback failed:', error);
             // Do NOT set isPlaying(true) — the media didn't start,
             // so the game loop must not run (would cause infinite wall-clock hang).
@@ -550,8 +552,10 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
                 if (isNonScoringMode) {
                   // Non-scoring modes: just warn, don't abort. Wall-clock fallback
                   // and onEnded will handle song completion naturally.
+                  // eslint-disable-next-line no-console
                   console.warn('[GameLoop] Media playback watchdog: no media playing after 10s in non-scoring mode — continuing with wall-clock timing');
                 } else {
+                  // eslint-disable-next-line no-console
                   console.error('[GameLoop] Media playback watchdog: no media actually playing after 10s — ending game to prevent hang');
                   // Use ref to call the latest version (avoids stale closure)
                   endGameAndCleanupRef.current();

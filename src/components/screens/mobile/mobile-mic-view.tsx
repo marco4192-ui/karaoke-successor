@@ -82,6 +82,7 @@ export function MobileMicView({ gameState, clientId, currentPitch, isListening, 
                       }),
                     });
                   } catch (error) {
+                    // eslint-disable-next-line no-console
                     console.error('Skip ad failed:', error);
                   }
                 }}

@@ -491,6 +491,7 @@ export function PtmGameScreen({
     // Guard: ensure lyrics are available before starting
     const songToCheck = isMedleyMode && currentSnippet ? currentSnippet.song : effectiveSong;
     if (!songToCheck?.lyrics || songToCheck.lyrics.length === 0) {
+      // eslint-disable-next-line no-console
       console.warn('[PTM] No lyrics loaded, attempting reload...');
       try {
         const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
@@ -545,6 +546,7 @@ export function PtmGameScreen({
               videoRef.current.play().catch(() => {});
             } else {
               // Media element not ready yet — retry shortly
+              // eslint-disable-next-line no-console
               console.warn('[PTM] No media element available at game start, retrying...');
               countdownRetryRef.current = setTimeout(() => {
                 countdownRetryRef.current = null;

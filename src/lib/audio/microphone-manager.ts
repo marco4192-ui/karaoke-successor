@@ -175,6 +175,7 @@ class MicrophoneInstance {
 
       return true;
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to connect microphone:', error);
       return false;
     }
@@ -348,6 +349,7 @@ export class MultiMicrophoneManager {
 
       return this.devices;
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to get microphone list:', error);
       return [];
     }
@@ -376,6 +378,7 @@ export class MultiMicrophoneManager {
   async assignMicrophone(deviceId: string, customName?: string): Promise<AssignedMicrophone | null> {
     // Check if we can add more mics
     if (!this.canAddMicrophone()) {
+      // eslint-disable-next-line no-console
       console.warn(`Maximum of ${MAX_MICROPHONES} microphones already assigned.`);
       return null;
     }

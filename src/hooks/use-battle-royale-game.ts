@@ -209,6 +209,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
           if (audio.readyState >= 3) { // HAVE_FUTURE_DATA or higher
             audio.play()
               .then(() => { audioHasPlayedRef.current = true; })
+              // eslint-disable-next-line no-console
               .catch(e => console.error('Audio play error:', e));
           } else {
             const onCanPlay = () => {
@@ -216,15 +217,18 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
               if (!cancelled) {
                 audio.play()
                   .then(() => { audioHasPlayedRef.current = true; })
+                  // eslint-disable-next-line no-console
                   .catch(e => console.error('Audio play error:', e));
               }
             };
             audio.addEventListener('canplay', onCanPlay);
           }
         } else {
+          // eslint-disable-next-line no-console
           console.warn('[BattleRoyale] No audio URL resolved — starting without audio');
         }
         if (videoRef.current && resolvedVideoUrlRef.current) {
+          // eslint-disable-next-line no-console
           videoRef.current.play().catch(e => console.error('Video play error:', e));
         }
 

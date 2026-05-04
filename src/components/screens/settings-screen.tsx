@@ -209,6 +209,7 @@ function SettingsScreen() {
       setHasChanges(false);
       // Note: folderSaveComplete feedback is handled by the folderScanner hook internally
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to save settings:', error);
     }
   };

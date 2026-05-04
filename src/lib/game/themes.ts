@@ -219,6 +219,7 @@ export const THEMES: Theme[] = [
 export function applyTheme(theme: Theme): void {
   // Safety check - ensure theme is defined
   if (!theme || !theme.colors) {
+    // eslint-disable-next-line no-console
     console.warn('[applyTheme] Invalid theme provided, using default');
     theme = THEMES[0]; // Fallback to default theme
   }
@@ -432,6 +433,7 @@ export function applyTheme(theme: Theme): void {
     try {
       window.dispatchEvent(new CustomEvent('themeChanged', { detail: theme }));
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.warn('[applyTheme] Failed to dispatch themeChanged event:', error);
     }
   }

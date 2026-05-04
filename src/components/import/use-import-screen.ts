@@ -163,6 +163,7 @@ export function useImportScreen(onImport: (song: Song) => void) {
           if (storedPaths.txtPath) song.relativeTxtPath = storedPaths.txtPath;
         }
       } catch (mediaErr) {
+        // eslint-disable-next-line no-console
         console.warn('[Import] Failed to store media:', mediaErr);
       }
 
@@ -450,6 +451,7 @@ export function useImportScreen(onImport: (song: Song) => void) {
             localStorage.setItem('karaoke-songs-folder', detectedBaseFolder);
           }
         } catch (e) {
+          // eslint-disable-next-line no-console
           console.warn('[Import] Could not save baseFolder to localStorage:', e);
         }
       }

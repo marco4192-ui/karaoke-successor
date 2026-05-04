@@ -117,6 +117,7 @@ export function useMobilePitchDetection({
         try {
           await audioContextRef.current.resume();
         } catch (resumeErr) {
+          // eslint-disable-next-line no-console
           console.warn('[MobilePitch] AudioContext.resume() failed, retrying…', resumeErr);
           await new Promise<void>(resolve => setTimeout(resolve, 100));
           await audioContextRef.current.resume();

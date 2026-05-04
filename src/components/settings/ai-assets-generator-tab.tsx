@@ -75,6 +75,7 @@ export function AIAssetsGeneratorTab() {
           setHasApiKey(data.config.hasApiKey || false);
         }
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.error('Failed to load config:', err);
       } finally {
         setConfigLoading(false);

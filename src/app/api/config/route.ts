@@ -48,6 +48,7 @@ export async function GET(request: NextRequest) {
       message: 'Configuration loaded'
     });
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Error reading config:', error);
     return NextResponse.json({
       success: false,
@@ -109,6 +110,7 @@ export async function POST(request: NextRequest) {
       configPath
     });
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Error saving config:', error);
     return NextResponse.json({
       success: false,
@@ -160,6 +162,7 @@ export async function PUT(request: NextRequest) {
         }, { status: 400 });
       }
     } catch (fetchError) {
+      // eslint-disable-next-line no-console
       console.error('Connection test failed:', fetchError);
       return NextResponse.json({
         success: false,
@@ -167,6 +170,7 @@ export async function PUT(request: NextRequest) {
       }, { status: 503 });
     }
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Error testing connection:', error);
     return NextResponse.json({
       success: false,
@@ -194,6 +198,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Configuration removed'
     });
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Error deleting config:', error);
     return NextResponse.json({
       success: false,

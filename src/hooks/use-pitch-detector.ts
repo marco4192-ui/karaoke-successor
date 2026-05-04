@@ -70,6 +70,7 @@ export function usePitchDetector() {
 
   const start = useCallback(() => {
     if (!detectorRef.current) {
+      // eslint-disable-next-line no-console
       console.error('Pitch detector not initialized');
       return;
     }

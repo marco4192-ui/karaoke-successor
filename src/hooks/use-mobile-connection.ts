@@ -154,6 +154,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
         localStorage.setItem('karaoke-connection-code', data.connectionCode);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('[MobileClient] Error syncing profile:', error);
     }
   }, [clientId]);

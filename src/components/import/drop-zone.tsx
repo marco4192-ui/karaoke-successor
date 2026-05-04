@@ -66,6 +66,7 @@ export function DropZone({
           return;
         }
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.error('[DropZone] Native file picker error:', err);
         // Fall through to browser input
       }

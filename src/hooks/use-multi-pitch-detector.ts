@@ -172,6 +172,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
         // Log warning if some players failed to initialize
         if (!allSuccess) {
           const failedCount = results.filter(r => !r).length;
+          // eslint-disable-next-line no-console
           console.warn(`[useMultiPitchDetector] ${failedCount} player(s) failed to initialize, continuing with ${results.filter(r => r).length} active player(s)`);
         }
         setIsInitialized(true);
@@ -192,6 +193,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
 
       return false;
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('[useMultiPitchDetector] Initialization failed:', error);
       return false;
     }
@@ -202,6 +204,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
    */
   const start = useCallback(() => {
     if (!managerRef.current || !isInitialized) {
+      // eslint-disable-next-line no-console
       console.error('[useMultiPitchDetector] Not initialized');
       return;
     }
@@ -226,6 +229,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
    */
   const addPlayer = useCallback(async (config: PlayerPitchConfig): Promise<boolean> => {
     if (!managerRef.current) {
+      // eslint-disable-next-line no-console
       console.error('[useMultiPitchDetector] Manager not initialized');
       return false;
     }

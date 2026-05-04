@@ -60,6 +60,7 @@ export function useBattleRoyaleSongMedia({
       try {
         preparedSong = await ensureSongUrls(song);
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.warn('[BattleRoyale] Failed to ensure song URLs:', e);
       }
       // Load lyrics if missing (storedTxt or relativeTxtPath)
@@ -72,6 +73,7 @@ export function useBattleRoyaleSongMedia({
             preparedSong = { ...preparedSong, lyrics };
           }
         } catch (e) {
+          // eslint-disable-next-line no-console
           console.warn('[BattleRoyale] Failed to load lyrics:', e);
         }
       }
@@ -119,6 +121,7 @@ export function useBattleRoyaleSongMedia({
           if (mediaUrls.audioUrl) audioUrl = mediaUrls.audioUrl;
           if (mediaUrls.videoUrl) videoUrl = mediaUrls.videoUrl;
         } catch (e) {
+          // eslint-disable-next-line no-console
           console.error('Failed to load media from IndexedDB:', e);
         }
       }
@@ -129,6 +132,7 @@ export function useBattleRoyaleSongMedia({
           const url = await getSongMediaUrl(currentSong.relativeAudioPath, currentSong.baseFolder);
           if (url) audioUrl = url;
         } catch (e) {
+          // eslint-disable-next-line no-console
           console.error('Failed to resolve audio from filesystem:', e);
         }
       }
@@ -137,6 +141,7 @@ export function useBattleRoyaleSongMedia({
           const url = await getSongMediaUrl(currentSong.relativeVideoPath, currentSong.baseFolder);
           if (url) videoUrl = url;
         } catch (e) {
+          // eslint-disable-next-line no-console
           console.error('Failed to resolve video from filesystem:', e);
         }
       }

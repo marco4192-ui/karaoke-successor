@@ -520,6 +520,7 @@ export const useGameStore = create<GameStore>()(
               state.setDifficulty(diff);
             });
           } else {
+            // eslint-disable-next-line no-console
             console.warn('[GameStore] Ignoring invalid persisted difficulty:', diff);
           }
         }

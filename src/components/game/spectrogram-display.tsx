@@ -90,6 +90,7 @@ export function SpectrogramDisplay({
         analyserRef.current = analyser;
         setIsInitialized(true);
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('[SpectrogramDisplay] Failed to initialize:', error);
       }
     };

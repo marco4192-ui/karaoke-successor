@@ -45,6 +45,7 @@ export function useCompanionSync(): {
     try {
       const response = await fetch('/api/mobile?action=getprofiles');
       if (!response.ok) {
+        // eslint-disable-next-line no-console
         console.error('[CompanionSync] Failed to fetch profiles:', response.status);
         return;
       }
@@ -56,6 +57,7 @@ export function useCompanionSync(): {
         });
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('[CompanionSync] Error syncing profiles:', error);
     }
   }, [importProfileFromMobile]);

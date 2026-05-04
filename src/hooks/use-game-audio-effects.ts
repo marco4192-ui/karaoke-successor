@@ -56,6 +56,7 @@ export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
       existingAudioContext = pitchDetector.getAudioContext();
 
       if (!existingAudioContext) {
+        // eslint-disable-next-line no-console
         console.warn(
           '[AudioEffects] PitchDetector AudioContext is not available. ' +
           'Refusing to create a new one to avoid stealing audio focus.'
@@ -64,6 +65,7 @@ export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
       }
 
       if (!stream) {
+        // eslint-disable-next-line no-console
         console.warn('[AudioEffects] No existing mic stream found, requesting new one');
         stream = await navigator.mediaDevices.getUserMedia({
           audio: {
@@ -80,6 +82,7 @@ export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
       setAudioEffects(engine);
       return true;
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to initialize audio effects:', error);
       return false;
     }

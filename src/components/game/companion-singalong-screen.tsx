@@ -453,6 +453,7 @@ export function CompanionGameView({
 
           if (audioRef.current) {
             audioRef.current.currentTime = 0;
+            // eslint-disable-next-line no-console
             audioRef.current.play().catch(e => console.warn('[CompanionSingAlong] Audio play failed:', e));
           }
 
@@ -536,6 +537,7 @@ export function CompanionGameView({
             setPhase('song-results');
           }
         }}
+        // eslint-disable-next-line no-console
         onError={(e) => console.error('[CompanionSingAlong] Audio error:', e)}
         className="hidden"
         preload="auto"

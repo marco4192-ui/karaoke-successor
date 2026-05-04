@@ -90,6 +90,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           setTimeout(() => loadReplay(attempt + 1), RETRY_DELAY);
         }
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.warn('[ResultsScreen] Failed to load replay:', err);
       }
     };
@@ -118,6 +119,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           }
         }
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.debug('[ResultsScreen] fetchNextInQueue failed:', error);
       }
     };
@@ -151,6 +153,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ type: 'queuecompleted', payload: { itemId: nextQueueItem.id } }),
         });
+      // eslint-disable-next-line no-console
       } catch (error) { console.debug('[ResultsScreen] queuecompleted (song not found) failed:', error); }
       setNextQueueItem(null);
       return;
@@ -162,12 +165,14 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
       const withLyrics = await getSongByIdWithLyrics(fullSong.id) || fullSong;
       fullSong = await ensureSongUrls(withLyrics);
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('[ResultsScreen] Failed to prepare song:', err);
     }
     
     // After URL resolution, check if the song has playable media.
     const hasMedia = fullSong.audioUrl || fullSong.videoUrl || fullSong.relativeVideoPath || fullSong.relativeAudioPath;
     if (!hasMedia) {
+      // eslint-disable-next-line no-console
       console.warn('[ResultsScreen] No playable media for song:', fullSong.title, '- skipping');
       safeAlert(`No media found for "${fullSong.title}" — skipping`);
       try {
@@ -176,6 +181,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ type: 'queuecompleted', payload: { itemId: nextQueueItem.id } }),
         });
+      // eslint-disable-next-line no-console
       } catch (error) { console.debug('[ResultsScreen] queuecompleted (no media) failed:', error); }
       setNextQueueItem(null);
       return;
@@ -192,6 +198,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
         }),
       });
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.debug('[ResultsScreen] markPlaying failed:', error);
     }
     

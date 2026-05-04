@@ -26,6 +26,7 @@ function savePlayCounts(counts: Record<string, number>): void {
   try {
     localStorage.setItem(PLAY_COUNTS_KEY, JSON.stringify(counts));
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.error('Failed to save play counts:', e);
   }
 }
@@ -43,6 +44,7 @@ export function getPlaylists(): Playlist[] {
       return parsed;
     }
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.error('Failed to load playlists — resetting to defaults:', e);
     // Corrupt data — remove and recreate defaults
     try {
@@ -94,6 +96,7 @@ function savePlaylists(playlists: Playlist[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(playlists));
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.error('Failed to save playlists:', e);
     throw e;
   }

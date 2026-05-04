@@ -69,6 +69,7 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
             if (mediaUrls.audioUrl && needsIdxDbAudio) preparedSong = { ...preparedSong, audioUrl: mediaUrls.audioUrl };
             if (mediaUrls.videoUrl && needsIdxDbVideo) preparedSong = { ...preparedSong, videoBackground: mediaUrls.videoUrl };
           } catch (e) {
+            // eslint-disable-next-line no-console
             console.warn('[GameScreen] Failed to restore media from IndexedDB:', e);
           }
         }
@@ -76,6 +77,7 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
         if (cancelled) return;
         setRestoredSong(preparedSong);
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.error('[GameScreen] Error ensuring URLs:', err);
         if (cancelled) return;
         setRestoredSong(song);
@@ -121,11 +123,13 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
           }
         }).catch(err => {
           if (cancelled) return;
+          // eslint-disable-next-line no-console
           console.error('[GameScreen] Error loading lyrics:', err);
           setLyricsLoadError(`Error loading lyrics: ${err.message}`);
         });
       }).catch(err => {
         if (cancelled) return;
+        // eslint-disable-next-line no-console
         console.error('[GameScreen] Error importing song-library:', err);
         setLyricsLoadError(`Error importing module: ${err.message}`);
       });
@@ -210,6 +214,7 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
         audioLoadedRef.current = audioReady;
 
         if (!audioReady) {
+          // eslint-disable-next-line no-console
           console.warn('[GameScreen] Audio load timeout, proceeding anyway');
         }
       }
@@ -222,6 +227,7 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
           videoLoadedRef.current = videoReady;
 
           if (!videoReady) {
+            // eslint-disable-next-line no-console
             console.warn('[GameScreen] Video load timeout, proceeding anyway');
           }
         }
@@ -240,6 +246,7 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
       if (!anyMedia || (audioReady && videoReady)) {
         setMediaLoaded(true);
       } else {
+        // eslint-disable-next-line no-console
         console.warn('[GameScreen] Media load had failures, proceeding anyway after timeout');
         setMediaLoaded(true); // Still proceed — game should not hang
       }

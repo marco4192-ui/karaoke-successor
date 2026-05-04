@@ -26,6 +26,7 @@ export async function initMediaDB(): Promise<IDBDatabase> {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
       
       request.onerror = () => {
+        // eslint-disable-next-line no-console
         console.error('[MediaDB] Failed to open database:', request.error);
         initPromise = null;
         reject(request.error);
@@ -93,6 +94,7 @@ export async function storeMedia(
       resolve();
     };
     request.onerror = () => {
+      // eslint-disable-next-line no-console
       console.error('[MediaDB] Failed to store', type, ':', request.error);
       reject(request.error);
     };
@@ -118,16 +120,19 @@ export async function getMedia(
       if (request.result) {
         const blob = request.result.data;
         if (blob.size === 0) {
+          // eslint-disable-next-line no-console
           console.warn('[MediaDB] Retrieved blob is empty for', type);
         }
         resolve(blob);
       } else {
+        // eslint-disable-next-line no-console
         console.warn('[MediaDB] No', type, 'found for song', songId);
         resolve(null);
       }
     };
     
     request.onerror = () => {
+      // eslint-disable-next-line no-console
       console.error('[MediaDB] Failed to get', type, ':', request.error);
       reject(request.error);
     };

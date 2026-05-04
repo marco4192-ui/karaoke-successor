@@ -85,6 +85,7 @@ function GenreLanguageEditor({
       if (saveMessageTimerRef.current) clearTimeout(saveMessageTimerRef.current);
       saveMessageTimerRef.current = setTimeout(() => setSaveMessage(null), 3000);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Save error:', error);
       setSaveMessage('❌ Fehler beim Speichern');
       if (saveMessageTimerRef.current) clearTimeout(saveMessageTimerRef.current);
@@ -295,10 +296,12 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
         if (songWithLyrics && songWithLyrics.lyrics && songWithLyrics.lyrics.length > 0) {
           setSelectedSong(songWithLyrics);
         } else {
+          // eslint-disable-next-line no-console
           console.warn('[EditorScreen] Failed to load song with lyrics');
           setSelectedSong(song);
         }
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('[EditorScreen] Error loading lyrics:', error);
         setSelectedSong(song);
       } finally {

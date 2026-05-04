@@ -24,6 +24,7 @@ function openDB(): Promise<IDBDatabase> {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onerror = () => {
+      // eslint-disable-next-line no-console
       console.error('[CustomSongsDB] Failed to open database:', request.error);
       initPromise = null;
       reject(request.error);
@@ -71,12 +72,14 @@ export async function saveCustomSongsToDB(songs: Song[]): Promise<void> {
         const ids = songs.map(s => s.id);
         localStorage.setItem(ID_INDEX_KEY, JSON.stringify(ids));
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.warn('[CustomSongsDB] Failed to update ID index:', e);
       }
       resolve();
     };
 
     tx.onerror = () => {
+      // eslint-disable-next-line no-console
       console.error('[CustomSongsDB] Failed to save songs:', tx.error);
       reject(tx.error);
     };
@@ -111,8 +114,10 @@ export async function loadCustomSongsFromDB(): Promise<Song[]> {
               // Persist merged result back to IndexedDB
               try {
                 await saveCustomSongsToDB(merged);
+                // eslint-disable-next-line no-console
                 console.info(`[CustomSongsDB] Reconciled ${missingSongs.length} song(s) from localStorage into IndexedDB`);
               } catch (e) {
+                // eslint-disable-next-line no-console
                 console.warn('[CustomSongsDB] Failed to persist reconciled songs:', e);
               }
               resolve(merged);
@@ -121,6 +126,7 @@ export async function loadCustomSongsFromDB(): Promise<Song[]> {
           }
         }
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.warn('[CustomSongsDB] localStorage reconciliation check failed:', e);
       }
 
@@ -128,6 +134,7 @@ export async function loadCustomSongsFromDB(): Promise<Song[]> {
     };
 
     request.onerror = () => {
+      // eslint-disable-next-line no-console
       console.error('[CustomSongsDB] Failed to load songs:', request.error);
       reject(request.error);
     };
@@ -228,6 +235,7 @@ export async function migrateFromLocalStorage(
 
     return localStorageSongs;
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.error('[CustomSongsDB] Migration failed:', e);
     return null;
   }

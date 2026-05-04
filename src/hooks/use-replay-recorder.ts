@@ -108,6 +108,7 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
 
     const micStream = getMicStream();
     if (!micStream || micStream.getAudioTracks().length === 0) {
+      // eslint-disable-next-line no-console
       console.warn('[ReplayRecorder] No mic stream available — skipping replay');
       return;
     }
@@ -129,6 +130,7 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
           webcamStreamRef.current = webcamStream;
           webcamStream.getVideoTracks().forEach(track => stream.addTrack(track));
         } catch (err) {
+          // eslint-disable-next-line no-console
           console.warn('[ReplayRecorder] Could not get webcam for replay:', err);
         }
       }
@@ -146,6 +148,7 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
         try {
           recorder = new MediaRecorder(stream);
         } catch (fallbackErr) {
+          // eslint-disable-next-line no-console
           console.error('[ReplayRecorder] Failed to create MediaRecorder:', fallbackErr);
           return;
         }
@@ -198,6 +201,7 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
       mediaRecorderRef.current = null;
 
       if (chunks.length === 0) {
+        // eslint-disable-next-line no-console
         console.warn('[ReplayRecorder] No recorded data — skipping save');
         return;
       }
@@ -242,6 +246,7 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
           onReplaySaved(replayData);
         })
         .catch(err => {
+          // eslint-disable-next-line no-console
           console.error('[ReplayRecorder] Failed to save replay:', err);
         });
     };
@@ -262,6 +267,7 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
       try {
         recorder.pause();
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.warn('[ReplayRecorder] Failed to pause:', err);
       }
     }
@@ -274,6 +280,7 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
       try {
         recorder.resume();
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.warn('[ReplayRecorder] Failed to resume:', err);
       }
     }

@@ -42,6 +42,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<LyricsSug
     try {
       zai = await ZAI.create();
     } catch (initError) {
+      // eslint-disable-next-line no-console
       console.error('[LyricsSuggestions] Failed to initialize ZAI SDK:', initError);
       return NextResponse.json(
         { success: false, error: 'AI service unavailable' },
@@ -113,6 +114,7 @@ Return ONLY the JSON object.`,
           detectedLanguage = parsed.language || 'en';
         }
       } catch {
+        // eslint-disable-next-line no-console
         console.error('[LyricsSuggestions] Failed to parse response:', analysisResponse);
       }
 
@@ -133,6 +135,7 @@ Return ONLY the JSON object.`,
         detectedLanguage,
       });
     } catch (llmError) {
+      // eslint-disable-next-line no-console
       console.error('[LyricsSuggestions] LLM error:', llmError);
       return NextResponse.json(
         { success: false, error: 'AI processing failed' },
@@ -140,6 +143,7 @@ Return ONLY the JSON object.`,
       );
     }
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('[LyricsSuggestions] Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return NextResponse.json(

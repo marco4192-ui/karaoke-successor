@@ -98,6 +98,7 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
       setIsPlaying(false);
     } else {
       el.play().catch(err => {
+        // eslint-disable-next-line no-console
         console.error('[ReplayModal] Play failed:', err);
       });
       if (showOriginal && originalAudioRef.current) {
@@ -166,6 +167,7 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('[ReplayModal] Export failed:', err);
       safeAlert('Export fehlgeschlagen. Bitte versuche es erneut.');
     } finally {
@@ -179,6 +181,7 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
       await deleteReplay(replay.id);
       onClose();
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('[ReplayModal] Delete failed:', err);
       safeAlert('Löschen fehlgeschlagen. Bitte versuche es erneut.');
     }

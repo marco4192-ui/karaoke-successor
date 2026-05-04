@@ -218,6 +218,7 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
         const selected = await nativePickFileOpen(title, filters.name, filters.extensions);
         if (selected) setter(selected);
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.error(`[NewSong] File picker error:`, err);
       }
     } else {

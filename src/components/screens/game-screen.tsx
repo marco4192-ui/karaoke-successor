@@ -628,6 +628,7 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
           onEnded={endGameAndCleanup}
           onError={(e) => {
             const audio = e.currentTarget;
+            // eslint-disable-next-line no-console
             console.error('[GameScreen] Audio element error:', {
               error: audio.error,
               networkState: audio.networkState,
@@ -683,6 +684,7 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
               5: 'HTML5-Fehler beim YouTube-Player',
             };
             setYoutubeError(messages[errorCode] || `YouTube-Fehler (Code: ${errorCode})`);
+            // eslint-disable-next-line no-console
             console.error('[GameScreen] YouTube error:', errorCode);
           }}
         />

@@ -209,6 +209,7 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
       notes: notes.map(n => ({ ...n, duration: Math.round(n.duration * tickDurationMs) })),
     };
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Failed to parse MIDI:', error);
     return null;
   }

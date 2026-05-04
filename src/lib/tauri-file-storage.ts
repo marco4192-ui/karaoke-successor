@@ -275,6 +275,7 @@ export async function scanSongsFolderTauri(baseSongsFolder: string): Promise<Tau
     
 
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('[TauriScanner] Scan failed:', error);
     result.errors.push(`Scan failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
@@ -327,6 +328,7 @@ async function collectAllFiles(
       }
     }
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.warn('[TauriScanner] Could not read directory:', currentPath, error);
   }
   
@@ -707,6 +709,7 @@ export async function storeSongFiles(
     if (files.txt) result.txtPath = await saveFile(files.txt);
     if (files.cover) result.coverPath = await saveFile(files.cover);
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Failed to store song files:', error);
   }
 
@@ -738,6 +741,7 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
 
         return await loadFileAsBlobUrl(relativePath);
       }
+      // eslint-disable-next-line no-console
       console.warn('[TauriFS] No songs folder configured and path is not absolute');
       return null;
     }
@@ -808,6 +812,7 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
 
     return null;
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('[TauriFS] Failed to get song media URL:', error);
     return null;
   }
@@ -889,6 +894,7 @@ async function findFileByScanningParentFolder(
 
     return null;
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('[TauriFS] Folder scan fallback error:', error);
     return null;
   }
@@ -925,6 +931,7 @@ async function loadFileAsBlobUrl(fullPath: string): Promise<string | null> {
 
     return blobUrl;
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('[TauriFS] Failed to load file as blob:', fullPath, error);
     return null;
   }

@@ -55,6 +55,7 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
       });
 
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('[SongLibrarySync] Error syncing songs:', error);
     }
   }, []);

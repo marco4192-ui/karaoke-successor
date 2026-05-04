@@ -26,9 +26,11 @@ export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
           return parsedLyrics;
         }
       } else {
+        // eslint-disable-next-line no-console
         console.warn('[SongLibrary] TXT content is null or empty for song:', song.id, '- falling through to file system');
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('[SongLibrary] Failed to load lyrics from IndexedDB:', error, '- falling through to file system');
     }
   }
@@ -64,6 +66,7 @@ export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
               const txtBlob = new Blob([txtContent], { type: 'text/plain' });
               await storeMedia(song.id, 'txt', txtBlob);
             } catch (cacheErr) {
+              // eslint-disable-next-line no-console
               console.warn('[SongLibrary] Failed to cache TXT:', cacheErr);
             }
             return parsedLyrics;
@@ -87,12 +90,15 @@ export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
               }
             }
           } catch (e) {
+            // eslint-disable-next-line no-console
             console.warn('[SongLibrary] Failed to load TXT from absolute path:', e);
           }
         }
+        // eslint-disable-next-line no-console
         console.warn('[SongLibrary] No songs folder available for loading TXT');
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('[SongLibrary] Failed to load lyrics from file system:', error);
     }
   }
@@ -119,10 +125,12 @@ export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
         }
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('[SongLibrary] Alternative IndexedDB lookup failed:', error);
     }
   }
 
+  // eslint-disable-next-line no-console
   console.warn('[SongLibrary] Could not load lyrics for song:', song.id);
   return [];
 }
@@ -177,6 +185,7 @@ function parseUltraStarTxtContent(content: string, gap: number, bpm: number): Ly
       return t.length > 0 && !t.startsWith('#') && t !== 'E' && t !== 'P1' && t !== 'P2' && t !== 'P1:' && t !== 'P2:' && !t.startsWith('-');
     });
     const sampleLines = nonHeaderLines.slice(0, 5).map(l => `"${l.substring(0, 100)}"`);
+    // eslint-disable-next-line no-console
     console.warn('[SongLibrary] parseUltraStarTxtContent: 0 notes found!', {
       totalLines: lines.length,
       nonHeaderLines: nonHeaderLines.length,

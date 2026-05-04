@@ -30,6 +30,7 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
     const allPaths = [song.relativeAudioPath, song.relativeVideoPath, song.relativeCoverPath].filter(Boolean);
     const hasAbsolutePath = allPaths.some(p => p && isAbsolutePath(p));
     if (!hasAbsolutePath) {
+      // eslint-disable-next-line no-console
       console.warn('[SongLibrary] No base folder available for song:', song.title);
       return song;
     }
@@ -57,6 +58,7 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
           if (url) {
             restored.audioUrl = url;
           } else {
+            // eslint-disable-next-line no-console
             console.warn('[SongLibrary] Failed to restore audio URL for', song.title, '- file may not exist:', song.relativeAudioPath);
           }
         }),
@@ -70,6 +72,7 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
           if (url) {
             restored.videoBackground = url;
           } else {
+            // eslint-disable-next-line no-console
             console.warn('[SongLibrary] Failed to restore video URL for', song.title, '- file may not exist:', song.relativeVideoPath);
           }
         }),
@@ -83,6 +86,7 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
           if (url) {
             restored.coverImage = url;
           } else {
+            // eslint-disable-next-line no-console
             console.warn('[SongLibrary] Failed to restore cover URL for', song.title, '- file may not exist:', song.relativeCoverPath);
           }
         }),
@@ -91,6 +95,7 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
 
     await Promise.all(urlPromises);
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('[SongLibrary] Failed to restore song URLs:', error);
   }
 

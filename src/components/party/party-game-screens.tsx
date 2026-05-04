@@ -251,6 +251,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                   setScreen('library');
                 }
               } catch (err) {
+                // eslint-disable-next-line no-console
                 console.error('[PTM] Failed to prepare next song:', err);
                 toast({ title: 'Fehler', description: 'Nächstes Lied konnte nicht geladen werden.', variant: 'destructive' });
                 setScreen('library');

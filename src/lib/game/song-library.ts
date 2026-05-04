@@ -105,6 +105,7 @@ export function getCustomSongs(): Song[] {
         if (result.changed) needsResave = true;
       }
       if (needsResave) {
+        // eslint-disable-next-line no-console
         try { localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(songs)); } catch (e) { console.debug('[SongLibrary] Failed to re-save normalized songs:', e); }
       }
       customSongsCache = songs;
@@ -115,11 +116,13 @@ export function getCustomSongs(): Song[] {
             customSongsCache = migrated;
             songCache = null; // Force refresh
           }
+        // eslint-disable-next-line no-console
         }).catch(error => { console.debug('[SongLibrary] Background migration to IndexedDB failed:', error); });
       }
       return customSongsCache || [];
     }
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.error('[SongLibrary] Failed to load custom songs from localStorage:', e);
   }
   return [];
@@ -162,6 +165,7 @@ export async function loadCustomSongsFromStorage(): Promise<Song[]> {
     }
     return lsSongs;
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.error('[SongLibrary] Failed to load from IndexedDB:', e);
     return getCustomSongs();
   }
@@ -269,6 +273,7 @@ function saveCustomSongs(songs: Song[]): void {
     saveCustomSongsToDB(minimalSongs).then(() => {
       // Saved successfully
     }).catch(err => {
+      // eslint-disable-next-line no-console
       console.error('[SongLibrary] IndexedDB save failed (localStorage still has data):', err);
     });
   }
@@ -279,6 +284,7 @@ function saveToLocalStorage(songs: Song[]): void {
   try {
     localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(songs));
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.error('[SongLibrary] Failed to save custom songs to localStorage:', e);
     // Try ultra-minimal save as last resort
     try {
@@ -315,6 +321,7 @@ function saveToLocalStorage(songs: Song[]): void {
       }));
       localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(ultraMinimalSongs));
     } catch (e2) {
+      // eslint-disable-next-line no-console
       console.error('[SongLibrary] Failed to save even ultra-minimal data — storage is full!', e2);
     }
   }
@@ -360,14 +367,17 @@ export async function getSongByIdWithLyrics(id: string): Promise<Song | undefine
     if (lyrics.length > 0) {
       // Update storedTxt flag since we successfully loaded lyrics
       if (!restoredSong.storedTxt) {
+        // eslint-disable-next-line no-console
         try { updateSong(id, { storedTxt: true }); } catch (e) { console.debug('[SongLibrary] Failed to update storedTxt flag:', e); }
       }
       return { ...restoredSong, lyrics, storedTxt: true };
     } else {
+      // eslint-disable-next-line no-console
       console.warn('[SongLibrary] getSongByIdWithLyrics: Failed to load lyrics for song', id);
     }
   }
 
+  // eslint-disable-next-line no-console
   console.warn('[SongLibrary] getSongByIdWithLyrics: No lyrics available for song', id);
   return restoredSong;
 }
@@ -453,6 +463,7 @@ export function filterSongs(
 
 // Clear all custom songs
 export function clearCustomSongs(): void {
+  // eslint-disable-next-line no-console
   try { localStorage.removeItem(CUSTOM_SONGS_KEY); } catch (e) { console.debug('[SongLibrary] Failed to clear localStorage:', e); }
   customSongsCache = [];
   songCache = null;
@@ -463,6 +474,7 @@ export function clearCustomSongs(): void {
   // Also clear IndexedDB
   if (typeof indexedDB !== 'undefined') {
     clearCustomSongsFromDB().catch(e => {
+      // eslint-disable-next-line no-console
       console.warn('[SongLibrary] Failed to clear IndexedDB:', e);
     });
   }
@@ -536,6 +548,7 @@ export async function getAllSongsAsync(): Promise<Song[]> {
             coverImage: mediaUrls.coverUrl || song.coverImage
           };
         } catch (error) {
+          // eslint-disable-next-line no-console
           console.error(`Failed to restore media for song ${song.id}:`, error);
           return song;
         }

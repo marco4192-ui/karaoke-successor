@@ -51,6 +51,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
           setCurrentSong(restored);
         }
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.warn('[Editor] URL restoration failed (non-critical):', err);
       }
     };
@@ -170,6 +171,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
       if (saveResultTimerRef.current) clearTimeout(saveResultTimerRef.current);
       saveResultTimerRef.current = setTimeout(() => setSaveResult(null), 5000);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Save error:', error);
       setSaveResult({
         success: false,
@@ -194,6 +196,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
       if (saveResultTimerRef.current) clearTimeout(saveResultTimerRef.current);
       saveResultTimerRef.current = setTimeout(() => setSaveResult(null), 5000);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Save error:', error);
       setSaveResult({
         success: false,

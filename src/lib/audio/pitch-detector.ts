@@ -135,6 +135,7 @@ export class PitchDetector {
         try {
           await this.audioContext.resume();
         } catch (resumeErr) {
+          // eslint-disable-next-line no-console
           console.warn('AudioContext.resume() failed, retrying…', resumeErr);
           // Retry once after a short delay (some webviews need a tick)
           await new Promise<void>(resolve => setTimeout(resolve, 100));
@@ -156,6 +157,7 @@ export class PitchDetector {
 
       return true;
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to initialize pitch detector:', error);
       return false;
     }
@@ -163,6 +165,7 @@ export class PitchDetector {
 
   start(callback: (result: PitchDetectionResult) => void): void {
     if (!this.analyser || !this.buffer) {
+      // eslint-disable-next-line no-console
       console.error('Pitch detector not initialized');
       return;
     }

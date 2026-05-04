@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
       count: songs.length,
     });
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Error reading songs from cache:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to read songs' },

@@ -99,10 +99,12 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
         const data = await response.json();
         setSongs(data.songs || []);
       } else {
+        // eslint-disable-next-line no-console
         console.error('[MobileClient] Failed to load songs, status:', response.status);
         setSongs([]);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('[MobileClient] Error loading songs:', error);
       setSongs([]);
     }
@@ -148,6 +150,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
         setAvailablePartners(partners);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.debug('[useMobileData] loadAvailablePartners failed:', error);
     }
   }, [clientId]);
@@ -238,6 +241,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
         setSlotsRemaining(Math.max(0, 3 - pendingCount));
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.debug('[useMobileData] loadQueue failed:', error);
     }
   }, []);
@@ -250,6 +254,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
         setGameResults(data.results);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.debug('[useMobileData] loadGameResults failed:', error);
     }
   }, []);
@@ -271,6 +276,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
       });
       setJukeboxWishlist(prev => [...prev, { songId: song.id, songTitle: song.title, songArtist: song.artist, addedBy: profile.name }]);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.debug('[useMobileData] addToJukeboxWishlist failed:', error);
     }
   }, [profile, clientId, onNavigateToProfile]);
@@ -283,6 +289,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
         setJukeboxWishlist(data.wishlist || []);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.debug('[useMobileData] loadJukeboxWishlist failed:', error);
     }
   }, []);

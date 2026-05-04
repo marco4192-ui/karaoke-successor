@@ -67,6 +67,7 @@ export function saveWebcamConfig(config: WebcamBackgroundConfig): void {
   try {
     localStorage.setItem(WEBCAM_CONFIG_KEY, JSON.stringify(config));
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.error('Failed to save webcam config:', e);
   }
 }
@@ -85,6 +86,7 @@ export function loadWebcamConfig(): WebcamBackgroundConfig {
       return { ...DEFAULT_WEBCAM_CONFIG, ...parsed };
     }
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.error('Failed to load webcam config:', e);
   }
   return { ...DEFAULT_WEBCAM_CONFIG };
@@ -106,6 +108,7 @@ export function useWebcamBackground(deviceId: string | null = null) {
       const videoDevices = deviceList.filter(d => d.kind === 'videoinput');
       setDevices(videoDevices);
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Failed to enumerate devices:', err);
     }
   }, []);

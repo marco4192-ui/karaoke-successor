@@ -97,6 +97,7 @@ export async function POST(request: NextRequest) {
 
         if (!response.ok) {
           const errorText = await response.text();
+          // eslint-disable-next-line no-console
           console.error('Image API error:', response.status, errorText);
           
           // Provide helpful error messages
@@ -133,6 +134,7 @@ export async function POST(request: NextRequest) {
           filename 
         });
       } catch (fetchError: unknown) {
+        // eslint-disable-next-line no-console
         console.error('Image fetch error:', fetchError);
         const msg = fetchError instanceof Error ? fetchError.message : String(fetchError);
         
@@ -173,6 +175,7 @@ export async function POST(request: NextRequest) {
 
         if (!response.ok) {
           const errorText = await response.text();
+          // eslint-disable-next-line no-console
           console.error('TTS API error:', response.status, errorText);
           
           // Provide helpful error messages
@@ -206,6 +209,7 @@ export async function POST(request: NextRequest) {
           filename 
         });
       } catch (fetchError: unknown) {
+        // eslint-disable-next-line no-console
         console.error('TTS fetch error:', fetchError);
         const msg = fetchError instanceof Error ? fetchError.message : String(fetchError);
         
@@ -225,6 +229,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: 'Invalid type. Use "image" or "audio"' }, { status: 400 });
   } catch (error: unknown) {
+    // eslint-disable-next-line no-console
     console.error('Asset generation error:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: message }, { status: 500 });

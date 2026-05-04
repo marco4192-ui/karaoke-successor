@@ -522,6 +522,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         return Response.json({ success: false, message: 'Unknown message type' }, { status: 400 });
     }
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Mobile API error:', error);
     return Response.json({ 
       success: false, 

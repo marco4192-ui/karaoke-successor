@@ -100,6 +100,7 @@ export function PlayingView({
           }
         }}
         onError={(e) => {
+          // eslint-disable-next-line no-console
           console.error('[BattleRoyale] Audio error:', e);
         }}
         className="hidden"

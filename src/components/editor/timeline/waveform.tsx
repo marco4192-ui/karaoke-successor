@@ -195,6 +195,7 @@ export function Waveform({
       const canvas = canvasRef.current;
       if (canvas) drawWaveform(audioBuffer, canvas);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('[Waveform] Failed to load audio:', error);
     }
   }, [drawWaveform]);

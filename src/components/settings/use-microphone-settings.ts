@@ -42,6 +42,7 @@ export function useMicrophoneSettings(onSettingsChange?: MicrophoneSettingsPanel
       await micManager.assignMicrophone(selectedDeviceId);
       setSelectedDeviceId('default');
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to add microphone:', error);
     }
     setIsAddingMic(false);
