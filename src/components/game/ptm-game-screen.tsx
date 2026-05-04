@@ -136,6 +136,8 @@ export function PtmGameScreen({
   const medleyCanplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
+  const currentPlayerIndexRef = useRef(currentPlayerIndex);
+  currentPlayerIndexRef.current = currentPlayerIndex;
   const [currentSegmentIndex, setCurrentSegmentIndex] = useState(0);
   const currentPlayer = playersRef.current[currentPlayerIndex];
   const currentSegment = initialSegments[currentSegmentIndex];
@@ -401,14 +403,15 @@ export function PtmGameScreen({
     if (phase !== 'playing' || !isPlaying || !safeSettings.randomSwitches) return;
     const interval = setInterval(() => {
       if (Math.random() < 0.003) {
-        const next = (currentPlayerIndex + 1 + Math.floor(Math.random() * (playersRef.current.length - 1))) % playersRef.current.length;
-        playersRef.current[currentPlayerIndex].segmentsSung++;
+        const currentIndex = currentPlayerIndexRef.current;
+        const next = (currentIndex + 1 + Math.floor(Math.random() * (playersRef.current.length - 1))) % playersRef.current.length;
+        playersRef.current[currentIndex].segmentsSung++;
         setCurrentPlayerIndex(next);
         showTransition(next);
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [phase, isPlaying, currentPlayerIndex, showTransition, safeSettings.randomSwitches]);
+  }, [phase, isPlaying, showTransition, safeSettings.randomSwitches]);
 
   // ── Mic handoff ──
   useEffect(() => {
