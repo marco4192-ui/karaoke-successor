@@ -6,6 +6,7 @@ import type { GameResult, GameState, Player } from '@/types/game';
 import type { PartyStore } from '@/lib/game/party-store';
 import { recordMatchResult } from '@/lib/game/tournament';
 import { finishCompetitiveRound, calculateMissingWordsBonus, calculateBlindBonus } from '@/lib/game/competitive-words-blind';
+import { estimatePerfectNotes } from '@/lib/game/scoring';
 
 /**
  * Extracts a GameResult from the current game state if one hasn't
@@ -31,15 +32,8 @@ function buildGameResultFromState(
       else if (accuracy >= 50) rating = 'okay';
       else rating = 'poor';
       // Estimate perfect notes from accuracy-based rating — the Player interface
-      // does not carry per-note quality, so we apply the same ratio used by
-      // results-screen.tsx to stay consistent.
-      const perfectNotes = totalNotes > 0 ? Math.floor(p.notesHit * (
-        rating === 'perfect' ? 0.85
-        : rating === 'excellent' ? 0.55
-        : rating === 'good' ? 0.25
-        : rating === 'okay' ? 0.08
-        : 0.02
-      )) : 0;
+      // does not carry per-note quality, so we use the shared heuristic.
+      const perfectNotes = estimatePerfectNotes(p.notesHit, rating);
       return {
         playerId: p.id, score: p.score, accuracy: Math.round(accuracy * 10) / 10,
         notesHit: p.notesHit, notesMissed: p.notesMissed, maxCombo: p.maxCombo,

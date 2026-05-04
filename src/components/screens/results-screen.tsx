@@ -8,6 +8,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 import { safeAlert } from '@/lib/safe-dialog';
 import { getExtendedStats, updateStatsAfterGame, saveExtendedStats, calculateSongXP, getLevelForXP } from '@/lib/game/player-progression';
 import { checkAndUnlockAchievements } from '@/lib/game/achievements';
+import { estimatePerfectNotes } from '@/lib/game/scoring';
 import { RATING_TAILWIND_CLASSES } from '@/lib/game/rating-utils';
 import { recordSongPlay } from '@/lib/playlist-manager';
 
@@ -19,21 +20,6 @@ import { getCountryFlag, TrophyIcon, MAX_POINTS_PER_SONG } from '@/components/re
 export { SongHighscoreModal, ScoreVisualization };
 export type { VisualizationMode };
 export { getCountryFlag, TrophyIcon, MAX_POINTS_PER_SONG };
-
-/**
- * Estimate the number of "perfect" notes based on the rating.
- * The game doesn't track per-note quality, so we derive it from the
- * overall rating which reflects the ratio of excellent-perfect hits.
- */
-function estimatePerfectNotes(notesHit: number, rating: string): number {
-  if (notesHit <= 0) return 0;
-  const ratio = rating === 'perfect' ? 0.85
-    : rating === 'excellent' ? 0.55
-    : rating === 'good' ? 0.25
-    : rating === 'okay' ? 0.08
-    : 0.02;
-  return Math.floor(notesHit * ratio);
-}
 
 // Internal imports from extracted components
 import { UploadStatus } from '@/components/results/upload-status';

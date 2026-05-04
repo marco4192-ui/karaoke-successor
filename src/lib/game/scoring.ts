@@ -157,3 +157,21 @@ export function calculateTickPoints(
  * values (more points per tick when pitch is closer to target), so a separate
  * completion bonus is redundant and mathematically incorrect.
  */
+
+/**
+ * Estimate the number of "perfect" notes from overall hit count and rating.
+ * Used as a fallback when per-note quality data is unavailable (e.g. tournament
+ * results built without the main game loop's tick-by-tick tracking).
+ *
+ * The ratio reflects how many of the hit notes were likely rated "Perfect"
+ * (accuracy > 95%) given the overall rating band.
+ */
+export function estimatePerfectNotes(notesHit: number, rating: string): number {
+  if (notesHit <= 0) return 0;
+  const ratio = rating === 'perfect' ? 0.85
+    : rating === 'excellent' ? 0.55
+    : rating === 'good' ? 0.25
+    : rating === 'okay' ? 0.08
+    : 0.02;
+  return Math.floor(notesHit * ratio);
+}
