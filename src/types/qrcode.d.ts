@@ -9,7 +9,7 @@ declare module 'qrcode' {
     errorCorrectionLevel?: 'L' | 'M' | 'Q' | 'H';
   }
 
-  function _toDataURL(_texttext: string, options?: QRCodeToDataURLOptions): Promise<string>;
+  function _toDataURL(_text: string, options?: QRCodeToDataURLOptions): Promise<string>;
 
   const _default: {
     toDataURL: typeof _toDataURL;
