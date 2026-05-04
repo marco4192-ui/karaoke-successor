@@ -43,7 +43,6 @@ export function useMobilePitchPolling(song: { id: string } | null): {
     let pollInterval: ReturnType<typeof setInterval> | null = null;
     // Exponential backoff: when no companion is connected, poll less frequently
     let pollDelay = 100;
-    const backoffTimer: ReturnType<typeof setTimeout> | null = null;
 
     const startPolling = () => {
       if (pollInterval) clearInterval(pollInterval);
@@ -98,7 +97,6 @@ export function useMobilePitchPolling(song: { id: string } | null): {
     return () => {
       aborted = true;
       if (pollInterval) clearInterval(pollInterval);
-      if (backoffTimer) clearTimeout(backoffTimer);
       if (abortController) abortController.abort();
     };
   }, [song]);
