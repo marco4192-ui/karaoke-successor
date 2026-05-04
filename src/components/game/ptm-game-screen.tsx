@@ -134,6 +134,7 @@ export function PtmGameScreen({
   const fallbackLyricsRef = useRef<LyricLine[] | null>(null);
   const medleyRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const medleyCanplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const segmentSwitchHandledRef = useRef(false);
 
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const currentPlayerIndexRef = useRef(currentPlayerIndex);
@@ -377,8 +378,12 @@ export function PtmGameScreen({
 
   // ── Segment switching ──
   useEffect(() => {
-    if (phase !== 'playing' || !isPlaying || !currentSegment) return;
-    if (currentTime >= currentSegment.endTime) {
+    if (phase !== 'playing' || !isPlaying || !currentSegment) {
+      segmentSwitchHandledRef.current = false;
+      return;
+    }
+    if (currentTime >= currentSegment.endTime && !segmentSwitchHandledRef.current) {
+      segmentSwitchHandledRef.current = true;
       if (currentSegmentIndex < initialSegments.length - 1) {
         const nextSegIdx = currentSegmentIndex + 1;
         const nextPlayerIdx = (currentPlayerIndex + 1) % playersRef.current.length;
