@@ -84,7 +84,7 @@ export function getAllSongs(): Song[] {
 }
 
 // Get custom/imported songs — reads from IndexedDB cache, falls back to localStorage
-export function getCustomSongs(): Song[] {
+function getCustomSongs(): Song[] {
   if (customSongsCache) return customSongsCache;
 
   // Check if running in browser
