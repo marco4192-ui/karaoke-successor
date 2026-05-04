@@ -1,7 +1,7 @@
 // PTM segment generation — shared utility for Pass the Mic game mode.
 // Auto 20-60s segments, equal per player, short songs excluded (< 60s).
 
-import { PassTheMicSegment } from '@/components/game/pass-the-mic-screen';
+import type { PassTheMicSegment } from '@/components/game/ptm-types';
 
 export function generatePtmSegments(
   songDurationMs: number,

@@ -29,7 +29,7 @@ import { QueueNextSong } from '@/components/results/queue-next-song';
 import { ReplayModal } from '@/components/results/replay-modal';
 import { getLastReplayId } from '@/lib/replay-state';
 import { getReplay, type ReplayRecord } from '@/lib/db/replay-db';
-import { PassTheMicSegment } from '@/components/game/pass-the-mic-screen';
+import type { PassTheMicSegment } from '@/components/game/ptm-types';
 
 // ===================== RESULTS SCREEN =====================
 export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void; onHome: () => void }) {

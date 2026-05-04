@@ -44,4 +44,5 @@ export const DEFAULT_SETTINGS: PassTheMicSettings = {
   difficulty: 'medium',
   micId: 'default',
   micName: 'Standard',
+  randomSwitches: true,
 };

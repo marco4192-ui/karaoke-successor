@@ -4,7 +4,7 @@ import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { getAllSongs, filterSongs, ensureSongUrls } from '@/lib/game/song-library';
 import { UnifiedPartySetup, SongVotingModal, PARTY_GAME_CONFIGS } from '@/components/game/unified-party-setup';
-import { PassTheMicSegment } from '@/components/game/pass-the-mic-screen';
+import type { PassTheMicSegment } from '@/components/game/ptm-types';
 import type { MedleyPlayer as MedleyPlayerType, MedleySettings as MedleySettingsType } from '@/components/game/medley/medley-types';
 import { Song, EMPTY_PLAYER_SCORE } from '@/types/game';
 import type { Screen } from '@/types/screens';

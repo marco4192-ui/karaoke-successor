@@ -5,45 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlayerProfile, PLAYER_COLORS, Difficulty, EMPTY_PLAYER_SCORE } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
-
-// ===================== SHARED TYPES =====================
-
-export interface PassTheMicPlayer {
-  id: string;
-  name: string;
-  avatar?: string;
-  color: string;
-  score: number;
-  notesHit: number;
-  notesMissed: number;
-  combo: number;
-  maxCombo: number;
-  isActive: boolean;
-  segmentsSung: number;
-  micId?: string;
-}
-
-export interface PassTheMicSegment {
-  startTime: number;
-  endTime: number;
-  playerId: string | null;
-}
-
-interface PassTheMicSettings {
-  segmentDuration: number;
-  randomSwitches: boolean;
-  difficulty: Difficulty;
-  micId: string;
-  micName: string;
-}
-
-const DEFAULT_SETTINGS: PassTheMicSettings = {
-  segmentDuration: 30,
-  randomSwitches: true,
-  difficulty: 'medium',
-  micId: 'default',
-  micName: 'Standard',
-};
+import type { PassTheMicPlayer, PassTheMicSettings } from '@/components/game/ptm-types';
+import { DEFAULT_SETTINGS } from '@/components/game/ptm-types';
 
 // ===================== SETUP SCREEN =====================
 

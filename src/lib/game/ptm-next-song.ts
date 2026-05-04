@@ -4,7 +4,7 @@
 
 import { Song } from '@/types/game';
 import { getAllSongs, filterSongs, ensureSongUrls } from '@/lib/game/song-library';
-import { PassTheMicSegment } from '@/components/game/pass-the-mic-screen';
+import type { PassTheMicSegment } from '@/components/game/ptm-types';
 import { generatePtmSegments } from '@/lib/game/ptm-segments';
 
 // ===================== MEDLEY SNIPPET GENERATION =====================
