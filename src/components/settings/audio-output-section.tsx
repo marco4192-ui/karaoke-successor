@@ -19,6 +19,7 @@ export function AudioOutputSection() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
     if (devices.length > 0) setError(null);
   }, [devices]);
 

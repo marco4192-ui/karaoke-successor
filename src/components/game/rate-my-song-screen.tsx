@@ -647,7 +647,7 @@ export function RateMySongResultsScreen({ result, songId, onPlayAgain, onEnd }: 
       addRateMySongEntry(entryBase);
       addDailyRateMySongEntry(entryBase);
     }
-    // Reload both rankings
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
     setTopRanking(getRateMySongTopN(5));
     setDailyRanking(getDailyRateMySongTopN(5));
   }, [result, songId]);

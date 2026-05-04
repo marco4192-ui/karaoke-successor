@@ -42,8 +42,8 @@ export function CharacterScreen() {
   }, []);
 
   // Poll claimed profiles every 10s
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- initial poll sets state from async callback
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
     fetchClaimedProfiles();
     const interval = setInterval(fetchClaimedProfiles, 10000);
     return () => clearInterval(interval);

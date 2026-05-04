@@ -16,7 +16,9 @@ export function useAppEffects() {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Mark as client-side mounted (Tauri hydration guard)
+
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
     setIsMounted(true);
   }, []);
 

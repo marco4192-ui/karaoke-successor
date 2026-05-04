@@ -13,8 +13,8 @@ export function PerformanceDisplay() {
   // Avoid hydration mismatch - only show content after mount
   const [isMounted, setIsMounted] = useState(false);
   
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-only effect for hydration guard
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
     setIsMounted(true);
   }, []);
   

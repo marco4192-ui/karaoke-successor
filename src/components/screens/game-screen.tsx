@@ -208,9 +208,9 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
     }
   }, [song, gameState.players.length, profiles, addPlayer, createProfile]);
   
-  // Load webcam config from localStorage after mount
   useEffect(() => {
     const savedConfig = loadWebcamConfig();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
     setWebcamConfig(savedConfig);
   }, []);
   
@@ -332,11 +332,15 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
   // Use mobile pitch for P2 in duet/duel mode
   useEffect(() => {
     if (isDuetMode && mobilePitch) {
-      setP2DetectedPitch(mobilePitch.frequency);
-      setP2Volume(mobilePitch.volume || 0);
+      queueMicrotask(() => {
+        setP2DetectedPitch(mobilePitch.frequency);
+        setP2Volume(mobilePitch.volume || 0);
+      });
     } else if (isDuetMode && !mobilePitch?.frequency) {
-      setP2DetectedPitch(null);
-      setP2Volume(0);
+      queueMicrotask(() => {
+        setP2DetectedPitch(null);
+        setP2Volume(0);
+      });
     }
   }, [isDuetMode, mobilePitch, setP2DetectedPitch, setP2Volume]);
   
@@ -528,21 +532,24 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
 
   useEffect(() => {
     if (!effectiveSong) return;
-    if (effectiveSong.end) {
-      setDisplayDuration(effectiveSong.end);
-      return;
-    }
-    const audioDur = audioRef.current?.duration;
-    if (audioDur && isFinite(audioDur) && audioDur > 0) {
-      setDisplayDuration(audioDur * 1000);
-      return;
-    }
-    const videoDur = videoRef.current?.duration;
-    if (videoDur && isFinite(videoDur) && videoDur > 0) {
-      setDisplayDuration(videoDur * 1000);
-      return;
-    }
-    setDisplayDuration(effectiveSong.duration);
+    const compute = () => {
+      if (effectiveSong.end) {
+        setDisplayDuration(effectiveSong.end);
+        return;
+      }
+      const audioDur = audioRef.current?.duration;
+      if (audioDur && isFinite(audioDur) && audioDur > 0) {
+        setDisplayDuration(audioDur * 1000);
+        return;
+      }
+      const videoDur = videoRef.current?.duration;
+      if (videoDur && isFinite(videoDur) && videoDur > 0) {
+        setDisplayDuration(videoDur * 1000);
+        return;
+      }
+      setDisplayDuration(effectiveSong.duration);
+    };
+    queueMicrotask(compute);
   }, [effectiveSong, mediaLoaded, audioRef, videoRef]);
 
   if (!song) {

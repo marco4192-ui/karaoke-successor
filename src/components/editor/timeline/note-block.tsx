@@ -88,7 +88,7 @@ export function NoteBlock({
 
   const handleMouseDown = useCallback((e: React.MouseEvent, type: 'move' | 'resize-left' | 'resize-right') => {
     e.stopPropagation();
-    onDragStart(note.id, e.clientX, _type);
+    onDragStart(note.id, e.clientX, type);
   }, [note.id, onDragStart]);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
@@ -122,7 +122,7 @@ export function NoteBlock({
         (isSelected || isPlayingNote) && 'z-10'
       )}
       style={{
-        left: `${}px`,
+        left: `${startX}px`,
         top: `${y}px`,
         width: `${width}px`,
         height: `${pitchHeight * 0.9}px`,

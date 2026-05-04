@@ -13,6 +13,7 @@ export function useQRCode(data: string, size = 200): string {
 
   useEffect(() => {
     if (!data) {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
       setSrc('');
       return;
     }

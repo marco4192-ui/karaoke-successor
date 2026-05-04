@@ -275,6 +275,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         },
       }),
     }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- gameMode changes should not restart the init effect (handled separately)
   }, [players, song, setResults, isDuetMode, p2ScoringState]);
 
   // ── End game and cleanup - stops all audio/microphone ──
@@ -447,7 +448,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
                 videoRef.current.muted = true;
                 await videoRef.current.play();
                 setTimeout(() => {
-                  if (videoRef.current) {
+      if (videoRef.current) {
                     videoRef.current.muted = false;
                   }
                 }, 100);
@@ -589,15 +590,18 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         cancelAnimationFrame(gameLoopRef.current);
       }
       if (audioRef.current) {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
         audioRef.current.pause();
       }
       if (videoRef.current) {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
         videoRef.current.pause();
       }
       setIsPlaying(false);
       setCountdown(3);
     };
-  }, [effectiveSong, mediaLoaded, initialize, start, stop, setPitchDifficulty, difficulty, resetScoring, audioRef, videoRef, isYouTube, youtubeVideoId, setIsPlaying, gameMode, nativeAudioPlay, nativeAudioSeek]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- gameMode read from options but not needed as dep for init effect
+  }, [effectiveSong, mediaLoaded, initialize, start, stop, setPitchDifficulty, difficulty, resetScoring, audioRef, videoRef, isYouTube, youtubeVideoId, setIsPlaying, nativeAudioPlay, nativeAudioSeek]);
 
   // ── CRITICAL: Cleanup on unmount ──
   const audioEffectsRef = useRef(audioEffects);
@@ -614,11 +618,13 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
 
       if (audioRef.current) {
         audioRef.current.pause();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
         audioRef.current.currentTime = 0;
       }
 
       if (videoRef.current) {
         videoRef.current.pause();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
         videoRef.current.currentTime = 0;
       }
 
@@ -799,7 +805,8 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [isPlaying, effectiveSong, setCurrentTime, setDetectedPitch, isYouTube, timingOffset, isDuetMode, setP2Volume, audioRef, videoRef, startTimeRef, isNativeAudio]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- isNativeAudio read from options but not needed as dep for game loop (read via ref)
+  }, [isPlaying, effectiveSong, setCurrentTime, setDetectedPitch, isYouTube, timingOffset, isDuetMode, setP2Volume, audioRef, videoRef, startTimeRef]);
 
   // ── Abort: immediately stop game loop without saving results ──
   const abortGameLoop = useCallback(() => {

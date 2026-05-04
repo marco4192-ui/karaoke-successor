@@ -186,7 +186,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   }, []);
   useEffect(() => {
     if (currentView === 'songs' && data.songs.length === 0) queueMicrotask(() => data.loadSongs());
-  }, [currentView, data.songs.length, data.loadSongs]);
+  }, [currentView, data.songs.length, data.loadSongs, data]);
 
   // Keyboard navigation: Arrow keys to move focus between interactive elements, Enter to activate
   useEffect(() => {
@@ -275,11 +275,12 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       const interval = setInterval(() => data.loadQueue(), 5000);
       return () => clearInterval(interval);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- data.loadQueue is stable; isConnected is the actual trigger
   }, [isConnected, data.loadQueue]);
 
   useEffect(() => {
     if (currentView === 'jukebox') queueMicrotask(() => data.loadJukeboxWishlist());
-  }, [currentView, data.loadJukeboxWishlist]);
+  }, [currentView, data.loadJukeboxWishlist, data]);
 
   // ===================== RENDER =====================
   return (
@@ -380,12 +381,12 @@ function SingalongOverlay({ isMyTurn, countdown }: SingalongOverlayProps) {
   useEffect(() => {
     if (countdown !== null && countdown > 0) {
       // Flash the screen
-      setFlashVisible(true);
+      queueMicrotask(() => setFlashVisible(true));
       const flashTimer = setTimeout(() => setFlashVisible(false), 300);
       return () => clearTimeout(flashTimer);
     } else if (countdown === null && isMyTurn) {
       // Brief flash when becoming the active singer
-      setFlashVisible(true);
+      queueMicrotask(() => setFlashVisible(true));
       const flashTimer = setTimeout(() => setFlashVisible(false), 500);
       return () => clearTimeout(flashTimer);
     }

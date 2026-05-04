@@ -178,6 +178,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
       : [];
 
     onStartGame(players, finalSettings, matchups);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- settings is computed from multiple state vars; excluded to avoid excessive deps
   }, [playMode, teamSize, selectedProfileIds, teamAIds, teamBIds, profiles, globalDifficulty, filterGenre, filterLanguage, allSongs, snippetCount, onStartGame]);
 
   // ── Render ──

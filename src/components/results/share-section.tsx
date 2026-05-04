@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -38,6 +38,9 @@ export function ShareSection({
   difficulty,
   gameMode,
 }: ShareSectionProps) {
+  // Stable timestamp for this render — avoids impure Date.now() during render
+  const [playedAt] = useState(() => Date.now());
+
   const buildScoreEntry = (): HighscoreEntry => ({
     id: 'current',
     playerId: activeProfileId || '',
@@ -54,7 +57,7 @@ export function ShareSection({
     gameMode,
     rating: playerResult.rating as HighscoreEntry['rating'],
     rankTitle: '',
-    playedAt: Date.now(),
+    playedAt,
   });
 
   return (

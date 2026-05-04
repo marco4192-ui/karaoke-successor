@@ -68,6 +68,7 @@ export function useGameSettings(): GameSettings & {
   // Load initial settings and listen for changes
   useEffect(() => {
     // Load initial values from localStorage
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
     setShowBackgroundVideo(localStorage.getItem('karaoke-bg-video') !== 'false');
     setShowPitchGuide(localStorage.getItem('karaoke-show-pitch-guide') !== 'false');
     setNoteDisplayStyle(localStorage.getItem('karaoke-note-style') || 'classic');

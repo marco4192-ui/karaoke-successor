@@ -297,14 +297,15 @@ export function useJukebox(refs?: {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- containerRef is a stable ref
   }, []);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- ref.current access in cleanup is intentional; refs are stable objects
   useEffect(() => {
+    const audioEl = audioRef.current;
+    const videoEl = videoRef.current;
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
+      if (audioEl) {
+        audioEl.pause();
       }
-      if (videoRef.current) {
-        videoRef.current.pause();
+      if (videoEl) {
+        videoEl.pause();
       }
       setPlaylist([]);
       setCurrentSong(null);
@@ -313,17 +314,15 @@ export function useJukebox(refs?: {
       manualIdsRef.current = new Set();
       processedWishlistRef.current = new Set();
     };
-  }, []);
+  }, [audioRef, videoRef]);
 
   // Update volume
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- audioRef/videoRef are stable refs
   useEffect(() => {
     if (videoRef.current) videoRef.current.volume = volume;
     if (audioRef.current) audioRef.current.volume = volume;
-  }, [volume]);
+  }, [volume, videoRef, audioRef]);
 
   // Auto-play when song changes
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- audioRef/videoRef are stable refs; youtubeTime read in interval via ref
   useEffect(() => {
     if (isPlaying && currentSong) {
       const playTimer = setTimeout(() => {
@@ -339,10 +338,9 @@ export function useJukebox(refs?: {
       }, 100);
       return () => clearTimeout(playTimer);
     }
-  }, [isPlaying, currentSong]);
+  }, [isPlaying, currentSong, videoRef, audioRef]);
 
   // Track current lyric line based on time
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- audioRef/videoRef are stable refs; youtubeTime read via ref in interval
   useEffect(() => {
     if (!showLyrics || !currentSong || !currentSong.lyrics?.length) return;
     const updateCurrentLyric = () => {
@@ -359,7 +357,7 @@ export function useJukebox(refs?: {
     };
     const interval = setInterval(updateCurrentLyric, 100);
     return () => clearInterval(interval);
-  }, [showLyrics, currentSong]);
+  }, [showLyrics, currentSong, youtubeTime, audioRef, videoRef]);
 
   // Up next songs
   const upNext = useMemo(() => {

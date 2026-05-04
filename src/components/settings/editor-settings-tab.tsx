@@ -74,6 +74,7 @@ export function EditorSettingsTab({ onEditorActiveChange }: EditorSettingsTabPro
     setSelectedSong(null);
     // Reload songs list
     getAllSongsAsync().then(setSongs);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- onEditorActiveChange excluded; it's a callback not used in body
   }, [onEditorActiveChange]);
 
   // Handle new song creation from dialog

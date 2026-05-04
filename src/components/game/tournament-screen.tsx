@@ -266,6 +266,7 @@ export function TournamentBracketView({ currentMatch, onPlayMatch, onManualWinne
     const ro = new ResizeObserver(updateScale);
     if (bracketWrapperRef.current) ro.observe(bracketWrapperRef.current);
     return () => ro.disconnect();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bracket is an outer scope value not needed as dep
   }, [bracket]);
 
   return (

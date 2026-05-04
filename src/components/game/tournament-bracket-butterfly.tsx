@@ -216,6 +216,7 @@ export function TournamentBracketButterfly({
     }
 
     return p;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- FINAL_Y is a module-level constant; not needed as dep
   }, [
     leftRounds,
     rightRounds,

@@ -39,15 +39,18 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
       }
     }
 
+    const mediaEl = mediaRef.current;
+    const originalAudioEl = originalAudioRef.current;
+
     return () => {
       // Stop playback and cleanup
-      if (mediaRef.current) {
-        mediaRef.current.pause();
-        mediaRef.current.src = '';
+      if (mediaEl) {
+        mediaEl.pause();
+        mediaEl.src = '';
       }
-      if (originalAudioRef.current) {
-        originalAudioRef.current.pause();
-        originalAudioRef.current.src = '';
+      if (originalAudioEl) {
+        originalAudioEl.pause();
+        originalAudioEl.src = '';
       }
       if (animFrameRef.current) {
         cancelAnimationFrame(animFrameRef.current);

@@ -65,6 +65,7 @@ export function useCompanionSync(): {
   // Periodically fetch companion profiles (every 10 seconds)
   useEffect(() => {
     const syncInterval = setInterval(syncCompanionProfiles, 10000);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
     syncCompanionProfiles(); // Initial sync (fetches AND imports profiles)
 
     return () => clearInterval(syncInterval);
@@ -92,7 +93,7 @@ export function useCompanionSync(): {
   // Periodically fetch companion queue (every 5 seconds)
   useEffect(() => {
     const syncInterval = setInterval(fetchCompanionQueue, 5000);
-    fetchCompanionQueue(); // Initial fetch
+    queueMicrotask(() => fetchCompanionQueue()); // Initial fetch
 
     return () => clearInterval(syncInterval);
   }, [fetchCompanionQueue]);

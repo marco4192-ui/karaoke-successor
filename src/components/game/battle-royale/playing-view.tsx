@@ -64,7 +64,7 @@ export function PlayingView({
         audioRef.current.play().catch(() => {});
       }
     }
-  }, [pauseDialogAction, game.status]);
+  }, [pauseDialogAction, game.status, audioRef]);
 
   // Determine the 3 lowest active players for danger pulsing (Fix 2f)
   const activeSorted = sortedPlayers.filter(p => !p.eliminated);

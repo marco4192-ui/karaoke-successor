@@ -37,6 +37,7 @@ export function SpectrogramDisplay({
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<MediaElementAudioSourceNode | MediaStreamAudioSourceNode | null>(null);
   const animationRef = useRef<number | null>(null);
+  const drawRef = useRef<() => void>(() => {});
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Initialize audio analysis
@@ -116,7 +117,7 @@ export function SpectrogramDisplay({
     };
   }, [isActive, audioElement, audioStream]);
 
-  // Draw visualization
+  // Draw visualization — uses drawRef for self-scheduling to avoid forward reference
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     const analyser = analyserRef.current;
@@ -204,8 +205,12 @@ export function SpectrogramDisplay({
 
     ctx.shadowBlur = 0;
 
-    animationRef.current = requestAnimationFrame(draw);
+    // Self-schedule next frame via ref to avoid forward reference
+    animationRef.current = requestAnimationFrame(() => drawRef.current());
   }, [isActive, mode, numBars, size]);
+
+  // Keep drawRef up-to-date for self-scheduling
+  useEffect(() => { drawRef.current = draw; }, [draw]);
 
   // Start animation loop
   useEffect(() => {

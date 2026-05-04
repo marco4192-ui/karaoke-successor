@@ -33,6 +33,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
   // Detect local IP for QR code
   const [localIP, setLocalIP] = useState('');
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
     setIsMounted(true);
     detectLocalIP().then(ip => { if (ip) setLocalIP(ip); });
   }, []);

@@ -67,8 +67,8 @@ export default function KaraokeSuccessor() {
   // ── Dialog handlers (defined before conditional returns for Rules of Hooks) ──
   const closeDialog = useCallback(() => {
     party.setPauseDialogAction(null);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- party excluded; setPauseDialogAction is the stable dependency
-  }, [party.setPauseDialogAction]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [party.setPauseDialogAction, party]);
 
   const handleResumeGame = useCallback(() => {
     closeDialog();

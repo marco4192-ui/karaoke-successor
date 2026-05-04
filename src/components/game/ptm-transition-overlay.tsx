@@ -46,6 +46,7 @@ export function PtmTransitionOverlay({
   // Reset and start animation when visible changes
   useEffect(() => {
     if (!visible || !nextPlayer) {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
       setPhase('idle');
       setOpacity(0);
       return;

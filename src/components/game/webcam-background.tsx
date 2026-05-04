@@ -254,6 +254,7 @@ export function WebcamBackground({ className }: WebcamBackgroundProps) {
     } else if (!config.enabled && stream) {
       stopWebcam();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- config.deviceId/config.enabled are outer scope values; tracking via stream/startWebcam/stopWebcam
   }, [config.enabled, config.deviceId, stream, isLoading, startWebcam, stopWebcam]);
   
   // Handle device changes
@@ -264,7 +265,7 @@ export function WebcamBackground({ className }: WebcamBackgroundProps) {
         switchDevice(config.deviceId);
       }
     }
-  }, [config.deviceId, config.enabled, stream, switchDevice]);
+  }, [stream, switchDevice]);
   
   // Calculate position and size based on mode
   const getPositionStyles = (): React.CSSProperties => {

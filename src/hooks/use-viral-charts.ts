@@ -133,14 +133,8 @@ export function useViralCharts(): UseViralCharts {
     loadCachedMatches();
     loadStatus();
 
-    // Auto-refresh charts on first load if we have no data
-    if (isTauri() && !status?.lastFetchedAt) {
-      // Don't auto-refresh immediately — let the user or app trigger it
-      // to avoid blocking startup. The library screen will trigger it.
-    }
-
     return () => { mountedRef.current = false; };
-  }, []);
+  }, [loadCachedMatches, loadStatus]);
 
   // Refresh charts from external sources
   const refreshCharts = useCallback(async (_country?: string) => {

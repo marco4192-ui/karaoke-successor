@@ -75,9 +75,9 @@ interface UseBattleRoyaleGameReturn {
   setCurrentTime: (_timetime: number) => void;
 }
 
-export function useBattleRoyaleGame({ songs, onUpdateGame }: UseBattleRoyaleGameParams): UseBattleRoyaleGameReturn {
+export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoyaleGameParams): UseBattleRoyaleGameReturn {
   const [showElimination, setShowElimination] = useState(false);
-  const stats = getBattleRoyaleStats(_game);
+  const stats = getBattleRoyaleStats(game);
 
   const sortedPlayers = useMemo(() => getPlayersByScore(game), [game]);
   const activePlayers = useMemo(() => getActivePlayers(game), [game]);
@@ -233,7 +233,7 @@ export function useBattleRoyaleGame({ songs, onUpdateGame }: UseBattleRoyaleGame
         }
 
         // Start game loop for simultaneous scoring
-        startGameLoop();
+        startGameLoopRef.current();
       };
 
       initGame();
@@ -246,9 +246,13 @@ export function useBattleRoyaleGame({ songs, onUpdateGame }: UseBattleRoyaleGame
         }
       };
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- refs are stable, startGameLoopRef is used via ref
   }, [game.status, mediaLoaded, currentSong, pitchInitialized, initPitch, startPitch, stopPitch]);
 
   // ── Game Loop for simultaneous scoring (Champions League) ──────────
+  // Use ref to avoid forward-reference immutability error
+  const startGameLoopRef = useRef<() => void>(() => {});
+
   const startGameLoop = () => {
     const TICK_INTERVAL = 100; // 100ms between scoring evaluations
     let lastTickTime = performance.now();
@@ -375,6 +379,9 @@ export function useBattleRoyaleGame({ songs, onUpdateGame }: UseBattleRoyaleGame
 
     gameLoopRef.current = requestAnimationFrame(gameLoop);
   };
+
+  // Keep ref up-to-date for use in effect
+  useEffect(() => { startGameLoopRef.current = startGameLoop; });
 
   return {
     showElimination,

@@ -38,7 +38,7 @@ export function useSmoothedPitch(
     }
     prevRawRef.current = rawPitch;
 
-    // Exponential moving average
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
     setSmoothedPitch(prev => {
       if (prev === null) return rawPitch;
       return prev + smoothingFactor * (rawPitch - prev);

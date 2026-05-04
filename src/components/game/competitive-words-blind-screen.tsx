@@ -49,8 +49,8 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
 
   // Sync difficulty when global store changes (e.g. changed in Settings)
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
     if (globalDifficulty) {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
       setDifficulty(globalDifficulty);
     }
   }, [globalDifficulty]);

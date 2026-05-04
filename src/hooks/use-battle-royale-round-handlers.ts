@@ -97,7 +97,7 @@ export function useBattleRoyaleRoundHandlers({
       const nextGame = advanceToNextRound(updatedGame);
       onUpdateGame(nextGame);
     }, 4000); // 4 seconds to show elimination animation
-  }, [activePlayers.length, onUpdateGame, stopPitch, audioRef, videoRef, audioHasPlayedRef, setShowElimination]);
+  }, [activePlayers.length, onUpdateGame, stopPitch, audioRef, videoRef, audioHasPlayedRef, setShowElimination, game]);
 
   // Keep the auto-elimination timer's ref to handleRoundEnd up-to-date
   useEffect(() => {
@@ -126,7 +126,7 @@ export function useBattleRoyaleRoundHandlers({
 
     const updatedGame = startRound(_game, song.id, song.title);
     onUpdateGame(updatedGame);
-  }, [game, onUpdateGame, getRandomSong]);
+  }, [onUpdateGame, getRandomSong]);
 
   return {
     handleRoundEnd,

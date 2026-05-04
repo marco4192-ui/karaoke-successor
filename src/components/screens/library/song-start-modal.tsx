@@ -12,11 +12,13 @@ import { isDuetSong } from './utils';
 function useSavedMics() {
   const [savedMics, setSavedMics] = useState<Array<{ id: string; customName: string; deviceName: string }>>([]);
 
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem('karaoke-multi-mic-config');
       if (saved) {
         const parsed = JSON.parse(saved);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
         setSavedMics((parsed.assignedMics || []).map((m: { id: string; customName?: string; deviceName?: string }) => ({
           id: m.id,
           customName: m.customName,

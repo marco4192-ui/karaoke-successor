@@ -296,8 +296,8 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
     let animationId: number;
 
     if (!isRecording) {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
       // Draw a single preview frame when not recording
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
       drawFrame(performance.now());
       return undefined;
     }

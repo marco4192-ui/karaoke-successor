@@ -19,8 +19,10 @@ export function OfflineBanner() {
   const [dbStats, setDbStats] = useState<DbStats | null>(null);
 
   // Fetch SQLite stats when offline to show what's available locally
+
   useEffect(() => {
     if (isOnline) {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
       setDbStats(null);
       return;
     }

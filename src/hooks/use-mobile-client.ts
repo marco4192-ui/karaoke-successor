@@ -95,6 +95,7 @@ export function useMobileClient({
     sendGameState(); // immediate first send
     const interval = setInterval(sendGameState, 500); // poll at max 2 Hz
     return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- song may change identity but effect only cares about song.id via ref
   }, [sendGameState]);
 
   // ── Ad state sending ──

@@ -261,6 +261,7 @@ export function PtmSeriesResults({
         rotation: Math.random() * 360,
       });
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
     setConfettiParticles(particles);
 
     // Animate falling

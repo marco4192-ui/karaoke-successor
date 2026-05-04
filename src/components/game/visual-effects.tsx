@@ -542,6 +542,7 @@ export function useSongEnergy(audioRef?: React.RefObject<HTMLAudioElement | null
 
   // Sync ref.current into state so the effect re-runs when the element appears
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
     setAudioElement(audioRef?.current ?? null);
     // Check periodically until element is available (audio loads async)
     if (!audioRef?.current) {

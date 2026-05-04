@@ -496,6 +496,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
         }
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- isDuel excluded; derived from gameMode which IS in deps via gameState.gameMode
   }, [results, song, activeProfileId, profiles, addHighscore, gameState.difficulty, gameState.gameMode, onlineEnabled, updateProfile]);
 
   if (!results || !song || !results.players || results.players.length === 0) {

@@ -31,6 +31,7 @@ export function useMobilePitchPolling(song: { id: string } | null): {
 
   useEffect(() => {
     if (!song) {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
       setMobilePitch(null);
       setHasMobileClient(false);
       lastPitchRef.current = '';

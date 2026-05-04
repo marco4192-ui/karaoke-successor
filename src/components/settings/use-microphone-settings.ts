@@ -26,14 +26,14 @@ export function useMicrophoneSettings(onSettingsChange?: MicrophoneSettingsPanel
     micManager.getMicrophones().then(setDevices);
     micManager.onDevices(setDevices);
     return () => {};
-  }, []);
+  }, [micManager]);
 
   // Subscribe to assigned mics changes
   useEffect(() => {
-    setAssignedMics(micManager.getAssignedMicrophones());
+    queueMicrotask(() => setAssignedMics(micManager.getAssignedMicrophones()));
     micManager.onAssignedMics(setAssignedMics);
     return () => { micManager.offAssignedMics(); };
-  }, []);
+  }, [micManager]);
 
   const handleAddMicrophone = async () => {
     if (!micManager.canAddMicrophone()) return;

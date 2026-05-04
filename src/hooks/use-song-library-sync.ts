@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import {} from '@/lib/game/store';
 import { getAllSongs } from '@/lib/game/song-library';
 import type { PlayerProfile } from '@/types/game';
@@ -16,7 +16,7 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
   syncSongLibrary: () => Promise<void>;
 } {
   // Track last synced song count to avoid redundant syncs when library hasn't changed
-  const lastSyncedCountRef = { value: -1 };
+  const lastSyncedCountRef = useRef(-1);
 
   // Sync song library to server for companion clients
   const syncSongLibrary = useCallback(async () => {
@@ -25,10 +25,10 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
 
       // Skip sync if song count hasn't changed since last sync.
       // Companion clients get the full library on initial connect anyway.
-      if (allSongs.length === lastSyncedCountRef.value) {
+      if (allSongs.length === lastSyncedCountRef.current) {
         return;
       }
-      lastSyncedCountRef.value = allSongs.length;
+      lastSyncedCountRef.current = allSongs.length;
 
       const simplifiedSongs = allSongs
         .filter(song => song.id && song.title) // Skip songs without id or title
@@ -58,7 +58,7 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
       // eslint-disable-next-line no-console
       console.error('[SongLibrarySync] Error syncing songs:', error);
     }
-  }, []);
+  }, [lastSyncedCountRef]);
 
   // Sync songs on mount and when songs change
   useEffect(() => {

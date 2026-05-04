@@ -27,7 +27,7 @@ const VISIBLE_DURATION = 8000;
 const FADE_DURATION = 1500;
 
 export function MicIndicator({
-  currentTime = 0,
+  _currentTime = 0,
   isPlaying = false,
   isDuetMode = false,
   gameMode = '',
@@ -48,9 +48,8 @@ export function MicIndicator({
   };
 
   const inputMode: InputMode = unifiedSetupResult?.inputMode || 'microphone';
-  const players: SelectedPlayer[] = unifiedSetupResult?.players || [];
+  const players = useMemo((): SelectedPlayer[] => unifiedSetupResult?.players || [], [unifiedSetupResult?.players]);
 
-  // Find microphone-assigned players
   const micPlayers = useMemo(() => {
     return players.filter(
       (p) => p.playerType === 'microphone' && p.micId
@@ -78,7 +77,7 @@ export function MicIndicator({
       }
     }
     return micPlayers[0] || null;
-  }, [micPlayers, gameMode, currentTime]);
+  }, [micPlayers, gameMode]);
 
   // Re-trigger visibility on player change
   useEffect(() => {

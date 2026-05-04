@@ -95,16 +95,15 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
         viralCharts.matchLibrary(loadedSongs);
       }).catch(() => {});
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- loadedSongs tracked via length; viralCharts excluded to avoid infinite re-trigger
-  }, [songsLoading, loadedSongs.length, viralCharts.status?.lastFetchedAt, viralCharts]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- viralCharts is intentionally destructured; adding whole object causes re-renders
+  }, [songsLoading, loadedSongs.length, viralCharts.status?.lastFetchedAt, viralCharts.refreshCharts, viralCharts.matchLibrary, loadedSongs]);
 
   // Re-match when songs change (e.g. after import)
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- loadedSongs tracked via length; viralCharts excluded
   useEffect(() => {
     if (!songsLoading && loadedSongs.length > 0 && viralCharts.status?.lastFetchedAt && viralCharts.viralSongIds.size === 0) {
       viralCharts.matchLibrary(loadedSongs).catch(() => {});
     }
-  }, [songsLoading, loadedSongs.length, viralCharts.status?.lastFetchedAt]);
+  }, [songsLoading, loadedSongs.length, viralCharts.status?.lastFetchedAt, viralCharts, loadedSongs]);
   
   const updateFavoriteIds = useCallback(() => {
     const favs = new Set<string>();
@@ -193,6 +192,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
     else { setCurrentFolder(folderBreadcrumb[index]); setFolderBreadcrumb(folderBreadcrumb.slice(0, index + 1)); }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- handleSongClick intentionally not memoized; stable ref is passed to children
   const handleSongClick = async (song: Song) => {
     // Pass-the-Mic: skip the song-start modal and go directly to the game.
     // Players, mic, and settings are already configured in PTM setup.
@@ -244,9 +244,8 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
   const handlePlaylistDelete = (id: string) => { deletePlaylist(id); setPlaylists(getPlaylists()); };
   const handleRemoveSongFromPlaylist = (pid: string, sid: string) => { removeSongFromPlaylist(pid, sid); setPlaylists(getPlaylists()); setSelectedPlaylist(getPlaylistById(pid)); };
 
-  const songCardBaseProps: Omit<SongCardProps, 'song'> = { previewSong, previewAudio, onSongClick: handleSongClick, onPreviewStart: handlePreviewStart, onPreviewStop: handlePreviewStop, previewVideoRefs };
+  const songCardBaseProps = useMemo<Omit<SongCardProps, 'song'>>(() => ({ previewSong, previewAudio, onSongClick: handleSongClick, onPreviewStart: handlePreviewStart, onPreviewStop: handlePreviewStop, previewVideoRefs }), [previewSong, previewAudio, handleSongClick, handlePreviewStart, handlePreviewStop, previewVideoRefs]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- songCardBaseProps is a stable object per render; wrapping in useMemo is over-engineering
   const renderViralSongCard = useCallback((song: Song) => (
     <SongCard key={song.id} song={} {...songCardBaseProps} isViralHit={viralCharts.viralSongIds.has(song.id)} />
   ), [songCardBaseProps, viralCharts.viralSongIds]);

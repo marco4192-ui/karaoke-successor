@@ -514,7 +514,6 @@ export function CompanionGameView({
   }, [song, companionSeriesHistory, setCompanionSeriesHistory]);
 
   // ── Continue series: pick next song ──
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- React Compiler cannot infer deps for companion state update
   const handleContinue = useCallback(() => {
     const resetPlayers = playersRef.current.map(p => ({
       ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, turnCount: 0,
@@ -793,9 +792,9 @@ function CompanionSeriesResults({ onBack }: { onBack: () => void }) {
   const history = usePartyStore(s => s.companionSeriesHistory);
   const companionPlayers = usePartyStore(s => s.companionPlayers);
 
-  const [cumulative, setCumulative] = useState<Record<string, { name: string; avatar?: string; color: string; totalScore: number; totalHits: number; totalMisses: number; bestCombo: number; roundsPlayed: number }>>({});
-  useEffect(() => {
-    const agg: Record<string, { name: string; avatar?: string; color: string; totalScore: number; totalHits: number; totalMisses: number; bestCombo: number; roundsPlayed: number }> = {};
+  type CumulativeEntry = { name: string; avatar?: string; color: string; totalScore: number; totalHits: number; totalMisses: number; bestCombo: number; roundsPlayed: number };
+  const cumulative = useMemo((): Record<string, CumulativeEntry> => {
+    const agg: Record<string, CumulativeEntry> = {};
     for (const p of companionPlayers) {
       agg[p.id] = { name: p.name, avatar: p.avatar, color: p.color, totalScore: 0, totalHits: 0, totalMisses: 0, bestCombo: 0, roundsPlayed: 0 };
     }
@@ -816,8 +815,7 @@ function CompanionSeriesResults({ onBack }: { onBack: () => void }) {
         agg[id].roundsPlayed++;
       }
     }
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- accumulating scores is intentional on history/companionPlayers change
-    setCumulative(agg);
+    return agg;
   }, [history, companionPlayers]);
 
   const sortedPlayers = Object.entries(cumulative)

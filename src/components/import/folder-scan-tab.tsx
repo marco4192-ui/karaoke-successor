@@ -72,6 +72,7 @@ export function FolderScanTab({
     } finally {
       setIsProcessing(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- scanErrors and setIsProcessing excluded to avoid infinite loop on error state changes
   }, [isProcessing, setScannedSongs, setScanErrors, setSelectedScanned]);
 
   // Handle folder input change (non-FileSystemAccess browsers)

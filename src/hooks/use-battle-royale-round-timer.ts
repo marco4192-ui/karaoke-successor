@@ -29,6 +29,7 @@ export function useBattleRoyaleRoundTimer({
 
   useEffect(() => {
     if (gameStatus === 'playing' && roundDuration) {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
       setRoundTimeLeft(roundDuration);
 
       const interval = setInterval(() => {

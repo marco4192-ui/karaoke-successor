@@ -175,6 +175,7 @@ export function MedleyGameScreen({
 
     prepare();
     return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- currentSnippet tracked via currentSnippet?.song.id
   }, [currentSnippet?.song.id, currentSnippetIdx]);
 
   // ── Audio element ──
@@ -306,6 +307,7 @@ export function MedleyGameScreen({
     }, 80);
 
     return () => clearInterval(loop);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- medleySongs.length tracked via currentSnippet; excluded to avoid unnecessary re-runs
   }, [phase, isPlaying, currentSnippet, currentSnippetIdx, scorePlayer, getActivePlayerIds, multiPitch, forceRender]);
 
   // ── Transition: pulse then next snippet ──
@@ -894,6 +896,7 @@ function MedleyFinalResults({
         agg[id].roundsPlayed++;
       }
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
     setCumulative(agg);
   }, [players, seriesHistory]);
 

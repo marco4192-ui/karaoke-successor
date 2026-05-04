@@ -151,7 +151,6 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
       return { ...effectiveSongBase, lyrics: loadedLyrics };
     }
     return effectiveSongBase;
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- lyricsLoadError excluded to avoid re-computing when only error message changes
   }, [effectiveSongBase, loadedLyrics]);
 
   // ── Media element refs ──

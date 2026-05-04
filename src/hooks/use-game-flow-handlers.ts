@@ -112,6 +112,7 @@ export function useGameFlowHandlers(
     party.setTournamentBracket(updatedBracket);
     party.setCurrentTournamentMatch(null);
     setScreen('tournament-game');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [party.tournamentBracket, party.currentTournamentMatch, party.setTournamentBracket, party.setCurrentTournamentMatch, gameState.results, gameState.players, gameState.currentSong, gameState.currentTime, actions.setResults, setScreen]);
 
   const handleGameEnd = useCallback(() => {
@@ -197,7 +198,7 @@ export function useGameFlowHandlers(
     } else {
       setScreen('results');
     }
-  }, [party, gameState, actions.resetGame, handleTournamentGameEnd, setScreen]);
+  }, [party, gameState, actions, handleTournamentGameEnd, setScreen]);
 
   return {
     handleTournamentGameEnd,

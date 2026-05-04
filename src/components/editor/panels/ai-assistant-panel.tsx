@@ -204,6 +204,7 @@ export function AIAssistantPanel({ song, onSongUpdate, onLyricsUpdate }: AIAssis
       setLyricsStatus('error');
       setError(result.error || 'Analyse fehlgeschlagen');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- song.bpm and song.lyrics excluded; song.title/artist/genre are the stable deps
   }, [song.title, song.artist, song.genre]);
 
   // Accept suggestion
