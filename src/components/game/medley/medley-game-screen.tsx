@@ -785,8 +785,9 @@ interface MedleyRoundResultsProps {
   onRecordAndEnd: () => void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function MedleyRoundResults({
-  players, settings, _seriesHistory, roundNumber,
+  players, settings, seriesHistory, roundNumber,
   onNextRound, onEndSeries, onRecordAndEnd,
 }: MedleyRoundResultsProps) {
   const isTeam = settings.playMode === 'team';

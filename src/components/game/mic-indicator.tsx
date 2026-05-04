@@ -26,8 +26,9 @@ const VISIBLE_DURATION = 8000;
 /** Fade-out animation duration (ms) */
 const FADE_DURATION = 1500;
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function MicIndicator({
-  _currentTime = 0,
+  currentTime = 0,
   isPlaying = false,
   isDuetMode = false,
   gameMode = '',

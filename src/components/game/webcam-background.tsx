@@ -234,7 +234,8 @@ export function WebcamBackground({ config, onConfigChange: _onConfigChange, clas
     stream, 
     isLoading, 
     error, 
-    _devices,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    devices: _devices,
     startWebcam, 
     stopWebcam, 
     switchDevice 
@@ -382,7 +383,8 @@ export function WebcamSettingsPanel({ config, onConfigChange, compact = false }:
   // TODO: This creates an independent hook instance separate from the actual
   // webcam background being rendered. Device list and permission state may
   // diverge from the active WebcamBackground. Consider passing these as props instead.
-  const { devices, hasPermission: _hasPermission, refreshDevices: _refreshDevices } = useWebcamBackground();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { devices, hasPermission: _hasPermission, refreshDevices } = useWebcamBackground();
   
   const sizeOptions: { value: WebcamSizeMode; label: string; description: string }[] = [
     { value: 'fullscreen', label: 'Fullscreen', description: 'Fill entire background' },
@@ -573,7 +575,7 @@ interface WebcamQuickControlsProps {
 }
 
 export function WebcamQuickControls({ config, onConfigChange }: WebcamQuickControlsProps) {
-  const { devices, refreshDevices: _refreshDevices } = useWebcamBackground();
+  const { devices, refreshDevices } = useWebcamBackground();
   
   return (
     <div className="flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-lg p-2 border border-white/10">
