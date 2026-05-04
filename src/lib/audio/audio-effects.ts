@@ -47,7 +47,7 @@ interface AudioEffectSettings {
 }
 
 // Preset configurations
-export const AUDIO_PRESETS: Record<AudioEffectPreset, Partial<AudioEffectSettings>> = {
+const AUDIO_PRESETS: Record<AudioEffectPreset, Partial<AudioEffectSettings>> = {
   pop: {
     reverb: { enabled: true, amount: 0.3, decay: 1.5, preDelay: 10 },
     delay: { enabled: true, time: 0.3, feedback: 0.2, mix: 0.15 },
