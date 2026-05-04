@@ -352,6 +352,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
                   tick.accuracy,
                   1, 0, 1
                 );
+                scoreChanged = true;
               } else {
                 // Miss: reset combo (but don't inflate notesMissed per tick)
                 const p = batchedGame.players.find(pl => pl.id === player.id);
@@ -362,6 +363,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
                     0, 0, 0, 0,
                     -(p.currentCombo) // Reset combo to 0
                   );
+                  scoreChanged = true;
                 }
               }
             }
