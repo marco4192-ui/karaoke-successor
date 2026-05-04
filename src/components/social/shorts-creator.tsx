@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { RATING_HEX_COLORS } from '@/lib/game/rating-utils';
 import type { Song, HighscoreEntry, GameResult } from '@/types/game';
 
 interface ShortsCreatorProps {
@@ -254,14 +255,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
     ctx.fillText(score.difficulty.toUpperCase(), (width * 3) / 4, statsY);
 
     // Rating badge
-    const ratingColors: Record<string, string> = {
-      perfect: '#ffd700',
-      excellent: '#00ff88',
-      good: '#00d9ff',
-      okay: '#a0a0a0',
-      poor: '#ff4444',
-    };
-    ctx.fillStyle = ratingColors[score.rating] || styleConfig.accent;
+    ctx.fillStyle = RATING_HEX_COLORS[score.rating] || styleConfig.accent;
     ctx.font = 'bold 48px Arial, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(score.rating.toUpperCase() + '!', width / 2, cameraPosition === 'fullscreen' ? height - 30 : height - 100);

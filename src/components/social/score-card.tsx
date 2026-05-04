@@ -2,6 +2,7 @@
 
 import { useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
+import { RATING_HEX_COLORS } from '@/lib/game/rating-utils';
 import type { HighscoreEntry, Song } from '@/types/game';
 
 interface ScoreCardProps {
@@ -87,14 +88,7 @@ export function ScoreCard({ song, score, playerName, playerAvatar }: ScoreCardPr
     ctx.fillText(`🎤 ${playerName}`, 40, 480);
 
     // Rating badge
-    const ratingColors: Record<string, string> = {
-      perfect: '#ffd700',
-      excellent: '#00ff88',
-      good: '#00d9ff',
-      okay: '#a0a0a0',
-      poor: '#ff4444',
-    };
-    const badgeColor = ratingColors[score.rating] || '#ffffff';
+    const badgeColor = RATING_HEX_COLORS[score.rating] || '#ffffff';
     ctx.fillStyle = badgeColor;
     ctx.font = 'bold 36px Arial, sans-serif';
     ctx.fillText(score.rating.toUpperCase() + '!', 40, 540);

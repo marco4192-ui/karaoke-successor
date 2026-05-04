@@ -8,6 +8,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 import { safeAlert } from '@/lib/safe-dialog';
 import { getExtendedStats, updateStatsAfterGame, saveExtendedStats, calculateSongXP, getLevelForXP } from '@/lib/game/player-progression';
 import { checkAndUnlockAchievements } from '@/lib/game/achievements';
+import { RATING_TAILWIND_CLASSES } from '@/lib/game/rating-utils';
 import { recordSongPlay } from '@/lib/playlist-manager';
 
 // Imports from extracted components (also re-exported for backward compatibility)
@@ -510,13 +511,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
 
   const playerResult = results.players[0];
   const player2Result = results.players[1] || null;
-  const ratingColors: Record<string, string> = {
-    perfect: 'from-yellow-400 to-orange-500',
-    excellent: 'from-green-400 to-cyan-500',
-    good: 'from-blue-400 to-purple-500',
-    okay: 'from-gray-400 to-gray-500',
-    poor: 'from-red-400 to-red-600',
-  };
+  const ratingColors = RATING_TAILWIND_CLASSES;
 
   // Get active profile for display
   const activeProfile = profiles.find(p => p.id === activeProfileId);
