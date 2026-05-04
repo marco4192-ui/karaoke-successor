@@ -57,8 +57,8 @@ export async function nativeMkdir(dirPath: string): Promise<void> {
 
 // ---- File Write ----
 
-/** Write base64-encoded bytes to a file. Reserved for future import features. */
-async function _nativeWriteFileBytes(filePath: string, dataBase64: string): Promise<void> {
+/** Write base64-encoded bytes to a file (e.g. for importing audio/images). */
+export async function nativeWriteFileBytes(filePath: string, dataBase64: string): Promise<void> {
   validatePath(filePath);
   return invoke<void>('native_write_file_bytes', { filePath, dataBase64 });
 }
