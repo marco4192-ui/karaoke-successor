@@ -396,13 +396,6 @@ export interface Playlist {
   playCount?: number;  // How many times this playlist has been played
 }
 
-export interface PlaylistFolder {
-  id: string;
-  name: string;
-  playlistIds: string[];
-  createdAt: number;
-}
-
 // Playlist import/export format
 export interface PlaylistExport {
   version: 1;
