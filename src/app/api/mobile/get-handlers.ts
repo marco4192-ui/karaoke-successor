@@ -192,7 +192,7 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         },
       });
 
-    case 'getpitch':
+    case 'getpitch': {
       // PC polls this to get the latest pitch from all mobile devices
       const pitches: Array<{ clientId: string; code: string; data: PitchData; profile: MobileProfile | null }> = [];
       latestPitchData.forEach((data, cId) => {
@@ -218,6 +218,7 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
           hasPitch: c.pitchData !== null,
         })),
       });
+    }
 
     case 'gamestate':
       // Mobile client gets current game state
@@ -287,7 +288,7 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         results: mutableState.lastGameResults,
       });
 
-    case 'getprofiles':
+    case 'getprofiles': {
       // Get all companion profiles for main app to import
       const companionProfiles: MobileProfile[] = [];
       mobileClients.forEach((client) => {
@@ -301,6 +302,7 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         profiles: companionProfiles,
         count: companionProfiles.length,
       });
+    }
 
     case 'hostprofiles':
       // Get host profiles for companion to choose from
@@ -343,18 +345,20 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
       if (!requireAuth(request)) {
         return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN.' }, { status: 401 });
       }
-      const commands = [...mutableState.remoteControlState.pendingCommands];
-      // Clear commands after they're fetched
-      mutableState.remoteControlState.pendingCommands = [];
-      return Response.json({
-        success: true,
-        commands,
-        remoteControlState: {
-          isLocked: mutableState.remoteControlState.lockedBy !== null,
-          lockedBy: mutableState.remoteControlState.lockedBy,
-          lockedByName: mutableState.remoteControlState.lockedByName,
-        },
-      });
+      {
+        const commands = [...mutableState.remoteControlState.pendingCommands];
+        // Clear commands after they're fetched
+        mutableState.remoteControlState.pendingCommands = [];
+        return Response.json({
+          success: true,
+          commands,
+          remoteControlState: {
+            isLocked: mutableState.remoteControlState.lockedBy !== null,
+            lockedBy: mutableState.remoteControlState.lockedBy,
+            lockedByName: mutableState.remoteControlState.lockedByName,
+          },
+        });
+      }
 
     case 'clearall':
       // Clear all connections (when main app closes)

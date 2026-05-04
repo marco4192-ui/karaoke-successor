@@ -160,7 +160,7 @@ export function useRemoteControl({
                 onBack();
                 break;
                 
-              case 'volume':
+              case 'volume': {
                 const volumeData = cmd.data as { direction?: string };
                 if (audioRef.current) {
                   const currentVolume = audioRef.current.volume;
@@ -171,6 +171,7 @@ export function useRemoteControl({
                   }
                 }
                 break;
+              }
                 
               case 'quit':
                 // Quit the application - same as stop but more definitive
@@ -187,7 +188,7 @@ export function useRemoteControl({
                 onBack();
                 break;
                 
-              case 'seek':
+              case 'seek': {
                 const seekData = cmd.data as { position?: number; direction?: string };
                 if (audioRef.current && seekData?.position !== undefined) {
                   // Seek to absolute position (in seconds)
@@ -225,6 +226,7 @@ export function useRemoteControl({
                   }
                 }
                 break;
+              }
             }
           }
         }

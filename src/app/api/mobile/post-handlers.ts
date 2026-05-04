@@ -18,7 +18,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
     const { type, payload, clientId } = body;
 
     switch (type) {
-      case 'register':
+      case 'register': {
         const newClientId = `mobile-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
         const connectionCode = getUniqueConnectionCode();
         const regPayload = payload as { type?: string; name?: string; profile?: MobileProfile };
@@ -57,8 +57,9 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           message: 'Registered successfully',
           gameState: mutableState.gameState,
         });
+      }
 
-      case 'pitch':
+      case 'pitch': {
         // Mobile client sends pitch data
         const pitchPayload = payload as PitchData;
         if (clientId && mobileClients.has(clientId)) {
@@ -69,6 +70,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           latestPitchData.set(clientId, pitchPayload);
         }
         return Response.json({ success: true, received: true });
+      }
 
       case 'volume':
         if (clientId && mobileClients.has(clientId)) {
@@ -78,9 +80,10 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         }
         return Response.json({ success: true });
 
-      case 'command':
+      case 'command': {
         const cmdPayload = payload as { command: string; data?: unknown };
         return Response.json({ success: true, executed: cmdPayload.command });
+      }
 
       case 'sync':
         return Response.json({ 
@@ -88,7 +91,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           state: mutableState.gameState,
         });
 
-      case 'gamestate':
+      case 'gamestate': {
         // PC updates game state for mobile clients to see
         const gsPayload = payload as typeof mutableState.gameState;
         mutableState.gameState = { ...gsPayload };
@@ -102,6 +105,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         }
         
         return Response.json({ success: true, updated: true });
+      }
 
       case 'profile':
         // Update profile for a client
@@ -129,7 +133,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         }
         return Response.json({ success: false, message: 'Client not found' }, { status: 404 });
 
-      case 'queue':
+      case 'queue': {
         // Add song to queue (with max 3 per companion limit)
         if (!clientId || !mobileClients.has(clientId)) {
           return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
@@ -184,8 +188,9 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           message: 'Song added to queue',
           slotsRemaining: 3 - clientForQueue.queueCount,
         });
+      }
 
-      case 'removequeue':
+      case 'removequeue': {
         // Remove song from queue — only the creator (matching companionCode) can remove
         const removePayload = payload as { itemId: string };
         const requestingClient = mobileClients.get(clientId);
@@ -212,8 +217,9 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           return Response.json({ success: true, message: 'Song removed from queue' });
         }
         return Response.json({ success: false, message: 'Item not found' }, { status: 404 });
+      }
 
-      case 'markplaying':
+      case 'markplaying': {
         // Mark a song as currently playing (called by main app or queue screen)
         const playingPayload = payload as { itemId: string };
         const playingItem = mutableState.songQueue.find(q => q.id === playingPayload.itemId);
@@ -235,8 +241,9 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           });
         }
         return Response.json({ success: false, message: 'Item not found' }, { status: 404 });
+      }
 
-      case 'queuecompleted':
+      case 'queuecompleted': {
         // Mark a song as completed (called by main app)
         const completedPayload = payload as { itemId: string };
         const completedItem = mutableState.songQueue.find(q => q.id === completedPayload.itemId);
@@ -256,8 +263,9 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           return Response.json({ success: true, message: 'Song marked as completed' });
         }
         return Response.json({ success: false, message: 'Item not found' }, { status: 404 });
+      }
 
-      case 'jukebox':
+      case 'jukebox': {
         // Add song to jukebox wishlist
         if (!clientId || !mobileClients.has(clientId)) {
           return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
@@ -282,13 +290,14 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           wishlistItem,
           message: 'Song added to wishlist',
         });
+      }
 
       case 'results':
         // Store game results for social features
         mutableState.lastGameResults = payload as typeof mutableState.lastGameResults;
         return Response.json({ success: true, message: 'Results stored' });
 
-      case 'remote_acquire':
+      case 'remote_acquire': {
         // Acquire remote control lock
         if (!clientId || !mobileClients.has(clientId)) {
           return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
@@ -321,8 +330,9 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
             lockedAt: mutableState.remoteControlState.lockedAt,
           },
         });
+      }
 
-      case 'remote_release':
+      case 'remote_release': {
         // Release remote control lock
         if (!clientId || !mobileClients.has(clientId)) {
           return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
@@ -349,8 +359,9 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           success: true, 
           message: 'Remote control released',
         });
+      }
 
-      case 'remote_command':
+      case 'remote_command': {
         // Send a remote control command
         if (!clientId || !mobileClients.has(clientId)) {
           return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
@@ -385,14 +396,16 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           message: 'Command queued',
           command: newCommand,
         });
+      }
 
-      case 'setAdPlaying':
+      case 'setAdPlaying': {
         // Set ad playing state (from main app)
         const adPayload = payload as { isAdPlaying: boolean };
         mutableState.gameState.isAdPlaying = adPayload.isAdPlaying;
         return Response.json({ success: true, isAdPlaying: mutableState.gameState.isAdPlaying });
+      }
 
-      case 'skipAd':
+      case 'skipAd': {
         // Request to skip ad (from mobile client)
         // This will be picked up by the main app polling for commands
         if (!clientId || !mobileClients.has(clientId)) {
@@ -415,6 +428,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           success: true, 
           message: 'Skip ad command sent',
         });
+      }
 
       case 'assigncharacter':
         // Assign a character profile to a companion (called from settings)
@@ -492,7 +506,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           return Response.json({ success: false, message: 'Invalid profiles payload' }, { status: 400 });
         }
 
-      case 'setsongs':
+      case 'setsongs': {
         // Main app syncs its song library for companion clients
         // Auth required: this is a privileged admin action
         if (!requireAuth(request)) {
@@ -517,6 +531,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           });
         }
         return Response.json({ success: false, message: 'Invalid songs payload' }, { status: 400 });
+      }
 
       default:
         return Response.json({ success: false, message: 'Unknown message type' }, { status: 400 });

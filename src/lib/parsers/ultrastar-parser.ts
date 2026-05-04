@@ -107,7 +107,7 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
           case 'MP3':
             song.mp3 = value.trim();
             break;
-          case 'VIDEO':
+          case 'VIDEO': {
             // Classify URL: YouTube, direct video file, or local path
             const videoValue = value.trim();
             if (videoValue.startsWith('http://') || videoValue.startsWith('https://')) {
@@ -123,6 +123,7 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
               song.video = videoValue;
             }
             break;
+          }
           case 'VIDEOGAP':
             song.videoGap = parseFloat(value.replace(',', '.')) || 0;
             break;
@@ -142,12 +143,13 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
           case 'START':
             song.start = parseInt(value) || 0;
             break;
-          case 'END':
+          case 'END': {
             // parseInt returns 0 for "#END:0" — treat 0 as undefined since
             // a song ending at 0ms makes no sense (song creator mistake).
             const endVal = parseInt(value);
             song.end = endVal > 0 ? endVal : undefined;
             break;
+          }
           case 'PREVIEWSTART':
             song.previewStart = parseFloat(value) || 0;
             break;
