@@ -287,6 +287,12 @@ function isPlayerFinished(game: CompetitiveGame, playerId: string): boolean {
   if (player.roundsPlayed < game.settings.bestOf) return false;
   // Even if this player hit bestOf, don't mark them finished if any
   // other eligible player has strictly fewer rounds.
+  // NOTE: The condition below is intentionally "roundsPlayed <= minRounds"
+  // (not "roundsPlayed >= minRounds").  This returns true ONLY for the
+  // player(s) with the *fewest* rounds who have ALSO reached bestOf.
+  // All other players who reached bestOf but played MORE rounds are
+  // considered finished too, because the game ends as soon as every
+  // player has completed at least bestOf rounds.
   const minRounds = Math.min(
     ...game.players.map(p => p.roundsPlayed)
   );

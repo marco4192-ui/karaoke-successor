@@ -1,8 +1,5 @@
 import { Difficulty } from '@/types/game';
 
-// Re-export types from pass-the-mic-screen for backward compatibility
-export type { PassTheMicPlayer, PassTheMicSegment } from '@/components/game/pass-the-mic-screen';
-
 export interface PtmPlayer {
   id: string;
   name: string;

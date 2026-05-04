@@ -36,16 +36,6 @@ interface AIAssistantPanelProps {
   onLyricsUpdate: (_lyrics: LyricLine[]) => void;
 }
 
-interface _SuggestionItem {
-  id: string;
-  type: 'metadata' | 'lyrics' | 'cover';
-  title: string;
-  description: string;
-  confidence: number;
-  action: () => void;
-  dismiss: () => void;
-}
-
 // ===================== AI Status Badge =====================
 
 function AIStatusBadge({ status }: { status: 'idle' | 'loading' | 'success' | 'error' }) {
