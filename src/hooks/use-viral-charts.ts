@@ -61,8 +61,8 @@ async function viralClear() {
   return invoke<Record<string, unknown>>('viral_clear');
 }
 
-async function viralSetCountry(_country: string) {
-  return invoke<Record<string, unknown>>('viral_set_country', {});
+async function viralSetCountry(country: string) {
+  return invoke<Record<string, unknown>>('viral_set_country', { country });
 }
 
 // ============================================================================
@@ -81,11 +81,11 @@ export interface UseViralCharts {
   /** Manually trigger a chart refresh */
   refreshCharts: (country?: string) => Promise<void>;
   /** Manually trigger matching against library */
-  matchLibrary: (_songssongs: Song[]) => Promise<void>;
+  matchLibrary: (songs: Song[]) => Promise<void>;
   /** Get the match info for a specific song */
-  getMatchInfo: (_songIdsongId: string) => ViralMatchInfo[] | null;
+  getMatchInfo: (songId: string) => ViralMatchInfo[] | null;
   /** Set the chart country */
-  setCountry: (_country: string) => Promise<void>;
+  setCountry: (country: string) => Promise<void>;
   /** Clear all cached data */
   clearData: () => Promise<void>;
 }
