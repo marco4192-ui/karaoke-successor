@@ -33,6 +33,7 @@ export function MicIndicator({
   gameMode = '',
 }: MicIndicatorProps) {
   const unifiedSetupResult = usePartyStore((s) => s.unifiedSetupResult);
+  const passTheMicPlayers = usePartyStore((s) => s.passTheMicPlayers);
 
   // Track player changes to re-trigger visibility
   const [lastPlayerId, setLastPlayerId] = useState<string | null>(null);
@@ -61,10 +62,9 @@ export function MicIndicator({
   // For regular modes: all mic players
   const activePlayer = useMemo(() => {
     if (gameMode === 'pass-the-mic') {
-      const ptmPlayers = usePartyStore.getState().passTheMicPlayers;
-      if (ptmPlayers && ptmPlayers.length > 0) {
+      if (passTheMicPlayers && passTheMicPlayers.length > 0) {
         // Find the active player (isActive flag)
-        const active = ptmPlayers.find((p: { isActive?: boolean }) => p.isActive);
+        const active = passTheMicPlayers.find((p: { isActive?: boolean }) => p.isActive);
         if (active) {
           // Match with mic player
           return micPlayers.find((mp) => mp.id === active.id) || {
@@ -77,7 +77,7 @@ export function MicIndicator({
       }
     }
     return micPlayers[0] || null;
-  }, [micPlayers, gameMode]);
+  }, [micPlayers, gameMode, passTheMicPlayers]);
 
   // Re-trigger visibility on player change
   useEffect(() => {
