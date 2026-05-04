@@ -18,7 +18,7 @@ import { detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
 
 interface HomeScreenProps {
-  onNavigate: (_screenscreen: Screen) => void;
+  onNavigate: (_screen: Screen) => void;
 }
 
 // Dynamic app stats (reflects actual game modes and difficulty levels)
