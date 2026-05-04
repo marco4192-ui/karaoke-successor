@@ -162,8 +162,8 @@ export async function deleteReplay(id: string): Promise<void> {
   });
 }
 
-/** Delete all replays for a specific song. Reserved for future delete-song UI. */
-async function _deleteReplaysForSong(songId: string): Promise<void> {
+/** Delete all replays for a specific song (e.g. when a song is removed from the library). */
+export async function deleteReplaysForSong(songId: string): Promise<void> {
   const replays = await getReplaysForSong(songId);
   const db = await openDB();
 
