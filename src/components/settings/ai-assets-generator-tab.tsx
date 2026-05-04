@@ -454,7 +454,7 @@ export function AIAssetsGeneratorTab() {
               <p>Images and audio are generated using AI. For best results:</p>
               <ul className="list-disc list-inside mt-2 space-y-1 text-white/60">
                 <li>Be specific in your image descriptions</li>
-                <li>Include style keywords like "gaming", "neon", "vector"</li>
+                <li>Include style keywords like &quot;gaming&quot;, &quot;neon&quot;, &quot;vector&quot;</li>
                 <li>Audio supports multiple voices and languages</li>
               </ul>
             </div>

@@ -9,13 +9,13 @@ export function extractYouTubeId(url: string): string | null {
   
   const patterns = [
     // Standard: youtube.com/watch?v=ID, youtu.be/ID, youtube.com/embed/ID, youtube.com/v/ID
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([^&\?\/]+)/,
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([^&?\/]+)/, // eslint-disable-line no-useless-escape
     // YouTube Shorts: youtube.com/shorts/ID
-    /(?:youtube\.com\/shorts\/)([^&\?\/]+)/,
+    /(?:youtube\.com\/shorts\/)([^&?\/]+)/, // eslint-disable-line no-useless-escape
     // YouTube Music: music.youtube.com/watch?v=ID
-    /(?:music\.youtube\.com\/watch\?v=)([^&\?\/]+)/,
+    /(?:music\.youtube\.com\/watch\?v=)([^&?\/]+)/, // eslint-disable-line no-useless-escape
     // YouTube Live: youtube.com/live/ID
-    /(?:youtube\.com\/live\/)([^&\?\/]+)/,
+    /(?:youtube\.com\/live\/)([^&?\/]+)/, // eslint-disable-line no-useless-escape
     // Direct video ID (11 chars)
     /^([a-zA-Z0-9_-]{11})$/,
   ];

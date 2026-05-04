@@ -92,7 +92,7 @@ const BLOB_CACHE_MAX = 200;
 function evictBlobUrl(key: string) {
   const url = blobUrlCache.get(key);
   if (url) {
-    try { URL.revokeObjectURL(url); } catch {}
+    try { URL.revokeObjectURL(url); } catch { /* ignore if already revoked */ }
     blobUrlCache.delete(key);
   }
 }
@@ -257,8 +257,8 @@ export async function scanSongsFolderTauri(baseSongsFolder: string): Promise<Tau
         folderMap.set(parentFolder, new Map());
       }
       
-      const folderFiles = folderMap.get(parentFolder)!;
-      folderFiles.set(file.name, { path: relativePath, name: file.name });
+      const folderFiles = folderMap.get(parentFolder);
+      if (folderFiles) folderFiles.set(file.name, { path: relativePath, name: file.name });
     }
     
 

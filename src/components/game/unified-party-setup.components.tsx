@@ -135,6 +135,7 @@ function SettingsPanel({
   config, settings, difficulty, onSettingChange, onDifficultyChange,
 }: {
   config: PartyGameConfig;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   settings: Record<string, any>;
   difficulty: Difficulty;
   onSettingChange: (_key: string, _value: string | number | boolean) => void;
@@ -304,7 +305,7 @@ function MicAssignmentPanel({
                     if (e.target.value) {
                       onAssignMic(e.target.value, playerId);
                     } else {
-                      currentMicId && onRemoveMic(currentMicId);
+                      if (currentMicId) onRemoveMic(currentMicId);
                     }
                   }}
                   className="flex-1 bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
@@ -826,7 +827,7 @@ export function SongVotingModal({ songs, onVote, onClose, gameColor }: {
     restoreCovers();
     return () => {
       cancelled = true;
-      coverBlobUrlsRef.current.forEach(url => { if (url.startsWith('blob:')) try { URL.revokeObjectURL(url); } catch {} });
+      coverBlobUrlsRef.current.forEach(url => { if (url.startsWith('blob:')) try { URL.revokeObjectURL(url); } catch { /* revoke may fail for already-revoked URLs */ } });
       coverBlobUrlsRef.current = [];
     };
   }, [songs]);

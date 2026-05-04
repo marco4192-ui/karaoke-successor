@@ -30,13 +30,13 @@ export function usePartySetup({
   // whose keys and value types vary at runtime. This trades compile-time type safety
   // for flexibility; individual consumers should validate specific settings as needed.
   const initialSettings = useMemo(() => {
-    const s: Record<string, any> = {};
+    const s: Record<string, any> = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
     config.settings.forEach(setting => { s[setting.key] = setting.defaultValue; });
     return s;
   }, [config]);
 
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
-  const [settings, setSettings] = useState<Record<string, any>>(initialSettings);
+  const [settings, setSettings] = useState<Record<string, any>>(initialSettings); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [__songSelection, setSongSelection] = useState<SongSelectionOption | null>(null);
   const [error, setError] = useState<string | null>(null);
   const storeDifficulty = useGameStore((state) => state.gameState.difficulty);
@@ -83,7 +83,9 @@ export function usePartySetup({
   const [filterLanguage, setFilterLanguage] = useState('all');
   const [filterCombined, setFilterCombined] = useState(true);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- songs.length is a proxy for songs identity change; songs itself would cause infinite loop
   const availableGenres = useMemo(() => getGenres(), [songs.length]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- songs.length is a proxy for songs identity change
   const availableLanguages = useMemo(() => getLanguages(), [songs.length]);
 
   const filteredSongs = useMemo(() => {

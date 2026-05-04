@@ -85,7 +85,7 @@ export async function loadSongLyrics(song: Song): Promise<LyricLine[]> {
                 try {
                   const txtBlob = new Blob([txtContent], { type: 'text/plain' });
                   await storeMedia(song.id, 'txt', txtBlob);
-                } catch {}
+                } catch { /* storing txt blob is non-critical */ }
                 return parsedLyrics;
               }
             }

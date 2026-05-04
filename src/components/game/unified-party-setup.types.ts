@@ -88,7 +88,7 @@ export interface SelectedPlayer {
 
 export interface GameSetupResult {
   players: SelectedPlayer[];
-  settings: Record<string, any>;
+  settings: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
   songSelection: SongSelectionOption;
   difficulty: Difficulty;
   inputMode: InputMode;

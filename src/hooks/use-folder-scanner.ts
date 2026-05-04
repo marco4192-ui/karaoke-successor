@@ -327,6 +327,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
         localStorage.setItem('karaoke-songs-folder', selected);
         await performFolderScan(selected);
       } else {
+        // user cancelled folder picker
       }
     } catch (e) {
       // eslint-disable-next-line no-console

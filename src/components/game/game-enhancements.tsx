@@ -13,6 +13,7 @@ export function PerformanceDisplay() {
   // Avoid hydration mismatch - only show content after mount
   const [isMounted, setIsMounted] = useState(false);
   
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-only effect for hydration guard
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -52,7 +53,7 @@ export function PerformanceDisplay() {
           >
             {activeProfile.name[0]}
           </div>
-          {activeProfile.name}'s Stats
+          {activeProfile.name}&apos;s Stats
         </CardTitle>
       </CardHeader>
       <CardContent>

@@ -34,7 +34,7 @@ export function MobileMicView({ gameState, clientId, currentPitch, isListening, 
               <div className="space-y-1 text-xs text-white/60">
                 <p>So erlaubst du den Zugang:</p>
                 <p>1. Tippe auf das Schloss-Symbol links neben der URL</p>
-                <p>2. Finde "Mikrofon" und wähle "Erlauben"</p>
+                <p>2. Finde &quot;Mikrofon&quot; und wähle &quot;Erlauben&quot;</p>
                 <p>3. Lade die Seite neu</p>
               </div>
               <details className="text-xs text-white/40">

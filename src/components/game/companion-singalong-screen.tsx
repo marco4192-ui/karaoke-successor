@@ -95,7 +95,7 @@ export function CompanionSingAlongSetupScreen({ profiles, onSelectSong, onBack }
         <Button variant="ghost" onClick={onBack} className="text-white/60">← Back</Button>
         <div>
           <h1 className="text-3xl font-bold">📱 Companion Sing-A-Long</h1>
-          <p className="text-white/60">Your phone randomly lights up — that's your cue to sing!</p>
+          <p className="text-white/60">Your phone randomly lights up — that&apos;s your cue to sing!</p>
         </div>
       </div>
 
@@ -104,8 +104,8 @@ export function CompanionSingAlongSetupScreen({ profiles, onSelectSong, onBack }
           <h3 className="font-bold text-lg mb-2 text-emerald-400">🎮 How it works</h3>
           <ul className="text-sm text-white/70 space-y-2">
             <li>📱 Everyone keeps their phone nearby</li>
-            <li>⚡ When your phone screen flashes, it's YOUR turn to sing!</li>
-            <li>🎤 No one knows who's next until the blink</li>
+            <li>⚡ When your phone screen flashes, it&apos;s YOUR turn to sing!</li>
+            <li>🎤 No one knows who&apos;s next until the blink</li>
             <li>⏱️ Singers rotate every 20–45 seconds (randomized)</li>
             <li>🏆 Score points while you sing — all players get equal time!</li>
           </ul>
@@ -514,12 +514,14 @@ export function CompanionGameView({
   }, [song, companionSeriesHistory, setCompanionSeriesHistory]);
 
   // ── Continue series: pick next song ──
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- React Compiler cannot infer deps for companion state update
   const handleContinue = useCallback(() => {
     const resetPlayers = playersRef.current.map(p => ({
       ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, turnCount: 0,
     }));
     setCompanionPlayers(resetPlayers);
     onEndGame();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- setCompanionPlayers excluded; stable setState
   }, [onEndGame]);
 
   // ── End series ──
@@ -814,6 +816,7 @@ function CompanionSeriesResults({ onBack }: { onBack: () => void }) {
         agg[id].roundsPlayed++;
       }
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- accumulating scores is intentional on history/companionPlayers change
     setCumulative(agg);
   }, [history, companionPlayers]);
 

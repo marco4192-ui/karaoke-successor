@@ -67,12 +67,11 @@ export async function storeMedia(
   // If we await inside the transaction scope (e.g. data.arrayBuffer()), the
   // engine may commit the transaction before store.put() runs, causing silent
   // data loss.
-  let blobToStore: Blob;
   // IMPORTANT: Always materialize to a new Blob in Tauri/WebView.
   // File objects may be filesystem references that become dead references
   // after the user navigates away or the file handle is garbage-collected.
   const arrayBuffer = await data.arrayBuffer();
-  blobToStore = new Blob([arrayBuffer], { type: data.type || (type === 'txt' ? 'text/plain' : 'application/octet-stream') });
+  const blobToStore = new Blob([arrayBuffer], { type: data.type || (type === 'txt' ? 'text/plain' : 'application/octet-stream') });
 
   const db = await initMediaDB();
 
@@ -171,7 +170,7 @@ export function revokeSongMediaUrls(urls: {
 }): void {
   for (const url of [urls.audioUrl, urls.videoUrl, urls.coverUrl, urls.txtUrl]) {
     if (url?.startsWith('blob:')) {
-      try { URL.revokeObjectURL(url); } catch {}
+      try { URL.revokeObjectURL(url); } catch { /* already revoked */ }
     }
   }
 }

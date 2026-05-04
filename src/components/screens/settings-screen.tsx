@@ -120,7 +120,7 @@ function SettingsScreen() {
 
   // Initialize folder scanner ONCE on mount (must not re-run — would overwrite user input)
   useEffect(() => {
-    folderScanner.initializeFromStorage && folderScanner.initializeFromStorage();
+    if (folderScanner.initializeFromStorage) folderScanner.initializeFromStorage();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

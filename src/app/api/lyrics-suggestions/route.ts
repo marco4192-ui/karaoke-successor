@@ -85,7 +85,7 @@ Rules:
           {
             role: 'user',
             content: `Analyze these lyrics for errors and issues:
-${body.lyrics.map((line, i) => `[${i}] ${line.replace(/[{}()\[\]\\]/g, '').substring(0, 200)}`).join('\n').substring(0, 5000)}
+${body.lyrics.map((line, i) => `[${i}] ${line.replace(/[\]{}()[\\]]/g, '').substring(0, 200)}`).join('\n').substring(0, 5000)}
 
 Return ONLY the JSON object.`,
           },

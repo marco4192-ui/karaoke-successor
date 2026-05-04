@@ -42,6 +42,7 @@ export function CharacterScreen() {
   }, []);
 
   // Poll claimed profiles every 10s
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- initial poll sets state from async callback
   useEffect(() => {
     fetchClaimedProfiles();
     const interval = setInterval(fetchClaimedProfiles, 10000);
@@ -131,7 +132,7 @@ export function CharacterScreen() {
           <Card className="bg-white/5 border-white/10">
             <CardContent className="py-8 text-center text-white/60">
               <UserIcon className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p>No characters yet. Click "Create New Character" to get started!</p>
+              <p>No characters yet. Click &quot;Create New Character&quot; to get started!</p>
             </CardContent>
           </Card>
         ) : (

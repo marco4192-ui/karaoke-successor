@@ -24,7 +24,8 @@ interface PartySetupSectionProps {
 }
 
 // ===================== HELPER: Convert unified setup settings to typed settings =====================
-function toPassTheMicSettings(s: Record<string, any>, overrides?: Partial<PassTheMicSettings>): PassTheMicSettings {
+function toPassTheMicSettings( // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  s: Record<string, any>, overrides?: Partial<PassTheMicSettings>): PassTheMicSettings {
   return {
     segmentDuration: s.segmentDuration ?? 30,
     difficulty: s.difficulty ?? 'medium',
@@ -37,7 +38,8 @@ function toPassTheMicSettings(s: Record<string, any>, overrides?: Partial<PassTh
   };
 }
 
-function toCompanionSettings(s: Record<string, any>): CompanionSingAlongSettings {
+function toCompanionSettings( // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  s: Record<string, any>): CompanionSingAlongSettings {
   return {
     difficulty: s.difficulty ?? 'medium',
   };

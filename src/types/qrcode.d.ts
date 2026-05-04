@@ -11,5 +11,8 @@ declare module 'qrcode' {
 
   function toDataURL(_texttext: string, options?: QRCodeToDataURLOptions): Promise<string>;
 
-  export default { toDataURL };
+  const _default: {
+    toDataURL: typeof toDataURL;
+  };
+  export default _default;
 }

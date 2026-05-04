@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { X, Save, Music, FileText, Sparkles, FolderOpen, Film, Image } from 'lucide-react';
+import { X, Save, Music, FileText, Sparkles, FolderOpen, Film, Image as ImageIcon } from 'lucide-react';
 import type { Song, LyricLine, Note } from '@/types/game';
 import { v4 as uuidv4 } from 'uuid';
 import { parseLyricsToSyllables, syllablesToUltraStarNotes, type SyllableResult } from '@/lib/editor/syllable-separator';
@@ -490,7 +490,7 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
               {/* Cover */}
               <div className="flex items-center gap-2">
                 <div className="flex-1 flex items-center gap-2 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 min-w-0">
-                  <Image className="w-4 h-4 text-amber-400 shrink-0" />
+                  <ImageIcon className="w-4 h-4 text-amber-400 shrink-0" />
                   <Input
                     value={coverPath}
                     onChange={(e) => setCoverPath(e.target.value)}

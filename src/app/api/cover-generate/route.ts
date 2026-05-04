@@ -67,7 +67,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<CoverGene
     }
 
     // Sanitize user inputs to prevent prompt injection
-    const sanitize = (s: string) => s.replace(/[{}()\[\]\\]/g, '').slice(0, 200);
+    const sanitize = (s: string) => s.replace(/[\]{}()[\\]]/g, '').slice(0, 200);
     const safeTitle = sanitize(body.title);
     const safeArtist = sanitize(body.artist);
 

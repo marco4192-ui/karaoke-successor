@@ -95,9 +95,11 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
         viralCharts.matchLibrary(loadedSongs);
       }).catch(() => {});
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- loadedSongs tracked via length; viralCharts excluded to avoid infinite re-trigger
   }, [songsLoading, loadedSongs.length, viralCharts.status?.lastFetchedAt, viralCharts]);
 
   // Re-match when songs change (e.g. after import)
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- loadedSongs tracked via length; viralCharts excluded
   useEffect(() => {
     if (!songsLoading && loadedSongs.length > 0 && viralCharts.status?.lastFetchedAt && viralCharts.viralSongIds.size === 0) {
       viralCharts.matchLibrary(loadedSongs).catch(() => {});
@@ -147,7 +149,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
 
   useEffect(() => {
     const saved = localStorage.getItem('karaoke-library-settings');
-    if (saved) try { setSettings(prev => ({ ...prev, ...JSON.parse(saved) })); } catch {}
+    if (saved) try { setSettings(prev => ({ ...prev, ...JSON.parse(saved) })); } catch { /* ignore malformed stored settings */ }
   }, []);
   
   useEffect(() => { localStorage.setItem('karaoke-library-settings', JSON.stringify(settings)); }, [settings]);
@@ -244,7 +246,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
 
   const songCardBaseProps: Omit<SongCardProps, 'song'> = { previewSong, previewAudio, onSongClick: handleSongClick, onPreviewStart: handlePreviewStart, onPreviewStop: handlePreviewStop, previewVideoRefs };
 
-  // Custom card renderer that adds viral hit badge
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- songCardBaseProps is a stable object per render; wrapping in useMemo is over-engineering
   const renderViralSongCard = useCallback((song: Song) => (
     <SongCard key={song.id} song={} {...songCardBaseProps} isViralHit={viralCharts.viralSongIds.has(song.id)} />
   ), [songCardBaseProps, viralCharts.viralSongIds]);

@@ -57,7 +57,7 @@ export function useImportScreen(onImport: (_songsong: Song) => void) {
   const [duplicates, setDuplicates] = useState<DuplicateInfo[]>([]);
 
   // Store Tauri scan result for native import path
-  const tauriScanResultRef = useRef<any>(null);
+  const tauriScanResultRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
   const tauriScanFolderRef = useRef<string | null>(null);
   const autoNavTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -68,6 +68,7 @@ export function useImportScreen(onImport: (_songsong: Song) => void) {
 
   // H20: Re-compute existingSongs on every render so re-scans detect duplicates correctly.
   // The empty dependency array caused stale data after songs were added.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- scannedSongs triggers re-compute of existing songs
   const existingSongs = useMemo(() => getAllSongs(), [scannedSongs]);
 
   const audioInputRef = useRef<HTMLInputElement>(null);
@@ -110,6 +111,7 @@ export function useImportScreen(onImport: (_songsong: Song) => void) {
         parseUltrastarFile(file);
         break;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- audioUrl/videoUrl excluded; effect triggers on title change which is sufficient
   }, [title, audioFile]);
 
   const handleDrop = useCallback((e: React.DragEvent, type: 'audio' | 'video' | 'ultrastar') => {
