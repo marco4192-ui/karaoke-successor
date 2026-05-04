@@ -21,7 +21,7 @@ import { MatchAbortDialog } from '@/components/game/match-abort-dialog';
 interface TournamentScreenProps {
   profiles: PlayerProfile[];
   songs: Song[];
-  onStartTournament: (_bracketbracket: TournamentBracket, _songDurationsongDuration: number) => void;
+  onStartTournament: (_bracket: TournamentBracket, _songDuration: number) => void;
   onBack: () => void;
 }
 
