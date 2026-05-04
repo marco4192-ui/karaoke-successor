@@ -29,8 +29,6 @@ export function extractYouTubeId(url: string): string | null {
   return null;
 }
 
-export { isYouTubeUrl, isDirectVideoUrl } from '@/lib/url-utils';
-
 interface YouTubePlayerProps {
   videoId: string;
   videoGap?: number; // Offset in MILLISECONDS (positive = video starts AFTER audio)
