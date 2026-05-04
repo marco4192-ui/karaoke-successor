@@ -280,7 +280,6 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
           const tickInterval = beatDurationMs;
 
           if (timeSinceLastEval >= tickInterval) {
-            if (pitch.note == null) return;
             const detectedNote = pitch.note;
             const tickResult = evaluateTick(detectedNote, note.pitch, difficulty);
 
@@ -444,7 +443,6 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
           const tickInterval = beatDurationMs;
 
           if (timeSinceLastEval >= tickInterval) {
-            if (pitch.note == null) return;
             const detectedNote = pitch.note;
             const tickResult = evaluateTick(detectedNote, note.pitch, difficulty);
 
