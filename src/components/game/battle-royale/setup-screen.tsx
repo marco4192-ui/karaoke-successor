@@ -20,7 +20,7 @@ import { useGameStore } from '@/lib/game/store';
 interface BattleRoyaleSetupProps {
   profiles: PlayerProfile[];
   songs: Song[];
-  onStartGame: (_gamegame: BattleRoyaleGame) => void;
+  onStartGame: (_game: BattleRoyaleGame) => void;
   onBack: () => void;
 }
 

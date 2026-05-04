@@ -8,7 +8,7 @@ import type { Screen } from '@/types/screens';
 
 interface NavBarProps {
   screen: Screen;
-  setScreen: (_ss: Screen) => void;
+  setScreen: (_s: Screen) => void;
   queueLength: number;
   isMounted: boolean;
   isFullscreen: boolean;

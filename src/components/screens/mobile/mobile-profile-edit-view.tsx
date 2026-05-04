@@ -10,15 +10,15 @@ import type { MobileProfile } from './mobile-types';
 interface ProfileEditViewProps {
   profile: MobileProfile;
   profileName: string;
-  onProfileNameChange: (_valuevalue: string) => void;
+  onProfileNameChange: (_value: string) => void;
   profileColor: string;
-  onProfileColorChange: (_colorcolor: string) => void;
+  onProfileColorChange: (_color: string) => void;
   avatarPreview: string | null;
   connectionCode: string;
   profileColors: readonly string[];
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   onSave: () => void;
-  onPhotoUpload: (_ee: React.ChangeEvent<HTMLInputElement>) => void;
+  onPhotoUpload: (_e: React.ChangeEvent<HTMLInputElement>) => void;
   onSwitchToHostProfile?: (_hostProfilehostProfile: MobileProfile) => void;
 }
 

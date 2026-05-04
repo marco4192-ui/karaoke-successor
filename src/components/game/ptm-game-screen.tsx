@@ -45,7 +45,7 @@ interface PtmGameScreenProps {
   settings: PassTheMicSettings | null;
   onUpdateGame: (_players: PtmPlayer[], _segments: PtmSegment[]) => void;
   onEndGame: () => void;
-  onNavigate?: (_screenscreen: string) => void;
+  onNavigate?: (_screen: string) => void;
   onPause?: () => void;
 }
 

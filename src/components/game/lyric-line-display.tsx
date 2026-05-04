@@ -19,7 +19,7 @@ interface LyricLineDisplayProps {
   missingWordsIndices?: number[];
   isBlindSection?: boolean;
   /** Callback ref attached to the first singable note span (for pointer targeting) */
-  firstNoteRef?: (_nodenode: HTMLSpanElement | null) => void;
+  firstNoteRef?: (_node: HTMLSpanElement | null) => void;
 }
 
 /**

@@ -14,7 +14,7 @@ import { isYouTubeUrl } from '@/components/game/youtube-player';
 interface EditorSongInfoTabProps {
   song: Song;
   allNotesCount: number;
-  onSongChange: (updater: (_prevprev: Song) => Song) => void;
+  onSongChange: (updater: (_prev: Song) => Song) => void;
   onSetUnsavedChanges: () => void;
 }
 

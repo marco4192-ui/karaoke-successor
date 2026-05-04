@@ -66,10 +66,10 @@ export function useGameFlowHandlers(
   party: PartyStore,
   gameState: GameState,
   actions: {
-    setResults: (_resultsresults: GameResult) => void;
+    setResults: (_results: GameResult) => void;
     resetGame: () => void;
   },
-  setScreen: (_ss: Screen) => void,
+  setScreen: (_s: Screen) => void,
 ) {
   const handleTournamentGameEnd = useCallback(() => {
     if (!party.tournamentBracket || !party.currentTournamentMatch) {

@@ -23,7 +23,7 @@ import type { Screen } from '@/types/screens';
 
 interface PartyGameScreensProps {
   screen: Screen;
-  setScreen: (_ss: Screen) => void;
+  setScreen: (_s: Screen) => void;
 }
 
 // ===================== PARTY GAME MODE SCREENS =====================

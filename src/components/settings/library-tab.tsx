@@ -9,7 +9,7 @@ import { FolderIcon, CloudUploadIcon, TrashIcon } from '@/components/settings/se
 
 interface LibraryTabProps {
   songsFolder: string;
-  setSongsFolder: (_valuevalue: string) => void;
+  setSongsFolder: (_value: string) => void;
   isScanning: boolean;
   scanProgress: {
     stage: 'scanning' | 'importing' | 'complete' | 'error';
@@ -24,7 +24,7 @@ interface LibraryTabProps {
   isResetting: boolean;
   resetComplete: boolean;
   folderSaveComplete: boolean;
-  tx: (_keykey: string) => string;
+  tx: (_key: string) => string;
 }
 
 export function LibraryTab({

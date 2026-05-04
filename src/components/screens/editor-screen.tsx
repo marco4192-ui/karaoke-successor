@@ -23,7 +23,7 @@ function GenreLanguageEditor({
   onUpdate 
 }: { 
   song: Song; 
-  onUpdate: (_updatesupdates: Partial<Song>) => void;
+  onUpdate: (_updates: Partial<Song>) => void;
 }) {
   const [showGenreDropdown, setShowGenreDropdown] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);

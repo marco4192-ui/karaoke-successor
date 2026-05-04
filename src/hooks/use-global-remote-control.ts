@@ -18,7 +18,7 @@ interface RemoteCommand {
  */
 export interface UseGlobalRemoteControlProps {
   /** Navigate to a screen */
-  navigateToScreen: (_screenscreen: string) => void;
+  navigateToScreen: (_screen: string) => void;
   /** Whether currently in a game */
   isPlaying?: boolean;
   /** Polling interval in milliseconds (default: 1000ms) */

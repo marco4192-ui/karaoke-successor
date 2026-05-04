@@ -3,7 +3,7 @@ import type { JukeboxWishlistItem, MobileView } from './mobile-types';
 
 interface JukeboxViewProps {
   jukeboxWishlist: JukeboxWishlistItem[];
-  onNavigate: (_viewview: MobileView) => void;
+  onNavigate: (_view: MobileView) => void;
 }
 
 export function MobileJukeboxView({ jukeboxWishlist, onNavigate }: JukeboxViewProps) {

@@ -9,7 +9,7 @@ import {
 } from '@/lib/audio/microphone-manager';
 
 export interface MicrophoneSettingsPanelProps {
-  onSettingsChange?: (_settingssettings: Record<string, ExtendedMicConfig>) => void;
+  onSettingsChange?: (_settings: Record<string, ExtendedMicConfig>) => void;
 }
 
 export function useMicrophoneSettings(onSettingsChange?: MicrophoneSettingsPanelProps['onSettingsChange']) {

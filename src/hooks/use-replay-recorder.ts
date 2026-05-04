@@ -25,7 +25,7 @@ export interface UseReplayRecorderOptions {
   playerName: string;
   isWebcamActive: boolean;                  // whether webcam is currently active
   getMicStream: () => MediaStream | null;   // callback to get mic stream from PitchDetector
-  onReplaySaved: (_replayreplay: ReplayData) => void;
+  onReplaySaved: (_replay: ReplayData) => void;
 }
 
 export interface UseReplayRecorderResult {

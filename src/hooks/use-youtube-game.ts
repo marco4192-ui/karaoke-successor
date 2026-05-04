@@ -14,19 +14,19 @@ interface UseYouTubeGameParams {
     audioUrl?: string;
   } | null;
   isPlaying: boolean;
-  setIsPlaying: (_playingplaying: boolean) => void;
+  setIsPlaying: (_playing: boolean) => void;
 }
 
 interface UseYouTubeGameReturn {
   youtubeVideoId: string | null;
   customYoutubeId: string | null;
   showYoutubeInput: boolean;
-  setShowYoutubeInput: (_showshow: boolean) => void;
+  setShowYoutubeInput: (_show: boolean) => void;
   isYouTube: boolean;
   useYouTubeAudio: boolean;
   isAdPlaying: boolean;
   adCountdown: number;
-  handleYoutubeUrlSubmit: (_urlurl: string) => void;
+  handleYoutubeUrlSubmit: (_url: string) => void;
   clearCustomYoutube: () => void;
   handleAdStart: () => void;
   handleAdEnd: () => void;

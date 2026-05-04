@@ -7,19 +7,19 @@ import { DropZone } from './drop-zone';
 
 interface UltrastarTabProps {
   title: string;
-  setTitle: (_tt: string) => void;
+  setTitle: (_t: string) => void;
   artist: string;
-  setArtist: (_aa: string) => void;
+  setArtist: (_a: string) => void;
   useVideoAudio: boolean;
-  setUseVideoAudio: (_vv: boolean) => void;
+  setUseVideoAudio: (_v: boolean) => void;
   audioFile: File | null;
   videoFile: File | null;
   ultrastarFile: File | null;
   audioInputRef: React.RefObject<HTMLInputElement | null>;
   videoInputRef: React.RefObject<HTMLInputElement | null>;
   ultrastarInputRef: React.RefObject<HTMLInputElement | null>;
-  handleDrop: (_ee: React.DragEvent, type: 'audio' | 'video' | 'ultrastar') => void;
-  handleFileSelect: (type: 'audio' | 'video' | 'ultrastar', _filefile: File) => void;
+  handleDrop: (_e: React.DragEvent, type: 'audio' | 'video' | 'ultrastar') => void;
+  handleFileSelect: (type: 'audio' | 'video' | 'ultrastar', _file: File) => void;
 }
 
 export function UltrastarTab({

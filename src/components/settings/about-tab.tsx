@@ -8,7 +8,7 @@ import { safeAlert } from '@/lib/safe-dialog';
 import { MusicIcon } from '@/components/settings/settings-icons';
 
 interface AboutTabProps {
-  tx: (_keykey: string) => string;
+  tx: (_key: string) => string;
   isTauriDetected: boolean;
 }
 

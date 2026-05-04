@@ -60,7 +60,7 @@ interface UseMobilePitchDetectionOptions {
   clientId: string | null;
   isPlaying: boolean;
   songEnded: boolean;
-  onError?: (_messagemessage: string) => void;
+  onError?: (_message: string) => void;
 }
 
 export function useMobilePitchDetection({

@@ -59,7 +59,7 @@ export interface SongStartModalProps {
     gameMode?: 'single' | 'duel' | 'duet';
   }) => void;
   toggleFavorite: (_songIdsongId: string) => boolean;
-  setPlaylists: (_playlistsplaylists: Playlist[]) => void;
+  setPlaylists: (_playlists: Playlist[]) => void;
   getPlaylists: () => Playlist[];
   setShowAddToPlaylistModal: (_open: boolean) => void;
   setSongToAddToPlaylist: (_song: Song | null) => void;

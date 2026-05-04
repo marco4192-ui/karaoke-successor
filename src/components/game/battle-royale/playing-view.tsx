@@ -20,7 +20,7 @@ interface PlayingViewProps {
   roundDuration: number;
   audioRef: React.RefObject<HTMLAudioElement | null>;
   videoRef: React.RefObject<HTMLVideoElement | null>;
-  setCurrentTime: (_timetime: number) => void;
+  setCurrentTime: (_time: number) => void;
   onRoundEnd: () => void;
   onBack?: () => void;
 }

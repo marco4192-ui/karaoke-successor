@@ -9,7 +9,7 @@ import { MusicIcon } from './icons';
 
 interface AddToPlaylistModalProps {
   show: boolean;
-  onClose: (_openopen: boolean) => void;
+  onClose: (_open: boolean) => void;
   song: Song | null;
   playlists: Playlist[];
   onSongAdded: () => void;

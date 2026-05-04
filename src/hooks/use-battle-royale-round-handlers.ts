@@ -19,7 +19,7 @@ interface UseBattleRoyaleRoundHandlersParams {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   audioHasPlayedRef: React.RefObject<boolean>;
   getRandomSong: () => Song | null;
-  setShowElimination: (_showshow: boolean) => void;
+  setShowElimination: (_show: boolean) => void;
 }
 
 interface UseBattleRoyaleRoundHandlersReturn {

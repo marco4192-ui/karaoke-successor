@@ -12,7 +12,7 @@ import { NewSongDialog } from '@/components/editor/new-song-dialog';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
 
 interface EditorSettingsTabProps {
-  onEditorActiveChange?: (_activeactive: boolean) => void;
+  onEditorActiveChange?: (_active: boolean) => void;
 }
 
 export function EditorSettingsTab({ onEditorActiveChange }: EditorSettingsTabProps) {

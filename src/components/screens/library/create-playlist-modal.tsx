@@ -6,7 +6,7 @@ import { CreatePlaylistForm } from './create-playlist-form';
 
 interface CreatePlaylistModalProps {
   show: boolean;
-  onClose: (_openopen: boolean) => void;
+  onClose: (_open: boolean) => void;
   onSuccess: () => void;
 }
 

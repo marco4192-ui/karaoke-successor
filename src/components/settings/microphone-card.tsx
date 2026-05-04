@@ -15,8 +15,8 @@ import { MIC_PRESETS } from '@/components/settings/microphone-presets';
 interface MicrophoneCardProps {
   mic: AssignedMicrophone;
   devices: MicrophoneDevice[];
-  onUpdateConfig: (_id: string, _configconfig: Partial<ExtendedMicConfig>) => void;
-  onUpdateName: (_id: string, _namename: string) => void;
+  onUpdateConfig: (_id: string, _config: Partial<ExtendedMicConfig>) => void;
+  onUpdateName: (_id: string, _name: string) => void;
   onRemove: (_id: string) => void;
   isExpanded: boolean;
   onToggleExpand: () => void;

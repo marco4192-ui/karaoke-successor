@@ -10,11 +10,11 @@ import type { Note, DuetPlayer } from '@/types/game';
 interface ToolsPanelProps {
   selectedNote: Note | undefined;
   currentTime: number;
-  onAddNote: (_startTimestartTime: number, _pitchpitch: number) => void;
+  onAddNote: (_startTime: number, _pitch: number) => void;
   onDuplicateNote: () => void;
   onDeleteNote: () => void;
   onSplitNote: () => void;
-  onUpdateSelectedNote: (_updatesupdates: Partial<Note>) => void;
+  onUpdateSelectedNote: (_updates: Partial<Note>) => void;
   tapMode?: {
     isActive: boolean;
     isHolding: boolean;

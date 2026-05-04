@@ -12,11 +12,11 @@ interface FolderScanTabProps {
   isProcessing: boolean;
   scannedSongs: ScannedSong[];
   selectedScanned: Set<number>;
-  setSelectedScanned: (_ss: Set<number>) => void;
+  setSelectedScanned: (_s: Set<number>) => void;
   scanErrors: string[];
-  setScanErrors: (_ee: string[]) => void;
+  setScanErrors: (_e: string[]) => void;
   setScannedSongs: (_s: ScannedSong[]) => void;
-  setIsProcessing: (_vv: boolean) => void;
+  setIsProcessing: (_v: boolean) => void;
   duplicates: DuplicateInfo[];
   folderInputRef: React.RefObject<HTMLInputElement | null>;
   handleScanFolder: () => void;
@@ -244,7 +244,7 @@ async function collectFilesFromEntry(
 
 function SongListItem({ song, dupInfo, selected, onToggle }: {
   song: ScannedSong; index: number; dupInfo: DuplicateInfo; selected: boolean;
-  onToggle: (_checkedchecked: boolean) => void;
+  onToggle: (_checked: boolean) => void;
 }) {
   const isDuplicate = dupInfo?.matchType === 'exact';
   const isSimilar = dupInfo?.matchType === 'similar';

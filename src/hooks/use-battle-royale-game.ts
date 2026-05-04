@@ -72,7 +72,7 @@ interface UseBattleRoyaleGameReturn {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   handleRoundEnd: () => void;
   handleStartRound: () => void;
-  setCurrentTime: (_timetime: number) => void;
+  setCurrentTime: (_time: number) => void;
 }
 
 export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoyaleGameParams): UseBattleRoyaleGameReturn {

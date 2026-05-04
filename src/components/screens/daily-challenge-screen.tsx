@@ -32,7 +32,7 @@ function MicIcon({ className }: { className?: string }) {
 }
 
 // ===================== DAILY CHALLENGE SCREEN =====================
-export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_songsong: Song) => void }) {
+export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_song: Song) => void }) {
   const { profiles, activeProfileId, setActiveProfile } = useGameStore();
   const [activeTab, setActiveTab] = useState<'challenge' | 'modes' | 'leaderboard' | 'badges'>('challenge');
   const [gameMode, setGameMode] = useState<'single' | 'duel'>('single');

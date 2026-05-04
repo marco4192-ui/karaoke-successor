@@ -8,7 +8,7 @@ import { InfoIcon, WebcamIcon } from '@/components/settings/settings-icons';
 
 interface WebcamTabProps {
   webcamConfig: WebcamBackgroundConfig;
-  updateWebcamConfig: (_updatesupdates: Partial<WebcamBackgroundConfig>) => void;
+  updateWebcamConfig: (_updates: Partial<WebcamBackgroundConfig>) => void;
 }
 
 export function WebcamTab({

@@ -14,7 +14,7 @@ import { midiPitchToFrequency } from '@/lib/utils';
 
 interface EditorNoteTabProps {
   selectedNote: Note;
-  onUpdateSelectedNote: (_updatesupdates: Partial<Note>) => void;
+  onUpdateSelectedNote: (_updates: Partial<Note>) => void;
 }
 
 export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNoteTabProps) {

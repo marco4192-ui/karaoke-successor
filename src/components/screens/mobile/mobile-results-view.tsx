@@ -5,7 +5,7 @@ import type { GameResults, MobileView } from './mobile-types';
 
 interface ResultsViewProps {
   gameResults: GameResults | null;
-  onNavigate: (_viewview: MobileView) => void;
+  onNavigate: (_view: MobileView) => void;
 }
 
 export function MobileResultsView({ gameResults, onNavigate }: ResultsViewProps) {

@@ -9,8 +9,8 @@ import { FolderIcon, MusicIcon } from './icons';
 interface FolderViewProps {
   groupedSongs: Map<string, Song[]>;
   groupBy: LibraryGroupBy;
-  onOpenFolder: (_folderfolder: string) => void;
-  getGroupDisplayName: (_keykey: string) => string;
+  onOpenFolder: (_folder: string) => void;
+  getGroupDisplayName: (_key: string) => string;
 }
 
 export function FolderView({

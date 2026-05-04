@@ -24,8 +24,8 @@ import {
 
 interface AudioAnalysisPanelProps {
   audioFilePath: string | null;
-  onApplyNotes: (_notesnotes: DetectedNote[]) => void;
-  onApplyBpm: (_bpmbpm: number) => void;
+  onApplyNotes: (_notes: DetectedNote[]) => void;
+  onApplyBpm: (_bpm: number) => void;
 }
 
 // ============================================================================

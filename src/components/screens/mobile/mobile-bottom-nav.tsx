@@ -2,7 +2,7 @@ import type { MobileView } from './mobile-types';
 
 interface BottomNavProps {
   currentView: MobileView;
-  onNavigate: (_viewview: MobileView) => void;
+  onNavigate: (_view: MobileView) => void;
 }
 
 export function MobileBottomNav({ currentView, onNavigate }: BottomNavProps) {

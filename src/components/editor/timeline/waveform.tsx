@@ -17,7 +17,7 @@ interface WaveformProps {
   /** Click on waveform — seek to that time in ms */
   onSeek?: (_timeMstimeMs: number) => void;
   /** Double-click on waveform — add a note at that position */
-  onNoteAdd?: (_timeMs: number, _pitchpitch: number) => void;
+  onNoteAdd?: (_timeMs: number, _pitch: number) => void;
   className?: string;
 }
 

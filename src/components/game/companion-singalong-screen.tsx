@@ -48,7 +48,7 @@ type GamePhase = 'intro' | 'countdown' | 'playing' | 'switching' | 'song-results
 
 interface CompanionSingAlongSetupProps {
   profiles: PlayerProfile[];
-  onSelectSong: (_players: CompanionPlayer[], _settingssettings: CompanionSingAlongSettings) => void;
+  onSelectSong: (_players: CompanionPlayer[], _settings: CompanionSingAlongSettings) => void;
   onBack: () => void;
 }
 

@@ -21,7 +21,7 @@ const MIN_UNIT_SPACING = 70; // minimum vertical spacing between adjacent first-
 interface ButterflyBracketProps {
   bracket: TournamentBracket;
   currentMatch: TournamentMatch | null;
-  onPlayMatch: (_matchmatch: TournamentMatch) => void;
+  onPlayMatch: (_match: TournamentMatch) => void;
 }
 
 /** Get a human-readable round name */

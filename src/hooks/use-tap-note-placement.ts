@@ -21,9 +21,9 @@ interface UseTapNotePlacementParams {
   /** Default pitch for new notes */
   defaultPitch: number;
   /** Callback to create a new note — returns note ID */
-  onNoteCreate: (_startTimestartTime: number, _pitchpitch: number, _lyriclyric: string) => string;
+  onNoteCreate: (_startTime: number, _pitch: number, _lyric: string) => string;
   /** Callback to update a note's end time / duration */
-  onNoteRelease: (_noteIdnoteId: string, _releaseTimereleaseTime: number) => void;
+  onNoteRelease: (_noteId: string, _releaseTime: number) => void;
   /** All available lyrics syllables from the song for auto-assignment */
   lyrics: string[];
 }

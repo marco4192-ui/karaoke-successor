@@ -8,14 +8,14 @@ import type { MobileProfile } from './mobile-types';
 
 interface ProfileCreateViewProps {
   profileName: string;
-  onProfileNameChange: (_valuevalue: string) => void;
+  onProfileNameChange: (_value: string) => void;
   profileColor: string;
-  onProfileColorChange: (_colorcolor: string) => void;
+  onProfileColorChange: (_color: string) => void;
   avatarPreview: string | null;
   profileColors: readonly string[];
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   onCreateProfile: (hostProfile?: MobileProfile) => void;
-  onPhotoUpload: (_ee: React.ChangeEvent<HTMLInputElement>) => void;
+  onPhotoUpload: (_e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export function MobileProfileCreateView({

@@ -6,19 +6,19 @@ import type { MobileSong} from './mobile-types';
 
 interface SongsViewProps {
   songSearch: string;
-  onSongSearchChange: (_valuevalue: string) => void;
+  onSongSearchChange: (_value: string) => void;
   songsLoading: boolean;
   filteredSongs: MobileSong[];
   showSongOptions: MobileSong | null;
   selectedGameMode: 'single' | 'duel' | 'duet';
   selectedPartner: { id: string; name: string } | null;
   availablePartners: Array<{ id: string; name: string; code: string }>;
-  onShowSongOptions: (_songsong: MobileSong | null) => void;
+  onShowSongOptions: (_song: MobileSong | null) => void;
   onSelectGameMode: (mode: 'single' | 'duel' | 'duet') => void;
   onSelectPartner: (partner: { id: string; name: string } | null) => void;
   onAddToQueue: (_song: MobileSong) => void;
   onLoadPartners: () => void;
-  formatDuration: (_msms: number) => string;
+  formatDuration: (_ms: number) => string;
 }
 
 export function MobileSongsView({

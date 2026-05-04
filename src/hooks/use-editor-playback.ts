@@ -20,7 +20,7 @@ interface UseEditorPlaybackReturn {
   setPlaybackRate: React.Dispatch<React.SetStateAction<number>>;
   audioRef: React.RefObject<HTMLAudioElement | null>;
   handlePlayPause: () => void;
-  handleTimeChange: (_timetime: number) => void;
+  handleTimeChange: (_time: number) => void;
 }
 
 export function useEditorPlayback(

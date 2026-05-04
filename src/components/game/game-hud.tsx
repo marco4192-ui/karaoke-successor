@@ -47,7 +47,7 @@ interface AudioEffectsPanelProps {
   audioEffects: AudioEffectsEngine | null;
   reverbAmount: number;
   echoAmount: number;
-  onReverbChange: (_valval: number) => void;
+  onReverbChange: (_val: number) => void;
   onEchoChange: (_val: number) => void;
 }
 

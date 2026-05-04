@@ -16,7 +16,7 @@ interface UseEditorHistoryReturn {
   redo: () => LyricLine[] | null;
   canUndo: boolean;
   canRedo: boolean;
-  setHasUnsavedChanges: (_valval: boolean) => void;
+  setHasUnsavedChanges: (_val: boolean) => void;
 }
 
 const MAX_HISTORY = 50;

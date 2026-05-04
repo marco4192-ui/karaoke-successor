@@ -10,7 +10,7 @@ interface LyricTrackProps {
   pixelsPerSecond: number;
   scrollOffset: number;
   height: number;
-  onLyricChange: (_noteIdnoteId: string, _newLyricnewLyric: string) => void;
+  onLyricChange: (_noteId: string, _newLyric: string) => void;
   selectedNoteId?: string;
 }
 

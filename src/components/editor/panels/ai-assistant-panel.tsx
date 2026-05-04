@@ -32,8 +32,8 @@ import { Song, LyricLine } from '@/types/game';
 
 interface AIAssistantPanelProps {
   song: Song;
-  onSongUpdate: (_updatesupdates: Partial<Song>) => void;
-  onLyricsUpdate: (_lyricslyrics: LyricLine[]) => void;
+  onSongUpdate: (_updates: Partial<Song>) => void;
+  onLyricsUpdate: (_lyrics: LyricLine[]) => void;
 }
 
 interface _SuggestionItem {

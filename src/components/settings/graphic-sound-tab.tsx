@@ -13,7 +13,7 @@ interface GraphicSoundTabProps {
   useAnimatedBg: boolean;
   setUseAnimatedBg: (_value: boolean) => void;
   currentThemeId: string;
-  handleThemeChange: (_themetheme: Theme) => void;
+  handleThemeChange: (_theme: Theme) => void;
   noteDisplayStyle: string;
   setNoteDisplayStyle: (_value: string) => void;
   noteShapeStyle: string;
@@ -26,7 +26,7 @@ interface GraphicSoundTabProps {
   setLyricsStyle: (_value: string) => void;
   performanceMode: 'full' | 'low';
   setPerformanceMode: (value: 'full' | 'low') => void;
-  tx: (_keykey: string) => string;
+  tx: (_key: string) => string;
   setHasChanges: (_value: boolean) => void;
 }
 

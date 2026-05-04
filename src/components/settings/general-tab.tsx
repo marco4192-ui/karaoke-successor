@@ -10,10 +10,10 @@ interface GeneralTabProps {
   language: string;
   handleLanguageChange: (_newLangnewLang: Language) => void;
   defaultDifficulty: Difficulty;
-  handleDifficultyChange: (_diffdiff: Difficulty) => void;
+  handleDifficultyChange: (_diff: Difficulty) => void;
   showPitchGuide: boolean;
-  handlePitchGuideToggle: (_enabledenabled: boolean) => void;
-  tx: (_keykey: string) => string;
+  handlePitchGuideToggle: (_enabled: boolean) => void;
+  tx: (_key: string) => string;
 }
 
 export function GeneralTab({

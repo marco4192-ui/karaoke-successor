@@ -23,11 +23,11 @@ export interface UseNativeAudioResult {
   /** Whether native audio is enabled in settings. */
   enabled: boolean;
   /** Set native audio enabled/disabled. */
-  setEnabled: (_valuevalue: boolean) => void;
+  setEnabled: (_value: boolean) => void;
   /** Currently selected device ID (persisted in localStorage). */
   deviceId: string;
   /** Set the device ID. */
-  setDeviceId: (_idid: string) => void;
+  setDeviceId: (_id: string) => void;
   /** List of available audio output devices. */
   devices: AudioDeviceInfo[];
   /** Refresh the device list. */
@@ -47,7 +47,7 @@ export interface UseNativeAudioResult {
   /** Seek to position (ms). */
   seek: (_positionMspositionMs: number) => Promise<void>;
   /** Set volume (0.0 – 1.0). */
-  setVolume: (_volumevolume: number) => Promise<void>;
+  setVolume: (_volume: number) => Promise<void>;
   /** Stop playback and reset. */
   stop: () => Promise<void>;
   /** Whether the device list is currently loading. */
