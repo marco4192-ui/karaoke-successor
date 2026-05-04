@@ -21,11 +21,11 @@ import { MatchAbortDialog } from '@/components/game/match-abort-dialog';
 interface TournamentScreenProps {
   profiles: PlayerProfile[];
   songs: Song[];
-  onStartTournament: (bracket: TournamentBracket, songDuration: number) => void;
+  onStartTournament: (_bracketbracket: TournamentBracket, _songDurationsongDuration: number) => void;
   onBack: () => void;
 }
 
-export function TournamentSetupScreen({ profiles, songs, onStartTournament, onBack }: TournamentScreenProps) {
+export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: TournamentScreenProps) {
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [maxPlayers, setMaxPlayers] = useState<2 | 4 | 8 | 16 | 32>(8);
   const [shortMode, setShortMode] = useState(true);
@@ -231,15 +231,15 @@ export function TournamentSetupScreen({ profiles, songs, onStartTournament, onBa
 interface TournamentBracketViewProps {
   bracket: TournamentBracket;
   currentMatch: TournamentMatch | null;
-  onPlayMatch: (match: TournamentMatch) => void;
-  onManualWinner?: (matchId: string, winnerId: string) => void;
+  onPlayMatch: (_matchmatch: TournamentMatch) => void;
+  onManualWinner?: (_matchIdmatchId: string, _winnerIdwinnerId: string) => void;
   onRepeatMatch?: () => void;
   matchAborted?: boolean;
   onAbortHandled?: () => void;
   shortMode: boolean;
 }
 
-export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onManualWinner, onRepeatMatch, matchAborted, onAbortHandled, shortMode }: TournamentBracketViewProps) {
+export function TournamentBracketView({ currentMatch, onPlayMatch, onManualWinner, onRepeatMatch, matchAborted, onAbortHandled, shortMode }: TournamentBracketViewProps) {
   const stats = getTournamentStats(bracket);
 
   // Get next match to play
@@ -379,8 +379,6 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
     </div>
   );
 }
-
-
 
 // Player Display Component
 function PlayerDisplay({ player, small = false }: { player: TournamentPlayer | null; small?: boolean }) {

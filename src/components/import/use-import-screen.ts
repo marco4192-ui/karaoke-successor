@@ -16,7 +16,7 @@ import { storeMedia } from '@/lib/db/media-db';
 import { Song } from '@/types/game';
 import { findDuplicates, DuplicateInfo, ProgressInfo } from './import-types';
 
-export function useImportScreen(onImport: (song: Song) => void) {
+export function useImportScreen(onImport: (_songsong: Song) => void) {
   const [importType, setImportType] = useState<'ultrastar' | 'folder' | 'alt-format'>('ultrastar');
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState<ProgressInfo | null>(null);

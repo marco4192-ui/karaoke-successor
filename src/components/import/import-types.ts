@@ -6,7 +6,7 @@ export interface DuplicateInfo {
 }
 
 export interface ImportScreenProps {
-  onImport: (song: Song) => void;
+  onImport: (_songsong: Song) => void;
   onCancel: () => void;
 }
 

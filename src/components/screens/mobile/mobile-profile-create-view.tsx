@@ -8,14 +8,14 @@ import type { MobileProfile } from './mobile-types';
 
 interface ProfileCreateViewProps {
   profileName: string;
-  onProfileNameChange: (value: string) => void;
+  onProfileNameChange: (_valuevalue: string) => void;
   profileColor: string;
-  onProfileColorChange: (color: string) => void;
+  onProfileColorChange: (_colorcolor: string) => void;
   avatarPreview: string | null;
   profileColors: readonly string[];
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   onCreateProfile: (hostProfile?: MobileProfile) => void;
-  onPhotoUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onPhotoUpload: (_ee: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export function MobileProfileCreateView({
@@ -31,7 +31,7 @@ export function MobileProfileCreateView({
 }: ProfileCreateViewProps) {
   const [hostProfiles, setHostProfiles] = useState<MobileProfile[]>([]);
   const [claimedProfileIds, setClaimedProfileIds] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [_isLoading, setIsLoading] = useState(false);
   // Track a selected host profile before confirming — allows deselection
   const [selectedHostProfile, setSelectedHostProfile] = useState<MobileProfile | null>(null);
 
@@ -216,7 +216,7 @@ export function MobileProfileCreateView({
             <div className="flex flex-wrap gap-2">
               {profileColors.map((color) => (
                 <button
-                  key={color}
+                  key={}
                   onClick={() => onProfileColorChange(color)}
                   className={`w-10 h-10 rounded-full transition-transform ${profileColor === color ? 'ring-2 ring-white scale-110' : ''}`}
                   style={{ backgroundColor: color }}

@@ -57,7 +57,7 @@ interface VirtualizedSongGridProps {
   songs: Song[];
   songCardProps: Omit<SongCardProps, 'song'>;
   /** Optional custom card renderer (e.g. playlist view with remove button overlay) */
-  renderSongCard?: (song: Song) => React.ReactNode;
+  renderSongCard?: (_songsong: Song) => React.ReactNode;
 }
 
 export function VirtualizedSongGrid({ songs, songCardProps, renderSongCard }: VirtualizedSongGridProps) {
@@ -158,7 +158,7 @@ export function VirtualizedSongGrid({ songs, songCardProps, renderSongCard }: Vi
                 ) : (
                   <SongCard
                     key={song.id}
-                    song={song}
+                    song={}
                     {...songCardProps}
                   />
                 )

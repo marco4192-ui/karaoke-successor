@@ -1,8 +1,8 @@
-import { Playlist, PlaylistFolder, PlaylistExport, SYSTEM_PLAYLISTS, DEFAULT_PLAYLIST_SETTINGS, Song } from '@/types/game';
+import { Playlist, PlaylistExport, SYSTEM_PLAYLISTS, DEFAULT_PLAYLIST_SETTINGS, Song } from '@/types/game';
 // IDs use crypto.randomUUID() for collision-free 128-bit random IDs
 
 // Re-export types for convenience
-export type { Playlist, PlaylistFolder, PlaylistExport } from '@/types/game';
+export type { Playlist, _PlaylistFolder, PlaylistExport } from '@/types/game';
 
 const STORAGE_KEY = 'karaoke-playlists';
 const PLAY_COUNTS_KEY = 'karaoke-song-play-counts';
@@ -207,7 +207,6 @@ export function removeSongFromPlaylist(playlistId: string, songId: string): bool
   savePlaylists(playlists);
   return true;
 }
-
 
 export function getPlaylistById(id: string): Playlist | null {
   const playlists = getPlaylists();

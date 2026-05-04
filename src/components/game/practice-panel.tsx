@@ -7,7 +7,7 @@ export interface PracticePanelProps {
   practiceMode: PracticeModeConfig;
   showControls: boolean;
   onToggleControls: () => void;
-  onPracticeModeChange: (config: Partial<PracticeModeConfig>) => void;
+  onPracticeModeChange: (_configconfig: Partial<PracticeModeConfig>) => void;
 }
 
 export function PracticePanel({

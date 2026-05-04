@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ImportScreen } from '@/components/import/import-screen';
-import { getAllSongs } from '@/lib/game/song-library';
+import {} from '@/lib/game/song-library';
 import { FolderIcon, CloudUploadIcon, TrashIcon } from '@/components/settings/settings-icons';
 
 interface LibraryTabProps {
   songsFolder: string;
-  setSongsFolder: (value: string) => void;
+  setSongsFolder: (_valuevalue: string) => void;
   isScanning: boolean;
   scanProgress: {
     stage: 'scanning' | 'importing' | 'complete' | 'error';
@@ -25,7 +25,7 @@ interface LibraryTabProps {
   isResetting: boolean;
   resetComplete: boolean;
   folderSaveComplete: boolean;
-  tx: (key: string) => string;
+  tx: (_keykey: string) => string;
 }
 
 export function LibraryTab({
@@ -40,7 +40,6 @@ export function LibraryTab({
   handleClearAllData,
   isResetting,
   resetComplete,
-  folderSaveComplete,
   tx,
 }: LibraryTabProps) {
   return (
@@ -170,7 +169,7 @@ export function LibraryTab({
         </CardHeader>
         <CardContent>
           <ImportScreen 
-            onImport={(song) => {
+            onImport={(_song) => {
               // Refresh song count after import
             }}
             onCancel={() => {}}

@@ -8,15 +8,15 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { MicIcon, PlusIcon, TrashIcon, SettingsIcon, CheckIcon } from '@/components/settings/settings-icons';
+import { TrashIcon, SettingsIcon, CheckIcon } from '@/components/settings/settings-icons';
 import { MicrophoneDevice, ExtendedMicConfig, AssignedMicrophone } from '@/lib/audio/microphone-manager';
 import { MIC_PRESETS } from '@/components/settings/microphone-presets';
 
 interface MicrophoneCardProps {
   mic: AssignedMicrophone;
   devices: MicrophoneDevice[];
-  onUpdateConfig: (id: string, config: Partial<ExtendedMicConfig>) => void;
-  onUpdateName: (id: string, name: string) => void;
+  onUpdateConfig: (id: string, _configconfig: Partial<ExtendedMicConfig>) => void;
+  onUpdateName: (id: string, _namename: string) => void;
   onRemove: (id: string) => void;
   isExpanded: boolean;
   onToggleExpand: () => void;

@@ -21,7 +21,7 @@ interface BattleRoyaleGameViewProps {
   onBack?: () => void;
 }
 
-export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onBack }: BattleRoyaleGameViewProps) {
+export function BattleRoyaleGameView({ songs, onUpdateGame, onEndGame, onBack }: BattleRoyaleGameViewProps) {
   const {
     showElimination,
     stats,
@@ -39,7 +39,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
 
   // Winner celebration
   if (game.status === 'completed' && game.winner) {
-    return <WinnerView winner={game.winner} eliminationOrder={getEliminationOrder(game)} onEndGame={onEndGame} />;
+    return <WinnerView winner={game.winner} eliminationOrder={getEliminationOrder(_game)} onEndGame={onEndGame} />;
   }
 
   // Elimination animation with "look up and turn gray" effect

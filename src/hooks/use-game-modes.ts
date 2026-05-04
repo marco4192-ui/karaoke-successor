@@ -9,8 +9,8 @@ interface UseGameModesParams {
   currentTime: number;
   songId?: string;
   sortedLines?: LyricLine[];
-  setBlindSection: (isBlind: boolean) => void;
-  setMissingWordsIndices: (indices: number[]) => void;
+  setBlindSection: (_isBlindisBlind: boolean) => void;
+  setMissingWordsIndices: (_indicesindices: number[]) => void;
   /** Override blind frequency (0.10–0.60). Falls back to 0.4 if not set. */
   blindFrequency?: number;
   /** Override missing words percentage (0.15–0.50). Falls back to 0.25 if not set. */

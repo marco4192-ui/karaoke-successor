@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { COUNTRY_OPTIONS } from './country-options';
 
 interface CreateCharacterFormProps {
-  onCreate: (name: string, avatarUrl: string, country: string, privacy: { showOnLeaderboard: boolean; showPhoto: boolean; showCountry: boolean }) => void;
+  onCreate: (_namename: string, _avatarUrlavatarUrl: string, _countrycountry: string, privacy: { showOnLeaderboard: boolean; showPhoto: boolean; showCountry: boolean }) => void;
   onCancel: () => void;
   onlineEnabled: boolean;
 }
@@ -36,7 +36,7 @@ export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: Creat
 
   const handleCreate = () => {
     if (newName.trim()) {
-      onCreate(newName.trim(), avatarUrl, selectedCountry, privacySettings);
+      onCreate(newName.trim(), selectedCountry, privacySettings);
       setNewName('');
       setAvatarUrl('');
       setSelectedCountry('');

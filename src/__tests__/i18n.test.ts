@@ -115,7 +115,7 @@ describe('i18n translation system', () => {
 
   describe('translation value types', () => {
     it('English translations contain string values', () => {
-      for (const [key, value] of Object.entries(translations.en)) {
+      for (const [_key, value] of Object.entries(translations.en)) {
         expect(typeof value).toBe('string');
       }
     });

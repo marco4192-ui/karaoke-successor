@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef} from 'react';
 
 /**
  * Hook that applies exponential moving average (EMA) smoothing to raw pitch values.

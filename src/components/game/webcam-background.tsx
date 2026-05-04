@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useCallback} from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
@@ -65,7 +65,7 @@ const WEBCAM_CONFIG_KEY = 'karaoke-webcam-config';
 // Save webcam config to localStorage
 export function saveWebcamConfig(config: WebcamBackgroundConfig): void {
   try {
-    localStorage.setItem(WEBCAM_CONFIG_KEY, JSON.stringify(config));
+    localStorage.setItem(WEBCAM_CONFIG_KEY, JSON.stringify(_config));
   } catch (e) {
     // eslint-disable-next-line no-console
     console.error('Failed to save webcam config:', e);
@@ -98,8 +98,8 @@ export function useWebcamBackground(deviceId: string | null = null) {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [_devices, setDevices] = useState<MediaDeviceInfo[]>([]);
+  const [_hasPermission, setHasPermission] = useState<boolean | null>(null);
   
   // Get available video devices
   const refreshDevices = useCallback(async () => {
@@ -228,7 +228,7 @@ interface WebcamBackgroundProps {
   className?: string;
 }
 
-export function WebcamBackground({ config, onConfigChange, className }: WebcamBackgroundProps) {
+export function WebcamBackground({ className }: WebcamBackgroundProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { 
     stream, 
@@ -378,7 +378,7 @@ interface WebcamSettingsPanelProps {
   compact?: boolean;
 }
 
-export function WebcamSettingsPanel({ config, onConfigChange, compact = false }: WebcamSettingsPanelProps) {
+export function WebcamSettingsPanel({ config, _onConfigChange, compact = false }: WebcamSettingsPanelProps) {
   // TODO: This creates an independent hook instance separate from the actual
   // webcam background being rendered. Device list and permission state may
   // diverge from the active WebcamBackground. Consider passing these as props instead.

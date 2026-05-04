@@ -11,7 +11,7 @@ interface UsePartySetupArgs {
   songs: Song[];
   onStartGame: (result: GameSetupResult) => void;
   onSelectLibrary: (result: GameSetupResult) => void;
-  onVoteMode: (result: GameSetupResult, suggestedSongs: Song[]) => void;
+  onVoteMode: (result: GameSetupResult, _suggestedSongssuggestedSongs: Song[]) => void;
 }
 
 export function usePartySetup({
@@ -37,7 +37,7 @@ export function usePartySetup({
 
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [settings, setSettings] = useState<Record<string, any>>(initialSettings);
-  const [songSelection, setSongSelection] = useState<SongSelectionOption | null>(null);
+  const [_songSelection, setSongSelection] = useState<SongSelectionOption | null>(null);
   const [error, setError] = useState<string | null>(null);
   const storeDifficulty = useGameStore((state) => state.gameState.difficulty);
   const [difficulty, setDifficulty] = useState<Difficulty>(storeDifficulty || 'medium');
@@ -277,7 +277,7 @@ export function usePartySetup({
         break;
       case 'vote': {
         const shuffled = [...filteredSongs].sort(() => Math.random() - 0.5);
-        onVoteMode(result, shuffled.slice(0, 3));
+        onVoteMode(_result, shuffled.slice(0, 3));
         break;
       }
     }

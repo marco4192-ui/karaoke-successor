@@ -35,7 +35,7 @@ const CAMERA_POSITIONS: { id: CameraPosition; name: string }[] = [
   { id: 'none', name: 'No Camera' },
 ];
 
-export function ShortsCreator({ song, score, gameResult, audioUrl, onClose }: ShortsCreatorProps) {
+export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const cameraVideoRef = useRef<HTMLVideoElement>(null);
@@ -68,7 +68,7 @@ export function ShortsCreator({ song, score, gameResult, audioUrl, onClose }: Sh
   const [hasCamera, setHasCamera] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isRequestingMobileCamera, setIsRequestingMobileCamera] = useState(false);
-  const [mobileCameraConnected, setMobileCameraConnected] = useState(false);
+  const [_mobileCameraConnected, setMobileCameraConnected] = useState(false);
 
   const styleConfig = VIDEO_STYLES.find(s => s.id === style) || VIDEO_STYLES[0];
 

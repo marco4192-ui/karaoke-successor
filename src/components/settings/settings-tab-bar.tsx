@@ -11,8 +11,8 @@ export type SettingsTab = 'general' | 'graphicsound' | 'microphone' | 'mobile' |
 
 interface SettingsTabBarProps {
   activeTab: SettingsTab;
-  onTabChange: (tab: SettingsTab) => void;
-  tx: (key: string) => string;
+  onTabChange: (_tabtab: SettingsTab) => void;
+  tx: (_keykey: string) => string;
 }
 
 export function SettingsTabBar({ activeTab, onTabChange, tx }: SettingsTabBarProps) {

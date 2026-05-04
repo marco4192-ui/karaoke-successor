@@ -10,8 +10,8 @@ interface EditorLyricsTabProps {
   song: Song;
   currentTime: number;
   selectedNoteId?: string;
-  onNoteSelect: (noteId: string | undefined) => void;
-  onTimeChange: (time: number) => void;
+  onNoteSelect: (_noteIdnoteId: string | undefined) => void;
+  onTimeChange: (_timetime: number) => void;
 }
 
 /**

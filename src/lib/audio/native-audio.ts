@@ -49,8 +49,8 @@ export async function resumeAudio(): Promise<void> {
 }
 
 /** Seek to a position in milliseconds. */
-export async function seekAudio(positionMs: number): Promise<void> {
-  return invoke<void>('audio_seek', { positionMs });
+export async function seekAudio(_positionMspositionMs: number): Promise<void> {
+  return invoke<void>('audio_seek', {});
 }
 
 /** Set volume (0.0 – 1.0). */

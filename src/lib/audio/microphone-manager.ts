@@ -280,7 +280,7 @@ class MicrophoneInstance {
       };
 
       if (this.onStatusChange) {
-        this.onStatusChange(status);
+        this.onStatusChange(_status);
       }
 
       this.animationFrame = requestAnimationFrame(monitor);
@@ -309,7 +309,7 @@ export class MultiMicrophoneManager {
   private assignedMics: Map<string, AssignedMicrophone> = new Map();
   private micInstances: Map<string, MicrophoneInstance> = new Map();
   private onDevicesChange: ((devices: MicrophoneDevice[]) => void) | null = null;
-  private onAssignedMicsChange: ((mics: AssignedMicrophone[]) => void) | null = null;
+  private onAssignedMicsChange: ((_micsmics: AssignedMicrophone[]) => void) | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -683,5 +683,4 @@ export function getMultiMicrophoneManager(): MultiMicrophoneManager {
   }
   return multiMicManagerInstance;
 }
-
 

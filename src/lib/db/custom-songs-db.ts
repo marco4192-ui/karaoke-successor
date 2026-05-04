@@ -73,7 +73,7 @@ export async function saveCustomSongsToDB(songs: Song[]): Promise<void> {
         localStorage.setItem(ID_INDEX_KEY, JSON.stringify(ids));
       } catch (e) {
         // eslint-disable-next-line no-console
-        console.warn('[CustomSongsDB] Failed to update ID index:', e);
+        console.warn('[CustomSongsDB] Failed to update ID index:', _e);
       }
       resolve();
     };
@@ -216,7 +216,7 @@ export async function clearCustomSongsFromDB(): Promise<void> {
  */
 export async function migrateFromLocalStorage(
   localStorageSongs: Song[],
-  localStorageKey: string
+  _localStorageKeylocalStorageKey: string
 ): Promise<Song[] | null> {
   if (localStorageSongs.length === 0) return null;
 

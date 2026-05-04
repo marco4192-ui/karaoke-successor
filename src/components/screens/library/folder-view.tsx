@@ -2,16 +2,16 @@
 
 import React from 'react';
 import { Song } from '@/types/game';
-import { SongCard } from './song-card';
-import { SongCardProps, LibraryGroupBy } from './types';
+import {} from './song-card';
+import { LibraryGroupBy } from './types';
 import { getSortedFolderKeys } from './utils';
 import { FolderIcon, MusicIcon } from './icons';
 
 interface FolderViewProps {
   groupedSongs: Map<string, Song[]>;
   groupBy: LibraryGroupBy;
-  onOpenFolder: (folder: string) => void;
-  getGroupDisplayName: (key: string) => string;
+  onOpenFolder: (_folderfolder: string) => void;
+  getGroupDisplayName: (_keykey: string) => string;
 }
 
 export function FolderView({

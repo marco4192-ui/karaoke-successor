@@ -9,7 +9,7 @@ import type { Song } from '@/types/game';
 
 interface EditorMetadataTabProps {
   song: Song;
-  onSongChange: (updater: (prev: Song) => Song) => void;
+  onSongChange: (updater: (_prevprev: Song) => Song) => void;
   onSetUnsavedChanges: () => void;
 }
 

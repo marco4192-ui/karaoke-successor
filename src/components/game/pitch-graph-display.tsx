@@ -4,7 +4,6 @@ import { useEffect, useRef, useCallback } from 'react';
 import {
   PitchGraphRenderer,
   PitchGraphConfig,
-  DEFAULT_PITCH_GRAPH_CONFIG,
 } from '@/lib/game/pitch-graph';
 
 export interface PitchGraphDisplayProps {

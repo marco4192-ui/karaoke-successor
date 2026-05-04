@@ -3,7 +3,7 @@
 import React, { ReactNode } from 'react';
 
 interface DropZoneProps {
-  file: File | null;
+  _filefile: File | null;
   accept: string;
   inputRef: React.RefObject<HTMLInputElement | null>;
   icon: string;
@@ -11,15 +11,14 @@ interface DropZoneProps {
   description?: string;
   accentColor?: 'cyan' | 'purple';
   extra?: ReactNode;
-  onDrop: (e: React.DragEvent) => void;
+  onDrop: (_ee: React.DragEvent) => void;
   onFileChange: (file: File) => void;
   /** Tauri native file picker config. When set, uses native dialog instead of browser input. */
   tauriFilter?: { name: string; extensions: string[] };
   tauriPickerTitle?: string;
 }
 
-export function DropZone({
-  file, accept, inputRef, icon, label, description, accentColor = 'cyan', extra, onDrop, onFileChange,
+export function DropZone({ accept, inputRef, icon, label, description, accentColor = 'cyan', extra, onDrop, onFileChange,
   tauriFilter, tauriPickerTitle,
 }: DropZoneProps) {
   const hoverBorder = accentColor === 'purple' ? 'hover:border-purple-500/50' : 'hover:border-cyan-500/50';

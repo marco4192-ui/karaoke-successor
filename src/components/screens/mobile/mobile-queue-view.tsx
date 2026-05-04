@@ -6,8 +6,8 @@ interface QueueViewProps {
   queue: QueueItem[];
   slotsRemaining: number;
   queueError: string | null;
-  onNavigate: (view: MobileView) => void;
-  onRemoveFromQueue?: (itemId: string) => void;
+  onNavigate: (_viewview: MobileView) => void;
+  onRemoveFromQueue?: (_itemIditemId: string) => void;
   clientId?: string | null;
 }
 

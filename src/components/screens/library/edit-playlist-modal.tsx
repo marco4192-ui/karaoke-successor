@@ -7,7 +7,7 @@ import { EditPlaylistForm } from './edit-playlist-form';
 
 interface EditPlaylistModalProps {
   show: boolean;
-  onClose: (open: boolean) => void;
+  onClose: (_openopen: boolean) => void;
   onSuccess: () => void;
   playlist: Playlist | null;
 }

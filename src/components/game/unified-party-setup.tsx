@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Song, PlayerProfile, GameMode } from '@/types/game';
 import { usePartySetup } from './unified-party-setup.hook';
-import { SongVotingModal, GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, InputModeSelector, MicAssignmentPanel, SingleMicSelector } from './unified-party-setup.components';
+import { GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, InputModeSelector, MicAssignmentPanel, SingleMicSelector } from './unified-party-setup.components';
 
 // Re-export public API (only exports actually consumed by other modules)
 export { SongVotingModal } from './unified-party-setup.components';
@@ -18,7 +18,7 @@ interface UnifiedPartySetupProps {
   songs: Song[];
   onStartGame: (result: import('./unified-party-setup.types').GameSetupResult) => void;
   onSelectLibrary: (result: import('./unified-party-setup.types').GameSetupResult) => void;
-  onVoteMode: (result: import('./unified-party-setup.types').GameSetupResult, suggestedSongs: Song[]) => void;
+  onVoteMode: (result: import('./unified-party-setup.types').GameSetupResult, _suggestedSongssuggestedSongs: Song[]) => void;
   onBack: () => void;
   /** Pre-selected song from library (user returned after picking a song) */
   preSelectedSong?: Song | null;

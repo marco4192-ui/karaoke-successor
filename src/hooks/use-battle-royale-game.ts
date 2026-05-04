@@ -13,7 +13,7 @@ import {
 import { Song, Note, Difficulty } from '@/types/game';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { calculateScoringMetadata } from '@/lib/game/scoring';
-import { evaluateAndScoreTick, findActiveNoteFlat } from '@/lib/game/party-scoring';
+import { evaluateAndScoreTick} from '@/lib/game/party-scoring';
 import { useBattleRoyaleSongMedia } from '@/hooks/use-battle-royale-song-media';
 import { useBattleRoyaleCompanionPolling } from '@/hooks/use-battle-royale-companion-polling';
 import { useBattleRoyaleRoundTimer } from '@/hooks/use-battle-royale-round-timer';
@@ -72,12 +72,12 @@ interface UseBattleRoyaleGameReturn {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   handleRoundEnd: () => void;
   handleStartRound: () => void;
-  setCurrentTime: (time: number) => void;
+  setCurrentTime: (_timetime: number) => void;
 }
 
-export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoyaleGameParams): UseBattleRoyaleGameReturn {
+export function useBattleRoyaleGame({ songs, onUpdateGame }: UseBattleRoyaleGameParams): UseBattleRoyaleGameReturn {
   const [showElimination, setShowElimination] = useState(false);
-  const stats = getBattleRoyaleStats(game);
+  const stats = getBattleRoyaleStats(_game);
 
   const sortedPlayers = useMemo(() => getPlayersByScore(game), [game]);
   const activePlayers = useMemo(() => getActivePlayers(game), [game]);

@@ -21,12 +21,12 @@ export interface GameBackgroundProps {
   volume: number;
   videoRef: React.RefObject<HTMLVideoElement | null>;
   // Callbacks
-  onYoutubeTimeUpdate: (time: number) => void;
+  onYoutubeTimeUpdate: (_timetime: number) => void;
   onAdStart: () => void;
   onAdEnd: () => void;
   onVideoEnded: () => void;
   onVideoCanPlay: () => void;
-  onYoutubeError: (errorCode: number) => void;
+  onYoutubeError: (_errorCodeerrorCode: number) => void;
 }
 
 /**

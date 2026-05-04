@@ -12,7 +12,7 @@ import { PtmGameScreen } from '@/components/game/ptm-game-screen';
 import { CompanionSingAlongSetupScreen, CompanionGameView } from '@/components/game/companion-singalong-screen';
 import { MedleySetupScreen } from '@/components/game/medley';
 import { MedleyGameScreen } from '@/components/game/medley/medley-game-screen';
-import type { MedleyPlayer, MedleySettings, MedleySong, SnippetMatchup, MedleyRoundResult } from '@/components/game/medley/medley-types';
+import type { MedleyPlayer, MedleySettings, MedleySong} from '@/components/game/medley/medley-types';
 import { CompetitiveSetupScreen, CompetitiveGameView } from '@/components/game/competitive-words-blind-screen';
 import { RateMySongSetupScreen, RateMySongRatingScreen, RateMySongResultsScreen } from '@/components/game/rate-my-song-screen';
 import type { RateMySongResult } from '@/components/game/rate-my-song-screen';
@@ -23,7 +23,7 @@ import type { Screen } from '@/types/screens';
 
 interface PartyGameScreensProps {
   screen: Screen;
-  setScreen: (s: Screen) => void;
+  setScreen: (_ss: Screen) => void;
 }
 
 // ===================== PARTY GAME MODE SCREENS =====================
@@ -35,7 +35,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
   const [rateMySongResult, setRateMySongResult] = useState<RateMySongResult | null>(null);
 
   // State for PTM next-song loading
-  const [ptmNextLoading, setPtmNextLoading] = useState(false);
+  const [_ptmNextLoading, setPtmNextLoading] = useState(false);
 
   // ── Tournament mic assignment overlay state ──
   const [micOverlay, setMicOverlay] = useState<{ p1Name: string; p2Name: string; p1Mic: string; p2Mic: string; countdown: number } | null>(null);
@@ -576,7 +576,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             // Add players
             setPlayers([]);
             const setupResult: GameSetupResult = {
-              players: playerIds.map((id, i) => {
+              players: playerIds.map((id, _i) => {
                 const p = profiles.find(pr => pr.id === id);
                 return {
                   id,

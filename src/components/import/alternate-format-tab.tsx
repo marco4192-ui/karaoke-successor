@@ -17,12 +17,12 @@ import { v4 as uuidv4 } from 'uuid';
 
 export interface AlternateFormatTabProps {
   isProcessing: boolean;
-  setIsProcessing: (v: boolean) => void;
+  setIsProcessing: (_vv: boolean) => void;
   error: string | null;
-  setError: (e: string | null) => void;
+  setError: (_ee: string | null) => void;
   previewSong: Song | null;
-  setPreviewSong: (s: Song | null) => void;
-  onImport: (song: Song) => void;
+  setPreviewSong: (_ss: Song | null) => void;
+  onImport: (_songsong: Song) => void;
 }
 
 /** Supported alternate formats with file extensions */

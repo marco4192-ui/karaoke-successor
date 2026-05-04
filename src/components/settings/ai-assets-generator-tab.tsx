@@ -58,7 +58,7 @@ export function AIAssetsGeneratorTab() {
   // API Configuration state
   const [apiBaseUrl, setApiBaseUrl] = useState('');
   const [apiKey, setApiKey] = useState('');
-  const [configLoading, setConfigLoading] = useState(true);
+  const [_configLoading, setConfigLoading] = useState(true);
   const [configSaving, setConfigSaving] = useState(false);
   const [configMessage, setConfigMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showConfig, setShowConfig] = useState(false);

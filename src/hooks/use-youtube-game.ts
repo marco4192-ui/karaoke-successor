@@ -14,19 +14,19 @@ interface UseYouTubeGameParams {
     audioUrl?: string;
   } | null;
   isPlaying: boolean;
-  setIsPlaying: (playing: boolean) => void;
+  setIsPlaying: (_playingplaying: boolean) => void;
 }
 
 interface UseYouTubeGameReturn {
   youtubeVideoId: string | null;
   customYoutubeId: string | null;
   showYoutubeInput: boolean;
-  setShowYoutubeInput: (show: boolean) => void;
+  setShowYoutubeInput: (_showshow: boolean) => void;
   isYouTube: boolean;
   useYouTubeAudio: boolean;
   isAdPlaying: boolean;
   adCountdown: number;
-  handleYoutubeUrlSubmit: (url: string) => void;
+  handleYoutubeUrlSubmit: (_urlurl: string) => void;
   clearCustomYoutube: () => void;
   handleAdStart: () => void;
   handleAdEnd: () => void;
@@ -41,7 +41,7 @@ export function useYouTubeGame({
   isPlaying,
   setIsPlaying,
 }: UseYouTubeGameParams): UseYouTubeGameReturn {
-  const [customYoutubeUrl, setCustomYoutubeUrl] = useState('');
+  const [_customYoutubeUrl, setCustomYoutubeUrl] = useState('');
   const [customYoutubeId, setCustomYoutubeId] = useState<string | null>(null);
   const [showYoutubeInput, setShowYoutubeInput] = useState(false);
   const [isAdPlaying, setIsAdPlaying] = useState(false);

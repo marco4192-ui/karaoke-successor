@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import {} from '@/components/ui/scroll-area';
 import { getAllSongsAsync, updateSong, addSong, getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { Song } from '@/types/game';
 import { KaraokeEditor } from '@/components/editor/karaoke-editor';
@@ -13,7 +13,7 @@ import { NewSongDialog } from '@/components/editor/new-song-dialog';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
 
 interface EditorSettingsTabProps {
-  onEditorActiveChange?: (active: boolean) => void;
+  onEditorActiveChange?: (_activeactive: boolean) => void;
 }
 
 export function EditorSettingsTab({ onEditorActiveChange }: EditorSettingsTabProps) {

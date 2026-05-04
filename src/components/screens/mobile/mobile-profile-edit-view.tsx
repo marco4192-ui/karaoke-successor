@@ -10,16 +10,16 @@ import type { MobileProfile } from './mobile-types';
 interface ProfileEditViewProps {
   profile: MobileProfile;
   profileName: string;
-  onProfileNameChange: (value: string) => void;
+  onProfileNameChange: (_valuevalue: string) => void;
   profileColor: string;
-  onProfileColorChange: (color: string) => void;
+  onProfileColorChange: (_colorcolor: string) => void;
   avatarPreview: string | null;
   connectionCode: string;
   profileColors: readonly string[];
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   onSave: () => void;
-  onPhotoUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onSwitchToHostProfile?: (hostProfile: MobileProfile) => void;
+  onPhotoUpload: (_ee: React.ChangeEvent<HTMLInputElement>) => void;
+  onSwitchToHostProfile?: (_hostProfilehostProfile: MobileProfile) => void;
 }
 
 export function MobileProfileEditView({
@@ -28,7 +28,6 @@ export function MobileProfileEditView({
   onProfileNameChange,
   profileColor,
   onProfileColorChange,
-  avatarPreview,
   connectionCode,
   profileColors,
   fileInputRef,
@@ -155,7 +154,7 @@ export function MobileProfileEditView({
               <div className="flex flex-wrap gap-2">
                 {profileColors.map((color) => (
                   <button
-                    key={color}
+                    key={}
                     onClick={() => onProfileColorChange(color)}
                     className={`w-10 h-10 rounded-full transition-transform ${profileColor === color ? 'ring-2 ring-white scale-110' : ''}`}
                     style={{ backgroundColor: color }}

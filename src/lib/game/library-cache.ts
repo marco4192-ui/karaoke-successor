@@ -1,7 +1,7 @@
 // Library Cache System - Persistent storage for song library data
 // Uses IndexedDB for browser persistence
 
-import { Song } from '@/types/game';
+import {} from '@/types/game';
 
 export interface CachedSong {
   id: string;
@@ -142,5 +142,4 @@ export async function clearCache(): Promise<void> {
     request.onerror = () => reject(request.error);
   });
 }
-
 

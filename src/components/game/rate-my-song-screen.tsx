@@ -49,7 +49,7 @@ export interface RateMySongResult {
 
 interface RateMySongSetupScreenProps {
   profiles: PlayerProfile[];
-  onStart: (settings: RateMySongSettings, playerIds: string[]) => void;
+  onStart: (_settingssettings: RateMySongSettings, _playerIdsplayerIds: string[]) => void;
   onBack: () => void;
 }
 
@@ -453,7 +453,7 @@ export function RateMySongRatingScreen({
       playerColor: singer.color,
       rating: getAverageForSinger(singer.id),
     }));
-    onSubmit(ratings);
+    onSubmit(_ratings);
   };
 
   // If no audience exists, allow a single combined rating screen (fallback)

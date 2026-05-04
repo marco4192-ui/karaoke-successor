@@ -5,7 +5,7 @@ import type { GameState, QueueItem, MobileView } from './mobile-types';
 interface HomeViewProps {
   gameState: GameState;
   queue: QueueItem[];
-  onNavigate: (view: MobileView) => void;
+  onNavigate: (_viewview: MobileView) => void;
 }
 
 export function MobileHomeView({ gameState, queue, onNavigate }: HomeViewProps) {

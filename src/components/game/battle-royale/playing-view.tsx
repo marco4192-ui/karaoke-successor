@@ -20,25 +20,22 @@ interface PlayingViewProps {
   roundDuration: number;
   audioRef: React.RefObject<HTMLAudioElement | null>;
   videoRef: React.RefObject<HTMLVideoElement | null>;
-  setCurrentTime: (time: number) => void;
+  setCurrentTime: (_timetime: number) => void;
   onRoundEnd: () => void;
   onBack?: () => void;
 }
 
 export function PlayingView({
   game,
-  stats,
   sortedPlayers,
   activePlayers,
   currentSong,
   currentTime,
   roundTimeLeft,
-  roundDuration,
   audioRef,
   videoRef,
   setCurrentTime,
   onRoundEnd,
-  onBack,
 }: PlayingViewProps) {
   const currentRound = game.rounds[game.rounds.length - 1];
   // Guard: only allow onEnded to fire if audio actually started playing

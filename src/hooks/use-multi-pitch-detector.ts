@@ -63,7 +63,7 @@ export interface UseMultiPitchDetectorReturn {
   initialize: () => Promise<boolean>;
   start: () => void;
   stop: () => void;
-  addPlayer: (config: PlayerPitchConfig) => Promise<boolean>;
+  addPlayer: (_configconfig: PlayerPitchConfig) => Promise<boolean>;
   removePlayer: (playerId: string) => Promise<void>;
   setDifficulty: (difficulty: Difficulty) => void;
   getPlayerPitch: (playerId: string) => PitchDetectionResult | null;
@@ -90,7 +90,7 @@ export interface UseMultiPitchDetectorReturn {
  * ```
  */
 export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): UseMultiPitchDetectorReturn {
-  const { players, difficulty, autoStart = false } = options;
+  const { players, autoStart = false } = options;
 
   // Keep players in a ref so the initialize callback doesn't need it as a dependency
   // (array reference changes every render, which would cause unnecessary re-initialization)
@@ -127,7 +127,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
         onPitchDetected: (playerId: string, result: PitchDetectionResult) => {
           setPlayerPitches(prev => {
             const newMap = new Map(prev);
-            newMap.set(playerId, result);
+            newMap.set(_playerId, result);
             return newMap;
           });
         },
@@ -197,7 +197,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
       console.error('[useMultiPitchDetector] Initialization failed:', error);
       return false;
     }
-  }, [isInitialized, difficulty, autoStart]);
+  }, [isInitialized, _difficulty, autoStart]);
 
   /**
    * Start pitch detection
@@ -354,5 +354,4 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
     getPlayerPitch,
   };
 }
-
 

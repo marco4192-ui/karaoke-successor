@@ -34,19 +34,19 @@ export interface UseJukeboxReturn {
   audioRef: React.RefObject<HTMLAudioElement | null>;
   containerRef: React.RefObject<HTMLDivElement | null>;
   // Setters
-  setFilterGenre: (g: string) => void;
-  setFilterArtist: (a: string) => void;
-  setSearchQuery: (q: string) => void;
+  setFilterGenre: (_gg: string) => void;
+  setFilterArtist: (_aa: string) => void;
+  setSearchQuery: (_qq: string) => void;
   setShuffle: (s: boolean) => void;
-  setRepeat: (r: RepeatMode) => void;
-  setVolume: (v: number) => void;
-  setHidePlaylist: (h: boolean) => void;
+  setRepeat: (_rr: RepeatMode) => void;
+  setVolume: (_vv: number) => void;
+  setHidePlaylist: (_hh: boolean) => void;
   setShowLyrics: (s: boolean) => void;
-  setCurrentLyricIndex: (i: number) => void;
+  setCurrentLyricIndex: (_ii: number) => void;
   setCurrentSong: (s: Song | null) => void;
   setCurrentIndex: (i: number) => void;
   setIsAdPlaying: (a: boolean) => void;
-  setYoutubeTime: (t: number) => void;
+  setYoutubeTime: (_tt: number) => void;
   // Actions
   startJukebox: () => void;
   stopJukebox: () => void;

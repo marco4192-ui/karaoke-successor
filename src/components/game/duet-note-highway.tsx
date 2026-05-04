@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { Note, LyricLine, Player } from '@/types/game';
+import { LyricLine, Player } from '@/types/game';
 import { NoteHighway, NoteWithLine, PitchStats } from './note-highway';
 import { LyricLineDisplay, type GameModeType } from './lyric-line-display';
 import { NoteShapeStyle, NoteDisplayStyle } from '@/lib/game/note-utils';

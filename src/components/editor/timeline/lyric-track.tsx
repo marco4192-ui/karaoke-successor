@@ -10,13 +10,12 @@ interface LyricTrackProps {
   pixelsPerSecond: number;
   scrollOffset: number;
   height: number;
-  onLyricChange: (noteId: string, newLyric: string) => void;
+  onLyricChange: (_noteIdnoteId: string, _newLyricnewLyric: string) => void;
   selectedNoteId?: string;
 }
 
 export function LyricTrack({
   notes,
-  zoom,
   pixelsPerSecond,
   scrollOffset,
   height,

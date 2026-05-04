@@ -16,7 +16,7 @@ export interface ScanProgress {
 
 export interface UseFolderScannerReturn {
   songsFolder: string;
-  setSongsFolder: (folder: string) => void;
+  setSongsFolder: (_folderfolder: string) => void;
   songCount: number;
   setSongCount: (count: number) => void;
   isScanning: boolean;

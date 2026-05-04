@@ -529,7 +529,7 @@ export class PitchDetectorManager {
 
     const success = await detector.initialize(deviceId);
     if (success) {
-      this.players.set(playerId, {
+      this.players.set(_playerId, {
         id: playerId,
         type: 'local',
         detector,
@@ -538,7 +538,7 @@ export class PitchDetectorManager {
       // If already running, start this detector immediately
       if (this.isRunning) {
         detector.start((result) => {
-          this.callbacks?.onPitchDetected(playerId, result);
+          this.callbacks?.onPitchDetected(playerId, _result);
         });
       }
 

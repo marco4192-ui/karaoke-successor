@@ -67,11 +67,11 @@ interface YouTubePlayerProps {
   videoId: string;
   videoGap?: number; // Offset in MILLISECONDS (positive = video starts AFTER audio)
   onReady?: () => void;
-  onTimeUpdate?: (currentTime: number) => void;
+  onTimeUpdate?: (_currentTimecurrentTime: number) => void;
   onEnded?: () => void;
   onAdStart?: () => void;
   onAdEnd?: () => void;
-  onError?: (errorCode: number) => void;
+  onError?: (_errorCodeerrorCode: number) => void;
   isPlaying?: boolean;
   startTime?: number; // Start position in milliseconds
   interactive?: boolean; // Allow user interaction with the player
@@ -317,7 +317,7 @@ export function YouTubePlayer({
             const errorCode = event.data as number;
             const message = YOUTUBE_ERROR_MESSAGES[errorCode] || `Unbekannter YouTube-Fehler (Code: ${errorCode})`;
             // eslint-disable-next-line no-console
-            console.error('[YouTube] Player error:', errorCode, message);
+            console.error('[YouTube] Player error:', message);
             onErrorRef.current?.(errorCode);
           },
         },

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Song } from '@/types/game';
+import {} from '@/types/game';
 import { SongStartModalProps } from './types';
 import { MusicIcon, MicIcon, StarIcon, TrophyIcon, QueueIcon, PlayIcon } from './icons';
 import { isDuetSong } from './utils';
@@ -143,7 +143,6 @@ export function SongStartModal({
   setStartOptions,
   favoriteSongIds,
   activeProfileId,
-  playerQueueCount,
   showSongModal,
   setShowSongModal,
   setShowHighscoreModal,
@@ -171,7 +170,7 @@ export function SongStartModal({
   // Auto-remove deactivated players from selection to prevent blocked slots
   useEffect(() => {
     const activeIds = new Set(profiles.filter(p => p.isActive !== false).map(p => p.id));
-    const cleanedPlayers = startOptions.players.filter(id => activeIds.has(id));
+    const cleanedPlayers = startOptions.players.filter(id => activeIds.has(_id));
     if (cleanedPlayers.length !== startOptions.players.length) {
       setStartOptions(prev => ({ ...prev, players: cleanedPlayers }));
     }
@@ -393,8 +392,6 @@ export function SongStartModal({
                 </div>
               </div>
             )}
-
-
 
             {/* Player Selection (for Duel mode) */}
             {!startOptions.partyMode && startOptions.mode === 'duel' && activeProfiles.length >= 2 && (

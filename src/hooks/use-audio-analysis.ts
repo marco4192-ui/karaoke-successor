@@ -156,8 +156,6 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
       channelsRef.current.errorCh = onError;
 
       invoke('audio_analyze_pitch', {
-        filePath,
-        options,
         onProgress,
         onComplete,
         onError,

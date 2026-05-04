@@ -440,7 +440,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
               try {
                 videoRef.current.muted = false;
                 await videoRef.current.play();
-              } catch (_autoplayError) {
+              } catch (__autoplayError) {
                 videoRef.current.muted = true;
                 await videoRef.current.play();
                 setTimeout(() => {

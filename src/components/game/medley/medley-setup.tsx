@@ -21,10 +21,10 @@ import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
 interface MedleySetupProps {
   profiles: PlayerProfile[];
   onStartGame: (
-    players: MedleyPlayer[],
-    songs: MedleySong[],
-    settings: MedleySettings,
-    matchups: SnippetMatchup[],
+    _playersplayers: MedleyPlayer[],
+    _songssongs: MedleySong[],
+    _settingssettings: MedleySettings,
+    _matchupsmatchups: SnippetMatchup[],
   ) => void;
   onBack: () => void;
 }
@@ -177,8 +177,8 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
       ? generateTeamMatchups(teamAPlayers, teamBPlayers)
       : [];
 
-    onStartGame(players, songs, finalSettings, matchups);
-  }, [playMode, teamSize, selectedProfileIds, teamAIds, teamBIds, profiles, settings, globalDifficulty, filterGenre, filterLanguage, allSongs, snippetCount, onStartGame]);
+    onStartGame(players, finalSettings, matchups);
+  }, [playMode, teamSize, selectedProfileIds, teamAIds, teamBIds, profiles, globalDifficulty, filterGenre, filterLanguage, allSongs, snippetCount, onStartGame]);
 
   // ── Render ──
   const selectStyle = {

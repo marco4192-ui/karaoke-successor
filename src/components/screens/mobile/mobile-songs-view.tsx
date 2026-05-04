@@ -2,23 +2,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MusicIcon } from './mobile-icons';
-import type { MobileSong, MobileView } from './mobile-types';
+import type { MobileSong} from './mobile-types';
 
 interface SongsViewProps {
   songSearch: string;
-  onSongSearchChange: (value: string) => void;
+  onSongSearchChange: (_valuevalue: string) => void;
   songsLoading: boolean;
   filteredSongs: MobileSong[];
   showSongOptions: MobileSong | null;
   selectedGameMode: 'single' | 'duel' | 'duet';
   selectedPartner: { id: string; name: string } | null;
   availablePartners: Array<{ id: string; name: string; code: string }>;
-  onShowSongOptions: (song: MobileSong | null) => void;
+  onShowSongOptions: (_songsong: MobileSong | null) => void;
   onSelectGameMode: (mode: 'single' | 'duel' | 'duet') => void;
   onSelectPartner: (partner: { id: string; name: string } | null) => void;
   onAddToQueue: (song: MobileSong) => void;
   onLoadPartners: () => void;
-  formatDuration: (ms: number) => string;
+  formatDuration: (_msms: number) => string;
 }
 
 export function MobileSongsView({
@@ -107,7 +107,7 @@ export function MobileSongsView({
                 </label>
                 {availablePartners.length > 0 ? (
                   <div className="space-y-2 max-h-32 overflow-y-auto">
-                    {availablePartners.map((partner) => (
+                    {availablePartners.map((_partner) => (
                       <button
                         key={partner.id}
                         onClick={() => onSelectPartner(

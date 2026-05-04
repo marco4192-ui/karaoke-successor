@@ -4,10 +4,10 @@ import React from 'react';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { getAllSongs, filterSongs, ensureSongUrls } from '@/lib/game/song-library';
-import { UnifiedPartySetup, SongVotingModal, GameSetupResult, PARTY_GAME_CONFIGS } from '@/components/game/unified-party-setup';
+import { UnifiedPartySetup, SongVotingModal, PARTY_GAME_CONFIGS } from '@/components/game/unified-party-setup';
 import { PassTheMicSegment } from '@/components/game/pass-the-mic-screen';
 import type { MedleyPlayer as MedleyPlayerType, MedleySettings as MedleySettingsType } from '@/components/game/medley/medley-types';
-import { Song, GameMode } from '@/types/game';
+import { Song} from '@/types/game';
 import type { Screen } from '@/types/screens';
 import { createTournament, TournamentPlayer, TournamentSettings } from '@/lib/game/tournament';
 import { createBattleRoyale, BattleRoyaleSettings } from '@/lib/game/battle-royale';
@@ -87,7 +87,7 @@ function generatePassTheMicSegments(song: Song, playerCount: number, explicitDur
 // ===================== PARTY SETUP + SONG VOTING SECTION =====================
 // ===================== HELPER: Convert SelectedPlayer to Medley/PassTheMic/Companion player =====================
 function toMedleyPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]): MedleyPlayerType[] {
-  return players.map((p, i) => ({ ...p, team: null as unknown as number, inputType: (p.playerType === 'companion' ? 'mobile' : 'local') as 'local' | 'mobile', score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, snippetsSung: 0 }));
+  return players.map((p, _i) => ({ ...p, team: null as unknown as number, inputType: (p.playerType === 'companion' ? 'mobile' : 'local') as 'local' | 'mobile', score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, snippetsSung: 0 }));
 }
 
 function toPassTheMicPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]) {

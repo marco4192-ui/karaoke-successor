@@ -1,6 +1,6 @@
 // Song Library Store - Manages songs with persistent storage
 import type { Song } from '@/types/game';
-import { isTauri, getSongMediaUrl, clearBlobUrlCache, normalizeFilePath } from '@/lib/tauri-file-storage';
+import { isTauri, getSongMediaUrl, clearBlobUrlCache} from '@/lib/tauri-file-storage';
 import { getSongMediaUrls, revokeSongMediaUrls } from '@/lib/db/media-db';
 import { saveCustomSongsToDB, loadCustomSongsFromDB, migrateFromLocalStorage, clearCustomSongsFromDB } from '@/lib/db/custom-songs-db';
 // IDs use crypto.randomUUID() for collision-free 128-bit random IDs
@@ -106,7 +106,7 @@ export function getCustomSongs(): Song[] {
       }
       if (needsResave) {
         // eslint-disable-next-line no-console
-        try { localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(songs)); } catch (e) { console.debug('[SongLibrary] Failed to re-save normalized songs:', e); }
+        try { localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(songs)); } catch (e) { console.debug('[SongLibrary] Failed to re-save normalized songs:', _e); }
       }
       customSongsCache = songs;
       // Trigger background migration to IndexedDB

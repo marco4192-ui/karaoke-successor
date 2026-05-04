@@ -48,7 +48,7 @@ type GamePhase = 'intro' | 'countdown' | 'playing' | 'switching' | 'song-results
 
 interface CompanionSingAlongSetupProps {
   profiles: PlayerProfile[];
-  onSelectSong: (players: CompanionPlayer[], settings: CompanionSingAlongSettings) => void;
+  onSelectSong: (players: CompanionPlayer[], _settingssettings: CompanionSingAlongSettings) => void;
   onBack: () => void;
 }
 
@@ -86,7 +86,7 @@ export function CompanionSingAlongSetupScreen({ profiles, onSelectSong, onBack }
       };
     });
 
-    onSelectSong(players, { ...DEFAULT_SETTINGS, difficulty: globalDifficulty });
+    onSelectSong(_players, { ...DEFAULT_SETTINGS, difficulty: globalDifficulty });
   };
 
   return (
@@ -204,7 +204,7 @@ function randomTurnDuration(): number {
 }
 
 export function CompanionGameView({
-  players: initialPlayers, song, settings, onEndGame,
+  players: initialPlayers, song, onEndGame,
 }: CompanionGameViewProps) {
   const safeSettings: CompanionSingAlongSettings = settings ?? DEFAULT_SETTINGS;
   // H6: Use individual selectors to avoid re-renders on unrelated party state changes

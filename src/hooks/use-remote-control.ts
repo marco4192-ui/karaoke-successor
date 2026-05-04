@@ -22,7 +22,7 @@ export interface UseRemoteControlProps {
   /** Whether the game is currently playing */
   isPlaying: boolean;
   /** Setter for isPlaying state */
-  setIsPlaying: (value: boolean) => void;
+  setIsPlaying: (_valuevalue: boolean) => void;
   /** Whether an ad is currently playing */
   isAdPlaying: boolean;
   /** Stop pitch detection callback */

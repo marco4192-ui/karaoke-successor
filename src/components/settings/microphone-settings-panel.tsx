@@ -12,7 +12,7 @@ import { useMicrophoneSettings } from '@/components/settings/use-microphone-sett
 export function MicrophoneSettingsPanel({
   onSettingsChange,
 }: {
-  onSettingsChange?: (settings: Record<string, import('@/lib/audio/microphone-manager').ExtendedMicConfig>) => void;
+  onSettingsChange?: (_settingssettings: Record<string, import('@/lib/audio/microphone-manager').ExtendedMicConfig>) => void;
 }) {
   const {
     devices,

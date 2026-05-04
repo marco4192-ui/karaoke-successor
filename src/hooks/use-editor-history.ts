@@ -11,12 +11,12 @@ interface UseEditorHistoryReturn {
   history: HistoryState[];
   historyIndex: number;
   hasUnsavedChanges: boolean;
-  pushHistory: (newLyrics: LyricLine[]) => void;
+  pushHistory: (_newLyricsnewLyrics: LyricLine[]) => void;
   undo: () => LyricLine[] | null;
   redo: () => LyricLine[] | null;
   canUndo: boolean;
   canRedo: boolean;
-  setHasUnsavedChanges: (val: boolean) => void;
+  setHasUnsavedChanges: (_valval: boolean) => void;
 }
 
 const MAX_HISTORY = 50;

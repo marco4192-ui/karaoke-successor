@@ -1,14 +1,14 @@
 'use client';
 
 import React from 'react';
-import { Song } from '@/types/game';
+import {} from '@/types/game';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Playlist } from '@/lib/playlist-manager';
+import {} from '@/lib/playlist-manager';
 import { CreatePlaylistForm } from './create-playlist-form';
 
 interface CreatePlaylistModalProps {
   show: boolean;
-  onClose: (open: boolean) => void;
+  onClose: (_openopen: boolean) => void;
   onSuccess: () => void;
 }
 

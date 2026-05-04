@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import type { GameMode } from '@/types/game';
 
 interface PartyGame {
-  mode: GameMode;
+  _modemode: GameMode;
   title: string;
   description: string;
   icon: string;

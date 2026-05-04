@@ -21,7 +21,7 @@ const MIN_UNIT_SPACING = 70; // minimum vertical spacing between adjacent first-
 interface ButterflyBracketProps {
   bracket: TournamentBracket;
   currentMatch: TournamentMatch | null;
-  onPlayMatch: (match: TournamentMatch) => void;
+  onPlayMatch: (_matchmatch: TournamentMatch) => void;
 }
 
 /** Get a human-readable round name */
@@ -378,7 +378,6 @@ export function TournamentBracketButterfly({
 // ─── Match Card (compact) ──────────────────────────────────────
 
 function MatchCard({
-  match,
   isCurrent,
   isPlayable,
   onPlay,

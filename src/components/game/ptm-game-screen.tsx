@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Song, PLAYER_COLORS, LyricLine, Difficulty, Note } from '@/types/game';
+import { Song, PLAYER_COLORS, LyricLine, Note } from '@/types/game';
 
 /** Minimum interval (ms) between scoring evaluations to avoid excessive recalculation */
 const SCORING_THROTTLE_MS = 250;
@@ -45,7 +45,7 @@ interface PtmGameScreenProps {
   settings: PassTheMicSettings | null;
   onUpdateGame: (players: PtmPlayer[], segments: PtmSegment[]) => void;
   onEndGame: () => void;
-  onNavigate?: (screen: string) => void;
+  onNavigate?: (_screenscreen: string) => void;
   onPause?: () => void;
 }
 

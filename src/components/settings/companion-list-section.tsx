@@ -399,7 +399,7 @@ function CompanionCard({
                       <button
                         key={profile.id}
                         onClick={() => {
-                          onAssignCharacter(companion.id, profile);
+                          onAssignCharacter(companion.id, _profile);
                           setShowCharacterDropdown(false);
                         }}
                         className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 flex items-center gap-2 transition-colors ${

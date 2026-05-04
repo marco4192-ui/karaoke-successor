@@ -469,7 +469,6 @@ function PlayerGrid({
   inputMode?: InputMode;
 }) {
 
-
   // Check if any input mode involves companion app
   const showConnectionStatus = inputMode === 'companion' || inputMode === 'mixed';
 
@@ -771,7 +770,7 @@ function ReadySummary({
 export function SongVotingModal({ songs, onVote, onClose, gameColor }: {
   songs: Song[];
   players?: SelectedPlayer[];
-  onVote: (songId: string) => void;
+  onVote: (_songIdsongId: string) => void;
   onClose: () => void;
   gameColor: string;
 }) {

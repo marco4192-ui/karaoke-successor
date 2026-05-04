@@ -32,7 +32,7 @@ export function HighscoreScreen() {
           })
           .then(players => {
             // Convert API players to highscore format
-            const entries = players.map((p, i): HighscoreEntry => ({
+            const entries = players.map((p, _i): HighscoreEntry => ({
               id: `global-${p.id}`,
               playerId: p.id,
               playerName: p.name,

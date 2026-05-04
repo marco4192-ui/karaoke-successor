@@ -25,7 +25,7 @@ export interface UseReplayRecorderOptions {
   playerName: string;
   isWebcamActive: boolean;                  // whether webcam is currently active
   getMicStream: () => MediaStream | null;   // callback to get mic stream from PitchDetector
-  onReplaySaved: (replay: ReplayData) => void;
+  onReplaySaved: (_replayreplay: ReplayData) => void;
 }
 
 export interface UseReplayRecorderResult {
@@ -131,7 +131,7 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
           webcamStream.getVideoTracks().forEach(track => stream.addTrack(track));
         } catch (err) {
           // eslint-disable-next-line no-console
-          console.warn('[ReplayRecorder] Could not get webcam for replay:', err);
+          console.warn('[ReplayRecorder] Could not get webcam for replay:', _err);
         }
       }
 

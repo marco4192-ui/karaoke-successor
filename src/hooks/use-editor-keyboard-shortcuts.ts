@@ -8,11 +8,11 @@ interface UseEditorKeyboardShortcutsParams {
   selectedNote: Note | undefined;
   currentTime: number;
   handlePlayPause: () => void;
-  handleNoteDelete: (noteId: string) => void;
+  handleNoteDelete: (_noteIdnoteId: string) => void;
   handleSave: () => void;
   undo: () => void;
   redo: () => void;
-  handleNoteAdd: (startTime: number, pitch: number) => void;
+  handleNoteAdd: (_startTimestartTime: number, _pitchpitch: number) => void;
   setSelectedNoteId: (noteId: string | undefined) => void;
   tapModeActive?: boolean;
 }

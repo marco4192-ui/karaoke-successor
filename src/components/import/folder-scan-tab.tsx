@@ -12,11 +12,11 @@ interface FolderScanTabProps {
   isProcessing: boolean;
   scannedSongs: ScannedSong[];
   selectedScanned: Set<number>;
-  setSelectedScanned: (s: Set<number>) => void;
+  setSelectedScanned: (_ss: Set<number>) => void;
   scanErrors: string[];
-  setScanErrors: (e: string[]) => void;
+  setScanErrors: (_ee: string[]) => void;
   setScannedSongs: (s: ScannedSong[]) => void;
-  setIsProcessing: (v: boolean) => void;
+  setIsProcessing: (_vv: boolean) => void;
   duplicates: DuplicateInfo[];
   folderInputRef: React.RefObject<HTMLInputElement | null>;
   handleScanFolder: () => void;
@@ -170,7 +170,7 @@ export function FolderScanTab({
             )}
 
             <div className="max-h-64 overflow-y-auto space-y-2">
-              {scannedSongs.map((song, index) => (
+              {scannedSongs.map((song, _index) => (
                 <SongListItem
                   key={index} song={song} index={index}
                   dupInfo={duplicates[index]}
@@ -241,9 +241,9 @@ async function collectFilesFromEntry(
   }
 }
 
-function SongListItem({ song, index, dupInfo, selected, onToggle }: {
+function SongListItem({ song, dupInfo, selected, onToggle }: {
   song: ScannedSong; index: number; dupInfo: DuplicateInfo; selected: boolean;
-  onToggle: (checked: boolean) => void;
+  onToggle: (_checkedchecked: boolean) => void;
 }) {
   const isDuplicate = dupInfo?.matchType === 'exact';
   const isSimilar = dupInfo?.matchType === 'similar';

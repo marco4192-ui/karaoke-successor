@@ -7,8 +7,7 @@ import type { MobileProfile } from './mobile-types';
 
 // ===================== REMOTE CONTROL VIEW =====================
 export function RemoteControlView({ 
-  clientId, 
-  profile,
+  clientId,
   onBack 
 }: { 
   clientId: string | null; 

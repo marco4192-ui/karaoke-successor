@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useState, useRef, useEffect } from 'react';
+import React, { useCallback, useState, useRef} from 'react';
 import { cn } from '@/lib/utils';
 import type { Note } from '@/types/game';
 
@@ -14,8 +14,8 @@ interface NoteBlockProps {
   minPitch: number;
   maxPitch: number;
   pitchHeight: number;
-  onClick: (noteId: string, event: React.MouseEvent) => void;
-  onDragStart: (noteId: string, startX: number, type: 'move' | 'resize-left' | 'resize-right') => void;
+  onClick: (noteId: string, _eventevent: React.MouseEvent) => void;
+  onDragStart: (noteId: string, _startXstartX: number, type: 'move' | 'resize-left' | 'resize-right') => void;
   onDoubleClick?: (noteId: string) => void;
 }
 
@@ -23,10 +23,8 @@ export function NoteBlock({
   note,
   isSelected,
   isPlayingNote = false,
-  zoom,
   pixelsPerSecond,
   scrollOffset,
-  minPitch,
   maxPitch,
   pitchHeight,
   onClick,
@@ -90,7 +88,7 @@ export function NoteBlock({
 
   const handleMouseDown = useCallback((e: React.MouseEvent, type: 'move' | 'resize-left' | 'resize-right') => {
     e.stopPropagation();
-    onDragStart(note.id, e.clientX, type);
+    onDragStart(note.id, e.clientX, _type);
   }, [note.id, onDragStart]);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
@@ -124,7 +122,7 @@ export function NoteBlock({
         (isSelected || isPlayingNote) && 'z-10'
       )}
       style={{
-        left: `${startX}px`,
+        left: `${}px`,
         top: `${y}px`,
         width: `${width}px`,
         height: `${pitchHeight * 0.9}px`,

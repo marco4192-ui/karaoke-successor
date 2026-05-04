@@ -35,7 +35,7 @@ export function useMobileClient({
   mobilePitch: import('@/hooks/use-mobile-pitch-polling').MobilePitchData | null;
   hasMobileClient: boolean;
   sendGameState: () => Promise<void>;
-  sendAdState: (isAdPlaying: boolean) => Promise<void>;
+  sendAdState: (_isAdPlayingisAdPlaying: boolean) => Promise<void>;
   companionProfiles: import('@/hooks/use-companion-sync').CompanionProfile[];
   syncCompanionProfiles: () => Promise<void>;
   companionQueue: import('@/hooks/use-companion-sync').CompanionQueueItem[];
@@ -103,7 +103,7 @@ export function useMobileClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'setAdPlaying',
-          payload: { isAdPlaying },
+          payload: {},
         }),
       });
     } catch {

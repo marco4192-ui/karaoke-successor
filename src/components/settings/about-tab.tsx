@@ -2,13 +2,13 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
 import { leaderboardService } from '@/lib/api/leaderboard-service';
 import { safeAlert } from '@/lib/safe-dialog';
 import { MusicIcon } from '@/components/settings/settings-icons';
 
 interface AboutTabProps {
-  tx: (key: string) => string;
+  tx: (_keykey: string) => string;
   isTauriDetected: boolean;
 }
 

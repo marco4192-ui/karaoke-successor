@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { PhoneIcon } from '@/components/settings/settings-icons';
-import { detectLocalIP, buildCompanionUrl } from '@/lib/qr-code';
+import { buildCompanionUrl } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
 
 interface ConnectedClient {

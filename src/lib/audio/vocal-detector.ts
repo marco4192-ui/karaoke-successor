@@ -171,7 +171,7 @@ export class VocalDetector {
     pitch: number | null,
     volume: number,
     frequencyData: Float32Array | null = null,
-    sampleRate: number = 44100,
+    _sampleRatesampleRate: number = 44100,
     currentTimeMs: number = Date.now()
   ): VocalDetectionResult {
     const defaultResult: VocalDetectionResult = {

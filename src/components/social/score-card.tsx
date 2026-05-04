@@ -12,7 +12,7 @@ interface ScoreCardProps {
   onClose?: () => void;
 }
 
-export function ScoreCard({ song, score, playerName, playerAvatar, onClose }: ScoreCardProps) {
+export function ScoreCard({ song, score, playerName}: ScoreCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const generateCard = useCallback(() => {

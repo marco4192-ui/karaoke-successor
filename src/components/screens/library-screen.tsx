@@ -201,7 +201,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
         onSelectSong(songWithUrls);
       } catch {
         // Fallback: use song as-is (game view has its own URL restoration)
-        onSelectSong(song);
+        onSelectSong(_song);
       }
       return;
     }
@@ -246,7 +246,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
 
   // Custom card renderer that adds viral hit badge
   const renderViralSongCard = useCallback((song: Song) => (
-    <SongCard key={song.id} song={song} {...songCardBaseProps} isViralHit={viralCharts.viralSongIds.has(song.id)} />
+    <SongCard key={song.id} song={} {...songCardBaseProps} isViralHit={viralCharts.viralSongIds.has(song.id)} />
   ), [songCardBaseProps, viralCharts.viralSongIds]);
 
   // --- Render ---

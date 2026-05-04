@@ -8,12 +8,12 @@ import { LanguageIcon, KeyboardIcon } from '@/components/settings/settings-icons
 
 interface GeneralTabProps {
   language: string;
-  handleLanguageChange: (newLang: Language) => void;
+  handleLanguageChange: (_newLangnewLang: Language) => void;
   defaultDifficulty: Difficulty;
-  handleDifficultyChange: (diff: Difficulty) => void;
+  handleDifficultyChange: (_diffdiff: Difficulty) => void;
   showPitchGuide: boolean;
-  handlePitchGuideToggle: (enabled: boolean) => void;
-  tx: (key: string) => string;
+  handlePitchGuideToggle: (_enabledenabled: boolean) => void;
+  tx: (_keykey: string) => string;
 }
 
 export function GeneralTab({
@@ -67,7 +67,7 @@ export function GeneralTab({
             <div className="flex gap-2">
               {(['easy', 'medium', 'hard'] as Difficulty[]).map((diff) => (
                 <button
-                  key={diff}
+                  key={}
                   type="button"
                   onClick={() => handleDifficultyChange(diff)}
                   className={`flex-1 py-2 px-4 rounded-lg border-2 transition-all capitalize cursor-pointer ${

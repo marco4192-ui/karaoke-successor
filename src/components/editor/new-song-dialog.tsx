@@ -19,7 +19,7 @@ import { nativePickFileOpen } from '@/lib/native-fs';
 import { midiPitchToFrequency } from '@/lib/utils';
 
 interface NewSongDialogProps {
-  onSave: (song: Song) => void;
+  onSave: (_songsong: Song) => void;
   onCancel: () => void;
 }
 
@@ -200,7 +200,7 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
   }, [generateSong, onSave]);
 
   // Pick a file using native Tauri command (bypass ACL) or browser fallback
-  const pickFile = useCallback(async (fileType: 'audio' | 'video' | 'cover', setter: (path: string) => void) => {
+  const pickFile = useCallback(async (fileType: 'audio' | 'video' | 'cover', setter: (_pathpath: string) => void) => {
     if (isTauri()) {
       try {
         const filters = fileType === 'audio'
