@@ -11,7 +11,7 @@ interface UsePartySetupArgs {
   songs: Song[];
   onStartGame: (_result: GameSetupResult) => void;
   onSelectLibrary: (_result: GameSetupResult) => void;
-  onVoteMode: (_result: GameSetupResult, _suggestedSongssuggestedSongs: Song[]) => void;
+  onVoteMode: (_result: GameSetupResult, _suggestedSongs: Song[]) => void;
 }
 
 export function usePartySetup({

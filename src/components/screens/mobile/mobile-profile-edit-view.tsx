@@ -19,7 +19,7 @@ interface ProfileEditViewProps {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   onSave: () => void;
   onPhotoUpload: (_e: React.ChangeEvent<HTMLInputElement>) => void;
-  onSwitchToHostProfile?: (_hostProfilehostProfile: MobileProfile) => void;
+  onSwitchToHostProfile?: (_hostProfile: MobileProfile) => void;
 }
 
 export function MobileProfileEditView({

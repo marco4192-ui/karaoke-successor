@@ -15,7 +15,7 @@ interface WaveformProps {
   /** Currently selected note ID (highlighted differently) */
   selectedNoteId?: string;
   /** Click on waveform — seek to that time in ms */
-  onSeek?: (_timeMstimeMs: number) => void;
+  onSeek?: (_timeMs: number) => void;
   /** Double-click on waveform — add a note at that position */
   onNoteAdd?: (_timeMs: number, _pitch: number) => void;
   className?: string;

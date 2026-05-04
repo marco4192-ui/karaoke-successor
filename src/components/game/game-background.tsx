@@ -26,7 +26,7 @@ export interface GameBackgroundProps {
   onAdEnd: () => void;
   onVideoEnded: () => void;
   onVideoCanPlay: () => void;
-  onYoutubeError: (_errorCodeerrorCode: number) => void;
+  onYoutubeError: (_errorCode: number) => void;
 }
 
 /**

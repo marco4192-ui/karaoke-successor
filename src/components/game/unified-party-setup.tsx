@@ -18,7 +18,7 @@ interface UnifiedPartySetupProps {
   songs: Song[];
   onStartGame: (result: import('./unified-party-setup.types').GameSetupResult) => void;
   onSelectLibrary: (result: import('./unified-party-setup.types').GameSetupResult) => void;
-  onVoteMode: (result: import('./unified-party-setup.types').GameSetupResult, _suggestedSongssuggestedSongs: Song[]) => void;
+  onVoteMode: (result: import('./unified-party-setup.types').GameSetupResult, _suggestedSongs: Song[]) => void;
   onBack: () => void;
   /** Pre-selected song from library (user returned after picking a song) */
   preSelectedSong?: Song | null;

@@ -8,7 +8,7 @@ import { LanguageIcon, KeyboardIcon } from '@/components/settings/settings-icons
 
 interface GeneralTabProps {
   language: string;
-  handleLanguageChange: (_newLangnewLang: Language) => void;
+  handleLanguageChange: (_newLang: Language) => void;
   defaultDifficulty: Difficulty;
   handleDifficultyChange: (_diff: Difficulty) => void;
   showPitchGuide: boolean;

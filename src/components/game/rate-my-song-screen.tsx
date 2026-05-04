@@ -49,7 +49,7 @@ export interface RateMySongResult {
 
 interface RateMySongSetupScreenProps {
   profiles: PlayerProfile[];
-  onStart: (_settings: RateMySongSettings, _playerIdsplayerIds: string[]) => void;
+  onStart: (_settings: RateMySongSettings, _playerIds: string[]) => void;
   onBack: () => void;
 }
 

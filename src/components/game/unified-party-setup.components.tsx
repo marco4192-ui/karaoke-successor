@@ -771,7 +771,7 @@ function ReadySummary({
 export function SongVotingModal({ songs, onVote, onClose, gameColor }: {
   songs: Song[];
   players?: SelectedPlayer[];
-  onVote: (_songIdsongId: string) => void;
+  onVote: (_songId: string) => void;
   onClose: () => void;
   gameColor: string;
 }) {

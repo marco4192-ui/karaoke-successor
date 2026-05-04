@@ -15,7 +15,7 @@ interface NoteBlockProps {
   maxPitch: number;
   pitchHeight: number;
   onClick: (noteId: string, _event: React.MouseEvent) => void;
-  onDragStart: (noteId: string, _startXstartX: number, type: 'move' | 'resize-left' | 'resize-right') => void;
+  onDragStart: (noteId: string, _startX: number, type: 'move' | 'resize-left' | 'resize-right') => void;
   onDoubleClick?: (noteId: string) => void;
 }
 

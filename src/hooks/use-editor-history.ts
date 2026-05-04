@@ -11,7 +11,7 @@ interface UseEditorHistoryReturn {
   history: HistoryState[];
   historyIndex: number;
   hasUnsavedChanges: boolean;
-  pushHistory: (_newLyricsnewLyrics: LyricLine[]) => void;
+  pushHistory: (_newLyrics: LyricLine[]) => void;
   undo: () => LyricLine[] | null;
   redo: () => LyricLine[] | null;
   canUndo: boolean;

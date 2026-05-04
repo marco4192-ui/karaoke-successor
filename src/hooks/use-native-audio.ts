@@ -39,13 +39,13 @@ export interface UseNativeAudioResult {
   /** Whether native audio is currently playing. */
   isPlaying: boolean;
   /** Play an audio file through native output. */
-  play: (_filePathfilePath: string) => Promise<void>;
+  play: (_filePath: string) => Promise<void>;
   /** Pause playback. */
   pause: () => Promise<void>;
   /** Resume playback. */
   resume: () => Promise<void>;
   /** Seek to position (ms). */
-  seek: (_positionMspositionMs: number) => Promise<void>;
+  seek: (_positionMs: number) => Promise<void>;
   /** Set volume (0.0 – 1.0). */
   setVolume: (_volume: number) => Promise<void>;
   /** Stop playback and reset. */
