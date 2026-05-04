@@ -55,7 +55,7 @@ interface PassTheMicSetupProps {
 
 export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTheMicSetupProps) {
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
-  const [settings, _setSettings] = useState<PassTheMicSettings>(DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<PassTheMicSettings>(DEFAULT_SETTINGS);
   const [error, setError] = useState<string | null>(null);
 
   const activeProfiles = profiles.filter(p => p.isActive !== false);
@@ -100,6 +100,36 @@ export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTh
       <Card className="bg-white/5 border-white/10 mb-6">
         <CardHeader><CardTitle>Game Settings</CardTitle></CardHeader>
         <CardContent className="space-y-4">
+          {/* Segment Duration */}
+          <div>
+            <label className="text-sm text-white/60 mb-2 block">Segment Duration</label>
+            <div className="flex gap-2">
+              {[15, 30, 45, 60].map(dur => (
+                <Button key={dur} variant={settings.segmentDuration === dur ? 'default' : 'outline'}
+                  onClick={() => setSettings(s => ({ ...s, segmentDuration: dur }))}
+                  className={settings.segmentDuration === dur ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}>
+                  {dur}s
+                </Button>
+              ))}
+            </div>
+            <p className="text-xs text-white/40 mt-1">How long each player sings before switching</p>
+          </div>
+
+          {/* Random Switches */}
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="font-medium">Random Switches</label>
+              <p className="text-sm text-white/60">Randomly switch players mid-song for surprise</p>
+            </div>
+            <Button
+              variant={settings.randomSwitches ? 'default' : 'outline'}
+              onClick={() => setSettings(s => ({ ...s, randomSwitches: !s.randomSwitches }))}
+              className={settings.randomSwitches ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}>
+              {settings.randomSwitches ? '✓ On' : 'Off'}
+            </Button>
+          </div>
+
+          {/* Difficulty */}
           <div>
             <label className="text-sm text-white/60 mb-2 block">Difficulty</label>
             <div className="flex gap-2">
