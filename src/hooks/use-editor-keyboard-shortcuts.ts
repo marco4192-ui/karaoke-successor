@@ -38,11 +38,13 @@ export function useEditorKeyboardShortcuts({
   const currentTimeRef = useRef(currentTime);
   const tapModeActiveRef = useRef(tapModeActive);
 
-  // Update refs when props change (cheap — no listener churn)
-  selectedNoteIdRef.current = selectedNoteId;
-  selectedNoteRef.current = selectedNote;
-  currentTimeRef.current = currentTime;
-  tapModeActiveRef.current = tapModeActive;
+  // Update refs when props change (via effect — avoids accessing refs during render)
+  useEffect(() => {
+    selectedNoteIdRef.current = selectedNoteId;
+    selectedNoteRef.current = selectedNote;
+    currentTimeRef.current = currentTime;
+    tapModeActiveRef.current = tapModeActive;
+  }, [selectedNoteId, selectedNote, currentTime, tapModeActive]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

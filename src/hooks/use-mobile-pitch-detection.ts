@@ -86,11 +86,13 @@ export function useMobilePitchDetection({
   // Without these, detectPitch would capture stale snapshots of
   // isPlaying / songEnded / clientId at the time startMicrophone was called.
   const isPlayingRef = useRef(isPlaying);
-  isPlayingRef.current = isPlaying;
   const songEndedRef = useRef(songEnded);
-  songEndedRef.current = songEnded;
   const clientIdRef = useRef(clientId);
-  clientIdRef.current = clientId;
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+    songEndedRef.current = songEnded;
+    clientIdRef.current = clientId;
+  }, [isPlaying, songEnded, clientId]);
 
   const startMicrophone = useCallback(async () => {
     if (!clientIdRef.current) return;

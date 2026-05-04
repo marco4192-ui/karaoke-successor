@@ -54,9 +54,11 @@ export function useRemoteControl({
   // Use refs so the polling interval isn't torn down and recreated
   // every time isPlaying / isAdPlaying change.
   const isPlayingRef = useRef(isPlaying);
-  isPlayingRef.current = isPlaying;
   const isAdPlayingRef = useRef(isAdPlaying);
-  isAdPlayingRef.current = isAdPlaying;
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+    isAdPlayingRef.current = isAdPlaying;
+  }, [isPlaying, isAdPlaying]);
 
   useEffect(() => {
     const pollRemoteCommands = async () => {

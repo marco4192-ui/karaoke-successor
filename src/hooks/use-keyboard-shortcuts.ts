@@ -19,7 +19,7 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]) {
   // Use a ref to avoid re-registering the event listener on every render
   // when the shortcuts array reference changes (inline construction).
   const shortcutsRef = useRef(shortcuts);
-  shortcutsRef.current = shortcuts;
+  useEffect(() => { shortcutsRef.current = shortcuts; }, [shortcuts]);
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     // Don't trigger shortcuts when typing in input fields

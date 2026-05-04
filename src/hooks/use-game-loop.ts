@@ -155,28 +155,31 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   // would be torn down and recreated on every pitch detection callback (~50Hz),
   // causing severe performance degradation and potential timing gaps.
   const pitchResultRef = useRef(pitchResult);
-  pitchResultRef.current = pitchResult;
   const p2DetectedPitchRef = useRef(p2DetectedPitch);
-  p2DetectedPitchRef.current = p2DetectedPitch;
   const p2VolumeRef = useRef(p2Volume);
-  p2VolumeRef.current = p2Volume;
   const p2IsSingingRef = useRef(p2IsSinging);
-  p2IsSingingRef.current = p2IsSinging;
   const youtubeTimeRef = useRef(youtubeTime);
-  youtubeTimeRef.current = youtubeTime;
   const nativeAudioTimeRef = useRef(nativeAudioTime);
-  nativeAudioTimeRef.current = nativeAudioTime;
   // Ref for p1PerfectNotesCount — ensure generateResults reads the latest value
   const p1PerfectNotesCountRef = useRef(p1PerfectNotesCount);
-  p1PerfectNotesCountRef.current = p1PerfectNotesCount;
   const playersRef = useRef(players);
-  playersRef.current = players;
   // Refs for checkNoteHits / checkP2NoteHits — prevents game loop restart
   // when these callbacks are recreated (e.g. inline arrow functions in caller).
   const checkNoteHitsRef = useRef(checkNoteHits);
-  checkNoteHitsRef.current = checkNoteHits;
   const checkP2NoteHitsRef = useRef(checkP2NoteHits);
-  checkP2NoteHitsRef.current = checkP2NoteHits;
+  // Sync all frequently-changing values to refs via effect (avoids ref access during render)
+  useEffect(() => {
+    pitchResultRef.current = pitchResult;
+    p2DetectedPitchRef.current = p2DetectedPitch;
+    p2VolumeRef.current = p2Volume;
+    p2IsSingingRef.current = p2IsSinging;
+    youtubeTimeRef.current = youtubeTime;
+    nativeAudioTimeRef.current = nativeAudioTime;
+    p1PerfectNotesCountRef.current = p1PerfectNotesCount;
+    playersRef.current = players;
+    checkNoteHitsRef.current = checkNoteHits;
+    checkP2NoteHitsRef.current = checkP2NoteHits;
+  }, [pitchResult, p2DetectedPitch, p2Volume, p2IsSinging, youtubeTime, nativeAudioTime, p1PerfectNotesCount, players, checkNoteHits, checkP2NoteHits]);
   // Throttle detectedPitch store updates to ~30fps.
   // Pitch visualization doesn't need 60fps — scoring reads pitch directly
   // from the ref, not from the store, so accuracy is unaffected.
@@ -343,7 +346,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   // the game loop effect to tear down and restart on every tick.
   // Using a ref lets the loop call the latest version without re-running.
   const endGameAndCleanupRef = useRef(endGameAndCleanup);
-  endGameAndCleanupRef.current = endGameAndCleanup;
+  useEffect(() => { endGameAndCleanupRef.current = endGameAndCleanup; }, [endGameAndCleanup]);
 
   // ── Pause / Resume helpers ──
   const pauseGame = useCallback(() => {
@@ -598,7 +601,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
 
   // ── CRITICAL: Cleanup on unmount ──
   const audioEffectsRef = useRef(audioEffects);
-  audioEffectsRef.current = audioEffects;
+  useEffect(() => { audioEffectsRef.current = audioEffects; }, [audioEffects]);
 
   useEffect(() => {
     return () => {

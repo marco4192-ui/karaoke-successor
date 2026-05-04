@@ -48,9 +48,11 @@ export function useBattleRoyaleRoundHandlers({
   // Refs for game/activePlayers — used by the game loop and auto-elimination timer
   // to avoid stale closures.
   const activePlayersRef = useRef(activePlayers);
-  activePlayersRef.current = activePlayers;
   const gameRef = useRef(game);
-  gameRef.current = game;
+  useEffect(() => {
+    activePlayersRef.current = activePlayers;
+    gameRef.current = game;
+  }, [activePlayers, game]);
 
   // Ref for the elimination-animation timer
   const roundEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

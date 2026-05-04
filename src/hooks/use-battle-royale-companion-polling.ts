@@ -42,7 +42,7 @@ export function useBattleRoyaleCompanionPolling({
   const companionPollRef = useRef<NodeJS.Timeout | null>(null);
   const companionPitchCacheRef = useRef<Map<string, CompanionPitchEntry>>(new Map());
   const playersRef = useRef(players);
-  playersRef.current = players;
+  useEffect(() => { playersRef.current = players; }, [players]);
 
   useEffect(() => {
     if (gameStatus !== 'playing') {

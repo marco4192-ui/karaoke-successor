@@ -29,10 +29,6 @@ export interface UseJukeboxReturn {
   artists: string[];
   filteredSongs: Song[];
   upNext: Song[];
-  // Refs
-  videoRef: React.RefObject<HTMLVideoElement | null>;
-  audioRef: React.RefObject<HTMLAudioElement | null>;
-  containerRef: React.RefObject<HTMLDivElement | null>;
   // Setters
   setFilterGenre: (_gg: string) => void;
   setFilterArtist: (_aa: string) => void;

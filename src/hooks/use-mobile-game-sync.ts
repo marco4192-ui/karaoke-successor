@@ -16,9 +16,11 @@ export function useMobileGameSync(
   const isPlayingRef = useRef(isPlaying);
   const gameModeRef = useRef(gameMode);
   const songEndedRef = useRef(songEnded);
-  isPlayingRef.current = isPlaying;
-  gameModeRef.current = gameMode;
-  songEndedRef.current = songEnded;
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+    gameModeRef.current = gameMode;
+    songEndedRef.current = songEnded;
+  }, [isPlaying, gameMode, songEnded]);
 
   useEffect(() => {
     if (!song) return;

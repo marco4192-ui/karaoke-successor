@@ -254,7 +254,7 @@ function PlaylistSidebar({ j }: { j: UseJukeboxReturn }) {
 }
 
 /** Main player view component */
-export function JukeboxPlayerView({ j }: { j: UseJukeboxReturn }) {
+export function JukeboxPlayerView({ j, videoRef, audioRef }: { j: UseJukeboxReturn; videoRef: React.RefObject<HTMLVideoElement | null>; audioRef: React.RefObject<HTMLAudioElement | null> }) {
   return (
     <>
       {j.isFullscreen && <FullscreenHeader j={j} />}
@@ -310,7 +310,7 @@ export function JukeboxPlayerView({ j }: { j: UseJukeboxReturn }) {
                 />
               ) : j.currentSong!.videoBackground ? (
                 <video
-                  ref={j.videoRef}
+                  ref={videoRef}
                   src={j.currentSong!.videoBackground}
                   className="absolute inset-0 w-full h-full object-cover"
                   muted={!!j.currentSong!.audioUrl && !j.currentSong!.hasEmbeddedAudio}
@@ -330,7 +330,7 @@ export function JukeboxPlayerView({ j }: { j: UseJukeboxReturn }) {
 
               {/* Audio element for songs with separate audio file */}
               {j.currentSong!.audioUrl && !j.currentSong!.hasEmbeddedAudio && (
-                <audio ref={j.audioRef} src={j.currentSong!.audioUrl} onEnded={j.handleMediaEnd} />
+                <audio ref={audioRef} src={j.currentSong!.audioUrl} onEnded={j.handleMediaEnd} />
               )}
 
               <LyricsOverlay j={j} />

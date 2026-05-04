@@ -225,22 +225,30 @@ export function CompanionGameView({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const currentTimeRef = useRef(currentTime);
-  currentTimeRef.current = currentTime;
+  useEffect(() => { currentTimeRef.current = currentTime; }, [currentTime]);
   const [isPlaying, setIsPlaying] = useState(false);
 
   // ── Player state (local, mutable for performance) ──
   const playersRef = useRef<CompanionPlayer[]>(initialPlayers.map(p => ({
     ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, turnCount: 0,
   })));
+  const [playersSnapshot, setPlayersSnapshot] = useState<CompanionPlayer[]>(() => initialPlayers.map(p => ({
+    ...p, score: 0, notesHit: 0, notesMissed: 0, combo: 0, maxCombo: 0, turnCount: 0,
+  })));
   const [, rerender] = useState(0);
-  const forceRender = useCallback(() => rerender(n => n + 1), []);
+  const forceRender = useCallback(() => {
+    setPlayersSnapshot([...playersRef.current]);
+    rerender(n => n + 1);
+  }, []);
 
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
-  const currentPlayer = playersRef.current[currentPlayerIndex];
+  const currentPlayer = playersSnapshot[currentPlayerIndex];
 
   // ── Switch timer ──
-  const timeUntilSwitchRef = useRef(randomTurnDuration());
-  const [timeUntilSwitchDisplay, setTimeUntilSwitchDisplay] = useState(timeUntilSwitchRef.current);
+  const initialTurnDuration = randomTurnDuration();
+  const timeUntilSwitchRef = useRef(initialTurnDuration);
+  const [timeUntilSwitchDisplay, setTimeUntilSwitchDisplay] = useState(initialTurnDuration);
+  const [timeUntilSwitchTotal, setTimeUntilSwitchTotal] = useState(initialTurnDuration);
   const switchCountdownRef = useRef<number | null>(null);
   const [switchCountdown, setSwitchCountdown] = useState<number | null>(null);
 
@@ -384,6 +392,7 @@ export function CompanionGameView({
         const currentP = playersRef.current[currentPlayerIndex];
         currentP.turnCount++;
         playersRef.current[currentPlayerIndex] = { ...currentP };
+        setPlayersSnapshot([...playersRef.current]);
 
         // Pick next player (round-robin)
         const nextIdx = (currentPlayerIndex + 1) % playersRef.current.length;
@@ -410,7 +419,9 @@ export function CompanionGameView({
       // Activate the next player
       setCurrentPlayerIndex(nextPlayerIndexRef.current);
       timeUntilSwitchRef.current = randomTurnDuration();
-      setTimeUntilSwitchDisplay(timeUntilSwitchRef.current);
+      const newDuration = timeUntilSwitchRef.current;
+      setTimeUntilSwitchDisplay(newDuration);
+      setTimeUntilSwitchTotal(newDuration);
       switchCountdownRef.current = null;
       setSwitchCountdown(null);
       setPhase('playing');
@@ -449,7 +460,9 @@ export function CompanionGameView({
           setIsPlaying(true);
           setCurrentTime(0);
           timeUntilSwitchRef.current = randomTurnDuration();
-          setTimeUntilSwitchDisplay(timeUntilSwitchRef.current);
+          const newSwitchDuration = timeUntilSwitchRef.current;
+          setTimeUntilSwitchDisplay(newSwitchDuration);
+          setTimeUntilSwitchTotal(newSwitchDuration);
 
           if (audioRef.current) {
             audioRef.current.currentTime = 0;
@@ -470,8 +483,8 @@ export function CompanionGameView({
   // ── Helpers ──
   const progress = song.duration > 0 ? (currentTime / song.duration) * 100 : 0;
   const turnSecondsLeft = Math.max(0, timeUntilSwitchDisplay / 1000);
-  const turnProgress = timeUntilSwitchRef.current > 0
-    ? ((timeUntilSwitchRef.current - timeUntilSwitchDisplay) / timeUntilSwitchRef.current) * 100
+  const turnProgress = timeUntilSwitchTotal > 0
+    ? ((timeUntilSwitchTotal - timeUntilSwitchDisplay) / timeUntilSwitchTotal) * 100
     : 0;
 
   const getCurrentLyrics = (): LyricLine | null => {
@@ -566,7 +579,7 @@ export function CompanionGameView({
                 <span className="text-3xl font-bold">{currentPlayer?.name}</span>
               </div>
               <div className="text-sm text-white/40">
-                {playersRef.current.length} players • 20–45s turns
+                {playersSnapshot.length} players • 20–45s turns
                 {companionSeriesHistory.length > 0 && (
                   <span> • Round {companionSeriesHistory.length + 1}</span>
                 )}
@@ -669,7 +682,7 @@ export function CompanionGameView({
           <Card className="bg-white/5 border-white/10">
             <CardContent className="py-3">
               <div className="flex flex-wrap gap-2">
-                {playersRef.current.map((player, index) => (
+                {playersSnapshot.map((player, index) => (
                   <div key={player.id}
                     className={`px-3 py-2 rounded-lg transition-all text-sm ${index === currentPlayerIndex
                       ? 'bg-gradient-to-br from-emerald-500/30 to-teal-500/30 border-2 border-emerald-500 scale-105'
@@ -710,7 +723,7 @@ export function CompanionGameView({
             <CardHeader><CardTitle className="text-center">Round Results</CardTitle></CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {[...playersRef.current]
+                {[...playersSnapshot]
                   .sort((a, b) => b.score - a.score)
                   .map((player, rank) => (
                     <div key={player.id}

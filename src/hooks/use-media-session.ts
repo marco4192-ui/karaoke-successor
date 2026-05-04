@@ -35,9 +35,11 @@ export function useMediaSession({
   onResume,
 }: UseMediaSessionOptions) {
   const pauseRef = useRef(onPause);
-  pauseRef.current = onPause;
   const resumeRef = useRef(onResume);
-  resumeRef.current = onResume;
+  useEffect(() => {
+    pauseRef.current = onPause;
+    resumeRef.current = onResume;
+  }, [onPause, onResume]);
 
   // Set metadata when song changes
   useEffect(() => {

@@ -24,11 +24,13 @@ export function MusicReactiveBackground({
   const isPlayingRef = useRef(isPlaying);
   const bpmRef = useRef(bpm);
 
-  // Keep refs in sync with props
-  volumeRef.current = volume;
-  intensityRef.current = intensity;
-  isPlayingRef.current = isPlaying;
-  bpmRef.current = bpm;
+  // Keep refs in sync with props via effect (avoids ref access during render)
+  useEffect(() => {
+    volumeRef.current = volume;
+    intensityRef.current = intensity;
+    isPlayingRef.current = isPlaying;
+    bpmRef.current = bpm;
+  }, [volume, intensity, isPlaying, bpm]);
 
   const particlesRef = useRef<Array<{
     x: number;

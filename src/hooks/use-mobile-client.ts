@@ -55,12 +55,14 @@ export function useMobileClient({
 
   // ── Game state sending (throttled to max 2 Hz) ──
   const currentTimeRef = useRef(currentTime);
-  currentTimeRef.current = currentTime;
   const isPlayingRef = useRef(isPlaying);
-  isPlayingRef.current = isPlaying;
   const gameModeRef = useRef(gameMode);
-  gameModeRef.current = gameMode;
   const lastSentRef = useRef(0);
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+    isPlayingRef.current = isPlaying;
+    gameModeRef.current = gameMode;
+  }, [currentTime, isPlaying, gameMode]);
   const sendGameState = useCallback(async () => {
     if (!song) return;
 

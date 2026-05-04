@@ -5,7 +5,11 @@ import { Song } from '@/types/game';
 import { getAllSongsAsync, ensureSongUrls, getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { RepeatMode } from './jukebox-types';
 
-export function useJukebox() {
+export function useJukebox(refs?: {
+  containerRef?: React.RefObject<HTMLDivElement | null>;
+  videoRef?: React.RefObject<HTMLVideoElement | null>;
+  audioRef?: React.RefObject<HTMLAudioElement | null>;
+}) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [customYoutubeId, _setCustomYoutubeId] = useState<string | null>(null);
@@ -28,9 +32,9 @@ export function useJukebox() {
   const [showLyrics, setShowLyrics] = useState(false);
   const [currentLyricIndex, setCurrentLyricIndex] = useState(0);
   const [songs, setSongs] = useState<Song[]>([]);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = refs?.containerRef ?? useRef<HTMLDivElement | null>(null);
+  const videoRef = refs?.videoRef ?? useRef<HTMLVideoElement | null>(null);
+  const audioRef = refs?.audioRef ?? useRef<HTMLAudioElement | null>(null);
 
   // Load songs asynchronously
   useEffect(() => {
@@ -361,7 +365,6 @@ export function useJukebox() {
     youtubeTime, isAdPlaying,
     volume, isFullscreen, hidePlaylist, showLyrics, currentLyricIndex,
     genres, artists, filteredSongs, upNext,
-    videoRef, audioRef, containerRef,
     setFilterGenre, setFilterArtist, setSearchQuery, setShuffle, setRepeat,
     setVolume, setHidePlaylist, setShowLyrics,
     setCurrentLyricIndex, setCurrentSong, setCurrentIndex,

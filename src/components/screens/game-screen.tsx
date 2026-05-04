@@ -109,6 +109,13 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
   const [isPlaying, setIsPlaying] = useState(false);
   const wasPlayingRef = useRef(false);
 
+  // Track the audio element for SpectrogramDisplay (avoids reading ref during render)
+  const [spectrogramAudioEl, setSpectrogramAudioEl] = useState<HTMLAudioElement | null>(null);
+  const audioElRefCallback = useCallback((el: HTMLAudioElement | null) => {
+    audioRef.current = el;
+    setSpectrogramAudioEl(el);
+  }, [audioRef]);
+
   // Native audio (ASIO / WASAPI)
   const nativeAudio = useNativeAudio();
 
@@ -619,7 +626,7 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
       {effectiveSong?.audioUrl && (
         <audio 
           key={effectiveSong.id}
-          ref={audioRef}
+          ref={audioElRefCallback}
           src={effectiveSong.audioUrl}
           className="hidden"
           onEnded={endGameAndCleanup}
@@ -825,8 +832,8 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
       {/* Spectrogram Display / Equalizer — left side, below pitch detection */}
       {showPitchGuide && isPlaying && !isLowPerf && (
         <SpectrogramDisplay
-          audioElement={audioRef.current}
-          isActive={isPlaying && !!audioRef.current}
+          audioElement={spectrogramAudioEl}
+          isActive={isPlaying && !!spectrogramAudioEl}
           mode="bars"
           position={{ x: 50, y: 50 }}
           size={{ width: 256, height: 40 }}

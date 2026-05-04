@@ -201,11 +201,13 @@ export function Timeline({
 
   // Keep refs for values the scroll loop needs without re-triggering the effect
   const currentTimeRef = useRef(currentTime);
-  currentTimeRef.current = currentTime;
   const scrollOffsetRef = useRef(scrollOffset);
-  scrollOffsetRef.current = scrollOffset;
   const ppsRef = useRef(pixelsPerSecond);
-  ppsRef.current = pixelsPerSecond;
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+    scrollOffsetRef.current = scrollOffset;
+    ppsRef.current = pixelsPerSecond;
+  }, [currentTime, scrollOffset, pixelsPerSecond]);
 
   // Auto-scroll while playing — reads currentTime from a ref so the effect
   // is only mounted/unmounted when isPlaying changes, NOT every frame.

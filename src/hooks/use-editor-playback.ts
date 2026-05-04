@@ -36,9 +36,11 @@ export function useEditorPlayback(
   // Keep a ref of the latest values so the animation loop
   // always knows the correct state at launch.
   const currentTimeRef = useRef(currentTime);
-  currentTimeRef.current = currentTime;
   const playbackRateRef = useRef(playbackRate);
-  playbackRateRef.current = playbackRate;
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+    playbackRateRef.current = playbackRate;
+  }, [currentTime, playbackRate]);
 
   // ── Start / stop the rAF animation loop + audio element ──
   useEffect(() => {

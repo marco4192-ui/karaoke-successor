@@ -29,7 +29,7 @@ export function useEditorHistory(initialLyrics: LyricLine[]): UseEditorHistoryRe
   // Ref to always have the latest historyIndex — prevents stale closure
   // when pushHistory is called rapidly from async contexts.
   const historyIndexRef = useRef(historyIndex);
-  historyIndexRef.current = historyIndex;
+  useEffect(() => { historyIndexRef.current = historyIndex; }, [historyIndex]);
 
   const setHasUnsavedChanges = useCallback((val: boolean) => {
     setHasUnsavedChangesState(val);
