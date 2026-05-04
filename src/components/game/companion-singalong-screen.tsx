@@ -213,7 +213,6 @@ export function CompanionGameView({
   const setCompanionSeriesHistory = usePartyStore(s => s.setCompanionSeriesHistory);
   const companionSeriesHistory = usePartyStore(s => s.companionSeriesHistory);
   const setCompanionPlayers = usePartyStore(s => s.setCompanionPlayers);
-  const __companionPlayers = usePartyStore(s => s.companionPlayers);
   const setCompanionSong = usePartyStore(s => s.setCompanionSong);
   const setCompanionSettings = usePartyStore(s => s.setCompanionSettings);
 

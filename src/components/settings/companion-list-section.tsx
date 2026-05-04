@@ -268,9 +268,6 @@ function CompanionCard({
   const companionName = companion.profile?.name || companion.name;
   const companionColor = companion.profile?.color || '#6B7280';
 
-  // Check if current character is used by another companion (to prevent assignment to two companions)
-  const __assignedProfileIds = new Set<string>(); // We don't have the full list here, so allow any assignment
-
   return (
     <div className="bg-white/5 border border-white/10 rounded-lg p-4 hover:border-white/20 transition-colors">
       {/* Top Row: Avatar, Name, Code, Status */}

@@ -166,7 +166,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   }, [syncProfile]);
 
   // Disconnect from server and reset local state
-  const __handleDisconnect = useCallback(async () => {
+  const handleDisconnect = useCallback(async () => {
     await disconnect();
     setProfile(null);
     setProfileName('');
@@ -297,6 +297,15 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
           <div className="flex items-center gap-3">
             {connectionCode && <Badge variant="outline" className="border-cyan-500/50 text-cyan-400 font-mono">{connectionCode}</Badge>}
             <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+            {isConnected && profile && (
+              <button
+                onClick={handleDisconnect}
+                className="text-white/40 hover:text-red-400 text-xs transition-colors"
+                title="Verbindung trennen"
+              >
+                ✕
+              </button>
+            )}
             {profile && (
               <button onClick={() => setCurrentView('profile')} className="w-8 h-8 rounded-full overflow-hidden" style={{ backgroundColor: profile.color }}>
                 {profile.avatar ? <img src={profile.avatar} alt={profile.name} className="w-full h-full object-cover" /> : <span className="text-sm font-bold">{profile.name[0]}</span>}

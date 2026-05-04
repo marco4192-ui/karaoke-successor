@@ -5,7 +5,6 @@ import {
   getAvailableLanguages,
 } from '@/components/game/medley/medley-snippet-generator';
 import type { Song } from '@/types/game';
-import type {} from '@/components/game/medley/medley-types';
 
 // Mock Math.random for deterministic tests
 const __originalRandom = Math.random;
