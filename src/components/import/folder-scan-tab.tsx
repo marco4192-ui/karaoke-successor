@@ -63,7 +63,7 @@ export function FolderScanTab({
       }
 
       // Use the existing scanner with the collected files
-      const result = await scanFilesFromFileList(files as unknown as FileList);
+      const result = await scanFilesFromFileList(files);
       setScannedSongs(result.songs);
       setScanErrors(result.errors);
       setSelectedScanned(new Set(result.songs.map((_, i) => i)));

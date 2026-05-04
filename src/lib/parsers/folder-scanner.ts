@@ -306,8 +306,9 @@ function parseUltraStarMetadata(content: string): {
   return { title, artist, bpm, gap, previewStart, previewDuration, genre, language, year };
 }
 
-// Scan files from a FileList (fallback for browsers without File System Access API)
-export async function scanFilesFromFileList(files: FileList): Promise<ScanResult> {
+// Scan files from a FileList or File[] (fallback for browsers without File System Access API,
+// and for drag & drop where files are collected into a plain array).
+export async function scanFilesFromFileList(files: FileList | File[]): Promise<ScanResult> {
   const result: ScanResult = { songs: [], folders: [], errors: [] };
   const songFolders: Map<string, ScannedSong> = new Map();
 
