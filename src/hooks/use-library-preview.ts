@@ -92,7 +92,7 @@ export function useLibraryPreview() {
             audio.currentTime = startTime;
           }
           audio.play().catch(() => {});
-        });
+        }, { once: true });
 
         audio.addEventListener('canplaythrough', () => {
           if (audio.paused) {
