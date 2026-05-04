@@ -12,7 +12,7 @@ import { PtmGameScreen } from '@/components/game/ptm-game-screen';
 import { CompanionSingAlongSetupScreen, CompanionGameView } from '@/components/game/companion-singalong-screen';
 import { MedleySetupScreen } from '@/components/game/medley';
 import { MedleyGameScreen } from '@/components/game/medley/medley-game-screen';
-import type { MedleyPlayer, MedleySettings, MedleySong} from '@/components/game/medley/medley-types';
+import type { MedleyPlayer, MedleySettings, MedleySong, SnippetMatchup} from '@/components/game/medley/medley-types';
 import { CompetitiveSetupScreen, CompetitiveGameView } from '@/components/game/competitive-words-blind-screen';
 import { RateMySongSetupScreen, RateMySongRatingScreen, RateMySongResultsScreen } from '@/components/game/rate-my-song-screen';
 import type { RateMySongResult } from '@/components/game/rate-my-song-screen';
@@ -410,10 +410,11 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       {screen === 'medley' && (
         <MedleySetupScreen
           profiles={profiles}
-          onStartGame={(players: MedleyPlayer[], medleySongList: MedleySong[], settings: MedleySettings) => {
+          onStartGame={(players: MedleyPlayer[], medleySongList: MedleySong[], settings: MedleySettings, matchups: SnippetMatchup[]) => {
             party.setMedleyPlayers(players);
             party.setMedleySongs(medleySongList);
             party.setMedleySettings(settings);
+            party.setMedleyMatches(matchups);
             party.setMedleySeriesHistory([]);
             // Reset isSongPlaying BEFORE navigating to prevent React #185
             party.setIsSongPlaying(false);
