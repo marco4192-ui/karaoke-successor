@@ -244,7 +244,10 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       // Start from last processed index for O(1) forward progression
       // Reset to 0 if time went backward (e.g. seek)
       const searchStartRef = _playerIndex === 1 ? lastProcessedNoteP2Ref : lastProcessedNoteRef;
-      if (searchStartRef.current > 0 && notesToCheck.length > 0 &&
+      // Clamp index to array bounds — notesToCheck may shrink if timingData changes
+      if (searchStartRef.current >= notesToCheck.length) {
+        searchStartRef.current = 0;
+      } else if (searchStartRef.current > 0 &&
           notesToCheck[searchStartRef.current].startTime > currentTime) {
         searchStartRef.current = 0;
       }
@@ -406,7 +409,10 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
 
       // Start from last processed index for O(1) forward progression
       // Reset to 0 if time went backward (e.g. seek)
-      if (lastProcessedNoteRef.current > 0 && notesToCheck.length > 0 &&
+      // Clamp index to array bounds — notesToCheck may shrink if timingData changes
+      if (lastProcessedNoteRef.current >= notesToCheck.length) {
+        lastProcessedNoteRef.current = 0;
+      } else if (lastProcessedNoteRef.current > 0 &&
           notesToCheck[lastProcessedNoteRef.current].startTime > currentTime) {
         lastProcessedNoteRef.current = 0;
       }
