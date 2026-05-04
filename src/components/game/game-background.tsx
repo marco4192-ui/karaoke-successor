@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import type { Song } from '@/types/game';
 import { YouTubePlayer } from '@/components/game/youtube-player';
 import { MusicReactiveBackground } from '@/components/game/music-reactive-background';

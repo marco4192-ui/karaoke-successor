@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Theme } from '@/lib/game/themes';
 import { THEMES } from '@/lib/game/themes';

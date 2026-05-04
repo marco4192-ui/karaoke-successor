@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { LyricLine } from '@/types/game';
 
 export function LyricsDisplay({ lyrics, currentTime }: { lyrics: LyricLine[]; currentTime: number }) {

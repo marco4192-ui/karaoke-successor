@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import type { AudioEffectsEngine } from '@/lib/audio/audio-effects';
 
 // ===================== VOLUME METER =====================

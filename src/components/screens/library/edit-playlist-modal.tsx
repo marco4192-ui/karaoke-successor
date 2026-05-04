@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Playlist } from '@/types/game';
 import { EditPlaylistForm } from './edit-playlist-form';

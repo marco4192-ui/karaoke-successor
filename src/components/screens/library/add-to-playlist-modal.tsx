@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { Song } from '@/types/game';
 import { Playlist, addSongToPlaylist } from '@/lib/playlist-manager';
 import { Button } from '@/components/ui/button';

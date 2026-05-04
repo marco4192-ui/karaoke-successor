@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { WebcamSettingsPanel, WebcamBackground } from '@/components/game/webcam-background';
 import { WebcamBackgroundConfig } from '@/components/game/webcam-background';

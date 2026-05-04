@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { PracticeModeConfig } from '@/lib/game/practice-mode';
 
 export interface PracticePanelProps {

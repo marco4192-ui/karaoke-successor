@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/lib/i18n/translations';
 import { MusicIcon, LibraryIcon, PartyIcon, UserIcon, QueueIcon, StarIcon, TrophyIcon, SettingsIcon } from '@/components/icons';

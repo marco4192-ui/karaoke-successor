@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { PlayerProfile } from '@/types/game';
 import { getLevelForXP, getRankForXP } from '@/lib/game/player-progression';
 import { getCountryFlag } from './country-options';
