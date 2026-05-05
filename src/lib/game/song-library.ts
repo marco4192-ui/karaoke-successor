@@ -488,15 +488,17 @@ export async function getAllSongsAsync(): Promise<Song[]> {
   const localStorageFolder = resolveSongsBaseFolder();
 
   // CRITICAL: If songs have no baseFolder or a RELATIVE baseFolder, fix them
-  // A relative baseFolder (e.g. "Songs") cannot be used for file access
+  // A relative baseFolder (e.g. "Songs") cannot be used for file access.
+  // Check if ANY song needs fixing (not just the first one).
   if (songs.length > 0) {
-    const firstSong = songs[0];
+    const needsMigration = songs.some(s => {
+      if (s.baseFolder && !isAbsolutePath(s.baseFolder)) return true;
+      if (!s.baseFolder && localStorageFolder &&
+        (s.relativeAudioPath || s.relativeVideoPath || s.relativeCoverPath)) return true;
+      return false;
+    });
 
-    const needsBaseFolderFix = firstSong.baseFolder && !isAbsolutePath(firstSong.baseFolder);
-    const needsBaseFolderMigration = !firstSong.baseFolder && localStorageFolder &&
-      (firstSong.relativeAudioPath || firstSong.relativeVideoPath || firstSong.relativeCoverPath);
-
-    if ((needsBaseFolderFix || needsBaseFolderMigration) && localStorageFolder && isAbsolutePath(localStorageFolder)) {
+    if (needsMigration && localStorageFolder && isAbsolutePath(localStorageFolder)) {
       const updatedSongs = songs.map(s => ({
         ...s,
         baseFolder: (s.baseFolder && isAbsolutePath(s.baseFolder)) ? s.baseFolder : (localStorageFolder || undefined),
