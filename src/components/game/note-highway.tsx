@@ -99,9 +99,12 @@ const SingLine = React.memo(function SingLine({
 });
 
 /**
- * Single note block with all styling
+ * Single note block with all styling.
+ * Wrapped in React.memo because this is rendered in a .map() at ~60fps
+ * during gameplay — without memoization every game frame re-renders all
+ * visible notes even when their props haven't changed.
  */
-function NoteBlock({
+const NoteBlock = React.memo(function NoteBlock({
   note,
   currentTime,
   pitchStats,
@@ -207,7 +210,7 @@ function NoteBlock({
       {displayStyle.overlayElement}
     </div>
   );
-}
+});
 
 /**
  * Pitch indicator showing singer's current pitch
