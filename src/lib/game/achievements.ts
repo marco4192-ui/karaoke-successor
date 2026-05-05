@@ -74,11 +74,11 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   {
     id: 'perfect_song',
     name: 'Perfect Song',
-    description: 'Get 100% accuracy on a song',
+    description: 'Get 99.5%+ accuracy on a song',
     icon: '💎',
     category: 'performance',
     rarity: 'legendary',
-    requirement: { type: 'accuracy', value: 100 },
+    requirement: { type: 'accuracy', value: 99.5 },
     reward: { xp: 500, title: 'Perfectionist' },
   },
   {
@@ -367,7 +367,7 @@ function meetsRequirement(def: AchievementDefinition, ctx: AchievementGameContex
       return ctx.maxCombo >= value;
 
     case 'accuracy': {
-      // 'shower_singer': accuracy <= 20, 'accuracy_90': accuracy >= 90, 'perfect_song': accuracy >= 100
+      // 'shower_singer': accuracy <= 20, 'accuracy_90': accuracy >= 90, 'perfect_song': accuracy >= 99.5
       if (def.id === 'shower_singer') {
         return ctx.accuracy <= value;
       }

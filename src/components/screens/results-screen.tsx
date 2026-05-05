@@ -401,7 +401,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           playerResult.accuracy,
           playerResult.maxCombo,
           estimatePerfectNotes(playerResult.notesHit, playerResult.rating),
-          0, // Golden notes feature not yet implemented in scoring
+          playerResult.goldenNotesCount || 0,
           gameState.challengeMode
         );
         const currentProfileXP = profile.xp || 0;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef } from 'react';
+import { useRef } from 'react';
 import { useJukebox } from './jukebox/use-jukebox';
 import { JukeboxSetupView } from './jukebox/jukebox-setup-view';
 import { JukeboxPlayerView } from './jukebox/jukebox-player-view';

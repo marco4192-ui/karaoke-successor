@@ -141,7 +141,6 @@ export class AudioEffectsEngine {
   
   // Current settings
   private settings: AudioEffectSettings = { ...DEFAULT_EFFECTS_SETTINGS };
-  private currentPreset: AudioEffectPreset | null = null;
   // Track previous effect enable states to avoid unnecessary chain reconnects
   private prevEnabledState = '';
   
@@ -352,7 +351,6 @@ export class AudioEffectsEngine {
 
   // Apply preset
   async applyPreset(preset: AudioEffectPreset): Promise<void> {
-    this.currentPreset = preset;
     const presetSettings = AUDIO_PRESETS[preset];
     
     // Merge preset with defaults

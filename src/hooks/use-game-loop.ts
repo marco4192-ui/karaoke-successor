@@ -292,6 +292,12 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     if (hasEndedRef.current) return;
     hasEndedRef.current = true;
 
+    // Clear the media play watchdog timeout (if song ended before the 10s watchdog fired)
+    if (mediaPlayWatchdogRef.current) {
+      clearTimeout(mediaPlayWatchdogRef.current);
+      mediaPlayWatchdogRef.current = null;
+    }
+
     // Stop pitch detection (microphone)
     stop();
 

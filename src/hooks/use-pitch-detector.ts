@@ -10,9 +10,11 @@ export function usePitchDetector() {
   const [error, setError] = useState<string | null>(null);
   const [pitchResult, setPitchResult] = useState<PitchDetectionResult | null>(null);
   const detectorRef = useRef<PitchDetector | null>(null);
+  const initializingRef = useRef(false);
 
   const initialize = useCallback(async (deviceId?: string) => {
-    if (isInitialized) return true;
+    if (initializingRef.current) return false;
+    initializingRef.current = true;
 
     try {
       const detector = getPitchDetector();
@@ -29,8 +31,10 @@ export function usePitchDetector() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
       return false;
+    } finally {
+      initializingRef.current = false;
     }
-  }, [isInitialized]);
+  }, []);
 
   /**
    * Re-initialize the pitch detector with a different microphone device.
