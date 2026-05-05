@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { LyricLine, Player } from '@/types/game';
+import { LyricLine, Player, type GameMode } from '@/types/game';
 import { NoteHighway, NoteWithLine, PitchStats } from './note-highway';
-import { LyricLineDisplay, type GameModeType } from './lyric-line-display';
+import { LyricLineDisplay } from './lyric-line-display';
 import { NoteShapeStyle, NoteDisplayStyle } from '@/lib/game/note-utils';
 
 // ===================== TYPES =====================
@@ -48,7 +48,7 @@ export interface DuetNoteHighwayProps {
   /** Note performance for lyrics display */
   notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
   /** Game mode */
-  gameMode?: string;
+  gameMode?: GameMode;
   /** Missing words indices for missing-words mode */
   missingWordsIndices?: number[];
   /** Is blind section for blind mode */
@@ -134,7 +134,7 @@ function PlayerLyrics({
   playerColor: string;
   noteDisplayStyle?: NoteDisplayStyle;
   notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
-  gameMode?: string;
+  gameMode?: GameMode;
   missingWordsIndices?: number[];
   isBlindSection?: boolean;
 }) {
@@ -172,7 +172,7 @@ function PlayerLyrics({
           playerColor={playerColor}
           noteDisplayStyle={noteDisplayStyle}
           notePerformance={notePerformance}
-          gameMode={gameMode as GameModeType}
+          gameMode={gameMode}
           missingWordsIndices={missingWordsIndices}
           isBlindSection={isBlindSection}
         />
@@ -241,7 +241,7 @@ export function DuetNoteHighway({
           playerColor="#22d3ee"
           noteDisplayStyle={noteDisplayStyle}
           notePerformance={notePerformance}
-          gameMode={gameMode as GameModeType}
+          gameMode={gameMode}
           missingWordsIndices={missingWordsIndices}
           isBlindSection={isBlindSection}
         />
@@ -277,7 +277,7 @@ export function DuetNoteHighway({
           playerColor="#ec4899"
           noteDisplayStyle={noteDisplayStyle}
           notePerformance={notePerformance}
-          gameMode={gameMode as GameModeType}
+          gameMode={gameMode}
           missingWordsIndices={missingWordsIndices}
           isBlindSection={isBlindSection}
         />

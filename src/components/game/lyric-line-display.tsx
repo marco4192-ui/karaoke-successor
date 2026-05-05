@@ -3,8 +3,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LyricLine } from '@/types/game';
 
-// Game mode type for the lyric display
-export type GameModeType = 'standard' | 'pass-the-mic' | 'companion-singalong' | 'medley' | 'missing-words' | 'duel' | 'blind' | 'tournament' | 'battle-royale' | 'duet' | 'online';
+import type { GameMode } from '@/types/game';
+
+// Re-export canonical GameMode type so all consumers use the same union.
+// This avoids drift between local duplicates and @/types/game.
+export type GameModeType = GameMode;
 
 // Note display style type
 export type NoteDisplayStyleType = 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity';

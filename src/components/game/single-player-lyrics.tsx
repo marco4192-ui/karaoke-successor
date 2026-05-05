@@ -1,8 +1,8 @@
 'use client';
 
 import { useMemo, useRef, useState, useCallback, useLayoutEffect } from 'react';
-import { LyricLine } from '@/types/game';
-import { LyricLineDisplay, type GameModeType } from './lyric-line-display';
+import { LyricLine, type GameMode } from '@/types/game';
+import { LyricLineDisplay } from './lyric-line-display';
 
 // ===================== TYPES =====================
 
@@ -18,7 +18,7 @@ export interface SinglePlayerLyricsProps {
   /** Note performance for visual feedback */
   notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
   /** Game mode */
-  gameMode?: string;
+  gameMode?: GameMode;
   /** Missing words indices for missing-words mode */
   missingWordsIndices?: number[];
   /** Is blind section for blind mode */
@@ -188,7 +188,7 @@ export function SinglePlayerLyrics({
             playerColor={playerColor}
             noteDisplayStyle={noteDisplayStyle}
             notePerformance={notePerformance}
-            gameMode={gameMode as GameModeType}
+            gameMode={gameMode}
             missingWordsIndices={missingWordsIndices}
             isBlindSection={isBlindSection}
             firstNoteRef={firstNoteRefCallback}
