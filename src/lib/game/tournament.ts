@@ -222,6 +222,16 @@ function selectByePositions(totalMatches: number, byesNeeded: number): number[] 
   return positions;
 }
 
+// Build a lookup map for O(1) match access by round+position.
+// Key format: "round-position" (e.g. "1-0", "2-1").
+function buildMatchLookup(bracket: TournamentBracket): Map<string, TournamentMatch> {
+  const map = new Map<string, TournamentMatch>();
+  for (const m of bracket.matches) {
+    map.set(`${m.round}-${m.position}`, m);
+  }
+  return map;
+}
+
 // Get matches for a specific round
 export function getMatchesForRound(bracket: TournamentBracket, round: number): TournamentMatch[] {
   return bracket.matches.filter(m => m.round === round);
@@ -231,6 +241,7 @@ export function getMatchesForRound(bracket: TournamentBracket, round: number): T
 // both feeder matches have completed so the winner has been determined).
 // This allows clicking on any match in the bracket to start it out of order.
 export function getPlayableMatches(bracket: TournamentBracket): TournamentMatch[] {
+  const lookup = buildMatchLookup(bracket);
   return bracket.matches.filter(
     m => {
       if (m.completed || !m.player1 || !m.player2 || m.isBye) return false;
@@ -238,8 +249,8 @@ export function getPlayableMatches(bracket: TournamentBracket): TournamentMatch[
       if (m.round === 1) return true;
       // For round 2+, check that both feeder matches are completed
       const pos = m.position;
-      const feeder1 = bracket.matches.find(f => f.round === m.round - 1 && f.position === pos * 2);
-      const feeder2 = bracket.matches.find(f => f.round === m.round - 1 && f.position === pos * 2 + 1);
+      const feeder1 = lookup.get(`${m.round - 1}-${pos * 2}`);
+      const feeder2 = lookup.get(`${m.round - 1}-${pos * 2 + 1}`);
       return !!(feeder1 && feeder1.completed) && !!(feeder2 && feeder2.completed);
     }
   );
@@ -248,13 +259,8 @@ export function getPlayableMatches(bracket: TournamentBracket): TournamentMatch[
 // Get the next match a winner advances to
 function getNextMatch(bracket: TournamentBracket, currentMatch: TournamentMatch): TournamentMatch | null {
   if (currentMatch.round >= bracket.totalRounds) return null;
-  
-  const nextRound = currentMatch.round + 1;
-  const nextPosition = Math.floor(currentMatch.position / 2);
-  
-  return bracket.matches.find(
-    m => m.round === nextRound && m.position === nextPosition
-  ) || null;
+  const lookup = buildMatchLookup(bracket);
+  return lookup.get(`${currentMatch.round + 1}-${Math.floor(currentMatch.position / 2)}`) || null;
 }
 
 // Record match result and advance winner
