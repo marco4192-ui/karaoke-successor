@@ -67,7 +67,10 @@ export function MedleyGameScreen({
   const [isPlaying, setIsPlaying] = useState(false);
 
   // ── Players (mutable ref for performance) ──
-  const initialMappedPlayers = initialPlayers.map(p => ({ ...p, ...EMPTY_PLAYER_SCORE, snippetsSung: 0 }));
+  const initialMappedPlayers = useMemo(
+    () => initialPlayers.map(p => ({ ...p, ...EMPTY_PLAYER_SCORE, snippetsSung: 0 })),
+    [initialPlayers],
+  );
   const playersRef = useRef<MedleyPlayer[]>(initialMappedPlayers);
   const [___playersDisplay, setPlayersDisplay] = useState<MedleyPlayer[]>(initialMappedPlayers);
   const forceRender = useCallback(() => setPlayersDisplay([...playersRef.current]), []);
@@ -796,6 +799,14 @@ function MedleyRoundResults({
   const sorted = [...players].sort((a, b) => b.score - a.score);
   const winner = sorted[0];
 
+  // Guard against double-click: onRecordAndEnd should only fire once
+  const recordedRef = useRef(false);
+  const handleRecorded = useCallback(() => {
+    if (recordedRef.current) return;
+    recordedRef.current = true;
+    onRecordAndEnd();
+  }, [onRecordAndEnd]);
+
   const teamAScore = players.filter(p => p.team === 0).reduce((s, p) => s + p.score, 0);
   const teamBScore = players.filter(p => p.team === 1).reduce((s, p) => s + p.score, 0);
 
@@ -857,11 +868,11 @@ function MedleyRoundResults({
 
       {/* Actions */}
       <div className="flex gap-3">
-        <Button onClick={() => { onRecordAndEnd(); onNextRound(); }}
+        <Button onClick={() => { handleRecorded(); onNextRound(); }}
           className="flex-1 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400">
           🎵 Nächste Runde
         </Button>
-        <Button onClick={() => { onRecordAndEnd(); onEndSeries(); }}
+        <Button onClick={() => { handleRecorded(); onEndSeries(); }}
           variant="outline" className="flex-1 py-3 border-white/20 text-white/60 hover:text-white">
           🏆 Endauswertung
         </Button>
