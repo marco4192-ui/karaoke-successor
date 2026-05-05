@@ -390,6 +390,56 @@ Keine implementierte fehlende Feature-Funktion. Empfehlung: Entfernen.
 
 **Übersprungene Items:**
 - PHP Leaderboard API (6 Critical/High-Bugs): Externe PHP-Datei, kein Teil der Tauri-App-Core-Logik. TS-Client-Seite in H7 korrigiert. PHP-Backend muss komplett neu aufgebaut werden — sprengt TypeScript-Fix-Rahmen.
-- V1-V10 Verbesserungsvorschläge: Architektur- und Refactoring-Änderungen, kein Bugfix. Werden bei Bedarf in separater Session behandelt.
 
 **Finaler Zustand:** 0 TSC-Fehler, 1 ESLint-Fehler (false positive: setTimeout setState in effect), 28 Warnings (no-console)
+
+---
+
+## Session: 2026-05-06 (V1-V10 Verbesserungsvorschläge)
+
+### V1: localStorage-Zentralisierung (HIGH)
+- **Commit:** `a1342d2`
+- **Änderung:** Alle 40+ direkten `localStorage`-Aufrufe zentralisiert durch `@/lib/storage` Modul mit typisierten Helpern (`getItem`, `getString`, `getNumber`, `getBool`, `getJson`, `setItem`, `setBool`, `setJson`, `removeItem`, `clearAll`).
+- **Neu:** `src/lib/storage.ts` (173 Zeilen), zentraler Key-Registry `StorageKeys`.
+- **Betroffen:** 41 Dateien aktualisiert.
+
+### V2: checkNoteHits/checkPlayerNoteHits Deduplizierung (HIGH)
+- **Commit:** `5689942`
+- **Änderung:** Gemeinsamer Scoring-Kern (`runScoringPass`) extrahiert — reine Funktion die Note-Iteration, Tick-Evaluation, Challenge-Modifier, Combo-Tracking und Note-Completion als `ScoringPassResult` zurückgibt. Beide P1 und P2+ rufen diese Funktion auf und behandeln nur ihre spezifischen Side-Effects (Performance-Tracking, Callbacks, Accuracy-Berechnung).
+- **Ergebnis:** 58 Zeilen gespart (678→620), Single Source of Truth für Scoring-Logik.
+
+### V3: Tournament O(n²) → O(1) Lookup-Map (MEDIUM)
+- **Commit:** `1b8e419`
+- **Änderung:** `getPlayableMatches` und `getNextMatch` verwenden Lookup-Map statt Array-Scan.
+
+### V4: accuracyToRating Shared Utility (MEDIUM)
+- **Commit:** `4a664fd`
+- **Änderung:** Doppelte Rating-Berechnung in `use-game-loop.ts` und `use-game-flow-handlers.ts` durch `accuracyToRating()` in `@/lib/game/rating-utils` ersetzt.
+
+### V5: Discriminated Union für Game-Mode Settings (MEDIUM)
+- **Commit:** `1456d7e`
+- **Änderung:** `Record<string, any>` in `GameSetupResult.settings` ersetzt durch typisierte discriminated union (`GameModeSettingsMap`). Pro Game-Mode ein eigenes Settings-Interface mit korrekt getypten Keys. `mode: GameMode` zu `GameSetupResult` hinzugefügt.
+- **Neu:** 12 Settings-Interfaces (`TournamentModeSettings`, `BattleRoyaleModeSettings`, `MedleyModeSettings`, etc.) in `unified-party-setup.types.ts`.
+- **Betroffen:** 4 Dateien (types, hook, party-setup-section, party-game-screens).
+
+### V6: XP-Berechnung Deduplizierung (MEDIUM)
+- **Commit:** `d5acfae`
+- **Änderung:** `awardXPToProfile()` Helper in `results-screen.tsx` extrahiert. Duplicate P1/P2 XP-Blöcke (~20 Zeilen) durch einen einzigen Funktionsaufruf ersetzt.
+
+### V7: Kanonischer NoteDisplayStyle-Typ (MEDIUM)
+- **Commit:** `d5acfae`
+- **Änderung:** `lyric-line-display.tsx` definiert `NoteDisplayStyleType` nicht mehr als separaten Typ, sondern re-exportiert den kanonischen `NoteDisplayStyle` aus `@/lib/game/note-utils` als Alias.
+
+### V8: Song-Energy Binary Search (MEDIUM)
+- **Commit:** `d5acfae`
+- **Änderung:** `ptm-game-screen.tsx`: `allNotes.filter()` (O(n) pro 200ms Tick) ersetzt durch `useMemo`-sortierte Start-Times + binary search (O(log n)).
+
+### V9: getLevelForXP O(1) Closed-Form (LOW)
+- **Commit:** `d5acfae`
+- **Änderung:** `player-progression.ts`: Iterative while-Schleife (bis 1000 Iterationen) ersetzt durch O(1) Closed-Form mit kumulierten XP-Tier-Schwellen und Division.
+
+### V10: Dead Code tailwind.config.ts gelöscht (LOW)
+- **Commit:** `d5acfae`
+- **Änderung:** `tailwind.config.ts` (64 Zeilen) gelöscht — ungenutzt in Tailwind v4 Projekt (CSS-only Config via `@import "tailwindcss"`).
+
+**Finaler Zustand:** 0 TSC-Fehler, 1 ESLint-Fehler (false positive), 28 Warnings (no-console)
