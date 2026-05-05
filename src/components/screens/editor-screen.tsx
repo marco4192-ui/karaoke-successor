@@ -20,10 +20,12 @@ import { GENRES, LANGUAGES } from '@/lib/constants';
 // Genre/Language Editor Component
 function GenreLanguageEditor({ 
   song, 
-  onUpdate 
+  onUpdate,
+  onSaved 
 }: { 
   song: Song; 
   onUpdate: (_updates: Partial<Song>) => void;
+  onSaved?: () => void;
 }) {
   const [showGenreDropdown, setShowGenreDropdown] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
@@ -78,6 +80,7 @@ function GenreLanguageEditor({
       
       if (result.success) {
         setSaveMessage(`✅ ${result.message}`);
+        onSaved?.();
       } else {
         setSaveMessage(`❌ ${result.message}`);
       }
@@ -478,6 +481,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 key={selectedSong?.id ?? 'none'}
                 song={selectedSong}
                 onUpdate={handleSongMetadataUpdate}
+                onSaved={refreshSongs}
               />
             </div>
           )}
