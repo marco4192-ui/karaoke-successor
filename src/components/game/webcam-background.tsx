@@ -171,14 +171,15 @@ export function useWebcamBackground(deviceId: string | null = null) {
     return await startWebcam(newDeviceId);
   }, [stopWebcam, startWebcam]);
   
-  // Cleanup on unmount
+  // Cleanup on unmount — use ref to always capture the latest stream,
+  // even if stream was set to null before the effect re-ran.
+  const streamRef = useRef(stream);
+  streamRef.current = stream;
   useEffect(() => {
     return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
+      streamRef.current?.getTracks().forEach(track => track.stop());
     };
-  }, [stream]);
+  }, []);
   
   // Initial device list
   useEffect(() => {

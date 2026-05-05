@@ -110,13 +110,17 @@ export function MusicReactiveBackground({
           });
         }
         
-        // Update and draw particles
-        particlesRef.current = particlesRef.current.filter(p => {
+        // Update and draw particles (in-place filter to avoid allocating a
+        // new array every frame at 60fps)
+        const particles = particlesRef.current;
+        let writeIdx = 0;
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
           p.life++;
           p.x += p.vx;
           p.y += p.vy;
           
-          if (p.life >= p.maxLife) return false;
+          if (p.life >= p.maxLife) continue;
           
           const alpha = 1 - (p.life / p.maxLife);
           ctx.beginPath();
@@ -124,8 +128,9 @@ export function MusicReactiveBackground({
           ctx.fillStyle = p.color.replace(/[\d.]+\)$/, `${alpha})`);
           ctx.fill();
           
-          return true;
-        });
+          particles[writeIdx++] = p;
+        }
+        particles.length = writeIdx;
         
         // Draw center glow based on volume
         if (isPlayingRef.current && volumeRef.current > 0.1) {
