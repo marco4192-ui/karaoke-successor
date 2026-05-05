@@ -211,9 +211,17 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       return 'poor';
     };
 
-    // Count total notes for each player (P1 gets all notes, P2 only P2-assigned notes in duet/duel)
+    // Count total notes for each player.
+    // In duet mode with P1/P2 assignment, each player only sings their assigned
+    // notes, so accuracy should be calculated against their own subset.
+    // In duel mode (no assignment), both players sing all notes.
     const totalNotes = song.lyrics.reduce((acc, line) => acc + line.notes.length, 0);
-    const p1Accuracy = totalNotes > 0 ? (activePlayer.notesHit / totalNotes) * 100 : 0;
+    const p1AssignedNotes = song.lyrics.reduce((acc, line) =>
+      acc + line.notes.filter(n => n.player === 'P1' || n.player === undefined || n.player === null).length, 0);
+    const hasDuetAssignment = song.lyrics.reduce((acc, line) =>
+      acc + line.notes.filter(n => n.player === 'P2').length, 0) > 0;
+    const p1TotalNotes = hasDuetAssignment ? p1AssignedNotes : totalNotes;
+    const p1Accuracy = p1TotalNotes > 0 ? (activePlayer.notesHit / p1TotalNotes) * 100 : 0;
 
     const playerResults = [{
       playerId: activePlayer.id,
@@ -235,7 +243,6 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       // In duel mode (no player assignment), P2 sings the same notes as P1.
       const p2AssignedNotes = song.lyrics.reduce((acc, line) =>
         acc + line.notes.filter(n => n.player === 'P2').length, 0);
-      const hasDuetAssignment = p2AssignedNotes > 0;
       const p2TotalNotes = hasDuetAssignment ? p2AssignedNotes : totalNotes;
       const p2Accuracy = p2TotalNotes > 0 ? (p2.notesHit / p2TotalNotes) * 100 : 0;
       playerResults.push({
