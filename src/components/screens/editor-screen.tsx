@@ -1,8 +1,5 @@
 'use client';
 
-// TODO: German strings are hardcoded throughout this file. These should be migrated
-// to use an i18n system (e.g. next-intl) for multi-language support.
-
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +11,7 @@ import { NewSongDialog } from '@/components/editor/new-song-dialog';
 import { Song } from '@/types/game';
 import { saveSongToTxt } from '@/lib/editor/save-to-file';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
+import { useTranslation } from '@/lib/i18n/translations';
 
 import { GENRES, LANGUAGES } from '@/lib/constants';
 
@@ -21,11 +19,13 @@ import { GENRES, LANGUAGES } from '@/lib/constants';
 function GenreLanguageEditor({ 
   song, 
   onUpdate,
-  onSaved 
+  onSaved,
+  t 
 }: { 
   song: Song; 
   onUpdate: (_updates: Partial<Song>) => void;
   onSaved?: () => void;
+  t: (key: string) => string;
 }) {
   const [showGenreDropdown, setShowGenreDropdown] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
@@ -90,7 +90,7 @@ function GenreLanguageEditor({
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Save error:', error);
-      setSaveMessage('❌ Fehler beim Speichern');
+      setSaveMessage(t('editor.saveError'));
       if (saveMessageTimerRef.current) clearTimeout(saveMessageTimerRef.current);
       saveMessageTimerRef.current = setTimeout(() => setSaveMessage(null), 3000);
     } finally {
@@ -102,16 +102,16 @@ function GenreLanguageEditor({
     <Card className="bg-white/5 border-white/10">
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
-          🏷️ Metadaten ergänzen
+          🏷️ {t('editor.metadataTitle')}
         </CardTitle>
         <CardDescription>
-          Genre und Sprache für diesen Song hinzufügen
+          {t('editor.metadataDesc')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Genre Section */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-white/80">Genre</label>
+          <label className="text-sm font-medium text-white/80">{t('editor.genre')}</label>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Button
@@ -120,7 +120,7 @@ function GenreLanguageEditor({
                 className="w-full justify-between border-white/20 text-white"
               >
                 <span className="flex items-center gap-2">
-                  🎸 {customGenre || 'Genre auswählen...'}
+                  🎸 {customGenre || t('editor.selectGenre')}
                 </span>
                 <svg className={`w-4 h-4 transition-transform ${showGenreDropdown ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M6 9l6 6 6-6" />
@@ -148,7 +148,7 @@ function GenreLanguageEditor({
             </div>
           </div>
           <Input
-            placeholder="Oder eigenes Genre eingeben..."
+            placeholder={t('editor.customGenre')}
             value={customGenre}
             onChange={(e) => handleCustomGenreChange(e.target.value)}
             className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
@@ -157,7 +157,7 @@ function GenreLanguageEditor({
 
         {/* Language Section */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-white/80">Sprache</label>
+          <label className="text-sm font-medium text-white/80">{t('editor.language')}</label>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Button
@@ -166,7 +166,7 @@ function GenreLanguageEditor({
                 className="w-full justify-between border-white/20 text-white"
               >
                 <span className="flex items-center gap-2">
-                  🌐 {customLanguage || 'Sprache auswählen...'}
+                  🌐 {customLanguage || t('editor.selectLanguage')}
                 </span>
                 <svg className={`w-4 h-4 transition-transform ${showLanguageDropdown ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M6 9l6 6 6-6" />
@@ -194,7 +194,7 @@ function GenreLanguageEditor({
             </div>
           </div>
           <Input
-            placeholder="Oder eigene Sprache eingeben..."
+            placeholder={t('editor.customLanguage')}
             value={customLanguage}
             onChange={(e) => handleCustomLanguageChange(e.target.value)}
             className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
@@ -204,10 +204,10 @@ function GenreLanguageEditor({
         {/* Current Status */}
         <div className="flex gap-4 text-sm">
           <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${song.genre ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-            {song.genre ? '✅' : '❌'} Genre: {song.genre || 'nicht gesetzt'}
+            {song.genre ? '✅' : '❌'} {t('editor.genre')}: {song.genre || t('editor.genreNotSet')}
           </div>
           <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${song.language ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-            {song.language ? '✅' : '❌'} Sprache: {song.language || 'nicht gesetzt'}
+            {song.language ? '✅' : '❌'} {t('editor.language')}: {song.language || t('editor.languageNotSet')}
           </div>
         </div>
 
@@ -221,11 +221,11 @@ function GenreLanguageEditor({
             {isSaving ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                Speichere...
+                {t('editor.saving')}
               </>
             ) : (
               <>
-                💾 Änderungen in TXT-Datei speichern
+                💾 {t('editor.saveChanges')}
               </>
             )}
           </Button>
@@ -235,7 +235,7 @@ function GenreLanguageEditor({
             </p>
           )}
           <p className="text-xs text-white/40 text-center mt-2">
-            Fügt #GENRE: und #LANGUAGE: Tags in die TXT-Datei ein
+            {t('editor.saveHint')}
           </p>
         </div>
       </CardContent>
@@ -244,6 +244,7 @@ function GenreLanguageEditor({
 }
 
 export function EditorScreen({ onBack }: { onBack: () => void }) {
+  const { t } = useTranslation();
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [songs, setSongs] = useState<Song[]>(() => getAllSongs());
   const refreshSongs = useCallback(() => setSongs(getAllSongs()), []);
@@ -334,7 +335,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-slate-800 rounded-lg p-6 flex flex-col items-center gap-3">
             <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
-            <p className="text-white">Lade Lyrics...</p>
+            <p className="text-white">{t('editor.loadingLyrics')}</p>
           </div>
         </div>
       )}
@@ -344,15 +345,15 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
           {/* Header - Consistent with other screens */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Karaoke Editor</h1>
-              <p className="text-white/60">Bearbeite deine Songs</p>
+              <h1 className="text-3xl font-bold mb-2">{t('editor.title')}</h1>
+              <p className="text-white/60">{t('editor.subtitle')}</p>
             </div>
             <div className="flex gap-2">
-              <Button onClick={refreshSongs} variant="outline" className="border-white/20 hover:bg-white/10" title="Songliste neu laden">
+              <Button onClick={refreshSongs} variant="outline" className="border-white/20 hover:bg-white/10" title={t('editor.refreshTitle')}>
                 🔄
               </Button>
               <Button onClick={onBack} variant="outline" className="border-white/20 hover:bg-white/10">
-                ← Zurück
+                ← {t('editor.back')}
               </Button>
             </div>
           </div>
@@ -362,7 +363,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
             {/* Search */}
             <div className="relative flex-1">
               <Input
-                placeholder="Songs suchen..."
+                placeholder={t('editor.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="bg-white/5 border-white/10 text-white placeholder:text-white/40 pr-10"
@@ -381,7 +382,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 className={filterMode === 'no-genre' ? 'bg-orange-500' : 'border-white/20 text-white'}
                 size="sm"
               >
-                🎸 Kein Genre ({songsWithoutGenre})
+                🎸 {t('editor.noGenre')} ({songsWithoutGenre})
               </Button>
               <Button
                 onClick={() => setFilterMode(filterMode === 'no-language' ? 'all' : 'no-language')}
@@ -389,7 +390,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 className={filterMode === 'no-language' ? 'bg-purple-500' : 'border-white/20 text-white'}
                 size="sm"
               >
-                🌐 Keine Sprache ({songsWithoutLanguage})
+                🌐 {t('editor.noLanguage')} ({songsWithoutLanguage})
               </Button>
             </div>
           </div>
@@ -406,8 +407,8 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                   <path d="M12 5v14M5 12h14" />
                 </svg>
               </div>
-              <span className="text-sm font-medium text-white/60 group-hover:text-white/80 transition-colors">Neuer Song</span>
-              <span className="text-xs text-white/30 mt-1">Songtext & Metadaten</span>
+              <span className="text-sm font-medium text-white/60 group-hover:text-white/80 transition-colors">{t('editor.newSong')}</span>
+              <span className="text-xs text-white/30 mt-1">{t('editor.newSongDesc')}</span>
             </button>
             {filteredSongs.map(song => (
               <button
@@ -426,7 +427,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                       )}
                       {/* Hover overlay */}
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">Bearbeiten</span>
+                        <span className="text-white text-sm font-medium">{t('editor.editSong')}</span>
                       </div>
                     </div>
                     {/* Song Info */}
@@ -450,8 +451,8 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               {filteredSongs.length === 0 && (
                 <div className="text-center py-12 text-white/40">
                   <div className="text-4xl mb-2">📝</div>
-                  <p>Keine Songs gefunden</p>
-                  <p className="text-sm">Versuche andere Filterkriterien</p>
+                  <p>{t('editor.noSongsFound')}</p>
+                  <p className="text-sm">{t('editor.noSongsDesc')}</p>
                 </div>
               )}
         </div>
@@ -463,7 +464,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
             <button
               onClick={() => setShowMetadataPanel(!showMetadataPanel)}
               className="absolute top-2 right-2 z-10 p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
-              title={showMetadataPanel ? 'Metadaten ausblenden' : 'Metadaten anzeigen'}
+              title={showMetadataPanel ? t('editor.hideMetadata') : t('editor.showMetadata')}
             >
               🏷️
             </button>
@@ -482,6 +483,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 song={selectedSong}
                 onUpdate={handleSongMetadataUpdate}
                 onSaved={refreshSongs}
+                t={t}
               />
             </div>
           )}
