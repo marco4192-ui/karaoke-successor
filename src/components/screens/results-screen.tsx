@@ -118,6 +118,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
     const fetchNextInQueue = async () => {
       try {
         const response = await fetch('/api/mobile?action=getqueue');
+        if (!response.ok) return;
         const data = await response.json();
         if (data.success && data.queue && data.queue.length > 0) {
           const nextItem = data.queue.find((q: { status: string }) => q.status === 'pending');

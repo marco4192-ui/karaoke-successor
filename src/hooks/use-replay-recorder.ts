@@ -102,6 +102,8 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
   // Guard against double-invocation: set synchronously before the async webcam
   // acquisition so a second call to startRecording sees it immediately.
   const startingRef = useRef(false);
+  // Guard against unmount during async recorder initialization.
+  const isMountedRef = useRef(true);
 
   /**
    * Start recording: combine mic audio tracks + webcam video tracks into one stream.
@@ -133,6 +135,12 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
             video: { width: 1280, height: 720, facingMode: 'user' },
             audio: false,
           });
+          if (!isMountedRef.current) {
+            // Component unmounted during webcam acquisition — release stream
+            webcamStream.getTracks().forEach(t => t.stop());
+            startingRef.current = false;
+            return;
+          }
           webcamStreamRef.current = webcamStream;
           webcamStream.getVideoTracks().forEach(track => stream.addTrack(track));
         } catch (_err) {
@@ -303,6 +311,7 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
   // H8: Cleanup on unmount — stop recorder and release webcam+mic streams
   useEffect(() => {
     return () => {
+      isMountedRef.current = false;
       const recorder = mediaRecorderRef.current;
       if (recorder && recorder.state !== 'inactive') {
         try { recorder.stop(); } catch { /* already stopped */ }

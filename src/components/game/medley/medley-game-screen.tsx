@@ -61,7 +61,6 @@ export function MedleyGameScreen({
   // ── Audio ──
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [___audioReady, setAudioReady] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
   const [currentTimeMs, setCurrentTimeMs] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -135,7 +134,6 @@ export function MedleyGameScreen({
     let cancelled = false;
 
     const prepare = async () => {
-      setAudioReady(false);
       setAudioUrl(null);
       setAudioError(null);
 
@@ -195,11 +193,9 @@ export function MedleyGameScreen({
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    const onReady = () => { setAudioReady(true); };
-    const onErr = () => { setAudioError('Audio-Laden fehlgeschlagen'); setAudioReady(false); };
-    audio.addEventListener('canplay', onReady);
+    const onErr = () => { setAudioError('Audio-Laden fehlgeschlagen'); };
     audio.addEventListener('error', onErr);
-    return () => { audio.removeEventListener('canplay', onReady); audio.removeEventListener('error', onErr); };
+    return () => { audio.removeEventListener('error', onErr); };
   }, [audioUrl]);
 
   // ── Get current lyric line ──

@@ -268,7 +268,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
       return;
     }
     try {
-      await fetch('/api/mobile', {
+      const response = await fetch('/api/mobile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -276,6 +276,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
           payload: { songId: song.id, songTitle: song.title, songArtist: song.artist },
         }),
       });
+      if (!response.ok) return;
       setJukeboxWishlist(prev => [...prev, { songId: song.id, songTitle: song.title, songArtist: song.artist, addedBy: profile.name }]);
     } catch (error) {
       // eslint-disable-next-line no-console
