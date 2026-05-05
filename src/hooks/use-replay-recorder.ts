@@ -99,12 +99,15 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
   const webcamStreamRef = useRef<MediaStream | null>(null);
   const startTimeRef = useRef<number>(0);
   const savedRef = useRef(false);
+  // Guard against double-invocation: set synchronously before the async webcam
+  // acquisition so a second call to startRecording sees it immediately.
+  const startingRef = useRef(false);
 
   /**
    * Start recording: combine mic audio tracks + webcam video tracks into one stream.
    */
   const startRecording = useCallback(() => {
-    if (!enabled || !songId || mediaRecorderRef.current) return;
+    if (!enabled || !songId || mediaRecorderRef.current || startingRef.current) return;
 
     const micStream = getMicStream();
     if (!micStream || micStream.getAudioTracks().length === 0) {
@@ -117,6 +120,9 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
 
     // Add mic audio tracks
     micStream.getAudioTracks().forEach(track => combinedStream.addTrack(track));
+
+    // Set guard synchronously to prevent double-invocation while async init runs
+    startingRef.current = true;
 
     // Add webcam video tracks if webcam is active (must complete before starting recorder)
     const useWebcam = isWebcamActive;
@@ -150,6 +156,7 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
         } catch (fallbackErr) {
           // eslint-disable-next-line no-console
           console.error('[ReplayRecorder] Failed to create MediaRecorder:', fallbackErr);
+          startingRef.current = false;
           return;
         }
       }
@@ -165,6 +172,7 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
 
       recorder.start(1000); // Collect chunks every second
       mediaRecorderRef.current = recorder;
+      startingRef.current = false;
       startTimeRef.current = Date.now();
       setIsRecording(true);
       setHasReplay(false);
@@ -300,6 +308,7 @@ export function useReplayRecorder(options: UseReplayRecorderOptions): UseReplayR
         try { recorder.stop(); } catch { /* already stopped */ }
       }
       mediaRecorderRef.current = null;
+      startingRef.current = false;
       if (webcamStreamRef.current) {
         webcamStreamRef.current.getTracks().forEach(t => t.stop());
         webcamStreamRef.current = null;
