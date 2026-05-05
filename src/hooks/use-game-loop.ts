@@ -149,11 +149,16 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   const startTimeRef = useRef<number>(0);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isMountedRef = useRef(true);
+  // Ref to playMedia closure (defined inside initGame effect) so the
+  // pause-resume effect can call it when restarting an interrupted countdown.
+  const playMediaRef = useRef<() => Promise<void>>(() => Promise.resolve());
   const hasEndedRef = useRef(false); // Guard against double endGameAndCleanup
   const abortedRef = useRef(false);   // Set when user aborts to prevent endGameAndCleanup
   const comebackRef = useRef(false);  // Tracks if player had a comeback (combo >= 50 after missing >= 10)
   const mediaPlayWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // ── Pause position tracking ──
+  // When pausing during countdown, remember the countdown value so resume can restart it.
+  const pausedAtCountdownRef = useRef<number | null>(null);
   // ── Refs for frequently-changing values (pitch, YouTube, native audio) ──
   // These MUST NOT be in the game loop dependency array, otherwise the loop
   // would be torn down and recreated on every pitch detection callback (~50Hz),
@@ -496,6 +501,10 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
           }
         };
 
+        // Store playMedia in ref so the pause-resume effect can call it
+        // when restarting an interrupted countdown.
+        playMediaRef.current = playMedia;
+
         // ── Medley mode: skip countdown (MedleyGameView already counted down) ──
         if (gameMode === 'medley') {
           setCountdown(0);
@@ -688,8 +697,77 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         clearInterval(countdownIntervalRef.current);
         countdownIntervalRef.current = null;
       }
+      // Remember countdown value so resume can restart it instead of
+      // jumping straight to the game loop (which would start without media).
+      pausedAtCountdownRef.current = countdown;
     } else if (gameStatus === 'playing' && wasPausedByStoreRef.current) {
       wasPausedByStoreRef.current = false;
+
+      // If the countdown was interrupted by pause, restart it instead of
+      // jumping to the game loop (which would start without media setup).
+      if (pausedAtCountdownRef.current !== null && pausedAtCountdownRef.current > 0) {
+        const remaining = pausedAtCountdownRef.current;
+        pausedAtCountdownRef.current = null;
+
+        setCountdown(remaining);
+        let currentCount = remaining;
+
+        if (mediaPlayWatchdogRef.current) {
+          clearTimeout(mediaPlayWatchdogRef.current);
+          mediaPlayWatchdogRef.current = null;
+        }
+
+        countdownIntervalRef.current = setInterval(() => {
+          if (!isMountedRef.current) {
+            if (countdownIntervalRef.current) {
+              clearInterval(countdownIntervalRef.current);
+              countdownIntervalRef.current = null;
+            }
+            return;
+          }
+
+          currentCount -= 1;
+
+          if (currentCount <= 0) {
+            if (countdownIntervalRef.current) {
+              clearInterval(countdownIntervalRef.current);
+              countdownIntervalRef.current = null;
+            }
+
+            setCountdown(0);
+            setIsPlaying(true);
+            startTimeRef.current = Date.now();
+            playMediaRef.current();
+
+            // Watchdog: same 10s guard as the initial countdown
+            const nonScoring = gameMode === 'rate-my-song';
+            mediaPlayWatchdogRef.current = setTimeout(() => {
+              if (wasPausedByStoreRef.current) return;
+              const audioPlaying = audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2;
+              const videoPlaying = videoRef.current && !videoRef.current.paused && videoRef.current.readyState >= 2;
+              const youTubeActive = isYouTube;
+              const nativePlaying = isNativeAudio && nativeAudioTimeRef.current > 0;
+              const youTubePlaying = youTubeActive && youtubeTimeRef.current > 0;
+
+              if (!audioPlaying && !videoPlaying && !youTubePlaying && !nativePlaying) {
+                if (nonScoring) {
+                  // eslint-disable-next-line no-console
+                  console.warn('[GameLoop] Media playback watchdog: no media playing after 10s in non-scoring mode — continuing with wall-clock timing');
+                } else {
+                  // eslint-disable-next-line no-console
+                  console.error('[GameLoop] Media playback watchdog: no media actually playing after 10s — ending game to prevent hang');
+                  endGameAndCleanupRef.current();
+                }
+              }
+            }, 10000);
+          } else {
+            setCountdown(currentCount);
+          }
+        }, 1000);
+        return;
+      }
+
+      pausedAtCountdownRef.current = null;
 
       // Resume all media sources — audio/video elements keep their currentTime,
       // so calling .play() continues from where they were paused.
@@ -714,6 +792,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     if (gameStatus === 'ended' || gameStatus === 'idle') {
       wasPausedByStoreRef.current = false;
       pausedAtElapsedMsRef.current = null;
+      pausedAtCountdownRef.current = null;
     }
   }, [gameStatus, audioRef, videoRef, nativeAudioPause, nativeAudioResume, setIsPlaying, effectiveSong]);
 
