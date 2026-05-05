@@ -587,9 +587,25 @@ function updateLevelProgression(
   return { leveledUp: newLevel > oldLevel, newLevel };
 }
 
-/** Track session counts and dates */
+/** Track session counts, dates, and play streaks */
 function updateSessionStats(stats: ExtendedPlayerStats, today: string): void {
+  // Calculate play streak before updating lastSessionDate
   if (stats.lastSessionDate !== today) {
+    // New day — check if streak continues
+    const lastDate = stats.lastSessionDate ? new Date(stats.lastSessionDate) : null;
+    const todayDate = new Date(today);
+    const dayDiff = lastDate ? Math.round((todayDate.getTime() - lastDate.getTime()) / 86400000) : Infinity;
+
+    if (dayDiff === 1) {
+      // Consecutive day — extend streak
+      stats.currentPlayStreak++;
+    } else if (dayDiff > 1) {
+      // Gap of 2+ days — reset streak
+      stats.currentPlayStreak = 1;
+    }
+    // dayDiff === 0 means same day (first session), streak unchanged
+
+    stats.longestPlayStreak = Math.max(stats.longestPlayStreak, stats.currentPlayStreak);
     stats.sessionsToday = 1;
     stats.lastSessionDate = today;
   } else {
@@ -641,6 +657,9 @@ function checkMilestones(stats: ExtendedPlayerStats, game: PlayerGameResult, now
   if (!stats.milestones.firstSong) stats.milestones.firstSong = now;
   if (game.accuracy >= PERFECT_ACCURACY && !stats.milestones.firstPerfect) stats.milestones.firstPerfect = now;
   if (game.goldenNotes > 0 && !stats.milestones.firstGolden) stats.milestones.firstGolden = now;
+  // Song count milestones — checked AFTER songsCompleted is incremented
+  if (stats.songsCompleted >= 100 && !stats.milestones.hundredSongs) stats.milestones.hundredSongs = now;
+  if (stats.songsCompleted >= 1000 && !stats.milestones.thousandSongs) stats.milestones.thousandSongs = now;
 }
 
 /** Add completed game to recent games list, trimming to the cap */
@@ -721,6 +740,11 @@ export function updateStatsAfterGame(
 
   // 3b. Increment songs completed (actual played-to-completion songs)
   stats.songsCompleted++;
+
+  // 3c. Track challenge mode completions
+  if (gameData.challengeMode) {
+    stats.challengesCompleted++;
+  }
 
   // 4. Update performance stats (running averages based on completed songs, not sessions)
   updatePerformanceStats(stats, gameData, stats.songsCompleted);
