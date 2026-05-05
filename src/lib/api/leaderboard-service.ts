@@ -118,7 +118,7 @@ class LeaderboardService {
    */
   async getGlobalLeaderboard(limit = 100, offset = 0): Promise<ApiPlayer[]> {
     const result = await this.request<{ leaderboard: ApiPlayer[] }>(
-      `/leaderboard?limit=${limit}&offset=${offset}`
+      `/leaderboard/global?limit=${limit}&offset=${offset}`
     );
     return result.leaderboard;
   }
@@ -128,7 +128,7 @@ class LeaderboardService {
    */
   async getSongLeaderboard(songId: string, limit = 100): Promise<ApiScore[]> {
     const result = await this.request<{ leaderboard: ApiScore[] }>(
-      `/leaderboard/${encodeURIComponent(songId)}?limit=${limit}`
+      `/leaderboard/song/${encodeURIComponent(songId)}?limit=${limit}`
     );
     return result.leaderboard;
   }
@@ -142,11 +142,11 @@ class LeaderboardService {
       body: JSON.stringify({
         id: profile.id,
         name: profile.name,
-        avatar: profile.avatar,
+        avatar_url: profile.avatar,
         country: profile.country,
-        showOnLeaderboard: profile.privacy?.showOnLeaderboard ?? true,
-        showPhoto: profile.privacy?.showPhoto ?? true,
-        showCountry: profile.privacy?.showCountry ?? true,
+        show_on_leaderboard: profile.privacy?.showOnLeaderboard ? 1 : 0,
+        show_photo: profile.privacy?.showPhoto ? 1 : 0,
+        show_country: profile.privacy?.showCountry ? 1 : 0,
       }),
     });
   }
@@ -171,13 +171,16 @@ class LeaderboardService {
     const result = await this.request<{ success: boolean; rank: number; is_new_high_score: boolean }>('/scores', {
       method: 'POST',
       body: JSON.stringify({
-        playerId: player.id,
-        songId: song.id,
+        player_id: player.id,
+        song_id: song.id,
         score,
-        maxScore,
+        max_score: maxScore,
         difficulty: difficulty === 'easy' ? 1 : difficulty === 'medium' ? 2 : 3,
-        gameMode,
-        ...stats,
+        game_mode: gameMode,
+        perfect_notes: stats.perfectNotes,
+        good_notes: stats.goodNotes,
+        missed_notes: stats.missedNotes,
+        max_combo: stats.maxCombo,
       }),
     });
 
