@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 import type { Screen } from '@/types/screens';
 import type { GameResult, GameState, Player } from '@/types/game';
 import type { PartyStore } from '@/lib/game/party-store';
+import { accuracyToRating } from '@/lib/game/rating-utils';
 import { recordMatchResult } from '@/lib/game/tournament';
 import { finishCompetitiveRound, calculateMissingWordsBonus, calculateBlindBonus } from '@/lib/game/competitive-words-blind';
 import { estimatePerfectNotes } from '@/lib/game/scoring';
@@ -25,12 +26,7 @@ function buildGameResultFromState(
       // ratings to always be 'poor'.
       const totalNotes = p.notesHit + p.notesMissed;
       const accuracy = totalNotes > 0 ? (p.notesHit / totalNotes) * 100 : 0;
-      let rating: GameResult['players'][0]['rating'];
-      if (accuracy >= 95) rating = 'perfect';
-      else if (accuracy >= 85) rating = 'excellent';
-      else if (accuracy >= 70) rating = 'good';
-      else if (accuracy >= 50) rating = 'okay';
-      else rating = 'poor';
+      const rating = accuracyToRating(accuracy);
       // Estimate perfect notes from accuracy-based rating — the Player interface
       // does not carry per-note quality, so we use the shared heuristic.
       const perfectNotes = estimatePerfectNotes(p.notesHit, rating);

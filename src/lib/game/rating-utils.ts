@@ -1,8 +1,20 @@
 /**
- * Shared rating color definitions used across score cards, shorts creator,
- * and results screen.  Provides both hex values (for Canvas rendering) and
+ * Shared rating definitions and utilities used across score cards, shorts creator,
+ * results screen, and game-loop.  Provides both hex values (for Canvas rendering) and
  * Tailwind gradient classes (for HTML/CSS rendering).
  */
+
+export type Rating = 'perfect' | 'excellent' | 'good' | 'okay' | 'poor';
+
+/** Map accuracy percentage to a rating label. Thresholds match PERFECT_ACCURACY
+ *  (99.5%) and the tiered boundaries used in scoring and results. */
+export function accuracyToRating(accuracy: number): Rating {
+  if (accuracy >= 95) return 'perfect';
+  if (accuracy >= 85) return 'excellent';
+  if (accuracy >= 70) return 'good';
+  if (accuracy >= 50) return 'okay';
+  return 'poor';
+}
 
 /** Hex color per rating level — consumed by Canvas-based components. */
 export const RATING_HEX_COLORS: Record<string, string> = {

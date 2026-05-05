@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Song, Difficulty, GameResult, PitchDetectionResult, GameMode } from '@/types/game';
 import type { AudioEffectsEngine } from '@/lib/audio/audio-effects';
 import { normalizeFilePath } from '@/lib/tauri-file-storage';
+import { accuracyToRating } from '@/lib/game/rating-utils';
 import { useGameStore } from '@/lib/game/store';
 
 interface UseGameLoopOptions {
@@ -202,14 +203,8 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     const activePlayer = players[0];
     if (!activePlayer || !song) return;
 
-    // Helper: calculate rating from accuracy
-    const calcRating = (acc: number): 'perfect' | 'excellent' | 'good' | 'okay' | 'poor' => {
-      if (acc >= 95) return 'perfect';
-      if (acc >= 85) return 'excellent';
-      if (acc >= 70) return 'good';
-      if (acc >= 50) return 'okay';
-      return 'poor';
-    };
+    // Helper: calculate rating from accuracy (shared utility)
+    const calcRating = accuracyToRating;
 
     // Count total notes for each player.
     // In duet mode with P1/P2 assignment, each player only sings their assigned
