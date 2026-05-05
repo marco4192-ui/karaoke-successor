@@ -93,6 +93,10 @@ export function useMobilePitchPolling(song: { id: string } | null): {
       }
     };
 
+    // Start first poll immediately, then set up interval for repeated polling
+    pollMobilePitch();
+    startPolling();
+
     // Clear backoff timer on cleanup
     return () => {
       aborted = true;
