@@ -84,11 +84,126 @@ export interface SelectedPlayer {
   isConnected?: boolean;
 }
 
+// ===================== TYPED GAME MODE SETTINGS =====================
+// Each game mode has its own settings interface with properly typed keys.
+// Universal keys (difficulty, filters, shared mic) are included in every mode.
+// Config-driven keys are optional since they may not exist in all code paths.
+
+/** Universal settings present in every game mode */
+interface BaseModeSettings {
+  difficulty: Difficulty;
+  filterGenre: string;
+  filterLanguage: string;
+  filterCombined: boolean;
+}
+
+/** Pass the Mic — no extra config settings, shared mic support */
+export interface PassTheMicSettings extends BaseModeSettings {
+  segmentDuration?: number;
+  micId?: string;
+  micName?: string;
+  randomSwitches?: boolean;
+  sharedMicId?: string | null;
+  sharedMicName?: string | null;
+}
+
+/** Companion Sing-Along */
+export interface CompanionSingAlongSettings extends BaseModeSettings {
+  minTurnDuration?: number;
+  maxTurnDuration?: number;
+  blinkWarning?: number;
+}
+
+/** Medley Contest */
+export interface MedleyModeSettings extends BaseModeSettings {
+  playMode?: 'ffa' | 'team';
+  teamSize?: 1 | 2;
+  snippetCount?: number;
+  snippetDuration?: number;
+  transitionTime?: number;
+}
+
+/** Tournament */
+export interface TournamentModeSettings extends BaseModeSettings {
+  maxPlayers?: 2 | 4 | 8 | 16 | 32;
+  shortMode?: boolean;
+}
+
+/** Battle Royale */
+export interface BattleRoyaleModeSettings extends BaseModeSettings {
+  roundDuration?: number;
+  finalRoundDuration?: number;
+  medleyMode?: boolean;
+}
+
+/** Missing Words */
+export interface MissingWordsModeSettings extends BaseModeSettings {
+  missingWordFrequency?: 'easy' | 'normal' | 'hard';
+  bestOf?: 1 | 3 | 5 | 7;
+}
+
+/** Blind Karaoke */
+export interface BlindModeSettings extends BaseModeSettings {
+  blindFrequency?: 'rare' | 'normal' | 'often' | 'insane';
+  bestOf?: 1 | 3 | 5 | 7;
+}
+
+/** Rate My Song */
+export interface RateMySongModeSettings extends BaseModeSettings {
+  duration?: 'short' | 'normal';
+}
+
+/** Duel — no extra config settings */
+export interface DuelModeSettings extends BaseModeSettings {}
+
+/** Standard — no extra config settings */
+export interface StandardModeSettings extends BaseModeSettings {}
+
+/** Duet — no extra config settings */
+export interface DuetModeSettings extends BaseModeSettings {}
+
+/** Online — no extra config settings */
+export interface OnlineModeSettings extends BaseModeSettings {}
+
+/** Union of all mode-specific settings */
+export type GameModeSettings =
+  | PassTheMicSettings
+  | CompanionSingAlongSettings
+  | MedleyModeSettings
+  | TournamentModeSettings
+  | BattleRoyaleModeSettings
+  | MissingWordsModeSettings
+  | BlindModeSettings
+  | RateMySongModeSettings
+  | DuelModeSettings
+  | StandardModeSettings
+  | DuetModeSettings
+  | OnlineModeSettings;
+
+/** Discriminated union: maps each GameMode to its typed settings */
+export interface GameModeSettingsMap {
+  'standard': StandardModeSettings;
+  'pass-the-mic': PassTheMicSettings;
+  'companion-singalong': CompanionSingAlongSettings;
+  'medley': MedleyModeSettings;
+  'tournament': TournamentModeSettings;
+  'battle-royale': BattleRoyaleModeSettings;
+  'missing-words': MissingWordsModeSettings;
+  'blind': BlindModeSettings;
+  'rate-my-song': RateMySongModeSettings;
+  'duel': DuelModeSettings;
+  'duet': DuetModeSettings;
+  'online': OnlineModeSettings;
+}
+
 // ===================== GAME SETUP RESULT =====================
 
 export interface GameSetupResult {
+  /** Which game mode was selected — enables type narrowing on settings */
+  mode: GameMode;
   players: SelectedPlayer[];
-  settings: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  /** Typed settings for the selected game mode */
+  settings: GameModeSettingsMap[GameMode];
   songSelection: SongSelectionOption;
   difficulty: Difficulty;
   inputMode: InputMode;

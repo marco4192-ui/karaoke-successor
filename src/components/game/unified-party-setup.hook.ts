@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Song, PlayerProfile, PLAYER_COLORS, Difficulty, GameMode } from '@/types/game';
 import { PARTY_GAME_CONFIGS } from './unified-party-setup.config';
-import type { SongSelectionOption, SelectedPlayer, GameSetupResult, InputMode } from './unified-party-setup.types';
+import type { SongSelectionOption, SelectedPlayer, GameSetupResult, InputMode, GameModeSettingsMap } from './unified-party-setup.types';
 import { getGenres, getLanguages, filterSongs } from '@/lib/game/song-library';
 import { useGameStore } from '@/lib/game/store';
 import { StorageKeys, getItem, setItem, removeItem, setJson, getJson, getString } from '@/lib/storage';
@@ -243,6 +243,7 @@ export function usePartySetup({
     }
 
     const result: GameSetupResult = {
+      mode: gameMode,
       players: createPlayers(),
       settings: {
         ...settings,
@@ -251,7 +252,7 @@ export function usePartySetup({
         filterLanguage,
         filterCombined,
         ...(config.sharedMic && selectedMicId ? { sharedMicId: selectedMicId, sharedMicName: selectedMicName } : {}),
-      },
+      } as GameModeSettingsMap[typeof gameMode],
       songSelection: option,
       difficulty,
       inputMode,

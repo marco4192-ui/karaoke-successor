@@ -111,11 +111,12 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
 
       // Store mic assignments in unifiedSetupResult for MicIndicator display
       const setupResult: GameSetupResult = {
+        mode: 'tournament',
         players: [
           { id: match.player1.id, name: match.player1.name, color: match.player1.color || '#FF6B6B', playerType: micOverlay.p1Mic === 'Companion' ? 'companion' : 'microphone', micId: 'default', micName: micOverlay.p1Mic },
           { id: match.player2.id, name: match.player2.name, color: match.player2.color || '#4ECDC4', playerType: micOverlay.p2Mic === 'Companion' ? 'companion' : 'microphone', micId: 'default', micName: micOverlay.p2Mic },
         ],
-        settings: {},
+        settings: { difficulty: 'medium', filterGenre: 'all', filterLanguage: 'all', filterCombined: true },
         songSelection: 'random',
         difficulty: 'medium',
         inputMode: 'microphone',
@@ -263,8 +264,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               // Re-generate voting songs from filtered pool
               const { filterSongs } = await import('@/lib/game/song-library');
               const songs = getAllSongs();
-              const filters = party.unifiedSetupResult?.settings || {};
-              const filtered = filterSongs(songs, filters.filterGenre, filters.filterLanguage, filters.filterCombined);
+              const filters = party.unifiedSetupResult?.settings;
+              const filtered = filterSongs(songs, filters?.filterGenre ?? 'all', filters?.filterLanguage ?? 'all', filters?.filterCombined ?? true);
               const suggested = filtered.sort(() => Math.random() - 0.5).slice(0, 5);
               party.setVotingSongs(suggested);
               setScreen('song-voting');
@@ -485,11 +486,12 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             addPlayer({ id: p2Id, name: p2Name, color: p2Color });
             // Set unifiedSetupResult so MicIndicator can display mic assignments
             const setupResult: GameSetupResult = {
+              mode: 'missing-words',
               players: [
                 { id: p1Id, name: p1Name, color: p1Color, playerType: 'microphone', micId: 'default', micName: 'Mikrofon 1' },
                 { id: p2Id, name: p2Name, color: p2Color, playerType: 'microphone', micId: 'default', micName: 'Mikrofon 2' },
               ],
-              settings: {},
+              settings: { difficulty: comp.settings.difficulty, filterGenre: 'all', filterLanguage: 'all', filterCombined: true },
               songSelection: 'random',
               difficulty: comp.settings.difficulty,
               inputMode: 'microphone',
@@ -538,11 +540,12 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             addPlayer({ id: p2Id, name: p2Name, color: p2Color });
             // Set unifiedSetupResult so MicIndicator can display mic assignments
             const setupResult: GameSetupResult = {
+              mode: 'blind',
               players: [
                 { id: p1Id, name: p1Name, color: p1Color, playerType: 'microphone', micId: 'default', micName: 'Mikrofon 1' },
                 { id: p2Id, name: p2Name, color: p2Color, playerType: 'microphone', micId: 'default', micName: 'Mikrofon 2' },
               ],
-              settings: {},
+              settings: { difficulty: comp.settings.difficulty, filterGenre: 'all', filterLanguage: 'all', filterCombined: true },
               songSelection: 'random',
               difficulty: comp.settings.difficulty,
               inputMode: 'microphone',
@@ -579,6 +582,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             // Add players
             setPlayers([]);
             const setupResult: GameSetupResult = {
+              mode: 'rate-my-song',
               players: playerIds.map((id, i) => {
                 const p = profiles.find(pr => pr.id === id);
                 return {
@@ -590,7 +594,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                   micName: `Mikrofon ${i + 1}`,
                 };
               }),
-              settings: {},
+              settings: { difficulty: 'medium', filterGenre: 'all', filterLanguage: 'all', filterCombined: true },
               songSelection: 'library',
               difficulty: 'medium',
               inputMode: 'mixed',

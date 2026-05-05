@@ -6,6 +6,7 @@ import { getAllSongs, filterSongs, ensureSongUrls } from '@/lib/game/song-librar
 import { UnifiedPartySetup, SongVotingModal, PARTY_GAME_CONFIGS } from '@/components/game/unified-party-setup';
 import type { PassTheMicSegment } from '@/components/game/ptm-types';
 import type { MedleyPlayer as MedleyPlayerType, MedleySettings as MedleySettingsType } from '@/components/game/medley/medley-types';
+import type { GameModeSettingsMap, PassTheMicSettings as PassTheMicModeSettings } from '@/components/game/unified-party-setup.types';
 import { Song, EMPTY_PLAYER_SCORE } from '@/types/game';
 import type { Screen } from '@/types/screens';
 import { createTournament, TournamentPlayer, TournamentSettings } from '@/lib/game/tournament';
@@ -23,8 +24,8 @@ interface PartySetupSectionProps {
 }
 
 // ===================== HELPER: Convert unified setup settings to typed settings =====================
-function toPassTheMicSettings( // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  s: Record<string, any>, overrides?: Partial<PassTheMicSettings>): PassTheMicSettings {
+function toPassTheMicSettings(
+  s: GameModeSettingsMap['pass-the-mic'], overrides?: Partial<PassTheMicSettings>): PassTheMicSettings {
   return {
     segmentDuration: s.segmentDuration ?? 30,
     difficulty: s.difficulty ?? 'medium',
@@ -37,8 +38,8 @@ function toPassTheMicSettings( // eslint-disable-next-line @typescript-eslint/no
   };
 }
 
-function toCompanionSettings( // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  s: Record<string, any>): CompanionSingAlongSettings {
+function toCompanionSettings(
+  s: GameModeSettingsMap['companion-singalong']): CompanionSingAlongSettings {
   return {
     difficulty: s.difficulty ?? 'medium',
   };
@@ -175,27 +176,29 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
 
             const songs = getAllSongs();
 
-            // Apply song filter if set
+            // Apply song filter — base settings (difficulty, filters) are shared across all modes
+            const baseSettings = result.settings as { filterGenre: string; filterLanguage: string; filterCombined: boolean };
             const filteredSongs = filterSongs(
               songs,
-              result.settings.filterGenre,
-              result.settings.filterLanguage,
-              result.settings.filterCombined
+              baseSettings.filterGenre,
+              baseSettings.filterLanguage,
+              baseSettings.filterCombined
             );
             // Store filters for next-round song selection in PTM
             if (party.selectedGameMode === 'pass-the-mic') {
               storeSongFilters({
-                filterGenre: result.settings.filterGenre,
-                filterLanguage: result.settings.filterLanguage,
-                filterCombined: result.settings.filterCombined,
+                filterGenre: baseSettings.filterGenre,
+                filterLanguage: baseSettings.filterLanguage,
+                filterCombined: String(baseSettings.filterCombined),
               });
             }
 
             switch (mode) {
               // ── Tournament: create bracket → bracket view ──
               case 'tournament': {
-                const rawMaxPlayers = result.settings.maxPlayers || 8;
-                const shortMode = result.settings.shortMode !== false;
+                const s = result.settings as GameModeSettingsMap['tournament'];
+                const rawMaxPlayers = s.maxPlayers || 8;
+                const shortMode = s.shortMode !== false;
                 const tournamentPlayers: TournamentPlayer[] = result.players.map((p, i) => ({
                   id: p.id,
                   name: p.name,
@@ -250,6 +253,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
 
               // ── Battle Royale: create game object → game view ──
               case 'battle-royale': {
+                const s = result.settings as GameModeSettingsMap['battle-royale'];
                 // Battle Royale allows max 4 microphone players + 20 companion players.
                 // The unified setup marks all players as 'microphone', so we need to
                 // auto-convert excess players (>4) to 'companion' type.
@@ -263,10 +267,10 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 }));
 
                 const brSettings: BattleRoyaleSettings = {
-                  roundDuration: result.settings.roundDuration || 60,
-                  finalRoundDuration: result.settings.finalRoundDuration || 120,
+                  roundDuration: s.roundDuration || 60,
+                  finalRoundDuration: s.finalRoundDuration || 120,
                   randomSongs: true,
-                  medleyMode: result.settings.medleyMode || false,
+                  medleyMode: s.medleyMode || false,
                   medleySnippets: 3,
                   difficulty: result.difficulty,
                   eliminationAnimation: true,
@@ -285,8 +289,9 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
 
               // ── Medley: create song list → medley game view ──
               case 'medley': {
-                const snippetCount = result.settings.snippetCount || 5;
-                const snippetDuration = result.settings.snippetDuration || 30;
+                const s = result.settings as GameModeSettingsMap['medley'];
+                const snippetCount = s.snippetCount || 5;
+                const snippetDuration = s.snippetDuration || 30;
                 const medleySongList = generateMedleySnippets(filteredSongs, snippetCount, snippetDuration);
                 party.setMedleyPlayers(toMedleyPlayers(result.players));
                 party.setMedleySongs(medleySongList);
@@ -302,6 +307,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
 
               // ── Pass the Mic: song selection (random, medley, or library-picked) ──
               case 'pass-the-mic': {
+                const s = result.settings as GameModeSettingsMap['pass-the-mic'];
                 // Store song selection mode so handleContinue knows how to pick the next song
                 party.setPtmSongSelection(result.songSelection || 'random');
                 // When songSelection is 'medley', delegate to the medley game flow
@@ -359,10 +365,10 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   party.setPassTheMicPlayers(ptmPlayers);
                   party.setPassTheMicSegments(segments);
                   party.setPassTheMicSong(firstSong);
-                  party.setPassTheMicSettings(toPassTheMicSettings(result.settings, {
+                  party.setPassTheMicSettings(toPassTheMicSettings(s, {
                     segmentDuration: snippetDuration,
-                    sharedMicId: result.settings.sharedMicId || null,
-                    sharedMicName: result.settings.sharedMicName || null,
+                    sharedMicId: s.sharedMicId || null,
+                    sharedMicName: s.sharedMicName || null,
                   }));
                   // Prevent React #185
                   party.setIsSongPlaying(false);
@@ -380,17 +386,17 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   } catch { /* non-critical — game view has its own URL restoration */ }
 
                   const playerCount = result.players.length || 2;
-                  const segments = generatePassTheMicSegments(songWithUrls, playerCount, result.settings.segmentDuration);
+                  const segments = generatePassTheMicSegments(songWithUrls, playerCount, s.segmentDuration);
                   if (segments.length === 0) {
                     toast({ title: 'Song zu kurz', description: 'Der gewählte Song ist kürzer als 60 Sekunden. Bitte erneut wählen.', variant: 'destructive' });
                     break;
                   }
                   const segDur = (segments[1]?.startTime ?? segments[0]?.endTime ?? 30000) - (segments[0]?.startTime ?? 0);
                   const settingsWithMic = {
-                    ...result.settings,
+                    ...s,
                     segmentDuration: Math.round(segDur / 1000),
-                    sharedMicId: result.settings.sharedMicId || null,
-                    sharedMicName: result.settings.sharedMicName || null,
+                    sharedMicId: s.sharedMicId || null,
+                    sharedMicName: s.sharedMicName || null,
                   };
                   const ptmPlayers = toPassTheMicPlayers(result.players);
                   party.setPassTheMicPlayers(ptmPlayers);
@@ -411,7 +417,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   const compPlayers = toCompanionPlayers(result.players);
                   party.setCompanionPlayers(compPlayers);
                   party.setCompanionSong(randomSong);
-                  party.setCompanionSettings(toCompanionSettings(result.settings));
+                  party.setCompanionSettings(toCompanionSettings(result.settings as GameModeSettingsMap['companion-singalong']));
                   // Reset game and add first player as the active singer
                   resetGame();
                   setPlayers([]);
@@ -428,14 +434,15 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               // ── Missing Words / Blind: create competitive game → competitive game view ──
               case 'missing-words':
               case 'blind': {
+                const s = result.settings as GameModeSettingsMap['missing-words'] & GameModeSettingsMap['blind'];
                 const modeType = mode as CompetitiveModeType;
-                const freqSetting = result.settings.missingWordFrequency || result.settings.blindFrequency || 'normal';
+                const freqSetting = s.missingWordFrequency || s.blindFrequency || 'normal';
                 const mwFreqMap: Record<string, number> = { easy: 0.15, normal: 0.25, hard: 0.40 };
                 const blindFreqMap: Record<string, number> = { rare: 0.10, normal: 0.25, often: 0.40, insane: 0.60 };
                 const compSettings: CompetitiveSettings = {
                   difficulty: result.difficulty,
                   modeType,
-                  bestOf: ([1, 3, 5, 7].includes(result.settings.bestOf) ? result.settings.bestOf : 3) as 1 | 3 | 5 | 7,
+                  bestOf: ([1, 3, 5, 7].includes(s.bestOf as number) ? s.bestOf : 3) as 1 | 3 | 5 | 7,
                   missingWordFrequency: modeType === 'missing-words'
                     ? (mwFreqMap[freqSetting] ?? 0.25)
                     : 0.25,
@@ -457,9 +464,10 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
 
               // ── Rate my Song: pick song → set up state → game screen ──
               case 'rate-my-song': {
+                const s = result.settings as GameModeSettingsMap['rate-my-song'];
                 const randomSong = pickRandomSong(filteredSongs);
                 if (!randomSong) break;
-                const duration = result.settings.duration || 'normal';
+                const duration = s.duration || 'normal';
                 const rateSettings = { playMode: result.players.length > 1 ? 'duel' as const : 'single' as const, duration: duration as 'short' | 'normal', songId: randomSong.id };
                 const playerIds = result.players.map(p => p.id);
                 party.setRateMySongSettings(rateSettings);
@@ -497,16 +505,16 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
             if (party.selectedGameMode === 'pass-the-mic') {
               party.setPtmSongSelection('library');
               party.setPassTheMicPlayers(toPassTheMicPlayers(result.players));
-              party.setPassTheMicSettings(toPassTheMicSettings(result.settings, {
-                sharedMicId: result.settings.sharedMicId || null,
-                sharedMicName: result.settings.sharedMicName || null,
+              party.setPassTheMicSettings(toPassTheMicSettings(result.settings as GameModeSettingsMap['pass-the-mic'], {
+                sharedMicId: (result.settings as GameModeSettingsMap['pass-the-mic']).sharedMicId || null,
+                sharedMicName: (result.settings as GameModeSettingsMap['pass-the-mic']).sharedMicName || null,
               }));
             } else if (party.selectedGameMode === 'companion-singalong') {
               party.setCompanionPlayers(toCompanionPlayers(result.players));
-              party.setCompanionSettings(toCompanionSettings(result.settings));
+              party.setCompanionSettings(toCompanionSettings(result.settings as GameModeSettingsMap['companion-singalong']));
             } else if (party.selectedGameMode === 'rate-my-song') {
-              // Pre-store player IDs and settings; songId will be set when user picks from library
-              const duration = result.settings.duration || 'normal';
+              const rateSettings = result.settings as GameModeSettingsMap['rate-my-song'];
+              const duration = rateSettings.duration || 'normal';
               party.setRateMySongSettings({
                 playMode: result.players.length > 1 ? 'duel' as const : 'single' as const,
                 duration: duration as 'short' | 'normal',
@@ -561,7 +569,8 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
 
             if (party.selectedGameMode === 'pass-the-mic') {
               const playerCount = (party.unifiedSetupResult?.players?.length) || 2;
-              const segments = generatePassTheMicSegments(songWithUrls, playerCount, party.unifiedSetupResult?.settings?.segmentDuration);
+              const pSettings = party.unifiedSetupResult?.settings as PassTheMicModeSettings | undefined;
+              const segments = generatePassTheMicSegments(songWithUrls, playerCount, pSettings?.segmentDuration);
               if (segments.length === 0) {
                 toast({ title: 'Song zu kurz', description: 'Der gewählte Song ist kürzer als 60 Sekunden.', variant: 'destructive' });
                 return;
@@ -571,10 +580,10 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               party.setPassTheMicPlayers(ptmPlayers);
               party.setPassTheMicSegments(segments);
               party.setPassTheMicSong(songWithUrls);
-              party.setPassTheMicSettings(toPassTheMicSettings(party.unifiedSetupResult?.settings ?? {}, {
+              party.setPassTheMicSettings(toPassTheMicSettings(pSettings!, {
                 segmentDuration: Math.round(segDur / 1000),
-                sharedMicId: party.unifiedSetupResult?.settings?.sharedMicId || null,
-                sharedMicName: party.unifiedSetupResult?.settings?.sharedMicName || null,
+                sharedMicId: pSettings?.sharedMicId || null,
+                sharedMicName: pSettings?.sharedMicName || null,
               }));
               party.setIsSongPlaying(false);
               // Use dedicated PTM game screen
