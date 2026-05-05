@@ -1,7 +1,7 @@
 // Library Cache System - Persistent storage for song library data
 // Uses IndexedDB for browser persistence
 
-export interface CachedSong {
+interface CachedSong {
   id: string;
   title: string;
   artist: string;

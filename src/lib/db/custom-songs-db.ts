@@ -156,7 +156,7 @@ function loadMissingSongsFromLocalStorage(missingIds: string[]): Song[] {
 }
 
 /** Get the count of custom songs stored. */
-export async function getCustomSongCount(): Promise<number> {
+async function getCustomSongCount(): Promise<number> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readonly');

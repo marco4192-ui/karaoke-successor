@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, type RefObject } from 'react';
-import { AudioEffectsEngine } from '@/lib/audio/audio-effects';
+import { AudioEffectsEngine, AUDIO_PRESETS, type AudioEffectPreset } from '@/lib/audio/audio-effects';
 import { getPitchDetector } from '@/lib/audio/pitch-detector';
 import { useGameStore } from '@/lib/game/store';
 
@@ -176,5 +176,15 @@ export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
     setReverbAmount,
     echoAmount,
     setEchoAmount,
+    applyEffectPreset,
   };
+
+  /** Apply a named audio effect preset and sync UI sliders */
+  function applyEffectPreset(preset: AudioEffectPreset) {
+    if (!audioEffectsRef.current) return;
+    audioEffectsRef.current.applyPreset(preset);
+    const presetSettings = AUDIO_PRESETS[preset];
+    if (presetSettings.reverb) setReverbAmount(presetSettings.reverb.amount ?? 0);
+    if (presetSettings.delay) setEchoAmount((presetSettings.delay.mix ?? 0) * 100);
+  }
 }

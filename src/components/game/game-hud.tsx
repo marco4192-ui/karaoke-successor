@@ -1,6 +1,8 @@
 'use client';
 
 import type { AudioEffectsEngine } from '@/lib/audio/audio-effects';
+import { PRESET_LABELS } from '@/lib/audio/audio-effects';
+import type { AudioEffectPreset } from '@/lib/audio/audio-effects';
 
 // ===================== VOLUME METER =====================
 
@@ -48,7 +50,10 @@ interface AudioEffectsPanelProps {
   echoAmount: number;
   onReverbChange: (_val: number) => void;
   onEchoChange: (_val: number) => void;
+  onApplyPreset: (_preset: AudioEffectPreset) => void;
 }
+
+const PRESET_KEYS = Object.keys(PRESET_LABELS) as AudioEffectPreset[];
 
 export function AudioEffectsPanel({
   show,
@@ -57,6 +62,7 @@ export function AudioEffectsPanel({
   echoAmount,
   onReverbChange,
   onEchoChange,
+  onApplyPreset,
 }: AudioEffectsPanelProps) {
   if (!show) return null;
 
@@ -93,6 +99,20 @@ export function AudioEffectsPanel({
             }}
             className="w-full accent-cyan-500"
           />
+        </div>
+        <div>
+          <span className="text-xs text-white/60 mb-1 block">Presets</span>
+          <div className="flex flex-wrap gap-1">
+            {PRESET_KEYS.map(key => (
+              <button
+                key={key}
+                onClick={() => onApplyPreset(key)}
+                className="px-2 py-1 text-xs rounded-md bg-white/10 hover:bg-white/20 border border-white/10 hover:border-purple-500/50 transition-all text-white/80 hover:text-white"
+              >
+                {PRESET_LABELS[key]}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

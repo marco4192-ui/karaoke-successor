@@ -67,7 +67,7 @@ export interface AssignedMicrophone {
  * OPTIMAL KARAOKE SETTINGS FOR PITCH DETECTION
  * Based on UltraStar/SingStar standards and audio engineering best practices
  */
-export const OPTIMAL_KARAOKE_CONFIG: MicrophoneConfig = {
+const OPTIMAL_KARAOKE_CONFIG: MicrophoneConfig = {
   deviceId: 'default',
   gain: 1.0,
   noiseSuppression: true,   // ON - removes background noise

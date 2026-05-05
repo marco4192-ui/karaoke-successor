@@ -18,7 +18,7 @@ let dbInstance: IDBDatabase | null = null;
 let initPromise: Promise<IDBDatabase> | null = null;
 
 // Initialize the database (with concurrency lock to prevent double-open)
-export async function initMediaDB(): Promise<IDBDatabase> {
+async function initMediaDB(): Promise<IDBDatabase> {
   if (dbInstance) return dbInstance;
   
   if (!initPromise) {

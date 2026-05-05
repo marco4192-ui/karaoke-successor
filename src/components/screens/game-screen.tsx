@@ -186,6 +186,7 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
     setReverbAmount,
     echoAmount,
     setEchoAmount,
+    applyEffectPreset,
   } = useGameAudioEffects({ audioRef, videoRef });
   
   // YouTube + Ad handling - URL extraction, ad callbacks, countdown
@@ -824,6 +825,7 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
           echoAmount={echoAmount}
           onReverbChange={setReverbAmount}
           onEchoChange={setEchoAmount}
+          onApplyPreset={applyEffectPreset}
         />
         
         {/* Progress Bar — uses actual media duration when available */}

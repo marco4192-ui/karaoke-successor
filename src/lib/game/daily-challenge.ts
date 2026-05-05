@@ -37,7 +37,7 @@ interface PlayerDailyStats {
   lastWeekStart: string | null; // ISO date of Monday of current week, for weekly reset
 }
 
-export interface DailyBadge {
+interface DailyBadge {
   id: string;
   name: string;
   icon: string;

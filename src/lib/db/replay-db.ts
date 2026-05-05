@@ -100,7 +100,7 @@ export async function getReplay(id: string): Promise<ReplayRecord | null> {
 }
 
 /** Get all replays for a specific song, sorted by most recent first. */
-export async function getReplaysForSong(songId: string): Promise<ReplayRecord[]> {
+async function getReplaysForSong(songId: string): Promise<ReplayRecord[]> {
   const db = await openDB();
 
   return new Promise((resolve, reject) => {
@@ -123,7 +123,7 @@ export async function getReplaysForSong(songId: string): Promise<ReplayRecord[]>
 }
 
 /** Get all replays, sorted by most recent first. */
-export async function getAllReplays(): Promise<ReplayRecord[]> {
+async function getAllReplays(): Promise<ReplayRecord[]> {
   const db = await openDB();
 
   return new Promise((resolve, reject) => {
