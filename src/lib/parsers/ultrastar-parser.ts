@@ -623,10 +623,12 @@ export function generateUltraStarTxt(song: Song): string {
       
       lines.push(noteLine);
     }
-    // Line break indicator at the end of each line
-    const lastNote = line.notes[line.notes.length - 1];
-    const lineBreakBeat = Math.round((lastNote.startTime + lastNote.duration - song.gap) / beatDuration);
-    lines.push(`- ${lineBreakBeat}`);
+    // Line break indicator at the end of each lyric line
+    if (line.notes.length > 0) {
+      const lastNote = line.notes[line.notes.length - 1];
+      const lineBreakBeat = Math.round((lastNote.startTime + lastNote.duration - song.gap) / beatDuration);
+      lines.push(`- ${lineBreakBeat}`);
+    }
   }
   
   lines.push('E'); // End marker
