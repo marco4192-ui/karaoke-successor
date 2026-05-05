@@ -366,3 +366,30 @@ Keine implementierte fehlende Feature-Funktion. Empfehlung: Entfernen.
 | FP-14 | unified-party-setup setState-in-setState | React 18 batched — funktional korrekt, nur Anti-Pattern |
 | FP-15 | mic-indicator competing timers | Beide Timer führen zum selben Ergebnis "visible + timeout" |
 | FP-16 | Batch asset validation | Tauri-app nutzt nur Single-Item-Endpunkt |
+
+---
+
+### ✅ Session 4 Fixes (alle gepusht)
+
+**12 Commits** — Alle 16 bestätigten Issues + 1 Dead Code Entfernung:
+
+| Commit | Fix | Schwere |
+|--------|-----|---------|
+| `6d8750b` | C4: Tournament BYE winners into next-round match slots | Critical |
+| `4e04267` | C5+L8: Off-by-one substring indices for preview/medley + negative #END guard | Critical+Low |
+| `635ff40` | C6: mic-indicator fade timer — useRef instead of setState in effect | Critical |
+| `844b044` | H5: sendAdState passes isAdPlaying to payload | High |
+| `45df43a` | H6: generateUltraStarTxt guard against empty notes array | High |
+| `2445fd0` | H7: leaderboard-service URLs + snake_case field mapping | High |
+| `e88d410` | M9+L6: video readyState check + gameMode in generateResults deps | Medium+Low |
+| `743cc27` | M10+M11: analyzePitch race condition + unmounted state guard | Medium |
+| `af26eea` | M12+L7: blob URL cache both paths + SingStar nullish coalescing | Medium+Low |
+| `7a051a2` | M13: NoteBlock wrapped in React.memo | Medium |
+| `3f6019b` | M14+M15: in-place particle filter + webcam cleanup on unmount | Medium |
+| `3e309d8` | DC-7: remove unused saveCache() from library-cache.ts | Chore |
+
+**Übersprungene Items:**
+- PHP Leaderboard API (6 Critical/High-Bugs): Externe PHP-Datei, kein Teil der Tauri-App-Core-Logik. TS-Client-Seite in H7 korrigiert. PHP-Backend muss komplett neu aufgebaut werden — sprengt TypeScript-Fix-Rahmen.
+- V1-V10 Verbesserungsvorschläge: Architektur- und Refactoring-Änderungen, kein Bugfix. Werden bei Bedarf in separater Session behandelt.
+
+**Finaler Zustand:** 0 TSC-Fehler, 1 ESLint-Fehler (false positive: setTimeout setState in effect), 28 Warnings (no-console)
