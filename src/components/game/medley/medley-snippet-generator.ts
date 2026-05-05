@@ -46,15 +46,15 @@ export function generateMedleySnippets(
     // Priority 1: Both MEDLEYSTARTBEAT and MEDLEYENDBEAT defined
     if (song.medleyStartBeat !== undefined && song.medleyEndBeat !== undefined && song.bpm > 0) {
       const bd = beatDurationMs(song.bpm);
-      const startTime = song.medleyStartBeat * bd;
-      const endTime = Math.min(song.medleyEndBeat * bd, song.duration);
+      const startTime = (song.gap || 0) + song.medleyStartBeat * bd;
+      const endTime = Math.min((song.gap || 0) + song.medleyEndBeat * bd, song.duration);
       return { song, startTime, endTime, duration: endTime - startTime };
     }
 
     // Priority 2: Only MEDLEYSTARTBEAT defined
     if (song.medleyStartBeat !== undefined && song.bpm > 0) {
       const bd = beatDurationMs(song.bpm);
-      const startTime = song.medleyStartBeat * bd;
+      const startTime = (song.gap || 0) + song.medleyStartBeat * bd;
       const endTime = Math.min(startTime + snippetMs, song.duration);
       return { song, startTime, endTime, duration: endTime - startTime };
     }

@@ -24,12 +24,12 @@ function generateMedleySnippets(songs: Song[], snippetCount: number, snippetDura
   return shuffled.slice(0, snippetCount).map(song => {
     if (song.medleyStartBeat !== undefined && song.medleyEndBeat !== undefined && song.bpm > 0) {
       const bd = beatDurationMs(song.bpm);
-      const startTime = song.medleyStartBeat * bd;
-      const endTime = song.medleyEndBeat * bd;
+      const startTime = (song.gap || 0) + song.medleyStartBeat * bd;
+      const endTime = (song.gap || 0) + song.medleyEndBeat * bd;
       return { song, startTime, endTime, duration: endTime - startTime };
     }
     if (song.medleyStartBeat !== undefined && song.bpm > 0) {
-      const startTime = song.medleyStartBeat * beatDurationMs(song.bpm);
+      const startTime = (song.gap || 0) + song.medleyStartBeat * beatDurationMs(song.bpm);
       return { song, startTime, endTime: startTime + snippetDurationMs, duration: snippetDurationMs };
     }
     const maxSafeTime = song.lyrics && song.lyrics.length > 0
