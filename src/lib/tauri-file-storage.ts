@@ -786,8 +786,9 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
 
       const fallback = await loadFileAsBlobUrl(backslashPath);
       if (fallback) {
-        // Cache under both paths
+        // Cache under both paths so subsequent calls from either path hit the cache
         cacheBlobUrl(backslashPath, fallback);
+        cacheBlobUrl(fullPath, fallback);
         return fallback;
       }
     }

@@ -247,7 +247,7 @@ export function parseSingStarData(data: string): SingStarSongData | null {
       else if (trimmed.startsWith('NOTE=')) {
         const parts = trimmed.slice(5).split(',');
         if (parts.length >= 4) {
-          notes.push({ startTime: parseInt(parts[0]), duration: parseInt(parts[1]), pitch: parseInt(parts[2]), text: parts[3] || '' });
+          notes.push({ startTime: parseInt(parts[0]), duration: parseInt(parts[1]), pitch: parseInt(parts[2]), text: parts[3] ?? '' });
         }
       }
     }
