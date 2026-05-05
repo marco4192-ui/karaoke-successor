@@ -122,10 +122,10 @@ export function useGameFlowHandlers(
         const resultPlayer = results?.players?.find(rp => rp.playerId === p.id);
         if (!gamePlayer && !resultPlayer) return p;
 
-        const score = resultPlayer?.score || gamePlayer?.score || 0;
-        const notesHit = resultPlayer?.notesHit || gamePlayer?.notesHit || 0;
-        const notesMissed = resultPlayer?.notesMissed || gamePlayer?.notesMissed || 0;
-        const maxCombo = resultPlayer?.maxCombo || gamePlayer?.maxCombo || 0;
+        const score = resultPlayer?.score ?? gamePlayer?.score ?? 0;
+        const notesHit = resultPlayer?.notesHit ?? gamePlayer?.notesHit ?? 0;
+        const notesMissed = resultPlayer?.notesMissed ?? gamePlayer?.notesMissed ?? 0;
+        const maxCombo = resultPlayer?.maxCombo ?? gamePlayer?.maxCombo ?? 0;
 
         return {
           ...p,
