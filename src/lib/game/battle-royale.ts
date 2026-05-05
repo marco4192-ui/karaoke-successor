@@ -219,7 +219,7 @@ export function updatePlayerScore(
   game: BattleRoyaleGame,
   playerId: string,
   scoreDelta: number,
-  accuracyDelta: number,
+  tickAccuracy: number,
   notesHitDelta: number = 0,
   notesMissedDelta: number = 0,
   comboDelta: number = 0
@@ -233,8 +233,8 @@ export function updatePlayerScore(
   // Calculate accuracy as running average: newAvg = oldAvg + (newValue - oldAvg) / newCount
   const newTickCount = player.totalEvaluatedTicks + 1;
   const newAccuracy = player.totalEvaluatedTicks === 0
-    ? accuracyDelta
-    : player.accuracy + (accuracyDelta - player.accuracy) / newTickCount;
+    ? tickAccuracy
+    : player.accuracy + (tickAccuracy - player.accuracy) / newTickCount;
 
   const updatedPlayer = {
     ...player,
