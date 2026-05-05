@@ -208,7 +208,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
    * Start pitch detection
    */
   const start = useCallback(() => {
-    if (!managerRef.current || !isInitialized) {
+    if (!managerRef.current || !isInitializedRef.current) {
       // eslint-disable-next-line no-console
       console.error('[useMultiPitchDetector] Not initialized');
       return;
@@ -216,7 +216,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
 
     managerRef.current.start();
     setIsRunning(true);
-  }, [isInitialized]);
+  }, []);
 
   /**
    * Stop pitch detection
