@@ -298,14 +298,19 @@ export function NoteLane({
     return calculatePitchY(midi, windowHeight);
   }, [detectedPitch, windowHeight]);
 
-  // Current line
+  // Current line — fall back to next upcoming line if no active line found
+  // (handles small timing gaps between lines due to rounding)
   const currentLine = useMemo(() => {
+    let nextLine: LyricLine | null = null;
     for (const line of lyrics) {
       if (currentTime >= line.startTime && currentTime <= line.endTime) {
         return line;
       }
+      if (line.startTime > currentTime && (!nextLine || line.startTime < nextLine.startTime)) {
+        nextLine = line;
+      }
     }
-    return null;
+    return nextLine;
   }, [lyrics, currentTime]);
 
   return (

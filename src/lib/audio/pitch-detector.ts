@@ -357,7 +357,7 @@ export class PitchDetector {
     // Compute difference function
     for (let tau = 0; tau < yinBufferLength; tau++) {
       yinBuffer[tau] = 0;
-      for (let i = 0; i < yinBufferLength; i++) {
+      for (let i = 0; i + tau < buffer.length; i++) {
         const delta = buffer[i] - buffer[i + tau];
         yinBuffer[tau] += delta * delta;
       }
