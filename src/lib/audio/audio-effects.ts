@@ -248,8 +248,18 @@ export class AudioEffectsEngine {
   private connectEffectChain(): void {
     if (!this.audioContext || !this.inputNode || !this.analyserNode || !this.dryGain || !this.wetGain || !this.masterGain) return;
     
-    // Disconnect all existing connections
-    this.inputNode.disconnect();
+    // Disconnect ALL intermediate nodes before reconnecting.
+    // Previously only inputNode was disconnected, causing delay feedback
+    // connections (delayNode ↔ delayFeedback) to duplicate on each toggle
+    // and amplify feedback by 2^N× after N toggles.
+    const allNodes = [
+      this.inputNode, this.analyserNode, this.dryGain, this.wetGain, this.masterGain,
+      this.eqLow, this.eqMid, this.eqHigh, this.compressorNode, this.distortionNode,
+      this.reverbNode, this.reverbMix, this.delayNode, this.delayFeedback, this.delayMix,
+    ];
+    for (const node of allNodes) {
+      try { node?.disconnect(); } catch { /* ignore — node may not be connected */ }
+    }
     
     // Connect to analyser for visualization
     this.inputNode.connect(this.analyserNode);
