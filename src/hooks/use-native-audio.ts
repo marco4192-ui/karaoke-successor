@@ -16,8 +16,7 @@ import {
   onAudioEnded,
 } from '@/lib/audio/native-audio';
 
-const STORAGE_KEY = 'karaoke-native-audio-device';
-const ENABLED_KEY = 'karaoke-native-audio-enabled';
+import { StorageKeys, getBool, getString, setBool, setItem } from '@/lib/storage';
 
 export interface UseNativeAudioResult {
   /** Whether native audio is enabled in settings. */
@@ -55,14 +54,8 @@ export interface UseNativeAudioResult {
 }
 
 export function useNativeAudio(): UseNativeAudioResult {
-  const [enabled, setEnabledState] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem(ENABLED_KEY) === 'true';
-  });
-  const [deviceId, setDeviceIdState] = useState(() => {
-    if (typeof window === 'undefined') return 'default';
-    return localStorage.getItem(STORAGE_KEY) || 'default';
-  });
+  const [enabled, setEnabledState] = useState(() => getBool(StorageKeys.NATIVE_AUDIO_ENABLED, false));
+  const [deviceId, setDeviceIdState] = useState(() => getString(StorageKeys.NATIVE_AUDIO_DEVICE, 'default'));
   const [devices, setDevices] = useState<AudioDeviceInfo[]>([]);
   const [playbackState, setPlaybackState] = useState<AudioPlaybackState | null>(null);
   const [currentPosition, setCurrentPosition] = useState(0);
@@ -76,12 +69,12 @@ export function useNativeAudio(): UseNativeAudioResult {
   // Persist settings
   const setEnabled = useCallback((value: boolean) => {
     setEnabledState(value);
-    localStorage.setItem(ENABLED_KEY, String(value));
+    setBool(StorageKeys.NATIVE_AUDIO_ENABLED, value);
   }, []);
 
   const setDeviceId = useCallback((id: string) => {
     setDeviceIdState(id);
-    localStorage.setItem(STORAGE_KEY, id);
+    setItem(StorageKeys.NATIVE_AUDIO_DEVICE, id);
   }, []);
 
   // Load devices on mount

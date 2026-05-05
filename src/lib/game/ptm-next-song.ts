@@ -4,6 +4,7 @@
 
 import { Song } from '@/types/game';
 import { getAllSongs, filterSongs, ensureSongUrls } from '@/lib/game/song-library';
+import { StorageKeys, getJson, setJson } from '@/lib/storage';
 import type { PassTheMicSegment } from '@/components/game/ptm-types';
 import { generatePtmSegments } from '@/lib/game/ptm-segments';
 
@@ -43,14 +44,11 @@ function generateMedleySnippets(songs: Song[], snippetCount: number, snippetDura
 // ===================== FILTERED SONGS =====================
 function getFilteredSongs(): Song[] {
   const allSongs = getAllSongs();
-  // Read filter settings from localStorage (same way unified-party-setup stores them)
-  try {
-    const raw = localStorage.getItem('ptm-song-filters');
-    if (raw) {
-      const filters = JSON.parse(raw);
-      return filterSongs(allSongs, filters.filterGenre, filters.filterLanguage, filters.filterCombined);
-    }
-  } catch { /* ignore */ }
+  // Read filter settings from storage (same way unified-party-setup stores them)
+  const filters = getJson<{filterGenre?: string; filterLanguage?: string; filterCombined?: string}>(StorageKeys.PTM_SONG_FILTERS, {});
+  if (filters.filterGenre || filters.filterLanguage || filters.filterCombined) {
+    return filterSongs(allSongs, filters.filterGenre, filters.filterLanguage, filters.filterCombined === 'true');
+  }
   return allSongs;
 }
 
@@ -192,7 +190,5 @@ export async function preparePtmNextSong(
 
 // Store/retrieve song filters for next-round song selection
 export function storeSongFilters(filters: { filterGenre?: string; filterLanguage?: string; filterCombined?: string }) {
-  try {
-    localStorage.setItem('ptm-song-filters', JSON.stringify(filters));
-  } catch { /* ignore */ }
+  setJson(StorageKeys.PTM_SONG_FILTERS, filters);
 }

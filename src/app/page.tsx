@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { CHALLENGE_GAME_MODE_MAP } from '@/lib/game/player-progression';
+import { StorageKeys, getItem } from '@/lib/storage';
 import { useGlobalKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useGlobalRemoteControl } from '@/hooks/use-global-remote-control';
 import { useMobileClient } from '@/hooks/use-mobile-client';
@@ -415,7 +416,7 @@ export default function KaraokeSuccessor() {
         {screen === 'achievements' && <AchievementsScreen />}
         {screen === 'dailyChallenge' && <DailyChallengeScreen onPlayChallenge={(song) => {
           // Look up the stored challenge mode ID and map it to a built-in game mode
-          const challengeId = typeof window !== 'undefined' ? localStorage.getItem('karaoke-challenge-mode') : null;
+          const challengeId = getItem(StorageKeys.CHALLENGE_MODE);
           const mappedMode = challengeId ? CHALLENGE_GAME_MODE_MAP[challengeId] : undefined;
           setGameMode(mappedMode || 'standard');
           setChallengeMode(challengeId || undefined);

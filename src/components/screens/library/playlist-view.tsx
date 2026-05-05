@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Song } from '@/types/game';
 import { Playlist, getPlaylistSongs, exportPlaylist, importPlaylist } from '@/lib/playlist-manager';
+import { StorageKeys, setJson } from '@/lib/storage';
 import { SongCard } from './song-card';
 import { VirtualizedSongGrid } from './virtualized-song-grid';
 import { safeConfirm } from '@/lib/safe-dialog';
@@ -243,7 +244,7 @@ export function PlaylistView({
                 onClick={() => {
                   const songs = getPlaylistSongs(selectedPlaylist.id, loadedSongs);
                   if (songs.length > 0) {
-                    localStorage.setItem('jukebox-playlist', JSON.stringify(songs.map(s => s.id)));
+                    setJson(StorageKeys.JUKEBOX_PLAYLIST, songs.map(s => s.id));
                   }
                 }}
                 className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400"

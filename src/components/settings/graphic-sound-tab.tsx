@@ -5,6 +5,7 @@ import { Theme } from '@/lib/game/themes';
 import { THEMES } from '@/lib/game/themes';
 import { MusicIcon, PaletteIcon } from '@/components/settings/settings-icons';
 import { AudioOutputSection } from '@/components/settings/audio-output-section';
+import { StorageKeys, setItem, setBool } from '@/lib/storage';
 
 interface GraphicSoundTabProps {
   bgVideo: boolean;
@@ -74,7 +75,7 @@ export function GraphicSoundTab({
               onClick={() => {
                 const newValue = isLowPerf ? 'full' : 'low';
                 setPerformanceMode(newValue);
-                localStorage.setItem('karaoke-performance-mode', newValue);
+                setItem(StorageKeys.PERFORMANCE_MODE, newValue);
                 window.dispatchEvent(new CustomEvent('settingsChange', { detail: { performanceMode: newValue } }));
                 setHasChanges(true);
               }}
@@ -137,7 +138,7 @@ export function GraphicSoundTab({
               type="button"
               onClick={() => {
                 setBgVideo(!bgVideo);
-                localStorage.setItem('karaoke-bg-video', String(!bgVideo));
+                setBool(StorageKeys.BG_VIDEO, !bgVideo);
                 window.dispatchEvent(new CustomEvent('settingsChange'));
                 setHasChanges(true);
               }}
@@ -160,7 +161,7 @@ export function GraphicSoundTab({
               onClick={() => {
                 const newValue = !useAnimatedBg;
                 setUseAnimatedBg(newValue);
-                localStorage.setItem('karaoke-animated-bg', String(newValue));
+                setBool(StorageKeys.ANIMATED_BG, newValue);
                 window.dispatchEvent(new CustomEvent('settingsChange', { detail: { useAnimatedBackground: newValue } }));
                 setHasChanges(true);
               }}
@@ -225,7 +226,7 @@ export function GraphicSoundTab({
                   type="button"
                   onClick={() => {
                     setNoteDisplayStyle(style.id);
-                    localStorage.setItem('karaoke-note-style', style.id);
+                    setItem(StorageKeys.NOTE_STYLE, style.id);
                     window.dispatchEvent(new CustomEvent('settingsChange', { detail: { noteDisplayStyle: style.id } }));
                     setHasChanges(true);
                   }}
@@ -258,7 +259,7 @@ export function GraphicSoundTab({
                   type="button"
                   onClick={() => {
                     setNoteShapeStyle(shape.id);
-                    localStorage.setItem('karaoke-note-shape', shape.id);
+                    setItem(StorageKeys.NOTE_SHAPE, shape.id);
                     window.dispatchEvent(new CustomEvent('settingsChange', { detail: { noteShapeStyle: shape.id } }));
                     setHasChanges(true);
                   }}

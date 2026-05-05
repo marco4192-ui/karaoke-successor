@@ -3,6 +3,7 @@
 // Allows both function call t('key') and object access t.settings.title
 
 import { useState, useEffect, useCallback } from 'react';
+import { StorageKeys, getItem, setItem, getString } from '@/lib/storage';
 
 export type Language = 'en' | 'de' | 'es' | 'fr' | 'it' | 'pt' | 'ja' | 'ko' | 'zh' | 'ru' | 'nl' | 'pl' | 'sv' | 'no' | 'da' | 'fi';
 
@@ -1048,7 +1049,7 @@ function createTranslationObject(language: Language): Record<string, unknown> {
 export function useTranslation() {
   const [language, setLanguageState] = useState<Language>(() => {
     if (typeof window === 'undefined') return 'en';
-    const stored = localStorage.getItem('karaoke-language');
+    const stored = getString(StorageKeys.LANGUAGE, 'en');
     if (stored && (translations as Record<string, unknown>)[stored]) {
       return stored as Language;
     }
@@ -1058,7 +1059,7 @@ export function useTranslation() {
   const setLanguage = useCallback((newLang: Language) => {
     setLanguageState(newLang);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('karaoke-language', newLang);
+      setItem(StorageKeys.LANGUAGE, newLang);
     }
     // Dispatch event for other components to react (within same tab)
     window.dispatchEvent(new CustomEvent('languageChange', { detail: newLang }));

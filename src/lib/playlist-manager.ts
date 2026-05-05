@@ -1,55 +1,41 @@
 import { Playlist, PlaylistExport, SYSTEM_PLAYLISTS, DEFAULT_PLAYLIST_SETTINGS, Song } from '@/types/game';
+import { StorageKeys, getItem, getJson, setJson, removeItem } from '@/lib/storage';
 // IDs use crypto.randomUUID() for collision-free 128-bit random IDs
 
 // Re-export types for convenience
 export type { Playlist, PlaylistExport } from '@/types/game';
 
-const STORAGE_KEY = 'karaoke-playlists';
-const PLAY_COUNTS_KEY = 'karaoke-song-play-counts';
+const STORAGE_KEY = StorageKeys.PLAYLISTS;
+const PLAY_COUNTS_KEY = StorageKeys.SONG_PLAY_COUNTS;
 
 // ============ PLAY COUNT TRACKING ============
 
 /** Load play counts from localStorage. */
 function getPlayCounts(): Record<string, number> {
-  if (typeof window === 'undefined') return {};
-  try {
-    const stored = localStorage.getItem(PLAY_COUNTS_KEY);
-    return stored ? JSON.parse(stored) : {};
-  } catch {
-    return {};
-  }
+  return getJson<Record<string, number>>(PLAY_COUNTS_KEY, {});
 }
 
 /** Persist play counts to localStorage. */
 function savePlayCounts(counts: Record<string, number>): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(PLAY_COUNTS_KEY, JSON.stringify(counts));
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('Failed to save play counts:', e);
-  }
+  setJson(PLAY_COUNTS_KEY, counts);
 }
 
 // Get all playlists from storage
 export function getPlaylists(): Playlist[] {
-  if (typeof window === 'undefined') return getDefaultPlaylists();
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
+  const stored = getItem(STORAGE_KEY);
+  if (stored) {
+    try {
       const parsed = JSON.parse(stored);
       if (!Array.isArray(parsed)) {
         throw new Error('Expected array, got ' + typeof parsed);
       }
       return parsed;
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to load playlists — resetting to defaults:', e);
+      // Corrupt data — remove and recreate defaults
+      removeItem(STORAGE_KEY);
     }
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('Failed to load playlists — resetting to defaults:', e);
-    // Corrupt data — remove and recreate defaults
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch { /* ignore */ }
   }
   
   // Return default playlists if none exist or data was corrupt
@@ -92,14 +78,7 @@ function getDefaultPlaylists(): Playlist[] {
 
 // Save playlists to storage
 function savePlaylists(playlists: Playlist[]): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(playlists));
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('Failed to save playlists:', e);
-    throw e;
-  }
+  setJson(STORAGE_KEY, playlists);
 }
 
 // Create a new playlist
@@ -343,9 +322,7 @@ export function importPlaylist(data: PlaylistExport): Playlist | null {
 
 // Initialize playlists (call on app start)
 export function initializePlaylists(): void {
-  if (typeof window === 'undefined') return;
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) {
+  if (!getItem(STORAGE_KEY)) {
     // Create default playlists
     savePlaylists(getDefaultPlaylists());
   }

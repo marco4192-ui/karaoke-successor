@@ -2,6 +2,7 @@
 // Global rankings, XP system, and streak rewards
 
 import { getRankForXP } from './player-progression';
+import { StorageKeys, getItem, getJson, setJson } from '@/lib/storage';
 
 interface DailyChallengeEntry {
   playerId: string;
@@ -126,9 +127,9 @@ export const DAILY_BADGES: Record<string, Omit<DailyBadge, 'unlockedAt'>> = {
 };
 
 // Storage keys
-const DAILY_CHALLENGE_KEY = 'dailyChallenge';
-const DAILY_LEADERBOARD_KEY = 'dailyChallengeLeaderboard';
-const PLAYER_DAILY_STATS_KEY = 'playerDailyStats';
+const DAILY_CHALLENGE_KEY = StorageKeys.DAILY_CHALLENGE;
+const DAILY_LEADERBOARD_KEY = StorageKeys.DAILY_LEADERBOARD_PREFIX;
+const PLAYER_DAILY_STATS_KEY = StorageKeys.PLAYER_DAILY_STATS;
 
 /** Returns today's date as a locale-independent ISO string (YYYY-MM-DD). */
 function todayISO(): string {
@@ -147,14 +148,12 @@ export function getDailyChallenge(): DailyChallengeData {
   const targets = { score: 8000, accuracy: 85, combo: 50, perfect_notes: 20 };
   
   // Try to load existing leaderboard
-  if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem(`${DAILY_LEADERBOARD_KEY}_${today}`);
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch {
-        // Fall through to create new
-      }
+  const stored = getItem(`${DAILY_LEADERBOARD_KEY}_${today}`);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {
+      // Fall through to create new
     }
   }
   
@@ -170,50 +169,28 @@ export function getDailyChallenge(): DailyChallengeData {
 
 // Save leaderboard
 function saveDailyChallenge(data: DailyChallengeData): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(`${DAILY_LEADERBOARD_KEY}_${data.date}`, JSON.stringify(data));
+  setJson(`${DAILY_LEADERBOARD_KEY}_${data.date}`, data);
 }
 
 // Get player's daily stats
+const DEFAULT_PLAYER_DAILY_STATS: PlayerDailyStats = {
+  currentStreak: 0,
+  longestStreak: 0,
+  totalCompleted: 0,
+  totalXP: 0,
+  lastCompletedDate: null,
+  badges: [],
+  weeklyProgress: [0, 0, 0, 0, 0, 0, 0],
+  lastWeekStart: null,
+};
+
 export function getPlayerDailyStats(): PlayerDailyStats {
-  if (typeof window === 'undefined') {
-    return {
-      currentStreak: 0,
-      longestStreak: 0,
-      totalCompleted: 0,
-      totalXP: 0,
-      lastCompletedDate: null,
-      badges: [],
-      weeklyProgress: [0, 0, 0, 0, 0, 0, 0],
-      lastWeekStart: null,
-    };
-  }
-
-  const stored = localStorage.getItem(PLAYER_DAILY_STATS_KEY);
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch {
-      // Fall through to defaults
-    }
-  }
-
-  return {
-    currentStreak: 0,
-    longestStreak: 0,
-    totalCompleted: 0,
-    totalXP: 0,
-    lastCompletedDate: null,
-    badges: [],
-    weeklyProgress: [0, 0, 0, 0, 0, 0, 0],
-    lastWeekStart: null,
-  };
+  return getJson<PlayerDailyStats>(PLAYER_DAILY_STATS_KEY, DEFAULT_PLAYER_DAILY_STATS);
 }
 
 // Save player's daily stats
 function savePlayerDailyStats(stats: PlayerDailyStats): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(PLAYER_DAILY_STATS_KEY, JSON.stringify(stats));
+  setJson(PLAYER_DAILY_STATS_KEY, stats);
 }
 
 // Submit a challenge result
@@ -437,22 +414,18 @@ export function submitChallengeResult(
 
   // Sync completion flag so isChallengeCompletedToday() returns true
   // (isChallengeCompletedToday reads from DAILY_CHALLENGE_KEY, not the leaderboard)
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(DAILY_CHALLENGE_KEY, JSON.stringify({
-      date: today,
-      completed: true,
-      streak: stats.currentStreak,
-    }));
-  }
+  setJson(DAILY_CHALLENGE_KEY, {
+    date: today,
+    completed: true,
+    streak: stats.currentStreak,
+  });
 
   return { challenge, stats, xpEarned, newBadges, rank: playerRank };
 }
 
 // Check if challenge is completed
 export function isChallengeCompletedToday(): boolean {
-  if (typeof window === 'undefined') return false;
-  
-  const stored = localStorage.getItem(DAILY_CHALLENGE_KEY);
+  const stored = getItem(DAILY_CHALLENGE_KEY);
   if (stored) {
     try {
       const data = JSON.parse(stored);

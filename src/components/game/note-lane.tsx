@@ -22,6 +22,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { LyricLine, DIFFICULTY_SETTINGS, frequencyToMidi } from '@/types/game';
 import { getStoredTheme } from '@/lib/game/themes';
 import { parseNoteShape } from '@/hooks/use-game-settings';
+import { StorageKeys, getItem } from '@/lib/storage';
 import {
   NOTE_HEIGHT,
   PITCH_RANGE,
@@ -199,7 +200,7 @@ export function NoteLane({
   useEffect(() => {
     const loadNoteShapeStyle = () => {
       // First check localStorage for explicit setting
-      const storedNoteShape = parseNoteShape(localStorage.getItem('karaoke-note-shape'));
+      const storedNoteShape = parseNoteShape(getItem(StorageKeys.NOTE_SHAPE));
       if (storedNoteShape) {
         setNoteShapeStyle(storedNoteShape);
       } else {
@@ -214,7 +215,7 @@ export function NoteLane({
 
     // Listen for settings changes
     const handleSettingsChange = () => {
-      const storedShape = parseNoteShape(localStorage.getItem('karaoke-note-shape'));
+      const storedShape = parseNoteShape(getItem(StorageKeys.NOTE_SHAPE));
       if (storedShape) {
         setNoteShapeStyle(storedShape);
       }
@@ -222,7 +223,7 @@ export function NoteLane({
     
     const handleThemeChange = () => {
       // Only update from theme if no explicit localStorage setting
-      const storedShape = parseNoteShape(localStorage.getItem('karaoke-note-shape'));
+      const storedShape = parseNoteShape(getItem(StorageKeys.NOTE_SHAPE));
       if (!storedShape) {
         const theme = getStoredTheme();
         if (theme) {

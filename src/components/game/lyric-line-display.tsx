@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { LyricLine } from '@/types/game';
+import { StorageKeys, getString } from '@/lib/storage';
 
 import type { GameMode } from '@/types/game';
 
@@ -56,7 +57,7 @@ export function LyricLineDisplay({
   // Load initial value and listen for style changes
   useEffect(() => {
     const handleStyleChange = () => {
-      const style = localStorage.getItem('karaoke-lyrics-style') || 'classic';
+      const style = getString(StorageKeys.LYRICS_STYLE, 'classic');
       setLyricsStyle(style);
     };
 

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { StorageKeys, setJson, setItem } from '@/lib/storage';
 import { useGameStore } from '@/lib/game/store';
 import { getAllSongs } from '@/lib/game/song-library';
 import { 
@@ -263,7 +264,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                         setActiveProfile(selectedPlayerIds[0]);
                       }
                       // Mark this game as a daily challenge for results-screen submission
-                      localStorage.setItem('karaoke_daily_challenge_active', JSON.stringify({ active: true, startedAt: Date.now() }));
+                      setJson(StorageKeys.DAILY_CHALLENGE_ACTIVE, { active: true, startedAt: Date.now() });
                       // Start the challenge directly
                       onPlayChallenge(randomSong);
                     }
@@ -323,7 +324,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                   onClick={() => {
                     if (locked) return;
                     // Store challenge mode and go to library
-                    localStorage.setItem('karaoke-challenge-mode', challenge.id);
+                    setItem(StorageKeys.CHALLENGE_MODE, challenge.id);
                     const songs = getAllSongs();
                     if (songs.length === 0) return;
                     onPlayChallenge(songs[Math.floor(Math.random() * songs.length)]);

@@ -1,6 +1,7 @@
 // Shared path utilities for song library modules
 import type { Song } from '@/types/game';
 import { normalizeFilePath } from '@/lib/tauri-file-storage';
+import { StorageKeys, getItem } from '@/lib/storage';
 
 /** The 7 path fields on Song that need normalization. */
 export const SONG_PATH_FIELDS = [
@@ -27,14 +28,10 @@ export function isAbsolutePath(p: string): boolean {
  * 3. `null` — caller should fall back gracefully
  */
 export function resolveSongsBaseFolder(songBaseFolder?: string): string | null {
-  // Try localStorage
+  // Try storage
   let localStorageFolder: string | null = null;
-  try {
-    const raw = localStorage.getItem('karaoke-songs-folder');
-    localStorageFolder = raw ? normalizeFilePath(raw) : null;
-  } catch {
-    // localStorage unavailable (e.g. SSR)
-  }
+  const raw = getItem(StorageKeys.SONGS_FOLDER);
+  localStorageFolder = raw ? normalizeFilePath(raw) : null;
 
   const candidate = songBaseFolder || localStorageFolder;
 

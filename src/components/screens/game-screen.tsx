@@ -10,6 +10,7 @@ import { usePartyStore } from '@/lib/game/party-store';
 import { LyricLine, Note, PLAYER_COLORS } from '@/types/game';
 import { PRACTICE_MODE_DEFAULTS, PracticeModeConfig } from '@/lib/game/practice-mode';
 import { CHALLENGE_MODES } from '@/lib/game/player-progression';
+import { StorageKeys, getJson, getItem, removeItem } from '@/lib/storage';
 import { 
   WebcamBackground, 
   WebcamQuickControls,
@@ -101,7 +102,7 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
 
   // Replay recording: enabled by default, persisted in localStorage
   const [replayEnabled] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('karaoke-replay-enabled') || 'true'); } catch { return true; }
+    return getJson<boolean>(StorageKeys.REPLAY_ENABLED, true);
   });
 
   const [youtubeTime, setYoutubeTime] = useState(0);
@@ -137,14 +138,12 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
   
   // Challenge mode state - read from localStorage when game starts
   const [activeChallenge] = useState<typeof CHALLENGE_MODES[0] | null>(() => {
-    if (typeof window !== 'undefined') {
-      const savedChallengeId = localStorage.getItem('karaoke-challenge-mode');
-      if (savedChallengeId) {
-        const challenge = CHALLENGE_MODES.find(c => c.id === savedChallengeId);
-        if (challenge) {
-          localStorage.removeItem('karaoke-challenge-mode'); // Clear after reading
-          return challenge;
-        }
+    const savedChallengeId = getItem(StorageKeys.CHALLENGE_MODE);
+    if (savedChallengeId) {
+      const challenge = CHALLENGE_MODES.find(c => c.id === savedChallengeId);
+      if (challenge) {
+        removeItem(StorageKeys.CHALLENGE_MODE); // Clear after reading
+        return challenge;
       }
     }
     return null;

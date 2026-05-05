@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { StorageKeys, getItem, setItem, getJson, setJson, removeItem, getString } from '@/lib/storage';
 import type { MobileProfile, GameState } from '@/components/screens/mobile/mobile-types';
 
 interface UseMobileConnectionCallbacks {
@@ -63,7 +64,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
 
     try {
       // Strategy 1: Reconnect via saved connection code
-      const savedCode = localStorage.getItem('karaoke-connection-code');
+      const savedCode = getString(StorageKeys.CONNECTION_CODE);
       if (savedCode) {
         try {
           const r = await fetch(`/api/mobile?action=reconnect&code=${encodeURIComponent(savedCode)}`);
@@ -96,7 +97,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
         setClientId(newClientId);
         setConnectionCode(newCode);
         setIsConnected(true);
-        localStorage.setItem('karaoke-connection-code', newCode);
+        setItem(StorageKeys.CONNECTION_CODE, newCode);
 
         if (data.gameState) {
           const parsed = parseGameState(data.gameState);
@@ -109,7 +110,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
           callbacksRef.current.onProfileFieldsLoaded(data.profile.name, data.profile.color, data.profile.avatar || null);
         } else if (!data.ipReconnected) {
           // Auto-restore profile from localStorage
-          const savedProfile = localStorage.getItem('karaoke-mobile-profile');
+          const savedProfile = getString(StorageKeys.MOBILE_PROFILE);
           if (savedProfile) {
             try {
               const profileToRestore = JSON.parse(savedProfile);
@@ -151,7 +152,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
       const data = await response.json();
       if (data.connectionCode) {
         setConnectionCode(data.connectionCode);
-        localStorage.setItem('karaoke-connection-code', data.connectionCode);
+        setItem(StorageKeys.CONNECTION_CODE, data.connectionCode);
       }
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -183,8 +184,8 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     setConnectionCode('');
     setIsConnected(false);
     setGameState(INITIAL_GAME_STATE);
-    localStorage.removeItem('karaoke-connection-code');
-    localStorage.removeItem('karaoke-client-id');
+    removeItem(StorageKeys.CONNECTION_CODE);
+    removeItem(StorageKeys.CLIENT_ID);
   }, [cleanup]);
 
   // Auto-connect on mount

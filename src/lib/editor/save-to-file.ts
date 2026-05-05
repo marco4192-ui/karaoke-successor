@@ -4,6 +4,8 @@
 
 import { Song } from '@/types/game';
 import { generateUltraStarTxt } from '@/lib/parsers/ultrastar-parser';
+import { StorageKeys, getString } from '@/lib/storage';
+
 import { normalizeFilePath } from '@/lib/tauri-file-storage';
 
 // Characters that are invalid in file paths on Windows
@@ -22,8 +24,8 @@ export async function saveSongToTxt(song: Song): Promise<SaveResult> {
     // Generate txt content
     const txtContent = generateUltraStarTxt(song);
     
-    // Get the songs folder from localStorage (normalized)
-    const raw = localStorage.getItem('karaoke-songs-folder');
+    // Get the songs folder from storage (normalized)
+    const raw = getString(StorageKeys.SONGS_FOLDER);
     const songsFolder = raw ? normalizeFilePath(raw) : null;
     
     if (!songsFolder) {

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { StorageKeys, getItem } from '@/lib/storage';
 import { Badge } from '@/components/ui/badge';
 import type { MobileProfile } from './mobile-types';
 
@@ -42,7 +43,7 @@ export function MobileProfileEditView({
   React.useEffect(() => {
     const fetchHostProfiles = async () => {
       try {
-        const storedClientId = localStorage.getItem('karaoke-client-id');
+        const storedClientId = getItem(StorageKeys.CLIENT_ID);
         const clientIdParam = storedClientId ? `&clientId=${storedClientId}` : '';
         const response = await fetch(`/api/mobile?action=hostprofiles${clientIdParam}`);
         const data = await response.json();

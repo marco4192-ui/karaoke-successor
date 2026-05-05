@@ -1,3 +1,5 @@
+import { StorageKeys, getItem, setItem, setJson, getJson } from '@/lib/storage';
+
 // Multi-Microphone Manager - Handles multiple microphone input devices simultaneously
 // Supports USB mics, SingStar mics, 3.5mm jack mics, Bluetooth audio
 // Each microphone has its own individual extended settings
@@ -312,9 +314,7 @@ export class MultiMicrophoneManager {
   private onAssignedMicsChange: ((_mics: AssignedMicrophone[]) => void) | null = null;
 
   constructor() {
-    if (typeof window !== 'undefined') {
-      this.loadConfig();
-    }
+    this.loadConfig();
   }
 
   // Get list of all available microphones
@@ -618,7 +618,7 @@ export class MultiMicrophoneManager {
           config: m.config,
         })),
       };
-      localStorage.setItem('karaoke-multi-mic-config', JSON.stringify(config));
+      setJson(StorageKeys.MULTI_MIC_CONFIG, config);
     } catch {
       // Non-critical: config will reset to defaults
     }
@@ -626,9 +626,8 @@ export class MultiMicrophoneManager {
 
   // Load config from localStorage
   private loadConfig(): void {
-    if (typeof window === 'undefined') return;
     try {
-      const saved = localStorage.getItem('karaoke-multi-mic-config');
+      const saved = getItem(StorageKeys.MULTI_MIC_CONFIG);
       if (saved) {
         const config = JSON.parse(saved);
         
@@ -657,7 +656,7 @@ export class MultiMicrophoneManager {
           });
           // Persist migration results so they are not re-run every load
           if (needsSave) {
-            localStorage.setItem('karaoke-multi-mic-config', JSON.stringify(config));
+            setJson(StorageKeys.MULTI_MIC_CONFIG, config);
           }
         }
       }

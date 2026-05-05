@@ -5,6 +5,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 import { Song, Difficulty, GameMode } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
 import { getAllSongs, getAllSongsAsync, getSongByIdWithLyrics, ensureSongUrls } from '@/lib/game/song-library';
+import { StorageKeys, getItem, getString, setJson } from '@/lib/storage';
 import { 
   getPlaylists, 
   deletePlaylist, 
@@ -140,22 +141,22 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
   useEffect(() => { setStartOptions(prev => ({ ...prev, difficulty: storeDifficulty })); }, [storeDifficulty]);
   
   useEffect(() => {
-    const saved = localStorage.getItem('karaoke-default-difficulty');
+    const saved = getString(StorageKeys.DEFAULT_DIFFICULTY);
     if (saved === 'easy' || saved === 'medium' || saved === 'hard') {
       if (storeDifficulty === 'medium') setStartOptions(prev => ({ ...prev, difficulty: saved }));
     }
   }, [storeDifficulty]);
 
   useEffect(() => {
-    const saved = localStorage.getItem('karaoke-library-settings');
+    const saved = getItem(StorageKeys.LIBRARY_SETTINGS);
     if (saved) try { setSettings(prev => ({ ...prev, ...JSON.parse(saved) })); } catch { /* ignore malformed stored settings */ }
   }, []);
   
-  useEffect(() => { localStorage.setItem('karaoke-library-settings', JSON.stringify(settings)); }, [settings]);
+  useEffect(() => { setJson(StorageKeys.LIBRARY_SETTINGS, settings); }, [settings]);
   
   useEffect(() => {
     const handler = () => {
-      const saved = localStorage.getItem('karaoke-default-difficulty');
+      const saved = getString(StorageKeys.DEFAULT_DIFFICULTY);
       if (saved === 'easy' || saved === 'medium' || saved === 'hard')
         setStartOptions(prev => ({ ...prev, difficulty: saved as Difficulty }));
     };

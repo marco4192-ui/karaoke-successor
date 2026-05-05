@@ -3,11 +3,11 @@
 // Keeps only a lightweight ID index in localStorage for fast sync access
 
 import { Song } from '@/types/game';
+import { StorageKeys, getItem, setItem, removeItem, setJson, getJson } from '@/lib/storage';
 
 const DB_NAME = 'karaoke-successor-custom-songs';
 const DB_VERSION = 1;
 const STORE_NAME = 'songs';
-const ID_INDEX_KEY = 'karaoke-custom-song-ids';
 
 let dbInstance: IDBDatabase | null = null;
 let initPromise: Promise<IDBDatabase> | null = null;
@@ -70,7 +70,7 @@ export async function saveCustomSongsToDB(songs: Song[]): Promise<void> {
       // Update the lightweight ID index in localStorage
       try {
         const ids = songs.map(s => s.id);
-        localStorage.setItem(ID_INDEX_KEY, JSON.stringify(ids));
+        setJson(StorageKeys.CUSTOM_SONG_IDS, ids);
       } catch (_e) {
         // eslint-disable-next-line no-console
         console.warn('[CustomSongsDB] Failed to update ID index:', _e);
@@ -100,7 +100,7 @@ export async function loadCustomSongsFromDB(): Promise<Song[]> {
 
       // Reconciliation: check localStorage for songs missing from IndexedDB
       try {
-        const idIndexRaw = localStorage.getItem(ID_INDEX_KEY);
+        const idIndexRaw = getItem(StorageKeys.CUSTOM_SONG_IDS);
         if (idIndexRaw) {
           const idIndex: string[] = JSON.parse(idIndexRaw);
           const indexedDBIds = new Set(indexedDBSongs.map(s => s.id));
@@ -144,7 +144,7 @@ export async function loadCustomSongsFromDB(): Promise<Song[]> {
 /** Attempt to load songs from localStorage by their IDs (legacy fallback). */
 function loadMissingSongsFromLocalStorage(missingIds: string[]): Song[] {
   try {
-    const stored = localStorage.getItem('karaoke-custom-songs');
+    const stored = getItem(StorageKeys.CUSTOM_SONGS);
     if (!stored) return [];
     const allLocal: Song[] = JSON.parse(stored);
     if (!Array.isArray(allLocal)) return [];
@@ -182,7 +182,7 @@ export async function clearCustomSongsFromDB(): Promise<void> {
 
     tx.oncomplete = () => {
       try {
-        localStorage.removeItem(ID_INDEX_KEY);
+        removeItem(StorageKeys.CUSTOM_SONG_IDS);
       } catch (error) {
         console.debug('[custom-songs-db]: failed to clear ID index from localStorage', error);
       }

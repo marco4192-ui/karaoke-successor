@@ -11,6 +11,7 @@ import { INPUT_MODE_CONFIG } from './unified-party-setup.types';
 import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
 import type { Language } from '@/lib/i18n/translations';
 import { ConnectionStatusBadge } from './connection-status-badge';
+import { StorageKeys, getJson } from '@/lib/storage';
 
 // ===================== SETTING CONTROL =====================
 
@@ -251,13 +252,12 @@ function MicAssignmentPanel({
 
   React.useEffect(() => {
     try {
-      const saved = localStorage.getItem('karaoke-multi-mic-config');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setSavedMics((parsed.assignedMics || []).map((m: { id: string; customName?: string; deviceName?: string }) => ({
+      const parsed = getJson<{ assignedMics?: Array<{ id: string; customName?: string; deviceName?: string }> }>(StorageKeys.MULTI_MIC_CONFIG, undefined as any);
+      if (parsed) {
+        setSavedMics((parsed.assignedMics || []).map((m) => ({
           id: m.id,
-          customName: m.customName,
-          deviceName: m.deviceName,
+          customName: m.customName ?? '',
+          deviceName: m.deviceName ?? '',
         })));
       }
     } catch { /* ignore */ }
@@ -357,37 +357,31 @@ export function SingleMicSelector({
   // Load savedMics synchronously from localStorage to avoid initial render
   // with empty list (which resets the selectedMicId to default)
   const [savedMics, setSavedMics] = useState<Array<{ id: string; customName: string; deviceName: string }>>(() => {
-    try {
-      const saved = localStorage.getItem('karaoke-multi-mic-config');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return (parsed.assignedMics || []).map((m: { id: string; customName?: string; deviceName?: string }) => ({
-          id: m.id,
-          customName: m.customName,
-          deviceName: m.deviceName,
-        }));
-      }
-    } catch { /* ignore */ }
+    const parsed = getJson<{ assignedMics?: Array<{ id: string; customName?: string; deviceName?: string }> }>(StorageKeys.MULTI_MIC_CONFIG, undefined as any);
+    if (parsed) {
+      return (parsed.assignedMics || []).map((m) => ({
+        id: m.id,
+        customName: m.customName || '',
+        deviceName: m.deviceName || '',
+      }));
+    }
     return [];
   });
 
   // Re-sync savedMics when component remounts (e.g., navigating back from game)
   React.useEffect(() => {
-    try {
-      const saved = localStorage.getItem('karaoke-multi-mic-config');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const mics = (parsed.assignedMics || []).map((m: { id: string; customName?: string; deviceName?: string }) => ({
-          id: m.id,
-          customName: m.customName,
-          deviceName: m.deviceName,
-        }));
-        setSavedMics(prev => {
-          if (prev.length === mics.length && prev.every((m, i) => m.id === mics[i].id)) return prev;
-          return mics;
-        });
-      }
-    } catch { /* ignore */ }
+    const parsed = getJson<{ assignedMics?: Array<{ id: string; customName?: string; deviceName?: string }> }>(StorageKeys.MULTI_MIC_CONFIG, undefined as any);
+    if (parsed) {
+      const mics = (parsed.assignedMics || []).map((m) => ({
+        id: m.id,
+        customName: m.customName || '',
+        deviceName: m.deviceName || '',
+      }));
+      setSavedMics(prev => {
+        if (prev.length === mics.length && prev.every((m, i) => m.id === mics[i].id)) return prev;
+        return mics;
+      });
+    }
   }, []);
 
   // Ensure the currently selected mic is in savedMics (may be missing if mic

@@ -2,6 +2,7 @@
 // XP, Levels, Ranks, Titles, and Extended Statistics
 
 import type { GameMode } from '@/types/game';
+import { StorageKeys, getItem, setJson } from '@/lib/storage';
 
 // ===================== NAMED CONSTANTS =====================
 
@@ -477,14 +478,8 @@ export function getLevelForXP(xp: number): { level: number; currentXP: number; n
 
 // ===================== STORAGE =====================
 
-const EXTENDED_STATS_KEY = 'karaoke_extended_stats';
-
 export function getExtendedStats(): ExtendedPlayerStats {
-  if (typeof window === 'undefined') {
-    return getDefaultStats();
-  }
-  
-  const stored = localStorage.getItem(EXTENDED_STATS_KEY);
+  const stored = getItem(StorageKeys.EXTENDED_STATS);
   if (stored) {
     try {
       return { ...getDefaultStats(), ...JSON.parse(stored) };
@@ -493,17 +488,11 @@ export function getExtendedStats(): ExtendedPlayerStats {
       return getDefaultStats();
     }
   }
-  
   return getDefaultStats();
 }
 
 export function saveExtendedStats(stats: ExtendedPlayerStats): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(EXTENDED_STATS_KEY, JSON.stringify(stats));
-  } catch {
-    // localStorage may be full or unavailable — silently ignore
-  }
+  setJson(StorageKeys.EXTENDED_STATS, stats);
 }
 
 function getDefaultStats(): ExtendedPlayerStats {

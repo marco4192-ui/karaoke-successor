@@ -1,4 +1,5 @@
 // Theme System for UI customization
+import { StorageKeys, getItem, setItem } from '@/lib/storage';
 export interface ThemeColors {
   primary: string;
   secondary: string;
@@ -424,9 +425,7 @@ export function applyTheme(theme: Theme): void {
   `;
   
   // Store preference
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem('karaoke-theme', theme.id);
-  }
+  setItem(StorageKeys.THEME, theme.id);
   
   // Dispatch event for components to react (with safety check for SSR)
   if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
@@ -440,9 +439,6 @@ export function applyTheme(theme: Theme): void {
 }
 
 export function getStoredTheme(): Theme | null {
-  if (typeof localStorage === 'undefined') {
-    return null;
-  }
-  const storedId = localStorage.getItem('karaoke-theme');
+  const storedId = getItem(StorageKeys.THEME);
   return THEMES.find(t => t.id === storedId) || null;
 }

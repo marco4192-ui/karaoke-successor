@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { SongStartModalProps } from './types';
 import { MusicIcon, MicIcon, StarIcon, TrophyIcon, QueueIcon, PlayIcon } from '@/components/icons';
 import { isDuetSong } from './utils';
+import { StorageKeys, getItem } from '@/lib/storage';
 
 // ===================== MIC SELECTOR (Single mode) =====================
 function useSavedMics() {
@@ -14,7 +15,7 @@ function useSavedMics() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('karaoke-multi-mic-config');
+      const saved = getItem(StorageKeys.MULTI_MIC_CONFIG);
       if (saved) {
         const parsed = JSON.parse(saved);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync

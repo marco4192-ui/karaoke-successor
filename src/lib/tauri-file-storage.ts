@@ -12,6 +12,7 @@ import {
 } from '@/lib/native-fs';
 import { normalizeTxtContent } from '@/lib/utils';
 import { AUDIO_EXTENSIONS, VIDEO_EXTENSIONS, TXT_EXTENSIONS, COVER_EXTENSIONS } from '@/lib/media-extensions';
+import { StorageKeys, getItem } from '@/lib/storage';
 
 /**
  * Sanitize a filename to prevent directory traversal attacks.
@@ -731,7 +732,7 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
     let songsFolder = baseFolder;
     
     if (!songsFolder) {
-      const raw = localStorage.getItem('karaoke-songs-folder');
+      const raw = getItem(StorageKeys.SONGS_FOLDER);
       songsFolder = raw ? normalizeFilePath(raw) : undefined;
     }
     

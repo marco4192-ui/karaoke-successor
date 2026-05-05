@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { StorageKeys, setItem, setJson, removeItem } from '@/lib/storage';
 
 // Types & constants
 import type { MobileView, MobileProfile } from './mobile/mobile-types';
@@ -73,7 +74,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   // Persist clientId to localStorage for IP-based reconnection hints
   useEffect(() => {
     if (clientId) {
-      localStorage.setItem('karaoke-client-id', clientId);
+      setItem(StorageKeys.CLIENT_ID, clientId);
     }
   }, [clientId]);
 
@@ -102,7 +103,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
           setProfileName(hostProfile.name);
           setProfileColor(hostProfile.color);
           setAvatarPreview(hostProfile.avatar || null);
-          localStorage.setItem('karaoke-mobile-profile', JSON.stringify(hostProfile));
+          setJson(StorageKeys.MOBILE_PROFILE, hostProfile);
           syncProfile(hostProfile);
         }
       })
@@ -127,7 +128,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
           name: profileName.trim(), avatar: avatarPreview || undefined, color: profileColor, createdAt: Date.now(),
         };
     setProfile(newProfile);
-    localStorage.setItem('karaoke-mobile-profile', JSON.stringify(newProfile));
+    setJson(StorageKeys.MOBILE_PROFILE, newProfile);
     syncProfile(newProfile);
     setCurrentView('home');
   }, [profileName, avatarPreview, profileColor, syncProfile]);
@@ -144,7 +145,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     if (!profile) return;
     const updated = { ...profile, name: profileName, color: profileColor, avatar: avatarPreview || undefined };
     setProfile(updated);
-    localStorage.setItem('karaoke-mobile-profile', JSON.stringify(updated));
+    setJson(StorageKeys.MOBILE_PROFILE, updated);
     syncProfile(updated);
   }, [profile, profileName, profileColor, avatarPreview, syncProfile]);
 
@@ -161,7 +162,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     setProfileName(switchedProfile.name);
     setProfileColor(switchedProfile.color);
     setAvatarPreview(switchedProfile.avatar || null);
-    localStorage.setItem('karaoke-mobile-profile', JSON.stringify(switchedProfile));
+    setJson(StorageKeys.MOBILE_PROFILE, switchedProfile);
     syncProfile(switchedProfile);
   }, [syncProfile]);
 
@@ -172,7 +173,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     setProfileName('');
     setProfileColor('#06B6D4');
     setAvatarPreview(null);
-    localStorage.removeItem('karaoke-mobile-profile');
+    removeItem(StorageKeys.MOBILE_PROFILE);
     setCurrentView('home');
     // Re-connect after a short delay to allow fresh profile creation
     reconnectTimerRef.current = setTimeout(() => connect(), 500);

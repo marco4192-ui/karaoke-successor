@@ -1,6 +1,7 @@
 // Song Library Store - Manages songs with persistent storage
 import type { Song } from '@/types/game';
 import { isTauri, getSongMediaUrl, clearBlobUrlCache} from '@/lib/tauri-file-storage';
+import { StorageKeys, getItem, setItem, removeItem, setJson, getJson } from '@/lib/storage';
 import { getSongMediaUrls, revokeSongMediaUrls } from '@/lib/db/media-db';
 import { saveCustomSongsToDB, loadCustomSongsFromDB, migrateFromLocalStorage, clearCustomSongsFromDB } from '@/lib/db/custom-songs-db';
 // IDs use crypto.randomUUID() for collision-free 128-bit random IDs
@@ -11,7 +12,7 @@ export { ensureSongUrls } from './song-url-restore';
 import { restoreSongUrls } from './song-url-restore';
 import { loadSongLyrics } from './song-lyrics-loader';
 
-const CUSTOM_SONGS_KEY = 'karaoke-successor-custom-songs';
+// CUSTOM_SONGS_KEY migrated to StorageKeys.CUSTOM_SONGS
 
 // In-memory song cache
 let songCache: Song[] | null = null;
@@ -88,13 +89,9 @@ function getCustomSongs(): Song[] {
   if (customSongsCache) return customSongsCache;
 
   // Check if running in browser
-  if (typeof window === 'undefined') {
-    return [];
-  }
-
-  // Try localStorage first (fast, sync)
+  // Try storage first (fast, sync)
   try {
-    const stored = localStorage.getItem(CUSTOM_SONGS_KEY);
+    const stored = getItem(StorageKeys.CUSTOM_SONGS);
     if (stored) {
       const songs = JSON.parse(stored);
       // One-time migration: normalize all path fields to fix HTML entities,
@@ -106,12 +103,12 @@ function getCustomSongs(): Song[] {
       }
       if (needsResave) {
         // eslint-disable-next-line no-console
-        try { localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(songs)); } catch (e) { console.debug('[SongLibrary] Failed to re-save normalized songs:', e); }
+        try { setJson(StorageKeys.CUSTOM_SONGS, songs); } catch (e) { console.debug('[SongLibrary] Failed to re-save normalized songs:', e); }
       }
       customSongsCache = songs;
       // Trigger background migration to IndexedDB
       if (typeof indexedDB !== 'undefined' && songs.length > 0) {
-        migrateFromLocalStorage(songs, CUSTOM_SONGS_KEY).then(migrated => {
+        migrateFromLocalStorage(songs, StorageKeys.CUSTOM_SONGS).then(migrated => {
           if (migrated) {
             customSongsCache = migrated;
             songCache = null; // Force refresh
@@ -161,7 +158,7 @@ export async function loadCustomSongsFromStorage(): Promise<Song[]> {
     // IndexedDB empty — check localStorage for migration
     const lsSongs = getCustomSongs();
     if (lsSongs.length > 0) {
-      await migrateFromLocalStorage(lsSongs, CUSTOM_SONGS_KEY);
+      await migrateFromLocalStorage(lsSongs, StorageKeys.CUSTOM_SONGS);
     }
     return lsSongs;
   } catch (e) {
@@ -282,7 +279,7 @@ function saveCustomSongs(songs: Song[]): void {
 /** Legacy localStorage save — used as fallback when IndexedDB is unavailable. */
 function saveToLocalStorage(songs: Song[]): void {
   try {
-    localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(songs));
+    setJson(StorageKeys.CUSTOM_SONGS, songs);
   } catch (e) {
     // eslint-disable-next-line no-console
     console.error('[SongLibrary] Failed to save custom songs to localStorage:', e);
@@ -319,7 +316,7 @@ function saveToLocalStorage(songs: Song[]): void {
         relativeBackgroundPath: s.relativeBackgroundPath,
         lyrics: [],
       }));
-      localStorage.setItem(CUSTOM_SONGS_KEY, JSON.stringify(ultraMinimalSongs));
+      setJson(StorageKeys.CUSTOM_SONGS, ultraMinimalSongs);
     } catch (e2) {
       // eslint-disable-next-line no-console
       console.error('[SongLibrary] Failed to save even ultra-minimal data — storage is full!', e2);
@@ -464,7 +461,7 @@ export function filterSongs(
 // Clear all custom songs
 export function clearCustomSongs(): void {
   // eslint-disable-next-line no-console
-  try { localStorage.removeItem(CUSTOM_SONGS_KEY); } catch (e) { console.debug('[SongLibrary] Failed to clear localStorage:', e); }
+  try { removeItem(StorageKeys.CUSTOM_SONGS); } catch (e) { console.debug('[SongLibrary] Failed to clear localStorage:', e); }
   customSongsCache = [];
   songCache = null;
   // Clear blob URL cache in Tauri to force fresh loads

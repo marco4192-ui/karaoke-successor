@@ -4,6 +4,7 @@ import { PARTY_GAME_CONFIGS } from './unified-party-setup.config';
 import type { SongSelectionOption, SelectedPlayer, GameSetupResult, InputMode } from './unified-party-setup.types';
 import { getGenres, getLanguages, filterSongs } from '@/lib/game/song-library';
 import { useGameStore } from '@/lib/game/store';
+import { StorageKeys, getItem, setItem, removeItem, setJson, getJson, getString } from '@/lib/storage';
 
 interface UsePartySetupArgs {
   gameMode: GameMode;
@@ -49,32 +50,24 @@ export function usePartySetup({
 
   // ── Mic-to-Player assignment (micId → profileId) ──
   const [micAssignments, setMicAssignments] = useState<Record<string, string>>(() => {
-    // Restore saved mic preferences when component mounts
-    try {
-      const saved = localStorage.getItem('karaoke-player-mic-preferences');
-      return saved ? JSON.parse(saved) : {};
-    } catch { return {}; }
+    return getJson<Record<string, string>>(StorageKeys.PLAYER_MIC_PREFERENCES, {}) || {};
   });
 
   // ── Shared single mic (for modes like pass-the-mic) ──
   const [selectedMicId, setSelectedMicId] = useState<string | null>(() => {
-    try {
-      return localStorage.getItem('karaoke-ptm-shared-mic-id') || null;
-    } catch { return null; }
+    return getString(StorageKeys.PTM_SHARED_MIC_ID) || null;
   });
   const [selectedMicName, setSelectedMicName] = useState<string | null>(() => {
-    try {
-      return localStorage.getItem('karaoke-ptm-shared-mic-name') || null;
-    } catch { return null; }
+    return getString(StorageKeys.PTM_SHARED_MIC_NAME) || null;
   });
 
   // Persist shared mic selection to localStorage
   useEffect(() => {
     try {
-      if (selectedMicId) localStorage.setItem('karaoke-ptm-shared-mic-id', selectedMicId);
-      else localStorage.removeItem('karaoke-ptm-shared-mic-id');
-      if (selectedMicName) localStorage.setItem('karaoke-ptm-shared-mic-name', selectedMicName);
-      else localStorage.removeItem('karaoke-ptm-shared-mic-name');
+      if (selectedMicId) setItem(StorageKeys.PTM_SHARED_MIC_ID, selectedMicId);
+      else removeItem(StorageKeys.PTM_SHARED_MIC_ID);
+      if (selectedMicName) setItem(StorageKeys.PTM_SHARED_MIC_NAME, selectedMicName);
+      else removeItem(StorageKeys.PTM_SHARED_MIC_NAME);
     } catch { /* ignore */ }
   }, [selectedMicId, selectedMicName]);
 
@@ -102,7 +95,7 @@ export function usePartySetup({
   // Persist mic assignments to localStorage
   const persistMicAssignments = useCallback((assignments: Record<string, string>) => {
     try {
-      localStorage.setItem('karaoke-player-mic-preferences', JSON.stringify(assignments));
+      setJson(StorageKeys.PLAYER_MIC_PREFERENCES, assignments);
     } catch { /* ignore */ }
   }, []);
 
@@ -127,13 +120,12 @@ export function usePartySetup({
       // Auto-restore this player's last mic assignment from localStorage
       // (only if the mic still exists in saved mic configs)
       try {
-        const saved = localStorage.getItem('karaoke-player-mic-preferences');
-        if (saved) {
-          const preferences: Record<string, string> = JSON.parse(saved);
+        const preferences = getJson<Record<string, string>>(StorageKeys.PLAYER_MIC_PREFERENCES, undefined as any);
+        if (preferences) {
           const preferredMicId = preferences[playerId];
           if (preferredMicId) {
             // Check if this mic exists in current configs
-            const micConfig = localStorage.getItem('karaoke-multi-mic-config');
+            const micConfig = getItem(StorageKeys.MULTI_MIC_CONFIG);
             if (micConfig) {
               const parsed = JSON.parse(micConfig);
               const micExists = (parsed.assignedMics || []).some((m: { id: string }) => m.id === preferredMicId);
@@ -188,9 +180,8 @@ export function usePartySetup({
     // Load saved mic configs to get mic names
     let savedMics: Array<{ id: string; deviceId: string; customName: string; deviceName: string }> = [];
     try {
-      const saved = localStorage.getItem('karaoke-multi-mic-config');
-      if (saved) {
-        const parsed = JSON.parse(saved);
+      const parsed = getJson<{ assignedMics?: Array<{ id: string; deviceId: string; customName: string; deviceName: string }> }>(StorageKeys.MULTI_MIC_CONFIG, undefined as any);
+      if (parsed) {
         savedMics = parsed.assignedMics || [];
       }
     } catch { /* ignore */ }

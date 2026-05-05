@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { parseUltraStarTxt, convertUltraStarToSong } from '@/lib/parsers/ultrastar-parser';
 import { normalizeFilePath } from '@/lib/tauri-file-storage';
+import { StorageKeys, getItem, setItem } from '@/lib/storage';
 import {
   scanFolderWithPicker,
   scanFilesFromFileList,
@@ -285,7 +286,7 @@ export function useImportScreen(onImport: (_song: Song) => void) {
       const selectedArray = Array.from(selectedScanned);
 
       const scanLock = acquireScanLock();
-      localStorage.setItem('karaoke-songs-folder', folderPath);
+      setItem(StorageKeys.SONGS_FOLDER, folderPath);
 
       try {
         const { storeMedia } = await import('@/lib/db/media-db');
@@ -447,14 +448,8 @@ export function useImportScreen(onImport: (_song: Song) => void) {
     if (songsToImport.length > 0) {
       await addSongs(songsToImport);
       if (detectedBaseFolder) {
-        try {
-          const existingFolder = localStorage.getItem('karaoke-songs-folder');
-          if (!existingFolder) {
-            localStorage.setItem('karaoke-songs-folder', detectedBaseFolder);
-          }
-        } catch (e) {
-          // eslint-disable-next-line no-console
-          console.warn('[Import] Could not save baseFolder to localStorage:', e);
+        if (!getItem(StorageKeys.SONGS_FOLDER)) {
+          setItem(StorageKeys.SONGS_FOLDER, detectedBaseFolder);
         }
       }
     }

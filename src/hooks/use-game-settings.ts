@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect} from 'react';
+import { StorageKeys, getItem, getBool, getString } from '@/lib/storage';
 import { getStoredTheme } from '@/lib/game/themes';
 import type { NoteShapeStyle } from '@/lib/game/note-utils';
 
@@ -37,45 +38,40 @@ export function useGameSettings(): GameSettings & {
   setNoteShapeStyle: (_value: NoteShapeStyle) => void;
   setPerformanceMode: (_value: PerformanceMode) => void;
 } {
-  // Helper to safely read localStorage (returns null in SSR)
-  const getStored = (key: string): string | null => {
-    try { return localStorage.getItem(key); } catch { return null; }
-  };
-
   // Initialize with stored values to avoid flash of default on mount
   const [showBackgroundVideo, setShowBackgroundVideo] = useState(
-    () => getStored('karaoke-bg-video') !== 'false'
+    () => getBool(StorageKeys.BG_VIDEO, true)
   );
   const [showPitchGuide, setShowPitchGuide] = useState(
-    () => getStored('karaoke-show-pitch-guide') !== 'false'
+    () => getBool(StorageKeys.SHOW_PITCH_GUIDE, true)
   );
   const [useAnimatedBackground, setUseAnimatedBackground] = useState(
-    () => getStored('karaoke-animated-bg') === 'true'
+    () => getBool(StorageKeys.ANIMATED_BG, false)
   );
   const [noteDisplayStyle, setNoteDisplayStyle] = useState(
-    () => getStored('karaoke-note-style') || 'classic'
+    () => getString(StorageKeys.NOTE_STYLE, 'classic')
   );
   const [noteShapeStyle, setNoteShapeStyle] = useState<NoteShapeStyle>(() => {
-    const stored = parseNoteShape(getStored('karaoke-note-shape'));
+    const stored = parseNoteShape(getString(StorageKeys.NOTE_SHAPE));
     if (stored) return stored;
     const theme = getStoredTheme();
     return theme?.noteStyle || 'rounded';
   });
   const [performanceMode, setPerformanceMode] = useState<PerformanceMode>(() => {
-    return parsePerformanceMode(getStored('karaoke-performance-mode')) || 'full';
+    return parsePerformanceMode(getString(StorageKeys.PERFORMANCE_MODE)) || 'full';
   });
 
   // Load initial settings and listen for changes
   useEffect(() => {
     // Load initial values from localStorage
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
-    setShowBackgroundVideo(localStorage.getItem('karaoke-bg-video') !== 'false');
-    setShowPitchGuide(localStorage.getItem('karaoke-show-pitch-guide') !== 'false');
-    setNoteDisplayStyle(localStorage.getItem('karaoke-note-style') || 'classic');
-    setUseAnimatedBackground(localStorage.getItem('karaoke-animated-bg') === 'true');
+    setShowBackgroundVideo(getBool(StorageKeys.BG_VIDEO, true));
+    setShowPitchGuide(getBool(StorageKeys.SHOW_PITCH_GUIDE, true));
+    setNoteDisplayStyle(getString(StorageKeys.NOTE_STYLE, 'classic'));
+    setUseAnimatedBackground(getBool(StorageKeys.ANIMATED_BG, false));
 
     // Load note shape style - PRIORITIZE localStorage setting over theme
-    const storedNoteShape = parseNoteShape(localStorage.getItem('karaoke-note-shape'));
+    const storedNoteShape = parseNoteShape(getString(StorageKeys.NOTE_SHAPE));
     if (storedNoteShape) {
       setNoteShapeStyle(storedNoteShape);
     } else {
@@ -106,18 +102,18 @@ export function useGameSettings(): GameSettings & {
         }
       }
       // Always refresh from localStorage
-      setShowBackgroundVideo(localStorage.getItem('karaoke-bg-video') !== 'false');
-      setShowPitchGuide(localStorage.getItem('karaoke-show-pitch-guide') !== 'false');
-      setNoteDisplayStyle(localStorage.getItem('karaoke-note-style') || 'classic');
-      setUseAnimatedBackground(localStorage.getItem('karaoke-animated-bg') === 'true');
+      setShowBackgroundVideo(getBool(StorageKeys.BG_VIDEO, true));
+      setShowPitchGuide(getBool(StorageKeys.SHOW_PITCH_GUIDE, true));
+      setNoteDisplayStyle(getString(StorageKeys.NOTE_STYLE, 'classic'));
+      setUseAnimatedBackground(getBool(StorageKeys.ANIMATED_BG, false));
 
       // Refresh note shape style - PRIORITIZE localStorage
-      const storedShape = parseNoteShape(localStorage.getItem('karaoke-note-shape'));
+      const storedShape = parseNoteShape(getString(StorageKeys.NOTE_SHAPE));
       if (storedShape) {
         setNoteShapeStyle(storedShape);
       }
       // Refresh performance mode
-      const storedPerf = parsePerformanceMode(localStorage.getItem('karaoke-performance-mode'));
+      const storedPerf = parsePerformanceMode(getString(StorageKeys.PERFORMANCE_MODE));
       if (storedPerf) {
         setPerformanceMode(storedPerf);
       }
@@ -125,7 +121,7 @@ export function useGameSettings(): GameSettings & {
 
     // Listen for theme changes specifically - only update if no localStorage setting
     const handleThemeChange = () => {
-      const storedShape = parseNoteShape(localStorage.getItem('karaoke-note-shape'));
+      const storedShape = parseNoteShape(getString(StorageKeys.NOTE_SHAPE));
       if (!storedShape) {
         const theme = getStoredTheme();
         if (theme) {

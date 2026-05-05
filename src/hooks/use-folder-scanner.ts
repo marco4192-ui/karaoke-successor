@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { StorageKeys, getItem, getString, setItem, removeItem, clearAll } from '@/lib/storage';
 import { getAllSongs, clearCustomSongs, replaceCustomSongs, acquireScanLock, invalidateSongCache, clearSongCache } from '@/lib/game/song-library';
 import { clearCustomSongsFromDB } from '@/lib/db/custom-songs-db';
 import { Song } from '@/types/game';
@@ -59,12 +60,12 @@ export function useFolderScanner(): UseFolderScannerReturn {
   // Initialize folder and song count from localStorage
   const initializeFromStorage = useCallback(() => {
     try {
-      let savedFolder = localStorage.getItem('karaoke-songs-folder') || '';
+      let savedFolder = getString(StorageKeys.SONGS_FOLDER);
       // CRITICAL: Normalize HTML entities in stored folder path
       // (e.g. &amp; → &) that may have been introduced during serialization
       if (savedFolder) {
         savedFolder = normalizeFilePath(savedFolder);
-        localStorage.setItem('karaoke-songs-folder', savedFolder);
+        setItem(StorageKeys.SONGS_FOLDER, savedFolder);
       }
       setSongsFolder(savedFolder);
       setSongCount(getAllSongs().length);
@@ -72,7 +73,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
       // Check if songs have baseFolder but localStorage is empty (migration needed)
       const songs = getAllSongs();
       if (songs.length > 0 && songs[0].baseFolder && !savedFolder) {
-        localStorage.setItem('karaoke-songs-folder', songs[0].baseFolder);
+        setItem(StorageKeys.SONGS_FOLDER, songs[0].baseFolder);
         setSongsFolder(songs[0].baseFolder);
       }
     } catch {
@@ -90,7 +91,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
 
     // CRITICAL: Always save the songs folder to localStorage (normalized)
     const normalizedFolder = normalizeFilePath(folderPath);
-    localStorage.setItem('karaoke-songs-folder', normalizedFolder);
+    setItem(StorageKeys.SONGS_FOLDER, normalizedFolder);
     try {
       // Import the Tauri scanner
       const { scanSongsFolderTauri, isTauri: checkTauri } = await import('@/lib/tauri-file-storage');
@@ -303,7 +304,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
     }
 
     const normalized = normalizeFilePath(songsFolder);
-    localStorage.setItem('karaoke-songs-folder', normalized);
+    setItem(StorageKeys.SONGS_FOLDER, normalized);
     await performFolderScan(normalized);
   }, [songsFolder, performFolderScan]);
 
@@ -324,7 +325,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
 
       if (selected) {
         setSongsFolder(selected);
-        localStorage.setItem('karaoke-songs-folder', selected);
+        setItem(StorageKeys.SONGS_FOLDER, selected);
         await performFolderScan(selected);
       } else {
         // user cancelled folder picker
@@ -358,7 +359,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
       const allKeys = Object.keys(localStorage);
       for (const key of allKeys) {
         if (key.startsWith('karaoke-songs') || key.startsWith('imported-song-') || key === 'karaoke-library') {
-          localStorage.removeItem(key);
+          removeItem(key);
         }
       }
 
@@ -410,7 +411,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
     setIsResetting(true);
 
     try {
-      localStorage.clear();
+      clearAll();
       window.location.reload();
     } catch (error) {
       // eslint-disable-next-line no-console

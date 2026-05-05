@@ -59,13 +59,14 @@ export const DEFAULT_WEBCAM_CONFIG: WebcamBackgroundConfig = {
   zIndex: 5,
 };
 
-// LocalStorage key for webcam config
-const WEBCAM_CONFIG_KEY = 'karaoke-webcam-config';
+// LocalStorage key for webcam config — migrated to StorageKeys.WEBCAM_CONFIG
+
+import { StorageKeys, setJson, getJson } from '@/lib/storage';
 
 // Save webcam config to localStorage
 export function saveWebcamConfig(_config: WebcamBackgroundConfig): void {
   try {
-    localStorage.setItem(WEBCAM_CONFIG_KEY, JSON.stringify(_config));
+    setJson(StorageKeys.WEBCAM_CONFIG, _config);
   } catch (e) {
     // eslint-disable-next-line no-console
     console.error('Failed to save webcam config:', e);
@@ -74,22 +75,9 @@ export function saveWebcamConfig(_config: WebcamBackgroundConfig): void {
 
 // Load webcam config from localStorage
 export function loadWebcamConfig(): WebcamBackgroundConfig {
-  // Check if running in browser (not SSR)
-  if (typeof window === 'undefined') {
-    return { ...DEFAULT_WEBCAM_CONFIG };
-  }
-  
-  try {
-    const saved = localStorage.getItem(WEBCAM_CONFIG_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return { ...DEFAULT_WEBCAM_CONFIG, ...parsed };
-    }
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('Failed to load webcam config:', e);
-  }
-  return { ...DEFAULT_WEBCAM_CONFIG };
+  // getJson handles SSR and error cases
+  const parsed = getJson<Partial<WebcamBackgroundConfig>>(StorageKeys.WEBCAM_CONFIG, {});
+  return { ...DEFAULT_WEBCAM_CONFIG, ...parsed };
 }
 
 // ===================== Webcam Background Hook =====================

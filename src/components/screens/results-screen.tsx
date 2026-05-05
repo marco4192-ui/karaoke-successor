@@ -6,6 +6,7 @@ import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { useTranslation } from '@/lib/i18n/translations';
 import { safeAlert } from '@/lib/safe-dialog';
+import { StorageKeys, getItem, removeItem } from '@/lib/storage';
 import { getExtendedStats, updateStatsAfterGame, saveExtendedStats, calculateSongXP, getLevelForXP } from '@/lib/game/player-progression';
 import { checkAndUnlockAchievements } from '@/lib/game/achievements';
 import { estimatePerfectNotes } from '@/lib/game/scoring';
@@ -416,12 +417,12 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
         // DAILY CHALLENGE SUBMISSION
         // If this game was started from the daily challenge screen, submit the result
         try {
-          const dailyFlag = localStorage.getItem('karaoke_daily_challenge_active');
+          const dailyFlag = getItem(StorageKeys.DAILY_CHALLENGE_ACTIVE);
           if (dailyFlag) {
             const parsed = JSON.parse(dailyFlag);
             if (parsed.active) {
               // Clear the flag first to avoid double-submission
-              localStorage.removeItem('karaoke_daily_challenge_active');
+              removeItem(StorageKeys.DAILY_CHALLENGE_ACTIVE);
               // Submit the challenge result (async, fire-and-forget — it persists to localStorage internally)
               import('@/lib/game/daily-challenge').then(({ submitChallengeResult }) => {
                 submitChallengeResult(

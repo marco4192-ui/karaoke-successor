@@ -6,8 +6,10 @@
  * high ratings AND a larger number of evaluations.
  */
 
-const STORAGE_KEY_ALLTIME = 'karaoke-rate-my-song-history';
-const STORAGE_KEY_DAILY = 'karaoke-rate-my-song-daily';
+import { StorageKeys, getJson, setJson } from '@/lib/storage';
+
+const STORAGE_KEY_ALLTIME = StorageKeys.RATE_MY_SONG_HISTORY;
+const STORAGE_KEY_DAILY = StorageKeys.RATE_MY_SONG_DAILY;
 
 export interface RateMySongEntry {
   id: string;              // unique entry id
@@ -41,19 +43,11 @@ interface RateMySongRanking {
 }
 
 function loadRanking(): RateMySongRanking {
-  if (typeof window === 'undefined') return { entries: [] };
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_ALLTIME);
-    if (raw) return JSON.parse(raw);
-  } catch { /* ignore */ }
-  return { entries: [] };
+  return getJson<RateMySongRanking>(STORAGE_KEY_ALLTIME, { entries: [] });
 }
 
 function saveRanking(ranking: RateMySongRanking) {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY_ALLTIME, JSON.stringify(ranking));
-  } catch { /* ignore quota errors */ }
+  setJson(STORAGE_KEY_ALLTIME, ranking);
 }
 
 // ── Daily Highscore helpers ──
@@ -68,25 +62,15 @@ interface DailyRanking {
 }
 
 function loadDailyRanking(): DailyRanking {
-  if (typeof window === 'undefined') return { entries: [] };
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_DAILY);
-    if (raw) {
-      const data: DailyRanking = JSON.parse(raw);
-      // Clean up entries older than today
-      const today = getTodayString();
-      data.entries = data.entries.filter(e => e.date === today);
-      return data;
-    }
-  } catch { /* ignore */ }
-  return { entries: [] };
+  const data = getJson<DailyRanking>(STORAGE_KEY_DAILY, { entries: [] });
+  // Clean up entries older than today
+  const today = getTodayString();
+  data.entries = data.entries.filter(e => e.date === today);
+  return data;
 }
 
 function saveDailyRanking(data: DailyRanking) {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY_DAILY, JSON.stringify(data));
-  } catch { /* ignore quota errors */ }
+  setJson(STORAGE_KEY_DAILY, data);
 }
 
 /** Add a new rating entry (or update existing for same player+song) */

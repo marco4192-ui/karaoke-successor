@@ -3,6 +3,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { getAllSongs } from '@/lib/game/song-library';
 import type { PlayerProfile } from '@/types/game';
+import { StorageKeys, setJson } from '@/lib/storage';
 
 /**
  * Syncs song library and host profiles to the mobile companion server.
@@ -83,7 +84,7 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
     }));
     // Also keep localStorage for any legacy use
     try {
-      localStorage.setItem('karaoke-host-profiles', JSON.stringify(hostProfiles));
+      setJson(StorageKeys.HOST_PROFILES, hostProfiles);
     } catch { /* ignore */ }
 
     const pushProfiles = () => {

@@ -11,6 +11,7 @@ import {
   saveWebcamConfig,
 } from '@/components/game/webcam-background';
 import { THEMES, applyTheme, getStoredTheme, Theme } from '@/lib/game/themes';
+import { StorageKeys, getItem, setItem, setBool, getNumber, getBool, getString, setJson, clearAll } from '@/lib/storage';
 
 // Tab components
 import { AIAssetsGeneratorTab } from '@/components/settings/ai-assets-generator-tab';
@@ -58,10 +59,8 @@ function SettingsScreen() {
   const [bgVideo, setBgVideo] = useState<boolean>(true);
   const [useAnimatedBg, setUseAnimatedBg] = useState<boolean>(false);
   const [performanceMode, setPerformanceMode] = useState<'full' | 'low'>(() => {
-    try {
-      const stored = localStorage.getItem('karaoke-performance-mode');
-      return stored === 'low' ? 'low' : 'full';
-    } catch { return 'full'; }
+    const stored = getString(StorageKeys.PERFORMANCE_MODE);
+    return stored === 'low' ? 'low' : 'full';
   });
 
   // Webcam settings state
@@ -98,32 +97,6 @@ function SettingsScreen() {
     return typeof result === 'string' ? result : key;
   }, [translations]);
 
-  // Safe localStorage helpers
-  const safeGetItem = useCallback((key: string, defaultValue: string = ''): string => {
-    try {
-      if (typeof window === 'undefined') return defaultValue;
-      return localStorage.getItem(key) || defaultValue;
-    } catch {
-      return defaultValue;
-    }
-  }, []);
-
-  const safeGetBool = useCallback((key: string, defaultValue: boolean = true): boolean => {
-    try {
-      if (typeof window === 'undefined') return defaultValue;
-      const val = localStorage.getItem(key);
-      return val === null ? defaultValue : val === 'true';
-    } catch {
-      return defaultValue;
-    }
-  }, []);
-
-  // Initialize folder scanner ONCE on mount (must not re-run — would overwrite user input)
-  useEffect(() => {
-    if (folderScanner.initializeFromStorage) folderScanner.initializeFromStorage();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // Load settings on mount
   useEffect(() => {
     // Check if running in Tauri (v1: __TAURI__, v2: __TAURI_INTERNALS__)
@@ -131,34 +104,30 @@ function SettingsScreen() {
       setIsTauriDetected(true);
     }
 
-    // Load all settings from localStorage
-    try {
-      setPreviewVolume(parseInt(safeGetItem('karaoke-preview-volume', '30')) || 30);
-      setMicSensitivity(parseInt(safeGetItem('karaoke-mic-sensitivity', '50')) || 50);
+    // Load all settings from storage module
+    setPreviewVolume(getNumber(StorageKeys.PREVIEW_VOLUME, 30));
+    setMicSensitivity(getNumber(StorageKeys.MIC_SENSITIVITY, 50));
 
-      if (!initialDifficultyLoaded && gameState.difficulty) {
-        setDefaultDifficulty(gameState.difficulty);
-        setInitialDifficultyLoaded(true);
-      }
+    if (!initialDifficultyLoaded && gameState.difficulty) {
+    setDefaultDifficulty(gameState.difficulty);
+    setInitialDifficultyLoaded(true);
+  }
 
-      setShowPitchGuide(safeGetBool('karaoke-show-pitch-guide', true));
-      setLyricsStyle(safeGetItem('karaoke-lyrics-style', 'classic'));
-      setNoteDisplayStyle(safeGetItem('karaoke-note-style', 'classic'));
-      setNoteShapeStyle(safeGetItem('karaoke-note-shape', 'rounded'));
-      setBgVideo(safeGetBool('karaoke-bg-video', true));
-      setUseAnimatedBg(safeGetItem('karaoke-animated-bg', 'false') === 'true');
-      setPerformanceMode(safeGetItem('karaoke-performance-mode', 'full') === 'low' ? 'low' : 'full');
+  setShowPitchGuide(getBool(StorageKeys.SHOW_PITCH_GUIDE, true));
+  setLyricsStyle(getString(StorageKeys.LYRICS_STYLE, 'classic'));
+  setNoteDisplayStyle(getString(StorageKeys.NOTE_STYLE, 'classic'));
+  setNoteShapeStyle(getString(StorageKeys.NOTE_SHAPE, 'rounded'));
+  setBgVideo(getBool(StorageKeys.BG_VIDEO, true));
+  setUseAnimatedBg(getBool(StorageKeys.ANIMATED_BG, false));
+  setPerformanceMode(getString(StorageKeys.PERFORMANCE_MODE, 'full') === 'low' ? 'low' : 'full');
 
-      try {
-        const storedTheme = getStoredTheme();
-        if (storedTheme) setCurrentThemeId(storedTheme.id);
-      } catch {
-        // Ignore theme errors
-      }
-    } catch {
-      // Ignore any localStorage errors
-    }
-  }, [safeGetItem, safeGetBool, gameState.difficulty, initialDifficultyLoaded]);
+  try {
+    const storedTheme = getStoredTheme();
+    if (storedTheme) setCurrentThemeId(storedTheme.id);
+  } catch {
+    // Ignore theme errors
+  }
+  }, [gameState.difficulty, initialDifficultyLoaded]);
 
   // Settings change handlers
   const handleLanguageChange = (newLang: Language) => {
@@ -175,7 +144,7 @@ function SettingsScreen() {
   const handleDifficultyChange = (diff: Difficulty) => {
     setDefaultDifficulty(diff);
     setDifficulty(diff);
-    localStorage.setItem('karaoke-default-difficulty', diff);
+    setItem(StorageKeys.DEFAULT_DIFFICULTY, diff);
     window.dispatchEvent(new CustomEvent('settingsChange', { detail: { difficulty: diff } }));
     setHasChanges(true);
   };
@@ -188,16 +157,16 @@ function SettingsScreen() {
   // Save all settings to localStorage and dispatch events
   const handleSaveSettings = () => {
     try {
-      localStorage.setItem('karaoke-preview-volume', previewVolume.toString());
-      localStorage.setItem('karaoke-mic-sensitivity', micSensitivity.toString());
-      localStorage.setItem('karaoke-default-difficulty', defaultDifficulty);
-      localStorage.setItem('karaoke-show-pitch-guide', showPitchGuide.toString());
-      localStorage.setItem('karaoke-lyrics-style', lyricsStyle);
-      localStorage.setItem('karaoke-bg-video', bgVideo.toString());
+      setItem(StorageKeys.PREVIEW_VOLUME, previewVolume.toString());
+      setItem(StorageKeys.MIC_SENSITIVITY, micSensitivity.toString());
+      setItem(StorageKeys.DEFAULT_DIFFICULTY, defaultDifficulty);
+      setBool(StorageKeys.SHOW_PITCH_GUIDE, showPitchGuide);
+      setItem(StorageKeys.LYRICS_STYLE, lyricsStyle);
+      setBool(StorageKeys.BG_VIDEO, bgVideo);
 
       const theme = THEMES.find(t => t.id === currentThemeId);
       if (theme) {
-        localStorage.setItem('karaoke-theme', currentThemeId);
+        setItem(StorageKeys.THEME, currentThemeId);
         window.dispatchEvent(new CustomEvent('themeChange', { detail: theme.id }));
       }
 
