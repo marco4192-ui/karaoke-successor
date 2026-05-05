@@ -49,19 +49,7 @@ export async function nativeReadDir(dirPath: string): Promise<NativeDirEntry[]> 
   return invoke<NativeDirEntry[]>('native_read_dir', { dirPath });
 }
 
-/** Create a directory (recursive). */
-export async function nativeMkdir(dirPath: string): Promise<void> {
-  validatePath(dirPath);
-  return invoke<void>('native_mkdir', { dirPath });
-}
-
 // ---- File Write ----
-
-/** Write base64-encoded bytes to a file (e.g. for importing audio/images). */
-export async function nativeWriteFileBytes(filePath: string, dataBase64: string): Promise<void> {
-  validatePath(filePath);
-  return invoke<void>('native_write_file_bytes', { filePath, dataBase64 });
-}
 
 /** Write a text string to a file. Parent directories are created automatically. */
 export async function nativeWriteFileText(filePath: string, content: string): Promise<void> {

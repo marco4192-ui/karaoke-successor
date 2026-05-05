@@ -188,22 +188,5 @@ export async function getTxtContent(songId: string): Promise<string | null> {
   });
 }
 
-// Delete all media for a song
-export async function deleteSongMedia(songId: string): Promise<void> {
-  const db = await initMediaDB();
-  
-  const types: ('audio' | 'video' | 'cover' | 'txt')[] = ['audio', 'video', 'cover', 'txt'];
-  
-  for (const type of types) {
-    await new Promise<void>((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.delete(`${songId}-${type}`);
-      
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
-  }
-}
 
 

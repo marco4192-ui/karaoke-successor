@@ -155,21 +155,6 @@ function loadMissingSongsFromLocalStorage(missingIds: string[]): Song[] {
   }
 }
 
-/** Check if a song exists in IndexedDB by ID. */
-export async function hasSongInDB(songId: string): Promise<boolean> {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readonly');
-    const request = tx.objectStore(STORE_NAME).getKey(songId);
-
-    request.onsuccess = () => {
-      resolve(request.result !== undefined);
-    };
-
-    request.onerror = () => reject(request.error);
-  });
-}
-
 /** Get the count of custom songs stored. */
 export async function getCustomSongCount(): Promise<number> {
   const db = await openDB();

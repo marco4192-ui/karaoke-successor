@@ -78,11 +78,6 @@ export function isFileSystemAccessSupported(): boolean {
   return 'showDirectoryPicker' in window;
 }
 
-// Load cached library or scan fresh
-export async function getLibrary(): Promise<LibraryCache | null> {
-  return await loadCache();
-}
-
 // Scan a folder using File System Access API
 export async function scanFolderWithPicker(): Promise<ScanResult> {
   if (!isFileSystemAccessSupported()) {

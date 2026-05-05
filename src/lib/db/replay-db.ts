@@ -162,41 +162,6 @@ export async function deleteReplay(id: string): Promise<void> {
   });
 }
 
-/** Delete all replays for a specific song (e.g. when a song is removed from the library). */
-export async function deleteReplaysForSong(songId: string): Promise<void> {
-  const replays = await getReplaysForSong(songId);
-  const db = await openDB();
-
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction([STORE_NAME], 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
-
-    let completed = 0;
-    let errored = false;
-
-    if (replays.length === 0) {
-      resolve();
-      return;
-    }
-
-    replays.forEach((replay) => {
-      const request = store.delete(replay.id);
-      request.onsuccess = () => {
-        completed++;
-        if (completed === replays.length && !errored) resolve();
-      };
-      request.onerror = () => {
-        if (!errored) {
-          errored = true;
-          // eslint-disable-next-line no-console
-          console.error('[ReplayDB] Failed to delete replay for song:', request.error);
-          reject(request.error);
-        }
-      };
-    });
-  });
-}
-
 /**
  * Auto-cleanup: Delete replays older than 30 days or keep max 50 replays.
  * Call this periodically (e.g., on app startup or before storing a new replay).
