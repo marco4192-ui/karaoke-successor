@@ -65,8 +65,8 @@ export class PitchDetector {
 
   // FFT buffer
   private bufferSize = 4096;
-  private buffer: Float32Array | null = null;
-  private frequencyBuffer: Float32Array | null = null;
+  private buffer: Float32Array<ArrayBuffer> | null = null;
+  private frequencyBuffer: Float32Array<ArrayBuffer> | null = null;
 
   // Pre-allocated YIN buffer to avoid ~8KB allocation per frame (GC pressure)
   private yinBuffer: Float32Array | null = null;
