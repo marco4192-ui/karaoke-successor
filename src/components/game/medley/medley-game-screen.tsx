@@ -55,6 +55,8 @@ export function MedleyGameScreen({
   // ── Current snippet ──
   const [currentSnippetIdx, setCurrentSnippetIdx] = useState(0);
   const currentSnippet = medleySongs[currentSnippetIdx] || null;
+  const currentSnippetRef = useRef(currentSnippet);
+  currentSnippetRef.current = currentSnippet;
 
   // ── Audio ──
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -355,8 +357,8 @@ export function MedleyGameScreen({
           clearInterval(interval);
           countdownIntervalRef.current = null;
           setPhase('playing');
-          if (audioRef.current && currentSnippet) {
-            audioRef.current.currentTime = currentSnippet.startTime / 1000;
+          if (audioRef.current && currentSnippetRef.current) {
+            audioRef.current.currentTime = currentSnippetRef.current.startTime / 1000;
             // eslint-disable-next-line no-console
             audioRef.current.play().catch(e => console.warn('[Medley] Play failed:', e));
             setIsPlaying(true);
@@ -368,7 +370,7 @@ export function MedleyGameScreen({
       });
     }, 1000);
     countdownIntervalRef.current = interval;
-  }, [multiPitch, currentSnippet]);
+  }, [multiPitch]);
 
   // ── Round complete ──
   const handleRoundComplete = useCallback(() => {

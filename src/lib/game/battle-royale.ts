@@ -345,7 +345,7 @@ export function getBattleRoyaleStats(game: BattleRoyaleGame) {
     currentRound: game.currentRound,
     totalScore: game.players.reduce((sum, p) => sum + p.score, 0),
     isComplete: game.status === 'completed',
-    topPlayer: getPlayersByScore(game)[0],
+    topPlayer: getPlayersByScore(game)[0] ?? null,
     // Player type breakdown
     micPlayers: micPlayers.length,
     companionPlayers: companionPlayers.length,

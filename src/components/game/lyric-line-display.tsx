@@ -80,7 +80,14 @@ export function LyricLineDisplay({
 
   // Calculate note fill level based on performance (for fill-level mode)
   const getNoteFillLevel = (noteId: string, isActive: boolean): number => {
-    if (!isActive) return 1; // Past notes show full
+    if (!isActive) {
+      // Past notes: calculate from recorded samples instead of showing full
+      const samples = notePerformance.get(noteId) || [];
+      if (samples.length === 0) return 0;
+      const hitRate = samples.filter(s => s.hit).length / samples.length;
+      return hitRate;
+    }
+    // Active note: calculate based on recent samples
     const samples = notePerformance.get(noteId) || [];
     if (samples.length === 0) return 0;
     // Calculate fill based on recent hits
