@@ -439,41 +439,52 @@ export function getLevelForXP(xp: number): { level: number; currentXP: number; n
   
   // Guard: NaN would cause infinite loop (NaN < anything is always false)
   const safeXP = (typeof xp !== 'number' || isNaN(xp) || xp < 0) ? 0 : xp;
-  
-  let level = 1;
-  let xpRequired = 0;
-  
-  let iterations = 0;
-  while (iterations++ < 1000) {
-    let nextRequired: number;
-    if (level < LEVEL_TIER_1_MAX) {
-      nextRequired = XP_PER_LEVEL_TIER_1;
-    } else if (level < LEVEL_TIER_2_MAX) {
-      nextRequired = XP_PER_LEVEL_TIER_2;
-    } else if (level < LEVEL_TIER_3_MAX) {
-      nextRequired = XP_PER_LEVEL_TIER_3;
-    } else if (level < LEVEL_TIER_4_MAX) {
-      nextRequired = XP_PER_LEVEL_TIER_4;
-    } else {
-      nextRequired = XP_PER_LEVEL_TIER_5;
-    }
-    
-    if (safeXP < xpRequired + nextRequired) {
-      const currentLevelXP = safeXP - xpRequired;
-      const progress = (currentLevelXP / nextRequired) * 100;
-      return {
-        level,
-        currentXP: safeXP,
-        nextLevelXP: xpRequired + nextRequired,
-        progress: Math.min(100, Math.max(0, progress)),
-      };
-    }
 
-    xpRequired += nextRequired;
-    level++;
+  // Cumulative XP at each tier boundary (O(1) closed-form)
+  const TIER1_CUM = (LEVEL_TIER_1_MAX - 1) * XP_PER_LEVEL_TIER_1;           // 9 * 500 = 4500
+  const TIER2_CUM = TIER1_CUM + (LEVEL_TIER_2_MAX - LEVEL_TIER_1_MAX) * XP_PER_LEVEL_TIER_2;  // + 15 * 1000 = 19500
+  const TIER3_CUM = TIER2_CUM + (LEVEL_TIER_3_MAX - LEVEL_TIER_2_MAX) * XP_PER_LEVEL_TIER_3;  // + 25 * 2000 = 69500
+  const TIER4_CUM = TIER3_CUM + (LEVEL_TIER_4_MAX - LEVEL_TIER_3_MAX) * XP_PER_LEVEL_TIER_4;  // + 50 * 4000 = 269500
+
+  let xpRequired: number;
+  let xpPerLevel: number;
+  let level: number;
+
+  if (safeXP < TIER1_CUM) {
+    // Tier 1: levels 1-9
+    xpRequired = 0;
+    xpPerLevel = XP_PER_LEVEL_TIER_1;
+    level = 1 + Math.floor(safeXP / XP_PER_LEVEL_TIER_1);
+  } else if (safeXP < TIER2_CUM) {
+    // Tier 2: levels 10-24
+    xpRequired = TIER1_CUM;
+    xpPerLevel = XP_PER_LEVEL_TIER_2;
+    level = LEVEL_TIER_1_MAX + Math.floor((safeXP - TIER1_CUM) / XP_PER_LEVEL_TIER_2);
+  } else if (safeXP < TIER3_CUM) {
+    // Tier 3: levels 25-49
+    xpRequired = TIER2_CUM;
+    xpPerLevel = XP_PER_LEVEL_TIER_3;
+    level = LEVEL_TIER_2_MAX + Math.floor((safeXP - TIER2_CUM) / XP_PER_LEVEL_TIER_3);
+  } else if (safeXP < TIER4_CUM) {
+    // Tier 4: levels 50-99
+    xpRequired = TIER3_CUM;
+    xpPerLevel = XP_PER_LEVEL_TIER_4;
+    level = LEVEL_TIER_3_MAX + Math.floor((safeXP - TIER3_CUM) / XP_PER_LEVEL_TIER_4);
+  } else {
+    // Tier 5: levels 100+
+    xpRequired = TIER4_CUM;
+    xpPerLevel = XP_PER_LEVEL_TIER_5;
+    level = LEVEL_TIER_4_MAX + Math.floor((safeXP - TIER4_CUM) / XP_PER_LEVEL_TIER_5);
   }
-  // Safety fallback: if we exceeded max iterations, return a reasonable default
-  return { level, currentXP: safeXP, nextLevelXP: xpRequired + XP_PER_LEVEL_TIER_5, progress: 100 };
+
+  const currentLevelXP = safeXP - xpRequired;
+  const progress = (currentLevelXP / xpPerLevel) * 100;
+  return {
+    level,
+    currentXP: safeXP,
+    nextLevelXP: xpRequired + xpPerLevel,
+    progress: Math.min(100, Math.max(0, progress)),
+  };
 }
 
 // ===================== STORAGE =====================

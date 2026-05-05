@@ -318,18 +318,38 @@ export function PtmGameScreen({
   const currentTimeRef = useRef(currentTime);
   currentTimeRef.current = currentTime;
 
+  // Pre-sort note start times for O(log n) binary search instead of O(n) filter
+  const sortedNoteStarts = useMemo(() => {
+    return allNotes.map(n => n.startTime).sort((a, b) => a - b);
+  }, [allNotes]);
+
   useEffect(() => {
     if (!isPlaying || phase !== 'playing') { setSongEnergy(0); return; }
     const interval = setInterval(() => {
-      // Simple energy approximation based on note density
+      // Binary search: count notes within ±2s of current time
       const t = currentTimeRef.current;
-      const nearbyNotes = allNotes.filter(n =>
-        Math.abs(n.startTime - t) < 2000
-      ).length;
+      const lo = t - 2000;
+      const hi = t + 2000;
+      // bisect_left for lo
+      let left = 0, right = sortedNoteStarts.length;
+      while (left < right) {
+        const mid = (left + right) >> 1;
+        if (sortedNoteStarts[mid] < lo) left = mid + 1;
+        else right = mid;
+      }
+      const startIdx = left;
+      // bisect_left for hi
+      left = startIdx; right = sortedNoteStarts.length;
+      while (left < right) {
+        const mid = (left + right) >> 1;
+        if (sortedNoteStarts[mid] < hi) left = mid + 1;
+        else right = mid;
+      }
+      const nearbyNotes = left - startIdx;
       setSongEnergy(Math.min(1, nearbyNotes / 5));
     }, 200);
     return () => clearInterval(interval);
-  }, [isPlaying, phase, allNotes]);
+  }, [isPlaying, phase, sortedNoteStarts]);
 
   // ── Display duration ──
   const displayDuration = useMemo(() => {

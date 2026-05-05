@@ -3,21 +3,20 @@
 import React, { useState, useEffect } from 'react';
 import { LyricLine } from '@/types/game';
 import { StorageKeys, getString } from '@/lib/storage';
-
+import type { NoteDisplayStyle } from '@/lib/game/note-utils';
 import type { GameMode } from '@/types/game';
 
 // Re-export canonical GameMode type so all consumers use the same union.
-// This avoids drift between local duplicates and @/types/game.
 export type GameModeType = GameMode;
 
-// Note display style type
-export type NoteDisplayStyleType = 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity';
+// Re-export canonical NoteDisplayStyle so all consumers use the same type.
+export type { NoteDisplayStyle as NoteDisplayStyleType };
 
 interface LyricLineDisplayProps {
   line: LyricLine;
   currentTime: number;
   playerColor: string;
-  noteDisplayStyle?: NoteDisplayStyleType;
+  noteDisplayStyle?: NoteDisplayStyle;
   notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
   gameMode?: GameModeType;
   missingWordsIndices?: number[];

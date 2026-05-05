@@ -12,6 +12,33 @@ import { checkAndUnlockAchievements } from '@/lib/game/achievements';
 import { estimatePerfectNotes } from '@/lib/game/scoring';
 import { RATING_TAILWIND_CLASSES } from '@/lib/game/rating-utils';
 import { recordSongPlay } from '@/lib/playlist-manager';
+import type { PlayerProfile } from '@/types/game';
+
+// Helper: calculate XP and update a player's profile with new level
+function awardXPToProfile(
+  profile: PlayerProfile,
+  score: number,
+  accuracy: number,
+  maxCombo: number,
+  notesHit: number,
+  goldenNotes: number,
+  rating: string,
+  challengeMode: string | undefined,
+  updateFn: (id: string, updates: Partial<PlayerProfile>) => void,
+) {
+  const xp = calculateSongXP(
+    score,
+    accuracy,
+    maxCombo,
+    estimatePerfectNotes(notesHit, rating),
+    goldenNotes,
+    challengeMode,
+  );
+  const currentXP = profile.xp || 0;
+  const newXP = currentXP + xp;
+  const levelInfo = getLevelForXP(newXP);
+  updateFn(profile.id, { xp: newXP, level: levelInfo.level });
+}
 
 // Imports from extracted components (also re-exported for backward compatibility)
 import { SongHighscoreModal } from '@/components/results/song-highscore-modal';
@@ -361,21 +388,11 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
             });
 
             // Update P2 profile XP
-            const p2XP = calculateSongXP(
-              player2Result.score,
-              player2Result.accuracy,
-              player2Result.maxCombo,
-              estimatePerfectNotes(player2Result.notesHit, player2Result.rating),
-              player2Result.goldenNotesCount || 0,
-              undefined
+            awardXPToProfile(
+              p2Profile, player2Result.score, player2Result.accuracy, player2Result.maxCombo,
+              player2Result.notesHit, player2Result.goldenNotesCount || 0, player2Result.rating,
+              undefined, updateProfile,
             );
-            const p2CurrentXP = p2Profile.xp || 0;
-            const p2NewXP = p2CurrentXP + p2XP;
-            const p2LevelInfo = getLevelForXP(p2NewXP);
-            updateProfile(p2Profile.id, {
-              xp: p2NewXP,
-              level: p2LevelInfo.level,
-            });
           }
         }
         
@@ -398,21 +415,11 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
         saveExtendedStats(xpResult.stats);
         
         // UPDATE ACTIVE PROFILE XP AND LEVEL (character-based progression)
-        const earnedXP = calculateSongXP(
-          playerResult.score,
-          playerResult.accuracy,
-          playerResult.maxCombo,
-          estimatePerfectNotes(playerResult.notesHit, playerResult.rating),
-          goldenNotes,
-          gameState.challengeMode
+        awardXPToProfile(
+          profile, playerResult.score, playerResult.accuracy, playerResult.maxCombo,
+          playerResult.notesHit, goldenNotes, playerResult.rating,
+          gameState.challengeMode, updateProfile,
         );
-        const currentProfileXP = profile.xp || 0;
-        const newTotalXP = currentProfileXP + earnedXP;
-        const levelInfo = getLevelForXP(newTotalXP);
-        updateProfile(profile.id, {
-          xp: newTotalXP,
-          level: levelInfo.level,
-        });
         
         // DAILY CHALLENGE SUBMISSION
         // If this game was started from the daily challenge screen, submit the result
