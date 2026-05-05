@@ -302,7 +302,8 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
               let tickPoints = calculateTickPoints(tickResult.accuracy, note.isGolden, scoringMeta.pointsPerTick);
 
               // Challenge modifier: perfect_only — only "Perfect" hits score
-              if (hasPerfectOnly && tickResult.accuracy <= 0.95) {
+              // Use displayType from evaluateTick which respects difficulty-specific thresholds
+              if (hasPerfectOnly && tickResult.displayType !== 'Perfect') {
                 tickPoints = 0;
               }
               // Challenge modifier: golden_only — only golden notes score
@@ -323,7 +324,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
                 hasPlayerUpdates = true;
 
                 pendingEvents.push({
-                  type: tickResult.accuracy > 0.95 ? 'perfect' : 'good',
+                  type: tickResult.displayType === 'Perfect' ? 'perfect' : 'good',
                   displayType: tickResult.displayType,
                   points: finalPoints,
                   time: currentTime,
@@ -499,7 +500,9 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
               noteProgress.ticksHit++;
 
               let tickPoints = calculateTickPoints(tickResult.accuracy, note.isGolden, scoringMeta.pointsPerTick);
-              const isPerfect = tickResult.accuracy > 0.95;
+              // Use displayType from evaluateTick which respects difficulty-specific
+              // thresholds (Easy=0.85, Medium=0.95, Hard=0.97) instead of hardcoded 0.95
+              const isPerfect = tickResult.displayType === 'Perfect';
 
               // Challenge modifier: perfect_only — only "Perfect" hits score
               if (hasPerfectOnly && !isPerfect) {
@@ -525,7 +528,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
                 setScoreEvents(prev => [
                   ...prev.slice(-10),
                   {
-                    type: tickResult.accuracy > 0.95 ? 'perfect' : 'good',
+                    type: tickResult.displayType === 'Perfect' ? 'perfect' : 'good',
                     displayType: tickResult.displayType,
                     points: finalPoints,
                     time: currentTime,
@@ -553,7 +556,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
                   setP1ScoreEvents(prev => [
                     ...prev.slice(-10),
                     {
-                      type: tickResult.accuracy > 0.95 ? 'perfect' : 'good',
+                      type: tickResult.displayType === 'Perfect' ? 'perfect' : 'good',
                       displayType: tickResult.displayType,
                       points: finalPoints,
                       time: currentTime,
