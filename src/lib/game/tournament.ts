@@ -167,7 +167,27 @@ function generateBracket(
       });
     }
   }
-  
+
+  // Advance BYE winners into their next-round match slots.
+  // Without this, BYE matches are marked completed with a winner, but the
+  // winner is never placed into the round-2 match → tournament is permanently stuck.
+  for (const match of matches) {
+    if (match.isBye && match.winner) {
+      const nextRound = match.round + 1;
+      const nextPosition = Math.floor(match.position / 2);
+      const nextMatch = matches.find(
+        m => m.round === nextRound && m.position === nextPosition
+      );
+      if (nextMatch) {
+        if (match.position % 2 === 0) {
+          nextMatch.player1 = match.winner;
+        } else {
+          nextMatch.player2 = match.winner;
+        }
+      }
+    }
+  }
+
   return matches;
 }
 
