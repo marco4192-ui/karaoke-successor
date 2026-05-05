@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { DIFFICULTY_SETTINGS, Difficulty, Note, LyricLine } from '@/types/game';
 import {
   evaluateTick,
@@ -350,9 +350,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   const [p2State, setP2State] = useState<PlayerScoringState>({ ...DEFAULT_PLAYER_SCORING_STATE });
 
 
-  // Refs for P2-P4 states to avoid stale closures in checkPlayerNoteHits
-  const p2StateRef = useRef(p2State);
-  p2StateRef.current = p2State;
+
 
   // Ref for P1 combo to avoid stale closure when batched updates delay React re-render.
   // Without this, two ticks firing before a re-render both read the same old combo value.
@@ -385,7 +383,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   // Ref to always have the latest players array — prevents stale closure issues
   // when checkNoteHits is called from requestAnimationFrame
   const playersRef = useRef(players);
-  playersRef.current = players;
+  useEffect(() => { playersRef.current = players; }, [players]);
 
   // Reset scoring state
   const resetScoring = useCallback(() => {
