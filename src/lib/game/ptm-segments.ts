@@ -25,6 +25,14 @@ export function generatePtmSegments(
   const segCount = Math.max(playerCount, Math.ceil(rawCount / playerCount) * playerCount);
 
   const adjustedDurMs = songDurationMs / segCount;
+
+  // Guard: if rounding up to equal distribution produces segments shorter than
+  // 20s, the song is too short for proper PTM gameplay with this player count.
+  // Fall back to a single full-song segment (no turn-based play).
+  if (adjustedDurMs < 20000) {
+    return [{ startTime: 0, endTime: Math.round(songDurationMs), playerId: null }];
+  }
+
   const segments: PassTheMicSegment[] = [];
   for (let i = 0; i < segCount; i++) {
     segments.push({
