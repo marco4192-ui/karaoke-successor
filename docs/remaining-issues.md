@@ -1,111 +1,68 @@
-# Zusammenfassung aller unbehandelten Punkte aus allen Review-Sessions
+# Zusammenfassung aller Punkte aus allen Review-Sessions
 
 **Erstellt:** 2026-05-05
-**Status:** Zu bearbeiten
+**Abgeschlossen:** 2026-05-05
 
 ---
 
-## A) Aus worklog-cycle3.md — Quality-Items (Übersprungen)
+## Fix-Aktionen (3 Punkte implementiert)
 
-### Q1: Duplizierte UltraStar TXT-Parser
-- **Quelle:** 3 ähnliche TXT-Parser in ultrastar-parser.ts, song-lyrics-loader.ts, tauri-file-storage.ts
-- **Begründung (übersprungen):** Verschiedene Use-Cases (Import/Konvertierung, Runtime-Laden, Tauri-Scanning)
-- **Aktion:** Prüfen ob sinnvoll konsolidierbar, ggf. Teilfunktionen extrahieren
-
-### Q2: Duplizierte Timing-Data-Berechnung
-- **Begründung (übersprungen):** Riskante Refaktorierung
-- **Aktion:** Analysieren, prüfen ob Konsolidierung möglich ohne Funktionsverlust
-
-### Q3: Duplizierte Client-Cleanup-Logik
-- **Begründung (übersprungen):** Riskante Refaktorierung
-- **Aktion:** Analysieren und konsolidieren wo möglich
-
-### Q4: audio-effects.ts GainNode Leak
-- **Begründung (übersprungen):** Benötigt tiefere Analyse
-- **Aktion:** GainNode-Leak identifizieren und beheben
-
-### Q5: IMMERSIVE_SCREENS fehlen
-- **Begründung (übersprungen):** UI-Erweiterung
-- **Aktion:** Prüfen was gemeint ist und ob implementierbar
-
-### Q6: MicrophoneManager non-standard Constraints
-- **Begründung (übersprungen):** Tauri-spezifisch
-- **Aktion:** Prüfen ob Constraints kompatibel mit Tauri sind
-
-### Q9: Duplizierte Medley-Snippet-Erzeugung
-- **Begründung (übersprungen):** Riskante Refaktorierung
-- **Aktion:** Analysieren und konsolidieren wo möglich
-
-### Q12: Duplizierter Pause/Stop-Button
-- **Begründung (übersprungen):** UI-Analyse nötig
-- **Aktion:** Prüfen und ggf. deduplizieren
+### UNENTSCHIEDEN hardcoded string → i18n
+- **Datei:** results-screen.tsx, translations.ts
+- **Status:** ✅ Fixed (Commit b9db15a)
+- **Details:** `draw`-Key zu `results`-Sektion in 6 Sprachen (EN, DE, ES, FR, IT, PT) hinzugefügt. Compact-Sprachen fallen auf EN zurück.
 
 ### Q15: Editor songs-Liste Refresh
-- **Begründung (übersprungen):** Feature-Implementierung
-- **Aktion:** Implementieren — Editor soll Songliste nach Änderungen aktualisieren
-
-### Q18: PitchGraph Canvas-Resolution
-- **Begründung (übersprungen):** Feature-Implementierung
-- **Aktion:** Canvas-Resolution für PitchGraph verbessern (HiDPI-Unterstützung)
-
-### D13: Leeres sampleSongs-Array
-- **Begründung (übersprungen):** Harmlos
-- **Aktion:** Prüfen ob Array mit Daten befüllt werden sollte
-
----
-
-## B) Aus worklog.md (Haupt-Worklog) — Deferred Items
-
-### T-M3: P2-Scoring Batching
-- **Begründung (deferred):** Würde architektonische Änderung erfordern
-- **Aktion:** Prüfen ob Scoring-Updates gebatcht werden können
-
-### T-M6: useMultiPitchDetector Re-Init
-- **Begründung (deferred):** Aktuelles Verhalten akzeptabel für Tauri
-- **Aktion:** Prüfen ob Re-Init bei Konfigurationswechsel nötig
-
-### R-M2/M3: Stille Fehler in Charts
-- **Begründung (deferred):** Error handling ist absichtlich
-- **Aktion:** Prüfen ob silent errors sinnvoll sind oder Logging hinzugefügt werden sollte
-
-### R-M6: Hardcoded Port 3000
-- **Begründung (deferred):** Next.js Default, Tauri überschreibt
-- **Aktion:** Prüfen ob tatsächlich Tauri-Only und kein Problem
-
-### R-M7: Server Kill
-- **Begründung (deferred):** Von Tauri Lifecycle gehandhabt
-- **Aktion:** Bestätigen
-
----
-
-## C) Aus worklog-review4.md — Known Limitations
-
-### pitch_shift Challenge Mode
-- **Beschreibung:** Requires Web Audio API real-time pitch shifting (audio time-stretch + transpose)
-- **Aktion:** Komplex — Web Audio API Pitch Shifting implementieren oder als NOT IMPLEMENTED markieren
-
-### UNENTSCHIEDEN hardcoded string
-- **Datei:** results-screen.tsx Zeile 561
-- **Beschreibung:** "UNENTSCHIEDEN" sollte t('draw') für i18n nutzen
-- **Aktion:** i18n implementieren
-
----
-
-## D) Aus worklog-review5.md — Deferred
+- **Datei:** editor-screen.tsx
+- **Status:** ✅ Fixed (Commit 9ee8102)
+- **Details:** `onSaved`-Callback an GenreLanguageEditor übergeben. Nach erfolgreichem TXT-Speichern wird Songliste automatisch aktualisiert.
 
 ### V-4: i18n für editor-screen.tsx
-- **Beschreibung:** ~20 hartcodierte deutsche Strings × 16 Sprachen
-- **Aktion:** i18n für Editor-Screen implementieren
+- **Datei:** editor-screen.tsx, translations.ts
+- **Status:** ✅ Fixed (Commit 2008e09)
+- **Details:** 26 hartcodierte deutsche Strings durch `t()`-Aufrufe ersetzt. Editor-Sektion zu 6 Sprachen hinzugefügt. `useTranslation` importiert und verwendet.
 
 ---
 
-## E) Aus review-session-worklog.md / worklog-review2.md — Übersprungen
+## Analysierte Punkte (False Positives / Korrekt Deferred)
 
-### Verbesserung 4: Doppelte Mobile-Typen
-- **Beschreibung:** MobileProfile, QueueItem, GameResults, PitchData, GameState doppelt definiert
-- **Begründung (übersprungen):** Verschiedene Schichten (Server-API vs Client-UI) mit strukturell verschiedenen Shapes
-- **Aktion:** Nochmals prüfen ob Typen konsolidierbar sind
+### Q4: audio-effects.ts GainNode Leak → False Positive
+- Web Audio API ignoriert Duplikat-`connect()` zu selbem Ziel
+- `disconnect()` trennt alle Nodes korrekt
+- Kein Leak vorhanden
 
-### Verbesserung 6: UltraStar TXT Parsing Duplikation
-- **Beschreibung:** Gleich wie Q1 — 3 ähnliche TXT-Parser
-- **Aktion:** Gleich wie Q1
+### Q12: Duplizierter Pause/Stop-Button → False Positive
+- Pause/Stop-Buttons existieren in verschiedenen Spielmodi (Game, Battle Royale, PTM)
+- Jeder Button dient einem eigenen Kontext — keine Duplikation
+
+### Q18: PitchGraph Canvas-Resolution → Bereits implementiert
+- HiDPI-Support existiert: `devicePixelRatio`-Skalierung, ResizeObserver, `setTransform()`
+
+### Q1/Q6: UltraStar Parser + MicrophoneManager → Bereits korrekt gehandhabt
+- `convertNotesToLyricLines` bereits als Shared-Module extrahiert
+- MicrophoneManager nutzt absichtlich nur Tauri-kompatible Constraints
+
+### Q2/Q3/Q9: Timing/Cleanup/Medley Duplikationen → Korrekt deferred
+- Verschiedene Kontexte mit kontextspezifischer Logik
+- Refaktorierung zu riskant, Nutzen marginal
+
+### T-M3/T-M6/R-M2/M3/R-M6/R-M7: Deferred Items → Alle korrekt deferred
+- P2-Scoring Batching: Architektonische Änderung nötig
+- useMultiPitchDetector Re-Init: Nicht nötig in Tauri
+- Stille Chart-Fehler: Absichtliches Error Handling
+- Hardcoded Port 3000: Tauri überschreibt
+- Server Kill: Tauri Lifecycle
+
+### Verbesserung 4: Doppelte Mobile-Typen → Korrekt übersprungen
+- Server-API und Client-UI haben absichtlich verschiedene Shapes
+
+### Q5: IMMERSIVE_SCREENS → Bereits implementiert
+- Alle 9 immersiven Screens in Set enthalten
+
+### D13: sampleSongs-Array → Bereits entfernt
+- Existiert nicht mehr im Codebase
+
+### pitch_shift Challenge Mode → Korrekt deferred
+- Erfordert Web Audio API real-time pitch shifting
+- Benötigt Anpassung von Scoring, Lyrics-Timing und Audio-Pipeline
+- Komplexes Feature, kein Bugfix
