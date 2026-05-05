@@ -187,3 +187,34 @@ Alle 6 sind "truly dead" — keine implementiert fehlende Features, keine ist be
 | FP-11 | ptm-next-song NaN propagation | `endTime` ist required Field im Song-Typ — TypeScript schützt |
 | FP-12 | Daily challenge timezone streak | Low-Priority Edge-Case für Desktop-App (kein Mobilgerät) |
 | FP-13 | Results screen P2 highscore | isMultiplayerMode korrekt — Duet ist kooperativ, kein separater Highscore |
+
+---
+
+### ✅ Session 3 Fixes (alle gepusht)
+
+**15 Commits** — Alle 20 bestätigten Issues + 6 Dead Code Entfernungen:
+
+| Commit | Fix | Schwere |
+|--------|-----|---------|
+| `144278e` | C1+H2: MIDI VLQ-Parsing + Endlosschleife-Guard | Critical+High |
+| `fd07d5a` | C2: Battle Royale Round-Timer Guard | Critical |
+| `7fa7e18` | C3: Scoring Division-by-Zero Guard | Critical |
+| `da8e746` | H1: hasPerfectOnly nutzt displayType statt 0.95 | High |
+| `f1f2c6b` | H3: Replay Recorder Sync-Guard | High |
+| `a756f30` | H4: Mobile IP-Detection Loop aufgelöst | High |
+| `56b021f` | M1: Duet P1 Accuracy korrigiert | Medium |
+| `33f818a` | M2: Medley Score `??` statt `\|\|` | Medium |
+| `a6449b4` | M3: MultiPitchDetector start() nutzt Ref | Medium |
+| `4be23b0` | M4: Audio Effects Disconnect-All | Medium |
+| `321943a` | M5: Daily-Challenge Badges outside Gate | Medium |
+| `c3bbf4f` | M6: BaseFolder-Migration .some() | Medium |
+| `c0d63b9` | M7: PTM Segmente 20s-Minimum | Medium |
+| `e21ff4a` | M8: Blob-URL Cache 200→2000 | Medium |
+| `e1492b6` | L3,L4,L5: Array-Mutation, Spread-Overflow, Key-Fallback | Low |
+| `5e1b074` | DC1-DC6: 6 Dead Code Exports entfernt | Chore |
+
+**Übersprungene Low-Priority Items:**
+- L1 (addToQueue silent drop): UI deaktiviert den Button bereits
+- L2 (Streak Timezone): Edge-Case für Desktop-App
+
+**Finaler Zustand:** 0 TSC-Fehler, 0 ESLint-Fehler, 318 TypeScript-Dateien
