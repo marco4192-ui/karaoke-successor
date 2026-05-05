@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LyricLine } from '@/types/game';
 
 import type { GameMode } from '@/types/game';
@@ -52,9 +52,6 @@ export function LyricLineDisplay({
 }: LyricLineDisplayProps) {
   // Get lyrics style from localStorage - initialize with default to avoid hydration mismatch
   const [lyricsStyle, setLyricsStyle] = useState<string>('classic');
-  const initialLoadDone = useRef(false);
-  // Per-instance interval ref for polling localStorage style changes (replaces module-level singleton)
-  const styleIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load initial value and listen for style changes
   useEffect(() => {
@@ -63,18 +60,15 @@ export function LyricLineDisplay({
       setLyricsStyle(style);
     };
 
-    // Load initial value on first effect run
-    if (!initialLoadDone.current) {
-      initialLoadDone.current = true;
-      handleStyleChange();
-    }
+    // Load initial value
+    handleStyleChange();
 
-    window.addEventListener('storage', handleStyleChange);
-    // Poll for cross-tab style changes
-    styleIntervalRef.current = setInterval(handleStyleChange, 5000);
+    // Listen for settings/theme changes from other components (same tab)
+    window.addEventListener('settingsChange', handleStyleChange);
+    // NOTE: No polling interval — this is a Tauri desktop app (single window),
+    // so cross-tab sync via storage event is unnecessary.
     return () => {
-      window.removeEventListener('storage', handleStyleChange);
-      if (styleIntervalRef.current) clearInterval(styleIntervalRef.current);
+      window.removeEventListener('settingsChange', handleStyleChange);
     };
   }, []);
 
