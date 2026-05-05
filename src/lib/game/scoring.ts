@@ -62,8 +62,12 @@ export function calculateScoringMetadata(
   let totalNoteTicks = 0;
   let goldenNoteTicks = 0;
 
+  // Guard against division by zero — if BPM is 0 or missing, fall back to
+  // ~120 BPM (500ms per beat) so scoring still works for malformed songs.
+  const safeBeatDuration = beatDuration > 0 ? beatDuration : 500;
+
   for (const note of notes) {
-    const ticksInNote = Math.max(1, Math.round(note.duration / beatDuration));
+    const ticksInNote = Math.max(1, Math.round(note.duration / safeBeatDuration));
     totalNoteTicks += ticksInNote;
     if (note.isGolden) goldenNoteTicks += ticksInNote;
   }
