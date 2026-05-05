@@ -85,9 +85,12 @@ export function isTauri(): boolean {
 }
 
 // In-memory cache for blob URLs to avoid recreating them.
-// Eviction: capped at 200 entries — oldest entries are removed when full.
+// Eviction: capped at 2000 entries — oldest entries are removed when full.
+// NOTE: Was 200, but eviction of in-use URLs caused playback failures during
+// seeking on long songs. 2000 is safe for a desktop app (Tauri) where memory
+// is plentiful and the number of distinct media files in a session is bounded.
 const blobUrlCache = new Map<string, string>();
-const BLOB_CACHE_MAX = 200;
+const BLOB_CACHE_MAX = 2000;
 
 /** Revoke an old blob URL and remove it from the cache. */
 function evictBlobUrl(key: string) {
