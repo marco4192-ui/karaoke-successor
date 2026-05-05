@@ -38,7 +38,7 @@ interface CompetitiveSetupScreenProps {
 export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame, onBack }: CompetitiveSetupScreenProps) {
   const activeProfiles = useMemo(() => profiles.filter(p => p.isActive !== false), [profiles]);
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
-  const [bestOf, setBestOf] = useState<number>(3);
+  const [bestOf, setBestOf] = useState<1 | 3 | 5 | 7>(3);
   const [frequency, setFrequency] = useState<string>('normal');
   const [error, setError] = useState<string | null>(null);
 
@@ -89,7 +89,7 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
     const settings: CompetitiveSettings = {
       difficulty,
       modeType,
-      bestOf: bestOf as 1 | 3 | 5 | 7,
+      bestOf,
       missingWordFrequency: modeType === 'missing-words'
         ? frequency === 'easy' ? 0.15 : frequency === 'hard' ? 0.40 : 0.25
         : 0.25,
@@ -152,7 +152,7 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-3">Runden pro Spieler</h3>
           <div className="flex gap-3">
-            {[1, 3, 5, 7].map(bo => (
+            {([1, 3, 5, 7] as const).map(bo => (
               <button
                 key={bo}
                 onClick={() => setBestOf(bo)}
