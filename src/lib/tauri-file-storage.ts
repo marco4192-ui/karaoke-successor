@@ -464,7 +464,8 @@ async function processFolder(
     else if (trimmed.startsWith('#START:')) {
       start = parseInt(trimmed.substring(7)) || undefined;
     } else if (trimmed.startsWith('#END:')) {
-      end = parseInt(trimmed.substring(5)) || undefined;
+      const endVal = parseInt(trimmed.substring(5));
+      end = endVal > 0 ? endVal : undefined;
     } else if (trimmed.startsWith('#VIDEOGAP:')) {
       videoGap = parseFloat(trimmed.substring(10).replace(',', '.')) || undefined;
     } else if (trimmed.startsWith('#VIDEOSTART:')) {
@@ -473,16 +474,16 @@ async function processFolder(
 
     // Preview
     else if (trimmed.startsWith('#PREVIEWSTART:')) {
-      previewStart = parseFloat(trimmed.substring(13)) || undefined;
+      previewStart = parseFloat(trimmed.substring(14)) || undefined;
     } else if (trimmed.startsWith('#PREVIEWDURATION:')) {
-      previewDuration = parseFloat(trimmed.substring(16)) || undefined;
+      previewDuration = parseFloat(trimmed.substring(17)) || undefined;
     }
 
     // Medley
     else if (trimmed.startsWith('#MEDLEYSTARTBEAT:')) {
-      medleyStartBeat = parseInt(trimmed.substring(16)) || undefined;
+      medleyStartBeat = parseInt(trimmed.substring(17)) || undefined;
     } else if (trimmed.startsWith('#MEDLEYENDBEAT:')) {
-      medleyEndBeat = parseInt(trimmed.substring(14)) || undefined;
+      medleyEndBeat = parseInt(trimmed.substring(15)) || undefined;
     }
 
     // Additional metadata
