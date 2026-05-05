@@ -391,7 +391,7 @@ export function convertUltraStarToSong(
     totalDuration = ultraStar.end;
   } else if (lyricLines.length > 0) {
     // Use last lyric line end time + 5s buffer for a realistic display duration
-    const lastLineEnd = Math.max(...lyricLines.map(l => l.endTime));
+    const lastLineEnd = lyricLines.reduce((max, l) => Math.max(max, l.endTime), 0);
     totalDuration = lastLineEnd + 5000;
   } else {
     totalDuration = 180000; // Default 3 minutes

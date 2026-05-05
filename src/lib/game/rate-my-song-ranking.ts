@@ -130,7 +130,7 @@ export function addRateMySongEntry(entry: Omit<RateMySongEntry, 'id' | 'timestam
 /** Get all entries sorted by weighted score (descending) */
 function getRateMySongRanking(): RateMySongEntry[] {
   const ranking = loadRanking();
-  return ranking.entries.sort((a, b) => {
+  return [...ranking.entries].sort((a, b) => {
     const scoreA = a.rating * Math.log2(a.ratingCount + 1);
     const scoreB = b.rating * Math.log2(b.ratingCount + 1);
     return scoreB - scoreA;

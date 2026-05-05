@@ -190,7 +190,7 @@ function NoteBlock({
 
   return (
     <div
-      key={note.id}
+      key={note.id || `note-${note.startTime}`}
       className={`absolute ${noteShape.baseClass} ${getBackgroundClasses()} ${displayStyle.additionalClasses} ${isActive ? noteShape.activeClass : ''} ${isPast ? 'opacity-60' : ''}`}
       style={{
         left: `${x}%`,
@@ -323,7 +323,7 @@ export function NoteHighway({
       {/* Notes */}
       {visibleNotes.map((note) => (
         <NoteBlock
-          key={note.id}
+          key={note.id || `note-${note.startTime}`}
           note={note}
           currentTime={currentTime}
           pitchStats={pitchStats}
