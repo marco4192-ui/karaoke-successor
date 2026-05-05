@@ -18,7 +18,7 @@ interface DailyChallengeEntry {
 
 interface DailyChallengeData {
   date: string;
-  type: 'score' | 'accuracy' | 'combo' | 'songs' | 'perfect_notes';
+  type: 'score' | 'accuracy' | 'combo' | 'perfect_notes';
   target: number;
   seed: number;
   entries: DailyChallengeEntry[];
@@ -111,6 +111,18 @@ export const DAILY_BADGES: Record<string, Omit<DailyBadge, 'unlockedAt'>> = {
     icon: '⭐',
     description: 'Reach 10,000 total XP',
   },
+  'century-champion': {
+    id: 'century-champion',
+    name: 'Century Champion',
+    icon: '💎',
+    description: 'Maintain a 100-day streak',
+  },
+  'yearly-legend': {
+    id: 'yearly-legend',
+    name: 'Yearly Legend',
+    icon: '🌟',
+    description: 'Maintain a 365-day streak',
+  },
 };
 
 // Storage keys
@@ -128,11 +140,11 @@ function todayISO(): string {
 export function getDailyChallenge(): DailyChallengeData {
   const today = todayISO();
   const seed = today.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-  const types: Array<'score' | 'accuracy' | 'combo' | 'songs' | 'perfect_notes'> = 
-    ['score', 'accuracy', 'combo', 'songs', 'perfect_notes'];
+  const types: Array<'score' | 'accuracy' | 'combo' | 'perfect_notes'> = 
+    ['score', 'accuracy', 'combo', 'perfect_notes'];
   const type = types[seed % types.length];
   // score: 80% of MAX_POINTS_PER_SONG (10000) — achievable with "Excellent" rating
-  const targets = { score: 8000, accuracy: 85, combo: 50, songs: 3, perfect_notes: 20 };
+  const targets = { score: 8000, accuracy: 85, combo: 50, perfect_notes: 20 };
   
   // Try to load existing leaderboard
   if (typeof window !== 'undefined') {

@@ -90,17 +90,19 @@ export function useGameSettings(): GameSettings & {
       // Handle custom event with detail
       if (e && 'detail' in e) {
         const detail = (e as CustomEvent).detail;
-        if (detail.showPitchGuide !== undefined) {
-          setShowPitchGuide(detail.showPitchGuide);
-        }
-        if (detail.noteDisplayStyle !== undefined) {
-          setNoteDisplayStyle(detail.noteDisplayStyle);
-        }
-        if (detail.useAnimatedBackground !== undefined) {
-          setUseAnimatedBackground(detail.useAnimatedBackground);
-        }
-        if (detail.noteShapeStyle !== undefined) {
-          setNoteShapeStyle(detail.noteShapeStyle);
+        if (detail && typeof detail === 'object') {
+          if (detail.showPitchGuide !== undefined) {
+            setShowPitchGuide(detail.showPitchGuide);
+          }
+          if (detail.noteDisplayStyle !== undefined) {
+            setNoteDisplayStyle(detail.noteDisplayStyle);
+          }
+          if (detail.useAnimatedBackground !== undefined) {
+            setUseAnimatedBackground(detail.useAnimatedBackground);
+          }
+          if (detail.noteShapeStyle !== undefined) {
+            setNoteShapeStyle(detail.noteShapeStyle);
+          }
         }
       }
       // Always refresh from localStorage

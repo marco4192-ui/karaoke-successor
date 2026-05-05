@@ -484,7 +484,8 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
             }
             samples.push({ time: currentTime, accuracy: tickResult.accuracy, hit: tickResult.isHit });
             if (samples.length > MAX_SAMPLES_PER_NOTE) {
-              samples.splice(0, samples.length - MAX_SAMPLES_PER_NOTE);
+              samples = samples.slice(-MAX_SAMPLES_PER_NOTE);
+              perfRef.set(noteId, samples);
             }
 
             // Throttled state sync: flush to React state at ~10Hz
