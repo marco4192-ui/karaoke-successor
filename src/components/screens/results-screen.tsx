@@ -295,6 +295,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
         // CHECK AND UNLOCK ACHIEVEMENTS
         const currentExtendedStats = getExtendedStats();
         const perfectNotes = estimatePerfectNotes(playerResult.notesHit, playerResult.rating);
+        const goldenNotes = playerResult.goldenNotesCount || 0;
         const isDuelWin = isDuel && player2Result && playerResult.score > player2Result.score;
         const isPartyMode = ['pass-the-mic', 'medley', 'battle-royale', 'competitive-words', 'competitive-blind', 'companion-singalong'].includes(gameState.gameMode);
         const isPassTheMic = gameState.gameMode === 'pass-the-mic';
@@ -386,8 +387,8 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           score: playerResult.score,
           accuracy: playerResult.accuracy,
           maxCombo: playerResult.maxCombo,
-          perfectNotes: estimatePerfectNotes(playerResult.notesHit, playerResult.rating),
-          goldenNotes: playerResult.goldenNotesCount || 0,
+          perfectNotes,
+          goldenNotes,
           difficulty: gameState.difficulty,
           mode: gameState.gameMode,
           challengeMode: gameState.challengeMode,
@@ -401,7 +402,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           playerResult.accuracy,
           playerResult.maxCombo,
           estimatePerfectNotes(playerResult.notesHit, playerResult.rating),
-          playerResult.goldenNotesCount || 0,
+          goldenNotes,
           gameState.challengeMode
         );
         const currentProfileXP = profile.xp || 0;

@@ -36,23 +36,17 @@ interface TickEvaluation {
 
 // ===================== PITCH UTILITIES =====================
 
-/** Get the pitch class (0-11) from a MIDI note number. */
-function getPitchClass(midiNote: number): number {
-  return ((Math.round(midiNote) % 12) + 12) % 12;
-}
-
 /**
- * Calculate the relative pitch difference between two MIDI notes.
+ * Calculate the relative pitch difference between two MIDI notes using
+ * continuous (non-quantized) values for sub-semitone accuracy.
  * Uses UltraStar-style octave wrapping: notes in the same pitch class have 0 difference.
  * Maximum difference is 6 semitones (half an octave).
  */
 function getRelativePitchDiff(sungNote: number, targetNote: number): number {
-  const sungClass = getPitchClass(sungNote);
-  const targetClass = getPitchClass(targetNote);
-
-  let diff = Math.abs(sungClass - targetClass);
+  // Use continuous MIDI values instead of quantized pitch classes.
+  // This gives sub-semitone precision (e.g., 0.3 semitones off instead of 0 or 1).
+  let diff = Math.abs(sungNote - targetNote) % 12;
   if (diff > 6) diff = 12 - diff;
-
   return diff;
 }
 

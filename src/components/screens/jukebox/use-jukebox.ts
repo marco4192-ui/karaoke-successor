@@ -164,8 +164,16 @@ export function useJukebox(refs?: {
 
   // Poll companion jukebox wishlist and insert new manual songs into the playlist.
   // Runs always (not only when playing) so wishlist items are ready before jukebox starts.
+  // Uses refs for values read inside the callback to avoid unnecessary effect restarts.
+  const songsRef = useRef(songs);
+  songsRef.current = songs;
+  const playlistLengthRef = useRef(playlist.length);
+  playlistLengthRef.current = playlist.length;
+  const insertManualSongRef = useRef(insertManualSong);
+  insertManualSongRef.current = insertManualSong;
+
   useEffect(() => {
-    if (songs.length === 0) return; // Need songs loaded to resolve wishlist items
+    if (songsRef.current.length === 0) return; // Need songs loaded to resolve wishlist items
     let active = true;
     const pollWishlist = async () => {
       try {
@@ -177,11 +185,11 @@ export function useJukebox(refs?: {
           if (processedWishlistRef.current.has(key)) continue;
           processedWishlistRef.current.add(key);
           // Resolve wishlist item to full Song object
-          const fullSong = songs.find(s => s.id === item.songId);
+          const fullSong = songsRef.current.find(s => s.id === item.songId);
           if (fullSong) {
-            if (playlist.length > 0) {
+            if (playlistLengthRef.current > 0) {
               // Jukebox already running — insert after last manual song
-              insertManualSong(fullSong);
+              insertManualSongRef.current(fullSong);
             }
             // If playlist is empty, the songs will be picked up when
             // generatePlaylist creates the playlist (processedWishlistRef
@@ -195,7 +203,7 @@ export function useJukebox(refs?: {
     pollWishlist();
     const interval = setInterval(pollWishlist, 5000);
     return () => { active = false; clearInterval(interval); };
-  }, [songs.length, songs, playlist.length, insertManualSong]);
+  }, [songs.length]);
 
   // Play next song
   const playNext = useCallback(async () => {
