@@ -98,6 +98,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
   playersRef.current = players;
 
   const [isInitialized, setIsInitialized] = useState(false);
+  const isInitializedRef = useRef(false);
   const [isRunning, setIsRunning] = useState(false);
   const [playerPitches, setPlayerPitches] = useState<Map<string, PitchDetectionResult | null>>(new Map());
   const [errors, setErrors] = useState<Map<string, string>>(new Map());
@@ -109,10 +110,12 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
    */
   const initialize = useCallback(async (): Promise<boolean> => {
     // H10: Allow re-initialization (e.g., player switch). Stop old manager first.
-    if (managerRef.current && isInitialized) {
+    // Use ref to check initialization state — avoids stale closure when called rapidly
+    if (managerRef.current && isInitializedRef.current) {
       try { managerRef.current.stop(); } catch (error) { console.debug('[useMultiPitchDetector]: stop failed during re-init', error); }
       try { await managerRef.current.destroy(); } catch (error) { console.debug('[useMultiPitchDetector]: destroy failed during re-init', error); }
       managerRef.current = null;
+      isInitializedRef.current = false;
       setIsInitialized(false);
       setIsRunning(false);
     }
@@ -175,6 +178,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
           // eslint-disable-next-line no-console
           console.warn(`[useMultiPitchDetector] ${failedCount} player(s) failed to initialize, continuing with ${results.filter(r => r).length} active player(s)`);
         }
+        isInitializedRef.current = true;
         setIsInitialized(true);
         
         // Initialize pitch state for all players
@@ -195,9 +199,10 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('[useMultiPitchDetector] Initialization failed:', error);
+      isInitializedRef.current = false;
       return false;
     }
-  }, [difficulty, isInitialized, autoStart]);
+  }, [difficulty, autoStart]);
 
   /**
    * Start pitch detection
@@ -293,11 +298,15 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
   }, []);
 
   /**
-   * Get pitch for a specific player
+   * Get pitch for a specific player.
+   * Uses ref to avoid playerPitches in dependency array — this callback
+   * must be stable because it's consumed in hot paths (~50Hz pitch updates).
    */
+  const playerPitchesRef = useRef(playerPitches);
+  playerPitchesRef.current = playerPitches;
   const getPlayerPitch = useCallback((playerId: string): PitchDetectionResult | null => {
-    return playerPitches.get(playerId) || null;
-  }, [playerPitches]);
+    return playerPitchesRef.current.get(playerId) || null;
+  }, []);
 
   /**
    * Cleanup on unmount
@@ -306,7 +315,9 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
     return () => {
       if (managerRef.current) {
         managerRef.current.stop();
-        // Don't destroy the singleton - it can be reused
+        try { managerRef.current.destroy(); } catch { /* ignore cleanup errors */ }
+        managerRef.current = null;
+        isInitializedRef.current = false;
       }
     };
   }, []);
