@@ -35,8 +35,9 @@ export function MicIndicator({
   const unifiedSetupResult = usePartyStore((s) => s.unifiedSetupResult);
   const passTheMicPlayers = usePartyStore((s) => s.passTheMicPlayers);
 
-  // Track player changes to re-trigger visibility
-  const [lastPlayerId, setLastPlayerId] = useState<string | null>(null);
+  // Track player changes to re-trigger visibility (ref, not state, to avoid
+  // the setState-in-effect anti-pattern that caused the fade timer to self-destruct)
+  const lastPlayerIdRef = useRef<string | null>(null);
   const [isVisible, setIsVisible] = useState(true);
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -79,23 +80,17 @@ export function MicIndicator({
     return micPlayers[0] || null;
   }, [micPlayers, gameMode, passTheMicPlayers]);
 
-  // Re-trigger visibility on player change
+  // Show indicator when player changes or playback starts, auto-fade after delay.
+  // Uses a ref for lastPlayerId to avoid the setState-in-effect cycle that
+  // previously caused the fade timer to be destroyed on its own re-render.
   useEffect(() => {
     const currentId = activePlayer?.id || null;
-    if (currentId !== lastPlayerId) {
-      setLastPlayerId(currentId);
-      setIsVisible(true);
-      clearFadeTimer();
-      fadeTimerRef.current = setTimeout(() => {
-        setIsVisible(false);
-      }, VISIBLE_DURATION);
-    }
-    return clearFadeTimer;
-  }, [activePlayer?.id, lastPlayerId]);
+    const playerChanged = currentId !== lastPlayerIdRef.current;
 
-  // Also re-trigger when playback starts
-  useEffect(() => {
-    if (isPlaying) {
+    if (isPlaying || playerChanged) {
+      if (playerChanged) {
+        lastPlayerIdRef.current = currentId;
+      }
       setIsVisible(true);
       clearFadeTimer();
       fadeTimerRef.current = setTimeout(() => {
@@ -103,7 +98,7 @@ export function MicIndicator({
       }, VISIBLE_DURATION);
     }
     return clearFadeTimer;
-  }, [isPlaying]);
+  }, [activePlayer?.id, isPlaying]);
 
   // Don't render if:
   // - No setup result (e.g. quick play from library without party setup)
