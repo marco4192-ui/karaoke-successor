@@ -197,6 +197,7 @@ export const useGameStore = create<GameStore>()(
             maxCombo: 0,
             notesHit: 0,
             notesMissed: 0,
+            goldenNotesHit: 0,
             accuracy: 0,
           };
 
@@ -291,6 +292,7 @@ export const useGameStore = create<GameStore>()(
               maxCombo: 0,
               notesHit: 0,
               notesMissed: 0,
+              goldenNotesHit: 0,
               accuracy: 0,
             })),
           },

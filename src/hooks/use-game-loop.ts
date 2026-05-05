@@ -50,9 +50,9 @@ interface UseGameLoopOptions {
   setAudioEffects: (_engine: AudioEffectsEngine | null) => void;
   // Song + players (for results generation)
   song: Song | null;
-  players: Array<{ id: string; score: number; notesHit: number; notesMissed: number; combo: number; maxCombo: number }>;
+  players: Array<{ id: string; score: number; notesHit: number; notesMissed: number; combo: number; maxCombo: number; goldenNotesHit?: number }>;
   // P2 scoring state (for duel/duet results)
-  p2ScoringState?: { score: number; notesHit: number; notesMissed: number; maxCombo: number; perfectNotesCount?: number } | null;
+  p2ScoringState?: { score: number; notesHit: number; notesMissed: number; maxCombo: number; perfectNotesCount?: number; goldenNotesHit?: number } | null;
   // P1 perfect notes count (for daily challenge / leaderboard)
   p1PerfectNotesCount?: number;
   // Practice mode playback rate (for achievements that track speed)
@@ -223,6 +223,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       accuracy: p1Accuracy,
       maxCombo: activePlayer.maxCombo,
       perfectNotesCount: p1PerfectNotesCountRef.current || 0,
+      goldenNotesCount: activePlayer.goldenNotesHit || 0,
       rating: calcRating(p1Accuracy),
     }];
 
@@ -245,6 +246,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         accuracy: p2Accuracy,
         maxCombo: p2.maxCombo,
         perfectNotesCount: p2.perfectNotesCount || 0,
+        goldenNotesCount: p2.goldenNotesHit || 0,
         rating: calcRating(p2Accuracy),
       });
     }

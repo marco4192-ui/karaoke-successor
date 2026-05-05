@@ -102,6 +102,7 @@ export interface Player {
   maxCombo: number;
   notesHit: number;
   notesMissed: number;
+  goldenNotesHit: number;
   accuracy: number;
   notes?: Note[]; // Optional notes array for detailed display
   totalNotes?: number; // Total notes count for display
@@ -112,6 +113,7 @@ export const EMPTY_PLAYER_SCORE = {
   score: 0,
   notesHit: 0,
   notesMissed: 0,
+  goldenNotesHit: 0,
   combo: 0,
   maxCombo: 0,
 } as const;
@@ -216,6 +218,7 @@ export interface GameResult {
     accuracy: number;
     maxCombo: number;
     perfectNotesCount: number;
+    goldenNotesCount: number;
     rating: 'perfect' | 'excellent' | 'good' | 'okay' | 'poor';
   }[];
   playedAt: number;

@@ -305,14 +305,14 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
             accuracy: playerResult.accuracy,
             maxCombo: playerResult.maxCombo,
             perfectNotes,
-            goldenNotes: 0, // Golden notes tracking not yet in scoring
+            goldenNotes: playerResult.goldenNotesCount || 0,
             notesHit: playerResult.notesHit,
             notesMissed: playerResult.notesMissed,
             gameMode: gameState.gameMode,
             difficulty: gameState.difficulty,
             totalSongsCompleted: currentExtendedStats.songsCompleted,
             totalGamesPlayed: currentExtendedStats.totalSessions,
-            totalGoldenNotes: currentExtendedStats.totalGoldenNotesHit,
+            totalGoldenNotes: currentExtendedStats.totalGoldenNotesHit + (playerResult.goldenNotesCount || 0),
             totalPerfectNotes: currentExtendedStats.totalPerfectNotes + perfectNotes,
             isPartyMode,
             isDuelWin,
@@ -364,7 +364,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
               player2Result.accuracy,
               player2Result.maxCombo,
               estimatePerfectNotes(player2Result.notesHit, player2Result.rating),
-              0,
+              player2Result.goldenNotesCount || 0,
               undefined
             );
             const p2CurrentXP = p2Profile.xp || 0;
@@ -387,7 +387,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           accuracy: playerResult.accuracy,
           maxCombo: playerResult.maxCombo,
           perfectNotes: estimatePerfectNotes(playerResult.notesHit, playerResult.rating),
-          goldenNotes: 0, // Golden notes feature not yet implemented in scoring
+          goldenNotes: playerResult.goldenNotesCount || 0,
           difficulty: gameState.difficulty,
           mode: gameState.gameMode,
           challengeMode: gameState.challengeMode,

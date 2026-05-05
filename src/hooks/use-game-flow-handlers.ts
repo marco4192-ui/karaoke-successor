@@ -37,7 +37,9 @@ function buildGameResultFromState(
       return {
         playerId: p.id, score: p.score, accuracy: Math.round(accuracy * 10) / 10,
         notesHit: p.notesHit, notesMissed: p.notesMissed, maxCombo: p.maxCombo,
-        perfectNotesCount: perfectNotes, rating,
+        perfectNotesCount: perfectNotes,
+        goldenNotesCount: p.goldenNotesHit || 0,
+        rating,
       };
     }),
     songId: currentSong?.id || '',

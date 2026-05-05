@@ -34,6 +34,7 @@ interface PlayerScoringState {
   notesHit: number;
   notesMissed: number;
   perfectNotesCount: number;
+  goldenNotesHit: number;
 }
 
 // Timing data structure (subset used by scoring)
@@ -111,6 +112,7 @@ const DEFAULT_PLAYER_SCORING_STATE: PlayerScoringState = {
   notesHit: 0,
   notesMissed: 0,
   perfectNotesCount: 0,
+  goldenNotesHit: 0,
 };
 
 /**
@@ -245,6 +247,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       let notesHitDelta = 0;
       let notesMissedDelta = 0;
       let perfectNotesDelta = 0;
+      let goldenNotesDelta = 0;
       let hasPlayerUpdates = false;
       const pendingEvents: ScoreEvent[] = [];
 
@@ -361,6 +364,10 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
               progress.wasPerfect = true;
               perfectNotesDelta++;
             }
+            // Track golden notes hit (note was golden and at least one tick hit)
+            if (progress.isGolden && progress.ticksHit > 0) {
+              goldenNotesDelta++;
+            }
           }
         }
       }
@@ -375,6 +382,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
           if (notesHitDelta > 0) next.notesHit = prev.notesHit + notesHitDelta;
           if (notesMissedDelta > 0) next.notesMissed = prev.notesMissed + notesMissedDelta;
           if (perfectNotesDelta > 0) next.perfectNotesCount = prev.perfectNotesCount + perfectNotesDelta;
+          if (goldenNotesDelta > 0) next.goldenNotesHit = (prev.goldenNotesHit || 0) + goldenNotesDelta;
           return next;
         });
 
@@ -421,6 +429,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       let notesHitDelta = 0;
       let notesMissedDelta = 0;
       let perfectNotesInc = 0;
+      let goldenNotesInc = 0;
       let hasPlayerUpdates = false;
 
       // Start from last processed index for O(1) forward progression
@@ -591,6 +600,10 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
               p1PerfectNotesCountRef.current++;
               perfectNotesInc++;
             }
+            // Track golden notes hit (note was golden and at least one tick hit)
+            if (note.isGolden && noteProgress.ticksHit > 0) {
+              goldenNotesInc++;
+            }
           }
         }
       }
@@ -603,6 +616,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         if (maxComboUpdate !== undefined) updates.maxCombo = maxComboUpdate;
         if (notesHitDelta > 0) updates.notesHit = activePlayer.notesHit + notesHitDelta;
         if (notesMissedDelta > 0) updates.notesMissed = activePlayer.notesMissed + notesMissedDelta;
+        if (goldenNotesInc > 0) updates.goldenNotesHit = (activePlayer.goldenNotesHit || 0) + goldenNotesInc;
         // Update live accuracy whenever hit/miss counts change
         if (notesHitDelta > 0 || notesMissedDelta > 0) {
           const totalNotes = (activePlayer.notesHit + notesHitDelta) + (activePlayer.notesMissed + notesMissedDelta);
