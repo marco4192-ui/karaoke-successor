@@ -103,6 +103,11 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
     errorCh: Channel<string> | null;
   }>({ progress: null, complete: null, bpmComplete: null, errorCh: null });
 
+  // Mounted guard + analysis generation counter to prevent stale callbacks
+  // from overwriting state after unmount or after a newer analysis starts.
+  const mountedRef = useRef(true);
+  const analysisGenRef = useRef(0);
+
   // Check CREPE availability on mount
   useEffect(() => {
     invoke<{ available: boolean; info: string }>('audio_crepe_info')
@@ -110,18 +115,21 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
       .catch(() => setCrepeAvailable(false));
   }, []);
 
-  // Cleanup channels on unmount
+  // Cleanup on unmount: mark as unmounted so Tauri channel callbacks
+  // don't call setState on an unmounted component.
   useEffect(() => {
-    const ref = channelsRef.current;
+    mountedRef.current = true;
     return () => {
-      ref.progress = null;
-      ref.complete = null;
-      ref.bpmComplete = null;
-      ref.errorCh = null;
+      mountedRef.current = false;
+      channelsRef.current.progress = null;
+      channelsRef.current.complete = null;
+      channelsRef.current.bpmComplete = null;
+      channelsRef.current.errorCh = null;
     };
   }, []);
 
   const analyzePitch = useCallback((_filePath: string, _options?: AnalysisOptions) => {
+    const gen = ++analysisGenRef.current;
     setStatus('loading');
     setError(null);
     setResult(null);
@@ -131,6 +139,7 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
     try {
       const onProgress = new Channel<AnalysisProgress>();
       onProgress.onmessage = (payload) => {
+        if (analysisGenRef.current !== gen || !mountedRef.current) return;
         setProgress(payload);
         if (payload.stage !== 'Loading') {
           setStatus('analyzing');
@@ -139,6 +148,7 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
 
       const onComplete = new Channel<PitchAnalysisResult>();
       onComplete.onmessage = (payload) => {
+        if (analysisGenRef.current !== gen || !mountedRef.current) return;
         setResult(payload);
         setStatus('complete');
         setProgress(null);
@@ -146,6 +156,7 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
 
       const onError = new Channel<string>();
       onError.onmessage = (payload) => {
+        if (analysisGenRef.current !== gen || !mountedRef.current) return;
         setError(payload);
         setStatus('error');
         setProgress(null);
@@ -160,6 +171,7 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
         onComplete,
         onError,
       }).catch((e) => {
+        if (analysisGenRef.current !== gen || !mountedRef.current) return;
         setError(e instanceof Error ? e.message : String(e));
         setStatus('error');
       });
@@ -170,6 +182,7 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
   }, []);
 
   const detectBpm = useCallback((filePath: string) => {
+    const gen = ++analysisGenRef.current;
     setStatus('loading');
     setError(null);
     setBpmResult(null);
@@ -178,12 +191,14 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
     try {
       const onComplete = new Channel<BpmDetectionResult>();
       onComplete.onmessage = (payload) => {
+        if (analysisGenRef.current !== gen || !mountedRef.current) return;
         setBpmResult(payload);
         setStatus('complete');
       };
 
       const onError = new Channel<string>();
       onError.onmessage = (payload) => {
+        if (analysisGenRef.current !== gen || !mountedRef.current) return;
         setError(payload);
         setStatus('error');
       };
@@ -196,6 +211,7 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
         onComplete,
         onError,
       }).catch((e) => {
+        if (analysisGenRef.current !== gen || !mountedRef.current) return;
         setError(e instanceof Error ? e.message : String(e));
         setStatus('error');
       });
