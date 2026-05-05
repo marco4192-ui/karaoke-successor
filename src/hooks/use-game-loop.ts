@@ -289,7 +289,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       }),
     }).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps -- gameMode changes should not restart the init effect (handled separately)
-  }, [players, song, setResults, isDuetMode, p2ScoringState]);
+  }, [players, song, setResults, isDuetMode, p2ScoringState, gameMode]);
 
   // ── End game and cleanup - stops all audio/microphone ──
   const endGameAndCleanup = useCallback(() => {
@@ -741,7 +741,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       else if (audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2) {
         elapsed = audioRef.current.currentTime * 1000;
       }
-      else if (effectiveSong.hasEmbeddedAudio && videoRef.current && !videoRef.current.paused) {
+      else if (effectiveSong.hasEmbeddedAudio && videoRef.current && !videoRef.current.paused && videoRef.current.readyState >= 2) {
         elapsed = videoRef.current.currentTime * 1000;
       }
       else {
