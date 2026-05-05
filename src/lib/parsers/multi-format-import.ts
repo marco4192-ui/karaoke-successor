@@ -128,6 +128,7 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
 
         // Running Status handling
         if (eventType < 0x80) {
+          if (runningStatus === 0) break; // malformed data — no valid running status yet
           offset--;
           eventType = runningStatus;
         } else if (eventType >= 0x80 && eventType < 0xf0) {
@@ -137,7 +138,12 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
         if (eventType === 0xff) {
           // Meta event
           const metaType = view.getUint8(offset++);
-          const length = view.getUint8(offset++);
+          // Decode VLQ (Variable-Length Quantity) for meta event length
+          let length = 0;
+          do {
+            byte = view.getUint8(offset++);
+            length = (length << 7) | (byte & 0x7f);
+          } while (byte & 0x80 && offset < trackEnd);
 
           if (metaType === 0x01 || metaType === 0x05) {
             // Text / Lyrics meta event
