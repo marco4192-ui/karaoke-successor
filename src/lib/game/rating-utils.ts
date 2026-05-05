@@ -6,13 +6,14 @@
 
 export type Rating = 'perfect' | 'excellent' | 'good' | 'okay' | 'poor';
 
-/** Map accuracy percentage to a rating label. Thresholds match PERFECT_ACCURACY
- *  (99.5%) and the tiered boundaries used in scoring and results. */
+/** Map accuracy percentage to a rating label. Thresholds align with PERFECT_ACCURACY
+ *  (99.5%) and EXCELLENT_ACCURACY (95%) in player-progression.ts for consistent
+ *  display across results screen, score cards, and XP bonus tiers. */
 export function accuracyToRating(accuracy: number): Rating {
-  if (accuracy >= 95) return 'perfect';
-  if (accuracy >= 85) return 'excellent';
-  if (accuracy >= 70) return 'good';
-  if (accuracy >= 50) return 'okay';
+  if (accuracy >= 99.5) return 'perfect';
+  if (accuracy >= 95) return 'excellent';
+  if (accuracy >= 85) return 'good';
+  if (accuracy >= 70) return 'okay';
   return 'poor';
 }
 
