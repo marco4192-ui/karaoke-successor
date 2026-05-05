@@ -371,24 +371,6 @@ export function submitChallengeResult(
       newBadges.push(badge);
     }
 
-    // Check for top 3 and champion badges
-    if (playerRank === 1 && !stats.badges.some(b => b.id === 'champion')) {
-      const badge: DailyBadge = {
-        ...DAILY_BADGES['champion'],
-        unlockedAt: Date.now(),
-      };
-      stats.badges.push(badge);
-      newBadges.push(badge);
-    }
-    if (playerRank <= 3 && !stats.badges.some(b => b.id === 'top-3')) {
-      const badge: DailyBadge = {
-        ...DAILY_BADGES['top-3'],
-        unlockedAt: Date.now(),
-      };
-      stats.badges.push(badge);
-      newBadges.push(badge);
-    }
-
     // Check for legendary badge
     if (stats.totalXP + xpEarned >= 10000 && !stats.badges.some(b => b.id === 'legendary')) {
       const badge: DailyBadge = {
@@ -423,6 +405,30 @@ export function submitChallengeResult(
     stats.weeklyProgress[weekIndex] = 1;
 
     stats.totalXP += xpEarned;
+
+  } else {
+    // Same-day replay — no XP/streak, but still check rank-based badges
+    // in case the player improved their score and moved into top 3 or #1
+  }
+
+  // Rank-based badges: checked on EVERY submission (not just first completion)
+  // so a same-day score improvement that moves the player into #1 or top 3
+  // still awards the corresponding badge.
+  if (playerRank === 1 && !stats.badges.some(b => b.id === 'champion')) {
+    const badge: DailyBadge = {
+      ...DAILY_BADGES['champion'],
+      unlockedAt: Date.now(),
+    };
+    stats.badges.push(badge);
+    newBadges.push(badge);
+  }
+  if (playerRank <= 3 && !stats.badges.some(b => b.id === 'top-3')) {
+    const badge: DailyBadge = {
+      ...DAILY_BADGES['top-3'],
+      unlockedAt: Date.now(),
+    };
+    stats.badges.push(badge);
+    newBadges.push(badge);
   }
 
   // Save data
