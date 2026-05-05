@@ -244,12 +244,16 @@ export function getChallengeRequirementStatus(
         }
         break;
       case 'rank': {
-        if (totalXP === undefined) break;
+        if (totalXP === undefined) {
+          return `Rank requirement cannot be verified (no XP data available)`;
+        }
         const requiredRankIndex = RANKS.findIndex(r => r.name === req.value);
         if (requiredRankIndex < 0) break;
-        const playerRankIndex = RANKS.findIndex(r => totalXP >= r.minXP) - 1;
+        // findIndex returns the index of the lowest rank whose minXP the player meets.
+        // No off-by-one subtraction — having exactly the minXP for a rank means you ARE that rank.
+        const playerRankIndex = RANKS.findIndex(r => totalXP >= r.minXP);
         if (playerRankIndex < requiredRankIndex) {
-          return `Requires rank "${req.value}" (you are "${RANKS[Math.max(0, playerRankIndex + 1)].name}")`;
+          return `Requires rank "${req.value}" (you are "${RANKS[playerRankIndex].name}")`;
         }
         break;
       }
