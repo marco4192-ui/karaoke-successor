@@ -76,17 +76,17 @@ interface UseNoteScoringReturn {
   scoreEvents: ScoreEvent[];
   p1ScoreEvents: ScoreEvent[];
   p2ScoreEvents: ScoreEvent[];
-  
+
   // Note performance for visual display modes
   notePerformance: Map<string, NotePerformanceSample[]>;
   // P1 perfect notes count (all ticks hit) — updated via ref for 60fps accuracy
   p1PerfectNotesCount: number;
   // P2 state (for duet mode)
   p2State: PlayerScoringState;
-  
+
   // Detected pitch for P2
   p2DetectedPitch: number | null;
-  
+
   setP2DetectedPitch: (_pitch: number | null) => void;
   // Functions
   checkNoteHits: (
@@ -114,6 +114,202 @@ const DEFAULT_PLAYER_SCORING_STATE: PlayerScoringState = {
   perfectNotesCount: 0,
   goldenNotesHit: 0,
 };
+
+// ---------------------------------------------------------------------------
+// Shared scoring pass — pure function that iterates notes, evaluates ticks,
+// applies challenge modifiers, tracks combo, and computes deltas.
+// Used by both P1 (checkNoteHits) and P2+ (checkPlayerNoteHits).
+// ---------------------------------------------------------------------------
+
+interface ScoringPassResult {
+  scoreDelta: number;
+  comboUpdate: number | undefined;
+  maxComboUpdate: number | undefined;
+  notesHitDelta: number;
+  notesMissedDelta: number;
+  perfectNotesDelta: number;
+  goldenNotesDelta: number;
+  hasUpdates: boolean;
+  pendingEvents: ScoreEvent[];
+  // P1 visual tracking: the active note's ID and last tick result for performance samples
+  activeNoteId: string | undefined;
+  activeNoteIsGolden: boolean;
+  lastTickAccuracy: number;
+  lastTickHit: boolean;
+}
+
+function runScoringPass(
+  currentTime: number,
+  detectedNote: number,
+  notesToCheck: Array<Note & { lineIndex: number; line: LyricLine }>,
+  scoringMeta: ScoringMetadata,
+  beatDurationMs: number,
+  difficulty: Difficulty,
+  noteProgressMap: Map<string, NoteProgress>,
+  searchStartRef: React.MutableRefObject<number>,
+  noteIdPrefix: string,
+  hasPerfectOnly: boolean,
+  hasGoldenOnly: boolean,
+  comboRef: React.MutableRefObject<number>,
+  maxComboRef: React.MutableRefObject<number>,
+): ScoringPassResult {
+  // Batch accumulator
+  let scoreDelta = 0;
+  let comboUpdate: number | undefined;
+  let maxComboUpdate: number | undefined;
+  let notesHitDelta = 0;
+  let notesMissedDelta = 0;
+  let perfectNotesDelta = 0;
+  let goldenNotesDelta = 0;
+  let hasUpdates = false;
+  const pendingEvents: ScoreEvent[] = [];
+
+  // P1 visual tracking — filled during tick evaluation inside the loop
+  let activeNoteId: string | undefined;
+  let activeNoteIsGolden = false;
+  let lastTickAccuracy = 0;
+  let lastTickHit = false;
+
+  // Clamp index to array bounds — notesToCheck may shrink if timingData changes
+  if (searchStartRef.current >= notesToCheck.length) {
+    searchStartRef.current = 0;
+  } else if (searchStartRef.current > 0 &&
+      notesToCheck[searchStartRef.current].startTime > currentTime) {
+    searchStartRef.current = 0;
+  }
+
+  for (let ni = searchStartRef.current; ni < notesToCheck.length; ni++) {
+    const note = notesToCheck[ni];
+    const noteEnd = note.startTime + note.duration;
+    const noteId = note.id || `${noteIdPrefix}-${note.startTime}`;
+
+    // Check if we're in the note's time window
+    if (currentTime >= note.startTime && currentTime <= noteEnd) {
+      searchStartRef.current = ni;
+      let noteProgress = noteProgressMap.get(noteId);
+
+      if (!noteProgress) {
+        const totalTicks = Math.max(1, Math.round(note.duration / beatDurationMs));
+        noteProgress = {
+          noteId,
+          totalTicks,
+          ticksHit: 0,
+          ticksEvaluated: 0,
+          isGolden: note.isGolden,
+          lastEvaluatedTime: currentTime,
+          isComplete: false,
+          wasPerfect: false,
+        };
+        noteProgressMap.set(noteId, noteProgress);
+      }
+
+      const timeSinceLastEval = currentTime - noteProgress.lastEvaluatedTime;
+      const tickInterval = beatDurationMs;
+
+      if (timeSinceLastEval >= tickInterval) {
+        const tickResult = evaluateTick(detectedNote, note.pitch, difficulty);
+
+        noteProgress.ticksEvaluated++;
+        noteProgress.lastEvaluatedTime = currentTime;
+
+        // Record active note info for P1 performance sample recording
+        activeNoteId = noteId;
+        activeNoteIsGolden = note.isGolden;
+        lastTickAccuracy = tickResult.accuracy;
+        lastTickHit = tickResult.isHit;
+
+        if (tickResult.isHit) {
+          noteProgress.ticksHit++;
+
+          let tickPoints = calculateTickPoints(tickResult.accuracy, note.isGolden, scoringMeta.pointsPerTick);
+
+          // Challenge modifier: perfect_only — only "Perfect" hits score
+          if (hasPerfectOnly && tickResult.displayType !== 'Perfect') {
+            tickPoints = 0;
+          }
+          // Challenge modifier: golden_only — only golden notes score
+          if (hasGoldenOnly && !note.isGolden) {
+            tickPoints = 0;
+          }
+
+          const finalPoints = Math.max(1, Math.round(tickPoints));
+
+          if (finalPoints > 0) {
+            const newCombo = comboRef.current + 1;
+
+            scoreDelta += finalPoints;
+            comboUpdate = newCombo;
+            maxComboUpdate = Math.max(maxComboRef.current, newCombo);
+            comboRef.current = newCombo;
+            maxComboRef.current = maxComboUpdate;
+            hasUpdates = true;
+
+            pendingEvents.push({
+              type: tickResult.displayType === 'Perfect' ? 'perfect' : 'good',
+              displayType: tickResult.displayType,
+              points: finalPoints,
+              time: currentTime,
+            });
+          }
+        } else {
+          comboUpdate = 0;
+          comboRef.current = 0;
+          hasUpdates = true;
+
+          pendingEvents.push({
+            type: 'miss',
+            displayType: 'Miss',
+            points: 0,
+            time: currentTime,
+          });
+        }
+      }
+
+      break;
+    }
+
+    // Check if we just passed a note
+    if (currentTime > noteEnd) {
+      const progress = noteProgressMap.get(noteId);
+
+      if (progress && !progress.isComplete) {
+        progress.isComplete = true;
+
+        if (progress.ticksHit > 0) {
+          notesHitDelta++;
+        } else {
+          notesMissedDelta++;
+        }
+        hasUpdates = true;
+
+        if (progress.ticksHit >= progress.totalTicks) {
+          progress.wasPerfect = true;
+          perfectNotesDelta++;
+        }
+        // Track golden notes hit (note was golden and at least one tick hit)
+        if (progress.isGolden && progress.ticksHit > 0) {
+          goldenNotesDelta++;
+        }
+      }
+    }
+  }
+
+  return {
+    scoreDelta,
+    comboUpdate,
+    maxComboUpdate,
+    notesHitDelta,
+    notesMissedDelta,
+    perfectNotesDelta,
+    goldenNotesDelta,
+    hasUpdates,
+    pendingEvents,
+    activeNoteId,
+    activeNoteIsGolden,
+    lastTickAccuracy,
+    lastTickHit,
+  };
+}
 
 /**
  * Custom hook for note scoring and hit detection
@@ -153,7 +349,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   // Additional player states (P2, P3, P4) - P1 uses the main store
   const [p2State, setP2State] = useState<PlayerScoringState>({ ...DEFAULT_PLAYER_SCORING_STATE });
 
-  
+
   // Refs for P2-P4 states to avoid stale closures in checkPlayerNoteHits
   const p2StateRef = useRef(p2State);
   p2StateRef.current = p2State;
@@ -172,7 +368,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   const p2ComboRef = useRef(0);
   const p2MaxComboRef = useRef(0);
 
-  
+
   // Detected pitches for P2-P4
   const [p2DetectedPitch, setP2DetectedPitch] = useState<number | null>(null);
 
@@ -213,9 +409,9 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     p2MaxComboRef.current = 0;
   }, []);
 
-  // Generic function to check note hits for any player
-  // Uses ref-based combo tracking and batched state updates (same pattern as P1's checkNoteHits)
-  // to prevent stale-state race conditions when multiple ticks fire in the same frame.
+  // Generic function to check note hits for any player (P2, P3, P4)
+  // Delegates to runScoringPass() for the core scoring loop, then flushes
+  // accumulated deltas via setPlayerState.
   const checkPlayerNoteHits = useCallback(
     (
       currentTime: number,
@@ -235,163 +431,35 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       if (!notesToCheck || notesToCheck.length === 0 || !scoringMeta) return;
 
       const beatDurationMs = timingData?.beatDuration || 500;
-
-      // Select the correct combo refs based on player index
       const comboRef = _playerIndex === 1 ? p2ComboRef : p1ComboRef;
       const maxComboRef = _playerIndex === 1 ? p2MaxComboRef : p1MaxComboRef;
-
-      // Batch accumulator — all state deltas collected here, flushed once at end
-      let scoreDelta = 0;
-      let comboUpdate: number | undefined;
-      let maxComboUpdate: number | undefined;
-      let notesHitDelta = 0;
-      let notesMissedDelta = 0;
-      let perfectNotesDelta = 0;
-      let goldenNotesDelta = 0;
-      let hasPlayerUpdates = false;
-      const pendingEvents: ScoreEvent[] = [];
-
-      // Start from last processed index for O(1) forward progression
-      // Reset to 0 if time went backward (e.g. seek)
       const searchStartRef = _playerIndex === 1 ? lastProcessedNoteP2Ref : lastProcessedNoteRef;
-      // Clamp index to array bounds — notesToCheck may shrink if timingData changes
-      if (searchStartRef.current >= notesToCheck.length) {
-        searchStartRef.current = 0;
-      } else if (searchStartRef.current > 0 &&
-          notesToCheck[searchStartRef.current].startTime > currentTime) {
-        searchStartRef.current = 0;
-      }
-      for (let ni = searchStartRef.current; ni < notesToCheck.length; ni++) {
-        const note = notesToCheck[ni];
-        const noteEnd = note.startTime + note.duration;
-        const noteId = note.id || `${noteIdPrefix}-${note.startTime}`;
 
-        // Check if we're in the note's time window
-        if (currentTime >= note.startTime && currentTime <= noteEnd) {
-          searchStartRef.current = ni;
-          let noteProgress = noteProgressMap.current.get(noteId);
-
-          if (!noteProgress) {
-            const totalTicks = Math.max(1, Math.round(note.duration / beatDurationMs));
-            noteProgress = {
-              noteId,
-              totalTicks,
-              ticksHit: 0,
-              ticksEvaluated: 0,
-              isGolden: note.isGolden,
-              lastEvaluatedTime: currentTime,
-              isComplete: false,
-              wasPerfect: false,
-            };
-            noteProgressMap.current.set(noteId, noteProgress);
-          }
-
-          const timeSinceLastEval = currentTime - noteProgress.lastEvaluatedTime;
-          const tickInterval = beatDurationMs;
-
-          if (timeSinceLastEval >= tickInterval) {
-            const detectedNote = pitch.note;
-            const tickResult = evaluateTick(detectedNote, note.pitch, difficulty);
-
-            noteProgress.ticksEvaluated++;
-            noteProgress.lastEvaluatedTime = currentTime;
-
-            if (tickResult.isHit) {
-              noteProgress.ticksHit++;
-
-              let tickPoints = calculateTickPoints(tickResult.accuracy, note.isGolden, scoringMeta.pointsPerTick);
-
-              // Challenge modifier: perfect_only — only "Perfect" hits score
-              // Use displayType from evaluateTick which respects difficulty-specific thresholds
-              if (hasPerfectOnly && tickResult.displayType !== 'Perfect') {
-                tickPoints = 0;
-              }
-              // Challenge modifier: golden_only — only golden notes score
-              if (hasGoldenOnly && !note.isGolden) {
-                tickPoints = 0;
-              }
-
-              const finalPoints = Math.max(1, Math.round(tickPoints));
-
-              if (finalPoints > 0) {
-                const newCombo = comboRef.current + 1;
-
-                scoreDelta += finalPoints;
-                comboUpdate = newCombo;
-                maxComboUpdate = Math.max(maxComboRef.current, newCombo);
-                comboRef.current = newCombo;
-                maxComboRef.current = maxComboUpdate;
-                hasPlayerUpdates = true;
-
-                pendingEvents.push({
-                  type: tickResult.displayType === 'Perfect' ? 'perfect' : 'good',
-                  displayType: tickResult.displayType,
-                  points: finalPoints,
-                  time: currentTime,
-                });
-              }
-            } else {
-              comboUpdate = 0;
-              comboRef.current = 0;
-              hasPlayerUpdates = true;
-
-              pendingEvents.push({
-                type: 'miss',
-                displayType: 'Miss',
-                points: 0,
-                time: currentTime,
-              });
-            }
-          }
-
-          break;
-        }
-
-        // Check if we just passed a note
-        if (currentTime > noteEnd) {
-          const progress = noteProgressMap.current.get(noteId);
-
-          if (progress && !progress.isComplete) {
-            progress.isComplete = true;
-
-            if (progress.ticksHit > 0) {
-              notesHitDelta++;
-            } else {
-              notesMissedDelta++;
-            }
-            hasPlayerUpdates = true;
-
-            if (progress.ticksHit >= progress.totalTicks) {
-              progress.wasPerfect = true;
-              perfectNotesDelta++;
-            }
-            // Track golden notes hit (note was golden and at least one tick hit)
-            if (progress.isGolden && progress.ticksHit > 0) {
-              goldenNotesDelta++;
-            }
-          }
-        }
-      }
+      const result = runScoringPass(
+        currentTime, pitch.note!, notesToCheck, scoringMeta, beatDurationMs, difficulty,
+        noteProgressMap.current, searchStartRef, noteIdPrefix,
+        hasPerfectOnly, hasGoldenOnly, comboRef, maxComboRef,
+      );
 
       // Flush: single setPlayerState call with all accumulated deltas
-      if (hasPlayerUpdates) {
+      if (result.hasUpdates) {
         setPlayerState(prev => {
           const next = { ...prev };
-          if (scoreDelta !== 0) next.score = prev.score + scoreDelta;
-          if (comboUpdate !== undefined) next.combo = comboUpdate;
-          if (maxComboUpdate !== undefined) next.maxCombo = Math.max(prev.maxCombo, maxComboUpdate);
-          if (notesHitDelta > 0) next.notesHit = prev.notesHit + notesHitDelta;
-          if (notesMissedDelta > 0) next.notesMissed = prev.notesMissed + notesMissedDelta;
-          if (perfectNotesDelta > 0) next.perfectNotesCount = prev.perfectNotesCount + perfectNotesDelta;
-          if (goldenNotesDelta > 0) next.goldenNotesHit = (prev.goldenNotesHit || 0) + goldenNotesDelta;
+          if (result.scoreDelta !== 0) next.score = prev.score + result.scoreDelta;
+          if (result.comboUpdate !== undefined) next.combo = result.comboUpdate;
+          if (result.maxComboUpdate !== undefined) next.maxCombo = Math.max(prev.maxCombo, result.maxComboUpdate);
+          if (result.notesHitDelta > 0) next.notesHit = prev.notesHit + result.notesHitDelta;
+          if (result.notesMissedDelta > 0) next.notesMissed = prev.notesMissed + result.notesMissedDelta;
+          if (result.perfectNotesDelta > 0) next.perfectNotesCount = prev.perfectNotesCount + result.perfectNotesDelta;
+          if (result.goldenNotesDelta > 0) next.goldenNotesHit = (prev.goldenNotesHit || 0) + result.goldenNotesDelta;
           return next;
         });
 
         // Flush score events in a single batch
-        if (pendingEvents.length > 0) {
+        if (result.pendingEvents.length > 0) {
           setScoreEventsState(prev => [
             ...prev.slice(-10),
-            ...pendingEvents.slice(-10),
+            ...result.pendingEvents.slice(-10),
           ]);
         }
       }
@@ -400,9 +468,9 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   );
 
   // Check if P1 hits notes - using duration-based scoring
-  // Uses batched updatePlayer: accumulates all state deltas locally and flushes
-  // a single updatePlayer call at the end, preventing stale-state race conditions
-  // when multiple notes complete in the same frame.
+  // Delegates to runScoringPass() for the core scoring loop, then adds
+  // P1-specific side effects: performance tracking, visual callbacks,
+  // duet score events, accuracy calculation, and perfectNotesCount sync.
   const checkNoteHits = useCallback(
     (currentTime: number, pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }) => {
       const difficultySettings = DIFFICULTY_SETTINGS[difficulty];
@@ -423,217 +491,92 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
 
       const beatDurationMs = timingData?.beatDuration || 500;
 
-      // Batch accumulator — all P1 state deltas collected here, flushed once at end
-      let scoreDelta = 0;
-      let comboUpdate: number | undefined;
-      let maxComboUpdate: number | undefined;
-      let notesHitDelta = 0;
-      let notesMissedDelta = 0;
-      let perfectNotesInc = 0;
-      let goldenNotesInc = 0;
-      let hasPlayerUpdates = false;
+      const result = runScoringPass(
+        currentTime, pitch.note!, notesToCheck, scoringMeta, beatDurationMs, difficulty,
+        noteProgressRef.current, lastProcessedNoteRef, 'note',
+        hasPerfectOnly, hasGoldenOnly, p1ComboRef, p1MaxComboRef,
+      );
 
-      // Start from last processed index for O(1) forward progression
-      // Reset to 0 if time went backward (e.g. seek)
-      // Clamp index to array bounds — notesToCheck may shrink if timingData changes
-      if (lastProcessedNoteRef.current >= notesToCheck.length) {
-        lastProcessedNoteRef.current = 0;
-      } else if (lastProcessedNoteRef.current > 0 &&
-          notesToCheck[lastProcessedNoteRef.current].startTime > currentTime) {
-        lastProcessedNoteRef.current = 0;
-      }
-      for (let ni = lastProcessedNoteRef.current; ni < notesToCheck.length; ni++) {
-        const note = notesToCheck[ni];
-        const noteEnd = note.startTime + note.duration;
-        const noteId = note.id || `note-${note.startTime}`;
-
-        if (currentTime >= note.startTime && currentTime <= noteEnd) {
-          lastProcessedNoteRef.current = ni;
-          let noteProgress = noteProgressRef.current.get(noteId);
-
-          if (!noteProgress) {
-            const totalTicks = Math.max(1, Math.round(note.duration / beatDurationMs));
-            noteProgress = {
-              noteId,
-              totalTicks,
-              ticksHit: 0,
-              ticksEvaluated: 0,
-              isGolden: note.isGolden,
-              lastEvaluatedTime: currentTime,
-              isComplete: false,
-              wasPerfect: false,
-            };
-            noteProgressRef.current.set(noteId, noteProgress);
-          }
-
-          const timeSinceLastEval = currentTime - noteProgress.lastEvaluatedTime;
-          const tickInterval = beatDurationMs;
-
-          if (timeSinceLastEval >= tickInterval) {
-            const detectedNote = pitch.note;
-            const tickResult = evaluateTick(detectedNote, note.pitch, difficulty);
-
-            noteProgress.ticksEvaluated++;
-            noteProgress.lastEvaluatedTime = currentTime;
-
-            // Write to ref — mutate in-place to avoid array spread allocation on every tick
-            const perfRef = notePerformanceRef.current;
-            let samples = perfRef.get(noteId);
-            if (!samples) {
-              samples = [];
-              perfRef.set(noteId, samples);
-            }
-            samples.push({ time: currentTime, accuracy: tickResult.accuracy, hit: tickResult.isHit });
-            if (samples.length > MAX_SAMPLES_PER_NOTE) {
-              samples = samples.slice(-MAX_SAMPLES_PER_NOTE);
-              perfRef.set(noteId, samples);
-            }
-
-            // Throttled state sync: flush to React state at ~10Hz
-            const now = performance.now();
-            if (now - lastNotePerfSyncRef.current >= 100) {
-              lastNotePerfSyncRef.current = now;
-              setNotePerformance(new Map(perfRef));
-            }
-
-            if (tickResult.isHit) {
-              noteProgress.ticksHit++;
-
-              let tickPoints = calculateTickPoints(tickResult.accuracy, note.isGolden, scoringMeta.pointsPerTick);
-              // Use displayType from evaluateTick which respects difficulty-specific
-              // thresholds (Easy=0.85, Medium=0.95, Hard=0.97) instead of hardcoded 0.95
-              const isPerfect = tickResult.displayType === 'Perfect';
-
-              // Challenge modifier: perfect_only — only "Perfect" hits score
-              if (hasPerfectOnly && !isPerfect) {
-                tickPoints = 0;
-              }
-              // Challenge modifier: golden_only — only golden notes score
-              if (hasGoldenOnly && !note.isGolden) {
-                tickPoints = 0;
-              }
-
-              const finalPoints = Math.max(1, Math.round(tickPoints));
-
-              if (finalPoints > 0) {
-                const newCombo = p1ComboRef.current + 1;
-
-                scoreDelta += finalPoints;
-                comboUpdate = newCombo;
-                maxComboUpdate = Math.max(p1MaxComboRef.current, newCombo);
-                p1ComboRef.current = newCombo;
-                p1MaxComboRef.current = maxComboUpdate;
-                hasPlayerUpdates = true;
-
-                setScoreEvents(prev => [
-                  ...prev.slice(-10),
-                  {
-                    type: tickResult.displayType === 'Perfect' ? 'perfect' : 'good',
-                    displayType: tickResult.displayType,
-                    points: finalPoints,
-                    time: currentTime,
-                  },
-                ]);
-
-                if (typeof window !== 'undefined') {
-                  const particleX = window.innerWidth * 0.25;
-                  const particleY = window.innerHeight * 0.4;
-
-                  if (isPerfect && onPerfectHit) {
-                    onPerfectHit(particleX, particleY);
-                  }
-
-                  if (note.isGolden && onGoldenNote) {
-                    onGoldenNote(particleX, particleY);
-                  }
-
-                  if (newCombo > 0 && newCombo % 10 === 0 && onComboMilestone) {
-                    onComboMilestone(newCombo, window.innerWidth / 2, window.innerHeight / 2);
-                  }
-                }
-
-                if (isDuetMode) {
-                  setP1ScoreEvents(prev => [
-                    ...prev.slice(-10),
-                    {
-                      type: tickResult.displayType === 'Perfect' ? 'perfect' : 'good',
-                      displayType: tickResult.displayType,
-                      points: finalPoints,
-                      time: currentTime,
-                    },
-                  ]);
-                }
-              }
-            } else {
-              comboUpdate = 0;
-              p1ComboRef.current = 0;
-              hasPlayerUpdates = true;
-
-              setScoreEvents(prev => [
-                ...prev.slice(-10),
-                { type: 'miss', displayType: 'Miss', points: 0, time: currentTime },
-              ]);
-
-              if (isDuetMode) {
-                setP1ScoreEvents(prev => [
-                  ...prev.slice(-10),
-                  { type: 'miss', displayType: 'Miss', points: 0, time: currentTime },
-                ]);
-              }
-            }
-          }
-
-          break;
+      // P1-specific: record note performance samples for visual display modes
+      // (heat-map, accuracy graph). Uses active note info from the scoring pass.
+      if (result.activeNoteId) {
+        const perfRef = notePerformanceRef.current;
+        let samples = perfRef.get(result.activeNoteId);
+        if (!samples) {
+          samples = [];
+          perfRef.set(result.activeNoteId, samples);
+        }
+        samples.push({ time: currentTime, accuracy: result.lastTickAccuracy, hit: result.lastTickHit });
+        if (samples.length > MAX_SAMPLES_PER_NOTE) {
+          samples = samples.slice(-MAX_SAMPLES_PER_NOTE);
+          perfRef.set(result.activeNoteId, samples);
         }
 
-        if (currentTime > noteEnd) {
-          const noteProgress = noteProgressRef.current.get(noteId);
+        // Throttled state sync: flush to React state at ~10Hz
+        const now = performance.now();
+        if (now - lastNotePerfSyncRef.current >= 100) {
+          lastNotePerfSyncRef.current = now;
+          setNotePerformance(new Map(perfRef));
+        }
+      }
 
-          if (noteProgress && !noteProgress.isComplete) {
-            noteProgress.isComplete = true;
+      // P1-specific: fire visual effect callbacks
+      if (result.pendingEvents.length > 0 && typeof window !== 'undefined') {
+        const particleX = window.innerWidth * 0.25;
+        const particleY = window.innerHeight * 0.4;
+        const lastEvent = result.pendingEvents[result.pendingEvents.length - 1];
 
-            if (noteProgress.ticksHit > 0) {
-              notesHitDelta++;
-            } else {
-              notesMissedDelta++;
-            }
-            hasPlayerUpdates = true;
+        if (lastEvent.displayType === 'Perfect' && onPerfectHit) {
+          onPerfectHit(particleX, particleY);
+        }
 
-            if (noteProgress.ticksHit >= noteProgress.totalTicks) {
-              noteProgress.wasPerfect = true;
-              p1PerfectNotesCountRef.current++;
-              perfectNotesInc++;
-            }
-            // Track golden notes hit (note was golden and at least one tick hit)
-            if (note.isGolden && noteProgress.ticksHit > 0) {
-              goldenNotesInc++;
-            }
-          }
+        if (result.activeNoteIsGolden && onGoldenNote) {
+          onGoldenNote(particleX, particleY);
+        }
+
+        const newCombo = result.comboUpdate ?? 0;
+        if (newCombo > 0 && newCombo % 10 === 0 && onComboMilestone) {
+          onComboMilestone(newCombo, window.innerWidth / 2, window.innerHeight / 2);
         }
       }
 
       // Flush: single updatePlayer call with all accumulated deltas
-      if (hasPlayerUpdates) {
+      if (result.hasUpdates) {
         const updates: Partial<Player> = {};
-        if (scoreDelta !== 0) updates.score = activePlayer.score + scoreDelta;
-        if (comboUpdate !== undefined) updates.combo = comboUpdate;
-        if (maxComboUpdate !== undefined) updates.maxCombo = maxComboUpdate;
-        if (notesHitDelta > 0) updates.notesHit = activePlayer.notesHit + notesHitDelta;
-        if (notesMissedDelta > 0) updates.notesMissed = activePlayer.notesMissed + notesMissedDelta;
-        if (goldenNotesInc > 0) updates.goldenNotesHit = (activePlayer.goldenNotesHit || 0) + goldenNotesInc;
+        if (result.scoreDelta !== 0) updates.score = activePlayer.score + result.scoreDelta;
+        if (result.comboUpdate !== undefined) updates.combo = result.comboUpdate;
+        if (result.maxComboUpdate !== undefined) updates.maxCombo = result.maxComboUpdate;
+        if (result.notesHitDelta > 0) updates.notesHit = activePlayer.notesHit + result.notesHitDelta;
+        if (result.notesMissedDelta > 0) updates.notesMissed = activePlayer.notesMissed + result.notesMissedDelta;
+        if (result.goldenNotesDelta > 0) updates.goldenNotesHit = (activePlayer.goldenNotesHit || 0) + result.goldenNotesDelta;
         // Update live accuracy whenever hit/miss counts change
-        if (notesHitDelta > 0 || notesMissedDelta > 0) {
-          const totalNotes = (activePlayer.notesHit + notesHitDelta) + (activePlayer.notesMissed + notesMissedDelta);
+        if (result.notesHitDelta > 0 || result.notesMissedDelta > 0) {
+          const totalNotes = (activePlayer.notesHit + result.notesHitDelta) + (activePlayer.notesMissed + result.notesMissedDelta);
           updates.accuracy = totalNotes > 0
-            ? Math.round(((activePlayer.notesHit + notesHitDelta) / totalNotes) * 1000) / 10
+            ? Math.round(((activePlayer.notesHit + result.notesHitDelta) / totalNotes) * 1000) / 10
             : 0;
         }
         updatePlayer(activePlayer.id, updates);
 
         // Sync perfectNotesCount to state so useGameLoop's ref picks it up at next render.
-        // This only fires on note-complete (rare), not every tick, so it's cheap.
-        if (perfectNotesInc > 0) {
+        if (result.perfectNotesDelta > 0) {
+          p1PerfectNotesCountRef.current += result.perfectNotesDelta;
           setP1PerfectNotesCount(p1PerfectNotesCountRef.current);
+        }
+
+        // P1 score events (immediate setState for both general and duet-specific)
+        if (result.pendingEvents.length > 0) {
+          setScoreEvents(prev => [
+            ...prev.slice(-10),
+            ...result.pendingEvents.slice(-10),
+          ]);
+
+          if (isDuetMode) {
+            setP1ScoreEvents(prev => [
+              ...prev.slice(-10),
+              ...result.pendingEvents.slice(-10),
+            ]);
+          }
         }
       }
     },
