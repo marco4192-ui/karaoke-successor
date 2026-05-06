@@ -118,8 +118,10 @@ export function SongCard({
           )}
         </div>
         
-        {/* D.1: Audio Waveform — real-time frequency visualization during preview */}
-        <WaveformBar audio={previewAudio || null} isActive={previewSong?.id === song.id && !!song.audioUrl} />
+        {/* D.1: Audio Waveform — real-time frequency visualization during preview.
+            previewAudio is the authoritative source; song.audioUrl may be stale
+            if URLs were resolved asynchronously by ensureSongUrls. */}
+        <WaveformBar audio={previewAudio || null} isActive={previewSong?.id === song.id && !!previewAudio} />
 
         {/* Duration */}
         <div className="absolute bottom-2 right-2">

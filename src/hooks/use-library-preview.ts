@@ -55,7 +55,7 @@ export function useLibraryPreview() {
 
   const handlePreviewStart = useCallback((song: Song) => {
     const hasMedia = song.audioUrl || song.videoBackground || song.youtubeUrl || song.videoUrl
-      || song.relativeAudioPath || song.relativeVideoPath;
+      || song.relativeAudioPath || song.relativeVideoPath || song.storedMedia;
     if (!hasMedia) return;
 
     if (previewTimeoutRef.current) {
