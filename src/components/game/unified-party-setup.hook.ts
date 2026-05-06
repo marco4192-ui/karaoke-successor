@@ -4,7 +4,7 @@ import { PARTY_GAME_CONFIGS } from './unified-party-setup.config';
 import type { SongSelectionOption, SelectedPlayer, GameSetupResult, InputMode, GameModeSettingsMap } from './unified-party-setup.types';
 import { getGenres, getLanguages, filterSongs } from '@/lib/game/song-library';
 import { useGameStore } from '@/lib/game/store';
-import { StorageKeys, getItem, setItem, removeItem, setJson, getJson, getString } from '@/lib/storage';
+import { StorageKeys, getItem, setItem, removeItem, setJson, getJson, getJsonOptional, getString } from '@/lib/storage';
 
 interface UsePartySetupArgs {
   gameMode: GameMode;
@@ -119,7 +119,7 @@ export function usePartySetup({
       // Auto-restore this player's last mic assignment from localStorage
       // (only if the mic still exists in saved mic configs)
       try {
-        const preferences = getJson<Record<string, string>>(StorageKeys.PLAYER_MIC_PREFERENCES, undefined as any);
+        const preferences = getJsonOptional<Record<string, string>>(StorageKeys.PLAYER_MIC_PREFERENCES);
         if (preferences) {
           const preferredMicId = preferences[playerId];
           if (preferredMicId) {
@@ -179,7 +179,7 @@ export function usePartySetup({
     // Load saved mic configs to get mic names
     let savedMics: Array<{ id: string; deviceId: string; customName: string; deviceName: string }> = [];
     try {
-      const parsed = getJson<{ assignedMics?: Array<{ id: string; deviceId: string; customName: string; deviceName: string }> }>(StorageKeys.MULTI_MIC_CONFIG, undefined as any);
+      const parsed = getJsonOptional<{ assignedMics?: Array<{ id: string; deviceId: string; customName: string; deviceName: string }> }>(StorageKeys.MULTI_MIC_CONFIG);
       if (parsed) {
         savedMics = parsed.assignedMics || [];
       }

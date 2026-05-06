@@ -171,3 +171,18 @@ export function setBool(key: string, value: boolean): void {
 export function setJson<T>(key: string, value: T): void {
   setItem(key, JSON.stringify(value));
 }
+
+/**
+ * Read a JSON value without a fallback.
+ * Returns `undefined` when absent, unparseable, or on error.
+ * Use this instead of `getJson(key, undefined as any)`.
+ */
+export function getJsonOptional<T>(key: string): T | undefined {
+  const raw = getItem(key);
+  if (raw === null) return undefined;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return undefined;
+  }
+}
