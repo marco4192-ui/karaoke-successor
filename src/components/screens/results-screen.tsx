@@ -437,7 +437,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
                   { id: profile.id, name: profile.name, avatar: profile.avatar, color: profile.color },
                   { score: playerResult.score, accuracy: playerResult.accuracy, combo: playerResult.maxCombo, perfectNotesCount: playerResult.perfectNotesCount },
                 );
-              });
+              }).catch(() => {});
             }
           }
         } catch {
