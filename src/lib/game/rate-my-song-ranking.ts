@@ -93,6 +93,7 @@ export function addRateMySongEntry(entry: Omit<RateMySongEntry, 'id' | 'timestam
     const old = ranking.entries[existingIdx];
     if (entry.rating > old.rating) {
       newEntry.id = old.id;
+      newEntry.ratingCount = old.ratingCount + entry.ratingCount;
       ranking.entries[existingIdx] = newEntry;
     } else {
       // Update rating count even if rating isn't better
@@ -148,6 +149,7 @@ export function addDailyRateMySongEntry(entry: Omit<RateMySongDailyEntry, 'id' |
     const old = daily.entries[existingIdx];
     if (entry.rating > old.rating) {
       newEntry.id = old.id;
+      newEntry.ratingCount = old.ratingCount + entry.ratingCount;
       daily.entries[existingIdx] = newEntry;
     } else {
       // Update rating count even if rating isn't better
