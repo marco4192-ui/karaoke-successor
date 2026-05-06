@@ -154,15 +154,19 @@ export interface RateMySongModeSettings extends BaseModeSettings {
 }
 
 /** Duel — no extra config settings */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- Intentional marker in discriminated union for future extension
 export interface DuelModeSettings extends BaseModeSettings {}
 
 /** Standard — no extra config settings */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- Intentional marker in discriminated union for future extension
 export interface StandardModeSettings extends BaseModeSettings {}
 
 /** Duet — no extra config settings */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- Intentional marker in discriminated union for future extension
 export interface DuetModeSettings extends BaseModeSettings {}
 
 /** Online — no extra config settings */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- Intentional marker in discriminated union for future extension
 export interface OnlineModeSettings extends BaseModeSettings {}
 
 /** Union of all mode-specific settings */

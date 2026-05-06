@@ -91,6 +91,7 @@ export function MicIndicator({
       if (playerChanged) {
         lastPlayerIdRef.current = currentId;
       }
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: reset fade timer on dependency change (standard React pattern for timed state)
       setIsVisible(true);
       clearFadeTimer();
       fadeTimerRef.current = setTimeout(() => {
