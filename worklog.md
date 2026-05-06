@@ -166,3 +166,60 @@
 - **Codebase ist in exzellentem Zustand**
 
 ---
+
+## Session: 2026-05-06 (Code Review #11 — Parser + UI Focus)
+
+### Review-Ergebnis
+- **TSC:** 0 Errors | **ESLint:** 0 Errors / 54 Warnings
+- **319 TypeScript-Dateien**
+- **Gefunden:** 1 Medium, 4 Low Bugs | 1 Dead Code | 2 Verbesserungen
+
+### Umsetzungs-Log
+
+#### ✅ B1: Duet zeigt doppeltes Rating-Display (Medium)
+- **Commit:** `ca71ee3`
+- **Datei:** `src/components/screens/results-screen.tsx`
+- `!isDuel` schloss Duet nicht aus dem Single-Player Rating aus → both Single AND Dual Rating renderten gleichzeitig. Fix: `!isMultiplayer`. Auch Share-Section korrigiert.
+
+#### ✅ V2: isRap Flag fehlt in Folder-Scanner Parser (wichtig!)
+- **Commit:** `d65b850`
+- **Datei:** `src/lib/parsers/folder-scanner.ts`
+- `parseUltraStarFull` setzte `isBonus` und `isGolden` aber nicht `isRap` → Rap-Notes (Typ R/G) die über Tauri importiert wurden, verloren ihren Rap-Status. Scoring und UI betroffen.
+
+#### ✅ B2: Daily Challenge unhandled promise rejection (Low)
+- **Commit:** `468ff2c`
+- **Datei:** `src/components/screens/results-screen.tsx`
+- `import().then()` ohne `.catch()` → unhandled rejection bei Chunk-Fehler. Fix: `.catch(() => {})` hinzugefügt.
+
+#### ✅ B3: parseUltraStarMetadata nutzt nicht normalizeTxtContent (Low)
+- **Commit:** `82795d2`
+- **Datei:** `src/lib/parsers/folder-scanner.ts`
+- Manuelle `\r\n`-Normalisierung statt `normalizeTxtContent()` → HTML-Entities (`&amp;`) und Unicode-Dekomposition nicht behandelt.
+
+#### ✅ B4: Null-Byte Check bei Pfadvalidierung (Low)
+- **Commit:** `3ac0365`
+- **Datei:** `src/lib/native-fs.ts`
+- `validatePath()` prüfte `..` aber nicht `\0` → Defense-in-Depth für Path Traversal.
+
+#### ✅ B5: SingStar O(n²) indexOf (Low)
+- **Commit:** `c55f181`
+- **Datei:** `src/lib/parsers/multi-format-import.ts`
+- `ss.notes.indexOf(note)` im Loop → O(n²). Fix: Index-basierte Schleife.
+
+#### ✅ DC1: Unbenutzte Imports LibraryCache, loadCache
+- **Commit:** `c98b241`
+- **Datei:** `src/lib/parsers/folder-scanner.ts`
+- Importiert aber nie referenziert → entfernt.
+
+#### ✅ V1: useRef in useCallback Deps
+- **Commit:** `246008d`
+- **Datei:** `src/hooks/use-song-library-sync.ts`
+- `lastSyncedCountRef` (stabile Referenz) in Deps → entfernt.
+
+### Finaler Zustand
+- **TSC:** 0 Errors ✅
+- **ESLint:** 0 Errors / 54 Warnings ✅
+- **Keine echten Bugs verbleibend** (nach 11 Reviews, ~170+ Fixes insgesamt)
+- **Parser-Konsistenz verbessert** (isRap + normalizeTxtContent)
+
+---
