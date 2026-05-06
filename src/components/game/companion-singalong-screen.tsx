@@ -258,8 +258,14 @@ export function CompanionGameView({
   const { pitchResult, initialize, start, stop } = usePitchDetector();
 
   // ── Song playing status for Escape handler ──
+  // Guard with ref to prevent unnecessary store updates (same pattern as ptm-game-screen.tsx)
+  const lastIsSongPlayingRef = useRef(false);
   useEffect(() => {
-    setIsSongPlaying(isPlaying && (phase === 'playing' || phase === 'switching'));
+    const newVal = isPlaying && (phase === 'playing' || phase === 'switching');
+    if (lastIsSongPlayingRef.current !== newVal) {
+      lastIsSongPlayingRef.current = newVal;
+      setIsSongPlaying(newVal);
+    }
   }, [isPlaying, phase, setIsSongPlaying]);
 
   // ── Pause / Resume sync with page.tsx dialog ──
@@ -532,8 +538,10 @@ export function CompanionGameView({
     return () => {
       stop();
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+      setIsSongPlaying(false);
+      lastIsSongPlayingRef.current = false;
     };
-  }, [stop]);
+  }, [stop, setIsSongPlaying]);
 
   // ===================== RENDER =====================
   return (
