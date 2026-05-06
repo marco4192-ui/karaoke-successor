@@ -78,8 +78,8 @@ export interface MIDIKaraokeData {
   tempo: number;
   ticksPerBeat: number;
   tracks: Array<{ name: string; events: Array<{ tick: number; type: string; data: unknown }> }>;
-  lyrics: Array<{ tick: number; text: string }>;
-  notes: Array<{ tick: number; duration: number; pitch: number; velocity: number }>;
+  lyrics: Array<{ startTimeMs: number; text: string }>;
+  notes: Array<{ startTimeMs: number; duration: number; pitch: number; velocity: number }>;
 }
 
 export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | null {
@@ -95,10 +95,17 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
 
     const tracks: MIDIKaraokeData['tracks'] = [];
     const lyrics: MIDIKaraokeData['lyrics'] = [];
-    const notes: MIDIKaraokeData['notes'] = [];
+    const rawNotes: Array<{ tick: number; duration: number; pitch: number; velocity: number }> = [];
+    const rawLyrics: Array<{ tick: number; text: string }> = [];
     let tempo = 120;
 
     const activeNotes = new Map<string, { startTick: number; pitch: number; velocity: number }>();
+
+    // Track tempo changes so we can convert ticks→ms correctly even when
+    // the tempo changes mid-song (common in .kar files with ritardando etc.)
+    const tempoMap: Array<{ tick: number; microsPerBeat: number }> = [
+      { tick: 0, microsPerBeat: 500000 }, // default 120 BPM
+    ];
 
     let offset = 14;
     for (let t = 0; t < numTracks; t++) {
@@ -149,11 +156,12 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
             // Text / Lyrics meta event
             const textBytes = Array.from({ length }, (_, i) => view.getUint8(offset + i));
             const text = new TextDecoder('latin1').decode(new Uint8Array(textBytes));
-            lyrics.push({ tick: absoluteTick, text: text.replace(/[\r\n]/g, ' ').trim() });
+            rawLyrics.push({ tick: absoluteTick, text: text.replace(/[\r\n]/g, ' ').trim() });
           } else if (metaType === 0x51) {
             // Tempo
             const microseconds = (view.getUint8(offset) << 16) | (view.getUint8(offset + 1) << 8) | view.getUint8(offset + 2);
             tempo = 60000000 / microseconds;
+            tempoMap.push({ tick: absoluteTick, microsPerBeat: microseconds });
           } else if (metaType === 0x03) {
             // Track name
             const textBytes = Array.from({ length }, (_, i) => view.getUint8(offset + i));
@@ -177,7 +185,7 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
               const noteKey = `${channel}-${note}`;
               const activeNote = activeNotes.get(noteKey);
               if (activeNote) {
-                notes.push({ tick: activeNote.startTick, duration: absoluteTick - activeNote.startTick, pitch: note, velocity: activeNote.velocity });
+                rawNotes.push({ tick: activeNote.startTick, duration: absoluteTick - activeNote.startTick, pitch: note, velocity: activeNote.velocity });
                 activeNotes.delete(noteKey);
               }
               break;
@@ -189,7 +197,7 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
               if (velocity === 0) {
                 const activeNote = activeNotes.get(noteKey);
                 if (activeNote) {
-                  notes.push({ tick: activeNote.startTick, duration: absoluteTick - activeNote.startTick, pitch: note, velocity: activeNote.velocity });
+                  rawNotes.push({ tick: activeNote.startTick, duration: absoluteTick - activeNote.startTick, pitch: note, velocity: activeNote.velocity });
                   activeNotes.delete(noteKey);
                 }
               } else {
@@ -208,12 +216,34 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
       tracks.push({ name: tracks[t]?.name || `Track ${t + 1}`, events });
     }
 
-    // Convert tick durations to milliseconds
-    const tickDurationMs = 60000 / (tempo * ticksPerBeat);
+    // Convert tick positions to milliseconds using the tempo map.
+    // This correctly handles tempo changes that occur mid-song.
+    const tempoMapSorted = [...tempoMap].sort((a, b) => a.tick - b.tick);
+
+    function tickToMs(tick: number): number {
+      let ms = 0;
+      for (let i = 0; i < tempoMapSorted.length; i++) {
+        const entry = tempoMapSorted[i];
+        const nextTick = i < tempoMapSorted.length - 1 ? tempoMapSorted[i + 1].tick : Infinity;
+        const segmentEnd = Math.min(tick, nextTick);
+        const segmentTicks = segmentEnd - entry.tick;
+        if (segmentTicks > 0) {
+          ms += (segmentTicks * entry.microsPerBeat) / (ticksPerBeat * 1000);
+        }
+        if (tick <= nextTick) break;
+      }
+      return ms;
+    }
 
     return {
-      tempo, ticksPerBeat, tracks, lyrics,
-      notes: notes.map(n => ({ ...n, duration: Math.round(n.duration * tickDurationMs) })),
+      tempo, ticksPerBeat, tracks,
+      lyrics: rawLyrics.map(l => ({ startTimeMs: Math.round(tickToMs(l.tick)), text: l.text })),
+      notes: rawNotes.map(n => ({
+        startTimeMs: Math.round(tickToMs(n.tick)),
+        duration: Math.round(tickToMs(n.tick + n.duration) - tickToMs(n.tick)),
+        pitch: n.pitch,
+        velocity: n.velocity,
+      })),
     };
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -319,9 +349,8 @@ export function convertToSong(
       if (!midi.ticksPerBeat || !midi.tempo) {
         throw new Error('MIDI file has invalid ticksPerBeat or tempo — cannot calculate note timings.');
       }
-      const tickDurationMs = 60000 / (midi.tempo * midi.ticksPerBeat);
 
-      // Build lyric lines from MIDI lyrics + notes
+      // Build lyric lines from MIDI lyrics + notes (both already in ms)
       const lyrics: LyricLine[] = [];
       let currentLineNotes: Note[] = [];
       let lineStartTime = 0;
@@ -330,19 +359,19 @@ export function convertToSong(
 
       // First pass: build notes with MIDI pitch → frequency
       const midiNotes: Array<{ startTimeMs: number; durationMs: number; pitch: number; frequency: number }> = midi.notes.map(n => ({
-        startTimeMs: Math.round(n.tick * tickDurationMs),
+        startTimeMs: n.startTimeMs,
         durationMs: n.duration,
         pitch: n.pitch,
         frequency: midiPitchToFrequency(n.pitch),
       }));
 
-      // Match lyrics to notes by tick proximity
+      // Match lyrics to notes by time proximity
       let lyricIndex = 0;
       for (const n of midiNotes) {
         // Find closest lyric
         let lyricText = '♪';
         if (lyricIndex < midi.lyrics.length) {
-          const lyricTimeMs = midi.lyrics[lyricIndex].tick * tickDurationMs;
+          const lyricTimeMs = midi.lyrics[lyricIndex].startTimeMs;
           if (Math.abs(n.startTimeMs - lyricTimeMs) < 500) {
             lyricText = midi.lyrics[lyricIndex].text || '♪';
             lyricIndex++;
