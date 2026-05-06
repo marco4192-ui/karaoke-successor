@@ -55,6 +55,7 @@ export function convertNotesToLyricLines(
       lyric: note.lyric,
       isBonus: note.type === 'F',
       isGolden: note.type === '*' || note.type === 'G',
+      isRap: note.type === 'R' || note.type === 'G',
       player: note.player,
     };
 
