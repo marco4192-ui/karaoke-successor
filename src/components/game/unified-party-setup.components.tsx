@@ -482,10 +482,12 @@ function PlayerGrid({
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {activeProfiles.map((profile, profileIndex) => {
+          {activeProfiles.map((profile) => {
             const isSelected = selectedPlayers.includes(profile.id);
-            // In mixed mode, first half uses mic, second half uses companion
-            const isCompanionInMixed = inputMode === 'mixed' && profileIndex >= Math.ceil(activeProfiles.length / 2);
+            // In mixed mode, first half uses mic, second half uses companion.
+            // Must use position in selectedPlayers (matches actual game logic in hook).
+            const selectedIdx = selectedPlayers.indexOf(profile.id);
+            const isCompanionInMixed = inputMode === 'mixed' && selectedIdx >= 0 && selectedIdx >= Math.ceil(selectedPlayers.length / 2);
             const isCompanionPlayer = inputMode === 'companion' || isCompanionInMixed;
 
             return (
