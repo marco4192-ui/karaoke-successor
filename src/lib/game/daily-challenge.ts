@@ -137,13 +137,21 @@ function todayISO(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
+// Simple DJB2 hash — provides much better distribution than ASCII sum for % N
+function hashString(str: string): number {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) + str.charCodeAt(i);
+  }
+  return Math.abs(hash);
+}
+
 // Generate daily challenge based on date seed
 export function getDailyChallenge(): DailyChallengeData {
   const today = todayISO();
-  const seed = today.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-  const types: Array<'score' | 'accuracy' | 'combo' | 'perfect_notes'> = 
+  const types: Array<'score' | 'accuracy' | 'combo' | 'perfect_notes'> =
     ['score', 'accuracy', 'combo', 'perfect_notes'];
-  const type = types[seed % types.length];
+  const type = types[hashString(today) % types.length];
   // score: 80% of MAX_POINTS_PER_SONG (10000) — achievable with "Excellent" rating
   const targets = { score: 8000, accuracy: 85, combo: 50, perfect_notes: 20 };
   
@@ -161,7 +169,7 @@ export function getDailyChallenge(): DailyChallengeData {
     date: today,
     type,
     target: targets[type],
-    seed,
+    seed: hashString(today),
     entries: [],
     totalParticipants: 0,
   };
