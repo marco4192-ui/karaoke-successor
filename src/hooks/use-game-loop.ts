@@ -309,8 +309,10 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     stop();
 
     // Stop audio effects
-    if (audioEffects) {
-      audioEffects.disconnect();
+    // Use ref (not closure) to get the latest instance — matches unmount cleanup pattern.
+    const effects = audioEffectsRef.current;
+    if (effects) {
+      effects.disconnect();
       setAudioEffects(null);
     }
 
@@ -357,7 +359,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     }
 
     onEnd();
-  }, [stop, audioEffects, setAudioEffects, audioRef, videoRef, endGame, generateResults, onEnd, song, gameMode, setIsPlaying, nativeAudioStop]);
+  }, [stop, setAudioEffects, audioRef, videoRef, endGame, generateResults, onEnd, song, gameMode, setIsPlaying, nativeAudioStop]);
 
   // Fix (Code Review #5): Use ref for endGameAndCleanup in the game loop.
   // endGameAndCleanup depends on generateResults which depends on `players`.
