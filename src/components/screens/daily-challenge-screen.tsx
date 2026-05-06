@@ -51,9 +51,20 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
   // Check if already completed today
   const completedToday = isChallengeCompletedToday();
   
-  // Sort leaderboard by score (with playerId tiebreaker for deterministic order)
+  // Sort leaderboard by the challenge-type-specific metric, not by raw score.
+  // For perfect_notes, sort by perfectNotesCount; for accuracy, by accuracy; etc.
+  const sortMetric = (entry: typeof challenge.entries[0]): number => {
+    switch (challenge.type) {
+      case 'accuracy': return entry.accuracy;
+      case 'combo': return entry.combo;
+      case 'perfect_notes': return entry.perfectNotesCount;
+      default: return entry.score;
+    }
+  };
   const sortedLeaderboard = [...challenge.entries].sort((a, b) => {
-    if (b.score !== a.score) return b.score - a.score;
+    const metricA = sortMetric(a);
+    const metricB = sortMetric(b);
+    if (metricB !== metricA) return metricB - metricA;
     return a.playerId.localeCompare(b.playerId);
   });
   
