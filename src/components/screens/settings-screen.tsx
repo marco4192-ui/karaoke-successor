@@ -97,36 +97,41 @@ function SettingsScreen() {
     return typeof result === 'string' ? result : key;
   }, [translations]);
 
-  // Load settings on mount
+  // Load settings once on mount
   useEffect(() => {
     // Check if running in Tauri (v1: __TAURI__, v2: __TAURI_INTERNALS__)
-    if (typeof window !== 'undefined' && (window.__TAURI__ || window.__TAURI_INTERNALS__)) {
+    const isTauri = typeof window !== 'undefined' && (window.__TAURI__ || window.__TAURI_INTERNALS__);
+    if (isTauri) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- One-time initialization from platform detection on mount
       setIsTauriDetected(true);
     }
 
     // Load all settings from storage module
     setPreviewVolume(getNumber(StorageKeys.PREVIEW_VOLUME, 30));
     setMicSensitivity(getNumber(StorageKeys.MIC_SENSITIVITY, 50));
+    setShowPitchGuide(getBool(StorageKeys.SHOW_PITCH_GUIDE, true));
+    setLyricsStyle(getString(StorageKeys.LYRICS_STYLE, 'classic'));
+    setNoteDisplayStyle(getString(StorageKeys.NOTE_STYLE, 'classic'));
+    setNoteShapeStyle(getString(StorageKeys.NOTE_SHAPE, 'rounded'));
+    setBgVideo(getBool(StorageKeys.BG_VIDEO, true));
+    setUseAnimatedBg(getBool(StorageKeys.ANIMATED_BG, false));
+    setPerformanceMode(getString(StorageKeys.PERFORMANCE_MODE, 'full') === 'low' ? 'low' : 'full');
 
+    try {
+      const storedTheme = getStoredTheme();
+      if (storedTheme) setCurrentThemeId(storedTheme.id);
+    } catch {
+      // Ignore theme errors
+    }
+  }, []);
+
+  // Sync difficulty from global store on first load
+  useEffect(() => {
     if (!initialDifficultyLoaded && gameState.difficulty) {
-    setDefaultDifficulty(gameState.difficulty);
-    setInitialDifficultyLoaded(true);
-  }
-
-  setShowPitchGuide(getBool(StorageKeys.SHOW_PITCH_GUIDE, true));
-  setLyricsStyle(getString(StorageKeys.LYRICS_STYLE, 'classic'));
-  setNoteDisplayStyle(getString(StorageKeys.NOTE_STYLE, 'classic'));
-  setNoteShapeStyle(getString(StorageKeys.NOTE_SHAPE, 'rounded'));
-  setBgVideo(getBool(StorageKeys.BG_VIDEO, true));
-  setUseAnimatedBg(getBool(StorageKeys.ANIMATED_BG, false));
-  setPerformanceMode(getString(StorageKeys.PERFORMANCE_MODE, 'full') === 'low' ? 'low' : 'full');
-
-  try {
-    const storedTheme = getStoredTheme();
-    if (storedTheme) setCurrentThemeId(storedTheme.id);
-  } catch {
-    // Ignore theme errors
-  }
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional one-time sync from global store on mount
+      setDefaultDifficulty(gameState.difficulty);
+      setInitialDifficultyLoaded(true);
+    }
   }, [gameState.difficulty, initialDifficultyLoaded]);
 
   // Settings change handlers
