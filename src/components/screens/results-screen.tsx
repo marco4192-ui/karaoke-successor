@@ -526,8 +526,8 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
         <p className="text-white/60">{song.artist}</p>
       </div>
 
-      {/* Rating header - Single Player */}
-      {!isDuel && (
+      {/* Rating header - Single Player (hide for duel and duet which show dual cards below) */}
+      {!isMultiplayer && (
         <div className="text-center mb-8">
           <div className={`inline-block px-8 py-4 rounded-2xl bg-gradient-to-r ${ratingColors[playerResult.rating] || ratingColors.good} mb-4`}>
             <h1 className="text-4xl font-black text-white uppercase">{playerResult.rating}!</h1>
@@ -606,7 +606,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
       />
 
       {/* Share Section — only for single player (duel/duet doesn't make sense to share a single player stat) */}
-      {!isDuel && (
+      {!isMultiplayer && (
         <ShareSection
           song={song}
           playerResult={{
