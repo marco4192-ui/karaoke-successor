@@ -133,6 +133,10 @@ export function useLibraryPreview() {
 
       setPreviewSong(songToPlay);
 
+      // Clear any previous duration timeout before setting a new one
+      if (previewDurationTimeoutRef.current) {
+        clearTimeout(previewDurationTimeoutRef.current);
+      }
       // Auto-stop after preview duration
       previewDurationTimeoutRef.current = setTimeout(() => {
         stopAllMedia();
