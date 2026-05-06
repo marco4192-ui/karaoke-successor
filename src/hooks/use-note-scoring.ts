@@ -423,6 +423,8 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       if (!notesToCheck || notesToCheck.length === 0 || !scoringMeta) return;
 
       const beatDurationMs = timingData?.beatDuration || 500;
+      // Player-specific refs: currently only P1 (index 0) and P2 (index 1) are supported.
+      // P3/P4 would need their own combo refs — this is a latent limitation.
       const comboRef = _playerIndex === 1 ? p2ComboRef : p1ComboRef;
       const maxComboRef = _playerIndex === 1 ? p2MaxComboRef : p1MaxComboRef;
       const searchStartRef = _playerIndex === 1 ? lastProcessedNoteP2Ref : lastProcessedNoteRef;
