@@ -263,20 +263,31 @@ export function PtmSeriesResults({
     setConfettiParticles(particles);
 
     // Animate falling
+    let animating = true;
     const interval = setInterval(() => {
-      setConfettiParticles(prev =>
-        prev
+      if (!animating) {
+        clearInterval(interval);
+        return;
+      }
+      setConfettiParticles(prev => {
+        const next = prev
           .map(p => ({
             ...p,
             y: p.y + p.speed,
             rotation: p.rotation + 2,
             x: p.x + (Math.random() - 0.5) * 0.5,
           }))
-          .filter(p => p.y < 110)
-      );
+          .filter(p => p.y < 110);
+        // Stop interval once all particles have fallen off-screen
+        if (next.length === 0) {
+          animating = false;
+          clearInterval(interval);
+        }
+        return next;
+      });
     }, 50);
 
-    return () => clearInterval(interval);
+    return () => { animating = false; clearInterval(interval); };
   }, []);
 
   // Ceremony phase: keep visible permanently (no auto-dismiss)
