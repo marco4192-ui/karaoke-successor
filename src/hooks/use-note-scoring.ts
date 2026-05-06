@@ -72,10 +72,8 @@ interface UseNoteScoringOptions {
 
 // Hook return type
 interface UseNoteScoringReturn {
-  // Score events for visual feedback
+  // Score events for visual feedback (combined P1+P2 events)
   scoreEvents: ScoreEvent[];
-  p1ScoreEvents: ScoreEvent[];
-  p2ScoreEvents: ScoreEvent[];
 
   // Note performance for visual display modes
   notePerformance: Map<string, NotePerformanceSample[]>;
@@ -336,8 +334,6 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
 
   // Score events state
   const [scoreEvents, setScoreEvents] = useState<ScoreEvent[]>([]);
-  const [p1ScoreEvents, setP1ScoreEvents] = useState<ScoreEvent[]>([]);
-  const [p2ScoreEvents, setP2ScoreEvents] = useState<ScoreEvent[]>([]);
 
 
   // Note performance tracking for visual display modes
@@ -388,8 +384,6 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   // Reset scoring state
   const resetScoring = useCallback(() => {
     setScoreEvents([]);
-    setP1ScoreEvents([]);
-    setP2ScoreEvents([]);
     setNotePerformance(new Map());
     notePerformanceRef.current = new Map();
     lastNotePerfSyncRef.current = 0;
@@ -568,13 +562,6 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
             ...prev.slice(-10),
             ...result.pendingEvents.slice(-10),
           ]);
-
-          if (isDuetMode) {
-            setP1ScoreEvents(prev => [
-              ...prev.slice(-10),
-              ...result.pendingEvents.slice(-10),
-            ]);
-          }
         }
       }
     },
@@ -593,7 +580,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         timingData?.p2ScoringMetadata,
         p2NoteProgressRef,
         setP2State,
-        setP2ScoreEvents,
+        setScoreEvents,
         'p2-note'
       );
     },
@@ -604,8 +591,6 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
 
   return {
     scoreEvents,
-    p1ScoreEvents,
-    p2ScoreEvents,
     notePerformance,
     p2State,
     p2DetectedPitch,

@@ -253,7 +253,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // Use ref to avoid forward-reference immutability error
   const startGameLoopRef = useRef<() => void>(() => {});
 
-  const startGameLoop = () => {
+  const startGameLoop = useCallback(() => {
     const TICK_INTERVAL = 100; // 100ms between scoring evaluations
     let lastTickTime = performance.now();
 
@@ -383,7 +383,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     };
 
     gameLoopRef.current = requestAnimationFrame(gameLoop);
-  };
+  }, []); // refs only — function reads all state via refs
 
   // Keep ref up-to-date for use in effect
   useEffect(() => { startGameLoopRef.current = startGameLoop; }, [startGameLoop]);

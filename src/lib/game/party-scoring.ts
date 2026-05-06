@@ -138,10 +138,12 @@ export function evaluateAndScoreTick(
     tickPts = result.accuracy * FALLBACK_TICK_MULTIPLIER;
   }
 
-  // Round to nearest integer, cap at 3 in fallback mode, no artificial floor
+  // When scoringMetadata is available: round and enforce minimum of 1 point per hit
+  // In fallback mode (no BPM metadata): enforce minimum 1 point per hit and cap at 3
+  // This prevents edge-of-tolerance hits from awarding 0 points.
   const points = scoringMeta
     ? Math.max(1, Math.round(tickPts))
-    : Math.min(Math.round(tickPts), FALLBACK_MAX_TICK_PTS);
+    : Math.max(1, Math.min(Math.round(tickPts), FALLBACK_MAX_TICK_PTS));
 
   return { hit: true, points, accuracy: result.accuracy, displayType: result.displayType };
 }
