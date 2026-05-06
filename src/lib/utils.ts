@@ -19,12 +19,11 @@ export function normalizeTxtContent(content: string): string {
 }
 
 /**
- * Convert a MIDI pitch number to its frequency in Hz.
- * Uses the standard equal-temperament tuning: A4 = 440 Hz = MIDI note 69.
+ * MIDI ↔ frequency conversion — canonical implementations live in @/types/game
+ * (alongside frequencyToMidi and midiToNoteName).
+ * Re-exported here for backward compatibility with existing imports.
  */
-export function midiPitchToFrequency(pitch: number): number {
-  return 440 * Math.pow(2, (pitch - 69) / 12);
-}
+export { midiToFrequency as midiPitchToFrequency } from '@/types/game';
 
 /** Shuffle an array using Fisher-Yates algorithm (returns new array). */
 export function shuffleArray<T>(array: T[]): T[] {
