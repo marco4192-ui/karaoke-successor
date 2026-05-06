@@ -4,10 +4,10 @@
 
 import { invoke } from '@tauri-apps/api/core';
 
-/** Reject paths containing directory traversal sequences (`..`). */
+/** Reject paths containing directory traversal sequences (`..`) or null bytes. */
 function validatePath(path: string): void {
-  if (path.includes('..')) {
-    throw new Error(`[NativeFS] Path traversal detected — rejecting path: ${path}`);
+  if (path.includes('..') || path.includes('\0')) {
+    throw new Error(`[NativeFS] Path traversal or null byte detected — rejecting path: ${path}`);
   }
 }
 
