@@ -366,7 +366,7 @@ export function getVisibleNotes(
 
     if (note.startTime > windowEnd) break;
     if (noteEnd >= windowStart) {
-      result.push({ ...note, line: note.line });
+      result.push(note);
     }
   }
 
