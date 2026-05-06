@@ -38,7 +38,6 @@ export function usePartySetup({
 
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [settings, setSettings] = useState<Record<string, any>>(initialSettings); // eslint-disable-line @typescript-eslint/no-explicit-any
-  const [__songSelection, setSongSelection] = useState<SongSelectionOption | null>(null);
   const [error, setError] = useState<string | null>(null);
   const storeDifficulty = useGameStore((state) => state.gameState.difficulty);
   const [difficulty, setDifficulty] = useState<Difficulty>(storeDifficulty || 'medium');
@@ -259,7 +258,6 @@ export function usePartySetup({
     };
 
     setError(null);
-    setSongSelection(option);
 
     switch (option) {
       case 'library':
