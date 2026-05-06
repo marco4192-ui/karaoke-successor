@@ -278,9 +278,12 @@ export function getCurrentRound(game: CompetitiveGame): CompetitiveRound | null 
 }
 
 /** Check if a player has sung in all their required rounds.
- *  A player is finished only when they've reached bestOf AND no other
- *  player has fewer rounds than them (ensures even distribution when
- *  totalRounds doesn't divide evenly among players). */
+ *  A player is "ready for results" when they've reached bestOf AND they
+ *  have the fewest rounds among all eligible players (so the game
+ *  doesn't end prematurely while others are catching up).
+ *  In practice, finishCompetitiveRound() handles the actual end-check
+ *  via allRoundsComplete — this function only answers the question
+ *  "could we skip this player in future rounds?" */
 function isPlayerFinished(game: CompetitiveGame, playerId: string): boolean {
   const player = game.players.find(p => p.id === playerId);
   if (!player) return true;
