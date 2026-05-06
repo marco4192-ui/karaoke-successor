@@ -1,38 +1,10 @@
 // Library Cache System - Persistent storage for song library data
-// Uses IndexedDB for browser persistence
+// Uses IndexedDB for persistence (Tauri desktop app)
 
-interface CachedSong {
-  id: string;
-  title: string;
-  artist: string;
-  album?: string;
-  year?: number;
-  genre?: string;
-  duration: number;
-  bpm: number;
-  difficulty: string; // Default difficulty (user can change)
-  rating: number;
-  gap: number;
-  coverImage?: string;
-  videoBackground?: string;
-  audioUrl?: string;
-  hasEmbeddedAudio?: boolean;
-  preview?: {
-    startTime: number;
-    duration: number;
-  };
-  folder: string;
-  folderPath: string;
-  dateAdded: number;
-  lastPlayed?: number;
-  playCount: number;
-  // File references (not persisted, regenerated on scan)
-  audioFileName?: string;
-  videoFileName?: string;
-  txtFileName?: string;
-  coverFileName?: string;
-}
-
+/**
+ * Folder metadata for the library folder view.
+ * Used by use-folder-scanner.ts and folder-scan-tab.tsx.
+ */
 export interface CachedFolder {
   name: string;
   path: string;
@@ -40,14 +12,6 @@ export interface CachedFolder {
   isSongFolder: boolean; // true if contains song files, false if category folder
   songCount: number;
   coverImage?: string; // First song's cover as folder cover
-}
-
-export interface LibraryCache {
-  version: number;
-  lastScan: number;
-  songs: CachedSong[];
-  folders: CachedFolder[];
-  rootFolders: string[]; // Top-level folder paths
 }
 
 const CACHE_VERSION = 1;
@@ -69,19 +33,19 @@ function openDatabase(): Promise<IDBDatabase> {
 
   dbOpenPromise = new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, CACHE_VERSION);
-    
+
     request.onerror = () => {
       dbOpenPromise = null;
       reject(request.error);
     };
-    
+
     request.onsuccess = () => {
       const db = request.result;
       cachedDB = db;
       dbOpenPromise = null;
       resolve(db);
     };
-    
+
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
@@ -93,36 +57,15 @@ function openDatabase(): Promise<IDBDatabase> {
   return dbOpenPromise;
 }
 
-// Load cache from IndexedDB
-export async function loadCache(): Promise<LibraryCache | null> {
-  const db = await openDatabase();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, 'readonly');
-    const store = transaction.objectStore(STORE_NAME);
-    
-    const request = store.get('library-cache');
-    
-    request.onsuccess = () => {
-      const result = request.result;
-      if (result && result.value && result.value.version === CACHE_VERSION) {
-        resolve(result.value);
-      } else {
-        resolve(null);
-      }
-    };
-    request.onerror = () => reject(request.error);
-  });
-}
-
 // Clear cache
 export async function clearCache(): Promise<void> {
   const db = await openDatabase();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE_NAME, 'readwrite');
     const store = transaction.objectStore(STORE_NAME);
-    
+
     const request = store.delete('library-cache');
-    
+
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
   });
