@@ -133,7 +133,7 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
               }
               onSetUnsavedChanges();
             }}
-            placeholder="YouTube URL, direkte Video-URL (.mp4, .webm) oder lokaler Pfad"
+            placeholder="YouTube URL, direkte Video-URL (.mp4, .webm, .avi, .mkv) oder lokaler Pfad"
             className="bg-slate-800 border-slate-600"
           />
         </div>

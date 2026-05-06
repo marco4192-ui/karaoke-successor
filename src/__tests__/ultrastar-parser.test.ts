@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 // Mock the youtube-player module before importing the parser
 vi.mock('@/components/game/youtube-player', () => ({
   isYouTubeUrl: (url: string) => /youtube\.com|youtu\.be/.test(url),
-  isDirectVideoUrl: (url: string) => /\.(mp4|webm|ogg|mkv)(\?|$)/i.test(url),
+  isDirectVideoUrl: (url: string) => /\.(mp4|webm|ogg|ogv|avi|mkv|mov|wmv|flv|m4v|3gp|ts)(\?|$)/i.test(url),
 }));
 
 import { parseUltraStarTxt } from '@/lib/parsers/ultrastar-parser';

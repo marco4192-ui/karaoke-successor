@@ -17,8 +17,14 @@ export function isYouTubeUrl(url: string): boolean {
   );
 }
 
-// Video file extensions supported by HTML5 <video> element (not playlist/manifest files)
-const DIRECT_VIDEO_EXTENSIONS = ['.mp4', '.webm', '.ogg', '.ogv'];
+// Video file extensions that should be treated as direct video URLs.
+// Includes formats commonly found in UltraStar song collections.
+// Note: Browser/WebView support varies — MP4/WebM have universal support,
+// while AVI/MKV/WMV depend on the system media framework (especially in Tauri).
+const DIRECT_VIDEO_EXTENSIONS = [
+  '.mp4', '.webm', '.ogg', '.ogv',
+  '.avi', '.mkv', '.mov', '.wmv', '.flv', '.m4v', '.3gp', '.ts',
+];
 
 /**
  * Check if a URL points directly to a video file (MP4, WebM, OGG, etc.).
