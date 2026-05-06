@@ -244,15 +244,14 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
 
       if (cancelled) return;
 
-      // Only mark as loaded if no media was needed, or all media loaded successfully
-      // If a timeout occurred, still proceed but log the warning
-      if (!anyMedia || (audioReady && videoReady)) {
-        setMediaLoaded(true);
-      } else {
+      // Mark as loaded — proceed regardless of individual media load failures.
+      // If a timeout occurred, log the warning but still proceed.
+      // The game should not hang because of a single media file failure.
+      if (!anyMedia || !audioReady || !videoReady) {
         // eslint-disable-next-line no-console
         console.warn('[GameScreen] Media load had failures, proceeding anyway after timeout');
-        setMediaLoaded(true); // Still proceed — game should not hang
       }
+      setMediaLoaded(true);
     };
 
     loadMedia();
