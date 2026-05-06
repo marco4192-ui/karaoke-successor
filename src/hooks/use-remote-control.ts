@@ -60,6 +60,17 @@ export function useRemoteControl({
     isAdPlayingRef.current = isAdPlaying;
   }, [isPlaying, isAdPlaying]);
 
+  // Use refs for callbacks so the polling interval isn't torn down
+  // and recreated every time a parent re-renders with a new callback ref.
+  const setIsPlayingRef = useRef(setIsPlaying);
+  const stopRef = useRef(stop);
+  const onBackRef = useRef(onBack);
+  const onEndRef = useRef(onEnd);
+  useEffect(() => { setIsPlayingRef.current = setIsPlaying; }, [setIsPlaying]);
+  useEffect(() => { stopRef.current = stop; }, [stop]);
+  useEffect(() => { onBackRef.current = onBack; }, [onBack]);
+  useEffect(() => { onEndRef.current = onEnd; }, [onEnd]);
+
   useEffect(() => {
     const pollRemoteCommands = async () => {
       try {
@@ -77,7 +88,7 @@ export function useRemoteControl({
                 if (videoRef.current && videoRef.current.paused) {
                   videoRef.current.play().catch(() => {});
                 }
-                setIsPlaying(true);
+                setIsPlayingRef.current(true);
                 break;
                 
               case 'pause':
@@ -87,7 +98,7 @@ export function useRemoteControl({
                 if (videoRef.current) {
                   videoRef.current.pause();
                 }
-                setIsPlaying(false);
+                setIsPlayingRef.current(false);
                 break;
                 
               case 'stop':
@@ -99,9 +110,9 @@ export function useRemoteControl({
                   videoRef.current.pause();
                   videoRef.current.currentTime = 0;
                 }
-                setIsPlaying(false);
-                stop();
-                onBack();
+                setIsPlayingRef.current(false);
+                stopRef.current();
+                onBackRef.current();
                 break;
                 
               case 'restart':
@@ -113,7 +124,7 @@ export function useRemoteControl({
                   videoRef.current.currentTime = 0;
                   videoRef.current.play().catch(() => {});
                 }
-                setIsPlaying(true);
+                setIsPlayingRef.current(true);
                 break;
                 
               case 'skip':
@@ -125,15 +136,15 @@ export function useRemoteControl({
                   });
                 } else {
                   // End current song and go to results
-                  stop();
-                  onEnd();
+                  stopRef.current();
+                  onEndRef.current();
                 }
                 break;
                 
               case 'next':
                 // End current song and go to results
-                stop();
-                onEnd();
+                stopRef.current();
+                onEndRef.current();
                 break;
                 
               case 'previous':
@@ -147,8 +158,8 @@ export function useRemoteControl({
                 break;
                 
               case 'home':
-                stop();
-                onBack();
+                stopRef.current();
+                onBackRef.current();
                 break;
                 
               case 'library':
@@ -158,8 +169,8 @@ export function useRemoteControl({
                 // Navigation to specific screens is not available during gameplay
                 // (no navigate callback). The companion would need to send a
                 // separate command after the game ends to reach a specific screen.
-                stop();
-                onBack();
+                stopRef.current();
+                onBackRef.current();
                 break;
                 
               case 'volume': {
@@ -185,9 +196,9 @@ export function useRemoteControl({
                   videoRef.current.pause();
                   videoRef.current.currentTime = 0;
                 }
-                setIsPlaying(false);
-                stop();
-                onBack();
+                setIsPlayingRef.current(false);
+                stopRef.current();
+                onBackRef.current();
                 break;
                 
               case 'seek': {
@@ -241,7 +252,7 @@ export function useRemoteControl({
     // Poll at the specified interval - always, not just when playing
     const interval = setInterval(pollRemoteCommands, pollInterval);
     return () => clearInterval(interval);
-  }, [audioRef, videoRef, setIsPlaying, stop, onBack, onEnd, pollInterval]);
+  }, [audioRef, videoRef, pollInterval]);
 }
 
 export default useRemoteControl;
