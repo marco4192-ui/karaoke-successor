@@ -55,23 +55,55 @@ export function Timeline({
     originalNote: Note;
   } | null>(null);
 
+  // ── Dynamic Pitch Range ──────────────────────────────────────────
   // Constants
   const basePixelsPerSecond = 100;
   const pixelsPerSecond = basePixelsPerSecond * zoom;
   const pitchHeight = 20; // Height per pitch in pixels
-  const minPitch = 36; // C2
-  const maxPitch = 84; // C6
-  const pitchRange = maxPitch - minPitch;
-  const timelineHeight = pitchRange * pitchHeight;
+  const VISIBLE_OCTAVES = 3; // Show 3 octaves at a time
+  const VISIBLE_PITCH_RANGE = VISIBLE_OCTAVES * 12; // 36 semitones
+  const TOTAL_MIN_PITCH = 24; // C1
+  const TOTAL_MAX_PITCH = 96; // C7 (6-octave total range)
   const lyricTrackHeight = 40;
   const waveformHeight = 60;
   const totalDuration = song.duration;
   const totalWidth = totalDuration / 1000 * pixelsPerSecond;
+  const timelineHeight = VISIBLE_PITCH_RANGE * pitchHeight;
 
   // Get all notes from all lyric lines
   const allNotes = useMemo(() => {
     return song.lyrics.flatMap(line => line.notes);
   }, [song.lyrics]);
+
+  // ── Calculate center pitch from song's notes ──
+  // The center pitch is the median of all note pitches, snapped to the nearest
+  // C (octave boundary) so that C is always centered.
+  const [pitchScrollCenter, setPitchScrollCenter] = useState(() => {
+    if (allNotes.length === 0) return 60; // Default: C4
+    const pitches = allNotes.map(n => n.pitch).sort((a, b) => a - b);
+    const median = pitches[Math.floor(pitches.length / 2)];
+    // Snap to nearest C (octave boundary)
+    return Math.floor(median / 12) * 12;
+  });
+
+  // Reset center when song changes
+  const songIdRef = useRef(song.id);
+  useEffect(() => {
+    if (song.id !== songIdRef.current) {
+      songIdRef.current = song.id;
+      if (allNotes.length > 0) {
+        const pitches = allNotes.map(n => n.pitch).sort((a, b) => a - b);
+        const median = pitches[Math.floor(pitches.length / 2)];
+        setPitchScrollCenter(Math.floor(median / 12) * 12);
+      } else {
+        setPitchScrollCenter(60);
+      }
+    }
+  }, [song.id, allNotes]);
+
+  // Visible pitch range centered on pitchScrollCenter
+  const visibleMinPitch = pitchScrollCenter - VISIBLE_PITCH_RANGE / 2;
+  const visibleMaxPitch = pitchScrollCenter + VISIBLE_PITCH_RANGE / 2;
 
   // Calculate playhead position
   const playheadPosition = (currentTime / 1000) * pixelsPerSecond - scrollOffset;
@@ -82,6 +114,16 @@ export function Timeline({
       // Zoom with ctrl+scroll
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
       setZoom(prev => Math.max(0.25, Math.min(4, prev + delta)));
+    } else if (e.shiftKey) {
+      // Vertical pitch scroll with Shift+wheel
+      const scrollStep = 2; // semitones per scroll tick
+      setPitchScrollCenter(prev => {
+        const newCenter = prev - Math.sign(e.deltaY) * scrollStep;
+        // Clamp to keep at least 1 octave visible from total bounds
+        const minAllowed = TOTAL_MIN_PITCH + VISIBLE_PITCH_RANGE / 2;
+        const maxAllowed = TOTAL_MAX_PITCH - VISIBLE_PITCH_RANGE / 2;
+        return Math.max(minAllowed, Math.min(maxAllowed, newCenter));
+      });
     } else {
       // Horizontal scroll
       setScrollOffset(prev => {
@@ -108,17 +150,17 @@ export function Timeline({
     
     // Check if clicked on empty space (not on a note)
     const clickedTime = (clickX / pixelsPerSecond) * 1000;
-    const clickedPitch = Math.round(maxPitch - (clickY / pitchHeight));
+    const clickedPitch = Math.round(visibleMaxPitch - (clickY / pitchHeight));
 
     // If shift+click, add a new note
-    if (e.shiftKey && clickedPitch >= minPitch && clickedPitch <= maxPitch) {
+    if (e.shiftKey && clickedPitch >= visibleMinPitch && clickedPitch <= visibleMaxPitch) {
       onNoteAdd(clickedTime, clickedPitch);
       return;
     }
 
     // Deselect if clicking on empty space
     onNoteSelect(undefined);
-  }, [scrollOffset, pixelsPerSecond, pitchHeight, maxPitch, minPitch, dragState, onNoteSelect, onNoteAdd]);
+  }, [scrollOffset, pixelsPerSecond, pitchHeight, visibleMaxPitch, visibleMinPitch, dragState, onNoteSelect, onNoteAdd]);
 
   // Handle mouse move for playhead drag
   useEffect(() => {
@@ -377,8 +419,8 @@ export function Timeline({
           pixelsPerSecond={pixelsPerSecond}
           scrollOffset={scrollOffset}
           bpm={song.bpm}
-          minPitch={minPitch}
-          maxPitch={maxPitch}
+          minPitch={visibleMinPitch}
+          maxPitch={visibleMaxPitch}
           pitchHeight={pitchHeight}
         />
 
@@ -410,8 +452,8 @@ export function Timeline({
         >
           {/* Pitch labels */}
           <div className="absolute left-0 top-0 bottom-0 w-8 bg-slate-900/80 border-r border-slate-700 z-20">
-            {Array.from({ length: pitchRange + 1 }, (_, i) => {
-              const pitch = maxPitch - i;
+            {Array.from({ length: VISIBLE_PITCH_RANGE + 1 }, (_, i) => {
+              const pitch = visibleMaxPitch - i;
               if (pitch % 12 === 0) { // Show C notes
                 return (
                   <div
@@ -442,8 +484,8 @@ export function Timeline({
                 zoom={zoom}
                 pixelsPerSecond={pixelsPerSecond}
                 scrollOffset={scrollOffset}
-                minPitch={minPitch}
-                maxPitch={maxPitch}
+                minPitch={visibleMinPitch}
+                maxPitch={visibleMaxPitch}
                 pitchHeight={pitchHeight}
                 onClick={handleNoteClick}
                 onDragStart={handleNoteDragStart}
