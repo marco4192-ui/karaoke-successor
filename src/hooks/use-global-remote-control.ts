@@ -204,6 +204,7 @@ export function useGlobalRemoteControl({
     const pollRemoteCommands = async () => {
       try {
         const response = await fetch('/api/mobile?action=getcommands');
+        if (!response.ok) return;
         const data = await response.json();
 
         if (data.success && data.commands && data.commands.length > 0) {
