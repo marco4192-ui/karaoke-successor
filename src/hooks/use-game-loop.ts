@@ -383,6 +383,39 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     setIsPlaying(true);
   }, [audioRef, videoRef, setIsPlaying, nativeAudioResume]);
 
+  // ── Media playback watchdog helper ──
+  // Shared by both initial countdown and resume-from-pause paths.
+  // If no media source is actually playing after 10 seconds, the game
+  // either logs a warning (non-scoring modes) or aborts to prevent hang.
+  const scheduleMediaWatchdog = useCallback((isNonScoringMode: boolean) => {
+    if (mediaPlayWatchdogRef.current) {
+      clearTimeout(mediaPlayWatchdogRef.current);
+      mediaPlayWatchdogRef.current = null;
+    }
+
+    mediaPlayWatchdogRef.current = setTimeout(() => {
+      // Do NOT abort if the user paused during the watchdog window
+      if (wasPausedByStoreRef.current) return;
+
+      const audioPlaying = audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2;
+      const videoPlaying = videoRef.current && !videoRef.current.paused && videoRef.current.readyState >= 2;
+      const youTubeActive = isYouTube;
+      const nativePlaying = isNativeAudio && nativeAudioTimeRef.current > 0;
+      const youTubePlaying = youTubeActive && youtubeTimeRef.current > 0;
+
+      if (!audioPlaying && !videoPlaying && !youTubePlaying && !nativePlaying) {
+        if (isNonScoringMode) {
+          // eslint-disable-next-line no-console
+          console.warn('[GameLoop] Media playback watchdog: no media playing after 10s in non-scoring mode — continuing with wall-clock timing');
+        } else {
+          // eslint-disable-next-line no-console
+          console.error('[GameLoop] Media playback watchdog: no media actually playing after 10s — ending game to prevent hang');
+          endGameAndCleanupRef.current();
+        }
+      }
+    }, 10000);
+  }, [audioRef, videoRef, isYouTube, isNativeAudio]);
+
   // ── Initialize and start game - countdown + media playback ──
   useEffect(() => {
     if (!effectiveSong || !mediaLoaded) return;
@@ -524,12 +557,6 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         // Use a ref to track countdown value for proper timing
         let currentCount = 3;
 
-        // Clear any previous watchdog
-        if (mediaPlayWatchdogRef.current) {
-          clearTimeout(mediaPlayWatchdogRef.current);
-          mediaPlayWatchdogRef.current = null;
-        }
-
         countdownIntervalRef.current = setInterval(() => {
           if (!isMountedRef.current) {
             if (countdownIntervalRef.current) {
@@ -552,46 +579,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
             startTimeRef.current = Date.now();
             playMedia();
 
-            // Watchdog: if audio/video still isn't actually playing after 10 seconds,
-            // end the game to prevent infinite hang (wall-clock fallback loop).
-            // For non-scoring modes (rate-my-song), we only log a warning — the game
-            // still progresses via wall-clock timing and the audio element's onEnded event.
-            mediaPlayWatchdogRef.current = setTimeout(() => {
-              // CRITICAL FIX: Do NOT abort if the game has been paused by the user
-              // (Escape key → pause dialog). The watchdog runs 10s after countdown
-              // ends; if the user pauses within that window, audio/video will be
-              // paused (paused === true) which looks like "not playing" to the
-              // watchdog. Without this guard, the game would be aborted.
-              if (wasPausedByStoreRef.current) {
-                return;
-              }
-
-              const audioPlaying = audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2;
-              const videoPlaying = videoRef.current && !videoRef.current.paused && videoRef.current.readyState >= 2;
-              const youTubeActive = isYouTube;
-              // Fix (Code Review #5): Use nativeAudioTimeRef instead of stale closure value.
-              // The closure captures nativeAudioTime before native audio starts (value: 0),
-              // so the watchdog always evaluates nativePlaying = false incorrectly.
-              const nativePlaying = isNativeAudio && nativeAudioTimeRef.current > 0;
-              // YouTube active: check if youtubeTimeRef has been updated (non-zero means
-              // the YouTube player is reporting playback progress). This is more reliable
-              // than the static isYouTube flag which stays true even if YT fails to load.
-              const youTubePlaying = youTubeActive && youtubeTimeRef.current > 0;
-
-              if (!audioPlaying && !videoPlaying && !youTubePlaying && !nativePlaying) {
-                if (isNonScoringMode) {
-                  // Non-scoring modes: just warn, don't abort. Wall-clock fallback
-                  // and onEnded will handle song completion naturally.
-                  // eslint-disable-next-line no-console
-                  console.warn('[GameLoop] Media playback watchdog: no media playing after 10s in non-scoring mode — continuing with wall-clock timing');
-                } else {
-                  // eslint-disable-next-line no-console
-                  console.error('[GameLoop] Media playback watchdog: no media actually playing after 10s — ending game to prevent hang');
-                  // Use ref to call the latest version (avoids stale closure)
-                  endGameAndCleanupRef.current();
-                }
-              }
-            }, 10000);
+            scheduleMediaWatchdog(isNonScoringMode);
           } else {
             setCountdown(currentCount);
           }
@@ -715,11 +703,6 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         setCountdown(remaining);
         let currentCount = remaining;
 
-        if (mediaPlayWatchdogRef.current) {
-          clearTimeout(mediaPlayWatchdogRef.current);
-          mediaPlayWatchdogRef.current = null;
-        }
-
         countdownIntervalRef.current = setInterval(() => {
           if (!isMountedRef.current) {
             if (countdownIntervalRef.current) {
@@ -742,27 +725,8 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
             startTimeRef.current = Date.now();
             playMediaRef.current();
 
-            // Watchdog: same 10s guard as the initial countdown
             const nonScoring = gameMode === 'rate-my-song';
-            mediaPlayWatchdogRef.current = setTimeout(() => {
-              if (wasPausedByStoreRef.current) return;
-              const audioPlaying = audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2;
-              const videoPlaying = videoRef.current && !videoRef.current.paused && videoRef.current.readyState >= 2;
-              const youTubeActive = isYouTube;
-              const nativePlaying = isNativeAudio && nativeAudioTimeRef.current > 0;
-              const youTubePlaying = youTubeActive && youtubeTimeRef.current > 0;
-
-              if (!audioPlaying && !videoPlaying && !youTubePlaying && !nativePlaying) {
-                if (nonScoring) {
-                  // eslint-disable-next-line no-console
-                  console.warn('[GameLoop] Media playback watchdog: no media playing after 10s in non-scoring mode — continuing with wall-clock timing');
-                } else {
-                  // eslint-disable-next-line no-console
-                  console.error('[GameLoop] Media playback watchdog: no media actually playing after 10s — ending game to prevent hang');
-                  endGameAndCleanupRef.current();
-                }
-              }
-            }, 10000);
+            scheduleMediaWatchdog(nonScoring);
           } else {
             setCountdown(currentCount);
           }
