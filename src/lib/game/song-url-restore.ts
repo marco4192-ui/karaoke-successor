@@ -21,6 +21,7 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
   if (restored.audioUrl?.startsWith('blob:')) restored.audioUrl = undefined;
   if (restored.videoBackground?.startsWith('blob:')) restored.videoBackground = undefined;
   if (restored.coverImage?.startsWith('blob:')) restored.coverImage = undefined;
+  if (restored.backgroundImage?.startsWith('blob:')) restored.backgroundImage = undefined;
 
   // Resolve the effective base folder (shared utility)
   const resolvedFolder = resolveSongsBaseFolder(song.baseFolder);
@@ -93,6 +94,20 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
       );
     }
 
+    // Restore background image URL from songs folder — only if missing
+    if (restored.relativeBackgroundPath && !restored.backgroundImage) {
+      urlPromises.push(
+        getSongMediaUrl(restored.relativeBackgroundPath, resolvedFolder ?? undefined).then(url => {
+          if (url) {
+            restored.backgroundImage = url;
+          } else {
+            // eslint-disable-next-line no-console
+            console.warn('[SongLibrary] Failed to restore background URL for', song.title, '- file may not exist:', song.relativeBackgroundPath);
+          }
+        }),
+      );
+    }
+
     await Promise.all(urlPromises);
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -118,8 +133,9 @@ export async function ensureSongUrls(song: Song): Promise<Song> {
   const needsAudio = song.relativeAudioPath && (!song.audioUrl || isStaleBlob(song.audioUrl));
   const needsVideo = song.relativeVideoPath && (!song.videoBackground || isStaleBlob(song.videoBackground));
   const needsCover = song.relativeCoverPath && (!song.coverImage || isStaleBlob(song.coverImage));
+  const needsBackground = song.relativeBackgroundPath && (!song.backgroundImage || isStaleBlob(song.backgroundImage));
 
-  if (!needsAudio && !needsVideo && !needsCover) {
+  if (!needsAudio && !needsVideo && !needsCover && !needsBackground) {
     return song;
   }
 

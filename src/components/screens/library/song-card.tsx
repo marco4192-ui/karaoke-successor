@@ -6,6 +6,11 @@ import { MusicIcon, PlayIcon } from '@/components/icons';
 import { extractYouTubeId } from '@/components/game/youtube-player';
 import { WaveformBar } from './waveform-bar';
 
+/** True when the song has any kind of video source (local, URL, or YouTube) */
+function hasVideo(song: SongCardProps['song']): boolean {
+  return !!(song.videoBackground || song.videoUrl || song.youtubeUrl || song.relativeVideoPath);
+}
+
 export function SongCard({ 
   song, 
   previewSong,
@@ -16,6 +21,17 @@ export function SongCard({
   previewVideoRefs,
   isViralHit,
 }: SongCardProps) {
+  const isPreviewing = previewSong?.id === song.id;
+  const songHasVideo = hasVideo(song);
+
+  // Use previewSong (URL-restored) when available, fall back to original song prop.
+  // This is critical in Tauri where URLs are resolved lazily — the previewSong
+  // has the resolved backgroundImage/coverImage URLs from ensureSongUrls.
+  const effectiveSong = isPreviewing && previewSong ? previewSong : song;
+
+  // During preview without video, prefer background image over cover
+  const showBackgroundDuringPreview = isPreviewing && !songHasVideo && !!effectiveSong.backgroundImage;
+
   return (
     <div 
       className="bg-white/5 rounded-xl overflow-hidden border border-white/10 hover:border-cyan-500/50 transition-all cursor-pointer group"
@@ -25,13 +41,25 @@ export function SongCard({
     >
       {/* Cover Image / Video Preview */}
       <div className="relative aspect-square bg-gradient-to-br from-purple-600/50 to-blue-600/50 overflow-hidden">
-        {/* Static Cover Image */}
-        {song.coverImage && (
+        {/* Background Image — shown during preview when no video is available.
+            Renders with effectiveSong which has the resolved URL from ensureSongUrls. */}
+        {effectiveSong.backgroundImage && (
           <img 
-            src={song.coverImage} 
-            alt={song.title} 
+            src={effectiveSong.backgroundImage} 
+            alt="" 
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
-              previewSong?.id === song.id && (song.videoBackground || song.videoUrl || song.youtubeUrl || song.relativeVideoPath) ? 'opacity-0' : 'opacity-100'
+              showBackgroundDuringPreview ? 'opacity-100' : 'opacity-0'
+            }`} 
+          />
+        )}
+        
+        {/* Static Cover Image — stays visible when no video is playing */}
+        {effectiveSong.coverImage && (
+          <img 
+            src={effectiveSong.coverImage} 
+            alt={effectiveSong.title} 
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+              isPreviewing && songHasVideo ? 'opacity-0' : 'opacity-100'
             }`} 
           />
         )}
@@ -46,9 +74,9 @@ export function SongCard({
                 previewVideoRefs.current.delete(song.id);
               }
             }}
-            src={song.videoUrl || song.videoBackground || undefined}
+            src={effectiveSong.videoUrl || effectiveSong.videoBackground || undefined}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
-              previewSong?.id === song.id ? 'opacity-100' : 'opacity-0'
+              isPreviewing ? 'opacity-100' : 'opacity-0'
             }`}
             // Mute only if there's a separate audio file; unmute for videos with embedded audio
             muted={!song.hasEmbeddedAudio && !!song.audioUrl}
@@ -58,10 +86,10 @@ export function SongCard({
               const video = e.currentTarget;
               if (previewSong?.id === song.id) {
                 // Respect #PREVIEWSTART for video start time
-                const previewStartSec = song.previewStart
-                  ? song.previewStart
-                  : song.preview?.startTime
-                    ? song.preview.startTime / 1000
+                const previewStartSec = effectiveSong.previewStart
+                  ? effectiveSong.previewStart
+                  : effectiveSong.preview?.startTime
+                    ? effectiveSong.preview.startTime / 1000
                     : 0;
                 if (previewStartSec > 0 && video.duration >= previewStartSec) {
                   video.currentTime = previewStartSec;
@@ -73,13 +101,13 @@ export function SongCard({
         )}
         
         {/* Video Preview - YouTube */}
-        {song.youtubeUrl && previewSong?.id === song.id && (() => {
+        {song.youtubeUrl && isPreviewing && (() => {
           const ytId = extractYouTubeId(song.youtubeUrl);
           if (!ytId) return null;
           return (
             <div className="absolute inset-0 w-full h-full">
               <iframe
-                src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&modestbranding=1&enablejsapi=1&start=${Math.floor(song.previewStart || (song.preview?.startTime || 0) / 1000)}`}
+                src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&modestbranding=1&enablejsapi=1&start=${Math.floor(effectiveSong.previewStart || (effectiveSong.preview?.startTime || 0) / 1000)}`}
                 className="w-full h-full object-cover pointer-events-none"
                 style={{ transform: 'scale(1.5)', transformOrigin: 'center' }}
                 allow="autoplay; encrypted-media"
@@ -89,17 +117,17 @@ export function SongCard({
           );
         })()}
         
-        {/* Fallback Music Icon */}
-        {!song.coverImage && !song.videoBackground && !song.videoUrl && !song.youtubeUrl && !song.relativeVideoPath && (
+        {/* Fallback Music Icon — shown when no cover, no background, and no video */}
+        {!effectiveSong.coverImage && !effectiveSong.backgroundImage && !songHasVideo && (
           <div className="absolute inset-0 flex items-center justify-center">
             <MusicIcon className="w-16 h-16 text-white/30" />
           </div>
         )}
         
-        {/* Play indicator on hover - only show if no video */}
+        {/* Play indicator on hover — hidden when video is playing */}
         <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300 ${
-          previewSong?.id === song.id && (song.videoBackground || song.videoUrl || song.youtubeUrl || song.relativeVideoPath) ? 'opacity-0' : 
-          previewSong?.id === song.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+          isPreviewing && songHasVideo ? 'opacity-0' : 
+          isPreviewing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
         }`}>
           <div className="w-14 h-14 rounded-full bg-cyan-500/80 flex items-center justify-center">
             <PlayIcon className="w-7 h-7 text-white ml-1" />
@@ -113,7 +141,7 @@ export function SongCard({
               <span className="text-sm">&#128293;</span>Viral
             </div>
           )}
-          {(song.hasEmbeddedAudio || song.videoBackground || song.videoUrl || song.youtubeUrl || song.relativeVideoPath) && (
+          {(song.hasEmbeddedAudio || songHasVideo) && (
             <Badge className="bg-purple-500/80 text-xs">Video</Badge>
           )}
         </div>
@@ -121,7 +149,7 @@ export function SongCard({
         {/* D.1: Audio Waveform — real-time frequency visualization during preview.
             previewAudio is the authoritative source; song.audioUrl may be stale
             if URLs were resolved asynchronously by ensureSongUrls. */}
-        <WaveformBar audio={previewAudio || null} isActive={previewSong?.id === song.id && !!previewAudio} />
+        <WaveformBar audio={previewAudio || null} isActive={isPreviewing && !!previewAudio} />
 
         {/* Duration */}
         <div className="absolute bottom-2 right-2">
