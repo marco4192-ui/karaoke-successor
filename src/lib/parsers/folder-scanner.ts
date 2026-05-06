@@ -366,6 +366,12 @@ export async function scanFilesFromFileList(files: FileList | File[]): Promise<S
         songData.coverFile = file;
         songData.coverUrl = createTrackedBlobUrl(file);
       }
+    } else if (BACKGROUND_EXTENSIONS.includes(ext)) {
+      const isPriorityBg = BACKGROUND_PATTERNS.some(p => p.test(file.name));
+      if (!songData.backgroundFile || isPriorityBg) {
+        songData.backgroundFile = file;
+        songData.backgroundUrl = createTrackedBlobUrl(file);
+      }
     }
   }
 
