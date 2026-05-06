@@ -386,7 +386,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   };
 
   // Keep ref up-to-date for use in effect
-  useEffect(() => { startGameLoopRef.current = startGameLoop; });
+  useEffect(() => { startGameLoopRef.current = startGameLoop; }, [startGameLoop]);
 
   return {
     showElimination,
