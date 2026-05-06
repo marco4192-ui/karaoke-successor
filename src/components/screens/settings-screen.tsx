@@ -312,4 +312,4 @@ function SettingsScreen() {
   );
 }
 
-export { SettingsScreen, AIAssetsGeneratorTab, EditorSettingsTab, MobileDeviceMicrophoneSection, CompanionListSection };
+export { SettingsScreen };
