@@ -163,10 +163,10 @@ function drawStar(
 
 export function useParticleEmitter() {
   // Use ref-based particle array — physics runs outside React render cycle.
-  // This prevents 60 React re-renders/sec from the physics setInterval.
+  // The ParticleSystem canvas reads directly from particlesRef.current via its
+  // own rAF loop, so NO React re-render is needed to propagate particle updates.
   const particlesRef = useRef<Particle[]>([]);
   const particleIdRef = useRef(0);
-  const [, forceRender] = useState(0); // trigger re-render only when needed
   // Track pending setTimeout IDs so we can clear them on unmount.
   // Without this, emitComboFirework / emitConfetti timers keep firing
   // after the component is gone, potentially calling stale emitParticles.
@@ -276,10 +276,9 @@ export function useParticleEmitter() {
   }, [emitParticles]);
 
   // Physics update loop: runs via rAF, mutates ref array in-place.
-  // Re-renders are triggered at ~30fps (every other frame) to keep visuals
-  // smooth without excessive React overhead.
+  // No React re-render is triggered — the ParticleSystem canvas reads from
+  // particlesRef.current directly in its own rAF draw loop.
   useEffect(() => {
-    let frameCount = 0;
     let animId: number | undefined;
 
     const tick = () => {
@@ -300,12 +299,6 @@ export function useParticleEmitter() {
         }
       }
       arr.length = writeIdx; // trim dead particles
-
-      // Trigger React re-render at ~30fps (every 2nd frame)
-      frameCount++;
-      if (frameCount % 2 === 0) {
-        forceRender(n => n + 1);
-      }
 
       animId = requestAnimationFrame(tick);
     };
@@ -407,8 +400,17 @@ export function AnimatedBackground({
       img.onload = () => { bgImageRef.current = img; };
     }
 
+    let frameCount = 0;
+
     const animate = () => {
-      timeRef.current += 0.016;
+      // Throttle to ~30fps (every 2nd frame) — background effects don't need 60fps
+      frameCount++;
+      if (frameCount % 2 !== 0) {
+        animationRef.current = requestAnimationFrame(animate);
+        return;
+      }
+
+      timeRef.current += 0.032; // ~30fps → double time step to maintain animation speed
       const time = timeRef.current;
       const energy = songEnergyRef.current;
       const playing = isPlayingRef.current;

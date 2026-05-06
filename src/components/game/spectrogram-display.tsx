@@ -38,6 +38,7 @@ export function SpectrogramDisplay({
   const sourceRef = useRef<MediaElementAudioSourceNode | MediaStreamAudioSourceNode | null>(null);
   const animationRef = useRef<number | null>(null);
   const drawRef = useRef<() => void>(() => {});
+  const frameSkipRef = useRef(0);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Initialize audio analysis
@@ -117,11 +118,21 @@ export function SpectrogramDisplay({
     };
   }, [isActive, audioElement, audioStream]);
 
-  // Draw visualization — uses drawRef for self-scheduling to avoid forward reference
+  // Draw visualization — uses drawRef for self-scheduling to avoid forward reference.
+  // Throttled to ~15fps (every 4th rAF frame) to reduce CPU usage while remaining
+  // visually smooth for bar-style audio visualization. 60fps is unnecessary for
+  // frequency bars and wastes CPU on low-end hardware.
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     const analyser = analyserRef.current;
     if (!canvas || !analyser || !isActive) return;
+
+    // Frame-skip throttling: only draw every 4th rAF callback (~15fps at 60Hz)
+    frameSkipRef.current++;
+    if (frameSkipRef.current % 4 !== 0) {
+      animationRef.current = requestAnimationFrame(() => drawRef.current());
+      return;
+    }
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -205,7 +216,7 @@ export function SpectrogramDisplay({
 
     ctx.shadowBlur = 0;
 
-    // Self-schedule next frame via ref to avoid forward reference
+    // Self-schedule next frame via ref — throttled to ~15fps
     animationRef.current = requestAnimationFrame(() => drawRef.current());
   }, [isActive, mode, numBars, size]);
 
