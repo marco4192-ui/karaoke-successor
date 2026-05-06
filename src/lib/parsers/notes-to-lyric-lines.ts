@@ -68,15 +68,12 @@ export function convertNotesToLyricLines(
       currentLinePlayer = 'both';
     }
 
-    // Check for line break: explicit "- <beat>" marker or BPM-dependent beat gap fallback
-    // 8 beats at given BPM: 8 × (60000 / bpm) = 480000 / bpm ms
-    const beatGapThreshold = Math.round(480000 / bpm);
+    // Check for line break: explicit "- <beat>" marker or 8+ beat gap fallback
+    // Matches ultrastar-parser.ts and folder-scanner.ts behavior
     const nextNoteStart = i < sortedNotes.length - 1 ? sortedNotes[i + 1].startBeat : -1;
-    const nextNoteStartMs = i < sortedNotes.length - 1 ? gap + (sortedNotes[i + 1].startBeat * beatDuration) : -1;
-    const noteEndMs = gap + (noteEndBeat * beatDuration);
     const isLineBreak = lineBreakBeats.has(noteEndBeat) ||
       (nextNoteStart >= 0 && lineBreakBeats.has(nextNoteStart)) ||
-      (i < sortedNotes.length - 1 && nextNoteStartMs - noteEndMs >= beatGapThreshold);
+      (i < sortedNotes.length - 1 && nextNoteStart - noteEndBeat >= 8);
 
     if ((isLineBreak || i === sortedNotes.length - 1) && currentLineNotes.length > 0) {
       flushLine();
