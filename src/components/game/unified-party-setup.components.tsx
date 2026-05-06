@@ -254,7 +254,7 @@ function MicAssignmentPanel({
     try {
       const parsed = getJsonOptional<{ assignedMics?: Array<{ id: string; customName?: string; deviceName?: string }> }>(StorageKeys.MULTI_MIC_CONFIG);
       if (parsed) {
-        setSavedMics((parsed.assignedMics || []).map((m) => ({
+        setSavedMics((parsed.assignedMics || []).map((m: { id: string; customName?: string; deviceName?: string }) => ({
           id: m.id,
           customName: m.customName ?? '',
           deviceName: m.deviceName ?? '',
@@ -359,7 +359,7 @@ export function SingleMicSelector({
   const [savedMics, setSavedMics] = useState<Array<{ id: string; customName: string; deviceName: string }>>(() => {
     const parsed = getJsonOptional<{ assignedMics?: Array<{ id: string; customName?: string; deviceName?: string }> }>(StorageKeys.MULTI_MIC_CONFIG);
     if (parsed) {
-      return (parsed.assignedMics || []).map((m) => ({
+      return (parsed.assignedMics || []).map((m: { id: string; customName?: string; deviceName?: string }) => ({
         id: m.id,
         customName: m.customName || '',
         deviceName: m.deviceName || '',
@@ -372,7 +372,7 @@ export function SingleMicSelector({
   React.useEffect(() => {
     const parsed = getJsonOptional<{ assignedMics?: Array<{ id: string; customName?: string; deviceName?: string }> }>(StorageKeys.MULTI_MIC_CONFIG);
     if (parsed) {
-      const mics = (parsed.assignedMics || []).map((m) => ({
+      const mics = (parsed.assignedMics || []).map((m: { id: string; customName?: string; deviceName?: string }) => ({
         id: m.id,
         customName: m.customName || '',
         deviceName: m.deviceName || '',

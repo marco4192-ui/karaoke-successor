@@ -243,8 +243,18 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
     particles, 
     emitPerfectHit, 
     emitGoldenNote, 
-    emitComboFirework 
+    emitComboFirework,
+    emitConfetti
   } = useParticleEmitter();
+
+  // Emit confetti burst when the song finishes (celebration effect)
+  const prevStatusRef = useRef(gameState.status);
+  useEffect(() => {
+    if (prevStatusRef.current !== 'ended' && gameState.status === 'ended') {
+      emitConfetti(window.innerWidth / 2, window.innerHeight / 2);
+    }
+    prevStatusRef.current = gameState.status;
+  }, [gameState.status, emitConfetti]);
   
   // Song energy for visual effects intensity
   const songEnergy = useSongEnergy(audioRef);
