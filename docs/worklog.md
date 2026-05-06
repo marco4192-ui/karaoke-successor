@@ -1,5 +1,39 @@
 # Code Review Worklog
 
+## Review #13 — 2026-05-07
+
+**Baseline:** TSC 0 Errors | ESLint 7 Errors (nur `no-require-imports` in Build-Scripts/Bundled-Files)
+
+### Summary
+Fresh review after Review #12. Systematische Analyse aller Quell-Dateien. Schwerpunkte: Duplicate-Code-Konsolidierung, Dead-Code-Identifikation, Bugfixes (fehlende response.ok checks, use-before-declaration).
+
+### Fixes Applied
+
+#### DC-01: Doppelte Funktion `midiToFrequency` vs `midiPitchToFrequency` (MEDIUM — Duplicate)
+**Datei:** `src/lib/utils.ts:25-27`
+**Problem:** `midiPitchToFrequency` in `utils.ts` und `midiToFrequency` in `types/game.ts` sind exakt identisch (`440 * Math.pow(2, (x - 69) / 12)`). Zwei verschiedene Namen für dieselbe Funktion erzeugen Verwirrung und Wartungsaufwand.
+**Fix:** `midiPitchToFrequency` durch einen Re-Export-Alias ersetzt: `export { midiToFrequency as midiPitchToFrequency } from '@/types/game'`. Alle 4 Konsumenten arbeiten weiter ohne Änderung.
+
+### Work in Progress — Dead Code (aufgelistet, nicht gelöscht)
+
+| ID | Datei | Element | Vermutliche Funktion | Status |
+|---|---|---|---|---|
+| DC-02 | `src/hooks/use-mobile-connection.ts:4` | Unbenutzte Imports `getItem`, `getJson`, `setJson` | Früher für Storage-Operationen, wurden durch Refactoring obsolet | ⏳ Pending |
+| DC-03 | `src/hooks/use-game-settings.ts:4` | Unbenutzter Import `getItem` | Wurde früher für Storage-Lookup verwendet | ⏳ Pending |
+| DC-04 | `src/lib/game/library-cache.ts` | Unbenutzte Exports `loadCache`, `LibraryCache`, `CachedSong` | Früher für Library-Cache-System, bevor direkte IndexedDB-Speicherung | ⏳ Pending |
+| DC-05 | `src/lib/game/pitch-graph.ts:181-214` | Tote Methode `drawPitchLine()` | Wurde durch segment-basiertes Rendering ersetzt, aber nicht gelöscht | ⏳ Pending |
+| DC-06 | `src/hooks/use-game-loop.ts` | Dead Code Branch (if/else beide gleich) | Kopierfehler, beide Zweige rufen `setMediaLoaded(true)` | ⏳ Pending |
+
+### Work in Progress — Bugs
+
+| ID | Datei | Problem | Status |
+|---|---|---|---|
+| BUG-01 | `src/hooks/use-global-remote-control.ts:206`, `src/hooks/use-remote-control.ts:78` | `response.json()` ohne `response.ok` check | ⏳ Pending |
+| BUG-02 | `src/hooks/use-mobile-connection.ts:173` | `clientIdRef` wird in `disconnect` verwendet, aber erst in Zeile 238 deklariert | ⏳ Pending |
+| BUG-03 | `src/hooks/use-note-scoring.ts:428-430` | P3/P4 Combo-Ref Fallback auf P1 (bekannt, dokumentiert in #12) | ⏳ Pending |
+
+---
+
 ## Review #12 — 2026-05-06
 
 **Baseline:** TSC 0 Errors | ESLint 7 Errors (nur `no-require-imports` in Build-Scripts/Bundled-Files) / 98 Warnings
