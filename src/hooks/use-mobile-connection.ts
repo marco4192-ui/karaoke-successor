@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { StorageKeys, getItem, setItem, getJson, setJson, removeItem, getString } from '@/lib/storage';
+import { StorageKeys, setItem, removeItem, getString } from '@/lib/storage';
 import type { MobileProfile, GameState } from '@/components/screens/mobile/mobile-types';
 
 interface UseMobileConnectionCallbacks {
