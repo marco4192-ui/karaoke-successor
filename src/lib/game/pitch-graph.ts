@@ -178,41 +178,6 @@ export class PitchGraphRenderer {
     }
   }
 
-  private drawPitchLine(
-    ctx: CanvasRenderingContext2D,
-    points: PitchGraphPoint[],
-    startTime: number,
-    endTime: number,
-    minPitch: number,
-    maxPitch: number,
-    color: string,
-    lineWidth: number
-  ): void {
-    if (points.length < 2) return;
-    
-    ctx.beginPath();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = lineWidth;
-    
-    let started = false;
-    for (const point of points) {
-      if (point.pitch === null) continue;
-      if (point.time < startTime || point.time > endTime) continue;
-      
-      const x = this.timeToX(point.time, startTime, endTime, this.config.width);
-      const y = this.pitchToY(point.pitch, minPitch, maxPitch, this.config.height);
-      
-      if (!started) {
-        ctx.moveTo(x, y);
-        started = true;
-      } else {
-        ctx.lineTo(x, y);
-      }
-    }
-    
-    ctx.stroke();
-  }
-
   private timeToX(time: number, startTime: number, endTime: number, width: number): number {
     if (endTime === startTime) return 0;
     return ((time - startTime) / (endTime - startTime)) * width;
