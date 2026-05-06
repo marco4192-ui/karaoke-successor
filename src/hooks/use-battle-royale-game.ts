@@ -297,10 +297,15 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         const activeNote = activeNotes.length > 0 ? activeNotes[0] : null;
 
         if (activeNote) {
+          // Pre-filter active players once per tick (not per iteration)
+          const micPlayers = activePlayersRef.current.filter(p => p.playerType === 'microphone' && !p.eliminated);
+          const companionPlayers = activePlayersRef.current.filter(p => p.playerType === 'companion' && !p.eliminated);
+
+          // Build O(1) lookup map for combo resets — avoids .find() per miss
+          const comboMap = new Map(batchedGame.players.map(p => [p.id, p.currentCombo]));
+
           // Score all active MICROPHONE players (local mic, shared pitch)
           // Skip scoring if vocal detection classifies input as humming/noise
-          const micPlayers = activePlayersRef.current.filter(p => p.playerType === 'microphone' && !p.eliminated);
-
           for (const player of micPlayers) {
             if (isSinging === false) continue; // Humming/noise detected
             // Skip scoring entirely when no pitch is detected - passing MIDI 0
@@ -319,13 +324,13 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
               scoreChanged = true;
             } else {
               // Miss: reset combo (but don't inflate notesMissed per tick)
-              const p = batchedGame.players.find(pl => pl.id === player.id);
-              if (p && p.currentCombo > 0) {
+              const currentCombo = comboMap.get(player.id) || 0;
+              if (currentCombo > 0) {
                 batchedGame = updatePlayerScore(
                   batchedGame,
                   player.id,
                   0, 0, 0, 0,
-                  -(p.currentCombo) // Reset combo to 0
+                  -currentCombo // Reset combo to 0
                 );
                 scoreChanged = true;
               }
@@ -333,8 +338,6 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
           }
 
           // Score all active COMPANION players (pitch from their phones)
-          const companionPlayers = activePlayersRef.current.filter(p => p.playerType === 'companion' && !p.eliminated);
-
           for (const player of companionPlayers) {
             // Look up companion's submitted pitch from cache
             const cachedPitch = player.connectionCode
@@ -355,13 +358,13 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
                 scoreChanged = true;
               } else {
                 // Miss: reset combo (but don't inflate notesMissed per tick)
-                const p = batchedGame.players.find(pl => pl.id === player.id);
-                if (p && p.currentCombo > 0) {
+                const currentCombo = comboMap.get(player.id) || 0;
+                if (currentCombo > 0) {
                   batchedGame = updatePlayerScore(
                     batchedGame,
                     player.id,
                     0, 0, 0, 0,
-                    -(p.currentCombo) // Reset combo to 0
+                    -currentCombo // Reset combo to 0
                   );
                   scoreChanged = true;
                 }
