@@ -3,7 +3,7 @@
 // Allows both function call t('key') and object access t.settings.title
 
 import { useState, useEffect, useCallback } from 'react';
-import { StorageKeys, getItem, setItem, getString } from '@/lib/storage';
+import { StorageKeys, setItem, getString } from '@/lib/storage';
 
 export type Language = 'en' | 'de' | 'es' | 'fr' | 'it' | 'pt' | 'ja' | 'ko' | 'zh' | 'ru' | 'nl' | 'pl' | 'sv' | 'no' | 'da' | 'fi';
 

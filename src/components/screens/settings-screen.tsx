@@ -11,7 +11,7 @@ import {
   saveWebcamConfig,
 } from '@/components/game/webcam-background';
 import { THEMES, applyTheme, getStoredTheme, Theme } from '@/lib/game/themes';
-import { StorageKeys, getItem, setItem, setBool, getNumber, getBool, getString, setJson, clearAll } from '@/lib/storage';
+import { StorageKeys, getItem, setItem, setBool, getNumber, getBool, getString } from '@/lib/storage';
 
 // Tab components
 import { AIAssetsGeneratorTab } from '@/components/settings/ai-assets-generator-tab';

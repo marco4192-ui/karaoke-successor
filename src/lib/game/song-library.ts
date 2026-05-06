@@ -1,7 +1,7 @@
 // Song Library Store - Manages songs with persistent storage
 import type { Song } from '@/types/game';
 import { isTauri, getSongMediaUrl, clearBlobUrlCache} from '@/lib/tauri-file-storage';
-import { StorageKeys, getItem, setItem, removeItem, setJson, getJson } from '@/lib/storage';
+import { StorageKeys, getItem, removeItem, setJson } from '@/lib/storage';
 import { getSongMediaUrls, revokeSongMediaUrls } from '@/lib/db/media-db';
 import { saveCustomSongsToDB, loadCustomSongsFromDB, migrateFromLocalStorage, clearCustomSongsFromDB } from '@/lib/db/custom-songs-db';
 // IDs use crypto.randomUUID() for collision-free 128-bit random IDs

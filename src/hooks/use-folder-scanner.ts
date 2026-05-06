@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { StorageKeys, getItem, getString, setItem, removeItem, clearAll } from '@/lib/storage';
+import { StorageKeys, getString, setItem, removeItem, clearAll } from '@/lib/storage';
 import { getAllSongs, clearCustomSongs, replaceCustomSongs, acquireScanLock, invalidateSongCache, clearSongCache } from '@/lib/game/song-library';
 import { clearCustomSongsFromDB } from '@/lib/db/custom-songs-db';
 import { Song } from '@/types/game';
