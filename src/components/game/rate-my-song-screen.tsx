@@ -70,7 +70,7 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
 
   // Collect available genres
   const genres = useMemo(() => {
-    const g = new Set(allSongs.map(s => s.genre).filter(Boolean) as string[]);
+    const g = new Set(allSongs.map(s => s.genre).filter((v): v is string => Boolean(v)));
     return ['all', ...Array.from(g).sort()];
   }, [allSongs]);
 

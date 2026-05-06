@@ -44,7 +44,7 @@ export interface ExtendedMicConfig extends MicrophoneConfig {
   clarityThreshold: number;     // 0.3 - 0.9 (pitch quality threshold)
 }
 
-export interface MicrophoneStatus {
+interface MicrophoneStatus {
   isConnected: boolean;
   isMuted: boolean;
   volume: number; // 0-1

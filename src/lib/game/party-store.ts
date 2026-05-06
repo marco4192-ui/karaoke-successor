@@ -186,7 +186,7 @@ export const usePartyStore = create<PartyStore>((set) => ({
   setRateMySongPlayerIds: (rateMySongPlayerIds) => set({ rateMySongPlayerIds }),
 
   // PTM song selection mode
-  ptmSongSelection: null as string | null,
+  ptmSongSelection: null,
   setPtmSongSelection: (ptmSongSelection) => set({ ptmSongSelection }),
 
   // Pre-selected library song
