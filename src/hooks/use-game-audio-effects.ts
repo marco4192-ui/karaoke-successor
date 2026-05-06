@@ -167,6 +167,15 @@ export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
     audioEffectsRef.current.setDelay(0.3, 0.4, echoAmount);
   }, [echoAmount]);
 
+  /** Apply a named audio effect preset and sync UI sliders */
+  const applyEffectPreset = useCallback((preset: AudioEffectPreset) => {
+    if (!audioEffectsRef.current) return;
+    audioEffectsRef.current.applyPreset(preset);
+    const presetSettings = AUDIO_PRESETS[preset];
+    if (presetSettings.reverb) setReverbAmount(presetSettings.reverb.amount ?? 0);
+    if (presetSettings.delay) setEchoAmount((presetSettings.delay.mix ?? 0) * 100);
+  }, [audioEffectsRef]);
+
   return {
     audioEffects,
     setAudioEffects,
@@ -178,13 +187,4 @@ export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
     setEchoAmount,
     applyEffectPreset,
   };
-
-  /** Apply a named audio effect preset and sync UI sliders */
-  function applyEffectPreset(preset: AudioEffectPreset) {
-    if (!audioEffectsRef.current) return;
-    audioEffectsRef.current.applyPreset(preset);
-    const presetSettings = AUDIO_PRESETS[preset];
-    if (presetSettings.reverb) setReverbAmount(presetSettings.reverb.amount ?? 0);
-    if (presetSettings.delay) setEchoAmount((presetSettings.delay.mix ?? 0) * 100);
-  }
 }
