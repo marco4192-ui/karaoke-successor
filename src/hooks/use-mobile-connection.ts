@@ -56,6 +56,12 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
   const gameStateRef = useRef(gameState);
   gameStateRef.current = gameState;
 
+  // clientIdRef tracks the latest clientId for use in callbacks that run
+  // after the component may have re-rendered (e.g. disconnect, wake-up).
+  // Declared early because it's used by disconnect() (line ~172).
+  const clientIdRef = useRef(clientId);
+  clientIdRef.current = clientId;
+
   // Internal reconnect function — bypasses the isConnecting guard.
   // Used by visibilitychange handler to force reconnect after wake from sleep.
   const reconnectInternal = useCallback(async (_isWakeUp = false) => {
@@ -235,8 +241,6 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
 
   // Shared wake-up handler: sends heartbeat and reconnects on failure.
   // Used by visibilitychange, pageshow (iOS), and focus events.
-  const clientIdRef = useRef(clientId);
-  clientIdRef.current = clientId;
 
   // Debounce wake-up handler: visibilitychange, pageshow, and focus can
   // all fire within milliseconds of each other. We only need one reconnect.
