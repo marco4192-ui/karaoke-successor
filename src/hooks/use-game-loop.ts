@@ -205,7 +205,9 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
 
   // ── Generate results at song end ──
   const generateResults = useCallback(() => {
-    const activePlayer = players[0];
+    // Use ref (not closure) to read the latest player state — avoids reading
+    // a slightly stale snapshot if endGameAndCleanup fires between scoring ticks.
+    const activePlayer = playersRef.current[0];
     if (!activePlayer || !song) return;
 
     // Helper: calculate rating from accuracy (shared utility)
@@ -237,7 +239,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
 
     // Add P2 results for duel/duet mode if P2 scoring data is available
     const p2 = p2ScoringState || null;
-    const p2Player = players[1] || null;
+    const p2Player = playersRef.current[1] || null;
     if ((isDuetMode || gameMode === 'duel') && p2 && (p2.notesHit > 0 || p2.notesMissed > 0)) {
       // For P2, count only notes assigned to P2 in duet mode.
       // In duel mode (no player assignment), P2 sings the same notes as P1.
@@ -288,8 +290,8 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         },
       }),
     }).catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- gameMode changes should not restart the init effect (handled separately)
-  }, [players, song, setResults, isDuetMode, p2ScoringState, gameMode]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- players read via ref; gameMode changes should not restart the init effect (handled separately)
+  }, [song, setResults, isDuetMode, p2ScoringState, gameMode]);
 
   // ── End game and cleanup - stops all audio/microphone ──
   const endGameAndCleanup = useCallback(() => {
@@ -362,10 +364,8 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   }, [stop, setAudioEffects, audioRef, videoRef, endGame, generateResults, onEnd, song, gameMode, setIsPlaying, nativeAudioStop]);
 
   // Fix (Code Review #5): Use ref for endGameAndCleanup in the game loop.
-  // endGameAndCleanup depends on generateResults which depends on `players`.
-  // Since `players` changes on every scoring tick (~10 Hz), the entire chain
-  // (generateResults → endGameAndCleanup) gets recreated, which would cause
-  // the game loop effect to tear down and restart on every tick.
+  // Both generateResults and endGameAndCleanup read players via playersRef
+  // (not from closure), so they are stable across scoring ticks (~10 Hz).
   // Using a ref lets the loop call the latest version without re-running.
   const endGameAndCleanupRef = useRef(endGameAndCleanup);
   useEffect(() => { endGameAndCleanupRef.current = endGameAndCleanup; }, [endGameAndCleanup]);
