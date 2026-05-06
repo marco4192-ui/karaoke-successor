@@ -407,6 +407,9 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
           start();
         }
 
+        // Reset per-game tracking refs
+        comebackRef.current = false;
+
         // Reset scoring state (note progress tracking is handled by the hook)
         resetScoring();
 
