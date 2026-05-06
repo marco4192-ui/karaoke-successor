@@ -407,7 +407,8 @@ export function convertToSong(
       const lyrics: LyricLine[] = [];
       let currentLine: LyricLine | null = null;
 
-      for (const note of ss.notes) {
+      for (let i = 0; i < ss.notes.length; i++) {
+        const note = ss.notes[i];
         if (!currentLine) {
           currentLine = { id: `line-${lyrics.length}`, text: note.text, startTime: note.startTime, endTime: note.startTime + note.duration, notes: [] };
         }
@@ -423,7 +424,7 @@ export function convertToSong(
         currentLine.text += ' ' + note.text;
         currentLine.endTime = note.startTime + note.duration;
 
-        const nextNote = ss.notes[ss.notes.indexOf(note) + 1];
+        const nextNote = ss.notes[i + 1];
         if (!nextNote || nextNote.startTime - note.startTime - note.duration > 2000) {
           lyrics.push(currentLine);
           currentLine = null;
