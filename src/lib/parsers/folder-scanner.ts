@@ -2,7 +2,7 @@
 // Supports nested folder structure with categories
 
 import { Song, Note, LyricLine, midiToFrequency, Difficulty } from '@/types/game';
-import { CachedFolder, LibraryCache, loadCache } from '@/lib/game/library-cache';
+import { CachedFolder } from '@/lib/game/library-cache';
 import { storeMedia } from '@/lib/db/media-db';
 import { normalizeTxtContent } from '@/lib/utils';
 import { AUDIO_EXTENSIONS, VIDEO_EXTENSIONS, TXT_EXTENSIONS, COVER_EXTENSIONS, BACKGROUND_EXTENSIONS } from '@/lib/media-extensions';
