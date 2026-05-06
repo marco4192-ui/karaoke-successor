@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect} from 'react';
-import { StorageKeys, getItem, getBool, getString } from '@/lib/storage';
+import { StorageKeys, getBool, getString } from '@/lib/storage';
 import { getStoredTheme } from '@/lib/game/themes';
 import type { NoteShapeStyle } from '@/lib/game/note-utils';
 
