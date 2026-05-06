@@ -149,6 +149,9 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // Ref for currentSong — avoids stale closure in the game loop rAF
   const currentSongRef = useRef(currentSong);
   currentSongRef.current = currentSong;
+  // Ref for difficulty — avoids stale closure in the game loop rAF
+  const difficultyRef = useRef(difficulty);
+  difficultyRef.current = difficulty;
 
   // ── Random song picker ─────────────────────────────────────────────
   const getRandomSong = useCallback((): Song | null => {
@@ -311,7 +314,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
             // Skip scoring entirely when no pitch is detected - passing MIDI 0
             // would cause false misses and incorrect combo resets
             if (detectedPitch == null) continue;
-            const tick = evaluateAndScoreTick(detectedPitch, activeNote, difficulty, td.scoringMetadata);
+            const tick = evaluateAndScoreTick(detectedPitch, activeNote, difficultyRef.current, td.scoringMetadata);
 
             if (tick.hit) {
               batchedGame = updatePlayerScore(
@@ -345,7 +348,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
               : null;
 
             if (cachedPitch && cachedPitch.note > 0 && cachedPitch.isSinging === true) {
-              const tick = evaluateAndScoreTick(cachedPitch.note, activeNote, difficulty, td.scoringMetadata);
+              const tick = evaluateAndScoreTick(cachedPitch.note, activeNote, difficultyRef.current, td.scoringMetadata);
 
               if (tick.hit) {
                 batchedGame = updatePlayerScore(
