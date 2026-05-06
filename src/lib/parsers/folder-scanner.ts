@@ -262,8 +262,8 @@ function parseUltraStarMetadata(content: string): {
   language?: string;
   year?: number;
 } {
-  // Normalize line endings
-  const normalized = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  // Normalize line endings and Unicode (matches parseUltraStarFull)
+  const normalized = normalizeTxtContent(content);
   const lines = normalized.split('\n');
   let title = 'Unknown';
   let artist = 'Unknown';
