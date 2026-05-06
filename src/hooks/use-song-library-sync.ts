@@ -58,7 +58,7 @@ export function useSongLibrarySync(profiles: PlayerProfile[]): {
       // eslint-disable-next-line no-console
       console.error('[SongLibrarySync] Error syncing songs:', error);
     }
-  }, [lastSyncedCountRef]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- refs are stable and don't need to be in deps
 
   // Sync songs on mount and when songs change
   useEffect(() => {
