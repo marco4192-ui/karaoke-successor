@@ -717,6 +717,7 @@ async function parseUltraStarFull(txtFile?: File): Promise<{
       lyric: note.lyric, // Preserve original lyric with spaces
       isBonus: note.type === 'F',
       isGolden: note.type === '*' || note.type === 'G',
+      isRap: note.type === 'R' || note.type === 'G',
       player: note.player,
     };
 
