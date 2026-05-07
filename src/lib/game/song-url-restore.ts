@@ -2,7 +2,10 @@
 import type { Song } from '@/types/game';
 import { isTauri, getSongMediaUrl } from '@/lib/tauri-file-storage';
 import { isAbsolutePath, resolveSongsBaseFolder } from './song-paths';
-import { updateSong } from './song-library';
+// NOTE: updateSong is imported dynamically to avoid circular dependency:
+//   song-library.ts → song-url-restore.ts → song-library.ts
+// Turbopack/webpack can convert function hoisting to const bindings,
+// which breaks with circular deps (TDZ: "Cannot access before initialization").
 
 /**
  * Restore song URLs for Tauri — converts relative paths back to playable URLs.
@@ -42,6 +45,8 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
   if (resolvedFolder && resolvedFolder !== song.baseFolder && isAbsolutePath(resolvedFolder)) {
     restored.baseFolder = resolvedFolder;
     try {
+      // Dynamic import to avoid circular dependency with song-library.ts
+      const { updateSong } = await import('./song-library');
       updateSong(song.id, { baseFolder: resolvedFolder });
     } catch {
       // Non-critical — the fix is in memory for this session
