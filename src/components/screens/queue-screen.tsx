@@ -210,7 +210,8 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
     // audioUrl/lyrics → game loop starts with no media → 10-second watchdog
     // fires → game ends immediately.
     try {
-      const { getSongByIdWithLyrics, ensureSongUrls } = await import('@/lib/game/song-library');
+      const { getSongByIdWithLyrics } = await import('@/lib/game/song-library');
+      const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
       const withLyrics = await getSongByIdWithLyrics(song.id) || song;
       song = await ensureSongUrls(withLyrics);
     } catch (err) {

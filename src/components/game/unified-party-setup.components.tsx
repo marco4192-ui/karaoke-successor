@@ -779,7 +779,7 @@ export function SongVotingModal({ songs, onVote, onClose, gameColor }: {
     let cancelled = false;
     const restoreCovers = async () => {
       try {
-        const { ensureSongUrls } = await import('@/lib/game/song-library');
+        const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
         const restored = await Promise.all(
           songs.map(async (s) => {
             if (s.coverImage) return s; // Already has cover

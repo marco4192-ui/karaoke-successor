@@ -2,7 +2,8 @@
 
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
-import { getAllSongs, filterSongs, ensureSongUrls } from '@/lib/game/song-library';
+import { getAllSongs, filterSongs } from '@/lib/game/song-library';
+import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { UnifiedPartySetup, SongVotingModal, PARTY_GAME_CONFIGS } from '@/components/game/unified-party-setup';
 import type { PassTheMicSegment } from '@/components/game/ptm-types';
 import type { MedleyPlayer as MedleyPlayerType, MedleySettings as MedleySettingsType } from '@/components/game/medley/medley-types';
@@ -553,7 +554,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
             // Restore media URLs (audio/video) for the selected song before starting the game
             let songWithUrls = selectedSong;
             try {
-              const { ensureSongUrls } = await import('@/lib/game/song-library');
+              const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
               songWithUrls = await ensureSongUrls(selectedSong);
             } catch { /* non-critical — game view has its own URL restoration */ }
 

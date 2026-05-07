@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Song } from '@/types/game';
-import { getAllSongsAsync, ensureSongUrls, getSongByIdWithLyrics } from '@/lib/game/song-library';
+import { getAllSongsAsync, getSongByIdWithLyrics } from '@/lib/game/song-library';
+import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { extractYouTubeId } from '@/components/game/youtube-player';
 import { RepeatMode } from './jukebox-types';
 

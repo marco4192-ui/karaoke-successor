@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Song } from '@/types/game';
-import { ensureSongUrls } from '@/lib/game/song-library';
+import { ensureSongUrls } from '@/lib/game/song-url-restore';
 
 export function useLibraryPreview() {
   const [previewSong, setPreviewSong] = useState<Song | null>(null);

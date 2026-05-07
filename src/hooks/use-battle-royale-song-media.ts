@@ -54,7 +54,7 @@ export function useBattleRoyaleSongMedia({
     let cancelled = false;
 
     // Ensure full song data: resolve URLs (Tauri) + load lyrics (IndexedDB/filesystem)
-    import('@/lib/game/song-library').then(async ({ ensureSongUrls }) => {
+    import('@/lib/game/song-url-restore').then(async ({ ensureSongUrls }) => {
       let preparedSong = song;
       // Restore media URLs for Tauri filesystem access
       try {

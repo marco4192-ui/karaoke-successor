@@ -45,7 +45,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   useEffect(() => {
     const restoreUrls = async () => {
       try {
-        const { ensureSongUrls } = await import('@/lib/game/song-library');
+        const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
         const restored = await ensureSongUrls(initialSong);
         if (restored.audioUrl !== initialSong.audioUrl || restored.videoBackground !== initialSong.videoBackground) {
           setCurrentSong(restored);

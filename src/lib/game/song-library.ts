@@ -8,7 +8,9 @@ import { saveCustomSongsToDB, loadCustomSongsFromDB, migrateFromLocalStorage, cl
 import { isAbsolutePath, resolveSongsBaseFolder, normalizeSongPathFields } from './song-paths';
 
 // Internal imports (not re-exported — consumers import directly from the source modules)
-export { ensureSongUrls } from './song-url-restore';
+// NOTE: ensureSongUrls was previously re-exported here but caused a Turbopack
+// circular dependency crash (TDZ: "Cannot access 'n' before initialization").
+// All consumers now import directly from song-url-restore.ts.
 import { restoreSongUrls } from './song-url-restore';
 import { loadSongLyrics } from './song-lyrics-loader';
 

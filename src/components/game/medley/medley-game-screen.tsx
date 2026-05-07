@@ -8,7 +8,7 @@ import { useMultiPitchDetector, type PlayerPitchConfig } from '@/hooks/use-multi
 import { usePartyStore } from '@/lib/game/party-store';
 import { calculateScoringMetadata } from '@/lib/game/scoring';
 import { findActiveNoteFlat, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';
-import { ensureSongUrls } from '@/lib/game/song-library';
+import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import type { Note, LyricLine, PitchDetectionResult } from '@/types/game';
 import { EMPTY_PLAYER_SCORE } from '@/types/game';
 import type {

@@ -148,7 +148,8 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
     if (!nextQueueItem) return;
     
     // Get full song from library
-    const { getAllSongsAsync, getSongByIdWithLyrics, ensureSongUrls } = await import('@/lib/game/song-library');
+    const { getAllSongsAsync, getSongByIdWithLyrics } = await import('@/lib/game/song-library');
+    const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
     const songs = await getAllSongsAsync();
     let fullSong = songs.find(s => s.id === nextQueueItem.songId);
     

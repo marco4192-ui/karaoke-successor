@@ -51,7 +51,7 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
     let cancelled = false;
     const restoreUrls = async () => {
       try {
-        const { ensureSongUrls } = await import('@/lib/game/song-library');
+        const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
         let preparedSong = await ensureSongUrls(song);
 
         // Browser: also restore audio/video from IndexedDB if storedMedia flag is set

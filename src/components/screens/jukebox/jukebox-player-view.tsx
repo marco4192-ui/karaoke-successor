@@ -2,7 +2,8 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ensureSongUrls, getSongByIdWithLyrics } from '@/lib/game/song-library';
+import { getSongByIdWithLyrics } from '@/lib/game/song-library';
+import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { YouTubePlayer, extractYouTubeId } from '@/components/game/youtube-player';
 import { PlayIcon, PauseIcon, MusicIcon } from '@/components/icons';
 import type { UseJukeboxReturn } from './jukebox-types';

@@ -4,7 +4,8 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
 import { Song, Difficulty, GameMode } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
-import { getAllSongs, getAllSongsAsync, getSongByIdWithLyrics, ensureSongUrls } from '@/lib/game/song-library';
+import { getAllSongs, getAllSongsAsync, getSongByIdWithLyrics } from '@/lib/game/song-library';
+import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { StorageKeys, getItem, getString, setJson } from '@/lib/storage';
 import { 
   getPlaylists, 

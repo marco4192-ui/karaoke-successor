@@ -324,7 +324,7 @@ export default function KaraokeSuccessor() {
                 const playerCount = party.passTheMicPlayers?.length || 2;
                 const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration);
                 party.setPassTheMicSegments(segments);
-                import('@/lib/game/song-library').then(({ ensureSongUrls }) => {
+                import('@/lib/game/song-url-restore').then(({ ensureSongUrls }) => {
                   ensureSongUrls(song).then(songWithUrls => {
                     party.setPassTheMicSong(songWithUrls);
                   }).catch(() => {
