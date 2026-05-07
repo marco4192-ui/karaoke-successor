@@ -6,7 +6,6 @@
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:3000",
-    "beforeBuildCommand": "node ../scripts/prepare-bundle.mjs",
     "frontendDist": "../dist"
   },
   "app": {
