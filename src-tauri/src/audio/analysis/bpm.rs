@@ -6,7 +6,7 @@
 use rustfft::{FftPlanner, num_complex::Complex};
 
 /// Default BPM returned when detection fails (not enough data).
-const DEFAULT_BPM: f64 = 120.0;
+pub const DEFAULT_BPM: f64 = 120.0;
 /// Default FFT size for BPM detection.
 const DEFAULT_FFT_SIZE: usize = 1024;
 /// Default hop size for BPM detection.
@@ -36,7 +36,7 @@ impl BpmDetector {
     /// Detect BPM from mono f64 audio samples.
     ///
     /// Returns the estimated BPM.
-    pub fn detect(&self, samples: &[f64]) -> f64 {
+    pub fn detect(&mut self, samples: &[f64]) -> f64 {
         if samples.len() < self.fft_size * 4 {
             return DEFAULT_BPM;
         }
@@ -57,7 +57,7 @@ impl BpmDetector {
     // ---- Internal ----------------------------------------------------------
 
     /// Compute the onset strength envelope using spectral flux.
-    fn onset_strength(&self, samples: &[f64]) -> Vec<f64> {
+    fn onset_strength(&mut self, samples: &[f64]) -> Vec<f64> {
         let n = self.fft_size;
         let fft = self.planner.plan_fft_forward(n);
 

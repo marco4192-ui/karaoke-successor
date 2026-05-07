@@ -251,7 +251,7 @@ impl AudioAnalyzer {
 
         // ---- BPM estimation ----
         report(AnalysisStage::BpmEstimation, 82.0, "Detecting BPM...", &progress_callback);
-        let bpm_det = BpmDetector::new(1024, 512, sample_rate);
+        let mut bpm_det = BpmDetector::new(1024, 512, sample_rate);
         let bpm = bpm_det.detect(samples);
 
         // ---- Convert frames to notes ----

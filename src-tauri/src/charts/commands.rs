@@ -332,7 +332,7 @@ pub fn viral_match_library(
                 row.get::<_, i64>(5)?,   // chart_position
                 row.get::<_, String>(6)?, // country
             ))
-        })
+        })?
         .filter_map(|r| try_log(r, "map viral hit"))
         .collect();
 
@@ -364,8 +364,8 @@ pub fn viral_match_library(
         for (chart_id, chart_title, chart_artist, chart_source, chart_playlist, chart_pos, chart_country) in &chart_entries {
             if is_fuzzy_match(chart_title, chart_artist, song_title, song_artist) {
                 matches.push(ViralMatchInfo {
-                    title: chart_title.clone(),
-                    artist: chart_artist.clone(),
+                    title: chart_title.to_string(),
+                    artist: chart_artist.to_string(),
                     source: chart_source.clone(),
                     playlist_name: chart_playlist.clone(),
                     chart_position: *chart_pos,
