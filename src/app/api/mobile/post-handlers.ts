@@ -551,11 +551,17 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         return Response.json({ success: false, message: 'Unknown message type' }, { status: 400 });
     }
   } catch (error) {
+    // ECONNRESET / aborted: client disconnected mid-request (e.g. React
+    // StrictMode double-mount or navigation).  Silently ignore — not a real error.
+    const code = (error as NodeJS.ErrnoException)?.code;
+    if (code === 'ECONNRESET' || code === 'ECANCELED') {
+      return new Response(null, { status: 499 });
+    }
     // eslint-disable-next-line no-console
     console.error('Mobile API error:', error);
-    return Response.json({ 
-      success: false, 
-      message: 'Invalid request body' 
+    return Response.json({
+      success: false,
+      message: 'Invalid request body'
     }, { status: 400 });
   }
 }
