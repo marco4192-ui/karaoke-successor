@@ -8,7 +8,7 @@
  */
 
 import { execSync } from 'child_process';
-import { existsSync, mkdirSync, cpSync, readdirSync } from 'fs';
+import { existsSync, mkdirSync, cpSync, readdirSync, rmSync } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -33,6 +33,19 @@ function sh(cmd) {
 
 function listDir(dir) {
   try { return readdirSync(dir); } catch { return []; }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Step 0: Clean .next cache to prevent stale Turbopack artifacts
+// ═══════════════════════════════════════════════════════════
+log('\n=== Step 0/5: Cleaning .next cache ===\n');
+
+const nextDir = join(ROOT, '.next');
+if (existsSync(nextDir)) {
+  rmSync(nextDir, { recursive: true, force: true });
+  ok('Removed .next/ directory');
+} else {
+  ok('.next/ does not exist, nothing to clean');
 }
 
 // ═══════════════════════════════════════════════════════════
