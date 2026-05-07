@@ -43,7 +43,10 @@ log('\n=== Step 1/5: Building Next.js (standalone) ===\n');
 const standaloneDir = join(ROOT, '.next', 'standalone');
 
 try {
-  sh('npx next build');
+  // Use webpack instead of Turbopack — Turbopack has a module initialization
+  // ordering bug that causes TDZ errors ("Cannot access 'n' before initialization")
+  // in React's useState/useSyncExternalStore when many modules are eagerly loaded.
+  sh('npx next build --webpack');
   ok('Next.js build completed');
 } catch {
   fail('Next.js build failed!');

@@ -3,9 +3,9 @@
   "version": "0.2.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3000 2>&1 | tee dev.log",
+    "dev": "next dev -p 3000 --webpack 2>&1 | tee dev.log",
     "build": "node scripts/prepare-bundle.mjs",
-    "build:next": "next build && node -e \"const fs=require('fs'),p=require('path'); const s=p.join('.next','static'),d=p.join('.next','standalone','.next','static'); fs.existsSync(s)&&(fs.mkdirSync(d,{recursive:true}),require('fs').cpSync(s,d,{recursive:true})); const pub=p.join('public'),dp=p.join('.next','standalone','public'); fs.existsSync(pub)&&(fs.mkdirSync(dp,{recursive:true}),require('fs').cpSync(pub,dp,{recursive:true}))\"",
+    "build:next": "next build --webpack && node -e \"const fs=require('fs'),p=require('path'); const s=p.join('.next','static'),d=p.join('.next','standalone','.next','static'); fs.existsSync(s)&&(fs.mkdirSync(d,{recursive:true}),require('fs').cpSync(s,d,{recursive:true})); const pub=p.join('public'),dp=p.join('.next','standalone','public'); fs.existsSync(pub)&&(fs.mkdirSync(dp,{recursive:true}),require('fs').cpSync(pub,dp,{recursive:true}))\"",
     "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
     "lint": "eslint .",
     "db:push": "prisma db push",
