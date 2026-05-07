@@ -109,7 +109,7 @@ fn run_analysis_thread(
                 match decode_mono_f64(&file_path) {
                     Ok(decoded) => {
                         use super::analysis::bpm::BpmDetector;
-                        let det = BpmDetector::new(1024, 512, decoded.sample_rate);
+                        let mut det = BpmDetector::new(1024, 512, decoded.sample_rate);
                         let bpm = det.detect(&decoded.samples);
 
                         let _ = on_complete.send(BpmDetectionResult {

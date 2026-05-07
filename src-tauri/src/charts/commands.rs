@@ -332,7 +332,8 @@ pub fn viral_match_library(
                 row.get::<_, i64>(5)?,   // chart_position
                 row.get::<_, String>(6)?, // country
             ))
-        })?
+        })
+        .map_err(|e| format!("query_map failed: {}", e))?
         .filter_map(|r| try_log(r, "map viral hit"))
         .collect();
 
