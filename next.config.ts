@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  reactStrictMode: true,
+  reactStrictMode: false,
 };
 
 export default nextConfig;
