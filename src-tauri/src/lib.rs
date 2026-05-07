@@ -636,6 +636,9 @@ pub fn run() {
                 println!("Server already running on port 3000");
                 if let Some(window) = app.handle().get_webview_window("main") {
                     let _ = window.eval("window.location.href = 'http://localhost:3000'");
+                    // Re-open DevTools after navigation (redirect may close them)
+                    #[cfg(debug_assertions)]
+                    let _ = window.open_devtools();
                 }
                 return Ok(());
             }
@@ -769,6 +772,9 @@ pub fn run() {
                             
                             if let Some(window) = handle.get_webview_window("main") {
                                 let _ = window.eval("window.location.href = 'http://localhost:3000'");
+                                // Re-open DevTools after navigation (redirect may close them)
+                                #[cfg(debug_assertions)]
+                                let _ = window.open_devtools();
                             }
                             return;
                         }

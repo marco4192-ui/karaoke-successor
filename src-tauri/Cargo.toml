@@ -46,7 +46,7 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-feature
 rusqlite = { version = "0.31", features = ["bundled"] }
 
 [features]
-default = ["crepe"]
+default = ["crepe", "devtools"]
 devtools = ["tauri/devtools"]
 asio = ["cpal/asio"]
 crepe = ["ort", "ndarray"]

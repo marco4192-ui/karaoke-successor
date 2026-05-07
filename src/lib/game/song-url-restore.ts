@@ -2,10 +2,11 @@
 import type { Song } from '@/types/game';
 import { isTauri, getSongMediaUrl } from '@/lib/tauri-file-storage';
 import { isAbsolutePath, resolveSongsBaseFolder } from './song-paths';
-// NOTE: updateSong is imported dynamically to avoid circular dependency:
-//   song-library.ts → song-url-restore.ts → song-library.ts
-// Turbopack/webpack can convert function hoisting to const bindings,
-// which breaks with circular deps (TDZ: "Cannot access before initialization").
+// NOTE: No imports from song-library.ts to avoid circular dependency:
+//   song-library.ts → song-url-restore.ts → ~~song-library.ts~~ (broken!)
+// Turbopack/webpack convert function hoisting to const bindings, which breaks
+// with circular deps (TDZ: "Cannot access before initialization").
+// updateSong is passed via optional callback instead of dynamic import.
 
 /**
  * Restore song URLs for Tauri — converts relative paths back to playable URLs.
@@ -13,7 +14,10 @@ import { isAbsolutePath, resolveSongsBaseFolder } from './song-paths';
  * Falls back to song.baseFolder if localStorage 'karaoke-songs-folder' is not set.
  * Restores ONLY the URLs that are missing — doesn't re-fetch existing ones.
  */
-export async function restoreSongUrls(song: Song): Promise<Song> {
+export async function restoreSongUrls(
+  song: Song,
+  onBaseFolderUpdate?: (songId: string, updates: Partial<Song>) => void,
+): Promise<Song> {
   if (!isTauri()) {
     return song;
   }
@@ -45,9 +49,8 @@ export async function restoreSongUrls(song: Song): Promise<Song> {
   if (resolvedFolder && resolvedFolder !== song.baseFolder && isAbsolutePath(resolvedFolder)) {
     restored.baseFolder = resolvedFolder;
     try {
-      // Dynamic import to avoid circular dependency with song-library.ts
-      const { updateSong } = await import('./song-library');
-      updateSong(song.id, { baseFolder: resolvedFolder });
+      // Use callback instead of importing updateSong (avoids circular dependency)
+      onBaseFolderUpdate?.(song.id, { baseFolder: resolvedFolder });
     } catch {
       // Non-critical — the fix is in memory for this session
     }

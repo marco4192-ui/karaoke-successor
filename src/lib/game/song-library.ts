@@ -348,7 +348,7 @@ export async function getSongByIdWithLyrics(id: string): Promise<Song | undefine
     const needsCoverRestore = song.relativeCoverPath && !song.coverImage;
 
     if (needsAudioRestore || needsVideoRestore || needsCoverRestore) {
-      restoredSong = await restoreSongUrls(song);
+      restoredSong = await restoreSongUrls(song, updateSong);
     }
   }
 
