@@ -609,8 +609,8 @@ pub fn run() {
             charts::commands::viral_set_country,
         ])
         .setup(|app| {
-            // Register the audio state (needs AppHandle for the dedicated audio thread)
-            let audio_state = audio::commands::AudioState::new(app.handle().clone())
+            // Register the audio state (dedicated audio thread uses Channel IPC)
+            let audio_state = audio::commands::AudioState::new()
                 .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
             app.manage(audio_state);
             // Register the analysis state (needs AppHandle for the dedicated analysis thread)

@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{ipc::Channel, AppHandle, Manager};
 
 use super::devices::{self, AudioDeviceInfo};
 use super::player::{NativeAudioPlayer, PlaybackState};
@@ -16,6 +16,9 @@ enum AudioCommand {
     Play {
         file_path: String,
         device_id: String,
+        on_time_update: Channel<u64>,
+        on_ended: Channel<()>,
+        on_error: Channel<String>,
     },
     Pause,
     Resume,
@@ -42,7 +45,7 @@ pub struct AudioState {
 
 impl AudioState {
     /// Spawn the dedicated audio thread and return the managed state.
-    pub fn new(app_handle: AppHandle) -> Result<Self, String> {
+    pub fn new() -> Result<Self, String> {
         let (tx, rx) = mpsc::channel::<AudioCommand>();
         let state = Arc::new(Mutex::new(PlaybackState::default()));
         let shared_state = state.clone();
@@ -50,7 +53,7 @@ impl AudioState {
         std::thread::Builder::new()
             .name("karaoke-audio".into())
             .spawn(move || {
-                run_audio_thread(rx, shared_state, app_handle);
+                run_audio_thread(rx, shared_state);
             })
             .map_err(|e| format!("Failed to spawn audio thread: {}", e))?;
 
@@ -77,18 +80,33 @@ impl Drop for AudioState {
 fn run_audio_thread(
     rx: mpsc::Receiver<AudioCommand>,
     shared_state: Arc<Mutex<PlaybackState>>,
-    app_handle: AppHandle,
 ) {
     let mut player = NativeAudioPlayer::with_shared_state(shared_state.clone());
     let mut ended_emitted = false;
 
+    // Channels for streaming events to the frontend (set on each Play command).
+    let mut time_update_ch: Option<Channel<u64>> = None;
+    let mut ended_ch: Option<Channel<()>> = None;
+    let mut error_ch: Option<Channel<String>> = None;
+
     loop {
         match rx.recv_timeout(Duration::from_millis(50)) {
-            Ok(AudioCommand::Play { file_path, device_id }) => {
+            Ok(AudioCommand::Play {
+                file_path,
+                device_id,
+                on_time_update,
+                on_ended,
+                on_error,
+            }) => {
                 ended_emitted = false;
+                time_update_ch = Some(on_time_update);
+                ended_ch = Some(on_ended);
+                error_ch = Some(on_error);
                 if let Err(e) = player.play_file(&file_path, &device_id) {
                     eprintln!("Play failed for '{}': {}", file_path, e);
-                    let _ = app_handle.emit("audio:error", e.to_string());
+                    if let Some(ch) = &error_ch {
+                        let _ = ch.send(e.to_string());
+                    }
                 }
             }
             Ok(AudioCommand::Pause) => {
@@ -106,6 +124,10 @@ fn run_audio_thread(
             Ok(AudioCommand::Stop) => {
                 ended_emitted = false;
                 player.stop();
+                // Drop channels so stale callbacks cannot fire after stop
+                time_update_ch = None;
+                ended_ch = None;
+                error_ch = None;
             }
             Ok(AudioCommand::Shutdown) => {
                 player.stop();
@@ -119,9 +141,11 @@ fn run_audio_thread(
                     break;
                 };
 
-                // Emit periodic time-update while playing
+                // Send periodic time-update while playing via Channel IPC
                 if state.is_playing {
-                    let _ = app_handle.emit("audio:time-update", state.position_ms);
+                    if let Some(ch) = &time_update_ch {
+                        let _ = ch.send(state.position_ms);
+                    }
                 }
 
                 // Detect playback ended (set by the cpal callback inside player)
@@ -130,8 +154,12 @@ fn run_audio_thread(
                     && state.duration_ms > 0
                     && state.position_ms >= state.duration_ms
                 {
-                    drop(state); // release lock before emitting
-                    let _ = app_handle.emit("audio:ended", ());
+                    drop(state); // release lock before sending
+                    if let Some(ch) = ended_ch.take() {
+                        let _ = ch.send(());
+                    }
+                    time_update_ch = None;
+                    error_ch = None;
                     ended_emitted = true;
                 }
             }
@@ -161,16 +189,26 @@ pub fn audio_get_default_device() -> Result<AudioDeviceInfo, String> {
 
 /// Play an audio file on the specified device.
 /// `device_id` can be "default" or "<host_name>:<device_index>".
+/// Time-update, ended, and error events are reported via Tauri Channels (bypasses ACL).
 #[tauri::command]
 pub fn audio_play_file(
     app: AppHandle,
     file_path: String,
     device_id: String,
+    on_time_update: Channel<u64>,
+    on_ended: Channel<()>,
+    on_error: Channel<String>,
 ) -> Result<(), String> {
     let audio_state = app.state::<AudioState>();
     let tx = audio_state.command_tx.lock().map_err(|e| e.to_string())?;
-    tx.send(AudioCommand::Play { file_path, device_id })
-        .map_err(|e| e.to_string())
+    tx.send(AudioCommand::Play {
+        file_path,
+        device_id,
+        on_time_update,
+        on_ended,
+        on_error,
+    })
+    .map_err(|e| e.to_string())
 }
 
 /// Pause native audio playback.

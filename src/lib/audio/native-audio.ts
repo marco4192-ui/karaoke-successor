@@ -1,8 +1,10 @@
 // Native Audio - TypeScript wrappers for Tauri native audio commands.
 // Supports ASIO and WASAPI output devices for low-latency audio playback.
+//
+// Events (time-update, ended, error) are delivered via Tauri Channel IPC,
+// which bypasses plugin:event ACL restrictions in Tauri v2.
 
-import { invoke } from '@tauri-apps/api/core';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { invoke, Channel } from '@tauri-apps/api/core';
 
 // ---- Types ----
 
@@ -21,6 +23,16 @@ export interface AudioPlaybackState {
   volume: number;
 }
 
+/** Callbacks for native audio streaming events. */
+export interface AudioEventCallbacks {
+  /** Called ~20 times/sec with the current position in milliseconds. */
+  onTimeUpdate?: (_positionMs: number) => void;
+  /** Called once when playback reaches the end of the track. */
+  onEnded?: () => void;
+  /** Called when the backend encounters a playback error. */
+  onError?: (_message: string) => void;
+}
+
 // ---- Device Management ----
 
 /** List all available audio output devices (ASIO + WASAPI). */
@@ -30,12 +42,41 @@ export async function listAudioDevices(): Promise<AudioDeviceInfo[]> {
 
 // ---- Playback Control ----
 
-/** Play an audio file on the specified device. */
+/**
+ * Play an audio file on the specified device.
+ *
+ * Streaming events (time-update, ended, error) are delivered via Tauri
+ * Channels passed as parameters. This bypasses the plugin:event ACL that
+ * blocks `listen()` in Tauri v2.
+ */
 export async function playAudioFile(
   filePath: string,
-  deviceId: string = 'default'
+  deviceId: string = 'default',
+  callbacks?: AudioEventCallbacks
 ): Promise<void> {
-  return invoke<void>('audio_play_file', { filePath, deviceId });
+  // Create Tauri Channels for streaming events
+  const onTimeUpdate = new Channel<number>();
+  if (callbacks?.onTimeUpdate) {
+    onTimeUpdate.onmessage = (positionMs) => callbacks.onTimeUpdate!(positionMs);
+  }
+
+  const onEnded = new Channel<void>();
+  if (callbacks?.onEnded) {
+    onEnded.onmessage = () => callbacks.onEnded!();
+  }
+
+  const onError = new Channel<string>();
+  if (callbacks?.onError) {
+    onError.onmessage = (message) => callbacks.onError!(message);
+  }
+
+  return invoke<void>('audio_play_file', {
+    filePath,
+    deviceId,
+    onTimeUpdate,
+    onEnded,
+    onError,
+  });
 }
 
 /** Pause native audio playback. */
@@ -66,24 +107,4 @@ export async function stopAudio(): Promise<void> {
 /** Get full playback state. */
 export async function getAudioState(): Promise<AudioPlaybackState> {
   return invoke<AudioPlaybackState>('audio_get_state');
-}
-
-// ---- Event Listeners ----
-
-/** Subscribe to time-update events from native audio. */
-export async function onAudioTimeUpdate(
-  callback: (_positionMs: number) => void
-): Promise<UnlistenFn> {
-  return listen<number>('audio:time-update', (event) => {
-    callback(event.payload);
-  });
-}
-
-/** Subscribe to playback-ended events from native audio. */
-export async function onAudioEnded(
-  callback: () => void
-): Promise<UnlistenFn> {
-  return listen<void>('audio:ended', () => {
-    callback();
-  });
 }

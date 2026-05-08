@@ -12,8 +12,6 @@ import {
   setAudioVolume,
   stopAudio,
   getAudioState,
-  onAudioTimeUpdate,
-  onAudioEnded,
 } from '@/lib/audio/native-audio';
 
 import { StorageKeys, getBool, getString, setBool, setItem } from '@/lib/storage';
@@ -33,7 +31,7 @@ export interface UseNativeAudioResult {
   refreshDevices: () => Promise<void>;
   /** Current playback state (null when idle). */
   playbackState: AudioPlaybackState | null;
-  /** Current position in ms, updated via Tauri events. */
+  /** Current position in ms, updated via Tauri Channel IPC. */
   currentPosition: number;
   /** Whether native audio is currently playing. */
   isPlaying: boolean;
@@ -62,9 +60,10 @@ export function useNativeAudio(): UseNativeAudioResult {
   const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Refs for unlisten cleanup
-  const unlistenTimeRef = useRef<(() => void) | null>(null);
-  const unlistenEndedRef = useRef<(() => void) | null>(null);
+  // Mounted guard + play generation counter to prevent stale channel callbacks
+  // from overwriting state after unmount or after a newer play() call.
+  const mountedRef = useRef(true);
+  const playGenRef = useRef(0);
 
   // Persist settings
   const setEnabled = useCallback((value: boolean) => {
@@ -92,60 +91,50 @@ export function useNativeAudio(): UseNativeAudioResult {
   }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
     refreshDevices();
-
-    // H9: Track whether this effect is still active to prevent listener leaks.
-    // If the effect is cleaned up before the Promise resolves, the unlisten
-    // function would never be stored in the ref and the listener leaks permanently.
-    let cancelled = false;
-
-    // Setup event listeners (gracefully degrade if event plugin is unavailable)
-    onAudioTimeUpdate((pos) => {
-      setCurrentPosition(pos);
-    }).then((unlisten) => {
-      if (cancelled) {
-        unlisten();
-      } else {
-        unlistenTimeRef.current = unlisten;
-      }
-    }).catch((err) => {
-      // eslint-disable-next-line no-console
-      console.warn('[NativeAudio] Could not register time-update listener (non-fatal):', err);
-    });
-
-    onAudioEnded(() => {
-      setIsPlaying(false);
-      setCurrentPosition(0);
-      setPlaybackState(null);
-    }).then((unlisten) => {
-      if (cancelled) {
-        unlisten();
-      } else {
-        unlistenEndedRef.current = unlisten;
-      }
-    }).catch((err) => {
-      // eslint-disable-next-line no-console
-      console.warn('[NativeAudio] Could not register ended listener (non-fatal):', err);
-    });
-
     return () => {
-      cancelled = true;
-      unlistenTimeRef.current?.();
-      unlistenTimeRef.current = null;
-      unlistenEndedRef.current?.();
-      unlistenEndedRef.current = null;
+      mountedRef.current = false;
     };
   }, [refreshDevices]);
 
   // Playback controls
   const play = useCallback(async (filePath: string) => {
+    const gen = ++playGenRef.current;
     try {
-      await playAudioFile(filePath, deviceId);
       setIsPlaying(true);
+
+      // Pass Channel-based callbacks to playAudioFile.
+      // Channels bypass the plugin:event ACL restriction in Tauri v2.
+      await playAudioFile(filePath, deviceId, {
+        onTimeUpdate: (pos) => {
+          if (playGenRef.current !== gen || !mountedRef.current) return;
+          setCurrentPosition(pos);
+        },
+        onEnded: () => {
+          if (playGenRef.current !== gen || !mountedRef.current) return;
+          setIsPlaying(false);
+          setCurrentPosition(0);
+          setPlaybackState(null);
+        },
+        onError: (message) => {
+          if (playGenRef.current !== gen || !mountedRef.current) return;
+          // eslint-disable-next-line no-console
+          console.error('[NativeAudio] Backend error:', message);
+        },
+      });
+
       // Poll state briefly to get duration
-      const state = await getAudioState();
-      setPlaybackState(state);
+      if (playGenRef.current === gen && mountedRef.current) {
+        const state = await getAudioState();
+        if (playGenRef.current === gen && mountedRef.current) {
+          setPlaybackState(state);
+        }
+      }
     } catch (err) {
+      if (playGenRef.current === gen && mountedRef.current) {
+        setIsPlaying(false);
+      }
       // eslint-disable-next-line no-console
       console.error('[NativeAudio] Play failed:', err);
       throw err;
