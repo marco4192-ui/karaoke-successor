@@ -266,7 +266,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               const songs = getAllSongs();
               const filters = party.unifiedSetupResult?.settings;
               const filtered = filterSongs(songs, filters?.filterGenre ?? 'all', filters?.filterLanguage ?? 'all', filters?.filterCombined ?? true);
-              const suggested = filtered.sort(() => Math.random() - 0.5).slice(0, 5);
+              const suggested = filtered.sort(() => Math.random() - 0.5).slice(0, 3);
               party.setVotingSongs(suggested);
               setScreen('song-voting');
             } else {
