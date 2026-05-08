@@ -123,6 +123,7 @@ export default function KaraokeSuccessor() {
         return;
       }
       resetGame();
+      setGameMode('standard');
       setScreen('library');
       return;
     }
@@ -131,6 +132,7 @@ export default function KaraokeSuccessor() {
     if (party.battleRoyaleGame) {
       party.setBattleRoyaleGame(null);
       resetGame();
+      setGameMode('standard');
       setScreen('party');
       return;
     }
@@ -146,13 +148,15 @@ export default function KaraokeSuccessor() {
       party.setCompanionSong(null);
       party.setCompanionSettings(null);
       resetGame();
+      setGameMode('standard');
       setScreen('party');
       return;
     }
 
     resetGame();
+    setGameMode('standard');
     setScreen('library');
-  }, [closeDialog, screen, isTournamentMatch, party, gameState.gameMode, resetGame, setScreen]);
+  }, [closeDialog, screen, isTournamentMatch, party, gameState.gameMode, resetGame, setScreen, setGameMode]);
 
   const handleTournamentRepeat = useCallback(() => {
     closeDialog();
@@ -196,9 +200,10 @@ export default function KaraokeSuccessor() {
     closeDialog();
     party.resetPartyState();
     resetGame();
+    setGameMode('standard');
     setScreen('home');
   // eslint-disable-next-line react-hooks/exhaustive-deps -- party excluded; sub-properties are the stable deps
-  }, [closeDialog, party.resetPartyState, resetGame, setScreen]);
+  }, [closeDialog, party.resetPartyState, resetGame, setScreen, setGameMode]);
 
   const handlePartyLeaveBack = useCallback(() => {
     closeDialog();
@@ -273,6 +278,7 @@ export default function KaraokeSuccessor() {
           setPendingNavigation(null);
           party.resetPartyState();
           resetGame();
+          setGameMode('standard');
           setScreen(target);
         }}
       />

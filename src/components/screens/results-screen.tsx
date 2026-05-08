@@ -651,7 +651,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
         <Button onClick={() => { resetGame(); onPlayAgain(); }} className="bg-gradient-to-r from-cyan-500 to-purple-500 px-8">
           {t('results.playAgain')}
         </Button>
-        <Button variant="outline" onClick={() => { resetGame(); onHome(); }} className="border-white/20 text-white px-8">
+        <Button variant="outline" onClick={() => { resetGame(); setGameMode('standard'); onHome(); }} className="border-white/20 text-white px-8">
           {t('results.backToHome')}
         </Button>
       </div>

@@ -285,6 +285,11 @@ export const useGameStore = create<GameStore>()(
             // Preserve the current difficulty so the user's default setting
             // is not lost every time a game ends.
             difficulty: state.gameState.difficulty,
+            // Preserve gameMode so that duel/duet mode is not lost across
+            // resetGame() calls (e.g. in onSelectSong where resetGame is
+            // followed by setScreen).  Callers that need to reset the mode
+            // must explicitly call setGameMode('standard').
+            gameMode: state.gameState.gameMode,
             players: state.gameState.players.map((p) => ({
               ...p,
               score: 0,
