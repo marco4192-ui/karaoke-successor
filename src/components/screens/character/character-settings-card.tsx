@@ -23,6 +23,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
   const [isEditingCharacter, setIsEditingCharacter] = useState(false);
   const [editName, setEditName] = useState('');
   const [editAvatarUrl, setEditAvatarUrl] = useState('');
+  const [editCountry, setEditCountry] = useState('');
   const editFileInputRef = useRef<HTMLInputElement>(null);
   const [localIP, setLocalIP] = useState('');
   const [showQR, setShowQR] = useState(false);
@@ -49,6 +50,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
   const startEditingCharacter = () => {
     setEditName(profile.name);
     setEditAvatarUrl(profile.avatar || '');
+    setEditCountry(profile.country || '');
     setIsEditingCharacter(true);
   };
 
@@ -56,13 +58,15 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
     setIsEditingCharacter(false);
     setEditName('');
     setEditAvatarUrl('');
+    setEditCountry('');
   };
 
   const saveEditedCharacter = () => {
     if (editName.trim()) {
       updateProfile(profile.id, {
         name: editName.trim(),
-        avatar: editAvatarUrl || undefined
+        avatar: editAvatarUrl || undefined,
+        country: editCountry || undefined,
       });
       setIsEditingCharacter(false);
     }
@@ -131,6 +135,23 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
                   onChange={(e) => setEditName(e.target.value)}
                   className="bg-white/5 border-white/10 text-white"
                 />
+                <select
+                  value={editCountry}
+                  onChange={(e) => setEditCountry(e.target.value)}
+                  className="w-full bg-[rgb(30,30,40)] dark:bg-[rgb(30,30,40)] border border-white/20 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 appearance-none cursor-pointer"
+                  style={{
+                    colorScheme: 'dark',
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 0.5rem center',
+                    backgroundSize: '1.5em 1.5em'
+                  }}
+                >
+                  <option value="" className="bg-[rgb(30,30,40)] text-white/60">Select Country (optional)</option>
+                  {COUNTRY_OPTIONS.map(c => (
+                    <option key={c.code} value={c.code} className="bg-[rgb(30,30,40)] text-white">{c.flag} {c.name}</option>
+                  ))}
+                </select>
                 <div className="flex gap-2">
                   <Button 
                     onClick={saveEditedCharacter} 
