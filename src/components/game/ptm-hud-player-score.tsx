@@ -11,7 +11,7 @@ export function PtmHudPlayerScore({ players, currentPlayer }: PtmHudPlayerScoreP
   const teamScore = players.reduce((sum, p) => sum + p.score, 0);
 
   return (
-    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-start gap-3">
+    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-start gap-2">
       {/* Active player — "Jetzt singt" */}
       <div className="bg-black/50 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/10 w-40">
         {currentPlayer?.avatar ? (
@@ -42,9 +42,9 @@ export function PtmHudPlayerScore({ players, currentPlayer }: PtmHudPlayerScoreP
       </div>
 
       {/* Team total score — right next to "Jetzt singt" */}
-      <div className="bg-black/50 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/10 text-center">
+      <div className="bg-black/50 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/10 text-center w-32">
         <div className="text-[10px] text-white/40 uppercase tracking-wider">Team-Score</div>
-        <div className="text-2xl font-bold text-cyan-400">
+        <div className="text-lg font-bold text-cyan-400">
           {teamScore.toLocaleString()}
         </div>
       </div>
