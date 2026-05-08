@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { t, translations, Language, LANGUAGE_NAMES, LANGUAGE_FLAGS } from '@/lib/i18n/translations';
+import { t, translations as getTranslations, Language, LANGUAGE_NAMES, LANGUAGE_FLAGS } from '@/lib/i18n/translations';
+
+// getTranslations() is a lazy-init function, call once for test access
+const translations = getTranslations();
 
 describe('i18n translation system', () => {
   describe('t() function', () => {
