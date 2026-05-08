@@ -365,20 +365,49 @@ export function useGameScreenLogic({ onEnd, onBack, onPause }: GameScreenProps):
   // Also treat blind/missing-words competitive modes as duet when 2+ players are added
   // NOTE: In low-performance mode, force single-player (no duet split-screen)
   const isCompetitiveMultiplayer = !isLowPerf && (gameState.gameMode === 'blind' || gameState.gameMode === 'missing-words') && gameState.players.length >= 2;
-  const isDuetMode = !isLowPerf && ((song ? isDuetSong(song) : false) || gameState.gameMode === 'duet' || gameState.gameMode === 'duel' || isCompetitiveMultiplayer);
+  const isDuelOrDuetGameMode = gameState.gameMode === 'duet' || gameState.gameMode === 'duel';
+  const isDuetMode = !isLowPerf && ((song ? isDuetSong(song) : false) || isDuelOrDuetGameMode || isCompetitiveMultiplayer);
+
+  // ── Safety: load lyrics on-demand for duel/duet mode when effectiveSong has none ──
+  const [duetFallbackLyrics, setDuetFallbackLyrics] = useState<LyricLine[] | null>(null);
+  useEffect(() => {
+    if (!isDuetMode || !effectiveSong || (effectiveSong.lyrics && effectiveSong.lyrics.length > 0)) {
+      setDuetFallbackLyrics(null);
+      return;
+    }
+    // effectiveSong has no lyrics but we need them for the highway — try loading
+    let cancelled = false;
+    import('@/lib/game/song-lyrics-loader').then(({ loadSongLyrics }) => {
+      loadSongLyrics(effectiveSong).then(lyrics => {
+        if (cancelled || lyrics.length === 0) return;
+        setDuetFallbackLyrics(lyrics);
+      }).catch(() => {});
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [isDuetMode, effectiveSong]);
+
+  // ── Song with fallback lyrics for timing computation ──
+  const songForTiming = useMemo(() => {
+    if (!effectiveSong) return null;
+    if (duetFallbackLyrics && duetFallbackLyrics.length > 0) {
+      return { ...effectiveSong, lyrics: duetFallbackLyrics };
+    }
+    return effectiveSong;
+  }, [effectiveSong, duetFallbackLyrics]);
 
   // =====================================================
   // PRE-COMPUTE ALL TIMING DATA ONCE WHEN SONG LOADS
   // MUST be defined BEFORE useNoteScoring hook!
   // =====================================================
   const timingData = useMemo<TimingData | null>(() => {
-    if (!effectiveSong || effectiveSong.lyrics.length === 0) return null;
+    const src = songForTiming || effectiveSong;
+    if (!src || src.lyrics.length === 0) return null;
 
     const allNotes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
     const p1Notes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
     const p2Notes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
 
-    effectiveSong.lyrics.forEach((line, lineIndex) => {
+    src.lyrics.forEach((line, lineIndex) => {
       line.notes.forEach(note => {
         const noteWithLine = { ...note, lineIndex, line };
         allNotes.push(noteWithLine);
@@ -400,7 +429,7 @@ export function useGameScreenLogic({ onEnd, onBack, onPause }: GameScreenProps):
     p1Notes.sort((a, b) => a.startTime - b.startTime);
     p2Notes.sort((a, b) => a.startTime - b.startTime);
 
-    const sortedLines = [...effectiveSong.lyrics].sort((a, b) => a.startTime - b.startTime);
+    const sortedLines = [...src.lyrics].sort((a, b) => a.startTime - b.startTime);
     const hasExplicitPlayerMarkers = sortedLines.some(line => line.player === 'P1' || line.player === 'P2');
 
     const p1Lines = sortedLines.filter(line => {
@@ -413,7 +442,7 @@ export function useGameScreenLogic({ onEnd, onBack, onPause }: GameScreenProps):
       return true;
     });
 
-    const beatDurationMs = effectiveSong.bpm ? 15000 / effectiveSong.bpm : 500;
+    const beatDurationMs = src.bpm ? 15000 / src.bpm : 500;
     const scoringMetadata = calculateScoringMetadata(allNotes, beatDurationMs);
     const p1ScoringMetadata = calculateScoringMetadata(p1Notes, beatDurationMs);
     const p2ScoringMetadata = calculateScoringMetadata(p2Notes, beatDurationMs);
@@ -425,7 +454,7 @@ export function useGameScreenLogic({ onEnd, onBack, onPause }: GameScreenProps):
       scoringMetadata, p1ScoringMetadata, p2ScoringMetadata,
       beatDuration: beatDurationMs,
     };
-  }, [effectiveSong, isDuetMode]);
+  }, [songForTiming, isDuetMode]);
 
   const beatDuration = timingData?.beatDuration || (song?.bpm ? 15000 / song.bpm : 500);
 
