@@ -266,6 +266,26 @@ export function usePtmGameLogic({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ── Safety: load lyrics if effectiveSong has no lyrics ──
+  // This can happen when useGameMedia restores URLs but lyrics were not
+  // preserved (e.g. song was stored without lyrics in the party store).
+  useEffect(() => {
+    const src = isMedleyMode && currentSnippet ? currentSnippet.song : effectiveSong;
+    if (!src || (src.lyrics && src.lyrics.length > 0)) return;
+    // Only attempt load if the song has a txt reference or stored flag
+    if (!src.storedTxt && !src.relativeTxtPath) return;
+    let cancelled = false;
+    import('@/lib/game/song-lyrics-loader').then(({ loadSongLyrics }) => {
+      loadSongLyrics(src).then(lyrics => {
+        if (cancelled || lyrics.length === 0) return;
+        fallbackLyricsRef.current = lyrics;
+        forceRender();
+      }).catch(() => {});
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: run when effectiveSong or snippet changes
+  }, [effectiveSong, currentSnippet, isMedleyMode, forceRender]);
+
   // ── Pre-compute note data for highway ──
   const { allNotes, sortedLines, pitchStats, scoringMeta } = useMemo(() => {
     if (!notesSource?.lyrics?.length) {
@@ -341,9 +361,12 @@ export function usePtmGameLogic({
   }, [phase, isPlaying, scoreCurrentPlayer]);
 
   // ── Audio time tracking ──
-  // IMPORTANT: Must depend on audioSong (not just refs) because refs are stable objects.
-  // The <audio>/<video> DOM elements are only rendered after URL restoration sets
-  // audioSong?.audioUrl, so the effect must re-run when audioSong changes.
+  // IMPORTANT: Must depend on audioSong AND phase because:
+  // 1. audioSong changes trigger re-attachment when URLs are restored.
+  // 2. Phase changes (intro→playing) re-mount the <audio>/<video> DOM elements
+  //    (intro renders its own elements with the same refs). When the intro
+  //    unmounts and the game screen mounts, the old element is detached and
+  //    the timeupdate listener must be re-attached to the new element.
   useEffect(() => {
     // For YouTube, time comes from the YouTube player via onYoutubeTimeUpdate.
     // For local audio, time comes from the <audio> element's timeupdate event.
@@ -367,7 +390,7 @@ export function usePtmGameLogic({
       video.addEventListener('timeupdate', handleTimeUpdate);
       return () => video.removeEventListener('timeupdate', handleTimeUpdate);
     }
-  }, [audioRef, videoRef, isYouTube, youtubeTime, audioSong]);
+  }, [audioRef, videoRef, isYouTube, youtubeTime, audioSong, phase]);
 
   // ── Song energy tracking ──
   // Use a ref for currentTime to avoid re-creating the interval every ~250ms
