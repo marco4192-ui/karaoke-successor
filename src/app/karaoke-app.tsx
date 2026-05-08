@@ -318,7 +318,13 @@ export default function KaraokeSuccessor() {
         {screen === 'library' && (
           <LibraryScreen
             onSelectSong={(song) => {
+              // Preserve the gameMode set by LibraryScreen.handleStartGame
+              // (e.g. 'duel' or 'duet') across the resetGame() call.
+              const currentMode = gameState.gameMode;
               resetGame();
+              if (currentMode && currentMode !== 'standard') {
+                setGameMode(currentMode);
+              }
               setSong(song);
               if (gameState.gameMode === 'pass-the-mic') {
                 const playerCount = party.passTheMicPlayers?.length || 2;
