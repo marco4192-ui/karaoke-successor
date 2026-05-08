@@ -1,66 +1,22 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { usePitchDetector } from '@/hooks/use-pitch-detector';
-import { useNoteScoring } from '@/hooks/use-note-scoring';
-import { useGameSettings } from '@/hooks/use-game-settings';
-import { useGameStore } from '@/lib/game/store';
-import { usePartyStore } from '@/lib/game/party-store';
-import { LyricLine, Note, PLAYER_COLORS } from '@/types/game';
-import { PRACTICE_MODE_DEFAULTS, PracticeModeConfig } from '@/lib/game/practice-mode';
-import { CHALLENGE_MODES } from '@/lib/game/player-progression';
-import { StorageKeys, getJson, getItem, removeItem } from '@/lib/storage';
-import { 
-  WebcamBackground, 
-  WebcamQuickControls,
-  WebcamBackgroundConfig,
-  DEFAULT_WEBCAM_CONFIG,
-  loadWebcamConfig,
-  saveWebcamConfig,
-} from '@/components/game/webcam-background';
-import {
-  calculateScoringMetadata,
-} from '@/lib/game/scoring';
-import {
-  calculatePitchStats,
-  PitchStats,
-  SING_LINE_POSITION,
-  NOTE_WINDOW,
-  VISIBLE_TOP,
-  VISIBLE_RANGE,
-  getVisibleNotes,
-} from '@/lib/game/note-utils';
+import { PLAYER_COLORS } from '@/types/game';
+import { SING_LINE_POSITION, NOTE_WINDOW, VISIBLE_TOP, VISIBLE_RANGE } from '@/lib/game/note-utils';
+import { WebcamBackground, WebcamQuickControls } from '@/components/game/webcam-background';
 import { ScoreEventsDisplay } from '@/components/game/score-events-display';
 import { PitchGraphDisplay } from '@/components/game/pitch-graph-display';
 import { PracticePanel } from '@/components/game/practice-panel';
 import { ProminentScoreDisplay } from '@/components/game/prominent-score-display';
-import {
-  ParticleSystem,
-  useParticleEmitter,
-  ComboFireEffect,
-  useSongEnergy
-} from '@/components/game/visual-effects';
+import { ParticleSystem, ComboFireEffect } from '@/components/game/visual-effects';
 import { SpectrogramDisplay } from '@/components/game/spectrogram-display';
 import { GameBackground } from '@/components/game/game-background';
 import { DuetNoteHighway } from '@/components/game/duet-note-highway';
 import { NoteHighway } from '@/components/game/note-highway';
 import { NoteLane } from '@/components/game/note-lane';
 import { SinglePlayerLyrics } from '@/components/game/single-player-lyrics';
-import { useRemoteControl } from '@/hooks/use-remote-control';
-import { useMobilePitchPolling } from '@/hooks/use-mobile-pitch-polling';
-import { useGameMedia } from '@/hooks/use-game-media';
-import { useGameLoop } from '@/hooks/use-game-loop';
-import { useNativeAudio } from '@/hooks/use-native-audio';
 import { GameCountdown } from '@/components/game/game-countdown';
 import { GameScoreDisplay } from '@/components/game/game-score-display';
-import { useSmoothedPitch } from '@/hooks/use-smoothed-pitch';
-import { useGameAudioEffects } from '@/hooks/use-game-audio-effects';
-import { useYouTubeGame } from '@/hooks/use-youtube-game';
-import { useGameModes } from '@/hooks/use-game-modes';
-import { useMobileGameSync } from '@/hooks/use-mobile-game-sync';
-import { usePracticePlayback } from '@/hooks/use-practice-playback';
-import { useMediaSession } from '@/hooks/use-media-session';
 import {
   VolumeMeter,
   AudioEffectsButton,
@@ -69,519 +25,18 @@ import {
   GameProgressBar,
   TimeDisplay,
 } from '@/components/game/game-hud';
-import { isDuetSong } from '@/components/screens/library/utils';
 import { MicIndicator } from '@/components/game/mic-indicator';
-import { useReplayRecorder } from '@/hooks/use-replay-recorder';
-import { setLastReplayId } from '@/lib/replay-state';
-import { getPitchDetector } from '@/lib/audio/pitch-detector';
-import { cleanupOldReplays } from '@/lib/db/replay-db';
+import { useGameScreenLogic } from '@/components/screens/game-screen-hook';
 
 // ===================== GAME SCREEN =====================
-function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () => void; onPause?: () => void }) {
-  const { gameState, setCurrentTime, setDetectedPitch, updatePlayer, endGame, setResults, addPlayer, createProfile, profiles, setMissingWordsIndices, setBlindSection } = useGameStore();
-  const blindFrequency = usePartyStore(s => s.competitiveGame?.settings?.blindFrequency);
-  const missingWordFrequency = usePartyStore(s => s.competitiveGame?.settings?.missingWordFrequency);
-  const { pitchResult, initialize, start, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
+function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
+  const g = useGameScreenLogic(props);
 
-  // Smoothed pitch for visual display (prevents flickering/jitter)
-  // Raw pitch is still used for scoring accuracy
-  const smoothedPitch = useSmoothedPitch(pitchResult?.note ?? null, 0.3, 0.25);
-  
-  // Current song reference - must be defined early as it's used by multiple hooks
-  const song = gameState.currentSong;
-  
-  // ── Media: URL restoration, lyrics loading, media element refs ──
-  const {
-    effectiveSong,
-    mediaLoaded,
-    audioRef,
-    videoRef,
-    audioLoadedRef,
-    videoLoadedRef,
-  } = useGameMedia(song);
-
-  // Replay recording: enabled by default, persisted in localStorage
-  const [replayEnabled] = useState(() => {
-    return getJson<boolean>(StorageKeys.REPLAY_ENABLED, true);
-  });
-
-  const [youtubeTime, setYoutubeTime] = useState(0);
-  const [youtubeError, setYoutubeError] = useState<string | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const wasPlayingRef = useRef(false);
-
-  // Track the audio element for SpectrogramDisplay (avoids reading ref during render)
-  const [spectrogramAudioEl, setSpectrogramAudioEl] = useState<HTMLAudioElement | null>(null);
-  const audioElRefCallback = useCallback((el: HTMLAudioElement | null) => {
-    audioRef.current = el;
-    setSpectrogramAudioEl(el);
-  }, [audioRef]);
-
-  // Native audio (ASIO / WASAPI)
-  const nativeAudio = useNativeAudio();
-
-  // Settings from localStorage - managed via useGameSettings hook
-  const {
-    showBackgroundVideo,
-    showPitchGuide,
-    useAnimatedBackground,
-    noteDisplayStyle,
-    noteShapeStyle,
-    performanceMode,
-  } = useGameSettings();
-
-  // Derived: is low-performance mode?
-  const isLowPerf = performanceMode === 'low';
-
-  // Practice mode UI controls
-  const [showPracticeControls, setShowPracticeControls] = useState(false);
-  
-  // Challenge mode state - read from localStorage when game starts
-  const [activeChallenge] = useState<typeof CHALLENGE_MODES[0] | null>(() => {
-    const savedChallengeId = getItem(StorageKeys.CHALLENGE_MODE);
-    if (savedChallengeId) {
-      const challenge = CHALLENGE_MODES.find(c => c.id === savedChallengeId);
-      if (challenge) {
-        removeItem(StorageKeys.CHALLENGE_MODE); // Clear after reading
-        return challenge;
-      }
-    }
-    return null;
-  });
-
-  // Derive challenge modifier flags for use throughout the component
-  const hasChallengeNoPitchGuide = activeChallenge?.modifiers.some(m => m.type === 'no_pitch_guide') ?? false;
-  const challengeSpeedModifier = activeChallenge?.modifiers.find(m => m.type === 'double_speed');
-  
-  // Practice mode state - initialize with challenge speed modifier if present
-  const [practiceMode, setPracticeMode] = useState<PracticeModeConfig>(() => {
-    const speedValue = challengeSpeedModifier?.value;
-    if (speedValue && speedValue > 1.0) {
-      return { ...PRACTICE_MODE_DEFAULTS, playbackRate: speedValue, enabled: true };
-    }
-    return { ...PRACTICE_MODE_DEFAULTS };
-  });
-
-  // Practice playback: apply playbackRate to audio/video, loop detection
-  usePracticePlayback({
-    practiceMode,
-    isPlaying,
-    currentTime: gameState.currentTime,
-    audioRef,
-    videoRef,
-  });
-  
-  // Mobile client state - pitch polling extracted to dedicated hook
-  const { mobilePitch } = useMobilePitchPolling(song);
-  
-  // Audio effects - lazy init, cleanup managed by hook.
-  // Pass audioRef/videoRef so the hook can resume media playback
-  // after effects init (Tauri/WebView may pause them).
-  const {
-    audioEffects,
-    setAudioEffects,
-    showAudioEffects,
-    toggleAudioEffects,
-    reverbAmount,
-    setReverbAmount,
-    echoAmount,
-    setEchoAmount,
-    applyEffectPreset,
-  } = useGameAudioEffects({ audioRef, videoRef });
-  
-  // YouTube + Ad handling - URL extraction, ad callbacks, countdown
-  const {
-    youtubeVideoId,
-    isYouTube,
-    useYouTubeAudio,
-    isAdPlaying,
-    adCountdown,
-    handleAdStart,
-    handleAdEnd,
-  } = useYouTubeGame({
-    effectiveSong,
-    isPlaying,
-    setIsPlaying,
-  });
-  
-  // Webcam background state - SEPARATE camera for filming singers
-  const [webcamConfig, setWebcamConfig] = useState<WebcamBackgroundConfig>({ ...DEFAULT_WEBCAM_CONFIG });
-
-  // SAFETY: Ensure at least one player exists before game starts
-  useEffect(() => {
-    if (gameState.players.length === 0 && song) {
-      if (profiles.length > 0) {
-        const activeProfile = profiles.find(p => p.isActive !== false) || profiles[0];
-        addPlayer(activeProfile);
-      } else {
-        const defaultProfile = createProfile('Player 1');
-        addPlayer(defaultProfile);
-      }
-    }
-  }, [song, gameState.players.length, profiles, addPlayer, createProfile]);
-  
-  useEffect(() => {
-    const savedConfig = loadWebcamConfig();
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
-    setWebcamConfig(savedConfig);
-  }, []);
-  
-  // Update webcam config and save to localStorage
-  const updateWebcamConfig = useCallback((updates: Partial<WebcamBackgroundConfig>) => {
-    setWebcamConfig(prev => {
-      const newConfig = { ...prev, ...updates };
-      saveWebcamConfig(newConfig);
-      return newConfig;
-    });
-  }, []);
-  
-  // Duet mode state - P2 volume
-  const [p2Volume, setP2Volume] = useState(0);
-  
-  // Visual Effects - Particle system for score feedback
-  const { 
-    particles, 
-    emitPerfectHit, 
-    emitGoldenNote, 
-    emitComboFirework,
-    emitConfetti
-  } = useParticleEmitter();
-
-  // Emit confetti burst when the song finishes (celebration effect)
-  const prevStatusRef = useRef(gameState.status);
-  useEffect(() => {
-    if (prevStatusRef.current !== 'ended' && gameState.status === 'ended') {
-      emitConfetti(window.innerWidth / 2, window.innerHeight / 2);
-    }
-    prevStatusRef.current = gameState.status;
-  }, [gameState.status, emitConfetti]);
-  
-  // Song energy for visual effects intensity
-  const songEnergy = useSongEnergy(audioRef);
-  
-  // Check if this is a duet song (use comprehensive detection, not just flag)
-  // Also treat blind/missing-words competitive modes as duet when 2+ players are added
-  // NOTE: In low-performance mode, force single-player (no duet split-screen)
-  const isCompetitiveMultiplayer = !isLowPerf && (gameState.gameMode === 'blind' || gameState.gameMode === 'missing-words') && gameState.players.length >= 2;
-  const isDuetMode = !isLowPerf && ((song ? isDuetSong(song) : false) || gameState.gameMode === 'duet' || gameState.gameMode === 'duel' || isCompetitiveMultiplayer);
-
-  // =====================================================
-  // PRE-COMPUTE ALL TIMING DATA ONCE WHEN SONG LOADS
-  // MUST be defined BEFORE useNoteScoring hook!
-  // =====================================================
-  const timingData = useMemo(() => {
-    if (!effectiveSong || effectiveSong.lyrics.length === 0) return null;
-    
-    const allNotes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
-    const p1Notes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
-    const p2Notes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
-    
-    effectiveSong.lyrics.forEach((line, lineIndex) => {
-      line.notes.forEach(note => {
-        const noteWithLine = { ...note, lineIndex, line };
-        allNotes.push(noteWithLine);
-        
-        if (isDuetMode) {
-          if (note.player === 'P1') {
-            p1Notes.push(noteWithLine);
-          } else if (note.player === 'P2') {
-            p2Notes.push(noteWithLine);
-          } else {
-            p1Notes.push(noteWithLine);
-            p2Notes.push(noteWithLine);
-          }
-        }
-      });
-    });
-    
-    allNotes.sort((a, b) => a.startTime - b.startTime);
-    p1Notes.sort((a, b) => a.startTime - b.startTime);
-    p2Notes.sort((a, b) => a.startTime - b.startTime);
-    
-    const sortedLines = [...effectiveSong.lyrics].sort((a, b) => a.startTime - b.startTime);
-    const hasExplicitPlayerMarkers = sortedLines.some(line => line.player === 'P1' || line.player === 'P2');
-    
-    const p1Lines = sortedLines.filter(line => {
-      if (hasExplicitPlayerMarkers) return line.player === 'P1' || line.player === 'both';
-      return true;
-    });
-    
-    const p2Lines = sortedLines.filter(line => {
-      if (hasExplicitPlayerMarkers) return line.player === 'P2' || line.player === 'both';
-      return true;
-    });
-    
-    const beatDurationMs = effectiveSong.bpm ? 15000 / effectiveSong.bpm : 500;
-    const scoringMetadata = calculateScoringMetadata(allNotes, beatDurationMs);
-    const p1ScoringMetadata = calculateScoringMetadata(p1Notes, beatDurationMs);
-    const p2ScoringMetadata = calculateScoringMetadata(p2Notes, beatDurationMs);
-    
-    return {
-      allNotes, sortedLines, noteCount: allNotes.length, lineCount: sortedLines.length,
-      p1Notes, p2Notes, p1Lines, p2Lines,
-      p1NoteCount: p1Notes.length, p2NoteCount: p2Notes.length,
-      scoringMetadata, p1ScoringMetadata, p2ScoringMetadata,
-      beatDuration: beatDurationMs,
-    };
-  }, [effectiveSong, isDuetMode]);
-  
-  const beatDuration = timingData?.beatDuration || (song?.bpm ? 15000 / song.bpm : 500);
-
-  // Note scoring hook - handles all scoring logic
-  const {
-    scoreEvents,
-    notePerformance,
-    p2State,
-    p2DetectedPitch,
-    setP2DetectedPitch,
-    checkNoteHits,
-    checkP2NoteHits,
-    resetScoring,
-    p1PerfectNotesCount,
-  } = useNoteScoring({
-    song,
-    difficulty: gameState.difficulty,
-    players: gameState.players,
-    timingData,
-    isDuetMode,
-    beatDuration,
-    updatePlayer,
-    challengeModifiers: activeChallenge?.modifiers,
-    onPerfectHit: emitPerfectHit,
-    onGoldenNote: emitGoldenNote,
-    onComboMilestone: useCallback((combo: number, x: number, y: number) => emitComboFirework(x, y, combo), [emitComboFirework]),
-  });
-
-  // Use mobile pitch for P2 in duet/duel mode
-  useEffect(() => {
-    if (isDuetMode && mobilePitch) {
-      queueMicrotask(() => {
-        setP2DetectedPitch(mobilePitch.frequency);
-        setP2Volume(mobilePitch.volume || 0);
-      });
-    } else if (isDuetMode && !mobilePitch?.frequency) {
-      queueMicrotask(() => {
-        setP2DetectedPitch(null);
-        setP2Volume(0);
-      });
-    }
-  }, [isDuetMode, mobilePitch, setP2DetectedPitch, setP2Volume]);
-  
-  // Mobile companion sync - periodic game state updates
-  useMobileGameSync(song, isPlaying, gameState.gameMode, gameState.status === 'ended');
-
-  // Special game modes (blind + missing words)
-  useGameModes({
-    gameMode: gameState.gameMode,
-    status: gameState.status,
-    currentTime: gameState.currentTime,
-    songId: song?.id,
-    sortedLines: timingData?.sortedLines,
-    setBlindSection,
-    setMissingWordsIndices,
-    // Pass competitive settings frequencies if available
-    blindFrequency,
-    missingWordFrequency,
-  });
-
-  // Calculate pitch ranges
-  const pitchStats = useMemo<PitchStats>(() => {
-    return calculatePitchStats(timingData?.allNotes);
-  }, [timingData]);
-  
-  const p1PitchStats = useMemo<PitchStats>(() => {
-    const notes = timingData?.p1Notes;
-    if (!notes || notes.length === 0) return pitchStats;
-    return calculatePitchStats(notes);
-  }, [timingData, pitchStats]);
-  
-  const p2PitchStats = useMemo<PitchStats>(() => {
-    const notes = timingData?.p2Notes;
-    if (!notes || notes.length === 0) return pitchStats;
-    return calculatePitchStats(notes);
-  }, [timingData, pitchStats]);
-
-  // ── Replay Recorder: mic + webcam during gameplay ──
-  const {
-    startRecording: replayStart,
-    stopRecording: replayStop,
-    pauseRecording: replayPause,
-    resumeRecording: replayResume,
-  } = useReplayRecorder({
-    enabled: replayEnabled,
-    songId: song?.id ?? null,
-    songTitle: song?.title ?? '',
-    songArtist: song?.artist ?? '',
-    playerName: gameState.players[0]?.name || 'Player 1',
-    isWebcamActive: webcamConfig.enabled,
-    getMicStream: useCallback(() => {
-      try { return getPitchDetector().getMediaStream() || null; } catch { return null; }
-    }, []),
-    onReplaySaved: useCallback((replay: { id: string }) => {
-      setLastReplayId(replay.id);
-    }, []),
-  });
-
-  // Run replay cleanup on mount (delete replays >30 days, keep max 50)
-  useEffect(() => { cleanupOldReplays().catch(() => {}); }, []);
-
-  // ── Replay: stop recording BEFORE navigating to results screen ──
-  // CRITICAL: This must be synchronous in the onEnd callback, NOT in a useEffect.
-  // A useEffect watching gameState.status === 'ended' will never fire because
-  // onEnd() navigates away and unmounts this component before the effect runs.
-  const handleEnd = useCallback(() => {
-    if (replayEnabled) {
-      replayStop(gameState.results);
-    }
-    onEnd();
-  }, [replayEnabled, replayStop, gameState.results, onEnd]);
-
-  // Remote control polling - commands from mobile companions
-  // MUST be defined AFTER handleEnd to avoid TDZ (Temporal Dead Zone) error
-  useRemoteControl({
-    audioRef,
-    videoRef,
-    isPlaying,
-    setIsPlaying,
-    isAdPlaying,
-    stop,
-    onBack,
-    onEnd: handleEnd,
-  });
-
-  // ── Game Loop: countdown, game loop, media playback, song-end detection ──
-  const {
-    countdown,
-    volume,
-    pauseGame,
-    resumeGame,
-    endGameAndCleanup,
-    abortGameLoop,
-  } = useGameLoop({
-    effectiveSong,
-    mediaLoaded,
-    audioRef,
-    videoRef,
-    isYouTube,
-    youtubeVideoId,
-    youtubeTime,
-    isPlaying,
-    setIsPlaying,
-    pitchResult,
-    initialize,
-    start,
-    stop,
-    setPitchDifficulty,
-    setCurrentTime,
-    setDetectedPitch,
-    endGame,
-    setResults,
-    resetScoring,
-    checkNoteHits,
-    checkP2NoteHits,
-    difficulty: gameState.difficulty,
-    gameMode: gameState.gameMode,
-    timingOffset: 0,
-    isDuetMode,
-    p2DetectedPitch,
-    p2Volume,
-    p2IsSinging: mobilePitch?.isSinging,
-    setP2Volume,
-    onEnd: handleEnd,
-    audioEffects,
-    setAudioEffects,
-    song,
-    players: gameState.players,
-    // P2 scoring state for duel/duet results
-    p2ScoringState: p2State,
-    // P1 perfect notes count for daily challenge / leaderboard
-    p1PerfectNotesCount,
-    // Practice mode playback rate (for speed_demon achievement)
-    playbackRate: practiceMode.playbackRate,
-    // Native audio support
-    isNativeAudio: nativeAudio.enabled,
-    nativeAudioTime: nativeAudio.currentPosition,
-    nativeAudioPlay: nativeAudio.play,
-    nativeAudioPause: nativeAudio.pause,
-    nativeAudioResume: nativeAudio.resume,
-    nativeAudioStop: nativeAudio.stop,
-    nativeAudioSeek: nativeAudio.seek,
-  });
-
-  // ── OS Media Controls: song metadata, media keys, position seekbar ──
-  useMediaSession({
-    song,
-    isPlaying,
-    audioRef,
-    onPause: pauseGame,
-    onResume: resumeGame,
-  });
-
-  // ── Replay: start recording when gameplay begins (after countdown) ──
-  useEffect(() => {
-    if (isPlaying && !wasPlayingRef.current) {
-      // isPlaying went from false → true (gameplay just started)
-      replayStart();
-    } else if (!isPlaying && wasPlayingRef.current) {
-      // isPlaying went from true → false (game ended or paused)
-      // Pause the replay recorder (stop happens on game end)
-      replayPause();
-    } else if (isPlaying && wasPlayingRef.current) {
-      // Resumed from pause
-      replayResume();
-    }
-    wasPlayingRef.current = isPlaying;
-  }, [isPlaying, replayStart, replayPause, replayResume]);
-
-  // Get visible notes using shared utility
-  const visibleNotes = useMemo(() =>
-    getVisibleNotes(timingData?.allNotes, gameState.currentTime, NOTE_WINDOW),
-    [gameState.currentTime, timingData]
-  );
-
-  const p1VisibleNotes = useMemo(() =>
-    getVisibleNotes(timingData?.p1Notes, gameState.currentTime, NOTE_WINDOW),
-    [gameState.currentTime, timingData]
-  );
-
-  const p2VisibleNotes = useMemo(() =>
-    getVisibleNotes(timingData?.p2Notes, gameState.currentTime, NOTE_WINDOW),
-    [gameState.currentTime, timingData]
-  );
-
-  // Compute display duration for progress bar & time display:
-  // - If #END: tag exists → use that value
-  // - Otherwise → use the audio/video element's actual media duration
-  //   (avoids showing ~999999s when #END: is not defined)
-  const [displayDuration, setDisplayDuration] = useState(0);
-
-  useEffect(() => {
-    if (!effectiveSong) return;
-    const compute = () => {
-      if (effectiveSong.end) {
-        setDisplayDuration(effectiveSong.end);
-        return;
-      }
-      const audioDur = audioRef.current?.duration;
-      if (audioDur && isFinite(audioDur) && audioDur > 0) {
-        setDisplayDuration(audioDur * 1000);
-        return;
-      }
-      const videoDur = videoRef.current?.duration;
-      if (videoDur && isFinite(videoDur) && videoDur > 0) {
-        setDisplayDuration(videoDur * 1000);
-        return;
-      }
-      setDisplayDuration(effectiveSong.duration);
-    };
-    queueMicrotask(compute);
-  }, [effectiveSong, mediaLoaded, audioRef, videoRef]);
-
-  if (!song) {
+  if (!g.song) {
     return (
       <div className="max-w-4xl mx-auto text-center py-20">
         <p className="text-white/60 mb-4">No song selected</p>
-        <Button onClick={onBack} className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white">Back to Library</Button>
+        <Button onClick={props.onBack} className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white">Back to Library</Button>
       </div>
     );
   }
@@ -592,61 +47,61 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
       <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2 bg-gradient-to-b from-black/70 to-transparent">
         {/* Left: Back / Pause Button */}
         <Button variant="ghost" onClick={() => {
-          if (onPause) {
-            onPause();
+          if (props.onPause) {
+            props.onPause();
           } else {
-            abortGameLoop();
-            stop();
-            if (audioEffects) audioEffects.disconnect();
-            if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
-            if (videoRef.current) { videoRef.current.pause(); videoRef.current.currentTime = 0; }
-            nativeAudio.stop().catch(() => {});
-            setIsPlaying(false);
-            resetScoring();
-            onBack();
+            g.abortGameLoop();
+            g.stop();
+            if (g.audioEffects) g.audioEffects.disconnect();
+            if (g.audioRef.current) { g.audioRef.current.pause(); g.audioRef.current.currentTime = 0; }
+            if (g.videoRef.current) { g.videoRef.current.pause(); g.videoRef.current.currentTime = 0; }
+            g.nativeAudio.stop().catch(() => {});
+            g.setIsPlaying(false);
+            g.resetScoring();
+            props.onBack();
           }
         }} className="text-white/80 hover:text-white hover:bg-white/10">
           ⏸ Pause
         </Button>
-        
+
         {/* Center: Webcam Controls — hidden in low-performance mode */}
         <div className="flex items-center gap-3">
-          {!isLowPerf && (
-            <WebcamQuickControls 
-              config={webcamConfig} 
-              onConfigChange={updateWebcamConfig}
+          {!g.isLowPerf && (
+            <WebcamQuickControls
+              config={g.webcamConfig}
+              onConfigChange={g.updateWebcamConfig}
             />
           )}
-          {isLowPerf && (
+          {g.isLowPerf && (
             <span className="text-xs text-orange-400/80 font-medium px-2 py-1 bg-orange-500/10 rounded">⚡ Low-Perf</span>
           )}
         </div>
-        
+
         {/* Right: Score, Difficulty & Challenge */}
         <GameScoreDisplay
-          isDuetMode={isDuetMode}
-          score={gameState.players[0]?.score || 0}
-          combo={gameState.players[0]?.combo || 0}
-          difficulty={gameState.difficulty}
-          activeChallenge={activeChallenge}
+          isDuetMode={g.isDuetMode}
+          score={g.gameState.players[0]?.score || 0}
+          combo={g.gameState.players[0]?.combo || 0}
+          difficulty={g.gameState.difficulty}
+          activeChallenge={g.activeChallenge}
         />
       </div>
 
       {/* Pitch Graph Display — disabled in low-performance mode and no_pitch_guide challenge */}
-      {isPlaying && showPitchGuide && !isLowPerf && !hasChallengeNoPitchGuide && (
+      {g.isPlaying && g.showPitchGuide && !g.isLowPerf && !g.hasChallengeNoPitchGuide && (
         <div className="absolute top-44 left-4 z-20 w-64">
           <PitchGraphDisplay
-            currentPitch={smoothedPitch}
+            currentPitch={g.smoothedPitch}
             targetPitch={null}
-            currentTime={gameState.currentTime}
-            isPlaying={isPlaying}
+            currentTime={g.gameState.currentTime}
+            isPlaying={g.isPlaying}
             accuracy={undefined}
             width={280}
             height={80}
             colorScheme="neon"
             showTargetLine={false}
-            minPitch={pitchStats.minPitch}
-            maxPitch={pitchStats.maxPitch}
+            minPitch={g.pitchStats.minPitch}
+            maxPitch={g.pitchStats.maxPitch}
           />
         </div>
       )}
@@ -655,13 +110,13 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
       {/* key=song.id forces React to create a fresh DOM element per song,
           preventing "already connected to different MediaElementSourceNode" errors
           when SpectrogramDisplay / useSongEnergy call createMediaElementSource */}
-      {effectiveSong?.audioUrl && (
-        <audio 
-          key={effectiveSong.id}
-          ref={audioElRefCallback}
-          src={effectiveSong.audioUrl}
+      {g.effectiveSong?.audioUrl && (
+        <audio
+          key={g.effectiveSong.id}
+          ref={g.audioElRefCallback}
+          src={g.effectiveSong.audioUrl}
           className="hidden"
-          onEnded={endGameAndCleanup}
+          onEnded={g.endGameAndCleanup}
           onError={(e) => {
             const audio = e.currentTarget;
             // eslint-disable-next-line no-console
@@ -672,21 +127,21 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
               src: audio.src?.substring(0, 50)
             });
           }}
-          onCanPlay={() => { audioLoadedRef.current = true; }}
+          onCanPlay={() => { g.audioLoadedRef.current = true; }}
           preload="auto"
         />
       )}
 
       {/* Hidden Video Element for embedded audio (when video has audio but we don't show it) */}
-      {effectiveSong?.hasEmbeddedAudio && effectiveSong?.videoBackground && !showBackgroundVideo && !isYouTube && !effectiveSong?.audioUrl && (
+      {g.effectiveSong?.hasEmbeddedAudio && g.effectiveSong?.videoBackground && !g.showBackgroundVideo && !g.isYouTube && !g.effectiveSong?.audioUrl && (
         <video
-          key={`video-${effectiveSong.id}`}
-          ref={videoRef}
-          src={effectiveSong.videoBackground}
+          key={`video-${g.effectiveSong.id}`}
+          ref={g.videoRef}
+          src={g.effectiveSong.videoBackground}
           className="hidden"
           muted={false}
           playsInline
-          onEnded={endGameAndCleanup}
+          onEnded={g.endGameAndCleanup}
           preload="auto"
         />
       )}
@@ -695,22 +150,22 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
       <div className="absolute inset-0 overflow-hidden">
         {/* Background layer — in low-perf mode: no video, no animated bg, no song energy */}
         <GameBackground
-          effectiveSong={effectiveSong}
-          showBackgroundVideo={!isLowPerf && showBackgroundVideo}
-          useAnimatedBackground={!isLowPerf && useAnimatedBackground}
-          isYouTube={isYouTube}
-          youtubeVideoId={youtubeVideoId}
-          useYouTubeAudio={useYouTubeAudio}
-          isPlaying={isPlaying}
-          isAdPlaying={isAdPlaying}
-          songEnergy={isLowPerf ? 0 : (songEnergy ?? 0)}
-          volume={volume}
-          videoRef={videoRef}
-          onYoutubeTimeUpdate={setYoutubeTime}
-          onAdStart={handleAdStart}
-          onAdEnd={handleAdEnd}
-          onVideoEnded={endGameAndCleanup}
-          onVideoCanPlay={() => { videoLoadedRef.current = true; }}
+          effectiveSong={g.effectiveSong}
+          showBackgroundVideo={!g.isLowPerf && g.showBackgroundVideo}
+          useAnimatedBackground={!g.isLowPerf && g.useAnimatedBackground}
+          isYouTube={g.isYouTube}
+          youtubeVideoId={g.youtubeVideoId}
+          useYouTubeAudio={g.useYouTubeAudio}
+          isPlaying={g.isPlaying}
+          isAdPlaying={g.isAdPlaying}
+          songEnergy={g.isLowPerf ? 0 : (g.songEnergy ?? 0)}
+          volume={g.volume}
+          videoRef={g.videoRef}
+          onYoutubeTimeUpdate={g.setYoutubeTime}
+          onAdStart={g.handleAdStart}
+          onAdEnd={g.handleAdEnd}
+          onVideoEnded={g.endGameAndCleanup}
+          onVideoCanPlay={() => { g.videoLoadedRef.current = true; }}
           onYoutubeError={(errorCode) => {
             const messages: Record<number, string> = {
               100: 'YouTube-Video nicht gefunden (gelöscht oder privat)',
@@ -719,30 +174,30 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
               2: 'Ungültiger YouTube-Parameter',
               5: 'HTML5-Fehler beim YouTube-Player',
             };
-            setYoutubeError(messages[errorCode] || `YouTube-Fehler (Code: ${errorCode})`);
+            g.setYoutubeError(messages[errorCode] || `YouTube-Fehler (Code: ${errorCode})`);
             // eslint-disable-next-line no-console
             console.error('[GameScreen] YouTube error:', errorCode);
           }}
         />
 
         {/* Webcam Background — disabled in low-performance mode */}
-        {!isLowPerf && (
-          <WebcamBackground 
-            config={webcamConfig} 
-            onConfigChange={updateWebcamConfig}
+        {!g.isLowPerf && (
+          <WebcamBackground
+            config={g.webcamConfig}
+            onConfigChange={g.updateWebcamConfig}
           />
         )}
 
         {/* Countdown */}
-        <GameCountdown countdown={countdown} />
-        
+        <GameCountdown countdown={g.countdown} />
+
         {/* Ad Indicator */}
-        <AdIndicator isAdPlaying={isAdPlaying} adCountdown={adCountdown} />
-        
+        <AdIndicator isAdPlaying={g.isAdPlaying} adCountdown={g.adCountdown ?? 0} />
+
         {/* YouTube Error Indicator */}
-        {youtubeError && (
+        {g.youtubeError && (
           <div className="absolute top-14 left-1/2 -translate-x-1/2 z-30 bg-red-500/90 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-lg max-w-md text-center">
-            ⚠️ {youtubeError}
+            ⚠️ {g.youtubeError}
           </div>
         )}
 
@@ -750,46 +205,46 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50 z-5" />
 
         {/* Note Highway — use lightweight NoteLane in low-performance mode */}
-        {isLowPerf ? (
+        {g.isLowPerf ? (
           <NoteLane
-            lyrics={timingData?.sortedLines || []}
-            currentTime={gameState.currentTime}
-            difficulty={gameState.difficulty}
-            detectedPitch={pitchResult?.frequency ?? null}
+            lyrics={g.timingData?.sortedLines || []}
+            currentTime={g.gameState.currentTime}
+            difficulty={g.gameState.difficulty}
+            detectedPitch={g.pitchResult?.frequency ?? null}
           />
-        ) : isDuetMode ? (
+        ) : g.isDuetMode ? (
           <DuetNoteHighway
-            p1VisibleNotes={p1VisibleNotes}
-            p2VisibleNotes={p2VisibleNotes}
-            p1PitchStats={p1PitchStats}
-            p2PitchStats={p2PitchStats}
-            currentTime={gameState.currentTime}
-            p1DetectedPitch={smoothedPitch}
-            p2DetectedPitch={p2DetectedPitch}
-            p1State={gameState.players[0]}
-            p2State={p2State}
-            noteShapeStyle={noteShapeStyle}
-            p1Lines={timingData?.p1Lines}
-            p2Lines={timingData?.p2Lines}
+            p1VisibleNotes={g.p1VisibleNotes}
+            p2VisibleNotes={g.p2VisibleNotes}
+            p1PitchStats={g.p1PitchStats}
+            p2PitchStats={g.p2PitchStats}
+            currentTime={g.gameState.currentTime}
+            p1DetectedPitch={g.smoothedPitch}
+            p2DetectedPitch={g.p2DetectedPitch}
+            p1State={g.gameState.players[0]}
+            p2State={g.p2State}
+            noteShapeStyle={g.noteShapeStyle}
+            p1Lines={g.timingData?.p1Lines}
+            p2Lines={g.timingData?.p2Lines}
             singLinePosition={SING_LINE_POSITION}
             noteWindow={NOTE_WINDOW}
-            notePerformance={notePerformance}
-            gameMode={gameState.gameMode}
-            missingWordsIndices={gameState.missingWordsIndices}
-            isBlindSection={gameState.isBlindSection}
-            p1PlayerName={song?.duetPlayerNames?.[0] || gameState.players[0]?.name || 'Player 1'}
-            p2PlayerName={song?.duetPlayerNames?.[1] || gameState.players[1]?.name || 'Player 2'}
-            noteDisplayStyle={noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
+            notePerformance={g.notePerformance}
+            gameMode={g.gameState.gameMode}
+            missingWordsIndices={g.gameState.missingWordsIndices}
+            isBlindSection={g.gameState.isBlindSection}
+            p1PlayerName={g.song?.duetPlayerNames?.[0] || g.gameState.players[0]?.name || 'Player 1'}
+            p2PlayerName={g.song?.duetPlayerNames?.[1] || g.gameState.players[1]?.name || 'Player 2'}
+            noteDisplayStyle={g.noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
           />
         ) : (
           <NoteHighway
-            visibleNotes={visibleNotes}
-            currentTime={gameState.currentTime}
-            pitchStats={pitchStats}
-            detectedPitch={smoothedPitch}
-            noteShapeStyle={noteShapeStyle}
-            noteDisplayStyle={noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
-            notePerformance={notePerformance}
+            visibleNotes={g.visibleNotes}
+            currentTime={g.gameState.currentTime}
+            pitchStats={g.pitchStats}
+            detectedPitch={g.smoothedPitch}
+            noteShapeStyle={g.noteShapeStyle}
+            noteDisplayStyle={g.noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
+            notePerformance={g.notePerformance}
             singLinePosition={SING_LINE_POSITION}
             noteWindow={NOTE_WINDOW}
             playerColor={PLAYER_COLORS[0]}
@@ -800,73 +255,73 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
         )}
 
         {/* Lyrics Display — NoteLane has built-in lyrics in low-perf mode */}
-        {!isDuetMode && !isLowPerf && timingData && (
+        {!g.isDuetMode && !g.isLowPerf && g.timingData && (
           <SinglePlayerLyrics
-            sortedLines={timingData.sortedLines}
-            currentTime={gameState.currentTime}
+            sortedLines={g.timingData.sortedLines}
+            currentTime={g.gameState.currentTime}
             playerColor={PLAYER_COLORS[0]}
-            noteDisplayStyle={noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
-            notePerformance={notePerformance}
-            gameMode={gameState.gameMode}
-            missingWordsIndices={gameState.missingWordsIndices}
-            isBlindSection={gameState.isBlindSection}
+            noteDisplayStyle={g.noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
+            notePerformance={g.notePerformance}
+            gameMode={g.gameState.gameMode}
+            missingWordsIndices={g.gameState.missingWordsIndices}
+            isBlindSection={g.gameState.isBlindSection}
           />
         )}
 
         {/* Mic Indicator — shows assigned mic + player during gameplay */}
         <MicIndicator
-          currentTime={gameState.currentTime}
-          isPlaying={isPlaying}
-          isDuetMode={isDuetMode}
-          gameMode={gameState.gameMode}
+          currentTime={g.gameState.currentTime}
+          isPlaying={g.isPlaying}
+          isDuetMode={g.isDuetMode}
+          gameMode={g.gameState.gameMode}
         />
 
         {/* Volume Meter */}
-        <VolumeMeter volume={volume} />
+        <VolumeMeter volume={g.volume} />
 
         {/* Audio Effects Button */}
-        <AudioEffectsButton onClick={toggleAudioEffects} />
+        <AudioEffectsButton onClick={g.toggleAudioEffects} />
 
         {/* Audio Effects Panel */}
         <AudioEffectsPanel
-          show={showAudioEffects}
-          audioEffects={audioEffects}
-          reverbAmount={reverbAmount}
-          echoAmount={echoAmount}
-          onReverbChange={setReverbAmount}
-          onEchoChange={setEchoAmount}
-          onApplyPreset={applyEffectPreset}
+          show={g.showAudioEffects}
+          audioEffects={g.audioEffects}
+          reverbAmount={g.reverbAmount}
+          echoAmount={g.echoAmount}
+          onReverbChange={g.setReverbAmount}
+          onEchoChange={g.setEchoAmount}
+          onApplyPreset={g.applyEffectPreset}
         />
-        
+
         {/* Progress Bar — uses actual media duration when available */}
         <GameProgressBar
-          currentTime={gameState.currentTime}
-          duration={displayDuration}
+          currentTime={g.gameState.currentTime}
+          duration={g.displayDuration}
         />
-        
+
         {/* Time Display — uses actual media duration when available */}
         <TimeDisplay
-          currentTime={gameState.currentTime}
-          duration={displayDuration}
+          currentTime={g.gameState.currentTime}
+          duration={g.displayDuration}
         />
       </div>
 
       <PracticePanel
-        practiceMode={practiceMode}
-        showControls={showPracticeControls}
-        onToggleControls={() => setShowPracticeControls(!showPracticeControls)}
-        onPracticeModeChange={(config) => setPracticeMode(p => ({ ...p, ...config }))}
+        practiceMode={g.practiceMode}
+        showControls={g.showPracticeControls}
+        onToggleControls={() => g.setShowPracticeControls(!g.showPracticeControls)}
+        onPracticeModeChange={(config) => g.setPracticeMode(p => ({ ...p, ...config }))}
       />
 
       {/* Score Events & Particles — disabled in low-performance mode */}
-      {!isLowPerf && <ScoreEventsDisplay events={scoreEvents} maxVisible={5} />}
-      {!isLowPerf && <ParticleSystem particles={particles} />}
-      
+      {!g.isLowPerf && <ScoreEventsDisplay events={g.scoreEvents} maxVisible={5} />}
+      {!g.isLowPerf && <ParticleSystem particles={g.particles} />}
+
       {/* Spectrogram Display / Equalizer — left side, below pitch detection */}
-      {showPitchGuide && isPlaying && !isLowPerf && !hasChallengeNoPitchGuide && (
+      {g.showPitchGuide && g.isPlaying && !g.isLowPerf && !g.hasChallengeNoPitchGuide && (
         <SpectrogramDisplay
-          audioElement={spectrogramAudioEl}
-          isActive={isPlaying && !!spectrogramAudioEl}
+          audioElement={g.spectrogramAudioEl}
+          isActive={g.isPlaying && !!g.spectrogramAudioEl}
           mode="bars"
           position={{ x: 50, y: 50 }}
           size={{ width: 256, height: 40 }}
@@ -875,16 +330,16 @@ function GameScreen({ onEnd, onBack, onPause }: { onEnd: () => void; onBack: () 
           className="!absolute !left-4 !top-[17.5rem] !transform-none"
         />
       )}
-      
+
       {/* Combo Fire Effect — disabled in low-performance mode */}
-      {!isLowPerf && gameState.players[0]?.combo && gameState.players[0].combo >= 5 && (
+      {!g.isLowPerf && g.gameState.players[0]?.combo && g.gameState.players[0].combo >= 5 && (
         <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
-          <ComboFireEffect combo={gameState.players[0].combo} isLarge={gameState.players[0].combo >= 20} />
+          <ComboFireEffect combo={g.gameState.players[0].combo} isLarge={g.gameState.players[0].combo >= 20} />
         </div>
       )}
-      
+
       {/* Prominent Score Display - Only for Single Player Mode */}
-      {!isDuetMode && <ProminentScoreDisplay player={gameState.players[0]} />}
+      {!g.isDuetMode && <ProminentScoreDisplay player={g.gameState.players[0]} />}
     </div>
   );
 }
