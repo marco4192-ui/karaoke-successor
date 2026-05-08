@@ -317,14 +317,12 @@ export default function KaraokeSuccessor() {
         {screen === 'home' && <HomeScreen onNavigate={setScreen} />}
         {screen === 'library' && (
           <LibraryScreen
-            onSelectSong={(song) => {
+            onSelectSong={(song, explicitGameMode) => {
               // Preserve the gameMode set by LibraryScreen.handleStartGame
               // (e.g. 'duel' or 'duet') across the resetGame() call.
-              // IMPORTANT: Read from the Zustand store directly (not the stale
-              // closure value) because handleStartGame calls setGameMode()
-              // synchronously before calling onSelectSong, but the React
-              // closure still holds the pre-render value of gameState.
-              const currentMode = useGameStore.getState().gameState.gameMode;
+              // IMPORTANT: Prefer explicitGameMode passed from the caller
+              // over the store value to avoid timing/race conditions.
+              const currentMode = explicitGameMode || useGameStore.getState().gameState.gameMode;
               resetGame();
               if (currentMode && currentMode !== 'standard') {
                 setGameMode(currentMode);

@@ -35,7 +35,7 @@ import { useLibraryFilters } from '@/hooks/use-library-filters';
 import { useLibraryPreview } from '@/hooks/use-library-preview';
 import { useViralCharts } from '@/hooks/use-viral-charts';
 
-export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong: (_song: Song) => void; initialGameMode?: GameMode }) {
+export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong: (_song: Song, _gameMode?: GameMode) => void; initialGameMode?: GameMode }) {
   const { t } = useTranslation();
 
   // Core state
@@ -236,11 +236,12 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
     else if (startOptions.mode === 'single') { const pid = startOptions.players[0] || activeProfileId; if (pid) addPlayers([pid]); }
     else if ((startOptions.mode === 'duel' || startOptions.mode === 'duet') && startOptions.players.length >= 2) addPlayers(startOptions.players);
     
+    const resolvedGameMode: GameMode = startOptions.partyMode || (startOptions.mode === 'duel' ? 'duel' : startOptions.mode === 'duet' ? 'duet' : 'standard');
     setDifficulty(startOptions.difficulty);
-    setGameMode(startOptions.partyMode || (startOptions.mode === 'duel' ? 'duel' : startOptions.mode === 'duet' ? 'duet' : 'standard'));
+    setGameMode(resolvedGameMode);
     setShowSongModal(false);
     
-    onSelectSong(songWithUrls);
+    onSelectSong(songWithUrls, resolvedGameMode);
   };
 
   const handlePlaylistDelete = (id: string) => { deletePlaylist(id); setPlaylists(getPlaylists()); };
