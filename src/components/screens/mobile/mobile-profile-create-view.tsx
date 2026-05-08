@@ -89,15 +89,15 @@ export function MobileProfileCreateView({
           <p className="text-center text-white/40 text-sm mt-2">Your profile will sync with the main app</p>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Choose Existing Character from Host */}
+          {/* Choose Existing Profile from Host */}
           {hostProfiles.length > 0 && !selectedHostProfile && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <span className="text-lg">👤</span>
-                <h3 className="font-bold text-sm">Bestehenden Charakter wählen</h3>
+                <h3 className="font-bold text-sm">Bestehendes Profil wählen</h3>
               </div>
               <p className="text-xs text-white/40 mb-2">
-                Wähle einen Charakter, der auf dem Hauptgerät erstellt wurde
+                Wähle ein Profil, das auf dem Hauptgerät erstellt wurde
               </p>
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {availableProfiles.map((hp) => (
@@ -135,7 +135,7 @@ export function MobileProfileCreateView({
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <span className="text-lg">👤</span>
-                <h3 className="font-bold text-sm">Ausgewählter Charakter</h3>
+                <h3 className="font-bold text-sm">Ausgewähltes Profil</h3>
               </div>
               <button
                 onClick={() => fileInputRef.current?.click()}

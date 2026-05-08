@@ -47,7 +47,7 @@ export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: Creat
   return (
     <Card className="bg-white/5 border-white/10 mb-6 animate-in slide-in-from-top-2 duration-200">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Create New Character</CardTitle>
+        <CardTitle className="text-lg">Neues Profil erstellen</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col sm:flex-row gap-4">
@@ -72,9 +72,9 @@ export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: Creat
           </div>
           <div className="flex-1 space-y-3">
             <Input
-              id="character-name"
-              name="character-name"
-              placeholder="Character name..."
+              id="profile-name"
+              name="profile-name"
+              placeholder="Profilname..."
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               className="bg-white/5 border-white/10 text-white"
@@ -120,7 +120,7 @@ export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: Creat
             )}
             <div className="flex gap-2">
               <Button onClick={handleCreate} disabled={!newName.trim()} className="bg-gradient-to-r from-cyan-500 to-purple-500">
-                Create Character
+                Profil erstellen
               </Button>
               <Button onClick={onCancel} variant="outline" className="border-white/20">
                 Cancel

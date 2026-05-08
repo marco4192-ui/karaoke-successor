@@ -69,8 +69,8 @@ export function CharacterScreen() {
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-1">Characters</h1>
-        <p className="text-white/60">Create and manage your singer profiles</p>
+        <h1 className="text-3xl font-bold mb-1">Profile</h1>
+        <p className="text-white/60">Erstelle und verwalte deine Sänger-Profile</p>
       </div>
 
       {/* Top Action Bar */}
@@ -112,7 +112,7 @@ export function CharacterScreen() {
           className="bg-gradient-to-r from-cyan-500 to-purple-500 gap-2"
         >
           <PlusIcon className="w-4 h-4" />
-          Create New Character
+          Neues Profil erstellen
         </Button>
       </div>
 
@@ -127,12 +127,12 @@ export function CharacterScreen() {
 
       {/* Character List */}
       <div className="mb-6">
-        <h2 className="text-lg font-semibold mb-3 text-white/80">Your Characters ({profiles.length})</h2>
+        <h2 className="text-lg font-semibold mb-3 text-white/80">Deine Profile ({profiles.length})</h2>
         {profiles.length === 0 ? (
           <Card className="bg-white/5 border-white/10">
             <CardContent className="py-8 text-center text-white/60">
               <UserIcon className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p>No characters yet. Click &quot;Create New Character&quot; to get started!</p>
+              <p>Noch keine Profile. Klicke auf &quot;Neues Profil erstellen&quot; um loszulegen!</p>
             </CardContent>
           </Card>
         ) : (

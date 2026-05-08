@@ -86,7 +86,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
   return (
     <Card className="bg-white/5 border-white/10">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Character Settings</CardTitle>
+        <CardTitle className="text-lg">Profile-Einstellungen</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Edit Character Section */}
@@ -128,9 +128,9 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
               </div>
               <div className="flex-1 space-y-3">
                 <Input
-                  id="edit-character-name"
-                  name="edit-character-name"
-                  placeholder="Character name..."
+                  id="edit-profile-name"
+                  name="edit-profile-name"
+                  placeholder="Profilname..."
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   className="bg-white/5 border-white/10 text-white"
@@ -159,7 +159,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
                     size="sm"
                     className="bg-gradient-to-r from-cyan-500 to-purple-500 h-7"
                   >
-                    Save
+                    Speichern
                   </Button>
                   <Button 
                     onClick={cancelEditingCharacter} 
@@ -167,7 +167,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
                     size="sm"
                     className="border-white/20 h-7"
                   >
-                    Cancel
+                    Abbrechen
                   </Button>
                 </div>
               </div>
@@ -301,7 +301,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
         <div className="pt-4 border-t border-white/10">
           <h4 className="text-sm font-medium text-white/60 mb-3">Companion-App Verknüpfung</h4>
           <p className="text-xs text-white/40 mb-3">
-            Scanne diesen QR-Code, um dich direkt mit diesem Charakter in der Companion-App zu verbinden.
+            Scanne diesen QR-Code, um dich direkt mit diesem Profil in der Companion-App zu verbinden.
           </p>
           <button
             onClick={() => setShowQR(!showQR)}
@@ -332,7 +332,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
             className="text-red-400 border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
             onClick={onDelete}
           >
-            Delete Character
+            Profil löschen
           </Button>
         </div>
       </CardContent>

@@ -93,15 +93,15 @@ export function MobileProfileEditView({
             )}
           </div>
 
-          {/* Switch to Host Character */}
+          {/* Switch to Host Profile */}
           {availableHostProfiles.length > 0 && onSwitchToHostProfile && (
             <div className="space-y-3 mb-6">
               <div className="flex items-center gap-2">
                 <span className="text-lg">👤</span>
-                <h3 className="font-bold text-sm">Charakter wechseln</h3>
+                <h3 className="font-bold text-sm">Profil wechseln</h3>
               </div>
               <p className="text-xs text-white/40">
-                Wähle einen Charakter aus der Haupt-App
+                Wähle ein Profil aus der Haupt-App
               </p>
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {availableHostProfiles.map((hp) => (
