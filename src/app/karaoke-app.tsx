@@ -320,13 +320,17 @@ export default function KaraokeSuccessor() {
             onSelectSong={(song) => {
               // Preserve the gameMode set by LibraryScreen.handleStartGame
               // (e.g. 'duel' or 'duet') across the resetGame() call.
-              const currentMode = gameState.gameMode;
+              // IMPORTANT: Read from the Zustand store directly (not the stale
+              // closure value) because handleStartGame calls setGameMode()
+              // synchronously before calling onSelectSong, but the React
+              // closure still holds the pre-render value of gameState.
+              const currentMode = useGameStore.getState().gameState.gameMode;
               resetGame();
               if (currentMode && currentMode !== 'standard') {
                 setGameMode(currentMode);
               }
               setSong(song);
-              if (gameState.gameMode === 'pass-the-mic') {
+              if (currentMode === 'pass-the-mic') {
                 const playerCount = party.passTheMicPlayers?.length || 2;
                 const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration);
                 party.setPassTheMicSegments(segments);
@@ -342,11 +346,11 @@ export default function KaraokeSuccessor() {
                   }
                   setScreen('pass-the-mic-game');
                 })();
-              } else if (gameState.gameMode === 'companion-singalong') {
+              } else if (currentMode === 'companion-singalong') {
                 party.setCompanionSong(song);
                 party.setLibrarySelectedSong(song);
                 setScreen('party-setup');
-              } else if (gameState.gameMode === 'rate-my-song' && party.rateMySongSettings) {
+              } else if (currentMode === 'rate-my-song' && party.rateMySongSettings) {
                 const duration = party.rateMySongSettings.duration;
                 party.setRateMySongSettings({ ...party.rateMySongSettings, songId: song.id });
                 if (duration === 'short') {
