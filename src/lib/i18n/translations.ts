@@ -1046,11 +1046,22 @@ function createTranslationObject(language: Language): Record<string, unknown> {
 
 // React hook for translations (for client components)
 // Supports cross-tab synchronization via StorageEvent
+//
+// IMPORTANT: The useState initializer must NOT reference the module-level
+// `translations` constant. The translations data (~800KB, 16 languages) lives
+// in the same module and webpack may evaluate the useState callback before
+// the huge const is fully initialized, causing a TDZ crash
+// ("Cannot access 'n' before initialization").
+// Instead, we validate against the Language type union directly.
+const ALL_LANGUAGES: readonly string[] = [
+  'en','de','es','fr','it','pt','ja','ko','zh','ru','nl','pl','sv','no','da','fi',
+];
+
 export function useTranslation() {
   const [language, setLanguageState] = useState<Language>(() => {
     if (typeof window === 'undefined') return 'en';
     const stored = getString(StorageKeys.LANGUAGE, 'en');
-    if (stored && (translations as Record<string, unknown>)[stored]) {
+    if (stored && ALL_LANGUAGES.includes(stored)) {
       return stored as Language;
     }
     return 'en';
