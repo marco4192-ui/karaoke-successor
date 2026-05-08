@@ -8,7 +8,6 @@ export {
   PhoneIcon,
   SettingsIcon,
   TrophyIcon,
-  SparkleIcon,
   EditIcon,
   WebcamIcon,
   FolderIcon,

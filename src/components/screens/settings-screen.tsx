@@ -14,7 +14,6 @@ import { THEMES, applyTheme, getStoredTheme, Theme } from '@/lib/game/themes';
 import { StorageKeys, getItem, setItem, setBool, getNumber, getBool, getString } from '@/lib/storage';
 
 // Tab components
-import { AIAssetsGeneratorTab } from '@/components/settings/ai-assets-generator-tab';
 import { EditorSettingsTab } from '@/components/settings/editor-settings-tab';
 import { MicrophoneSettingsPanel } from '@/components/settings/microphone-settings-panel';
 import { LibraryTab } from '@/components/settings/library-tab';
@@ -239,8 +238,6 @@ function SettingsScreen() {
           tx={tx}
         />
       )}
-
-      {activeTab === 'assets' && <AIAssetsGeneratorTab />}
 
       {activeTab === 'viral' && <ViralChartsSettings />}
 

@@ -3,10 +3,10 @@
 import { Button } from '@/components/ui/button';
 import {
   SettingsIcon, MusicIcon, MicIcon, PhoneIcon,
-  WebcamIcon, FolderIcon, EditIcon, SparkleIcon, InfoIcon,
+  WebcamIcon, FolderIcon, EditIcon, InfoIcon,
 } from '@/components/settings/settings-icons';
 
-export type SettingsTab = 'general' | 'graphicsound' | 'microphone' | 'mobile' | 'webcam' | 'library' | 'editor' | 'assets' | 'viral' | 'about';
+export type SettingsTab = 'general' | 'graphicsound' | 'microphone' | 'mobile' | 'webcam' | 'library' | 'editor' | 'viral' | 'about';
 
 interface SettingsTabBarProps {
   activeTab: SettingsTab;
@@ -23,7 +23,6 @@ export function SettingsTabBar({ activeTab, onTabChange, tx }: SettingsTabBarPro
     { id: 'webcam', label: 'Webcam', icon: WebcamIcon, color: 'cyan' },
     { id: 'library', label: tx('settings.tabLibrary'), icon: FolderIcon, color: 'cyan' },
     { id: 'editor', label: 'Editor', icon: EditIcon, color: 'cyan' },
-    { id: 'assets', label: 'AI Asset', icon: SparkleIcon, color: 'purple' },
     { id: 'viral', label: 'Viral Charts', icon: () => <span>&#128293;</span>, color: 'orange' },
     { id: 'about', label: tx('settings.tabAbout'), icon: InfoIcon, color: 'cyan' },
   ];
