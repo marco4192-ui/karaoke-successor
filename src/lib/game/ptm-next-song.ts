@@ -69,6 +69,16 @@ export async function preparePtmNextSong(
       let songWithUrls = randomSong;
       try {
         songWithUrls = await ensureSongUrls(randomSong);
+        // Also load lyrics so the PTM note highway and lyrics display work
+        if (!songWithUrls.lyrics || songWithUrls.lyrics.length === 0) {
+          try {
+            const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
+            const lyrics = await loadSongLyrics(songWithUrls);
+            if (lyrics.length > 0) {
+              songWithUrls = { ...songWithUrls, lyrics };
+            }
+          } catch { /* non-critical */ }
+        }
       } catch { /* non-critical */ }
 
       const segments = generatePtmSegments(songWithUrls.duration, playerCount, explicitSegmentDuration);

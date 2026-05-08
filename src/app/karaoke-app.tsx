@@ -330,14 +330,18 @@ export default function KaraokeSuccessor() {
                 const playerCount = party.passTheMicPlayers?.length || 2;
                 const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration);
                 party.setPassTheMicSegments(segments);
-                import('@/lib/game/song-url-restore').then(({ ensureSongUrls }) => {
-                  ensureSongUrls(song).then(songWithUrls => {
+                // Ensure URLs (and lyrics) are ready BEFORE navigating to PTM screen
+                // to avoid race condition where PTM renders without lyrics
+                (async () => {
+                  try {
+                    const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
+                    const songWithUrls = await ensureSongUrls(song);
                     party.setPassTheMicSong(songWithUrls);
-                  }).catch(() => {
+                  } catch {
                     party.setPassTheMicSong(song);
-                  });
-                });
-                setScreen('pass-the-mic-game');
+                  }
+                  setScreen('pass-the-mic-game');
+                })();
               } else if (gameState.gameMode === 'companion-singalong') {
                 party.setCompanionSong(song);
                 party.setLibrarySelectedSong(song);

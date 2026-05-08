@@ -384,6 +384,16 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   let songWithUrls = randomSong;
                   try {
                     songWithUrls = await ensureSongUrls(randomSong);
+                    // Also load lyrics so the PTM note highway and lyrics display work
+                    if (!songWithUrls.lyrics || songWithUrls.lyrics.length === 0) {
+                      try {
+                        const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
+                        const lyrics = await loadSongLyrics(songWithUrls);
+                        if (lyrics.length > 0) {
+                          songWithUrls = { ...songWithUrls, lyrics };
+                        }
+                      } catch { /* non-critical */ }
+                    }
                   } catch { /* non-critical — game view has its own URL restoration */ }
 
                   const playerCount = result.players.length || 2;
@@ -556,6 +566,16 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
             try {
               const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
               songWithUrls = await ensureSongUrls(selectedSong);
+              // Also load lyrics for PTM note highway and lyrics display
+              if (!songWithUrls.lyrics || songWithUrls.lyrics.length === 0) {
+                try {
+                  const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
+                  const lyrics = await loadSongLyrics(songWithUrls);
+                  if (lyrics.length > 0) {
+                    songWithUrls = { ...songWithUrls, lyrics };
+                  }
+                } catch { /* non-critical */ }
+              }
             } catch { /* non-critical — game view has its own URL restoration */ }
 
             // IMPORTANT: resetGame() clears currentSong AND gameMode,
