@@ -361,6 +361,12 @@ export default function KaraokeSuccessor() {
                   setSong({ ...song, start: song.start, end: Math.min((song.start || 0) + 60000, song.end || song.duration) });
                 }
                 setScreen('game');
+              } else if ((currentMode === 'duel' || currentMode === 'duet') && party.unifiedSetupResult?.players) {
+                // Duel/Duet from unified party setup: add players from setup result
+                party.unifiedSetupResult.players.forEach((p) => {
+                  addPlayer({ id: p.id, name: p.name, color: p.color, avatar: p.avatar });
+                });
+                setScreen('game');
               } else {
                 setScreen('game');
               }

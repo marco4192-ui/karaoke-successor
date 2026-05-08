@@ -500,7 +500,39 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 break;
               }
 
-              // ── Duel / other modes: go to library for song selection ──
+              // ── Duel: pick random song, add both players, go to game ──
+              case 'duel': {
+                const randomSong = pickRandomSong(filteredSongs);
+                if (!randomSong) break;
+                resetGame();
+                setPlayers([]);
+                setGameMode('duel');
+                setSong(randomSong);
+                result.players.forEach((p) => {
+                  addPlayer({ id: p.id, name: p.name, color: p.color, avatar: p.avatar });
+                });
+                party.setUnifiedSetupResult(result);
+                setScreen('game');
+                break;
+              }
+
+              // ── Duet: same as duel ──
+              case 'duet': {
+                const randomSong = pickRandomSong(filteredSongs);
+                if (!randomSong) break;
+                resetGame();
+                setPlayers([]);
+                setGameMode('duet');
+                setSong(randomSong);
+                result.players.forEach((p) => {
+                  addPlayer({ id: p.id, name: p.name, color: p.color, avatar: p.avatar });
+                });
+                party.setUnifiedSetupResult(result);
+                setScreen('game');
+                break;
+              }
+
+              // ── Other modes: go to library for song selection ──
               default:
                 setScreen('library');
             }
@@ -616,6 +648,13 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               if (compPlayers.length > 0) {
                 addPlayer({ id: compPlayers[0].id, name: compPlayers[0].name, color: compPlayers[0].color, avatar: compPlayers[0].avatar });
               }
+              setScreen('game');
+            } else if (party.selectedGameMode === 'duel' || party.selectedGameMode === 'duet') {
+              // Duel/Duet: add both players from setup result
+              const setupPlayers = party.unifiedSetupResult?.players || [];
+              setupPlayers.forEach((p) => {
+                addPlayer({ id: p.id, name: p.name, color: p.color, avatar: p.avatar });
+              });
               setScreen('game');
             } else {
               setScreen('game');
