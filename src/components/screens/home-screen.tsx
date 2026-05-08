@@ -211,7 +211,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                 </button>
               ))}
               <button
-                onClick={() => onNavigate('character')}
+                onClick={() => onNavigate('profile')}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-dashed border-white/20 hover:bg-white/10 transition-all"
               >
                 <div className="w-10 h-10 rounded-full flex items-center justify-center text-white/60">
@@ -222,7 +222,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
             </div>
             {profiles.filter(p => p.isActive === false).length > 0 && (
               <p className="text-xs text-white/40 mt-3">
-                {profiles.filter(p => p.isActive === false).length} inactive profile(s) hidden. Enable them in Character settings.
+                {profiles.filter(p => p.isActive === false).length} inactive profile(s) hidden. Enable them in Profile settings.
               </p>
             )}
           </CardContent>

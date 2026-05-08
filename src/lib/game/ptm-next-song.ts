@@ -8,39 +8,7 @@ import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { StorageKeys, getJson, setJson } from '@/lib/storage';
 import type { PassTheMicSegment } from '@/components/game/ptm-types';
 import { generatePtmSegments } from '@/lib/game/ptm-segments';
-
-// ===================== MEDLEY SNIPPET GENERATION =====================
-function generateMedleySnippets(songs: Song[], snippetCount: number, snippetDuration: number) {
-  const snippetDurationMs = snippetDuration * 1000;
-  const MIN_MELODY_SONG_MS = 60 * 1000;
-  const eligibleSongs = songs.filter(s => s.duration >= MIN_MELODY_SONG_MS);
-  // Fisher-Yates shuffle for fair randomization
-  const shuffled = [...eligibleSongs];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  const beatDurationMs = (bpm: number) => 15000 / bpm;
-
-  return shuffled.slice(0, snippetCount).map(song => {
-    if (song.medleyStartBeat !== undefined && song.medleyEndBeat !== undefined && song.bpm > 0) {
-      const bd = beatDurationMs(song.bpm);
-      const startTime = (song.gap || 0) + song.medleyStartBeat * bd;
-      const endTime = (song.gap || 0) + song.medleyEndBeat * bd;
-      return { song, startTime, endTime, duration: endTime - startTime };
-    }
-    if (song.medleyStartBeat !== undefined && song.bpm > 0) {
-      const startTime = (song.gap || 0) + song.medleyStartBeat * beatDurationMs(song.bpm);
-      return { song, startTime, endTime: startTime + snippetDurationMs, duration: snippetDurationMs };
-    }
-    const maxSafeTime = song.lyrics && song.lyrics.length > 0
-      ? Math.max(...song.lyrics.map(l => l.endTime))
-      : Math.min(song.duration, snippetDurationMs * 3);
-    const maxStartTime = Math.max(0, maxSafeTime - snippetDurationMs);
-    const startTime = Math.random() * maxStartTime;
-    return { song, startTime, endTime: startTime + snippetDurationMs, duration: snippetDurationMs };
-  });
-}
+import { generateMedleySnippets } from '@/components/game/medley/medley-snippet-generator';
 
 // ===================== FILTERED SONGS =====================
 function getFilteredSongs(): Song[] {
