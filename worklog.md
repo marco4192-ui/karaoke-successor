@@ -223,3 +223,56 @@
 - **Parser-Konsistenz verbessert** (isRap + normalizeTxtContent)
 
 ---
+Task ID: 3-1
+Agent: Main Agent
+Task: Split ptm-game-screen.tsx into hook + thin orchestrator
+
+Work Log:
+- Read complete ptm-game-screen.tsx (912 lines)
+- Read ptm-types.ts for type context
+- Created ptm-game-hook.ts (826 lines): all game logic, state, scoring, audio, medley, callbacks
+- Rewrote ptm-game-screen.tsx (236 lines): thin rendering orchestrator using the hook
+- Exposed onYoutubeTimeUpdate, medleySnippetCount, initialSegmentsLength via hook interface
+- Fixed NoteShapeStyle type in hook interface
+- TypeScript: 0 errors in PTM files
+- Committed as 398aad2, pushed to origin/master
+
+Stage Summary:
+- 912-line file split into 2 focused files (826 + 236)
+- No functional changes, identical behavior
+
+---
+Task ID: 3-2
+Agent: Main Agent
+Task: Split game-screen.tsx into hook + thin renderer
+
+Work Log:
+- Read complete game-screen.tsx (892 lines)
+- Created game-screen-hook.ts (781 lines): all hooks, state, effects, computed values
+- Rewrote game-screen.tsx (347 lines): pure rendering using the hook
+- Fixed type issues: GameState import, TimingData/any cast, noteDisplayStyle, adCountdown null coalescing
+- TypeScript: 0 errors in game-screen files
+- Committed as db8f0fc, pushed to origin/master
+
+Stage Summary:
+- 892-line file split into 2 focused files (781 + 347)
+- No functional changes, identical behavior
+
+---
+Task ID: 3-3
+Agent: Main Agent
+Task: Extract generateGameResults from use-game-loop.ts into pure function
+
+Work Log:
+- Read complete use-game-loop.ts (896 lines)
+- Analyzed structure: tightly coupled countdown/game-loop/pause-resume refs make further hook splitting risky
+- Created game-results-generator.ts (106 lines): pure function for result computation
+- Updated use-game-loop.ts to use extracted function (-48 lines)
+- TypeScript: 0 errors
+- Committed as ca6d51a, pushed to origin/master
+
+Stage Summary:
+- generateResults extracted as testable pure function
+- use-game-loop.ts reduced from 896 to 848 lines
+- No functional changes, identical behavior
+
