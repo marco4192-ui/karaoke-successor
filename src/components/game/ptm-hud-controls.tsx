@@ -1,34 +1,35 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { usePartyStore } from '@/lib/game/party-store';
 import type { PassTheMicSettings } from '@/components/game/ptm-types';
 
 interface PtmHudControlsProps {
   safeSettings: PassTheMicSettings;
-  onPause?: () => void;
+  isPlaying: boolean;
+  onTogglePause: () => void;
   activeWebcamStreamsRef: React.MutableRefObject<MediaStream[]>;
   onEndSong: () => void;
 }
 
 export function PtmHudControls({
   safeSettings,
-  onPause,
+  isPlaying,
+  onTogglePause,
   activeWebcamStreamsRef,
   onEndSong,
 }: PtmHudControlsProps) {
-  // React-driven webcam state (replaces imperative document.createElement / document.body.appendChild)
   const [webcamStream, setWebcamStream] = useState<MediaStream | null>(null);
+  const pauseDialogAction = usePartyStore(s => s.pauseDialogAction);
 
   const toggleWebcam = useCallback(() => {
     if (webcamStream) {
-      // Turn off
       webcamStream.getTracks().forEach(t => t.stop());
       activeWebcamStreamsRef.current = activeWebcamStreamsRef.current.filter(s => s !== webcamStream);
       setWebcamStream(null);
     } else {
-      // Turn on
       navigator.mediaDevices?.getUserMedia({ video: true })
         .then(stream => {
           activeWebcamStreamsRef.current.push(stream);
@@ -37,6 +38,14 @@ export function PtmHudControls({
         .catch(() => {});
     }
   }, [webcamStream, activeWebcamStreamsRef]);
+
+  // Sync pause state with party store (e.g. keyboard Escape sets it)
+  useEffect(() => {
+    if (pauseDialogAction === 'song-pause' && isPlaying) {
+      onTogglePause();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pauseDialogAction, isPlaying, onTogglePause]);
 
   // Clean up webcam stream on unmount
   useEffect(() => {
@@ -47,9 +56,18 @@ export function PtmHudControls({
     };
   }, [webcamStream]);
 
+  const handleFullscreen = useCallback(() => {
+    import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+      const win = getCurrentWindow();
+      win.isFullscreen().then(isFs => {
+        win.setFullscreen(!isFs).catch(() => {});
+      }).catch(() => {});
+    }).catch(() => {});
+  }, []);
+
   return (
     <div className="fixed inset-0 z-0 pointer-events-none">
-      {/* Webcam preview overlay — rendered via React instead of imperative DOM */}
+      {/* Webcam preview overlay */}
       {webcamStream && (
         <video
           autoPlay
@@ -61,9 +79,38 @@ export function PtmHudControls({
           title="Kamera schließen"
         />
       )}
-      <div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-2 pointer-events-auto">
-      <div className="flex items-center gap-2">
-        {/* Difficulty badge */}
+
+      {/* Top-left: Beenden + Pause */}
+      <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-auto">
+        <Button
+          onClick={onEndSong}
+          variant="ghost"
+          size="sm"
+          className="text-white/30 hover:text-red-400 hover:bg-white/10 h-8 rounded-md gap-1.5 px-3 text-xs"
+          title="Song beenden"
+        >
+          ⏹ Beenden
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={onTogglePause}
+          className="text-white/80 hover:text-white hover:bg-white/10 rounded-lg w-10 h-10 p-0 text-sm"
+          title={isPlaying ? 'Pause' : 'Fortsetzen'}
+        >
+          {isPlaying ? '⏸' : '▶'}
+        </Button>
+      </div>
+
+      {/* Top-right: Vollbild + Difficulty + Kamera */}
+      <div className="absolute top-4 right-4 z-20 flex items-center gap-2 pointer-events-auto">
+        <Button
+          variant="ghost"
+          onClick={handleFullscreen}
+          className="text-white/80 hover:text-white hover:bg-white/10 rounded-lg w-10 h-10 p-0 text-sm"
+          title="Vollbild"
+        >
+          ⛶
+        </Button>
         <Badge
           variant="outline"
           className={`text-[10px] px-2 py-0.5 border-white/20 ${
@@ -80,50 +127,14 @@ export function PtmHudControls({
               ? 'Schwer'
               : 'Mittel'}
         </Badge>
-      </div>
-      <Button
-        variant="ghost"
-        onClick={() => onPause?.()}
-        className="text-white/80 hover:text-white hover:bg-white/10 rounded-lg w-10 h-10 p-0"
-        title="Pause"
-      >
-        ⏸
-      </Button>
-      <Button
-        variant="ghost"
-        onClick={() => {
-          // Tauri uses its own Window API for fullscreen (DOM fullscreen API
-          // does not work reliably inside Tauri webviews)
-          import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
-            const win = getCurrentWindow();
-            win.isFullscreen().then(isFs => {
-              win.setFullscreen(!isFs).catch(() => {});
-            }).catch(() => {});
-          }).catch(() => {});
-        }}
-        className="text-white/80 hover:text-white hover:bg-white/10 rounded-lg w-10 h-10 p-0"
-        title="Vollbild"
-      >
-        ⛶
-      </Button>
-      <Button
-        variant="ghost"
-        onClick={toggleWebcam}
-        className="text-white/80 hover:text-white hover:bg-white/10 rounded-lg w-10 h-10 p-0"
-        title="Kamera"
-      >
-        📷
-      </Button>
-      {/* Stop button */}
-      <Button
-        onClick={onEndSong}
-        variant="ghost"
-        size="sm"
-        className="text-white/30 hover:text-red-400 text-xs"
-        title="Song beenden"
-      >
-        ⏹ Beenden
-      </Button>
+        <Button
+          variant="ghost"
+          onClick={toggleWebcam}
+          className="text-white/80 hover:text-white hover:bg-white/10 rounded-lg w-10 h-10 p-0 text-sm"
+          title="Kamera"
+        >
+          📷
+        </Button>
       </div>
     </div>
   );

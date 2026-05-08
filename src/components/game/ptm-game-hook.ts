@@ -92,6 +92,7 @@ export interface PtmGameHookReturn {
 
   // Callbacks
   startGame: () => Promise<void>;
+  togglePause: () => void;
   handleEndSong: () => void;
   handleMediaEnded: () => void;
   handleContinue: () => void;
@@ -99,7 +100,6 @@ export interface PtmGameHookReturn {
   handleEndSeriesComplete: () => void;
   handleContinueWithPlayers: () => void;
   activeWebcamStreamsRef: React.RefObject<MediaStream[]>;
-  onPause: (() => void) | undefined;
   onEndGame: () => void;
 }
 
@@ -762,6 +762,19 @@ export function usePtmGameLogic({
     };
   }, [stop]);
 
+  // ── Toggle pause/resume (used by HUD controls) ──
+  const togglePause = useCallback(() => {
+    const media = audioRef.current || (videoRef.current && !isYouTube ? videoRef.current : null);
+    if (!media) return;
+    if (isPlaying) {
+      media.pause();
+      setIsPlaying(false);
+    } else if (phase === 'playing') {
+      media.play().catch(() => {});
+      setIsPlaying(true);
+    }
+  }, [isPlaying, phase, audioRef, videoRef, isYouTube]);
+
   // ── Handle ending the song early ──
   const handleEndSong = useCallback(() => {
     setIsPlaying(false);
@@ -837,13 +850,13 @@ export function usePtmGameLogic({
     // Callbacks
     startGame,
     handleEndSong,
+    togglePause,
     handleMediaEnded,
     handleContinue,
     handleEndSeries,
     handleEndSeriesComplete,
     handleContinueWithPlayers,
     activeWebcamStreamsRef,
-    onPause,
     onEndGame,
   };
 }

@@ -205,7 +205,8 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
       {g.phase === 'playing' && (
         <PtmHudControls
           safeSettings={g.safeSettings}
-          onPause={g.onPause}
+          isPlaying={g.isPlaying}
+          onTogglePause={g.togglePause}
           activeWebcamStreamsRef={g.activeWebcamStreamsRef}
           onEndSong={g.handleEndSong}
         />
