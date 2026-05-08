@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Song, Difficulty, GameResult, PitchDetectionResult, GameMode } from '@/types/game';
 import type { AudioEffectsEngine } from '@/lib/audio/audio-effects';
 import { normalizeFilePath } from '@/lib/tauri-file-storage';
-import { accuracyToRating } from '@/lib/game/rating-utils';
 import { useGameStore } from '@/lib/game/store';
+import { generateGameResults } from '@/lib/game/game-results-generator';
 
 interface UseGameLoopOptions {
   // Song / media
@@ -207,91 +207,43 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   const generateResults = useCallback(() => {
     // Use ref (not closure) to read the latest player state — avoids reading
     // a slightly stale snapshot if endGameAndCleanup fires between scoring ticks.
-    const activePlayer = playersRef.current[0];
-    if (!activePlayer || !song) return;
-
-    // Helper: calculate rating from accuracy (shared utility)
-    const calcRating = accuracyToRating;
-
-    // Count total notes for each player.
-    // In duet mode with P1/P2 assignment, each player only sings their assigned
-    // notes, so accuracy should be calculated against their own subset.
-    // In duel mode (no assignment), both players sing all notes.
-    const totalNotes = song.lyrics.reduce((acc, line) => acc + line.notes.length, 0);
-    const p1AssignedNotes = song.lyrics.reduce((acc, line) =>
-      acc + line.notes.filter(n => n.player === 'P1' || n.player === undefined || n.player === null).length, 0);
-    const hasDuetAssignment = song.lyrics.reduce((acc, line) =>
-      acc + line.notes.filter(n => n.player === 'P2').length, 0) > 0;
-    const p1TotalNotes = hasDuetAssignment ? p1AssignedNotes : totalNotes;
-    const p1Accuracy = p1TotalNotes > 0 ? (activePlayer.notesHit / p1TotalNotes) * 100 : 0;
-
-    const playerResults = [{
-      playerId: activePlayer.id,
-      score: activePlayer.score,
-      notesHit: activePlayer.notesHit,
-      notesMissed: activePlayer.notesMissed,
-      accuracy: p1Accuracy,
-      maxCombo: activePlayer.maxCombo,
-      perfectNotesCount: p1PerfectNotesCountRef.current || 0,
-      goldenNotesCount: activePlayer.goldenNotesHit || 0,
-      rating: calcRating(p1Accuracy),
-    }];
-
-    // Add P2 results for duel/duet mode if P2 scoring data is available
-    const p2 = p2ScoringState || null;
-    const p2Player = playersRef.current[1] || null;
-    if ((isDuetMode || gameMode === 'duel') && p2 && (p2.notesHit > 0 || p2.notesMissed > 0)) {
-      // For P2, count only notes assigned to P2 in duet mode.
-      // In duel mode (no player assignment), P2 sings the same notes as P1.
-      const p2AssignedNotes = song.lyrics.reduce((acc, line) =>
-        acc + line.notes.filter(n => n.player === 'P2').length, 0);
-      const p2TotalNotes = hasDuetAssignment ? p2AssignedNotes : totalNotes;
-      const p2Accuracy = p2TotalNotes > 0 ? (p2.notesHit / p2TotalNotes) * 100 : 0;
-      playerResults.push({
-        playerId: p2Player?.id || 'p2',
-        score: p2.score,
-        notesHit: p2.notesHit,
-        notesMissed: p2.notesMissed,
-        accuracy: p2Accuracy,
-        maxCombo: p2.maxCombo,
-        perfectNotesCount: p2.perfectNotesCount || 0,
-        goldenNotesCount: p2.goldenNotesHit || 0,
-        rating: calcRating(p2Accuracy),
-      });
-    }
-
-    const results = {
-      songId: song.id,
-      players: playerResults,
-      playedAt: Date.now(),
-      duration: song.duration,
-      isBlindMode: gameMode === 'blind',
-      playbackRate: playbackRate,
+    const results = generateGameResults({
+      song,
+      gameMode,
+      isDuetMode,
+      playbackRate,
+      players: playersRef.current,
+      p2ScoringState: p2ScoringState || null,
+      p1PerfectNotesCount: p1PerfectNotesCountRef.current || 0,
       hadComeback: comebackRef.current ?? false,
-    };
+    });
+
+    if (!results) return;
 
     setResults(results);
 
     // Send results to mobile clients for social features
+    const activePlayer = playersRef.current[0];
+    const p1Accuracy = results.players[0]?.accuracy ?? 0;
     fetch('/api/mobile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         type: 'results',
         payload: {
-          songId: song.id,
-          songTitle: song.title,
-          songArtist: song.artist,
-          score: activePlayer.score,
+          songId: song?.id,
+          songTitle: song?.title,
+          songArtist: song?.artist,
+          score: activePlayer?.score,
           accuracy: p1Accuracy,
-          maxCombo: activePlayer.maxCombo,
-          rating: calcRating(p1Accuracy),
-          playedAt: Date.now(),
+          maxCombo: activePlayer?.maxCombo,
+          rating: results.players[0]?.rating,
+          playedAt: results.playedAt,
         },
       }),
     }).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps -- players read via ref; gameMode changes should not restart the init effect (handled separately)
-  }, [song, setResults, isDuetMode, p2ScoringState, gameMode]);
+  }, [song, setResults, isDuetMode, p2ScoringState, gameMode, playbackRate]);
 
   // ── End game and cleanup - stops all audio/microphone ──
   const endGameAndCleanup = useCallback(() => {
