@@ -11,7 +11,7 @@ export function PtmHudPlayerScore({ players, currentPlayer }: PtmHudPlayerScoreP
   const teamScore = players.reduce((sum, p) => sum + p.score, 0);
 
   return (
-    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-start gap-2">
+    <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 flex items-start gap-2 pt-2">
       {/* Active player — "Jetzt singt" */}
       <div className="bg-black/50 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/10 w-40">
         {currentPlayer?.avatar ? (

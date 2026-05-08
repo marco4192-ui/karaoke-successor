@@ -262,11 +262,12 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               }
             } else if (targetScreen === 'song-voting') {
               // Re-generate voting songs from filtered pool
+              // IMPORTANT: always limit to 3 songs (matching initial setup behavior)
               const { filterSongs } = await import('@/lib/game/song-library');
               const songs = getAllSongs();
               const filters = party.unifiedSetupResult?.settings;
               const filtered = filterSongs(songs, filters?.filterGenre ?? 'all', filters?.filterLanguage ?? 'all', filters?.filterCombined ?? true);
-              const suggested = filtered.sort(() => Math.random() - 0.5).slice(0, 3);
+              const suggested = [...filtered].sort(() => Math.random() - 0.5).slice(0, 3);
               party.setVotingSongs(suggested);
               setScreen('song-voting');
             } else {

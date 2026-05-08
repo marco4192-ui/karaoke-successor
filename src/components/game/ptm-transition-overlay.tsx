@@ -176,10 +176,7 @@ export function PtmTransitionOverlay({
           {nextPlayer.name}
         </div>
 
-        {/* Segment label */}
-        {segmentLabel && (
-          <div className="text-white/40 text-sm font-medium">{segmentLabel}</div>
-        )}
+        {/* Segment label — hidden to prevent predicting mic handoff timing */}
 
         {/* Skip hint */}
         <div className="mt-8 text-white/20 text-xs">

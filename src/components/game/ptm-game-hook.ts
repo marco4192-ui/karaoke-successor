@@ -269,11 +269,11 @@ export function usePtmGameLogic({
   // ── Safety: load lyrics if effectiveSong has no lyrics ──
   // This can happen when useGameMedia restores URLs but lyrics were not
   // preserved (e.g. song was stored without lyrics in the party store).
+  // Always attempt to load lyrics if missing — loadSongLyrics handles the
+  // case where no lyrics file exists (returns empty array, no error).
   useEffect(() => {
     const src = isMedleyMode && currentSnippet ? currentSnippet.song : effectiveSong;
     if (!src || (src.lyrics && src.lyrics.length > 0)) return;
-    // Only attempt load if the song has a txt reference or stored flag
-    if (!src.storedTxt && !src.relativeTxtPath) return;
     let cancelled = false;
     import('@/lib/game/song-lyrics-loader').then(({ loadSongLyrics }) => {
       loadSongLyrics(src).then(lyrics => {
@@ -597,14 +597,16 @@ export function usePtmGameLogic({
 
   const startGame = async () => {
     // Guard: ensure lyrics are available before starting
-    const songToCheck = isMedleyMode && currentSnippet ? currentSnippet.song : effectiveSong;
+    // Use notesSource which includes fallback lyrics from the safety effect
+    const songToCheck = notesSource || (isMedleyMode && currentSnippet ? currentSnippet.song : effectiveSong);
     if (!songToCheck?.lyrics || songToCheck.lyrics.length === 0) {
       // eslint-disable-next-line no-console
       console.warn('[PTM] No lyrics loaded, attempting reload...');
+      const fallbackSrc = isMedleyMode && currentSnippet ? currentSnippet.song : effectiveSong;
       try {
         const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
-        if (!songToCheck) return;
-        const lyrics = await loadSongLyrics(songToCheck);
+        if (!fallbackSrc) return;
+        const lyrics = await loadSongLyrics(fallbackSrc);
         if (lyrics.length > 0) {
           fallbackLyricsRef.current = lyrics;
           forceRender();

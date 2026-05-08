@@ -24,6 +24,19 @@ export function PtmHudControls({
   const [webcamStream, setWebcamStream] = useState<MediaStream | null>(null);
   const pauseDialogAction = usePartyStore(s => s.pauseDialogAction);
 
+  const [difficulty, setDifficulty] = useState(safeSettings.difficulty);
+
+  // Sync difficulty with safeSettings prop
+  useEffect(() => {
+    setDifficulty(safeSettings.difficulty);
+  }, [safeSettings.difficulty]);
+
+  const cycleDifficulty = useCallback(() => {
+    const levels: Array<'easy' | 'medium' | 'hard'> = ['easy', 'medium', 'hard'];
+    const next = levels[(levels.indexOf(difficulty) + 1) % levels.length];
+    setDifficulty(next);
+  }, [difficulty]);
+
   const toggleWebcam = useCallback(() => {
     if (webcamStream) {
       webcamStream.getTracks().forEach(t => t.stop());
@@ -113,17 +126,18 @@ export function PtmHudControls({
         </Button>
         <Badge
           variant="outline"
-          className={`text-[10px] px-2 py-0.5 border-white/20 ${
-            safeSettings.difficulty === 'easy'
+          onClick={cycleDifficulty}
+          className={`text-[10px] px-2 py-0.5 border-white/20 cursor-pointer select-none hover:opacity-80 ${
+            difficulty === 'easy'
               ? 'bg-green-500/20 text-green-400 border-green-500/30'
-              : safeSettings.difficulty === 'hard'
+              : difficulty === 'hard'
                 ? 'bg-red-500/20 text-red-400 border-red-500/30'
                 : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
           }`}
         >
-          {safeSettings.difficulty === 'easy'
+          {difficulty === 'easy'
             ? 'Leicht'
-            : safeSettings.difficulty === 'hard'
+            : difficulty === 'hard'
               ? 'Schwer'
               : 'Mittel'}
         </Badge>

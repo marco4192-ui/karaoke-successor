@@ -29,6 +29,25 @@ export function isDuetSong(song: Song): boolean {
   // Check title for [Duet] / [DUET] / (Duet) etc. (case insensitive)
   if (song.title && /\[\s*duet\s*\]/i.test(song.title)) return true;
   if (song.title && /\(\s*duet\s*\)/i.test(song.title)) return true;
+  // Fallback: check lyrics for P1/P2 player markers (common in Ultrastar format)
+  // Songs that have P1 and P2 markers in lyrics are duets even without explicit flag
+  if (song.lyrics && song.lyrics.length > 0) {
+    let hasP1 = false;
+    let hasP2 = false;
+    for (const line of song.lyrics) {
+      if (line.player === 'P1') hasP1 = true;
+      if (line.player === 'P2') hasP2 = true;
+      if (hasP1 && hasP2) return true;
+      // Also check note-level player markers
+      if (line.notes) {
+        for (const note of line.notes) {
+          if (note.player === 'P1') hasP1 = true;
+          if (note.player === 'P2') hasP2 = true;
+          if (hasP1 && hasP2) return true;
+        }
+      }
+    }
+  }
   return false;
 }
 

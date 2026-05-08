@@ -196,6 +196,8 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
 
   // eslint-disable-next-line react-hooks/exhaustive-deps -- handleSongClick intentionally not memoized; stable ref is passed to children
   const handleSongClick = async (song: Song) => {
+    // Stop any active preview before starting game or opening modal
+    handlePreviewStop();
     // Pass-the-Mic: skip the song-start modal and go directly to the game.
     // Players, mic, and settings are already configured in PTM setup.
     if (isPartyMode && initialGameMode === 'pass-the-mic') {
@@ -220,6 +222,8 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
 
   const handleStartGame = async () => {
     if (!selectedSong) return;
+    // Stop any active preview before starting the game
+    handlePreviewStop();
     const songWithLyrics = await getSongByIdWithLyrics(selectedSong.id) || selectedSong;
     const songWithUrls = await ensureSongUrls(songWithLyrics);
     const activeProfiles = profiles.filter(p => p.isActive !== false);
