@@ -81,7 +81,7 @@ export function PtmSongResults({
   }, [seriesHistory, playerScores]);
 
   return (
-    <div className="max-w-3xl mx-auto py-8 max-h-screen overflow-y-auto flex flex-col">
+    <div className="mx-auto py-8 max-h-screen overflow-y-auto flex flex-col">
       {/* Song Header */}
       <div className="text-center mb-6 shrink-0">
         <div className="text-4xl mb-3">🎤</div>
@@ -93,11 +93,11 @@ export function PtmSongResults({
       </div>
 
       {/* Current Round Ranking */}
-      <div className="bg-white/5 border border-white/10 rounded-xl mb-6 overflow-hidden">
-        <div className="px-4 py-3 border-b border-white/10 bg-zinc-900 z-10">
+      <div className="bg-white/5 border border-white/10 rounded-xl mb-6">
+        <div className="px-4 py-3 border-b border-white/10 bg-zinc-900 z-10 rounded-t-xl">
           <h3 className="font-bold text-center text-white/80">Runden-Ergebnis</h3>
         </div>
-        <div className="divide-y divide-white/5 max-h-[40vh] overflow-y-auto">
+        <div className="divide-y divide-white/5 max-h-[40vh] overflow-y-auto rounded-b-xl">
           {sorted.map((player, rank) => {
             const cumScore = cumulativeScores.get(player.id) || 0;
             return (
@@ -161,7 +161,7 @@ export function PtmSongResults({
 
       {/* Cumulative Standings (only if previous rounds exist) */}
       {seriesHistory.length > 0 && (
-        <div className="bg-white/5 border border-white/10 rounded-xl mb-6 overflow-hidden">
+        <div className="bg-white/5 border border-white/10 rounded-xl mb-6">
           <div className="px-4 py-3 border-b border-white/10">
             <h3 className="font-bold text-center text-white/80">Gesamtwertung</h3>
           </div>
@@ -295,7 +295,7 @@ export function PtmSeriesResults({
   // the user scrolls down to see the final standings or clicks the action buttons.
 
   return (
-    <div className="max-w-3xl mx-auto py-8 max-h-screen overflow-y-auto flex flex-col">
+    <div className="mx-auto py-8 max-h-screen overflow-y-auto flex flex-col">
       {/* Confetti (during ceremony) */}
       {confettiParticles.length > 0 && (
         <div className="fixed inset-0 z-50 pointer-events-none overflow-hidden">
