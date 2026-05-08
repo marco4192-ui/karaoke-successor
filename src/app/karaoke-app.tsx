@@ -230,7 +230,7 @@ export default function KaraokeSuccessor() {
   const handleRemoteNavigation = useCallback((targetScreen: string) => {
     const screenMap: Record<string, Screen> = {
       'home': 'home', 'library': 'library', 'settings': 'settings',
-      'queue': 'queue', 'party': 'party', 'character': 'character',
+      'queue': 'queue', 'party': 'party', 'profile': 'profile',
     };
     navigateWithGuard(screenMap[targetScreen] || 'home');
   }, [navigateWithGuard]);
@@ -376,7 +376,7 @@ export default function KaraokeSuccessor() {
         <PartySetupSection screen={screen} setScreen={setScreen} />
         <PartyGameScreens screen={screen} setScreen={setScreen} />
 
-        {screen === 'character' && <CharacterScreen />}
+        {screen === 'profile' && <CharacterScreen />}
         {screen === 'queue' && (
           <QueueScreen onPlayFromQueue={(song, gameMode, players) => {
             resetGame();
