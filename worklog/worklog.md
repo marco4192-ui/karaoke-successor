@@ -276,3 +276,48 @@ Stage Summary:
 - use-game-loop.ts reduced from 896 to 848 lines
 - No functional changes, identical behavior
 
+
+
+---
+
+## Session: 2026-05-08 (Feature Fixes — 5 Tasks)
+
+### Übersicht
+5 gezielte Feature-Fixes und Bereinigungen, nacheinander umgesetzt.
+
+### Umsetzungs-Log
+
+#### ✅ Fix 1: Profil-Screen unzugänglich — Router-Mismatch
+- **Commit:** 23c1244
+- **Datei:** src/app/karaoke-app.tsx
+- **Problem:** Screen-Typ hatte 'profile', Navbar navigierte zu 'profile', aber Router prüfte screen === 'character' — Profil-Screen komplett unzugänglich. Country-Selector im Edit-Form war bereits vorhanden aber nutzlos, da das Formular nie erreicht werden konnte.
+- **Fix:** screen === 'character' → screen === 'profile' in Router und Remote-Navigation-Handler.
+
+#### ✅ Fix 2: "Charakter" → "Profil" Umbenennung
+- **Commit:** 5d2e361
+- **Dateien:** character-screen.tsx, create-character-form.tsx, character-settings-card.tsx, mobile-profile-edit-view.tsx, mobile-profile-create-view.tsx
+- **Problem:** "Charakter" und "Character" in UI-Strings klangen zu sehr nach Rollenspiel.
+- **Fix:** Alle sichtbaren Strings auf Deutsch ("Profil", "Profile-Einstellungen", "Profil erstellen", "Profil löschen", "Profil wechseln" etc.) umbenannt. Code-Identifier (Komponentennamen, Variablen) bleiben unverändert.
+
+#### ✅ Fix 3: Mikrofon-Settings Buttons funktionsfähig
+- **Commit:** 0fa45b7
+- **Dateien:** microphone-manager.ts, use-microphone-settings.ts, microphone-settings-panel.tsx
+- **Problem:** "Optimale Einstellungen auf alle anwenden" funktionierte bereits. "Geräte aktualisieren" aktualisierte nur die Device-Liste, entfernte aber keine getrennten Geräte.
+- **Fix:** Neue Methode removeDisconnectedDevices() in MultiMicrophoneManager — vergleicht Device-IDs der eingerichteten Mikrofone mit der aktuellen Device-Liste und entfernt nicht mehr verbundene Geräte. Visuelles Feedback-Nachricht nach Aktualisierung.
+
+#### ✅ Fix 4: "AI Asset" Tab entfernt
+- **Commit:** ded4a98
+- **Gelöschte Dateien:** ai-assets-generator-tab.tsx, api/assets/generate/route.ts, api/config/route.ts, api/lib/find-config.ts
+- **Geänderte Dateien:** settings-screen.tsx, settings-tab-bar.tsx, settings-icons.tsx
+- **Problem:** AI Asset-Funktion war nicht wie gedacht nutzbar.
+- **Fix:** Tab aus SettingsTab-Typ und Tab-Bar entfernt. Import und Render-Block gelöscht. Alle API-Routes und Hilfsdateien entfernt. Unbenutzter SparkleIcon-Re-Export bereinigt.
+
+#### ⏭️ Fix 5: Worklog-Ordner
+- **Status:** Bereits in Commit 91722f4 umgesetzt — alle Worklog-Dateien befinden sich bereits in worklog/.
+
+### Commits
+1. 23c1244 — fix: resolve 'profile' vs 'character' screen router mismatch
+2. 5d2e361 — refactor: rename 'Character/Charakter' to 'Profile/Profil' in all UI strings
+3. 0fa45b7 — feat: implement functional microphone settings buttons
+4. ded4a98 — refactor: remove 'AI Asset' tab and all related code (-1052 Zeilen)
+
