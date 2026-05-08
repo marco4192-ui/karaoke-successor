@@ -154,8 +154,8 @@ export function useGlobalRemoteControl({
         navigateToScreen('party');
         break;
 
-      case 'character':
-        navigateToScreen('character');
+      case 'profile':
+        navigateToScreen('profile');
         break;
 
       case 'stop':

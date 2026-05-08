@@ -4,7 +4,7 @@ export type Screen =
   | 'library'
   | 'game'
   | 'party'
-  | 'character'
+  | 'profile'
   | 'queue'
   | 'mobile'
   | 'results'

@@ -45,8 +45,8 @@ export function NavBar({ screen, setScreen, queueLength, isMounted, isFullscreen
               <Badge variant="secondary" className="ml-1 px-1.5 py-0.5 text-xs">{queueLength}</Badge>
             )}
           </NavButton>
-          <NavButton active={screen === 'character'} onClick={() => setScreen('character')}>
-            <UserIcon className="w-5 h-5" /> {t('nav.characters')}
+          <NavButton active={screen === 'profile'} onClick={() => setScreen('profile')}>
+            <UserIcon className="w-5 h-5" /> {t('nav.profiles')}
           </NavButton>
           <NavButton active={screen === 'highscores'} onClick={() => setScreen('highscores')}>
             <TrophyIcon className="w-5 h-5" /> {t('nav.highscores')}
