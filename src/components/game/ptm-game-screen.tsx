@@ -228,7 +228,7 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
       <PtmTransitionOverlay
         visible={g.transitionVisible}
         nextPlayer={g.transitionNextPlayer}
-        segmentLabel={`Segment ${g.currentSegmentIndex + 2}/${g.initialSegmentsLength}`}
+        segmentLabel={`Nächster Spieler`}
         onComplete={g.completeTransition}
         onSkip={g.completeTransition}
       />
