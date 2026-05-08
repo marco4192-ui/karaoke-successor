@@ -28,6 +28,7 @@ export function MicrophoneSettingsPanel({
     toggleExpanded,
     handleApplyOptimalToAll,
     handleRefreshDevices,
+    refreshMessage,
   } = useMicrophoneSettings(onSettingsChange);
 
   const SUPPORTED_MICS = [
@@ -122,6 +123,13 @@ export function MicrophoneSettingsPanel({
           <Button variant="outline" onClick={handleRefreshDevices} className="border-white/20 text-white hover:bg-white/10">
             🔄 Geräte aktualisieren
           </Button>
+        </div>
+      )}
+
+      {/* Refresh Message */}
+      {refreshMessage && (
+        <div className="p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg text-center">
+          <p className="text-cyan-400 text-sm">🔄 {refreshMessage}</p>
         </div>
       )}
 

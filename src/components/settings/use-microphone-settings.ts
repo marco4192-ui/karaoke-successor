@@ -18,6 +18,7 @@ export function useMicrophoneSettings(onSettingsChange?: MicrophoneSettingsPanel
   const [expandedMics, setExpandedMics] = useState<Set<string>>(new Set());
   const [isAddingMic, setIsAddingMic] = useState(false);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>('default');
+  const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
 
   const micManager = getMultiMicrophoneManager();
 
@@ -82,8 +83,14 @@ export function useMicrophoneSettings(onSettingsChange?: MicrophoneSettingsPanel
     await micManager.applyOptimalSettingsToAll();
   };
 
-  const handleRefreshDevices = () => {
-    micManager.getMicrophones();
+  const handleRefreshDevices = async () => {
+    const removedCount = await micManager.removeDisconnectedDevices();
+    if (removedCount > 0) {
+      setRefreshMessage(`${removedCount} nicht verbundene(s) Mikrofon(e) entfernt`);
+    } else {
+      setRefreshMessage('Alle Mikrofone sind verbunden');
+    }
+    setTimeout(() => setRefreshMessage(null), 3000);
   };
 
   return {
@@ -101,5 +108,6 @@ export function useMicrophoneSettings(onSettingsChange?: MicrophoneSettingsPanel
     toggleExpanded,
     handleApplyOptimalToAll,
     handleRefreshDevices,
+    refreshMessage,
   };
 }

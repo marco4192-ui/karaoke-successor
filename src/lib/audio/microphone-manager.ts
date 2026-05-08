@@ -605,6 +605,25 @@ export class MultiMicrophoneManager {
     await Promise.all(promises);
   }
 
+  // Refresh the device list and remove assigned microphones whose device is no longer available
+  async removeDisconnectedDevices(): Promise<number> {
+    const currentDevices = await this.getMicrophones();
+    const connectedDeviceIds = new Set(currentDevices.map(d => d.deviceId));
+
+    const toRemove: string[] = [];
+    for (const [id, assigned] of this.assignedMics) {
+      if (!connectedDeviceIds.has(assigned.deviceId)) {
+        toRemove.push(id);
+      }
+    }
+
+    for (const id of toRemove) {
+      await this.unassignMicrophone(id);
+    }
+
+    return toRemove.length;
+  }
+
   // Save config to localStorage
   private saveConfig(): void {
     try {
