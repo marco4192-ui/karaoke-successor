@@ -6,6 +6,7 @@ import { getSongMediaUrls, revokeSongMediaUrls } from '@/lib/db/media-db';
 import { saveCustomSongsToDB, loadCustomSongsFromDB, migrateFromLocalStorage, clearCustomSongsFromDB } from '@/lib/db/custom-songs-db';
 // IDs use crypto.randomUUID() for collision-free 128-bit random IDs
 import { isAbsolutePath, resolveSongsBaseFolder, normalizeSongPathFields } from './song-paths';
+import { normalizeLanguage, splitGenres, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
 
 // Internal imports (not re-exported — consumers import directly from the source modules)
 // NOTE: ensureSongUrls was previously re-exported here but caused a Turbopack
@@ -399,25 +400,31 @@ export function getGenres(): string[] {
   const genres = new Set<string>();
 
   songs.forEach(song => {
-    if (song.genre) genres.add(song.genre);
+    if (song.genre) {
+      // Split comma-separated genres and normalize each one
+      const parts = splitGenres(song.genre);
+      parts.forEach(g => genres.add(normalizeGenreName(g)));
+    }
   });
 
   return Array.from(genres).sort();
 }
 
-// Get unique languages
+// Get unique languages (normalized)
 export function getLanguages(): string[] {
   const songs = getAllSongs();
   const languages = new Set<string>();
 
   songs.forEach(song => {
-    if (song.language) languages.add(song.language);
+    if (song.language) {
+      languages.add(normalizeLanguage(song.language));
+    }
   });
 
   return Array.from(languages).sort();
 }
 
-// Filter songs by genre and/or language
+// Filter songs by genre and/or language (with normalization)
 export function filterSongs(
   songs: Song[],
   genre?: string,
@@ -430,13 +437,26 @@ export function filterSongs(
   // No filters active
   if (!hasGenre && !hasLanguage) return songs;
 
+  // Helper: check if a song's genre matches the filter genre
+  // Handles comma-separated genres (e.g., "Soundtrack, K-Pop")
+  const songGenreMatches = (song: Song, filterGenre: string): boolean => {
+    if (!song.genre) return false;
+    const normalizedFilter = normalizeGenreName(filterGenre).toLowerCase();
+    const parts = splitGenres(song.genre);
+    return parts.some(g => normalizeGenreName(g).toLowerCase() === normalizedFilter);
+  };
+
+  // Helper: check if a song's language matches the filter language
+  const songLanguageMatches = (song: Song, filterLanguage: string): boolean => {
+    if (!song.language) return false;
+    return normalizeLanguage(song.language) === normalizeLanguage(filterLanguage);
+  };
+
   // Independent mode (combined=false): OR logic — songs matching either filter are included
   if (combined === false && hasGenre && hasLanguage) {
-    const lowerGenre = (genre ?? '').toLowerCase();
-    const lowerLanguage = (language ?? '').toLowerCase();
     return songs.filter(s =>
-      s.genre?.toLowerCase().includes(lowerGenre) ||
-      s.language?.toLowerCase().includes(lowerLanguage)
+      songGenreMatches(s, genre!) ||
+      songLanguageMatches(s, language!)
     );
   }
 
@@ -444,17 +464,11 @@ export function filterSongs(
   let filtered = songs;
 
   if (hasGenre) {
-    const lowerGenre = (genre ?? '').toLowerCase();
-    filtered = filtered.filter(s =>
-      s.genre?.toLowerCase().includes(lowerGenre)
-    );
+    filtered = filtered.filter(s => songGenreMatches(s, genre!));
   }
 
   if (hasLanguage) {
-    const lowerLanguage = (language ?? '').toLowerCase();
-    filtered = filtered.filter(s =>
-      s.language?.toLowerCase().includes(lowerLanguage)
-    );
+    filtered = filtered.filter(s => songLanguageMatches(s, language!));
   }
 
   return filtered;

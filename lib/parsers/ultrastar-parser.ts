@@ -21,6 +21,7 @@
 import { Song, Note, LyricLine, Difficulty, DuetPlayer, midiToFrequency } from '@/types/game';
 import { isYouTubeUrl, isDirectVideoUrl } from '@/lib/url-utils';
 import { normalizeTxtContent } from '@/lib/utils';
+import { normalizeLanguage } from '@/lib/parsers/meta-normalizer';
 
 interface UltraStarNote {
   type: ':' | '*' | 'F' | 'R' | 'G';
@@ -157,7 +158,7 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
             song.year = parseInt(value) || undefined;
             break;
           case 'LANGUAGE':
-            song.language = value.trim();
+            song.language = normalizeLanguage(value.trim());
             break;
           case 'EDITION':
             song.edition = value.trim();
