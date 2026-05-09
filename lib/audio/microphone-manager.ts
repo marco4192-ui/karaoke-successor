@@ -630,6 +630,7 @@ export class MultiMicrophoneManager {
       const config = {
         version: 2, // Version for future migrations
         assignedMics: Array.from(this.assignedMics.values()).map(m => ({
+          id: m.id,
           deviceId: m.deviceId,
           deviceName: m.deviceName,
           customName: m.customName,
@@ -653,7 +654,12 @@ export class MultiMicrophoneManager {
         // Migration from old format
         if (config.assignedMics && Array.isArray(config.assignedMics)) {
           let needsSave = false;
-          config.assignedMics.forEach((mic: { config?: { latency?: string; }; playerIndex?: number }) => {
+          config.assignedMics.forEach((mic: { id?: string; deviceId?: string; config?: { latency?: string; }; playerIndex?: number }) => {
+            // Migrate missing id (was not saved before version bump)
+            if (!mic.id && mic.deviceId) {
+              mic.id = `mic-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+              needsSave = true;
+            }
             // Migrate latency values
             if (mic.config?.latency) {
               if (mic.config.latency === 'low') {
