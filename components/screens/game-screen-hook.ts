@@ -413,11 +413,17 @@ export function useGameScreenLogic({ onEnd, onBack, onPause }: GameScreenProps):
         allNotes.push(noteWithLine);
 
         if (isDuetMode) {
-          if (note.player === 'P1') {
-            p1Notes.push(noteWithLine);
-          } else if (note.player === 'P2') {
-            p2Notes.push(noteWithLine);
+          if (hasExplicitPlayerMarkers) {
+            // P1 notes only for player 1, P2 notes only for player 2
+            // Notes with player 'both' or undefined are sung by BOTH → show for each player
+            if (note.player === 'P1' || note.player === 'both' || note.player === undefined) {
+              p1Notes.push(noteWithLine);
+            }
+            if (note.player === 'P2' || note.player === 'both' || note.player === undefined) {
+              p2Notes.push(noteWithLine);
+            }
           } else {
+            // Duel / no markers — both players sing all notes
             p1Notes.push(noteWithLine);
             p2Notes.push(noteWithLine);
           }

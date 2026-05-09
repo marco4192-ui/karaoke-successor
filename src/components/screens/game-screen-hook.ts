@@ -366,8 +366,7 @@ export function useGameScreenLogic({ onEnd, onBack, onPause }: GameScreenProps):
   // NOTE: In low-performance mode, force single-player (no duet split-screen)
   const isCompetitiveMultiplayer = !isLowPerf && (gameState.gameMode === 'blind' || gameState.gameMode === 'missing-words') && gameState.players.length >= 2;
   const isDuelOrDuetGameMode = gameState.gameMode === 'duet' || gameState.gameMode === 'duel';
-  // Use effectiveSong (with loaded lyrics) for duet detection so P1/P2 markers are found
-  const isDuetMode = !isLowPerf && ((effectiveSong ? isDuetSong(effectiveSong) : false) || isDuelOrDuetGameMode || isCompetitiveMultiplayer);
+  const isDuetMode = !isLowPerf && ((song ? isDuetSong(song) : false) || isDuelOrDuetGameMode || isCompetitiveMultiplayer);
 
   // ── Safety: load lyrics on-demand for duel/duet mode when effectiveSong has none ──
   const [duetFallbackLyrics, setDuetFallbackLyrics] = useState<LyricLine[] | null>(null);
@@ -408,11 +407,6 @@ export function useGameScreenLogic({ onEnd, onBack, onPause }: GameScreenProps):
     const p1Notes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
     const p2Notes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
 
-    // Check for P1/P2 markers early — needed for note splitting below
-    const hasExplicitPlayerMarkers = src.lyrics.some(
-      line => line.player === 'P1' || line.player === 'P2'
-    );
-
     src.lyrics.forEach((line, lineIndex) => {
       line.notes.forEach(note => {
         const noteWithLine = { ...note, lineIndex, line };
@@ -420,14 +414,14 @@ export function useGameScreenLogic({ onEnd, onBack, onPause }: GameScreenProps):
 
         if (isDuetMode) {
           if (hasExplicitPlayerMarkers) {
-            // Strict P1/P2 separation for duet songs with explicit markers
             // P1 notes only for player 1, P2 notes only for player 2
-            if (note.player === 'P1') {
+            // Notes with player 'both' or undefined are sung by BOTH → show for each player
+            if (note.player === 'P1' || note.player === 'both' || note.player === undefined) {
               p1Notes.push(noteWithLine);
-            } else if (note.player === 'P2') {
+            }
+            if (note.player === 'P2' || note.player === 'both' || note.player === undefined) {
               p2Notes.push(noteWithLine);
             }
-            // Unassigned notes are skipped — they don't belong to either player
           } else {
             // Duel / no markers — both players sing all notes
             p1Notes.push(noteWithLine);
@@ -442,15 +436,15 @@ export function useGameScreenLogic({ onEnd, onBack, onPause }: GameScreenProps):
     p2Notes.sort((a, b) => a.startTime - b.startTime);
 
     const sortedLines = [...src.lyrics].sort((a, b) => a.startTime - b.startTime);
+    const hasExplicitPlayerMarkers = sortedLines.some(line => line.player === 'P1' || line.player === 'P2');
 
-    // Strict P1/P2 line separation when song has explicit markers
     const p1Lines = sortedLines.filter(line => {
-      if (hasExplicitPlayerMarkers) return line.player === 'P1';
+      if (hasExplicitPlayerMarkers) return line.player === 'P1' || line.player === 'both';
       return true;
     });
 
     const p2Lines = sortedLines.filter(line => {
-      if (hasExplicitPlayerMarkers) return line.player === 'P2';
+      if (hasExplicitPlayerMarkers) return line.player === 'P2' || line.player === 'both';
       return true;
     });
 
