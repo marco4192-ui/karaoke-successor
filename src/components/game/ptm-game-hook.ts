@@ -259,7 +259,7 @@ export function usePtmGameLogic({
       audio.src = nextAudioUrl;
       audio.preload = 'auto';
       // Start loading immediately
-      audio.load().catch(() => {});
+      audio.load();
     }
 
     return () => {
