@@ -18,20 +18,18 @@ export interface PtmTransitionOverlayProps {
   nextPlayer: PtmTransitionPlayer | null;
   /** Segment number (e.g. "Segment 3/8") */
   segmentLabel?: string;
-  /** Called when the transition is complete (3 seconds elapsed) */
+  /** Called when the transition is complete (blinks + name display elapsed) */
   onComplete?: () => void;
   /** Called when user clicks/presses Space to skip */
   onSkip?: () => void;
 }
 
 // ===================== TRANSITION OVERLAY =====================
-/**
- * Full-screen pulsing transition overlay for Pass-the-Mic mode.
- * Shows the next player's name, avatar, and color in a dramatic 3-second animation.
- * The background fills with the player's color in expanding circles.
- */
 
-const TRANSITION_DURATION = 3000; // 3 seconds
+const TOTAL_DURATION = 3500; // 3.5 seconds total
+const BLINK_DURATION = 1500; // 1.5 seconds for 3 blinks
+const SHOW_DURATION = 1500; // 1.5 seconds for name display
+const DISSOLVE_DURATION = 500; // 0.5 seconds for fade out
 
 export function PtmTransitionOverlay({
   visible,
@@ -40,43 +38,62 @@ export function PtmTransitionOverlay({
   onComplete,
   onSkip,
 }: PtmTransitionOverlayProps) {
-  const [phase, setPhase] = useState<'idle' | 'expanding' | 'hold' | 'dissolving'>('idle');
-  const [opacity, setOpacity] = useState(0);
+  const [phase, setPhase] = useState<'idle' | 'blinking' | 'showing' | 'dissolving'>('idle');
+  const [blinkCount, setBlinkCount] = useState(0);
+  const [showName, setShowName] = useState(false);
+  const [overlayOpacity, setOverlayOpacity] = useState(0);
 
   // Reset and start animation when visible changes
   useEffect(() => {
     if (!visible || !nextPlayer) {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
       setPhase('idle');
-      setOpacity(0);
+      setBlinkCount(0);
+      setShowName(false);
+      setOverlayOpacity(0);
       return;
     }
 
-    setPhase('expanding');
-    setOpacity(0);
+    // Phase 1: Blinking — 3 blinks over 1.5s
+    setPhase('blinking');
+    setBlinkCount(0);
+    setShowName(false);
+    setOverlayOpacity(1);
 
-    // Phase 1: Expand (0-1500ms) — background fills in
-    const expandTimer = setTimeout(() => {
-      setOpacity(1);
-      setPhase('hold');
-    }, 100);
+    // Create 3 blinks: each blink is flash-on (150ms) → flash-off (200ms) → gap (150ms)
+    // Total per blink: 500ms × 3 = 1500ms
+    const blinkTimers: ReturnType<typeof setTimeout>[] = [];
+    for (let i = 0; i < 3; i++) {
+      const baseTime = i * 500;
+      // Flash ON
+      blinkTimers.push(setTimeout(() => setBlinkCount(prev => prev + 1), baseTime));
+      // Flash OFF
+      blinkTimers.push(setTimeout(() => setBlinkCount(prev => prev + 1), baseTime + 150));
+    }
 
-    // Phase 2: Hold (1500-2500ms) — full visibility
-    const holdTimer = setTimeout(() => {
-      setPhase('dissolving');
-    }, 1500);
+    // Phase 2: Show player name (after blinking completes)
+    const showTimer = setTimeout(() => {
+      setPhase('showing');
+      setShowName(true);
+    }, BLINK_DURATION);
 
-    // Phase 3: Dissolve (2500-3000ms) — fade out
+    // Phase 3: Dissolve
     const dissolveTimer = setTimeout(() => {
-      setOpacity(0);
+      setPhase('dissolving');
+      setOverlayOpacity(0);
+    }, BLINK_DURATION + SHOW_DURATION);
+
+    // Complete
+    const completeTimer = setTimeout(() => {
       setPhase('idle');
+      setShowName(false);
       onComplete?.();
-    }, TRANSITION_DURATION);
+    }, TOTAL_DURATION);
 
     return () => {
-      clearTimeout(expandTimer);
-      clearTimeout(holdTimer);
+      blinkTimers.forEach(clearTimeout);
+      clearTimeout(showTimer);
       clearTimeout(dissolveTimer);
+      clearTimeout(completeTimer);
     };
   }, [visible, nextPlayer, onComplete]);
 
@@ -87,8 +104,9 @@ export function PtmTransitionOverlay({
     const handleKey = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
         e.preventDefault();
-        setOpacity(0);
         setPhase('idle');
+        setShowName(false);
+        setOverlayOpacity(0);
         onSkip?.();
       }
     };
@@ -100,88 +118,101 @@ export function PtmTransitionOverlay({
   // Click to skip
   const handleClick = useCallback(() => {
     if (!visible) return;
-    setOpacity(0);
     setPhase('idle');
+    setShowName(false);
+    setOverlayOpacity(0);
     onSkip?.();
   }, [visible, onSkip]);
 
   if (!visible || !nextPlayer || phase === 'idle') return null;
 
-  const isExpanding = phase === 'expanding';
+  // Determine blink state: odd count = flash on, even = flash off
+  const isFlashOn = blinkCount % 2 === 1;
+  const isBlinking = phase === 'blinking';
+  const isShowing = phase === 'showing';
   const isDissolving = phase === 'dissolving';
+
+  // During blinking, flash the screen with the player's color
+  // During showing, display the player name
+  // During dissolving, fade out everything
 
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center cursor-pointer select-none"
       onClick={handleClick}
       style={{
-        opacity,
+        opacity: overlayOpacity,
         transition: isDissolving
           ? 'opacity 0.5s ease-out'
-          : isExpanding
-            ? 'opacity 0.3s ease-in'
-            : 'none',
+          : 'none',
       }}
     >
-      {/* Background: player color gradient filling the screen */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `radial-gradient(circle at 50% 50%, ${nextPlayer.color}66 0%, ${nextPlayer.color}33 40%, rgba(0,0,0,0.85) 100%)`,
-          animation: phase === 'hold' ? 'ptm-pulse 0.8s ease-in-out infinite' : 'none',
-        }}
-      />
+      {/* Background layer */}
+      <div className="absolute inset-0 bg-black/90" />
 
-      {/* Dark vignette */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60" />
-
-      {/* Content */}
-      <div className="relative z-10 flex flex-col items-center">
-        {/* Player Avatar — large with pulsing ring */}
+      {/* Blink flash layer — only visible during blinking phase when flash is ON */}
+      {isBlinking && isFlashOn && (
         <div
-          className="mb-6"
+          className="absolute inset-0"
           style={{
-            animation: phase === 'hold' ? 'ptm-avatar-pulse 1s ease-in-out infinite' : 'none',
+            backgroundColor: `${nextPlayer.color}44`,
           }}
-        >
-          {nextPlayer.avatar ? (
-            <img
-              src={nextPlayer.avatar}
-              alt={nextPlayer.name}
-              className="w-28 h-28 rounded-full object-cover border-4 shadow-2xl"
-              style={{ borderColor: nextPlayer.color }}
-            />
-          ) : (
-            <div
-              className="w-28 h-28 rounded-full flex items-center justify-center text-4xl font-bold border-4 shadow-2xl text-white"
-              style={{ backgroundColor: nextPlayer.color, borderColor: nextPlayer.color }}
-            >
-              {nextPlayer.name.charAt(0).toUpperCase()}
-            </div>
-          )}
-        </div>
+        />
+      )}
 
-        {/* "Passing the Mic" label */}
-        <div className="text-white/60 text-sm font-medium uppercase tracking-widest mb-2">
-          Passing the Mic
-        </div>
-
-        {/* Player name — large, bold */}
+      {/* Player color glow — visible during showing phase */}
+      {isShowing && (
         <div
-          className="text-5xl font-black text-white mb-3"
+          className="absolute inset-0"
           style={{
-            textShadow: `0 0 30px ${nextPlayer.color}88, 0 0 60px ${nextPlayer.color}44`,
+            background: `radial-gradient(circle at 50% 50%, ${nextPlayer.color}66 0%, ${nextPlayer.color}33 40%, rgba(0,0,0,0.85) 100%)`,
+            animation: 'ptm-pulse 0.8s ease-in-out infinite',
           }}
-        >
-          {nextPlayer.name}
-        </div>
+        />
+      )}
 
-        {/* Segment label — hidden to prevent predicting mic handoff timing */}
+      {/* Content — only visible during showing phase */}
+      {showName && (
+        <div className="relative z-10 flex flex-col items-center">
+          {/* Player Avatar */}
+          <div
+            className="mb-6"
+            style={{
+              animation: 'ptm-avatar-pulse 1s ease-in-out infinite',
+            }}
+          >
+            {nextPlayer.avatar ? (
+              <img
+                src={nextPlayer.avatar}
+                alt={nextPlayer.name}
+                className="w-28 h-28 rounded-full object-cover border-4 shadow-2xl"
+                style={{ borderColor: nextPlayer.color }}
+              />
+            ) : (
+              <div
+                className="w-28 h-28 rounded-full flex items-center justify-center text-4xl font-bold border-4 shadow-2xl text-white"
+                style={{ backgroundColor: nextPlayer.color, borderColor: nextPlayer.color }}
+              >
+                {nextPlayer.name.charAt(0).toUpperCase()}
+              </div>
+            )}
+          </div>
 
-        {/* Skip hint */}
-        <div className="mt-8 text-white/20 text-xs">
-          Leertaste zum Überspringen
+          {/* Player name */}
+          <div
+            className="text-5xl font-black text-white mb-3"
+            style={{
+              textShadow: `0 0 30px ${nextPlayer.color}88, 0 0 60px ${nextPlayer.color}44`,
+            }}
+          >
+            {nextPlayer.name}
+          </div>
         </div>
+      )}
+
+      {/* Skip hint */}
+      <div className="absolute bottom-6 text-white/20 text-xs">
+        Leertaste zum Überspringen
       </div>
     </div>
   );
