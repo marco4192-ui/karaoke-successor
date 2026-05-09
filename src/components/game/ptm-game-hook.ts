@@ -230,6 +230,43 @@ export function usePtmGameLogic({
     return audioSong;
   }, [audioSong, fallbackRef.current]);
 
+  // ── Medley preloading: preload next snippet's audio while current is playing ──
+  const preloadRef = useRef<HTMLAudioElement | null>(null);
+  useEffect(() => {
+    if (!isMedleyMode || phase !== 'playing') {
+      // Cleanup preload when not in medley playing mode
+      if (preloadRef.current) {
+        preloadRef.current.src = '';
+        preloadRef.current = null;
+      }
+      return;
+    }
+
+    const nextIdx = currentSegmentIndex + 1;
+    if (nextIdx >= ptmMedleySnippets.length) return; // No next snippet
+
+    const nextSnippet = ptmMedleySnippets[nextIdx];
+    const nextAudioUrl = nextSnippet?.song?.audioUrl;
+    if (!nextAudioUrl) return;
+
+    // Create/reuse an Audio object to preload the next snippet
+    if (!preloadRef.current) {
+      preloadRef.current = new Audio();
+    }
+    const audio = preloadRef.current;
+    // Only preload if not already loaded or different URL
+    if (audio.src !== nextAudioUrl) {
+      audio.src = nextAudioUrl;
+      audio.preload = 'auto';
+      // Start loading immediately
+      audio.load().catch(() => {});
+    }
+
+    return () => {
+      // Don't clean up during unmount — let the browser cache it
+    };
+  }, [isMedleyMode, phase, currentSegmentIndex, ptmMedleySnippets]);
+
   // ── Transition state ──
   const [transitionVisible, setTransitionVisible] = useState(false);
   const [transitionNextPlayer, setTransitionNextPlayer] = useState<{
