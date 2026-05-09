@@ -70,12 +70,25 @@ export function PtmHudControls({
   }, [webcamStream]);
 
   const handleFullscreen = useCallback(() => {
-    import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
-      const win = getCurrentWindow();
-      win.isFullscreen().then(isFs => {
-        win.setFullscreen(!isFs).catch(() => {});
-      }).catch(() => {});
-    }).catch(() => {});
+    // Try Tauri fullscreen first, fall back to browser Document.fullscreen
+    if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+      import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+        const win = getCurrentWindow();
+        win.isFullscreen().then(isFs => {
+          win.setFullscreen(!isFs).catch(() => {});
+        }).catch(() => {
+          // Fallback to browser fullscreen
+          if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+          else document.documentElement.requestFullscreen().catch(() => {});
+        });
+      }).catch(() => {
+        if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+        else document.documentElement.requestFullscreen().catch(() => {});
+      });
+    } else {
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      else document.documentElement.requestFullscreen().catch(() => {});
+    }
   }, []);
 
   return (
