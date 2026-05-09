@@ -336,7 +336,7 @@ export default function KaraokeSuccessor() {
               setSong(song);
               if (currentMode === 'pass-the-mic') {
                 const playerCount = party.passTheMicPlayers?.length || 2;
-                const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration);
+                const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration, song.lyrics);
                 party.setPassTheMicSegments(segments);
                 // Ensure URLs (and lyrics) are ready BEFORE navigating to PTM screen
                 // to avoid race condition where PTM renders without lyrics
@@ -344,6 +344,11 @@ export default function KaraokeSuccessor() {
                   try {
                     const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
                     const songWithUrls = await ensureSongUrls(song);
+                    // Re-generate segments with loaded lyrics for score-based splitting
+                    if (songWithUrls.lyrics && songWithUrls.lyrics.length > 0 && (!song.lyrics || song.lyrics.length === 0)) {
+                      const scoreSegments = generatePtmSegments(songWithUrls.duration, playerCount, party.passTheMicSettings?.segmentDuration, songWithUrls.lyrics);
+                      party.setPassTheMicSegments(scoreSegments);
+                    }
                     party.setPassTheMicSong(songWithUrls);
                   } catch {
                     party.setPassTheMicSong(song);
@@ -405,7 +410,7 @@ export default function KaraokeSuccessor() {
 
             if (activeMode === 'pass-the-mic' && party.passTheMicPlayers?.length > 0) {
               const playerCount = party.passTheMicPlayers.length || 2;
-              const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration);
+              const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration, song.lyrics);
               party.setPassTheMicSegments(segments);
               party.setPassTheMicSong(song);
               setSong(song);
