@@ -614,15 +614,9 @@ export class MultiMicrophoneManager {
         deviceId: assigned.config.deviceId,
       };
 
-      // Directly update the config without reconnecting (only reconnect if device ID changed)
-      assigned.config = { ...assigned.config, ...optimalSettings };
-      this.saveConfig();
-
-      // Also apply gain change to live instance if it exists
-      const instance = this.micInstances.get(id);
-      if (instance && optimalSettings.gain !== undefined) {
-        instance.setGain(optimalSettings.gain);
-      }
+      // Use updateExtendedConfig which handles reconnection when
+      // audio constraints change (echoCancellation, noiseSuppression, etc.)
+      await this.updateExtendedConfig(id, optimalSettings);
     }
 
     // Notify UI that all mics have been updated
