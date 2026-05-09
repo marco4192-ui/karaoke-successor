@@ -21,34 +21,42 @@ export function MobileDeviceMicrophoneSection() {
   const [localIP, setLocalIP] = useState<string>('');
   const [connectedClients, setConnectedClients] = useState<ConnectedClient[]>([]);
   
-  // Get local IP address via WebRTC
+  // Get local IP address — try multiple strategies
   useEffect(() => {
     let isMounted = true;
     let detectedIP: string | null = null;
-    
+
     const getLocalIP = async () => {
+      // Strategy 1: Check sessionStorage for previously detected IP
+      const storedIP = sessionStorage.getItem('karaoke-detected-ip');
+      if (storedIP && !storedIP.startsWith('127.') && storedIP !== 'localhost' && !storedIP.endsWith('.local')) {
+        detectedIP = storedIP;
+        setLocalIP(storedIP);
+        return;
+      }
+
+      // Strategy 2: Use window.location.hostname (works when opened via IP, e.g. in dev)
+      const hostname = window.location.hostname;
+      if (hostname && hostname !== 'localhost' && !hostname.startsWith('127.') && !hostname.endsWith('.local') && hostname !== 'tauri.localhost') {
+        detectedIP = hostname;
+        setLocalIP(hostname);
+        sessionStorage.setItem('karaoke-detected-ip', hostname);
+        return;
+      }
+
+      // Strategy 3: WebRTC IP detection
       try {
-        // Check sessionStorage for previously detected IP
-        const storedIP = sessionStorage.getItem('karaoke-detected-ip');
-        if (storedIP && !storedIP.startsWith('127.') && storedIP !== 'localhost') {
-          detectedIP = storedIP;
-          setLocalIP(storedIP);
-          return;
-        }
-        
-        // Try to get local IP via RTCPeerConnection
         const pc = new RTCPeerConnection({ iceServers: [] });
         pc.createDataChannel('');
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
-        
+
         pc.onicecandidate = (event) => {
           if (event?.candidate && isMounted && !detectedIP) {
             const candidate = event.candidate.candidate;
             const ipMatch = candidate.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/);
             if (ipMatch && ipMatch[1]) {
               const ip = ipMatch[1];
-              // Filter out mDNS addresses and localhost
               if (!ip.endsWith('.local') && ip !== '0.0.0.0' && !ip.startsWith('127.')) {
                 detectedIP = ip;
                 setLocalIP(ip);
@@ -58,28 +66,13 @@ export function MobileDeviceMicrophoneSection() {
             }
           }
         };
-        
-        // Also check hostname
-        setTimeout(() => {
-          if (isMounted && !detectedIP) {
-            const hostname = window.location.hostname;
-            if (hostname && hostname !== 'localhost' && !hostname.startsWith('127.')) {
-              detectedIP = hostname;
-              setLocalIP(hostname);
-              sessionStorage.setItem('karaoke-detected-ip', hostname);
-            }
-          }
-          pc.close();
-        }, 3000);
+
+        setTimeout(() => { pc.close(); }, 5000);
       } catch {
-        // Fallback to hostname
-        const hostname = window.location.hostname;
-        if (hostname && hostname !== 'localhost' && !hostname.startsWith('127.')) {
-          setLocalIP(hostname);
-        }
+        // WebRTC not available — IP remains undetected
       }
     };
-    
+
     getLocalIP();
     return () => { isMounted = false; };
   }, []);

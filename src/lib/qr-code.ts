@@ -89,10 +89,13 @@ export async function detectLocalIP(): Promise<string | null> {
 /**
  * Build the companion app connection URL for the given IP and optional profile ID.
  * Always uses the /mobile route so the companion gets the latest implementation.
+ *
+ * In Tauri, the Next.js server always runs on port 3000 (started by the Rust side).
+ * window.location.port is empty in Tauri (custom protocol), so we always
+ * fall back to 3000 — which is correct for both Tauri production and dev mode.
  */
 export function buildCompanionUrl(ip: string, port?: number, profileId?: string): string {
-  // Use the actual server port from window.location unless explicitly provided
-  const actualPort = port ?? (typeof window !== 'undefined' ? parseInt(window.location.port, 10) || 3000 : 3000);
+  const actualPort = port ?? 3000;
   const base = `http://${ip}:${actualPort}/mobile`;
   if (profileId) {
     return `${base}?profile=${encodeURIComponent(profileId)}`;
