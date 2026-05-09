@@ -4,6 +4,7 @@ import { Song } from '@/types/game';
 import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
 import type { Language } from '@/lib/i18n/translations';
 import { LibraryGroupBy } from './types';
+import { normalizeLanguage, splitGenres, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
 
 export function getLetterGroup(name: string): string {
   if (!name) return '#';
@@ -55,57 +56,63 @@ export function groupSongs(songs: Song[], groupBy: LibraryGroupBy): Map<string, 
   const groups = new Map<string, Song[]>();
   
   songs.forEach(song => {
-    let key: string;
+    let keys: string[];
     
     switch (groupBy) {
       case 'artist':
-        key = getLetterGroup(song.artist);
+        keys = [getLetterGroup(song.artist)];
         break;
       case 'title':
-        key = getLetterGroup(song.title);
+        keys = [getLetterGroup(song.title)];
         break;
-      case 'genre':
-        key = song.genre || 'Unknown';
-        break;
-      case 'language':
-        key = song.language || 'unknown';
-        break;
-      case 'folder':
-        // Get the TOP-LEVEL folder only (parent folder of the song's folder)
-        // Songs are typically in: BaseFolder/ArtistFolder/SongFolder/song.txt
-        // We want to show only: ArtistFolder (the first level after base)
-        if (song.folderPath) {
-          const parts = song.folderPath.split('/').filter(p => p.length > 0);
-          // Only show the first subfolder level (not the song's immediate folder)
-          // If path is "Artist/Album/Song", show "Artist"
-          // If path is "Artist/Song", show "Artist"
-          // If path is "Song", show "Root"
-          if (parts.length >= 2) {
-            // Skip the last part (song folder) and take the first meaningful parent
-            key = parts[0];
-          } else if (parts.length === 1) {
-            // Single folder - could be an artist folder with songs directly
-            key = parts[0];
-          } else {
-            key = 'Root';
-          }
-        } else if (song.storageFolder) {
-          // For storage folder, extract top-level folder
-          const parts = song.storageFolder.split('/').filter(p => p.length > 0);
-          key = parts.length > 0 ? parts[0] : 'Root';
+      case 'genre': {
+        // Normalize and split comma-separated genres
+        // e.g., "Soundtrack, K-Pop" → song appears in both "Soundtrack" and "K-Pop" folders
+        if (song.genre) {
+          keys = splitGenres(song.genre).map(g => normalizeGenreName(g));
         } else {
-          key = 'Root';
+          keys = ['Unknown'];
         }
         break;
+      }
+      case 'language': {
+        // Normalize language for grouping (e.g., "English", "Deutsch", "español" all map to canonical)
+        keys = [song.language ? normalizeLanguage(song.language) : 'unknown'];
+        break;
+      }
+      case 'folder':
+        keys = (() => {
+          if (song.folderPath) {
+            const parts = song.folderPath.split('/').filter(p => p.length > 0);
+            if (parts.length >= 2) {
+              return [parts[0]];
+            } else if (parts.length === 1) {
+              return [parts[0]];
+            } else {
+              return ['Root'];
+            }
+          } else if (song.storageFolder) {
+            const parts = song.storageFolder.split('/').filter(p => p.length > 0);
+            return parts.length > 0 ? [parts[0]] : ['Root'];
+          } else {
+            return ['Root'];
+          }
+        })();
+        break;
       default:
-        key = 'All';
+        keys = ['All'];
     }
     
-    if (!groups.has(key)) {
-      groups.set(key, []);
+    // Add song to each group key (important for multi-genre)
+    for (const key of keys) {
+      if (!groups.has(key)) {
+        groups.set(key, []);
+      }
+      const group = groups.get(key);
+      if (group && !group.includes(song)) {
+        group.push(song);
+      }
     }
-    const group = groups.get(key);
-    if (group) group.push(song);
   });
   
   return groups;
