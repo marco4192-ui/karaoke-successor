@@ -95,6 +95,8 @@ export interface PtmGameHookReturn {
   togglePause: () => void;
   handleEndSong: () => void;
   handleMediaEnded: () => void;
+  handleMediaError: () => void;
+  isRetryingSnippet: boolean;
   handleContinue: () => void;
   handleEndSeries: () => void;
   handleEndSeriesComplete: () => void;
@@ -136,6 +138,7 @@ export function usePtmGameLogic({
   // ── Phase management ──
   const [phase, setPhase] = useState<GamePhase>('intro');
   const [countdown, setCountdown] = useState(3);
+  const [isRetryingSnippet, setIsRetryingSnippet] = useState(false);
 
   // ── Media: URL restoration, lyrics, media element refs ──
   const {
@@ -867,6 +870,78 @@ export function usePtmGameLogic({
     }
   }, [phase, recordRound]);
 
+  // ── Handle media error — in medley mode, retry with a different song ──
+  const handleMediaError = useCallback(() => {
+    if (!isMedleyMode || phase !== 'playing') return;
+    // Don't retry if already retrying (prevent infinite loops)
+    if (isRetryingSnippet) return;
+
+    setIsRetryingSnippet(true);
+    setIsPlaying(false);
+
+    // Try to load a replacement snippet from the library
+    (async () => {
+      try {
+        const { getAllSongs } = await import('@/lib/game/song-library');
+        const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
+        const { generateMedleySnippets } = await import('@/components/game/medley/medley-snippet-generator');
+
+        const songs = getAllSongs();
+        // Generate 1 snippet from a random song (different from current if possible)
+        const snippets = generateMedleySnippets(songs, 1, 30);
+        if (snippets.length === 0) {
+          // No songs available — fall through to song end
+          setIsRetryingSnippet(false);
+          recordRound();
+          setPhase('song-results');
+          return;
+        }
+
+        let prepared = await ensureSongUrls(snippets[0].song);
+        // Load lyrics
+        if (!prepared.lyrics || prepared.lyrics.length === 0) {
+          try {
+            const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
+            const lyrics = await loadSongLyrics(prepared);
+            if (lyrics.length > 0) prepared = { ...prepared, lyrics };
+          } catch { /* non-critical */ }
+        }
+
+        const newSnippet = { ...snippets[0], song: prepared };
+
+        // Replace the current snippet in the store
+        const setPtmMedleySnippets = usePartyStore.getState().setPtmMedleySnippets;
+        const updatedSnippets = [...ptmMedleySnippets];
+        if (currentSegmentIndex < updatedSnippets.length) {
+          updatedSnippets[currentSegmentIndex] = newSnippet;
+          setPtmMedleySnippets(updatedSnippets);
+        }
+
+        // Reset segment switch guard so it can detect the new end time
+        segmentSwitchHandledRef.current = false;
+
+        // Clear fallback lyrics so they get re-loaded for the new snippet
+        fallbackLyricsRef.current = null;
+
+        setIsRetryingSnippet(false);
+
+        // The audio/video elements will re-mount because the key (song.id) changed
+        // The medley seek effect will handle seeking and playing
+        // Need to re-trigger playing state after snippet replacement
+        setTimeout(() => {
+          if (!unmountGuardRef.current) {
+            setIsPlaying(true);
+          }
+        }, 500);
+      } catch {
+        // Retry failed — fall through to song end
+        setIsRetryingSnippet(false);
+        recordRound();
+        setPhase('song-results');
+      }
+    })();
+  }, [isMedleyMode, phase, isRetryingSnippet, currentSegmentIndex, ptmMedleySnippets, recordRound]);
+
   return {
     // Phase
     phase,
@@ -928,6 +1003,8 @@ export function usePtmGameLogic({
     handleEndSong,
     togglePause,
     handleMediaEnded,
+    handleMediaError,
+    isRetryingSnippet,
     handleContinue,
     handleEndSeries,
     handleEndSeriesComplete,

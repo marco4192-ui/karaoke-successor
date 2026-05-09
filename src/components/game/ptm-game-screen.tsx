@@ -110,6 +110,7 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
           src={g.audioSong.audioUrl}
           className="hidden"
           onEnded={g.handleMediaEnded}
+          onError={g.handleMediaError}
           preload="auto"
         />
       )}
@@ -124,6 +125,7 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
           muted={false}
           playsInline
           onEnded={g.handleMediaEnded}
+          onError={g.handleMediaError}
           preload="auto"
         />
       )}
