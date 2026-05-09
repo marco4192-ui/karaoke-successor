@@ -439,12 +439,12 @@ export function useGameScreenLogic({ onEnd, onBack, onPause }: GameScreenProps):
     const hasExplicitPlayerMarkers = sortedLines.some(line => line.player === 'P1' || line.player === 'P2');
 
     const p1Lines = sortedLines.filter(line => {
-      if (hasExplicitPlayerMarkers) return line.player === 'P1' || line.player === 'both';
+      if (hasExplicitPlayerMarkers) return line.player === 'P1' || line.player === 'both' || !line.player;
       return true;
     });
 
     const p2Lines = sortedLines.filter(line => {
-      if (hasExplicitPlayerMarkers) return line.player === 'P2' || line.player === 'both';
+      if (hasExplicitPlayerMarkers) return line.player === 'P2' || line.player === 'both' || !line.player;
       return true;
     });
 
