@@ -42,7 +42,6 @@ const LANGUAGE_ALIASES: Record<string, string> = {
   'francais': 'French',
   'fr': 'French',
   'französisch': 'French',
-  'francais': 'French',
   'francese': 'French',
 
   // Spanish variants
