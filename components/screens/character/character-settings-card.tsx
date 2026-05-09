@@ -32,7 +32,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
     detectLocalIP().then(ip => { if (ip) setLocalIP(ip); });
   }, []);
 
-  const qrCodeSrc = useQRCode(localIP ? buildCompanionUrl(localIP, 3000, profile.id) : '', 160);
+  const qrCodeSrc = useQRCode(localIP ? buildCompanionUrl(localIP, undefined, profile.id) : '', 160);
 
   const handleUpdatePrivacy = (field: string, value: boolean) => {
     updateProfile(profile.id, {
@@ -315,7 +315,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
                 {qrCodeSrc ? <img src={qrCodeSrc} alt="QR Code" className="w-32 h-32" /> : <div className="w-32 h-32 animate-pulse bg-gray-200 rounded" />}
               </div>
               <p className="text-xs text-white/40 font-mono break-all">
-                {buildCompanionUrl(localIP, 3000, profile.id)}
+                {buildCompanionUrl(localIP, undefined, profile.id)}
               </p>
             </div>
           )}
