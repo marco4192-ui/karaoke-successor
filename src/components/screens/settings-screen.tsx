@@ -188,7 +188,7 @@ function SettingsScreen() {
   };
 
   return (
-    <div className={`theme-container w-full ${activeTab === 'editor' ? 'text-center' : 'max-w-7xl mx-auto px-4 md:px-6 lg:px-8'}`}>
+    <div className="theme-container w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
       {/* Header - hidden when editor is actively editing a song */}
       {!isEditorActive && (
         <div className="mb-8">
@@ -282,7 +282,9 @@ function SettingsScreen() {
       )}
 
       {activeTab === 'editor' && (
-        <EditorSettingsTab onEditorActiveChange={handleEditorActiveChange} />
+        <div className="text-center">
+          <EditorSettingsTab onEditorActiveChange={handleEditorActiveChange} />
+        </div>
       )}
 
       {activeTab === 'about' && (
