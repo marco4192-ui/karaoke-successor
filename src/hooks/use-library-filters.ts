@@ -6,6 +6,7 @@ import { LibrarySettings, StartOptions } from '@/components/screens/library/type
 import { isDuetSong } from '@/components/screens/library/utils';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
 import { useDebouncedValue } from './use-debounce';
+import { normalizeLanguage, splitGenres, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
 
 interface UseLibraryFiltersParams {
   loadedSongs: Song[];
@@ -45,15 +46,23 @@ export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMod
     }
     
     // Genre filter - reads from #Genre: tag in txt files
+    // Supports comma-separated genres (e.g., "Soundtrack, K-Pop")
     if (settings.filterGenre && settings.filterGenre !== 'all') {
-      songs = songs.filter(s =>
-        s.genre?.toLowerCase().includes(settings.filterGenre.toLowerCase())
-      );
+      const normalizedFilter = normalizeGenreName(settings.filterGenre).toLowerCase();
+      songs = songs.filter(s => {
+        if (!s.genre) return false;
+        const parts = splitGenres(s.genre);
+        return parts.some(g => normalizeGenreName(g).toLowerCase() === normalizedFilter);
+      });
     }
     
-    // Language filter - reads from #Language: tag in txt files
+    // Language filter - reads from #Language: tag in txt files (normalized)
     if (settings.filterLanguage && settings.filterLanguage !== 'all') {
-      songs = songs.filter(s => s.language === settings.filterLanguage);
+      const normalizedFilter = normalizeLanguage(settings.filterLanguage);
+      songs = songs.filter(s => {
+        if (!s.language) return false;
+        return normalizeLanguage(s.language) === normalizedFilter;
+      });
     }
     
     // Duet filter - show only duet songs when enabled
@@ -93,20 +102,23 @@ export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMod
     return songs;
   }, [loadedSongs, deferredQuery, settings, startMode, viralSongIds]);
   
-  // Get unique genres from loaded songs (read from #Genre: in txt files)
+  // Get unique genres from loaded songs (read from #Genre: in txt files, normalized)
   const availableGenres = useMemo(() => {
     const genreSet = new Set<string>();
     loadedSongs.forEach(s => {
-      if (s.genre) genreSet.add(s.genre);
+      if (s.genre) {
+        const parts = splitGenres(s.genre);
+        parts.forEach(g => genreSet.add(normalizeGenreName(g)));
+      }
     });
     return ['all', ...Array.from(genreSet).sort()];
   }, [loadedSongs]);
   
-  // Get unique languages from loaded songs (read from #Language: in txt files)
+  // Get unique languages from loaded songs (read from #Language: in txt files, normalized)
   const availableLanguages = useMemo(() => {
     const langSet = new Set<string>();
     loadedSongs.forEach(s => {
-      if (s.language) langSet.add(s.language);
+      if (s.language) langSet.add(normalizeLanguage(s.language));
     });
     return ['all', ...Array.from(langSet).sort()];
   }, [loadedSongs]);

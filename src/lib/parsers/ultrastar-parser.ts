@@ -21,6 +21,7 @@
 import { Song, Note, LyricLine, Difficulty, DuetPlayer, midiToFrequency } from '@/types/game';
 import { isYouTubeUrl, isDirectVideoUrl } from '@/lib/url-utils';
 import { normalizeTxtContent } from '@/lib/utils';
+import { normalizeLanguage } from '@/lib/parsers/meta-normalizer';
 
 interface UltraStarNote {
   type: ':' | '*' | 'F' | 'R' | 'G';
@@ -157,7 +158,7 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
             song.year = parseInt(value) || undefined;
             break;
           case 'LANGUAGE':
-            song.language = value.trim();
+            song.language = normalizeLanguage(value.trim());
             break;
           case 'EDITION':
             song.edition = value.trim();
@@ -348,25 +349,11 @@ export function convertUltraStarToSong(
     // Check if this note ends a line (after adding)
     // Line breaks are determined ONLY by the explicit "- <beat>" markers in lineBreakBeats,
     // or by a large gap between notes (8+ beats fallback).
-    // Uses ±1 beat tolerance for line break matching to handle fractional beats.
     const nextNoteStart = i < sortedNotes.length - 1 ? sortedNotes[i + 1].startBeat : -1;
-    const isExactBreak = lineBreakBeats.has(noteEndBeat) ||
-                        (nextNoteStart >= 0 && lineBreakBeats.has(nextNoteStart));
-    // Tolerance-based matching for fractional beat alignment
-    let isNearBreak = false;
-    if (!isExactBreak && lineBreakBeats.size > 0) {
-      const TOLERANCE = 1.0;
-      for (const breakBeat of lineBreakBeats) {
-        if (Math.abs(noteEndBeat - breakBeat) <= TOLERANCE ||
-            (nextNoteStart >= 0 && Math.abs(nextNoteStart - breakBeat) <= TOLERANCE)) {
-          isNearBreak = true;
-          break;
-        }
-      }
-    }
-    const isGapBreak = i < sortedNotes.length - 1 &&
-                         nextNoteStart - noteEndBeat >= 8;
-    const isLineBreak = isExactBreak || isNearBreak || isGapBreak;
+    const isLineBreak = lineBreakBeats.has(noteEndBeat) ||
+                        (nextNoteStart >= 0 && lineBreakBeats.has(nextNoteStart)) ||
+                        (i < sortedNotes.length - 1 &&
+                         nextNoteStart - noteEndBeat >= 8);
 
     if ((isLineBreak || i === sortedNotes.length - 1) && currentLineNotes.length > 0) {
       const lineStartTime = currentLineNotes[0].startTime;
