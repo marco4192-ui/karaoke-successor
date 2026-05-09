@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 // ===================== TYPES =====================
 
@@ -18,18 +18,21 @@ export interface PtmTransitionOverlayProps {
   nextPlayer: PtmTransitionPlayer | null;
   /** Segment number (e.g. "Segment 3/8") */
   segmentLabel?: string;
-  /** Called when the transition is complete (blinks + name display elapsed) */
+  /** Called when the transition is complete */
   onComplete?: () => void;
   /** Called when user clicks/presses Space to skip */
   onSkip?: () => void;
 }
 
 // ===================== TRANSITION OVERLAY =====================
+// Border-only blinking + brief name display.
+// The blinking starts ~2s before the previous player's segment ends,
+// so the overlay does NOT block gameplay during the blink phase.
+// When the segment actually ends, a brief name flash is shown.
 
-const TOTAL_DURATION = 3500; // 3.5 seconds total
-const BLINK_DURATION = 1500; // 1.5 seconds for 3 blinks
-const SHOW_DURATION = 1500; // 1.5 seconds for name display
-const DISSOLVE_DURATION = 500; // 0.5 seconds for fade out
+const BLINK_PHASE_MS = 2000; // Blinking duration (matches TRANSITION_LEAD_TIME in hook)
+const NAME_DISPLAY_MS = 800; // Brief name display
+const NAME_FADE_MS = 300; // Fade out
 
 export function PtmTransitionOverlay({
   visible,
@@ -38,61 +41,59 @@ export function PtmTransitionOverlay({
   onComplete,
   onSkip,
 }: PtmTransitionOverlayProps) {
-  const [phase, setPhase] = useState<'idle' | 'blinking' | 'showing' | 'dissolving'>('idle');
+  const [phase, setPhase] = useState<'idle' | 'blinking' | 'showing' | 'fading'>('idle');
   const [blinkCount, setBlinkCount] = useState(0);
-  const [showName, setShowName] = useState(false);
-  const [overlayOpacity, setOverlayOpacity] = useState(0);
+  const [nameOpacity, setNameOpacity] = useState(0);
+  const startTimeRef = useMemo(() => Date.now(), []); // stable ref for animation loop
 
   // Reset and start animation when visible changes
   useEffect(() => {
     if (!visible || !nextPlayer) {
       setPhase('idle');
       setBlinkCount(0);
-      setShowName(false);
-      setOverlayOpacity(0);
+      setNameOpacity(0);
       return;
     }
 
-    // Phase 1: Blinking — 3 blinks over 1.5s
+    // Phase 1: Border blinking (does NOT block gameplay — pointer-events-none)
     setPhase('blinking');
     setBlinkCount(0);
-    setShowName(false);
-    setOverlayOpacity(1);
+    setNameOpacity(0);
 
-    // Create 3 blinks: each blink is flash-on (150ms) → flash-off (200ms) → gap (150ms)
-    // Total per blink: 500ms × 3 = 1500ms
+    // Create blinks: each blink is flash-on (200ms) → flash-off (200ms)
+    // ~5 blinks over 2 seconds
     const blinkTimers: ReturnType<typeof setTimeout>[] = [];
-    for (let i = 0; i < 3; i++) {
-      const baseTime = i * 500;
-      // Flash ON
+    const blinkInterval = 400;
+    const totalBlinks = Math.floor(BLINK_PHASE_MS / blinkInterval);
+    for (let i = 0; i < totalBlinks; i++) {
+      const baseTime = i * blinkInterval;
       blinkTimers.push(setTimeout(() => setBlinkCount(prev => prev + 1), baseTime));
-      // Flash OFF
-      blinkTimers.push(setTimeout(() => setBlinkCount(prev => prev + 1), baseTime + 150));
+      blinkTimers.push(setTimeout(() => setBlinkCount(prev => prev + 1), baseTime + 200));
     }
 
-    // Phase 2: Show player name (after blinking completes)
+    // Phase 2: Show player name briefly
     const showTimer = setTimeout(() => {
       setPhase('showing');
-      setShowName(true);
-    }, BLINK_DURATION);
+      setNameOpacity(1);
+    }, BLINK_PHASE_MS);
 
-    // Phase 3: Dissolve
-    const dissolveTimer = setTimeout(() => {
-      setPhase('dissolving');
-      setOverlayOpacity(0);
-    }, BLINK_DURATION + SHOW_DURATION);
+    // Phase 3: Fade out name
+    const fadeTimer = setTimeout(() => {
+      setPhase('fading');
+      setNameOpacity(0);
+    }, BLINK_PHASE_MS + NAME_DISPLAY_MS);
 
     // Complete
     const completeTimer = setTimeout(() => {
       setPhase('idle');
-      setShowName(false);
+      setNameOpacity(0);
       onComplete?.();
-    }, TOTAL_DURATION);
+    }, BLINK_PHASE_MS + NAME_DISPLAY_MS + NAME_FADE_MS);
 
     return () => {
       blinkTimers.forEach(clearTimeout);
       clearTimeout(showTimer);
-      clearTimeout(dissolveTimer);
+      clearTimeout(fadeTimer);
       clearTimeout(completeTimer);
     };
   }, [visible, nextPlayer, onComplete]);
@@ -100,17 +101,14 @@ export function PtmTransitionOverlay({
   // Space to skip
   useEffect(() => {
     if (!visible) return;
-
     const handleKey = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
         e.preventDefault();
         setPhase('idle');
-        setShowName(false);
-        setOverlayOpacity(0);
+        setNameOpacity(0);
         onSkip?.();
       }
     };
-
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [visible, onSkip]);
@@ -119,101 +117,74 @@ export function PtmTransitionOverlay({
   const handleClick = useCallback(() => {
     if (!visible) return;
     setPhase('idle');
-    setShowName(false);
-    setOverlayOpacity(0);
+    setNameOpacity(0);
     onSkip?.();
   }, [visible, onSkip]);
 
   if (!visible || !nextPlayer || phase === 'idle') return null;
 
-  // Determine blink state: odd count = flash on, even = flash off
   const isFlashOn = blinkCount % 2 === 1;
   const isBlinking = phase === 'blinking';
   const isShowing = phase === 'showing';
-  const isDissolving = phase === 'dissolving';
+  const isFading = phase === 'fading';
 
-  // During blinking, flash the screen with the player's color
-  // During showing, display the player name
-  // During dissolving, fade out everything
+  // Border glow intensity
+  const borderGlowOpacity = isBlinking && isFlashOn ? 0.8 : 0;
+  const borderGlowWidth = isBlinking ? 12 : 0;
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center cursor-pointer select-none"
-      onClick={handleClick}
-      style={{
-        opacity: overlayOpacity,
-        transition: isDissolving
-          ? 'opacity 0.5s ease-out'
-          : 'none',
-      }}
+      className="fixed inset-0 z-[60] pointer-events-none select-none"
+      style={{ cursor: 'default' }}
     >
-      {/* Background layer */}
-      <div className="absolute inset-0 bg-black/90" />
+      {/* Border glow — only at edges, no full-screen blackout */}
+      <div
+        className="absolute inset-0 pointer-events-auto cursor-pointer"
+        style={{
+          boxShadow: borderGlowOpacity > 0
+            ? `inset 0 0 ${borderGlowWidth}px ${borderGlowWidth}px ${nextPlayer.color}`
+            : 'none',
+          opacity: borderGlowOpacity,
+          transition: 'opacity 0.15s ease-in-out',
+        }}
+        onClick={handleClick}
+      />
 
-      {/* Blink flash layer — only visible during blinking phase when flash is ON */}
-      {isBlinking && isFlashOn && (
+      {/* Player name — centered, brief display during showing/fading phase */}
+      {(isShowing || isFading) && (
         <div
-          className="absolute inset-0"
-          style={{
-            backgroundColor: `${nextPlayer.color}44`,
-          }}
-        />
-      )}
-
-      {/* Player color glow — visible during showing phase */}
-      {isShowing && (
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `radial-gradient(circle at 50% 50%, ${nextPlayer.color}66 0%, ${nextPlayer.color}33 40%, rgba(0,0,0,0.85) 100%)`,
-            animation: 'ptm-pulse 0.8s ease-in-out infinite',
-          }}
-        />
-      )}
-
-      {/* Content — only visible during showing phase */}
-      {showName && (
-        <div className="relative z-10 flex flex-col items-center">
-          {/* Player Avatar */}
-          <div
-            className="mb-6"
-            style={{
-              animation: 'ptm-avatar-pulse 1s ease-in-out infinite',
-            }}
-          >
+          className="absolute inset-0 flex items-center justify-center pointer-events-auto cursor-pointer"
+          onClick={handleClick}
+          style={{ opacity: nameOpacity, transition: isFading ? `opacity ${NAME_FADE_MS}ms ease-out` : 'none' }}
+        >
+          <div className="flex flex-col items-center bg-black/60 rounded-2xl px-8 py-4 backdrop-blur-sm">
             {nextPlayer.avatar ? (
               <img
                 src={nextPlayer.avatar}
                 alt={nextPlayer.name}
-                className="w-28 h-28 rounded-full object-cover border-4 shadow-2xl"
+                className="w-16 h-16 rounded-full object-cover border-2 mb-2"
                 style={{ borderColor: nextPlayer.color }}
               />
             ) : (
               <div
-                className="w-28 h-28 rounded-full flex items-center justify-center text-4xl font-bold border-4 shadow-2xl text-white"
+                className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold border-2 mb-2 text-white"
                 style={{ backgroundColor: nextPlayer.color, borderColor: nextPlayer.color }}
               >
                 {nextPlayer.name.charAt(0).toUpperCase()}
               </div>
             )}
-          </div>
-
-          {/* Player name */}
-          <div
-            className="text-5xl font-black text-white mb-3"
-            style={{
-              textShadow: `0 0 30px ${nextPlayer.color}88, 0 0 60px ${nextPlayer.color}44`,
-            }}
-          >
-            {nextPlayer.name}
+            <div
+              className="text-2xl font-bold text-white"
+              style={{ textShadow: `0 0 20px ${nextPlayer.color}88` }}
+            >
+              {nextPlayer.name}
+            </div>
+            {segmentLabel && (
+              <div className="text-xs text-white/40 mt-1">{segmentLabel}</div>
+            )}
           </div>
         </div>
       )}
-
-      {/* Skip hint */}
-      <div className="absolute bottom-6 text-white/20 text-xs">
-        Leertaste zum Überspringen
-      </div>
     </div>
   );
 }

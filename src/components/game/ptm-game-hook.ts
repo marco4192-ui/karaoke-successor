@@ -583,11 +583,32 @@ export function usePtmGameLogic({
   }, [effectiveSong, song, passTheMicSeriesHistory, setPassTheMicSeriesHistory]);
 
   // ── Segment switching ──
+  const TRANSITION_LEAD_TIME = 2000; // Start border blinking 2s before segment end
+  const blinkWarningTriggeredRef = useRef(false);
+
   useEffect(() => {
     if (phase !== 'playing' || !isPlaying || !currentSegment) {
       segmentSwitchHandledRef.current = false;
+      blinkWarningTriggeredRef.current = false;
       return;
     }
+
+    // Trigger border blinking warning 2 seconds before segment ends
+    if (currentSegmentIndex < initialSegments.length - 1 &&
+        !blinkWarningTriggeredRef.current &&
+        currentTime >= currentSegment.endTime - TRANSITION_LEAD_TIME) {
+      blinkWarningTriggeredRef.current = true;
+      const nextSegIdx = currentSegmentIndex + 1;
+      const nextSegment = initialSegments[nextSegIdx];
+      const nextPlayerIdx = nextSegment.playerId
+        ? playersRef.current.findIndex(p => p.id === nextSegment.playerId)
+        : (currentPlayerIndex + 1) % playersRef.current.length;
+      const safeNextIdx = nextPlayerIdx >= 0 ? nextPlayerIdx : (currentPlayerIndex + 1) % playersRef.current.length;
+      // Start border-only blinking warning (does not block gameplay)
+      showTransition(safeNextIdx);
+    }
+
+    // Actually switch when segment ends
     if (currentTime >= currentSegment.endTime && !segmentSwitchHandledRef.current) {
       segmentSwitchHandledRef.current = true;
       if (currentSegmentIndex < initialSegments.length - 1) {
@@ -605,7 +626,7 @@ export function usePtmGameLogic({
 
         setCurrentSegmentIndex(nextSegIdx);
         setCurrentPlayerIndex(safeNextIdx);
-        showTransition(safeNextIdx);
+        // Don't call showTransition again — already triggered by warning
       } else {
         // Song finished
         setIsPlaying(false);
