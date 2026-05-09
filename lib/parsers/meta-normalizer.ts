@@ -82,7 +82,6 @@ const LANGUAGE_ALIASES: Record<string, string> = {
   'kor': 'Korean',
   'koreanisch': 'Korean',
   'coreano': 'Korean',
-  'coreano': 'Korean',
 
   // Chinese variants
   'chinese': 'Chinese',
