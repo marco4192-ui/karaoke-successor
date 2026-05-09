@@ -31,8 +31,10 @@ export async function generateQRCodeUrl(data: string, size = 200): Promise<strin
 }
 
 /**
- * Detect the local IP address via WebRTC.
- * Returns null if detection fails (does NOT fall back to localhost).
+ * Detect the local IP address.
+ * In Tauri, uses the native Rust command (UDP socket trick).
+ * Falls back to WebRTC for browser environments.
+ * Returns null if detection fails.
  */
 export async function detectLocalIP(): Promise<string | null> {
   // Check sessionStorage first
@@ -41,6 +43,26 @@ export async function detectLocalIP(): Promise<string | null> {
     return storedIP;
   }
 
+  // Strategy 1: Use Tauri native command (most reliable for Tauri apps)
+  try {
+    const { invoke } = await import('@tauri-apps/api/core');
+    const ip = await invoke<string | null>('network_get_local_ip');
+    if (ip) {
+      sessionStorage.setItem('karaoke-detected-ip', ip);
+      return ip;
+    }
+  } catch {
+    // Not running in Tauri or command not available — fall through
+  }
+
+  // Strategy 2: window.location.hostname (works when opened via IP in dev)
+  const hostname = window.location.hostname;
+  if (hostname && hostname !== 'localhost' && !hostname.startsWith('127.') && !hostname.endsWith('.local') && hostname !== 'tauri.localhost') {
+    sessionStorage.setItem('karaoke-detected-ip', hostname);
+    return hostname;
+  }
+
+  // Strategy 3: WebRTC IP detection (fallback for browser)
   try {
     const pc = new RTCPeerConnection({ iceServers: [] });
     pc.createDataChannel('');
@@ -50,13 +72,7 @@ export async function detectLocalIP(): Promise<string | null> {
     const ip = await new Promise<string | null>((resolve) => {
       const timeout = setTimeout(() => {
         pc.close();
-        // Fallback: use hostname if it's a real IP
-        const hostname = window.location.hostname;
-        if (hostname && hostname !== 'localhost' && !hostname.startsWith('127.') && !hostname.endsWith('.local')) {
-          resolve(hostname);
-        } else {
-          resolve(null);
-        }
+        resolve(null);
       }, 5000);
 
       pc.onicecandidate = (event) => {
@@ -78,10 +94,6 @@ export async function detectLocalIP(): Promise<string | null> {
 
     return ip;
   } catch {
-    const hostname = window.location.hostname;
-    if (hostname && hostname !== 'localhost' && !hostname.startsWith('127.') && !hostname.endsWith('.local')) {
-      return hostname;
-    }
     return null;
   }
 }

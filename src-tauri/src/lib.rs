@@ -1,4 +1,4 @@
-use std::net::TcpStream;
+use std::net::{TcpStream, UdpSocket};
 use std::process::{Command, Child};
 
 use std::sync::Mutex;
@@ -423,6 +423,26 @@ fn native_remove_dir(dir_path: String) -> Result<(), String> {
         .map_err(|e| format!("Failed to remove directory '{}': {}", validated.display(), e))
 }
 
+/// Get the local network IP address using UDP socket trick.
+/// This detects which interface would be used to reach the internet,
+/// which is typically the LAN interface companions need to connect to.
+#[tauri::command]
+fn network_get_local_ip() -> Option<String> {
+    let socket = UdpSocket::bind("0.0.0.0:0").ok()?;
+    // Connecting to an external address determines the routing interface
+    // without actually sending any data (UDP connect just sets the route)
+    socket.connect("8.8.8.8:80").ok()?;
+    let local_addr = socket.local_addr().ok()?;
+    let ip = local_addr.ip().to_string();
+    // Filter out loopback and unspecified addresses
+    if ip.starts_with("127.") || ip == "0.0.0.0" || ip.starts_with("169.254.") {
+        None
+    } else {
+        println!("[network_get_local_ip] Detected LAN IP: {}", ip);
+        Some(ip)
+    }
+}
+
 /// Server process handle protected by a Mutex for thread-safe access.
 /// Replaces the previous `static mut` which was undefined behavior.
 static SERVER_PROCESS: Mutex<Option<Child>> = Mutex::new(None);
@@ -607,6 +627,8 @@ pub fn run() {
             charts::commands::viral_get_status,
             charts::commands::viral_clear,
             charts::commands::viral_set_country,
+            // Network
+            network_get_local_ip,
         ])
         .setup(|app| {
             // Register the audio state (dedicated audio thread uses Channel IPC)
@@ -677,7 +699,7 @@ pub fn run() {
                                 .arg(&server_path)
                                 .current_dir(&cwd)
                                 .env("PORT", "3000")
-                                .env("HOSTNAME", "127.0.0.1")
+                                .env("HOSTNAME", "0.0.0.0")
                                 .env("NODE_ENV", "production")
                                 .spawn();
                             
@@ -742,14 +764,14 @@ pub fn run() {
                         let result = Command::new("bun")
                             .args(["run", "dev"])
                             .env("PORT", "3000")
-                            .env("HOSTNAME", "127.0.0.1")
+                            .env("HOSTNAME", "0.0.0.0")
                             .current_dir(&current_dir)
                             .spawn()
                             .or_else(|_| {
                                 Command::new("npm")
                                     .args(["run", "dev"])
                                     .env("PORT", "3000")
-                                    .env("HOSTNAME", "127.0.0.1")
+                                    .env("HOSTNAME", "0.0.0.0")
                                     .current_dir(&current_dir)
                                     .spawn()
                             });
