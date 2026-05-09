@@ -14,6 +14,23 @@ interface ParsedNote {
 }
 
 /**
+ * Check if a note boundary is near a line break marker (±1 beat tolerance).
+ * Handles fractional beats where "- 85" should match noteEndBeat of 84.5 or 85.3.
+ */
+function isNearLineBreak(
+  noteEndBeat: number,
+  nextNoteStart: number,
+  lineBreakBeats: Set<number>,
+): boolean {
+  const TOLERANCE = 1.0;
+  for (const breakBeat of lineBreakBeats) {
+    if (Math.abs(noteEndBeat - breakBeat) <= TOLERANCE) return true;
+    if (nextNoteStart >= 0 && Math.abs(nextNoteStart - breakBeat) <= TOLERANCE) return true;
+  }
+  return false;
+}
+
+/**
  * Convert raw parsed notes + line breaks into LyricLine[] format.
  *
  * UltraStar format rules:
@@ -69,11 +86,15 @@ export function convertNotesToLyricLines(
     }
 
     // Check for line break: explicit "- <beat>" marker or 8+ beat gap fallback
+    // Uses ±1 beat tolerance for line break matching to handle fractional beats
+    // (e.g., "- 85" should match noteEndBeat of 84.5 or 85.3)
     // Matches ultrastar-parser.ts and folder-scanner.ts behavior
     const nextNoteStart = i < sortedNotes.length - 1 ? sortedNotes[i + 1].startBeat : -1;
-    const isLineBreak = lineBreakBeats.has(noteEndBeat) ||
-      (nextNoteStart >= 0 && lineBreakBeats.has(nextNoteStart)) ||
-      (i < sortedNotes.length - 1 && nextNoteStart - noteEndBeat >= 8);
+    const isExactBreak = lineBreakBeats.has(noteEndBeat) ||
+      (nextNoteStart >= 0 && lineBreakBeats.has(nextNoteStart));
+    const isNearBreak = !isExactBreak && isNearLineBreak(noteEndBeat, nextNoteStart, lineBreakBeats);
+    const isGapBreak = i < sortedNotes.length - 1 && nextNoteStart - noteEndBeat >= 8;
+    const isLineBreak = isExactBreak || isNearBreak || isGapBreak;
 
     if ((isLineBreak || i === sortedNotes.length - 1) && currentLineNotes.length > 0) {
       flushLine();
