@@ -188,7 +188,7 @@ function SettingsScreen() {
   };
 
   return (
-    <div className={`theme-container w-full ${activeTab === 'editor' ? '' : 'max-w-7xl mx-auto px-4 md:px-6 lg:px-8'}`}>
+    <div className={`theme-container w-full ${activeTab === 'editor' ? 'text-center' : 'max-w-7xl mx-auto px-4 md:px-6 lg:px-8'}`}>
       {/* Header - hidden when editor is actively editing a song */}
       {!isEditorActive && (
         <div className="mb-8">
@@ -199,8 +199,10 @@ function SettingsScreen() {
 
       {/* Tab Bar - hidden when editor is actively editing a song */}
       {!isEditorActive && (
-        <div className={activeTab === 'editor' ? 'px-4 md:px-6' : ''}>
-          <SettingsTabBar activeTab={activeTab} onTabChange={setActiveTab} tx={tx} />
+        <div className="flex justify-center mb-6">
+          <div className="inline-flex">
+            <SettingsTabBar activeTab={activeTab} onTabChange={setActiveTab} tx={tx} />
+          </div>
         </div>
       )}
 
