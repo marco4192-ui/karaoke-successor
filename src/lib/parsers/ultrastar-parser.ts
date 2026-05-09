@@ -347,18 +347,15 @@ export function convertUltraStarToSong(
     }
 
     // Check if this note ends a line (after adding)
-    // Line breaks are determined by the explicit "- <beat>" markers in lineBreakBeats.
+    // Line breaks are ONLY created by explicit "- <beat>" markers in lineBreakBeats.
     // When a dash-beat marker is present, ALWAYS force a line break regardless of
     // the gap to the next note — the singer has the preview line as orientation.
-    // Fallback: large gap between notes (8+ beats) for songs without explicit markers.
+    // No automatic gap-based line breaks: if there's no marker, notes continue on the same line.
     const nextNoteStart = i < sortedNotes.length - 1 ? sortedNotes[i + 1].startBeat : -1;
     const hasExplicitBreak = lineBreakBeats.has(noteEndBeat) ||
                            (nextNoteStart >= 0 && lineBreakBeats.has(nextNoteStart));
-    const isLineBreak = hasExplicitBreak ||
-                        (!hasExplicitBreak && i < sortedNotes.length - 1 &&
-                         nextNoteStart - noteEndBeat >= 8);
 
-    if ((isLineBreak || i === sortedNotes.length - 1) && currentLineNotes.length > 0) {
+    if ((hasExplicitBreak || i === sortedNotes.length - 1) && currentLineNotes.length > 0) {
       const lineStartTime = currentLineNotes[0].startTime;
       const lineEndTime = currentLineNotes[currentLineNotes.length - 1].startTime +
                          currentLineNotes[currentLineNotes.length - 1].duration;
