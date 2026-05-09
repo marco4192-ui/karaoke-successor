@@ -199,6 +199,15 @@ export function usePtmGameLogic({
   const currentPlayer = playersRef.current[currentPlayerIndex];
   const currentSegment = initialSegments[currentSegmentIndex];
 
+  // ── Set initial player from first segment's assignment ──
+  useEffect(() => {
+    if (initialSegments.length > 0 && initialSegments[0].playerId) {
+      const idx = playersRef.current.findIndex(p => p.id === initialSegments[0].playerId);
+      if (idx >= 0) setCurrentPlayerIndex(idx);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Medley mode support ──
   const isMedleyMode = ptmMedleySnippets.length > 1;
   const currentSnippet = isMedleyMode ? ptmMedleySnippets[currentSegmentIndex] : null;
@@ -265,13 +274,52 @@ export function usePtmGameLogic({
     }
   }, [pauseDialogAction, isPlaying, phase, audioRef, videoRef, isYouTube]);
 
-  // ── Assign segments to players (round-robin) ──
+  // ── Assign segments to players (random order for surprise factor) ──
   useEffect(() => {
+    const players = playersRef.current;
+    const segCount = initialSegments.length;
+
+    if (segCount <= 1) {
+      // Single segment — assign to a random player
+      const randomPlayer = players[Math.floor(Math.random() * players.length)];
+      const assigned = initialSegments.map(seg => ({ ...seg, playerId: randomPlayer.id }));
+      onUpdateGame(players, assigned);
+      return;
+    }
+
+    // Build a pool with equal appearances per player, then shuffle
+    const baseRepeats = Math.floor(segCount / players.length);
+    const remainder = segCount % players.length;
+    const pool: string[] = [];
+    for (let p = 0; p < players.length; p++) {
+      const count = baseRepeats + (p < remainder ? 1 : 0);
+      for (let r = 0; r < count; r++) pool.push(players[p].id);
+    }
+
+    // Fisher-Yates shuffle
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+
+    // Avoid consecutive same-player assignments where possible
+    for (let i = 1; i < pool.length; i++) {
+      if (pool[i] === pool[i - 1]) {
+        // Find the nearest later position with a different player to swap with
+        for (let j = i + 1; j < pool.length; j++) {
+          if (pool[j] !== pool[i]) {
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+            break;
+          }
+        }
+      }
+    }
+
     const assigned = initialSegments.map((seg, i) => ({
       ...seg,
-      playerId: playersRef.current[i % playersRef.current.length].id,
+      playerId: pool[i] ?? players[0].id,
     }));
-    onUpdateGame(playersRef.current, assigned);
+    onUpdateGame(players, assigned);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -504,14 +552,20 @@ export function usePtmGameLogic({
       segmentSwitchHandledRef.current = true;
       if (currentSegmentIndex < initialSegments.length - 1) {
         const nextSegIdx = currentSegmentIndex + 1;
-        const nextPlayerIdx = (currentPlayerIndex + 1) % playersRef.current.length;
+        const nextSegment = initialSegments[nextSegIdx];
+
+        // Find the player index for the next segment's assigned player
+        const nextPlayerIdx = nextSegment.playerId
+          ? playersRef.current.findIndex(p => p.id === nextSegment.playerId)
+          : (currentPlayerIndex + 1) % playersRef.current.length;
+        const safeNextIdx = nextPlayerIdx >= 0 ? nextPlayerIdx : (currentPlayerIndex + 1) % playersRef.current.length;
 
         // Count segment as sung for the current player
         playersRef.current[currentPlayerIndex].segmentsSung++;
 
         setCurrentSegmentIndex(nextSegIdx);
-        setCurrentPlayerIndex(nextPlayerIdx);
-        showTransition(nextPlayerIdx);
+        setCurrentPlayerIndex(safeNextIdx);
+        showTransition(safeNextIdx);
       } else {
         // Song finished
         setIsPlaying(false);
@@ -519,7 +573,7 @@ export function usePtmGameLogic({
         setPhase('song-results');
       }
     }
-  }, [phase, isPlaying, currentTime, currentSegment, currentSegmentIndex, initialSegments.length, currentPlayerIndex, showTransition, recordRound]);
+  }, [phase, isPlaying, currentTime, currentSegment, currentSegmentIndex, initialSegments.length, initialSegments, currentPlayerIndex, showTransition, recordRound]);
 
   // ── Random switch (rare mid-segment) ──
   useEffect(() => {
