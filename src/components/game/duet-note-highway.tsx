@@ -140,8 +140,8 @@ function PlayerLyrics({
 }) {
   const PREVIEW_TIME = 2000;
 
-  const displayLine = useMemo(() => {
-    if (!lines) return null;
+  const { displayLine, nextLine } = useMemo(() => {
+    if (!lines) return { displayLine: null, nextLine: null };
 
     // Find current line
     let currentLine = lines.find(line =>
@@ -158,7 +158,13 @@ function PlayerLyrics({
       }
     }
 
-    return currentLine;
+    if (!currentLine) return { displayLine: null, nextLine: null };
+
+    // Find next line for preview
+    const currentIndex = lines.findIndex(line => line === currentLine);
+    const next = currentIndex >= 0 ? lines[currentIndex + 1] : null;
+
+    return { displayLine: currentLine, nextLine: next };
   }, [lines, currentTime]);
 
   if (!displayLine) return null;
@@ -177,6 +183,12 @@ function PlayerLyrics({
           isBlindSection={isBlindSection}
         />
       </div>
+      {/* Next Line Preview — smaller, faded text for orientation */}
+      {nextLine && (
+        <p className="text-xs text-center text-white/30 mt-0.5 truncate">
+          {nextLine.notes.map(n => n.lyric).join('')}
+        </p>
+      )}
     </div>
   );
 }
