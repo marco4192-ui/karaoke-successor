@@ -601,8 +601,34 @@ export class MultiMicrophoneManager {
 
   // Apply optimal settings to ALL assigned microphones
   async applyOptimalSettingsToAll(): Promise<void> {
-    const promises = Array.from(this.assignedMics.keys()).map(id => this.applyOptimalSettings(id));
-    await Promise.all(promises);
+    const ids = Array.from(this.assignedMics.keys());
+    if (ids.length === 0) return;
+
+    for (const id of ids) {
+      const assigned = this.assignedMics.get(id);
+      if (!assigned) continue;
+
+      const optimalSettings: Partial<ExtendedMicConfig> = {
+        ...OPTIMAL_EXTENDED_CONFIG,
+        customName: assigned.customName,
+        deviceId: assigned.config.deviceId,
+      };
+
+      // Directly update the config without reconnecting (only reconnect if device ID changed)
+      assigned.config = { ...assigned.config, ...optimalSettings };
+      this.saveConfig();
+
+      // Also apply gain change to live instance if it exists
+      const instance = this.micInstances.get(id);
+      if (instance && optimalSettings.gain !== undefined) {
+        instance.setGain(optimalSettings.gain);
+      }
+    }
+
+    // Notify UI that all mics have been updated
+    if (this.onAssignedMicsChange) {
+      this.onAssignedMicsChange(Array.from(this.assignedMics.values()));
+    }
   }
 
   // Refresh the device list and remove assigned microphones whose device is no longer available

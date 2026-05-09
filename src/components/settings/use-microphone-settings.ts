@@ -80,7 +80,15 @@ export function useMicrophoneSettings(onSettingsChange?: MicrophoneSettingsPanel
   };
 
   const handleApplyOptimalToAll = async () => {
-    await micManager.applyOptimalSettingsToAll();
+    try {
+      await micManager.applyOptimalSettingsToAll();
+      setRefreshMessage('Optimale Einstellungen auf alle Mikrofone angewendet');
+    } catch (error) {
+      setRefreshMessage('Fehler beim Anwenden der optimalen Einstellungen');
+      // eslint-disable-next-line no-console
+      console.error('Failed to apply optimal settings:', error);
+    }
+    setTimeout(() => setRefreshMessage(null), 3000);
   };
 
   const handleRefreshDevices = async () => {
