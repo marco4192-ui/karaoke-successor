@@ -784,15 +784,16 @@ export function usePtmGameLogic({
   }, [stop]);
 
   // ── Toggle pause/resume (used by HUD controls) ──
+  // CRITICAL: setIsPlaying must always be called so the YouTube hook picks up the state change.
+  // For YouTube songs, audioRef/videoRef may be null — the YouTube player is controlled via setIsPlaying.
   const togglePause = useCallback(() => {
     const media = audioRef.current || (videoRef.current && !isYouTube ? videoRef.current : null);
-    if (!media) return;
     if (isPlaying) {
-      media.pause();
+      if (media) media.pause();
       setIsPlaying(false);
     } else if (phase === 'playing') {
-      media.play().catch(() => {});
       setIsPlaying(true);
+      if (media) media.play().catch(() => {});
     }
   }, [isPlaying, phase, audioRef, videoRef, isYouTube]);
 

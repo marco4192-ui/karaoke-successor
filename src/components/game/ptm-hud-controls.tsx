@@ -31,11 +31,15 @@ export function PtmHudControls({
     setDifficulty(safeSettings.difficulty);
   }, [safeSettings.difficulty]);
 
+  const setPassTheMicSettings = usePartyStore(s => s.setPassTheMicSettings);
+
   const cycleDifficulty = useCallback(() => {
     const levels: Array<'easy' | 'medium' | 'hard'> = ['easy', 'medium', 'hard'];
     const next = levels[(levels.indexOf(difficulty) + 1) % levels.length];
     setDifficulty(next);
-  }, [difficulty]);
+    // Persist to party store so scoring uses the new difficulty
+    setPassTheMicSettings({ ...safeSettings, difficulty: next });
+  }, [difficulty, safeSettings, setPassTheMicSettings]);
 
   const toggleWebcam = useCallback(() => {
     if (webcamStream) {
@@ -127,15 +131,15 @@ export function PtmHudControls({
         </Button>
       </div>
 
-      {/* Top-right: Vollbild + Difficulty + Kamera */}
+      {/* Top-right: Kamera + Difficulty + Vollbild */}
       <div className="absolute top-4 right-4 z-20 flex items-center gap-2 pointer-events-auto">
         <Button
           variant="ghost"
-          onClick={handleFullscreen}
+          onClick={toggleWebcam}
           className="text-white/80 hover:text-white hover:bg-white/10 rounded-lg w-10 h-10 p-0 text-sm"
-          title="Vollbild"
+          title="Kamera"
         >
-          ⛶
+          📷
         </Button>
         <Badge
           variant="outline"
@@ -156,11 +160,11 @@ export function PtmHudControls({
         </Badge>
         <Button
           variant="ghost"
-          onClick={toggleWebcam}
+          onClick={handleFullscreen}
           className="text-white/80 hover:text-white hover:bg-white/10 rounded-lg w-10 h-10 p-0 text-sm"
-          title="Kamera"
+          title="Vollbild"
         >
-          📷
+          ⛶
         </Button>
       </div>
     </div>
