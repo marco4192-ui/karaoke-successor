@@ -204,10 +204,19 @@ export function usePtmGameLogic({
   const currentSnippet = isMedleyMode ? ptmMedleySnippets[currentSegmentIndex] : null;
   // In medley mode, use the current snippet's song for audio; otherwise use effectiveSong
   const audioSong = isMedleyMode && currentSnippet ? currentSnippet.song : effectiveSong;
-  // For notes/lyrics, use snippet song in medley mode, or fallback lyrics if loaded
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- notesSource logical expression is fine; wrapping would be over-engineering
-  const notesSource = (audioSong?.lyrics?.length ? audioSong : null)
-    ?? (fallbackLyricsRef.current && audioSong ? { ...audioSong, lyrics: fallbackLyricsRef.current } : audioSong);
+  // For notes/lyrics, use snippet song in medley mode, or fallback lyrics if loaded.
+  // CRITICAL: Use a ref for fallbackLyricsRef.current to ensure useMemo picks up changes
+  // when forceRender() is called (fallback lyrics loaded async).
+  const fallbackRef = useRef(fallbackLyricsRef.current);
+  fallbackRef.current = fallbackLyricsRef.current;
+  const notesSource = useMemo(() => {
+    if (!audioSong) return null;
+    if (audioSong.lyrics && audioSong.lyrics.length > 0) return audioSong;
+    if (fallbackRef.current && fallbackRef.current.length > 0) {
+      return { ...audioSong, lyrics: fallbackRef.current };
+    }
+    return audioSong;
+  }, [audioSong, fallbackRef.current]);
 
   // ── Transition state ──
   const [transitionVisible, setTransitionVisible] = useState(false);
@@ -267,18 +276,28 @@ export function usePtmGameLogic({
   }, []);
 
   // ── Safety: load lyrics if effectiveSong has no lyrics ──
-  // This can happen when useGameMedia restores URLs but lyrics were not
-  // preserved (e.g. song was stored without lyrics in the party store).
-  // Always attempt to load lyrics if missing — loadSongLyrics handles the
-  // case where no lyrics file exists (returns empty array, no error).
+  // Uses getSongByIdWithLyrics for comprehensive loading (IndexedDB + filesystem).
+  // This handles cases where the song was stored without lyrics in the party store
+  // or where loadSongLyrics alone fails to find the TXT data.
+  // CRITICAL: Also clear fallback when effectiveSong gains lyrics (e.g., after useGameMedia async load).
   useEffect(() => {
     const src = isMedleyMode && currentSnippet ? currentSnippet.song : effectiveSong;
-    if (!src || (src.lyrics && src.lyrics.length > 0)) return;
+    if (!src) {
+      fallbackLyricsRef.current = null;
+      return;
+    }
+    if (src.lyrics && src.lyrics.length > 0) {
+      // effectiveSong now has lyrics — clear fallback to avoid stale data
+      if (fallbackLyricsRef.current) {
+        fallbackLyricsRef.current = null;
+      }
+      return;
+    }
     let cancelled = false;
-    import('@/lib/game/song-lyrics-loader').then(({ loadSongLyrics }) => {
-      loadSongLyrics(src).then(lyrics => {
-        if (cancelled || lyrics.length === 0) return;
-        fallbackLyricsRef.current = lyrics;
+    import('@/lib/game/song-library').then(({ getSongByIdWithLyrics }) => {
+      getSongByIdWithLyrics(src.id).then(songWithLyrics => {
+        if (cancelled || !songWithLyrics?.lyrics?.length) return;
+        fallbackLyricsRef.current = songWithLyrics.lyrics;
         forceRender();
       }).catch(() => {});
     }).catch(() => {});
@@ -604,11 +623,11 @@ export function usePtmGameLogic({
       console.warn('[PTM] No lyrics loaded, attempting reload...');
       const fallbackSrc = isMedleyMode && currentSnippet ? currentSnippet.song : effectiveSong;
       try {
-        const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
+        const { getSongByIdWithLyrics } = await import('@/lib/game/song-library');
         if (!fallbackSrc) return;
-        const lyrics = await loadSongLyrics(fallbackSrc);
-        if (lyrics.length > 0) {
-          fallbackLyricsRef.current = lyrics;
+        const songWithLyrics = await getSongByIdWithLyrics(fallbackSrc.id);
+        if (songWithLyrics?.lyrics?.length) {
+          fallbackLyricsRef.current = songWithLyrics.lyrics;
           forceRender();
         }
       } catch { /* non-critical */ }

@@ -99,7 +99,7 @@ export default function KaraokeSuccessor() {
         setScreen(modeScreen as Screen);
         return;
       }
-      if ((gameState.gameMode === 'medley' || gameState.gameMode === 'duel') && party.medleySongs.length > 0) {
+      if (gameState.gameMode === 'medley' && party.medleySongs.length > 0) {
         resetGame();
         setScreen('medley-game');
         return;
@@ -361,13 +361,10 @@ export default function KaraokeSuccessor() {
                   setSong({ ...song, start: song.start, end: Math.min((song.start || 0) + 60000, song.end || song.duration) });
                 }
                 setScreen('game');
-              } else if ((currentMode === 'duel' || currentMode === 'duet') && party.unifiedSetupResult?.players) {
-                // Duel/Duet from unified party setup: add players from setup result
-                party.unifiedSetupResult.players.forEach((p) => {
-                  addPlayer({ id: p.id, name: p.name, color: p.color, avatar: p.avatar });
-                });
-                setScreen('game');
               } else {
+                // Standard, duel, duet, rate-my-song (no duration trim), or any other mode.
+                // Players and gameMode are already set by LibraryScreen.handleStartGame
+                // and preserved across resetGame(). No need to re-add players here.
                 setScreen('game');
               }
             }}
