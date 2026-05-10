@@ -285,7 +285,7 @@ const PlayerLabel = React.memo(function PlayerLabel({
 
 // ===================== MAIN COMPONENT =====================
 
-export function NoteHighway({
+export const NoteHighway = React.memo(function NoteHighway({
   visibleNotes,
   currentTime,
   pitchStats,

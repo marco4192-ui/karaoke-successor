@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState, useCallback, useLayoutEffect } from 'react';
+import { useMemo, useRef, useState, useCallback, useLayoutEffect, memo } from 'react';
 import { LyricLine, type GameMode } from '@/types/game';
 import { LyricLineDisplay } from './lyric-line-display';
 
@@ -32,7 +32,7 @@ export interface SinglePlayerLyricsProps {
 // Shared empty Map to avoid creating a new one on every render (defeats React.memo)
 const EMPTY_NOTE_PERFORMANCE = new Map<string, Array<{ time: number; hit: boolean; accuracy: number }>>();
 
-export function SinglePlayerLyrics({
+export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
   sortedLines,
   currentTime,
   playerColor = '#22d3ee',

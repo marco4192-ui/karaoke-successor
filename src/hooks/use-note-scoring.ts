@@ -337,9 +337,11 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
 
 
   // Note performance tracking for visual display modes
-  // Ref-based for 60fps writes; synced to state at ~10Hz to reduce GC pressure
-  const [notePerformance, setNotePerformance] = useState<Map<string, NotePerformanceSample[]>>(new Map());
+  // CRITICAL: Use a version counter instead of new Map() to trigger re-renders.
+  // new Map() defeats React.memo on NoteBlock by creating a new object reference.
   const notePerformanceRef = useRef<Map<string, NotePerformanceSample[]>>(new Map());
+  const [notePerformance, setNotePerformance] = useState<Map<string, NotePerformanceSample[]>>(new Map());
+  const notePerfVersionRef = useRef(0);
   const lastNotePerfSyncRef = useRef(0);
 
   // Additional player states (P2, P3, P4) - P1 uses the main store
@@ -386,6 +388,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     setScoreEvents([]);
     setNotePerformance(new Map());
     notePerformanceRef.current = new Map();
+    notePerfVersionRef.current = 0;
     lastNotePerfSyncRef.current = 0;
     setP2State({ ...DEFAULT_PLAYER_SCORING_STATE });
     p1ComboRef.current = 0;
@@ -507,10 +510,14 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         }
 
         // Throttled state sync: flush to React state at ~10Hz
+        // CRITICAL: Reuse the SAME Map reference and increment a version counter.
+        // This prevents React.memo on NoteBlock from detecting a new prop reference.
         const now = performance.now();
         if (now - lastNotePerfSyncRef.current >= 100) {
           lastNotePerfSyncRef.current = now;
-          setNotePerformance(new Map(perfRef));
+          notePerfVersionRef.current++;
+          // Set the same ref object — shallow equality passes
+          setNotePerformance(notePerformanceRef.current);
         }
       }
 

@@ -180,7 +180,19 @@ export interface GameScreenHookReturn {
 // ===================== MAIN HOOK =====================
 
 export function useGameScreenLogic({ onEnd, onBack, onPause }: GameScreenProps): GameScreenHookReturn {
-  const { gameState, setCurrentTime, setDetectedPitch, updatePlayer, endGame, setResults, addPlayer, createProfile, profiles, setMissingWordsIndices, setBlindSection } = useGameStore();
+  // CRITICAL: Use individual selectors to prevent re-rendering the entire component tree
+  // when unrelated store state changes (e.g., volume, currentTime, etc.)
+  const gameState = useGameStore(s => s.gameState);
+  const setCurrentTime = useGameStore(s => s.setCurrentTime);
+  const setDetectedPitch = useGameStore(s => s.setDetectedPitch);
+  const updatePlayer = useGameStore(s => s.updatePlayer);
+  const endGame = useGameStore(s => s.endGame);
+  const setResults = useGameStore(s => s.setResults);
+  const addPlayer = useGameStore(s => s.addPlayer);
+  const createProfile = useGameStore(s => s.createProfile);
+  const profiles = useGameStore(s => s.profiles);
+  const setMissingWordsIndices = useGameStore(s => s.setMissingWordsIndices);
+  const setBlindSection = useGameStore(s => s.setBlindSection);
   const blindFrequency = usePartyStore(s => s.competitiveGame?.settings?.blindFrequency);
   const missingWordFrequency = usePartyStore(s => s.competitiveGame?.settings?.missingWordFrequency);
   const { pitchResult, initialize, start, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
