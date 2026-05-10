@@ -292,14 +292,15 @@ export function convertUltraStarToSong(
   // Sort notes by start beat
   const sortedNotes = [...ultraStar.notes].sort((a, b) => a.startBeat - b.startBeat);
 
-  // Create a set of line break beats for quick lookup
-  const lineBreakBeats = new Set(ultraStar.lineBreaks);
-
   // Group notes into lyric lines
   const lyricLines: LyricLine[] = [];
   let currentLineNotes: Note[] = [];
   let currentLineText = '';
   let currentLinePlayer: DuetPlayer | undefined = undefined;
+
+  // Sort line breaks for sequential scanning
+  const sortedLineBreaks = [...ultraStar.lineBreaks].sort((a, b) => a - b);
+  let nextBreakIndex = 0; // Points to the next unprocessed line break
 
   for (let i = 0; i < sortedNotes.length; i++) {
     const note = sortedNotes[i];
@@ -347,13 +348,27 @@ export function convertUltraStarToSong(
     }
 
     // Check if this note ends a line (after adding)
-    // Line breaks are ONLY created by explicit "- <beat>" markers in lineBreakBeats.
-    // When a dash-beat marker is present, ALWAYS force a line break regardless of
-    // the gap to the next note — the singer has the preview line as orientation.
-    // No automatic gap-based line breaks: if there's no marker, notes continue on the same line.
-    const nextNoteStart = i < sortedNotes.length - 1 ? sortedNotes[i + 1].startBeat : -1;
-    const hasExplicitBreak = lineBreakBeats.has(noteEndBeat) ||
-                           (nextNoteStart >= 0 && lineBreakBeats.has(nextNoteStart));
+    // Line breaks are ONLY created by explicit "- <beat>" markers.
+    // Scan forward through sorted line breaks: if any break falls at or after
+    // this note's end beat, force a line break — regardless of gap to next note.
+    const nextNoteStart = i < sortedNotes.length - 1 ? sortedNotes[i + 1].startBeat : Infinity;
+    let hasExplicitBreak = false;
+
+    while (nextBreakIndex < sortedLineBreaks.length) {
+      const breakBeat = sortedLineBreaks[nextBreakIndex];
+      if (breakBeat <= noteEndBeat) {
+        // Break at or before this note's end — applies to this note
+        nextBreakIndex++;
+        hasExplicitBreak = true;
+      } else if (breakBeat < nextNoteStart) {
+        // Break falls between this note's end and next note's start
+        nextBreakIndex++;
+        hasExplicitBreak = true;
+      } else {
+        // Break is at or after next note's start — will be handled then
+        break;
+      }
+    }
 
     if ((hasExplicitBreak || i === sortedNotes.length - 1) && currentLineNotes.length > 0) {
       const lineStartTime = currentLineNotes[0].startTime;
