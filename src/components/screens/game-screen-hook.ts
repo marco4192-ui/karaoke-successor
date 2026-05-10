@@ -407,7 +407,10 @@ export function useGameScreenLogic({ onEnd, onBack, onPause }: GameScreenProps):
     const p1Notes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
     const p2Notes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
 
-    src.lyrics.forEach((line, lineIndex) => {
+    const sortedLines = [...src.lyrics].sort((a, b) => a.startTime - b.startTime);
+    const hasExplicitPlayerMarkers = sortedLines.some(line => line.player === 'P1' || line.player === 'P2');
+
+    sortedLines.forEach((line, lineIndex) => {
       line.notes.forEach(note => {
         const noteWithLine = { ...note, lineIndex, line };
         allNotes.push(noteWithLine);
@@ -434,9 +437,6 @@ export function useGameScreenLogic({ onEnd, onBack, onPause }: GameScreenProps):
     allNotes.sort((a, b) => a.startTime - b.startTime);
     p1Notes.sort((a, b) => a.startTime - b.startTime);
     p2Notes.sort((a, b) => a.startTime - b.startTime);
-
-    const sortedLines = [...src.lyrics].sort((a, b) => a.startTime - b.startTime);
-    const hasExplicitPlayerMarkers = sortedLines.some(line => line.player === 'P1' || line.player === 'P2');
 
     const p1Lines = sortedLines.filter(line => {
       if (hasExplicitPlayerMarkers) return line.player === 'P1' || line.player === 'both' || !line.player;
