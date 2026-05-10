@@ -204,6 +204,6 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
       </div>
     </div>
   );
-}
+});
 
 export default SinglePlayerLyrics;

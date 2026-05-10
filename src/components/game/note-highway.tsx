@@ -361,6 +361,6 @@ export const NoteHighway = React.memo(function NoteHighway({
       )}
     </div>
   );
-}
+});
 
 export default NoteHighway;
