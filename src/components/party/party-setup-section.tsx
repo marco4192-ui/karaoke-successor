@@ -2,7 +2,7 @@
 
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
-import { getAllSongs, filterSongs } from '@/lib/game/song-library';
+import { getAllSongs, getNonDuetSongs, filterSongs } from '@/lib/game/song-library';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { UnifiedPartySetup, SongVotingModal, PARTY_GAME_CONFIGS } from '@/components/game/unified-party-setup';
 import type { PassTheMicSegment } from '@/components/game/ptm-types';
@@ -113,7 +113,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
         <UnifiedPartySetup
           gameMode={party.selectedGameMode}
           profiles={profiles}
-          songs={getAllSongs()}
+          songs={getNonDuetSongs()}
           preSelectedSong={party.librarySelectedSong}
           onStartWithPreselectedSong={() => {
             // User clicked "Start Game" with pre-selected library song
@@ -175,7 +175,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               setDifficulty(result.difficulty);
             }
 
-            const songs = getAllSongs();
+            const songs = getNonDuetSongs();
 
             // Apply song filter — base settings (difficulty, filters) are shared across all modes
             const baseSettings = result.settings as { filterGenre: string; filterLanguage: string; filterCombined: boolean };

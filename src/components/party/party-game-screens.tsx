@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
-import { getAllSongs } from '@/lib/game/song-library';
+import { getAllSongs, getNonDuetSongs } from '@/lib/game/song-library';
 import { recordMatchResult } from '@/lib/game/tournament';
 import { TournamentSetupScreen, TournamentBracketView } from '@/components/game/tournament-screen';
 import { BattleRoyaleSetupScreen, BattleRoyaleGameView } from '@/components/game/battle-royale-screen';
@@ -129,7 +129,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
 
       setGameMode('duel');
 
-      const songs = getAllSongs();
+      const songs = getNonDuetSongs();
       if (songs.length > 0) {
         const randomSong = songs[Math.floor(Math.random() * songs.length)];
         setSong(randomSong);
@@ -264,7 +264,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               // Re-generate voting songs from filtered pool
               // IMPORTANT: always limit to 3 songs (matching initial setup behavior)
               const { filterSongs } = await import('@/lib/game/song-library');
-              const songs = getAllSongs();
+              const songs = getNonDuetSongs();
               const filters = party.unifiedSetupResult?.settings;
               const filtered = filterSongs(songs, filters?.filterGenre ?? 'all', filters?.filterLanguage ?? 'all', filters?.filterCombined ?? true);
               const suggested = [...filtered].sort(() => Math.random() - 0.5).slice(0, 3);
@@ -284,7 +284,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       {screen === 'tournament' && (
         <TournamentSetupScreen
           profiles={profiles}
-          songs={getAllSongs()}
+          songs={getNonDuetSongs()}
           onStartTournament={(bracket, songDuration) => {
             party.setTournamentBracket(bracket);
             party.setTournamentSongDuration(songDuration);
@@ -335,7 +335,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               color: match.player2.color,
             });
             setGameMode('duel');
-            const songs = getAllSongs();
+            const songs = getNonDuetSongs();
             if (songs.length > 0) {
               const randomSong = songs[Math.floor(Math.random() * songs.length)];
               setSong(randomSong);
@@ -353,7 +353,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       {screen === 'battle-royale' && (
         <BattleRoyaleSetupScreen
           profiles={profiles}
-          songs={getAllSongs()}
+          songs={getNonDuetSongs()}
           onStartGame={(game) => {
             party.setBattleRoyaleGame(game);
             setScreen('battle-royale-game');
@@ -366,7 +366,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       {screen === 'battle-royale-game' && party.battleRoyaleGame && (
         <BattleRoyaleGameView
           game={party.battleRoyaleGame}
-          songs={getAllSongs()}
+          songs={getNonDuetSongs()}
           onUpdateGame={(game) => party.setBattleRoyaleGame(game)}
           onEndGame={() => {
             party.setBattleRoyaleGame(null);
@@ -454,7 +454,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       {screen === 'missing-words' && (
         <CompetitiveSetupScreen
           profiles={profiles}
-          songs={getAllSongs()}
+          songs={getNonDuetSongs()}
           modeType='missing-words'
           onStartGame={(game) => {
             party.setCompetitiveGame(game);
@@ -468,7 +468,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       {screen === 'missing-words-game' && party.competitiveGame && (
         <CompetitiveGameView
           game={party.competitiveGame}
-          songs={getAllSongs()}
+          songs={getNonDuetSongs()}
           modeType='missing-words'
           onUpdateGame={(game) => party.setCompetitiveGame(game)}
           onEndGame={() => {
@@ -509,7 +509,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       {screen === 'blind' && (
         <CompetitiveSetupScreen
           profiles={profiles}
-          songs={getAllSongs()}
+          songs={getNonDuetSongs()}
           modeType='blind'
           onStartGame={(game) => {
             party.setCompetitiveGame(game);
@@ -523,7 +523,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       {screen === 'blind-game' && party.competitiveGame && (
         <CompetitiveGameView
           game={party.competitiveGame}
-          songs={getAllSongs()}
+          songs={getNonDuetSongs()}
           modeType='blind'
           onUpdateGame={(game) => party.setCompetitiveGame(game)}
           onEndGame={() => {

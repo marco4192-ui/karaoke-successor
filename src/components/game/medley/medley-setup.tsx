@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useGameStore } from '@/lib/game/store';
-import { getAllSongs } from '@/lib/game/song-library';
+import { getAllSongs, getNonDuetSongs } from '@/lib/game/song-library';
 import type { PlayerProfile, Difficulty } from '@/types/game';
 import type {
   MedleyPlayer, MedleySong, MedleySettings,
@@ -32,7 +32,7 @@ interface MedleySetupProps {
 // ===================== COMPONENT =====================
 
 export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps) {
-  const allSongs = useMemo(() => getAllSongs(), []);
+  const allSongs = useMemo(() => getNonDuetSongs(), []);
   const activeProfiles = useMemo(() => profiles.filter(p => p.isActive !== false), [profiles]);
 
   const globalDifficulty = useGameStore((s) => s.gameState.difficulty);

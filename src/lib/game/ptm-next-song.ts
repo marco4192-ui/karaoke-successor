@@ -3,7 +3,7 @@
 // Uses song filters from unifiedSetupResult if available
 
 import { Song } from '@/types/game';
-import { getAllSongs, filterSongs } from '@/lib/game/song-library';
+import { getAllSongs, getNonDuetSongs, filterSongs } from '@/lib/game/song-library';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { StorageKeys, getJson, setJson } from '@/lib/storage';
 import type { PassTheMicSegment } from '@/components/game/ptm-types';
@@ -12,7 +12,7 @@ import { generateMedleySnippets } from '@/components/game/medley/medley-snippet-
 
 // ===================== FILTERED SONGS =====================
 function getFilteredSongs(): Song[] {
-  const allSongs = getAllSongs();
+  const allSongs = getNonDuetSongs();
   // Read filter settings from storage (same way unified-party-setup stores them)
   const filters = getJson<{filterGenre?: string; filterLanguage?: string; filterCombined?: string}>(StorageKeys.PTM_SONG_FILTERS, {});
   if (filters.filterGenre || filters.filterLanguage || filters.filterCombined) {

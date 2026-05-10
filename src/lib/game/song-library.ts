@@ -87,6 +87,33 @@ export function getAllSongs(): Song[] {
   return songCache;
 }
 
+// Get all non-duet songs (for party modes where duets are excluded)
+// Inline duet detection to avoid circular dependency with library/utils.ts
+export function getNonDuetSongs(): Song[] {
+  return getAllSongs().filter(s => {
+    if ((s as any).isDuet === true) return false;
+    if (s.title && /\[\s*duet\s*\]/i.test(s.title)) return false;
+    if (s.title && /\(\s*duet\s*\)/i.test(s.title)) return false;
+    if (s.lyrics && s.lyrics.length > 0) {
+      let hasP1 = false;
+      let hasP2 = false;
+      for (const line of s.lyrics) {
+        if (line.player === 'P1') hasP1 = true;
+        if (line.player === 'P2') hasP2 = true;
+        if (hasP1 && hasP2) return false;
+        if (line.notes) {
+          for (const note of line.notes) {
+            if (note.player === 'P1') hasP1 = true;
+            if (note.player === 'P2') hasP2 = true;
+            if (hasP1 && hasP2) return false;
+          }
+        }
+      }
+    }
+    return true;
+  });
+}
+
 // Get custom/imported songs — reads from IndexedDB cache, falls back to localStorage
 function getCustomSongs(): Song[] {
   if (customSongsCache) return customSongsCache;
