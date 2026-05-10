@@ -210,7 +210,6 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
           isPlaying={g.isPlaying}
           onTogglePause={g.togglePause}
           activeWebcamStreamsRef={g.activeWebcamStreamsRef}
-          onEndSong={g.handleEndSong}
         />
       )}
 

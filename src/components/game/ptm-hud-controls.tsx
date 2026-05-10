@@ -11,7 +11,6 @@ interface PtmHudControlsProps {
   isPlaying: boolean;
   onTogglePause: () => void;
   activeWebcamStreamsRef: React.MutableRefObject<MediaStream[]>;
-  onEndSong: () => void;
 }
 
 export function PtmHudControls({
@@ -19,7 +18,6 @@ export function PtmHudControls({
   isPlaying,
   onTogglePause,
   activeWebcamStreamsRef,
-  onEndSong,
 }: PtmHudControlsProps) {
   const [webcamStream, setWebcamStream] = useState<MediaStream | null>(null);
   const pauseDialogAction = usePartyStore(s => s.pauseDialogAction);
@@ -110,17 +108,8 @@ export function PtmHudControls({
         />
       )}
 
-      {/* Top-left: Beenden + Pause */}
+      {/* Top-left: Pause */}
       <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-auto">
-        <Button
-          onClick={onEndSong}
-          variant="ghost"
-          size="sm"
-          className="text-white/30 hover:text-red-400 hover:bg-white/10 h-8 rounded-md gap-1.5 px-3 text-xs"
-          title="Song beenden"
-        >
-          ⏹ Beenden
-        </Button>
         <Button
           variant="ghost"
           onClick={onTogglePause}
