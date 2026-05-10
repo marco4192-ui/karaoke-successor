@@ -11,6 +11,7 @@ interface PtmHudControlsProps {
   isPlaying: boolean;
   onTogglePause: () => void;
   activeWebcamStreamsRef: React.MutableRefObject<MediaStream[]>;
+  onEndSong?: () => void;
 }
 
 export function PtmHudControls({
@@ -18,6 +19,7 @@ export function PtmHudControls({
   isPlaying,
   onTogglePause,
   activeWebcamStreamsRef,
+  onEndSong: _onEndSong,
 }: PtmHudControlsProps) {
   const [webcamStream, setWebcamStream] = useState<MediaStream | null>(null);
   const pauseDialogAction = usePartyStore(s => s.pauseDialogAction);
