@@ -899,18 +899,24 @@ export function usePtmGameLogic({
   }, [stop]);
 
   // ── Toggle pause/resume (used by HUD controls) ──
-  // CRITICAL: setIsPlaying must always be called so the YouTube hook picks up the state change.
+  // CRITICAL: Pause/resume BOTH audio AND video independently (like Escape key does).
   // For YouTube songs, audioRef/videoRef may be null — the YouTube player is controlled via setIsPlaying.
+  // Also syncs isSongPlaying in the party store so the Escape handler stays consistent.
   const togglePause = useCallback(() => {
-    const media = audioRef.current || (videoRef.current && !isYouTube ? videoRef.current : null);
     if (isPlaying) {
-      if (media) media.pause();
+      // Pause ALL media elements — audio, video, and background video
+      if (audioRef.current && !audioRef.current.paused) audioRef.current.pause();
+      if (videoRef.current && !videoRef.current.paused && !isYouTube) videoRef.current.pause();
       setIsPlaying(false);
+      setIsSongPlaying(false);
+      lastIsSongPlayingRef.current = false;
     } else if (phase === 'playing') {
       setIsPlaying(true);
-      if (media) media.play().catch(() => {});
+      // Resume media elements
+      if (audioRef.current && audioRef.current.paused) audioRef.current.play().catch(() => {});
+      if (videoRef.current && videoRef.current.paused && !isYouTube) videoRef.current.play().catch(() => {});
     }
-  }, [isPlaying, phase, audioRef, videoRef, isYouTube]);
+  }, [isPlaying, phase, audioRef, videoRef, isYouTube, setIsSongPlaying]);
 
   // ── Handle ending the song early ──
   const handleEndSong = useCallback(() => {
