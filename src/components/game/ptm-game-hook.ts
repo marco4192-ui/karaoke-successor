@@ -560,6 +560,27 @@ export function usePtmGameLogic({
   const completeTransition = useCallback(() => {
     setTransitionVisible(false);
     setPhase('playing');
+
+    // If this transition was triggered by the pre-end warning,
+    // perform the actual segment switch NOW (synchronously with overlay completion).
+    // This prevents a delayed second visual "jump" when the useEffect
+    // detects the segment has already ended after phase goes back to 'playing'.
+    if (pendingSegmentSwitchRef.current &&
+        currentSegmentIndex < initialSegments.length - 1) {
+      pendingSegmentSwitchRef.current = false;
+      segmentSwitchHandledRef.current = true;
+
+      const nextSegIdx = currentSegmentIndex + 1;
+      const nextSegment = initialSegments[nextSegIdx];
+      const nextPlayerIdx = nextSegment?.playerId
+        ? playersRef.current.findIndex(p => p.id === nextSegment.playerId)
+        : (currentPlayerIndexRef.current + 1) % playersRef.current.length;
+      const safeNextIdx = nextPlayerIdx >= 0 ? nextPlayerIdx : (currentPlayerIndexRef.current + 1) % playersRef.current.length;
+
+      playersRef.current[currentPlayerIndexRef.current].segmentsSung++;
+      setCurrentSegmentIndex(nextSegIdx);
+      setCurrentPlayerIndex(safeNextIdx);
+    }
   }, []);
 
   // ── Record round results ──
@@ -585,6 +606,7 @@ export function usePtmGameLogic({
   // ── Segment switching ──
   const TRANSITION_LEAD_TIME = 2000; // Start border blinking 2s before segment end
   const blinkWarningTriggeredRef = useRef(false);
+  const pendingSegmentSwitchRef = useRef(false); // Set when warning triggers, consumed by completeTransition
 
   useEffect(() => {
     if (phase !== 'playing' || !isPlaying || !currentSegment) {
@@ -598,6 +620,7 @@ export function usePtmGameLogic({
         !blinkWarningTriggeredRef.current &&
         currentTime >= currentSegment.endTime - TRANSITION_LEAD_TIME) {
       blinkWarningTriggeredRef.current = true;
+      pendingSegmentSwitchRef.current = true; // Mark that completeTransition should handle the switch
       const nextSegIdx = currentSegmentIndex + 1;
       const nextSegment = initialSegments[nextSegIdx];
       const nextPlayerIdx = nextSegment.playerId
@@ -609,6 +632,7 @@ export function usePtmGameLogic({
     }
 
     // Actually switch when segment ends
+    // (fallback: if completeTransition already handled it, segmentSwitchHandledRef is true)
     if (currentTime >= currentSegment.endTime && !segmentSwitchHandledRef.current) {
       segmentSwitchHandledRef.current = true;
       if (currentSegmentIndex < initialSegments.length - 1) {
@@ -626,7 +650,6 @@ export function usePtmGameLogic({
 
         setCurrentSegmentIndex(nextSegIdx);
         setCurrentPlayerIndex(safeNextIdx);
-        // Don't call showTransition again — already triggered by warning
       } else {
         // Song finished
         setIsPlaying(false);
