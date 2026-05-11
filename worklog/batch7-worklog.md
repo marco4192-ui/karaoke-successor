@@ -7,7 +7,8 @@
 ---
 
 ## Schritt 1: Doppelte Dateistruktur aufräumen
-- Status: 🔲 PENDING
+- Status: ✅ DONE
+- Commit: b5d366a
 - Problem: Alle Dateien existieren doppelt (`src/components/` und `components/` auf Root). Die `tsconfig.json` mappt `@/*` auf `./src/*`, also baut der CI nur aus `src/`. Die Root-Duplikate sind toter Code.
 - Plan: Root-Verzeichnisse (`components/`, `app/`, `hooks/`, `lib/`, `types/`, `__tests__/`) prüfen ob sie Duplikate von `src/` sind, dann löschen.
 
