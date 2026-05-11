@@ -94,8 +94,10 @@ export function Timeline({
       if (allNotes.length > 0) {
         const pitches = allNotes.map(n => n.pitch).sort((a, b) => a - b);
         const median = pitches[Math.floor(pitches.length / 2)];
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- reset pitch center when song changes
         setPitchScrollCenter(Math.floor(median / 12) * 12);
       } else {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- reset pitch center when song changes
         setPitchScrollCenter(60);
       }
     }
