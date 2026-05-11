@@ -174,7 +174,7 @@ export interface GameScreenHookReturn {
 
 // ===================== MAIN HOOK =====================
 
-export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScreenHookReturn {
+export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScreenProps): GameScreenHookReturn {
   // CRITICAL: Use individual selectors to prevent re-rendering the entire component tree
   // when unrelated store state changes (e.g., volume, currentTime, etc.)
   const gameState = useGameStore(s => s.gameState);
@@ -414,6 +414,7 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     const p1Notes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
     const p2Notes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
 
+    // Determine if notes have explicit P1/P2 markers — needed before the forEach below
     const sortedLines = [...src.lyrics].sort((a, b) => a.startTime - b.startTime);
     const hasExplicitPlayerMarkers = sortedLines.some(line => line.player === 'P1' || line.player === 'P2');
 

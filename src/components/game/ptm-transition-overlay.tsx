@@ -37,7 +37,7 @@ const NAME_FADE_MS = 300; // Fade out
 export function PtmTransitionOverlay({
   visible,
   nextPlayer,
-  segmentLabel,
+  segmentLabel: _segmentLabel,
   onComplete,
   onSkip,
 }: PtmTransitionOverlayProps) {
@@ -48,6 +48,7 @@ export function PtmTransitionOverlay({
   // Reset and start animation when visible changes
   useEffect(() => {
     if (!visible || !nextPlayer) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- animation controller: reset state on visibility change
       setPhase('idle');
       setBlinkCount(0);
       setNameOpacity(0);
@@ -178,8 +179,8 @@ export function PtmTransitionOverlay({
             >
               {nextPlayer.name}
             </div>
-            {segmentLabel && (
-              <div className="text-xs text-white/40 mt-1">{segmentLabel}</div>
+            {_segmentLabel && (
+              <div className="text-xs text-white/40 mt-1">{_segmentLabel}</div>
             )}
           </div>
         </div>

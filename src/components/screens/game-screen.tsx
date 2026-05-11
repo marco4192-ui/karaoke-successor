@@ -53,8 +53,10 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
             g.abortGameLoop();
             g.stop();
             if (g.audioEffects) g.audioEffects.disconnect();
+            /* eslint-disable react-hooks/immutability -- imperative DOM cleanup: pause and rewind media refs */
             if (g.audioRef.current) { g.audioRef.current.pause(); g.audioRef.current.currentTime = 0; }
             if (g.videoRef.current) { g.videoRef.current.pause(); g.videoRef.current.currentTime = 0; }
+            /* eslint-enable react-hooks/immutability */
             g.nativeAudio.stop().catch(() => {});
             g.setIsPlaying(false);
             g.resetScoring();
@@ -124,6 +126,7 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
               src: audio.src?.substring(0, 50)
             });
           }}
+          // eslint-disable-next-line react-hooks/immutability -- event callback: set ref flag for imperative tracking
           onCanPlay={() => { g.audioLoadedRef.current = true; }}
           preload="auto"
         />
@@ -162,6 +165,7 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
           onAdStart={g.handleAdStart}
           onAdEnd={g.handleAdEnd}
           onVideoEnded={g.endGameAndCleanup}
+          // eslint-disable-next-line react-hooks/immutability -- event callback: set ref flag for imperative tracking
           onVideoCanPlay={() => { g.videoLoadedRef.current = true; }}
           onYoutubeError={(errorCode) => {
             const messages: Record<number, string> = {

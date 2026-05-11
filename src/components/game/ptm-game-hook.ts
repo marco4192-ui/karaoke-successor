@@ -115,6 +115,7 @@ export function usePtmGameLogic({
   onUpdateGame,
   onEndGame,
   onNavigate,
+  onPause: _onPause,
 }: PtmGameScreenProps): PtmGameHookReturn {
   const safeSettings: PassTheMicSettings = settings ?? DEFAULT_SETTINGS;
   const setIsSongPlaying = usePartyStore(s => s.setIsSongPlaying);

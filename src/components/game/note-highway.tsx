@@ -215,7 +215,7 @@ const NoteBlock = React.memo(function NoteBlock({
 /**
  * Pitch indicator showing singer's current pitch
  */
-function PitchIndicator({
+const PitchIndicator = React.memo(function PitchIndicator({
   detectedPitch,
   pitchStats,
   singLinePosition,
@@ -253,7 +253,7 @@ function PitchIndicator({
       <MicIcon className="w-4 h-4 text-white" />
     </div>
   );
-}
+});
 
 /**
  * Player label badge
