@@ -14,6 +14,9 @@ export interface PlayerScoringState {
   maxCombo: number;
   notesHit: number;
   notesMissed: number;
+  name?: string;
+  avatar?: string;
+  color?: string;
 }
 
 export interface DuetNoteHighwayProps {
@@ -69,48 +72,77 @@ export interface DuetNoteHighwayProps {
 const CenterScoreBar = React.memo(function CenterScoreBar({
   p1State,
   p2State,
+  p1Name = 'Player 1',
+  p2Name = 'Player 2',
 }: {
   p1State: Player;
   p2State: PlayerScoringState;
+  p1Name?: string;
+  p2Name?: string;
 }) {
+  const p1Avatar = (p1State as Player)?.avatar;
+  const p2Avatar = p2State?.avatar;
+  const p1Color = (p1State as Player)?.color || '#22d3ee';
+  const p2Color = p2State?.color || '#ec4899';
+
   return (
     <div className="relative flex items-center justify-center z-30" style={{ height: '8%' }}>
       {/* Background gradient for the score bar - very transparent to show game behind */}
       <div className="absolute inset-0 bg-black/10 border-y border-white/5" />
 
       {/* P1 Score - Left */}
-      <div className="relative flex items-center gap-3 px-4 py-1">
-        <div className="w-8 h-8 rounded-full bg-cyan-500 flex items-center justify-center text-xs font-bold text-white shadow-lg">
-          P1
-        </div>
+      <div className="relative flex items-center gap-2 px-4 py-1">
+        {/* Avatar */}
+        {p1Avatar ? (
+          <img src={p1Avatar} alt={p1Name} className="w-8 h-8 rounded-full object-cover border-2" style={{ borderColor: p1Color }} />
+        ) : (
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white border-2" style={{ backgroundColor: p1Color, borderColor: p1Color }}>
+            {p1Name.charAt(0).toUpperCase()}
+          </div>
+        )}
         <div className="flex flex-col">
-          <span className="text-xl font-bold text-cyan-400 leading-tight" suppressHydrationWarning>
-            {p1State?.score?.toLocaleString?.() ?? 0}
+          <span className="text-xs font-medium text-cyan-300/80 leading-tight truncate max-w-[80px]">
+            {p1Name}
           </span>
-          <span className="text-xs text-cyan-300/60 leading-tight" suppressHydrationWarning>
-            {p1State?.combo ?? 0}x
-          </span>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-xl font-bold text-cyan-400 leading-tight" suppressHydrationWarning>
+              {p1State?.score?.toLocaleString?.() ?? 0}
+            </span>
+            <span className="text-xs text-cyan-300/60" suppressHydrationWarning>
+              {p1State?.combo ?? 0}x
+            </span>
+          </div>
         </div>
       </div>
 
       {/* VS Badge */}
-      <div className="relative mx-4 bg-gradient-to-r from-cyan-500 via-white to-pink-500 text-black font-black px-6 py-1.5 rounded-xl text-lg shadow-lg ring-2 ring-white/30">
+      <div className="relative mx-3 bg-gradient-to-r from-cyan-500 via-white to-pink-500 text-black font-black px-5 py-1.5 rounded-xl text-lg shadow-lg ring-2 ring-white/30">
         VS
       </div>
 
       {/* P2 Score - Right */}
-      <div className="relative flex items-center gap-3 px-4 py-1">
+      <div className="relative flex items-center gap-2 px-4 py-1">
         <div className="flex flex-col items-end">
-          <span className="text-xl font-bold text-pink-400 leading-tight" suppressHydrationWarning>
-            {p2State?.score?.toLocaleString?.() ?? 0}
+          <span className="text-xs font-medium text-pink-300/80 leading-tight truncate max-w-[80px]">
+            {p2Name}
           </span>
-          <span className="text-xs text-pink-300/60 leading-tight" suppressHydrationWarning>
-            {p2State?.combo ?? 0}x
-          </span>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-xs text-pink-300/60" suppressHydrationWarning>
+              {p2State?.combo ?? 0}x
+            </span>
+            <span className="text-xl font-bold text-pink-400 leading-tight" suppressHydrationWarning>
+              {p2State?.score?.toLocaleString?.() ?? 0}
+            </span>
+          </div>
         </div>
-        <div className="w-8 h-8 rounded-full bg-pink-500 flex items-center justify-center text-xs font-bold text-white shadow-lg">
-          P2
-        </div>
+        {/* Avatar */}
+        {p2Avatar ? (
+          <img src={p2Avatar} alt={p2Name} className="w-8 h-8 rounded-full object-cover border-2" style={{ borderColor: p2Color }} />
+        ) : (
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white border-2" style={{ backgroundColor: p2Color, borderColor: p2Color }}>
+            {p2Name.charAt(0).toUpperCase()}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -260,7 +292,7 @@ export function DuetNoteHighway({
       </div>
 
       {/* ===== CENTER SCORE BAR with VS Badge - 8% ===== */}
-      <CenterScoreBar p1State={p1State} p2State={p2State} />
+      <CenterScoreBar p1State={p1State} p2State={p2State} p1Name={p1PlayerName} p2Name={p2PlayerName} />
 
       {/* ===== PLAYER 2 (BOTTOM HALF - PINK) - 46% ===== */}
       <div className="relative overflow-hidden" style={{ height: '46%' }}>
