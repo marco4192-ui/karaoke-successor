@@ -4,9 +4,6 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 
 interface GameScoreDisplayProps {
-  isDuetMode: boolean;
-  score: number;
-  combo: number;
   difficulty: string;
   activeChallenge: {
     difficulty: string;
@@ -17,31 +14,15 @@ interface GameScoreDisplayProps {
 }
 
 /**
- * Header score display showing points, combo, difficulty badge,
- * and active challenge mode indicator.
+ * Header badge display showing difficulty badge and active challenge mode indicator.
+ * Mini score/combo has been moved to ProminentScoreDisplay for single-player.
  */
 export const GameScoreDisplay = React.memo(function GameScoreDisplay({
-  isDuetMode,
-  score,
-  combo,
   difficulty,
   activeChallenge,
 }: GameScoreDisplayProps) {
   return (
     <div className="flex items-center gap-3">
-      {/* Mini Score Display - Only for Single Player */}
-      {!isDuetMode && (
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-1.5">
-            <span className="text-cyan-400 font-bold">{score?.toLocaleString() || 0}</span>
-            <span className="text-white/40">pts</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-purple-400 font-bold">{combo || 0}x</span>
-            <span className="text-white/40">combo</span>
-          </div>
-        </div>
-      )}
       <Badge variant="outline" className="border-white/20 text-white/80">
         {difficulty.toUpperCase()}
       </Badge>

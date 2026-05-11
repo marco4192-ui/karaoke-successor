@@ -9,63 +9,91 @@ interface ProminentScoreDisplayProps {
 }
 
 /**
- * Prominent score display shown at the top center of the game screen.
- * Shows the current score relative to max possible score and combo multiplier.
+ * Prominent score display for single-player mode.
+ * - Left header: player avatar + name
+ * - Top center: large real-time score out of max, combo counter
  */
 export const ProminentScoreDisplay = React.memo(function ProminentScoreDisplay({ player }: ProminentScoreDisplayProps) {
   const score = player?.score || 0;
   const combo = player?.combo || 0;
+  const name = player?.name || 'Player 1';
+  const avatar = player?.avatar;
+  const color = player?.color || '#4ECDC4';
 
   return (
     <>
-      {/* Total Score Display - Larger, more prominent with max score */}
-      <div className="fixed top-14 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
-        <div 
-          className="bg-black/60 backdrop-blur-md px-10 py-4 rounded-2xl border-2 border-white/20 shadow-xl" 
+      {/* Player Info — top-left, next to pause button */}
+      <div className="fixed top-3 left-16 z-40 flex items-center gap-2.5 pointer-events-none">
+        {/* Avatar */}
+        {avatar ? (
+          <img
+            src={avatar}
+            alt={name}
+            className="w-10 h-10 rounded-full object-cover border-2"
+            style={{ borderColor: color }}
+          />
+        ) : (
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold border-2 text-sm"
+            style={{ backgroundColor: color, borderColor: color }}
+          >
+            {name.charAt(0).toUpperCase()}
+          </div>
+        )}
+        {/* Name */}
+        <span
+          className="text-sm font-bold truncate max-w-[120px]"
+          style={{ color }}
+        >
+          {name}
+        </span>
+      </div>
+
+      {/* Total Score Display — top center */}
+      <div className="fixed top-3 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
+        <div
+          className="bg-black/60 backdrop-blur-md px-8 py-3 rounded-2xl border-2 border-white/20 shadow-xl"
           style={{ boxShadow: '0 0 40px rgba(34, 211, 238, 0.2)' }}
         >
-          <div className="flex flex-col items-center gap-1">
+          <div className="flex flex-col items-center gap-0.5">
             {/* Main Score */}
             <div className="flex items-baseline gap-3">
-              <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400">
+              <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400">
                 {score.toLocaleString()}
               </span>
-              <span className="text-white/40 text-lg">/ {MAX_POINTS_PER_SONG.toLocaleString()}</span>
+              <span className="text-white/40 text-sm">/ {MAX_POINTS_PER_SONG.toLocaleString()}</span>
             </div>
-            
-            {/* Combo and Multiplier Row */}
-            <div className="flex items-center gap-4 text-sm">
-              {combo >= 1 && (
-                <div className="flex items-center gap-2">
-                  <span className="text-yellow-400 font-bold text-lg">
-                    {combo}x
+
+            {/* Combo */}
+            {combo >= 1 && (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-yellow-400 font-bold text-base">
+                  {combo}x
+                </span>
+                <span className="text-white/60">COMBO</span>
+                {combo >= 5 && (
+                  <span className="text-green-400 font-semibold text-xs">
+                    (+{Math.round(Math.min(0.5, combo * 0.02) * 100)}%)
                   </span>
-                  <span className="text-white/60">COMBO</span>
-                  {/* Combo multiplier indicator */}
-                  {combo >= 5 && (
-                    <span className="text-green-400 font-semibold">
-                      (+{Math.round(Math.min(0.5, combo * 0.02) * 100)}%)
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
-      
+
       {/* Combo indicator with glow effect */}
       {combo >= 5 && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
-          <div 
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+          <div
             className="text-4xl font-black animate-pulse"
             style={{
-              color: combo >= 20 ? '#FFD700' : 
+              color: combo >= 20 ? '#FFD700' :
                      combo >= 10 ? '#FF6B6B' : '#4ECDC4',
-              textShadow: `0 0 20px currentColor, 0 0 40px currentColor, 0 0 60px currentColor`,
+              textShadow: '0 0 20px currentColor, 0 0 40px currentColor, 0 0 60px currentColor',
             }}
           >
-            {combo}x COMBO! 🔥
+            {combo}x COMBO!
           </div>
         </div>
       )}

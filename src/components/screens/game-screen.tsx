@@ -79,9 +79,6 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
 
         {/* Right: Score, Difficulty & Challenge */}
         <GameScoreDisplay
-          isDuetMode={g.isDuetMode}
-          score={g.gameState.players[0]?.score || 0}
-          combo={g.gameState.players[0]?.combo || 0}
           difficulty={g.gameState.difficulty}
           activeChallenge={g.activeChallenge}
         />

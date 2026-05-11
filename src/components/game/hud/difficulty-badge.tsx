@@ -2,7 +2,7 @@
 
 import { Badge } from '@/components/ui/badge';
 
-type Difficulty = 'easy' | 'medium' | 'hard';
+export type Difficulty = 'easy' | 'medium' | 'hard';
 
 interface DifficultyBadgeProps {
   difficulty: Difficulty;
