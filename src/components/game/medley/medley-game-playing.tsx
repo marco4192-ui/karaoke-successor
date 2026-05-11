@@ -166,7 +166,7 @@ export function MedleyPlayingUI({
         <Progress value={snippetProgress} className="h-2 bg-white/10" />
         <div className="flex justify-between text-xs text-white/40 mt-1">
           <span>{t('medley.snippetOf').replace('{n}', String(currentSnippetIdx + 1)).replace('{m}', String(snippetCount))}</span>
-          <button onClick={handleEndEarly} aria-label="Beenden" className="text-red-400/60 hover:text-red-400 transition-colors">
+          <button onClick={handleEndEarly} aria-label={t('medley.quit')} className="text-red-400/60 hover:text-red-400 transition-colors">
             {t('medley.quit')}
           </button>
         </div>

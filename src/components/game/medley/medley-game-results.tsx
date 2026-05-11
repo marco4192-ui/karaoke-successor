@@ -136,7 +136,7 @@ export function MedleyFinalResults({
       <div className="text-center mb-6">
         <div className="text-6xl mb-2">🏆</div>
         <h2 className="text-3xl font-bold">{isTeam ? t('medley.teamWinner') : t('medley.medleyChampion')}</h2>
-        <p className="text-white/60">{seriesHistory.length + 1} {t('medley.roundOf').replace('{n}', String(seriesHistory.length + 1))}</p>
+        <p className="text-white/60">{t('medley.roundOf').replace('{n}', String(seriesHistory.length + 1))}</p>
       </div>
 
       {/* Team total */}
@@ -167,9 +167,9 @@ export function MedleyFinalResults({
                     style={{ backgroundColor: w.color }}>{w.name.charAt(0).toUpperCase()}</div>
                 )}
                 <div className="text-2xl font-bold" style={{ color: w.color }}>{w.name}</div>
-                <div className="text-2xl font-bold text-amber-400 mt-1">{w.totalScore.toLocaleString()} pts</div>
+                <div className="text-2xl font-bold text-amber-400 mt-1">{w.totalScore.toLocaleString()} {t('medley.pts')}</div>
                 <div className="text-sm text-white/40 mt-1">
-                  {w.roundsPlayed} {t('medley.roundOf').replace('{n}', String(w.roundsPlayed))} · {w.bestCombo}x {t('medley.bestComboOf')}
+                  {t('medley.roundOf').replace('{n}', String(w.roundsPlayed))} · {t('medley.bestComboOf').replace('{n}', String(w.bestCombo))}
                 </div>
               </>
             );
@@ -196,7 +196,7 @@ export function MedleyFinalResults({
               <div>
                 <div className="font-medium text-sm">{data.name}</div>
                 <div className="text-xs text-white/40">
-                  {data.totalHits} {t('medley.hitsOf').replace('{n}', String(data.totalHits))} · {data.totalMisses} {t('medley.missOf').replace('{n}', String(data.totalMisses))} · {data.bestCombo}x {t('medley.bestComboOf')}
+                  {t('medley.hitsOf').replace('{n}', String(data.totalHits))} · {t('medley.missOf').replace('{n}', String(data.totalMisses))} · {t('medley.bestComboOf').replace('{n}', String(data.bestCombo))}
                 </div>
               </div>
             </div>
@@ -229,6 +229,7 @@ interface CumulativePlayerScore {
 
 /** Player standing row used in round results */
 function PlayerStandingRow({ player, rank, isTeam }: { player: MedleyPlayer; rank: number; isTeam: boolean }) {
+  const { t } = useTranslation();
   return (
     <div className={`flex items-center justify-between p-3 rounded-lg ${rank === 0 ? 'bg-gradient-to-r from-amber-500/20 to-yellow-500/10 border border-amber-500/30' : 'bg-white/5'}`}>
       <div className="flex items-center gap-3">
@@ -245,8 +246,8 @@ function PlayerStandingRow({ player, rank, isTeam }: { player: MedleyPlayer; ran
         <div>
           <div className="font-medium text-sm">{player.name}</div>
           <div className="text-xs text-white/40">
-            {player.notesHit} Hits · {player.notesMissed} Miss · {player.maxCombo}x Combo
-            {isTeam && <span> · Team {player.team === 0 ? 'A' : 'B'}</span>}
+            {t('medley.hitsOf').replace('{n}', String(player.notesHit))} · {t('medley.missOf').replace('{n}', String(player.notesMissed))} · {t('medley.bestComboOf').replace('{n}', String(player.maxCombo))}
+            {isTeam && <span> · {player.team === 0 ? t('medley.teamA') : t('medley.teamB')}</span>}
           </div>
         </div>
       </div>

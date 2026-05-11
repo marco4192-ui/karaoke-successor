@@ -263,7 +263,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
                     ? 'bg-purple-500 hover:bg-purple-600'
                     : 'border-white/20 text-white'}
                 >
-                  {size === 1 ? '1 vs 1' : '2 vs 2'} ({teamSnippetCount(size)} Snippets)
+                  {size === 1 ? t('medley.match1v1') : t('medley.match2v2')} ({teamSnippetCount(size)} {t('medley.snippets')})
                 </Button>
               ))}
             </div>
@@ -327,7 +327,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
                 onChange={(e) => setSettings(prev => ({ ...prev, snippetCount: Number(e.target.value) }))}
                 className="w-full" />
               <div className="flex justify-between text-xs text-white/40 mt-1">
-                <span>3 Snippets</span><span>10 Snippets</span>
+                <span>{t('medley.nSnippets').replace('{n}', '3')}</span><span>{t('medley.nSnippets').replace('{n}', '10')}</span>
               </div>
             </div>
           )}
@@ -340,7 +340,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
                 <Button key={diff} variant={globalDifficulty === diff ? 'default' : 'outline'}
                   onClick={() => setGlobalDifficulty(diff)}
                   className={globalDifficulty === diff ? 'bg-purple-500 hover:bg-purple-600' : 'border-white/20'}>
-                  {diff.charAt(0).toUpperCase() + diff.slice(1)}
+                  {t('medley.' + diff as 'medley.easy' | 'medley.medium' | 'medley.hard')}
                 </Button>
               ))}
             </div>
@@ -461,13 +461,13 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
             <div>
               <h3 className="font-bold text-lg">{t('medley.overview')}</h3>
               <p className="text-sm text-white/60">
-                {playMode === 'ffa' ? 'FFA' : `${teamSize} vs ${teamSize}`}
-                {' '}· {snippetCount} Snippets · {settings.snippetDuration}s pro Snippet
+                {playMode === 'ffa' ? t('medley.ffaBadge') : `${teamSize} ${t('medley.vs')} ${teamSize}`}
+                {' '}· {snippetCount} {t('medley.snippets')} · {settings.snippetDuration}s {t('medley.proSnippet')}
               </p>
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-purple-400">
-                {Math.ceil(snippetCount * settings.snippetDuration / 60)} Min.
+                {Math.ceil(snippetCount * settings.snippetDuration / 60)} {t('medley.min')}
               </div>
               <div className="text-xs text-white/40">{t('medley.approxTotalDuration')}</div>
             </div>

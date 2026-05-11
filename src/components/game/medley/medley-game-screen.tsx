@@ -68,8 +68,8 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
           <div className="text-5xl mb-6">🎵</div>
           <h2 className="text-3xl font-bold mb-2">{t('medley.gameTitle')}</h2>
           <p className="text-white/60 mb-6">
-            {medleySongs.length} Snippets · {settings.snippetDuration}s pro Song
-            {isTeam && ` · ${settings.teamSize} vs ${settings.teamSize}`}
+            {medleySongs.length} {t('medley.snippets')} · {settings.snippetDuration}s {t('medley.proSong')}
+            {isTeam && ` · ${settings.teamSize} ${t('medley.vs')} ${settings.teamSize}`}
           </p>
 
           {/* Player cards */}
