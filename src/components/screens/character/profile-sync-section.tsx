@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CloudUploadIcon, CloudDownloadIcon } from '@/components/icons';
 import { useGameStore } from '@/lib/game/store';
+import { useTranslation } from '@/lib/i18n/translations';
 import { PlayerProfile, HighscoreEntry } from '@/types/game';
 
 function generateSyncCode(): string {
@@ -17,6 +18,7 @@ function generateSyncCode(): string {
 }
 
 export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
+  const { t } = useTranslation();
   const [__syncCode, setSyncCode] = useState<string>('');
   const [inputCode, setInputCode] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
@@ -47,14 +49,14 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
       
       if (result.success) {
         setSyncCode(code);
-        setMessage({ type: 'success', text: `Profile uploaded! Sync code: ${code}` });
+        setMessage({ type: 'success', text: t('profileSync.uploadSuccess').replace('{n}', code) });
       } else {
-        throw new Error('Upload failed');
+        throw new Error(t('profileSync.uploadFailed'));
       }
     } catch (error: unknown) {
       // eslint-disable-next-line no-console
       console.error('Profile upload error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to upload profile';
+      const errorMessage = error instanceof Error ? error.message : t('profileSync.downloadFailed');
       setMessage({ type: 'error', text: errorMessage });
     } finally {
       setIsUploading(false);
@@ -63,7 +65,7 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
 
   const handleDownloadProfile = async () => {
     if (!inputCode || inputCode.length !== 8) {
-      setMessage({ type: 'error', text: 'Please enter a valid 8-character sync code' });
+      setMessage({ type: 'error', text: t('profileSync.invalidCode') });
       return;
     }
     
@@ -86,7 +88,7 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
           syncCode: downloadedProfile.sync_code,
         });
         
-        setMessage({ type: 'success', text: 'Profile synced successfully!' });
+        setMessage({ type: 'success', text: t('profileSync.syncSuccess') });
         setInputCode('');
       } else {
         throw new Error('Profile not found');
@@ -94,7 +96,7 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
     } catch (error: unknown) {
       // eslint-disable-next-line no-console
       console.error('Profile download error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to download profile. Check the sync code.';
+      const errorMessage = error instanceof Error ? error.message : t('profileSync.downloadFailedMsg');
       setMessage({ type: 'error', text: errorMessage });
     } finally {
       setIsDownloading(false);
@@ -105,7 +107,7 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
     <div className="space-y-2">
       {profile.syncCode && (
         <div className="flex items-center gap-2 text-xs">
-          <span className="text-white/50">Sync Code:</span>
+          <span className="text-white/50">{t('profileSync.syncCode')}</span>
           <code className="px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded font-mono">
             {profile.syncCode}
           </code>
@@ -125,7 +127,7 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
           ) : (
             <CloudUploadIcon className="w-3 h-3 mr-1" />
           )}
-          Upload
+          {t('profileSync.upload')}
         </Button>
         
         <div className="flex items-center gap-1">
@@ -134,7 +136,7 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
             name="sync-code"
             value={inputCode}
             onChange={(e) => setInputCode(e.target.value.toUpperCase())}
-            placeholder="Sync code"
+            placeholder={t('profileSync.syncCodePlaceholder')}
             maxLength={8}
             className="h-7 w-28 text-xs bg-white/5 border-white/10"
           />

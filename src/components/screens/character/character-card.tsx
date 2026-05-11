@@ -2,6 +2,7 @@
 
 import { PlayerProfile } from '@/types/game';
 import { getLevelForXP, getRankForXP } from '@/lib/game/player-progression';
+import { useTranslation } from '@/lib/i18n/translations';
 import { getCountryFlag } from './country-options';
 
 interface CharacterCardProps {
@@ -16,6 +17,7 @@ interface CharacterCardProps {
 }
 
 export function CharacterCard({ profile, isSelected, isActiveProfile, onClick, isClaimedByCompanion, claimedByDevice }: CharacterCardProps) {
+  const { t } = useTranslation();
   const level = getLevelForXP(profile.xp || 0);
   const rank = getRankForXP(profile.xp || 0);
   const isProfileActive = profile.isActive ?? true;
@@ -38,7 +40,7 @@ export function CharacterCard({ profile, isSelected, isActiveProfile, onClick, i
         className={`absolute top-2 right-2 w-3 h-3 rounded-full border border-black/30 ${
           isProfileActive ? 'bg-green-500' : 'bg-red-500'
         }`}
-        title={isProfileActive ? 'Active' : 'Inactive'}
+        title={isProfileActive ? t('playerProgression.active') : t('playerProgression.inactive')}
       />
       <div className="flex flex-col items-center text-center">
         {/* Avatar */}
@@ -74,9 +76,9 @@ export function CharacterCard({ profile, isSelected, isActiveProfile, onClick, i
 
         {/* Connection marker — below level display instead of overlaying avatar */}
         {isClaimedByCompanion && (
-          <div className="text-[10px] bg-purple-500/80 text-white px-1.5 py-0.5 rounded-full flex items-center gap-1" title={claimedByDevice ? `Verbunden: ${claimedByDevice}` : 'Von Companion belegt'}>
+          <div className="text-[10px] bg-purple-500/80 text-white px-1.5 py-0.5 rounded-full flex items-center gap-1" title={claimedByDevice ? t('characterCard.connectedWith').replace('{n}', claimedByDevice) : t('characterCard.connected')}>
             <span>📱</span>
-            <span>Verbunden</span>
+            <span>{t('characterCard.connected')}</span>
           </div>
         )}
 

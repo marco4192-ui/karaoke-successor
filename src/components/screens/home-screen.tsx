@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useGameStore } from '@/lib/game/store';
 import { getAllSongs } from '@/lib/game/song-library';
 import { PerformanceDisplay } from '@/components/game/game-enhancements';
+import { useTranslation } from '@/lib/i18n/translations';
 import {
   MusicIcon,
   PlayIcon,
@@ -26,6 +27,7 @@ const PARTY_GAME_COUNT = 9; // battle-royale, tournament, pass-the-mic, companio
 const DIFFICULTY_LEVELS = 3; // easy, medium, hard
 
 export function HomeScreen({ onNavigate }: HomeScreenProps) {
+  const { t } = useTranslation();
   const { profiles, activeProfileId, setActiveProfile } = useGameStore();
   // Track if component is mounted (to avoid hydration mismatch)
   const [isMounted, setIsMounted] = useState(false);
@@ -75,8 +77,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
         <div className="mx-auto w-48 h-0.5 retro-gradient-rainbow rounded-full mb-4" />
 
         <p className="text-lg text-[#b8b8d0] mb-10 max-w-2xl mx-auto leading-relaxed">
-          The ultimate karaoke experience. Sing your heart out with real-time pitch detection,
-          compete with friends, and enjoy party games!
+          {t('home.subtitle')}
         </p>
 
         <div className="flex items-center justify-center gap-4">
@@ -85,14 +86,14 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
             className="retro-btn retro-btn-cyan px-10 py-6 text-lg rounded-lg"
             onClick={() => onNavigate('library')}
           >
-            <PlayIcon className="w-5 h-5 mr-2" /> Start Singing
+            <PlayIcon className="w-5 h-5 mr-2" /> {t('home.startSinging')}
           </Button>
           <Button
             size="lg"
             className="retro-btn retro-btn-pink px-10 py-6 text-lg rounded-lg"
             onClick={() => onNavigate('party')}
           >
-            <PartyIcon className="w-5 h-5 mr-2" /> Party Mode
+            <PartyIcon className="w-5 h-5 mr-2" /> {t('home.partyMode')}
           </Button>
         </div>
       </div>
@@ -102,25 +103,25 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
         <Card className="retro-gradient-card retro-border-cyan backdrop-blur-sm rounded-xl">
           <CardContent className="pt-6">
             <div className="text-3xl font-black text-[#00e5ff] retro-glow-cyan">{isMounted ? songCount : 0}</div>
-            <div className="text-[#b8b8d0] text-sm mt-1">Songs Available</div>
+            <div className="text-[#b8b8d0] text-sm mt-1">{t('home.songsAvailable')}</div>
           </CardContent>
         </Card>
         <Card className="retro-gradient-card retro-border-pink backdrop-blur-sm rounded-xl">
           <CardContent className="pt-6">
             <div className="text-3xl font-black text-[#ff2d95] retro-glow-pink">{isMounted ? profiles.length : 0}</div>
-            <div className="text-[#b8b8d0] text-sm mt-1">Characters Created</div>
+            <div className="text-[#b8b8d0] text-sm mt-1">{t('home.profilesCreated')}</div>
           </CardContent>
         </Card>
         <Card className="retro-gradient-card backdrop-blur-sm rounded-xl" style={{ border: '2px solid rgba(191,90,242,0.4)' }}>
           <CardContent className="pt-6">
             <div className="text-3xl font-black text-[#bf5af2] retro-glow-purple">{PARTY_GAME_COUNT}</div>
-            <div className="text-[#b8b8d0] text-sm mt-1">Party Games</div>
+            <div className="text-[#b8b8d0] text-sm mt-1">{t('home.partyGames')}</div>
           </CardContent>
         </Card>
         <Card className="retro-gradient-card retro-border-gold backdrop-blur-sm rounded-xl">
           <CardContent className="pt-6">
             <div className="text-3xl font-black text-[#ffd60a] retro-glow-gold">{DIFFICULTY_LEVELS}</div>
-            <div className="text-[#b8b8d0] text-sm mt-1">Difficulty Levels</div>
+            <div className="text-[#b8b8d0] text-sm mt-1">{t('home.difficultyLevels')}</div>
           </CardContent>
         </Card>
       </div>
@@ -131,7 +132,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
           {isMounted ? (
             <PerformanceDisplay />
           ) : (
-            <div className="text-center text-white/40 py-4">Loading stats...</div>
+            <div className="text-center text-white/40 py-4">{t('homeScreen.loadingStats')}</div>
           )}
         </CardContent>
       </Card>
@@ -141,13 +142,12 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
         <Card className="bg-gradient-to-br from-[#00e5ff]/10 to-[#00ffff]/5 retro-border-cyan rounded-xl retro-box-glow-cyan">
           <CardHeader>
             <CardTitle className="text-[#00e5ff] flex items-center gap-2 font-bold">
-              <MicIcon className="w-6 h-6" /> Real-Time Pitch Detection
+              <MicIcon className="w-6 h-6" /> {t('homeScreen.realTimePitch')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-[#b8b8d0]/80">
-              Advanced YIN algorithm detects your singing pitch in real-time with high accuracy.
-              See your voice visualized as you sing!
+              {t('homeScreen.realTimePitchDesc')}
             </p>
           </CardContent>
         </Card>
@@ -155,13 +155,12 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
         <Card className="bg-gradient-to-br from-[#bf5af2]/10 to-[#ff00ff]/5 rounded-xl retro-box-glow-purple" style={{ border: '2px solid rgba(191,90,242,0.4)' }}>
           <CardHeader>
             <CardTitle className="text-[#bf5af2] flex items-center gap-2 font-bold">
-              <PartyIcon className="w-6 h-6" /> Party Games
+              <PartyIcon className="w-6 h-6" /> {t('homeScreen.partyGamesFeature')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-[#b8b8d0]/80">
-              Pass the Mic, Medley Contest, Missing Words, Duel Mode, and Blind Karaoke -
-              endless entertainment for your parties!
+              {t('homeScreen.partyGamesFeatureDesc')}
             </p>
           </CardContent>
         </Card>
@@ -169,13 +168,12 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
         <Card className="bg-gradient-to-br from-[#ffd60a]/10 to-[#ffaa00]/5 retro-border-gold rounded-xl retro-box-glow-gold">
           <CardHeader>
             <CardTitle className="text-[#ffd60a] flex items-center gap-2 font-bold">
-              <PhoneIcon className="w-6 h-6" /> Mobile Companion
+              <PhoneIcon className="w-6 h-6" /> {t('homeScreen.mobileCompanion')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-white/70 mb-4">
-              Use your smartphone as a microphone or remote control! 
-              Scan the QR code to connect.
+              {t('homeScreen.mobileCompanionDesc')}
             </p>
             {localIP ? (
               <div className="flex items-center gap-4">
@@ -183,14 +181,14 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                   {qrCodeSrc ? <img src={qrCodeSrc} alt="QR Code" className="w-32 h-32" /> : <div className="w-32 h-32 animate-pulse bg-gray-200 rounded" />}
                 </div>
                 <div className="text-xs text-white/50 space-y-1">
-                  <p>1. Same WiFi network</p>
-                  <p>2. Scan QR with camera</p>
-                  <p>3. Open link in browser</p>
+                  <p>{t('homeScreen.wifiStep1')}</p>
+                  <p>{t('homeScreen.wifiStep2')}</p>
+                  <p>{t('homeScreen.wifiStep3')}</p>
                   <p className="font-mono mt-2 break-all text-orange-400/70">{buildCompanionUrl(localIP)}</p>
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-white/40">Detecting network address...</p>
+              <p className="text-xs text-white/40">{t('homeScreen.detectingNetwork')}</p>
             )}
           </CardContent>
         </Card>
@@ -200,7 +198,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
       {isMounted && profiles.length > 0 && (
         <Card className="retro-gradient-card retro-border-pink backdrop-blur-sm rounded-xl">
           <CardHeader>
-            <CardTitle>Select Your Character</CardTitle>
+            <CardTitle>{t('homeScreen.selectCharacter')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-3">
@@ -234,12 +232,12 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                 <div className="w-10 h-10 rounded-full flex items-center justify-center text-white/60">
                   +
                 </div>
-                <span className="text-white/60">Create New</span>
+                <span className="text-white/60">{t('home.createNew')}</span>
               </button>
             </div>
             {profiles.filter(p => p.isActive === false).length > 0 && (
               <p className="text-xs text-white/40 mt-3">
-                {profiles.filter(p => p.isActive === false).length} inactive profile(s) hidden. Enable them in Profile settings.
+                {profiles.filter(p => p.isActive === false).length} {t('homeScreen.inactiveProfiles')}
               </p>
             )}
           </CardContent>

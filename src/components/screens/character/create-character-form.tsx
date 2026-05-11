@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslation } from '@/lib/i18n/translations';
 import { COUNTRY_OPTIONS } from './country-options';
 
 interface CreateCharacterFormProps {
@@ -13,6 +14,7 @@ interface CreateCharacterFormProps {
 }
 
 export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: CreateCharacterFormProps) {
+  const { t } = useTranslation();
   const [newName, setNewName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [selectedCountry, setSelectedCountry] = useState<string>('');
@@ -47,7 +49,7 @@ export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: Creat
   return (
     <Card className="bg-white/5 border-white/10 mb-6 animate-in slide-in-from-top-2 duration-200">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Neues Profil erstellen</CardTitle>
+        <CardTitle className="text-lg">{t('characterScreen.createProfile')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col sm:flex-row gap-4">
@@ -59,7 +61,7 @@ export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: Creat
               {avatarUrl ? (
                 <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
-                <span className="text-white/40 text-xs text-center">Upload<br/>Photo</span>
+                <span className="text-white/40 text-xs text-center">{t('profile.uploadPhoto')}</span>
               )}
             </button>
             <input 
@@ -74,7 +76,7 @@ export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: Creat
             <Input
               id="profile-name"
               name="profile-name"
-              placeholder="Profilname..."
+              placeholder={t('profile.namePlaceholder')}
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               className="bg-white/5 border-white/10 text-white"
@@ -91,7 +93,7 @@ export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: Creat
                 backgroundSize: '1.5em 1.5em' 
               }}
             >
-              <option value="" className="bg-[rgb(30,30,40)] text-white/60">Select Country (optional)</option>
+              <option value="" className="bg-[rgb(30,30,40)] text-white/60">{t('profile.countryOptional')}</option>
               {COUNTRY_OPTIONS.map(c => (
                 <option key={c.code} value={c.code} className="bg-[rgb(30,30,40)] text-white">{c.flag} {c.name}</option>
               ))}
@@ -105,7 +107,7 @@ export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: Creat
                     onChange={(e) => setPrivacySettings(prev => ({ ...prev, showOnLeaderboard: e.target.checked }))}
                     className="w-4 h-4 rounded"
                   />
-                  <span className="text-white/70">Show on leaderboard</span>
+                  <span className="text-white/70">{t('profile.showOnLeaderboard')}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer text-sm">
                   <input
@@ -114,16 +116,16 @@ export function CreateCharacterForm({ onCreate, onCancel, onlineEnabled }: Creat
                     onChange={(e) => setPrivacySettings(prev => ({ ...prev, showPhoto: e.target.checked }))}
                     className="w-4 h-4 rounded"
                   />
-                  <span className="text-white/70">Show photo</span>
+                  <span className="text-white/70">{t('profile.showPhoto')}</span>
                 </label>
               </div>
             )}
             <div className="flex gap-2">
               <Button onClick={handleCreate} disabled={!newName.trim()} className="bg-gradient-to-r from-cyan-500 to-purple-500">
-                Profil erstellen
+                {t('profile.create')}
               </Button>
               <Button onClick={onCancel} variant="outline" className="border-white/20">
-                Cancel
+                {t('common.cancel')}
               </Button>
             </div>
           </div>

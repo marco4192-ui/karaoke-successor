@@ -5,12 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useGameStore } from '@/lib/game/store';
 import { GlobeIcon, PlusIcon, UserIcon } from '@/components/icons';
+import { useTranslation } from '@/lib/i18n/translations';
 import { CharacterCard } from './character/character-card';
 import { CreateCharacterForm } from './character/create-character-form';
 import { PlayerProgressionCard } from './character/player-progression-card';
 import { CharacterSettingsCard } from './character/character-settings-card';
 
 export function CharacterScreen() {
+  const { t } = useTranslation();
   const {
     profiles, createProfile, updateProfile, deleteProfile,
     activeProfileId, setActiveProfile,
@@ -69,15 +71,15 @@ export function CharacterScreen() {
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-1">Profile</h1>
-        <p className="text-white/60">Erstelle und verwalte deine Sänger-Profile</p>
+        <h1 className="text-3xl font-bold mb-1">{t('characterScreen.title')}</h1>
+        <p className="text-white/60">{t('characterScreen.description')}</p>
       </div>
 
       {/* Top Action Bar */}
       <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-white/5 rounded-xl border border-white/10">
         <div className="flex items-center gap-3">
           <GlobeIcon className="w-5 h-5 text-cyan-400" />
-          <span className="text-sm text-white/80">Online Leaderboard</span>
+          <span className="text-sm text-white/80">{t('characterScreen.onlineLeaderboard')}</span>
           <button
             onClick={() => setOnlineEnabled(!onlineEnabled)}
             className={`relative w-12 h-6 rounded-full transition-colors ${onlineEnabled ? 'bg-cyan-500' : 'bg-white/20'}`}
@@ -93,14 +95,14 @@ export function CharacterScreen() {
               size="sm"
               className={leaderboardType === 'local' ? 'bg-cyan-500 h-7' : 'bg-white/10 h-7'}
             >
-              Local
+              {t('highscore.local')}
             </Button>
             <Button
               onClick={() => setLeaderboardType('global')}
               size="sm"
               className={leaderboardType === 'global' ? 'bg-purple-500 h-7' : 'bg-white/10 h-7'}
             >
-              Global
+              {t('highscore.global')}
             </Button>
           </div>
         )}
@@ -112,7 +114,7 @@ export function CharacterScreen() {
           className="bg-gradient-to-r from-cyan-500 to-purple-500 gap-2"
         >
           <PlusIcon className="w-4 h-4" />
-          Neues Profil erstellen
+          {t('characterScreen.createProfile')}
         </Button>
       </div>
 
@@ -127,12 +129,12 @@ export function CharacterScreen() {
 
       {/* Character List */}
       <div className="mb-6">
-        <h2 className="text-lg font-semibold mb-3 text-white/80">Deine Profile ({profiles.length})</h2>
+        <h2 className="text-lg font-semibold mb-3 text-white/80">{t('characterScreen.yourProfiles').replace('{n}', String(profiles.length))}</h2>
         {profiles.length === 0 ? (
           <Card className="bg-white/5 border-white/10">
             <CardContent className="py-8 text-center text-white/60">
               <UserIcon className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p>Noch keine Profile. Klicke auf &quot;Neues Profil erstellen&quot; um loszulegen!</p>
+              <p>{t('characterScreen.noProfiles')}</p>
             </CardContent>
           </Card>
         ) : (

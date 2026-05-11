@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GlobeIcon, CloudUploadIcon } from '@/components/icons';
 import { useGameStore } from '@/lib/game/store';
+import { useTranslation } from '@/lib/i18n/translations';
 import { PlayerProfile } from '@/types/game';
 import { COUNTRY_OPTIONS } from './country-options';
 import { ProfileSyncSection } from './profile-sync-section';
@@ -19,6 +20,7 @@ interface CharacterSettingsCardProps {
 }
 
 export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: CharacterSettingsCardProps) {
+  const { t } = useTranslation();
   const { updateProfile } = useGameStore();
   const [isEditingCharacter, setIsEditingCharacter] = useState(false);
   const [editName, setEditName] = useState('');
@@ -86,13 +88,13 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
   return (
     <Card className="bg-white/5 border-white/10">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Profile-Einstellungen</CardTitle>
+        <CardTitle className="text-lg">{t('characterScreen.settingsTitle')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Edit Character Section */}
         <div className="pt-2">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-medium text-white/60">Name &amp; Avatar</h4>
+            <h4 className="text-sm font-medium text-white/60">{t('characterScreen.nameAndAvatar')}</h4>
             {!isEditingCharacter && (
               <Button
                 size="sm"
@@ -100,7 +102,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
                 onClick={startEditingCharacter}
                 className="h-7 text-xs border-white/20 text-white/70 hover:bg-white/10"
               >
-                Edit
+                {t('common.edit')}
               </Button>
             )}
           </div>
@@ -115,7 +117,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
                   {editAvatarUrl ? (
                     <img src={editAvatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-white/40 text-xs text-center">Upload<br/>Photo</span>
+                    <span className="text-white/40 text-xs text-center">{t('profile.uploadPhoto')}</span>
                   )}
                 </button>
                 <input 
@@ -130,7 +132,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
                 <Input
                   id="edit-profile-name"
                   name="edit-profile-name"
-                  placeholder="Profilname..."
+                  placeholder={t('profile.namePlaceholder')}
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   className="bg-white/5 border-white/10 text-white"
@@ -147,7 +149,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
                     backgroundSize: '1.5em 1.5em'
                   }}
                 >
-                  <option value="" className="bg-[rgb(30,30,40)] text-white/60">Select Country (optional)</option>
+                  <option value="" className="bg-[rgb(30,30,40)] text-white/60">{t('profile.countryOptional')}</option>
                   {COUNTRY_OPTIONS.map(c => (
                     <option key={c.code} value={c.code} className="bg-[rgb(30,30,40)] text-white">{c.flag} {c.name}</option>
                   ))}
@@ -159,7 +161,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
                     size="sm"
                     className="bg-gradient-to-r from-cyan-500 to-purple-500 h-7"
                   >
-                    Speichern
+                    {t('common.save')}
                   </Button>
                   <Button 
                     onClick={cancelEditingCharacter} 
@@ -167,7 +169,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
                     size="sm"
                     className="border-white/20 h-7"
                   >
-                    Abbrechen
+                    {t('common.cancel')}
                   </Button>
                 </div>
               </div>
@@ -187,7 +189,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
               <div>
                 <div className="font-medium">{profile.name}</div>
                 <div className="text-xs text-white/50">
-                  {profile.avatar ? 'Photo uploaded' : 'No photo'}
+                  {profile.avatar ? t('profile.photoUploaded') : t('profile.noPhoto')}
                 </div>
               </div>
             </div>
@@ -196,9 +198,9 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
 
         {/* Rank Display Options */}
         <div>
-          <h4 className="text-sm font-medium text-white/60 mb-3">Rang-Anzeige</h4>
+          <h4 className="text-sm font-medium text-white/60 mb-3">{t('characterScreen.rankDisplay')}</h4>
           <div className="flex items-center gap-4 mb-3">
-            <span className="text-sm text-white/80">Rang im Namen anzeigen</span>
+            <span className="text-sm text-white/80">{t('characterScreen.showRankInName')}</span>
             <button
               onClick={() => {
                 updateProfile(profile.id, {
@@ -214,9 +216,9 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
           {profile.showRankInName && (
             <div className="flex gap-2">
               {[
-                { id: 'prefix', name: 'Präfix', example: '🎤 Name' },
-                { id: 'suffix', name: 'Suffix', example: 'Name 🎤' },
-                { id: 'nickname', name: 'Vollständig', example: '🎤 Name (Singer)' },
+                { id: 'prefix', name: t('characterScreen.rankPrefix'), example: '🎤 Name' },
+                { id: 'suffix', name: t('characterScreen.rankSuffix'), example: 'Name 🎤' },
+                { id: 'nickname', name: t('characterScreen.rankFull'), example: '🎤 Name (Singer)' },
               ].map((style) => (
                 <button
                   key={style.id}
@@ -241,10 +243,10 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
         {/* Country & Privacy */}
         {onlineEnabled && (
           <div className="pt-3 border-t border-white/10">
-            <h4 className="text-sm font-medium text-white/60 mb-3">Country &amp; Privacy</h4>
+            <h4 className="text-sm font-medium text-white/60 mb-3">{t('characterScreen.countryAndPrivacy')}</h4>
             <div className="flex flex-wrap gap-4 items-center">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-white/50">Country:</span>
+                <span className="text-xs text-white/50">{t('characterScreen.selectCountry')}:</span>
                 <select
                   value={profile.country || ''}
                   onChange={(e) => handleUpdateCountry(e.target.value)}
@@ -257,7 +259,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
                     backgroundSize: '1.2em 1.2em' 
                   }}
                 >
-                  <option value="" className="bg-[rgb(30,30,40)] text-white/60">Select Country</option>
+                  <option value="" className="bg-[rgb(30,30,40)] text-white/60">{t('characterScreen.selectCountry')}</option>
                   {COUNTRY_OPTIONS.map(c => (
                     <option key={c.code} value={c.code} className="bg-[rgb(30,30,40)] text-white">{c.flag} {c.name}</option>
                   ))}
@@ -272,7 +274,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
                   }`}
                 >
                   <GlobeIcon className="w-3 h-3" />
-                  {(profile.privacy?.showOnLeaderboard ?? true) ? 'Visible' : 'Hidden'}
+                  {(profile.privacy?.showOnLeaderboard ?? true) ? t('characterScreen.visible') : t('characterScreen.hidden')}
                 </button>
                 <button
                   onClick={() => handleUpdatePrivacy('showPhoto', !(profile.privacy?.showPhoto ?? true))}
@@ -280,7 +282,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
                     (profile.privacy?.showPhoto ?? true) ? 'bg-purple-500/30 text-purple-300' : 'bg-white/10 text-white/50'
                   }`}
                 >
-                  📷 {(profile.privacy?.showPhoto ?? true) ? 'Shown' : 'Hidden'}
+                  📷 {(profile.privacy?.showPhoto ?? true) ? t('characterScreen.shown') : t('characterScreen.hidden')}
                 </button>
               </div>
             </div>
@@ -291,7 +293,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
         {onlineEnabled && (
           <div className="pt-3 border-t border-white/10">
             <h4 className="text-sm font-medium text-white/60 mb-3 flex items-center gap-2">
-              <CloudUploadIcon className="w-4 h-4" /> Profile Sync
+              <CloudUploadIcon className="w-4 h-4" /> {t('profileSync.title')}
             </h4>
             <ProfileSyncSection profile={profile} />
           </div>
@@ -299,15 +301,15 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
 
         {/* Companion App QR Code */}
         <div className="pt-4 border-t border-white/10">
-          <h4 className="text-sm font-medium text-white/60 mb-3">Companion-App Verknüpfung</h4>
+          <h4 className="text-sm font-medium text-white/60 mb-3">{t('characterScreen.companionAppLink')}</h4>
           <p className="text-xs text-white/40 mb-3">
-            Scanne diesen QR-Code, um dich direkt mit diesem Profil in der Companion-App zu verbinden.
+            {t('characterScreen.companionAppLinkDesc')}
           </p>
           <button
             onClick={() => setShowQR(!showQR)}
             className="px-3 py-1.5 rounded-lg text-xs bg-orange-500/20 text-orange-300 border border-orange-500/30 hover:bg-orange-500/30 transition-colors"
           >
-            {showQR ? 'QR-Code ausblenden' : 'QR-Code anzeigen'}
+            {showQR ? t('characterScreen.hideQrCode') : t('characterScreen.showQrCode')}
           </button>
           {showQR && localIP && (
             <div className="mt-3 flex items-center gap-4">
@@ -320,7 +322,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
             </div>
           )}
           {showQR && !localIP && (
-            <p className="text-xs text-white/40 mt-2">Netzwerkadresse wird erkannt...</p>
+            <p className="text-xs text-white/40 mt-2">{t('mobile.detectingNetwork')}</p>
           )}
         </div>
 
@@ -332,7 +334,7 @@ export function CharacterSettingsCard({ profile, onlineEnabled, onDelete }: Char
             className="text-red-400 border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
             onClick={onDelete}
           >
-            Profil löschen
+            {t('profile.delete')}
           </Button>
         </div>
       </CardContent>
