@@ -7,7 +7,6 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { PauseButton } from '@/components/game/hud/pause-button';
 import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
 import type { Note, LyricLine } from '@/types/game';
 import { useMultiPitchDetector } from '@/hooks/use-multi-pitch-detector';

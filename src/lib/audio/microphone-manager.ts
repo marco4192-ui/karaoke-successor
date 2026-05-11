@@ -1,4 +1,4 @@
-import { StorageKeys, getItem, setItem, setJson, getJson } from '@/lib/storage';
+import { StorageKeys, getItem, setJson } from '@/lib/storage';
 
 // Multi-Microphone Manager - Handles multiple microphone input devices simultaneously
 // Supports USB mics, SingStar mics, 3.5mm jack mics, Bluetooth audio

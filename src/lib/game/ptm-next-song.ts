@@ -3,7 +3,7 @@
 // Uses song filters from unifiedSetupResult if available
 
 import { Song } from '@/types/game';
-import { getAllSongs, getNonDuetSongs, filterSongs } from '@/lib/game/song-library';
+import { getNonDuetSongs, filterSongs } from '@/lib/game/song-library';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { StorageKeys, getJson, setJson } from '@/lib/storage';
 import type { PassTheMicSegment } from '@/components/game/ptm-types';

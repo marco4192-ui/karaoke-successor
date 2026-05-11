@@ -1,4 +1,4 @@
-import type { Song, Difficulty, GameResult, GameMode } from '@/types/game';
+import type { Song, GameResult, GameMode } from '@/types/game';
 import { accuracyToRating } from '@/lib/game/rating-utils';
 
 interface GenerateResultsParams {

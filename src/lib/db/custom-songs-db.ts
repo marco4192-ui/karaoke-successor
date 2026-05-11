@@ -3,7 +3,7 @@
 // Keeps only a lightweight ID index in localStorage for fast sync access
 
 import { Song } from '@/types/game';
-import { StorageKeys, getItem, setItem, removeItem, setJson, getJson } from '@/lib/storage';
+import { StorageKeys, getItem, removeItem, setJson } from '@/lib/storage';
 
 const DB_NAME = 'karaoke-successor-custom-songs';
 const DB_VERSION = 1;

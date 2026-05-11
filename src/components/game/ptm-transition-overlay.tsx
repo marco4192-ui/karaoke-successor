@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 // ===================== TYPES =====================
 
@@ -44,7 +44,6 @@ export function PtmTransitionOverlay({
   const [phase, setPhase] = useState<'idle' | 'blinking' | 'showing' | 'fading'>('idle');
   const [blinkCount, setBlinkCount] = useState(0);
   const [nameOpacity, setNameOpacity] = useState(0);
-  const startTimeRef = useMemo(() => Date.now(), []); // stable ref for animation loop
 
   // Reset and start animation when visible changes
   useEffect(() => {
