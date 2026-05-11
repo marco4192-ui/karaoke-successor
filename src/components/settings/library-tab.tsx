@@ -58,7 +58,7 @@ export function LibraryTab({
             <Input
               value={songsFolder}
               onChange={(e) => setSongsFolder(e.target.value)}
-              placeholder="C:/Karaoke Successor/Songs"
+              placeholder="C:/Karaoke ZERO/Songs"
               className="bg-white/5 border-white/10 text-white flex-1"
             />
             <Button

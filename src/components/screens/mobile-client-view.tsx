@@ -293,7 +293,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
             {profile && currentView !== 'home' && (
               <button onClick={() => setCurrentView('home')} className="text-white/60 hover:text-white">← Back</button>
             )}
-            <h1 className="text-lg font-bold">Karaoke Successor</h1>
+            <h1 className="text-lg font-bold">Karaoke ZERO</h1>
           </div>
           <div className="flex items-center gap-3">
             {connectionCode && <Badge variant="outline" className="border-cyan-500/50 text-cyan-400 font-mono">{connectionCode}</Badge>}

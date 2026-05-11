@@ -51,7 +51,7 @@ export function ScoreCard({ song, score, playerName, playerAvatar }: ScoreCardPr
     // App name / logo area
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 24px Arial, sans-serif';
-    ctx.fillText('Karaoke Successor', 40, 50);
+    ctx.fillText('Karaoke ZERO', 40, 50);
 
     // Song info
     ctx.fillStyle = '#ffffff';
@@ -96,7 +96,7 @@ export function ScoreCard({ song, score, playerName, playerAvatar }: ScoreCardPr
     // Hashtags
     ctx.fillStyle = '#666666';
     ctx.font = '24px Arial, sans-serif';
-    ctx.fillText('#KaraokeSuccessor #Karaoke #Singing', 40, 600);
+    ctx.fillText('#KaraokeZERO #Karaoke #Singing', 40, 600);
 
     return canvas.toDataURL('image/png');
   }, [song, score, playerName]);
@@ -151,7 +151,7 @@ export function ScoreCard({ song, score, playerName, playerAvatar }: ScoreCardPr
         
         {/* Content */}
         <div className="relative p-6 h-full flex flex-col">
-          <div className="text-white/60 text-xs font-medium">Karaoke Successor</div>
+          <div className="text-white/60 text-xs font-medium">Karaoke ZERO</div>
           
           <div className="mt-4 flex-1">
             <div className="text-white text-2xl font-bold truncate">{song.title}</div>

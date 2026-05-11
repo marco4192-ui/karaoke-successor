@@ -264,7 +264,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
     ctx.fillStyle = style === 'minimal' ? '#cccccc' : '#ffffff66';
     ctx.font = '20px Arial, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Karaoke Successor', width / 2, cameraPosition === 'fullscreen' ? 30 : height - 40);
+    ctx.fillText('Karaoke ZERO', width / 2, cameraPosition === 'fullscreen' ? 30 : height - 40);
 
     // Progress bar (during recording)
     if (isRecording && duration > 0 && recordingStartTime > 0) {

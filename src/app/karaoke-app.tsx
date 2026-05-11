@@ -39,7 +39,7 @@ import { PartyGameScreens } from '@/components/party/party-game-screens';
 import { OfflineBanner } from '@/components/ui/offline-banner';
 
 // ===================== MAIN APP =====================
-export default function KaraokeSuccessor() {
+export default function KaraokeZERO() {
   // ── Store hooks (must be called before any conditional returns) ──
   const { gameState, setSong, setGameMode, setChallengeMode, profiles, queue, resetGame, addPlayer, setResults, pauseGame, resumeGame } = useGameStore();
   const party = usePartyStore();

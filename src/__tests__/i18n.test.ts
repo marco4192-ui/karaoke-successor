@@ -57,7 +57,7 @@ describe('i18n translation system', () => {
     });
 
     it('resolves home.title', () => {
-      expect(t('home.title', 'en')).toBe('Karaoke Successor');
+      expect(t('home.title', 'en')).toBe('Karaoke ZERO');
     });
 
     it('defaults to English when no language is specified', () => {

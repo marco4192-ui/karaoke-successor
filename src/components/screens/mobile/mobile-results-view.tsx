@@ -55,7 +55,7 @@ export function MobileResultsView({ gameResults, onNavigate }: ResultsViewProps)
             </Button>
             <Button 
               onClick={() => {
-                const text = `🎤 I scored ${gameResults.score.toLocaleString()} points on "${gameResults.songTitle}" by ${gameResults.songArtist}! 🎵\n\n#KaraokeSuccessor`;
+                const text = `🎤 I scored ${gameResults.score.toLocaleString()} points on "${gameResults.songTitle}" by ${gameResults.songArtist}! 🎵\n\n#KaraokeZERO`;
                 if (navigator.share) {
                   navigator.share({ text }).catch(() => {});
                 } else {

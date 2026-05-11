@@ -259,6 +259,154 @@
   opacity: 0.1;
 }
 
+/* ═══════════════════════════════════════════════════════
+   KARAOKE ZERO — 90s/2000s RETRO KARAOKE THEME
+   Neon glow, chunky borders, star particles, MTV vibes
+   ═══════════════════════════════════════════════════════ */
+
+/* Retro neon text glow */
+.retro-glow-pink {
+  text-shadow: 0 0 7px #ff2d95, 0 0 20px #ff2d95, 0 0 42px #ff00ff;
+}
+.retro-glow-cyan {
+  text-shadow: 0 0 7px #00ffff, 0 0 20px #00ffff, 0 0 42px #00e5ff;
+}
+.retro-glow-gold {
+  text-shadow: 0 0 7px #ffd60a, 0 0 20px #ffcc00, 0 0 42px #ffaa00;
+}
+.retro-glow-purple {
+  text-shadow: 0 0 7px #bf5af2, 0 0 20px #bf5af2, 0 0 42px #9b59b6;
+}
+
+/* Retro box glow */
+.retro-box-glow-pink {
+  box-shadow: 0 0 8px rgba(255, 45, 149, 0.5), 0 0 24px rgba(255, 45, 149, 0.25), inset 0 0 8px rgba(255, 45, 149, 0.08);
+}
+.retro-box-glow-cyan {
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.5), 0 0 24px rgba(0, 255, 255, 0.25), inset 0 0 8px rgba(0, 255, 255, 0.08);
+}
+.retro-box-glow-gold {
+  box-shadow: 0 0 8px rgba(255, 214, 10, 0.5), 0 0 24px rgba(255, 214, 10, 0.25), inset 0 0 8px rgba(255, 214, 10, 0.08);
+}
+.retro-box-glow-purple {
+  box-shadow: 0 0 8px rgba(191, 90, 242, 0.5), 0 0 24px rgba(191, 90, 242, 0.25), inset 0 0 8px rgba(191, 90, 242, 0.08);
+}
+
+/* Retro gradient backgrounds */
+.retro-gradient-hero {
+  background: linear-gradient(180deg, #0a0a1a 0%, #1a0a2e 40%, #0d0d2b 70%, #0a0a1a 100%);
+}
+.retro-gradient-card {
+  background: linear-gradient(135deg, rgba(191, 90, 242, 0.08) 0%, rgba(255, 45, 149, 0.08) 100%);
+}
+.retro-gradient-pink {
+  background: linear-gradient(135deg, #ff2d95, #ff00ff);
+}
+.retro-gradient-cyan {
+  background: linear-gradient(135deg, #00e5ff, #00ffff);
+}
+.retro-gradient-gold {
+  background: linear-gradient(135deg, #ffd60a, #ffaa00);
+}
+.retro-gradient-rainbow {
+  background: linear-gradient(90deg, #ff2d95, #ff00ff, #bf5af2, #00e5ff, #00ff88, #ffd60a, #ff2d95);
+  background-size: 200% 100%;
+  animation: retro-rainbow-slide 6s linear infinite;
+}
+
+/* Star particle decorations */
+.retro-star {
+  position: relative;
+}
+.retro-star::before,
+.retro-star::after {
+  content: '\2726';
+  position: absolute;
+  color: #ffd60a;
+  font-size: 0.7rem;
+  opacity: 0.7;
+  animation: retro-star-twinkle 2s ease-in-out infinite;
+}
+.retro-star::before { top: -8px; left: 10%; animation-delay: 0s; }
+.retro-star::after { bottom: -8px; right: 10%; animation-delay: 1s; }
+
+/* Retro chunky border */
+.retro-border {
+  border: 2px solid;
+  border-image: linear-gradient(135deg, #ff2d95, #bf5af2, #00e5ff) 1;
+}
+.retro-border-pink {
+  border: 2px solid rgba(255, 45, 149, 0.4);
+}
+.retro-border-cyan {
+  border: 2px solid rgba(0, 229, 255, 0.4);
+}
+.retro-border-gold {
+  border: 2px solid rgba(255, 214, 10, 0.4);
+}
+
+/* Retro button style */
+.retro-btn {
+  position: relative;
+  padding: 12px 28px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 2px solid;
+  transition: all 0.2s;
+}
+.retro-btn:hover {
+  transform: translateY(-1px);
+}
+.retro-btn-pink {
+  background: linear-gradient(135deg, #ff2d95, #cc0077);
+  border-color: #ff2d95;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(255, 45, 149, 0.5);
+}
+.retro-btn-pink:hover {
+  box-shadow: 0 0 24px rgba(255, 45, 149, 0.7), 0 4px 16px rgba(0,0,0,0.3);
+}
+.retro-btn-cyan {
+  background: linear-gradient(135deg, #00e5ff, #00b8d4);
+  border-color: #00e5ff;
+  color: #0a0a1a;
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.5);
+}
+.retro-btn-cyan:hover {
+  box-shadow: 0 0 24px rgba(0, 229, 255, 0.7), 0 4px 16px rgba(0,0,0,0.3);
+}
+
+/* Retro scanline overlay (subtle) */
+.retro-scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  pointer-events: none;
+}
+
+/* Retro keyframe animations */
+@keyframes retro-rainbow-slide {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+@keyframes retro-star-twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+@keyframes retro-pulse-border {
+  0%, 100% { border-color: rgba(255, 45, 149, 0.4); }
+  33% { border-color: rgba(191, 90, 242, 0.4); }
+  66% { border-color: rgba(0, 229, 255, 0.4); }
+}
+
 /* Karaoke game animations */
 @keyframes scorePopIn {
   0% {

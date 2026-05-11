@@ -18,14 +18,15 @@ interface NavBarProps {
 export function NavBar({ screen, setScreen, queueLength, isMounted, isFullscreen, toggleFullscreen }: NavBarProps) {
   const { t } = useTranslation();
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-black/30 backdrop-blur-xl border-b border-white/10">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a1a]/80 backdrop-blur-xl border-b border-[#ff2d95]/20">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         <button onClick={() => setScreen('home')} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#ff2d95] via-[#bf5af2] to-[#00e5ff] flex items-center justify-center retro-box-glow-pink">
             <MusicIcon className="w-6 h-6 text-white" />
           </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-            Karaoke Successor
+          <span className="text-xl font-black tracking-tight">
+            <span className="text-[#ff2d95]">Karaoke</span>{' '}
+            <span className="text-[#00e5ff]">ZERO</span>
           </span>
         </button>
 
@@ -104,8 +105,8 @@ function NavButton({ children, active, onClick }: { children: React.ReactNode; a
       onClick={onClick}
       className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
         active
-          ? 'bg-white/20 text-white'
-          : 'text-white/70 hover:text-white hover:bg-white/10'
+          ? 'bg-[#ff2d95]/20 text-[#ff2d95] retro-box-glow-pink'
+          : 'text-[#b8b8d0] hover:text-[#00e5ff] hover:bg-white/10'
       }`}
     >
       {children}

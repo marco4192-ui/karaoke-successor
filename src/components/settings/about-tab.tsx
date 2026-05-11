@@ -17,14 +17,17 @@ export function AboutTab({
 }: AboutTabProps) {
   return (
     <div className="space-y-6">
-      <Card className="bg-white/5 border-white/10">
+      <Card className="retro-gradient-card retro-border-pink rounded-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#ff2d95] via-[#bf5af2] to-[#00e5ff] flex items-center justify-center retro-box-glow-pink">
               <MusicIcon className="w-7 h-7 text-white" />
             </div>
             <div>
-              <div className="text-xl">Karaoke Successor</div>
+              <div className="text-xl font-black">
+                <span className="text-[#ff2d95]">Karaoke</span>{' '}
+                <span className="text-[#00e5ff]">ZERO</span>
+              </div>
               <div className="text-sm text-white/60">{tx('settings.version')} 1.0.0</div>
             </div>
           </CardTitle>
@@ -35,23 +38,23 @@ export function AboutTab({
           </p>
           <div className="space-y-2 text-sm text-white/60">
             <div className="flex items-center gap-2">
-              <span className="text-cyan-400">•</span>
+              <span className="text-[#00e5ff]">&#10022;</span>
               {tx('settings.feature1')}
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-cyan-400">•</span>
+              <span className="text-[#00e5ff]">&#10022;</span>
               {tx('settings.feature2')}
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-cyan-400">•</span>
+              <span className="text-[#00e5ff]">&#10022;</span>
               {tx('settings.feature3')}
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-cyan-400">•</span>
+              <span className="text-[#00e5ff]">&#10022;</span>
               {tx('settings.feature4')}
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-cyan-400">•</span>
+              <span className="text-[#00e5ff]">&#10022;</span>
               {tx('settings.feature5')}
             </div>
           </div>

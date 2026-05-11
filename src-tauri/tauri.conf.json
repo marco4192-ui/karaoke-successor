@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Karaoke Successor",
+  "productName": "Karaoke ZERO",
   "version": "1.0.0",
   "identifier": "com.karaoke.successor",
   "build": {
@@ -11,7 +11,7 @@
   "app": {
     "windows": [
       {
-        "title": "Karaoke Successor",
+        "title": "Karaoke ZERO",
         "width": 1280,
         "height": 800,
         "minWidth": 800,

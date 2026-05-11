@@ -1,4 +1,4 @@
-// Core game types for Karaoke Successor
+// Core game types for Karaoke ZERO
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 

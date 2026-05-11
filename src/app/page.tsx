@@ -20,12 +20,12 @@ function LoadingScreen() {
     <div
       className="h-screen w-full flex items-center justify-center"
       style={{
-        background: 'linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #0a0a2a 100%)',
+        background: 'linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 40%, #0d0d2b 100%)',
       }}
     >
       <div className="text-center">
-        <div className="text-4xl mb-4 animate-pulse">🎵</div>
-        <p className="text-white/60 text-sm">Loading Karaoke Successor...</p>
+        <div className="text-5xl mb-4 animate-pulse">&#127925;</div>
+        <p className="text-[#ff2d95] text-sm font-bold tracking-widest uppercase">Loading Karaoke ZERO...</p>
       </div>
     </div>
   );
@@ -68,15 +68,15 @@ export default function Page() {
       <div
         className="h-screen w-full flex items-center justify-center"
         style={{
-          background: 'linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #0a0a2a 100%)',
+          background: 'linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 40%, #0d0d2b 100%)',
         }}
       >
         <div className="text-center max-w-md p-6">
-          <div className="text-4xl mb-4">⚠️</div>
-          <p className="text-red-400 text-sm mb-4 font-mono break-all">{error}</p>
+          <div className="text-4xl mb-4">&#9888;&#65039;</div>
+          <p className="text-[#ff2d95] text-sm mb-4 font-mono break-all">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
+            className="bg-gradient-to-r from-[#ff2d95] to-[#bf5af2] hover:from-[#ff55aa] hover:to-[#cc77ff] text-white px-6 py-2.5 rounded-lg font-bold transition-colors retro-box-glow-pink"
           >
             Reload
           </button>

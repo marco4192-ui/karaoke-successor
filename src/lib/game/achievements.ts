@@ -1,4 +1,4 @@
-// Achievement System for Karaoke Successor
+// Achievement System for Karaoke ZERO
 
 interface AchievementDefinition {
   id: string;

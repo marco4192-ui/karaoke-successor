@@ -48,31 +48,48 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
   
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-      {/* Hero Section */}
-      <div className="text-center py-16">
-        <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-gradient-to-br from-cyan-400 via-purple-500 to-pink-500 mb-6 shadow-2xl shadow-purple-500/30">
-          <MusicIcon className="w-14 h-14 text-white" />
+      {/* ═══ HERO SECTION — Retro Karaoke Vibe ═══ */}
+      <div className="relative text-center py-16 retro-scanlines">
+        {/* Animated rainbow bar behind title */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-1 retro-gradient-rainbow rounded-full" />
+        
+        {/* Logo icon — neon pink glow ring */}
+        <div className="inline-flex items-center justify-center w-28 h-28 rounded-2xl bg-gradient-to-br from-[#ff2d95] via-[#bf5af2] to-[#00e5ff] mb-6 retro-box-glow-pink relative">
+          <MusicIcon className="w-16 h-16 text-white drop-shadow-lg" />
+          {/* Corner sparkles */}
+          <span className="absolute -top-2 -right-2 text-[#ffd60a] text-xs animate-pulse">&#10022;</span>
+          <span className="absolute -bottom-2 -left-2 text-[#00e5ff] text-xs animate-pulse" style={{ animationDelay: '0.5s' }}>&#10022;</span>
         </div>
-        <h1 className="text-5xl font-black mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-          Karaoke Successor
+
+        {/* Title — retro neon glow */}
+        <h1 className="text-6xl font-black mb-3 tracking-tight">
+          <span className="bg-gradient-to-r from-[#ff2d95] via-[#ff00ff] to-[#bf5af2] bg-clip-text text-transparent">
+            Karaoke
+          </span>{' '}
+          <span className="bg-gradient-to-r from-[#00e5ff] via-[#00ffff] to-[#00ff88] bg-clip-text text-transparent">
+            ZERO
+          </span>
         </h1>
-        <p className="text-xl text-white/60 mb-8 max-w-2xl mx-auto">
-          The ultimate karaoke experience. Sing your heart out with real-time pitch detection, 
+
+        {/* Rainbow divider line */}
+        <div className="mx-auto w-48 h-0.5 retro-gradient-rainbow rounded-full mb-4" />
+
+        <p className="text-lg text-[#b8b8d0] mb-10 max-w-2xl mx-auto leading-relaxed">
+          The ultimate karaoke experience. Sing your heart out with real-time pitch detection,
           compete with friends, and enjoy party games!
         </p>
-        
+
         <div className="flex items-center justify-center gap-4">
-          <Button 
-            size="lg" 
-            className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white px-8 py-6 text-lg"
+          <Button
+            size="lg"
+            className="retro-btn retro-btn-cyan px-10 py-6 text-lg rounded-lg"
             onClick={() => onNavigate('library')}
           >
             <PlayIcon className="w-5 h-5 mr-2" /> Start Singing
           </Button>
-          <Button 
-            size="lg" 
-            variant="outline"
-            className="bg-transparent hover:bg-white/10 text-white px-8 py-6 text-lg border-2 border-pink-400/50"
+          <Button
+            size="lg"
+            className="retro-btn retro-btn-pink px-10 py-6 text-lg rounded-lg"
             onClick={() => onNavigate('party')}
           >
             <PartyIcon className="w-5 h-5 mr-2" /> Party Mode
@@ -80,36 +97,36 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
         </div>
       </div>
 
-      {/* Quick Stats */}
+      {/* ═══ QUICK STATS — Neon Card Style ═══ */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
-        <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+        <Card className="retro-gradient-card retro-border-cyan backdrop-blur-sm rounded-xl">
           <CardContent className="pt-6">
-            <div className="text-3xl font-bold text-cyan-400">{isMounted ? songCount : 0}</div>
-            <div className="text-white/60 text-sm">Songs Available</div>
+            <div className="text-3xl font-black text-[#00e5ff] retro-glow-cyan">{isMounted ? songCount : 0}</div>
+            <div className="text-[#b8b8d0] text-sm mt-1">Songs Available</div>
           </CardContent>
         </Card>
-        <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+        <Card className="retro-gradient-card retro-border-pink backdrop-blur-sm rounded-xl">
           <CardContent className="pt-6">
-            <div className="text-3xl font-bold text-purple-400">{isMounted ? profiles.length : 0}</div>
-            <div className="text-white/60 text-sm">Characters Created</div>
+            <div className="text-3xl font-black text-[#ff2d95] retro-glow-pink">{isMounted ? profiles.length : 0}</div>
+            <div className="text-[#b8b8d0] text-sm mt-1">Characters Created</div>
           </CardContent>
         </Card>
-        <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+        <Card className="retro-gradient-card backdrop-blur-sm rounded-xl" style={{ border: '2px solid rgba(191,90,242,0.4)' }}>
           <CardContent className="pt-6">
-            <div className="text-3xl font-bold text-pink-400">{PARTY_GAME_COUNT}</div>
-            <div className="text-white/60 text-sm">Party Games</div>
+            <div className="text-3xl font-black text-[#bf5af2] retro-glow-purple">{PARTY_GAME_COUNT}</div>
+            <div className="text-[#b8b8d0] text-sm mt-1">Party Games</div>
           </CardContent>
         </Card>
-        <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+        <Card className="retro-gradient-card retro-border-gold backdrop-blur-sm rounded-xl">
           <CardContent className="pt-6">
-            <div className="text-3xl font-bold text-yellow-400">{DIFFICULTY_LEVELS}</div>
-            <div className="text-white/60 text-sm">Difficulty Levels</div>
+            <div className="text-3xl font-black text-[#ffd60a] retro-glow-gold">{DIFFICULTY_LEVELS}</div>
+            <div className="text-[#b8b8d0] text-sm mt-1">Difficulty Levels</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Performance Stats */}
-      <Card className="bg-white/5 border-white/10 mb-8">
+      <Card className="retro-gradient-card retro-border-cyan mb-8 rounded-xl">
         <CardContent className="pt-6">
           {isMounted ? (
             <PerformanceDisplay />
@@ -119,39 +136,39 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
         </CardContent>
       </Card>
 
-      {/* Features */}
+      {/* ═══ FEATURES — Retro Neon Cards ═══ */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <Card className="bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border-cyan-500/30">
+        <Card className="bg-gradient-to-br from-[#00e5ff]/10 to-[#00ffff]/5 retro-border-cyan rounded-xl retro-box-glow-cyan">
           <CardHeader>
-            <CardTitle className="text-cyan-400 flex items-center gap-2">
+            <CardTitle className="text-[#00e5ff] flex items-center gap-2 font-bold">
               <MicIcon className="w-6 h-6" /> Real-Time Pitch Detection
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-white/70">
-              Advanced YIN algorithm detects your singing pitch in real-time with high accuracy. 
+            <p className="text-[#b8b8d0]/80">
+              Advanced YIN algorithm detects your singing pitch in real-time with high accuracy.
               See your voice visualized as you sing!
             </p>
           </CardContent>
         </Card>
-        
-        <Card className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-purple-500/30">
+
+        <Card className="bg-gradient-to-br from-[#bf5af2]/10 to-[#ff00ff]/5 rounded-xl retro-box-glow-purple" style={{ border: '2px solid rgba(191,90,242,0.4)' }}>
           <CardHeader>
-            <CardTitle className="text-purple-400 flex items-center gap-2">
+            <CardTitle className="text-[#bf5af2] flex items-center gap-2 font-bold">
               <PartyIcon className="w-6 h-6" /> Party Games
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-white/70">
-              Pass the Mic, Medley Contest, Missing Words, Duel Mode, and Blind Karaoke - 
+            <p className="text-[#b8b8d0]/80">
+              Pass the Mic, Medley Contest, Missing Words, Duel Mode, and Blind Karaoke -
               endless entertainment for your parties!
             </p>
           </CardContent>
         </Card>
-        
-        <Card className="bg-gradient-to-br from-orange-500/20 to-red-500/20 border-orange-500/30">
+
+        <Card className="bg-gradient-to-br from-[#ffd60a]/10 to-[#ffaa00]/5 retro-border-gold rounded-xl retro-box-glow-gold">
           <CardHeader>
-            <CardTitle className="text-orange-400 flex items-center gap-2">
+            <CardTitle className="text-[#ffd60a] flex items-center gap-2 font-bold">
               <PhoneIcon className="w-6 h-6" /> Mobile Companion
             </CardTitle>
           </CardHeader>
@@ -181,7 +198,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
 
       {/* Select Profile */}
       {isMounted && profiles.length > 0 && (
-        <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+        <Card className="retro-gradient-card retro-border-pink backdrop-blur-sm rounded-xl">
           <CardHeader>
             <CardTitle>Select Your Character</CardTitle>
           </CardHeader>
@@ -192,8 +209,8 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                   key={profile.id}
                   onClick={() => setActiveProfile(profile.id)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                    activeProfileId === profile.id 
-                      ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white' 
+                    activeProfileId === profile.id
+                      ? 'bg-gradient-to-r from-[#ff2d95] to-[#bf5af2] text-white retro-box-glow-pink'
                       : 'bg-white/10 hover:bg-white/20'
                   }`}
                 >
