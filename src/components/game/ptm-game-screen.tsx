@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { useTranslation } from '@/lib/i18n/translations';
 import { PLAYER_COLORS } from '@/types/game';
 import { NOTE_WINDOW, VISIBLE_TOP, VISIBLE_RANGE } from '@/lib/game/note-utils';
 import { GameBackground } from '@/components/game/game-background';
@@ -23,14 +24,15 @@ export type { PassTheMicPlayer, PassTheMicSegment, PassTheMicSettings } from '@/
 // ===================== MAIN COMPONENT =====================
 
 export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
+  const { t } = useTranslation();
   const g = usePtmGameLogic(props);
 
   // Guard: no song
   if (!g.effectiveSong) {
     return (
       <div className="max-w-4xl mx-auto text-center py-20">
-        <p className="text-white/60 mb-4">No song loaded</p>
-        <Button onClick={g.onEndGame}>Back</Button>
+        <p className="text-white/60 mb-4">{t('gameScreen.noSongLoaded')}</p>
+        <Button onClick={g.onEndGame}>{t('common.back')}</Button>
       </div>
     );
   }
@@ -230,7 +232,7 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
       <PtmTransitionOverlay
         visible={g.transitionVisible}
         nextPlayer={g.transitionNextPlayer}
-        segmentLabel={`Nächster Spieler`}
+        segmentLabel={t('passTheMic.nextPlayer')}
         onComplete={g.completeTransition}
         onSkip={g.completeTransition}
       />

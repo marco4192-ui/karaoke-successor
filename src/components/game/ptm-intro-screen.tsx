@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Song } from '@/types/game';
+import { useTranslation } from '@/lib/i18n/translations';
 import type { PtmPlayer, PassTheMicSettings } from '@/components/game/ptm-types';
 import type { PassTheMicRoundResult } from '@/lib/game/party-store';
 
@@ -34,6 +35,8 @@ export function PtmIntroScreen({
   videoRef,
   playersCount,
 }: PtmIntroScreenProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="max-w-6xl mx-auto">
       {/* Hidden audio/video elements — must be in DOM during intro so refs
@@ -62,15 +65,15 @@ export function PtmIntroScreen({
       )}
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <div className="text-5xl mb-6">🎤</div>
-        <h2 className="text-2xl font-bold mb-2">Pass the Mic</h2>
+        <h2 className="text-2xl font-bold mb-2">{t('passTheMic.playingTitle')}</h2>
         <p className="text-white/60 mb-8">
           {isMedleyMode
-            ? `🎵 Medley — ${medleySnippetCount} Songs`
+            ? t('passTheMic.medleyLabel').replace('{n}', String(medleySnippetCount))
             : `${audioSong?.title} — ${audioSong?.artist}`}
         </p>
 
         <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-xl max-w-md w-full mb-6 p-8 text-center">
-          <div className="text-sm text-white/60 mb-2">STARTSPIELER</div>
+          <div className="text-sm text-white/60 mb-2">{t('passTheMic.startPlayer')}</div>
           <div className="flex items-center justify-center gap-4 mb-4">
             {currentPlayer?.avatar ? (
               <img
@@ -89,15 +92,15 @@ export function PtmIntroScreen({
             <span className="text-3xl font-bold">{currentPlayer?.name}</span>
           </div>
           <div className="text-sm text-white/40">
-            {playersCount} Spieler
+            {playersCount} {t('passTheMic.players')}
             {isMedleyMode
-              ? ` - ${medleySnippetCount} Snippets`
-              : ` - ${safeSettings.segmentDuration}s Segmente`}
+              ? ` - ${t('passTheMic.snippets').replace('{n}', String(medleySnippetCount))}`
+              : ` - ${t('passTheMic.segments').replace('{n}', String(safeSettings.segmentDuration))}`}
             {safeSettings.sharedMicName && (
               <span> - 🎤 {safeSettings.sharedMicName}</span>
             )}
             {seriesHistory.length > 0 && (
-              <span> - Runde {seriesHistory.length + 1}</span>
+              <span> - {t('passTheMic.round').replace('{n}', String(seriesHistory.length + 1))}</span>
             )}
           </div>
         </div>
@@ -105,7 +108,7 @@ export function PtmIntroScreen({
         {!mediaLoaded && (
           <div className="mb-4 text-center">
             <div className="animate-spin inline-block w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full" />
-            <p className="text-white/40 text-sm mt-2">Lied wird geladen...</p>
+            <p className="text-white/40 text-sm mt-2">{t('passTheMic.loadingSong')}</p>
           </div>
         )}
         <Button
@@ -113,7 +116,7 @@ export function PtmIntroScreen({
           disabled={!mediaLoaded}
           className="px-12 py-4 text-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 disabled:opacity-50"
         >
-          🎤 Singen starten!
+          {t('passTheMic.startSinging')}
         </Button>
       </div>
     </div>

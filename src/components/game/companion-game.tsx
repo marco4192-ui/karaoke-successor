@@ -16,6 +16,7 @@ import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
 import { Song, LyricLine, EMPTY_PLAYER_SCORE } from '@/types/game';
 import { usePartyStore } from '@/lib/game/party-store';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
+import { useTranslation } from '@/lib/i18n/translations';
 import { calculateScoringMetadata } from '@/lib/game/scoring';
 import { findActiveNote, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';
 import type { CompanionPlayer, CompanionSingAlongSettings, GamePhase, CompanionRoundResult } from './companion-types';
@@ -34,6 +35,7 @@ interface CompanionGameViewProps {
 export function CompanionGameView({
   players: initialPlayers, song, settings, onEndGame,
 }: CompanionGameViewProps) {
+  const { t } = useTranslation();
   const safeSettings: CompanionSingAlongSettings = settings ?? DEFAULT_SETTINGS;
   const setIsSongPlaying = usePartyStore(s => s.setIsSongPlaying);
   const pauseDialogAction = usePartyStore(s => s.pauseDialogAction);
@@ -390,12 +392,12 @@ export function CompanionGameView({
       {phase === 'intro' && (
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <div className="text-5xl mb-6">📱</div>
-          <h2 className="text-2xl font-bold mb-2">Companion Sing-A-Long</h2>
+          <h2 className="text-2xl font-bold mb-2">{t('companion.playingTitle')}</h2>
           <p className="text-white/60 mb-8">{song.title} — {song.artist}</p>
 
           <Card className="bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 max-w-md w-full mb-6">
             <CardContent className="py-8 text-center">
-              <div className="text-sm text-white/60 mb-2">STARTING PLAYER</div>
+              <div className="text-sm text-white/60 mb-2">{t('companion.startingPlayer')}</div>
               <div className="flex items-center justify-center gap-4 mb-4">
                 {currentPlayer?.avatar ? (
                   <img src={currentPlayer.avatar} alt={currentPlayer.name}
@@ -409,20 +411,20 @@ export function CompanionGameView({
                 <span className="text-3xl font-bold">{currentPlayer?.name}</span>
               </div>
               <div className="text-sm text-white/40">
-                {playersSnapshot.length} players • 20–45s turns
+                {t('companion.playersAndTurns').replace('{n}', String(playersSnapshot.length))}
                 {companionSeriesHistory.length > 0 && (
-                  <span> • Round {companionSeriesHistory.length + 1}</span>
+                  <span> • {t('companion.round').replace('{n}', String(companionSeriesHistory.length + 1))}</span>
                 )}
               </div>
               <p className="text-xs text-white/30 mt-2">
-                All player changes are communicated via the Companion app only.
+                {t('companion.allChangesNote')}
               </p>
             </CardContent>
           </Card>
 
           <Button onClick={startGame}
             className="px-12 py-4 text-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400">
-            🎤 Start Singing!
+            {t('companion.startSinging')}
           </Button>
         </div>
       )}
@@ -431,7 +433,7 @@ export function CompanionGameView({
       {phase === 'countdown' && (
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <div className="text-8xl font-bold text-emerald-400 animate-pulse">{countdown}</div>
-          <p className="text-white/60 mt-4">Get ready...</p>
+          <p className="text-white/60 mt-4">{t('companion.getReady')}</p>
         </div>
       )}
 
@@ -447,7 +449,7 @@ export function CompanionGameView({
             <div className="flex items-center gap-3 pointer-events-auto">
               {phase === 'switching' && (
                 <Badge className="bg-yellow-500/20 text-yellow-400 animate-pulse">
-                  Switching... {switchCountdown}
+                  {t('companion.switching')} {switchCountdown}
                 </Badge>
               )}
               <FullscreenButton />
@@ -469,13 +471,13 @@ export function CompanionGameView({
                     </div>
                   )}
                   <div>
-                    <div className="text-sm text-white/60">NOW SINGING</div>
+                    <div className="text-sm text-white/60">{t('companion.nowSinging')}</div>
                     <div className="text-2xl font-bold">{currentPlayer?.name}</div>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-3xl font-bold text-emerald-400" style={{ textShadow: '0 0 12px rgba(52,211,153,0.4)' }}>{currentPlayer?.score.toLocaleString()}</div>
-                  <div className="text-xs text-white/40">points</div>
+                  <div className="text-xs text-white/40">{t('companion.points')}</div>
                   {currentPlayer?.combo > 0 && (
                     <div className="text-sm text-amber-400">🔥 {currentPlayer.combo}x combo</div>
                   )}
@@ -487,7 +489,7 @@ export function CompanionGameView({
           {/* Turn Timer */}
           <div className="mb-3">
             <div className="flex justify-between text-xs text-white/40 mb-1">
-              <span>Next switch in</span>
+              <span>{t('companion.nextSwitchIn')}</span>
               <span>{Math.ceil(turnSecondsLeft)}s</span>
             </div>
             <Progress value={turnProgress} className="h-3 bg-white/10" />
@@ -496,7 +498,7 @@ export function CompanionGameView({
           {/* Song Progress */}
           <div className="mb-3">
             <div className="flex justify-between text-xs text-white/40 mb-1">
-              <span>Song Progress</span>
+              <span>{t('companion.songProgress')}</span>
               <span>{Math.floor(currentTime / 60000)}:{Math.floor((currentTime % 60000) / 1000).toString().padStart(2, '0')} / {Math.floor(song.duration / 60000)}:{Math.floor((song.duration % 60000) / 1000).toString().padStart(2, '0')}</span>
             </div>
             <Progress value={progress} className="h-2 bg-white/10" />
@@ -531,7 +533,7 @@ export function CompanionGameView({
                       )}
                       <span className="font-medium">{player.name}</span>
                     </div>
-                    <div className="text-xs text-white/40 ml-8">{player.score.toLocaleString()} pts</div>
+                    <div className="text-xs text-white/40 ml-8">{player.score.toLocaleString()} {t('companion.pts')}</div>
                   </div>
                 ))}
               </div>
@@ -540,7 +542,7 @@ export function CompanionGameView({
 
           <Button onClick={() => { setIsPlaying(false); recordRound(); setPhase('song-results'); }}
             variant="outline" className="w-full mt-3 border-white/20 text-white/60 hover:text-white">
-            End Song Early
+            {t('companion.endSongEarly')}
           </Button>
         </>
       )}
@@ -553,7 +555,7 @@ export function CompanionGameView({
           <p className="text-white/60 mb-6">{song.artist}</p>
 
           <Card className="bg-white/5 border-white/10 w-full max-w-2xl mb-6">
-            <CardHeader><CardTitle className="text-center">Round Results</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-center">{t('companion.roundResults')}</CardTitle></CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {[...playersSnapshot]
@@ -574,13 +576,13 @@ export function CompanionGameView({
                         <div>
                           <div className="font-medium">{player.name}</div>
                           <div className="text-xs text-white/40">
-                            {player.notesHit} hits • {player.notesMissed} misses • {player.maxCombo}x max combo • {player.turnCount} turns
+                            {t('companion.statsLine').replace('{hits}', String(player.notesHit)).replace('{misses}', String(player.notesMissed)).replace('{combo}', String(player.maxCombo)).replace('{turns}', String(player.turnCount))}
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="text-xl font-bold text-emerald-400">{player.score.toLocaleString()}</div>
-                        <div className="text-xs text-white/40">points</div>
+                        <div className="text-xs text-white/40">{t('companion.points')}</div>
                       </div>
                     </div>
                   ))}
@@ -591,12 +593,12 @@ export function CompanionGameView({
           <div className="flex gap-3 w-full max-w-2xl">
             <Button onClick={handleContinue}
               className="flex-1 py-4 text-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400">
-              🎵 Next Song
+              {t('companion.nextSong')}
             </Button>
             <Button onClick={handleEndSeries}
               variant="outline"
               className="flex-1 py-4 text-lg border-white/20 text-white/60 hover:text-white">
-              🏆 End Series
+              {t('companion.endSeries')}
             </Button>
           </div>
         </div>
@@ -615,5 +617,4 @@ export function CompanionGameView({
     </div>
   );
 }
-
 

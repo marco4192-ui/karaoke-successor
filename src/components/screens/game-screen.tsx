@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { PLAYER_COLORS } from '@/types/game';
 import { SING_LINE_POSITION, NOTE_WINDOW, VISIBLE_TOP, VISIBLE_RANGE } from '@/lib/game/note-utils';
+import { useTranslation } from '@/lib/i18n/translations';
 import { WebcamBackground, WebcamQuickControls } from '@/components/game/webcam-background';
 import { ScoreEventsDisplay } from '@/components/game/score-events-display';
 import { PitchGraphDisplay } from '@/components/game/pitch-graph-display';
@@ -30,13 +31,14 @@ import { useGameScreenLogic } from '@/components/screens/game-screen-hook';
 
 // ===================== GAME SCREEN =====================
 function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
+  const { t } = useTranslation();
   const g = useGameScreenLogic(props);
 
   if (!g.song) {
     return (
       <div className="max-w-4xl mx-auto text-center py-20">
-        <p className="text-white/60 mb-4">No song selected</p>
-        <Button onClick={props.onBack} className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white">Back to Library</Button>
+        <p className="text-white/60 mb-4">{t('gameScreen.noSongSelected')}</p>
+        <Button onClick={props.onBack} className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white">{t('gameScreen.backToLibrary')}</Button>
       </div>
     );
   }
@@ -63,7 +65,7 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
             props.onBack();
           }
         }} className="text-white/80 hover:text-white hover:bg-white/10">
-          ⏸ Pause
+          {t('gameScreen.pause')}
         </Button>
 
         {/* Center: Webcam Controls — hidden in low-performance mode */}
@@ -75,7 +77,7 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
             />
           )}
           {g.isLowPerf && (
-            <span className="text-xs text-orange-400/80 font-medium px-2 py-1 bg-orange-500/10 rounded">⚡ Low-Perf</span>
+            <span className="text-xs text-orange-400/80 font-medium px-2 py-1 bg-orange-500/10 rounded">{t('gameScreen.lowPerf')}</span>
           )}
         </div>
 
@@ -169,13 +171,13 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
           onVideoCanPlay={() => { g.videoLoadedRef.current = true; }}
           onYoutubeError={(errorCode) => {
             const messages: Record<number, string> = {
-              100: 'YouTube-Video nicht gefunden (gelöscht oder privat)',
-              101: 'Dieses Video kann nicht eingebettet werden (Vevo/Einbettungssperre)',
-              150: 'Dieses Video kann nicht eingebettet werden (Einbettungssperre)',
-              2: 'Ungültiger YouTube-Parameter',
-              5: 'HTML5-Fehler beim YouTube-Player',
+              100: t('gameScreen.youtubeErrorDeleted'),
+              101: t('gameScreen.youtubeErrorEmbed'),
+              150: t('gameScreen.youtubeErrorVevo'),
+              2: t('gameScreen.youtubeErrorInvalid'),
+              5: t('gameScreen.youtubeErrorHtml5'),
             };
-            g.setYoutubeError(messages[errorCode] || `YouTube-Fehler (Code: ${errorCode})`);
+            g.setYoutubeError(messages[errorCode] || t('gameScreen.youtubeErrorCode').replace('{n}', String(errorCode)));
             // eslint-disable-next-line no-console
             console.error('[GameScreen] YouTube error:', errorCode);
           }}
@@ -234,8 +236,8 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
             gameMode={g.gameState.gameMode}
             missingWordsIndices={g.gameState.missingWordsIndices}
             isBlindSection={g.gameState.isBlindSection}
-            p1PlayerName={g.song?.duetPlayerNames?.[0] || g.gameState.players[0]?.name || 'Player 1'}
-            p2PlayerName={g.song?.duetPlayerNames?.[1] || g.gameState.players[1]?.name || 'Player 2'}
+            p1PlayerName={g.song?.duetPlayerNames?.[0] || g.gameState.players[0]?.name || t('prominentScore.player1')}
+            p2PlayerName={g.song?.duetPlayerNames?.[1] || g.gameState.players[1]?.name || t('prominentScore.player2')}
             noteDisplayStyle={g.noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
           />
         ) : (

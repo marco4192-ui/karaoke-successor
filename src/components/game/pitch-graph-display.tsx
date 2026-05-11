@@ -130,7 +130,7 @@ export function PitchGraphDisplay({
         ref={canvasRef}
         className="block"
       />
-      {/* Current pitch indicator */}
+      {/* Current pitch indicator — kept as technical display */}
       <div className="absolute bottom-1 right-2 text-xs text-white/60">
         {currentPitch !== null ? `Pitch: ${currentPitch.toFixed(1)}` : 'No pitch detected'}
       </div>

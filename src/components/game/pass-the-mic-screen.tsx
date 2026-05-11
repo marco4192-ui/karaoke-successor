@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlayerProfile, PLAYER_COLORS, Difficulty, EMPTY_PLAYER_SCORE } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
+import { useTranslation } from '@/lib/i18n/translations';
 import type { PassTheMicPlayer, PassTheMicSettings } from '@/components/game/ptm-types';
 import { DEFAULT_SETTINGS } from '@/components/game/ptm-types';
 
@@ -17,6 +18,7 @@ interface PassTheMicSetupProps {
 }
 
 export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTheMicSetupProps) {
+  const { t } = useTranslation();
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [settings, setSettings] = useState<PassTheMicSettings>(DEFAULT_SETTINGS);
   const [error, setError] = useState<string | null>(null);
@@ -28,14 +30,14 @@ export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTh
   const togglePlayer = (playerId: string) => {
     setSelectedPlayers(prev => {
       if (prev.includes(playerId)) return prev.filter(id => id !== playerId);
-      if (prev.length >= 8) { setError('Maximum 8 players allowed'); return prev; }
+      if (prev.length >= 8) { setError(t('passTheMic.errorMaxPlayers')); return prev; }
       setError(null);
       return [...prev, playerId];
     });
   };
 
   const handleSelectSong = () => {
-    if (selectedPlayers.length < 2) { setError('Minimum 2 players required'); return; }
+    if (selectedPlayers.length < 2) { setError(t('passTheMic.errorMinPlayers')); return; }
     setError(null);
     const players: PassTheMicPlayer[] = selectedPlayers.map((id, index) => {
       const profile = profiles.find(p => p.id === id);
@@ -52,20 +54,20 @@ export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTh
   return (
     <div className="max-w-5xl mx-auto">
       <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" onClick={onBack} className="text-white/60">← Back</Button>
+        <Button variant="ghost" onClick={onBack} className="text-white/60">{t('passTheMic.back')}</Button>
         <div>
-          <h1 className="text-3xl font-bold">🎤 Pass the Mic</h1>
-          <p className="text-white/60">Take turns singing parts of a song!</p>
+          <h1 className="text-3xl font-bold">{t('passTheMic.playingTitle')}</h1>
+          <p className="text-white/60">{t('passTheMic.subtitle')}</p>
         </div>
       </div>
       {error && <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4 mb-6 text-red-400">{error}</div>}
 
       <Card className="bg-white/5 border-white/10 mb-6">
-        <CardHeader><CardTitle>Game Settings</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t('passTheMic.gameSettings')}</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           {/* Segment Duration */}
           <div>
-            <label className="text-sm text-white/60 mb-2 block">Segment Duration</label>
+            <label className="text-sm text-white/60 mb-2 block">{t('passTheMic.segmentDuration')}</label>
             <div className="flex gap-2">
               {[15, 30, 45, 60].map(dur => (
                 <Button key={dur} variant={settings.segmentDuration === dur ? 'default' : 'outline'}
@@ -75,14 +77,14 @@ export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTh
                 </Button>
               ))}
             </div>
-            <p className="text-xs text-white/40 mt-1">How long each player sings before switching</p>
+            <p className="text-xs text-white/40 mt-1">{t('passTheMic.segmentDurationDesc')}</p>
           </div>
 
           {/* Random Switches */}
           <div className="flex items-center justify-between">
             <div>
-              <label className="font-medium">Random Switches</label>
-              <p className="text-sm text-white/60">Randomly switch players mid-song for surprise</p>
+              <label className="font-medium">{t('passTheMic.randomSwitches')}</label>
+              <p className="text-sm text-white/60">{t('passTheMic.randomSwitchesDesc')}</p>
             </div>
             <Button
               variant={settings.randomSwitches ? 'default' : 'outline'}
@@ -94,7 +96,7 @@ export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTh
 
           {/* Difficulty */}
           <div>
-            <label className="text-sm text-white/60 mb-2 block">Difficulty</label>
+            <label className="text-sm text-white/60 mb-2 block">{t('passTheMic.difficulty')}</label>
             <div className="flex gap-2">
               {(['easy', 'medium', 'hard'] as Difficulty[]).map(diff => (
                 <Button key={diff} variant={globalDifficulty === diff ? 'default' : 'outline'}
@@ -109,7 +111,7 @@ export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTh
       </Card>
 
       <Card className="bg-white/5 border-white/10 mb-6">
-        <CardHeader><CardTitle>Select Players ({selectedPlayers.length}/8)</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t('passTheMic.selectPlayers').replace('{n}', String(selectedPlayers.length))}</CardTitle></CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {activeProfiles.map(profile => {
@@ -134,7 +136,7 @@ export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTh
             })}
           </div>
           {activeProfiles.length < 2 && (
-            <p className="text-yellow-400 mt-4">⚠️ Need at least 2 active profiles.</p>
+            <p className="text-yellow-400 mt-4">{t('passTheMic.noActiveProfiles')}</p>
           )}
         </CardContent>
       </Card>
@@ -143,12 +145,12 @@ export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTh
         <CardContent className="py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-bold text-lg">Ready to Play!</h3>
-              <p className="text-sm text-white/60">{selectedPlayers.length} players</p>
+              <h3 className="font-bold text-lg">{t('passTheMic.readyToPlay')}</h3>
+              <p className="text-sm text-white/60">{selectedPlayers.length} {t('passTheMic.players')}</p>
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-cyan-400">{selectedPlayers.length}</div>
-              <div className="text-xs text-white/40">players</div>
+              <div className="text-xs text-white/40">{t('passTheMic.players')}</div>
             </div>
           </div>
         </CardContent>
@@ -156,7 +158,7 @@ export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTh
 
       <Button onClick={handleSelectSong} disabled={selectedPlayers.length < 2}
         className="w-full py-6 text-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400">
-        🎵 Select Song ({selectedPlayers.length} Players)
+        {t('passTheMic.selectSong').replace('{n}', String(selectedPlayers.length))}
       </Button>
     </div>
   );

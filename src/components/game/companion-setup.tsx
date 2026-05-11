@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlayerProfile, PLAYER_COLORS, Difficulty, EMPTY_PLAYER_SCORE } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
+import { useTranslation } from '@/lib/i18n/translations';
 import type { CompanionPlayer, CompanionSingAlongSettings } from './companion-types';
 import { DEFAULT_SETTINGS } from './companion-types';
 
@@ -23,6 +24,7 @@ export interface CompanionSingAlongSetupProps {
 }
 
 export function CompanionSingAlongSetupScreen({ profiles, onSelectSong, onBack }: CompanionSingAlongSetupProps) {
+  const { t } = useTranslation();
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,14 +39,14 @@ export function CompanionSingAlongSetupScreen({ profiles, onSelectSong, onBack }
   const togglePlayer = (playerId: string) => {
     setSelectedPlayers(prev => {
       if (prev.includes(playerId)) return prev.filter(id => id !== playerId);
-      if (prev.length >= 8) { setError('Maximum 8 players allowed'); return prev; }
+      if (prev.length >= 8) { setError(t('companion.errorMaxPlayers')); return prev; }
       setError(null);
       return [...prev, playerId];
     });
   };
 
   const handleSelectSong = () => {
-    if (selectedPlayers.length < 2) { setError('Minimum 2 players required'); return; }
+    if (selectedPlayers.length < 2) { setError(t('companion.errorMinPlayers')); return; }
     setError(null);
 
     const _players: CompanionPlayer[] = selectedPlayers.map((id, index) => {
@@ -62,22 +64,22 @@ export function CompanionSingAlongSetupScreen({ profiles, onSelectSong, onBack }
   return (
     <div className="max-w-5xl mx-auto">
       <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" onClick={onBack} className="text-white/60">← Back</Button>
+        <Button variant="ghost" onClick={onBack} className="text-white/60">{t('companion.back')}</Button>
         <div>
-          <h1 className="text-3xl font-bold">📱 Companion Sing-A-Long</h1>
-          <p className="text-white/60">Your phone randomly lights up — that&apos;s your cue to sing!</p>
+          <h1 className="text-3xl font-bold">{t('companion.title')}</h1>
+          <p className="text-white/60">{t('companion.subtitle')}</p>
         </div>
       </div>
 
       <Card className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 mb-6">
         <CardContent className="py-4">
-          <h3 className="font-bold text-lg mb-2 text-emerald-400">🎮 How it works</h3>
+          <h3 className="font-bold text-lg mb-2 text-emerald-400">{t('companion.howItWorks')}</h3>
           <ul className="text-sm text-white/70 space-y-2">
-            <li>📱 Everyone keeps their phone nearby</li>
-            <li>⚡ When your phone screen flashes, it&apos;s YOUR turn to sing!</li>
-            <li>🎤 No one knows who&apos;s next until the blink</li>
-            <li>⏱️ Singers rotate every 20–45 seconds (randomized)</li>
-            <li>🏆 Score points while you sing — all players get equal time!</li>
+            <li>{t('companion.howItWorks1')}</li>
+            <li>{t('companion.howItWorks2')}</li>
+            <li>{t('companion.howItWorks3')}</li>
+            <li>{t('companion.howItWorks4')}</li>
+            <li>{t('companion.howItWorks5')}</li>
           </ul>
         </CardContent>
       </Card>
@@ -87,10 +89,10 @@ export function CompanionSingAlongSetupScreen({ profiles, onSelectSong, onBack }
       )}
 
       <Card className="bg-white/5 border-white/10 mb-6">
-        <CardHeader><CardTitle>Game Settings</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t('companion.gameSettings')}</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="text-sm text-white/60 mb-2 block">Difficulty</label>
+            <label className="text-sm text-white/60 mb-2 block">{t('companion.difficulty')}</label>
             <div className="flex gap-2">
               {(['easy', 'medium', 'hard'] as Difficulty[]).map(diff => (
                 <Button key={diff} variant={globalDifficulty === diff ? 'default' : 'outline'}
@@ -105,7 +107,7 @@ export function CompanionSingAlongSetupScreen({ profiles, onSelectSong, onBack }
       </Card>
 
       <Card className="bg-white/5 border-white/10 mb-6">
-        <CardHeader><CardTitle>Select Players ({selectedPlayers.length}/8)</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t('companion.selectPlayers').replace('{n}', String(selectedPlayers.length))}</CardTitle></CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {activeProfiles.map(profile => {
@@ -130,7 +132,7 @@ export function CompanionSingAlongSetupScreen({ profiles, onSelectSong, onBack }
             })}
           </div>
           {activeProfiles.length < 2 && (
-            <p className="text-yellow-400 mt-4">⚠️ Need at least 2 active profiles.</p>
+            <p className="text-yellow-400 mt-4">{t('companion.noActiveProfiles')}</p>
           )}
         </CardContent>
       </Card>
@@ -139,13 +141,13 @@ export function CompanionSingAlongSetupScreen({ profiles, onSelectSong, onBack }
         <CardContent className="py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-bold text-lg">Ready to Play!</h3>
-              <p className="text-sm text-white/60">{selectedPlayers.length} players</p>
-              <p className="text-xs text-white/40 mt-1">Turn duration: 20–45s (random) • Flash + 3s countdown</p>
+              <h3 className="font-bold text-lg">{t('companion.readyToPlay')}</h3>
+              <p className="text-sm text-white/60">{selectedPlayers.length} {t('companion.playersSelected')}</p>
+              <p className="text-xs text-white/40 mt-1">{t('companion.turnDuration')}</p>
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-emerald-400">{selectedPlayers.length}</div>
-              <div className="text-xs text-white/40">players</div>
+              <div className="text-xs text-white/40">{t('companion.playersSelected')}</div>
             </div>
           </div>
         </CardContent>
@@ -153,7 +155,7 @@ export function CompanionSingAlongSetupScreen({ profiles, onSelectSong, onBack }
 
       <Button onClick={handleSelectSong} disabled={selectedPlayers.length < 2}
         className="w-full py-6 text-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400">
-        🎵 Select Song ({selectedPlayers.length} Players)
+        {t('companion.selectSong').replace('{n}', String(selectedPlayers.length))}
       </Button>
     </div>
   );

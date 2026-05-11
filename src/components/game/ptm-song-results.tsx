@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from '@/lib/i18n/translations';
 import type { PassTheMicRoundResult } from '@/lib/game/party-store';
 
 // ===================== TYPES =====================
@@ -59,6 +60,7 @@ export function PtmSongResults({
   onNextSong,
   onEndSeries,
 }: PtmSongResultsProps) {
+  const { t } = useTranslation();
   const sorted = useMemo(
     () => [...playerScores].sort((a, b) => b.score - a.score),
     [playerScores]
@@ -88,14 +90,14 @@ export function PtmSongResults({
         <h2 className="text-2xl font-bold">{songTitle}</h2>
         <p className="text-white/60">{songArtist}</p>
         <Badge className="mt-2 bg-cyan-500/20 text-cyan-400">
-          Runde {roundNumber}
+          {t('passTheMic.round').replace('{n}', String(roundNumber))}
         </Badge>
       </div>
 
       {/* Current Round Ranking */}
       <div className="bg-white/5 border border-white/10 rounded-xl mb-6">
         <div className="px-4 py-3 border-b border-white/10 bg-zinc-900 z-10 rounded-t-xl">
-          <h3 className="font-bold text-center text-white/80">Runden-Ergebnis</h3>
+          <h3 className="font-bold text-center text-white/80">{t('passTheMic.roundResult')}</h3>
         </div>
         <div className="divide-y divide-white/5 max-h-[60vh] overflow-y-auto rounded-b-xl">
           {sorted.map((player, rank) => {
@@ -141,7 +143,7 @@ export function PtmSongResults({
                   <div>
                     <div className="font-medium">{player.name}</div>
                     <div className="text-xs text-white/40">
-                      {player.notesHit} Treffer - {player.notesMissed} Fehler - {player.maxCombo}x Max Combo
+                      {t('passTheMic.hitsMissesCombo').replace('{hits}', String(player.notesHit)).replace('{misses}', String(player.notesMissed)).replace('{combo}', String(player.maxCombo))}
                     </div>
                   </div>
                 </div>
@@ -150,7 +152,7 @@ export function PtmSongResults({
                     {player.score.toLocaleString()}
                   </div>
                   <div className="text-xs text-white/40">
-                    Gesamt: {cumScore.toLocaleString()}
+                    {t('passTheMic.cumulative').replace('{n}', cumScore.toLocaleString())}
                   </div>
                 </div>
               </div>
@@ -163,7 +165,7 @@ export function PtmSongResults({
       {seriesHistory.length > 0 && (
         <div className="bg-white/5 border border-white/10 rounded-xl mb-6">
           <div className="px-4 py-3 border-b border-white/10">
-            <h3 className="font-bold text-center text-white/80">Gesamtwertung</h3>
+            <h3 className="font-bold text-center text-white/80">{t('passTheMic.overallScore')}</h3>
           </div>
           <div className="px-4 py-3 max-h-[50vh] overflow-y-auto">
             <PtmCumulativeTable
@@ -186,14 +188,14 @@ export function PtmSongResults({
           onClick={onNextSong}
           className="flex-1 py-4 text-lg bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400"
         >
-          🎵 Nächstes Lied
+          {t('passTheMic.nextSong')}
         </Button>
         <Button
           onClick={onEndSeries}
           variant="outline"
           className="flex-1 py-4 text-lg border-white/20 text-white/60 hover:text-white"
         >
-          🏆 Serie beenden
+          {t('passTheMic.endSeries')}
         </Button>
       </div>
     </div>
@@ -208,6 +210,7 @@ export function PtmSeriesResults({
   onContinue,
   onBackToSetup,
 }: PtmSeriesResultsProps) {
+  const { t } = useTranslation();
   const [confettiParticles, setConfettiParticles] = useState<Array<{
     id: number; x: number; y: number; color: string; size: number; speed: number; rotation: number;
   }>>([]);
@@ -325,7 +328,7 @@ export function PtmSeriesResults({
             👑
           </div>
           <h2 className="text-4xl font-black text-amber-400 mb-2" style={{ textShadow: '0 0 30px rgba(251,191,36,0.5)' }}>
-            Series Champion!
+            {t('passTheMic.seriesChampion')}
           </h2>
           <div className="mt-6 mb-4">
             {winner[1].avatar ? (
@@ -345,10 +348,10 @@ export function PtmSeriesResults({
           </div>
           <div className="text-3xl font-bold text-white">{winner[1].name}</div>
           <div className="text-2xl font-bold text-amber-400 mt-1">
-            {winner[1].totalScore.toLocaleString()} Punkte
+            {t('passTheMic.pointsLabel').replace('{n}', winner[1].totalScore.toLocaleString())}
           </div>
           <div className="text-sm text-white/40 mt-1">
-            {seriesHistory.length} Runde{seriesHistory.length !== 1 ? 'n' : ''} gespielt
+            {t('passTheMic.roundsPlayed').replace('{n}', String(seriesHistory.length))}
           </div>
         </div>
       )}
@@ -356,7 +359,7 @@ export function PtmSeriesResults({
       {/* Final Standings */}
       <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
         <div className="px-4 py-3 border-b border-white/10 sticky top-0 bg-zinc-900 z-10">
-          <h3 className="font-bold text-center text-white/80">Endstand</h3>
+          <h3 className="font-bold text-center text-white/80">{t('passTheMic.finalScore')}</h3>
         </div>
         <div className="divide-y divide-white/5 max-h-[40vh] overflow-y-auto">
           {sortedPlayers.map(([id, data], rank) => (
@@ -397,13 +400,13 @@ export function PtmSeriesResults({
                 <div>
                   <div className="font-medium">{data.name}</div>
                   <div className="text-xs text-white/40">
-                    {data.totalHits} Treffer - {data.totalMisses} Fehler - {data.bestCombo}x Best Combo - {data.roundsPlayed} Runden
+                    {t('passTheMic.hitsMissesComboRounds').replace('{hits}', String(data.totalHits)).replace('{misses}', String(data.totalMisses)).replace('{combo}', String(data.bestCombo)).replace('{rounds}', String(data.roundsPlayed))}
                   </div>
                 </div>
               </div>
               <div className="text-right shrink-0">
                 <div className="text-xl font-bold text-cyan-400">{data.totalScore.toLocaleString()}</div>
-                <div className="text-xs text-white/40">Gesamt</div>
+                <div className="text-xs text-white/40">{t('passTheMic.total')}</div>
               </div>
             </div>
           ))}
@@ -414,7 +417,7 @@ export function PtmSeriesResults({
       {seriesHistory.length > 1 && (
         <div className="bg-white/5 border border-white/10 rounded-xl mt-6 overflow-hidden shrink-0">
           <div className="px-4 py-3 border-b border-white/10">
-            <h3 className="font-bold text-center text-white/80">Rundenverlauf</h3>
+            <h3 className="font-bold text-center text-white/80">{t('passTheMic.roundHistory')}</h3>
           </div>
           <div className="divide-y divide-white/5 max-h-[20vh] overflow-y-auto">
             {seriesHistory.map((round, i) => {
@@ -425,7 +428,7 @@ export function PtmSeriesResults({
               return (
                 <div key={i} className="flex items-center justify-between px-4 py-2 text-sm">
                   <div>
-                    <span className="text-white/40">Runde {i + 1}:</span>{' '}
+                    <span className="text-white/40">{t('passTheMic.roundLabel').replace('{n}', String(i + 1))}</span>{' '}
                     <span className="font-medium">{round.songTitle}</span>
                   </div>
                   <div className="text-amber-400 font-medium">
@@ -444,14 +447,14 @@ export function PtmSeriesResults({
           onClick={onContinue}
           className="flex-1 py-4 text-lg bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400"
         >
-          🔄 Weiter mit gleichen Spielern
+          {t('passTheMic.continueSamePlayers')}
         </Button>
         <Button
           onClick={onBackToSetup}
           variant="outline"
           className="flex-1 py-4 text-lg border-white/20 text-white/60 hover:text-white"
         >
-          ← Zurück zum Setup
+          {t('passTheMic.backToSetup')}
         </Button>
       </div>
     </div>
