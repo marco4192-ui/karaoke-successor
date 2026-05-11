@@ -1,11 +1,13 @@
 'use client';
 
 import { LyricLine } from '@/types/game';
+import { useTranslation } from '@/lib/i18n/translations';
 
 export function LyricsDisplay({ lyrics, currentTime }: { lyrics: LyricLine[]; currentTime: number }) {
+  const { t } = useTranslation();
   // Empty lyrics guard
   if (!lyrics || lyrics.length === 0) {
-    return <div className="text-center text-white/30">No lyrics</div>;
+    return <div className="text-center text-white/30">{t('battleRoyale.noLyrics')}</div>;
   }
 
   // Find current line — the one that is currently playing

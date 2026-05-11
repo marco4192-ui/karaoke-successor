@@ -15,6 +15,7 @@ import { getDefaultSettings, generateTeamMatchups, teamSnippetCount } from './me
 import { generateMedleySnippets, getAvailableGenres, getAvailableLanguages } from './medley-snippet-generator';
 import type { Language } from '@/lib/i18n/translations';
 import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== PROPS =====================
 
@@ -32,6 +33,7 @@ interface MedleySetupProps {
 // ===================== COMPONENT =====================
 
 export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps) {
+  const { t } = useTranslation();
   const allSongs = useMemo(() => getNonDuetSongs(), []);
   const activeProfiles = useMemo(() => profiles.filter(p => p.isActive !== false), [profiles]);
 
@@ -93,7 +95,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
         return prev.filter(x => x !== id);
       }
       if (prev.length >= maxPlayers) {
-        setError(`Maximal ${maxPlayers} Spieler erlaubt`);
+        setError(t('medley.errorMaxPlayers').replace('{n}', String(maxPlayers)));
         return prev;
       }
       setError(null);
@@ -119,12 +121,12 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
   // ── Start Game ──
   const handleStart = useCallback(() => {
     if (playMode === 'ffa' && selectedProfileIds.length < 2) {
-      setError('FFA benötigt mindestens 2 Spieler');
+      setError(t('medley.errorMinPlayers'));
       return;
     }
     if (playMode === 'team') {
       if (teamAIds.length !== teamSize || teamBIds.length !== teamSize) {
-        setError(`Jedes Team benötigt genau ${teamSize} Spieler`);
+        setError(t('medley.errorMinPlayers'));
         return;
       }
     }
@@ -166,7 +168,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
     );
 
     if (songs.length === 0) {
-      setError('Keine passenden Songs gefunden. Prüfe Filter oder Songbibliothek.');
+      setError(t('medley.errorNoSongs'));
       return;
     }
 
@@ -194,22 +196,22 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
     <div className="max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" onClick={onBack} className="text-white/60">← Back</Button>
+        <Button variant="ghost" onClick={onBack} className="text-white/60">{t('medley.back')}</Button>
         <div>
-          <h1 className="text-3xl font-bold">🎵 Medley Contest</h1>
-          <p className="text-white/60">Random Song-Snippets — singe gegeneinander!</p>
+          <h1 className="text-3xl font-bold">{t('medley.setupTitle')}</h1>
+          <p className="text-white/60">{t('medley.setupSubtitle')}</p>
         </div>
       </div>
 
       {/* How it works */}
       <Card className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 mb-6">
         <CardContent className="py-4">
-          <h3 className="font-bold text-lg mb-2 text-purple-400">🎮 So funktioniert&apos;s</h3>
+          <h3 className="font-bold text-lg mb-2 text-purple-400">{t('medley.howItWorks')}</h3>
           <ul className="text-sm text-white/70 space-y-1">
-            <li>🎵 Zufällige Song-Snippets werden nacheinander gespielt</li>
-            <li>⏱️ Jeder Snippet ist {settings.snippetDuration} Sekunden lang</li>
-            <li>🏆 Punkte werden über alle Snippets aufsummiert</li>
-            <li>🔄 Keine Song-Vorschau — es bleibt überraschend!</li>
+            <li>{t('medley.howItWorks1')}</li>
+            <li>{t('medley.howItWorks2')}</li>
+            <li>{t('medley.howItWorks3')}</li>
+            <li>{t('medley.howItWorks4')}</li>
           </ul>
         </CardContent>
       </Card>
@@ -220,7 +222,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
 
       {/* Play Mode Selection */}
       <Card className="bg-white/5 border-white/10 mb-6">
-        <CardHeader><CardTitle>Spielmodus</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t('medley.gameMode')}</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-3">
             <Button
@@ -231,8 +233,8 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
                 : 'border-white/20 text-white w-full'}
             >
               <div className="text-center w-full">
-                <div className="text-lg">🎮 Jeder gegen Jeden</div>
-                <div className="text-xs opacity-70">Bis zu 4 Spieler gleichzeitig</div>
+                <div className="text-lg">{t('medley.ffa')}</div>
+                <div className="text-xs opacity-70">{t('medley.ffaDesc')}</div>
               </div>
             </Button>
             <Button
@@ -243,8 +245,8 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
                 : 'border-white/20 text-white w-full'}
             >
               <div className="text-center w-full">
-                <div className="text-lg">⚔️ Team-Modus</div>
-                <div className="text-xs opacity-70">1v1 oder 2v2 — Relay-Style</div>
+                <div className="text-lg">{t('medley.teamMode')}</div>
+                <div className="text-xs opacity-70">{t('medley.teamModeDesc')}</div>
               </div>
             </Button>
           </div>
@@ -271,11 +273,11 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
 
       {/* Song Filters */}
       <Card className="bg-white/5 border-white/10 mb-6">
-        <CardHeader><CardTitle>Song-Filter</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t('medley.songFilter')}</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-white/40 text-sm">🎸 Genre:</span>
+              <span className="text-white/40 text-sm">{t('medley.genre')}</span>
               <select
                 value={filterGenre}
                 onChange={(e) => setFilterGenre(e.target.value)}
@@ -284,13 +286,13 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
               >
                 {availableGenres.map(g => (
                   <option key={g} value={g} className="bg-gray-800 text-white">
-                    {g === 'all' ? 'Alle Genres' : g}
+                    {g === 'all' ? t('medley.allGenres') : g}
                   </option>
                 ))}
               </select>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-white/40 text-sm">🌍 Sprache:</span>
+              <span className="text-white/40 text-sm">{t('medley.language')}</span>
               <select
                 value={filterLanguage}
                 onChange={(e) => setFilterLanguage(e.target.value)}
@@ -299,7 +301,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
               >
                 {availableLanguages.map(l => (
                   <option key={l} value={l} className="bg-gray-800 text-white">
-                    {l === 'all' ? 'Alle Sprachen' : (LANGUAGE_NAMES[l as Language] || l)}
+                    {l === 'all' ? t('medley.allLanguages') : (LANGUAGE_NAMES[l as Language] || l)}
                   </option>
                 ))}
               </select>
@@ -308,19 +310,19 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
 
           {/* Snippet Duration */}
           <div>
-            <label className="text-sm text-white/60 mb-2 block">Snippet-Dauer: {settings.snippetDuration}s</label>
+            <label className="text-sm text-white/60 mb-2 block">{t('medley.snippetDuration').replace('{n}', String(settings.snippetDuration))}</label>
             <input type="range" min={15} max={60} step={5} value={settings.snippetDuration}
               onChange={(e) => setSettings(prev => ({ ...prev, snippetDuration: Number(e.target.value) }))}
               className="w-full" />
             <div className="flex justify-between text-xs text-white/40 mt-1">
-              <span>15s (Schnell)</span><span>60s (Lang)</span>
+              <span>{t('medley.snippetDurationShort')}</span><span>{t('medley.snippetDurationLong')}</span>
             </div>
           </div>
 
           {/* FFA: snippet count */}
           {playMode === 'ffa' && (
             <div>
-              <label className="text-sm text-white/60 mb-2 block">Anzahl Snippets: {settings.snippetCount}</label>
+              <label className="text-sm text-white/60 mb-2 block">{t('medley.snippetCount').replace('{n}', String(settings.snippetCount))}</label>
               <input type="range" min={3} max={10} step={1} value={settings.snippetCount}
                 onChange={(e) => setSettings(prev => ({ ...prev, snippetCount: Number(e.target.value) }))}
                 className="w-full" />
@@ -332,7 +334,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
 
           {/* Difficulty */}
           <div>
-            <label className="text-sm text-white/60 mb-2 block">Schwierigkeit</label>
+            <label className="text-sm text-white/60 mb-2 block">{t('medley.difficulty')}</label>
             <div className="flex gap-2">
               {(['easy', 'medium', 'hard'] as Difficulty[]).map(diff => (
                 <Button key={diff} variant={globalDifficulty === diff ? 'default' : 'outline'}
@@ -349,11 +351,11 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
       {/* Player Selection */}
       <Card className="bg-white/5 border-white/10 mb-6">
         <CardHeader>
-          <CardTitle>Spieler ({selectedProfileIds.length}/{maxPlayers})</CardTitle>
+          <CardTitle>{t('medley.players').replace('{n}', String(selectedProfileIds.length)).replace('{m}', String(maxPlayers))}</CardTitle>
         </CardHeader>
         <CardContent>
           {activeProfiles.length < 1 && (
-            <p className="text-yellow-400 mb-4">⚠️ Keine aktiven Profile. Erstelle Profile unter Characters.</p>
+            <p className="text-yellow-400 mb-4">{t('medley.noActiveProfiles')}</p>
           )}
 
           {/* Team mode: two columns */}
@@ -362,7 +364,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
               {/* Team A */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <Badge className="bg-blue-500/30 text-blue-300">Team A ({teamAIds.length}/{teamSize})</Badge>
+                  <Badge className="bg-blue-500/30 text-blue-300">{t('medley.teamA')} ({teamAIds.length}/{teamSize})</Badge>
                 </div>
                 <div className="space-y-2">
                   {activeProfiles.map(profile => {
@@ -381,8 +383,8 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
                           {profile.name.charAt(0).toUpperCase()}
                         </div>
                         <span className="font-medium truncate text-sm">{profile.name}</span>
-                        {isInTeamA && <span className="ml-auto text-blue-400 text-xs">Team A</span>}
-                        {!isInTeamA && isSelected && <span className="ml-auto text-red-400 text-xs">Team B</span>}
+                        {isInTeamA && <span className="ml-auto text-blue-400 text-xs">{t('medley.teamA')}</span>}
+                        {!isInTeamA && isSelected && <span className="ml-auto text-red-400 text-xs">{t('medley.teamB')}</span>}
                       </div>
                     );
                   })}
@@ -391,7 +393,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
               {/* Team B */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <Badge className="bg-red-500/30 text-red-300">Team B ({teamBIds.length}/{teamSize})</Badge>
+                  <Badge className="bg-red-500/30 text-red-300">{t('medley.teamB')} ({teamBIds.length}/{teamSize})</Badge>
                 </div>
                 <div className="space-y-2">
                   {activeProfiles.map(profile => {
@@ -414,7 +416,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
                           {profile.name.charAt(0).toUpperCase()}
                         </div>
                         <span className="font-medium truncate text-sm">{profile.name}</span>
-                        {isInTeamB && <span className="ml-auto text-red-400 text-xs">Team B</span>}
+                        {isInTeamB && <span className="ml-auto text-red-400 text-xs">{t('medley.teamB')}</span>}
                       </div>
                     );
                   })}
@@ -457,7 +459,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
         <CardContent className="py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-bold text-lg">Übersicht</h3>
+              <h3 className="font-bold text-lg">{t('medley.overview')}</h3>
               <p className="text-sm text-white/60">
                 {playMode === 'ffa' ? 'FFA' : `${teamSize} vs ${teamSize}`}
                 {' '}· {snippetCount} Snippets · {settings.snippetDuration}s pro Snippet
@@ -467,7 +469,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
               <div className="text-2xl font-bold text-purple-400">
                 {Math.ceil(snippetCount * settings.snippetDuration / 60)} Min.
               </div>
-              <div className="text-xs text-white/40">ca. Gesamtdauer</div>
+              <div className="text-xs text-white/40">{t('medley.approxTotalDuration')}</div>
             </div>
           </div>
         </CardContent>
@@ -481,7 +483,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
           (playMode === 'team' && (teamAIds.length !== teamSize || teamBIds.length !== teamSize))
         }
         className="w-full py-6 text-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400">
-        🎵 Start Medley ({selectedProfileIds.length} Spieler)
+        {t('medley.startMedley').replace('{n}', String(selectedProfileIds.length))}
       </Button>
     </div>
   );

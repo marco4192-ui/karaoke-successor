@@ -8,6 +8,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import type { MedleyPlayer, MedleySettings, MedleyRoundResult } from './medley-types';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== ROUND RESULTS =====================
 
@@ -25,6 +26,7 @@ export function MedleyRoundResults({
   players, settings, seriesHistory: _seriesHistory, roundNumber,
   onNextRound, onEndSeries, onRecordAndEnd,
 }: MedleyRoundResultsProps) {
+  const { t } = useTranslation();
   const isTeam = settings.playMode === 'team';
   const sorted = [...players].sort((a, b) => b.score - a.score);
   const winner = sorted[0];
@@ -44,18 +46,18 @@ export function MedleyRoundResults({
     <div className="max-w-2xl mx-auto">
       <div className="text-center mb-6">
         <div className="text-4xl mb-2">🎵</div>
-        <h2 className="text-2xl font-bold">Runde {roundNumber} abgeschlossen!</h2>
+        <h2 className="text-2xl font-bold">{t('medley.roundComplete').replace('{n}', String(roundNumber))}</h2>
       </div>
 
       {/* Team comparison */}
       {isTeam && (
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 text-center">
-            <div className="text-sm text-blue-300 mb-1">Team A</div>
+            <div className="text-sm text-blue-300 mb-1">{t('medley.teamA')}</div>
             <div className="text-2xl font-bold text-blue-400">{teamAScore}</div>
           </div>
           <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-center">
-            <div className="text-sm text-red-300 mb-1">Team B</div>
+            <div className="text-sm text-red-300 mb-1">{t('medley.teamB')}</div>
             <div className="text-2xl font-bold text-red-400">{teamBScore}</div>
           </div>
         </div>
@@ -70,7 +72,7 @@ export function MedleyRoundResults({
 
       {winner && (
         <div className="text-center mb-6 text-lg">
-          🏆 <span className="font-bold" style={{ color: winner.color }}>{winner.name}</span> führt!
+          🏆 <span className="font-bold" style={{ color: winner.color }}>{winner.name}</span> {t('medley.leads')}
         </div>
       )}
 
@@ -78,11 +80,11 @@ export function MedleyRoundResults({
       <div className="flex gap-3">
         <Button onClick={() => { handleRecorded(); onNextRound(); }}
           className="flex-1 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400">
-          🎵 Nächste Runde
+          {t('medley.nextRound')}
         </Button>
         <Button onClick={() => { handleRecorded(); onEndSeries(); }}
           variant="outline" className="flex-1 py-3 border-white/20 text-white/60 hover:text-white">
-          🏆 Endauswertung
+          🏆 {t('medley.finalResults')}
         </Button>
       </div>
     </div>
@@ -101,9 +103,8 @@ export interface MedleyFinalResultsProps {
 export function MedleyFinalResults({
   players, settings, seriesHistory, onBack,
 }: MedleyFinalResultsProps) {
+  const { t } = useTranslation();
   const isTeam = settings.playMode === 'team';
-
-  // Aggregate across all rounds (series history + current round)
   const [cumulative, setCumulative] = useState<Record<string, CumulativePlayerScore>>({});
   useEffect(() => {
     const agg: Record<string, CumulativePlayerScore> = {};
@@ -134,19 +135,19 @@ export function MedleyFinalResults({
     <div className="max-w-2xl mx-auto">
       <div className="text-center mb-6">
         <div className="text-6xl mb-2">🏆</div>
-        <h2 className="text-3xl font-bold">{isTeam ? 'Team-Sieger!' : 'Medley Champion!'}</h2>
-        <p className="text-white/60">{seriesHistory.length + 1} Runde{nrc_round(seriesHistory.length)}</p>
+        <h2 className="text-3xl font-bold">{isTeam ? t('medley.teamWinner') : t('medley.medleyChampion')}</h2>
+        <p className="text-white/60">{seriesHistory.length + 1} {t('medley.roundOf').replace('{n}', String(seriesHistory.length + 1))}</p>
       </div>
 
       {/* Team total */}
       {isTeam && (
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div className={`rounded-lg p-4 text-center ${teamATotal >= teamBTotal ? 'bg-blue-500/20 border-2 border-blue-500' : 'bg-blue-500/10 border border-blue-500/30'}`}>
-            <div className="text-sm text-blue-300 mb-1">Team A</div>
+            <div className="text-sm text-blue-300 mb-1">{t('medley.teamA')}</div>
             <div className="text-3xl font-bold text-blue-400">{teamATotal}</div>
           </div>
           <div className={`rounded-lg p-4 text-center ${teamBTotal > teamATotal ? 'bg-red-500/20 border-2 border-red-500' : 'bg-red-500/10 border border-red-500/30'}`}>
-            <div className="text-sm text-red-300 mb-1">Team B</div>
+            <div className="text-sm text-red-300 mb-1">{t('medley.teamB')}</div>
             <div className="text-3xl font-bold text-red-400">{teamBTotal}</div>
           </div>
         </div>
@@ -168,7 +169,7 @@ export function MedleyFinalResults({
                 <div className="text-2xl font-bold" style={{ color: w.color }}>{w.name}</div>
                 <div className="text-2xl font-bold text-amber-400 mt-1">{w.totalScore.toLocaleString()} pts</div>
                 <div className="text-sm text-white/40 mt-1">
-                  {w.roundsPlayed} Runde{nrc_round(w.roundsPlayed)} · {w.bestCombo}x Best Combo
+                  {w.roundsPlayed} {t('medley.roundOf').replace('{n}', String(w.roundsPlayed))} · {w.bestCombo}x {t('medley.bestComboOf')}
                 </div>
               </>
             );
@@ -195,7 +196,7 @@ export function MedleyFinalResults({
               <div>
                 <div className="font-medium text-sm">{data.name}</div>
                 <div className="text-xs text-white/40">
-                  {data.totalHits} Hits · {data.totalMisses} Miss · {data.bestCombo}x Best Combo
+                  {data.totalHits} {t('medley.hitsOf').replace('{n}', String(data.totalHits))} · {data.totalMisses} {t('medley.missOf').replace('{n}', String(data.totalMisses))} · {data.bestCombo}x {t('medley.bestComboOf')}
                 </div>
               </div>
             </div>
@@ -206,7 +207,7 @@ export function MedleyFinalResults({
 
       <Button onClick={onBack}
         className="w-full py-4 text-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400">
-        🏠 Zurück
+        {t('medley.backToMenu')}
       </Button>
     </div>
   );

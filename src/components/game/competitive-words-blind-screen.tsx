@@ -15,6 +15,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { PlayerProfile, Song, PLAYER_COLORS, Difficulty } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
+import { useTranslation } from '@/lib/i18n/translations';
 import {
   CompetitiveGame,
   CompetitiveModeType,
@@ -36,6 +37,7 @@ interface CompetitiveSetupScreenProps {
 }
 
 export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame, onBack }: CompetitiveSetupScreenProps) {
+  const { t } = useTranslation();
   const activeProfiles = useMemo(() => profiles.filter(p => p.isActive !== false), [profiles]);
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [bestOf, setBestOf] = useState<1 | 3 | 5 | 7>(3);
@@ -65,7 +67,7 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
     setSelectedPlayers(prev => {
       if (prev.includes(playerId)) return prev.filter(id => id !== playerId);
       if (prev.length >= 4) {
-        setError('Maximum 4 players');
+        setError(t('competitiveWords.errorMaxPlayers'));
         return prev;
       }
       setError(null);
@@ -75,11 +77,11 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
 
   const handleStart = () => {
     if (selectedPlayers.length < 2) {
-      setError('Minimum 2 players required');
+      setError(t('competitiveWords.errorMinPlayers'));
       return;
     }
     if (songs.length === 0) {
-      setError('No songs available in library');
+      setError(t('competitiveWords.errorNoSongs'));
       return;
     }
 
@@ -109,7 +111,7 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
     onStartGame(game);
   };
 
-  const modeTitle = modeType === 'missing-words' ? 'Missing Words' : 'Blind Karaoke';
+  const modeTitle = modeType === 'missing-words' ? t('competitiveWords.missingWords') : t('competitiveWords.blindKaraoke');
   const modeIcon = modeType === 'missing-words' ? '📝' : '🙈';
 
   return (
@@ -120,17 +122,17 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
           onClick={onBack}
           className="mb-6 text-gray-400 hover:text-white transition-colors flex items-center gap-2"
         >
-          ← Zurück
+          ← {t('competitiveWords.back')}
         </button>
 
-        <h1 className="text-3xl md:text-4xl font-bold mb-2">{modeIcon} {modeTitle} — Kompetitiv</h1>
+        <h1 className="text-3xl md:text-4xl font-bold mb-2">{modeIcon} {modeTitle} {t('competitiveWords.competitive')}</h1>
         <p className="text-gray-400 mb-8">
-          2 Spieler singen gleichzeitig den gleichen Song. Punkte summieren sich über mehrere Runden!
+          {t('competitiveWords.competitiveDesc')}
         </p>
 
         {/* Difficulty */}
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-3">Schwierigkeit</h3>
+          <h3 className="text-lg font-semibold mb-3">{t('competitiveWords.difficulty')}</h3>
           <div className="flex gap-3">
             {(['easy', 'medium', 'hard'] as const).map(d => (
               <button
@@ -142,7 +144,7 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
                     : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50'
                 }`}
               >
-                {d === 'easy' ? ' Leicht' : d === 'medium' ? 'Mittel' : 'Schwer'}
+                {d === 'easy' ? t('competitiveWords.easy') : d === 'medium' ? t('competitiveWords.normal') : t('competitiveWords.hard')}
               </button>
             ))}
           </div>
@@ -150,7 +152,7 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
 
         {/* Best-of */}
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-3">Runden pro Spieler</h3>
+          <h3 className="text-lg font-semibold mb-3">{t('competitiveWords.roundsPerPlayer')}</h3>
           <div className="flex gap-3">
             {([1, 3, 5, 7] as const).map(bo => (
               <button
@@ -162,7 +164,7 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
                     : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50'
                 }`}
               >
-                {bo === 1 ? '1 Runde' : `Best of ${bo}`}
+                {bo === 1 ? t('competitiveWords.round1') : t('competitiveWords.bestOf').replace('{n}', String(bo))}
               </button>
             ))}
           </div>
@@ -171,20 +173,20 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
         {/* Frequency setting */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-3">
-            {modeType === 'missing-words' ? 'Wörter-Häufigkeit' : 'Blind-Frequenz'}
+            {modeType === 'missing-words' ? t('competitiveWords.wordFrequency') : t('competitiveWords.blindFrequency')}
           </h3>
           <div className="flex gap-3">
             {(modeType === 'missing-words'
               ? [
-                  { value: 'easy', label: 'Leicht' },
-                  { value: 'normal', label: 'Normal' },
-                  { value: 'hard', label: 'Schwer' },
+                  { value: 'easy', label: t('competitiveWords.easy') },
+                  { value: 'normal', label: t('competitiveWords.normal') },
+                  { value: 'hard', label: t('competitiveWords.hard') },
                 ]
               : [
-                  { value: 'rare', label: 'Selten' },
-                  { value: 'normal', label: 'Normal' },
-                  { value: 'often', label: 'Oft' },
-                  { value: 'insane', label: 'Wahnsinn' },
+                  { value: 'rare', label: t('competitiveWords.rarely') },
+                  { value: 'normal', label: t('competitiveWords.normal') },
+                  { value: 'often', label: t('competitiveWords.often') },
+                  { value: 'insane', label: t('competitiveWords.insane') },
                 ]
             ).map(opt => (
               <button
@@ -205,7 +207,7 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
         {/* Player selection */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold mb-3">
-            Spieler auswählen (2–4)
+            {t('competitiveWords.selectPlayers')}
           </h3>
           <div className="grid grid-cols-2 gap-3">
             {activeProfiles.map((profile, i) => {
@@ -233,7 +235,7 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
           </div>
           {selectedPlayers.length > 0 && (
             <p className="text-gray-400 text-sm mt-2">
-              {selectedPlayers.length} Spieler ausgewählt
+              {selectedPlayers.length} {t('competitiveWords.playersSelected').replace('{n}', String(selectedPlayers.length))}
             </p>
           )}
         </div>
@@ -248,7 +250,7 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
           onClick={handleStart}
           className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl text-xl font-bold hover:from-indigo-500 hover:to-purple-500 transition-all shadow-lg shadow-indigo-500/30"
         >
-          {modeIcon} Spiel starten
+          {modeIcon} {t('competitiveWords.startGame')}
         </button>
       </div>
     </div>
@@ -346,7 +348,7 @@ export function CompetitiveGameView({
     if (songs.length === 0) {
       return (
         <div className="min-h-screen flex items-center justify-center text-white">
-          <p className="text-xl">Keine Songs in der Bibliothek!</p>
+          <p className="text-xl">{t('competitiveWords.noSongsInLibrary')}</p>
         </div>
       );
     }
@@ -373,23 +375,23 @@ function CompetitiveScoreboard({ game, ranked, modeType, onNextRound }: Competit
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-4 md:p-8">
       <div className="max-w-2xl mx-auto">
-        <h2 className="text-2xl font-bold mb-2">{modeIcon} Rangliste</h2>
+        <h2 className="text-2xl font-bold mb-2">{modeIcon} {t('competitiveWords.scoreboard')}</h2>
         <p className="text-gray-400 mb-6">
-          Runde {game.rounds.length} von {game.totalRounds}
+          {t('competitiveWords.roundOf').replace('{n}', String(game.rounds.length)).replace('{m}', String(game.totalRounds))}
         </p>
 
         {/* Last round results */}
         {lastRound && (
           <div className="bg-gray-700/30 rounded-xl p-4 mb-6">
-            <h3 className="text-sm text-gray-400 mb-2">Letzte Runde: {lastRound.songTitle}</h3>
+            <h3 className="text-sm text-gray-400 mb-2">{t('competitiveWords.lastRound').replace('{n}', lastRound.songTitle)}</h3>
             <div className="flex justify-between">
               <div className="text-center">
                 <div className="text-lg font-bold">
                   {game.players.find(p => p.id === lastRound.player1Id)?.name}
                 </div>
-                <div className="text-indigo-400 font-mono">{lastRound.player1Score} pts</div>
+                <div className="text-indigo-400 font-mono">{lastRound.player1Score} {t('competitiveWords.pts').replace('{n}', String(lastRound.player1Score))}</div>
                 {lastRound.player1Bonus > 0 && (
-                  <div className="text-green-400 text-sm">+{lastRound.player1Bonus} Bonus</div>
+                  <div className="text-green-400 text-sm">{t('competitiveWords.bonus').replace('{n}', String(lastRound.player1Bonus))}</div>
                 )}
               </div>
               <div className="text-gray-500 self-center text-2xl">vs</div>
@@ -397,9 +399,9 @@ function CompetitiveScoreboard({ game, ranked, modeType, onNextRound }: Competit
                 <div className="text-lg font-bold">
                   {game.players.find(p => p.id === lastRound.player2Id)?.name}
                 </div>
-                <div className="text-indigo-400 font-mono">{lastRound.player2Score} pts</div>
+                <div className="text-indigo-400 font-mono">{lastRound.player2Score} {t('competitiveWords.pts').replace('{n}', String(lastRound.player2Score))}</div>
                 {lastRound.player2Bonus > 0 && (
-                  <div className="text-green-400 text-sm">+{lastRound.player2Bonus} Bonus</div>
+                  <div className="text-green-400 text-sm">{t('competitiveWords.bonus').replace('{n}', String(lastRound.player2Bonus))}</div>
                 )}
               </div>
             </div>
@@ -433,7 +435,7 @@ function CompetitiveScoreboard({ game, ranked, modeType, onNextRound }: Competit
               <div className="flex-1">
                 <div className="font-medium">{player.name}</div>
                 <div className="text-sm text-gray-400">
-                  {player.roundsPlayed} Runde{player.roundsPlayed !== 1 ? 'n' : ''} gespielt
+                  {player.roundsPlayed} {t('competitiveWords.roundsPlayed').replace('{n}', String(player.roundsPlayed))}
                 </div>
               </div>
               <div className="text-right">
@@ -452,7 +454,7 @@ function CompetitiveScoreboard({ game, ranked, modeType, onNextRound }: Competit
             onClick={onNextRound}
             className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl text-xl font-bold hover:from-indigo-500 hover:to-purple-500 transition-all"
           >
-            Nächste Runde →
+            {t('competitiveWords.nextRound')}
           </button>
         )}
       </div>
@@ -480,7 +482,7 @@ function CompetitiveWinnerScreen({
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/30 to-gray-900 text-white p-4 md:p-8 flex items-center justify-center">
       <div className="max-w-lg mx-auto text-center">
         <div className="text-6xl mb-4">👑</div>
-        <h1 className="text-4xl font-bold mb-2">Gewinner!</h1>
+        <h1 className="text-4xl font-bold mb-2">{t('competitiveWords.winner')}</h1>
         <h2 className="text-2xl text-indigo-400 mb-6">{winner?.name}</h2>
 
         {winner && (
@@ -493,7 +495,7 @@ function CompetitiveWinnerScreen({
         )}
 
         <div className="text-5xl font-bold text-yellow-400 mb-8">
-          {winner?.totalScore} Punkte
+          {winner?.totalScore} {t('competitiveWords.points').replace('{n}', String(winner?.totalScore))}
         </div>
 
         {/* Final rankings */}
@@ -516,7 +518,7 @@ function CompetitiveWinnerScreen({
           onClick={onEndGame}
           className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl text-xl font-bold hover:from-indigo-500 hover:to-purple-500 transition-all"
         >
-          {modeIcon} Zurück zum Hauptmenü
+          {modeIcon} {t('competitiveWords.backToMenu')}
         </button>
       </div>
     </div>

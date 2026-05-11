@@ -2,6 +2,7 @@
 
 import { Badge } from '@/components/ui/badge';
 import { BattleRoyalePlayer } from '@/lib/game/battle-royale';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface EliminationViewProps {
   eliminatedPlayer: BattleRoyalePlayer | undefined;
@@ -9,11 +10,12 @@ interface EliminationViewProps {
 }
 
 export function EliminationView({ eliminatedPlayer, remainingPlayersCount }: EliminationViewProps) {
+  const { t } = useTranslation();
   return (
     <div className="max-w-4xl mx-auto text-center">
       <div className="bg-gradient-to-r from-red-500/30 to-pink-500/30 border-2 border-red-500 rounded-xl p-12">
         <div className="text-6xl mb-6 animate-bounce">💔</div>
-        <h1 className="text-3xl font-bold text-red-400 mb-4">ELIMINATED!</h1>
+        <h1 className="text-3xl font-bold text-red-400 mb-4">{t('battleRoyale.eliminated')}</h1>
         
         {/* Player card with "look up and turn gray" animation */}
         <div className="flex flex-col items-center gap-4">
@@ -64,18 +66,18 @@ export function EliminationView({ eliminatedPlayer, remainingPlayersCount }: Eli
           </div>
           
           <p className="text-white/40 text-lg">
-            Score: <span className="text-red-400 font-bold">{eliminatedPlayer?.score?.toLocaleString()}</span>
+            {t('battleRoyale.score').replace('{n}', String(eliminatedPlayer?.score?.toLocaleString()))}
           </p>
           
           <p className="text-white/30 text-sm mt-2">
-            Eliminated in Round {eliminatedPlayer?.eliminationRound}
+            {t('battleRoyale.eliminatedInRound').replace('{n}', String(eliminatedPlayer?.eliminationRound))}
           </p>
         </div>
         
         {/* Remaining players count */}
         <div className="mt-6 pt-4 border-t border-white/10">
           <p className="text-white/60">
-            <span className="text-amber-400 font-bold">{remainingPlayersCount}</span> players remaining
+            <span className="text-amber-400 font-bold">{remainingPlayersCount}</span> {t('battleRoyale.playersRemaining').replace('{n}', String(remainingPlayersCount)).split(' ').slice(1).join(' ')}
           </p>
         </div>
       </div>

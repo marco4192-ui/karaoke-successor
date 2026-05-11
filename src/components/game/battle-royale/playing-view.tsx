@@ -10,6 +10,7 @@ import { Song } from '@/types/game';
 import { BattleRoyaleGame, BattleRoyalePlayer } from '@/lib/game/battle-royale';
 import { LyricsDisplay } from './lyrics-display';
 import { usePartyStore } from '@/lib/game/party-store';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface PlayingViewProps {
   game: BattleRoyaleGame;
@@ -36,6 +37,7 @@ export function PlayingView({
   setCurrentTime,
   onRoundEnd,
 }: PlayingViewProps) {
+  const { t } = useTranslation();
   const currentRound = game.rounds[game.rounds.length - 1];
   // Guard: only allow onEnded to fire if audio actually started playing
   const audioStartedRef = React.useRef(false);
@@ -142,12 +144,12 @@ export function PlayingView({
         {/* Round Info Bar — offset left to avoid overlapping Back button */}
         <div className="flex items-center justify-between mb-3 pl-16 pr-2">
           <div className="flex items-center gap-3">
-            <h1 className="text-lg font-bold">Round {game.currentRound}</h1>
+            <h1 className="text-lg font-bold">{t('battleRoyale.round').replace('{n}', String(game.currentRound))}</h1>
             <span className="text-sm text-white/50">{currentRound?.songName || '...'}</span>
           </div>
           <div className="flex items-center gap-3">
             <Badge variant="outline" className="border-red-500 text-red-400">
-              {activePlayers.length} Left
+              {t('battleRoyale.playersLeft').replace('{n}', String(activePlayers.length))}
             </Badge>
             <Badge className={`font-mono text-base ${roundTimeLeft <= 5 ? 'bg-red-500 text-white animate-pulse' : 'bg-purple-500/20 text-purple-400'}`}>
               {roundTimeLeft}s
@@ -274,12 +276,12 @@ export function PlayingView({
                 currentTime={currentTime}
               />
             ) : (
-              <p className="text-white/30 text-center text-lg">Loading lyrics...</p>
+              <p className="text-white/30 text-center text-lg">{t('battleRoyale.loadingLyrics')}</p>
             )}
           </div>
         ) : (
           <div className="w-full bg-black/30 rounded-xl p-4 border border-white/10 text-center">
-            <p className="text-white/30 text-lg">Loading song...</p>
+            <p className="text-white/30 text-lg">{t('battleRoyale.loadingSong')}</p>
           </div>
         )}
       </div>
@@ -291,7 +293,7 @@ export function PlayingView({
             onClick={onRoundEnd}
             className="px-12 py-4 text-xl bg-gradient-to-r from-red-500 to-pink-500 animate-pulse"
           >
-            💔 Eliminate Lowest Scorer
+            {t('battleRoyale.eliminateLowest')}
           </Button>
         </div>
       )}

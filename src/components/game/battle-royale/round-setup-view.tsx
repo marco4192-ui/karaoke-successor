@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { BattleRoyaleGame, BattleRoyalePlayer, getBattleRoyaleStats } from '@/lib/game/battle-royale';
 import { usePartyStore } from '@/lib/game/party-store';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface RoundSetupViewProps {
   game: BattleRoyaleGame;
@@ -15,6 +16,7 @@ interface RoundSetupViewProps {
 }
 
 export function RoundSetupView({ game, stats, activePlayers, onStartRound, onBack }: RoundSetupViewProps) {
+  const { t } = useTranslation();
   const party = usePartyStore();
 
   const handleBack = () => {
@@ -28,12 +30,12 @@ export function RoundSetupView({ game, stats, activePlayers, onStartRound, onBac
     <div className="max-w-5xl mx-auto text-center">
       <div className="text-left mb-4">
         <Button variant="ghost" onClick={handleBack} className="text-white/60">
-          ← Back
+          {t('battleRoyale.back')}
         </Button>
       </div>
-      <h1 className="text-3xl font-bold mb-2">Round {game.currentRound + 1}</h1>
+      <h1 className="text-3xl font-bold mb-2">{t('battleRoyale.roundSetup').replace('{n}', String(game.currentRound + 1))}</h1>
       <p className="text-white/60 mb-6">
-        {stats.activeMicPlayers} 🎤 Mic + {stats.activeCompanionPlayers} 📱 Companion = {activePlayers.length} players
+        {stats.activeMicPlayers} {t('battleRoyale.mic')} + {stats.activeCompanionPlayers} {t('battleRoyale.companion')} = {activePlayers.length} players
       </p>
       
       {/* Player Grid - Split by Type */}
@@ -42,7 +44,7 @@ export function RoundSetupView({ game, stats, activePlayers, onStartRound, onBac
         <Card className="bg-white/5 border-white/10">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
-              <span>🎤</span> Local Microphone ({stats.activeMicPlayers})
+              <span>🎤</span> {t('battleRoyale.localMicrophone')} ({stats.activeMicPlayers})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -68,7 +70,7 @@ export function RoundSetupView({ game, stats, activePlayers, onStartRound, onBac
                   )}
                   <div className="font-bold text-sm">{player.name}</div>
                   {player.eliminated ? (
-                    <div className="text-xs text-red-400">Eliminated R{player.eliminationRound}</div>
+                    <div className="text-xs text-red-400">{t('battleRoyale.eliminatedRound').replace('{n}', String(player.eliminationRound))}</div>
                   ) : (
                     <div className="text-xs text-white/60">{player.score.toLocaleString()} pts</div>
                   )}
@@ -82,7 +84,7 @@ export function RoundSetupView({ game, stats, activePlayers, onStartRound, onBac
         <Card className="bg-white/5 border-white/10">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
-              <span>📱</span> Companion App ({stats.activeCompanionPlayers})
+              <span>📱</span> {t('battleRoyale.companionApp')} ({stats.activeCompanionPlayers})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -111,7 +113,7 @@ export function RoundSetupView({ game, stats, activePlayers, onStartRound, onBac
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm truncate">{player.name}</div>
                         {player.eliminated ? (
-                          <div className="text-xs text-red-400">Out</div>
+                          <div className="text-xs text-red-400">{t('battleRoyale.out')}</div>
                         ) : (
                           <div className="text-xs text-white/40">{player.score.toLocaleString()}</div>
                         )}
@@ -129,7 +131,7 @@ export function RoundSetupView({ game, stats, activePlayers, onStartRound, onBac
         onClick={onStartRound}
         className="px-12 py-6 text-xl bg-gradient-to-r from-red-500 to-pink-500"
       >
-        🎤 Start Round {game.currentRound + 1}
+        {t('battleRoyale.startRound').replace('{n}', String(game.currentRound + 1))}
       </Button>
     </div>
   );

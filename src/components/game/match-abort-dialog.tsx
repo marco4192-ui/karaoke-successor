@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { TournamentMatch } from '@/lib/game/tournament';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface MatchAbortDialogProps {
   match: TournamentMatch;
@@ -24,6 +25,7 @@ export function MatchAbortDialog({
   onRepeatMatch,
   onDismiss,
 }: MatchAbortDialogProps) {
+  const { t } = useTranslation();
   const [step, setStep] = useState<'choose' | 'pick-winner'>('choose');
 
   const p1 = match.player1;
@@ -37,7 +39,7 @@ export function MatchAbortDialog({
             {/* Header */}
             <div className="text-center mb-6">
               <div className="text-4xl mb-2">⚠️</div>
-              <h2 className="text-xl font-bold text-white">Match Abgebrochen</h2>
+              <h2 className="text-xl font-bold text-white">{t('matchAbort.title')}</h2>
               <p className="text-sm text-white/50 mt-1">
                 {p1?.name} vs {p2?.name}
               </p>
@@ -49,14 +51,14 @@ export function MatchAbortDialog({
                 onClick={() => setStep('pick-winner')}
                 className="w-full py-3 text-sm bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300"
               >
-                🏆 Sieger manuell festlegen
+                {t('matchAbort.setWinner')}
               </Button>
 
               <Button
                 onClick={onRepeatMatch}
                 className="w-full py-3 text-sm bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300"
               >
-                🔄 Match wiederholen
+                {t('matchAbort.rematch')}
               </Button>
 
               <Button
@@ -64,7 +66,7 @@ export function MatchAbortDialog({
                 variant="ghost"
                 className="w-full py-3 text-sm text-white/40 hover:text-white/60"
               >
-                Zurück zum Bracket (ohne Ergebnis)
+                {t('matchAbort.backToBracket')}
               </Button>
             </div>
           </>
@@ -73,8 +75,8 @@ export function MatchAbortDialog({
         {step === 'pick-winner' && (
           <>
             <div className="text-center mb-6">
-              <h2 className="text-lg font-bold text-white mb-1">Sieger auswählen</h2>
-              <p className="text-sm text-white/50">Wer hat dieses Match gewonnen?</p>
+              <h2 className="text-lg font-bold text-white mb-1">{t('matchAbort.selectWinner')}</h2>
+              <p className="text-sm text-white/50">{t('matchAbort.selectWinnerDesc')}</p>
             </div>
 
             <div className="space-y-3">
@@ -98,7 +100,7 @@ export function MatchAbortDialog({
                       </div>
                     )}
                     <span className="font-medium">{p1.name}</span>
-                    <span className="ml-auto text-amber-400">Als Sieger</span>
+                    <span className="ml-auto text-amber-400">{t('matchAbort.asWinner')}</span>
                   </span>
                 </Button>
               )}
@@ -123,7 +125,7 @@ export function MatchAbortDialog({
                       </div>
                     )}
                     <span className="font-medium">{p2.name}</span>
-                    <span className="ml-auto text-amber-400">Als Sieger</span>
+                    <span className="ml-auto text-amber-400">{t('matchAbort.asWinner')}</span>
                   </span>
                 </Button>
               )}
@@ -133,7 +135,7 @@ export function MatchAbortDialog({
                 variant="ghost"
                 className="w-full py-2 text-sm text-white/40 hover:text-white/60"
               >
-                ← Zurück
+                {t('matchAbort.back')}
               </Button>
             </div>
           </>

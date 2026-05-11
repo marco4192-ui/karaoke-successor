@@ -15,6 +15,7 @@ import {
 } from '@/lib/game/tournament';
 import { Song, PlayerProfile, PLAYER_COLORS, Difficulty } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
+import { useTranslation } from '@/lib/i18n/translations';
 import { TournamentBracketButterfly } from '@/components/game/tournament-bracket-butterfly';
 import { MatchAbortDialog } from '@/components/game/match-abort-dialog';
 
@@ -26,6 +27,7 @@ interface TournamentScreenProps {
 }
 
 export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: TournamentScreenProps) {
+  const { t } = useTranslation();
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [maxPlayers, setMaxPlayers] = useState<2 | 4 | 8 | 16 | 32>(8);
   const [shortMode, setShortMode] = useState(true);
@@ -48,7 +50,7 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
         return prev.filter(id => id !== playerId);
       }
       if (prev.length >= maxPlayers) {
-        setError(`Maximum ${maxPlayers} players allowed`);
+        setError(t('tournament.errorMaxPlayers').replace('{n}', String(maxPlayers)));
         return prev;
       }
       setError(null);
@@ -58,7 +60,7 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
 
   const handleStartTournament = () => {
     if (selectedPlayers.length < 2) {
-      setError('Minimum 2 players required');
+      setError(t('tournament.errorMinPlayers'));
       return;
     }
     
@@ -85,7 +87,7 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
       const bracket = createTournament(players, settings);
       onStartTournament(bracket, settings.songDuration);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create tournament');
+      setError(err instanceof Error ? err.message : t('tournament.errorCreate'));
     }
   };
 
@@ -93,11 +95,11 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center gap-4 mb-6">
         <Button variant="ghost" onClick={onBack} className="text-white/60">
-          ← Back
+          ← {t('tournament.back')}
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">🏆 Tournament Mode</h1>
-          <p className="text-white/60">Single Elimination Bracket - Sudden Death!</p>
+          <h1 className="text-3xl font-bold">{t('tournament.title')}</h1>
+          <p className="text-white/60">{t('tournament.settings')}</p>
         </div>
       </div>
 
@@ -110,12 +112,12 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
       {/* Tournament Settings */}
       <Card className="bg-white/5 border-white/10 mb-6">
         <CardHeader>
-          <CardTitle>Tournament Settings</CardTitle>
+          <CardTitle>{t('tournament.settings')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Max Players */}
           <div>
-            <label className="text-sm text-white/60 mb-2 block">Bracket Size</label>
+            <label className="text-sm text-white/60 mb-2 block">{t('tournament.bracketSize')}</label>
             <div className="flex gap-2 flex-wrap">
               {[2, 4, 8, 16, 32].map(size => (
                 <Button
@@ -129,7 +131,7 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
                   }}
                   className={maxPlayers === size ? 'bg-amber-500 hover:bg-amber-600' : 'border-white/20'}
                 >
-                  {size} {size === 2 ? 'Duel' : 'Players'}
+                  {size} {size === 2 ? t('tournament.duel') : t('tournament.players')}
                 </Button>
               ))}
             </div>
@@ -138,21 +140,21 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
           {/* Short Mode */}
           <div className="flex items-center justify-between">
             <div>
-              <label className="font-medium">Short Mode</label>
-              <p className="text-sm text-white/60">Each match lasts only 60 seconds</p>
+              <label className="font-medium">{t('tournament.shortMode')}</label>
+              <p className="text-sm text-white/60">{t('tournament.shortModeDesc')}</p>
             </div>
             <Button
               variant={shortMode ? 'default' : 'outline'}
               onClick={() => setShortMode(!shortMode)}
               className={shortMode ? 'bg-green-500 hover:bg-green-600' : 'border-white/20'}
             >
-              {shortMode ? '✓ 60 Seconds' : 'Full Song'}
+              {shortMode ? t('tournament.short') : t('tournament.fullSong')}
             </Button>
           </div>
 
           {/* Difficulty */}
           <div>
-            <label className="text-sm text-white/60 mb-2 block">Difficulty</label>
+            <label className="text-sm text-white/60 mb-2 block">{t('tournament.difficulty')}</label>
             <div className="flex gap-2">
               {['easy', 'medium', 'hard'].map(diff => (
                 <Button
@@ -172,7 +174,7 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
       {/* Player Selection */}
       <Card className="bg-white/5 border-white/10 mb-6">
         <CardHeader>
-          <CardTitle>Select Players ({selectedPlayers.length}/{maxPlayers})</CardTitle>
+          <CardTitle>{t('tournament.selectPlayers').replace('{n}', String(selectedPlayers.length)).replace('{m}', String(maxPlayers))}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -209,7 +211,7 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
           
           {activeProfiles.length < 2 && (
             <p className="text-yellow-400 mt-4">
-              ⚠️ Need at least 2 active profiles. Create more in Character selection or activate existing ones.
+              {t('tournament.noActiveProfiles')}
             </p>
           )}
         </CardContent>
@@ -221,7 +223,7 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
         disabled={selectedPlayers.length < 2}
         className="w-full py-6 text-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400"
       >
-        🏆 Start Tournament ({selectedPlayers.length} Players)
+        {t('tournament.startTournament').replace('{n}', String(selectedPlayers.length))}
       </Button>
     </div>
   );

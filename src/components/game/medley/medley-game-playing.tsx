@@ -12,6 +12,7 @@ import type { Note, LyricLine } from '@/types/game';
 import { useMultiPitchDetector } from '@/hooks/use-multi-pitch-detector';
 import { PitchIndicator } from './medley-game-components';
 import type { MedleyPlayer, MedleySong, SnippetMatchup } from './medley-types';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== PROPS =====================
 
@@ -48,23 +49,24 @@ export function MedleyPlayingUI({
   multiPitch,
   handleEndEarly,
 }: MedleyPlayingProps) {
+  const { t } = useTranslation();
   return (
     <>
       {/* Top bar: badge + progress + controls */}
       <div className="flex-shrink-0 p-3 space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Badge className="bg-purple-500/20 text-purple-400 text-sm px-2 py-0.5">🎵 MEDLEY</Badge>
-            <span className="text-white/60 text-sm">Song {currentSnippetIdx + 1}/{snippetCount}</span>
+            <Badge className="bg-purple-500/20 text-purple-400 text-sm px-2 py-0.5">{t('medley.badge')}</Badge>
+            <span className="text-white/60 text-sm">{t('medley.songOf').replace('{n}', String(currentSnippetIdx + 1)).replace('{m}', String(snippetCount))}</span>
             {!isTeam && (
-              <Badge className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5">FFA</Badge>
+              <Badge className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5">{t('medley.ffaBadge')}</Badge>
             )}
           </div>
           <div className="flex items-center gap-2 pointer-events-auto">
             {isTeam && currentMatchup && (
               <div className="flex items-center gap-2 text-sm">
                 <span style={{ color: currentMatchup.playerA.color }}>{currentMatchup.playerA.name}</span>
-                <span className="text-white/40">vs</span>
+                <span className="text-white/40">{t('medley.vs')}</span>
                 <span style={{ color: currentMatchup.playerB.color }}>{currentMatchup.playerB.name}</span>
               </div>
             )}
@@ -163,9 +165,9 @@ export function MedleyPlayingUI({
       <div className="flex-shrink-0 px-3 pb-3">
         <Progress value={snippetProgress} className="h-2 bg-white/10" />
         <div className="flex justify-between text-xs text-white/40 mt-1">
-          <span>Snippet {currentSnippetIdx + 1}/{snippetCount}</span>
+          <span>{t('medley.snippetOf').replace('{n}', String(currentSnippetIdx + 1)).replace('{m}', String(snippetCount))}</span>
           <button onClick={handleEndEarly} aria-label="Beenden" className="text-red-400/60 hover:text-red-400 transition-colors">
-            Beenden
+            {t('medley.quit')}
           </button>
         </div>
       </div>

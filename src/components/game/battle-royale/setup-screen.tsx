@@ -16,6 +16,7 @@ import {
 } from '@/lib/game/battle-royale';
 import { Song, PlayerProfile, PLAYER_COLORS, Difficulty } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface BattleRoyaleSetupProps {
   profiles: PlayerProfile[];
@@ -25,6 +26,7 @@ interface BattleRoyaleSetupProps {
 }
 
 export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }: BattleRoyaleSetupProps) {
+  const { t } = useTranslation();
   const [micPlayers, setMicPlayers] = useState<string[]>([]);
   const [companionPlayers, setCompanionPlayers] = useState<string[]>([]);
   const [roundDuration, setRoundDuration] = useState(60);
@@ -53,7 +55,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       return;
     }
     if (micPlayers.length >= MAX_LOCAL_MIC_PLAYERS) {
-      setError(`Maximum ${MAX_LOCAL_MIC_PLAYERS} local microphone players`);
+      setError(t('battleRoyale.errorMaxLocalMic').replace('{n}', String(MAX_LOCAL_MIC_PLAYERS)));
       return;
     }
     // Remove from companion if present
@@ -70,12 +72,12 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       return;
     }
     if (companionPlayers.length >= MAX_COMPANION_PLAYERS) {
-      setError(`Maximum ${MAX_COMPANION_PLAYERS} companion players`);
+      setError(t('battleRoyale.errorMaxCompanion').replace('{n}', String(MAX_COMPANION_PLAYERS)));
       return;
     }
     // Check total limit using current micPlayers + new companion count
     if (micPlayers.length + companionPlayers.length >= MAX_BATTLE_ROYALE_PLAYERS) {
-      setError(`Maximum ${MAX_BATTLE_ROYALE_PLAYERS} total players`);
+      setError(t('battleRoyale.errorMaxTotal').replace('{n}', String(MAX_BATTLE_ROYALE_PLAYERS)));
       return;
     }
     // Remove from mic if present
@@ -86,7 +88,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
 
   const handleStartGame = () => {
     if (totalPlayers < 2) {
-      setError('Minimum 2 players required');
+      setError(t('battleRoyale.errorMinPlayers'));
       return;
     }
 
@@ -136,7 +138,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       const game = createBattleRoyale(players, settings, songIds);
       onStartGame(game);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create game');
+      setError(err instanceof Error ? err.message : t('battleRoyale.errorCreateGame'));
     }
   };
 
@@ -144,11 +146,11 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
     <div className="max-w-5xl mx-auto">
       <div className="flex items-center gap-4 mb-6">
         <Button variant="ghost" onClick={onBack} className="text-white/60">
-          ← Back
+          {t('battleRoyale.back')}
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">👑 Battle Royale</h1>
-          <p className="text-white/60">All sing together - lowest score eliminated each round!</p>
+          <h1 className="text-3xl font-bold">{t('battleRoyale.setupTitle')}</h1>
+          <p className="text-white/60">{t('battleRoyale.setupSubtitle')}</p>
         </div>
       </div>
 
@@ -157,17 +159,17 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
         <div className="flex flex-wrap gap-6 text-center justify-center">
           <div>
             <div className="text-3xl font-bold text-red-400">{micPlayers.length}/{MAX_LOCAL_MIC_PLAYERS}</div>
-            <div className="text-sm text-white/60">🎤 Local Mics</div>
+            <div className="text-sm text-white/60">{t('battleRoyale.localMics')}</div>
           </div>
           <div className="text-white/20 text-4xl">+</div>
           <div>
             <div className="text-3xl font-bold text-purple-400">{companionPlayers.length}/{MAX_COMPANION_PLAYERS}</div>
-            <div className="text-sm text-white/60">📱 Companions</div>
+            <div className="text-sm text-white/60">{t('battleRoyale.companions')}</div>
           </div>
           <div className="text-white/20 text-4xl">=</div>
           <div>
             <div className="text-3xl font-bold text-amber-400">{totalPlayers}/{MAX_BATTLE_ROYALE_PLAYERS}</div>
-            <div className="text-sm text-white/60">👥 Total</div>
+            <div className="text-sm text-white/60">{t('battleRoyale.total')}</div>
           </div>
         </div>
       </div>
@@ -181,12 +183,12 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       {/* Game Settings */}
       <Card className="bg-white/5 border-white/10 mb-6">
         <CardHeader>
-          <CardTitle>Game Settings</CardTitle>
+          <CardTitle>{t('battleRoyale.gameSettings')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Round Duration */}
           <div>
-            <label className="text-sm text-white/60 mb-2 block">Round Duration: {roundDuration}s</label>
+            <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.roundDuration').replace('{n}', String(roundDuration))}</label>
             <input
               type="range"
               min={30}
@@ -197,14 +199,14 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
               className="w-full"
             />
             <div className="flex justify-between text-xs text-white/40 mt-1">
-              <span>30s (Fast)</span>
-              <span>180s (Long)</span>
+              <span>{t('battleRoyale.fast')}</span>
+              <span>{t('battleRoyale.long')}</span>
             </div>
           </div>
 
           {/* Final Round Duration */}
           <div>
-            <label className="text-sm text-white/60 mb-2 block">Final Round Duration: {finalRoundDuration}s</label>
+            <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.finalRoundDuration').replace('{n}', String(finalRoundDuration))}</label>
             <input
               type="range"
               min={60}
@@ -219,21 +221,21 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
           {/* Medley Mode */}
           <div className="flex items-center justify-between">
             <div>
-              <label className="font-medium">Medley Mode</label>
-              <p className="text-sm text-white/60">Multiple song snippets per round</p>
+              <label className="font-medium">{t('battleRoyale.medleyMode')}</label>
+              <p className="text-sm text-white/60">{t('battleRoyale.medleyModeDesc')}</p>
             </div>
             <Button
               variant={medleyMode ? 'default' : 'outline'}
               onClick={() => setMedleyMode(!medleyMode)}
               className={medleyMode ? 'bg-purple-500 hover:bg-purple-600' : 'border-white/20'}
             >
-              {medleyMode ? '✓ On' : 'Off'}
+              {medleyMode ? t('battleRoyale.on') : t('battleRoyale.off')}
             </Button>
           </div>
 
           {/* Difficulty */}
           <div>
-            <label className="text-sm text-white/60 mb-2 block">Difficulty</label>
+            <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.difficulty')}</label>
             <div className="flex gap-2">
               {['easy', 'medium', 'hard'].map(diff => (
                 <Button
@@ -257,12 +259,12 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <span className="text-2xl">🎤</span>
-              Local Microphone
+              {t('battleRoyale.localMicrophone')}
               <Badge variant="outline" className="border-red-500 text-red-400">
                 {micPlayers.length}/{MAX_LOCAL_MIC_PLAYERS}
               </Badge>
             </CardTitle>
-            <p className="text-sm text-white/60">Players at this device with microphone</p>
+            <p className="text-sm text-white/60">{t('battleRoyale.localMicrophoneDesc')}</p>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-3">
@@ -307,12 +309,12 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <span className="text-2xl">📱</span>
-              Companion App
+              {t('battleRoyale.companionApp')}
               <Badge variant="outline" className="border-purple-500 text-purple-400">
                 {companionPlayers.length}/{MAX_COMPANION_PLAYERS}
               </Badge>
             </CardTitle>
-            <p className="text-sm text-white/60">Players using the mobile companion app</p>
+            <p className="text-sm text-white/60">{t('battleRoyale.companionAppDesc')}</p>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-3">
@@ -358,14 +360,14 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
         <CardContent className="py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-bold text-lg">Ready to Battle!</h3>
+              <h3 className="font-bold text-lg">{t('battleRoyale.readyToBattle')}</h3>
               <p className="text-sm text-white/60">
                 {micPlayers.length} mic + {companionPlayers.length} companion = {totalPlayers} total players
               </p>
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-amber-400">{totalPlayers}</div>
-              <div className="text-xs text-white/40">players selected</div>
+              <div className="text-xs text-white/40">{t('battleRoyale.playersSelected')}</div>
             </div>
           </div>
         </CardContent>
@@ -377,7 +379,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
         disabled={totalPlayers < 2}
         className="w-full py-6 text-xl bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-400 hover:to-pink-400"
       >
-        👑 Start Battle Royale ({totalPlayers} Players)
+        {t('battleRoyale.startBattle').replace('{n}', String(totalPlayers))}
       </Button>
     </div>
   );
