@@ -27,8 +27,13 @@
   - Overlay: GameCountdown
 
 ## Schritt 4: Universal HUD — In Game-Screens integrieren
-- Status: 🔲 PENDING
-- Plan: GameHudShell in Single-Player, PTM, Battle Royale, Medley, Companion Screens integrieren. Inline-Controls entfernen.
+- Status: ✅ DONE
+- Commit: 62f3ebc (PTM), 5d4b05d (BR, Medley, Companion)
+- PTM: PtmHudControls refactored to use universal components (PauseButton, FullscreenButton, WebcamButton, DifficultyBadge). Kein GameHudShell da PTM eigene Layout-Logik hat.
+- Battle Royale: Inline pause replaced with PauseButton + added FullscreenButton.
+- Medley: Added FullscreenButton (no pause — continuous contest).
+- Companion: Added FullscreenButton (no pause — turn-based).
+- GameScreen (Single/Duel/Duet): Nicht geändert — Pause = Spiel abbrechen, nicht pausieren. Hat eigene Webcam/Audio/Pitch-Features.
 
 ## Schritt 5: Score-Anzeige — Single-Player
 - Status: 🔲 PENDING
