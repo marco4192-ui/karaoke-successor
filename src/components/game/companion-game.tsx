@@ -474,7 +474,7 @@ export function CompanionGameView({
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-3xl font-bold text-emerald-400">{currentPlayer?.score.toLocaleString()}</div>
+                  <div className="text-3xl font-bold text-emerald-400" style={{ textShadow: '0 0 12px rgba(52,211,153,0.4)' }}>{currentPlayer?.score.toLocaleString()}</div>
                   <div className="text-xs text-white/40">points</div>
                   {currentPlayer?.combo > 0 && (
                     <div className="text-sm text-amber-400">🔥 {currentPlayer.combo}x combo</div>

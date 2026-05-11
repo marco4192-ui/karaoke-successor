@@ -33,7 +33,7 @@ export function PtmHudPlayerScore({ players, currentPlayer }: PtmHudPlayerScoreP
         <div className="text-base font-bold truncate" style={{ color: currentPlayer?.color }}>
           {currentPlayer?.name}
         </div>
-        <div className="text-2xl font-bold text-cyan-400 mt-1">
+        <div className="text-2xl font-bold text-cyan-400 mt-1" style={{ textShadow: '0 0 12px rgba(34,211,238,0.4)' }}>
           {currentPlayer?.score.toLocaleString()}
         </div>
         {currentPlayer && currentPlayer.combo > 0 && (
