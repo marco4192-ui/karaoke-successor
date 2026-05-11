@@ -244,7 +244,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
                   onClick={() => setGlobalDifficulty(diff as Difficulty)}
                   className={difficulty === diff ? 'bg-red-500 hover:bg-red-600' : 'border-white/20'}
                 >
-                  {diff.charAt(0).toUpperCase() + diff.slice(1)}
+                  {{easy: t('song.easy'), medium: t('song.medium'), hard: t('song.hard')}[diff] as string}
                 </Button>
               ))}
             </div>
@@ -362,7 +362,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
             <div>
               <h3 className="font-bold text-lg">{t('battleRoyale.readyToBattle')}</h3>
               <p className="text-sm text-white/60">
-                {micPlayers.length} mic + {companionPlayers.length} companion = {totalPlayers} total players
+                {micPlayers.length} {t('battleRoyale.mic')} + {companionPlayers.length} {t('battleRoyale.companion')} = {totalPlayers} {t('battleRoyale.playersSelected')}
               </p>
             </div>
             <div className="text-right">

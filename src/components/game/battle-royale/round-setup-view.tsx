@@ -35,7 +35,7 @@ export function RoundSetupView({ game, stats, activePlayers, onStartRound, onBac
       </div>
       <h1 className="text-3xl font-bold mb-2">{t('battleRoyale.roundSetup').replace('{n}', String(game.currentRound + 1))}</h1>
       <p className="text-white/60 mb-6">
-        {stats.activeMicPlayers} {t('battleRoyale.mic')} + {stats.activeCompanionPlayers} {t('battleRoyale.companion')} = {activePlayers.length} players
+        {stats.activeMicPlayers} {t('battleRoyale.mic')} + {stats.activeCompanionPlayers} {t('battleRoyale.companion')} = {activePlayers.length} {t('battleRoyale.playersSelected')}
       </p>
       
       {/* Player Grid - Split by Type */}
@@ -72,7 +72,7 @@ export function RoundSetupView({ game, stats, activePlayers, onStartRound, onBac
                   {player.eliminated ? (
                     <div className="text-xs text-red-400">{t('battleRoyale.eliminatedRound').replace('{n}', String(player.eliminationRound))}</div>
                   ) : (
-                    <div className="text-xs text-white/60">{player.score.toLocaleString()} pts</div>
+                    <div className="text-xs text-white/60">{player.score.toLocaleString()} {t('game.pts')}</div>
                   )}
                 </div>
               ))}
