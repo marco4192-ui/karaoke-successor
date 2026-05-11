@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
 import { Song, LyricLine, EMPTY_PLAYER_SCORE } from '@/types/game';
 import { usePartyStore } from '@/lib/game/party-store';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
@@ -443,11 +444,14 @@ export function CompanionGameView({
               <Badge className="bg-emerald-500/20 text-emerald-400 text-lg px-3 py-1">📱 COMPANION SING-A-LONG</Badge>
               <span className="text-white/60 text-sm">{song.title}</span>
             </div>
-            {phase === 'switching' && (
-              <Badge className="bg-yellow-500/20 text-yellow-400 animate-pulse">
-                Switching... {switchCountdown}
-              </Badge>
-            )}
+            <div className="flex items-center gap-3 pointer-events-auto">
+              {phase === 'switching' && (
+                <Badge className="bg-yellow-500/20 text-yellow-400 animate-pulse">
+                  Switching... {switchCountdown}
+                </Badge>
+              )}
+              <FullscreenButton />
+            </div>
           </div>
 
           {/* Current Player */}

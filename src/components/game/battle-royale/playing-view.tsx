@@ -4,6 +4,8 @@ import React, { useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { PauseButton } from '@/components/game/hud/pause-button';
+import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
 import { Song } from '@/types/game';
 import { BattleRoyaleGame, BattleRoyalePlayer, getBattleRoyaleStats } from '@/lib/game/battle-royale';
 import { LyricsDisplay } from './lyrics-display';
@@ -116,22 +118,20 @@ export function PlayingView({
       />
       <div className="fixed inset-0 bg-black/50 -z-10" />
 
-      {/* ─────────── Pause Button ─────────── */}
-      <div className="absolute top-3 left-3 z-20">
-        <Button
-          variant="ghost"
-          onClick={() => {
-            // Pause audio immediately
+      {/* ─────────── Pause + Fullscreen (universal HUD) ─────────── */}
+      <div className="absolute top-3 left-3 z-20 pointer-events-auto">
+        <PauseButton
+          isPlaying={game.status === 'playing'}
+          onTogglePause={() => {
             if (audioRef.current && !audioRef.current.paused) {
               audioRef.current.pause();
             }
-            // Trigger the song-pause dialog in page.tsx
             setPauseDialogAction('song-pause');
           }}
-          className="text-white/60 hover:text-white hover:bg-white/10"
-        >
-          ⏸ Pause
-        </Button>
+        />
+      </div>
+      <div className="absolute top-3 right-3 z-20 pointer-events-auto">
+        <FullscreenButton />
       </div>
 
       {/* ─────────── UPPER THIRD: Player Cards ─────────── */}

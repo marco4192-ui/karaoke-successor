@@ -7,6 +7,8 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { PauseButton } from '@/components/game/hud/pause-button';
+import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
 import type { Note, LyricLine } from '@/types/game';
 import { useMultiPitchDetector } from '@/hooks/use-multi-pitch-detector';
 import { PitchIndicator } from './medley-game-components';
@@ -49,7 +51,7 @@ export function MedleyPlayingUI({
 }: MedleyPlayingProps) {
   return (
     <>
-      {/* Top bar: badge + progress */}
+      {/* Top bar: badge + progress + controls */}
       <div className="flex-shrink-0 p-3 space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -59,13 +61,16 @@ export function MedleyPlayingUI({
               <Badge className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5">FFA</Badge>
             )}
           </div>
-          {isTeam && currentMatchup && (
-            <div className="flex items-center gap-2 text-sm">
-              <span style={{ color: currentMatchup.playerA.color }}>{currentMatchup.playerA.name}</span>
-              <span className="text-white/40">vs</span>
-              <span style={{ color: currentMatchup.playerB.color }}>{currentMatchup.playerB.name}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2 pointer-events-auto">
+            {isTeam && currentMatchup && (
+              <div className="flex items-center gap-2 text-sm">
+                <span style={{ color: currentMatchup.playerA.color }}>{currentMatchup.playerA.name}</span>
+                <span className="text-white/40">vs</span>
+                <span style={{ color: currentMatchup.playerB.color }}>{currentMatchup.playerB.name}</span>
+              </div>
+            )}
+            <FullscreenButton />
+          </div>
         </div>
         {/* Per-player live scores */}
         <div className="flex items-center gap-3">
