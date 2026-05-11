@@ -223,16 +223,24 @@ export function PlayingView({
                   {player.name}
                 </div>
 
-                {/* Score */}
-                <div className={`w-full px-1 py-0.5 rounded text-center font-bold text-sm ${
-                  eliminated
-                    ? 'text-white/20'
-                    : lowest
-                      ? 'text-red-300'
-                      : 'text-white'
-                }`}>
-                  {player.score.toLocaleString()}
-                </div>
+                {/* Score — leader gets a glow */}
+                {(() => {
+                  const isLeader = !eliminated && sortedPlayers[0]?.id === player.id && sortedPlayers[0]?.score > 0;
+                  return (
+                    <div className={`w-full px-1 py-0.5 rounded text-center font-bold text-sm ${
+                      eliminated
+                        ? 'text-white/20'
+                        : lowest
+                          ? 'text-red-300'
+                          : 'text-white'
+                    }`}
+                    style={isLeader ? { textShadow: '0 0 10px rgba(250,204,21,0.5)' } : undefined}
+                    >
+                      {player.score.toLocaleString()}
+                      {isLeader && <span className="ml-1 text-yellow-400 text-[10px]">👑</span>}
+                    </div>
+                  );
+                })()}
 
                 {/* Combo indicator for active players */}
                 {!eliminated && player.currentCombo > 2 && (
