@@ -461,9 +461,9 @@ export function CompanionGameView({
                 <div className="flex items-center gap-4">
                   {currentPlayer?.avatar ? (
                     <img src={currentPlayer.avatar} alt={currentPlayer.name}
-                      className="w-14 h-14 rounded-full object-cover border-3 border-emerald-500" />
+                      className="w-14 h-14 rounded-full object-cover border-[3px] border-emerald-500" />
                   ) : (
-                    <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold border-3 border-emerald-500"
+                    <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold border-[3px] border-emerald-500"
                       style={{ backgroundColor: currentPlayer?.color }}>
                       {currentPlayer?.name?.charAt(0).toUpperCase()}
                     </div>
