@@ -5,6 +5,7 @@ import { LyricLine, Player, type GameMode } from '@/types/game';
 import { NoteHighway, NoteWithLine, PitchStats } from './note-highway';
 import { LyricLineDisplay } from './lyric-line-display';
 import { NoteShapeStyle, NoteDisplayStyle } from '@/lib/game/note-utils';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== TYPES =====================
 
@@ -74,8 +75,8 @@ export interface DuetNoteHighwayProps {
 const CenterScoreBar = React.memo(function CenterScoreBar({
   p1State,
   p2State,
-  p1Name = 'Player 1',
-  p2Name = 'Player 2',
+  p1Name,
+  p2Name,
   p2Player,
 }: {
   p1State: Player;
@@ -84,6 +85,10 @@ const CenterScoreBar = React.memo(function CenterScoreBar({
   p2Name?: string;
   p2Player?: Player;
 }) {
+  const { t } = useTranslation();
+  const resolvedP1Name = p1Name || t('prominentScore.player1');
+  const resolvedP2Name = p2Name || t('prominentScore.player2');
+
   const p1Avatar = (p1State as Player)?.avatar;
   const p2Avatar = p2Player?.avatar;
   const p1Color = (p1State as Player)?.color || '#22d3ee';
@@ -98,15 +103,15 @@ const CenterScoreBar = React.memo(function CenterScoreBar({
       <div className="relative flex items-center gap-2 px-4 py-1">
         {/* Avatar */}
         {p1Avatar ? (
-          <img src={p1Avatar} alt={p1Name} className="w-8 h-8 rounded-full object-cover border-2" style={{ borderColor: p1Color }} />
+          <img src={p1Avatar} alt={resolvedP1Name} className="w-8 h-8 rounded-full object-cover border-2" style={{ borderColor: p1Color }} />
         ) : (
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white border-2" style={{ backgroundColor: p1Color, borderColor: p1Color }}>
-            {p1Name.charAt(0).toUpperCase()}
+            {resolvedP1Name.charAt(0).toUpperCase()}
           </div>
         )}
         <div className="flex flex-col">
           <span className="text-xs font-medium text-cyan-300/80 leading-tight truncate max-w-[80px]">
-            {p1Name}
+            {resolvedP1Name}
           </span>
           <div className="flex items-baseline gap-1.5">
             <span className="text-xl font-bold text-cyan-400 leading-tight" suppressHydrationWarning>
@@ -128,7 +133,7 @@ const CenterScoreBar = React.memo(function CenterScoreBar({
       <div className="relative flex items-center gap-2 px-4 py-1">
         <div className="flex flex-col items-end">
           <span className="text-xs font-medium text-pink-300/80 leading-tight truncate max-w-[80px]">
-            {p2Name}
+            {resolvedP2Name}
           </span>
           <div className="flex items-baseline gap-1.5">
             <span className="text-xs text-pink-300/60" suppressHydrationWarning>
@@ -141,10 +146,10 @@ const CenterScoreBar = React.memo(function CenterScoreBar({
         </div>
         {/* Avatar */}
         {p2Avatar ? (
-          <img src={p2Avatar} alt={p2Name} className="w-8 h-8 rounded-full object-cover border-2" style={{ borderColor: p2Color }} />
+          <img src={p2Avatar} alt={resolvedP2Name} className="w-8 h-8 rounded-full object-cover border-2" style={{ borderColor: p2Color }} />
         ) : (
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white border-2" style={{ backgroundColor: p2Color, borderColor: p2Color }}>
-            {p2Name.charAt(0).toUpperCase()}
+            {resolvedP2Name.charAt(0).toUpperCase()}
           </div>
         )}
       </div>
@@ -257,8 +262,8 @@ export function DuetNoteHighway({
   gameMode,
   missingWordsIndices,
   isBlindSection,
-  p1PlayerName = 'Player 1',
-  p2PlayerName = 'Player 2',
+  p1PlayerName,
+  p2PlayerName,
   p2Player,
   noteDisplayStyle = 'classic',
 }: DuetNoteHighwayProps) {

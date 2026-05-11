@@ -1,6 +1,7 @@
 'use client';
 
 import type { PtmPlayer } from '@/components/game/ptm-types';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface PtmHudPlayerScoreProps {
   players: PtmPlayer[];
@@ -8,6 +9,7 @@ interface PtmHudPlayerScoreProps {
 }
 
 export function PtmHudPlayerScore({ players, currentPlayer }: PtmHudPlayerScoreProps) {
+  const { t } = useTranslation();
   const teamScore = players.reduce((sum, p) => sum + p.score, 0);
 
   return (
@@ -29,7 +31,7 @@ export function PtmHudPlayerScore({ players, currentPlayer }: PtmHudPlayerScoreP
             {currentPlayer?.name?.charAt(0).toUpperCase()}
           </div>
         )}
-        <div className="text-[10px] text-white/50 uppercase tracking-wider">Jetzt singt</div>
+        <div className="text-[10px] text-white/50 uppercase tracking-wider">{t('passTheMic.nowSinging')}</div>
         <div className="text-base font-bold truncate" style={{ color: currentPlayer?.color }}>
           {currentPlayer?.name}
         </div>
@@ -43,7 +45,7 @@ export function PtmHudPlayerScore({ players, currentPlayer }: PtmHudPlayerScoreP
 
       {/* Team total score — right next to "Jetzt singt" */}
       <div className="bg-black/50 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/10 text-center w-32">
-        <div className="text-[10px] text-white/40 uppercase tracking-wider">Team-Score</div>
+        <div className="text-[10px] text-white/40 uppercase tracking-wider">{t('passTheMic.teamScore')}</div>
         <div className="text-lg font-bold text-cyan-400">
           {teamScore.toLocaleString()}
         </div>

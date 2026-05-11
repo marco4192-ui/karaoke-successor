@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useGameStore } from '@/lib/game/store';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // Performance stats display
 export function PerformanceDisplay() {
   const { profiles, activeProfileId } = useGameStore();
   const activeProfile = profiles.find(p => p.id === activeProfileId);
+  const { t } = useTranslation();
   
   // Avoid hydration mismatch - only show content after mount
   const [isMounted, setIsMounted] = useState(false);
@@ -22,7 +24,7 @@ export function PerformanceDisplay() {
     return (
       <Card className="bg-white/5 border-white/10">
         <CardContent className="pt-4 text-center text-white/40">
-          Loading stats...
+          {t('gameEnhancements.loadingStats')}
         </CardContent>
       </Card>
     );
@@ -32,7 +34,7 @@ export function PerformanceDisplay() {
     return (
       <Card className="bg-white/5 border-white/10">
         <CardContent className="pt-4 text-center text-white/60">
-          Select or create a character to view performance stats
+          {t('gameEnhancements.noCharacter')}
         </CardContent>
       </Card>
     );
@@ -60,25 +62,25 @@ export function PerformanceDisplay() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="text-2xl font-bold text-cyan-400">{activeProfile.totalScore.toLocaleString()}</p>
-            <p className="text-sm text-white/60">Total Score</p>
+            <p className="text-sm text-white/60">{t('gameEnhancements.totalScore')}</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-purple-400">{totalGames}</p>
-            <p className="text-sm text-white/60">Games Played</p>
+            <p className="text-sm text-white/60">{t('gameEnhancements.gamesPlayed')}</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-green-400">{avgAccuracy}%</p>
-            <p className="text-sm text-white/60">Avg Accuracy</p>
+            <p className="text-sm text-white/60">{t('gameEnhancements.avgAccuracy')}</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-yellow-400">{activeProfile.stats.bestCombo}</p>
-            <p className="text-sm text-white/60">Best Combo</p>
+            <p className="text-sm text-white/60">{t('gameEnhancements.bestCombo')}</p>
           </div>
         </div>
         
         {activeProfile.achievements.length > 0 && (
           <div className="mt-4">
-            <p className="text-sm text-white/60 mb-2">Recent Achievements</p>
+            <p className="text-sm text-white/60 mb-2">{t('gameEnhancements.recentAchievements')}</p>
             <div className="flex flex-wrap gap-2">
               {activeProfile.achievements.slice(0, 5).map(a => (
                 <Badge key={a.id} variant="outline" className="border-yellow-500/50 text-yellow-400">

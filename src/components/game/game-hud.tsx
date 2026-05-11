@@ -3,6 +3,7 @@
 import type { AudioEffectsEngine } from '@/lib/audio/audio-effects';
 import { PRESET_LABELS } from '@/lib/audio/audio-effects';
 import type { AudioEffectPreset } from '@/lib/audio/audio-effects';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== VOLUME METER =====================
 
@@ -30,11 +31,13 @@ interface AudioEffectsButtonProps {
 }
 
 export function AudioEffectsButton({ onClick }: AudioEffectsButtonProps) {
+  const { t } = useTranslation();
+
   return (
     <button
       onClick={onClick}
       className="fixed bottom-24 right-4 z-30 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
-      title="Audio Effects"
+      title={t('gameHud.audioEffects')}
     >
       🎛️
     </button>
@@ -64,14 +67,16 @@ export function AudioEffectsPanel({
   onEchoChange,
   onApplyPreset,
 }: AudioEffectsPanelProps) {
+  const { t } = useTranslation();
+
   if (!show) return null;
 
   return (
     <div className="fixed bottom-40 right-4 z-30 w-72 bg-gray-800/95 rounded-xl p-4 border border-white/20">
-      <h4 className="font-semibold mb-3">Audio Effects</h4>
+      <h4 className="font-semibold mb-3">{t('gameHud.audioEffects')}</h4>
       <div className="space-y-3">
         <div>
-          <span className="text-xs text-white/60">Reverb: {Math.round(reverbAmount * 100)}%</span>
+          <span className="text-xs text-white/60">{t('gameHud.reverb').replace('{n}', String(Math.round(reverbAmount * 100)))}</span>
           <input
             type="range"
             min="0"
@@ -86,7 +91,7 @@ export function AudioEffectsPanel({
           />
         </div>
         <div>
-          <span className="text-xs text-white/60">Echo: {Math.round(echoAmount * 100)}%</span>
+          <span className="text-xs text-white/60">{t('gameHud.echo').replace('{n}', String(Math.round(echoAmount * 100)))}</span>
           <input
             type="range"
             min="0"
@@ -101,7 +106,7 @@ export function AudioEffectsPanel({
           />
         </div>
         <div>
-          <span className="text-xs text-white/60 mb-1 block">Presets</span>
+          <span className="text-xs text-white/60 mb-1 block">{t('gameHud.presets')}</span>
           <div className="flex flex-wrap gap-1">
             {PRESET_KEYS.map(key => (
               <button
@@ -127,15 +132,17 @@ interface AdIndicatorProps {
 }
 
 export function AdIndicator({ isAdPlaying, adCountdown }: AdIndicatorProps) {
+  const { t } = useTranslation();
+
   if (!isAdPlaying) return null;
 
   return (
     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40">
       <div className="bg-black/80 backdrop-blur-sm px-6 py-3 rounded-full border border-yellow-500/50 flex items-center gap-3">
         <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" />
-        <span className="text-yellow-400 font-medium">Werbung läuft</span>
+        <span className="text-yellow-400 font-medium">{t('gameHud.adPlaying')}</span>
         <span className="text-white/60">-</span>
-        <span className="text-white/80">Spiel pausiert</span>
+        <span className="text-white/80">{t('gameHud.gamePaused')}</span>
         {adCountdown > 0 && (
           <>
             <span className="text-white/60">-</span>

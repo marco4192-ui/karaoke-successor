@@ -1,6 +1,7 @@
 'use client';
 
 import type { SelectedPlayer } from './unified-party-setup.types';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== CONNECTION STATUS BADGE =====================
 // Small colored dot showing companion connection status.
@@ -19,13 +20,14 @@ export function ConnectionStatusBadge({
   size = 'sm',
   asRing = false,
 }: ConnectionStatusBadgeProps) {
+  const { t } = useTranslation();
   const dotSize = size === 'sm' ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5';
 
   // Only companion players have connection status
   if (player.playerType !== 'companion') {
     // For mic players, show a subtle mic icon or nothing
     return (
-      <span className="text-xs opacity-70" title="Mikrofon-Spieler">
+      <span className="text-xs opacity-70" title={t('connectionStatus.micPlayer')}>
         🎤
       </span>
     );
@@ -44,8 +46,8 @@ export function ConnectionStatusBadge({
         }`}
         title={
           isConnected
-            ? `${player.name} ist verbunden`
-            : `${player.name} ist nicht verbunden`
+            ? t('connectionStatus.connected').replace('{n}', player.name)
+            : t('connectionStatus.disconnected').replace('{n}', player.name)
         }
       />
     );
@@ -55,8 +57,8 @@ export function ConnectionStatusBadge({
   return (
     <div className="relative flex items-center justify-center" title={
       isConnected
-        ? `${player.name} ist verbunden`
-        : `${player.name} ist nicht verbunden`
+        ? t('connectionStatus.connected').replace('{n}', player.name)
+        : t('connectionStatus.disconnected').replace('{n}', player.name)
     }>
       <div
         className={`${dotSize} rounded-full ${

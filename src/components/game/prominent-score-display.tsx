@@ -3,6 +3,7 @@
 import React from 'react';
 import { Player } from '@/types/game';
 import { MAX_POINTS_PER_SONG } from '@/lib/game/scoring';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface ProminentScoreDisplayProps {
   player: Player | undefined;
@@ -14,9 +15,10 @@ interface ProminentScoreDisplayProps {
  * - Top center: large real-time score out of max, combo counter
  */
 export const ProminentScoreDisplay = React.memo(function ProminentScoreDisplay({ player }: ProminentScoreDisplayProps) {
+  const { t } = useTranslation();
   const score = player?.score || 0;
   const combo = player?.combo || 0;
-  const name = player?.name || 'Player 1';
+  const name = player?.name || t('prominentScore.player1');
   const avatar = player?.avatar;
   const color = player?.color || '#4ECDC4';
 
@@ -70,7 +72,7 @@ export const ProminentScoreDisplay = React.memo(function ProminentScoreDisplay({
                 <span className="text-yellow-400 font-bold text-base">
                   {combo}x
                 </span>
-                <span className="text-white/60">COMBO</span>
+                <span className="text-white/60">{t('prominentScore.combo')}</span>
                 {combo >= 5 && (
                   <span className="text-green-400 font-semibold text-xs">
                     (+{Math.round(Math.min(0.5, combo * 0.02) * 100)}%)
@@ -93,7 +95,7 @@ export const ProminentScoreDisplay = React.memo(function ProminentScoreDisplay({
               textShadow: '0 0 20px currentColor, 0 0 40px currentColor, 0 0 60px currentColor',
             }}
           >
-            {combo}x COMBO!
+            {t('prominentScore.comboMultiplied').replace('{n}', String(combo))}
           </div>
         </div>
       )}

@@ -276,6 +276,7 @@ export function CompetitiveGameView({
   onEndGame,
   onPlayMatch,
 }: CompetitiveGameViewProps) {
+  const { t } = useTranslation();
   const currentRound = getCurrentRound(game);
   const ranked = getRankedPlayers(game);
   const hasTriggeredSetup = useRef(false);
@@ -369,6 +370,7 @@ interface CompetitiveScoreboardProps {
 }
 
 function CompetitiveScoreboard({ game, ranked, modeType, onNextRound }: CompetitiveScoreboardProps) {
+  const { t } = useTranslation();
   const lastRound = game.rounds[game.rounds.length - 1];
   const modeIcon = modeType === 'missing-words' ? '📝' : '🙈';
 
@@ -475,6 +477,7 @@ function CompetitiveWinnerScreen({
   modeType: CompetitiveModeType;
   onEndGame: () => void;
 }) {
+  const { t } = useTranslation();
   const winner = ranked[0];
   const modeIcon = modeType === 'missing-words' ? '📝' : '🙈';
 

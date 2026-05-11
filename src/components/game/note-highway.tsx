@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { Note, LyricLine } from '@/types/game';
 import { getNoteShapeClasses, getNoteDisplayStyleClasses, NoteShapeStyle, NoteDisplayStyle, PitchStats } from '@/lib/game/note-utils';
 import { MicIcon } from '@/components/icons';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== TYPES =====================
 
@@ -297,12 +298,14 @@ export const NoteHighway = React.memo(function NoteHighway({
   noteWindow = 4000,
   playerColor: _playerColor = '#22d3ee',
   showPlayerLabel = false,
-  playerName = 'Player 1',
+  playerName,
   playerNumber = 1,
   visibleTop = 8,
   visibleRange = 77,
   className = '',
 }: NoteHighwayProps) {
+  const { t } = useTranslation();
+
   // Get note shape classes from style
   const noteShape = useMemo(() => getNoteShapeClasses(noteShapeStyle), [noteShapeStyle]);
 
@@ -311,6 +314,8 @@ export const NoteHighway = React.memo(function NoteHighway({
   const bgGradientClass = playerNumber === 1
     ? 'absolute inset-0 bg-gradient-to-b from-cyan-900/20 to-transparent pointer-events-none'
     : 'absolute inset-0 bg-gradient-to-t from-pink-900/20 to-transparent pointer-events-none';
+
+  const resolvedPlayerName = playerName || t('prominentScore.player1');
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${className}`}>
@@ -354,7 +359,7 @@ export const NoteHighway = React.memo(function NoteHighway({
       {/* Player label */}
       {showPlayerLabel && (
         <PlayerLabel
-          playerName={playerName}
+          playerName={resolvedPlayerName}
           playerNumber={playerNumber}
           color={colorScheme}
         />

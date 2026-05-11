@@ -703,7 +703,7 @@ const enTranslations = {
     cameraDevice: 'Camera Device',
     selectCamera: 'Select camera',
     defaultCamera: 'Default Camera',
-    camera: 'Camera {n}',
+    camera: 'Camera',
     size: 'Size',
     position: 'Position',
     filter: 'Filter',
@@ -1053,6 +1053,7 @@ const enTranslations = {
     preview: 'Preview',
     previewDesc: 'Preview your webcam settings',
     enableToPreview: 'Enable webcam to see preview',
+    close: 'Close Webcam',
   },
   settingsEditor: {
     title: 'Song Editor',
@@ -2367,7 +2368,7 @@ const deTranslations = {
     cameraDevice: 'Kamera-Gerät',
     selectCamera: 'Kamera wählen',
     defaultCamera: 'Standard-Kamera',
-    camera: 'Kamera {n}',
+    camera: 'Kamera',
     size: 'Größe',
     position: 'Position',
     filter: 'Filter',
@@ -2717,6 +2718,7 @@ const deTranslations = {
     preview: 'Vorschau',
     previewDesc: 'Vorschau deiner Webcam-Einstellungen',
     enableToPreview: 'Webcam aktivieren um Vorschau zu sehen',
+    close: 'Kamera schließen',
   },
   settingsEditor: {
     title: 'Song-Editor',

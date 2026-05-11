@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface WebcamButtonProps {
   /** Ref to collect active streams (for cleanup by parent) */
@@ -15,6 +16,7 @@ interface WebcamButtonProps {
  */
 export function WebcamButton({ activeWebcamStreamsRef }: WebcamButtonProps) {
   const [webcamStream, setWebcamStream] = useState<MediaStream | null>(null);
+  const { t } = useTranslation();
 
   const toggleWebcam = useCallback(() => {
     if (webcamStream) {
@@ -50,7 +52,7 @@ export function WebcamButton({ activeWebcamStreamsRef }: WebcamButtonProps) {
             ? 'text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10'
             : 'text-white/80 hover:text-white hover:bg-white/10'
         }`}
-        title={webcamStream ? 'Kamera schließen' : 'Kamera'}
+        title={webcamStream ? t('settingsWebcam.close') : t('webcamBackground.camera')}
       >
         📷
       </Button>
@@ -64,7 +66,7 @@ export function WebcamButton({ activeWebcamStreamsRef }: WebcamButtonProps) {
           ref={(el) => { if (el) el.srcObject = webcamStream; }}
           className="pointer-events-auto fixed bottom-20 right-4 w-[200px] rounded-xl z-[100] border-2 border-white/30 cursor-pointer"
           onClick={toggleWebcam}
-          title="Kamera schließen"
+          title={t('settingsWebcam.close')}
         />
       )}
     </>

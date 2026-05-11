@@ -2,6 +2,7 @@
 
 import { Badge } from '@/components/ui/badge';
 import type { Difficulty } from '@/types/game';
+import { useTranslation } from '@/lib/i18n/translations';
 
 export type { Difficulty } from '@/types/game';
 
@@ -10,10 +11,16 @@ interface DifficultyBadgeProps {
   onCycleDifficulty?: () => void;
 }
 
-const DIFFICULTY_CONFIG: Record<Difficulty, { label: string; bg: string; text: string; border: string }> = {
-  easy:   { label: 'Leicht', bg: 'bg-green-500/20',  text: 'text-green-400',  border: 'border-green-500/30' },
-  medium: { label: 'Mittel', bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/30' },
-  hard:   { label: 'Schwer', bg: 'bg-red-500/20',    text: 'text-red-400',    border: 'border-red-500/30' },
+const DIFFICULTY_CONFIG: Record<Difficulty, { bg: string; text: string; border: string }> = {
+  easy:   { bg: 'bg-green-500/20',  text: 'text-green-400',  border: 'border-green-500/30' },
+  medium: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/30' },
+  hard:   { bg: 'bg-red-500/20',    text: 'text-red-400',    border: 'border-red-500/30' },
+};
+
+const DIFFICULTY_LABELS: Record<Difficulty, string> = {
+  easy: 'song.easy',
+  medium: 'song.medium',
+  hard: 'song.hard',
 };
 
 /**
@@ -22,7 +29,9 @@ const DIFFICULTY_CONFIG: Record<Difficulty, { label: string; bg: string; text: s
  * Otherwise, it's a read-only display.
  */
 export function DifficultyBadge({ difficulty, onCycleDifficulty }: DifficultyBadgeProps) {
+  const { t } = useTranslation();
   const cfg = DIFFICULTY_CONFIG[difficulty];
+  const label = t(DIFFICULTY_LABELS[difficulty]);
 
   return (
     <Badge
@@ -32,7 +41,7 @@ export function DifficultyBadge({ difficulty, onCycleDifficulty }: DifficultyBad
         onCycleDifficulty ? 'cursor-pointer' : 'cursor-default'
       } ${cfg.bg} ${cfg.text} ${cfg.border}`}
     >
-      {cfg.label}
+      {label}
     </Badge>
   );
 }

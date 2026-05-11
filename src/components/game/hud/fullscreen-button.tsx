@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface FullscreenButtonProps {
   className?: string;
@@ -12,6 +13,8 @@ interface FullscreenButtonProps {
  * Tauri-only: No browser-specific solution needed.
  */
 export function FullscreenButton({ className }: FullscreenButtonProps) {
+  const { t } = useTranslation();
+
   const handleFullscreen = () => {
     if (typeof window === 'undefined') return;
 
@@ -38,7 +41,7 @@ export function FullscreenButton({ className }: FullscreenButtonProps) {
       variant="ghost"
       onClick={handleFullscreen}
       className={`text-white/80 hover:text-white hover:bg-white/10 rounded-lg w-10 h-10 p-0 text-sm ${className || ''}`}
-      title="Vollbild"
+      title={t('webcamBackground.fullscreen')}
     >
       ⛶
     </Button>

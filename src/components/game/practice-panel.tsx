@@ -1,6 +1,7 @@
 'use client';
 
 import { PracticeModeConfig } from '@/lib/game/practice-mode';
+import { useTranslation } from '@/lib/i18n/translations';
 
 export interface PracticePanelProps {
   practiceMode: PracticeModeConfig;
@@ -15,6 +16,8 @@ export function PracticePanel({
   onToggleControls,
   onPracticeModeChange,
 }: PracticePanelProps) {
+  const { t } = useTranslation();
+
   return (
     <>
       {/* Practice Mode Button */}
@@ -25,7 +28,7 @@ export function PracticePanel({
             ? 'bg-purple-500 ring-2 ring-purple-300'
             : 'bg-white/10 hover:bg-white/20'
         }`}
-        title="Practice Mode"
+        title={t('practicePanel.title')}
       >
         🎯
       </button>
@@ -33,7 +36,7 @@ export function PracticePanel({
       {/* Practice Controls Panel */}
       {showControls && (
         <div className="fixed bottom-40 left-4 z-30 w-72 bg-gray-800/95 rounded-xl p-4 border border-white/20">
-          <h4 className="font-semibold mb-3">Practice Mode</h4>
+          <h4 className="font-semibold mb-3">{t('practicePanel.title')}</h4>
           <div className="space-y-3">
             <label className="flex items-center gap-2">
               <input
@@ -44,7 +47,7 @@ export function PracticePanel({
                 }
                 className="w-4 h-4 rounded"
               />
-              <span className="text-sm">Enable Practice Mode</span>
+              <span className="text-sm">{t('practicePanel.enable')}</span>
             </label>
             <div>
               <span className="text-xs text-white/60">
@@ -71,7 +74,7 @@ export function PracticePanel({
                 }
                 className="w-4 h-4 rounded"
               />
-              <span className="text-sm">Pitch Guide</span>
+              <span className="text-sm">{t('practicePanel.pitchGuide')}</span>
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -82,7 +85,7 @@ export function PracticePanel({
                 }
                 className="w-4 h-4 rounded"
               />
-              <span className="text-sm">Auto-Play Notes</span>
+              <span className="text-sm">{t('practicePanel.autoPlayNotes')}</span>
             </label>
           </div>
         </div>
