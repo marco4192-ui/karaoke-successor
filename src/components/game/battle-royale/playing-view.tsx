@@ -7,24 +7,21 @@ import { Progress } from '@/components/ui/progress';
 import { PauseButton } from '@/components/game/hud/pause-button';
 import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
 import { Song } from '@/types/game';
-import { BattleRoyaleGame, BattleRoyalePlayer, getBattleRoyaleStats } from '@/lib/game/battle-royale';
+import { BattleRoyaleGame, BattleRoyalePlayer } from '@/lib/game/battle-royale';
 import { LyricsDisplay } from './lyrics-display';
 import { usePartyStore } from '@/lib/game/party-store';
 
 interface PlayingViewProps {
   game: BattleRoyaleGame;
-  stats: ReturnType<typeof getBattleRoyaleStats>;
   sortedPlayers: BattleRoyalePlayer[];
   activePlayers: BattleRoyalePlayer[];
   currentSong: Song | null;
   currentTime: number;
   roundTimeLeft: number;
-  roundDuration: number;
   audioRef: React.RefObject<HTMLAudioElement | null>;
   videoRef: React.RefObject<HTMLVideoElement | null>;
   setCurrentTime: (_time: number) => void;
   onRoundEnd: () => void;
-  onBack?: () => void;
 }
 
 export function PlayingView({
@@ -121,12 +118,18 @@ export function PlayingView({
       {/* ─────────── Pause + Fullscreen (universal HUD) ─────────── */}
       <div className="absolute top-3 left-3 z-20 pointer-events-auto">
         <PauseButton
-          isPlaying={game.status === 'playing'}
+          isPlaying={game.status === 'playing' && pauseDialogAction !== 'song-pause'}
           onTogglePause={() => {
-            if (audioRef.current && !audioRef.current.paused) {
-              audioRef.current.pause();
+            if (pauseDialogAction === 'song-pause') {
+              // Currently paused → resume
+              setPauseDialogAction(null);
+            } else {
+              // Currently playing → pause
+              if (audioRef.current && !audioRef.current.paused) {
+                audioRef.current.pause();
+              }
+              setPauseDialogAction('song-pause');
             }
-            setPauseDialogAction('song-pause');
           }}
         />
       </div>
