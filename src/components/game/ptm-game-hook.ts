@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { Song, PLAYER_COLORS, LyricLine, Note, EMPTY_PLAYER_SCORE } from '@/types/game';
+import { Song, LyricLine, Note, EMPTY_PLAYER_SCORE } from '@/types/game';
 
 /** Minimum interval (ms) between scoring evaluations to avoid excessive recalculation */
 const SCORING_THROTTLE_MS = 250;
@@ -15,7 +15,7 @@ import { useYouTubeGame } from '@/hooks/use-youtube-game';
 import { useMobileGameSync } from '@/hooks/use-mobile-game-sync';
 import { calculateScoringMetadata } from '@/lib/game/scoring';
 import { findActiveNote, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';
-import { calculatePitchStats, PitchStats, NOTE_WINDOW, VISIBLE_TOP, VISIBLE_RANGE, getVisibleNotes } from '@/lib/game/note-utils';
+import { calculatePitchStats, PitchStats, NOTE_WINDOW, getVisibleNotes } from '@/lib/game/note-utils';
 import type { PassTheMicRoundResult } from '@/lib/game/party-store';
 
 import type { PtmPlayer, PtmSegment, PassTheMicSettings, GamePhase } from '@/components/game/ptm-types';
@@ -115,7 +115,7 @@ export function usePtmGameLogic({
   onUpdateGame,
   onEndGame,
   onNavigate,
-  onPause,
+  onPause: _onPause,
 }: PtmGameScreenProps): PtmGameHookReturn {
   const safeSettings: PassTheMicSettings = settings ?? DEFAULT_SETTINGS;
   const setIsSongPlaying = usePartyStore(s => s.setIsSongPlaying);

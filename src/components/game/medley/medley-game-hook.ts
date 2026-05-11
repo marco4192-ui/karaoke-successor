@@ -83,9 +83,9 @@ export function useMedleyGame({
   songs: medleySongs,
   settings,
   matchups,
-  seriesHistory,
+  seriesHistory: _seriesHistory,
   onRoundComplete,
-  onEndGame,
+  onEndGame: _onEndGame,
 }: MedleyGameScreenProps): MedleyGameState {
   // Subscribe to specific fields only (NOT the entire store) to minimize re-renders.
   // Using the whole store (usePartyStore()) causes React #185 when any

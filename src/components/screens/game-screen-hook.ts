@@ -23,16 +23,11 @@ import {
 import {
   calculatePitchStats,
   PitchStats,
-  SING_LINE_POSITION,
   NOTE_WINDOW,
-  VISIBLE_TOP,
-  VISIBLE_RANGE,
   getVisibleNotes,
 } from '@/lib/game/note-utils';
 import {
-  ParticleSystem,
   useParticleEmitter,
-  ComboFireEffect,
   useSongEnergy,
 } from '@/components/game/visual-effects';
 import { useRemoteControl } from '@/hooks/use-remote-control';
@@ -179,7 +174,7 @@ export interface GameScreenHookReturn {
 
 // ===================== MAIN HOOK =====================
 
-export function useGameScreenLogic({ onEnd, onBack, onPause }: GameScreenProps): GameScreenHookReturn {
+export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScreenProps): GameScreenHookReturn {
   const { gameState, setCurrentTime, setDetectedPitch, updatePlayer, endGame, setResults, addPlayer, createProfile, profiles, setMissingWordsIndices, setBlindSection } = useGameStore();
   const blindFrequency = usePartyStore(s => s.competitiveGame?.settings?.blindFrequency);
   const missingWordFrequency = usePartyStore(s => s.competitiveGame?.settings?.missingWordFrequency);
