@@ -29,12 +29,12 @@ export interface PtmTransitionOverlayProps {
 const TOTAL_DURATION = 3500; // 3.5 seconds total
 const BLINK_DURATION = 1500; // 1.5 seconds for 3 blinks
 const SHOW_DURATION = 1500; // 1.5 seconds for name display
-const DISSOLVE_DURATION = 500; // 0.5 seconds for fade out
+const _DISSOLVE_DURATION = 500; // 0.5 seconds for fade out (available for future use)
 
 export function PtmTransitionOverlay({
   visible,
   nextPlayer,
-  segmentLabel,
+  segmentLabel: _segmentLabel,
   onComplete,
   onSkip,
 }: PtmTransitionOverlayProps) {
@@ -46,6 +46,7 @@ export function PtmTransitionOverlay({
   // Reset and start animation when visible changes
   useEffect(() => {
     if (!visible || !nextPlayer) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- animation controller: reset state on visibility change
       setPhase('idle');
       setBlinkCount(0);
       setShowName(false);
