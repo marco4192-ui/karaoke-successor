@@ -18,6 +18,7 @@ export interface NoteProgress {
   lastEvaluatedTime: number;
   isComplete: boolean;
   wasPerfect: boolean;
+  accumulatedPoints: number;
 }
 
 export interface ScoringMetadata {

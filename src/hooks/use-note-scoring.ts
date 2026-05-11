@@ -197,6 +197,7 @@ function runScoringPass(
           lastEvaluatedTime: currentTime,
           isComplete: false,
           wasPerfect: false,
+          accumulatedPoints: 0,
         };
         noteProgressMap.set(noteId, noteProgress);
       }
@@ -236,37 +237,24 @@ function runScoringPass(
             const newCombo = comboRef.current + 1;
 
             scoreDelta += finalPoints;
+            noteProgress.accumulatedPoints += finalPoints;
             comboUpdate = newCombo;
             maxComboUpdate = Math.max(maxComboRef.current, newCombo);
             comboRef.current = newCombo;
             maxComboRef.current = maxComboUpdate;
             hasUpdates = true;
-
-            pendingEvents.push({
-              type: tickResult.displayType === 'Perfect' ? 'perfect' : 'good',
-              displayType: tickResult.displayType,
-              points: finalPoints,
-              time: currentTime,
-            });
           }
         } else {
           comboUpdate = 0;
           comboRef.current = 0;
           hasUpdates = true;
-
-          pendingEvents.push({
-            type: 'miss',
-            displayType: 'Miss',
-            points: 0,
-            time: currentTime,
-          });
         }
       }
 
       break;
     }
 
-    // Check if we just passed a note
+    // Check if we just passed a note — emit ONE aggregated score event
     if (currentTime > noteEnd) {
       const progress = noteProgressMap.get(noteId);
 
@@ -288,6 +276,32 @@ function runScoringPass(
         if (progress.isGolden && progress.ticksHit > 0) {
           goldenNotesDelta++;
         }
+
+        // Determine aggregated displayType based on hit ratio across all ticks
+        const hitRatio = progress.ticksEvaluated > 0
+          ? progress.ticksHit / progress.ticksEvaluated
+          : 0;
+        let aggregatedDisplayType: ScoreEvent['displayType'];
+        if (hitRatio >= 1) {
+          aggregatedDisplayType = 'Perfect';
+        } else if (hitRatio >= 0.8) {
+          aggregatedDisplayType = 'Great';
+        } else if (hitRatio >= 0.5) {
+          aggregatedDisplayType = 'Good';
+        } else if (hitRatio > 0) {
+          aggregatedDisplayType = 'Okay';
+        } else {
+          aggregatedDisplayType = 'Miss';
+        }
+
+        pendingEvents.push({
+          type: aggregatedDisplayType === 'Miss' ? 'miss'
+            : aggregatedDisplayType === 'Perfect' ? 'perfect'
+            : 'good',
+          displayType: aggregatedDisplayType,
+          points: progress.accumulatedPoints,
+          time: noteEnd,
+        });
       }
     }
   }

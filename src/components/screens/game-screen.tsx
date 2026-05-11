@@ -311,7 +311,7 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
       />
 
       {/* Score Events & Particles — disabled in low-performance mode */}
-      {!g.isLowPerf && <ScoreEventsDisplay events={g.scoreEvents} maxVisible={5} />}
+      {!g.isLowPerf && <ScoreEventsDisplay events={g.scoreEvents} maxVisible={3} />}
       {!g.isLowPerf && <ParticleSystem particles={g.particles} />}
 
       {/* Spectrogram Display / Equalizer — left side, below pitch detection */}
