@@ -220,6 +220,7 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
             p2DetectedPitch={g.p2DetectedPitch}
             p1State={g.gameState.players[0]}
             p2State={g.p2State}
+            p2Player={g.gameState.players[1]}
             noteShapeStyle={g.noteShapeStyle}
             p1Lines={g.timingData?.p1Lines}
             p2Lines={g.timingData?.p2Lines}

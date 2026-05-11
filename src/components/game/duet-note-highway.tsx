@@ -38,6 +38,8 @@ export interface DuetNoteHighwayProps {
   p1State: Player;
   /** P2 score and stats */
   p2State: PlayerScoringState;
+  /** P2 player profile (for avatar + color display in score bar) */
+  p2Player?: Player;
   /** Note shape style from settings */
   noteShapeStyle: NoteShapeStyle;
   /** P1 lines for lyrics */
@@ -74,16 +76,18 @@ const CenterScoreBar = React.memo(function CenterScoreBar({
   p2State,
   p1Name = 'Player 1',
   p2Name = 'Player 2',
+  p2Player,
 }: {
   p1State: Player;
   p2State: PlayerScoringState;
   p1Name?: string;
   p2Name?: string;
+  p2Player?: Player;
 }) {
   const p1Avatar = (p1State as Player)?.avatar;
-  const p2Avatar = p2State?.avatar;
+  const p2Avatar = p2Player?.avatar;
   const p1Color = (p1State as Player)?.color || '#22d3ee';
-  const p2Color = p2State?.color || '#ec4899';
+  const p2Color = p2Player?.color || '#ec4899';
 
   return (
     <div className="relative flex items-center justify-center z-30" style={{ height: '8%' }}>
@@ -254,6 +258,7 @@ export function DuetNoteHighway({
   isBlindSection,
   p1PlayerName = 'Player 1',
   p2PlayerName = 'Player 2',
+  p2Player,
   noteDisplayStyle = 'classic',
 }: DuetNoteHighwayProps) {
   return (
@@ -292,7 +297,7 @@ export function DuetNoteHighway({
       </div>
 
       {/* ===== CENTER SCORE BAR with VS Badge - 8% ===== */}
-      <CenterScoreBar p1State={p1State} p2State={p2State} p1Name={p1PlayerName} p2Name={p2PlayerName} />
+      <CenterScoreBar p1State={p1State} p2State={p2State} p1Name={p1PlayerName} p2Name={p2PlayerName} p2Player={p2Player} />
 
       {/* ===== PLAYER 2 (BOTTOM HALF - PINK) - 46% ===== */}
       <div className="relative overflow-hidden" style={{ height: '46%' }}>
