@@ -116,10 +116,12 @@ const CenterScoreBar = React.memo(function CenterScoreBar({
   );
 });
 
+const PREVIEW_TIME = 2000;
+
 /**
  * Lyrics display for a player's section
  */
-function PlayerLyrics({
+const PlayerLyrics = React.memo(function PlayerLyrics({
   lines,
   currentTime,
   playerColor,
@@ -138,7 +140,6 @@ function PlayerLyrics({
   missingWordsIndices?: number[];
   isBlindSection?: boolean;
 }) {
-  const PREVIEW_TIME = 2000;
 
   const displayLine = useMemo(() => {
     if (!lines) return null;
@@ -179,7 +180,7 @@ function PlayerLyrics({
       </div>
     </div>
   );
-}
+});
 
 // ===================== CONSTANTS FOR HALF-SCREEN =====================
 

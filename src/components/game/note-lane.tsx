@@ -45,10 +45,7 @@ interface NoteLaneProps {
 
 // ===================== SUB-COMPONENTS =====================
 
-/**
- * Pitch grid background lines
- */
-function PitchGrid({ pitchRange }: { pitchRange: number }) {
+const PitchGrid = React.memo(function PitchGrid({ pitchRange }: { pitchRange: number }) {
   return (
     <div className="absolute inset-0 pointer-events-none">
       {Array.from({ length: pitchRange + 1 }).map((_, i) => (
@@ -62,12 +59,9 @@ function PitchGrid({ pitchRange }: { pitchRange: number }) {
       ))}
     </div>
   );
-}
+});
 
-/**
- * Target line indicator showing where to sing
- */
-function TargetLine() {
+const TargetLine = React.memo(function TargetLine() {
   return (
     <div
       className="absolute top-0 bottom-0 w-1 bg-gradient-to-b from-transparent via-cyan-400 to-transparent z-10"
@@ -78,7 +72,7 @@ function TargetLine() {
       </div>
     </div>
   );
-}
+});
 
 /**
  * Single note block component
@@ -93,7 +87,7 @@ interface NoteBlockProps {
   windowHeight: number;
 }
 
-function NoteBlock({ data, noteShape, windowHeight }: NoteBlockProps) {
+const NoteBlock = React.memo(function NoteBlock({ data, noteShape, windowHeight }: NoteBlockProps) {
   const backgroundClass = getNoteBackgroundClasses(data.isGolden, data.isBonus);
   const boxShadow = getNoteBoxShadow(data.isActive, data.isGolden);
   
@@ -121,7 +115,7 @@ function NoteBlock({ data, noteShape, windowHeight }: NoteBlockProps) {
       </span>
     </div>
   );
-}
+});
 
 /**
  * Current pitch indicator showing the singer's current pitch
@@ -131,7 +125,7 @@ interface PitchIndicatorProps {
   windowHeight: number;
 }
 
-function PitchIndicator({ pitchY, windowHeight }: PitchIndicatorProps) {
+const PitchIndicator = React.memo(function PitchIndicator({ pitchY, windowHeight }: PitchIndicatorProps) {
   if (pitchY === null) return null;
   
   return (
@@ -159,7 +153,7 @@ function PitchIndicator({ pitchY, windowHeight }: PitchIndicatorProps) {
       </div>
     </div>
   );
-}
+});
 
 /**
  * Current lyrics display at the bottom
@@ -168,7 +162,7 @@ interface CurrentLyricsProps {
   currentLine: LyricLine | null;
 }
 
-function CurrentLyrics({ currentLine }: CurrentLyricsProps) {
+const CurrentLyrics = React.memo(function CurrentLyrics({ currentLine }: CurrentLyricsProps) {
   if (!currentLine) return null;
   
   return (
@@ -180,7 +174,7 @@ function CurrentLyrics({ currentLine }: CurrentLyricsProps) {
       </div>
     </div>
   );
-}
+});
 
 // ===================== MAIN COMPONENT =====================
 
