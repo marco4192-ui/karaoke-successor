@@ -13,11 +13,13 @@
 - Plan: Root-Verzeichnisse (`components/`, `app/`, `hooks/`, `lib/`, `types/`, `__tests__/`) prüfen ob sie Duplikate von `src/` sind, dann löschen.
 
 ## Schritt 2: Universal HUD — Grundkomponenten extrahieren
-- Status: 🔲 PENDING
+- Status: ✅ DONE
+- Commit: 141618c
 - Plan: `PauseButton`, `FullscreenButton`, `WebcamButton`, `DifficultyBadge` als eigene Komponenten in `src/components/game/hud/` extrahieren.
 
 ## Schritt 3: Universal HUD — GameHudShell zusammenbauen
-- Status: 🔲 PENDING
+- Status: ✅ DONE
+- Commit: 141618c
 - Plan: `GameHudShell` Komponente mit Layout-Slots:
   - Links: PauseButton
   - Rechts: DifficultyBadge + WebcamButton + FullscreenButton
