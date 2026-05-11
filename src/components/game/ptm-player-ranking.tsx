@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import type { PtmPlayer } from '@/components/game/ptm-types';
 
 interface PtmPlayerRankingProps {
@@ -8,9 +9,12 @@ interface PtmPlayerRankingProps {
 }
 
 export function PtmPlayerRanking({ players, currentPlayerIndex }: PtmPlayerRankingProps) {
-  const ranked = [...players]
-    .map((p, i) => ({ ...p, originalIndex: i }))
-    .sort((a, b) => b.score - a.score);
+  const ranked = useMemo(() =>
+    [...players]
+      .map((p, i) => ({ ...p, originalIndex: i }))
+      .sort((a, b) => b.score - a.score),
+    [players],
+  );
 
   return (
     <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20">
