@@ -1,8 +1,9 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
+import type { Difficulty } from '@/types/game';
 
-export type Difficulty = 'easy' | 'medium' | 'hard';
+export type { Difficulty } from '@/types/game';
 
 interface DifficultyBadgeProps {
   difficulty: Difficulty;

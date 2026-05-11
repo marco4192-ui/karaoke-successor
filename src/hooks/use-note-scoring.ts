@@ -13,7 +13,6 @@ import type { ChallengeModifier } from '@/lib/game/player-progression';
 
 // Score event type for visual feedback
 interface ScoreEvent {
-  type: string;
   displayType: 'Perfect' | 'Great' | 'Good' | 'Okay' | 'Miss';
   points: number;
   time: number;
@@ -295,9 +294,6 @@ function runScoringPass(
         }
 
         pendingEvents.push({
-          type: aggregatedDisplayType === 'Miss' ? 'miss'
-            : aggregatedDisplayType === 'Perfect' ? 'perfect'
-            : 'good',
           displayType: aggregatedDisplayType,
           points: progress.accumulatedPoints,
           time: noteEnd,
