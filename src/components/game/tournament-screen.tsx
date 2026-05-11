@@ -163,7 +163,7 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
                   onClick={() => setGlobalDifficulty(diff as Difficulty)}
                   className={difficulty === diff ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}
                 >
-                  {diff.charAt(0).toUpperCase() + diff.slice(1)}
+                  {diff === 'easy' ? t('tournament.easy') : diff === 'medium' ? t('tournament.medium') : t('tournament.hard')}
                 </Button>
               ))}
             </div>
@@ -242,6 +242,7 @@ interface TournamentBracketViewProps {
 }
 
 export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onManualWinner, onRepeatMatch, matchAborted, onAbortHandled, shortMode }: TournamentBracketViewProps) {
+  const { t } = useTranslation();
   const stats = getTournamentStats(bracket);
 
   // Get next match to play
@@ -274,11 +275,11 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
     <div className="max-w-full mx-auto px-4 h-[calc(100vh-5rem)] overflow-hidden flex flex-col">
       {/* Tournament Header — compact */}
       <div className="text-center mb-1 shrink-0">
-        <h1 className="text-2xl font-bold mb-0.5">🏆 Tournament Bracket</h1>
+        <h1 className="text-2xl font-bold mb-0.5">{t('tournament.bracketTitle')}</h1>
         <div className="flex items-center justify-center gap-3 text-white/60 text-sm">
-          <span>Round {stats.currentRound} of {stats.totalRounds}</span>
+          <span>{t('tournament.roundOfOf').replace('{n}', String(stats.currentRound)).replace('{m}', String(stats.totalRounds))}</span>
           <span>·</span>
-          <span>{stats.remainingPlayers} players remaining</span>
+          <span>{t('tournament.playersRemaining').replace('{n}', String(stats.remainingPlayers))}</span>
           {shortMode && <Badge className="bg-green-500/20 text-green-400 text-xs">60s</Badge>}
         </div>
       </div>
@@ -287,7 +288,7 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
       {bracket.champion && (
         <div className="bg-gradient-to-r from-amber-500/30 to-yellow-500/30 border-2 border-amber-500 rounded-xl p-4 mb-2 text-center shrink-0">
           <div className="text-4xl mb-1">👑</div>
-          <h2 className="text-xl font-bold text-amber-400 mb-1">CHAMPION!</h2>
+          <h2 className="text-xl font-bold text-amber-400 mb-1">{t('tournament.champion')}</h2>
           <div className="flex items-center justify-center gap-3">
             {bracket.champion.avatar ? (
               <img src={bracket.champion.avatar} alt={bracket.champion.name} className="w-10 h-10 rounded-full object-cover" />
@@ -309,7 +310,7 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
         <div className="mb-1 bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-pink-500/20 border border-cyan-500/30 rounded-xl p-2.5 shrink-0">
           <h3 className="text-sm font-bold mb-1.5 text-center flex items-center justify-center gap-2">
             <span className="animate-pulse">🎤</span>
-            <span>Next Duel: {nextMatch.player1?.name || 'TBD'} vs {nextMatch.player2?.name || 'TBD'}</span>
+            <span>{t('tournament.nextDuel')} {nextMatch.player1?.name || t('tournament.tbd')} {t('tournament.vs')} {nextMatch.player2?.name || t('tournament.tbd')}</span>
           </h3>
           <div className="flex items-center justify-center gap-5 mb-1.5">
             <PlayerDisplay player={nextMatch.player1} />
@@ -320,7 +321,7 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
             onClick={() => onPlayMatch(nextMatch)}
             className="w-full py-2.5 text-sm bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400"
           >
-            🎤 Start Next Match
+            {t('tournament.startNextMatch')}
           </Button>
         </div>
       )}
@@ -342,19 +343,19 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
       {/* Upcoming Duels — compact overlay at bottom */}
       {playableMatches.length > 1 && !bracket.champion && (
         <div className="mt-1 bg-white/5 rounded-lg p-1.5 shrink-0">
-          <h4 className="text-xs text-white/60 mb-1">📋 Upcoming Duels</h4>
+          <h4 className="text-xs text-white/60 mb-1">{t('tournament.upcomingDuels')}</h4>
           <div className="flex flex-wrap gap-1">
             {playableMatches.slice(1, 5).map((match, i) => (
               <div key={match.id} className="bg-white/5 rounded px-2 py-0.5 text-xs border border-white/10">
                 <span className="text-white/60">{i + 2}.</span>{' '}
-                <span className="text-cyan-400">{match.player1?.name || 'TBD'}</span>
-                <span className="text-white/40 mx-0.5">vs</span>
-                <span className="text-pink-400">{match.player2?.name || 'TBD'}</span>
+                <span className="text-cyan-400">{match.player1?.name || t('tournament.tbd')}</span>
+                <span className="text-white/40 mx-0.5">{t('tournament.vs')}</span>
+                <span className="text-pink-400">{match.player2?.name || t('tournament.tbd')}</span>
               </div>
             ))}
             {playableMatches.length > 5 && (
               <div className="text-white/40 text-xs self-center">
-                +{playableMatches.length - 5} more
+                {t('tournament.moreMatches').replace('{n}', String(playableMatches.length - 5))}
               </div>
             )}
           </div>
@@ -384,11 +385,12 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
 
 // Player Display Component
 function PlayerDisplay({ player, small = false }: { player: TournamentPlayer | null; small?: boolean }) {
+  const { t } = useTranslation();
   if (!player) {
     return (
       <div className={`flex items-center gap-2 ${small ? 'text-sm' : ''}`}>
         <div className={`${small ? 'w-8 h-8' : 'w-10 h-10'} rounded-full bg-white/10`} />
-        <span className="text-white/30">TBD</span>
+        <span className="text-white/30">{t('tournament.tbd')}</span>
       </div>
     );
   }

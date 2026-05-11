@@ -19,6 +19,7 @@ import {
   type RateMySongEntry,
   type RateMySongDailyEntry,
 } from '@/lib/game/rate-my-song-ranking';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== TYPES =====================
 
@@ -54,6 +55,7 @@ interface RateMySongSetupScreenProps {
 }
 
 export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongSetupScreenProps) {
+  const { t } = useTranslation();
   const activeProfiles = useMemo(() => profiles.filter(p => p.isActive !== false), [profiles]);
   const [playMode, setPlayMode] = useState<RateMySongPlayMode>('single');
   const [duration, setDuration] = useState<RateMySongDuration>('normal');
@@ -105,7 +107,7 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
       if (prev.includes(id)) return prev.filter(pid => pid !== id);
       const maxPlayers = playMode === 'single' ? 1 : 2;
       if (prev.length >= maxPlayers) {
-        setError(`Maximal ${maxPlayers} Spieler für ${playMode === 'single' ? 'Single' : playMode === 'duel' ? 'Duel' : 'Duett'}`);
+        setError(t('rateMySong.errorMaxPlayers').replace('{n}', String(maxPlayers)));
         return prev;
       }
       setError(null);
@@ -128,12 +130,12 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
       if (pool.length > 0) song = pool[Math.floor(Math.random() * pool.length)];
     }
     if (!song) {
-      setError('Bitte wähle einen Song aus');
+      setError(t('rateMySong.errorNoSong'));
       return;
     }
     const minPlayers = playMode === 'single' ? 1 : 2;
     if (selectedPlayers.length < minPlayers) {
-      setError(`Mindestens ${minPlayers} Spieler erforderlich`);
+      setError(t('rateMySong.errorMinPlayers').replace('{n}', String(minPlayers)));
       return;
     }
     setError(null);
@@ -144,9 +146,9 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
   };
 
   const playModeOptions = [
-    { value: 'single' as const, label: 'Solo', icon: '🎤', desc: '1 Spieler singt' },
-    { value: 'duel' as const, label: 'Duell', icon: '⚔️', desc: '2 Spieler, gleicher Song' },
-    { value: 'duet' as const, label: 'Duett', icon: '👥', desc: '2 Spieler, Duett-Parts' },
+    { value: 'single' as const, label: t('rateMySong.solo'), icon: '🎤', desc: t('rateMySong.soloDesc') },
+    { value: 'duel' as const, label: t('rateMySong.duel'), icon: '⚔️', desc: t('rateMySong.duelDesc') },
+    { value: 'duet' as const, label: t('rateMySong.duet'), icon: '👥', desc: t('rateMySong.duetDesc') },
   ];
 
   return (
@@ -154,16 +156,16 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <button onClick={onBack} className="mb-6 text-gray-400 hover:text-white transition-colors flex items-center gap-2">
-          ← Zurück
+          {t('rateMySong.back')}
         </button>
-        <h1 className="text-3xl md:text-4xl font-bold mb-2">⭐ Rate my Song</h1>
+        <h1 className="text-3xl md:text-4xl font-bold mb-2">{t('rateMySong.title')}</h1>
         <p className="text-gray-400 mb-8">
-          Singe einen Song und lass dich von deinen Freunden bewerten!
+          {t('rateMySong.subtitle')}
         </p>
 
         {/* Play Mode */}
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-3">Modus</h3>
+          <h3 className="text-lg font-semibold mb-3">{t('rateMySong.mode')}</h3>
           <div className="grid grid-cols-3 gap-3">
             {playModeOptions.map(opt => (
               <button
@@ -185,7 +187,7 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
 
         {/* Duration */}
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-3">Dauer</h3>
+          <h3 className="text-lg font-semibold mb-3">{t('rateMySong.duration')}</h3>
           <div className="flex gap-3">
             <button
               onClick={() => setDuration('short')}
@@ -195,7 +197,7 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
                   : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50'
               }`}
             >
-              ⏱️ Kurz (60s)
+              {t('rateMySong.short')}
             </button>
             <button
               onClick={() => setDuration('normal')}
@@ -205,14 +207,14 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
                   : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50'
               }`}
             >
-              🎵 Normal
+              {t('rateMySong.normal')}
             </button>
           </div>
         </div>
 
         {/* Song Selection */}
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-3">Song auswählen</h3>
+          <h3 className="text-lg font-semibold mb-3">{t('rateMySong.selectSong')}</h3>
 
           {/* Manual / Random toggle */}
           <div className="flex gap-2 mb-3">
@@ -224,13 +226,13 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
                   : 'bg-gray-700/50 text-gray-400 hover:bg-gray-600/50'
               }`}
             >
-              📋 Bibliothek
+              {t('rateMySong.library')}
             </button>
             <button
               onClick={pickRandom}
               className="flex-1 py-2 px-3 rounded-lg text-sm font-medium bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-400 hover:to-orange-400 transition-all"
             >
-              🎲 Zufälliger Song
+              {t('rateMySong.randomSong')}
             </button>
           </div>
 
@@ -257,7 +259,7 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
               <div className="relative mb-3">
                 <input
                   type="text"
-                  placeholder="Song oder Künstler suchen..."
+                  placeholder={t('rateMySong.searchPlaceholder')}
                   value={songSearch}
                   onChange={(e) => setSongSearch(e.target.value)}
                   className="w-full bg-gray-700/50 border border-white/10 rounded-xl p-3 text-white text-sm pl-9"
@@ -273,7 +275,7 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
                   className="flex-1 bg-gray-700/50 border border-white/10 rounded-lg p-2 text-white text-xs appearance-none cursor-pointer"
                 >
                   {genres.map(g => (
-                    <option key={g} value={g}>{g === 'all' ? 'Alle Genres' : g}</option>
+                    <option key={g} value={g}>{g === 'all' ? t('rateMySong.allGenres') : g}</option>
                   ))}
                 </select>
                 <select
@@ -281,17 +283,17 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
                   onChange={(e) => setFilterDifficulty(e.target.value as typeof filterDifficulty)}
                   className="bg-gray-700/50 border border-white/10 rounded-lg p-2 text-white text-xs appearance-none cursor-pointer"
                 >
-                  <option value="all">Alle Schwierigkeiten</option>
-                  <option value="easy">Leicht</option>
-                  <option value="medium">Mittel</option>
-                  <option value="hard">Schwer</option>
+                  <option value="all">{t('rateMySong.allDifficulties')}</option>
+                  <option value="easy">{t('song.easy')}</option>
+                  <option value="medium">{t('song.medium')}</option>
+                  <option value="hard">{t('song.hard')}</option>
                 </select>
               </div>
 
               {/* Song list */}
               <div className="max-h-48 overflow-y-auto rounded-xl border border-white/10 bg-gray-800/50">
                 {filteredSongs.length === 0 ? (
-                  <div className="p-4 text-center text-gray-500 text-sm">Keine Songs gefunden</div>
+                  <div className="p-4 text-center text-gray-500 text-sm">{t('rateMySong.noSongsFound')}</div>
                 ) : (
                   filteredSongs.map(song => {
                     const isSelected = selectedSong?.id === song.id;
@@ -319,7 +321,7 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
                 )}
                 {allSongs.length > 50 && filteredSongs.length === 50 && (
                   <div className="p-2 text-center text-xs text-gray-500">
-                    +{allSongs.length - 50} weitere — Bitte Suche oder Filter verwenden
+                    {t('rateMySong.moreSongs').replace('{n}', String(allSongs.length - 50))}
                   </div>
                 )}
               </div>
@@ -329,7 +331,7 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
           {/* Random mode info */}
           {songSelectionMode === 'random' && !selectedSong && (
             <p className="text-sm text-gray-400 text-center py-2">
-              Beim Start wird ein zufälliger Song aus der Bibliothek gewählt ({allSongs.length} Songs)
+              {t('rateMySong.randomInfo').replace('{n}', String(allSongs.length))}
             </p>
           )}
         </div>
@@ -337,7 +339,7 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
         {/* Player Selection */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold mb-3">
-            Spieler {playMode === 'single' ? '(1)' : '(2)'}
+            {t('rateMySong.players').replace('{n}', playMode === 'single' ? '1' : '2').replace('{m}', playMode === 'single' ? '1' : '2')}
           </h3>
           <div className="grid grid-cols-2 gap-3">
             {activeProfiles.map((profile, i) => {
@@ -373,7 +375,7 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
           onClick={handleStart}
           className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl text-xl font-bold hover:from-purple-500 hover:to-pink-500 transition-all shadow-lg shadow-purple-500/30"
         >
-          ⭐ Singen & Bewerten
+          {t('rateMySong.startSinging')}
         </button>
       </div>
     </div>
@@ -401,6 +403,7 @@ export function RateMySongRatingScreen({
   onSubmit,
   onBack,
 }: RateMySongRatingScreenProps) {
+  const { t } = useTranslation();
   // Audience = all active profiles EXCEPT the singers themselves
   const audienceProfiles = useMemo(() => {
     const singerIds = new Set(singingPlayers.map(p => p.id));
@@ -469,8 +472,8 @@ export function RateMySongRatingScreen({
           <p className="text-gray-400">{songArtist}</p>
           <p className="text-purple-400 text-sm mt-2">
             {hasAudience
-              ? `Bewertung durch das Publikum (${audienceProfiles.length} Stimmen)`
-              : 'Bitte bewerte den Auftritt'}
+              ? t('rateMySong.ratingByAudience').replace('{n}', String(audienceProfiles.length))
+              : t('rateMySong.pleaseRate')}
           </p>
         </div>
 
@@ -495,7 +498,7 @@ export function RateMySongRatingScreen({
               ))}
             </div>
             <p className="text-center text-gray-400 text-sm mb-4">
-              Bewertet als: <span className="text-white font-medium">{audienceProfiles[currentAudienceIdx]?.name}</span>
+              {t('rateMySong.ratedAs').replace('{n}', audienceProfiles[currentAudienceIdx]?.name || '')}
             </p>
 
             {/* Rating sliders — one per singer, for the selected audience member */}
@@ -588,7 +591,7 @@ export function RateMySongRatingScreen({
         {/* Overall Average */}
         {singingPlayers.length > 1 && (
           <div className="text-center mb-6 bg-purple-500/10 rounded-xl p-3 border border-purple-500/20">
-            <span className="text-purple-300 font-medium">Gesamtdurchschnitt: </span>
+            <span className="text-purple-300 font-medium">{t('rateMySong.overallAverage').replace('{n}', '')} </span>
             <span className="text-xl font-bold text-white">
               {(singingPlayers.reduce((sum, s) => sum + getAverageForSinger(s.id), 0) / singingPlayers.length).toFixed(1)}
             </span>
@@ -602,13 +605,13 @@ export function RateMySongRatingScreen({
             onClick={onBack}
             className="flex-1 py-3 rounded-xl font-medium bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 transition-all"
           >
-            Zurück
+            {t('rateMySong.backBtn')}
           </button>
           <button
             onClick={handleSubmit}
             className="flex-1 py-3 rounded-xl font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-400 hover:to-orange-400 transition-all shadow-lg"
           >
-            ⭐ Bewertung speichern
+            {t('rateMySong.saveRating')}
           </button>
         </div>
       </div>
@@ -626,6 +629,7 @@ interface RateMySongResultsScreenProps {
 }
 
 export function RateMySongResultsScreen({ result, songId, onPlayAgain, onEnd }: RateMySongResultsScreenProps) {
+  const { t } = useTranslation();
   const [topRanking, setTopRanking] = useState<RateMySongEntry[]>([]);
   const [dailyRanking, setDailyRanking] = useState<RateMySongDailyEntry[]>([]);
   const [activeTab, setActiveTab] = useState<'daily' | 'alltime'>('daily');
@@ -656,7 +660,7 @@ export function RateMySongResultsScreen({ result, songId, onPlayAgain, onEnd }: 
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-amber-900/10 to-gray-900 text-white p-4 md:p-8 flex items-center justify-center">
       <div className="max-w-lg w-full text-center">
         <div className="text-6xl mb-4">🏆</div>
-        <h1 className="text-3xl font-bold mb-2">Bewertung abgeschlossen!</h1>
+        <h1 className="text-3xl font-bold mb-2">{t('rateMySong.ratingComplete')}</h1>
         <p className="text-gray-400 mb-2">{result.songTitle}</p>
         <div className="text-5xl font-bold text-amber-400 mb-8">
           {result.averageRating.toFixed(1)}
@@ -701,7 +705,7 @@ export function RateMySongResultsScreen({ result, songId, onPlayAgain, onEnd }: 
                     : 'bg-white/5 text-gray-400 border border-transparent hover:bg-white/10'
                 }`}
               >
-                📅 Tages-Highscore
+                {t('rateMySong.dailyHighscore')}
               </button>
               <button
                 onClick={() => setActiveTab('alltime')}
@@ -711,7 +715,7 @@ export function RateMySongResultsScreen({ result, songId, onPlayAgain, onEnd }: 
                     : 'bg-white/5 text-gray-400 border border-transparent hover:bg-white/10'
                 }`}
               >
-                🏅 All-Time Highscore
+                {t('rateMySong.allTimeHighscore')}
               </button>
             </div>
 
@@ -741,11 +745,11 @@ export function RateMySongResultsScreen({ result, songId, onPlayAgain, onEnd }: 
                   </div>
                 ) : (
                   <p className="text-center text-gray-500 text-sm py-4">
-                    Noch keine Bewertungen heute. Sei der Erste!
+                    {t('rateMySong.noDailyRatings')}
                   </p>
                 )}
                 <p className="text-[10px] text-gray-500 text-center mt-2">
-                  Tägliche Bestenliste — wird jeden Tag zurückgesetzt
+                  {t('rateMySong.dailyLeaderboardNote')}
                 </p>
               </>
             )}
@@ -780,11 +784,11 @@ export function RateMySongResultsScreen({ result, songId, onPlayAgain, onEnd }: 
                   </div>
                 ) : (
                   <p className="text-center text-gray-500 text-sm py-4">
-                    Noch keine Bewertungen vorhanden.
+                    {t('rateMySong.noAllTimeRatings')}
                   </p>
                 )}
                 <p className="text-[10px] text-gray-500 text-center mt-2">
-                  Score = Rating × log2(Bewertungen + 1)
+                  {t('rateMySong.scoreFormula')}
                 </p>
               </>
             )}
@@ -796,13 +800,13 @@ export function RateMySongResultsScreen({ result, songId, onPlayAgain, onEnd }: 
             onClick={onPlayAgain}
             className="flex-1 py-3 rounded-xl font-medium bg-purple-600 text-white hover:bg-purple-500 transition-all"
           >
-            Nochmal spielen
+            {t('rateMySong.playAgain')}
           </button>
           <button
             onClick={onEnd}
             className="flex-1 py-3 rounded-xl font-medium bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 transition-all"
           >
-            Zurück zum Menü
+            {t('rateMySong.backToMenu')}
           </button>
         </div>
       </div>

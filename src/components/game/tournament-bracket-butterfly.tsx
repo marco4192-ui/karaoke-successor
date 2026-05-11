@@ -8,6 +8,7 @@ import {
   getMatchesForRound,
   getPlayableMatches,
 } from '@/lib/game/tournament';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // Layout constants — compact match cards with comfortable spacing between columns
 const MATCH_W = 100;
@@ -22,15 +23,6 @@ interface ButterflyBracketProps {
   bracket: TournamentBracket;
   currentMatch: TournamentMatch | null;
   onPlayMatch: (_match: TournamentMatch) => void;
-}
-
-/** Get a human-readable round name */
-function getRoundName(round: number, totalRounds: number): string {
-  if (round === totalRounds) return '🏆 Final';
-  if (round === totalRounds - 1) return 'Semi-Finals';
-  if (round === totalRounds - 2 && totalRounds >= 4) return 'Quarter-Finals';
-  if (round === totalRounds - 3 && totalRounds >= 5) return 'Round of 16';
-  return `Round ${round}`;
 }
 
 /** Recursively compute the vertical center Y for a match at (round, position).
@@ -61,6 +53,7 @@ export function TournamentBracketButterfly({
   currentMatch,
   onPlayMatch,
 }: ButterflyBracketProps) {
+  const { t } = useTranslation();
   const playableMatches = getPlayableMatches(bracket);
   const firstRoundCount = Math.pow(2, bracket.totalRounds - 1);
   const matchesPerSide = firstRoundCount / 2;
@@ -83,6 +76,15 @@ export function TournamentBracketButterfly({
   // Memoised helper (adds top padding for round labels)
   const getCY = (round: number, pos: number) =>
     computeCenterY(round, pos, bracket.totalRounds, bracketH - ROUND_LABEL_H) + ROUND_LABEL_H;
+
+  /** Get a human-readable round name */
+  const getRoundName = (round: number, totalRounds: number): string => {
+    if (round === totalRounds) return t('tournament.final');
+    if (round === totalRounds - 1) return t('tournament.semiFinals');
+    if (round === totalRounds - 2 && totalRounds >= 4) return t('tournament.quarterFinals');
+    if (round === totalRounds - 3 && totalRounds >= 5) return t('tournament.roundOf16');
+    return t('tournament.roundOf').replace('{n}', String(round));
+  };
 
   // ── Split rounds into left (top-half), right (bottom-half, reversed) and final ──
   const { leftRounds, rightRounds, finalMatch } = useMemo(() => {
@@ -396,13 +398,15 @@ function MatchCard({
   /** Use horizontal layout (side-by-side) for first-round matches */
   isFirstRound?: boolean;
 }) {
+  const { t } = useTranslation();
+
   // BYE match
   if (match.isBye && match.player1) {
     return (
       <div className="bg-white/5 border border-white/10 rounded-md p-1.5">
-        <div className="text-[9px] text-white/40">BYE</div>
+        <div className="text-[9px] text-white/40">{t('tournament.bye')}</div>
         <SmallPlayer player={match.player1} />
-        <div className="text-[9px] text-green-400">Advanced →</div>
+        <div className="text-[9px] text-green-400">{t('tournament.advanced')}</div>
       </div>
     );
   }
@@ -440,7 +444,7 @@ function MatchCard({
           </div>
 
           {/* VS divider */}
-          <div className="text-white/40 text-[9px] font-bold px-0.5 shrink-0">VS</div>
+          <div className="text-white/40 text-[9px] font-bold px-0.5 shrink-0">{t('tournament.vs')}</div>
 
           {/* Player 2 */}
           <div
@@ -467,7 +471,7 @@ function MatchCard({
         {/* Playable indicator */}
         {isPlayable && !match.completed && !done && (
           <div className="text-[9px] text-center text-cyan-400 font-medium pb-0.5">
-            ▶ Play →
+            {t('tournament.play')}
           </div>
         )}
       </div>
@@ -511,7 +515,7 @@ function MatchCard({
       {/* VS divider */}
       <div className="text-center text-white/30 text-[9px] my-0.5 flex items-center justify-center gap-1">
         <div className="flex-1 h-px bg-white/10" />
-        <span>VS</span>
+        <span>{t('tournament.vs')}</span>
         <div className="flex-1 h-px bg-white/10" />
       </div>
 
@@ -545,7 +549,7 @@ function MatchCard({
       {/* Playable indicator */}
       {isPlayable && !match.completed && !done && (
         <div className="text-[9px] text-center text-cyan-400 font-medium">
-          ▶ Play →
+          {t('tournament.play')}
         </div>
       )}
     </div>
@@ -555,11 +559,12 @@ function MatchCard({
 // ─── Small player row ──────────────────────────────────────────
 
 function SmallPlayer({ player }: { player: TournamentPlayer | null }) {
+  const { t } = useTranslation();
   if (!player) {
     return (
       <div className="flex items-center gap-1 text-[11px]">
         <div className="w-5 h-5 rounded-full bg-white/10 shrink-0" />
-        <span className="text-white/30 truncate">TBD</span>
+        <span className="text-white/30 truncate">{t('tournament.tbd')}</span>
       </div>
     );
   }

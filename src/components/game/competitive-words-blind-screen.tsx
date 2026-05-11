@@ -396,7 +396,7 @@ function CompetitiveScoreboard({ game, ranked, modeType, onNextRound }: Competit
                   <div className="text-green-400 text-sm">{t('competitiveWords.bonus').replace('{n}', String(lastRound.player1Bonus))}</div>
                 )}
               </div>
-              <div className="text-gray-500 self-center text-2xl">vs</div>
+              <div className="text-gray-500 self-center text-2xl">{t('competitiveWords.vs')}</div>
               <div className="text-center">
                 <div className="text-lg font-bold">
                   {game.players.find(p => p.id === lastRound.player2Id)?.name}
@@ -443,7 +443,7 @@ function CompetitiveScoreboard({ game, ranked, modeType, onNextRound }: Competit
               <div className="text-right">
                 <div className="text-lg font-bold text-indigo-400">{player.totalScore}</div>
                 {player.totalBonusPoints > 0 && (
-                  <div className="text-xs text-green-400">{player.totalBonusPoints} Bonus</div>
+                  <div className="text-xs text-green-400">{player.totalBonusPoints} {t('competitiveWords.bonusLabel')}</div>
                 )}
               </div>
             </div>
