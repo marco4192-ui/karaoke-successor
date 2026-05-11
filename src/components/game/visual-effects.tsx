@@ -314,8 +314,10 @@ export function useParticleEmitter() {
   }, []);
 
   // Expose a snapshot of particles for the canvas renderer
+  // eslint-disable-next-line react-hooks/refs -- animation hook: imperative canvas reads ref without triggering React re-renders
   const particles = particlesRef.current;
 
+  // eslint-disable-next-line react-hooks/refs -- particles ref consumed by imperative canvas renderer, not JSX
   return {
     particles,
     emitParticles,
