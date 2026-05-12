@@ -1475,6 +1475,9 @@ const enTranslations = {
     player2Wins: 'Player 2 Wins!',
     drawResult: 'Draw!',
     scoreBattle: 'Score Battle',
+    player1Abbr: 'P1',
+    player2Abbr: 'P2',
+    stat: 'Stat',
   },
   replayModal: {
     copyrightNotice: 'Note: For copyright reasons, no original audio or vocals can be included in exported replays. Only your microphone recording will be used.',
@@ -1487,6 +1490,7 @@ const enTranslations = {
     exportShort: '⬇ Export',
     delete: '🗑 Delete',
     volume: '🎵 Volume',
+    replay: 'Replay',
   },
   shareSection: {
     title: '📤 Share Your Score',
@@ -1519,6 +1523,9 @@ const enTranslations = {
     noGlobal: 'No global scores yet. Be the first!',
     noLocal: 'No local scores yet. Play this song!',
     close: 'Close',
+    failedToLoad: 'Failed to load',
+    combo: 'combo',
+    pts: 'pts',
   },
   songLeaderboardPreview: {
     title: 'Song Leaderboard',
@@ -3196,6 +3203,9 @@ const deTranslations = {
     player2Wins: 'Spieler 2 gewinnt!',
     drawResult: 'Unentschieden!',
     scoreBattle: 'Punkte-Duell',
+    player1Abbr: 'S1',
+    player2Abbr: 'S2',
+    stat: 'Stat',
   },
   replayModal: {
     copyrightNotice: 'Hinweis: Aus Urheberrechtsgründen dürfen in exportierten Replays kein originales Audio oder Gesang enthalten sein. Es wird nur deine Mikrofon-Aufnahme verwendet.',
@@ -3208,6 +3218,7 @@ const deTranslations = {
     exportShort: '⬇ Export',
     delete: '🗑 Löschen',
     volume: '🎵 Lautstärke',
+    replay: 'Replay',
   },
   shareSection: {
     title: '📤 Ergebnis teilen',
@@ -3240,6 +3251,9 @@ const deTranslations = {
     noGlobal: 'Noch keine globalen Scores. Sei der Erste!',
     noLocal: 'Noch keine lokalen Scores. Spiele diesen Song!',
     close: 'Schließen',
+    failedToLoad: 'Laden fehlgeschlagen',
+    combo: 'Combo',
+    pts: 'Pkt.',
   },
   songLeaderboardPreview: {
     title: 'Song-Leaderboard',

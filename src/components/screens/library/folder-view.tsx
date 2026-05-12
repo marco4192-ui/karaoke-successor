@@ -4,6 +4,7 @@ import { Song } from '@/types/game';
 import { LibraryGroupBy } from './types';
 import { getSortedFolderKeys } from './utils';
 import { FolderIcon, MusicIcon } from '@/components/icons';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface FolderViewProps {
   groupedSongs: Map<string, Song[]>;
@@ -18,6 +19,7 @@ export function FolderView({
   onOpenFolder,
   getGroupDisplayName,
 }: FolderViewProps) {
+  const { t } = useTranslation();
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
       {getSortedFolderKeys(groupedSongs, groupBy).map((folderKey) => {
@@ -34,7 +36,7 @@ export function FolderView({
               <FolderIcon className="w-6 h-6 text-yellow-400" />
             </div>
             <h3 className="font-semibold text-white truncate">{folderDisplayName}</h3>
-            <p className="text-xs text-white/40">{songs.length} song{songs.length !== 1 ? 's' : ''}</p>
+            <p className="text-xs text-white/40">{songs.length} {songs.length !== 1 ? t('folderView.songs') : t('folderView.song')}</p>
             <div className="flex -space-x-2 mt-3">
               {songs.slice(0, 4).map((song, i) => (
                 <div 

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== SCORE VISUALIZATION COMPONENTS =====================
 export type VisualizationMode = 'table' | 'barometer' | 'speedometer' | 'radar' | 'comparison';
@@ -39,16 +40,25 @@ export function ScoreVisualization({
   player2Rating?: string;
   isDuel?: boolean;
 }) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<VisualizationMode>('barometer');
   
   const percentage = maxScore > 0 ? (score / maxScore) * 100 : 0;
   const player2Percentage = player2Score != null && maxScore > 0 ? (player2Score / maxScore) * 100 : 0;
   
+  const radarLabels = [
+    { key: 'score', label: t('scoreVisualization.score') },
+    { key: 'accuracy', label: t('scoreVisualization.accuracy').replace('{n}', '') },
+    { key: 'combo', label: t('scoreVisualization.combo') },
+    { key: 'consistency', label: t('scoreVisualization.consistency') },
+    { key: 'rating', label: t('scoreVisualization.rating') },
+  ];
+
   return (
     <Card className="bg-white/5 border-white/10">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Score Analysis</CardTitle>
+          <CardTitle className="text-lg">{t('scoreVisualization.title')}</CardTitle>
           <div className="flex gap-1">
             {(['barometer', 'speedometer', 'radar', 'table', 'comparison'] as VisualizationMode[]).map((m) => (
               <Button
@@ -101,32 +111,32 @@ export function ScoreVisualization({
               {/* Grade labels */}
               <div className="flex justify-between text-xs text-white/40 mt-1">
                 <span>0</span>
-                <span className="text-red-400">Poor</span>
-                <span className="text-orange-400">Okay</span>
-                <span className="text-blue-400">Good</span>
-                <span className="text-green-400">Excellent</span>
-                <span className="text-yellow-400">Perfect</span>
+                <span className="text-red-400">{t('scoreVisualization.poor')}</span>
+                <span className="text-orange-400">{t('scoreVisualization.okay')}</span>
+                <span className="text-blue-400">{t('scoreVisualization.good')}</span>
+                <span className="text-green-400">{t('scoreVisualization.excellent')}</span>
+                <span className="text-yellow-400">{t('scoreVisualization.perfect')}</span>
               </div>
             </div>
             
             {/* Duel Comparison */}
             {isDuel && player2Score !== undefined && (
               <div className="mt-6 pt-4 border-t border-white/10">
-                <h4 className="text-sm font-semibold mb-3 text-center">⚔️ Duel Comparison</h4>
+                <h4 className="text-sm font-semibold mb-3 text-center">{t('scoreVisualization.duelComparison')}</h4>
                 <div className="grid grid-cols-2 gap-4">
                   {/* Player 1 */}
                   <div className="text-center">
-                    <div className="w-10 h-10 rounded-full bg-cyan-500 flex items-center justify-center mx-auto mb-2 font-bold">P1</div>
+                    <div className="w-10 h-10 rounded-full bg-cyan-500 flex items-center justify-center mx-auto mb-2 font-bold">{t('scoreVisualization.player1Abbr')}</div>
                     <div className="text-2xl font-bold text-cyan-400">{score.toLocaleString()}</div>
-                    <div className="text-xs text-white/40">{accuracy.toFixed(1)}% accuracy</div>
-                    <div className="text-xs text-white/40">{maxCombo}x max combo</div>
+                    <div className="text-xs text-white/40">{t('scoreVisualization.accuracy').replace('{n}', accuracy.toFixed(1))}</div>
+                    <div className="text-xs text-white/40">{t('scoreVisualization.maxCombo').replace('{n}', String(maxCombo))}</div>
                   </div>
                   {/* Player 2 */}
                   <div className="text-center">
-                    <div className="w-10 h-10 rounded-full bg-pink-500 flex items-center justify-center mx-auto mb-2 font-bold">P2</div>
+                    <div className="w-10 h-10 rounded-full bg-pink-500 flex items-center justify-center mx-auto mb-2 font-bold">{t('scoreVisualization.player2Abbr')}</div>
                     <div className="text-2xl font-bold text-pink-400">{player2Score.toLocaleString()}</div>
-                    <div className="text-xs text-white/40">{player2Accuracy?.toFixed(1)}% accuracy</div>
-                    <div className="text-xs text-white/40">{player2MaxCombo}x max combo</div>
+                    <div className="text-xs text-white/40">{t('scoreVisualization.accuracy').replace('{n}', player2Accuracy?.toFixed(1) || '0')}</div>
+                    <div className="text-xs text-white/40">{t('scoreVisualization.maxCombo').replace('{n}', String(player2MaxCombo || 0))}</div>
                   </div>
                 </div>
                 {/* Win indicator */}
@@ -136,7 +146,7 @@ export function ScoreVisualization({
                     score < player2Score ? 'bg-pink-500/30 text-pink-300' :
                     'bg-purple-500/30 text-purple-300'
                   }`}>
-                    {score > player2Score ? '🏆 P1 WINS!' : score < player2Score ? '🏆 P2 WINS!' : '🤝 DRAW!'}
+                    {score > player2Score ? t('scoreVisualization.p1Wins') : score < player2Score ? t('scoreVisualization.p2Wins') : t('scoreVisualization.draw')}
                   </span>
                 </div>
               </div>
@@ -145,21 +155,21 @@ export function ScoreVisualization({
             {/* Sub-statistics barometer */}
             <div className="grid grid-cols-3 gap-4 mt-4">
               <div>
-                <div className="text-xs text-white/40 mb-1">Notes Hit</div>
+                <div className="text-xs text-white/40 mb-1">{t('scoreVisualization.notesHit')}</div>
                 <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                   <div className="h-full bg-green-500" style={{ width: `${notesHit + notesMissed > 0 ? (notesHit / (notesHit + notesMissed)) * 100 : 0}%` }} />
                 </div>
                 <div className="text-xs text-green-400 mt-1">{notesHit} / {notesHit + notesMissed}</div>
               </div>
               <div>
-                <div className="text-xs text-white/40 mb-1">Accuracy</div>
+                <div className="text-xs text-white/40 mb-1">{t('results.accuracy')}</div>
                 <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                   <div className="h-full bg-cyan-500" style={{ width: `${accuracy}%` }} />
                 </div>
                 <div className="text-xs text-cyan-400 mt-1">{accuracy.toFixed(1)}%</div>
               </div>
               <div>
-                <div className="text-xs text-white/40 mb-1">Max Combo</div>
+                <div className="text-xs text-white/40 mb-1">{t('scoreVisualization.maxComboLabel')}</div>
                 <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                   <div className="h-full bg-purple-500" style={{ width: `${Math.min(100, (maxCombo / Math.max(notesHit, 1)) * 100)}%` }} />
                 </div>
@@ -225,11 +235,11 @@ export function ScoreVisualization({
             {isDuel && player2Score !== undefined && (
               <div className="mt-6 grid grid-cols-2 gap-8 w-full">
                 <div className="text-center">
-                  <div className="text-sm text-cyan-400 font-semibold">Player 1</div>
+                  <div className="text-sm text-cyan-400 font-semibold">{t('scoreVisualization.player1')}</div>
                   <div className="text-xl font-bold">{score.toLocaleString()}</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-sm text-pink-400 font-semibold">Player 2</div>
+                  <div className="text-sm text-pink-400 font-semibold">{t('scoreVisualization.player2')}</div>
                   <div className="text-xl font-bold">{player2Score.toLocaleString()}</div>
                 </div>
               </div>
@@ -274,11 +284,11 @@ export function ScoreVisualization({
               {/* Data polygon - Player 1 */}
               <polygon
                 points={[
-                  { label: 'Score', value: percentage / 100 },
-                  { label: 'Accuracy', value: accuracy / 100 },
-                  { label: 'Combo', value: Math.min(1, maxCombo / Math.max(notesHit, 1)) },
-                  { label: 'Consistency', value: notesHit + notesMissed > 0 ? notesHit / (notesHit + notesMissed) : 0 },
-                  { label: 'Rating', value: rating === 'perfect' ? 1 : rating === 'excellent' ? 0.8 : rating === 'good' ? 0.6 : rating === 'okay' ? 0.4 : 0.2 },
+                  { value: percentage / 100 },
+                  { value: accuracy / 100 },
+                  { value: Math.min(1, maxCombo / Math.max(notesHit, 1)) },
+                  { value: notesHit + notesMissed > 0 ? notesHit / (notesHit + notesMissed) : 0 },
+                  { value: rating === 'perfect' ? 1 : rating === 'excellent' ? 0.8 : rating === 'good' ? 0.6 : rating === 'okay' ? 0.4 : 0.2 },
                 ].map((d, i) => {
                   const angle = (i * 72 - 90) * (Math.PI / 180);
                   return `${100 + d.value * 70 * Math.cos(angle)},${100 + d.value * 70 * Math.sin(angle)}`;
@@ -308,7 +318,7 @@ export function ScoreVisualization({
               )}
               
               {/* Labels */}
-              {['Score', 'Accuracy', 'Combo', 'Consistency', 'Rating'].map((label, i) => {
+              {radarLabels.map(({ label }, i) => {
                 const angle = (i * 72 - 90) * (Math.PI / 180);
                 return (
                   <text
@@ -329,12 +339,12 @@ export function ScoreVisualization({
             <div className="flex gap-4 mt-2">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-cyan-500" />
-                <span className="text-xs text-white/60">Player 1</span>
+                <span className="text-xs text-white/60">{t('scoreVisualization.player1')}</span>
               </div>
               {isDuel && (
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-pink-500" />
-                  <span className="text-xs text-white/60">Player 2</span>
+                  <span className="text-xs text-white/60">{t('scoreVisualization.player2')}</span>
                 </div>
               )}
             </div>
@@ -347,24 +357,24 @@ export function ScoreVisualization({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10">
-                  <th className="text-left py-2 px-3 text-white/40 font-normal">Category</th>
-                  <th className="text-right py-2 px-3 text-white/40 font-normal">Player 1</th>
-                  {isDuel && <th className="text-right py-2 px-3 text-white/40 font-normal">Player 2</th>}
+                  <th className="text-left py-2 px-3 text-white/40 font-normal">{t('scoreVisualization.category')}</th>
+                  <th className="text-right py-2 px-3 text-white/40 font-normal">{t('scoreVisualization.player1')}</th>
+                  {isDuel && <th className="text-right py-2 px-3 text-white/40 font-normal">{t('scoreVisualization.player2')}</th>}
                 </tr>
               </thead>
               <tbody>
                 <tr className="border-b border-white/5">
-                  <td className="py-2 px-3">Final Score</td>
+                  <td className="py-2 px-3">{t('scoreVisualization.finalScore')}</td>
                   <td className="py-2 px-3 text-right font-bold text-cyan-400">{score.toLocaleString()}</td>
                   {isDuel && <td className="py-2 px-3 text-right font-bold text-pink-400">{player2Score?.toLocaleString()}</td>}
                 </tr>
                 <tr className="border-b border-white/5">
-                  <td className="py-2 px-3">Max Score</td>
+                  <td className="py-2 px-3">{t('scoreVisualization.maxScore')}</td>
                   <td className="py-2 px-3 text-right text-white/60">{maxScore.toLocaleString()}</td>
                   {isDuel && <td className="py-2 px-3 text-right text-white/60">{maxScore.toLocaleString()}</td>}
                 </tr>
                 <tr className="border-b border-white/5">
-                  <td className="py-2 px-3">Rating</td>
+                  <td className="py-2 px-3">{t('scoreVisualization.rating')}</td>
                   <td className="py-2 px-3 text-right">
                     <span className={`px-2 py-0.5 rounded text-xs ${
                       rating === 'perfect' ? 'bg-yellow-500/30 text-yellow-300' :
@@ -387,22 +397,22 @@ export function ScoreVisualization({
                   </td>}
                 </tr>
                 <tr className="border-b border-white/5">
-                  <td className="py-2 px-3">Notes Hit</td>
+                  <td className="py-2 px-3">{t('scoreVisualization.notesHit')}</td>
                   <td className="py-2 px-3 text-right text-green-400">{notesHit}</td>
                   {isDuel && <td className="py-2 px-3 text-right text-green-400">{player2NotesHit}</td>}
                 </tr>
                 <tr className="border-b border-white/5">
-                  <td className="py-2 px-3">Notes Missed</td>
+                  <td className="py-2 px-3">{t('scoreVisualization.notesMissed')}</td>
                   <td className="py-2 px-3 text-right text-red-400">{notesMissed}</td>
                   {isDuel && <td className="py-2 px-3 text-right text-red-400">{player2NotesMissed}</td>}
                 </tr>
                 <tr className="border-b border-white/5">
-                  <td className="py-2 px-3">Accuracy</td>
+                  <td className="py-2 px-3">{t('results.accuracy')}</td>
                   <td className="py-2 px-3 text-right text-cyan-400">{accuracy.toFixed(1)}%</td>
                   {isDuel && <td className="py-2 px-3 text-right text-pink-400">{player2Accuracy?.toFixed(1)}%</td>}
                 </tr>
                 <tr>
-                  <td className="py-2 px-3">Max Combo</td>
+                  <td className="py-2 px-3">{t('scoreVisualization.maxComboLabel')}</td>
                   <td className="py-2 px-3 text-right text-purple-400">{maxCombo}x</td>
                   {isDuel && <td className="py-2 px-3 text-right text-purple-400">{player2MaxCombo}x</td>}
                 </tr>
@@ -417,9 +427,9 @@ export function ScoreVisualization({
             {/* Score comparison bar */}
             <div>
               <div className="flex justify-between text-xs text-white/40 mb-1">
-                <span>Player 1</span>
-                <span>Score Battle</span>
-                <span>Player 2</span>
+                <span>{t('scoreVisualization.player1')}</span>
+                <span>{t('scoreVisualization.scoreBattle')}</span>
+                <span>{t('scoreVisualization.player2')}</span>
               </div>
               <div className="relative h-8 bg-white/5 rounded-full overflow-hidden flex">
                 <div 
@@ -441,7 +451,7 @@ export function ScoreVisualization({
             {isDuel && (
               <div className="grid grid-cols-3 gap-2 text-center text-xs">
                 <div className="space-y-2">
-                  <div className="text-cyan-400 font-semibold">P1</div>
+                  <div className="text-cyan-400 font-semibold">{t('scoreVisualization.player1Abbr')}</div>
                   <div className={`py-1 rounded ${accuracy > (player2Accuracy || 0) ? 'bg-cyan-500/20 text-cyan-300' : 'bg-white/5 text-white/40'}`}>
                     {accuracy.toFixed(1)}%
                   </div>
@@ -453,13 +463,13 @@ export function ScoreVisualization({
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <div className="text-white/40 font-semibold">Stat</div>
-                  <div className="py-1 text-white/60">Accuracy</div>
-                  <div className="py-1 text-white/60">Combo</div>
-                  <div className="py-1 text-white/60">Notes</div>
+                  <div className="text-white/40 font-semibold">{t('scoreVisualization.stat')}</div>
+                  <div className="py-1 text-white/60">{t('results.accuracy')}</div>
+                  <div className="py-1 text-white/60">{t('scoreVisualization.combo')}</div>
+                  <div className="py-1 text-white/60">{t('scoreVisualization.notes')}</div>
                 </div>
                 <div className="space-y-2">
-                  <div className="text-pink-400 font-semibold">P2</div>
+                  <div className="text-pink-400 font-semibold">{t('scoreVisualization.player2Abbr')}</div>
                   <div className={`py-1 rounded ${(player2Accuracy || 0) > accuracy ? 'bg-pink-500/20 text-pink-300' : 'bg-white/5 text-white/40'}`}>
                     {player2Accuracy?.toFixed(1)}%
                   </div>
@@ -484,7 +494,7 @@ export function ScoreVisualization({
                   {score > (player2Score || 0) ? '🏆' : score < (player2Score || 0) ? '🏆' : '🤝'}
                 </span>
                 <span className="ml-2 font-bold">
-                  {score > (player2Score || 0) ? 'Player 1 Wins!' : score < (player2Score || 0) ? 'Player 2 Wins!' : 'Draw!'}
+                  {score > (player2Score || 0) ? t('scoreVisualization.player1Wins') : score < (player2Score || 0) ? t('scoreVisualization.player2Wins') : t('scoreVisualization.drawResult')}
                 </span>
               </div>
             </div>

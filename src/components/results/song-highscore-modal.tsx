@@ -7,8 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useGameStore } from '@/lib/game/store';
 import { Song, GameMode, HighscoreEntry } from '@/types/game';
 import { TrophyIcon } from './constants';
+import { useTranslation } from '@/lib/i18n/translations';
 
-// Song Highscore Modal Component
 export function SongHighscoreModal({ 
   song, 
   isOpen, 
@@ -18,12 +18,12 @@ export function SongHighscoreModal({
   isOpen: boolean; 
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const { highscores, onlineEnabled, leaderboardType, setLeaderboardType } = useGameStore();
   const [globalScores, setGlobalScores] = useState<HighscoreEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Get local highscores for this song
   const localScores = useMemo(() => 
     highscores
       .filter(h => h.songId === song.id)
@@ -32,7 +32,6 @@ export function SongHighscoreModal({
     [highscores, song.id]
   );
 
-  // Load global scores when tab is active
   useEffect(() => {
     if (isOpen && onlineEnabled && leaderboardType === 'global') {
       setIsLoading(true);
@@ -61,11 +60,11 @@ export function SongHighscoreModal({
             }));
             setGlobalScores(entries);
           })
-          .catch(err => setError(err.message || 'Failed to load'))
+          .catch(err => setError(err.message || t('songHighscoreModal.failedToLoad')))
           .finally(() => setIsLoading(false));
       });
     }
-  }, [isOpen, onlineEnabled, leaderboardType, song.id, song.title, song.artist]);
+  }, [isOpen, onlineEnabled, leaderboardType, song.id, song.title, song.artist, t]);
 
   const displayScores = leaderboardType === 'global' ? globalScores : localScores;
 
@@ -79,17 +78,16 @@ export function SongHighscoreModal({
             <TrophyIcon className="w-5 h-5 text-yellow-400" />
             {song.title}
           </DialogTitle>
-          <DialogDescription className="text-white/60 text-sm">{song.artist} - Highscores</DialogDescription>
+          <DialogDescription className="text-white/60 text-sm">{t('songHighscoreModal.highscores').replace('{artist}', song.artist)}</DialogDescription>
         </DialogHeader>
         
-        {/* Tabs */}
         <div className="flex gap-2 mb-4">
           <Button 
             onClick={() => setLeaderboardType('local')}
             size="sm"
             className={leaderboardType === 'local' ? 'bg-cyan-500' : 'bg-white/10'}
           >
-            🏠 Local ({localScores.length})
+            {t('songHighscoreModal.local').replace('{n}', String(localScores.length))}
           </Button>
           {onlineEnabled && (
             <Button 
@@ -97,18 +95,17 @@ export function SongHighscoreModal({
               size="sm"
               className={leaderboardType === 'global' ? 'bg-purple-500' : 'bg-white/10'}
             >
-              🌍 Global
+              {t('songHighscoreModal.global')}
             </Button>
           )}
         </div>
 
-        {/* Score List */}
         <ScrollArea className="flex-1 -mx-6">
           <div className="px-6 space-y-2">
             {isLoading && (
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full mr-2" />
-                <span className="text-white/60">Loading...</span>
+                <span className="text-white/60">{t('songHighscoreModal.loading')}</span>
               </div>
             )}
             
@@ -119,8 +116,8 @@ export function SongHighscoreModal({
             {!isLoading && !error && displayScores.length === 0 && (
               <div className="text-center py-8 text-white/60">
                 {leaderboardType === 'global' 
-                  ? 'No global scores yet. Be the first!'
-                  : 'No local scores yet. Play this song!'}
+                  ? t('songHighscoreModal.noGlobal')
+                  : t('songHighscoreModal.noLocal')}
               </div>
             )}
             
@@ -131,7 +128,6 @@ export function SongHighscoreModal({
                   index < 3 ? 'bg-white/10' : 'bg-white/5'
                 }`}
               >
-                {/* Rank */}
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
                   index === 0 ? 'bg-yellow-500 text-black' :
                   index === 1 ? 'bg-gray-300 text-black' :
@@ -141,7 +137,6 @@ export function SongHighscoreModal({
                   {index === 0 ? '👑' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
                 </div>
 
-                {/* Player */}
                 <div 
                   className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold overflow-hidden"
                   style={{ backgroundColor: entry.playerColor }}
@@ -155,15 +150,14 @@ export function SongHighscoreModal({
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-white truncate">{entry.playerName}</div>
                   {leaderboardType === 'local' && (
-                    <div className="text-xs text-white/40">{entry.accuracy.toFixed(1)}% • {entry.maxCombo}x combo</div>
+                    <div className="text-xs text-white/40">{entry.accuracy.toFixed(1)}% • {entry.maxCombo}x {t('songHighscoreModal.combo')}</div>
                   )}
                 </div>
                 
-                {/* Score */}
                 <div className="text-right">
                   <div className="font-bold text-cyan-400">{entry.score.toLocaleString()}</div>
                   <div className="text-xs text-white/40">
-                    {leaderboardType === 'local' ? entry.difficulty : 'pts'}
+                    {leaderboardType === 'local' ? entry.difficulty : t('songHighscoreModal.pts')}
                   </div>
                 </div>
               </div>
@@ -173,7 +167,7 @@ export function SongHighscoreModal({
         
         <div className="pt-4">
           <Button onClick={onClose} className="w-full bg-white/10 hover:bg-white/20">
-            Close
+            {t('songHighscoreModal.close')}
           </Button>
         </div>
       </DialogContent>

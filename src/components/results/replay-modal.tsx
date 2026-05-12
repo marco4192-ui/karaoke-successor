@@ -5,21 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { safeAlert } from '@/lib/safe-dialog';
 import { deleteReplay, type ReplayRecord } from '@/lib/db/replay-db';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface ReplayModalProps {
   isOpen: boolean;
   onClose: () => void;
   replay: ReplayRecord;
-  originalAudioUrl?: string;   // URL to play original song alongside
-  originalVideoUrl?: string;   // URL for background video (muted, visual only during analysis)
+  originalAudioUrl?: string;
+  originalVideoUrl?: string;
 }
 
-const COPYRIGHT_NOTICE =
-  'Hinweis: Aus Urheberrechtsgründen enthält dieses Replay nur deine eigene Stimme und ggf. deine Webcam-Aufnahme. ' +
-  'Tipp: Du kannst den Original-Song ganz einfach über YouTube, Instagram oder TikTok hinzufügen — ' +
-  'diese Plattformen bieten oft integrierte Musikbibliotheken, mit denen du dein Replay im Handumdrehen zum perfekten Video machst!';
-
 export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, originalVideoUrl }: ReplayModalProps) {
+  const { t } = useTranslation();
   const mediaRef = useRef<HTMLVideoElement | HTMLAudioElement>(null);
   const originalAudioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -31,7 +28,6 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
   const blobUrlRef = useRef<string | null>(null);
   const animFrameRef = useRef<number | null>(null);
 
-  // Create blob URL when modal opens
   useEffect(() => {
     if (isOpen && replay.data) {
       if (!blobUrlRef.current) {
@@ -43,7 +39,6 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
     const originalAudioEl = originalAudioRef.current;
 
     return () => {
-      // Stop playback and cleanup
       if (mediaEl) {
         mediaEl.pause();
         mediaEl.src = '';
@@ -65,7 +60,6 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
     };
   }, [isOpen, replay.data]);
 
-  // Update current time while playing
   useEffect(() => {
     if (!isPlaying) {
       if (animFrameRef.current) {
@@ -134,7 +128,6 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
     }
   }, []);
 
-  // Toggle original song audio
   const toggleOriginal = useCallback(() => {
     const next = !showOriginal;
     setShowOriginal(next);
@@ -147,20 +140,18 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
     }
   }, [showOriginal, isPlaying]);
 
-  // Update original audio volume
   useEffect(() => {
     if (originalAudioRef.current) {
       originalAudioRef.current.volume = originalVolume;
     }
   }, [originalVolume]);
 
-  // Export replay as .webm file
   const handleExport = useCallback(async () => {
     if (!replay.data) return;
     setIsExporting(true);
     try {
       const extension = replay.hasWebcam ? 'video.webm' : 'audio.webm';
-      const filename = `${replay.songTitle} - ${replay.playerName} Replay.${extension}`;
+      const filename = `${replay.songTitle} - ${replay.playerName} ${t('replayModal.replay')}.${extension}`;
       const url = URL.createObjectURL(replay.data);
       const a = document.createElement('a');
       a.href = url;
@@ -172,13 +163,12 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('[ReplayModal] Export failed:', err);
-      safeAlert('Export fehlgeschlagen. Bitte versuche es erneut.');
+      safeAlert(t('replayModal.exportFailed'));
     } finally {
       setIsExporting(false);
     }
-  }, [replay]);
+  }, [replay, t]);
 
-  // Delete replay
   const handleDelete = useCallback(async () => {
     try {
       await deleteReplay(replay.id);
@@ -186,11 +176,10 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('[ReplayModal] Delete failed:', err);
-      safeAlert('Löschen fehlgeschlagen. Bitte versuche es erneut.');
+      safeAlert(t('replayModal.deleteFailed'));
     }
-  }, [replay.id, onClose]);
+  }, [replay.id, onClose, t]);
 
-  // Format time as mm:ss
   const formatTime = (seconds: number): string => {
     if (!isFinite(seconds) || seconds < 0) return '0:00';
     const m = Math.floor(seconds / 60);
@@ -198,7 +187,6 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Format date for display
   const formatDate = (timestamp: number): string => {
     const d = new Date(timestamp);
     return d.toLocaleDateString('de-DE', {
@@ -216,7 +204,6 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm">
-      {/* Background video (muted, visual only for analysis mode) */}
       {originalVideoUrl && (
         <video
           src={originalVideoUrl}
@@ -229,7 +216,6 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
       )}
 
       <div className="relative z-10 w-full max-w-4xl mx-4 flex flex-col bg-slate-950 rounded-2xl border border-white/10 shadow-2xl overflow-hidden max-h-[95vh]">
-        {/* Top Bar */}
         <div className="flex items-center justify-between px-5 py-3 bg-slate-900/80 border-b border-white/10 shrink-0">
           <div className="min-w-0 flex-1">
             <h2 className="text-white font-bold text-lg truncate">{replay.songTitle}</h2>
@@ -240,14 +226,13 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
             <button
               onClick={onClose}
               className="w-8 h-8 rounded-lg flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
-              aria-label="Schließen"
+              aria-label={t('replayModal.close')}
             >
               ✕
             </button>
           </div>
         </div>
 
-        {/* Center: Video or Audio Player */}
         <div className="relative flex-1 min-h-0 bg-black flex items-center justify-center p-4">
           {replay.hasWebcam && blobUrl ? (
             <video
@@ -261,13 +246,12 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
             />
           ) : (
             <div className="w-full flex flex-col items-center gap-4 py-8">
-              {/* Audio waveform visualization (static placeholder) */}
               <div className="flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/30">
                 <svg className="w-10 h-10 text-cyan-400" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55C7.79 13 6 14.79 6 17s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
                 </svg>
               </div>
-              <p className="text-white/40 text-sm">Audio-Only Replay</p>
+              <p className="text-white/40 text-sm">{t('replayModal.audioOnly')}</p>
               <audio
                 ref={mediaRef as React.RefObject<HTMLAudioElement>}
                 src={blobUrl ?? undefined}
@@ -279,7 +263,6 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
           )}
         </div>
 
-        {/* Hidden original audio element */}
         {originalAudioUrl && (
           <audio
             ref={originalAudioRef}
@@ -289,9 +272,7 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
           />
         )}
 
-        {/* Controls */}
         <div className="px-5 pb-3 shrink-0 space-y-3">
-          {/* Seek bar */}
           <div className="flex items-center gap-3">
             <span className="text-xs text-white/50 w-10 text-right tabular-nums">
               {formatTime(currentTime)}
@@ -309,9 +290,7 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
             </span>
           </div>
 
-          {/* Playback buttons */}
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            {/* Left: Play/Pause + Original Song toggle */}
             <div className="flex items-center gap-2">
               <Button
                 onClick={togglePlay}
@@ -329,7 +308,6 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
                 )}
               </Button>
 
-              {/* Two-way playback: Original Song alongside */}
               {originalAudioUrl && (
                 <Button
                   variant={showOriginal ? 'default' : 'outline'}
@@ -339,14 +317,13 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
                       ? 'bg-purple-500/80 hover:bg-purple-500 text-white border-purple-500/50'
                       : 'border-white/20 text-white/60 hover:text-white hover:bg-white/10'
                   }`}
-                  title="Original-Song zur Analyse abspielen"
+                  title={t('replayModal.originalSong')}
                 >
-                  🎵 Original-Song
+                  {t('replayModal.originalSong')}
                 </Button>
               )}
             </div>
 
-            {/* Right: Export + Delete */}
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -357,10 +334,10 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
                 {isExporting ? (
                   <span className="flex items-center gap-1">
                     <span className="animate-spin w-3 h-3 border-2 border-cyan-400 border-t-transparent rounded-full" />
-                    Export…
+                    {t('replayModal.export')}
                   </span>
                 ) : (
-                  '⬇ Export'
+                  t('replayModal.exportShort')
                 )}
               </Button>
               <Button
@@ -368,15 +345,14 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
                 onClick={handleDelete}
                 className="border-red-500/50 text-red-400 hover:bg-red-500/10 rounded-xl px-3 text-xs"
               >
-                🗑 Löschen
+                {t('replayModal.delete')}
               </Button>
             </div>
           </div>
 
-          {/* Original song volume slider */}
           {showOriginal && originalAudioUrl && (
             <div className="flex items-center gap-3 pt-1">
-              <span className="text-xs text-purple-300/70 whitespace-nowrap">🎵 Lautstärke</span>
+              <span className="text-xs text-purple-300/70 whitespace-nowrap">{t('replayModal.volume')}</span>
               <Slider
                 value={[originalVolume]}
                 min={0}
@@ -389,10 +365,9 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
             </div>
           )}
 
-          {/* Copyright notice */}
           <div className="pt-2 pb-1">
             <p className="text-[11px] text-white/25 leading-relaxed">
-              {COPYRIGHT_NOTICE}
+              {t('replayModal.copyrightNotice')}
             </p>
           </div>
         </div>

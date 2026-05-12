@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface QueueNextSongProps {
   nextQueueItem: {
@@ -18,6 +19,7 @@ interface QueueNextSongProps {
 }
 
 export function QueueNextSong({ nextQueueItem, onPlay }: QueueNextSongProps) {
+  const { t } = useTranslation();
   if (!nextQueueItem) return null;
 
   return (
@@ -27,7 +29,7 @@ export function QueueNextSong({ nextQueueItem, onPlay }: QueueNextSongProps) {
           <div className="flex items-center gap-4">
             <div className="text-3xl">📋</div>
             <div>
-              <p className="text-sm text-white/60">Next in Queue</p>
+              <p className="text-sm text-white/60">{t('queueNextSong.label')}</p>
               <p className="font-semibold text-lg">{nextQueueItem.songTitle}</p>
               <p className="text-sm text-white/60">{nextQueueItem.songArtist}</p>
               <div className="flex items-center gap-2 mt-1">
@@ -35,10 +37,10 @@ export function QueueNextSong({ nextQueueItem, onPlay }: QueueNextSongProps) {
                   📱 {nextQueueItem.addedBy}
                 </Badge>
                 {nextQueueItem.gameMode === 'duel' && (
-                  <Badge className="bg-red-500/80 text-xs">⚔️ Duel</Badge>
+                  <Badge className="bg-red-500/80 text-xs">{t('queueNextSong.duel')}</Badge>
                 )}
                 {nextQueueItem.gameMode === 'duet' && (
-                  <Badge className="bg-pink-500/80 text-xs">🎭 Duet</Badge>
+                  <Badge className="bg-pink-500/80 text-xs">{t('queueNextSong.duet')}</Badge>
                 )}
               </div>
             </div>
@@ -47,7 +49,7 @@ export function QueueNextSong({ nextQueueItem, onPlay }: QueueNextSongProps) {
             onClick={onPlay}
             className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400"
           >
-            ▶ Play Next
+            {t('queueNextSong.playNext')}
           </Button>
         </div>
       </CardContent>

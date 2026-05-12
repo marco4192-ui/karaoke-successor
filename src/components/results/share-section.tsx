@@ -9,6 +9,7 @@ import { Song, HighscoreEntry, GameMode, Difficulty } from '@/types/game';
 import { createShareableCard, downloadScoreCard, shareScoreCard, copyScoreToClipboard, copyScoreImageToClipboard } from '@/lib/game/share-results';
 import { ScoreCard } from '@/components/social/score-card';
 import { ShortsCreator } from '@/components/social/shorts-creator';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface ShareSectionProps {
   song: Song;
@@ -38,7 +39,7 @@ export function ShareSection({
   difficulty,
   gameMode,
 }: ShareSectionProps) {
-  // Stable timestamp for this render — avoids impure Date.now() during render
+  const { t } = useTranslation();
   const [playedAt] = useState(() => Date.now());
 
   const buildScoreEntry = (): HighscoreEntry => ({
@@ -62,18 +63,17 @@ export function ShareSection({
 
   return (
     <>
-      {/* Share Section */}
       <Card className="bg-white/5 border-white/10 mb-8">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
-            📤 Share Your Score
+            {t('shareSection.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="card" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="card">📸 Score Card</TabsTrigger>
-              <TabsTrigger value="video">🎬 Video Short</TabsTrigger>
+              <TabsTrigger value="card">{t('shareSection.scoreCard')}</TabsTrigger>
+              <TabsTrigger value="video">{t('shareSection.videoShort')}</TabsTrigger>
             </TabsList>
             
             <TabsContent value="card">
@@ -100,29 +100,28 @@ export function ShareSection({
         </CardContent>
       </Card>
 
-      {/* Share Buttons */}
       <div className="flex flex-wrap gap-2 justify-center mb-4">
         <Button
           variant="outline"
           onClick={async () => {
             const card = createShareableCard(buildScoreEntry());
             const success = await copyScoreToClipboard(card);
-            safeAlert(success ? 'Score text copied!' : 'Failed to copy');
+            safeAlert(success ? t('shareSection.textCopied') : t('shareSection.textCopyFailed'));
           }}
           className="border-green-500/50 text-green-400"
         >
-          📋 Copy Text
+          {t('shareSection.copyText')}
         </Button>
         <Button
           variant="outline"
           onClick={async () => {
             const card = createShareableCard(buildScoreEntry());
             const success = await copyScoreImageToClipboard(card);
-            safeAlert(success ? 'Score image copied!' : 'Failed to copy image');
+            safeAlert(success ? t('shareSection.imageCopied') : t('shareSection.imageCopyFailed'));
           }}
           className="border-green-500/50 text-green-400"
         >
-          🖼️ Copy Image
+          {t('shareSection.copyImage')}
         </Button>
         <Button
           variant="outline"
@@ -132,7 +131,7 @@ export function ShareSection({
           }}
           className="border-purple-500/50 text-purple-400"
         >
-          📥 Download Card
+          {t('shareSection.downloadCard')}
         </Button>
         <Button
           variant="outline"
@@ -140,13 +139,13 @@ export function ShareSection({
             const card = createShareableCard(buildScoreEntry());
             const success = await shareScoreCard(card);
             if (!success) {
-              safeAlert('Sharing not supported. Card downloaded instead.');
+              safeAlert(t('shareSection.sharingNotSupported'));
               downloadScoreCard(card);
             }
           }}
           className="border-cyan-500/50 text-cyan-400"
         >
-          📤 Share Score
+          {t('shareSection.shareScore')}
         </Button>
       </div>
     </>

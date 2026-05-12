@@ -1,6 +1,7 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface UploadStatusProps {
   onlineEnabled: boolean;
@@ -9,6 +10,7 @@ interface UploadStatusProps {
 }
 
 export function UploadStatus({ onlineEnabled, uploadStatus, uploadMessage }: UploadStatusProps) {
+  const { t } = useTranslation();
   if (!onlineEnabled || uploadStatus === 'idle') return null;
 
   return (
@@ -21,7 +23,7 @@ export function UploadStatus({ onlineEnabled, uploadStatus, uploadMessage }: Upl
         {uploadStatus === 'uploading' && (
           <>
             <div className="animate-spin w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full" />
-            <span className="text-blue-400">Uploading to global leaderboard...</span>
+            <span className="text-blue-400">{t('uploadStatus.uploading')}</span>
           </>
         )}
         {uploadStatus === 'success' && (

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { HighscoreEntry } from '@/types/game';
 import { TrophyIcon } from './constants';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface SongLeaderboardPreviewProps {
   songHighscores: HighscoreEntry[];
@@ -14,6 +15,7 @@ interface SongLeaderboardPreviewProps {
 }
 
 export function SongLeaderboardPreview({ songHighscores, activeProfileId, currentPlayerRank, onViewAll }: SongLeaderboardPreviewProps) {
+  const { t } = useTranslation();
   if (songHighscores.length === 0) return null;
 
   return (
@@ -22,7 +24,7 @@ export function SongLeaderboardPreview({ songHighscores, activeProfileId, curren
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <TrophyIcon className="w-5 h-5 text-yellow-400" />
-            Song Leaderboard
+            {t('songLeaderboardPreview.title')}
           </CardTitle>
           <Button
             variant="ghost"
@@ -30,7 +32,7 @@ export function SongLeaderboardPreview({ songHighscores, activeProfileId, curren
             onClick={onViewAll}
             className="text-purple-400 hover:text-purple-300"
           >
-            View All →
+            {t('songLeaderboardPreview.viewAll')}
           </Button>
         </div>
       </CardHeader>
@@ -54,7 +56,7 @@ export function SongLeaderboardPreview({ songHighscores, activeProfileId, curren
               <span className="flex-1 text-sm truncate">{entry.playerName}</span>
               <span className="text-sm font-bold text-cyan-400">{entry.score.toLocaleString()}</span>
               {entry.playerId === activeProfileId && currentPlayerRank && (
-                <Badge className="bg-cyan-500/30 text-cyan-300 text-xs">You #{currentPlayerRank}</Badge>
+                <Badge className="bg-cyan-500/30 text-cyan-300 text-xs">{t('songLeaderboardPreview.youRank').replace('{rank}', String(currentPlayerRank))}</Badge>
               )}
             </div>
           ))}
