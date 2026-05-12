@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
 import { Song, Difficulty, GameMode } from '@/types/game';
+import { Button } from '@/components/ui/button';
 import { useGameStore } from '@/lib/game/store';
 import { getAllSongs, getAllSongsAsync, getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
@@ -35,7 +36,7 @@ import { useLibraryFilters } from '@/hooks/use-library-filters';
 import { useLibraryPreview } from '@/hooks/use-library-preview';
 import { useViralCharts } from '@/hooks/use-viral-charts';
 
-export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong: (_song: Song, _gameMode?: GameMode) => void; initialGameMode?: GameMode }) {
+export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEditor }: { onSelectSong: (_song: Song, _gameMode?: GameMode) => void; initialGameMode?: GameMode; onNavigateToEditor?: () => void; }) {
   const { t } = useTranslation();
 
   // Core state
@@ -260,9 +261,24 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
   // --- Render ---
   return (
     <div className="w-full px-4 md:px-6 lg:px-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">{t('library.title')}</h1>
-        <p className="text-white/60">{songsLoading ? t('library.loadingSongs') : `${loadedSongs.length} ${t('library.songsAvailable')}`}</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">{t('library.title')}</h1>
+          <p className="text-white/60">{songsLoading ? t('library.loadingSongs') : `${loadedSongs.length} ${t('library.songsAvailable')}`}</p>
+        </div>
+        {onNavigateToEditor && (
+          <Button
+            onClick={onNavigateToEditor}
+            variant="outline"
+            className="border-white/20 hover:border-cyan-500/50 hover:bg-cyan-500/10 text-white/70 hover:text-cyan-400 transition-colors"
+          >
+            <svg className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+            </svg>
+            Editor
+            <kbd className="ml-2 text-[10px] text-white/40 bg-white/5 px-1.5 py-0.5 rounded">F10</kbd>
+          </Button>
+        )}
       </div>
 
       {songsLoading && (

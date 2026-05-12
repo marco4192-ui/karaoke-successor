@@ -4,7 +4,6 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { getAllSongs, addSong, updateSong, getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { KaraokeEditor } from '@/components/editor/karaoke-editor';
 import { NewSongDialog } from '@/components/editor/new-song-dialog';
@@ -396,52 +395,43 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
           </div>
 
           {/* Songs Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2">
             {/* New Song Button - First card */}
             <button
               onClick={() => setShowNewSongDialog(true)}
-              className="border-2 border-dashed border-white/20 hover:border-cyan-500/50 rounded-xl overflow-hidden transition-all group flex flex-col items-center justify-center min-h-[200px] hover:bg-white/5"
+              className="border-2 border-dashed border-white/20 hover:border-cyan-500/50 rounded-lg overflow-hidden transition-all group flex flex-col items-center justify-center min-h-[60px] hover:bg-white/5"
             >
-              <div className="w-16 h-16 rounded-full bg-cyan-500/10 flex items-center justify-center mb-3 group-hover:bg-cyan-500/20 transition-colors">
-                <svg className="w-8 h-8 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <div className="w-8 h-8 rounded-full bg-cyan-500/10 flex items-center justify-center mb-1 group-hover:bg-cyan-500/20 transition-colors">
+                <svg className="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 5v14M5 12h14" />
                 </svg>
               </div>
-              <span className="text-sm font-medium text-white/60 group-hover:text-white/80 transition-colors">{t('editor.newSong')}</span>
-              <span className="text-xs text-white/30 mt-1">{t('editor.newSongDesc')}</span>
+              <span className="text-[10px] font-medium text-white/60 group-hover:text-white/80 transition-colors">{t('editor.newSong')}</span>
             </button>
             {filteredSongs.map(song => (
               <button
                 key={song.id}
                     onClick={() => handleSelectSong(song)}
-                    className="theme-adaptive-bg hover:brightness-110 border border-white/10 hover:border-cyan-500/50 rounded-xl overflow-hidden transition-all group"
+                    className="theme-adaptive-bg hover:brightness-110 border border-white/10 hover:border-cyan-500/50 rounded-lg overflow-hidden transition-all group"
                   >
                     {/* Cover Image */}
                     <div className="relative aspect-square bg-gradient-to-br from-purple-600/30 to-blue-600/30 overflow-hidden">
                       {song.coverImage ? (
-                        <img src={song.coverImage} alt={song.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <img src={song.coverImage} alt={song.title} className="w-full h-full object-cover" />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-4xl opacity-50">🎵</span>
+                          <span className="text-lg opacity-50">🎵</span>
                         </div>
                       )}
-                      {/* Hover overlay */}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">{t('editor.editSong')}</span>
-                      </div>
                     </div>
                     {/* Song Info */}
-                    <div className="p-3">
-                      <p className="font-medium truncate text-sm">{song.title}</p>
-                      <p className="text-xs text-white/60 truncate">{song.artist}</p>
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">{song.bpm} BPM</Badge>
-                        {!song.genre && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-orange-500/50 text-orange-400">🎸</Badge>
-                        )}
-                        {!song.language && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-purple-500/50 text-purple-400">🌐</Badge>
-                        )}
+                    <div className="p-1.5">
+                      <p className="font-medium truncate text-[10px]">{song.title}</p>
+                      <p className="text-[9px] text-white/60 truncate">{song.artist}</p>
+                      <div className="flex gap-0.5 mt-0.5">
+                        <span className="text-[8px] text-white/40">{song.bpm}</span>
+                        {!song.genre && <span className="text-[8px] text-orange-400">🎸</span>}
+                        {!song.language && <span className="text-[8px] text-purple-400">🌐</span>}
                       </div>
                     </div>
                   </button>

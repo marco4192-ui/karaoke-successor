@@ -406,6 +406,7 @@ export default function KaraokeZERO() {
               }
             }}
             initialGameMode={gameState.gameMode}
+            onNavigateToEditor={() => setScreen('editor')}
           />
         )}
         {screen === 'game' && (
