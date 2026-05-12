@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -11,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { X, Save, Music, FileText, Sparkles, FolderOpen, Film, Image as ImageIcon, Activity } from 'lucide-react';
 import type { Song } from '@/types/game';
+import { parseLyricsToSyllables, type SyllableResult } from '@/lib/editor/syllable-separator';
 import { isTauri } from '@/lib/tauri-file-storage';
 import { nativePickFileOpen } from '@/lib/native-fs';
 import { GENRES, LANGUAGES } from '@/lib/constants';
@@ -26,9 +28,10 @@ interface NewSongDialogProps {
  *
  * Allows creating a brand new song from scratch:
  * 1. Enter metadata (title, artist, BPM, genre, language)
- * 2. Optionally select audio, video, and cover files
- * 3. BPM can be detected automatically from the audio file
- * 4. Song is created WITHOUT notes — use tap mode in the editor (Space) to add notes
+ * 2. Paste or type lyrics text — syllables are parsed and stored for tap-mode assignment
+ * 3. Optionally select audio, video, and cover files
+ * 4. BPM can be detected automatically from the audio file
+ * 5. Song is created WITHOUT notes — use tap mode in the editor (Space) to add notes
  */
 export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
   // Metadata state
@@ -39,6 +42,10 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
   const [genre, setGenre] = useState('');
   const [language, setLanguage] = useState('');
   const [edition, setEdition] = useState('');
+
+  // Lyrics state
+  const [lyricsText, setLyricsText] = useState('');
+  const [syllableResult, setSyllableResult] = useState<SyllableResult | null>(null);
 
   // Media file paths (Tauri filesystem)
   const [audioPath, setAudioPath] = useState('');
@@ -59,10 +66,21 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
     }
   }, [bpmResult]);
 
-  // Auto-fill duration when BPM detection completes (duration from audio)
+  // Auto-fill duration when BPM detection completes
   const detectedDurationMs = bpmResult?.duration_ms ?? null;
 
-  // Generate Song object from the form data (NO notes)
+  // Parse syllables when lyrics text changes
+  const handleLyricsChange = useCallback((text: string) => {
+    setLyricsText(text);
+    if (text.trim().length > 0) {
+      const result = parseLyricsToSyllables(text);
+      setSyllableResult(result);
+    } else {
+      setSyllableResult(null);
+    }
+  }, []);
+
+  // Generate Song object from the form data (NO notes — lyrics text stored for tap mode)
   const generateSong = useCallback((): Song | null => {
     if (!title.trim() || !artist.trim()) {
       setError('Bitte Titel und Künstler angeben.');
@@ -91,10 +109,12 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
       ...(audioPath ? { relativeAudioPath: audioPath } : {}),
       ...(videoPath ? { relativeVideoPath: videoPath } : {}),
       ...(coverPath ? { relativeCoverPath: coverPath, coverImage: coverPath } : {}),
+      // Store raw lyrics text so the editor can parse syllables for tap-mode assignment
+      ...(lyricsText.trim() ? { rawLyrics: lyricsText.trim() } : {}),
     };
 
     return song;
-  }, [title, artist, bpm, gap, genre, language, edition, audioPath, videoPath, coverPath, detectedDurationMs]);
+  }, [title, artist, bpm, gap, genre, language, edition, audioPath, videoPath, coverPath, detectedDurationMs, lyricsText]);
 
   // Handle save
   const handleSave = useCallback(async () => {
@@ -300,7 +320,28 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
 
           <Separator className="bg-slate-700" />
 
-          {/* Section 2: Media Files */}
+          {/* Section 2: Lyrics Input */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-slate-400 flex items-center gap-2">
+              <Music className="w-4 h-4" /> Songtext
+            </h3>
+            <Textarea
+              value={lyricsText}
+              onChange={(e) => handleLyricsChange(e.target.value)}
+              placeholder={`Gib hier den Songtext ein...\n\nDie Silben werden automatisch getrennt und beim Noten-Erstellen\nim Editor (Tap-Modus) den Noten zugewiesen.\n\nBeispiel:\nWalking in the rain\nFeeling no pain\nNever going back again`}
+              className="bg-slate-800 border-slate-600 min-h-[160px] font-mono text-sm"
+            />
+            {syllableResult && (
+              <div className="flex items-center gap-4 text-xs text-slate-500">
+                <span>{syllableResult.lines.length} Zeilen</span>
+                <span>{syllableResult.totalSyllables} Silben</span>
+              </div>
+            )}
+          </div>
+
+          <Separator className="bg-slate-700" />
+
+          {/* Section 3: Media Files */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-slate-400 flex items-center gap-2">
               <FolderOpen className="w-4 h-4" /> Mediendateien
@@ -402,7 +443,7 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
 
           {/* Info text */}
           <div className="text-xs text-slate-600 space-y-1">
-            <p>Der Song wird ohne Noten erstellt. Nutze im Editor den Tap-Modus (Leertaste während der Wiedergabe), um Noten manuell einzufügen.</p>
+            <p>Der Song wird ohne Noten erstellt. Nutze im Editor den Tap-Modus (Leertaste während der Wiedergabe), um Noten manuell einzufügen. Die Silben aus dem Songtext werden dabei automatisch zugewiesen.</p>
           </div>
         </CardContent>
       </Card>

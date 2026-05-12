@@ -90,6 +90,7 @@ export interface Song {
   medleyStartBeat?: number; // #MEDLEYSTARTBEAT: - medley start beat
   medleyEndBeat?: number; // #MEDLEYENDBEAT: - medley end beat
   tags?: string; // #TAGS: - comma-separated tags
+  rawLyrics?: string; // Parsed lyrics text for tap-mode syllable assignment (not persisted to UltraStar TXT)
 }
 
 export interface Player {

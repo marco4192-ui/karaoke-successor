@@ -10,6 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Music, FileText, Settings, BookOpen, Waves, Sparkles, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { normalizeFilePath } from '@/lib/tauri-file-storage';
 import { midiPitchToFrequency } from '@/lib/utils';
+import { parseLyricsToSyllables } from '@/lib/editor/syllable-separator';
 import { useEditorHistory } from '@/hooks/use-editor-history';
 import { useEditorPlayback } from '@/hooks/use-editor-playback';
 import { useEditorKeyboardShortcuts } from '@/hooks/use-editor-keyboard-shortcuts';
@@ -79,11 +80,22 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   const allNotes = useMemo(() => currentSong.lyrics.flatMap(line => line.notes), [currentSong.lyrics]);
   const selectedNote = useMemo(() => allNotes.find(n => n.id === selectedNoteId), [allNotes, selectedNoteId]);
 
-  // All lyrics syllables for tap-mode auto-assignment
-  const allLyricsSyllables = useMemo(
-    () => allNotes.map(n => n.lyric).filter(l => l && l !== '---'),
-    [allNotes]
-  );
+  // All lyrics syllables for tap-mode auto-assignment.
+  // Prefer syllables from existing notes; fall back to rawLyrics text if no notes exist yet.
+  const allLyricsSyllables = useMemo(() => {
+    const noteLyrics = allNotes.map(n => n.lyric).filter(l => l && l !== '---');
+    if (noteLyrics.length > 0) return noteLyrics;
+
+    // No notes yet — parse rawLyrics if available (from new-song dialog)
+    if (currentSong.rawLyrics) {
+      const parsed = parseLyricsToSyllables(currentSong.rawLyrics);
+      return parsed.lines.flatMap(line =>
+        line.words.flatMap(word => word.syllables)
+      );
+    }
+
+    return [];
+  }, [allNotes, currentSong.rawLyrics]);
 
   // Ref for currentTime (needed by tap note placement hook to avoid stale closures)
   const currentTimeRef = useRef(currentTime);
