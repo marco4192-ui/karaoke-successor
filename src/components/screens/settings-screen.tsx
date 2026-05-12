@@ -230,6 +230,7 @@ function SettingsScreen() {
           lyricsSize={lyricsSize}
           setLyricsSize={setLyricsSize}
           performanceMode={performanceMode}
+          setPerformanceMode={setPerformanceMode}
           tx={tx}
           setHasChanges={setHasChanges}
         />
@@ -241,8 +242,6 @@ function SettingsScreen() {
           setPreviewVolume={setPreviewVolume}
           micSensitivity={micSensitivity}
           setMicSensitivity={setMicSensitivity}
-          performanceMode={performanceMode}
-          setPerformanceMode={setPerformanceMode}
           masterVolume={masterVolume}
           setMasterVolume={setMasterVolume}
           youtubeQuality={youtubeQuality}

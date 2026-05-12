@@ -18,12 +18,7 @@ export function WebcamTab({
   const { t } = useTranslation();
   return (
     <div className="space-y-6">
-      <WebcamSettingsPanel 
-        config={webcamConfig}
-        onConfigChange={updateWebcamConfig}
-      />
-      
-      {/* Webcam Info Card */}
+      {/* 1. Info Card — About Webcam Background */}
       <Card className="bg-white/5 border-white/10">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -54,8 +49,14 @@ export function WebcamTab({
           </div>
         </CardContent>
       </Card>
-      
-      {/* Webcam Preview Card */}
+
+      {/* 2. Webcam Background Settings */}
+      <WebcamSettingsPanel
+        config={webcamConfig}
+        onConfigChange={updateWebcamConfig}
+      />
+
+      {/* 3. Webcam Preview Card */}
       <Card className="bg-white/5 border-white/10">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -67,7 +68,7 @@ export function WebcamTab({
         </CardHeader>
         <CardContent>
           <div className="relative aspect-video bg-black rounded-lg overflow-hidden border border-white/10">
-            <WebcamBackground 
+            <WebcamBackground
               config={webcamConfig}
               onConfigChange={updateWebcamConfig}
             />

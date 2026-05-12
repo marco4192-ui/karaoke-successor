@@ -467,17 +467,50 @@ export function usePtmGameLogic({
     return () => cancelAnimationFrame(rafId);
   }, [phase, isPlaying, scoreCurrentPlayer]);
 
-  // ── Audio time tracking ──
+  // ── RAF-based time tracking (smooth 40fps like normal game screens) ──
   // IMPORTANT: Must depend on audioSong AND phase because:
   // 1. audioSong changes trigger re-attachment when URLs are restored.
-  // 2. Phase changes (intro→playing) re-mount the <audio>/<video> DOM elements
-  //    (intro renders its own elements with the same refs). When the intro
-  //    unmounts and the game screen mounts, the old element is detached and
-  //    the timeupdate listener must be re-attached to the new element.
+  // 2. Phase changes (intro→playing) re-mount the <audio>/<video> DOM elements.
+  // Uses requestAnimationFrame for smooth note highway animation instead of
+  // the ~4Hz timeupdate events which cause jerky note movement.
+  const lastCurrentTimeUpdateRef = useRef(0);
+
   useEffect(() => {
-    // For YouTube, time comes from the YouTube player via onYoutubeTimeUpdate.
-    // For local audio, time comes from the <audio> element's timeupdate event.
-    // For embedded audio (video), time comes from the <video> element's timeupdate event.
+    if (phase !== 'playing' || !isPlaying) return;
+    let rafId: number;
+
+    const timeLoop = () => {
+      let elapsedMs: number;
+
+      if (isYouTube && youtubeTime > 0) {
+        elapsedMs = youtubeTime * 1000;
+      } else if (audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2) {
+        elapsedMs = audioRef.current.currentTime * 1000;
+      } else if (videoRef.current && !videoRef.current.paused && videoRef.current.readyState >= 2 && !isYouTube) {
+        elapsedMs = videoRef.current.currentTime * 1000;
+      } else {
+        // Fallback: keep current time (no regression)
+        elapsedMs = currentTimeRef.current;
+      }
+
+      // Throttle React state updates to ~40fps (25ms) for smooth visuals
+      const now = performance.now();
+      if (now - lastCurrentTimeUpdateRef.current >= 25) {
+        setCurrentTime(elapsedMs);
+        lastCurrentTimeUpdateRef.current = now;
+      }
+
+      rafId = requestAnimationFrame(timeLoop);
+    };
+
+    rafId = requestAnimationFrame(timeLoop);
+    return () => cancelAnimationFrame(rafId);
+  }, [phase, isPlaying, isYouTube, youtubeTime, audioRef, videoRef]);
+
+  // ── Legacy timeupdate fallback (non-playing phases: intro, countdown) ──
+  useEffect(() => {
+    if (phase === 'playing') return; // handled by RAF loop above
+
     if (isYouTube && youtubeTime > 0) {
       setCurrentTime(youtubeTime * 1000);
       return;
@@ -490,7 +523,6 @@ export function usePtmGameLogic({
       return () => audio.removeEventListener('timeupdate', handleTimeUpdate);
     }
 
-    // Embedded audio: fall back to video element for time tracking
     const video = videoRef.current;
     if (video) {
       const handleTimeUpdate = () => setCurrentTime(video.currentTime * 1000);

@@ -10,8 +10,6 @@ interface GraphicSoundTabProps {
   setPreviewVolume: (_value: number) => void;
   micSensitivity: number;
   setMicSensitivity: (_value: number) => void;
-  performanceMode: 'full' | 'low';
-  setPerformanceMode: (value: 'full' | 'low') => void;
   masterVolume: number;
   setMasterVolume: (_value: number) => void;
   youtubeQuality: string;
@@ -25,8 +23,6 @@ export function GraphicSoundTab({
   setPreviewVolume,
   micSensitivity,
   setMicSensitivity,
-  performanceMode,
-  setPerformanceMode,
   masterVolume,
   setMasterVolume,
   youtubeQuality,
@@ -34,70 +30,8 @@ export function GraphicSoundTab({
   tx,
   setHasChanges,
 }: GraphicSoundTabProps) {
-  const isLowPerf = performanceMode === 'low';
-
   return (
     <div className="space-y-6">
-      {/* Performance Mode */}
-      <Card className={`bg-white/5 border-white/10 ${isLowPerf ? 'border-orange-500/50' : ''}`}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span className="text-lg">⚡</span>
-            {tx('settingsGraphicSound.performanceMode')}
-          </CardTitle>
-          <CardDescription>{tx('settingsGraphicSound.performanceModeDesc')}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-            <div>
-              <h4 className="font-medium">{tx('settingsGraphicSound.lowPerfMode')}</h4>
-              <p className="text-sm text-white/60">{tx('settingsGraphicSound.lowPerfModeDesc')}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                const newValue = isLowPerf ? 'full' : 'low';
-                setPerformanceMode(newValue);
-                setItem(StorageKeys.PERFORMANCE_MODE, newValue);
-                window.dispatchEvent(new CustomEvent('settingsChange', { detail: { performanceMode: newValue } }));
-                setHasChanges(true);
-              }}
-              className={`relative w-14 h-7 rounded-full transition-colors cursor-pointer ${
-                isLowPerf ? 'bg-orange-500' : 'bg-white/20'
-              }`}
-            >
-              <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${isLowPerf ? 'left-8' : 'left-1'}`} />
-            </button>
-          </div>
-          {isLowPerf && (
-            <div className="p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg text-sm space-y-1">
-              <p className="font-medium text-orange-300">{tx('settingsGraphicSound.lowPerfFeatures')}</p>
-              <ul className="text-white/60 space-y-0.5 ml-4 list-disc">
-                <li>{tx('settingsGraphicSound.featureSplitScreen')}</li>
-                <li>{tx('settingsGraphicSound.featureNoteStyles')}</li>
-                <li>{tx('settingsGraphicSound.featureAccuracy')}</li>
-                <li>{tx('settingsGraphicSound.featureParticles')}</li>
-                <li>{tx('settingsGraphicSound.featureSpectrogram')}</li>
-                <li>{tx('settingsGraphicSound.featureComboFire')}</li>
-                <li>{tx('settingsGraphicSound.featureScorePopups')}</li>
-                <li>{tx('settingsGraphicSound.featureWebcam')}</li>
-                <li>{tx('settingsGraphicSound.featureAnimatedBg')}</li>
-                <li>{tx('settingsGraphicSound.featureYoutubeBg')}</li>
-                <li>{tx('settingsGraphicSound.featureEnergyViz')}</li>
-              </ul>
-              <p className="text-white/80 mt-2 font-medium">{tx('settingsGraphicSound.remainAvailable')}</p>
-              <ul className="text-green-400/80 space-y-0.5 ml-4 list-disc">
-                <li>{tx('settingsGraphicSound.remainCore')}</li>
-                <li>{tx('settingsGraphicSound.remainPitch')}</li>
-                <li>{tx('settingsGraphicSound.remainLyrics')}</li>
-                <li>{tx('settingsGraphicSound.remainPractice')}</li>
-                <li>{tx('settingsGraphicSound.remainAudioEffects')}</li>
-              </ul>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Audio Output / ASIO Device Selection */}
       <AudioOutputSection />
 

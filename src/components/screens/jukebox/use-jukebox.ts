@@ -266,6 +266,15 @@ export function useJukebox(refs?: {
     if (audioRef.current) audioRef.current.pause();
   };
 
+  // Listen for external start signal (e.g., Ctrl+J from keyboard shortcuts)
+  useEffect(() => {
+    const handleStartSignal = () => {
+      startJukebox();
+    };
+    window.addEventListener('jukebox:start', handleStartSignal);
+    return () => window.removeEventListener('jukebox:start', handleStartSignal);
+  }, [startJukebox]);
+
   // Toggle fullscreen — specifically targets the jukebox container, not the entire document.
   // When the app is already in app-level fullscreen (NavBar button), simply exit fullscreen
   // instead of switching to the jukebox's own split layout fullscreen.

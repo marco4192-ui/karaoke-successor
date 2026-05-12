@@ -28,6 +28,12 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
 
   return (
     <>
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-2">{t('jukeboxPlayer.jukeboxMode')}</h1>
+        <p className="text-white/60">{t('jukeboxPlayer.sitBackEnjoy')}</p>
+      </div>
+
       {/* Search and Filters */}
       <div className="mb-6 space-y-4">
         {/* Search */}

@@ -262,7 +262,11 @@ export default function KaraokeZERO() {
       setAutoPlayNext(true);
       navigateWithGuard('queue');
     },
-    navigateToJukebox: () => navigateWithGuard('jukebox'),
+    navigateToJukebox: () => {
+      navigateWithGuard('jukebox');
+      // Dispatch event to auto-start jukebox after screen mounts
+      setTimeout(() => window.dispatchEvent(new CustomEvent('jukebox:start')), 300);
+    },
   });
 
   // ── Global remote control from mobile companions ──
