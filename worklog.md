@@ -97,3 +97,27 @@ Stage Summary:
 - Webcam quick controls (size/position/device/mirror) available in-game on all screens
 - Particle density significantly increased across all effects
 - Duel/duet score events now properly assigned to each player's side
+
+---
+Task ID: 1-6
+Agent: main
+Task: Six UI/UX fixes: PTM performance, settings reorder, webcam cards, jukebox heading/translations/CTRL-J
+
+Work Log:
+- Read ptm-game-hook.ts, graphic-sound-tab.tsx, appearance-tab.tsx, webcam-tab.tsx, jukebox files, settings-screen.tsx, keyboard shortcuts, i18n files
+- Replaced timeupdate-based time tracking (~4Hz) in PTM with RAF-based tracking (~40fps) throttled to 25ms, matching normal game screen behavior
+- Moved Performance Mode card from GraphicSoundTab to AppearanceTab, updated props in settings-screen.tsx
+- Reordered webcam-tab.tsx cards: Info → Settings → Preview
+- Added heading to jukebox-setup-view.tsx
+- Added 23 missing jukeboxPlayer translation keys to both en.ts and de.ts
+- Implemented auto-start jukebox via custom event (jukebox:start) on CTRL-J
+- npx tsc --noEmit passed clean
+- Pushed as d6414e4
+
+Stage Summary:
+- PTM notes now scroll smoothly at 40fps instead of jerky 4Hz
+- Performance Mode now logically lives under Appearance settings
+- Webcam settings cards in correct user-requested order
+- Jukebox setup view has visible heading
+- All jukebox field labels properly translated in German and English
+- CTRL-J navigates to jukebox and auto-starts playback
