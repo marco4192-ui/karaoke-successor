@@ -7,6 +7,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 
 interface ProminentScoreDisplayProps {
   player: Player | undefined;
+  showCombo?: boolean;
 }
 
 /**
@@ -14,7 +15,7 @@ interface ProminentScoreDisplayProps {
  * - Left header: player avatar + name
  * - Top center: large real-time score out of max, combo counter
  */
-export const ProminentScoreDisplay = React.memo(function ProminentScoreDisplay({ player }: ProminentScoreDisplayProps) {
+export const ProminentScoreDisplay = React.memo(function ProminentScoreDisplay({ player, showCombo }: ProminentScoreDisplayProps) {
   const { t } = useTranslation();
   const score = player?.score || 0;
   const combo = player?.combo || 0;
@@ -67,7 +68,7 @@ export const ProminentScoreDisplay = React.memo(function ProminentScoreDisplay({
             </div>
 
             {/* Combo */}
-            {combo >= 1 && (
+            {showCombo !== false && combo >= 1 && (
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-yellow-400 font-bold text-base">
                   {combo}x
@@ -85,7 +86,7 @@ export const ProminentScoreDisplay = React.memo(function ProminentScoreDisplay({
       </div>
 
       {/* Combo indicator with glow effect */}
-      {combo >= 5 && (
+      {showCombo !== false && combo >= 5 && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
           <div
             className="text-4xl font-black animate-pulse"

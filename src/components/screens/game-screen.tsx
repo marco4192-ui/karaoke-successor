@@ -269,6 +269,7 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
             gameMode={g.gameState.gameMode}
             missingWordsIndices={g.gameState.missingWordsIndices}
             isBlindSection={g.gameState.isBlindSection}
+            lyricsSize={g.lyricsSize}
           />
         )}
 
@@ -318,8 +319,8 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
       />
 
       {/* Score Events & Particles — disabled in low-performance mode */}
-      {!g.isLowPerf && <ScoreEventsDisplay events={g.scoreEvents} maxVisible={3} />}
-      {!g.isLowPerf && <ParticleSystem particles={g.particles} />}
+      {!g.isLowPerf && g.showParticles !== false && <ScoreEventsDisplay events={g.scoreEvents} maxVisible={3} />}
+      {!g.isLowPerf && g.showParticles !== false && <ParticleSystem particles={g.particles} />}
 
       {/* Spectrogram Display / Equalizer — left side, below pitch detection */}
       {g.showPitchGuide && g.isPlaying && !g.isLowPerf && !g.hasChallengeNoPitchGuide && (
@@ -336,14 +337,14 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
       )}
 
       {/* Combo Fire Effect — disabled in low-performance mode */}
-      {!g.isLowPerf && g.gameState.players[0]?.combo && g.gameState.players[0].combo >= 5 && (
+      {!g.isLowPerf && g.showCombo !== false && g.gameState.players[0]?.combo && g.gameState.players[0].combo >= 5 && (
         <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
           <ComboFireEffect combo={g.gameState.players[0].combo} isLarge={g.gameState.players[0].combo >= 20} />
         </div>
       )}
 
       {/* Prominent Score Display - Only for Single Player Mode */}
-      {!g.isDuetMode && <ProminentScoreDisplay player={g.gameState.players[0]} />}
+      {!g.isDuetMode && g.showScore !== false && <ProminentScoreDisplay player={g.gameState.players[0]} showCombo={g.showCombo !== false} />}
     </div>
   );
 }

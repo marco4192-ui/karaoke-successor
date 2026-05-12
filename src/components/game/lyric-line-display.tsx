@@ -23,6 +23,8 @@ interface LyricLineDisplayProps {
   isBlindSection?: boolean;
   /** Callback ref attached to the first singable note span (for pointer targeting) */
   firstNoteRef?: (_node: HTMLSpanElement | null) => void;
+  /** Lyrics size setting: 'small', 'medium', or 'large' */
+  lyricsSize?: string;
 }
 
 /**
@@ -49,7 +51,10 @@ export function LyricLineDisplay({
   missingWordsIndices = [],
   isBlindSection = false,
   firstNoteRef,
+  lyricsSize,
 }: LyricLineDisplayProps) {
+  // Compute base size class from lyricsSize setting
+  const lyricsSizeClass = lyricsSize === 'large' ? 'text-3xl md:text-4xl' : lyricsSize === 'small' ? 'text-xl md:text-2xl' : 'text-2xl md:text-3xl';
   // Get lyrics style from localStorage - initialize with default to avoid hydration mismatch
   const [lyricsStyle, setLyricsStyle] = useState<string>('classic');
 
@@ -158,7 +163,7 @@ export function LyricLineDisplay({
   // IMPORTANT: Use inline-block spans to preserve exact spacing from txt file
   // IMPORTANT: Hyphens in lyrics should be rendered with special styling for line breaks
   return (
-    <span className="text-2xl md:text-3xl font-bold text-center inline" style={{ whiteSpace: 'pre-wrap' }}>
+    <span className={`${lyricsSizeClass} font-bold text-center inline`} style={{ whiteSpace: 'pre-wrap' }}>
       {line.notes.map((note, idx) => {
         // Use startTime as noteId to match checkNoteHits (startTime is unique per note)
         const noteId = note.id || `note-${note.startTime}`;

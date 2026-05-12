@@ -25,6 +25,8 @@ export interface SinglePlayerLyricsProps {
   isBlindSection?: boolean;
   /** Preview time in milliseconds (how early to show next line) */
   previewTime?: number;
+  /** Lyrics size setting: 'small', 'medium', or 'large' */
+  lyricsSize?: string;
 }
 
 // ===================== MAIN COMPONENT =====================
@@ -42,6 +44,7 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
   missingWordsIndices = [],
   isBlindSection = false,
   previewTime = 2000,
+  lyricsSize,
 }: SinglePlayerLyricsProps) {
   // ── Find current and next lines ──
   const { currentLine, nextLine, timeUntilSing, isSinging: _isSinging, isFlying } = useMemo(() => {
@@ -140,7 +143,7 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
   return (
     <div className="absolute bottom-0 left-0 right-0 z-20">
       <div className="bg-gradient-to-t from-black/80 to-transparent p-6">
-        <div ref={containerRef} className="text-2xl md:text-3xl font-bold text-center drop-shadow-lg relative w-full">
+        <div ref={containerRef} className={`${lyricsSize === 'large' ? 'text-3xl md:text-4xl' : lyricsSize === 'small' ? 'text-xl md:text-2xl' : 'text-2xl md:text-3xl'} font-bold text-center drop-shadow-lg relative w-full`}>
           {/* Flying Pointer — flies from off-screen left to the first singable note.
               Disappears immediately when singing starts (no lingering indicator). */}
           {isFlying && (
@@ -192,12 +195,13 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
             missingWordsIndices={missingWordsIndices}
             isBlindSection={isBlindSection}
             firstNoteRef={firstNoteRefCallback}
+            lyricsSize={lyricsSize}
           />
         </div>
 
         {/* Next Line Preview */}
         {nextLine && (
-          <p className="text-base md:text-lg text-center text-white/40 mt-3" style={{ whiteSpace: 'pre-wrap' }}>
+          <p className={`${lyricsSize === 'large' ? 'text-xl md:text-2xl' : lyricsSize === 'small' ? 'text-base md:text-lg' : 'text-base md:text-lg'} text-center text-white/40 mt-3`} style={{ whiteSpace: 'pre-wrap' }}>
             {nextLine.notes.map(n => n.lyric).join('')}
           </p>
         )}

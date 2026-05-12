@@ -30,6 +30,13 @@ export const StorageKeys = {
   NOTE_SHAPE: 'karaoke-note-shape',
   PERFORMANCE_MODE: 'karaoke-performance-mode',
   REPLAY_ENABLED: 'karaoke-replay-enabled',
+  SHOW_SCORE: 'karaoke-show-score',
+  SHOW_PARTICLES: 'karaoke-show-particles',
+  SHOW_COMBO: 'karaoke-show-combo',
+  LYRICS_SIZE: 'karaoke-lyrics-size',
+  MASTER_VOLUME: 'karaoke-master-volume',
+  YOUTUBE_QUALITY: 'karaoke-youtube-quality',
+  AUTO_FULLSCREEN: 'karaoke-auto-fullscreen',
 
   // --- Lyrics / Theme ---
   LYRICS_STYLE: 'karaoke-lyrics-style',

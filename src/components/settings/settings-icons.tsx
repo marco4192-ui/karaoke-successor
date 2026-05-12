@@ -19,4 +19,5 @@ export {
   CheckIcon,
   CloudUploadIcon,
   KeyboardIcon,
+  GamepadIcon,
 } from '@/components/icons';

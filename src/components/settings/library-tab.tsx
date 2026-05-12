@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ImportScreen } from '@/components/import/import-screen';
 import { FolderIcon, CloudUploadIcon, TrashIcon } from '@/components/settings/settings-icons';
 import { useTranslation } from '@/lib/i18n/translations';
+import { ViralChartsSettings } from '@/components/settings/viral-charts-tab';
 
 interface LibraryTabProps {
   songsFolder: string;
@@ -176,6 +177,9 @@ export function LibraryTab({
           />
         </CardContent>
       </Card>
+
+      {/* Viral Charts */}
+      <ViralChartsSettings />
       
       {/* Reset Library */}
       <Card className="bg-white/5 border-white/10 border-red-500/30">

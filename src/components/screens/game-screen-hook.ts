@@ -10,7 +10,7 @@ import { usePartyStore } from '@/lib/game/party-store';
 import { LyricLine, Note } from '@/types/game';
 import { PRACTICE_MODE_DEFAULTS, PracticeModeConfig } from '@/lib/game/practice-mode';
 import { CHALLENGE_MODES } from '@/lib/game/player-progression';
-import { StorageKeys, getJson, getItem, removeItem } from '@/lib/storage';
+import { StorageKeys, getJson, getItem, removeItem, getBool, getNumber, getString } from '@/lib/storage';
 import {
   WebcamBackgroundConfig,
   DEFAULT_WEBCAM_CONFIG,
@@ -133,6 +133,13 @@ export interface GameScreenHookReturn {
   noteShapeStyle: 'rounded' | 'sharp' | 'pill' | 'diamond';
   hasChallengeNoPitchGuide: boolean;
   activeChallenge: typeof CHALLENGE_MODES[0] | null;
+  showScore: boolean;
+  showParticles: boolean;
+  showCombo: boolean;
+  autoFullscreen: boolean;
+  masterVolume: number;
+  lyricsSize: string;
+  youtubeQuality: string;
 
   // Practice mode
   practiceMode: PracticeModeConfig;
@@ -213,6 +220,14 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
   const [replayEnabled] = useState(() => {
     return getJson<boolean>(StorageKeys.REPLAY_ENABLED, true);
   });
+
+  const [showScore] = useState(() => getBool(StorageKeys.SHOW_SCORE, true));
+  const [showParticles] = useState(() => getBool(StorageKeys.SHOW_PARTICLES, true));
+  const [showCombo] = useState(() => getBool(StorageKeys.SHOW_COMBO, true));
+  const [autoFullscreen] = useState(() => getBool(StorageKeys.AUTO_FULLSCREEN, false));
+  const [masterVolume] = useState(() => getNumber(StorageKeys.MASTER_VOLUME, 100));
+  const [lyricsSize] = useState(() => getString(StorageKeys.LYRICS_SIZE, 'medium'));
+  const [youtubeQuality] = useState(() => getString(StorageKeys.YOUTUBE_QUALITY, 'default'));
 
   const [youtubeTime, setYoutubeTime] = useState(0);
   const [youtubeError, setYoutubeError] = useState<string | null>(null);
@@ -663,6 +678,19 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
     onResume: resumeGame,
   });
 
+  // Apply master volume to audio/video elements
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = masterVolume / 100;
+    if (videoRef.current) videoRef.current.volume = masterVolume / 100;
+  }, [masterVolume, audioRef, videoRef]);
+
+  // Auto-fullscreen on game start
+  useEffect(() => {
+    if (isPlaying && autoFullscreen && !document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+  }, [isPlaying, autoFullscreen]);
+
   // ── Replay: start recording when gameplay begins (after countdown) ──
   useEffect(() => {
     if (isPlaying && !wasPlayingRef.current) {
@@ -783,6 +811,13 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
     noteShapeStyle,
     hasChallengeNoPitchGuide,
     activeChallenge,
+    showScore,
+    showParticles,
+    showCombo,
+    autoFullscreen,
+    masterVolume,
+    lyricsSize,
+    youtubeQuality,
 
     // Practice mode
     practiceMode,

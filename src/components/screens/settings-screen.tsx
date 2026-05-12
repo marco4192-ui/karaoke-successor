@@ -14,11 +14,12 @@ import { THEMES, applyTheme, getStoredTheme, Theme } from '@/lib/game/themes';
 import { StorageKeys, setItem, setBool, getNumber, getBool, getString } from '@/lib/storage';
 
 // Tab components
-import { EditorSettingsTab } from '@/components/settings/editor-settings-tab';
 import { MicrophoneSettingsPanel } from '@/components/settings/microphone-settings-panel';
 import { LibraryTab } from '@/components/settings/library-tab';
 import { WebcamTab } from '@/components/settings/webcam-tab';
 import { GeneralTab } from '@/components/settings/general-tab';
+import { GameplayTab } from '@/components/settings/gameplay-tab';
+import { AppearanceTab } from '@/components/settings/appearance-tab';
 import { GraphicSoundTab } from '@/components/settings/graphic-sound-tab';
 import { AboutTab } from '@/components/settings/about-tab';
 import { ViralChartsSettings } from '@/components/settings/viral-charts-tab';
@@ -41,9 +42,6 @@ function SettingsScreen() {
   const [initialDifficultyLoaded, setInitialDifficultyLoaded] = useState(false);
   const [isTauriDetected, setIsTauriDetected] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  // useReducer is the idiomatic React replacement for the useState(0) force-update trick.
-  // The language change may not trigger a re-render via useTranslation alone,
-  // so we increment a counter to guarantee the component re-renders with the new locale.
   const [, forceUpdate] = useReducer((c: number) => c + 1, 0);
 
   // Audio/Game settings state
@@ -53,6 +51,7 @@ function SettingsScreen() {
   const [showPitchGuide, setShowPitchGuide] = useState(true);
   const [currentThemeId, setCurrentThemeId] = useState<string>('neon-nights');
   const [lyricsStyle, setLyricsStyle] = useState<string>('classic');
+  const [lyricsSize, setLyricsSize] = useState<string>('medium');
   const [noteDisplayStyle, setNoteDisplayStyle] = useState<string>('classic');
   const [noteShapeStyle, setNoteShapeStyle] = useState<string>('rounded');
   const [bgVideo, setBgVideo] = useState<boolean>(true);
@@ -61,6 +60,8 @@ function SettingsScreen() {
     const stored = getString(StorageKeys.PERFORMANCE_MODE);
     return stored === 'low' ? 'low' : 'full';
   });
+  const [masterVolume, setMasterVolume] = useState(100);
+  const [youtubeQuality, setYoutubeQuality] = useState('default');
 
   // Webcam settings state
   const [webcamConfig, setWebcamConfig] = useState<WebcamBackgroundConfig>(() => loadWebcamConfig());
@@ -75,12 +76,6 @@ function SettingsScreen() {
 
   // Active tab
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
-  // Track whether the editor is actively editing a song (to hide tab bar)
-  const [isEditorActive, setIsEditorActive] = useState(false);
-
-  const handleEditorActiveChange = useCallback((active: boolean) => {
-    setIsEditorActive(active);
-  }, []);
 
   // Helper to access nested translations with fallback
   const tx = useCallback((key: string): string => {
@@ -98,23 +93,23 @@ function SettingsScreen() {
 
   // Load settings once on mount
   useEffect(() => {
-    // Check if running in Tauri (v1: __TAURI__, v2: __TAURI_INTERNALS__)
     const isTauri = typeof window !== 'undefined' && (window.__TAURI__ || window.__TAURI_INTERNALS__);
     if (isTauri) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- One-time initialization from platform detection on mount
       setIsTauriDetected(true);
     }
 
-    // Load all settings from storage module
     setPreviewVolume(getNumber(StorageKeys.PREVIEW_VOLUME, 30));
     setMicSensitivity(getNumber(StorageKeys.MIC_SENSITIVITY, 50));
     setShowPitchGuide(getBool(StorageKeys.SHOW_PITCH_GUIDE, true));
     setLyricsStyle(getString(StorageKeys.LYRICS_STYLE, 'classic'));
+    setLyricsSize(getString(StorageKeys.LYRICS_SIZE, 'medium'));
     setNoteDisplayStyle(getString(StorageKeys.NOTE_STYLE, 'classic'));
     setNoteShapeStyle(getString(StorageKeys.NOTE_SHAPE, 'rounded'));
     setBgVideo(getBool(StorageKeys.BG_VIDEO, true));
     setUseAnimatedBg(getBool(StorageKeys.ANIMATED_BG, false));
     setPerformanceMode(getString(StorageKeys.PERFORMANCE_MODE, 'full') === 'low' ? 'low' : 'full');
+    setMasterVolume(getNumber(StorageKeys.MASTER_VOLUME, 100));
+    setYoutubeQuality(getString(StorageKeys.YOUTUBE_QUALITY, 'default'));
 
     try {
       const storedTheme = getStoredTheme();
@@ -127,13 +122,11 @@ function SettingsScreen() {
   // Sync difficulty from global store on first load
   useEffect(() => {
     if (!initialDifficultyLoaded && gameState.difficulty) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional one-time sync from global store on mount
       setDefaultDifficulty(gameState.difficulty);
       setInitialDifficultyLoaded(true);
     }
   }, [gameState.difficulty, initialDifficultyLoaded]);
 
-  // Settings change handlers
   const handleLanguageChange = (newLang: Language) => {
     setLanguage(newLang);
     forceUpdate();
@@ -166,9 +159,11 @@ function SettingsScreen() {
       setItem(StorageKeys.DEFAULT_DIFFICULTY, defaultDifficulty);
       setBool(StorageKeys.SHOW_PITCH_GUIDE, showPitchGuide);
       setItem(StorageKeys.LYRICS_STYLE, lyricsStyle);
+      setItem(StorageKeys.LYRICS_SIZE, lyricsSize);
       setBool(StorageKeys.BG_VIDEO, bgVideo);
+      setItem(StorageKeys.MASTER_VOLUME, masterVolume.toString());
 
-      const theme = THEMES.find(t => t.id === currentThemeId);
+      const theme = THEMES.find(th => th.id === currentThemeId);
       if (theme) {
         setItem(StorageKeys.THEME, currentThemeId);
         window.dispatchEvent(new CustomEvent('themeChange', { detail: theme.id }));
@@ -176,11 +171,10 @@ function SettingsScreen() {
 
       setDifficulty(defaultDifficulty);
       window.dispatchEvent(new CustomEvent('settingsChange', {
-        detail: { difficulty: defaultDifficulty, showPitchGuide, lyricsStyle, bgVideo }
+        detail: { difficulty: defaultDifficulty, showPitchGuide, lyricsStyle, lyricsSize, bgVideo, masterVolume }
       }));
 
       setHasChanges(false);
-      // Note: folderSaveComplete feedback is handled by the folderScanner hook internally
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Failed to save settings:', error);
@@ -188,47 +182,21 @@ function SettingsScreen() {
   };
 
   return (
-    <div className={`theme-container w-full px-4 md:px-6 lg:px-8 ${activeTab === 'editor' && isEditorActive ? '' : 'max-w-7xl mx-auto'}`}>
-      {/* Header - left-aligned, hidden when editor is actively editing a song */}
-      {!isEditorActive && (
-        <div className="mb-8 text-left">
-          <h1 className="text-3xl font-bold mb-2 theme-adaptive-text">{tx('settings.title')}</h1>
-          <p className="theme-adaptive-text-muted">{tx('settings.subtitle')}</p>
-        </div>
-      )}
+    <div className="theme-container w-full px-4 md:px-6 lg:px-8 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="mb-8 text-left">
+        <h1 className="text-3xl font-bold mb-2 theme-adaptive-text">{tx('settings.title')}</h1>
+        <p className="theme-adaptive-text-muted">{tx('settings.subtitle')}</p>
+      </div>
 
-      {/* Tab Bar - hidden when editor is actively editing a song */}
-      {!isEditorActive && (
-        <div className="flex justify-start mb-6">
-          <div className="inline-flex">
-            <SettingsTabBar activeTab={activeTab} onTabChange={setActiveTab} tx={tx} />
-          </div>
+      {/* Tab Bar */}
+      <div className="flex justify-start mb-6">
+        <div className="inline-flex">
+          <SettingsTabBar activeTab={activeTab} onTabChange={setActiveTab} tx={tx} />
         </div>
-      )}
+      </div>
 
       {/* Tab Content */}
-      {activeTab === 'library' && (
-        <LibraryTab
-          songsFolder={folderScanner.songsFolder}
-          setSongsFolder={folderScanner.setSongsFolder}
-          isScanning={folderScanner.isScanning}
-          scanProgress={folderScanner.scanProgress}
-          songCount={folderScanner.songCount}
-          handleSaveFolder={folderScanner.handleSaveFolder}
-          handleBrowseFolder={folderScanner.handleBrowseFolder}
-          handleResetLibrary={folderScanner.handleResetLibrary}
-          handleClearAllData={folderScanner.handleClearAllData}
-          isResetting={folderScanner.isResetting}
-          resetComplete={folderScanner.resetComplete}
-          folderSaveComplete={folderScanner.folderSaveComplete}
-          tx={tx}
-        />
-      )}
-
-      {activeTab === 'webcam' && (
-        <WebcamTab webcamConfig={webcamConfig} updateWebcamConfig={updateWebcamConfig} />
-      )}
-
       {activeTab === 'general' && (
         <GeneralTab
           language={language}
@@ -241,10 +209,12 @@ function SettingsScreen() {
         />
       )}
 
-      {activeTab === 'viral' && <ViralChartsSettings />}
+      {activeTab === 'gameplay' && (
+        <GameplayTab tx={tx} setHasChanges={setHasChanges} />
+      )}
 
-      {activeTab === 'graphicsound' && (
-        <GraphicSoundTab
+      {activeTab === 'appearance' && (
+        <AppearanceTab
           bgVideo={bgVideo}
           setBgVideo={setBgVideo}
           useAnimatedBg={useAnimatedBg}
@@ -255,14 +225,28 @@ function SettingsScreen() {
           setNoteDisplayStyle={setNoteDisplayStyle}
           noteShapeStyle={noteShapeStyle}
           setNoteShapeStyle={setNoteShapeStyle}
+          lyricsStyle={lyricsStyle}
+          setLyricsStyle={setLyricsStyle}
+          lyricsSize={lyricsSize}
+          setLyricsSize={setLyricsSize}
+          performanceMode={performanceMode}
+          tx={tx}
+          setHasChanges={setHasChanges}
+        />
+      )}
+
+      {activeTab === 'graphicsound' && (
+        <GraphicSoundTab
           previewVolume={previewVolume}
           setPreviewVolume={setPreviewVolume}
           micSensitivity={micSensitivity}
           setMicSensitivity={setMicSensitivity}
-          lyricsStyle={lyricsStyle}
-          setLyricsStyle={setLyricsStyle}
           performanceMode={performanceMode}
           setPerformanceMode={setPerformanceMode}
+          masterVolume={masterVolume}
+          setMasterVolume={setMasterVolume}
+          youtubeQuality={youtubeQuality}
+          setYoutubeQuality={setYoutubeQuality}
           tx={tx}
           setHasChanges={setHasChanges}
         />
@@ -281,9 +265,29 @@ function SettingsScreen() {
         </div>
       )}
 
-      {activeTab === 'editor' && (
-        <EditorSettingsTab onEditorActiveChange={handleEditorActiveChange} />
+      {activeTab === 'webcam' && (
+        <WebcamTab webcamConfig={webcamConfig} updateWebcamConfig={updateWebcamConfig} />
       )}
+
+      {activeTab === 'library' && (
+        <LibraryTab
+          songsFolder={folderScanner.songsFolder}
+          setSongsFolder={folderScanner.setSongsFolder}
+          isScanning={folderScanner.isScanning}
+          scanProgress={folderScanner.scanProgress}
+          songCount={folderScanner.songCount}
+          handleSaveFolder={folderScanner.handleSaveFolder}
+          handleBrowseFolder={folderScanner.handleBrowseFolder}
+          handleResetLibrary={folderScanner.handleResetLibrary}
+          handleClearAllData={folderScanner.handleClearAllData}
+          isResetting={folderScanner.isResetting}
+          resetComplete={folderScanner.resetComplete}
+          folderSaveComplete={folderScanner.folderSaveComplete}
+          tx={tx}
+        />
+      )}
+
+      {activeTab === 'viral' && <ViralChartsSettings />}
 
       {activeTab === 'about' && (
         <AboutTab tx={tx} isTauriDetected={isTauriDetected} />
