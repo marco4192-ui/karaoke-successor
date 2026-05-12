@@ -72,3 +72,28 @@ Stage Summary:
 - Editor is now accessible via button in Library header (not just F10 hotkey)
 - Editor library tiles are ~1/4 of previous size
 - Lyrics tab shows rawLyrics text and progressive syllable assignment visualization
+
+---
+Task ID: 4
+Agent: Main Agent
+Task: Game screen improvements - combo overlap, webcam controls, particles, per-player score events
+
+Work Log:
+- Fixed combo glow overlap: moved from `top-28` to `top-40`, reduced font from `text-3xl` to `text-2xl`
+- Replaced WebcamToggleButton with WebcamQuickControls in game-screen.tsx header
+- Updated GameHudShell to use WebcamQuickControls + WebcamBackground instead of old WebcamButton
+- Boosted particle emitter counts: PerfectHit 14 sparks + 5 stars + 4 golden, GoldenNote 18 + 10 + 6 fireworks, ComboFirework up to 35/burst, Confetti 50 pieces with longer life (180)
+- Boosted AnimatedBackground: 5 disco lights, 4 floating particles/frame, 25 rising columns, 3 pulsing rings
+- Added `player?: 'P1' | 'P2'` field to ScoreEvent in use-note-scoring.ts
+- Tag P1 events with `player: 'P1'` in checkNoteHits, P2 events with `player: 'P2'` in checkPlayerNoteHits
+- Rewrote ScoreEventsDisplay to support duel/duet mode: P1 events on left, P2 events on right
+- Passed `isDuetMode` from game-screen.tsx to ScoreEventsDisplay
+- TypeScript check passed with zero errors
+- Pushed as commit 27f9701
+
+Stage Summary:
+- Files modified: prominent-score-display.tsx, game-screen.tsx, game-hud-shell.tsx, visual-effects.tsx, score-events-display.tsx, use-note-scoring.ts
+- Combo glow no longer overlaps score display
+- Webcam quick controls (size/position/device/mirror) available in-game on all screens
+- Particle density significantly increased across all effects
+- Duel/duet score events now properly assigned to each player's side
