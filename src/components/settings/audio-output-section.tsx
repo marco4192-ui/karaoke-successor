@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useNativeAudio } from '@/hooks/use-native-audio';
 import type { AudioDeviceInfo } from '@/lib/audio/native-audio';
+import { useTranslation } from '@/lib/i18n/translations';
 
 export function AudioOutputSection() {
   const {
@@ -17,6 +18,7 @@ export function AudioOutputSection() {
   } = useNativeAudio();
 
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
@@ -44,19 +46,19 @@ export function AudioOutputSection() {
             <path d="M11 5L6 9H2v6h4l5 4V5z" strokeLinecap="round" strokeLinejoin="round" />
             <path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          Audio Output
+          {t('settingsAudioOutput.title')}
         </CardTitle>
         <CardDescription>
-          Select your audio output device. ASIO devices offer low-latency output for professional audio interfaces.
+          {t('settingsAudioOutput.desc')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
         {/* Enable/Disable Toggle */}
         <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
           <div>
-            <h4 className="font-medium">Native Audio Output</h4>
+            <h4 className="font-medium">{t('settingsAudioOutput.nativeOutput')}</h4>
             <p className="text-sm text-white/60">
-              Use native audio output instead of browser audio. Required for ASIO support.
+              {t('settingsAudioOutput.nativeOutputDesc')}
             </p>
           </div>
           <button
@@ -75,14 +77,14 @@ export function AudioOutputSection() {
             {/* Device Selection */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">Output Device</label>
+                <label className="text-sm font-medium">{t('settingsAudioOutput.outputDevice')}</label>
                 <button
                   type="button"
                   onClick={() => refreshDevices()}
                   disabled={loading}
                   className="text-xs text-cyan-400 hover:text-cyan-300 disabled:opacity-50 cursor-pointer"
                 >
-                  {loading ? 'Scanning...' : '↻ Refresh'}
+                  {loading ? t('settingsAudioOutput.scanning') : t('settingsAudioOutput.refresh')}
                 </button>
               </div>
 
@@ -92,7 +94,7 @@ export function AudioOutputSection() {
                 </div>
               ) : devices.length === 0 ? (
                 <div className="p-3 bg-white/5 rounded-lg text-white/60 text-sm">
-                  {loading ? 'Scanning for devices...' : 'No audio devices found.'}
+                  {loading ? t('settingsAudioOutput.scanningDevices') : t('settingsAudioOutput.noDevices')}
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -107,7 +109,7 @@ export function AudioOutputSection() {
                           {hostName}
                         </span>
                         {hostName.toUpperCase().includes('ASIO') && (
-                          <span className="text-xs text-green-400/70">Low-Latency</span>
+                          <span className="text-xs text-green-400/70">{t('settingsAudioOutput.lowLatency')}</span>
                         )}
                       </div>
                       <div className="space-y-1">
@@ -125,7 +127,7 @@ export function AudioOutputSection() {
                             <div className="flex items-center justify-between">
                               <span className="text-sm font-medium truncate">{device.name}</span>
                               {deviceId === device.id && (
-                                <span className="text-cyan-400 text-xs ml-2">✓ Active</span>
+                                <span className="text-cyan-400 text-xs ml-2">{t('settingsAudioOutput.active')}</span>
                               )}
                             </div>
                             <div className="flex gap-3 mt-1 text-xs text-white/50">
@@ -144,7 +146,7 @@ export function AudioOutputSection() {
             {/* Current Device Info */}
             {currentDevice && (
               <div className="p-3 bg-cyan-500/5 border border-cyan-500/20 rounded-lg">
-                <h4 className="text-sm font-medium text-cyan-400 mb-1">Current Device</h4>
+                <h4 className="text-sm font-medium text-cyan-400 mb-1">{t('settingsAudioOutput.currentDevice')}</h4>
                 <p className="text-sm text-white/80">{currentDevice.name}</p>
                 <div className="flex gap-4 mt-1 text-xs text-white/50">
                   <span>Backend: {currentDevice.host_name}</span>
@@ -158,7 +160,7 @@ export function AudioOutputSection() {
             {hasAsioDevices && (
               <div className="p-3 bg-green-500/5 border border-green-500/20 rounded-lg">
                 <p className="text-sm text-green-400">
-                  ✓ ASIO devices detected. Native audio output is active for low-latency playback.
+                  {t('settingsAudioOutput.asioDetected')}
                 </p>
               </div>
             )}
@@ -166,7 +168,7 @@ export function AudioOutputSection() {
             {!hasAsioDevices && (
               <div className="p-3 bg-yellow-500/5 border border-yellow-500/20 rounded-lg">
                 <p className="text-sm text-yellow-400/80">
-                  No ASIO devices detected. Your audio interface drivers may not be installed, or the ASIO SDK was not available at build time. Using WASAPI as fallback (still low-latency).
+                  {t('settingsAudioOutput.noAsio')}
                 </p>
               </div>
             )}

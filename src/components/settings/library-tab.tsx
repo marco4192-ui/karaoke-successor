@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ImportScreen } from '@/components/import/import-screen';
 import { FolderIcon, CloudUploadIcon, TrashIcon } from '@/components/settings/settings-icons';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface LibraryTabProps {
   songsFolder: string;
@@ -40,6 +41,7 @@ export function LibraryTab({
   resetComplete,
   tx,
 }: LibraryTabProps) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-6">
       {/* Songs Base Folder */}
@@ -47,10 +49,10 @@ export function LibraryTab({
         <CardHeader>
           <CardTitle className="flex items-center gap-2 theme-adaptive-text">
             <FolderIcon className="w-5 h-5 text-cyan-400" />
-            Songs Base Folder
+            {t('settingsLibrary.title')}
           </CardTitle>
           <CardDescription>
-            All songs are imported from this folder. Each subfolder contains one song.
+            {t('settingsLibrary.desc')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -58,7 +60,7 @@ export function LibraryTab({
             <Input
               value={songsFolder}
               onChange={(e) => setSongsFolder(e.target.value)}
-              placeholder="C:/Karaoke ZERO/Songs"
+              placeholder={t('settingsLibrary.placeholder')}
               className="bg-white/5 border-white/10 text-white flex-1"
             />
             <Button
@@ -69,7 +71,7 @@ export function LibraryTab({
               {isScanning ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
-                'Scan'
+                t('settingsLibrary.scan')
               )}
             </Button>
             <Button
@@ -78,11 +80,11 @@ export function LibraryTab({
               variant="outline"
               className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 shrink-0"
             >
-              Browse
+              {t('settingsLibrary.browse')}
             </Button>
           </div>
           <p className="text-xs text-white/50">
-            Enter the path to your songs folder and click &quot;Scan&quot; to import, or use &quot;Browse&quot; to select a folder.
+            {t('settingsLibrary.help')}
           </p>
           {songsFolder && (
             <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 flex items-center gap-3">
@@ -90,8 +92,8 @@ export function LibraryTab({
                 <path d="M20 6L9 17l-5-5" />
               </svg>
               <div>
-                <p className="text-green-400 font-medium">Base Folder: {songsFolder}</p>
-                <p className="text-sm text-white/60">All songs will use this as the base path for media files</p>
+                <p className="text-green-400 font-medium">{t('settingsLibrary.basePath')} {songsFolder}</p>
+                <p className="text-sm text-white/60">{t('settingsLibrary.basePathDesc')}</p>
               </div>
             </div>
           )}
@@ -102,7 +104,7 @@ export function LibraryTab({
                 <line x1="12" y1="8" x2="12" y2="12" />
                 <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
-              <p className="text-yellow-400">No base folder set. Please select a songs folder to import songs.</p>
+              <p className="text-yellow-400">{t('settingsLibrary.noBaseFolder')}</p>
             </div>
           )}
         </CardContent>
@@ -143,10 +145,10 @@ export function LibraryTab({
                   scanProgress?.stage === 'error' ? 'text-red-400' :
                   'text-cyan-400'
                 }`}>
-                  {scanProgress?.message || 'Scanning...'}
+                  {scanProgress?.message || t('settingsLibrary.scanning')}
                 </p>
                 {scanProgress && scanProgress.count > 0 && (
-                  <p className="text-sm text-white/60">{scanProgress.count} songs processed</p>
+                  <p className="text-sm text-white/60">{scanProgress.count} {t('settingsLibrary.songsProcessed')}</p>
                 )}
               </div>
             </div>
@@ -159,10 +161,10 @@ export function LibraryTab({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CloudUploadIcon className="w-5 h-5 text-cyan-400" />
-            Import Songs
+            {t('settingsLibrary.importSongs')}
           </CardTitle>
           <CardDescription>
-            Import new songs into your library
+            {t('settingsLibrary.importSongsDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -183,7 +185,7 @@ export function LibraryTab({
             {tx('settings.dangerZone')}
           </CardTitle>
           <CardDescription>
-            These actions cannot be undone easily
+            {t('settingsLibrary.cannotUndo')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -193,7 +195,7 @@ export function LibraryTab({
               <svg className="w-5 h-5 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M20 6L9 17l-5-5" />
               </svg>
-              <span className="text-green-400">Library has been reset successfully!</span>
+              <span className="text-green-400">{t('settingsLibrary.resetSuccess')}</span>
             </div>
           )}
           

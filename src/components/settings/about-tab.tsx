@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
 import { leaderboardService } from '@/lib/api/leaderboard-service';
 import { safeAlert } from '@/lib/safe-dialog';
 import { MusicIcon } from '@/components/settings/settings-icons';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface AboutTabProps {
   tx: (_key: string) => string;
@@ -15,6 +16,7 @@ export function AboutTab({
   tx,
   isTauriDetected,
 }: AboutTabProps) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-6">
       <Card className="retro-gradient-card retro-border-pink rounded-xl">
@@ -63,25 +65,25 @@ export function AboutTab({
       
       <Card className="bg-white/5 border-white/10">
         <CardHeader>
-          <CardTitle>Technology Stack</CardTitle>
+          <CardTitle>{t('settingsAbout.technologyStack')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-white/5 rounded-lg p-3 text-center">
               <div className="text-cyan-400 font-medium">Next.js 15</div>
-              <div className="text-xs text-white/40">Framework</div>
+              <div className="text-xs text-white/40">{tx('settings.framework')}</div>
             </div>
             <div className="bg-white/5 rounded-lg p-3 text-center">
               <div className="text-purple-400 font-medium">React</div>
-              <div className="text-xs text-white/40">UI Library</div>
+              <div className="text-xs text-white/40">{tx('settings.uiLibrary')}</div>
             </div>
             <div className="bg-white/5 rounded-lg p-3 text-center">
               <div className="text-pink-400 font-medium">Zustand</div>
-              <div className="text-xs text-white/40">State Management</div>
+              <div className="text-xs text-white/40">{tx('settings.stateManagement')}</div>
             </div>
             <div className="bg-white/5 rounded-lg p-3 text-center">
               <div className="text-yellow-400 font-medium">Tailwind CSS</div>
-              <div className="text-xs text-white/40">Styling</div>
+              <div className="text-xs text-white/40">{tx('settings.styling')}</div>
             </div>
           </div>
         </CardContent>
@@ -92,18 +94,18 @@ export function AboutTab({
         <CardContent className="py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="font-medium">Online Leaderboard</h4>
-              <p className="text-sm text-white/60">Connect to global highscores</p>
+              <h4 className="font-medium">{t('settingsAbout.onlineLeaderboard')}</h4>
+              <p className="text-sm text-white/60">{t('settingsAbout.onlineLeaderboardDesc')}</p>
             </div>
             <Button
               variant="outline"
               onClick={async () => {
                 const connected = await leaderboardService.testConnection();
-                safeAlert(connected ? '✅ Connected to leaderboard!' : '❌ Could not connect to leaderboard');
+                safeAlert(connected ? t('settingsAbout.connected') : t('settingsAbout.notConnected'));
               }}
               className="border-cyan-500/50 text-cyan-400"
             >
-              Test Connection
+              {t('settingsAbout.testConnection')}
             </Button>
           </div>
         </CardContent>
@@ -121,8 +123,8 @@ export function AboutTab({
               </svg>
             </div>
             <div>
-              <h4 className="font-medium text-green-400">Desktop App Installed</h4>
-              <p className="text-sm text-white/60">This app is running as a native desktop application with full offline support.</p>
+              <h4 className="font-medium text-green-400">{t('settingsAbout.desktopInstalled')}</h4>
+              <p className="text-sm text-white/60">{t('settingsAbout.desktopInstalledDesc')}</p>
             </div>
           </div>
         </div>

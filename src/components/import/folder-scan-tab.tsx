@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { isFileSystemAccessSupported, scanFilesFromFileList } from '@/lib/parsers/folder-scanner';
 import { ScannedSong } from '@/lib/parsers/folder-scanner';
 import { DuplicateInfo } from './import-types';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface FolderScanTabProps {
   isProcessing: boolean;
@@ -29,6 +30,7 @@ export function FolderScanTab({
 }: FolderScanTabProps) {
   const exactDupCount = duplicates.filter(d => d.matchType === 'exact').length;
   const [isDragOver, setIsDragOver] = useState(false);
+  const { t } = useTranslation();
 
   // C.2: Drag & Drop for folders/files
   const handleDrop = useCallback(async (e: React.DragEvent) => {
@@ -101,9 +103,9 @@ export function FolderScanTab({
   return (
     <Card className="bg-white/5 border-white/10">
       <CardHeader>
-        <CardTitle>Scan Folder for Songs</CardTitle>
+        <CardTitle>{t('importFolderScan.title')}</CardTitle>
         <CardDescription>
-          Select a folder containing karaoke songs (audio/video + txt files)
+          {t('importFolderScan.desc')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -116,19 +118,19 @@ export function FolderScanTab({
           onDrop={handleDrop}
         >
           <p className="text-white/60 mb-4">
-            Drag a folder here or select one below
+            {t('importFolderScan.dropFolder')}
           </p>
           <p className="text-white/30 text-sm mb-4">
-            Each subfolder should contain song files (audio, video, txt, cover)
+            {t('importFolderScan.folderInfo')}
           </p>
           {isFileSystemAccessSupported() ? (
             <Button onClick={handleScanFolder} disabled={isProcessing} className="bg-gradient-to-r from-cyan-500 to-purple-500">
-              {isProcessing ? 'Scanning...' : 'Select Folder'}
+              {isProcessing ? t('importFolderScan.scanning') : t('importFolderScan.selectFolder')}
             </Button>
           ) : (
             <>
               <Button onClick={handleScanFolder} disabled={isProcessing} className="bg-gradient-to-r from-cyan-500 to-purple-500">
-                {isProcessing ? 'Scanning...' : 'Select Folder'}
+                {isProcessing ? t('importFolderScan.scanning') : t('importFolderScan.selectFolder')}
               </Button>
               <input
                 ref={folderInputRef}
@@ -147,25 +149,25 @@ export function FolderScanTab({
           <div className="mt-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold">
-                Found {scannedSongs.length} songs
+                {t('importFolderScan.foundSongs').replace('{n}', String(scannedSongs.length))}
                 {exactDupCount > 0 && (
-                  <span className="ml-2 text-yellow-400 text-sm">({exactDupCount} duplicates)</span>
+                  <span className="ml-2 text-yellow-400 text-sm">{t('importFolderScan.duplicates').replace('{n}', String(exactDupCount))}</span>
                 )}
               </h3>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => {
                   const nonDupIndexes = duplicates.filter(d => d.matchType === 'none').map(d => d.index);
                   setSelectedScanned(new Set(nonDupIndexes));
-                }} className="border-white/20 text-white">Select New Only</Button>
-                <Button variant="outline" size="sm" onClick={() => setSelectedScanned(new Set(scannedSongs.map((_, i) => i)))} className="border-white/20 text-white">Select All</Button>
-                <Button variant="outline" size="sm" onClick={() => setSelectedScanned(new Set())} className="border-white/20 text-white">Deselect All</Button>
+                }} className="border-white/20 text-white">{t('importFolderScan.selectNew')}</Button>
+                <Button variant="outline" size="sm" onClick={() => setSelectedScanned(new Set(scannedSongs.map((_, i) => i)))} className="border-white/20 text-white">{t('importFolderScan.selectAll')}</Button>
+                <Button variant="outline" size="sm" onClick={() => setSelectedScanned(new Set())} className="border-white/20 text-white">{t('importFolderScan.deselectAll')}</Button>
               </div>
             </div>
 
             {exactDupCount > 0 && (
               <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
                 <p className="text-yellow-400 text-sm">
-                  ⚠️ {exactDupCount} duplicate song(s) detected. They have been deselected by default.
+                  {t('importFolderScan.duplicatesWarning').replace('{n}', String(exactDupCount))}
                 </p>
               </div>
             )}
@@ -189,10 +191,10 @@ export function FolderScanTab({
 
         {scanErrors.length > 0 && (
           <div className="mt-4 p-4 bg-red-500/10 rounded-lg">
-            <p className="text-red-400 font-medium mb-2">Errors:</p>
+            <p className="text-red-400 font-medium mb-2">{t('importFolderScan.errors')}</p>
             <ul className="text-sm text-red-300 list-disc list-inside">
               {scanErrors.slice(0, 5).map((err, i) => <li key={i}>{err}</li>)}
-              {scanErrors.length > 5 && <li>...and {scanErrors.length - 5} more</li>}
+              {scanErrors.length > 5 && <li>{t('importFolderScan.andMore').replace('{n}', String(scanErrors.length - 5))}</li>}
             </ul>
           </div>
         )}

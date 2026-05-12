@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Song } from '@/types/game';
 import { ProgressInfo } from './import-types';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface ImportPreviewProps {
   progress: ProgressInfo | null;
@@ -15,6 +16,7 @@ interface ImportPreviewProps {
 }
 
 export function ImportPreview({ progress, error, previewSong, audioUrl, videoUrl }: ImportPreviewProps) {
+  const { t } = useTranslation();
   return (
     <>
       {progress && progress.stage !== 'complete' && (
@@ -37,7 +39,7 @@ export function ImportPreview({ progress, error, previewSong, audioUrl, videoUrl
       {previewSong && (
         <Card className="bg-white/5 border-white/10">
           <CardHeader>
-            <CardTitle>Preview</CardTitle>
+            <CardTitle>{t('settingsWebcam.preview')}</CardTitle>
           </CardHeader>
           <CardContent>
             <h3 className="text-xl font-bold">{previewSong.title}</h3>
@@ -46,7 +48,7 @@ export function ImportPreview({ progress, error, previewSong, audioUrl, videoUrl
               <Badge>{previewSong.bpm} BPM</Badge>
               <Badge variant="outline" className="border-white/20">{previewSong.difficulty}</Badge>
               <Badge variant="outline" className="border-white/20">
-                {previewSong.lyrics.reduce((acc, l) => acc + l.notes.length, 0)} notes
+                {previewSong.lyrics.reduce((acc, l) => acc + l.notes.length, 0)} {t('game.notes')}
               </Badge>
               {previewSong.hasEmbeddedAudio && (
                 <Badge className="bg-purple-500">Video Audio</Badge>

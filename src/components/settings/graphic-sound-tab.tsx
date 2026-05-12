@@ -60,15 +60,15 @@ export function GraphicSoundTab({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <span className="text-lg">⚡</span>
-            Performance-Modus
+            {tx('settingsGraphicSound.performanceMode')}
           </CardTitle>
-          <CardDescription>Optimierung für schwächere Hardware</CardDescription>
+          <CardDescription>{tx('settingsGraphicSound.performanceModeDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
             <div>
-              <h4 className="font-medium">Low-Performance-Modus</h4>
-              <p className="text-sm text-white/60">Reduziert visuelle Effekte für flüssigeres Gameplay auf älteren Geräten.</p>
+              <h4 className="font-medium">{tx('settingsGraphicSound.lowPerfMode')}</h4>
+              <p className="text-sm text-white/60">{tx('settingsGraphicSound.lowPerfModeDesc')}</p>
             </div>
             <button
               type="button"
@@ -88,27 +88,27 @@ export function GraphicSoundTab({
           </div>
           {isLowPerf && (
             <div className="p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg text-sm space-y-1">
-              <p className="font-medium text-orange-300">Im Low-Performance-Modus werden folgende Features deaktiviert:</p>
+              <p className="font-medium text-orange-300">{tx('settingsGraphicSound.lowPerfFeatures')}</p>
               <ul className="text-white/60 space-y-0.5 ml-4 list-disc">
-                <li>Duet-/Multiplayer-Split-Screen (Single-Player-Ansicht)</li>
-                <li>Noten-Darstellungsstile (nur Klassisch verfügbar)</li>
-                <li>Noten-Accuracy-Tracking (Farb-/Glow-Feedback)</li>
-                <li>Partikeleffekte (Perfect-Hit, Combo-Feuerwerk, Konfetti)</li>
-                <li>Spektrogramm- und Pitch-Graph-Anzeige</li>
-                <li>Combo-Feuereffekte</li>
-                <li>Score-Event-Popups</li>
-                <li>Webcam-Hintergrund</li>
-                <li>Animierte Musik-Hintergründe</li>
-                <li>YouTube-Video-Hintergründe (nur Audio)</li>
-                <li>Song-Energy-Visualisierung</li>
+                <li>{tx('settingsGraphicSound.featureSplitScreen')}</li>
+                <li>{tx('settingsGraphicSound.featureNoteStyles')}</li>
+                <li>{tx('settingsGraphicSound.featureAccuracy')}</li>
+                <li>{tx('settingsGraphicSound.featureParticles')}</li>
+                <li>{tx('settingsGraphicSound.featureSpectrogram')}</li>
+                <li>{tx('settingsGraphicSound.featureComboFire')}</li>
+                <li>{tx('settingsGraphicSound.featureScorePopups')}</li>
+                <li>{tx('settingsGraphicSound.featureWebcam')}</li>
+                <li>{tx('settingsGraphicSound.featureAnimatedBg')}</li>
+                <li>{tx('settingsGraphicSound.featureYoutubeBg')}</li>
+                <li>{tx('settingsGraphicSound.featureEnergyViz')}</li>
               </ul>
-              <p className="text-white/80 mt-2 font-medium">Verfügbar bleiben:</p>
+              <p className="text-white/80 mt-2 font-medium">{tx('settingsGraphicSound.remainAvailable')}</p>
               <ul className="text-green-400/80 space-y-0.5 ml-4 list-disc">
-                <li>Kernspielplay (Noten, Scoring, Combo-System)</li>
-                <li>Einfacher Pitch-Indikator</li>
-                <li>Liedtext-Anzeige (eingebaut)</li>
-                <li>Practice-Panel, Fortschrittsbalken, Zeitanzeige</li>
-                <li>Audio-Effekte (Reverb, Echo)</li>
+                <li>{tx('settingsGraphicSound.remainCore')}</li>
+                <li>{tx('settingsGraphicSound.remainPitch')}</li>
+                <li>{tx('settingsGraphicSound.remainLyrics')}</li>
+                <li>{tx('settingsGraphicSound.remainPractice')}</li>
+                <li>{tx('settingsGraphicSound.remainAudioEffects')}</li>
               </ul>
             </div>
           )}
@@ -123,9 +123,9 @@ export function GraphicSoundTab({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MusicIcon className="w-5 h-5 text-cyan-400" />
-            Video Settings
+            {tx('settingsGraphicSound.videoSettings')}
           </CardTitle>
-          <CardDescription>Background video and visual settings</CardDescription>
+          <CardDescription>{tx('settingsGraphicSound.videoSettingsDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Background Video Toggle */}
@@ -153,8 +153,8 @@ export function GraphicSoundTab({
           {/* Animated Background Toggle */}
           <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
             <div>
-              <h4 className="font-medium">Animated Background</h4>
-              <p className="text-sm text-white/60">Use animated backgrounds instead of videos. Recommended for low-performance systems.</p>
+              <h4 className="font-medium">{tx('settingsGraphicSound.animatedBackground')}</h4>
+              <p className="text-sm text-white/60">{tx('settingsGraphicSound.animatedBackgroundDesc')}</p>
             </div>
             <button
               type="button"
@@ -213,13 +213,13 @@ export function GraphicSoundTab({
 
           {/* Note Display Style — disabled in low-performance mode */}
           <div className={isLowPerf ? 'opacity-40 pointer-events-none' : ''}>
-            <label className="text-sm theme-adaptive-text-secondary mb-2 block">Noten-Darstellung {isLowPerf && '(nur Klassisch im Low-Perf-Modus)'}</label>
+            <label className="text-sm theme-adaptive-text-secondary mb-2 block">{tx('settingsGraphicSound.noteDisplay')} {isLowPerf && <span>({tx('settingsGraphicSound.lowPerfNote')})</span>}</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
-                { id: 'classic', name: 'Klassisch', icon: '➡️', desc: 'UltraStar-Stil' },
-                { id: 'fill-level', name: 'Füllstand', icon: '📊', desc: 'Lücken bei Fehlern' },
-                { id: 'color-feedback', name: 'Farb-Feedback', icon: '🎨', desc: 'Farbe nach Treffgenauigkeit' },
-                { id: 'glow-intensity', name: 'Glow-Intensität', icon: '✨', desc: 'Helligkeit zeigt Qualität' },
+                { id: 'classic', name: tx('settingsGraphicSound.noteStyleClassic'), icon: '➡️', desc: tx('settingsGraphicSound.noteStyleUltraStar') },
+                { id: 'fill-level', name: tx('settingsGraphicSound.noteStyleFill'), icon: '📊', desc: tx('settingsGraphicSound.noteStyleGaps') },
+                { id: 'color-feedback', name: tx('settingsGraphicSound.noteStyleColor'), icon: '🎨', desc: tx('settingsGraphicSound.noteStyleColorDesc') },
+                { id: 'glow-intensity', name: tx('settingsGraphicSound.noteStyleGlow'), icon: '✨', desc: tx('settingsGraphicSound.noteStyleGlowDesc') },
               ].map((style) => (
                 <button
                   key={style.id}
@@ -246,13 +246,13 @@ export function GraphicSoundTab({
           
           {/* Note Shape Style */}
           <div className={isLowPerf ? 'opacity-40 pointer-events-none' : ''}>
-            <label className="text-sm theme-adaptive-text-secondary mb-2 block">Notenform</label>
+            <label className="text-sm theme-adaptive-text-secondary mb-2 block">{tx('settingsGraphicSound.noteShape')}</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
-                { id: 'rounded', name: 'Abgerundet', icon: '🔵', desc: 'Rechteck mit Rahmen' },
-                { id: 'sharp', name: 'Eckig', icon: '🔷', desc: 'Kantige Form' },
-                { id: 'pill', name: 'Pille', icon: '💊', desc: 'Glatte Kapsel' },
-                { id: 'diamond', name: 'Raute', icon: '💎', desc: 'Diamant-Form' },
+                { id: 'rounded', name: tx('settingsGraphicSound.shapeRounded'), icon: '🔵', desc: tx('settingsGraphicSound.shapeRectangle') },
+                { id: 'sharp', name: tx('settingsGraphicSound.shapeAngular'), icon: '🔷', desc: tx('settingsGraphicSound.shapeAngularDesc') },
+                { id: 'pill', name: tx('settingsGraphicSound.shapePill'), icon: '💊', desc: tx('settingsGraphicSound.shapePillDesc') },
+                { id: 'diamond', name: tx('settingsGraphicSound.shapeDiamond'), icon: '💎', desc: tx('settingsGraphicSound.shapeDiamondDesc') },
               ].map((shape) => (
                 <button
                   key={shape.id}
@@ -329,19 +329,19 @@ export function GraphicSoundTab({
       {/* Lyrics Display Settings */}
       <Card className="bg-white/5 border-white/10">
         <CardHeader>
-          <CardTitle>Lyrics Display</CardTitle>
-          <CardDescription>Customize how lyrics are displayed during gameplay</CardDescription>
+          <CardTitle>{tx('settingsGraphicSound.lyricsDisplay')}</CardTitle>
+          <CardDescription>{tx('settingsGraphicSound.lyricsDisplayDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <label className="text-sm text-white/60 mb-2 block">{tx('settings.lyricsStyle')}</label>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               {[
-                { id: 'classic', name: 'Classic' },
-                { id: 'concert', name: 'Concert' },
-                { id: 'retro', name: 'Retro' },
-                { id: 'neon', name: 'Neon' },
-                { id: 'minimal', name: 'Minimal' },
+                { id: 'classic', name: tx('settingsGraphicSound.lyricsClassic') },
+                { id: 'concert', name: tx('settingsGraphicSound.lyricsConcert') },
+                { id: 'retro', name: tx('settingsGraphicSound.lyricsRetro') },
+                { id: 'neon', name: tx('settingsGraphicSound.lyricsNeon') },
+                { id: 'minimal', name: tx('settingsGraphicSound.lyricsMinimal') },
               ].map((style) => (
                 <button
                   key={style.id}

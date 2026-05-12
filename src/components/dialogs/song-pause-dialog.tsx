@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface SongPauseDialogProps {
   isTournamentMatch: boolean;
@@ -20,14 +21,15 @@ export function SongPauseDialog({
   onTournamentRepeat,
   onTournamentAutoWinner,
 }: SongPauseDialogProps) {
+  const { t } = useTranslation();
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
       <div className="bg-zinc-900 border border-white/15 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
         <div className="text-center mb-6">
           <div className="text-4xl mb-2">⏸️</div>
-          <h2 className="text-xl font-bold text-white">Spiel pausiert</h2>
+          <h2 className="text-xl font-bold text-white">{t('dialogs.pauseTitle')}</h2>
           <p className="text-sm text-white/50 mt-2">
-            Möchtest du das Spiel fortsetzen oder abbrechen?
+            {t('dialogs.pauseDesc')}
           </p>
         </div>
         <div className="space-y-3">
@@ -38,19 +40,19 @@ export function SongPauseDialog({
                 onClick={onResume}
                 className="w-full py-3 rounded-lg font-medium bg-green-500/20 border border-green-500/40 text-green-300 hover:bg-green-500/30 transition-all"
               >
-                Fortsetzen
+                {t('dialogs.resume')}
               </button>
               <button
                 onClick={() => onTournamentRepeat?.()}
                 className="w-full py-3 rounded-lg font-medium bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/30 transition-all"
               >
-                🔄 Game wiederholen
+                {t('dialogs.rematch')}
               </button>
               <button
                 onClick={() => onTournamentAutoWinner?.()}
                 className="w-full py-3 rounded-lg font-medium bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 transition-all"
               >
-                🏆 Sieger automatisch festlegen
+                {t('dialogs.setWinner')}
               </button>
             </>
           ) : (
@@ -61,13 +63,13 @@ export function SongPauseDialog({
                   onClick={onResume}
                   className="flex-1 py-3 rounded-lg font-medium bg-green-500/20 border border-green-500/40 text-green-300 hover:bg-green-500/30 transition-all"
                 >
-                  Fortsetzen
+                  {t('dialogs.resume')}
                 </button>
                 <button
                   onClick={onAbort}
                   className="flex-1 py-3 rounded-lg font-medium bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all"
                 >
-                  Abbrechen
+                  {t('dialogs.abort')}
                 </button>
               </div>
             </>

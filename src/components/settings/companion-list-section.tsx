@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { TrashIcon, CheckIcon } from '@/components/settings/settings-icons';
 import { useGameStore } from '@/lib/game/store';
 import type { PlayerProfile } from '@/types/game';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== TYPES =====================
 interface CompanionClient {
@@ -30,10 +31,10 @@ interface CompanionListResponse {
 }
 
 // ===================== HELPERS =====================
-function formatDuration(connectedAt: number): string {
+function formatDuration(connectedAt: number, t: (k: string) => string): string {
   const diff = Date.now() - connectedAt;
   const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return 'just now';
+  if (minutes < 1) return t('settingsCompanion.justNow');
   if (minutes < 60) return `${minutes}m`;
   const hours = Math.floor(minutes / 60);
   const remainMin = minutes % 60;
@@ -62,6 +63,7 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { t } = useTranslation();
 
   // Clear success-message timer on unmount
   useEffect(() => {
@@ -82,11 +84,11 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
       }
       setError(null);
     } catch {
-      setError('Failed to fetch companions');
+      setError(t('settingsCompanion.kickFailed'));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   // Fetch once when the tab becomes visible
   const wasVisible = useRef(false);
@@ -99,19 +101,19 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
 
   // Kick a companion
   const handleKick = async (companionId: string, companionName: string) => {
-    if (!confirm(`Kick "${companionName}"? They will be disconnected and their queue will be cleared.`)) return;
+    if (!confirm(t('settingsCompanion.kickConfirm').replace('{name}', companionName))) return;
     setKickingId(companionId);
     try {
       const res = await fetch(`/api/mobile?action=kick&kickClientId=${encodeURIComponent(companionId)}`);
       const data = await res.json();
       if (data.success) {
-        showSuccess(`"${companionName}" has been kicked`);
+        showSuccess(t('settingsCompanion.kickSuccess').replace('{name}', companionName));
         fetchCompanions(); // Immediate refresh
       } else {
-        setError(data.message || 'Failed to kick companion');
+        setError(data.message || t('settingsCompanion.kickFailed'));
       }
     } catch {
-      setError('Failed to kick companion');
+      setError(t('settingsCompanion.kickFailed'));
     } finally {
       setKickingId(null);
     }
@@ -135,10 +137,10 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
         showSuccess(data.message);
         fetchCompanions(); // Immediate refresh
       } else {
-        setError(data.message || 'Failed to assign character');
+        setError(data.message || t('settingsCompanion.assignFailed'));
       }
     } catch {
-      setError('Failed to assign character');
+      setError(t('settingsCompanion.assignFailed'));
     } finally {
       setAssigningId(null);
     }
@@ -157,12 +159,12 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-            Connected Companions
+            {t('settingsCompanion.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8 text-white/40">
-            Loading companions...
+            {t('settingsCompanion.loading')}
           </div>
         </CardContent>
       </Card>
@@ -176,7 +178,7 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
           <div>
             <CardTitle className="flex items-center gap-2 text-lg">
               <div className={`w-2.5 h-2.5 rounded-full ${companions.length > 0 ? 'bg-green-500' : 'bg-white/30'}`} />
-              Connected Companions
+              {t('settingsCompanion.title')}
               {companions.length > 0 && (
                 <Badge className="ml-2 bg-cyan-500/20 text-cyan-400 border-0 text-xs">
                   {companions.length}
@@ -184,7 +186,7 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
               )}
             </CardTitle>
             <CardDescription className="mt-1">
-              Manage connected mobile devices and their assigned characters
+              {t('settingsCompanion.manageDesc')}
             </CardDescription>
           </div>
           <Button
@@ -193,7 +195,7 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
             onClick={() => { setIsLoading(true); fetchCompanions(); }}
             className="border-white/20 text-white hover:bg-white/10"
           >
-            ↻ Refresh
+            {t('settingsCompanion.refresh')}
           </Button>
         </div>
       </CardHeader>
@@ -208,7 +210,7 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
         {error && (
           <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
             {error}
-            <button onClick={() => setError(null)} className="ml-2 underline">Dismiss</button>
+            <button onClick={() => setError(null)} className="ml-2 underline">{t('settingsCompanion.dismiss')}</button>
           </div>
         )}
 
@@ -220,8 +222,8 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
               </svg>
             </div>
-            <p className="text-lg font-medium text-white/60">No companions connected</p>
-            <p className="text-sm mt-1">Companions will appear here when they scan the QR code and connect</p>
+            <p className="text-lg font-medium text-white/60">{t('settingsCompanion.noCompanions')}</p>
+            <p className="text-sm mt-1">{t('settingsCompanion.noCompanionsDesc')}</p>
           </div>
         )}
 
@@ -267,6 +269,7 @@ function CompanionCard({
   const [showCharacterDropdown, setShowCharacterDropdown] = useState(false);
   const companionName = companion.profile?.name || companion.name;
   const companionColor = companion.profile?.color || '#6B7280';
+  const { t } = useTranslation();
 
   return (
     <div className="bg-white/5 border border-white/10 rounded-lg p-4 hover:border-white/20 transition-colors">
@@ -298,18 +301,18 @@ function CompanionCard({
               </Badge>
             ) : (
               <Badge className="bg-white/5 text-white/30 border border-white/10 text-xs px-2 shrink-0">
-                Kein Charakter
+                {t('settingsCompanion.noCharacter')}
               </Badge>
             )}
           </div>
           <div className="flex items-center gap-2 mt-0.5">
             {/* Connection duration */}
             <span className="text-xs text-white/40">
-              Connected: {formatDuration(companion.connected)}
+              {t('settingsCompanion.connected')} {formatDuration(companion.connected, t)}
             </span>
             <span className="text-xs text-white/20">|</span>
             <span className="text-xs text-white/40">
-              Last seen: {getLastSeen(companion.lastActivity)}
+              {t('settingsCompanion.lastSeen')} {getLastSeen(companion.lastActivity)}
             </span>
           </div>
         </div>
@@ -318,17 +321,17 @@ function CompanionCard({
         <div className="flex items-center gap-1.5 shrink-0">
           {companion.hasPitch && (
             <Badge className="bg-green-500/20 text-green-400 border-0 text-xs px-2">
-              Mic Active
+              {t('settingsCompanion.micActive')}
             </Badge>
           )}
           {companion.hasRemoteControl && (
             <Badge className="bg-purple-500/20 text-purple-400 border-0 text-xs px-2">
-              Remote
+              {t('settingsCompanion.remote')}
             </Badge>
           )}
           {companion.queueCount > 0 && (
             <Badge className="bg-orange-500/20 text-orange-400 border-0 text-xs px-2">
-              {companion.queueCount} in queue
+              {t('settingsCompanion.inQueue').replace('{n}', String(companion.queueCount))}
             </Badge>
           )}
         </div>
@@ -338,10 +341,10 @@ function CompanionCard({
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/10">
         {/* Character Assignment */}
         <div className="relative flex items-center gap-2">
-          <span className="text-xs text-white/50">Character:</span>
+          <span className="text-xs text-white/50">{t('settingsCompanion.character')}</span>
 
           {activeProfiles.length === 0 ? (
-            <span className="text-xs text-white/30 italic">No characters created yet</span>
+            <span className="text-xs text-white/30 italic">{t('settingsCompanion.noCharacters')}</span>
           ) : (
             <>
               <button
@@ -364,7 +367,7 @@ function CompanionCard({
                     {companion.profile.name}
                   </>
                 ) : (
-                  <span className="text-white/40">Not assigned</span>
+                  <span className="text-white/40">{t('settingsCompanion.notAssigned')}</span>
                 )}
                 <svg className={`w-3 h-3 transition-transform ${showCharacterDropdown ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -387,7 +390,7 @@ function CompanionCard({
                         className="w-full text-left px-3 py-2 text-sm text-white/50 hover:bg-white/10 flex items-center gap-2 border-b border-white/10"
                       >
                         <TrashIcon className="w-3.5 h-3.5" />
-                        Remove character
+                        {t('settingsCompanion.removeCharacter')}
                       </button>
                     )}
 
@@ -437,12 +440,12 @@ function CompanionCard({
           {isKicking ? (
             <>
               <div className="w-3 h-3 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin mr-1" />
-              Kicking...
+              {t('settingsCompanion.kicking')}
             </>
           ) : (
             <>
               <TrashIcon className="w-3.5 h-3.5 mr-1" />
-              Kick
+              {t('settingsCompanion.kick')}
             </>
           )}
         </Button>

@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { DropZone } from './drop-zone';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface UltrastarTabProps {
   title: string;
@@ -27,12 +28,13 @@ export function UltrastarTab({
   audioInputRef, videoInputRef, ultrastarInputRef,
   handleDrop, handleFileSelect,
 }: UltrastarTabProps) {
+  const { t } = useTranslation();
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <Card className="bg-white/5 border-white/10">
         <CardHeader>
-          <CardTitle>UltraStar File *</CardTitle>
-          <CardDescription>Drop your .txt file here</CardDescription>
+          <CardTitle>{t('importUltrastar.fileTitle')}</CardTitle>
+          <CardDescription>{t('importUltrastar.fileDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <DropZone
@@ -40,20 +42,20 @@ export function UltrastarTab({
             accept=".txt"
             inputRef={ultrastarInputRef}
             icon="📄"
-            label="Drop UltraStar .txt file here"
-            description="Click to change"
+            label={t('importUltrastar.fileLabel')}
+            description={t('importUltrastar.fileHint')}
             onDrop={(e) => handleDrop(e, 'ultrastar')}
             onFileChange={(f) => handleFileSelect('ultrastar', f)}
             tauriFilter={{ name: 'UltraStar TXT', extensions: ['txt'] }}
-            tauriPickerTitle="Select UltraStar TXT File"
+            tauriPickerTitle={t('importUltrastar.pickerTitle')}
           />
         </CardContent>
       </Card>
 
       <Card className="bg-white/5 border-white/10">
         <CardHeader>
-          <CardTitle>Audio File</CardTitle>
-          <CardDescription>MP3, OGG, WAV, M4A (optional if video has audio)</CardDescription>
+          <CardTitle>{t('importUltrastar.audioTitle')}</CardTitle>
+          <CardDescription>{t('importUltrastar.audioDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <DropZone
@@ -61,19 +63,19 @@ export function UltrastarTab({
             accept="audio/*,.mp3,.ogg,.wav,.m4a"
             inputRef={audioInputRef}
             icon="🎵"
-            label="Drop audio file here"
+            label={t('importUltrastar.audioLabel')}
             onDrop={(e) => handleDrop(e, 'audio')}
             onFileChange={(f) => handleFileSelect('audio', f)}
             tauriFilter={{ name: 'Audio', extensions: ['mp3', 'ogg', 'wav', 'm4a', 'flac', 'aac', 'wma', 'opus'] }}
-            tauriPickerTitle="Select Audio File"
+            tauriPickerTitle={t('importUltrastar.audioPicker')}
           />
         </CardContent>
       </Card>
 
       <Card className="bg-white/5 border-white/10">
         <CardHeader>
-          <CardTitle>Video File</CardTitle>
-          <CardDescription>MP4, WebM, MKV - can include audio</CardDescription>
+          <CardTitle>{t('importUltrastar.videoTitle')}</CardTitle>
+          <CardDescription>{t('importUltrastar.videoDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <DropZone
@@ -81,7 +83,7 @@ export function UltrastarTab({
             accept="video/*,.mp4,.webm,.mkv,.avi"
             inputRef={videoInputRef}
             icon="🎬"
-            label="Drop video file here"
+            label={t('importUltrastar.videoLabel')}
             accentColor="purple"
             extra={
               !audioFile ? (
@@ -92,39 +94,39 @@ export function UltrastarTab({
                     onChange={(e) => setUseVideoAudio(e.target.checked)}
                     className="rounded"
                   />
-                  Use video&apos;s audio
+                  {t('importUltrastar.useVideoAudio')}
                 </label>
               ) : undefined
             }
             onDrop={(e) => handleDrop(e, 'video')}
             onFileChange={(f) => handleFileSelect('video', f)}
             tauriFilter={{ name: 'Video', extensions: ['mp4', 'webm', 'mkv', 'avi', 'mov', 'wmv'] }}
-            tauriPickerTitle="Select Video File"
+            tauriPickerTitle={t('importUltrastar.videoPicker')}
           />
         </CardContent>
       </Card>
 
       <Card className="bg-white/5 border-white/10">
         <CardHeader>
-          <CardTitle>Song Info</CardTitle>
-          <CardDescription>Review/edit details</CardDescription>
+          <CardTitle>{t('importUltrastar.songInfo')}</CardTitle>
+          <CardDescription>{t('importUltrastar.songInfoDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="text-sm text-white/60 mb-1 block">Title</label>
+            <label className="text-sm text-white/60 mb-1 block">{t('importUltrastar.titleLabel')}</label>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Song title"
+              placeholder={t('importUltrastar.titlePlaceholder')}
               className="bg-white/5 border-white/10 text-white"
             />
           </div>
           <div>
-            <label className="text-sm text-white/60 mb-1 block">Artist</label>
+            <label className="text-sm text-white/60 mb-1 block">{t('importUltrastar.artistLabel')}</label>
             <Input
               value={artist}
               onChange={(e) => setArtist(e.target.value)}
-              placeholder="Artist name"
+              placeholder={t('importUltrastar.artistPlaceholder')}
               className="bg-white/5 border-white/10 text-white"
             />
           </div>

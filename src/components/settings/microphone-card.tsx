@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { TrashIcon, SettingsIcon, CheckIcon } from '@/components/settings/settings-icons';
 import { MicrophoneDevice, ExtendedMicConfig, AssignedMicrophone } from '@/lib/audio/microphone-manager';
 import { MIC_PRESETS } from '@/components/settings/microphone-presets';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface MicrophoneCardProps {
   mic: AssignedMicrophone;
@@ -33,6 +34,7 @@ export function MicrophoneCard({
 }: MicrophoneCardProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(mic.customName);
+  const { t } = useTranslation();
 
   const config = mic.config;
   const volume = mic.status.volume;
@@ -40,10 +42,10 @@ export function MicrophoneCard({
 
   const getSettingsStatus = () => {
     const issues: string[] = [];
-    if (config.autoGainControl) issues.push('AGC sollte AUS sein');
-    if (!config.echoCancellation) issues.push('Echo Cancellation sollte AN sein');
-    if (!config.noiseSuppression) issues.push('Noise Suppression sollte AN sein');
-    if (config.fftSize < 2048) issues.push('FFT Size zu klein');
+    if (config.autoGainControl) issues.push(t('settingsMicrophoneCard.agcShouldBeOff'));
+    if (!config.echoCancellation) issues.push(t('settingsMicrophoneCard.echoShouldBeOn'));
+    if (!config.noiseSuppression) issues.push(t('settingsMicrophoneCard.noiseShouldBeOn'));
+    if (config.fftSize < 2048) issues.push(t('settingsMicrophoneCard.fftTooSmall'));
     return { isOptimal: issues.length === 0, issues };
   };
 
@@ -88,13 +90,13 @@ export function MicrophoneCard({
                     {mic.customName}
                   </CardTitle>
                   <Badge variant="outline" className="text-xs border-white/20">
-                    Spieler {mic.playerIndex + 1}
+                    {t('settingsMicrophoneCard.player').replace('{n}', String(mic.playerIndex + 1))}
                   </Badge>
                 </div>
               )}
               <CardDescription className="text-xs">
                 {mic.deviceName}
-                {isConnected && <span className="text-green-400 ml-2">● Verbunden</span>}
+                {isConnected && <span className="text-green-400 ml-2">{t('settingsMicrophoneCard.connected')}</span>}
               </CardDescription>
             </div>
           </div>
@@ -114,7 +116,7 @@ export function MicrophoneCard({
         {isConnected && (
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-white/60">Pegel</span>
+              <span className="text-white/60">{t('settingsMicrophoneCard.level')}</span>
               <span>{Math.round(volume * 100)}%</span>
             </div>
             <div className="h-3 bg-white/10 rounded-full overflow-hidden">
@@ -125,15 +127,15 @@ export function MicrophoneCard({
 
         {/* Device Selection */}
         <div className="space-y-2">
-          <label className="text-sm text-white/60">Eingabe-Quelle</label>
+          <label className="text-sm text-white/60">{t('settingsMicrophoneCard.inputSource')}</label>
           <Select value={config.deviceId} onValueChange={(v) => updateSetting('deviceId', v)}>
             <SelectTrigger className="bg-white/10 border-white/20">
-              <SelectValue placeholder="Mikrofon wählen..." />
+              <SelectValue placeholder={t('settingsMicrophoneCard.selectMic')} />
             </SelectTrigger>
             <SelectContent>
               {devices.filter(d => d.deviceId).map((device) => (
                 <SelectItem key={device.deviceId} value={device.deviceId}>
-                  {device.label}{device.isDefault && ' (Standard)'}
+                  {device.label}{device.isDefault && ` ${t('settingsMicrophoneCard.default')}`}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -145,13 +147,13 @@ export function MicrophoneCard({
           <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-yellow-400 font-medium">Einstellungen nicht optimal</p>
+                <p className="text-sm text-yellow-400 font-medium">{t('settingsMicrophoneCard.settingsNotOptimal')}</p>
                 <ul className="text-xs text-white/60 mt-1">
                   {status.issues.slice(0, 2).map((issue, i) => <li key={i}>• {issue}</li>)}
                 </ul>
               </div>
               <Button size="sm" onClick={() => applyPreset('optimal')} className="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400">
-                Reparieren
+                {t('settingsMicrophoneCard.fix')}
               </Button>
             </div>
           </div>
@@ -162,7 +164,7 @@ export function MicrophoneCard({
           <div className="space-y-4 pt-4 border-t border-white/10">
             {/* Presets */}
             <div>
-              <label className="text-sm text-white/60 mb-2 block">Presets</label>
+              <label className="text-sm text-white/60 mb-2 block">{t('settingsMicrophoneCard.presets')}</label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {Object.entries(MIC_PRESETS).map(([key, preset]) => (
                   <button key={key} onClick={() => applyPreset(key as keyof typeof MIC_PRESETS)} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-cyan-500/50 transition-all text-left">
@@ -175,26 +177,26 @@ export function MicrophoneCard({
 
             {/* Audio Processing */}
             <div className="space-y-3">
-              <h4 className="text-sm font-medium text-cyan-400">Audio-Verarbeitung</h4>
+              <h4 className="text-sm font-medium text-cyan-400">{t('settingsMicrophoneCard.audioProcessing')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <label className="text-xs text-white/60">Verstärkung (Gain)</label>
+                  <label className="text-xs text-white/60">{t('settingsMicrophoneCard.gain')}</label>
                   <span className="text-xs">{(config.gain * 100).toFixed(0)}%</span>
                 </div>
                 <Slider value={[config.gain]} onValueChange={([v]) => updateSetting('gain', v)} min={0.1} max={3} step={0.1} className="w-full" />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <div className="flex items-center justify-between p-2 bg-white/5 rounded-lg">
-                  <label className="text-xs">Echo-Unterdrückung</label>
+                  <label className="text-xs">{t('settingsMicrophoneCard.echoCancellation')}</label>
                   <Switch checked={config.echoCancellation} onCheckedChange={(v) => updateSetting('echoCancellation', v)} />
                 </div>
                 <div className="flex items-center justify-between p-2 bg-white/5 rounded-lg">
-                  <label className="text-xs">Rausch-Unterdrückung</label>
+                  <label className="text-xs">{t('settingsMicrophoneCard.noiseSuppression')}</label>
                   <Switch checked={config.noiseSuppression} onCheckedChange={(v) => updateSetting('noiseSuppression', v)} />
                 </div>
                 <div className="flex items-center justify-between p-2 bg-white/5 rounded-lg">
                   <div>
-                    <label className="text-xs">AGC</label>
+                    <label className="text-xs">{t('settingsMicrophoneCard.agc')}</label>
                     {!config.autoGainControl && <span className="text-xs text-green-400 ml-1">✓</span>}
                   </div>
                   <Switch checked={config.autoGainControl} onCheckedChange={(v) => updateSetting('autoGainControl', v)} />
@@ -202,23 +204,23 @@ export function MicrophoneCard({
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-xs text-white/60">Abtastrate</label>
+                  <label className="text-xs text-white/60">{t('settingsMicrophoneCard.sampleRate')}</label>
                   <Select value={config.sampleRate.toString()} onValueChange={(v) => updateSetting('sampleRate', parseInt(v))}>
                     <SelectTrigger className="h-8 bg-white/10 border-white/20 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="44100">44100 Hz (CD)</SelectItem>
-                      <SelectItem value="48000">48000 Hz (Studio)</SelectItem>
+                      <SelectItem value="44100">{t('settingsMicrophoneCard.sampleRateCd')}</SelectItem>
+                      <SelectItem value="48000">{t('settingsMicrophoneCard.sampleRateStudio')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-white/60">Latenz-Modus</label>
+                  <label className="text-xs text-white/60">{t('settingsMicrophoneCard.latencyMode')}</label>
                   <Select value={config.latency} onValueChange={(v) => updateSetting('latency', v as 'interactive' | 'balanced' | 'playback')}>
                     <SelectTrigger className="h-8 bg-white/10 border-white/20 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="interactive">Interaktiv (~10-20ms)</SelectItem>
-                      <SelectItem value="balanced">Ausgewogen (~20-50ms)</SelectItem>
-                      <SelectItem value="playback">Wiedergabe (~50-100ms)</SelectItem>
+                      <SelectItem value="interactive">{t('settingsMicrophoneCard.latencyInteractive')}</SelectItem>
+                      <SelectItem value="balanced">{t('settingsMicrophoneCard.latencyBalanced')}</SelectItem>
+                      <SelectItem value="playback">{t('settingsMicrophoneCard.latencyPlayback')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -227,43 +229,43 @@ export function MicrophoneCard({
 
             {/* Pitch Detection */}
             <div className="space-y-3">
-              <h4 className="text-sm font-medium text-purple-400">Pitch-Detection</h4>
+              <h4 className="text-sm font-medium text-purple-400">{t('settingsMicrophoneCard.pitchDetection')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <label className="text-xs text-white/60">YIN-Schwellwert</label>
+                  <label className="text-xs text-white/60">{t('settingsMicrophoneCard.yinThreshold')}</label>
                   <span className="text-xs">{config.yinThreshold.toFixed(2)}</span>
                 </div>
                 <Slider value={[config.yinThreshold]} onValueChange={([v]) => updateSetting('yinThreshold', v)} min={0.05} max={0.30} step={0.01} className="w-full" />
               </div>
               <div className="space-y-1">
-                <label className="text-xs text-white/60">FFT-Größe (Genauigkeit)</label>
+                <label className="text-xs text-white/60">{t('settingsMicrophoneCard.fftSize')}</label>
                 <Select value={config.fftSize.toString()} onValueChange={(v) => updateSetting('fftSize', parseInt(v))}>
                   <SelectTrigger className="h-8 bg-white/10 border-white/20 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1024">1024 (schnell)</SelectItem>
-                    <SelectItem value="2048">2048 (ausgewogen)</SelectItem>
-                    <SelectItem value="4096">4096 (empfohlen)</SelectItem>
-                    <SelectItem value="8192">8192 (sehr genau)</SelectItem>
+                    <SelectItem value="1024">{t('settingsMicrophoneCard.fftFast')}</SelectItem>
+                    <SelectItem value="2048">{t('settingsMicrophoneCard.fftBalanced')}</SelectItem>
+                    <SelectItem value="4096">{t('settingsMicrophoneCard.fftRecommended')}</SelectItem>
+                    <SelectItem value="8192">{t('settingsMicrophoneCard.fftVeryAccurate')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <label className="text-xs text-white/60">Lautstärke-Schwellwert</label>
+                  <label className="text-xs text-white/60">{t('settingsMicrophoneCard.volumeThreshold')}</label>
                   <span className="text-xs">{(config.volumeThreshold * 100).toFixed(0)}%</span>
                 </div>
                 <Slider value={[config.volumeThreshold]} onValueChange={([v]) => updateSetting('volumeThreshold', v)} min={0.01} max={0.20} step={0.01} className="w-full" />
               </div>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <label className="text-xs text-white/60">Glättungsfaktor</label>
+                  <label className="text-xs text-white/60">{t('settingsMicrophoneCard.smoothing')}</label>
                   <span className="text-xs">{(config.smoothingFactor * 100).toFixed(0)}%</span>
                 </div>
                 <Slider value={[config.smoothingFactor]} onValueChange={([v]) => updateSetting('smoothingFactor', v)} min={0} max={0.95} step={0.05} className="w-full" />
               </div>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <label className="text-xs text-white/60">Klarheits-Schwellwert</label>
+                  <label className="text-xs text-white/60">{t('settingsMicrophoneCard.clarityThreshold')}</label>
                   <span className="text-xs">{(config.clarityThreshold * 100).toFixed(0)}%</span>
                 </div>
                 <Slider value={[config.clarityThreshold]} onValueChange={([v]) => updateSetting('clarityThreshold', v)} min={0.3} max={0.9} step={0.05} className="w-full" />
@@ -272,37 +274,37 @@ export function MicrophoneCard({
 
             {/* Frequency Range */}
             <div className="space-y-3">
-              <h4 className="text-sm font-medium text-pink-400">Frequenzbereich</h4>
+              <h4 className="text-sm font-medium text-pink-400">{t('settingsMicrophoneCard.frequencyRange')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <label className="text-xs text-white/60">Min. Frequenz</label>
+                  <label className="text-xs text-white/60">{t('settingsMicrophoneCard.minFrequency')}</label>
                   <span className="text-xs">{config.minFrequency} Hz</span>
                 </div>
                 <Slider value={[config.minFrequency]} onValueChange={([v]) => updateSetting('minFrequency', v)} min={60} max={200} step={10} className="w-full" />
               </div>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <label className="text-xs text-white/60">Max. Frequenz</label>
+                  <label className="text-xs text-white/60">{t('settingsMicrophoneCard.maxFrequency')}</label>
                   <span className="text-xs">{config.maxFrequency} Hz</span>
                 </div>
                 <Slider value={[config.maxFrequency]} onValueChange={([v]) => updateSetting('maxFrequency', v)} min={500} max={1500} step={50} className="w-full" />
               </div>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => applyPreset('bass')} className="border-white/20 text-xs">🎤 Bass</Button>
-                <Button size="sm" variant="outline" onClick={() => applyPreset('soprano')} className="border-white/20 text-xs">🎤 Sopran</Button>
+                <Button size="sm" variant="outline" onClick={() => applyPreset('bass')} className="border-white/20 text-xs">{t('settingsMicrophoneCard.bass')}</Button>
+                <Button size="sm" variant="outline" onClick={() => applyPreset('soprano')} className="border-white/20 text-xs">{t('settingsMicrophoneCard.soprano')}</Button>
               </div>
             </div>
 
             {/* Latency Correction */}
             <div className="space-y-3">
-              <h4 className="text-sm font-medium text-orange-400">Latenz-Korrektur</h4>
+              <h4 className="text-sm font-medium text-orange-400">{t('settingsMicrophoneCard.latencyCorrection')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <label className="text-xs text-white/60">Manueller Offset</label>
+                  <label className="text-xs text-white/60">{t('settingsMicrophoneCard.manualOffset')}</label>
                   <span className="text-xs">{config.manualLatencyOffset > 0 ? '+' : ''}{config.manualLatencyOffset} ms</span>
                 </div>
                 <Slider value={[config.manualLatencyOffset]} onValueChange={([v]) => updateSetting('manualLatencyOffset', v)} min={-200} max={200} step={10} className="w-full" />
-                <p className="text-xs text-white/40">Negativ = Audio früher, Positiv = Audio später</p>
+                <p className="text-xs text-white/40">{t('settingsMicrophoneCard.offsetHelp')}</p>
               </div>
             </div>
           </div>

@@ -5,6 +5,7 @@ import {
   SettingsIcon, MusicIcon, MicIcon, PhoneIcon,
   WebcamIcon, FolderIcon, EditIcon, InfoIcon,
 } from '@/components/settings/settings-icons';
+import { useTranslation } from '@/lib/i18n/translations';
 
 export type SettingsTab = 'general' | 'graphicsound' | 'microphone' | 'mobile' | 'webcam' | 'library' | 'editor' | 'viral' | 'about';
 
@@ -15,15 +16,16 @@ interface SettingsTabBarProps {
 }
 
 export function SettingsTabBar({ activeTab, onTabChange, tx }: SettingsTabBarProps) {
+  const { t } = useTranslation();
   const tabs: { id: SettingsTab; label: string; icon: React.FC<{ className?: string }>; color: string }[] = [
     { id: 'general', label: tx('settings.tabGeneral'), icon: SettingsIcon, color: 'cyan' },
-    { id: 'graphicsound', label: 'Graphic / Sound', icon: MusicIcon, color: 'cyan' },
-    { id: 'microphone', label: 'Microphone', icon: MicIcon, color: 'cyan' },
-    { id: 'mobile', label: 'Mobile Companion', icon: PhoneIcon, color: 'cyan' },
-    { id: 'webcam', label: 'Webcam', icon: WebcamIcon, color: 'cyan' },
+    { id: 'graphicsound', label: t('settingsTabs.graphicSound'), icon: MusicIcon, color: 'cyan' },
+    { id: 'microphone', label: t('settingsTabs.microphone'), icon: MicIcon, color: 'cyan' },
+    { id: 'mobile', label: t('settingsTabs.mobileCompanion'), icon: PhoneIcon, color: 'cyan' },
+    { id: 'webcam', label: t('settingsTabs.webcam'), icon: WebcamIcon, color: 'cyan' },
     { id: 'library', label: tx('settings.tabLibrary'), icon: FolderIcon, color: 'cyan' },
-    { id: 'editor', label: 'Editor', icon: EditIcon, color: 'cyan' },
-    { id: 'viral', label: 'Viral Charts', icon: () => <span>&#128293;</span>, color: 'orange' },
+    { id: 'editor', label: t('settingsTabs.editor'), icon: EditIcon, color: 'cyan' },
+    { id: 'viral', label: t('settingsTabs.viralCharts'), icon: () => <span>&#128293;</span>, color: 'orange' },
     { id: 'about', label: tx('settings.tabAbout'), icon: InfoIcon, color: 'cyan' },
   ];
 

@@ -8,6 +8,7 @@ import { UltrastarTab } from './ultrastar-tab';
 import { FolderScanTab } from './folder-scan-tab';
 import { AlternateFormatTab } from './alternate-format-tab';
 import { ImportPreview } from './import-preview';
+import { useTranslation } from '@/lib/i18n/translations';
 
 export function ImportScreen({ onImport }: ImportScreenProps) {
   const {
@@ -22,13 +23,15 @@ export function ImportScreen({ onImport }: ImportScreenProps) {
     handleScanFolder, importSelectedScanned, confirmImport,
   } = useImportScreen(onImport);
 
+  const { t } = useTranslation();
+
   return (
     <div className="space-y-6">
       <Tabs value={importType} onValueChange={(v) => setImportType(v as typeof importType)}>
         <TabsList className="mb-6">
-          <TabsTrigger value="ultrastar">UltraStar Import</TabsTrigger>
-          <TabsTrigger value="folder">Folder Scan</TabsTrigger>
-          <TabsTrigger value="alt-format">More Formats</TabsTrigger>
+          <TabsTrigger value="ultrastar">{t('importScreen.ultrastarImport')}</TabsTrigger>
+          <TabsTrigger value="folder">{t('importScreen.folderScan')}</TabsTrigger>
+          <TabsTrigger value="alt-format">{t('importScreen.moreFormats')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="ultrastar">
@@ -89,7 +92,7 @@ export function ImportScreen({ onImport }: ImportScreenProps) {
             disabled={!ultrastarFile || (!audioFile && !videoFile) || isProcessing}
             className="bg-gradient-to-r from-cyan-500 to-purple-500"
           >
-            {isProcessing ? 'Processing...' : 'Process'}
+            {isProcessing ? t('importScreen.processing') : t('importScreen.process')}
           </Button>
         )}
         {importType === 'folder' && scannedSongs.length > 0 && (
@@ -98,12 +101,12 @@ export function ImportScreen({ onImport }: ImportScreenProps) {
             disabled={selectedScanned.size === 0 || isProcessing}
             className="bg-gradient-to-r from-cyan-500 to-purple-500"
           >
-            Import {selectedScanned.size} Songs
+            {t('importScreen.importSongs').replace('{n}', String(selectedScanned.size))}
           </Button>
         )}
         {importType !== 'alt-format' && previewSong && (
           <Button onClick={confirmImport} className="bg-green-500 hover:bg-green-400">
-            Add to Library
+            {t('importScreen.addToLibrary')}
           </Button>
         )}
       </div>

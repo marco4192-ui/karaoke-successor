@@ -7,6 +7,7 @@ import { InfoIcon, PlusIcon } from '@/components/settings/settings-icons';
 import { MAX_MICROPHONES } from '@/lib/audio/microphone-manager';
 import { MicrophoneCard } from '@/components/settings/microphone-card';
 import { useMicrophoneSettings } from '@/components/settings/use-microphone-settings';
+import { useTranslation } from '@/lib/i18n/translations';
 
 export function MicrophoneSettingsPanel({
   onSettingsChange,
@@ -31,6 +32,8 @@ export function MicrophoneSettingsPanel({
     refreshMessage,
   } = useMicrophoneSettings(onSettingsChange);
 
+  const { t } = useTranslation();
+
   const SUPPORTED_MICS = [
     { icon: '🎤', title: 'USB Mics', desc: 'Blue Yeti, AT2020' },
     { icon: '🎮', title: 'SingStar Mics', desc: 'PS2/PS3 Dongles' },
@@ -45,18 +48,18 @@ export function MicrophoneSettingsPanel({
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <InfoIcon className="w-5 h-5 text-cyan-400" />
-            Mikrofon-Einstellungen
+            {t('settingsMicPanel.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2 text-sm text-white/70">
-            <p><strong className="text-white">🎤 Bis zu 4 Mikrofone:</strong> Jedes Mikrofon hat eigene Einstellungen.</p>
-            <p><strong className="text-white">⚙️ UltraStar/SingStar-Standard:</strong> Optimal für Pitch-Detection vorkonfiguriert.</p>
-            <p><strong className="text-white">📝 Individuelle Namen:</strong> Klicken Sie auf den Namen zum Bearbeiten.</p>
+            <p><strong className="text-white">{t('settingsMicPanel.upTo4Mics')}</strong> {t('settingsMicPanel.eachOwnSettings')}</p>
+            <p><strong className="text-white">{t('settingsMicPanel.ultraStarStandard')}</strong> {t('settingsMicPanel.ultraStarDesc')}</p>
+            <p><strong className="text-white">{t('settingsMicPanel.customNames')}</strong> {t('settingsMicPanel.customNamesDesc')}</p>
             <ul className="text-xs text-white/50 mt-3 space-y-1">
-              <li>• <strong>AGC (Auto Gain Control)</strong> sollte AUS sein für präzise Pitch-Erkennung</li>
-              <li>• <strong>Echo Cancellation</strong> und <strong>Noise Suppression</strong> sollten AN sein</li>
-              <li>• <strong>FFT Size 4096</strong> ist optimal für Pitch-Detection</li>
+              <li>• <strong>AGC (Auto Gain Control)</strong> {t('settingsMicPanel.agcInfo')}</li>
+              <li>• <strong>Echo Cancellation</strong> / <strong>Noise Suppression</strong> {t('settingsMicPanel.echoInfo')}</li>
+              <li>• <strong>FFT Size 4096</strong> {t('settingsMicPanel.fftInfo')}</li>
             </ul>
           </div>
         </CardContent>
@@ -84,23 +87,23 @@ export function MicrophoneSettingsPanel({
               <div className="flex items-center gap-2">
                 <Select value={selectedDeviceId} onValueChange={setSelectedDeviceId}>
                   <SelectTrigger className="flex-1 bg-white/10 border-white/20">
-                    <SelectValue placeholder="Mikrofon wählen..." />
+                    <SelectValue placeholder={t('settingsMicPanel.selectMic')} />
                   </SelectTrigger>
                   <SelectContent>
                     {devices.filter(d => d.deviceId).map((device) => (
                       <SelectItem key={device.deviceId} value={device.deviceId}>
-                        {device.label}{device.isDefault && ' (Standard)'}
+                        {device.label}{device.isDefault && ` ${t('settingsMicPanel.default')}`}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <Button onClick={handleAddMicrophone} className="bg-green-500 hover:bg-green-400">Hinzufügen</Button>
-                <Button variant="outline" onClick={() => setIsAddingMic(false)} className="border-white/20">Abbrechen</Button>
+                <Button onClick={handleAddMicrophone} className="bg-green-500 hover:bg-green-400">{t('settingsMicPanel.add')}</Button>
+                <Button variant="outline" onClick={() => setIsAddingMic(false)} className="border-white/20">{t('settingsMicPanel.cancel')}</Button>
               </div>
             ) : (
               <button onClick={() => setIsAddingMic(true)} className="w-full flex items-center justify-center gap-2 py-4 text-white/60 hover:text-white transition-colors">
                 <PlusIcon className="w-5 h-5" />
-                <span>Mikrofon {assignedMics.length + 1} hinzufügen ({MAX_MICROPHONES - assignedMics.length} von {MAX_MICROPHONES} verfügbar)</span>
+                <span>{t('settingsMicPanel.addMic').replace('{n}', String(assignedMics.length + 1)).replace('{m}', String(MAX_MICROPHONES - assignedMics.length)).replace('{max}', String(MAX_MICROPHONES))}</span>
               </button>
             )}
           </CardContent>
@@ -110,7 +113,7 @@ export function MicrophoneSettingsPanel({
       {/* Max microphones reached */}
       {assignedMics.length >= MAX_MICROPHONES && (
         <div className="p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-lg text-center">
-          <p className="text-cyan-400 text-sm">✓ Maximale Anzahl von {MAX_MICROPHONES} Mikrofonen erreicht</p>
+          <p className="text-cyan-400 text-sm">{t('settingsMicPanel.maxReached').replace('{max}', String(MAX_MICROPHONES))}</p>
         </div>
       )}
 
@@ -118,10 +121,10 @@ export function MicrophoneSettingsPanel({
       {assignedMics.length > 0 && (
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleApplyOptimalToAll} className="flex-1 border-white/20 text-white hover:bg-white/10">
-            ⚡ Optimale Einstellungen auf alle anwenden
+            {t('settingsMicPanel.applyOptimal')}
           </Button>
           <Button variant="outline" onClick={handleRefreshDevices} className="border-white/20 text-white hover:bg-white/10">
-            🔄 Geräte aktualisieren
+            {t('settingsMicPanel.refreshDevices')}
           </Button>
         </div>
       )}
@@ -135,7 +138,7 @@ export function MicrophoneSettingsPanel({
 
       {/* Supported Microphones Info */}
       <Card className="bg-white/5 border-white/10">
-        <CardHeader><CardTitle className="text-sm">Unterstützte Mikrofone</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-sm">{t('settingsMicPanel.supportedMics')}</CardTitle></CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {SUPPORTED_MICS.map(({ icon, title, desc }) => (

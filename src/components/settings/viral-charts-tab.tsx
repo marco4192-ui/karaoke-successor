@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useTranslation } from '@/lib/i18n/translations';
 
 const COUNTRY_OPTIONS = [
   { code: 'de', name: 'Deutschland', flag: '🇩🇪' },
@@ -48,6 +49,7 @@ export function ViralChartsSettings() {
   const [status, setStatus] = useState<ViralChartsStatus | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   // Load current status on mount
   useEffect(() => {
@@ -72,7 +74,7 @@ export function ViralChartsSettings() {
     try {
       const { invoke } = await import('@tauri-apps/api/core');
       await invoke('viral_set_country', { country: newCountry });
-      setMessage('Land gespeichert. Charts werden beim nächsten Laden aktualisiert.');
+      setMessage(t('settingsViralCharts.regionSaved'));
       setTimeout(() => setMessage(null), 3000);
     } catch {
       // Silently fail
@@ -87,9 +89,9 @@ export function ViralChartsSettings() {
       const { invoke } = await import('@tauri-apps/api/core');
       await invoke('viral_refresh_charts', { country });
       await loadStatus();
-      setMessage('Charts erfolgreich aktualisiert!');
+      setMessage(t('settingsViralCharts.chartsRefreshed'));
     } catch (e) {
-      setMessage(`Fehler: ${e instanceof Error ? e.message : String(e)}`);
+      setMessage(`${t('settingsViralCharts.errorPrefix')} ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setIsRefreshing(false);
       setTimeout(() => setMessage(null), 5000);
@@ -101,14 +103,12 @@ export function ViralChartsSettings() {
       <Card className="bg-white/5 border-white/10">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <span>&#128293;</span> Virale Charts
+            <span>&#128293;</span> {t('settingsViralCharts.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-white/60 text-sm">
-            Dieses Feature ist nur in der Tauri-App verfügbar. Es fragt aktuelle Chart-Hits
-            von Apple Music, Deezer und iTunes ab und markiert Songs in deiner Bibliothek,
-            die gerade viral sind.
+            {t('settingsViralCharts.tauriOnly')} {t('settingsViralCharts.tauriOnlyDesc')}
           </p>
         </CardContent>
       </Card>
@@ -121,17 +121,16 @@ export function ViralChartsSettings() {
     <Card className="bg-white/5 border-white/10">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <span className="text-xl">&#128293;</span> Virale Charts
+          <span className="text-xl">&#128293;</span> {t('settingsViralCharts.title')}
         </CardTitle>
         <CardDescription>
-          Finde trending Songs in deiner Bibliothek — abgeglichen mit Apple Music, Deezer und iTunes Charts.
-          Keine Anmeldung nötig!
+          {t('settingsViralCharts.description')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Country Selection */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-white/80">Region für Charts</label>
+          <label className="text-sm font-medium text-white/80">{t('settingsViralCharts.region')}</label>
           <select
             value={country}
             onChange={(e) => handleCountryChange(e.target.value)}
@@ -155,11 +154,11 @@ export function ViralChartsSettings() {
           {isRefreshing ? (
             <>
               <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-              Charts werden geladen...
+              {t('settingsViralCharts.loadingCharts')}
             </>
           ) : (
             <>
-              <span>&#128260;</span> Charts jetzt aktualisieren
+              <span>&#128260;</span> {t('settingsViralCharts.refreshCharts')}
             </>
           )}
         </button>
@@ -168,26 +167,26 @@ export function ViralChartsSettings() {
         {status && (
           <div className="bg-white/5 rounded-lg p-3 space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-white/60">Region:</span>
+              <span className="text-white/60">{t('settingsViralCharts.regionLabel')}</span>
               <span>{selectedCountryData?.flag} {selectedCountryData?.name}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-white/60">Chart-Einträge:</span>
+              <span className="text-white/60">{t('settingsViralCharts.chartEntries')}</span>
               <span>{status.totalEntries}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-white/60">In Bibliothek gefunden:</span>
+              <span className="text-white/60">{t('settingsViralCharts.foundInLibrary')}</span>
               <span className="font-medium text-orange-400">{status.matchedCount}</span>
             </div>
             {status.lastFetchedAt && (
               <div className="flex justify-between text-sm">
-                <span className="text-white/60">Letztes Update:</span>
+                <span className="text-white/60">{t('settingsViralCharts.lastUpdate')}</span>
                 <span>{formatDate(status.lastFetchedAt)}</span>
               </div>
             )}
             {status.sources.length > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-white/60">Quellen:</span>
+                <span className="text-white/60">{t('settingsViralCharts.sources')}</span>
                 <span>{status.sources.join(', ')}</span>
               </div>
             )}
@@ -196,15 +195,14 @@ export function ViralChartsSettings() {
 
         {/* Message */}
         {message && (
-          <p className={`text-sm ${message.startsWith('Fehler') ? 'text-red-400' : 'text-green-400'}`}>
+          <p className={`text-sm ${message.startsWith(t('settingsViralCharts.errorPrefix')) ? 'text-red-400' : 'text-green-400'}`}>
             {message}
           </p>
         )}
 
         {/* Info */}
         <p className="text-xs text-white/40">
-          Charts werden automatisch beim Öffnen der Bibliothek aktualisiert (1x pro Tag).
-          Du kannst hier manuell ein Update auslösen oder die Region ändern.
+          {t('settingsViralCharts.autoUpdate')}
         </p>
       </CardContent>
     </Card>

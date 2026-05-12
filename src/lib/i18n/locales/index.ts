@@ -223,6 +223,7 @@ const enTranslations = {
     feature2: 'Multiple party game modes',
     feature3: 'Mobile app integration for remote control',
     feature4: 'Import your own UltraStar format songs',
+    feature5: 'Offline-capable with local SQLite database',
   },
   mic: {
     title: 'Microphone Settings',
@@ -1998,6 +1999,7 @@ const deTranslations = {
     feature2: 'Mehrere Party-Spielmodi',
     feature3: 'Mobile-App-Integration zur Fernsteuerung',
     feature4: 'Eigene UltraStar-Format-Songs importieren',
+    feature5: 'Offline-fähig mit lokaler SQLite-Datenbank',
   },
   mic: {
     title: 'Mikrofon-Einstellungen',

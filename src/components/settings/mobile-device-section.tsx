@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { PhoneIcon } from '@/components/settings/settings-icons';
 import { buildCompanionUrl, detectLocalIP } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface ConnectedClient {
   id: string;
@@ -20,6 +21,7 @@ interface ConnectedClient {
 export function MobileDeviceMicrophoneSection() {
   const [localIP, setLocalIP] = useState<string>('');
   const [connectedClients, setConnectedClients] = useState<ConnectedClient[]>([]);
+  const { t } = useTranslation();
   
   // Get local IP address using the shared detection function
   useEffect(() => {
@@ -57,23 +59,23 @@ export function MobileDeviceMicrophoneSection() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <PhoneIcon className="w-5 h-5 text-cyan-400" />
-          Mobile Device as Microphone
+          {t('settingsMobileDevice.title')}
         </CardTitle>
-        <CardDescription>Use your smartphone as a wireless microphone</CardDescription>
+        <CardDescription>{t('settingsMobileDevice.desc')}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid md:grid-cols-2 gap-6">
           {/* QR Code Section */}
           <div className="flex flex-col items-center justify-center p-4 bg-white/5 rounded-lg">
             <div className="text-center mb-4">
-              <h4 className="font-medium mb-1">Scan to Connect</h4>
-              <p className="text-xs text-white/60">Open your phone&apos;s camera app</p>
+              <h4 className="font-medium mb-1">{t('settingsMobileDevice.scanToConnect')}</h4>
+              <p className="text-xs text-white/60">{t('settingsMobileDevice.openCamera')}</p>
             </div>
             <div className="w-48 h-48 bg-white rounded-lg p-2 mb-4">
               {qrCodeSrc ? (
                 <img
                   src={qrCodeSrc}
-                  alt="QR Code for mobile connection"
+                  alt={t('settingsMobileDevice.qrCodeAlt')}
                   className="w-full h-full"
                 />
               ) : (
@@ -81,14 +83,14 @@ export function MobileDeviceMicrophoneSection() {
               )}
             </div>
             <p className="text-xs text-white/40 text-center">
-              Point your phone camera at this QR code to connect
+              {t('settingsMobileDevice.pointCamera')}
             </p>
           </div>
           
           {/* Connection Info */}
           <div className="space-y-4">
             <div className="p-4 bg-white/5 rounded-lg">
-              <h4 className="font-medium mb-2">Connection URL</h4>
+              <h4 className="font-medium mb-2">{t('settingsMobileDevice.connectionUrl')}</h4>
               <div className="flex items-center gap-2">
                 <code className="flex-1 bg-black/30 px-3 py-2 rounded text-sm text-cyan-400 overflow-hidden text-ellipsis">
                   {mobileUrl}
@@ -101,17 +103,17 @@ export function MobileDeviceMicrophoneSection() {
                   }}
                   className="border-white/20 text-white hover:bg-white/10"
                 >
-                  Copy
+                  {t('settingsMobileDevice.copy')}
                 </Button>
               </div>
               {localIP && (
                 <p className="text-xs text-green-400 mt-2">
-                  ✓ Detected IP: {localIP}
+                  {t('settingsMobileDevice.ipDetected')} {localIP}
                 </p>
               )}
               {!localIP && (
                 <p className="text-xs text-yellow-400 mt-2">
-                  ⚠ Using localhost - may not work on mobile devices
+                  {t('settingsMobileDevice.localhostWarning')}
                 </p>
               )}
             </div>
@@ -119,13 +121,13 @@ export function MobileDeviceMicrophoneSection() {
             {/* Connected Clients */}
             {connectedClients.length > 0 && (
               <div className="p-4 bg-white/5 rounded-lg">
-                <h4 className="font-medium mb-2">Connected Devices ({connectedClients.length})</h4>
+                <h4 className="font-medium mb-2">{t('settingsMobileDevice.connectedDevices').replace('{n}', String(connectedClients.length))}</h4>
                 <div className="space-y-2">
                   {connectedClients.map((client) => (
                     <div key={client.id} className="flex items-center gap-2 text-sm">
                       <div className="w-2 h-2 rounded-full bg-green-500" />
-                      <span>{client.name || 'Unknown'}</span>
-                      {client.hasPitch && <Badge className="text-xs bg-cyan-500/20 text-cyan-400">Mic</Badge>}
+                      <span>{client.name || t('settingsMobileDevice.unknown')}</span>
+                      {client.hasPitch && <Badge className="text-xs bg-cyan-500/20 text-cyan-400">{t('settingsMobileDevice.mic')}</Badge>}
                     </div>
                   ))}
                 </div>
@@ -133,23 +135,23 @@ export function MobileDeviceMicrophoneSection() {
             )}
             
             <div className="p-4 bg-white/5 rounded-lg">
-              <h4 className="font-medium mb-2">How it works</h4>
+              <h4 className="font-medium mb-2">{t('settingsMobileDevice.howItWorks')}</h4>
               <ul className="text-sm text-white/60 space-y-2">
                 <li className="flex items-start gap-2">
                   <span className="text-cyan-400">1.</span>
-                  Scan the QR code or open the URL on your phone
+                  {t('settingsMobileDevice.step1')}
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-cyan-400">2.</span>
-                  Create a profile on the mobile app
+                  {t('settingsMobileDevice.step2')}
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-cyan-400">3.</span>
-                  Your phone becomes a wireless microphone
+                  {t('settingsMobileDevice.step3')}
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-cyan-400">4.</span>
-                  Sing wirelessly from anywhere in the room!
+                  {t('settingsMobileDevice.step4')}
                 </li>
               </ul>
             </div>

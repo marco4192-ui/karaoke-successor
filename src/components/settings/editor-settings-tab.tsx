@@ -10,6 +10,7 @@ import { Song } from '@/types/game';
 import { KaraokeEditor } from '@/components/editor/karaoke-editor';
 import { NewSongDialog } from '@/components/editor/new-song-dialog';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface EditorSettingsTabProps {
   onEditorActiveChange?: (_active: boolean) => void;
@@ -21,6 +22,7 @@ export function EditorSettingsTab({ onEditorActiveChange }: EditorSettingsTabPro
   const [filterMode, setFilterMode] = useState<'all' | 'no-genre' | 'no-language'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showNewSongDialog, setShowNewSongDialog] = useState(false);
+  const { t } = useTranslation();
   
   // Load songs
   useEffect(() => {
@@ -113,24 +115,24 @@ export function EditorSettingsTab({ onEditorActiveChange }: EditorSettingsTabPro
       <Card className="bg-white/5 border-white/10">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Song-Editor</span>
+            <span>{t('settingsEditor.title')}</span>
             <Button
               onClick={() => setShowNewSongDialog(true)}
               size="sm"
               className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white text-xs"
             >
-              + Neuen Song erstellen
+              {t('settingsEditor.newSong')}
             </Button>
           </CardTitle>
           <CardDescription>
-            Wähle einen Song aus, um die Noten, Lyrics und Metadaten zu bearbeiten.
+            {t('settingsEditor.selectSongDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Search */}
           <div className="relative">
             <Input
-              placeholder="Songs suchen..."
+              placeholder={t('settingsEditor.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-white/5 border-white/10 text-white placeholder:text-white/40 pr-10"
@@ -149,7 +151,7 @@ export function EditorSettingsTab({ onEditorActiveChange }: EditorSettingsTabPro
               className={filterMode === 'no-genre' ? 'bg-orange-500' : 'border-white/20 text-white'}
               size="sm"
             >
-              🎸 Kein Genre ({songsWithoutGenre})
+              {t('settingsEditor.noGenre').replace('{n}', String(songsWithoutGenre))}
             </Button>
             <Button
               onClick={() => setFilterMode(filterMode === 'no-language' ? 'all' : 'no-language')}
@@ -157,7 +159,7 @@ export function EditorSettingsTab({ onEditorActiveChange }: EditorSettingsTabPro
               className={filterMode === 'no-language' ? 'bg-purple-500' : 'border-white/20 text-white'}
               size="sm"
             >
-              🌐 Keine Sprache ({songsWithoutLanguage})
+              {t('settingsEditor.noLanguage').replace('{n}', String(songsWithoutLanguage))}
             </Button>
           </div>
         </CardContent>
@@ -167,8 +169,8 @@ export function EditorSettingsTab({ onEditorActiveChange }: EditorSettingsTabPro
       {filteredSongs.length === 0 ? (
         <div className="text-center py-12 text-white/40">
           <div className="text-4xl mb-2">📝</div>
-          <p>Keine Songs gefunden</p>
-          <p className="text-sm">Versuche andere Filterkriterien</p>
+          <p>{t('settingsEditor.noSongs')}</p>
+          <p className="text-sm">{t('settingsEditor.noSongsDesc')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
@@ -199,7 +201,7 @@ export function EditorSettingsTab({ onEditorActiveChange }: EditorSettingsTabPro
                 )}
                 {/* Hover overlay */}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <span className="text-white text-xs font-medium">Bearbeiten</span>
+                  <span className="text-white text-xs font-medium">{t('settingsEditor.edit')}</span>
                 </div>
               </div>
               {/* Song Info */}

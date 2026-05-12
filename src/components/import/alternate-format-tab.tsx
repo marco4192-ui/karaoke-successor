@@ -14,6 +14,7 @@ import {
 } from '@/lib/parsers/multi-format-import';
 import { addSong } from '@/lib/game/song-library';
 import { v4 as uuidv4 } from 'uuid';
+import { useTranslation } from '@/lib/i18n/translations';
 
 export interface AlternateFormatTabProps {
   isProcessing: boolean;
@@ -50,6 +51,7 @@ export function AlternateFormatTab({
 
   const songInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation();
 
   // Track blob URLs created in handleProcess for cleanup on unmount/cancel
   const previewBlobUrlRef = useRef<string | null>(null);
@@ -89,13 +91,13 @@ export function AlternateFormatTab({
 
   const handleProcess = useCallback(async () => {
     if (!songFile || !selectedFormat) {
-      setError('Please select a song file and format.');
+      setError(t('importAlternateFormat.selectFile'));
       return;
     }
 
     setIsProcessing(true);
     setError(null);
-    setStatusMessage('Parsing file...');
+    setStatusMessage(t('importAlternateFormat.parsing'));
 
     // H19: Track blob URLs created during import so they can be revoked on error
     let tempBlobUrl: string | undefined;
@@ -107,7 +109,7 @@ export function AlternateFormatTab({
         case 'karaoke-mugen': {
           const text = await songFile.text();
           const data = parseKaraokeMugen(text);
-          if (!data) throw new Error('Failed to parse Karaoke Mugen JSON.');
+          if (!data) throw new Error(t('importAlternateFormat.failedToParse'));
           tempBlobUrl = audioFile ? URL.createObjectURL(audioFile) : undefined;
           partialSong = convertToSong(data, 'karaoke-mugen', tempBlobUrl);
           break;
@@ -115,8 +117,8 @@ export function AlternateFormatTab({
         case 'midi': {
           const buffer = await songFile.arrayBuffer();
           const data = parseMIDIKaraoke(buffer);
-          if (!data) throw new Error('Failed to parse MIDI file. Not a valid MIDI/KAR file.');
-          if (data.notes.length === 0 && data.lyrics.length === 0) throw new Error('MIDI file contains no notes or lyrics.');
+          if (!data) throw new Error(t('importAlternateFormat.failedToParse'));
+          if (data.notes.length === 0 && data.lyrics.length === 0) throw new Error(t('importAlternateFormat.noLyricLines'));
           tempBlobUrl = audioFile ? URL.createObjectURL(audioFile) : undefined;
           partialSong = convertToSong(data, 'midi', tempBlobUrl);
           break;
@@ -124,23 +126,23 @@ export function AlternateFormatTab({
         case 'singstar': {
           const text = await songFile.text();
           const data = parseSingStarData(text);
-          if (!data) throw new Error('Failed to parse SingStar data.');
+          if (!data) throw new Error(t('importAlternateFormat.failedToParse'));
           partialSong = convertToSong(data, 'singstar');
           break;
         }
         case 'stepmania': {
           const text = await songFile.text();
           const data = parseStepMania(text);
-          if (!data) throw new Error('Failed to parse StepMania file.');
+          if (!data) throw new Error(t('importAlternateFormat.failedToParse'));
           partialSong = convertToSong(data, 'stepmania');
           break;
         }
         default:
-          throw new Error('Unsupported format.');
+          throw new Error(t('importAlternateFormat.unknownError'));
       }
 
       if (!partialSong || !partialSong.lyrics || partialSong.lyrics.length === 0) {
-        throw new Error('No lyric lines could be extracted from the file.');
+        throw new Error(t('importAlternateFormat.noLyricLines'));
       }
 
       // Revoke previous preview blob URLs to prevent memory leaks
@@ -169,11 +171,11 @@ export function AlternateFormatTab({
       if (song.audioUrl?.startsWith('blob:')) {
         previewBlobUrlRef.current = song.audioUrl;
       }
-      setStatusMessage(`Successfully imported "${song.title}" — ${song.lyrics.length} lyric lines`);
+      setStatusMessage(t('importAlternateFormat.importSuccess').replace('{title}', song.title).replace('{n}', String(song.lyrics.length)));
     } catch (err) {
       // H19: Revoke temporary blob URL on error
       if (tempBlobUrl) URL.revokeObjectURL(tempBlobUrl);
-      setError(err instanceof Error ? err.message : 'Unknown error during import.');
+      setError(err instanceof Error ? err.message : t('importAlternateFormat.unknownError'));
       setStatusMessage(null);
     } finally {
       setIsProcessing(false);
@@ -184,7 +186,7 @@ export function AlternateFormatTab({
     <div className="space-y-4">
       {/* Format selector */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-300">Song Format</label>
+        <label className="text-sm font-medium text-slate-300">{t('importAlternateFormat.songFormat')}</label>
         <div className="grid grid-cols-2 gap-2">
           {FORMATS.map(fmt => (
             <button
@@ -206,7 +208,7 @@ export function AlternateFormatTab({
 
       {/* Song file upload */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-300">Song File</label>
+        <label className="text-sm font-medium text-slate-300">{t('importAlternateFormat.songFile')}</label>
         <div
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
@@ -222,7 +224,7 @@ export function AlternateFormatTab({
               )}
             </div>
           ) : (
-            <div className="text-sm text-slate-500">Click or drag song file here</div>
+            <div className="text-sm text-slate-500">{t('importAlternateFormat.dropFile')}</div>
           )}
         </div>
         <input ref={songInputRef} type="file" className="hidden" onChange={(e) => e.target.files?.[0] && handleSongFileSelect(e.target.files[0])} />
@@ -230,7 +232,7 @@ export function AlternateFormatTab({
 
       {/* Optional audio file */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-300">Audio File (optional)</label>
+        <label className="text-sm font-medium text-slate-300">{t('importAlternateFormat.audioFile')}</label>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -238,16 +240,16 @@ export function AlternateFormatTab({
             onClick={() => audioInputRef.current?.click()}
             className="border-slate-600 text-xs"
           >
-            {audioFile ? audioFile.name : 'Select Audio...'}
+            {audioFile ? audioFile.name : t('importAlternateFormat.selectAudio')}
           </Button>
           {audioFile && (
             <Button variant="ghost" size="sm" onClick={() => setAudioFile(null)} className="text-xs text-red-400">
-              Remove
+              {t('importAlternateFormat.remove')}
             </Button>
           )}
         </div>
         <input ref={audioInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => setAudioFile(e.target.files?.[0] || null)} />
-        <p className="text-[10px] text-slate-500">Required for MIDI imports without embedded audio.</p>
+        <p className="text-[10px] text-slate-500">{t('importAlternateFormat.audioRequired')}</p>
       </div>
 
       {/* Process button */}
@@ -256,7 +258,7 @@ export function AlternateFormatTab({
         disabled={!songFile || !selectedFormat || isProcessing}
         className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 text-sm"
       >
-        {isProcessing ? 'Processing...' : `Import as ${FORMATS.find(f => f.id === selectedFormat)?.label || 'Song'}`}
+        {isProcessing ? t('importAlternateFormat.processing') : t('importAlternateFormat.importAs').replace('{format}', FORMATS.find(f => f.id === selectedFormat)?.label || 'Song')}
       </Button>
 
       {/* Status message */}
@@ -273,7 +275,7 @@ export function AlternateFormatTab({
             onClick={() => { addSong(previewSong); onImport(previewSong); }}
             className="flex-1 bg-green-500 hover:bg-green-400 text-sm"
           >
-            Add to Library
+            {t('importAlternateFormat.addToLibrary')}
           </Button>
           <Button
             variant="ghost"
@@ -287,7 +289,7 @@ export function AlternateFormatTab({
             }}
             className="text-slate-500 text-xs"
           >
-            Cancel
+            {t('importAlternateFormat.cancel')}
           </Button>
         </div>
       )}
