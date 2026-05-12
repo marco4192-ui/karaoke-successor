@@ -189,9 +189,9 @@ function SettingsScreen() {
 
   return (
     <div className={`theme-container w-full px-4 md:px-6 lg:px-8 ${activeTab === 'editor' && isEditorActive ? '' : 'max-w-7xl mx-auto'}`}>
-      {/* Header - centered, hidden when editor is actively editing a song */}
+      {/* Header - left-aligned, hidden when editor is actively editing a song */}
       {!isEditorActive && (
-        <div className="mb-8 text-center">
+        <div className="mb-8 text-left">
           <h1 className="text-3xl font-bold mb-2 theme-adaptive-text">{tx('settings.title')}</h1>
           <p className="theme-adaptive-text-muted">{tx('settings.subtitle')}</p>
         </div>
@@ -199,7 +199,7 @@ function SettingsScreen() {
 
       {/* Tab Bar - hidden when editor is actively editing a song */}
       {!isEditorActive && (
-        <div className="flex justify-center mb-6">
+        <div className="flex justify-start mb-6">
           <div className="inline-flex">
             <SettingsTabBar activeTab={activeTab} onTabChange={setActiveTab} tx={tx} />
           </div>

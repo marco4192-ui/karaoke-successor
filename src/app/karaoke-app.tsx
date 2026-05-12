@@ -316,9 +316,7 @@ export default function KaraokeZERO() {
       <main className={`${
         IMMERSIVE_SCREENS.has(screen)
           ? 'pt-0 px-0 pb-0 w-full h-full'
-          : isFullscreen
-            ? 'pt-4 px-4 pb-8 min-h-screen'
-            : 'pt-20 px-4 pb-8 min-h-screen'
+          : 'pt-20 px-4 pb-8 min-h-screen'
       }`}>
         {screen === 'home' && <HomeScreen onNavigate={setScreen} />}
         {screen === 'library' && (
