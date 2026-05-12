@@ -1,39 +1,34 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { X, Save, Music, FileText, Sparkles, FolderOpen, Film, Image as ImageIcon } from 'lucide-react';
-import type { Song, LyricLine, Note } from '@/types/game';
-import { v4 as uuidv4 } from 'uuid';
-import { parseLyricsToSyllables, syllablesToUltraStarNotes, type SyllableResult } from '@/lib/editor/syllable-separator';
+import { X, Save, Music, FileText, Sparkles, FolderOpen, Film, Image as ImageIcon, Activity } from 'lucide-react';
+import type { Song } from '@/types/game';
 import { isTauri } from '@/lib/tauri-file-storage';
 import { nativePickFileOpen } from '@/lib/native-fs';
-import { midiPitchToFrequency } from '@/lib/utils';
+import { GENRES, LANGUAGES } from '@/lib/constants';
+import { useAudioAnalysis } from '@/hooks/use-audio-analysis';
 
 interface NewSongDialogProps {
   onSave: (_song: Song) => void;
   onCancel: () => void;
 }
 
-import { GENRES, LANGUAGES } from '@/lib/constants';
-
 /**
  * New Song Dialog
- * 
+ *
  * Allows creating a brand new song from scratch:
  * 1. Enter metadata (title, artist, BPM, genre, language)
- * 2. Paste or type lyrics text
- * 3. Auto-syllabify lyrics into UltraStar note format
- * 4. Preview the generated notes
- * 5. Save as a new song in the library
+ * 2. Optionally select audio, video, and cover files
+ * 3. BPM can be detected automatically from the audio file
+ * 4. Song is created WITHOUT notes — use tap mode in the editor (Space) to add notes
  */
 export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
   // Metadata state
@@ -45,113 +40,38 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
   const [language, setLanguage] = useState('');
   const [edition, setEdition] = useState('');
 
-  // Lyrics state
-  const [lyricsText, setLyricsText] = useState('');
-  const [beatsPerSyllable, setBeatsPerSyllable] = useState(4);
-  const [beatsBetweenLines, setBeatsBetweenLines] = useState(8);
-  const [basePitch, setBasePitch] = useState(12); // UltraStar relative pitch (C4 area)
-
   // Media file paths (Tauri filesystem)
   const [audioPath, setAudioPath] = useState('');
   const [videoPath, setVideoPath] = useState('');
   const [coverPath, setCoverPath] = useState('');
 
   // UI state
-  const [syllableResult, setSyllableResult] = useState<SyllableResult | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Parse syllables when lyrics text changes
-  const handleLyricsChange = useCallback((text: string) => {
-    setLyricsText(text);
-    if (text.trim().length > 0) {
-      const result = parseLyricsToSyllables(text);
-      setSyllableResult(result);
-    } else {
-      setSyllableResult(null);
+  // Audio analysis for BPM detection
+  const { bpmResult, status: bpmStatus, error: bpmError, detectBpm } = useAudioAnalysis();
+
+  // Auto-fill BPM when detection completes
+  useEffect(() => {
+    if (bpmResult) {
+      setBpm(Math.round(bpmResult.bpm));
     }
-  }, []);
+  }, [bpmResult]);
 
-  // Generate UltraStar note preview
-  const notePreview = useMemo(() => {
-    if (!syllableResult) return [];
-    return syllablesToUltraStarNotes(
-      syllableResult,
-      0,
-      beatsPerSyllable,
-      beatsBetweenLines
-    );
-  }, [syllableResult, beatsPerSyllable, beatsBetweenLines]);
+  // Auto-fill duration when BPM detection completes (duration from audio)
+  const detectedDurationMs = bpmResult?.duration_ms ?? null;
 
-  // Generate Song object from the form data
+  // Generate Song object from the form data (NO notes)
   const generateSong = useCallback((): Song | null => {
     if (!title.trim() || !artist.trim()) {
       setError('Bitte Titel und Künstler angeben.');
       return null;
     }
 
-    // UltraStar beat duration: beatDuration = 15000 / BPM
-    const beatDuration = 15000 / bpm;
-    const MIDI_BASE_OFFSET = 48;
-
-    const lyrics: LyricLine[] = [];
-    let lineIndex = 0;
-
-    if (syllableResult && syllableResult.lines.length > 0) {
-      let currentBeat = 0;
-
-      for (const line of syllableResult.lines) {
-        const lineStartBeat = currentBeat;
-        const lineNotesArr: Note[] = [];
-
-        for (const word of line.words) {
-          for (let i = 0; i < word.syllables.length; i++) {
-            const isLastSyllable = i === word.syllables.length - 1;
-            const lyric = isLastSyllable ? `${word.syllables[i]} ` : word.syllables[i];
-
-            const startTime = gap + (currentBeat * beatDuration);
-            const duration = beatsPerSyllable * beatDuration;
-
-            lineNotesArr.push({
-              id: uuidv4(),
-              pitch: basePitch + MIDI_BASE_OFFSET,
-              frequency: midiPitchToFrequency(basePitch + MIDI_BASE_OFFSET),
-              startTime: Math.round(startTime),
-              duration: Math.round(duration),
-              lyric,
-              isBonus: false,
-              isGolden: false,
-            });
-
-            currentBeat += beatsPerSyllable;
-          }
-        }
-
-        const lineStartTime = gap + (lineStartBeat * beatDuration);
-        const lineEndTime = lineNotesArr.length > 0
-          ? lineNotesArr[lineNotesArr.length - 1].startTime + lineNotesArr[lineNotesArr.length - 1].duration
-          : lineStartTime + 2000;
-
-        const lineText = lineNotesArr.map(n => n.lyric).join('');
-
-        lyrics.push({
-          id: `line-${lineIndex}`,
-          text: lineText.trim(),
-          startTime: Math.round(lineStartTime),
-          endTime: Math.round(lineEndTime),
-          notes: lineNotesArr,
-        });
-
-        // Line break — beat progression already accounts for the gap
-        currentBeat += beatsBetweenLines;
-        lineIndex++;
-      }
-    }
-
-    const totalDuration = lyrics.length > 0
-      ? Math.max(...lyrics.map(l => l.endTime)) + 5000
-      : 180000;
+    const totalDuration = detectedDurationMs
+      ? detectedDurationMs + 5000
+      : 180000; // default 3 minutes when no audio loaded
 
     const song: Song = {
       id: `new-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
@@ -165,18 +85,16 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
       difficulty: 'medium',
       rating: 3,
       gap,
-      lyrics,
+      lyrics: [], // empty — notes are added via tap mode in the editor
       dateAdded: Date.now(),
-      // UltraStar TXT metadata
       mp3File: audioPath ? audioPath.split(/[/\\]/).pop() || 'song.mp3' : 'song.mp3',
-      // Tauri file paths
       ...(audioPath ? { relativeAudioPath: audioPath } : {}),
       ...(videoPath ? { relativeVideoPath: videoPath } : {}),
       ...(coverPath ? { relativeCoverPath: coverPath, coverImage: coverPath } : {}),
     };
 
     return song;
-  }, [title, artist, bpm, gap, genre, language, edition, syllableResult, beatsPerSyllable, beatsBetweenLines, basePitch, audioPath, videoPath, coverPath]);
+  }, [title, artist, bpm, gap, genre, language, edition, audioPath, videoPath, coverPath, detectedDurationMs]);
 
   // Handle save
   const handleSave = useCallback(async () => {
@@ -193,6 +111,12 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
       setIsSaving(false);
     }
   }, [generateSong, onSave]);
+
+  // Handle BPM detection
+  const handleDetectBpm = useCallback(() => {
+    if (!audioPath.trim()) return;
+    detectBpm(audioPath);
+  }, [audioPath, detectBpm]);
 
   // Pick a file using native Tauri command (bypass ACL) or browser fallback
   const pickFile = useCallback(async (fileType: 'audio' | 'video' | 'cover', setter: (_path: string) => void) => {
@@ -230,6 +154,7 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
   }, []);
 
   const isValid = title.trim().length > 0 && artist.trim().length > 0;
+  const isDetectingBpm = bpmStatus === 'loading' || bpmStatus === 'analyzing';
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
@@ -280,17 +205,48 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="new-bpm" className="text-slate-400 text-xs">BPM</Label>
-                <Input
-                  id="new-bpm"
-                  type="number"
-                  value={bpm}
-                  onChange={(e) => setBpm(parseFloat(e.target.value) || 120)}
-                  min={20}
-                  max={500}
-                  step={1}
-                  className="bg-slate-800 border-slate-600"
-                />
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="new-bpm"
+                    type="number"
+                    value={bpm}
+                    onChange={(e) => setBpm(parseFloat(e.target.value) || 120)}
+                    min={20}
+                    max={500}
+                    step={1}
+                    className="bg-slate-800 border-slate-600"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDetectBpm}
+                    disabled={!audioPath.trim() || isDetectingBpm}
+                    className="border-slate-600 text-slate-400 shrink-0 whitespace-nowrap"
+                    title={audioPath.trim() ? 'BPM automatisch aus Audiodatei erkennen' : 'Zuerst eine Audiodatei auswählen'}
+                  >
+                    {isDetectingBpm ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin mr-1.5" />
+                        Erkenne...
+                      </>
+                    ) : (
+                      <>
+                        <Activity className="w-3.5 h-3.5 mr-1.5" />
+                        BPM erkennen
+                      </>
+                    )}
+                  </Button>
+                </div>
                 <p className="text-xs text-slate-600">Beats pro Minute (UltraStar: Beats/4 Takte)</p>
+                {bpmError && (
+                  <p className="text-xs text-red-400">BPM-Erkennung fehlgeschlagen: {bpmError}</p>
+                )}
+                {bpmResult && !isDetectingBpm && (
+                  <p className="text-xs text-green-400">
+                    Erkannt: {Math.round(bpmResult.bpm)} BPM (Audiodauer: {(bpmResult.duration_ms / 1000).toFixed(1)}s)
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="new-gap" className="text-slate-400 text-xs">GAP (ms)</Label>
@@ -344,94 +300,7 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
 
           <Separator className="bg-slate-700" />
 
-          {/* Section 2: Lyrics Input */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-slate-400 flex items-center gap-2">
-              <Music className="w-4 h-4" /> Songtext
-            </h3>
-            <div className="space-y-2">
-              <Textarea
-                value={lyricsText}
-                onChange={(e) => handleLyricsChange(e.target.value)}
-                placeholder={`Gib hier den Songtext ein...\n\nJede Zeile wird zu einer Lyrics-Zeile.\nDie Wörter werden automatisch in Silben getrennt.\n\nBeispiel:\nWalking in the rain\nFeeling no pain\nNever going back again`}
-                className="bg-slate-800 border-slate-600 min-h-[200px] font-mono text-sm"
-              />
-              {syllableResult && (
-                <div className="flex items-center gap-4 text-xs text-slate-500">
-                  <span>{syllableResult.lines.length} Zeilen</span>
-                  <span>{syllableResult.totalSyllables} Silben</span>
-                  <span>{Math.round(syllableResult.totalSyllables * beatsPerSyllable * (15000 / bpm) / 1000)}s geschätzte Dauer</span>
-                </div>
-              )}
-            </div>
-
-            {/* Syllable Settings */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="beats-per-syllable" className="text-slate-400 text-xs">Beats pro Silbe</Label>
-                <Input
-                  id="beats-per-syllable"
-                  type="number"
-                  value={beatsPerSyllable}
-                  onChange={(e) => setBeatsPerSyllable(parseInt(e.target.value) || 4)}
-                  min={1}
-                  max={16}
-                  className="bg-slate-800 border-slate-600"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="beats-between-lines" className="text-slate-400 text-xs">Beats zwischen Zeilen</Label>
-                <Input
-                  id="beats-between-lines"
-                  type="number"
-                  value={beatsBetweenLines}
-                  onChange={(e) => setBeatsBetweenLines(parseInt(e.target.value) || 8)}
-                  min={1}
-                  max={32}
-                  className="bg-slate-800 border-slate-600"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="base-pitch" className="text-slate-400 text-xs">Basis-Tonhöhe (relativ)</Label>
-                <Input
-                  id="base-pitch"
-                  type="number"
-                  value={basePitch}
-                  onChange={(e) => setBasePitch(parseInt(e.target.value) || 12)}
-                  min={0}
-                  max={24}
-                  className="bg-slate-800 border-slate-600"
-                />
-                <p className="text-xs text-slate-600">0=C3, 12=C4, 24=C5</p>
-              </div>
-            </div>
-
-            {/* Preview Toggle */}
-            {notePreview.length > 0 && (
-              <div className="space-y-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowPreview(!showPreview)}
-                  className="border-slate-600 text-slate-400"
-                >
-                  {showPreview ? 'Vorschau ausblenden' : 'UltraStar Vorschau anzeigen'}
-                </Button>
-                {showPreview && (
-                  <div className="bg-slate-950 border border-slate-700 rounded-lg p-3 max-h-48 overflow-y-auto">
-                    <pre className="text-xs font-mono text-green-400 whitespace-pre-wrap">
-                      {notePreview.join('\n')}
-                    </pre>
-                    <div className="text-xs text-slate-500 mt-2">E</div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          <Separator className="bg-slate-700" />
-
-          {/* Section 3: Media Files */}
+          {/* Section 2: Media Files */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-slate-400 flex items-center gap-2">
               <FolderOpen className="w-4 h-4" /> Mediendateien
@@ -525,7 +394,7 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
               ) : (
                 <>
                   <Save className="w-4 h-4 mr-2" />
-                  Song erstellen & bearbeiten
+                  Song erstellen
                 </>
               )}
             </Button>
@@ -533,8 +402,7 @@ export function NewSongDialog({ onSave, onCancel }: NewSongDialogProps) {
 
           {/* Info text */}
           <div className="text-xs text-slate-600 space-y-1">
-            <p>Der Song wird mit der Silbentrennung als Notengerüst erstellt. Danach kannst du im Editor die Tonhöhen und Timings anpassen.</p>
-            <p>Tipp: Du kannst auch erst nur Metadaten eingeben und den Songtext später im Editor hinzufügen.</p>
+            <p>Der Song wird ohne Noten erstellt. Nutze im Editor den Tap-Modus (Leertaste während der Wiedergabe), um Noten manuell einzufügen.</p>
           </div>
         </CardContent>
       </Card>
