@@ -767,6 +767,7 @@ export const esTranslations = {
       backToSetup: '← Volver a Configuración',
       hitsMissesCombo: '{hits} aciertos • {misses} fallos • {combo}x Combo Máximo',
       hitsMissesComboRounds: '{hits} aciertos • {misses} fallos • {combo}x Mejor Combo • {rounds} rondas',
+      handOverMic: 'Pasa el micro :)',
       cumulative: 'Total: {n}',
       roundsPlayed: '{n} rondas jugadas',
       medleyLabel: '🎵 Popurrí — {n} Canciones'

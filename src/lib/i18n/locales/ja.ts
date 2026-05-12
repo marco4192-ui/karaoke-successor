@@ -560,6 +560,7 @@ export const jaTranslations = {
       backToSetup: '← セットアップに戻る',
       hitsMissesCombo: '{hits} ヒット • {misses} ミス • {combo}x 最大コンボ',
       hitsMissesComboRounds: '{hits} ヒット • {misses} ミス • {combo}x ベストコンボ • {rounds} ラウンド',
+      handOverMic: 'マイクを渡して :)',
       cumulative: '合計: {n}',
       roundsPlayed: '{n} ラウンドプレイ済み',
       medleyLabel: '🎵 メドレー — {n} 曲'

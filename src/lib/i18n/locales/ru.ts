@@ -767,6 +767,7 @@ export const ruTranslations = {
       backToSetup: '← Назад к настройке',
       hitsMissesCombo: '{hits} попаданий • {misses} промахов • {combo}x макс. комбо',
       hitsMissesComboRounds: '{hits} попаданий • {misses} промахов • {combo}x лучшее комбо • {rounds} раундов',
+      handOverMic: 'Передай микрофон :)',
       cumulative: 'Итого: {n}',
       roundsPlayed: 'Сыграно {n} раундов',
       medleyLabel: '🎵 Медли — {n} песен'

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== TYPES =====================
 
@@ -24,15 +25,14 @@ export interface PtmTransitionOverlayProps {
   onSkip?: () => void;
 }
 
-// ===================== TRANSITION OVERLAY =====================
-// Border-only blinking + brief name display.
-// The blinking starts ~2s before the previous player's segment ends,
-// so the overlay does NOT block gameplay during the blink phase.
-// When the segment actually ends, a brief name flash is shown.
+// ===================== TIMING =====================
 
-const BLINK_PHASE_MS = 2000; // Blinking duration (matches TRANSITION_LEAD_TIME in hook)
-const NAME_DISPLAY_MS = 800; // Brief name display
-const NAME_FADE_MS = 300; // Fade out
+const LEAD_PHASE_MS = 2000;       // Matches TRANSITION_LEAD_TIME in hook — subtle lead-in
+const TYPEWRITER_MS_PER_CHAR = 55; // Speed of letter-by-letter reveal
+const PROFILE_DISPLAY_MS = 1200;  // How long the player profile stays visible
+const PROFILE_FADE_MS = 400;      // Fade-out duration for profile
+
+// ===================== TRANSITION OVERLAY =====================
 
 export function PtmTransitionOverlay({
   visible,
@@ -41,62 +41,79 @@ export function PtmTransitionOverlay({
   onComplete,
   onSkip,
 }: PtmTransitionOverlayProps) {
-  const [phase, setPhase] = useState<'idle' | 'blinking' | 'showing' | 'fading'>('idle');
-  const [blinkCount, setBlinkCount] = useState(0);
-  const [nameOpacity, setNameOpacity] = useState(0);
+  const { t } = useTranslation();
+  const [phase, setPhase] = useState<'idle' | 'lead' | 'typing' | 'profile' | 'fading'>('idle');
+  const [visibleChars, setVisibleChars] = useState(0);
+  const [profileOpacity, setProfileOpacity] = useState(0);
+  const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const instructionText = t('passTheMic.handOverMic');
 
   // Reset and start animation when visible changes
   useEffect(() => {
     if (!visible || !nextPlayer) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- animation controller: reset state on visibility change
       setPhase('idle');
-      setBlinkCount(0);
-      setNameOpacity(0);
+      setVisibleChars(0);
+      setProfileOpacity(0);
+      if (typingIntervalRef.current) {
+        clearInterval(typingIntervalRef.current);
+        typingIntervalRef.current = null;
+      }
       return;
     }
 
-    // Phase 1: Border blinking (does NOT block gameplay — pointer-events-none)
-    setPhase('blinking');
-    setBlinkCount(0);
-    setNameOpacity(0);
+    // Phase 1: Lead-in (subtle, no heavy blinking — just a gentle glow pulse)
+    setPhase('lead');
+    setVisibleChars(0);
+    setProfileOpacity(0);
 
-    // Create blinks: each blink is flash-on (200ms) → flash-off (200ms)
-    // ~5 blinks over 2 seconds
-    const blinkTimers: ReturnType<typeof setTimeout>[] = [];
-    const blinkInterval = 400;
-    const totalBlinks = Math.floor(BLINK_PHASE_MS / blinkInterval);
-    for (let i = 0; i < totalBlinks; i++) {
-      const baseTime = i * blinkInterval;
-      blinkTimers.push(setTimeout(() => setBlinkCount(prev => prev + 1), baseTime));
-      blinkTimers.push(setTimeout(() => setBlinkCount(prev => prev + 1), baseTime + 200));
-    }
+    // Phase 2: Typewriter text reveal
+    const typingStart = setTimeout(() => {
+      setPhase('typing');
+      let charIdx = 0;
+      typingIntervalRef.current = setInterval(() => {
+        charIdx++;
+        setVisibleChars(charIdx);
+        if (charIdx >= instructionText.length) {
+          if (typingIntervalRef.current) {
+            clearInterval(typingIntervalRef.current);
+            typingIntervalRef.current = null;
+          }
+        }
+      }, TYPEWRITER_MS_PER_CHAR);
+    }, LEAD_PHASE_MS);
 
-    // Phase 2: Show player name briefly
-    const showTimer = setTimeout(() => {
-      setPhase('showing');
-      setNameOpacity(1);
-    }, BLINK_PHASE_MS);
+    // Phase 3: Show player profile
+    const typingDuration = instructionText.length * TYPEWRITER_MS_PER_CHAR;
+    const profileStart = setTimeout(() => {
+      setPhase('profile');
+      setProfileOpacity(1);
+    }, LEAD_PHASE_MS + typingDuration + 300);
 
-    // Phase 3: Fade out name
-    const fadeTimer = setTimeout(() => {
+    // Phase 4: Fade out
+    const fadeStart = setTimeout(() => {
       setPhase('fading');
-      setNameOpacity(0);
-    }, BLINK_PHASE_MS + NAME_DISPLAY_MS);
+      setProfileOpacity(0);
+    }, LEAD_PHASE_MS + typingDuration + 300 + PROFILE_DISPLAY_MS);
 
     // Complete
-    const completeTimer = setTimeout(() => {
+    const completeStart = setTimeout(() => {
       setPhase('idle');
-      setNameOpacity(0);
+      setProfileOpacity(0);
       onComplete?.();
-    }, BLINK_PHASE_MS + NAME_DISPLAY_MS + NAME_FADE_MS);
+    }, LEAD_PHASE_MS + typingDuration + 300 + PROFILE_DISPLAY_MS + PROFILE_FADE_MS);
 
     return () => {
-      blinkTimers.forEach(clearTimeout);
-      clearTimeout(showTimer);
-      clearTimeout(fadeTimer);
-      clearTimeout(completeTimer);
+      clearTimeout(typingStart);
+      clearTimeout(profileStart);
+      clearTimeout(fadeStart);
+      clearTimeout(completeStart);
+      if (typingIntervalRef.current) {
+        clearInterval(typingIntervalRef.current);
+        typingIntervalRef.current = null;
+      }
     };
-  }, [visible, nextPlayer, onComplete]);
+  }, [visible, nextPlayer, onComplete, instructionText]);
 
   // Space to skip
   useEffect(() => {
@@ -104,87 +121,160 @@ export function PtmTransitionOverlay({
     const handleKey = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
         e.preventDefault();
-        setPhase('idle');
-        setNameOpacity(0);
-        onSkip?.();
+        skip();
       }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [visible, onSkip]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- skip is stable via ref pattern
+  }, [visible]);
+
+  const skip = useCallback(() => {
+    setPhase('idle');
+    setVisibleChars(0);
+    setProfileOpacity(0);
+    if (typingIntervalRef.current) {
+      clearInterval(typingIntervalRef.current);
+      typingIntervalRef.current = null;
+    }
+    onSkip?.();
+  }, [onSkip]);
 
   // Click to skip
   const handleClick = useCallback(() => {
     if (!visible) return;
-    setPhase('idle');
-    setNameOpacity(0);
-    onSkip?.();
-  }, [visible, onSkip]);
+    skip();
+  }, [visible, skip]);
 
   if (!visible || !nextPlayer || phase === 'idle') return null;
 
-  const isFlashOn = blinkCount % 2 === 1;
-  const isBlinking = phase === 'blinking';
-  const isShowing = phase === 'showing';
+  const isLead = phase === 'lead';
+  const isTyping = phase === 'typing';
+  const isProfile = phase === 'profile';
   const isFading = phase === 'fading';
-
-  // Border glow intensity
-  const borderGlowOpacity = isBlinking && isFlashOn ? 0.8 : 0;
-  const borderGlowWidth = isBlinking ? 12 : 0;
+  const showProfile = isProfile || isFading;
+  const displayText = instructionText.slice(0, visibleChars);
+  const isTypingDone = visibleChars >= instructionText.length;
 
   return (
     <div
-      className="fixed inset-0 z-[60] pointer-events-none select-none"
-      style={{ cursor: 'default' }}
+      className="fixed inset-0 z-[60] pointer-events-auto cursor-pointer select-none"
+      onClick={handleClick}
     >
-      {/* Border glow — only at edges, no full-screen blackout */}
-      <div
-        className="absolute inset-0 pointer-events-auto cursor-pointer"
-        style={{
-          boxShadow: borderGlowOpacity > 0
-            ? `inset 0 0 ${borderGlowWidth}px ${borderGlowWidth}px ${nextPlayer.color}`
-            : 'none',
-          opacity: borderGlowOpacity,
-          transition: 'opacity 0.15s ease-in-out',
-        }}
-        onClick={handleClick}
-      />
-
-      {/* Player name — centered, brief display during showing/fading phase */}
-      {(isShowing || isFading) && (
+      {/* Dark backdrop — only during typing/profile/fading, not during lead-in */}
+      {!isLead && (
         <div
-          className="absolute inset-0 flex items-center justify-center pointer-events-auto cursor-pointer"
-          onClick={handleClick}
-          style={{ opacity: nameOpacity, transition: isFading ? `opacity ${NAME_FADE_MS}ms ease-out` : 'none' }}
-        >
-          <div className="flex flex-col items-center bg-black/60 rounded-2xl px-8 py-4 backdrop-blur-sm">
-            {nextPlayer.avatar ? (
-              <img
-                src={nextPlayer.avatar}
-                alt={nextPlayer.name}
-                className="w-16 h-16 rounded-full object-cover border-2 mb-2"
-                style={{ borderColor: nextPlayer.color }}
-              />
-            ) : (
-              <div
-                className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold border-2 mb-2 text-white"
-                style={{ backgroundColor: nextPlayer.color, borderColor: nextPlayer.color }}
-              >
-                {nextPlayer.name.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <div
-              className="text-2xl font-bold text-white"
-              style={{ textShadow: `0 0 20px ${nextPlayer.color}88` }}
-            >
-              {nextPlayer.name}
-            </div>
-            {_segmentLabel && (
-              <div className="text-xs text-white/40 mt-1">{_segmentLabel}</div>
-            )}
-          </div>
-        </div>
+          className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+          style={{
+            opacity: isTyping ? 1 : profileOpacity,
+            transition: isFading ? `opacity ${PROFILE_FADE_MS}ms ease-out` : 'opacity 0.3s ease-in',
+          }}
+        />
       )}
+
+      {/* Lead-in: subtle border glow (no blinking!) */}
+      {isLead && (
+        <div
+          className="absolute inset-0"
+          style={{
+            boxShadow: `inset 0 0 16px 4px ${nextPlayer.color}`,
+            opacity: 0.6,
+            animation: 'ptm-lead-pulse 0.8s ease-in-out infinite alternate',
+          }}
+        />
+      )}
+
+      {/* Content area — positioned above center (upper portion of screen) */}
+      <div className="absolute inset-0 flex flex-col items-center justify-start pt-[25%]">
+        {/* Typewriter text — centered above the profile */}
+        {(isTyping || isLead) && (
+          <div className="relative z-10">
+            {/* Instruction text */}
+            <div
+              className="text-2xl md:text-3xl font-bold text-white text-center px-6"
+              style={{
+                textShadow: `0 0 30px ${nextPlayer.color}66, 0 2px 4px rgba(0,0,0,0.8)`,
+                opacity: isLead ? 0 : 1,
+                transition: 'opacity 0.2s',
+              }}
+            >
+              {displayText}
+              {/* Blinking cursor while typing */}
+              {isTyping && !isTypingDone && (
+                <span
+                  className="inline-block w-0.5 h-6 md:h-7 bg-white ml-1 align-middle"
+                  style={{
+                    animation: 'ptm-cursor-blink 0.5s step-end infinite',
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Player profile — fades in after typing is complete */}
+        {showProfile && (
+          <div
+            className="relative z-10 flex flex-col items-center mt-6"
+            style={{
+              opacity: profileOpacity,
+              transform: profileOpacity < 1 ? 'translateY(10px)' : 'translateY(0)',
+              transition: isFading
+                ? `opacity ${PROFILE_FADE_MS}ms ease-out, transform ${PROFILE_FADE_MS}ms ease-out`
+                : 'opacity 0.4s ease-in, transform 0.4s ease-out',
+            }}
+          >
+            <div className="bg-white/5 border border-white/10 rounded-2xl px-8 py-5 backdrop-blur-md flex flex-col items-center gap-3">
+              {/* Avatar */}
+              {nextPlayer.avatar ? (
+                <img
+                  src={nextPlayer.avatar}
+                  alt={nextPlayer.name}
+                  className="w-20 h-20 rounded-full object-cover border-3"
+                  style={{
+                    borderColor: nextPlayer.color,
+                    boxShadow: `0 0 20px ${nextPlayer.color}44`,
+                  }}
+                />
+              ) : (
+                <div
+                  className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold border-3 text-white"
+                  style={{
+                    backgroundColor: nextPlayer.color,
+                    borderColor: nextPlayer.color,
+                    boxShadow: `0 0 20px ${nextPlayer.color}44`,
+                  }}
+                >
+                  {nextPlayer.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              {/* Name */}
+              <div
+                className="text-2xl font-bold text-white"
+                style={{ textShadow: `0 0 20px ${nextPlayer.color}88` }}
+              >
+                {nextPlayer.name}
+              </div>
+              {/* Segment label */}
+              {_segmentLabel && (
+                <div className="text-xs text-white/40">{_segmentLabel}</div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Inline keyframes for animations */}
+      <style>{`
+        @keyframes ptm-cursor-blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
+        @keyframes ptm-lead-pulse {
+          from { opacity: 0.3; }
+          to { opacity: 0.7; }
+        }
+      `}</style>
     </div>
   );
 }

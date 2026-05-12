@@ -767,6 +767,7 @@ export const fiTranslations = {
       backToSetup: '← Takaisin asetuksiin',
       hitsMissesCombo: '{hits} osumaa • {misses} huti • {combo}x Max Combo',
       hitsMissesComboRounds: '{hits} osumaa • {misses} huti • {combo}x Paras Combo • {rounds} kierrosta',
+      handOverMic: 'Anna mikrofoni eteenpäin :)',
       cumulative: 'Yhteensä: {n}',
       roundsPlayed: '{n} kierrosta pelattu',
       medleyLabel: '🎵 Medley — {n} kappaletta'

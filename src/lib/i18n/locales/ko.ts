@@ -767,6 +767,7 @@ export const koTranslations = {
       backToSetup: '← 설정으로 돌아가기',
       hitsMissesCombo: '{hits} 히트 • {misses} 미스 • {combo}x 최대 콤보',
       hitsMissesComboRounds: '{hits} 히트 • {misses} 미스 • {combo}x 최고 콤보 • {rounds} 라운드',
+      handOverMic: '마이크를 넘겨주세요 :)',
       cumulative: '합계: {n}',
       roundsPlayed: '{n}라운드 플레이됨',
       medleyLabel: '🎵 메들리 — {n}곡'

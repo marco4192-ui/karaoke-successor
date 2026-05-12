@@ -767,6 +767,7 @@ export const nlTranslations = {
       backToSetup: '← Terug naar instellingen',
       hitsMissesCombo: '{hits} raak • {misses} mis • {combo}x Max Combo',
       hitsMissesComboRounds: '{hits} raak • {misses} mis • {combo}x Beste Combo • {rounds} rondes',
+      handOverMic: 'Geef de microfoon door :)',
       cumulative: 'Totaal: {n}',
       roundsPlayed: '{n} rondes gespeeld',
       medleyLabel: '🎵 Medley — {n} nummers'

@@ -769,6 +769,7 @@ export const deTranslations = {
       backToSetup: '← Zurück zum Setup',
       hitsMissesCombo: '{hits} Treffer • {misses} Fehlgriffe • {combo}x Max. Combo',
       hitsMissesComboRounds: '{hits} Treffer • {misses} Fehlgriffe • {combo}x beste Combo • {rounds} Runden',
+      handOverMic: 'Gib das Mikro weiter an :)',
       cumulative: 'Gesamt: {n}',
       roundsPlayed: '{n} Runden gespielt',
       medleyLabel: '🎵 Medley — {n} Lieder'

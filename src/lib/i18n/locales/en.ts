@@ -769,6 +769,7 @@ export const enTranslations = {
       backToSetup: '← Back to Setup',
       hitsMissesCombo: '{hits} hits • {misses} misses • {combo}x Max Combo',
       hitsMissesComboRounds: '{hits} hits • {misses} misses • {combo}x Best Combo • {rounds} rounds',
+      handOverMic: 'Pass the mic on :)',
       cumulative: 'Total: {n}',
       roundsPlayed: '{n} rounds played',
       medleyLabel: '🎵 Medley — {n} Songs'

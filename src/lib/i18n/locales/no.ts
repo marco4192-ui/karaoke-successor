@@ -767,6 +767,7 @@ export const noTranslations = {
       backToSetup: '← Tilbake til oppsett',
       hitsMissesCombo: '{hits} treff • {misses} bom • {combo}x maks Combo',
       hitsMissesComboRounds: '{hits} treff • {misses} bom • {combo}x beste Combo • {rounds} runder',
+      handOverMic: 'Gi fra deg mikrofonen :)',
       cumulative: 'Totalt: {n}',
       roundsPlayed: '{n} runder spilt',
       medleyLabel: '🎵 Medley — {n} sanger'

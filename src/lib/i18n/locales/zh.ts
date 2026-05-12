@@ -767,6 +767,7 @@ export const zhTranslations = {
       backToSetup: '← 返回设置',
       hitsMissesCombo: '{hits}命中 • {misses}失误 • {combo}x最高连击',
       hitsMissesComboRounds: '{hits}命中 • {misses}失误 • {combo}x最高连击 • {rounds}轮',
+      handOverMic: '把麦克风传下去 :)',
       cumulative: '合计: {n}',
       roundsPlayed: '已进行{n}轮',
       medleyLabel: '🎵 混唱 — {n}首'

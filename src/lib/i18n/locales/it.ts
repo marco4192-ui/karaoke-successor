@@ -767,6 +767,7 @@ export const itTranslations = {
       backToSetup: '← Torna alla Configurazione',
       hitsMissesCombo: '{hits} centrati • {misses} sbagliati • {combo}x Combo Max',
       hitsMissesComboRounds: '{hits} centrati • {misses} sbagliati • {combo}x Miglior Combo • {rounds} turni',
+      handOverMic: 'Passa il micro :)',
       cumulative: 'Totale: {n}',
       roundsPlayed: '{n} turni giocati',
       medleyLabel: '🎵 Medley — {n} Canzoni'

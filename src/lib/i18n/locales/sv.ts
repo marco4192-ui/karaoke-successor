@@ -767,6 +767,7 @@ export const svTranslations = {
       backToSetup: '← Tillbaka till Inställning',
       hitsMissesCombo: '{hits} träffar • {misses} missar • {combo}x Max Combo',
       hitsMissesComboRounds: '{hits} träffar • {misses} missar • {combo}x Bästa Combo • {rounds} omgångar',
+      handOverMic: 'Ge över micken :)',
       cumulative: 'Totalt: {n}',
       roundsPlayed: '{n} omgångar spelade',
       medleyLabel: '🎵 Medley — {n} Låtar'
