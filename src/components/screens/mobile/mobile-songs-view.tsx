@@ -1,7 +1,10 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MusicIcon } from '@/components/icons';
+import { useTranslation } from '@/lib/i18n/translations';
 import type { MobileSong} from './mobile-types';
 
 interface SongsViewProps {
@@ -37,6 +40,8 @@ export function MobileSongsView({
   onLoadPartners,
   formatDuration,
 }: SongsViewProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="p-4">
       {/* Search */}
@@ -46,7 +51,7 @@ export function MobileSongsView({
           name="song-search-modal"
           value={songSearch}
           onChange={(e) => onSongSearchChange(e.target.value)}
-          placeholder="Songs suchen..."
+          placeholder={t('mobileViews.searchPlaceholder')}
           className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
         />
       </div>
@@ -61,7 +66,7 @@ export function MobileSongsView({
           <CardContent className="space-y-4">
             {/* Game Mode Selection */}
             <div>
-              <label className="text-sm text-white/60 mb-2 block">Game Mode</label>
+              <label className="text-sm text-white/60 mb-2 block">{t('mobileViews.gameMode')}</label>
               <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => onSelectGameMode('single')}
@@ -72,7 +77,7 @@ export function MobileSongsView({
                   }`}
                 >
                   <span className="text-2xl block mb-1">🎤</span>
-                  <span className="text-xs">Single</span>
+                  <span className="text-xs">{t('mobileViews.gameModeSingle')}</span>
                 </button>
                 <button
                   onClick={() => onSelectGameMode('duel')}
@@ -83,7 +88,7 @@ export function MobileSongsView({
                   }`}
                 >
                   <span className="text-2xl block mb-1">⚔️</span>
-                  <span className="text-xs">Duel</span>
+                  <span className="text-xs">{t('mobileViews.gameModeDuel')}</span>
                 </button>
                 <button
                   onClick={() => onSelectGameMode('duet')}
@@ -94,7 +99,7 @@ export function MobileSongsView({
                   }`}
                 >
                   <span className="text-2xl block mb-1">🎭</span>
-                  <span className="text-xs">Duet</span>
+                  <span className="text-xs">{t('mobileViews.gameModeDuet')}</span>
                 </button>
               </div>
             </div>
@@ -103,7 +108,7 @@ export function MobileSongsView({
             {(selectedGameMode === 'duel' || selectedGameMode === 'duet') && (
               <div>
                 <label className="text-sm text-white/60 mb-2 block">
-                  Partner (optional)
+                  {t('mobileViews.partnerOptional')}
                 </label>
                 {availablePartners.length > 0 ? (
                   <div className="space-y-2 max-h-32 overflow-y-auto">
@@ -129,7 +134,7 @@ export function MobileSongsView({
                   </div>
                 ) : (
                   <p className="text-sm text-white/40 py-2">
-                    No other companions connected. You can still add without a partner.
+                    {t('mobileViews.noPartner')}
                   </p>
                 )}
               </div>
@@ -146,13 +151,13 @@ export function MobileSongsView({
                 }}
                 className="flex-1 border-white/20"
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 onClick={() => onAddToQueue(showSongOptions)}
                 className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500"
               >
-                Add to Queue
+                {t('song.addToQueue')}
               </Button>
             </div>
           </CardContent>
@@ -163,7 +168,7 @@ export function MobileSongsView({
       {songsLoading ? (
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full mr-2" />
-          <span className="text-white/60">Loading songs...</span>
+          <span className="text-white/60">{t('common.loading')}</span>
         </div>
       ) : (
         <div className="space-y-2 pb-4">
@@ -180,7 +185,7 @@ export function MobileSongsView({
                 }}
                 className="bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 text-white flex items-center justify-center flex-shrink-0 text-xl font-bold rounded-lg transition-colors"
                 style={{ width: '2.25rem', height: '2.25rem', minWidth: '2.25rem', minHeight: '2.25rem' }}
-                aria-label="Song zur Warteschlange hinzufügen"
+                aria-label={t('mobileViews.songAdded')}
               >
                 +
               </button>
@@ -212,7 +217,7 @@ export function MobileSongsView({
           {filteredSongs.length === 0 && (
             <div className="text-center py-12 text-white/40">
               <p className="text-lg mb-1">🎵</p>
-              Keine Songs gefunden
+              {t('mobileViews.noSongsFound')}
             </div>
           )}
         </div>

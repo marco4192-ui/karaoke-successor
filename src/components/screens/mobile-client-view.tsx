@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StorageKeys, setItem, setJson, removeItem } from '@/lib/storage';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // Types & constants
 import type { MobileView, MobileProfile } from './mobile/mobile-types';
@@ -35,6 +36,7 @@ interface MobileClientViewProps {
 }
 
 export function MobileClientView({ profileId }: MobileClientViewProps) {
+  const { t } = useTranslation();
   const [currentView, setCurrentView] = useState<MobileView>('home');
   const [profile, setProfile] = useState<MobileProfile | null>(null);
   const [profileName, setProfileName] = useState('');
@@ -291,7 +293,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             {profile && currentView !== 'home' && (
-              <button onClick={() => setCurrentView('home')} className="text-white/60 hover:text-white">← Back</button>
+              <button onClick={() => setCurrentView('home')} className="text-white/60 hover:text-white">{t('mobileClient.back')}</button>
             )}
             <h1 className="text-lg font-bold">Karaoke ZERO</h1>
           </div>
@@ -302,7 +304,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
               <button
                 onClick={handleDisconnect}
                 className="text-white/40 hover:text-red-400 text-xs transition-colors"
-                title="Verbindung trennen"
+                title={t('mobileClient.disconnect')}
               >
                 ✕
               </button>
@@ -319,9 +321,9 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       {!isConnected ? (
         <div className="flex flex-col items-center justify-center p-8">
           <div className="animate-spin w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full mb-4" />
-          <p className="text-white/60 mb-4">Connecting to server...</p>
+          <p className="text-white/60 mb-4">{t('mobileClient.connecting')}</p>
           {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
-          <Button onClick={connect} className="bg-cyan-500 hover:bg-cyan-400">Retry Connection</Button>
+          <Button onClick={connect} className="bg-cyan-500 hover:bg-cyan-400">{t('mobileClient.retryConnection')}</Button>
         </div>
       ) : !profile ? (
         <MobileProfileCreateView
@@ -385,6 +387,7 @@ interface SingalongOverlayProps {
 }
 
 function SingalongOverlay({ isMyTurn, countdown }: SingalongOverlayProps) {
+  const { t } = useTranslation();
   const [flashVisible, setFlashVisible] = useState(false);
 
   // Flash briefly when countdown changes (new turn)
@@ -408,7 +411,7 @@ function SingalongOverlay({ isMyTurn, countdown }: SingalongOverlayProps) {
       <div className={`fixed inset-0 z-50 flex items-center justify-center transition-all duration-100 ${flashVisible ? 'bg-emerald-500' : 'bg-emerald-900/95'}`}>
         <div className="text-center">
           <div className="text-[12rem] font-bold text-white leading-none animate-pulse">{countdown}</div>
-          <div className="text-2xl font-bold text-emerald-200 mt-4 animate-pulse">GET READY!</div>
+          <div className="text-2xl font-bold text-emerald-200 mt-4 animate-pulse">{t('mobileClient.getReady')}</div>
         </div>
       </div>
     );
@@ -420,7 +423,7 @@ function SingalongOverlay({ isMyTurn, countdown }: SingalongOverlayProps) {
       <div className={`fixed inset-0 z-50 flex items-center justify-center pointer-events-none transition-all duration-300 ${flashVisible ? 'bg-emerald-500/40' : 'bg-transparent'}`}>
         <div className="absolute top-4 left-0 right-0 text-center">
           <div className="inline-block bg-emerald-500/90 text-white px-6 py-2 rounded-full text-lg font-bold animate-pulse">
-            🎤 YOU&apos;RE SINGING!
+            🎤 {t('mobileClient.youreSinging')}
           </div>
         </div>
       </div>

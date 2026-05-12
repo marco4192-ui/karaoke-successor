@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslation } from '@/lib/i18n/translations';
 import type { MobileProfile } from './mobile-types';
 
 // ===================== REMOTE CONTROL VIEW =====================
@@ -14,6 +15,7 @@ export function RemoteControlView({
   profile: MobileProfile | null;
   onBack: () => void;
 }) {
+  const { t } = useTranslation();
   const [remoteState, setRemoteState] = useState<{
     hasControl: boolean;
     lockedBy: string | null;
@@ -199,9 +201,9 @@ export function RemoteControlView({
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Button variant="ghost" size="sm" onClick={onBack} className="text-white/60">
-          ← Back
+          {t('remoteControl.back')}
         </Button>
-        <h2 className="text-xl font-bold">🎮 Remote Control</h2>
+        <h2 className="text-xl font-bold">{t('remoteControl.title')}</h2>
       </div>
       
       {/* Status Card */}
@@ -210,37 +212,37 @@ export function RemoteControlView({
           {remoteState.hasControl ? (
             <div className="text-center">
               <div className="text-3xl mb-2">🎮</div>
-              <p className="font-semibold text-cyan-400">You have control!</p>
-              <p className="text-sm text-white/40 mt-1">You can now control the main app</p>
+              <p className="font-semibold text-cyan-400">{t('remoteControl.youHaveControl')}</p>
+              <p className="text-sm text-white/40 mt-1">{t('remoteControl.canControl')}</p>
               <Button 
                 onClick={releaseControl}
                 variant="outline"
                 className="mt-4 border-red-500/50 text-red-400 hover:bg-red-500/10"
               >
-                Release Control
+                {t('remoteControl.releaseControl')}
               </Button>
             </div>
           ) : remoteState.lockedBy ? (
             <div className="text-center">
               <div className="text-3xl mb-2">🔒</div>
-              <p className="font-semibold text-orange-400">Control is locked</p>
+              <p className="font-semibold text-orange-400">{t('remoteControl.controlLocked')}</p>
               <p className="text-sm text-white/40 mt-1">
-                {remoteState.lockedByName} is currently controlling the app
+                {remoteState.lockedByName} {t('remoteControl.isControlling')}
               </p>
               <p className="text-xs text-white/30 mt-2">
-                Wait for them to release control
+                {t('remoteControl.waitForRelease')}
               </p>
             </div>
           ) : (
             <div className="text-center">
               <div className="text-3xl mb-2">🔓</div>
-              <p className="font-semibold text-white/60">Remote control available</p>
+              <p className="font-semibold text-white/60">{t('remoteControl.remoteAvailable')}</p>
               <Button 
                 onClick={acquireControl}
                 className="mt-4 bg-gradient-to-r from-cyan-500 to-purple-500"
                 disabled={remoteState.isLoading}
               >
-                {remoteState.isLoading ? 'Acquiring...' : 'Take Control'}
+                {remoteState.isLoading ? t('remoteControl.acquiring') : t('remoteControl.takeControl')}
               </Button>
               {remoteState.error && (
                 <p className="text-red-400 text-sm mt-2">{remoteState.error}</p>
@@ -261,7 +263,7 @@ export function RemoteControlView({
                 onClick={acquireControl}
                 className="mt-2 w-full bg-gradient-to-r from-cyan-500 to-purple-500 text-sm"
               >
-                Reconnect
+                {t('remoteControl.reconnect')}
               </Button>
             )}
           </div>
@@ -270,7 +272,7 @@ export function RemoteControlView({
         {/* Transport Controls */}
         <Card className="bg-white/5 border-white/10">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Playback Control</CardTitle>
+            <CardTitle className="text-sm">{t('remoteControl.playbackControl')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-4 gap-2">
@@ -280,7 +282,7 @@ export function RemoteControlView({
                 className={`h-16 flex flex-col border-white/20 ${commandSent === 'previous' ? 'bg-cyan-500/30' : ''}`}
               >
                 <span className="text-xl">⏮️</span>
-                <span className="text-xs">Prev</span>
+                <span className="text-xs">{t('remoteControl.prev')}</span>
               </Button>
               <Button
                 onClick={() => sendCommand('play')}
@@ -288,7 +290,7 @@ export function RemoteControlView({
                 className={`h-16 flex flex-col border-white/20 ${commandSent === 'play' ? 'bg-green-500/30' : ''}`}
               >
                 <span className="text-xl">▶️</span>
-                <span className="text-xs">Play</span>
+                <span className="text-xs">{t('remoteControl.play')}</span>
               </Button>
               <Button
                 onClick={() => sendCommand('pause')}
@@ -296,7 +298,7 @@ export function RemoteControlView({
                 className={`h-16 flex flex-col border-white/20 ${commandSent === 'pause' ? 'bg-yellow-500/30' : ''}`}
               >
                 <span className="text-xl">⏸️</span>
-                <span className="text-xs">Pause</span>
+                <span className="text-xs">{t('remoteControl.pause')}</span>
               </Button>
               <Button
                 onClick={() => sendCommand('next')}
@@ -304,7 +306,7 @@ export function RemoteControlView({
                 className={`h-16 flex flex-col border-white/20 ${commandSent === 'next' ? 'bg-cyan-500/30' : ''}`}
               >
                 <span className="text-xl">⏭️</span>
-                <span className="text-xs">Next</span>
+                <span className="text-xs">{t('remoteControl.next')}</span>
               </Button>
             </div>
             
@@ -316,7 +318,7 @@ export function RemoteControlView({
                 className={`h-12 flex items-center gap-2 border-red-500/30 ${commandSent === 'stop' ? 'bg-red-500/30' : ''}`}
               >
                 <span>⏹️</span>
-                <span>Stop</span>
+                <span>{t('remoteControl.stop')}</span>
               </Button>
               <Button
                 onClick={() => sendCommand('restart')}
@@ -324,7 +326,7 @@ export function RemoteControlView({
                 className={`h-12 flex items-center gap-2 border-purple-500/30 ${commandSent === 'restart' ? 'bg-purple-500/30' : ''}`}
               >
                 <span>🔄</span>
-                <span>Restart</span>
+                <span>{t('remoteControl.restart')}</span>
               </Button>
             </div>
           </CardContent>
@@ -333,7 +335,7 @@ export function RemoteControlView({
         {/* Navigation Controls */}
         <Card className="bg-white/5 border-white/10">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Navigation</CardTitle>
+            <CardTitle className="text-sm">{t('remoteControl.navigation')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-3 gap-2 mb-2">
@@ -343,7 +345,7 @@ export function RemoteControlView({
                 className={`h-14 flex flex-col border-white/20 ${commandSent === 'home' ? 'bg-cyan-500/30' : ''}`}
               >
                 <span className="text-xl">🏠</span>
-                <span className="text-xs">Home</span>
+                <span className="text-xs">{t('remoteControl.home')}</span>
               </Button>
               <Button
                 onClick={() => sendCommand('library')}
@@ -351,7 +353,7 @@ export function RemoteControlView({
                 className={`h-14 flex flex-col border-white/20 ${commandSent === 'library' ? 'bg-cyan-500/30' : ''}`}
               >
                 <span className="text-xl">📚</span>
-                <span className="text-xs">Library</span>
+                <span className="text-xs">{t('remoteControl.library')}</span>
               </Button>
               <Button
                 onClick={() => sendCommand('settings')}
@@ -359,7 +361,7 @@ export function RemoteControlView({
                 className={`h-14 flex flex-col border-white/20 ${commandSent === 'settings' ? 'bg-cyan-500/30' : ''}`}
               >
                 <span className="text-xl">⚙️</span>
-                <span className="text-xs">Settings</span>
+                <span className="text-xs">{t('remoteControl.settings')}</span>
               </Button>
             </div>
             {/* Directional Controls */}
@@ -407,8 +409,8 @@ export function RemoteControlView({
         
         {/* Info */}
         <div className="text-center text-xs text-white/40 mt-4">
-          <p>Only one device can control the app at a time.</p>
-          <p>Commands are sent to the main screen instantly.</p>
+          <p>{t('remoteControl.oneDevice')}</p>
+          <p>{t('remoteControl.instantCommands')}</p>
         </div>
       </div>
 

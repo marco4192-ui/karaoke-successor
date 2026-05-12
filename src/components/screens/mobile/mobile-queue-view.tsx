@@ -1,5 +1,8 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from '@/lib/i18n/translations';
 import type { QueueItem, MobileView } from './mobile-types';
 
 interface QueueViewProps {
@@ -12,13 +15,15 @@ interface QueueViewProps {
 }
 
 export function MobileQueueView({ queue, slotsRemaining, queueError, onNavigate, onRemoveFromQueue, clientId }: QueueViewProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="p-4">
       {/* Queue Header with Slots */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">Song Queue</h2>
+        <h2 className="text-lg font-semibold">{t('mobileViews.queueTitle')}</h2>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-white/40">Slots:</span>
+          <span className="text-sm text-white/40">{t('mobileViews.slots')}</span>
           <div className="flex gap-1">
             {[1, 2, 3].map((slot) => (
               <div 
@@ -40,14 +45,14 @@ export function MobileQueueView({ queue, slotsRemaining, queueError, onNavigate,
       {queue.length === 0 ? (
         <div className="text-center py-12 text-white/40">
           <span className="text-4xl mb-4 block">📋</span>
-          <p>No songs in queue</p>
-          <p className="text-sm mt-2">You can add up to 3 songs</p>
+          <p>{t('mobileViews.noSongsQueue')}</p>
+          <p className="text-sm mt-2">{t('mobileViews.canAddUpTo3')}</p>
           <Button 
             onClick={() => onNavigate('songs')}
             variant="outline"
             className="mt-4 border-white/20 text-white"
           >
-            Browse Songs
+            {t('mobileViews.browseSongs')}
           </Button>
         </div>
       ) : (
@@ -65,11 +70,11 @@ export function MobileQueueView({ queue, slotsRemaining, queueError, onNavigate,
                 <div className="flex items-center gap-2 text-sm text-white/40">
                   <span>{item.songArtist}</span>
                   <span>•</span>
-                  <span>by {item.addedBy}</span>
+                  <span>{t('mobileViews.addedBy').replace('{n}', item.addedBy)}</span>
                   {item.partnerName && (
                     <>
                       <span>•</span>
-                      <span className="text-purple-400">with {item.partnerName}</span>
+                      <span className="text-purple-400">{t('mobileViews.withPartner').replace('{n}', item.partnerName)}</span>
                     </>
                   )}
                 </div>
@@ -78,10 +83,10 @@ export function MobileQueueView({ queue, slotsRemaining, queueError, onNavigate,
               {/* Game Mode Badge */}
               <div className="flex items-center gap-1">
                 {item.gameMode === 'duel' && (
-                  <Badge className="bg-red-500/80 text-xs">⚔️ Duel</Badge>
+                  <Badge className="bg-red-500/80 text-xs">⚔️ {t('mobileViews.gameModeDuel')}</Badge>
                 )}
                 {item.gameMode === 'duet' && (
-                  <Badge className="bg-pink-500/80 text-xs">🎭 Duet</Badge>
+                  <Badge className="bg-pink-500/80 text-xs">🎭 {t('mobileViews.gameModeDuet')}</Badge>
                 )}
                 {(!item.gameMode || item.gameMode === 'single') && (
                   <Badge className="bg-cyan-500/80 text-xs">🎤</Badge>
@@ -89,7 +94,7 @@ export function MobileQueueView({ queue, slotsRemaining, queueError, onNavigate,
               </div>
               
               {item.status === 'playing' && (
-                <Badge className="bg-cyan-500 text-xs">Playing</Badge>
+                <Badge className="bg-cyan-500 text-xs">{t('mobileViews.playing')}</Badge>
               )}
               
               {/* Remove button — only shown for items added by this user and not currently playing */}
@@ -97,7 +102,7 @@ export function MobileQueueView({ queue, slotsRemaining, queueError, onNavigate,
                 <button
                   onClick={(e) => { e.stopPropagation(); onRemoveFromQueue(item.id || `${item.songTitle}`); }}
                   className="ml-1 text-white/30 hover:text-red-400 transition-colors p-1"
-                  title="Aus der Queue entfernen"
+                  title={t('mobileViews.removeFromQueue')}
                 >
                   ✕
                 </button>

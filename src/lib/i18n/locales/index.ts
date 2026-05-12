@@ -1648,6 +1648,7 @@ const enTranslations = {
     retryConnection: 'Retry Connection',
     getReady: 'GET READY!',
     youreSinging: "YOU'RE SINGING!",
+    disconnect: 'Disconnect',
   },
   mobileMicView: {
     permissionDenied: 'Microphone access denied',
@@ -1666,6 +1667,9 @@ const enTranslations = {
     skipAd: '⏭️ Skip ad',
     tapToStop: 'Tap to stop',
     tapToSing: 'Tap to sing',
+    step1: 'Tap the lock icon next to the URL',
+    step2: 'Find "Microphone" and select "Allow"',
+    step3: 'Reload the page',
   },
   mobileViews: {
     nowPlaying: 'Now Playing',
@@ -1729,6 +1733,13 @@ const enTranslations = {
     color: 'Color',
     saveChanges: 'Save Changes',
     code: 'Code: {n}',
+    gameModeSingle: 'Single',
+    gameModeDuel: 'Duel',
+    gameModeDuet: 'Duet',
+    partnerOptional: 'Partner (optional)',
+    accuracy: 'Accuracy',
+    saveScoreCardSoon: 'Score card saved to your photos! (Feature coming soon)',
+    addSongsToWishlistBtn: '+ Add Songs to Wishlist',
   },
   mobileNav: {
     home: 'Home',
@@ -3419,6 +3430,7 @@ const deTranslations = {
     retryConnection: 'Verbindung wiederholen',
     getReady: 'MACH EUCH BEREIT!',
     youreSinging: 'DU SINGST JETZT!',
+    disconnect: 'Verbindung trennen',
   },
   mobileMicView: {
     permissionDenied: 'Mikrofonzugriff verweigert',
@@ -3437,6 +3449,9 @@ const deTranslations = {
     skipAd: '⏭️ Werbung überspringen',
     tapToStop: 'Tippe zum Stoppen',
     tapToSing: 'Tippe zum Singen',
+    step1: 'Tippe auf das Schloss-Symbol links neben der URL',
+    step2: 'Finde "Mikrofon" und wähle "Erlauben"',
+    step3: 'Lade die Seite neu',
   },
   mobileViews: {
     nowPlaying: 'Jetzt läuft',
@@ -3500,6 +3515,13 @@ const deTranslations = {
     color: 'Farbe',
     saveChanges: 'Änderungen speichern',
     code: 'Code: {n}',
+    gameModeSingle: 'Solo',
+    gameModeDuel: 'Duell',
+    gameModeDuet: 'Duett',
+    partnerOptional: 'Partner (optional)',
+    accuracy: 'Genauigkeit',
+    saveScoreCardSoon: 'Punktekarte in deinen Fotos gespeichert! (Feature kommt bald)',
+    addSongsToWishlistBtn: '+ Songs zur Wunschliste hinzufügen',
   },
   mobileNav: {
     home: 'Startseite',

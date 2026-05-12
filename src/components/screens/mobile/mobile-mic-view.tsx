@@ -1,7 +1,10 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { midiToNoteName } from '@/types/game';
 import { MicIcon } from '@/components/icons';
+import { useTranslation } from '@/lib/i18n/translations';
 import type { GameState} from './mobile-types';
 
 interface MicViewProps {
@@ -15,6 +18,8 @@ interface MicViewProps {
 }
 
 export function MobileMicView({ gameState, clientId, currentPitch, isListening, micPermissionDenied, onStartMic, onStopMic }: MicViewProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="p-4">
       {/* Microphone Permission Denied Banner */}
@@ -27,32 +32,32 @@ export function MobileMicView({ gameState, clientId, currentPitch, isListening, 
                   🚫
                 </div>
                 <div>
-                  <p className="font-bold text-red-300">Mikrofonzugriff verweigert</p>
-                  <p className="text-sm text-white/70">Die App braucht Zugang zum Mikrofon zum Singen</p>
+                  <p className="font-bold text-red-300">{t('mobileMicView.permissionDenied')}</p>
+                  <p className="text-sm text-white/70">{t('mobileMicView.permissionDesc')}</p>
                 </div>
               </div>
               <div className="space-y-1 text-xs text-white/60">
-                <p>So erlaubst du den Zugang:</p>
-                <p>1. Tippe auf das Schloss-Symbol links neben der URL</p>
-                <p>2. Finde &quot;Mikrofon&quot; und wähle &quot;Erlauben&quot;</p>
-                <p>3. Lade die Seite neu</p>
+                <p>{t('mobileMicView.howToAllow')}</p>
+                <p>1. {t('mobileMicView.step1')}</p>
+                <p>2. {t('mobileMicView.step2')}</p>
+                <p>3. {t('mobileMicView.step3')}</p>
               </div>
               <details className="text-xs text-white/40">
-                <summary className="cursor-pointer hover:text-white/60">Weitere Hilfe</summary>
+                <summary className="cursor-pointer hover:text-white/60">{t('mobileMicView.moreHelp')}</summary>
                 <div className="mt-2 space-y-1">
-                  <p className="font-semibold text-white/60">iOS (Safari):</p>
-                  <p>Einstellungen &rarr; Safari &rarr; Mikrofon &rarr; Erlauben</p>
-                  <p className="font-semibold text-white/60 mt-1">Android (Chrome):</p>
-                  <p>Site-Einstellungen (Schloss-Symbol) &rarr; Mikrofon &rarr; Erlauben</p>
-                  <p className="font-semibold text-white/60 mt-1">Desktop:</p>
-                  <p>Adresseiste &rarr; Kamera/Mikrofon-Symbol &rarr; Erlauben</p>
+                  <p className="font-semibold text-white/60">{t('mobileMicView.iOS')}</p>
+                  <p>{t('mobileMicView.iOSSteps')}</p>
+                  <p className="font-semibold text-white/60 mt-1">{t('mobileMicView.android')}</p>
+                  <p>{t('mobileMicView.androidSteps')}</p>
+                  <p className="font-semibold text-white/60 mt-1">{t('mobileMicView.desktop')}</p>
+                  <p>{t('mobileMicView.desktopSteps')}</p>
                 </div>
               </details>
               <Button
                 onClick={onStartMic}
                 className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white font-bold"
               >
-                🔄 Nochmal versuchen
+                {t('mobileMicView.tapToRetry')}
               </Button>
             </div>
           </CardContent>
@@ -66,8 +71,8 @@ export function MobileMicView({ gameState, clientId, currentPitch, isListening, 
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 bg-orange-500 rounded-full animate-pulse" />
                 <div>
-                  <p className="font-bold text-orange-300">Werbung läuft</p>
-                  <p className="text-sm text-white/70">Spiel pausiert</p>
+                  <p className="font-bold text-orange-300">{t('mobileMicView.adPlaying')}</p>
+                  <p className="text-sm text-white/70">{t('mobileMicView.gamePaused')}</p>
                 </div>
               </div>
               <Button
@@ -88,7 +93,7 @@ export function MobileMicView({ gameState, clientId, currentPitch, isListening, 
                 }}
                 className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white font-bold px-6 py-3"
               >
-                ⏭️ Werbung überspringen
+                {t('mobileMicView.skipAd')}
               </Button>
             </div>
           </CardContent>
@@ -130,7 +135,7 @@ export function MobileMicView({ gameState, clientId, currentPitch, isListening, 
               <MicIcon className="w-20 h-20 text-white" />
             </button>
             <p className="mt-6 text-lg text-white/60">
-              {isListening ? 'Tap to stop' : 'Tap to sing'}
+              {isListening ? t('mobileMicView.tapToStop') : t('mobileMicView.tapToSing')}
             </p>
           </div>
         </CardContent>

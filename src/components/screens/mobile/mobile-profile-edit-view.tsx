@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { StorageKeys, getItem } from '@/lib/storage';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from '@/lib/i18n/translations';
 import type { MobileProfile } from './mobile-types';
 
 interface ProfileEditViewProps {
@@ -36,6 +37,7 @@ export function MobileProfileEditView({
   onPhotoUpload,
   onSwitchToHostProfile,
 }: ProfileEditViewProps) {
+  const { t } = useTranslation();
   const [hostProfiles, setHostProfiles] = useState<MobileProfile[]>([]);
   const [claimedProfileIds, setClaimedProfileIds] = useState<string[]>([]);
 
@@ -88,7 +90,7 @@ export function MobileProfileEditView({
             {/* Show connection code */}
             {connectionCode && (
               <Badge variant="outline" className="mt-2 border-cyan-500/50 text-cyan-400 font-mono">
-                Code: {connectionCode}
+                {t('mobileViews.code').replace('{n}', connectionCode)}
               </Badge>
             )}
           </div>
@@ -98,10 +100,10 @@ export function MobileProfileEditView({
             <div className="space-y-3 mb-6">
               <div className="flex items-center gap-2">
                 <span className="text-lg">👤</span>
-                <h3 className="font-bold text-sm">Profil wechseln</h3>
+                <h3 className="font-bold text-sm">{t('mobileViews.switchProfile')}</h3>
               </div>
               <p className="text-xs text-white/40">
-                Wähle ein Profil aus der Haupt-App
+                {t('mobileViews.switchProfileDesc')}
               </p>
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {availableHostProfiles.map((hp) => (
@@ -121,7 +123,7 @@ export function MobileProfileEditView({
                       )}
                     </div>
                     <span className="text-sm truncate flex-1">{hp.name}</span>
-                    <span className="text-xs text-cyan-400">Auswählen</span>
+                    <span className="text-xs text-cyan-400">{t('mobileViews.select')}</span>
                   </button>
                 ))}
               </div>
@@ -131,7 +133,7 @@ export function MobileProfileEditView({
           {availableHostProfiles.length > 0 && onSwitchToHostProfile && (
             <div className="flex items-center gap-2 mb-4">
               <div className="flex-1 h-px bg-white/10" />
-              <span className="text-xs text-white/30">oder bearbeiten</span>
+              <span className="text-xs text-white/30">{t('mobileViews.orEdit')}</span>
               <div className="flex-1 h-px bg-white/10" />
             </div>
           )}
@@ -139,7 +141,7 @@ export function MobileProfileEditView({
           {/* Name Edit */}
           <div className="space-y-4">
             <div>
-              <label htmlFor="edit-profile-name" className="text-sm text-white/60 mb-2 block">Name</label>
+              <label htmlFor="edit-profile-name" className="text-sm text-white/60 mb-2 block">{t('mobileViews.name')}</label>
               <Input
                 id="edit-profile-name"
                 name="edit-profile-name"
@@ -151,7 +153,7 @@ export function MobileProfileEditView({
             
             {/* Color Edit */}
             <div>
-              <label className="text-sm text-white/60 mb-2 block">Color</label>
+              <label className="text-sm text-white/60 mb-2 block">{t('mobileViews.color')}</label>
               <div className="flex flex-wrap gap-2">
                 {profileColors.map((color) => (
                   <button
@@ -169,7 +171,7 @@ export function MobileProfileEditView({
               onClick={onSave}
               className="w-full bg-gradient-to-r from-cyan-500 to-purple-500"
             >
-              Save Changes
+              {t('mobileViews.saveChanges')}
             </Button>
           </div>
         </CardContent>

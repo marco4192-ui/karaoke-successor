@@ -1,5 +1,8 @@
+'use client';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from '@/lib/i18n/translations';
 import type { GameState, QueueItem, MobileView } from './mobile-types';
 
 interface HomeViewProps {
@@ -9,13 +12,15 @@ interface HomeViewProps {
 }
 
 export function MobileHomeView({ gameState, queue, onNavigate }: HomeViewProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="p-4 space-y-4">
       {/* Now Playing */}
       {gameState.currentSong && (
         <Card className="bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border-cyan-500/30">
           <CardContent className="py-4">
-            <p className="text-xs text-white/60 mb-1">Now Playing</p>
+            <p className="text-xs text-white/60 mb-1">{t('mobileViews.nowPlaying')}</p>
             <p className="font-semibold text-lg">{gameState.currentSong.title}</p>
             <p className="text-white/60">{gameState.currentSong.artist}</p>
           </CardContent>
@@ -29,21 +34,21 @@ export function MobileHomeView({ gameState, queue, onNavigate }: HomeViewProps) 
           className="bg-white/10 rounded-xl p-4 text-center hover:bg-white/15 transition-colors"
         >
           <span className="text-3xl mb-2 block">🎤</span>
-          <span className="text-sm">Sing</span>
+          <span className="text-sm">{t('mobileViews.sing')}</span>
         </button>
         <button 
           onClick={() => onNavigate('songs')}
           className="bg-white/10 rounded-xl p-4 text-center hover:bg-white/15 transition-colors"
         >
           <span className="text-3xl mb-2 block">🎵</span>
-          <span className="text-sm">Songs</span>
+          <span className="text-sm">{t('mobileViews.songs')}</span>
         </button>
         <button 
           onClick={() => onNavigate('queue')}
           className="bg-white/10 rounded-xl p-4 text-center hover:bg-white/15 transition-colors"
         >
           <span className="text-3xl mb-2 block">📋</span>
-          <span className="text-sm">Queue</span>
+          <span className="text-sm">{t('mobileViews.queue')}</span>
           {queue.length > 0 && (
             <Badge className="ml-2 bg-cyan-500">{queue.length}</Badge>
           )}
@@ -53,21 +58,21 @@ export function MobileHomeView({ gameState, queue, onNavigate }: HomeViewProps) 
           className="bg-gradient-to-br from-purple-500/20 to-cyan-500/20 rounded-xl p-4 text-center hover:from-purple-500/30 hover:to-cyan-500/30 transition-colors border border-purple-500/30"
         >
           <span className="text-3xl mb-2 block">🎮</span>
-          <span className="text-sm font-medium">Remote</span>
+          <span className="text-sm font-medium">{t('mobileViews.remote')}</span>
         </button>
         <button 
           onClick={() => onNavigate('profile')}
           className="bg-white/10 rounded-xl p-4 text-center hover:bg-white/15 transition-colors"
         >
           <span className="text-3xl mb-2 block">👤</span>
-          <span className="text-sm">Profile</span>
+          <span className="text-sm">{t('mobileViews.profile')}</span>
         </button>
         <button 
           onClick={() => onNavigate('jukebox')}
           className="bg-white/10 rounded-xl p-4 text-center hover:bg-white/15 transition-colors"
         >
           <span className="text-3xl mb-2 block">📻</span>
-          <span className="text-sm">Jukebox</span>
+          <span className="text-sm">{t('mobileViews.jukebox')}</span>
         </button>
       </div>
       
@@ -75,7 +80,7 @@ export function MobileHomeView({ gameState, queue, onNavigate }: HomeViewProps) 
       {queue.length > 0 && (
         <Card className="bg-white/5 border-white/10">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Up Next</CardTitle>
+            <CardTitle className="text-sm">{t('mobileViews.upNext')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {queue.slice(0, 3).map((item, i) => (

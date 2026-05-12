@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StorageKeys, getItem } from '@/lib/storage';
+import { useTranslation } from '@/lib/i18n/translations';
 import type { MobileProfile } from './mobile-types';
 
 interface ProfileCreateViewProps {
@@ -30,6 +31,7 @@ export function MobileProfileCreateView({
   onCreateProfile,
   onPhotoUpload,
 }: ProfileCreateViewProps) {
+  const { t } = useTranslation();
   const [hostProfiles, setHostProfiles] = useState<MobileProfile[]>([]);
   const [claimedProfileIds, setClaimedProfileIds] = useState<string[]>([]);
   const [__isLoading, setIsLoading] = useState(false);
@@ -85,8 +87,8 @@ export function MobileProfileCreateView({
     <div className="p-4 max-w-md mx-auto">
       <Card className="bg-white/10 border-white/20">
         <CardHeader>
-          <CardTitle className="text-center">Create Your Profile</CardTitle>
-          <p className="text-center text-white/40 text-sm mt-2">Your profile will sync with the main app</p>
+          <CardTitle className="text-center">{t('mobileViews.createProfile')}</CardTitle>
+          <p className="text-center text-white/40 text-sm mt-2">{t('mobileViews.profileSyncDesc')}</p>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Choose Existing Profile from Host */}
@@ -94,10 +96,10 @@ export function MobileProfileCreateView({
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <span className="text-lg">👤</span>
-                <h3 className="font-bold text-sm">Bestehendes Profil wählen</h3>
+                <h3 className="font-bold text-sm">{t('mobileViews.selectExisting')}</h3>
               </div>
               <p className="text-xs text-white/40 mb-2">
-                Wähle ein Profil, das auf dem Hauptgerät erstellt wurde
+                {t('mobileViews.selectExistingDesc')}
               </p>
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {availableProfiles.map((hp) => (
@@ -124,7 +126,7 @@ export function MobileProfileCreateView({
               </div>
               <div className="flex items-center gap-2 pt-2">
                 <div className="flex-1 h-px bg-white/10" />
-                <span className="text-xs text-white/30">oder neu erstellen</span>
+                <span className="text-xs text-white/30">{t('mobileViews.orCreateNew')}</span>
                 <div className="flex-1 h-px bg-white/10" />
               </div>
             </div>
@@ -135,7 +137,7 @@ export function MobileProfileCreateView({
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <span className="text-lg">👤</span>
-                <h3 className="font-bold text-sm">Ausgewähltes Profil</h3>
+                <h3 className="font-bold text-sm">{t('mobileViews.selectedProfile')}</h3>
               </div>
               <button
                 onClick={() => fileInputRef.current?.click()}
@@ -146,7 +148,7 @@ export function MobileProfileCreateView({
                 ) : (
                   <div className="text-center">
                     <span className="text-xl">📷</span>
-                    <p className="text-[10px] text-white/40 mt-0.5">Foto</p>
+                    <p className="text-[10px] text-white/40 mt-0.5">{t('mobileViews.photo')}</p>
                   </div>
                 )}
               </button>
@@ -156,19 +158,19 @@ export function MobileProfileCreateView({
                   onClick={handleConfirmSelected}
                   className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400"
                 >
-                  ✓ Bestätigen
+                  {t('mobileViews.confirm')}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={handleDeselectProfile}
                   className="flex-1 border-white/30 text-white/70"
                 >
-                  ✕ Abwählen
+                  {t('mobileViews.deselect')}
                 </Button>
               </div>
               <div className="flex items-center gap-2 pt-2">
                 <div className="flex-1 h-px bg-white/10" />
-                <span className="text-xs text-white/30">oder neu erstellen</span>
+                <span className="text-xs text-white/30">{t('mobileViews.orCreateNew')}</span>
                 <div className="flex-1 h-px bg-white/10" />
               </div>
             </div>
@@ -185,7 +187,7 @@ export function MobileProfileCreateView({
               ) : (
                 <div className="text-center">
                   <span className="text-2xl">📷</span>
-                  <p className="text-xs text-white/40 mt-1">Add Photo</p>
+                  <p className="text-xs text-white/40 mt-1">{t('mobileViews.addPhoto')}</p>
                 </div>
               )}
             </button>
@@ -200,20 +202,20 @@ export function MobileProfileCreateView({
           
           {/* Name Input */}
           <div>
-            <label htmlFor="profile-name" className="text-sm text-white/60 mb-2 block">Your Name</label>
+            <label htmlFor="profile-name" className="text-sm text-white/60 mb-2 block">{t('mobileViews.yourName')}</label>
             <Input
               id="profile-name"
               name="profile-name"
               value={profileName}
               onChange={(e) => onProfileNameChange(e.target.value)}
-              placeholder="Enter your name"
+              placeholder={t('mobileViews.enterName')}
               className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
             />
           </div>
           
           {/* Color Selection */}
           <div>
-            <label className="text-sm text-white/60 mb-2 block">Choose Color</label>
+            <label className="text-sm text-white/60 mb-2 block">{t('mobileViews.chooseColor')}</label>
             <div className="flex flex-wrap gap-2">
               {profileColors.map((color) => (
                 <button
@@ -232,7 +234,7 @@ export function MobileProfileCreateView({
             disabled={!profileName.trim()}
             className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 disabled:opacity-50"
           >
-            Create Profile
+            {t('mobileViews.createProfileBtn')}
           </Button>
         </CardContent>
       </Card>
