@@ -26,9 +26,11 @@ interface CompanionQueueItem {
 
 interface QueueScreenProps {
   onPlayFromQueue?: (_song: Song, gameMode: 'single' | 'duel' | 'duet', players: { id: string; name: string }[]) => void;
+  /** When true, automatically starts playing the first queue item (Ctrl-Q) */
+  autoPlayNext?: boolean;
 }
 
-export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
+export function QueueScreen({ onPlayFromQueue, autoPlayNext }: QueueScreenProps) {
   const { t } = useTranslation();
   const { 
     queue, 
@@ -320,6 +322,20 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
       });
     }
   };
+
+  // Auto-play first queue item when triggered by Ctrl-Q (autoPlayNext prop)
+  const hasAutoPlayedRef = React.useRef(false);
+  useEffect(() => {
+    if (autoPlayNext && songs.length > 0 && !hasAutoPlayedRef.current) {
+      hasAutoPlayedRef.current = true;
+      const timer = setTimeout(() => {
+        if (unifiedQueue.length > 0) {
+          playFromQueue(unifiedQueue[0]);
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [autoPlayNext, songs.length, unifiedQueue.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Drag and drop handlers
   const handleDragStart = (index: number) => {

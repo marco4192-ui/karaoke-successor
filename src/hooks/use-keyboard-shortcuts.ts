@@ -29,11 +29,11 @@ export const FKEY_SCREEN_MAP: Record<string, Screen> = {
   f2: 'library',
   f3: 'party',
   f4: 'queue',
-  f5: 'settings',
-  f6: 'profile',
-  f7: 'highscores',
-  f8: 'achievements',
-  f9: 'jukebox',
+  f5: 'profile',
+  f6: 'highscores',
+  f7: 'achievements',
+  f8: 'jukebox',
+  f9: 'settings',
   f10: 'editor',
 };
 

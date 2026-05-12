@@ -59,9 +59,19 @@ export default function KaraokeZERO() {
   type DialogAction = null | 'song-pause' | 'party-leave';
   const [activeDialog, setActiveDialog] = useState<DialogAction>(null);
 
+  // ── Ctrl-Q: flag to auto-play first queue item ──
+  const [autoPlayNext, setAutoPlayNext] = useState(false);
+
   useEffect(() => {
     setActiveDialog(party.pauseDialogAction);
   }, [party.pauseDialogAction]);
+
+  // Reset autoPlayNext when navigating away from queue screen
+  useEffect(() => {
+    if (screen !== 'queue') {
+      setAutoPlayNext(false);
+    }
+  }, [screen]);
 
   const isTournamentMatch = !!(party.currentTournamentMatch && party.tournamentBracket);
 
@@ -249,6 +259,7 @@ export default function KaraokeZERO() {
       // Trigger the first queue item if available
       const q = useGameStore.getState().queue;
       if (q.length === 0) return;
+      setAutoPlayNext(true);
       navigateWithGuard('queue');
     },
     navigateToJukebox: () => navigateWithGuard('jukebox'),
@@ -425,7 +436,8 @@ export default function KaraokeZERO() {
 
         {screen === 'profile' && <CharacterScreen />}
         {screen === 'queue' && (
-          <QueueScreen onPlayFromQueue={(song, gameMode, players) => {
+          <QueueScreen autoPlayNext={autoPlayNext} onPlayFromQueue={(song, gameMode, players) => {
+            setAutoPlayNext(false);
             resetGame();
             const activeMode = gameState.gameMode;
 
