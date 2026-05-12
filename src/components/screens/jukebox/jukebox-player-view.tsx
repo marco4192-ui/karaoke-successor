@@ -146,6 +146,17 @@ function ControlsBar({ j }: { j: UseJukeboxReturn }) {
           <MusicIcon className="w-5 h-5" />
           <span className="text-xs">{t('jukeboxPlayer.lyrics').slice(2)}</span>
         </button>
+
+        <button
+          onClick={() => j.setHidePlaylist(!j.hidePlaylist)}
+          className={`p-2 rounded-lg transition-colors flex items-center gap-1 ${!j.hidePlaylist ? 'bg-cyan-500 text-white' : 'text-white/60 hover:text-white'}`}
+          title={j.hidePlaylist ? t('jukeboxPlayer.showPlaylist') : t('jukeboxPlayer.hidePlaylist')}
+        >
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
+            <line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
+          </svg>
+        </button>
       </div>
 
       {/* Volume */}
