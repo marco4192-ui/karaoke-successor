@@ -519,11 +519,11 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
           perfRef.set(result.activeNoteId, samples);
         }
 
-        // Throttled state sync: flush to React state at ~10Hz
+        // Throttled state sync: flush to React state at ~30Hz (33ms)
         // CRITICAL: Reuse the SAME Map reference and increment a version counter.
         // This prevents React.memo on NoteBlock from detecting a new prop reference.
         const now = performance.now();
-        if (now - lastNotePerfSyncRef.current >= 100) {
+        if (now - lastNotePerfSyncRef.current >= 33) {
           lastNotePerfSyncRef.current = now;
           notePerfVersionRef.current++;
           // Set the same ref object — shallow equality passes

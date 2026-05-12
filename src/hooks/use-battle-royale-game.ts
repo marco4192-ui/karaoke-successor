@@ -117,7 +117,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   // ── Game State ─────────────────────────────────────────────────────
   const [currentTime, setCurrentTime] = useState(0);
   const gameLoopRef = useRef<number | null>(null);
-  // Throttle setCurrentTime to ~20fps (50ms) — UI display doesn't need 60fps.
+  // Throttle setCurrentTime to ~40fps (25ms) — smoother note scrolling.
   // Scoring uses audioRef.current.currentTime directly, not the state value.
   const lastCurrentTimeUpdateRef = useRef(0);
 
@@ -265,10 +265,10 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
       const deltaTime = timestamp - lastTickTime;
 
-      // Update current time from audio (throttled to ~20fps)
+      // Update current time from audio (throttled to ~40fps)
       if (audioRef.current) {
         const now = performance.now();
-        if (now - lastCurrentTimeUpdateRef.current >= 50) {
+        if (now - lastCurrentTimeUpdateRef.current >= 25) {
           setCurrentTime(audioRef.current.currentTime * 1000);
           lastCurrentTimeUpdateRef.current = now;
         }

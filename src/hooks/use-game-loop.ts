@@ -193,11 +193,11 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   // Pitch visualization doesn't need 60fps — scoring reads pitch directly
   // from the ref, not from the store, so accuracy is unaffected.
   const lastPitchStoreUpdateRef = useRef(0);
-  // Throttle setCurrentTime state updates to ~20fps (50ms).
-  // The game loop runs at 60fps via requestAnimationFrame, but
-  // lyrics highlighting, progress bar, and note highway only need ~20fps
-  // to look smooth. Scoring uses adjustedTime directly, not the state value,
-  // so throttling the store update has zero impact on scoring accuracy.
+  // Throttle setCurrentTime state updates to ~40fps (25ms).
+  // The game loop runs at 60fps via requestAnimationFrame.
+  // Note highway, lyrics highlighting and progress bar benefit from higher
+  // update rate for smoother visual scrolling. Scoring uses adjustedTime
+  // directly, not the state value, so throttling has zero impact on accuracy.
   const lastCurrentTimeUpdateRef = useRef(0);
   // When the game is paused mid-song we must remember where the song was so
   // that resume picks up from that exact wall-clock offset instead of from 0.
@@ -745,9 +745,9 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
 
       const adjustedTime = elapsed + timingOffset;
 
-      // Throttled: only update React state at ~20fps (50ms)
+      // Throttled: only update React state at ~40fps (25ms)
       const now = performance.now();
-      if (now - lastCurrentTimeUpdateRef.current >= 50) {
+      if (now - lastCurrentTimeUpdateRef.current >= 25) {
         setCurrentTime(adjustedTime);
         lastCurrentTimeUpdateRef.current = now;
       }
