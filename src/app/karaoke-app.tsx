@@ -210,25 +210,48 @@ export default function KaraokeZERO() {
   }, [closeDialog]);
 
   // ── Global keyboard shortcuts ──
+  const isPaused = activeDialog === 'song-pause';
+  const isSongPlaying = screen === 'game' || party.isSongPlaying;
+
   useGlobalKeyboardShortcuts({
-    onSearch: () => navigateWithGuard('library'),
-    onFullscreen: toggleFullscreen,
-    onLibrary: () => navigateWithGuard('library'),
-    onSettings: () => navigateWithGuard('settings'),
-    onEscape: () => {
-      if (isFullscreen) {
-        document.exitFullscreen().catch(() => {});
-      } else if (screen === 'game') {
-        pauseGame();
-        party.setPauseDialogAction('song-pause');
-      } else if (isPartyModeActive && party.isSongPlaying) {
-        party.setPauseDialogAction('song-pause');
-      } else if (isPartyModeActive) {
-        party.setPauseDialogAction('party-leave');
-      } else {
-        setScreen('home');
-      }
+    screen: screen as Screen,
+    isFullscreen,
+    isPartyModeActive,
+    isSongPlaying,
+    isPaused,
+    toggleFullscreen,
+    navigateTo: (target) => navigateWithGuard(target),
+    pauseGame,
+    resumeGame,
+    setPauseDialog: (action) => party.setPauseDialogAction(action),
+    focusLibrarySearch: () => {
+      navigateWithGuard('library');
+      // Focus search input after navigation (small delay for render)
+      setTimeout(() => {
+        const searchInput = document.getElementById('song-search') as HTMLInputElement | null;
+        searchInput?.focus();
+      }, 100);
     },
+    startRandomSong: (mode) => {
+      const songs = getAllSongs();
+      if (songs.length === 0) return;
+      const randomSong = songs[Math.floor(Math.random() * songs.length)];
+      resetGame();
+      if (mode === 'duel') {
+        setGameMode('duel');
+      } else {
+        setGameMode('standard');
+      }
+      setSong(randomSong);
+      setScreen('game');
+    },
+    startQueueSong: () => {
+      // Trigger the first queue item if available
+      const q = useGameStore.getState().queue;
+      if (q.length === 0) return;
+      navigateWithGuard('queue');
+    },
+    navigateToJukebox: () => navigateWithGuard('jukebox'),
   });
 
   // ── Global remote control from mobile companions ──

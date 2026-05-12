@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Difficulty } from '@/types/game';
 import { Language, LANGUAGE_NAMES, LANGUAGE_FLAGS } from '@/lib/i18n/translations';
 import { LanguageIcon, KeyboardIcon } from '@/components/settings/settings-icons';
+import { SHORTCUT_REFERENCE } from '@/hooks/use-keyboard-shortcuts';
 
 interface GeneralTabProps {
   language: string;
@@ -53,7 +54,7 @@ export function GeneralTab({
           </p>
         </CardContent>
       </Card>
-      
+
       <Card className="bg-white/5 border-white/10">
         <CardHeader>
           <CardTitle>{tx('settings.gameSettings')}</CardTitle>
@@ -71,7 +72,7 @@ export function GeneralTab({
                   onClick={() => handleDifficultyChange(diff)}
                   className={`flex-1 py-2 px-4 rounded-lg border-2 transition-all capitalize cursor-pointer ${
                     defaultDifficulty === diff
-                      ? diff === 'easy' ? 'border-green-500 bg-green-500/20 text-green-400' 
+                      ? diff === 'easy' ? 'border-green-500 bg-green-500/20 text-green-400'
                         : diff === 'medium' ? 'border-yellow-500 bg-yellow-500/20 text-yellow-400'
                         : 'border-red-500 bg-red-500/20 text-red-400'
                       : 'border-white/10 bg-white/5 hover:border-white/30 text-white'
@@ -83,7 +84,7 @@ export function GeneralTab({
             </div>
             <p className="text-xs text-white/40">{tx('settings.defaultDifficultyDesc')}</p>
           </div>
-          
+
           {/* Show Pitch Guide Toggle */}
           <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
             <div>
@@ -115,31 +116,13 @@ export function GeneralTab({
           <CardDescription>{tx('settings.keyboardShortcutsDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="flex items-center justify-between p-2 bg-white/5 rounded">
-              <span className="text-white/60">{tx('settings.searchShortcut')}</span>
-              <kbd className="px-2 py-1 bg-white/10 rounded text-xs">/</kbd>
-            </div>
-            <div className="flex items-center justify-between p-2 bg-white/5 rounded">
-              <span className="text-white/60">{tx('settings.fullscreenShortcut')}</span>
-              <kbd className="px-2 py-1 bg-white/10 rounded text-xs">F</kbd>
-            </div>
-            <div className="flex items-center justify-between p-2 bg-white/5 rounded">
-              <span className="text-white/60">{tx('settings.libraryShortcut')}</span>
-              <kbd className="px-2 py-1 bg-white/10 rounded text-xs">L</kbd>
-            </div>
-            <div className="flex items-center justify-between p-2 bg-white/5 rounded">
-              <span className="text-white/60">{tx('settings.settingsShortcut')}</span>
-              <kbd className="px-2 py-1 bg-white/10 rounded text-xs">Ctrl+,</kbd>
-            </div>
-            <div className="flex items-center justify-between p-2 bg-white/5 rounded">
-              <span className="text-white/60">{tx('settings.closeShortcut')}</span>
-              <kbd className="px-2 py-1 bg-white/10 rounded text-xs">Esc</kbd>
-            </div>
-            <div className="flex items-center justify-between p-2 bg-white/5 rounded">
-              <span className="text-white/60">{tx('settings.searchAltShortcut')}</span>
-              <kbd className="px-2 py-1 bg-white/10 rounded text-xs">Ctrl+K</kbd>
-            </div>
+          <div className="space-y-1 text-sm">
+            {SHORTCUT_REFERENCE.map((s) => (
+              <div key={s.keys} className="flex items-center justify-between p-2 bg-white/5 rounded">
+                <span className="text-white/60">{s.label}</span>
+                <kbd className="px-2 py-1 bg-white/10 rounded text-xs font-mono">{s.keys}</kbd>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

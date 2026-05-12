@@ -40,7 +40,7 @@ export function SongPauseDialog({
                 onClick={onResume}
                 className="w-full py-3 rounded-lg font-medium bg-green-500/20 border border-green-500/40 text-green-300 hover:bg-green-500/30 transition-all"
               >
-                {t('dialogs.resume')}
+                {t('dialogs.resume')} <span className="text-green-300/50 text-xs ml-2">(Esc)</span>
               </button>
               <button
                 onClick={() => onTournamentRepeat?.()}
@@ -63,13 +63,13 @@ export function SongPauseDialog({
                   onClick={onResume}
                   className="flex-1 py-3 rounded-lg font-medium bg-green-500/20 border border-green-500/40 text-green-300 hover:bg-green-500/30 transition-all"
                 >
-                  {t('dialogs.resume')}
+                  {t('dialogs.resume')} <span className="text-green-300/50 text-xs">(Esc)</span>
                 </button>
                 <button
                   onClick={onAbort}
                   className="flex-1 py-3 rounded-lg font-medium bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all"
                 >
-                  {t('dialogs.abort')}
+                  {t('dialogs.abort')} <span className="text-red-300/50 text-xs">(Enter)</span>
                 </button>
               </div>
             </>
