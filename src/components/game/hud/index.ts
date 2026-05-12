@@ -5,3 +5,4 @@ export { FullscreenButton } from './fullscreen-button';
 export { WebcamButton } from './webcam-button';
 export { DifficultyBadge } from './difficulty-badge';
 export type { Difficulty } from './difficulty-badge';
+export { WebcamToggleButton } from './webcam-toggle-button';

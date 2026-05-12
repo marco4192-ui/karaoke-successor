@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button';
 import { PLAYER_COLORS } from '@/types/game';
 import { SING_LINE_POSITION, NOTE_WINDOW, VISIBLE_TOP, VISIBLE_RANGE } from '@/lib/game/note-utils';
 import { useTranslation } from '@/lib/i18n/translations';
-import { WebcamBackground, WebcamQuickControls } from '@/components/game/webcam-background';
+import { WebcamBackground } from '@/components/game/webcam-background';
+import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
+import { WebcamToggleButton } from '@/components/game/hud/webcam-toggle-button';
 import { ScoreEventsDisplay } from '@/components/game/score-events-display';
 import { PitchGraphDisplay } from '@/components/game/pitch-graph-display';
 import { PracticePanel } from '@/components/game/practice-panel';
@@ -68,24 +70,25 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
           {t('gameScreen.pause')}
         </Button>
 
-        {/* Center: Webcam Controls — hidden in low-performance mode */}
-        <div className="flex items-center gap-3">
+        {/* Center: Low-perf indicator only */}
+        {g.isLowPerf && (
+          <span className="text-xs text-orange-400/80 font-medium px-2 py-1 bg-orange-500/10 rounded">{t('gameScreen.lowPerf')}</span>
+        )}
+
+        {/* Right: Fullscreen > Difficulty > Webcam (right to left) */}
+        <div className="flex items-center gap-2">
+          <GameScoreDisplay
+            difficulty={g.gameState.difficulty}
+            activeChallenge={g.activeChallenge}
+          />
           {!g.isLowPerf && (
-            <WebcamQuickControls
+            <WebcamToggleButton
               config={g.webcamConfig}
               onConfigChange={g.updateWebcamConfig}
             />
           )}
-          {g.isLowPerf && (
-            <span className="text-xs text-orange-400/80 font-medium px-2 py-1 bg-orange-500/10 rounded">{t('gameScreen.lowPerf')}</span>
-          )}
+          <FullscreenButton />
         </div>
-
-        {/* Right: Score, Difficulty & Challenge */}
-        <GameScoreDisplay
-          difficulty={g.gameState.difficulty}
-          activeChallenge={g.activeChallenge}
-        />
       </div>
 
       {/* Pitch Graph Display — disabled in low-performance mode and no_pitch_guide challenge */}

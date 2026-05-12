@@ -25,19 +25,19 @@ export const ProminentScoreDisplay = React.memo(function ProminentScoreDisplay({
 
   return (
     <>
-      {/* Player Info — top-left, next to pause button */}
-      <div className="fixed top-3 left-16 z-40 flex items-center gap-2.5 pointer-events-none">
+      {/* Player Info — below header, left-aligned */}
+      <div className="fixed top-14 left-4 z-40 flex items-center gap-2.5 pointer-events-none">
         {/* Avatar */}
         {avatar ? (
           <img
             src={avatar}
             alt={name}
-            className="w-10 h-10 rounded-full object-cover border-2"
+            className="w-9 h-9 rounded-full object-cover border-2"
             style={{ borderColor: color }}
           />
         ) : (
           <div
-            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold border-2 text-sm"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold border-2 text-sm"
             style={{ backgroundColor: color, borderColor: color }}
           >
             {name.charAt(0).toUpperCase()}
@@ -45,23 +45,23 @@ export const ProminentScoreDisplay = React.memo(function ProminentScoreDisplay({
         )}
         {/* Name */}
         <span
-          className="text-sm font-bold truncate max-w-[120px]"
+          className="text-xs font-bold truncate max-w-[100px]"
           style={{ color }}
         >
           {name}
         </span>
       </div>
 
-      {/* Total Score Display — top center */}
-      <div className="fixed top-3 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
+      {/* Total Score Display — top center, below header */}
+      <div className="fixed top-14 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
         <div
-          className="bg-black/60 backdrop-blur-md px-8 py-3 rounded-2xl border-2 border-white/20 shadow-xl"
+          className="bg-black/60 backdrop-blur-md px-8 py-4 rounded-2xl border-2 border-white/20 shadow-xl"
           style={{ boxShadow: '0 0 40px rgba(34, 211, 238, 0.2)' }}
         >
-          <div className="flex flex-col items-center gap-0.5">
+          <div className="flex flex-col items-center gap-1">
             {/* Main Score */}
             <div className="flex items-baseline gap-3">
-              <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400">
+              <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400">
                 {score.toLocaleString()}
               </span>
               <span className="text-white/40 text-sm">/ {MAX_POINTS_PER_SONG.toLocaleString()}</span>
@@ -69,11 +69,11 @@ export const ProminentScoreDisplay = React.memo(function ProminentScoreDisplay({
 
             {/* Combo */}
             {showCombo !== false && combo >= 1 && (
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-yellow-400 font-bold text-base">
+              <div className="flex items-center gap-2">
+                <span className="text-yellow-400 font-bold text-lg">
                   {combo}x
                 </span>
-                <span className="text-white/60">{t('prominentScore.combo')}</span>
+                <span className="text-white/60 text-sm">{t('prominentScore.combo')}</span>
                 {combo >= 5 && (
                   <span className="text-green-400 font-semibold text-xs">
                     (+{Math.round(Math.min(0.5, combo * 0.02) * 100)}%)
@@ -87,9 +87,9 @@ export const ProminentScoreDisplay = React.memo(function ProminentScoreDisplay({
 
       {/* Combo indicator with glow effect */}
       {showCombo !== false && combo >= 5 && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+        <div className="fixed top-28 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
           <div
-            className="text-4xl font-black animate-pulse"
+            className="text-3xl font-black animate-pulse"
             style={{
               color: combo >= 20 ? '#FFD700' :
                      combo >= 10 ? '#FF6B6B' : '#4ECDC4',

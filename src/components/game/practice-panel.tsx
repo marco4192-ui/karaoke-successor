@@ -23,7 +23,7 @@ export function PracticePanel({
       {/* Practice Mode Button */}
       <button
         onClick={onToggleControls}
-        className={`fixed bottom-24 left-4 z-30 w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+        className={`fixed bottom-24 right-4 z-30 w-12 h-12 rounded-full flex items-center justify-center transition-all ${
           practiceMode.enabled
             ? 'bg-purple-500 ring-2 ring-purple-300'
             : 'bg-white/10 hover:bg-white/20'
@@ -35,7 +35,7 @@ export function PracticePanel({
 
       {/* Practice Controls Panel */}
       {showControls && (
-        <div className="fixed bottom-40 left-4 z-30 w-72 bg-gray-800/95 rounded-xl p-4 border border-white/20">
+        <div className="fixed bottom-40 right-4 z-30 w-72 bg-gray-800/95 rounded-xl p-4 border border-white/20">
           <h4 className="font-semibold mb-3">{t('practicePanel.title')}</h4>
           <div className="space-y-3">
             <label className="flex items-center gap-2">
