@@ -46,3 +46,29 @@ Stage Summary:
 - Build: ✅ All builds passed
 - All hardcoded German and English texts replaced with i18n-compatible t() calls
 - Other languages (es, fr, it, pt, ja, ko, zh, ru, nl, pl, sv, no, da, fi) use EN fallback for new keys
+
+---
+Task ID: 3
+Agent: Main Agent
+Task: Editor access button, smaller tiles, rawLyrics in lyrics tab
+
+Work Log:
+- Added `onNavigateToEditor` prop to LibraryScreen component
+- Added Editor button (pencil icon + "F10" keyboard hint) to library screen header
+- Wired `onNavigateToEditor={() => setScreen('editor')}` in karaoke-app.tsx
+- Reduced editor library tiles from grid-cols-2/3/4/5 to grid-cols-4/6/8/10 (roughly 1/4 size)
+- Reduced tile padding from p-3 to p-1.5, font sizes from text-sm to text-[10px], gap from gap-4 to gap-2
+- Removed unused Badge import from editor-screen.tsx
+- Rewrote editor-lyrics-tab.tsx with three display modes:
+  - Mode 1: No notes but rawLyrics exists → shows parsed syllables as amber "pending" text
+  - Mode 2: Notes exist → standard note-based lyrics + unassigned syllable counter + pending section
+  - Mode 3: Nothing → empty state
+- Added import of `parseLyricsToSyllables` and `FileText` icon to editor-lyrics-tab.tsx
+- TypeScript check passed with zero errors
+- Pushed as commit bfc2c6d
+
+Stage Summary:
+- Files modified: library-screen.tsx, karaoke-app.tsx, editor-screen.tsx, editor-lyrics-tab.tsx
+- Editor is now accessible via button in Library header (not just F10 hotkey)
+- Editor library tiles are ~1/4 of previous size
+- Lyrics tab shows rawLyrics text and progressive syllable assignment visualization
