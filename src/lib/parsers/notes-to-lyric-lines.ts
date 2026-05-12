@@ -40,6 +40,11 @@ function isNearLineBreak(
  * - Line breaks are separate lines: "- <beat>" (passed via lineBreakBeats set)
  * - A hyphen "-" as lyric text on a note is just normal text, NOT a line break
  * - 8+ beat gap between notes = automatic line break (fallback)
+ *
+ * DUET HANDLING:
+ * - When notes have P1/P2 player markers, notes are split into separate groups
+ * - Each player gets its own set of lyric lines with correct text
+ * - This prevents text duplication from merged P1+P2 notes
  */
 export function convertNotesToLyricLines(
   notes: ParsedNote[],
@@ -49,11 +54,42 @@ export function convertNotesToLyricLines(
 ): LyricLine[] {
   const beatDuration = 15000 / bpm;
   const MIDI_BASE_OFFSET = 48;
-  const lyricLines: LyricLine[] = [];
 
+  // Check if any note has a P1/P2 player marker — indicates a duet song
+  const hasPlayerMarkers = notes.some(n => n.player === 'P1' || n.player === 'P2');
+
+  if (!hasPlayerMarkers) {
+    // Single-player / no duet markers — build lines from all notes together (original logic)
+    return buildLinesFromNotes(notes, lineBreakBeats, beatDuration, MIDI_BASE_OFFSET, gap);
+  }
+
+  // Duet mode: build separate lines for P1 and P2, then merge into one array.
+  // Each player's lines contain only their own text, preventing duplication.
+  const p1Notes = notes.filter(n => n.player === 'P1' || n.player === 'both' || !n.player);
+  const p2Notes = notes.filter(n => n.player === 'P2' || n.player === 'both' || !n.player);
+
+  const p1Lines = buildLinesFromNotes(p1Notes, lineBreakBeats, beatDuration, MIDI_BASE_OFFSET, gap, 'P1');
+  const p2Lines = buildLinesFromNotes(p2Notes, lineBreakBeats, beatDuration, MIDI_BASE_OFFSET, gap, 'P2');
+
+  // Merge and sort by startTime so lines appear in chronological order
+  return [...p1Lines, ...p2Lines].sort((a, b) => a.startTime - b.startTime);
+}
+
+/**
+ * Build lyric lines from a set of notes.
+ * When playerTarget is set, all lines get that player assignment.
+ */
+function buildLinesFromNotes(
+  notes: ParsedNote[],
+  lineBreakBeats: Set<number>,
+  beatDuration: number,
+  midiBaseOffset: number,
+  gap: number,
+  playerTarget?: 'P1' | 'P2',
+): LyricLine[] {
+  const lyricLines: LyricLine[] = [];
   let currentLineNotes: Note[] = [];
   let currentLineText = '';
-  let currentLinePlayer: 'P1' | 'P2' | 'both' | undefined = undefined;
 
   const sortedNotes = [...notes].sort((a, b) => a.startBeat - b.startBeat);
 
@@ -65,30 +101,21 @@ export function convertNotesToLyricLines(
 
     const convertedNote: Note = {
       id: `note-${lyricLines.length}-${currentLineNotes.length}`,
-      pitch: note.pitch + MIDI_BASE_OFFSET,
-      frequency: midiToFrequency(note.pitch + MIDI_BASE_OFFSET),
+      pitch: note.pitch + midiBaseOffset,
+      frequency: midiToFrequency(note.pitch + midiBaseOffset),
       startTime: Math.round(startTime),
       duration: Math.round(duration),
       lyric: note.lyric,
       isBonus: note.type === 'F',
       isGolden: note.type === '*' || note.type === 'G',
       isRap: note.type === 'R' || note.type === 'G',
-      player: note.player,
+      player: playerTarget || note.player,
     };
 
     currentLineNotes.push(convertedNote);
     currentLineText += note.lyric;
 
-    if (currentLinePlayer === undefined) {
-      currentLinePlayer = note.player;
-    } else if (currentLinePlayer !== note.player && note.player !== undefined) {
-      currentLinePlayer = 'both';
-    }
-
     // Check for line break: explicit "- <beat>" marker or 8+ beat gap fallback
-    // Uses ±1 beat tolerance for line break matching to handle fractional beats
-    // (e.g., "- 85" should match noteEndBeat of 84.5 or 85.3)
-    // Matches ultrastar-parser.ts and folder-scanner.ts behavior
     const nextNoteStart = i < sortedNotes.length - 1 ? sortedNotes[i + 1].startBeat : -1;
     const isExactBreak = lineBreakBeats.has(noteEndBeat) ||
       (nextNoteStart >= 0 && lineBreakBeats.has(nextNoteStart));
@@ -116,11 +143,10 @@ export function convertNotesToLyricLines(
         startTime: lineStartTime,
         endTime: lineEndTime,
         notes: currentLineNotes,
-        player: currentLinePlayer,
+        player: playerTarget || (currentLineNotes[0]?.player === 'both' ? 'both' : currentLineNotes[0]?.player),
       });
     }
     currentLineNotes = [];
     currentLineText = '';
-    currentLinePlayer = undefined;
   }
 }

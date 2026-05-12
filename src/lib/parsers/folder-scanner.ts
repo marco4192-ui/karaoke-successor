@@ -4,6 +4,7 @@
 import { Song, Note, LyricLine, midiToFrequency, Difficulty } from '@/types/game';
 import { CachedFolder } from '@/lib/game/library-cache';
 import { storeMedia } from '@/lib/db/media-db';
+import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
 import { normalizeTxtContent } from '@/lib/utils';
 import { AUDIO_EXTENSIONS, VIDEO_EXTENSIONS, TXT_EXTENSIONS, COVER_EXTENSIONS, BACKGROUND_EXTENSIONS } from '@/lib/media-extensions';
 
@@ -650,10 +651,10 @@ async function parseUltraStarFull(txtFile?: File): Promise<{
       continue;
     } else if (trimmedLine === 'E') {
       break;
-    } else if (trimmedLine === 'P1' || trimmedLine === 'P1:') {
+    } else if (trimmedLine === 'P1' || trimmedLine === 'P1:' || trimmedLine === 'P 1') {
       currentPlayer = 'P1';
       hasDuetNotes = true;
-    } else if (trimmedLine === 'P2' || trimmedLine === 'P2:') {
+    } else if (trimmedLine === 'P2' || trimmedLine === 'P2:' || trimmedLine === 'P 2') {
       currentPlayer = 'P2';
       hasDuetNotes = true;
     } else if (trimmedLine.startsWith('-')) {
@@ -695,83 +696,8 @@ async function parseUltraStarFull(txtFile?: File): Promise<{
   }
 
   // Convert beats to milliseconds using CORRECT UltraStar formula
-  // beatDuration = 15000 / BPM (equivalent to 60000 / (BPM * 4))
-  const beatDuration = 15000 / bpm;
-  const MIDI_BASE_OFFSET = 48;
-  
-  // Group notes into lyric lines
-  const lyricLines: LyricLine[] = [];
-  let currentLineNotes: Note[] = [];
-  let currentLineText = '';
-  let currentLinePlayer: 'P1' | 'P2' | 'both' | undefined = undefined;
-
-  const sortedNotes = [...notes].sort((a, b) => a.startBeat - b.startBeat);
-
-  for (let i = 0; i < sortedNotes.length; i++) {
-    const note = sortedNotes[i];
-    const noteEndBeat = note.startBeat + note.duration;
-    
-    const startTime = gap + (note.startBeat * beatDuration);
-    const duration = note.duration * beatDuration;
-
-    const convertedNote: Note = {
-      id: `note-${lyricLines.length}-${currentLineNotes.length}`,
-      pitch: note.pitch + MIDI_BASE_OFFSET,
-      frequency: midiToFrequency(note.pitch + MIDI_BASE_OFFSET),
-      startTime: Math.round(startTime),
-      duration: Math.round(duration),
-      lyric: note.lyric, // Preserve original lyric with spaces
-      isBonus: note.type === 'F',
-      isGolden: note.type === '*' || note.type === 'G',
-      isRap: note.type === 'R' || note.type === 'G',
-      player: note.player,
-    };
-
-    currentLineNotes.push(convertedNote);
-    // Build line text: concatenate lyrics, spaces are already embedded
-    currentLineText += note.lyric;
-    
-    // Track line player
-    if (currentLinePlayer === undefined) {
-      currentLinePlayer = note.player;
-    } else if (currentLinePlayer !== note.player && note.player !== undefined) {
-      currentLinePlayer = 'both';
-    }
-
-    // Check for line break: explicit "- <beat>" marker or 8+ beat gap fallback
-    const nextNoteStart = i < sortedNotes.length - 1 ? sortedNotes[i + 1].startBeat : -1;
-    const isLineBreak = lineBreakBeats.has(noteEndBeat) || 
-                        (nextNoteStart >= 0 && lineBreakBeats.has(nextNoteStart)) ||
-                        (i < sortedNotes.length - 1 && 
-                         nextNoteStart - noteEndBeat >= 8);
-
-    if (isLineBreak || i === sortedNotes.length - 1) {
-      if (currentLineNotes.length > 0) {
-        const lineStartTime = currentLineNotes[0].startTime;
-        const lineEndTime = currentLineNotes[currentLineNotes.length - 1].startTime + 
-                           currentLineNotes[currentLineNotes.length - 1].duration;
-        
-        // Build line text: PRESERVE SPACES between words
-        // Only trim leading whitespace, keep internal and trailing spaces
-        const finalLineText = currentLineText.replace(/^\s+/, '');
-        
-        if (finalLineText) {
-          lyricLines.push({
-            id: `line-${lyricLines.length}`,
-            text: finalLineText,
-            startTime: lineStartTime,
-            endTime: lineEndTime,
-            notes: currentLineNotes,
-            player: currentLinePlayer,
-          });
-        }
-        
-        currentLineNotes = [];
-        currentLineText = '';
-        currentLinePlayer = undefined;
-      }
-    }
-  }
+  // Use the shared converter to build lyric lines (handles duet P1/P2 separation)
+  const lyricLines = convertNotesToLyricLines(notes, lineBreakBeats, bpm, gap);
 
   return { lyrics: lyricLines, bpm, gap, previewStart, previewDuration, isDuet: hasDuetNotes };
 }

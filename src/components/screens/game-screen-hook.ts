@@ -426,11 +426,11 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
         if (isDuetMode) {
           if (hasExplicitPlayerMarkers) {
             // P1 notes only for player 1, P2 notes only for player 2
-            // Notes with player 'both' or undefined are sung by BOTH → show for each player
-            if (note.player === 'P1' || note.player === 'both' || note.player === undefined) {
+            // Notes with player 'both' are sung by BOTH players
+            if (note.player === 'P1' || note.player === 'both') {
               p1Notes.push(noteWithLine);
             }
-            if (note.player === 'P2' || note.player === 'both' || note.player === undefined) {
+            if (note.player === 'P2' || note.player === 'both') {
               p2Notes.push(noteWithLine);
             }
           } else {
@@ -447,12 +447,12 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
     p2Notes.sort((a, b) => a.startTime - b.startTime);
 
     const p1Lines = sortedLines.filter(line => {
-      if (hasExplicitPlayerMarkers) return line.player === 'P1' || line.player === 'both' || !line.player;
+      if (hasExplicitPlayerMarkers) return line.player === 'P1' || line.player === 'both';
       return true;
     });
 
     const p2Lines = sortedLines.filter(line => {
-      if (hasExplicitPlayerMarkers) return line.player === 'P2' || line.player === 'both' || !line.player;
+      if (hasExplicitPlayerMarkers) return line.player === 'P2' || line.player === 'both';
       return true;
     });
 

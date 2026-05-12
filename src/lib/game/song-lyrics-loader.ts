@@ -150,8 +150,8 @@ function parseUltraStarTxtContent(content: string, gap: number, bpm: number): Ly
   for (const line of lines) {
     const trimmedLine = line.trim();
 
-    if (trimmedLine === 'P1' || trimmedLine === 'P1:') { currentPlayer = 'P1'; continue; }
-    if (trimmedLine === 'P2' || trimmedLine === 'P2:') { currentPlayer = 'P2'; continue; }
+    if (trimmedLine === 'P1' || trimmedLine === 'P1:' || trimmedLine === 'P 1') { currentPlayer = 'P1'; continue; }
+    if (trimmedLine === 'P2' || trimmedLine === 'P2:' || trimmedLine === 'P 2') { currentPlayer = 'P2'; continue; }
     if (trimmedLine.startsWith('#')) continue;
     if (trimmedLine === 'E') break;
 

@@ -22,6 +22,7 @@ import { Song, Note, LyricLine, Difficulty, DuetPlayer, midiToFrequency } from '
 import { isYouTubeUrl, isDirectVideoUrl } from '@/lib/url-utils';
 import { normalizeTxtContent } from '@/lib/utils';
 import { normalizeLanguage } from '@/lib/parsers/meta-normalizer';
+import { convertNotesToLyricLines } from '@/lib/parsers/notes-to-lyric-lines';
 
 interface UltraStarNote {
   type: ':' | '*' | 'F' | 'R' | 'G';
@@ -214,13 +215,13 @@ export function parseUltraStarTxt(content: string): UltraStarSong {
       continue;
     }
 
-    // Check for player switch markers (P1: or P2: at line start)
-    if (line === 'P1' || line === 'P1:') {
+    // Check for player switch markers (P1: or P2: at line start, with or without space)
+    if (line === 'P1' || line === 'P1:' || line === 'P 1') {
       currentPlayer = 'P1';
       hasDuetNotes = true;
       continue;
     }
-    if (line === 'P2' || line === 'P2:') {
+    if (line === 'P2' || line === 'P2:' || line === 'P 2') {
       currentPlayer = 'P2';
       hasDuetNotes = true;
       continue;
@@ -283,118 +284,14 @@ export function convertUltraStarToSong(
   // Formula: beatDuration = 60 seconds / BPM / 4 * 1000 = 15000 / BPM
   // This matches the official UltraStar formula: time = beat / BPM / 4 * 60 + GAP
   const beatDuration = 15000 / ultraStar.bpm; // 60000 / (BPM * 4)
-  
-  // Base MIDI note offset - UltraStar pitches are relative
-  // Typical range is 0-24, mapping to C3-C5 (MIDI 48-72)
-  // This is the standard UltraStar pitch mapping
-  const MIDI_BASE_OFFSET = 48;
 
-  // Sort notes by start beat
-  const sortedNotes = [...ultraStar.notes].sort((a, b) => a.startBeat - b.startBeat);
-
-  // Group notes into lyric lines
-  const lyricLines: LyricLine[] = [];
-  let currentLineNotes: Note[] = [];
-  let currentLineText = '';
-  let currentLinePlayer: DuetPlayer | undefined = undefined;
-
-  // Sort line breaks for sequential scanning
-  const sortedLineBreaks = [...ultraStar.lineBreaks].sort((a, b) => a - b);
-  let nextBreakIndex = 0; // Points to the next unprocessed line break
-
-  for (let i = 0; i < sortedNotes.length; i++) {
-    const note = sortedNotes[i];
-    const noteEndBeat = note.startBeat + note.duration;
-
-    // Convert note timing:
-    // startTime = GAP + (startBeat * beatDuration)
-    // This accounts for the delay before lyrics start
-    const startTime = ultraStar.gap + (note.startBeat * beatDuration);
-    const duration = note.duration * beatDuration;
-
-    // LYRIC HANDLING:
-    // In UltraStar format:
-    // - Trailing space = end of word (display space after the word)
-    // - No trailing space = syllable (connected to next note)
-    // - Line breaks are separate lines: "- <beat>" (handled via lineBreakBeats)
-    // - A lyric of "-" on a note is just a normal note with hyphen text (NOT a line break)
-
-    const rawLyric = note.lyric;
-
-    const convertedNote: Note = {
-      id: `note-${lyricLines.length}-${currentLineNotes.length}`,
-      pitch: note.pitch + MIDI_BASE_OFFSET,
-      frequency: midiToFrequency(note.pitch + MIDI_BASE_OFFSET),
-      startTime: Math.round(startTime),
-      duration: Math.round(duration),
-      lyric: rawLyric,
-      isBonus: note.type === 'F', // Freestyle notes are bonus
-      isGolden: note.type === '*' || note.type === 'G', // Golden notes
-      isRap: note.type === 'R' || note.type === 'G', // Rap notes
-      player: note.player, // Preserve player assignment for duet mode
-    };
-
-    // Add note to current line
-    currentLineNotes.push(convertedNote);
-
-    // Build line text: concatenate lyrics, spaces are already embedded
-    currentLineText += rawLyric;
-
-    // Track line player
-    if (currentLinePlayer === undefined) {
-      currentLinePlayer = note.player;
-    } else if (currentLinePlayer !== note.player && note.player !== undefined) {
-      currentLinePlayer = 'both';
-    }
-
-    // Check if this note ends a line (after adding)
-    // Line breaks are ONLY created by explicit "- <beat>" markers.
-    // Scan forward through sorted line breaks: if any break falls at or after
-    // this note's end beat, force a line break — regardless of gap to next note.
-    const nextNoteStart = i < sortedNotes.length - 1 ? sortedNotes[i + 1].startBeat : Infinity;
-    let hasExplicitBreak = false;
-
-    while (nextBreakIndex < sortedLineBreaks.length) {
-      const breakBeat = sortedLineBreaks[nextBreakIndex];
-      if (breakBeat <= noteEndBeat) {
-        // Break at or before this note's end — applies to this note
-        nextBreakIndex++;
-        hasExplicitBreak = true;
-      } else if (breakBeat < nextNoteStart) {
-        // Break falls between this note's end and next note's start
-        nextBreakIndex++;
-        hasExplicitBreak = true;
-      } else {
-        // Break is at or after next note's start — will be handled then
-        break;
-      }
-    }
-
-    if ((hasExplicitBreak || i === sortedNotes.length - 1) && currentLineNotes.length > 0) {
-      const lineStartTime = currentLineNotes[0].startTime;
-      const lineEndTime = currentLineNotes[currentLineNotes.length - 1].startTime +
-                         currentLineNotes[currentLineNotes.length - 1].duration;
-
-      // Build line text: PRESERVE SPACES between words
-      // Only trim leading whitespace, keep internal and trailing spaces
-      const finalLineText = currentLineText.replace(/^\s+/, '');
-
-      if (finalLineText) {
-        lyricLines.push({
-          id: `line-${lyricLines.length}`,
-          text: finalLineText,
-          startTime: lineStartTime,
-          endTime: lineEndTime,
-          notes: currentLineNotes,
-          player: currentLinePlayer,
-        });
-      }
-
-      currentLineNotes = [];
-      currentLineText = '';
-      currentLinePlayer = undefined;
-    }
-  }
+  // Use the shared converter to build lyric lines (handles duet P1/P2 separation)
+  const lyricLines = convertNotesToLyricLines(
+    ultraStar.notes,
+    new Set(ultraStar.lineBreaks),
+    ultraStar.bpm,
+    ultraStar.gap,
+  );
 
   // Calculate total duration:
   // - When #END: is defined → use that value (time-based ending in game loop)
@@ -414,7 +311,7 @@ export function convertUltraStarToSong(
   }
 
   // Determine difficulty based on note density
-  const totalNotes = sortedNotes.length;
+  const totalNotes = ultraStar.notes.length;
   const effectiveDurationForStats = ultraStar.end || totalDuration;
   const songDurationMinutes = effectiveDurationForStats / 60000;
   const notesPerMinute = songDurationMinutes > 0 ? totalNotes / songDurationMinutes : 0;
