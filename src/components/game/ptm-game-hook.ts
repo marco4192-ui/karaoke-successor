@@ -180,7 +180,7 @@ export function usePtmGameLogic({
 
   // ── Smoothed pitch ──
   const { pitchResult, stop, switchMicrophone } = usePitchDetector();
-  const smoothedPitch = useSmoothedPitch(pitchResult?.note ?? null, 0.3, 0.25);
+  const smoothedPitch = useSmoothedPitch(pitchResult?.note ?? null, 0.55, 0.15);
 
   // ── Player state (local, mutable for performance) ──
   const playersRef = useRef<PtmPlayer[]>(

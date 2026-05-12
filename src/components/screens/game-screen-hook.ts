@@ -201,7 +201,8 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
 
   // Smoothed pitch for visual display (prevents flickering/jitter)
   // Raw pitch is still used for scoring accuracy
-  const smoothedPitch = useSmoothedPitch(pitchResult?.note ?? null, 0.3, 0.25);
+  // α=0.55 = responsive tracking, deadZone=0.15 = sensitive to small changes
+  const smoothedPitch = useSmoothedPitch(pitchResult?.note ?? null, 0.55, 0.15);
 
   // Current song reference - must be defined early as it's used by multiple hooks
   const song = gameState.currentSong;

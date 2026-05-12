@@ -214,6 +214,67 @@ const NoteBlock = React.memo(function NoteBlock({
 });
 
 /**
+ * Target pitch marker — shows where the currently active note sits on the pitch scale.
+ * Rendered as a small horizontal line on the sing line so the singer can visually
+ * compare their current pitch (mic indicator) against the target note.
+ */
+const TargetPitchMarker = React.memo(function TargetPitchMarker({
+  visibleNotes,
+  currentTime,
+  pitchStats,
+  singLinePosition,
+  visibleTop,
+  visibleRange,
+  color = 'cyan',
+}: {
+  visibleNotes: NoteWithLine[];
+  currentTime: number;
+  pitchStats: PitchStats;
+  singLinePosition: number;
+  visibleTop: number;
+  visibleRange: number;
+  color?: 'cyan' | 'pink';
+}) {
+  // Find the currently active note (the one being sung right now)
+  const activeNote = useMemo(() => {
+    let best: NoteWithLine | null = null;
+    let bestOverlap = -Infinity;
+    for (const note of visibleNotes) {
+      const noteEnd = note.startTime + note.duration;
+      if (currentTime >= note.startTime && currentTime <= noteEnd) {
+        const overlap = Math.min(currentTime, noteEnd) - Math.max(currentTime, note.startTime);
+        if (overlap > bestOverlap) {
+          bestOverlap = overlap;
+          best = note;
+        }
+      }
+    }
+    return best;
+  }, [visibleNotes, currentTime]);
+
+  if (!activeNote) return null;
+
+  const pr = pitchStats.pitchRange || 1;
+  const pitchY = visibleTop + visibleRange - ((activeNote.pitch - pitchStats.minPitch) / pr) * visibleRange;
+
+  const markerColor = color === 'cyan' ? 'bg-white/50' : 'bg-white/50';
+
+  return (
+    <div
+      className={`absolute z-20 ${markerColor}`}
+      style={{
+        left: `${singLinePosition + 1}%`,
+        top: `${pitchY}%`,
+        width: '12px',
+        height: '3px',
+        borderRadius: '2px',
+        transform: 'translateY(-50%)',
+      }}
+    />
+  );
+});
+
+/**
  * Pitch indicator showing singer's current pitch
  */
 const PitchIndicator = React.memo(function PitchIndicator({
@@ -248,7 +309,6 @@ const PitchIndicator = React.memo(function PitchIndicator({
         left: `${singLinePosition - 1.5}%`,
         top: `${pitchY}%`,
         transform: 'translateY(-50%)',
-        transition: 'top 40ms linear',
       }}
     >
       <MicIcon className="w-4 h-4 text-white" />
@@ -346,9 +406,20 @@ export const NoteHighway = React.memo(function NoteHighway({
         />
       ))}
 
-      {/* Pitch indicator */}
+      {/* Pitch indicator (singer's current pitch) */}
       <PitchIndicator
         detectedPitch={detectedPitch}
+        pitchStats={pitchStats}
+        singLinePosition={singLinePosition}
+        visibleTop={visibleTop}
+        visibleRange={visibleRange}
+        color={colorScheme}
+      />
+
+      {/* Target pitch marker (where the active note sits on the pitch scale) */}
+      <TargetPitchMarker
+        visibleNotes={visibleNotes}
+        currentTime={currentTime}
         pitchStats={pitchStats}
         singLinePosition={singLinePosition}
         visibleTop={visibleTop}

@@ -30,17 +30,6 @@ export function useAppEffects() {
     });
   }, []);
 
-  // Fullscreen change listener
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    };
-  }, []);
-
   // Apply stored theme on app start + listen for runtime changes
   useEffect(() => {
     const storedTheme = getStoredTheme();
@@ -78,11 +67,47 @@ export function useAppEffects() {
   }, []);
 
   const toggleFullscreen = useCallback(() => {
+    // Prefer Tauri native fullscreen — it does NOT exit on Escape,
+    // unlike the browser Fullscreen API which has hardcoded Escape-to-exit.
+    if (typeof window !== 'undefined' && (window.__TAURI__ || window.__TAURI_INTERNALS__)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__TAURI__?.window?.appWindow?.toggleFullscreen?.().catch(() => {});
+      return;
+    }
+    // Fallback: browser Fullscreen API (Escape will exit — unavoidable)
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(() => {});
     } else {
       document.exitFullscreen().catch(() => {});
     }
+  }, []);
+
+  // Track fullscreen state from both Tauri and browser sources
+  useEffect(() => {
+    // Browser fullscreen change
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+    // Tauri fullscreen change (if available)
+    let tauriUnlisten: (() => void) | null = null;
+    if (typeof window !== 'undefined' && (window.__TAURI__ || window.__TAURI_INTERNALS__)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__TAURI__?.window?.appWindow?.onResized?.(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).__TAURI__?.window?.appWindow?.isFullscreen?.().then((isFs: boolean) => {
+          setIsFullscreen(isFs);
+        }).catch(() => {});
+      })?.then((unlisten: () => void) => {
+        tauriUnlisten = unlisten;
+      }).catch(() => {});
+    }
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      tauriUnlisten?.();
+    };
   }, []);
 
   return {
