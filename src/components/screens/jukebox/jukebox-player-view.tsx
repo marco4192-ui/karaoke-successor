@@ -6,14 +6,16 @@ import { getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { YouTubePlayer, extractYouTubeId } from '@/components/game/youtube-player';
 import { PlayIcon, PauseIcon, MusicIcon } from '@/components/icons';
+import { useTranslation } from '@/lib/i18n/translations';
 import type { UseJukeboxReturn } from './jukebox-types';
 
 /** Fullscreen header overlay */
 function FullscreenHeader({ j }: { j: UseJukeboxReturn }) {
+  const { t } = useTranslation();
   return (
     <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/80 to-transparent p-4 flex items-center justify-between">
       <div className="flex items-center gap-4">
-        <span className="text-cyan-400 text-sm font-medium">NOW PLAYING</span>
+        <span className="text-cyan-400 text-sm font-medium">{t('jukeboxPlayer.nowPlaying')}</span>
         <h2 className="text-xl font-bold text-white">{j.currentSong?.title}</h2>
         <span className="text-white/60">{j.currentSong?.artist}</span>
       </div>
@@ -23,17 +25,17 @@ function FullscreenHeader({ j }: { j: UseJukeboxReturn }) {
           onClick={() => j.setShowLyrics(!j.showLyrics)}
           className={`border-white/20 ${j.showLyrics ? 'bg-purple-500/50 border-purple-500' : 'text-white'}`}
         >
-          🎤 Lyrics
+          🎤 {t('jukeboxPlayer.lyrics').slice(2)}
         </Button>
         <Button
           variant="outline"
           onClick={() => j.setHidePlaylist(!j.hidePlaylist)}
           className="border-white/20 text-white"
         >
-          {j.hidePlaylist ? '📖 Show Playlist' : '📖 Hide Playlist'}
+          {j.hidePlaylist ? t('jukeboxPlayer.showPlaylist') : t('jukeboxPlayer.hidePlaylist')}
         </Button>
         <Button variant="outline" onClick={j.toggleFullscreen} className="border-white/20 text-white">
-          ⤓ Exit Fullscreen
+          {t('jukeboxPlayer.exitFullscreen')}
         </Button>
       </div>
     </div>
@@ -75,11 +77,12 @@ function LyricsOverlay({ j }: { j: UseJukeboxReturn }) {
 
 /** Song info + controls overlay at bottom of video (normal mode) */
 function VideoOverlay({ j }: { j: UseJukeboxReturn }) {
+  const { t } = useTranslation();
   return (
     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6">
       <div className="flex items-end justify-between">
         <div>
-          <p className="text-cyan-400 text-sm font-medium">NOW PLAYING</p>
+          <p className="text-cyan-400 text-sm font-medium">{t('jukeboxPlayer.nowPlaying')}</p>
           <h2 className="text-3xl font-bold text-white">{j.currentSong?.title ?? ''}</h2>
           <p className="text-white/70 text-lg">{j.currentSong?.artist ?? ''}</p>
         </div>
@@ -109,6 +112,7 @@ function VideoOverlay({ j }: { j: UseJukeboxReturn }) {
 
 /** Controls bar (shuffle, repeat, lyrics, volume, stop) in normal mode */
 function ControlsBar({ j }: { j: UseJukeboxReturn }) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center justify-between bg-white/5 rounded-xl p-4">
       <div className="flex items-center gap-4">
@@ -137,10 +141,10 @@ function ControlsBar({ j }: { j: UseJukeboxReturn }) {
         <button
           onClick={() => j.setShowLyrics(!j.showLyrics)}
           className={`p-2 rounded-lg transition-colors flex items-center gap-1 ${j.showLyrics ? 'bg-purple-500 text-white' : 'text-white/60 hover:text-white'}`}
-          title="Sing-Along Mode: Show Lyrics"
+          title={t('jukeboxPlayer.singAlongMode')}
         >
           <MusicIcon className="w-5 h-5" />
-          <span className="text-xs">Lyrics</span>
+          <span className="text-xs">{t('jukeboxPlayer.lyrics').slice(2)}</span>
         </button>
       </div>
 
@@ -159,7 +163,7 @@ function ControlsBar({ j }: { j: UseJukeboxReturn }) {
       </div>
 
       <Button variant="outline" onClick={j.stopJukebox} className="border-red-500/50 text-red-400 hover:bg-red-500/10">
-        Stop Jukebox
+        {t('jukeboxPlayer.stopJukebox')}
       </Button>
     </div>
   );
@@ -167,6 +171,7 @@ function ControlsBar({ j }: { j: UseJukeboxReturn }) {
 
 /** Playlist sidebar (Up Next) */
 function PlaylistSidebar({ j }: { j: UseJukeboxReturn }) {
+  const { t } = useTranslation();
   if (j.upNext.length === 0 || j.hidePlaylist) return null;
 
   const handleSongClick = async (songId: string) => {
@@ -183,7 +188,7 @@ function PlaylistSidebar({ j }: { j: UseJukeboxReturn }) {
       <Card className={`bg-white/5 border-white/10 ${j.isFullscreen ? 'flex-1 rounded-none border-0 flex flex-col' : ''}`}>
         <CardHeader className={j.isFullscreen ? 'pb-2 border-b border-white/10' : ''}>
           <CardTitle className="text-lg flex items-center justify-between">
-            Up Next
+            {t('jukeboxPlayer.upNext')}
             {j.isFullscreen && (
               <div className="flex items-center gap-2">
                 <button
@@ -244,7 +249,7 @@ function PlaylistSidebar({ j }: { j: UseJukeboxReturn }) {
               />
             </div>
             <Button variant="outline" onClick={j.stopJukebox} className="w-full border-red-500/50 text-red-400 hover:bg-red-500/10">
-              Stop Jukebox
+              {t('jukeboxPlayer.stopJukebox')}
             </Button>
           </div>
         )}
@@ -255,6 +260,7 @@ function PlaylistSidebar({ j }: { j: UseJukeboxReturn }) {
 
 /** Main player view component */
 export function JukeboxPlayerView({ j, videoRef, audioRef }: { j: UseJukeboxReturn; videoRef: React.RefObject<HTMLVideoElement | null>; audioRef: React.RefObject<HTMLAudioElement | null> }) {
+  const { t } = useTranslation();
   return (
     <>
       {j.isFullscreen && <FullscreenHeader j={j} />}
@@ -262,9 +268,9 @@ export function JukeboxPlayerView({ j, videoRef, audioRef }: { j: UseJukeboxRetu
       {/* Normal mode header */}
       {!j.isFullscreen && (
         <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">🎵 Jukebox Mode</h1>
+          <h1 className="text-3xl font-bold mb-2">{t('jukeboxPlayer.jukeboxMode')}</h1>
           <p className="text-white/60">
-            {j.isPlaying ? `${j.playlist.length} songs in playlist` : 'Sit back and enjoy the music!'}
+            {j.isPlaying ? `${j.playlist.length} ${t('jukeboxPlayer.songsInPlaylist').replace('{n}', String(j.playlist.length))}` : t('jukeboxPlayer.sitBackEnjoy')}
           </p>
         </div>
       )}
@@ -347,13 +353,13 @@ export function JukeboxPlayerView({ j, videoRef, audioRef }: { j: UseJukeboxRetu
                     <button
                       onClick={j.clearCustomYoutube}
                       className="p-2 rounded-lg bg-black/50 hover:bg-black/70 text-red-400 transition-colors text-xs"
-                      title="YouTube Video entfernen"
+                      title={t('jukeboxPlayer.youtubeRemove')}
                     >
-                      YouTube
+                      {t('jukeboxPlayer.youtube')}
                     </button>
                   )}
                   <button onClick={j.toggleFullscreen} className="p-2 rounded-lg bg-black/50 hover:bg-black/70 text-white transition-colors">
-                    ⤢ Fullscreen
+                    {t('jukeboxPlayer.fullscreen')}
                   </button>
                 </div>
               )}

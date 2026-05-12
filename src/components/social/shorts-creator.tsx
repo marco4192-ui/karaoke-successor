@@ -6,6 +6,7 @@ import { Slider } from '@/components/ui/slider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { RATING_HEX_COLORS } from '@/lib/game/rating-utils';
+import { useTranslation } from '@/lib/i18n/translations';
 import type { Song, HighscoreEntry, GameResult } from '@/types/game';
 
 interface ShortsCreatorProps {
@@ -25,6 +26,13 @@ const VIDEO_STYLES: { id: VideoStyle; name: string; bg: string; accent: string }
   { id: 'gradient', name: 'Gradient', bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', accent: '#ffffff' },
 ];
 
+const VIDEO_STYLE_KEYS: Record<VideoStyle, string> = {
+  neon: 'shortsCreator.styleNeon',
+  retro: 'shortsCreator.styleRetro',
+  minimal: 'shortsCreator.styleMinimal',
+  gradient: 'shortsCreator.styleGradient',
+};
+
 type CameraPosition = 'pip-top-right' | 'pip-top-left' | 'pip-bottom-right' | 'pip-bottom-left' | 'fullscreen' | 'none';
 
 const CAMERA_POSITIONS: { id: CameraPosition; name: string }[] = [
@@ -37,6 +45,7 @@ const CAMERA_POSITIONS: { id: CameraPosition; name: string }[] = [
 ];
 
 export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const cameraVideoRef = useRef<HTMLVideoElement>(null);
@@ -81,10 +90,10 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
       await fetch('/api/mobile?action=requestCameraStart', { method: 'POST' });
       setMobileCameraConnected(true);
     } catch {
-      setCameraError('Failed to connect to mobile camera');
+      setCameraError(t('shortsCreator.errorMobileCamera'));
     }
     setIsRequestingMobileCamera(false);
-  }, []);
+  }, [t]);
 
   // Use local camera
   const startLocalCamera = useCallback(async () => {
@@ -100,9 +109,9 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
       setHasCamera(true);
       setCameraError(null);
     } catch {
-      setCameraError('Camera access denied');
+      setCameraError(t('shortsCreator.errorCameraAccess'));
     }
-  }, []);
+  }, [t]);
 
   // Stop camera
   const stopCamera = useCallback(() => {
@@ -264,7 +273,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
     ctx.fillStyle = style === 'minimal' ? '#cccccc' : '#ffffff66';
     ctx.font = '20px Arial, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Karaoke ZERO', width / 2, cameraPosition === 'fullscreen' ? 30 : height - 40);
+    ctx.fillText(t('shortsCreator.branding'), width / 2, cameraPosition === 'fullscreen' ? 30 : height - 40);
 
     // Progress bar (during recording)
     if (isRecording && duration > 0 && recordingStartTime > 0) {
@@ -283,7 +292,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
         setProgress(progressPercent * 100);
       }
     }
-  }, [song, score, style, styleConfig, cameraPosition, hasCamera, isRecording, duration, recordingStartTime]);
+  }, [song, score, style, styleConfig, cameraPosition, hasCamera, isRecording, duration, recordingStartTime, t]);
 
   // Animation loop — only run continuous rAF during recording; draw single static preview otherwise
   useEffect(() => {
@@ -405,7 +414,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
     if (audioRef.current) {
       audioRef.current.play();
     }
-  }, [audioUrl, duration, song.preview]);
+  }, [audioUrl, duration, song.preview, t]);
 
   // Stop recording
   const stopRecording = useCallback(() => {
@@ -426,7 +435,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
     link.href = recordedUrl;
     link.download = `karaoke-${song.title.replace(/[^a-z0-9]/gi, '-')}.webm`;
     link.click();
-  }, [recordedBlob, recordedUrl, song.title]);
+  }, [recordedBlob, recordedUrl, song.title, t]);
 
   // Share video
   const shareVideo = useCallback(async () => {
@@ -437,7 +446,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
     if (navigator.share && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({
-          title: 'My Karaoke Score!',
+          title: t('scoreCardSocial.shareTitle'),
           text: `I scored ${score.score.toLocaleString()} points on "${song.title}"!`,
           files: [file],
         });
@@ -448,7 +457,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
     } else {
       downloadVideo();
     }
-  }, [recordedBlob, score.score, song.title, downloadVideo]);
+  }, [recordedBlob, score.score, song.title, downloadVideo, t]);
 
   // Reset
   const resetRecording = useCallback(() => {
@@ -492,9 +501,9 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
         <Card className="bg-white/5 border-white/10">
           <CardHeader className="py-3">
             <CardTitle className="text-sm flex items-center gap-2">
-              📹 Camera
-              {hasCamera && <Badge className="bg-green-500/30 text-green-400">Active</Badge>}
-              {mobileCameraConnected && <Badge className="bg-blue-500/30 text-blue-400">Mobile Connected</Badge>}
+              {t('shortsCreator.camera')}
+              {hasCamera && <Badge className="bg-green-500/30 text-green-400">{t('shortsCreator.active')}</Badge>}
+              {mobileCameraConnected && <Badge className="bg-blue-500/30 text-blue-400">{t('shortsCreator.mobileConnected')}</Badge>}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -507,7 +516,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
                     size="sm"
                     className="flex-1 bg-gradient-to-r from-pink-500 to-rose-500"
                   >
-                    📱 Use Device Camera
+                    {t('shortsCreator.useDeviceCamera')}
                   </Button>
                   <Button 
                     onClick={requestMobileCamera}
@@ -516,13 +525,13 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
                     className="flex-1 border-white/20 text-white"
                     disabled={isRequestingMobileCamera}
                   >
-                    {isRequestingMobileCamera ? 'Connecting...' : '📲 Mobile Camera'}
+                    {isRequestingMobileCamera ? t('shortsCreator.connecting') : t('shortsCreator.mobileCamera')}
                   </Button>
                 </>
               ) : (
                 <>
                   <Button onClick={stopCamera} size="sm" variant="outline" className="flex-1 border-white/20 text-white">
-                    Turn Off
+                    {t('shortsCreator.turnOff')}
                   </Button>
                   {!mobileCameraConnected && (
                     <Button
@@ -532,7 +541,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
                       className="flex-1 border-white/20 text-white"
                       disabled={isRequestingMobileCamera}
                     >
-                      {isRequestingMobileCamera ? 'Connecting...' : '📲 Mobile Camera'}
+                      {isRequestingMobileCamera ? t('shortsCreator.connecting') : t('shortsCreator.mobileCamera')}
                     </Button>
                   )}
                   {mobileCameraConnected && (
@@ -542,7 +551,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
                       variant="outline"
                       className="flex-1 border-red-500/30 text-red-400"
                     >
-                      Disconnect Mobile
+                      {t('shortsCreator.disconnectMobile')}
                     </Button>
                   )}
                 </>
@@ -556,7 +565,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
             {/* Camera Position */}
             {hasCamera && (
               <div className="space-y-2">
-                <label className="text-xs text-white/60">Position</label>
+                <label className="text-xs text-white/60">{t('shortsCreator.position')}</label>
                 <div className="flex gap-1 flex-wrap">
                   {CAMERA_POSITIONS.map((pos) => (
                     <button
@@ -568,7 +577,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
                           : 'bg-white/10 text-white hover:bg-white/20'
                       }`}
                     >
-                      {pos.name}
+                      {t(`shortsCreator.cameraPosition${pos.id.split('-').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('')}`)}
                     </button>
                   ))}
                 </div>
@@ -581,7 +590,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
       {/* Duration Slider */}
       {!recordedBlob && (
         <div className="space-y-2">
-          <label className="text-white/60 text-sm">Duration: {duration}s</label>
+          <label className="text-white/60 text-sm">{t('shortsCreator.duration').replace('{n}', String(duration))}</label>
           <Slider
             value={[duration]}
             onValueChange={([v]) => setDuration(v)}
@@ -596,7 +605,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
       {/* Style Selection */}
       {!recordedBlob && (
         <div className="space-y-2">
-          <label className="text-white/60 text-sm">Style</label>
+          <label className="text-white/60 text-sm">{t('shortsCreator.style')}</label>
           <div className="flex gap-2 flex-wrap">
             {VIDEO_STYLES.map((s) => (
               <button
@@ -619,7 +628,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
       {isRecording && (
         <div className="space-y-1">
           <div className="flex justify-between text-xs text-white/60">
-            <span>Recording...</span>
+            <span>{t('shortsCreator.recording')}</span>
             <span>{Math.round(progress)}%</span>
           </div>
           <div className="h-2 bg-white/10 rounded-full overflow-hidden">
@@ -638,7 +647,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
             onClick={startRecording}
             className="flex-1 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-400 hover:to-pink-400"
           >
-            🔴 Record ({duration}s)
+            {t('shortsCreator.record').replace('{n}', String(duration))}
           </Button>
         )}
         
@@ -647,20 +656,20 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
             onClick={stopRecording}
             className="flex-1 bg-white/10 text-white"
           >
-            ⏹️ Stop
+            {t('shortsCreator.stop')}
           </Button>
         )}
 
         {recordedBlob && (
           <>
             <Button onClick={resetRecording} variant="outline" className="border-white/20 text-white">
-              🔄 New
+              {t('shortsCreator.new')}
             </Button>
             <Button onClick={downloadVideo} className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500">
-              📥 Download
+              {t('shortsCreator.download')}
             </Button>
             <Button onClick={shareVideo} variant="outline" className="flex-1 border-white/20 text-white">
-              📤 Share
+              {t('shortsCreator.share')}
             </Button>
           </>
         )}

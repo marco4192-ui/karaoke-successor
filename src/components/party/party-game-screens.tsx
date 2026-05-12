@@ -5,6 +5,7 @@ import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { getAllSongs, getNonDuetSongs } from '@/lib/game/song-library';
 import { recordMatchResult } from '@/lib/game/tournament';
+import { useTranslation } from '@/lib/i18n/translations';
 import { TournamentSetupScreen, TournamentBracketView } from '@/components/game/tournament-screen';
 import { BattleRoyaleSetupScreen, BattleRoyaleGameView } from '@/components/game/battle-royale-screen';
 import { PassTheMicSetupScreen } from '@/components/game/pass-the-mic-screen';
@@ -30,6 +31,7 @@ interface PartyGameScreensProps {
 export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
   const { profiles, setGameMode, setSong, resetGame, addPlayer, setPlayers } = useGameStore();
   const party = usePartyStore();
+  const { t } = useTranslation();
 
   // State for Rate my Song results
   const [rateMySongResult, setRateMySongResult] = useState<RateMySongResult | null>(null);
@@ -53,8 +55,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
     if (!match.player1 || !match.player2) return;
 
     // Set up mic assignments: check companion connections
-    let p1Mic = 'Mikrofon 1';
-    let p2Mic = 'Mikrofon 2';
+    let p1Mic = t('partyGameScreens.microphone1');
+    let p2Mic = t('partyGameScreens.microphone2');
 
     try {
       const res = await fetch('/api/mobile?action=getprofiles');
@@ -70,8 +72,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
         );
 
         // Companion-connected players sing via companion app
-        if (p1Companion) p1Mic = 'Companion';
-        if (p2Companion) p2Mic = 'Companion';
+        if (p1Companion) p1Mic = t('partyGameScreens.companion');
+        if (p2Companion) p2Mic = t('partyGameScreens.companion');
 
         // If both players are companions, one still needs a mic (shouldn't happen in 1v1)
         // If both use mics, that's the default
@@ -88,9 +90,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       p2Mic,
       countdown: 3,
     });
-  }, []);
-
-  // Countdown timer for mic assignment overlay
+  }, [t]);
   useEffect(() => {
     if (!micOverlay) return;
 
@@ -113,8 +113,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       const setupResult: GameSetupResult = {
         mode: 'tournament',
         players: [
-          { id: match.player1.id, name: match.player1.name, color: match.player1.color || '#FF6B6B', playerType: micOverlay.p1Mic === 'Companion' ? 'companion' : 'microphone', micId: 'default', micName: micOverlay.p1Mic },
-          { id: match.player2.id, name: match.player2.name, color: match.player2.color || '#4ECDC4', playerType: micOverlay.p2Mic === 'Companion' ? 'companion' : 'microphone', micId: 'default', micName: micOverlay.p2Mic },
+          { id: match.player1.id, name: match.player1.name, color: match.player1.color || '#FF6B6B', playerType: micOverlay.p1Mic === t('partyGameScreens.companion') ? 'companion' : 'microphone', micId: 'default', micName: micOverlay.p1Mic },
+          { id: match.player2.id, name: match.player2.name, color: match.player2.color || '#4ECDC4', playerType: micOverlay.p2Mic === t('partyGameScreens.companion') ? 'companion' : 'microphone', micId: 'default', micName: micOverlay.p2Mic },
         ],
         settings: { difficulty: 'medium', filterGenre: 'all', filterLanguage: 'all', filterCombined: true },
         songSelection: 'random',
@@ -144,7 +144,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
 
     return () => { if (micOverlayTimerRef.current) clearTimeout(micOverlayTimerRef.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- party is a stable Zustand store; getAllSongs is from static import; specific fields used in body
-  }, [micOverlay, party.currentTournamentMatch, resetGame, addPlayer, setGameMode, setSong, setScreen, getAllSongs, party.setUnifiedSetupResult]);
+  }, [micOverlay, party.currentTournamentMatch, resetGame, addPlayer, setGameMode, setSong, setScreen, getAllSongs, party.setUnifiedSetupResult, t]);
 
   return (
     <>
@@ -489,8 +489,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             const setupResult: GameSetupResult = {
               mode: 'missing-words',
               players: [
-                { id: p1Id, name: p1Name, color: p1Color, playerType: 'microphone', micId: 'default', micName: 'Mikrofon 1' },
-                { id: p2Id, name: p2Name, color: p2Color, playerType: 'microphone', micId: 'default', micName: 'Mikrofon 2' },
+                { id: p1Id, name: p1Name, color: p1Color, playerType: 'microphone', micId: 'default', micName: t('partyGameScreens.microphone1') },
+                { id: p2Id, name: p2Name, color: p2Color, playerType: 'microphone', micId: 'default', micName: t('partyGameScreens.microphone2') },
               ],
               settings: { difficulty: comp.settings.difficulty, filterGenre: 'all', filterLanguage: 'all', filterCombined: true },
               songSelection: 'random',
@@ -543,8 +543,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             const setupResult: GameSetupResult = {
               mode: 'blind',
               players: [
-                { id: p1Id, name: p1Name, color: p1Color, playerType: 'microphone', micId: 'default', micName: 'Mikrofon 1' },
-                { id: p2Id, name: p2Name, color: p2Color, playerType: 'microphone', micId: 'default', micName: 'Mikrofon 2' },
+                { id: p1Id, name: p1Name, color: p1Color, playerType: 'microphone', micId: 'default', micName: t('partyGameScreens.microphone1') },
+                { id: p2Id, name: p2Name, color: p2Color, playerType: 'microphone', micId: 'default', micName: t('partyGameScreens.microphone2') },
               ],
               settings: { difficulty: comp.settings.difficulty, filterGenre: 'all', filterLanguage: 'all', filterCombined: true },
               songSelection: 'random',
@@ -592,7 +592,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                   color: p?.color || '#FF6B6B',
                   playerType: 'microphone' as const,
                   micId: 'default',
-                  micName: `Mikrofon ${i + 1}`,
+                  micName: t('partyGameScreens.microphone1').replace('1', String(i + 1)),
                 };
               }),
               settings: { difficulty: 'medium', filterGenre: 'all', filterLanguage: 'all', filterCombined: true },

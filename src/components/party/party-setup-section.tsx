@@ -4,6 +4,7 @@ import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { getNonDuetSongs, filterSongs } from '@/lib/game/song-library';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
+import { useTranslation } from '@/lib/i18n/translations';
 import { UnifiedPartySetup, SongVotingModal, PARTY_GAME_CONFIGS } from '@/components/game/unified-party-setup';
 import type { PassTheMicSegment } from '@/components/game/ptm-types';
 import type { MedleyPlayer as MedleyPlayerType, MedleySettings as MedleySettingsType } from '@/components/game/medley/medley-types';
@@ -105,6 +106,7 @@ function toCompanionPlayers(players: { id: string; name: string; avatar?: string
 export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps) {
   const { profiles, setGameMode, setSong, setDifficulty, resetGame, addPlayer, setPlayers } = useGameStore();
   const party = usePartyStore();
+  const { t } = useTranslation();
 
   return (
     <>
@@ -136,7 +138,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               const playerCount = ptmPlayers.length || 2;
               const segments = generatePassTheMicSegments(song, playerCount, party.passTheMicSettings?.segmentDuration);
               if (segments.length === 0) {
-                toast({ title: 'Song zu kurz', description: 'Der Song ist kürzer als 60 Sekunden und kann nicht für Pass the Mic verwendet werden.', variant: 'destructive' });
+                toast({ title: t('partySetup.songTooShort'), description: t('partySetup.songTooShortPassTheMic'), variant: 'destructive' });
                 return;
               }
               party.setPassTheMicSegments(segments);
@@ -223,16 +225,16 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 const playerCount = tournamentPlayers.length;
                 if (playerCount < 2) {
                   toast({
-                    title: 'Tournament Error',
-                    description: `Mindestens 2 Spieler werden benötigt. Du hast ${playerCount} Spieler ausgewählt.`,
+                    title: t('partySetup.tournamentError'),
+                    description: t('partySetup.minPlayersRequired').replace('{n}', String(playerCount)),
                     variant: 'destructive',
                   });
                   break;
                 }
                 if (playerCount > maxPlayers) {
                   toast({
-                    title: 'Tournament Error',
-                    description: `Das Turnier ist für maximal ${maxPlayers} Spieler konfiguriert (Bracket Size: ${maxPlayers}), aber du hast ${playerCount} Spieler ausgewählt. Reduziere die Anzahl der Spieler oder erhöhe die Bracket Size in den Einstellungen.`,
+                    title: t('partySetup.tournamentError'),
+                    description: t('partySetup.tournamentMaxPlayers').replace(/\{n\}/g, String(maxPlayers)),
                     variant: 'destructive',
                   });
                   break;
@@ -244,8 +246,8 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   setScreen('tournament-game');
                 } catch (err) {
                   toast({
-                    title: 'Tournament Error',
-                    description: err instanceof Error ? err.message : 'Unbekannter Fehler beim Erstellen des Turniers.',
+                    title: t('partySetup.tournamentError'),
+                    description: err instanceof Error ? err.message : t('partySetup.tournamentCreateError'),
                     variant: 'destructive',
                   });
                 }
@@ -283,7 +285,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 } catch (err) {
                   // eslint-disable-next-line no-console
                   console.error('[PartySetup] Failed to create battle royale:', err);
-                  alert(`Fehler beim Starten von Battle Royale: ${err instanceof Error ? err.message : String(err)}`);
+                  alert(t('partySetup.battleRoyaleStartError').replace('{error}', err instanceof Error ? err.message : String(err)));
                 }
                 break;
               }
@@ -399,7 +401,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   const playerCount = result.players.length || 2;
                   const segments = generatePassTheMicSegments(songWithUrls, playerCount, s.segmentDuration);
                   if (segments.length === 0) {
-                    toast({ title: 'Song zu kurz', description: 'Der gewählte Song ist kürzer als 60 Sekunden. Bitte erneut wählen.', variant: 'destructive' });
+                    toast({ title: t('partySetup.songTooShort'), description: t('partySetup.songTooShortRetry'), variant: 'destructive' });
                     break;
                   }
                   const segDur = (segments[1]?.startTime ?? segments[0]?.endTime ?? 30000) - (segments[0]?.startTime ?? 0);
@@ -625,7 +627,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               const pSettings = party.unifiedSetupResult?.settings as PassTheMicModeSettings | undefined;
               const segments = generatePassTheMicSegments(songWithUrls, playerCount, pSettings?.segmentDuration);
               if (segments.length === 0) {
-                toast({ title: 'Song zu kurz', description: 'Der gewählte Song ist kürzer als 60 Sekunden.', variant: 'destructive' });
+                toast({ title: t('partySetup.songTooShort'), description: t('partySetup.songTooShortVote'), variant: 'destructive' });
                 return;
               }
               const segDur = (segments[1]?.startTime ?? segments[0]?.endTime ?? 30000) - (segments[0]?.startTime ?? 0);

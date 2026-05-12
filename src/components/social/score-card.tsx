@@ -3,6 +3,7 @@
 import { useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { RATING_HEX_COLORS } from '@/lib/game/rating-utils';
+import { useTranslation } from '@/lib/i18n/translations';
 import type { HighscoreEntry, Song } from '@/types/game';
 
 interface ScoreCardProps {
@@ -13,6 +14,7 @@ interface ScoreCardProps {
 }
 
 export function ScoreCard({ song, score, playerName, playerAvatar }: ScoreCardProps) {
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const generateCard = useCallback(() => {
@@ -51,7 +53,7 @@ export function ScoreCard({ song, score, playerName, playerAvatar }: ScoreCardPr
     // App name / logo area
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 24px Arial, sans-serif';
-    ctx.fillText('Karaoke ZERO', 40, 50);
+    ctx.fillText(t('scoreCardSocial.branding'), 40, 50);
 
     // Song info
     ctx.fillStyle = '#ffffff';
@@ -78,14 +80,14 @@ export function ScoreCard({ song, score, playerName, playerAvatar }: ScoreCardPr
     ctx.fillStyle = '#ffffff';
     ctx.font = '28px Arial, sans-serif';
     const statsY = 380;
-    ctx.fillText(`Accuracy: ${score.accuracy.toFixed(1)}%`, 80, statsY);
-    ctx.fillText(`Max Combo: ${score.maxCombo}x`, 350, statsY);
-    ctx.fillText(`Difficulty: ${score.difficulty}`, 680, statsY);
+    ctx.fillText(`${t('scoreCardSocial.accuracy')} ${score.accuracy.toFixed(1)}%`, 80, statsY);
+    ctx.fillText(`${t('scoreCardSocial.maxCombo')} ${score.maxCombo}x`, 350, statsY);
+    ctx.fillText(`${t('scoreCardSocial.difficulty')} ${score.difficulty}`, 680, statsY);
 
     // Player info
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 32px Arial, sans-serif';
-    ctx.fillText(`🎤 ${playerName}`, 40, 480);
+    ctx.fillText(t('scoreCardSocial.playerLabel').replace('{name}', playerName), 40, 480);
 
     // Rating badge
     const badgeColor = RATING_HEX_COLORS[score.rating] || '#ffffff';
@@ -96,10 +98,10 @@ export function ScoreCard({ song, score, playerName, playerAvatar }: ScoreCardPr
     // Hashtags
     ctx.fillStyle = '#666666';
     ctx.font = '24px Arial, sans-serif';
-    ctx.fillText('#KaraokeZERO #Karaoke #Singing', 40, 600);
+    ctx.fillText(t('scoreCardSocial.hashtags'), 40, 600);
 
     return canvas.toDataURL('image/png');
-  }, [song, score, playerName]);
+  }, [song, score, playerName, t]);
 
   const downloadCard = useCallback(() => {
     const dataUrl = generateCard();
@@ -109,7 +111,7 @@ export function ScoreCard({ song, score, playerName, playerAvatar }: ScoreCardPr
     link.download = `karaoke-score-${song.title.replace(/[^a-z0-9]/gi, '-')}.png`;
     link.href = dataUrl;
     link.click();
-  }, [generateCard, song.title]);
+  }, [generateCard, song.title, t]);
 
   const shareCard = useCallback(async () => {
     const dataUrl = generateCard();
@@ -123,7 +125,7 @@ export function ScoreCard({ song, score, playerName, playerAvatar }: ScoreCardPr
 
       if (navigator.share && navigator.canShare({ files: [file] })) {
         await navigator.share({
-          title: 'My Karaoke Score!',
+          title: t('scoreCardSocial.shareTitle'),
           text: `I scored ${score.score.toLocaleString()} points on "${song.title}" by ${song.artist}!`,
           files: [file],
         });
@@ -136,7 +138,7 @@ export function ScoreCard({ song, score, playerName, playerAvatar }: ScoreCardPr
       console.error('Share failed:', err);
       downloadCard();
     }
-  }, [generateCard, downloadCard, score.score, song.title, song.artist]);
+  }, [generateCard, downloadCard, score.score, song.title, song.artist, t]);
 
   return (
     <div className="space-y-4">
@@ -151,7 +153,7 @@ export function ScoreCard({ song, score, playerName, playerAvatar }: ScoreCardPr
         
         {/* Content */}
         <div className="relative p-6 h-full flex flex-col">
-          <div className="text-white/60 text-xs font-medium">Karaoke ZERO</div>
+          <div className="text-white/60 text-xs font-medium">{t('scoreCardSocial.branding')}</div>
           
           <div className="mt-4 flex-1">
             <div className="text-white text-2xl font-bold truncate">{song.title}</div>
@@ -161,7 +163,7 @@ export function ScoreCard({ song, score, playerName, playerAvatar }: ScoreCardPr
               <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
                 {score.score.toLocaleString()}
               </div>
-              <div className="text-white/60 text-sm mt-1">points</div>
+              <div className="text-white/60 text-sm mt-1">{t('scoreCardSocial.points')}</div>
             </div>
             
             <div className="mt-4 flex justify-between text-sm text-white/80">
@@ -190,10 +192,10 @@ export function ScoreCard({ song, score, playerName, playerAvatar }: ScoreCardPr
       {/* Actions */}
       <div className="flex gap-2">
         <Button onClick={downloadCard} className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500">
-          📥 Download
+          {t('scoreCardSocial.download')}
         </Button>
         <Button onClick={shareCard} variant="outline" className="flex-1 border-white/20 text-white">
-          📤 Share
+          {t('scoreCardSocial.share')}
         </Button>
       </div>
     </div>

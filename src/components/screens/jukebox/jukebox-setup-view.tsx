@@ -6,17 +6,19 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { PlayIcon } from '@/components/icons';
 import { extractYouTubeId } from '@/components/game/youtube-player';
+import { useTranslation } from '@/lib/i18n/translations';
 import type { UseJukeboxReturn } from './jukebox-types';
 
 export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [youtubeError, setYoutubeError] = useState('');
+  const { t } = useTranslation();
 
   const handleYoutubeSubmit = () => {
     if (!youtubeUrl.trim()) return;
     const id = extractYouTubeId(youtubeUrl.trim());
     if (!id) {
-      setYoutubeError('Ungültige YouTube URL');
+      setYoutubeError(t('jukeboxPlayer.invalidYoutubeUrl'));
       return;
     }
     setYoutubeError('');
@@ -38,7 +40,7 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
             id="library-search"
             name="library-search"
             type="text"
-            placeholder="Search songs, artists, albums..."
+            placeholder={t('jukeboxPlayer.searchPlaceholder')}
             value={j.searchQuery}
             onChange={(e) => j.setSearchQuery(e.target.value)}
             className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-white/40"
@@ -54,7 +56,7 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
             style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', backgroundSize: '16px', paddingRight: '32px' }}
           >
             {j.genres.map(g => (
-              <option key={g} value={g} className="bg-gray-800 text-white">{g === 'all' ? 'All Genres' : g}</option>
+              <option key={g} value={g} className="bg-gray-800 text-white">{g === 'all' ? t('jukeboxPlayer.allGenres') : g}</option>
             ))}
           </select>
 
@@ -64,7 +66,7 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
             className="bg-gray-800 border border-white/20 rounded-lg px-3 py-2 text-white appearance-none cursor-pointer hover:border-cyan-500/50"
             style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', backgroundSize: '16px', paddingRight: '32px' }}
           >
-            <option value="" className="bg-gray-800 text-white">All Artists</option>
+            <option value="" className="bg-gray-800 text-white">{t('jukeboxPlayer.allArtists')}</option>
             {j.artists.map(a => (
               <option key={a} value={a} className="bg-gray-800 text-white">{a}</option>
             ))}
@@ -84,13 +86,13 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
 
         {/* Song count and start button */}
         <div className="flex items-center justify-between">
-          <p className="text-white/60">{j.filteredSongs.length} songs found</p>
+          <p className="text-white/60">{j.filteredSongs.length} {t('jukeboxPlayer.songsFound').replace('{n}', String(j.filteredSongs.length))}</p>
           <Button
             onClick={j.startJukebox}
             disabled={j.filteredSongs.length === 0}
             className="bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50"
           >
-            <PlayIcon className="w-4 h-4 mr-2" /> Start Jukebox
+            <PlayIcon className="w-4 h-4 mr-2" /> {t('jukeboxPlayer.startJukebox')}
           </Button>
         </div>
       </div>
@@ -100,13 +102,13 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
         {/* Playlist Settings */}
         <Card className="bg-white/5 border-white/10">
           <CardHeader>
-            <CardTitle>Playlist Settings</CardTitle>
-            <CardDescription>Customize your music experience</CardDescription>
+            <CardTitle>{t('jukeboxPlayer.playlistSettings')}</CardTitle>
+            <CardDescription>{t('jukeboxPlayer.customizeExperience')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Genre Filter */}
             <div>
-              <label className="text-sm text-white/60 mb-2 block">Filter by Genre</label>
+              <label className="text-sm text-white/60 mb-2 block">{t('jukeboxPlayer.filterByGenre')}</label>
               <select
                 value={j.filterGenre}
                 onChange={(e) => j.setFilterGenre(e.target.value)}
@@ -114,7 +116,7 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
               >
                 {j.genres.map(genre => (
                   <option key={genre} value={genre}>
-                    {genre === 'all' ? 'All Genres' : genre}
+                    {genre === 'all' ? t('jukeboxPlayer.allGenres') : genre}
                   </option>
                 ))}
               </select>
@@ -122,13 +124,13 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
 
             {/* Artist Filter */}
             <div>
-              <label className="text-sm text-white/60 mb-2 block">Filter by Artist</label>
+              <label className="text-sm text-white/60 mb-2 block">{t('jukeboxPlayer.filterByArtist')}</label>
               <select
                 value={j.filterArtist}
                 onChange={(e) => j.setFilterArtist(e.target.value)}
                 className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white"
               >
-                <option value="">All Artists</option>
+                <option value="">{t('jukeboxPlayer.allArtists')}</option>
                 {j.artists.map(artist => (
                   <option key={artist} value={artist}>{artist}</option>
                 ))}
@@ -139,14 +141,14 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
             <div className="flex flex-wrap gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={j.shuffle} onChange={(e) => j.setShuffle(e.target.checked)} className="w-4 h-4 accent-cyan-500" />
-                <span className="text-white">Shuffle</span>
+                <span className="text-white">{t('jukeboxPlayer.shuffle')}</span>
               </label>
 
               {(['none', 'all', 'one'] as const).map(mode => (
                 <label key={mode} className="flex items-center gap-2 cursor-pointer">
                   <input type="radio" name="repeat" checked={j.repeat === mode} onChange={() => j.setRepeat(mode)} className="w-4 h-4 accent-cyan-500" />
                   <span className="text-white">
-                    {mode === 'none' ? 'No Repeat' : mode === 'all' ? 'Repeat All' : 'Repeat One'}
+                    {mode === 'none' ? t('jukeboxPlayer.noRepeat') : mode === 'all' ? t('jukeboxPlayer.repeatAll') : t('jukeboxPlayer.repeatOne')}
                   </span>
                 </label>
               ))}
@@ -155,7 +157,7 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
             {/* Song count */}
             <div className="text-center py-4 bg-white/5 rounded-lg">
               <p className="text-2xl font-bold text-cyan-400">{j.filteredSongs.length}</p>
-              <p className="text-white/60 text-sm">songs available</p>
+              <p className="text-white/60 text-sm">{t('jukeboxPlayer.songsAvailable')}</p>
             </div>
           </CardContent>
         </Card>
@@ -163,14 +165,14 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
         {/* YouTube URL Input */}
         <Card className="bg-white/5 border-white/10">
           <CardHeader>
-            <CardTitle>YouTube Video</CardTitle>
-            <CardDescription>Optionales YouTube-Video als Hintergrund</CardDescription>
+            <CardTitle>{t('jukeboxPlayer.youtubeVideo')}</CardTitle>
+            <CardDescription>{t('jukeboxPlayer.youtubeVideoDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex gap-2">
               <Input
                 type="text"
-                placeholder="https://www.youtube.com/watch?v=..."
+                placeholder={t('jukeboxPlayer.youtubeUrlPlaceholder')}
                 value={youtubeUrl}
                 onChange={(e) => { setYoutubeUrl(e.target.value); setYoutubeError(''); }}
                 onKeyDown={(e) => e.key === 'Enter' && handleYoutubeSubmit()}
@@ -181,18 +183,18 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
                 variant="outline"
                 className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
               >
-                Setzen
+                {t('jukeboxPlayer.set')}
               </Button>
             </div>
             {youtubeError && <p className="text-red-400 text-sm">{youtubeError}</p>}
             {j.customYoutubeId && (
               <div className="flex items-center gap-2 text-cyan-400 text-sm">
-                <span>Aktiv: {j.customYoutubeId}</span>
+                <span>{t('jukeboxPlayer.activeLabel').replace('{id}', j.customYoutubeId)}</span>
                 <button
                   onClick={j.clearCustomYoutube}
                   className="text-white/60 hover:text-white underline"
                 >
-                  Entfernen
+                  {t('jukeboxPlayer.remove')}
                 </button>
               </div>
             )}
@@ -205,12 +207,12 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
           disabled={j.filteredSongs.length === 0}
           className="w-full py-6 text-lg bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white"
         >
-          <PlayIcon className="w-6 h-6 mr-2" /> Start Jukebox
+          <PlayIcon className="w-6 h-6 mr-2" /> {t('jukeboxPlayer.startJukebox')}
         </Button>
 
         {j.filteredSongs.length === 0 && (
           <p className="text-center text-white/60">
-            No songs match your filters. Try different settings or import some songs.
+            {t('jukeboxPlayer.noSongsMatchFilters')}
           </p>
         )}
       </div>
