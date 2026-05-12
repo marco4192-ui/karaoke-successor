@@ -14,18 +14,19 @@ interface ParsedNote {
 }
 
 /**
- * Check if a note boundary is near a line break marker (±1 beat tolerance).
- * Handles fractional beats where "- 85" should match noteEndBeat of 84.5 or 85.3.
+ * Check if any line break marker falls between noteEndBeat and nextNoteStart.
+ * A break is triggered whenever the gap spans a break-beat value,
+ * regardless of how small or large the gap is.
  */
-function isNearLineBreak(
+function hasBreakBetween(
   noteEndBeat: number,
   nextNoteStart: number,
   lineBreakBeats: Set<number>,
 ): boolean {
-  const TOLERANCE = 1.0;
+  if (nextNoteStart < 0) return false;
   for (const breakBeat of lineBreakBeats) {
-    if (Math.abs(noteEndBeat - breakBeat) <= TOLERANCE) return true;
-    if (nextNoteStart >= 0 && Math.abs(nextNoteStart - breakBeat) <= TOLERANCE) return true;
+    // Break falls within the gap (exclusive bounds avoid double-matching zero-duration edges)
+    if (breakBeat >= noteEndBeat && breakBeat <= nextNoteStart) return true;
   }
   return false;
 }
@@ -117,11 +118,9 @@ function buildLinesFromNotes(
 
     // Check for line break: explicit "- <beat>" marker or 8+ beat gap fallback
     const nextNoteStart = i < sortedNotes.length - 1 ? sortedNotes[i + 1].startBeat : -1;
-    const isExactBreak = lineBreakBeats.has(noteEndBeat) ||
-      (nextNoteStart >= 0 && lineBreakBeats.has(nextNoteStart));
-    const isNearBreak = !isExactBreak && isNearLineBreak(noteEndBeat, nextNoteStart, lineBreakBeats);
+    const isBreakMarker = hasBreakBetween(noteEndBeat, nextNoteStart, lineBreakBeats);
     const isGapBreak = i < sortedNotes.length - 1 && nextNoteStart - noteEndBeat >= 8;
-    const isLineBreak = isExactBreak || isNearBreak || isGapBreak;
+    const isLineBreak = isBreakMarker || isGapBreak;
 
     if ((isLineBreak || i === sortedNotes.length - 1) && currentLineNotes.length > 0) {
       flushLine();
