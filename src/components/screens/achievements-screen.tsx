@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useGameStore } from '@/lib/game/store';
+import { useTranslation } from '@/lib/i18n/translations';
 import { ACHIEVEMENT_DEFINITIONS, getRarityColor } from '@/lib/game/achievements';
 
 export function AchievementsScreen() {
+  const { t } = useTranslation();
   const { profiles, activeProfileId } = useGameStore();
   const [filter, setFilter] = useState<'all' | 'unlocked' | 'locked'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -29,8 +31,8 @@ export function AchievementsScreen() {
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">🏆 Achievements</h1>
-        <p className="text-white/60">Unlock achievements by playing!</p>
+        <h1 className="text-3xl font-bold mb-2">{t('achievementsScreen.title')}</h1>
+        <p className="text-white/60">{t('achievementsScreen.description')}</p>
       </div>
       
       {/* Stats */}
@@ -38,19 +40,19 @@ export function AchievementsScreen() {
         <Card className="bg-white/5 border-white/10">
           <CardContent className="pt-4">
             <div className="text-2xl font-bold text-yellow-400">{unlockedCount}/{ACHIEVEMENT_DEFINITIONS.length}</div>
-            <div className="text-sm text-white/60">Unlocked</div>
+            <div className="text-sm text-white/60">{t('achievementsScreen.unlocked')}</div>
           </CardContent>
         </Card>
         <Card className="bg-white/5 border-white/10">
           <CardContent className="pt-4">
             <div className="text-2xl font-bold text-cyan-400">{totalXP}</div>
-            <div className="text-sm text-white/60">XP Earned</div>
+            <div className="text-sm text-white/60">{t('achievementsScreen.xpEarned')}</div>
           </CardContent>
         </Card>
         <Card className="bg-white/5 border-white/10">
           <CardContent className="pt-4">
             <div className="text-2xl font-bold text-purple-400">{Math.round(unlockedCount / ACHIEVEMENT_DEFINITIONS.length * 100)}%</div>
-            <div className="text-sm text-white/60">Completion</div>
+            <div className="text-sm text-white/60">{t('achievementsScreen.completion')}</div>
           </CardContent>
         </Card>
       </div>
@@ -59,22 +61,22 @@ export function AchievementsScreen() {
       <div className="flex flex-wrap gap-2 mb-6">
         <Button variant={filter === 'all' ? 'default' : 'outline'} onClick={() => setFilter('all')}
           className={filter === 'all' ? 'bg-cyan-500' : 'border-white/20 text-white'}>
-          All
+          {t('achievementsScreen.all')}
         </Button>
         <Button variant={filter === 'unlocked' ? 'default' : 'outline'} onClick={() => setFilter('unlocked')}
           className={filter === 'unlocked' ? 'bg-green-500' : 'border-white/20 text-white'}>
-          Unlocked
+          {t('achievements.unlocked')}
         </Button>
         <Button variant={filter === 'locked' ? 'default' : 'outline'} onClick={() => setFilter('locked')}
           className={filter === 'locked' ? 'bg-red-500' : 'border-white/20 text-white'}>
-          Locked
+          {t('achievementsScreen.locked')}
         </Button>
         <span className="border-l border-white/20 mx-2" />
         {['all', 'performance', 'progression', 'social', 'special'].map(cat => (
           <Button key={cat} variant={categoryFilter === cat ? 'default' : 'outline'} 
             onClick={() => setCategoryFilter(cat)}
             className={categoryFilter === cat ? 'bg-purple-500' : 'border-white/20 text-white text-xs'}>
-            {cat === 'all' ? 'All' : cat}
+            {cat === 'all' ? t('achievementsScreen.all') : t(`achievementsScreen.categories.${cat}`)}
           </Button>
         ))}
       </div>
@@ -99,7 +101,7 @@ export function AchievementsScreen() {
                 <p className="text-xs text-white/60 text-center mt-1">{achievement.description}</p>
                 {isUnlocked && achievement.reward && (
                   <div className="mt-2 text-center text-xs text-yellow-400">
-                    +{achievement.reward.xp} XP
+                    {t('achievementsScreen.plusXp').replace('{n}', (achievement.reward?.xp || 0).toString())}
                   </div>
                 )}
               </CardContent>

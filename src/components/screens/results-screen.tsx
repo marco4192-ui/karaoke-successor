@@ -481,14 +481,14 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
               .then((result) => {
                 setUploadStatus('success');
                 if (result.is_new_high_score) {
-                  setUploadMessage('🎉 New global high score!');
+                  setUploadMessage(t('resultsScreen.newGlobalHighscore'));
                 } else {
-                  setUploadMessage(`Uploaded! Rank #${result.rank}`);
+                  setUploadMessage(t('resultsScreen.uploadedRank').replace('{n}', result.rank.toString()));
                 }
               })
               .catch((err) => {
                 setUploadStatus('error');
-                setUploadMessage(err.message || 'Upload failed');
+                setUploadMessage(err.message || t('resultsScreen.uploadFailed'));
               });
           });
         }
@@ -500,7 +500,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
   if (!results || !song || !results.players || results.players.length === 0) {
     return (
       <div className="max-w-4xl mx-auto text-center py-20">
-        <p className="text-white/60 mb-4">No results available</p>
+        <p className="text-white/60 mb-4">{t('resultsScreen.noResults')}</p>
         <Button onClick={onHome} className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white">{t('results.backToHome')}</Button>
       </div>
     );
@@ -546,9 +546,9 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
             <div className={`inline-block px-6 py-3 rounded-xl bg-gradient-to-r ${ratingColors[playerResult.rating] || ratingColors.good} mb-3`}>
               <h2 className="text-2xl font-black text-white uppercase">{playerResult.rating}!</h2>
             </div>
-            <div className="text-cyan-400 font-semibold text-lg">{activeProfile?.name || 'Player 1'}</div>
+            <div className="text-cyan-400 font-semibold text-lg">{activeProfile?.name || t('resultsScreen.player') + ' 1'}</div>
             <div className="text-3xl font-black text-white mt-2">{playerResult.score.toLocaleString()}</div>
-            <div className="text-white/40 text-sm">{playerResult.accuracy.toFixed(1)}% accuracy</div>
+            <div className="text-white/40 text-sm">{t('resultsScreen.accuracyLabel').replace('{n}', playerResult.accuracy.toFixed(1))}</div>
             {winnerSide === 'p1' && <div className="mt-3 text-xl">🏆</div>}
           </div>
 
@@ -565,9 +565,9 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
             <div className={`inline-block px-6 py-3 rounded-xl bg-gradient-to-r ${ratingColors[player2Result.rating] || ratingColors.good} mb-3`}>
               <h2 className="text-2xl font-black text-white uppercase">{player2Result.rating}!</h2>
             </div>
-            <div className="text-pink-400 font-semibold text-lg">{player2Profile?.name || song?.duetPlayerNames?.[1] || 'Player 2'}</div>
+            <div className="text-pink-400 font-semibold text-lg">{player2Profile?.name || song?.duetPlayerNames?.[1] || t('resultsScreen.player') + ' 2'}</div>
             <div className="text-3xl font-black text-white mt-2">{player2Result.score.toLocaleString()}</div>
-            <div className="text-white/40 text-sm">{player2Result.accuracy.toFixed(1)}% accuracy</div>
+            <div className="text-white/40 text-sm">{t('resultsScreen.accuracyLabel').replace('{n}', player2Result.accuracy.toFixed(1))}</div>
             {winnerSide === 'p2' && <div className="mt-3 text-xl">🏆</div>}
           </div>
         </div>
@@ -619,7 +619,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
             rating: playerResult.rating,
           }}
           activeProfileId={activeProfileId}
-          playerName={activeProfile?.name || 'Player'}
+          playerName={activeProfile?.name || t('resultsScreen.player')}
           playerAvatar={activeProfile?.avatar}
           playerColor={activeProfile?.color || '#FF6B6B'}
           difficulty={gameState.difficulty}
@@ -634,7 +634,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           onClick={() => setShowHighscoreModal(true)}
           className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 px-4"
         >
-          <TrophyIcon className="w-4 h-4 mr-2" /> Scores
+          <TrophyIcon className="w-4 h-4 mr-2" /> {t('resultsScreen.scores')}
         </Button>
         {replayRecord && (
           <Button
@@ -645,7 +645,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
             <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
               <path d="M8 5v14l11-7z" />
             </svg>
-            Replay
+            {t('resultsScreen.replay')}
           </Button>
         )}
         <Button onClick={() => { resetGame(); onPlayAgain(); }} className="bg-gradient-to-r from-cyan-500 to-purple-500 px-8">

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from '@/lib/i18n/translations';
 
 import { buildCompanionUrl } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
@@ -11,6 +12,7 @@ import { PhoneIcon, MicIcon, LibraryIcon, QueueIcon } from '@/components/icons';
 
 // ===================== MOBILE SCREEN =====================
 export function MobileScreen() {
+  const { t } = useTranslation();
   const [localIP, setLocalIP] = useState<string>('');
   const [connectedClients, setConnectedClients] = useState<Array<{ 
     id: string; 
@@ -25,17 +27,12 @@ export function MobileScreen() {
   const [mobileQueue, setMobileQueue] = useState<Array<{ id: string; songTitle: string; songArtist: string; companionCode: string; status: string }>>([]);
 
   // One-shot IP detection — runs once on mount.
-  // NOTE: ipDetectionAttempts is intentionally NOT in the dependency array.
-  // Previously it was, causing an infinite loop: on failure the effect incremented
-  // ipDetectionAttempts → re-triggered the effect → failed again → repeat.
-  // Retry is now triggered only by the user via retryIPDetection button.
   const detectLocalIP = useCallback(() => {
     let isMounted = true;
     let detectedIP: string | null = null;
     
     const getLocalIP = async () => {
       try {
-        // Try to get local IP via RTCPeerConnection
         const pc = new RTCPeerConnection({ iceServers: [] });
         pc.createDataChannel('');
         const offer = await pc.createOffer();
@@ -47,7 +44,6 @@ export function MobileScreen() {
             const ipMatch = candidate.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/);
             if (ipMatch && ipMatch[1]) {
               const ip = ipMatch[1];
-              // Filter out mDNS addresses and localhost
               if (!ip.endsWith('.local') && ip !== '0.0.0.0' && !ip.startsWith('127.')) {
                 detectedIP = ip;
                 setLocalIP(ip);
@@ -58,7 +54,6 @@ export function MobileScreen() {
           }
         };
         
-        // Check sessionStorage for previously detected IP
         const storedIP = sessionStorage.getItem('karaoke-detected-ip');
         if (storedIP && !storedIP.startsWith('127.') && storedIP !== 'localhost') {
           detectedIP = storedIP;
@@ -67,7 +62,6 @@ export function MobileScreen() {
           return;
         }
         
-        // Wait for ICE candidates, but don't fallback to localhost
         setTimeout(() => {
           if (isMounted && !detectedIP) {
             const hostname = window.location.hostname;
@@ -106,14 +100,12 @@ export function MobileScreen() {
     };
   }, []);
 
-  // Run IP detection once on mount
   useEffect(() => {
     return detectLocalIP();
   }, [detectLocalIP]);
   
   // Poll for connected clients
   useEffect(() => {
-    // Use queueMicrotask to avoid synchronous setState in effect
     queueMicrotask(() => setIsPolling(true));
     
     const pollClients = async () => {
@@ -138,22 +130,20 @@ export function MobileScreen() {
     };
   }, []);
   
-  // Retry IP detection — clears cache and re-runs detection
   const retryIPDetection = useCallback(() => {
     sessionStorage.removeItem('karaoke-detected-ip');
     setLocalIP('');
     detectLocalIP();
   }, [detectLocalIP]);
   
-  // Build connection URL with local IP
   const connectionUrl = localIP ? buildCompanionUrl(localIP) : '';
   const qrCodeSrc = useQRCode(connectionUrl);
   
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Mobile Integration</h1>
-        <p className="text-white/60">Use your smartphone as a microphone or remote control</p>
+        <h1 className="text-3xl font-bold mb-2">{t('mobile.title')}</h1>
+        <p className="text-white/60">{t('mobile.subtitle')}</p>
       </div>
 
       {/* Network Info */}
@@ -161,12 +151,12 @@ export function MobileScreen() {
         <CardContent className="py-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-white/60 mb-1">Your LAN IP Address</p>
-              <p className="text-2xl font-mono font-bold text-cyan-400">{localIP || 'Detecting...'}</p>
+              <p className="text-xs text-white/60 mb-1">{t('mobile.yourLanIp')}</p>
+              <p className="text-2xl font-mono font-bold text-cyan-400">{localIP || t('mobile.detecting')}</p>
             </div>
             <div className="text-right flex items-center gap-3">
               <div>
-                <p className="text-xs text-white/60 mb-1">Port</p>
+                <p className="text-xs text-white/60 mb-1">{t('mobile.port')}</p>
                 <p className="text-2xl font-mono font-bold">{typeof window !== 'undefined' ? window.location.port || '3000' : '3000'}</p>
               </div>
               {!localIP && (
@@ -176,17 +166,17 @@ export function MobileScreen() {
                   onClick={retryIPDetection}
                   className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
                 >
-                  Retry
+                  {t('mobile.retry')}
                 </Button>
               )}
             </div>
           </div>
           <p className="text-xs text-white/40 mt-2">
-            Make sure your phone is connected to the same WiFi network as this computer
+            {t('mobile.sameWifi')}
           </p>
           {!localIP && ipDetectionAttempts > 0 && (
             <p className="text-xs text-yellow-400 mt-2">
-              ⚠️ Could not detect network IP. Try refreshing the page or check your network connection.
+              {t('mobile.warningIp')}
             </p>
           )}
         </CardContent>
@@ -196,31 +186,31 @@ export function MobileScreen() {
         {/* QR Code */}
         <Card className="bg-white/5 border-white/10">
           <CardHeader>
-            <CardTitle>Scan to Connect</CardTitle>
+            <CardTitle>{t('mobile.scanToConnect')}</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
             {localIP ? (
               <>
                 <div className="bg-white rounded-xl p-4 inline-block mb-4">
                   {qrCodeSrc ? (
-                    <img src={qrCodeSrc} alt="QR Code" className="w-48 h-48" />
+                    <img src={qrCodeSrc} alt={t('mobile.qrCodeAlt')} className="w-48 h-48" />
                   ) : (
                     <div className="w-48 h-48 animate-pulse bg-gray-200 rounded-xl" />
                   )}
                 </div>
-                <p className="text-sm text-white/60 mb-2">Scan this QR code with your phone</p>
+                <p className="text-sm text-white/60 mb-2">{t('mobile.scanQrCode')}</p>
                 <p className="text-xs text-white/40 break-all font-mono">{connectionUrl}</p>
               </>
             ) : (
               <div className="py-16">
                 <div className="animate-spin w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full mx-auto mb-4" />
-                <p className="text-white/60 mb-4">Detecting network address...</p>
+                <p className="text-white/60 mb-4">{t('mobile.detectingNetwork')}</p>
                 <Button 
                   variant="outline"
                   onClick={retryIPDetection}
                   className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
                 >
-                  Retry Detection
+                  {t('mobile.retryDetection')}
                 </Button>
               </div>
             )}
@@ -231,7 +221,7 @@ export function MobileScreen() {
         <Card className="bg-white/5 border-white/10">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              Connected Companions
+              {t('settingsCompanion.title')}
               {isPolling && (
                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
               )}
@@ -241,8 +231,8 @@ export function MobileScreen() {
             {connectedClients.length === 0 ? (
               <div className="text-center py-8">
                 <PhoneIcon className="w-12 h-12 mx-auto mb-4 text-white/20" />
-                <p className="text-white/40">No devices connected</p>
-                <p className="text-xs text-white/20 mt-2">Scan the QR code to connect your phone</p>
+                <p className="text-white/40">{t('mobile.noDevices')}</p>
+                <p className="text-xs text-white/20 mt-2">{t('mobile.scanQrToConnect')}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -268,7 +258,7 @@ export function MobileScreen() {
                         </Badge>
                       </div>
                       <p className="text-xs text-white/40">
-                        Queue: {client.queueCount}/3 songs
+                        {t('mobile.queueSongs').replace('{n}', client.queueCount.toString())}
                       </p>
                     </div>
                     {client.hasPitch && (
@@ -290,7 +280,7 @@ export function MobileScreen() {
         <Card className="bg-white/5 border-white/10 mt-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              📋 Mobile Queue
+              📋 {t('mobile.mobileQueue')}
               <Badge className="bg-cyan-500">{mobileQueue.length}</Badge>
             </CardTitle>
           </CardHeader>
@@ -311,7 +301,7 @@ export function MobileScreen() {
               ))}
               {mobileQueue.length > 5 && (
                 <p className="text-xs text-white/40 text-center">
-                  +{mobileQueue.length - 5} more songs
+                  {t('mobile.moreSongs').replace('{n}', (mobileQueue.length - 5).toString())}
                 </p>
               )}
             </div>
@@ -324,24 +314,24 @@ export function MobileScreen() {
         <Card className="bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border-cyan-500/30">
           <CardContent className="pt-6 text-center">
             <MicIcon className="w-12 h-12 mx-auto mb-4 text-cyan-400" />
-            <h3 className="font-semibold mb-2">Use as Microphone</h3>
-            <p className="text-sm text-white/60">Your phone becomes a high-quality wireless microphone</p>
+            <h3 className="font-semibold mb-2">{t('mobile.useAsMicrophone')}</h3>
+            <p className="text-sm text-white/60">{t('mobile.useAsMicrophoneDesc')}</p>
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-purple-500/30">
           <CardContent className="pt-6 text-center">
             <LibraryIcon className="w-12 h-12 mx-auto mb-4 text-purple-400" />
-            <h3 className="font-semibold mb-2">Browse Library</h3>
-            <p className="text-sm text-white/60">Scroll through songs and add to queue from your phone</p>
+            <h3 className="font-semibold mb-2">{t('mobile.browseLibrary')}</h3>
+            <p className="text-sm text-white/60">{t('mobile.browseLibraryDesc')}</p>
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-orange-500/20 to-red-500/20 border-orange-500/30">
           <CardContent className="pt-6 text-center">
             <QueueIcon className="w-12 h-12 mx-auto mb-4 text-orange-400" />
-            <h3 className="font-semibold mb-2">Manage Queue</h3>
-            <p className="text-sm text-white/60">View and manage the song queue remotely</p>
+            <h3 className="font-semibold mb-2">{t('mobile.manageQueue')}</h3>
+            <p className="text-sm text-white/60">{t('mobile.manageQueueDesc')}</p>
           </CardContent>
         </Card>
       </div>
@@ -349,14 +339,14 @@ export function MobileScreen() {
       {/* Instructions */}
       <Card className="bg-white/5 border-white/10 mt-8">
         <CardHeader>
-          <CardTitle className="text-lg">How to Connect</CardTitle>
+          <CardTitle className="text-lg">{t('mobile.howToConnect')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-white/60">
-          <p>1. Make sure your phone is connected to the same WiFi network</p>
-          <p>2. Open your phone&apos;s camera app and point it at the QR code</p>
-          <p>3. Tap the notification to open the link</p>
-          <p>4. Grant microphone permission when prompted</p>
-          <p>5. Tap the microphone button to start singing!</p>
+          <p>{t('mobile.howToConnect1')}</p>
+          <p>{t('mobile.howToConnect2')}</p>
+          <p>{t('mobile.howToConnect3')}</p>
+          <p>{t('mobile.howToConnect4')}</p>
+          <p>{t('mobile.howToConnect5')}</p>
         </CardContent>
       </Card>
     </div>

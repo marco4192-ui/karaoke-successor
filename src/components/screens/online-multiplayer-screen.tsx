@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MusicIcon, TrophyIcon } from '@/components/icons';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== LOCAL ICONS (unique to this screen) =====================
 function WifiIcon({ className }: { className?: string }) {
@@ -56,6 +57,8 @@ function ZapIcon({ className }: { className?: string }) {
 
 // ===================== COMING SOON SCREEN =====================
 export function OnlineMultiplayerScreen({ onBack }: { onBack: () => void }) {
+  const { t } = useTranslation();
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-6">
@@ -63,11 +66,11 @@ export function OnlineMultiplayerScreen({ onBack }: { onBack: () => void }) {
           onClick={onBack}
           className="text-white/60 hover:text-white mb-4 flex items-center gap-2 transition-colors"
         >
-          Back to Party
+          {t('onlineMultiplayer.backToParty')}
         </button>
         <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
           <WifiIcon className="w-8 h-8 text-cyan-400" />
-          Online Multiplayer
+          {t('onlineMultiplayer.title')}
         </h1>
       </div>
 
@@ -76,14 +79,13 @@ export function OnlineMultiplayerScreen({ onBack }: { onBack: () => void }) {
         <CardContent className="py-12 text-center">
           <div className="text-7xl mb-6">🌐</div>
           <h2 className="text-3xl font-bold mb-3 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-            Coming Soon
+            {t('onlineMultiplayer.comingSoon')}
           </h2>
           <p className="text-white/60 text-lg max-w-md mx-auto mb-6">
-            Sing against friends and players worldwide in real-time online battles.
-            We are working hard to bring you the ultimate online karaoke experience!
+            {t('onlineMultiplayer.description')}
           </p>
           <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-sm px-4 py-1.5">
-            In Development
+            {t('onlineMultiplayer.inDevelopment')}
           </Badge>
         </CardContent>
       </Card>
@@ -96,10 +98,10 @@ export function OnlineMultiplayerScreen({ onBack }: { onBack: () => void }) {
               <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
                 <UsersIcon className="w-5 h-5 text-cyan-400" />
               </div>
-              <div className="font-medium">Duel Mode</div>
+              <div className="font-medium">{t('onlineMultiplayer.duelMode')}</div>
             </div>
             <p className="text-sm text-white/50">
-              Challenge a friend to a 1v1 singing battle with real-time score synchronization and live pitch comparison.
+              {t('onlineMultiplayer.duelModeDesc')}
             </p>
           </CardContent>
         </Card>
@@ -110,10 +112,10 @@ export function OnlineMultiplayerScreen({ onBack }: { onBack: () => void }) {
               <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
                 <TrophyIcon className="w-5 h-5 text-purple-400" />
               </div>
-              <div className="font-medium">Battle Royale</div>
+              <div className="font-medium">{t('onlineMultiplayer.battleRoyale')}</div>
             </div>
             <p className="text-sm text-white/50">
-              Compete with up to 8 players in elimination-style rounds. Last singer standing wins!
+              {t('onlineMultiplayer.battleRoyaleDesc')}
             </p>
           </CardContent>
         </Card>
@@ -124,10 +126,10 @@ export function OnlineMultiplayerScreen({ onBack }: { onBack: () => void }) {
               <div className="w-10 h-10 rounded-lg bg-pink-500/20 flex items-center justify-center">
                 <ClockIcon className="w-5 h-5 text-pink-400" />
               </div>
-              <div className="font-medium">Quick Match</div>
+              <div className="font-medium">{t('onlineMultiplayer.quickMatch')}</div>
             </div>
             <p className="text-sm text-white/50">
-              Jump right into a game with automatic matchmaking. No need to create or find a room manually.
+              {t('onlineMultiplayer.quickMatchDesc')}
             </p>
           </CardContent>
         </Card>
@@ -138,10 +140,10 @@ export function OnlineMultiplayerScreen({ onBack }: { onBack: () => void }) {
               <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
                 <MusicIcon className="w-5 h-5 text-amber-400" />
               </div>
-              <div className="font-medium">Song Voting</div>
+              <div className="font-medium">{t('onlineMultiplayer.songVoting')}</div>
             </div>
             <p className="text-sm text-white/50">
-              Vote on songs together in the lobby. Both players agree on the song before the battle begins.
+              {t('onlineMultiplayer.songVotingDesc')}
             </p>
           </CardContent>
         </Card>
@@ -152,10 +154,10 @@ export function OnlineMultiplayerScreen({ onBack }: { onBack: () => void }) {
               <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
                 <ShieldIcon className="w-5 h-5 text-green-400" />
               </div>
-              <div className="font-medium">Ranking & Leaderboard</div>
+              <div className="font-medium">{t('onlineMultiplayer.rankingLeaderboard')}</div>
             </div>
             <p className="text-sm text-white/50">
-              Climb the global leaderboard with an ELO-based ranking system. Track your progress over time.
+              {t('onlineMultiplayer.rankingLeaderboardDesc')}
             </p>
           </CardContent>
         </Card>
@@ -166,10 +168,10 @@ export function OnlineMultiplayerScreen({ onBack }: { onBack: () => void }) {
               <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
                 <ZapIcon className="w-5 h-5 text-blue-400" />
               </div>
-              <div className="font-medium">Real-Time Scoring</div>
+              <div className="font-medium">{t('onlineMultiplayer.realTimeScoring')}</div>
             </div>
             <p className="text-sm text-white/50">
-              See your opponent&apos;s score and pitch in real-time. Every note counts in the live comparison.
+              {t('onlineMultiplayer.realTimeScoringDesc')}
             </p>
           </CardContent>
         </Card>
@@ -180,15 +182,12 @@ export function OnlineMultiplayerScreen({ onBack }: { onBack: () => void }) {
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <ZapIcon className="w-5 h-5 text-amber-400" />
-            Technical Preview
+            {t('onlineMultiplayer.technicalPreview')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-white/60 leading-relaxed">
-            Online multiplayer requires a dedicated game server for real-time communication.
-            Since this is a Tauri desktop application, the server infrastructure needs to be
-            set up separately. The lobby UI, room management, and game synchronization code
-            already exist and will be activated once the backend is ready.
+            {t('onlineMultiplayer.technicalPreviewDesc')}
           </p>
         </CardContent>
       </Card>
@@ -198,7 +197,7 @@ export function OnlineMultiplayerScreen({ onBack }: { onBack: () => void }) {
         onClick={onBack}
         className="w-full py-5 text-lg bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400"
       >
-        Back to Party Mode
+        {t('onlineMultiplayer.backToPartyMode')}
       </Button>
     </div>
   );

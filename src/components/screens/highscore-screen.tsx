@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useGameStore } from '@/lib/game/store';
+import { useTranslation } from '@/lib/i18n/translations';
 import { TrophyIcon } from '@/components/icons';
 import { HighscoreEntry, RANKING_TITLES } from '@/types/game';
 
 export function HighscoreScreen() {
+  const { t } = useTranslation();
   const { highscores, profiles: _profiles, activeProfileId, onlineEnabled, leaderboardType, setLeaderboardType } = useGameStore();
   const [filter, setFilter] = useState<'all' | 'mine'>('all');
   const [globalLeaderboard, setGlobalLeaderboard] = useState<typeof highscores>([]);
@@ -84,9 +86,9 @@ export function HighscoreScreen() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
           <TrophyIcon className="w-8 h-8 text-yellow-400" />
-          Highscore Leaderboard
+          {t('highscoreScreen.title')}
         </h1>
-        <p className="text-white/60">Top singers and their legendary performances!</p>
+        <p className="text-white/60">{t('highscoreScreen.description')}</p>
       </div>
 
       {/* Global/Local Toggle */}
@@ -96,7 +98,7 @@ export function HighscoreScreen() {
           onClick={() => setLeaderboardType('local')}
           className={leaderboardType === 'local' ? 'bg-cyan-500' : 'bg-white/10'}
         >
-          🏠 Local
+          {t('highscoreScreen.local')}
         </Button>
         
         {/* Global Tab */}
@@ -105,7 +107,7 @@ export function HighscoreScreen() {
             onClick={() => setLeaderboardType('global')}
             className={leaderboardType === 'global' ? 'bg-purple-500' : 'bg-white/10'}
           >
-            🌍 Global
+            {t('highscoreScreen.global')}
           </Button>
         )}
 
@@ -117,7 +119,7 @@ export function HighscoreScreen() {
               size="sm"
               className={filter === 'all' ? 'bg-white/20' : 'bg-white/5'}
             >
-              All Scores
+              {t('highscoreScreen.allScores')}
             </Button>
             <Button 
               onClick={() => setFilter('mine')}
@@ -125,7 +127,7 @@ export function HighscoreScreen() {
               className={filter === 'mine' ? 'bg-white/20' : 'bg-white/5'}
               disabled={!activeProfileId}
             >
-              My Scores
+              {t('highscoreScreen.myScores')}
             </Button>
           </>
         )}
@@ -135,7 +137,7 @@ export function HighscoreScreen() {
       {leaderboardType === 'local' && (
         <Card className="bg-white/5 border-white/10 mb-6">
           <CardHeader>
-            <CardTitle className="text-lg">Ranking Titles</CardTitle>
+            <CardTitle className="text-lg">{t('highscoreScreen.rankingTitles')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 text-sm">
@@ -154,7 +156,7 @@ export function HighscoreScreen() {
       {isLoadingGlobal && (
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full mr-3" />
-          <span className="text-white/60">Loading global leaderboard...</span>
+          <span className="text-white/60">{t('highscoreScreen.loadingGlobal')}</span>
         </div>
       )}
 
@@ -165,10 +167,10 @@ export function HighscoreScreen() {
             <p className="text-red-400 mb-3">{globalError}</p>
             <div className="flex justify-center gap-2">
               <Button onClick={retryGlobalLoad} size="sm" className="bg-purple-500 hover:bg-purple-400">
-                🔄 Retry
+                {t('highscoreScreen.retry')}
               </Button>
               <Button onClick={() => setLeaderboardType('local')} size="sm" className="bg-white/10">
-                Switch to Local
+                {t('highscoreScreen.switchToLocal')}
               </Button>
             </div>
           </CardContent>
@@ -182,10 +184,10 @@ export function HighscoreScreen() {
             <TrophyIcon className="w-16 h-16 text-white/20 mx-auto mb-4" />
             <p className="text-white/60">
               {leaderboardType === 'global' 
-                ? "No global scores yet. Be the first to upload!" 
+                ? t('highscoreScreen.noGlobal') 
                 : filter === 'mine' 
-                  ? "You haven't set any scores yet!" 
-                  : "No highscores yet. Be the first to sing!"}
+                  ? t('highscoreScreen.noMine')
+                  : t('highscoreScreen.noAll')}
             </p>
           </CardContent>
         </Card>
@@ -255,12 +257,12 @@ export function HighscoreScreen() {
                     <div className="text-2xl font-bold text-cyan-400">{entry.score.toLocaleString()}</div>
                     {leaderboardType === 'local' && (
                       <>
-                        <div className="text-sm text-white/60">{entry.accuracy.toFixed(1)}% accuracy</div>
-                        <div className="text-xs text-white/40">{entry.maxCombo}x max combo</div>
+                        <div className="text-sm text-white/60">{t('highscoreScreen.accuracyLabel').replace('{n}', entry.accuracy.toFixed(1))}</div>
+                        <div className="text-xs text-white/40">{t('highscoreScreen.maxComboLabel').replace('{n}', entry.maxCombo.toString())}</div>
                       </>
                     )}
                     {leaderboardType === 'global' && (
-                      <div className="text-xs text-white/40">total points</div>
+                      <div className="text-xs text-white/40">{t('highscoreScreen.totalPoints')}</div>
                     )}
                   </div>
                 </CardContent>

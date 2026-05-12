@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useGameStore } from '@/lib/game/store';
 import { QueueIcon } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from '@/lib/i18n/translations';
 import type { Song } from '@/types/game';
 import { getAllSongsAsync } from '@/lib/game/song-library';
 
@@ -28,6 +29,7 @@ interface QueueScreenProps {
 }
 
 export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
+  const { t } = useTranslation();
   const { 
     queue, 
     removeFromQueue, 
@@ -349,20 +351,20 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
   const getGameModeBadge = (mode?: 'single' | 'duel' | 'duet') => {
     switch (mode) {
       case 'duel':
-        return <Badge className="bg-red-500 text-xs">⚔️ Duel</Badge>;
+        return <Badge className="bg-red-500 text-xs">{t('queueScreen.duel')}</Badge>;
       case 'duet':
-        return <Badge className="bg-pink-500 text-xs">🎭 Duet</Badge>;
+        return <Badge className="bg-pink-500 text-xs">{t('queueScreen.duet')}</Badge>;
       default:
-        return <Badge className="bg-cyan-500 text-xs">🎤 Single</Badge>;
+        return <Badge className="bg-cyan-500 text-xs">{t('queueScreen.single')}</Badge>;
     }
   };
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Song Queue</h1>
+        <h1 className="text-3xl font-bold mb-2">{t('queue.title')}</h1>
         <p className="text-white/60">
-          {unifiedQueue.length} songs in queue • Max 3 per player
+          {unifiedQueue.length} {t('queueScreen.songsInQueue')}
         </p>
       </div>
 
@@ -370,8 +372,8 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
         <Card className="bg-white/5 border-white/10">
           <CardContent className="py-12 text-center">
             <QueueIcon className="w-16 h-16 text-white/20 mx-auto mb-4" />
-            <p className="text-white/60">No songs in queue</p>
-            <p className="text-sm text-white/40 mt-2">Add songs from the library or via Companion App</p>
+            <p className="text-white/60">{t('queueScreen.noSongs')}</p>
+            <p className="text-sm text-white/40 mt-2">{t('queueScreen.noSongsDesc')}</p>
           </CardContent>
         </Card>
       ) : (
@@ -422,7 +424,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
                         <div 
                           className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
                           style={{ backgroundColor: mainProfile?.color || '#888', opacity: isMainInactive ? 0.4 : 1 }}
-                          title={isMainInactive ? 'Player deactivated' : ''}
+                          title={isMainInactive ? t('queueScreen.playerDeactivated') : ''}
                         >
                           {item.playerName?.[0]?.toUpperCase() || '?'}
                         </div>
@@ -443,7 +445,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
                             <div 
                               className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
                               style={{ backgroundColor: partnerProfile?.color || '#888', opacity: isPartnerInactive ? 0.4 : 1 }}
-                              title={isPartnerInactive ? 'Player deactivated' : ''}
+                              title={isPartnerInactive ? t('queueScreen.playerDeactivated') : ''}
                             >
                               {(item.partnerName || '?')[0]?.toUpperCase() || '?'}
                             </div>
@@ -468,7 +470,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
                       playFromQueue(item);
                     }}
                   >
-                    ▶ Play
+                    {t('queueScreen.play')}
                   </Button>
                   <Button
                     variant="ghost"
@@ -500,14 +502,14 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
             onClick={clearQueue}
             className="border-white/20 text-white hover:bg-white/10"
           >
-            Clear All
+            {t('queueScreen.clearAll')}
           </Button>
           {unifiedQueue[0] && (
             <Button 
               onClick={() => playFromQueue(unifiedQueue[0])}
               className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400"
             >
-              ▶ Play Next Song
+              {t('queueScreen.playNextSong')}
             </Button>
           )}
         </div>
@@ -525,13 +527,11 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
           <Card className="bg-yellow-500/10 border-yellow-500/30 mb-6">
             <CardHeader>
               <CardTitle className="text-lg text-yellow-400">
-                ⚠ Spieler-Neuauswahl benötigt
+                {t('queueScreen.playerReselectNeeded')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-white/80">
-                Ein Spieler für <strong>{item.song.title}</strong> ({item.gameMode === 'duel' ? 'Duell' : 'Duett'}) wurde deaktiviert. Bitte wähle neue Spieler oder lösche den Song.
-              </p>
+              <p className="text-sm text-white/80" dangerouslySetInnerHTML={{ __html: t('queueScreen.playerReselectDesc').replace('{song}', item.song.title).replace('{mode}', item.gameMode === 'duel' ? 'Duel' : 'Duet') }} />
               {activeProfiles.length >= 2 ? (
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-2">
@@ -578,7 +578,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
                       }}
                       className="bg-green-500 hover:bg-green-400 disabled:opacity-50"
                     >
-                      ✓ Spieler zuweisen
+                      {t('queueScreen.assignPlayers')}
                     </Button>
                     <Button
                       variant="outline"
@@ -588,20 +588,20 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
                       }}
                       className="border-red-500/50 text-red-400 hover:bg-red-500/10"
                     >
-                      ✕ Song löschen
+                      {t('queueScreen.deleteSong')}
                     </Button>
                     <Button
                       variant="outline"
                       onClick={() => setNeedsPlayerSelection(prev => prev.filter(id => id !== itemId))}
                       className="border-white/20 text-white hover:bg-white/10"
                     >
-                      Später
+                      {t('queueScreen.later')}
                     </Button>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <p className="text-sm text-red-400">Nicht genügend aktive Spieler verfügbar (mindestens 2 benötigt).</p>
+                  <p className="text-sm text-red-400">{t('queueScreen.notEnoughPlayers')}</p>
                   <Button
                     variant="outline"
                     onClick={() => {
@@ -610,7 +610,7 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
                     }}
                     className="border-red-500/50 text-red-400 hover:bg-red-500/10"
                   >
-                    ✕ Song aus Queue löschen
+                    {t('queueScreen.deleteFromQueue')}
                   </Button>
                 </div>
               )}
@@ -620,15 +620,15 @@ export function QueueScreen({ onPlayFromQueue }: QueueScreenProps) {
       })()}
       <Card className="bg-white/5 border-white/10 mt-8">
         <CardHeader>
-          <CardTitle className="text-lg">Queue Rules</CardTitle>
+          <CardTitle className="text-lg">{t('queueScreen.rules')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-white/60">
-          <p>• Maximum 3 songs per player at a time</p>
-          <p>• Songs play in the order they were added</p>
-          <p>• You can remove your own songs from the queue</p>
-          <p>• Select a character before adding to queue</p>
-          <p>• Companion app requests appear with a cyan border</p>
-          <p>• Click a song to play it immediately</p>
+          <p>{t('queueScreen.rule1')}</p>
+          <p>{t('queueScreen.rule2')}</p>
+          <p>{t('queueScreen.rule3')}</p>
+          <p>{t('queueScreen.rule4')}</p>
+          <p>{t('queueScreen.rule5')}</p>
+          <p>{t('queueScreen.rule6')}</p>
         </CardContent>
       </Card>
     </div>

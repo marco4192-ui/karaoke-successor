@@ -2,107 +2,110 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from '@/lib/i18n/translations';
 import type { GameMode } from '@/types/game';
 
 interface PartyGame {
   mode: GameMode;
-  title: string;
-  description: string;
+  titleKey: string;
+  descKey: string;
   icon: string;
   players: string;
   color: string;
   isNew?: boolean;
 }
 
-const partyGames: PartyGame[] = [
-  {
-    mode: 'pass-the-mic',
-    title: 'Pass the Mic',
-    description: 'Take turns singing parts of a song. When the music stops, the next singer takes over!',
-    icon: '🎤',
-    players: '2-8',
-    color: 'from-cyan-500 to-blue-500',
-  },
-  {
-    mode: 'companion-singalong',
-    title: 'Companion Sing-A-Long',
-    description: 'Your phone randomly lights up - that\'s your cue to sing! No one knows who\'s next until the blink!',
-    icon: '📱',
-    players: '2-8',
-    color: 'from-emerald-500 to-teal-500',
-  },
-  {
-    mode: 'medley',
-    title: 'Medley Contest',
-    description: 'Sing short snippets of multiple songs in a row. How many can you nail?',
-    icon: '🎵',
-    players: '1-4',
-    color: 'from-purple-500 to-pink-500',
-  },
-  {
-    mode: 'missing-words',
-    title: 'Missing Words',
-    description: 'Some lyrics disappear! Can you sing the right words at the right time?',
-    icon: '📝',
-    players: '1-4',
-    color: 'from-orange-500 to-red-500',
-  },
-  {
-    mode: 'blind',
-    title: 'Blind Karaoke',
-    description: 'Lyrics disappear for certain sections. Can you remember the words?',
-    icon: '🙈',
-    players: '1-4',
-    color: 'from-green-500 to-teal-500',
-  },
-  {
-    mode: 'tournament',
-    title: 'Tournament Mode',
-    description: 'Single elimination bracket! 4-32 players compete in Sudden-Death matches. Who will be champion?',
-    icon: '🏆',
-    players: '4-32',
-    color: 'from-amber-500 to-yellow-500',
-    isNew: true,
-  },
-  {
-    mode: 'battle-royale',
-    title: 'Battle Royale',
-    description: 'All players sing simultaneously! Lowest score gets eliminated each round. Last singer standing wins!',
-    icon: '👑',
-    players: '2-8',
-    color: 'from-red-600 to-pink-600',
-    isNew: true,
-  },
-  {
-    mode: 'rate-my-song',
-    title: 'Rate my Song',
-    description: 'Sing a song and let your friends rate your performance! No scoring — just pure fun. Solo, Duel, or Duet mode.',
-    icon: '⭐',
-    players: '1-2',
-    color: 'from-amber-500 to-orange-500',
-    isNew: true,
-  },
-  {
-    mode: 'online',
-    title: 'Online Multiplayer',
-    description: 'Play against friends or find opponents online! Create rooms, join matches, and compete globally!',
-    icon: '🌐',
-    players: '2-8',
-    color: 'from-cyan-500 to-purple-600',
-    isNew: true,
-  },
-];
-
 interface PartyScreenProps {
   onSelectMode: (_mode: GameMode) => void;
 }
 
 export function PartyScreen({ onSelectMode }: PartyScreenProps) {
+  const { t } = useTranslation();
+
+  const partyGames: PartyGame[] = [
+    {
+      mode: 'pass-the-mic',
+      titleKey: 'party.passTheMic',
+      descKey: 'party.passTheMicDesc',
+      icon: '🎤',
+      players: '2-8',
+      color: 'from-cyan-500 to-blue-500',
+    },
+    {
+      mode: 'companion-singalong',
+      titleKey: 'party.companionSingalong',
+      descKey: 'party.companionSingalongDesc',
+      icon: '📱',
+      players: '2-8',
+      color: 'from-emerald-500 to-teal-500',
+    },
+    {
+      mode: 'medley',
+      titleKey: 'party.medleyContest',
+      descKey: 'party.medleyContestDesc',
+      icon: '🎵',
+      players: '1-4',
+      color: 'from-purple-500 to-pink-500',
+    },
+    {
+      mode: 'missing-words',
+      titleKey: 'party.missingWords',
+      descKey: 'party.missingWordsDesc',
+      icon: '📝',
+      players: '1-4',
+      color: 'from-orange-500 to-red-500',
+    },
+    {
+      mode: 'blind',
+      titleKey: 'party.blindKaraoke',
+      descKey: 'party.blindKaraokeDesc',
+      icon: '🙈',
+      players: '1-4',
+      color: 'from-green-500 to-teal-500',
+    },
+    {
+      mode: 'tournament',
+      titleKey: 'party.tournamentMode',
+      descKey: 'party.tournamentModeDesc',
+      icon: '🏆',
+      players: '4-32',
+      color: 'from-amber-500 to-yellow-500',
+      isNew: true,
+    },
+    {
+      mode: 'battle-royale',
+      titleKey: 'party.battleRoyaleTitle',
+      descKey: 'party.battleRoyaleDesc',
+      icon: '👑',
+      players: '2-8',
+      color: 'from-red-600 to-pink-600',
+      isNew: true,
+    },
+    {
+      mode: 'rate-my-song',
+      titleKey: 'party.rateMySongTitle',
+      descKey: 'party.rateMySongDesc',
+      icon: '⭐',
+      players: '1-2',
+      color: 'from-amber-500 to-orange-500',
+      isNew: true,
+    },
+    {
+      mode: 'online',
+      titleKey: 'party.onlineMultiplayerTitle',
+      descKey: 'party.onlineMultiplayerDesc',
+      icon: '🌐',
+      players: '2-8',
+      color: 'from-cyan-500 to-purple-600',
+      isNew: true,
+    },
+  ];
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Party Games</h1>
-        <p className="text-white/60">Choose a game mode for your party!</p>
+        <h1 className="text-3xl font-bold mb-2">{t('party.title')}</h1>
+        <p className="text-white/60">{t('party.subtitle')}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -119,11 +122,11 @@ export function PartyScreen({ onSelectMode }: PartyScreenProps) {
                 </div>
               )}
               <div className="text-5xl mb-4">{game.icon}</div>
-              <h3 className="tile-text-white text-2xl font-bold text-white mb-2">{game.title}</h3>
-              <p className="tile-text-white text-white/80 mb-4">{game.description}</p>
+              <h3 className="tile-text-white text-2xl font-bold text-white mb-2">{t(game.titleKey)}</h3>
+              <p className="tile-text-white text-white/80 mb-4">{t(game.descKey)}</p>
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" className="tile-text-white bg-white/20 text-white">
-                  {game.players} players
+                  {game.players} {t('party.players')}
                 </Badge>
               </div>
             </CardContent>

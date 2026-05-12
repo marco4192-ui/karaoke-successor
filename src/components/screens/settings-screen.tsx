@@ -32,7 +32,7 @@ import { useFolderScanner } from '@/hooks/use-folder-scanner';
 
 // ===================== SETTINGS SCREEN =====================
 function SettingsScreen() {
-  const { t: _t, language, setLanguage, translations } = useTranslation();
+  const { t, language, setLanguage, translations } = useTranslation();
   const { setDifficulty, gameState } = useGameStore();
 
   // Folder scanning hook — encapsulates all library management logic
@@ -296,7 +296,7 @@ function SettingsScreen() {
             onClick={handleSaveSettings}
             className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white px-8 py-3 rounded-full shadow-lg shadow-cyan-500/30"
           >
-            💾 Save Changes
+            💾 {tx('settings.savedSuccessfully').replace('✓ ', '')}
           </Button>
         </div>
       )}
@@ -304,7 +304,7 @@ function SettingsScreen() {
       {/* Success notification */}
       {folderScanner.folderSaveComplete && (
         <div className="fixed top-4 right-4 z-50 bg-green-500/90 text-white px-4 py-2 rounded-lg shadow-lg">
-          ✓ Settings saved successfully
+          {tx('settings.savedSuccessfully')}
         </div>
       )}
     </div>

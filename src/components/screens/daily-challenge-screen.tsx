@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { StorageKeys, setJson, setItem } from '@/lib/storage';
 import { useGameStore } from '@/lib/game/store';
+import { useTranslation } from '@/lib/i18n/translations';
 import { getAllSongs } from '@/lib/game/song-library';
 import { 
   getDailyChallenge, 
@@ -23,6 +24,7 @@ import { MicIcon } from '@/components/icons';
 
 // ===================== DAILY CHALLENGE SCREEN =====================
 export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_song: Song) => void }) {
+  const { t } = useTranslation();
   const { profiles, activeProfileId, setActiveProfile } = useGameStore();
   const [activeTab, setActiveTab] = useState<'challenge' | 'modes' | 'leaderboard' | 'badges'>('challenge');
   const [gameMode, setGameMode] = useState<'single' | 'duel'>('single');
@@ -41,18 +43,17 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
   
   // Challenge descriptions
   const challengeDescriptions: Record<string, string> = {
-    score: `Score ${challenge.target.toLocaleString()}+ points in a single song`,
-    accuracy: `Achieve ${challenge.target}%+ accuracy`,
-    combo: `Get a ${challenge.target}+ note combo`,
-    songs: `Complete ${challenge.target} songs today`,
-    perfect_notes: `Hit ${challenge.target}+ perfect notes`,
+    score: t('dailyChallengeScreen.challengeScore').replace('{n}', challenge.target.toLocaleString()),
+    accuracy: t('dailyChallengeScreen.challengeAccuracy').replace('{n}', challenge.target.toString()),
+    combo: t('dailyChallengeScreen.challengeCombo').replace('{n}', challenge.target.toString()),
+    songs: t('dailyChallengeScreen.challengeSongs').replace('{n}', challenge.target.toString()),
+    perfect_notes: t('dailyChallengeScreen.challengePerfect').replace('{n}', challenge.target.toString()),
   };
   
   // Check if already completed today
   const completedToday = isChallengeCompletedToday();
   
   // Sort leaderboard by the challenge-type-specific metric, not by raw score.
-  // For perfect_notes, sort by perfectNotesCount; for accuracy, by accuracy; etc.
   const sortMetric = (entry: typeof challenge.entries[0]): number => {
     switch (challenge.type) {
       case 'accuracy': return entry.accuracy;
@@ -71,10 +72,10 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
       <div className="mb-6 text-center">
-        <h1 className="text-3xl font-bold mb-2">⭐ Daily Challenge</h1>
-        <p className="text-white/60">Complete daily challenges to earn XP and build your streak!</p>
+        <h1 className="text-3xl font-bold mb-2">{t('dailyChallengeScreen.title')}</h1>
+        <p className="text-white/60">{t('dailyChallengeScreen.description')}</p>
         {activeProfile && (
-          <p className="text-sm text-cyan-400 mt-1">Playing as: {activeProfile.name}</p>
+          <p className="text-sm text-cyan-400 mt-1">{t('dailyChallengeScreen.playingAs').replace('{n}', activeProfile.name)}</p>
         )}
       </div>
       
@@ -90,7 +91,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
               </div>
             </div>
             <div className="text-right">
-              <div className="text-sm text-white/60">Next Level</div>
+              <div className="text-sm text-white/60">{t('dailyChallengeScreen.nextLevel')}</div>
               <div className="text-sm font-medium">{levelInfo.nextLevel.toLocaleString()} XP</div>
             </div>
           </div>
@@ -109,21 +110,21 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
           <CardContent className="pt-4 text-center">
             <div className="text-3xl mb-1">🔥</div>
             <div className="text-2xl font-bold text-orange-400">{playerStats.currentStreak}</div>
-            <div className="text-xs text-white/60">Day Streak</div>
+            <div className="text-xs text-white/60">{t('dailyChallengeScreen.dayStreak')}</div>
           </CardContent>
         </Card>
         <Card className="bg-white/5 border-white/10">
           <CardContent className="pt-4 text-center">
             <div className="text-3xl mb-1">🏆</div>
             <div className="text-2xl font-bold text-amber-400">{playerStats.longestStreak}</div>
-            <div className="text-xs text-white/60">Best Streak</div>
+            <div className="text-xs text-white/60">{t('dailyChallengeScreen.bestStreak')}</div>
           </CardContent>
         </Card>
         <Card className="bg-white/5 border-white/10">
           <CardContent className="pt-4 text-center">
             <div className="text-3xl mb-1">✅</div>
             <div className="text-2xl font-bold text-green-400">{playerStats.totalCompleted}</div>
-            <div className="text-xs text-white/60">Completed</div>
+            <div className="text-xs text-white/60">{t('dailyChallengeScreen.completed')}</div>
           </CardContent>
         </Card>
       </div>
@@ -135,28 +136,28 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
           onClick={() => setActiveTab('challenge')}
           className={activeTab === 'challenge' ? 'bg-gradient-to-r from-cyan-500 to-purple-500' : 'border-white/20'}
         >
-          🎯 Challenges
+          {t('dailyChallengeScreen.challenges')}
         </Button>
         <Button
           variant={activeTab === 'modes' ? 'default' : 'outline'}
           onClick={() => setActiveTab('modes')}
           className={activeTab === 'modes' ? 'bg-gradient-to-r from-cyan-500 to-purple-500' : 'border-white/20'}
         >
-          🎮 Challenge Modes
+          {t('dailyChallengeScreen.challengeModes')}
         </Button>
         <Button
           variant={activeTab === 'leaderboard' ? 'default' : 'outline'}
           onClick={() => setActiveTab('leaderboard')}
           className={activeTab === 'leaderboard' ? 'bg-gradient-to-r from-cyan-500 to-purple-500' : 'border-white/20'}
         >
-          🏆 Leaderboard
+          {t('dailyChallengeScreen.leaderboard')}
         </Button>
         <Button
           variant={activeTab === 'badges' ? 'default' : 'outline'}
           onClick={() => setActiveTab('badges')}
           className={activeTab === 'badges' ? 'bg-gradient-to-r from-cyan-500 to-purple-500' : 'border-white/20'}
         >
-          🎖️ Badges
+          {t('dailyChallengeScreen.badges')}
         </Button>
       </div>
       
@@ -165,18 +166,18 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
         <Card className={`bg-white/5 border-white/10 ${completedToday ? 'ring-2 ring-green-500' : ''}`}>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>{completedToday ? '✅ Challenge Complete!' : '🎯 Today\'s Challenge'}</span>
+              <span>{completedToday ? t('dailyChallengeScreen.challengeComplete') : t('dailyChallengeScreen.todayChallenge')}</span>
               <Badge variant="outline" className="border-cyan-500 text-cyan-400">
                 +{XP_REWARDS.CHALLENGE_COMPLETE} XP
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-lg mb-4">{challengeDescriptions[challenge.type] || 'Complete the challenge!'}</p>
+            <p className="text-lg mb-4">{challengeDescriptions[challenge.type] || t('dailyChallengeScreen.completeChallenge')}</p>
             
             <div className="mb-4 p-4 bg-white/5 rounded-lg">
               <div className="flex items-center justify-between text-sm mb-2">
-                <span className="text-white/60">Target</span>
+                <span className="text-white/60">{t('dailyChallengeScreen.target')}</span>
                 <span className="font-medium">{challenge.target.toLocaleString()}</span>
               </div>
               <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
@@ -190,21 +191,21 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
             {/* Game Mode Selection */}
             {!completedToday && (
               <div className="mb-4">
-                <label className="text-sm text-white/60 mb-2 block">Game Mode</label>
+                <label className="text-sm text-white/60 mb-2 block">{t('dailyChallengeScreen.gameMode')}</label>
                 <div className="flex gap-2">
                   <Button
                     variant={gameMode === 'single' ? 'default' : 'outline'}
                     onClick={() => setGameMode('single')}
                     className={gameMode === 'single' ? 'bg-cyan-500' : 'border-white/20'}
                   >
-                    <MicIcon className="w-4 h-4 mr-2" /> Single
+                    <MicIcon className="w-4 h-4 mr-2" /> {t('dailyChallengeScreen.single')}
                   </Button>
                   <Button
                     variant={gameMode === 'duel' ? 'default' : 'outline'}
                     onClick={() => setGameMode('duel')}
                     className={gameMode === 'duel' ? 'bg-purple-500' : 'border-white/20'}
                   >
-                    ⚔️ Duel
+                    {t('dailyChallengeScreen.duel')}
                   </Button>
                 </div>
               </div>
@@ -213,7 +214,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
             {/* Player Selection for Duel Mode */}
             {!completedToday && gameMode === 'duel' && (
               <div className="mb-4">
-                <label className="text-sm text-white/60 mb-2 block">Select 2 Players</label>
+                <label className="text-sm text-white/60 mb-2 block">{t('dailyChallengeScreen.select2Players')}</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-32 overflow-y-auto">
                   {profiles.filter(p => p.isActive !== false).map((profile) => (
                     <button
@@ -251,7 +252,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
             
             <div className="flex items-center justify-between">
               <div className="text-sm text-white/60">
-                Resets in: {timeLeft.hours}h {timeLeft.minutes}m
+                {t('dailyChallengeScreen.resetsIn')} {timeLeft.hours}h {timeLeft.minutes}m
               </div>
               {!completedToday && (
                 <Button 
@@ -272,7 +273,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                   disabled={gameMode === 'duel' && selectedPlayerIds.length < 2}
                   className="bg-gradient-to-r from-cyan-500 to-purple-500"
                 >
-                  Play Now
+                  {t('dailyChallengeScreen.playNow')}
                 </Button>
               )}
             </div>
@@ -280,7 +281,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
             {!completedToday && playerStats.currentStreak > 0 && (
               <div className="mt-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
                 <div className="text-sm text-orange-400">
-                  🔥 Streak Bonus: +{XP_REWARDS.STREAK_BONUS_BASE * playerStats.currentStreak} XP ({playerStats.currentStreak} days)
+                  {t('dailyChallengeScreen.streakBonus').replace('{n}', (XP_REWARDS.STREAK_BONUS_BASE * playerStats.currentStreak).toString()).replace('{m}', playerStats.currentStreak.toString())}
                 </div>
               </div>
             )}
@@ -293,8 +294,8 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
         <div className="space-y-4">
           <Card className="bg-white/5 border-white/10">
             <CardHeader>
-              <CardTitle>🎮 Challenge Modes</CardTitle>
-              <CardDescription>Special modifiers for extra XP rewards!</CardDescription>
+              <CardTitle>{t('dailyChallengeScreen.challengeModes')}</CardTitle>
+              <CardDescription>{t('dailyChallengeScreen.specialModifiers')}</CardDescription>
             </CardHeader>
           </Card>
           
@@ -362,13 +363,13 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
       {activeTab === 'leaderboard' && (
         <Card className="bg-white/5 border-white/10">
           <CardHeader>
-            <CardTitle>🏆 Today&apos;s Leaderboard</CardTitle>
+            <CardTitle>{t('dailyChallengeScreen.todayLeaderboard')}</CardTitle>
           </CardHeader>
           <CardContent>
             {sortedLeaderboard.length === 0 ? (
               <div className="text-center py-8 text-white/40">
                 <div className="text-4xl mb-2">🎯</div>
-                <p>No entries yet! Be the first to complete today&apos;s challenge!</p>
+                <p>{t('dailyChallengeScreen.noLeaderboardEntries')}</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -398,12 +399,12 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                     <div className="flex-1">
                       <div className="font-medium">{entry.playerName}</div>
                       <div className="text-xs text-white/60">
-                        {entry.accuracy.toFixed(1)}% accuracy • {entry.combo} max combo
+                        {t('dailyChallengeScreen.accuracyMaxCombo').replace('{n}', entry.combo.toString())}
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="font-bold text-lg">{entry.score.toLocaleString()}</div>
-                      <div className="text-xs text-white/40">points</div>
+                      <div className="text-xs text-white/40">{t('dailyChallengeScreen.points')}</div>
                     </div>
                   </div>
                 ))}
@@ -411,7 +412,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
             )}
             
             <div className="mt-4 text-center text-sm text-white/40">
-              {challenge.totalParticipants} participant{challenge.totalParticipants !== 1 ? 's' : ''} today
+              {challenge.totalParticipants} {challenge.totalParticipants !== 1 ? t('dailyChallengeScreen.participants') : t('dailyChallengeScreen.participant')} {t('dailyChallengeScreen.dayStreak').toLowerCase()}
             </div>
           </CardContent>
         </Card>
@@ -421,13 +422,13 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
       {activeTab === 'badges' && (
         <Card className="bg-white/5 border-white/10">
           <CardHeader>
-            <CardTitle>🎖️ Your Badges ({playerStats.badges.length})</CardTitle>
+            <CardTitle>{t('dailyChallengeScreen.yourBadges')} ({playerStats.badges.length})</CardTitle>
           </CardHeader>
           <CardContent>
             {playerStats.badges.length === 0 ? (
               <div className="text-center py-8 text-white/40">
                 <div className="text-4xl mb-2">🎖️</div>
-                <p>Complete challenges to earn badges!</p>
+                <p>{t('dailyChallengeScreen.completeForBadges')}</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -448,7 +449,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
             )}
             
             <div className="mt-6">
-              <h4 className="text-sm font-medium text-white/60 mb-3">Available Badges</h4>
+              <h4 className="text-sm font-medium text-white/60 mb-3">{t('dailyChallengeScreen.availableBadges')}</h4>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 opacity-50">
                 {Object.values(DAILY_BADGES)
                   .filter(b => !playerStats.badges.some(pb => pb.id === b.id))
