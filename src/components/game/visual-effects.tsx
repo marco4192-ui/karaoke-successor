@@ -216,13 +216,15 @@ export function useParticleEmitter() {
   }, []);
 
   const emitPerfectHit = useCallback((x: number, y: number) => {
-    emitParticles(x, y, 'spark', 8, { color: '#22D3EE', speed: 1.5 });
-    emitParticles(x, y, 'star', 3, { color: '#FFD700', size: 12, life: 40 });
+    emitParticles(x, y, 'spark', 14, { color: '#22D3EE', speed: 1.8 });
+    emitParticles(x, y, 'star', 5, { color: '#FFD700', size: 14, life: 50 });
+    emitParticles(x, y, 'golden', 4, { color: '#A78BFA', speed: 1.2, size: 8 });
   }, [emitParticles]);
 
   const emitGoldenNote = useCallback((x: number, y: number) => {
-    emitParticles(x, y, 'golden', 12, { color: '#FFD700', speed: 2, size: 10 });
-    emitParticles(x, y, 'spark', 6, { color: '#FFA500', speed: 1.5 });
+    emitParticles(x, y, 'golden', 18, { color: '#FFD700', speed: 2.2, size: 12 });
+    emitParticles(x, y, 'spark', 10, { color: '#FFA500', speed: 1.8 });
+    emitParticles(x, y, 'firework', 6, { color: '#FFD700', speed: 1.5, size: 6, life: 45 });
   }, [emitParticles]);
 
   const emitComboFirework = useCallback((x: number, y: number, combo: number) => {
@@ -240,11 +242,11 @@ export function useParticleEmitter() {
           x + offsetX,
           y + offsetY,
           'firework',
-          Math.min(10 + combo, 25), // Cap total particles per burst
+          Math.min(15 + combo, 35), // More particles per burst
           {
             color: colors[Math.floor(Math.random() * colors.length)],
-            speed: 2 + intensity,
-            life: 60,
+            speed: 2.5 + intensity,
+            life: 70,
           }
         );
       }, burst * 150);
@@ -254,7 +256,7 @@ export function useParticleEmitter() {
 
   const emitConfetti = useCallback((_x: number, _y: number) => {
     const colors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#AA96DA', '#FF9F43'];
-    for (let i = 0; i < 30; i++) { // Reduced from 50
+    for (let i = 0; i < 50; i++) {
       const id = setTimeout(() => {
         pendingTimersRef.current = pendingTimersRef.current.filter(t => t !== id);
         if (!activeRef.current) return;
@@ -265,9 +267,9 @@ export function useParticleEmitter() {
           1,
           {
             color: colors[Math.floor(Math.random() * colors.length)],
-            speed: 0.5,
-            size: 10 + Math.random() * 10,
-            life: 150,
+            speed: 0.6,
+            size: 10 + Math.random() * 12,
+            life: 180,
           }
         );
       }, i * 30);
@@ -428,8 +430,8 @@ export function AnimatedBackground({
         ctx.globalAlpha = 1;
       }
 
-      // Disco lights effect (reduced from 5 to 3)
-      const numLights = 3;
+      // Disco lights effect (5 lights for richer visuals)
+      const numLights = 5;
       for (let i = 0; i < numLights; i++) {
         const angle = (time * 0.5 + (i * Math.PI * 2) / numLights) % (Math.PI * 2);
         const x = canvas.width / 2 + Math.cos(angle) * 200;
@@ -445,9 +447,9 @@ export function AnimatedBackground({
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      // Floating particles (only while playing, reduced from 3 to 2 per frame)
+      // Floating particles (only while playing, 4 per frame)
       if (playing) {
-        for (let i = 0; i < 2; i++) {
+        for (let i = 0; i < 4; i++) {
           const px = Math.random() * canvas.width;
           const py = canvas.height + 10;
           const size = 2 + Math.random() * 4;
@@ -460,8 +462,8 @@ export function AnimatedBackground({
         }
       }
 
-      // Rising particles animation (reduced from 20 to 12)
-      const particleCount = 12;
+      // Rising particles animation (25 columns)
+      const particleCount = 25;
       for (let i = 0; i < particleCount; i++) {
         const baseX = (i / particleCount) * canvas.width;
         const px = baseX + Math.sin(time + i) * 30;
@@ -475,13 +477,16 @@ export function AnimatedBackground({
         ctx.fill();
       }
 
-      // Pulsing circles from center
-      const pulseRadius = (time * 100) % 500;
-      ctx.beginPath();
-      ctx.arc(canvas.width / 2, canvas.height / 2, pulseRadius, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(150, 100, 255, ${1 - pulseRadius / 500})`;
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      // Pulsing circles from center (3 rings)
+      for (let r = 0; r < 3; r++) {
+        const pulseRadius = ((time * 100) + r * 170) % 510;
+        const alpha = (1 - pulseRadius / 510) * (1 - r * 0.3);
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, canvas.height / 2, pulseRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(150, 100, 255, ${alpha})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
 
       animationRef.current = requestAnimationFrame(animate);
     };

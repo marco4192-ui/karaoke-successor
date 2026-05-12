@@ -16,6 +16,7 @@ interface ScoreEvent {
   displayType: 'Perfect' | 'Great' | 'Good' | 'Okay' | 'Miss';
   points: number;
   time: number;
+  player?: 'P1' | 'P2';
 }
 
 // Note performance sample for visual display modes
@@ -466,7 +467,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         if (result.pendingEvents.length > 0) {
           setScoreEventsState(prev => [
             ...prev.slice(-10),
-            ...result.pendingEvents.slice(-10),
+            ...result.pendingEvents.slice(-10).map(e => ({ ...e, player: _playerIndex === 1 ? 'P2' as const : 'P1' as const })),
           ]);
         }
       }
@@ -575,11 +576,11 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
           setP1PerfectNotesCount(p1PerfectNotesCountRef.current);
         }
 
-        // P1 score events (immediate setState for both general and duet-specific)
+        // P1 score events (tag with P1)
         if (result.pendingEvents.length > 0) {
           setScoreEvents(prev => [
             ...prev.slice(-10),
-            ...result.pendingEvents.slice(-10),
+            ...result.pendingEvents.slice(-10).map(e => ({ ...e, player: 'P1' as const })),
           ]);
         }
       }

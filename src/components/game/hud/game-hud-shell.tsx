@@ -3,12 +3,13 @@
 import React from 'react';
 import { PauseButton } from './pause-button';
 import { FullscreenButton } from './fullscreen-button';
-import { WebcamButton } from './webcam-button';
 import { DifficultyBadge } from './difficulty-badge';
 import type { Difficulty } from './difficulty-badge';
 import { GameProgressBar } from '@/components/game/game-hud';
 import { TimeDisplay } from '@/components/game/game-hud';
 import { GameCountdown } from '@/components/game/game-countdown';
+import { WebcamBackground, WebcamQuickControls } from '@/components/game/webcam-background';
+import type { WebcamBackgroundConfig } from '@/components/game/webcam-background';
 
 type GameMode = 'standard' | 'duel' | 'duet' | 'ptm' | 'battle-royale' | 'medley' | 'companion' | 'missing-words' | 'blind';
 
@@ -31,6 +32,10 @@ export interface GameHudShellProps {
   showWebcam?: boolean;
   /** Ref to track active webcam streams */
   activeWebcamStreamsRef?: React.MutableRefObject<MediaStream[]>;
+  /** Webcam background config (for WebcamQuickControls) */
+  webcamConfig?: WebcamBackgroundConfig;
+  /** Callback to update webcam config */
+  onWebcamConfigChange?: (_config: Partial<WebcamBackgroundConfig>) => void;
   /** Show difficulty badge */
   showDifficulty?: boolean;
   /** Current difficulty */
@@ -68,6 +73,8 @@ export function GameHudShell({
   countdown = 0,
   showWebcam = true,
   activeWebcamStreamsRef,
+  webcamConfig,
+  onWebcamConfigChange,
   showDifficulty = true,
   difficulty = 'medium',
   onCycleDifficulty,
@@ -84,6 +91,11 @@ export function GameHudShell({
 
   return (
     <div className="absolute inset-0 z-20 pointer-events-none">
+      {/* Webcam Background */}
+      {showWebcam && webcamConfig && onWebcamConfigChange && (
+        <WebcamBackground config={webcamConfig} onConfigChange={onWebcamConfigChange} />
+      )}
+
       {/* Top-left: Pause */}
       <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-auto">
         <PauseButton isPlaying={isPlaying} onTogglePause={onTogglePause} />
@@ -97,8 +109,8 @@ export function GameHudShell({
             onCycleDifficulty={onCycleDifficulty}
           />
         )}
-        {showCam && (
-          <WebcamButton activeWebcamStreamsRef={activeWebcamStreamsRef} />
+        {showWebcam && webcamConfig && onWebcamConfigChange && (
+          <WebcamQuickControls config={webcamConfig} onConfigChange={onWebcamConfigChange} />
         )}
         {showFullscreen && (
           <FullscreenButton />

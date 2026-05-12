@@ -4,9 +4,8 @@ import { Button } from '@/components/ui/button';
 import { PLAYER_COLORS } from '@/types/game';
 import { SING_LINE_POSITION, NOTE_WINDOW, VISIBLE_TOP, VISIBLE_RANGE } from '@/lib/game/note-utils';
 import { useTranslation } from '@/lib/i18n/translations';
-import { WebcamBackground } from '@/components/game/webcam-background';
+import { WebcamBackground, WebcamQuickControls } from '@/components/game/webcam-background';
 import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
-import { WebcamToggleButton } from '@/components/game/hud/webcam-toggle-button';
 import { ScoreEventsDisplay } from '@/components/game/score-events-display';
 import { PitchGraphDisplay } from '@/components/game/pitch-graph-display';
 import { PracticePanel } from '@/components/game/practice-panel';
@@ -82,7 +81,7 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
             activeChallenge={g.activeChallenge}
           />
           {!g.isLowPerf && (
-            <WebcamToggleButton
+            <WebcamQuickControls
               config={g.webcamConfig}
               onConfigChange={g.updateWebcamConfig}
             />
@@ -322,7 +321,7 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
       />
 
       {/* Score Events & Particles — disabled in low-performance mode */}
-      {!g.isLowPerf && g.showParticles !== false && <ScoreEventsDisplay events={g.scoreEvents} maxVisible={3} />}
+      {!g.isLowPerf && g.showParticles !== false && <ScoreEventsDisplay events={g.scoreEvents} maxVisible={3} isDuetMode={g.isDuetMode} />}
       {!g.isLowPerf && g.showParticles !== false && <ParticleSystem particles={g.particles} />}
 
       {/* Spectrogram Display / Equalizer — left side, below pitch detection */}

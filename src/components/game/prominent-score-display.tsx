@@ -85,11 +85,11 @@ export const ProminentScoreDisplay = React.memo(function ProminentScoreDisplay({
         </div>
       </div>
 
-      {/* Combo indicator with glow effect */}
+      {/* Combo indicator with glow effect — positioned below score card */}
       {showCombo !== false && combo >= 5 && (
-        <div className="fixed top-28 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+        <div className="fixed top-40 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
           <div
-            className="text-3xl font-black animate-pulse"
+            className="text-2xl font-black animate-pulse"
             style={{
               color: combo >= 20 ? '#FFD700' :
                      combo >= 10 ? '#FF6B6B' : '#4ECDC4',

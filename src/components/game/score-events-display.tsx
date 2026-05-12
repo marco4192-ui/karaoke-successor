@@ -6,11 +6,14 @@ export interface ScoreEvent {
   displayType: 'Perfect' | 'Great' | 'Good' | 'Okay' | 'Miss';
   points: number;
   time: number;
+  player?: 'P1' | 'P2';
 }
 
 export interface ScoreEventsDisplayProps {
   events: ScoreEvent[];
   maxVisible?: number;
+  /** When true, split events by player — P1 left, P2 right */
+  isDuetMode?: boolean;
 }
 
 const SCORE_STYLES: Record<ScoreEvent['displayType'], { className: string; boxShadow: string; icon: string; iconSize: string }> = {
@@ -46,34 +49,73 @@ const SCORE_STYLES: Record<ScoreEvent['displayType'], { className: string; boxSh
   },
 };
 
+/** Renders a single score event card */
+function ScoreEventCard({ event, index }: { event: ScoreEvent; index: number }) {
+  const style = SCORE_STYLES[event.displayType];
+  return (
+    <div
+      key={`${event.time}-${event.player || 'p1'}-${index}`}
+      className={`px-4 py-2 rounded-xl font-bold shadow-2xl transform ${style.className}`}
+      style={{
+        animation: 'scorePopIn 0.4s ease-out, fadeOut 1.5s ease-in-out forwards',
+        animationDelay: `${index * 0.05}s`,
+        boxShadow: style.boxShadow,
+      }}
+    >
+      <span className="flex items-center gap-1.5">
+        <span className={style.iconSize}>{style.icon}</span>
+        <span className="text-sm">{event.displayType.toUpperCase()}</span>
+        {event.points > 0 && (
+          <span className="text-lg font-black">+{event.points}</span>
+        )}
+      </span>
+    </div>
+  );
+}
+
+/** Column of score events (shared between single and duel/duet layouts) */
+function ScoreEventColumn({ events, position }: { events: ScoreEvent[]; position: 'left' | 'right' | 'center' }) {
+  const positionClass = position === 'left'
+    ? 'fixed top-1/2 left-8 -translate-y-1/2'
+    : position === 'right'
+      ? 'fixed top-1/2 right-8 -translate-y-1/2'
+      : 'fixed top-1/2 right-8 -translate-y-1/2';
+
+  return (
+    <div className={`${positionClass} flex flex-col-reverse gap-2 z-50 pointer-events-none`}>
+      {events.map((event, i) => (
+        <ScoreEventCard key={`${event.time}-${event.player || ''}-${i}`} event={event} index={i} />
+      ))}
+    </div>
+  );
+}
+
 export const ScoreEventsDisplay = React.memo(function ScoreEventsDisplay({
   events,
   maxVisible = 5,
+  isDuetMode = false,
 }: ScoreEventsDisplayProps) {
+  if (!isDuetMode) {
+    // Single player / standard mode — centered right (classic position)
+    return <ScoreEventColumn events={events.slice(-maxVisible)} position="center" />;
+  }
+
+  // Duel / Duet mode — split by player: P1 left, P2 right
+  const p1Events = events.filter(e => e.player === 'P1').slice(-maxVisible);
+  const p2Events = events.filter(e => e.player === 'P2').slice(-maxVisible);
+  // Events without a player tag default to P1 side
+  const untaggedEvents = events.filter(e => !e.player).slice(-Math.max(0, maxVisible - p1Events.length));
+
   return (
-    <div className="fixed top-1/2 right-8 -translate-y-1/2 flex flex-col-reverse gap-3 z-50 pointer-events-none">
-      {events.slice(-maxVisible).map((event, i) => {
-        const style = SCORE_STYLES[event.displayType];
-        return (
-          <div
-            key={`${event.time}-${i}`}
-            className={`px-5 py-3 rounded-xl font-bold text-xl shadow-2xl transform ${style.className}`}
-            style={{
-              animation: 'scorePopIn 0.4s ease-out, fadeOut 1.5s ease-in-out forwards',
-              animationDelay: `${i * 0.05}s`,
-              boxShadow: style.boxShadow,
-            }}
-          >
-            <span className="flex items-center gap-2">
-              <span className={style.iconSize}>{style.icon}</span>
-              <span className="text-lg">{event.displayType.toUpperCase()}</span>
-              {event.points > 0 && (
-                <span className="text-2xl font-black">+{event.points}</span>
-              )}
-            </span>
-          </div>
-        );
-      })}
-    </div>
+    <>
+      {/* P1 events — left side */}
+      {(p1Events.length > 0 || untaggedEvents.length > 0) && (
+        <ScoreEventColumn events={[...untaggedEvents, ...p1Events].slice(-maxVisible)} position="left" />
+      )}
+      {/* P2 events — right side */}
+      {p2Events.length > 0 && (
+        <ScoreEventColumn events={p2Events} position="right" />
+      )}
+    </>
   );
 });
