@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { EditPlaylistModal } from './edit-playlist-modal';
 import { safeAlert } from '@/lib/safe-dialog';
 import { useGameStore } from '@/lib/game/store';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface PlaylistViewProps {
   playlists: Playlist[];
@@ -37,6 +38,7 @@ export function PlaylistView({
   onPlaylistSelect,
   onPlaylistDelete,
   onRemoveSongFromPlaylist,
+  onSongClick,
   onShowCreatePlaylist,
   songCardProps,
   activeProfileId,
@@ -44,6 +46,7 @@ export function PlaylistView({
   addToQueue,
   activeProfileName,
 }: PlaylistViewProps) {
+  const { t } = useTranslation();
   const [showEditModal, setShowEditModal] = useState(false);
   const [editTarget, setEditTarget] = useState<Playlist | null>(null);
 
@@ -63,7 +66,7 @@ export function PlaylistView({
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
-          Back to Playlists
+          {t('libraryPlaylist.backToPlaylists')}
         </button>
       )}
       
@@ -72,7 +75,7 @@ export function PlaylistView({
         <>
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold">
-              {playlists.length} Playlist{playlists.length !== 1 ? 's' : ''}
+              {playlists.length} {playlists.length !== 1 ? t('libraryPlaylist.playlists') : t('libraryPlaylist.playlist')}
             </h2>
             <div className="flex gap-2">
             <Button
@@ -83,7 +86,7 @@ export function PlaylistView({
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              Create Playlist
+              {t('libraryPlaylist.createPlaylist')}
             </Button>
             <Button
               onClick={() => {
@@ -101,10 +104,10 @@ export function PlaylistView({
                       onPlaylistSelect(null);
                       window.location.reload();
                     } else {
-                      safeAlert('Invalid playlist file format');
+                      safeAlert(t('libraryPlaylist.invalidFormat'));
                     }
                   } catch {
-                    safeAlert('Failed to import playlist file');
+                    safeAlert(t('libraryPlaylist.importFailed'));
                   }
                 };
                 input.click();
@@ -117,7 +120,7 @@ export function PlaylistView({
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
-              Import
+              {t('libraryPlaylist.import')}
             </Button>
             </div>
           </div>
@@ -134,7 +137,7 @@ export function PlaylistView({
                   {/* System playlist badge */}
                   {playlist.isSystem && (
                     <div className="absolute top-2 right-2 bg-purple-500/30 text-purple-300 text-xs px-2 py-0.5 rounded-full">
-                      System
+                      {t('libraryPlaylist.system')}
                     </div>
                   )}
                   
@@ -149,7 +152,7 @@ export function PlaylistView({
                   
                   {/* Playlist Name */}
                   <h3 className="font-semibold text-white truncate">{playlist.name}</h3>
-                  <p className="text-xs text-white/40">{playlistSongs.length} song{playlistSongs.length !== 1 ? 's' : ''}</p>
+                  <p className="text-xs text-white/40">{playlistSongs.length} {playlistSongs.length !== 1 ? t('libraryPlaylist.songs') : t('libraryPlaylist.song')}</p>
                   
                   {/* Edit & Delete buttons for non-system playlists */}
                   {!playlist.isSystem && (
@@ -160,7 +163,7 @@ export function PlaylistView({
                           handleEditPlaylist(playlist);
                         }}
                         className="p-1.5 rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/40 transition-all"
-                        title="Edit playlist"
+                        title={t('libraryPlaylist.editPlaylist')}
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -170,12 +173,12 @@ export function PlaylistView({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (safeConfirm(`Delete "${playlist.name}"?`)) {
+                          if (safeConfirm(t('libraryPlaylist.deleteConfirm').replace('{name}', playlist.name))) {
                             onPlaylistDelete(playlist.id);
                           }
                         }}
                         className="p-1.5 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/40 transition-all"
-                        title="Delete playlist"
+                        title={t('libraryPlaylist.deletePlaylist')}
                       >
                         <TrashIcon className="w-4 h-4" />
                       </button>
@@ -202,7 +205,7 @@ export function PlaylistView({
                 <Button
                   onClick={() => {
                     const data = exportPlaylist(selectedPlaylist.id);
-                    if (!data) { safeAlert('Export failed'); return; }
+                    if (!data) { safeAlert(t('libraryPlaylist.exportFailed')); return; }
                     const json = JSON.stringify(data, null, 2);
                     const blob = new Blob([json], { type: 'application/json' });
                     const url = URL.createObjectURL(blob);
@@ -220,7 +223,7 @@ export function PlaylistView({
                     <polyline points="17 8 12 3 7 8" />
                     <line x1="12" y1="3" x2="12" y2="15" />
                   </svg>
-                  Export
+                  {t('libraryPlaylist.export')}
                 </Button>
               )}
               <Button
@@ -238,7 +241,7 @@ export function PlaylistView({
                 disabled={!activeProfileId}
               >
                 <QueueIcon className="w-4 h-4 mr-2" />
-                Add to Queue
+                {t('libraryPlaylist.addToQueue')}
               </Button>
               <Button
                 onClick={() => {
@@ -250,7 +253,7 @@ export function PlaylistView({
                 className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400"
               >
                 <PlayIcon className="w-4 h-4 mr-2" />
-                Play in Jukebox
+                {t('libraryPlaylist.playInJukebox')}
               </Button>
             </div>
           </div>
@@ -260,8 +263,8 @@ export function PlaylistView({
             if (playlistSongs.length === 0) {
               return (
                 <div className="text-center py-12">
-                  <p className="text-white/60">This playlist is empty</p>
-                  <p className="text-white/40 text-sm mt-2">Add songs from the library</p>
+                  <p className="text-white/60">{t('libraryPlaylist.empty')}</p>
+                  <p className="text-white/40 text-sm mt-2">{t('libraryPlaylist.emptyDesc')}</p>
                 </div>
               );
             }
@@ -278,7 +281,7 @@ export function PlaylistView({
                         onRemoveSongFromPlaylist(selectedPlaylist.id, song.id);
                       }}
                       className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-500/80 text-white opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all z-10"
-                      title="Remove from playlist"
+                      title={t('libraryPlaylist.removeFromPlaylist')}
                     >
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <line x1="18" y1="6" x2="6" y2="18" />

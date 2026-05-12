@@ -2,6 +2,7 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { CreatePlaylistForm } from './create-playlist-form';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface CreatePlaylistModalProps {
   show: boolean;
@@ -14,13 +15,15 @@ export function CreatePlaylistModal({
   onClose,
   onSuccess,
 }: CreatePlaylistModalProps) {
+  const { t } = useTranslation();
+
   return (
     <Dialog open={show} onOpenChange={onClose}>
       <DialogContent className="bg-gray-900 border-white/10 text-white max-w-md">
         <DialogHeader>
-          <DialogTitle>Create New Playlist</DialogTitle>
+          <DialogTitle>{t('libraryPlaylist.createTitle')}</DialogTitle>
           <DialogDescription className="text-white/60">
-            Give your playlist a name and optionally a description
+            {t('libraryPlaylist.createDesc')}
           </DialogDescription>
         </DialogHeader>
         <CreatePlaylistForm 

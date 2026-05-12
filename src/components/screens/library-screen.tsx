@@ -302,7 +302,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode }: { onSelectSong:
           ) : filteredSongs.length === 0 ? (
             <div className="text-center py-20">
               <p className="text-white/60 mb-4">{t('library.noSongs')}</p>
-              <p className="text-white/40 text-sm">Try a different search or import some songs</p>
+              <p className="text-white/40 text-sm">{t('library.noSongsHint')}</p>
             </div>
           ) : viewMode === 'grid' || (viewMode === 'folder' && currentFolder) ? (
             <VirtualizedSongGrid songs={currentFolderSongs} songCardProps={songCardBaseProps} renderSongCard={renderViralSongCard} />
