@@ -21,6 +21,8 @@ interface LyricLineDisplayProps {
   gameMode?: GameModeType;
   missingWordsIndices?: number[];
   isBlindSection?: boolean;
+  /** Hardcore blind mode: text hidden when notes visible */
+  isBlindHardcore?: boolean;
   /** Callback ref attached to the first singable note span (for pointer targeting) */
   firstNoteRef?: (_node: HTMLSpanElement | null) => void;
   /** Lyrics size setting: 'small', 'medium', or 'large' */
@@ -50,6 +52,7 @@ export function LyricLineDisplay({
   gameMode = 'standard',
   missingWordsIndices = [],
   isBlindSection = false,
+  isBlindHardcore = false,
   firstNoteRef,
   lyricsSize,
 }: LyricLineDisplayProps) {
@@ -224,12 +227,14 @@ export function LyricLineDisplay({
         // Check if this lyric is ONLY a hyphen - force a line break after it
         const isHyphenOnly = displayLyric.trim() === '-';
 
-        // MISSING WORDS MODE: Hide certain words (replace with underscores or blanks)
-        // missingWordsIndices now stores note startTimes of hidden words
-        const isMissingWord = gameMode === 'missing-words' && missingWordsIndices.includes(note.startTime);
+        // MISSING WORDS MODE: Hide entire lines belonging to hidden passages
+        // missingWordsIndices now stores LINE startTimes (not note startTimes)
+        const isMissingWord = gameMode === 'missing-words' && missingWordsIndices.includes(line.startTime);
 
-        // BLIND KARAOKE MODE: Hide all lyrics in blind sections
-        const shouldHideLyric = isBlindSection && gameMode === 'blind';
+        // BLIND KARAOKE MODE (new concept): Text always shown unless Hardcore
+        // Normal blind: text always fully visible (notes hidden on highway instead)
+        // Hardcore: text hidden when notes are visible (NOT in blind section)
+        const shouldHideLyric = gameMode === 'blind' && isBlindHardcore && !isBlindSection;
 
         // Render the lyric - with special handling for game modes
         let renderedLyric = displayLyric;

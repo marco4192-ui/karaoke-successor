@@ -27,10 +27,12 @@ export interface CompetitiveSettings {
   difficulty: Difficulty;
   modeType: CompetitiveModeType;
   bestOf: BestOfSetting;
-  /** Missing words: percentage of words to hide (0.15 - 0.50) */
+  /** Missing words: percentage of passages to hide (0.15 - 0.90) */
   missingWordFrequency: number;
-  /** Blind: how often sections go blind (0.10 - 0.60) */
+  /** Blind: percentage of sections that go blind (0.15 - 0.90) */
   blindFrequency: number;
+  /** Hardcore blind: text hidden when notes visible, and vice versa */
+  hardcore: boolean;
 }
 
 interface CompetitivePlayer {

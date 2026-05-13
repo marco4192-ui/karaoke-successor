@@ -49,6 +49,8 @@ export interface NoteHighwayProps {
   visibleRange?: number;
   /** Additional CSS class names */
   className?: string;
+  /** Blind mode: hide notes when in a blind section */
+  isBlindSection?: boolean;
 }
 
 // ===================== SUB-COMPONENTS =====================
@@ -302,6 +304,7 @@ export const NoteHighway = React.memo(function NoteHighway({
   visibleTop = 8,
   visibleRange = 77,
   className = '',
+  isBlindSection = false,
 }: NoteHighwayProps) {
   const { t } = useTranslation();
 
@@ -327,8 +330,8 @@ export const NoteHighway = React.memo(function NoteHighway({
       {/* Sing line */}
       <SingLine position={singLinePosition} color={colorScheme} />
 
-      {/* Notes */}
-      {visibleNotes.map((note) => (
+      {/* Notes — hidden in blind sections */}
+      {!isBlindSection && visibleNotes.map((note) => (
         <NoteBlock
           key={note.id || `note-${note.startTime}`}
           note={note}
@@ -345,15 +348,24 @@ export const NoteHighway = React.memo(function NoteHighway({
         />
       ))}
 
-      {/* Pitch indicator (singer's current pitch) */}
-      <PitchIndicator
+      {/* Pitch indicator — hidden in blind sections */}
+      {!isBlindSection && <PitchIndicator
         detectedPitch={detectedPitch}
         pitchStats={pitchStats}
         singLinePosition={singLinePosition}
         visibleTop={visibleTop}
         visibleRange={visibleRange}
         color={colorScheme}
-      />
+      />}
+      {/* Blind indicator — subtle pulse when in blind section */}
+      {isBlindSection && (
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col items-center gap-2 pointer-events-none">
+          <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center" style={{ animation: 'ptm-cursor-blink 1.5s ease-in-out infinite' }}>
+            <span className="text-3xl">🙈</span>
+          </div>
+          <span className="text-xs text-white/30 font-medium">BLIND</span>
+        </div>
+      )}
 
       {/* Player label */}
       {showPlayerLabel && (

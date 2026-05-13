@@ -52,6 +52,7 @@ interface GameStore {
   setDetectedPitch: (_pitch: number | null) => void;
   setMicActive: (_active: boolean) => void;
   setBlindSection: (_isBlind: boolean) => void;
+  setBlindHardcore: (_isHardcore: boolean) => void;
   setMissingWordsIndices: (_indices: number[]) => void;
   pauseGame: () => void;
   resumeGame: () => void;
@@ -147,6 +148,7 @@ const initialGameState: GameState = {
   isMicActive: false,
   detectedPitch: null,
   isBlindSection: false,
+  blindHardcore: false,
   missingWordsIndices: [],
   currentLineIndex: 0,
   results: null,
@@ -256,6 +258,11 @@ export const useGameStore = create<GameStore>()(
       setBlindSection: (isBlind) =>
         set((state) => ({
           gameState: { ...state.gameState, isBlindSection: isBlind },
+        })),
+
+      setBlindHardcore: (isHardcore) =>
+        set((state) => ({
+          gameState: { ...state.gameState, blindHardcore: isHardcore },
         })),
 
       setMissingWordsIndices: (indices) =>

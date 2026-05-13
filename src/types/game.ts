@@ -204,6 +204,8 @@ export interface GameState {
   isMicActive: boolean;
   detectedPitch: number | null;
   isBlindSection: boolean;
+  /** Hardcore blind mode: text hidden when notes visible, and vice versa */
+  blindHardcore: boolean;
   missingWordsIndices: number[];
   currentLineIndex: number;
   results: GameResult | null;

@@ -145,20 +145,22 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     icon: '🙈',
     description: 'Lyrics disappear for certain sections! Competitive multiplayer mode.',
     extendedDescription: [
-      '🙈 Text verschwindet in bestimmten Abschnitten',
-      '🧠 Singe aus dem Gedächtnis',
-      '👥 2 Spieler singen gleichzeitig den gleichen Song',
+      '🙈 Noten auf der Highway verschwinden — Songtext bleibt sichtbar',
+      '🧠 Singe aus dem Gedächtnis ohne Noten-Hilfe',
+      '🆘 Erste Strophe immer sichtbar als Orientierungshilfe',
+      '🔥 HARDCORE: Wenn Noten sichtbar → Text versteckt (und umgekehrt)',
+      '👥 2–4 Spieler singen gleichzeitig den gleichen Song',
       '🏆 Rangliste über mehrere Runden',
-      '🎯 Best-of-3, Best-of-5 oder Best-of-7',
     ],
     color: 'from-green-500 to-teal-500',
     minPlayers: 2,
     maxPlayers: 4,
     settings: [
-      { key: 'blindFrequency', label: 'Blind Frequency', description: 'How often lyrics disappear', type: 'select', options: [
-        { value: 'rare', label: 'Rare (10%)' }, { value: 'normal', label: 'Normal (25%)' },
-        { value: 'often', label: 'Often (40%)' }, { value: 'insane', label: 'Insane (60%)' },
+      { key: 'blindFrequency', label: 'Blind Frequency', description: 'How often notes disappear from the highway', type: 'select', options: [
+        { value: 'light', label: 'Light (15%)' }, { value: 'normal', label: 'Normal (30%)' },
+        { value: 'hard', label: 'Hard (60%)' }, { value: 'insane', label: 'Insane (90%)' },
       ], defaultValue: 'normal' },
+      { key: 'hardcore', label: 'Hardcore Mode', description: 'Text hidden when notes visible, and vice versa', type: 'toggle', defaultValue: false },
       { key: 'bestOf', label: 'Best of', description: 'Number of rounds per player', type: 'select', options: [
         { value: 1, label: '1 Round' }, { value: 3, label: 'Best of 3' },
         { value: 5, label: 'Best of 5' }, { value: 7, label: 'Best of 7' },
@@ -173,18 +175,19 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     icon: '📝',
     description: 'Some lyrics disappear - competitive multiplayer mode!',
     extendedDescription: [
-      '📝 Manche Wörter verschwinden aus dem Text',
-      '🎤 Singe die fehlenden Wörter zur richtigen Zeit',
-      '👥 2 Spieler singen gleichzeitig den gleichen Song',
-      '⭐ Bonuspunkte für korrekte fehlende Wörter',
-      '🏆 Rangliste über mehrere Runden (Best-of-3/5/7)',
+      '📝 Ganze Textpassagen verschwinden — nicht nur einzelne Wörter',
+      '🎤 Die erste Strophe bleibt immer sichtbar als Anhaltspunkt',
+      '👥 2–4 Spieler singen gleichzeitig den gleichen Song',
+      '⭐ Bonuspunkte für korrekt gesungene versteckte Passagen',
+      '🏆 Rangliste über mehrere Runden (Best-of-1/3/5/7)',
     ],
     color: 'from-orange-500 to-red-500',
     minPlayers: 2,
     maxPlayers: 4,
     settings: [
-      { key: 'missingWordFrequency', label: 'Missing Word Frequency', type: 'select', options: [
-        { value: 'easy', label: 'Easy (few words)' }, { value: 'normal', label: 'Normal' }, { value: 'hard', label: 'Hard (many words)' },
+      { key: 'missingWordFrequency', label: 'Missing Words Frequency', description: 'Percentage of passages to hide', type: 'select', options: [
+        { value: 'light', label: 'Light (15%)' }, { value: 'normal', label: 'Normal (30%)' },
+        { value: 'hard', label: 'Hard (60%)' }, { value: 'insane', label: 'Insane (90%)' },
       ], defaultValue: 'normal' },
       { key: 'bestOf', label: 'Best of', description: 'Number of rounds per player', type: 'select', options: [
         { value: 1, label: '1 Round' }, { value: 3, label: 'Best of 3' },

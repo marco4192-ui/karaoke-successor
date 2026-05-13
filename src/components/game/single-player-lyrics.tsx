@@ -23,6 +23,8 @@ export interface SinglePlayerLyricsProps {
   missingWordsIndices?: number[];
   /** Is blind section for blind mode */
   isBlindSection?: boolean;
+  /** Hardcore blind mode: text hidden when notes visible */
+  isBlindHardcore?: boolean;
   /** Preview time in milliseconds (how early to show next line) */
   previewTime?: number;
   /** Lyrics size setting: 'small', 'medium', or 'large' */
@@ -43,6 +45,7 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
   gameMode = 'standard',
   missingWordsIndices = [],
   isBlindSection = false,
+  isBlindHardcore = false,
   previewTime = 2000,
   lyricsSize,
 }: SinglePlayerLyricsProps) {
@@ -194,6 +197,7 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
             gameMode={gameMode}
             missingWordsIndices={missingWordsIndices}
             isBlindSection={isBlindSection}
+            isBlindHardcore={isBlindHardcore}
             firstNoteRef={firstNoteRefCallback}
             lyricsSize={lyricsSize}
           />

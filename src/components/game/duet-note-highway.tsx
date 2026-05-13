@@ -59,6 +59,8 @@ export interface DuetNoteHighwayProps {
   missingWordsIndices?: number[];
   /** Is blind section for blind mode */
   isBlindSection?: boolean;
+  /** Hardcore blind mode */
+  isBlindHardcore?: boolean;
   /** P1 player name */
   p1PlayerName?: string;
   /** P2 player name */
@@ -171,6 +173,7 @@ const PlayerLyrics = React.memo(function PlayerLyrics({
   gameMode,
   missingWordsIndices,
   isBlindSection,
+  isBlindHardcore,
 }: {
   lines?: LyricLine[];
   currentTime: number;
@@ -180,6 +183,7 @@ const PlayerLyrics = React.memo(function PlayerLyrics({
   gameMode?: GameMode;
   missingWordsIndices?: number[];
   isBlindSection?: boolean;
+  isBlindHardcore?: boolean;
 }) {
 
   const { displayLine, nextLine } = useMemo(() => {
@@ -223,6 +227,7 @@ const PlayerLyrics = React.memo(function PlayerLyrics({
           gameMode={gameMode}
           missingWordsIndices={missingWordsIndices}
           isBlindSection={isBlindSection}
+          isBlindHardcore={isBlindHardcore}
         />
       </div>
       {/* Next Line Preview — smaller, faded text for orientation */}
@@ -262,6 +267,7 @@ export function DuetNoteHighway({
   gameMode,
   missingWordsIndices,
   isBlindSection,
+  isBlindHardcore,
   p1PlayerName,
   p2PlayerName,
   p2Player,
@@ -287,6 +293,7 @@ export function DuetNoteHighway({
           playerNumber={1}
           visibleTop={HALF_VISIBLE_TOP}
           visibleRange={HALF_VISIBLE_RANGE}
+          isBlindSection={isBlindSection}
         />
 
         {/* P1 Lyrics Display */}
@@ -299,6 +306,7 @@ export function DuetNoteHighway({
           gameMode={gameMode}
           missingWordsIndices={missingWordsIndices}
           isBlindSection={isBlindSection}
+          isBlindHardcore={isBlindHardcore}
         />
       </div>
 
@@ -323,6 +331,7 @@ export function DuetNoteHighway({
           playerNumber={2}
           visibleTop={HALF_VISIBLE_TOP}
           visibleRange={HALF_VISIBLE_RANGE}
+          isBlindSection={isBlindSection}
         />
 
         {/* P2 Lyrics Display */}
@@ -335,6 +344,7 @@ export function DuetNoteHighway({
           gameMode={gameMode}
           missingWordsIndices={missingWordsIndices}
           isBlindSection={isBlindSection}
+          isBlindHardcore={isBlindHardcore}
         />
       </div>
     </div>

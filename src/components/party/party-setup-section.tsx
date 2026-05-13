@@ -450,18 +450,19 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 const s = result.settings as GameModeSettingsMap['missing-words'] & GameModeSettingsMap['blind'];
                 const modeType = mode as CompetitiveModeType;
                 const freqSetting = s.missingWordFrequency || s.blindFrequency || 'normal';
-                const mwFreqMap: Record<string, number> = { easy: 0.15, normal: 0.25, hard: 0.40 };
-                const blindFreqMap: Record<string, number> = { rare: 0.10, normal: 0.25, often: 0.40, insane: 0.60 };
+                const mwFreqMap: Record<string, number> = { light: 0.15, easy: 0.15, normal: 0.30, hard: 0.60, insane: 0.90 };
+                const blindFreqMap: Record<string, number> = { light: 0.15, normal: 0.30, hard: 0.60, insane: 0.90 };
                 const compSettings: CompetitiveSettings = {
                   difficulty: result.difficulty,
                   modeType,
                   bestOf: ([1, 3, 5, 7].includes(s.bestOf as number) ? s.bestOf : 3) as 1 | 3 | 5 | 7,
                   missingWordFrequency: modeType === 'missing-words'
-                    ? (mwFreqMap[freqSetting] ?? 0.25)
-                    : 0.25,
+                    ? (mwFreqMap[freqSetting] ?? 0.30)
+                    : 0.30,
                   blindFrequency: modeType === 'blind'
-                    ? (blindFreqMap[freqSetting] ?? 0.25)
-                    : 0.25,
+                    ? (blindFreqMap[freqSetting] ?? 0.30)
+                    : 0.30,
+                  hardcore: !!(s.hardcore),
                 };
                 const compGame = createCompetitiveGame(
                   result.players.map(p => p.id),

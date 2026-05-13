@@ -42,6 +42,7 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [bestOf, setBestOf] = useState<1 | 3 | 5 | 7>(3);
   const [frequency, setFrequency] = useState<string>('normal');
+  const [hardcore, setHardcore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Read default difficulty from global store (set in Settings)
@@ -93,11 +94,12 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
       modeType,
       bestOf,
       missingWordFrequency: modeType === 'missing-words'
-        ? frequency === 'easy' ? 0.15 : frequency === 'hard' ? 0.40 : 0.25
-        : 0.25,
+        ? frequency === 'light' ? 0.15 : frequency === 'hard' ? 0.60 : frequency === 'insane' ? 0.90 : 0.30
+        : 0.30,
       blindFrequency: modeType === 'blind'
-        ? frequency === 'rare' ? 0.10 : frequency === 'often' ? 0.40 : frequency === 'insane' ? 0.60 : 0.25
-        : 0.25,
+        ? frequency === 'light' ? 0.15 : frequency === 'hard' ? 0.60 : frequency === 'insane' ? 0.90 : 0.30
+        : 0.30,
+      hardcore: modeType === 'blind' ? hardcore : false,
     };
 
     const playerObjs = selectedPlayers.map(id => profiles.find(p => p.id === id));
@@ -178,15 +180,16 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
           <div className="flex gap-3">
             {(modeType === 'missing-words'
               ? [
-                  { value: 'easy', label: t('competitiveWords.easy') },
-                  { value: 'normal', label: t('competitiveWords.normal') },
-                  { value: 'hard', label: t('competitiveWords.hard') },
+                  { value: 'light', label: t('competitiveWords.light') + ' (15%)' },
+                  { value: 'normal', label: t('competitiveWords.normal') + ' (30%)' },
+                  { value: 'hard', label: t('competitiveWords.hard') + ' (60%)' },
+                  { value: 'insane', label: t('competitiveWords.insane') + ' (90%)' },
                 ]
               : [
-                  { value: 'rare', label: t('competitiveWords.rarely') },
-                  { value: 'normal', label: t('competitiveWords.normal') },
-                  { value: 'often', label: t('competitiveWords.often') },
-                  { value: 'insane', label: t('competitiveWords.insane') },
+                  { value: 'light', label: t('competitiveWords.light') + ' (15%)' },
+                  { value: 'normal', label: t('competitiveWords.normal') + ' (30%)' },
+                  { value: 'hard', label: t('competitiveWords.hard') + ' (60%)' },
+                  { value: 'insane', label: t('competitiveWords.insane') + ' (90%)' },
                 ]
             ).map(opt => (
               <button
@@ -203,6 +206,24 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
             ))}
           </div>
         </div>
+
+        {/* Hardcore toggle (Blind mode only) */}
+        {modeType === 'blind' && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">{t('competitiveWords.hardcoreMode')}</h3>
+                <p className="text-sm text-gray-400">{t('competitiveWords.hardcoreDesc')}</p>
+              </div>
+              <button
+                onClick={() => setHardcore(!hardcore)}
+                className={`relative w-14 h-7 rounded-full transition-colors ${hardcore ? 'bg-red-500' : 'bg-gray-600'}`}
+              >
+                <div className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white transition-transform ${hardcore ? 'translate-x-7' : ''}`} />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Player selection */}
         <div className="mb-8">

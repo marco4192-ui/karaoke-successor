@@ -138,13 +138,14 @@ export interface BattleRoyaleModeSettings extends BaseModeSettings {
 
 /** Missing Words */
 export interface MissingWordsModeSettings extends BaseModeSettings {
-  missingWordFrequency?: 'easy' | 'normal' | 'hard';
+  missingWordFrequency?: 'light' | 'normal' | 'hard' | 'insane';
   bestOf?: 1 | 3 | 5 | 7;
 }
 
 /** Blind Karaoke */
 export interface BlindModeSettings extends BaseModeSettings {
-  blindFrequency?: 'rare' | 'normal' | 'often' | 'insane';
+  blindFrequency?: 'light' | 'normal' | 'hard' | 'insane';
+  hardcore?: boolean;
   bestOf?: 1 | 3 | 5 | 7;
 }
 
