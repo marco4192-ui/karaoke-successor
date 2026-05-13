@@ -194,6 +194,12 @@ export function usePtmGameLogic({
   const medleyRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const medleyCanplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const segmentSwitchHandledRef = useRef(false);
+  const transitionHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Pre-computed player schedule: maps segment index → player index ──
+  // Built once on mount so segment switches are deterministic and race-free.
+  interface PtmScheduleEntry { segmentIndex: number; playerIndex: number; }
+  const scheduleRef = useRef<PtmScheduleEntry[]>([]);
 
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const currentPlayerIndexRef = useRef(currentPlayerIndex);
@@ -202,12 +208,64 @@ export function usePtmGameLogic({
   const currentPlayer = playersRef.current[currentPlayerIndex];
   const currentSegment = initialSegments[currentSegmentIndex];
 
-  // ── Set initial player from first segment's assignment ──
+  // ── Set initial player from first segment's assignment & build pre-computed schedule ──
   useEffect(() => {
-    if (initialSegments.length > 0 && initialSegments[0].playerId) {
-      const idx = playersRef.current.findIndex(p => p.id === initialSegments[0].playerId);
-      if (idx >= 0) setCurrentPlayerIndex(idx);
+    const players = playersRef.current;
+    const segCount = initialSegments.length;
+
+    if (segCount <= 1) {
+      // Single segment — assign to a random player
+      const randomIdx = Math.floor(Math.random() * players.length);
+      scheduleRef.current = [{ segmentIndex: 0, playerIndex: randomIdx }];
+      const randomPlayer = players[randomIdx];
+      const assigned = initialSegments.map(seg => ({ ...seg, playerId: randomPlayer.id }));
+      setCurrentPlayerIndex(randomIdx);
+      onUpdateGame(players, assigned);
+      return;
     }
+
+    // Build a pool with equal appearances per player, then shuffle
+    const baseRepeats = Math.floor(segCount / players.length);
+    const remainder = segCount % players.length;
+    const pool: number[] = []; // player indices
+    for (let p = 0; p < players.length; p++) {
+      const count = baseRepeats + (p < remainder ? 1 : 0);
+      for (let r = 0; r < count; r++) pool.push(p);
+    }
+
+    // Fisher-Yates shuffle
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+
+    // Avoid consecutive same-player assignments where possible
+    for (let i = 1; i < pool.length; i++) {
+      if (pool[i] === pool[i - 1]) {
+        for (let j = i + 1; j < pool.length; j++) {
+          if (pool[j] !== pool[i]) {
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+            break;
+          }
+        }
+      }
+    }
+
+    // Build schedule and assign playerIds to segments
+    const schedule: PtmScheduleEntry[] = initialSegments.map((_, i) => ({
+      segmentIndex: i,
+      playerIndex: pool[i] ?? 0,
+    }));
+    scheduleRef.current = schedule;
+
+    const assigned = initialSegments.map((seg, i) => ({
+      ...seg,
+      playerId: players[schedule[i]?.playerIndex ?? 0]?.id,
+    }));
+
+    // Set initial player from first segment's schedule entry
+    setCurrentPlayerIndex(schedule[0]?.playerIndex ?? 0);
+    onUpdateGame(players, assigned);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -314,54 +372,15 @@ export function usePtmGameLogic({
     }
   }, [pauseDialogAction, isPlaying, phase, audioRef, videoRef, isYouTube]);
 
-  // ── Assign segments to players (random order for surprise factor) ──
+  // ── Reset transition refs when segment changes (prevents stale state) ──
   useEffect(() => {
-    const players = playersRef.current;
-    const segCount = initialSegments.length;
-
-    if (segCount <= 1) {
-      // Single segment — assign to a random player
-      const randomPlayer = players[Math.floor(Math.random() * players.length)];
-      const assigned = initialSegments.map(seg => ({ ...seg, playerId: randomPlayer.id }));
-      onUpdateGame(players, assigned);
-      return;
+    segmentSwitchHandledRef.current = false;
+    // Clean up transition hide timer from previous segment
+    if (transitionHideTimerRef.current) {
+      clearTimeout(transitionHideTimerRef.current);
+      transitionHideTimerRef.current = null;
     }
-
-    // Build a pool with equal appearances per player, then shuffle
-    const baseRepeats = Math.floor(segCount / players.length);
-    const remainder = segCount % players.length;
-    const pool: string[] = [];
-    for (let p = 0; p < players.length; p++) {
-      const count = baseRepeats + (p < remainder ? 1 : 0);
-      for (let r = 0; r < count; r++) pool.push(players[p].id);
-    }
-
-    // Fisher-Yates shuffle
-    for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
-    }
-
-    // Avoid consecutive same-player assignments where possible
-    for (let i = 1; i < pool.length; i++) {
-      if (pool[i] === pool[i - 1]) {
-        // Find the nearest later position with a different player to swap with
-        for (let j = i + 1; j < pool.length; j++) {
-          if (pool[j] !== pool[i]) {
-            [pool[i], pool[j]] = [pool[j], pool[i]];
-            break;
-          }
-        }
-      }
-    }
-
-    const assigned = initialSegments.map((seg, i) => ({
-      ...seg,
-      playerId: pool[i] ?? players[0].id,
-    }));
-    onUpdateGame(players, assigned);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [currentSegmentIndex]);
 
   // ── Safety: load lyrics if effectiveSong has no lyrics ──
   // Uses getSongByIdWithLyrics for comprehensive loading (IndexedDB + filesystem).
@@ -576,43 +595,23 @@ export function usePtmGameLogic({
     return effectiveSong.duration;
   }, [effectiveSong]);
 
-  // ── Show transition when segment ends ──
-  const showTransition = useCallback((nextPlayerIdx: number) => {
+  // ── Show transition text (does NOT change phase — game continues playing) ──
+  const showTransitionText = useCallback((nextPlayerIdx: number) => {
     const nextPlayer = playersRef.current[nextPlayerIdx];
+    if (!nextPlayer) return;
     setTransitionNextPlayer({
       id: nextPlayer.id,
       name: nextPlayer.name,
       avatar: nextPlayer.avatar,
       color: nextPlayer.color,
     });
-    setPhase('transitioning');
     setTransitionVisible(true);
   }, []);
 
+  // Dismiss transition overlay (user skips via Space/click).
+  // The actual segment switch is handled by the time-based game loop below.
   const completeTransition = useCallback(() => {
     setTransitionVisible(false);
-    setPhase('playing');
-
-    // If this transition was triggered by the pre-end warning,
-    // perform the actual segment switch NOW (synchronously with overlay completion).
-    // This prevents a delayed second visual "jump" when the useEffect
-    // detects the segment has already ended after phase goes back to 'playing'.
-    if (pendingSegmentSwitchRef.current &&
-        currentSegmentIndex < initialSegments.length - 1) {
-      pendingSegmentSwitchRef.current = false;
-      segmentSwitchHandledRef.current = true;
-
-      const nextSegIdx = currentSegmentIndex + 1;
-      const nextSegment = initialSegments[nextSegIdx];
-      const nextPlayerIdx = nextSegment?.playerId
-        ? playersRef.current.findIndex(p => p.id === nextSegment.playerId)
-        : (currentPlayerIndexRef.current + 1) % playersRef.current.length;
-      const safeNextIdx = nextPlayerIdx >= 0 ? nextPlayerIdx : (currentPlayerIndexRef.current + 1) % playersRef.current.length;
-
-      playersRef.current[currentPlayerIndexRef.current].segmentsSung++;
-      setCurrentSegmentIndex(nextSegIdx);
-      setCurrentPlayerIndex(safeNextIdx);
-    }
   }, []);
 
   // ── Record round results ──
@@ -635,63 +634,63 @@ export function usePtmGameLogic({
   // eslint-disable-next-line react-hooks/exhaustive-deps -- isMedleyMode/ptmMedleySnippets.length excluded; recordRound uses refs
   }, [effectiveSong, song, passTheMicSeriesHistory, setPassTheMicSeriesHistory]);
 
-  // ── Segment switching ──
-  const TRANSITION_LEAD_TIME = 2000; // Start border blinking 2s before segment end
-  const blinkWarningTriggeredRef = useRef(false);
-  const pendingSegmentSwitchRef = useRef(false); // Set when warning triggers, consumed by completeTransition
+  // ── Segment switching (deterministic, using pre-computed schedule) ──
+  // Phase stays 'playing' throughout — no 'transitioning' phase.
+  // The transition overlay is purely visual and non-blocking.
+  const TRANSITION_LEAD_TIME = 2000; // Show typing text 2s before segment end
+  const transitionShownRef = useRef(false);
 
   useEffect(() => {
-    if (phase !== 'playing' || !isPlaying || !currentSegment) {
-      segmentSwitchHandledRef.current = false;
-      blinkWarningTriggeredRef.current = false;
-      return;
-    }
+    if (phase !== 'playing' || !isPlaying || !currentSegment) return;
 
-    // Trigger border blinking warning 2 seconds before segment ends
+    const schedule = scheduleRef.current;
+    if (!schedule.length) return;
+
+    // Show transition text 2s before segment end (visual only, game continues)
     if (currentSegmentIndex < initialSegments.length - 1 &&
-        !blinkWarningTriggeredRef.current &&
+        !transitionShownRef.current &&
         currentTime >= currentSegment.endTime - TRANSITION_LEAD_TIME) {
-      blinkWarningTriggeredRef.current = true;
-      pendingSegmentSwitchRef.current = true; // Mark that completeTransition should handle the switch
-      const nextSegIdx = currentSegmentIndex + 1;
-      const nextSegment = initialSegments[nextSegIdx];
-      const nextPlayerIdx = nextSegment.playerId
-        ? playersRef.current.findIndex(p => p.id === nextSegment.playerId)
-        : (currentPlayerIndex + 1) % playersRef.current.length;
-      const safeNextIdx = nextPlayerIdx >= 0 ? nextPlayerIdx : (currentPlayerIndex + 1) % playersRef.current.length;
-      // Start border-only blinking warning (does not block gameplay)
-      showTransition(safeNextIdx);
+      transitionShownRef.current = true;
+      const nextEntry = schedule[currentSegmentIndex + 1];
+      if (nextEntry) {
+        showTransitionText(nextEntry.playerIndex);
+      }
     }
 
-    // Actually switch when segment ends
-    // (fallback: if completeTransition already handled it, segmentSwitchHandledRef is true)
+    // Switch player at segment end (deterministic, single code path)
     if (currentTime >= currentSegment.endTime && !segmentSwitchHandledRef.current) {
       segmentSwitchHandledRef.current = true;
-      if (currentSegmentIndex < initialSegments.length - 1) {
-        const nextSegIdx = currentSegmentIndex + 1;
-        const nextSegment = initialSegments[nextSegIdx];
 
-        // Find the player index for the next segment's assigned player
-        const nextPlayerIdx = nextSegment.playerId
-          ? playersRef.current.findIndex(p => p.id === nextSegment.playerId)
-          : (currentPlayerIndex + 1) % playersRef.current.length;
-        const safeNextIdx = nextPlayerIdx >= 0 ? nextPlayerIdx : (currentPlayerIndex + 1) % playersRef.current.length;
+      if (currentSegmentIndex < initialSegments.length - 1) {
+        const currentEntry = schedule[currentSegmentIndex];
+        const nextSegIdx = currentSegmentIndex + 1;
+        const nextEntry = schedule[nextSegIdx];
 
         // Count segment as sung for the current player
-        playersRef.current[currentPlayerIndex].segmentsSung++;
+        if (currentEntry) {
+          playersRef.current[currentEntry.playerIndex].segmentsSung++;
+        }
 
         setCurrentSegmentIndex(nextSegIdx);
-        setCurrentPlayerIndex(safeNextIdx);
+        setCurrentPlayerIndex(nextEntry?.playerIndex ?? currentPlayerIndexRef.current);
+
+        // Auto-hide transition text after 1.5s
+        if (transitionHideTimerRef.current) clearTimeout(transitionHideTimerRef.current);
+        transitionHideTimerRef.current = setTimeout(() => {
+          setTransitionVisible(false);
+          transitionHideTimerRef.current = null;
+        }, 1500);
       } else {
         // Song finished
         setIsPlaying(false);
+        setTransitionVisible(false);
         recordRound();
         setPhase('song-results');
       }
     }
-  }, [phase, isPlaying, currentTime, currentSegment, currentSegmentIndex, initialSegments.length, initialSegments, currentPlayerIndex, showTransition, recordRound]);
+  }, [phase, isPlaying, currentTime, currentSegment, currentSegmentIndex, initialSegments, showTransitionText, recordRound]);
 
-  // ── Random switch (rare mid-segment) ──
+  // ── Random switch (rare mid-segment, no phase change) ──
   useEffect(() => {
     if (phase !== 'playing' || !isPlaying || !safeSettings.randomSwitches) return;
     const interval = setInterval(() => {
@@ -700,15 +699,22 @@ export function usePtmGameLogic({
         const next = (currentIndex + 1 + Math.floor(Math.random() * (playersRef.current.length - 1))) % playersRef.current.length;
         playersRef.current[currentIndex].segmentsSung++;
         setCurrentPlayerIndex(next);
-        showTransition(next);
+        // Show transition text briefly (non-blocking)
+        showTransitionText(next);
+        // Auto-hide after 2s
+        if (transitionHideTimerRef.current) clearTimeout(transitionHideTimerRef.current);
+        transitionHideTimerRef.current = setTimeout(() => {
+          setTransitionVisible(false);
+          transitionHideTimerRef.current = null;
+        }, 2000);
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [phase, isPlaying, showTransition, safeSettings.randomSwitches]);
+  }, [phase, isPlaying, showTransitionText, safeSettings.randomSwitches]);
 
   // ── Mic handoff ──
   useEffect(() => {
-    if (phase !== 'playing' && phase !== 'transitioning') return;
+    if (phase !== 'playing') return;
     const player = playersRef.current[currentPlayerIndex];
     if (!player) return;
     if (player.micId && player.micId !== 'default') {
@@ -982,7 +988,7 @@ export function usePtmGameLogic({
 
   // ── Shared handler for audio/video/background end — avoids triplicated logic ──
   const handleMediaEnded = useCallback(() => {
-    if (phase === 'playing' || phase === 'transitioning') {
+    if (phase === 'playing') {
       setIsPlaying(false);
       recordRound();
       setPhase('song-results');

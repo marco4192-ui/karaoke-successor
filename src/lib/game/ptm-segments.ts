@@ -1,5 +1,7 @@
 // PTM segment generation — shared utility for Pass the Mic game mode.
 // When lyrics are available, segments are score-based (equal points per segment).
+// Segment count is determined by the singing duration (first note to last note),
+// NOT total song duration, so intros/outros without notes don't waste segments.
 // When lyrics are unavailable, falls back to equal time-based segments.
 // Natural break points (gaps between lines) are preferred for segment boundaries.
 
@@ -13,7 +15,7 @@ import type { PassTheMicSegment } from '@/components/game/ptm-types';
 export function generatePtmSegments(
   songDurationMs: number,
   playerCount: number,
-  settingsSegmentDuration?: number,
+  _settingsSegmentDuration?: number,
   lyrics?: LyricLine[],
 ): PassTheMicSegment[] {
   // Exclude very short songs (< 60s) — not enough for meaningful gameplay
@@ -30,7 +32,7 @@ export function generatePtmSegments(
   }
 
   // Fallback: time-based segmentation (original logic)
-  return generateTimeBasedSegments(songDurationMs, playerCount, settingsSegmentDuration);
+  return generateTimeBasedSegments(songDurationMs, playerCount);
 }
 
 // ───────────────────────────────────────────────────────────
@@ -40,6 +42,8 @@ export function generatePtmSegments(
 /**
  * Build segments where each segment has approximately equal scoring potential.
  * Break points are placed at natural line gaps (between lyric lines).
+ * Segment count is based on singing duration (first note → last note),
+ * so intros/outros without notes don't waste segments.
  */
 function generateScoreBasedSegments(
   songDurationMs: number,
@@ -47,9 +51,30 @@ function generateScoreBasedSegments(
   lyrics: LyricLine[],
   notes: Note[],
 ): PassTheMicSegment[] {
-  // Calculate segment count (same logic as time-based)
-  const segCount = computeSegmentCount(songDurationMs, playerCount);
-  if (segCount <= 1) {
+  // Find the actual singing range (first note start to last note end)
+  let firstNoteTime = Infinity;
+  let lastNoteEnd = 0;
+  for (const note of notes) {
+    if (note.startTime < firstNoteTime) firstNoteTime = note.startTime;
+    const noteEnd = note.startTime + (note.duration || 0);
+    if (noteEnd > lastNoteEnd) lastNoteEnd = noteEnd;
+  }
+
+  const singingDurationMs = lastNoteEnd - firstNoteTime;
+  // If less than 30s of actual singing, use a single segment
+  if (singingDurationMs < 30000) {
+    return [{ startTime: 0, endTime: Math.round(songDurationMs), playerId: null }];
+  }
+
+  // Calculate segment count based on SINGING duration, not total song duration.
+  // This ensures segments are only placed where there are notes.
+  // Target: ~30s of singing per segment, capped at 5 rounds per player.
+  const targetSegDurMs = 30000;
+  let segCount = Math.max(playerCount, Math.ceil(singingDurationMs / targetSegDurMs));
+  segCount = Math.ceil(segCount / playerCount) * playerCount; // Round to multiple of player count
+  segCount = Math.min(segCount, playerCount * 5); // Cap at 5 rounds
+
+  if (segCount <= playerCount) {
     return [{ startTime: 0, endTime: Math.round(songDurationMs), playerId: null }];
   }
 
@@ -69,12 +94,14 @@ function generateScoreBasedSegments(
   const targetScorePerSegment = totalScore / segCount;
 
   // Pick break points that are closest to the target cumulative score
-  const breakTimes: number[] = [0]; // Start at song beginning
+  // Start at song beginning (or slightly before first note for context)
+  const adjustedStart = Math.max(0, firstNoteTime - 1000);
+  const breakTimes: number[] = [Math.round(adjustedStart)];
   for (let seg = 1; seg < segCount; seg++) {
     const targetCumScore = seg * targetScorePerSegment;
     breakTimes.push(findBestBreakpoint(lineBreaks, targetCumScore, breakTimes[breakTimes.length - 1]));
   }
-  breakTimes.push(Math.round(songDurationMs)); // End at song end
+  breakTimes.push(Math.min(Math.round(songDurationMs), Math.round(lastNoteEnd + 1000))); // End shortly after last note
 
   // Build segments from break times
   const segments: PassTheMicSegment[] = [];
@@ -184,18 +211,17 @@ function findBestBreakpoint(
 function generateTimeBasedSegments(
   songDurationMs: number,
   playerCount: number,
-  settingsSegmentDuration?: number,
 ): PassTheMicSegment[] {
   if (songDurationMs < 60000) {
     return [{ startTime: 0, endTime: Math.round(songDurationMs), playerId: null }];
   }
 
-  const rawDurSec = settingsSegmentDuration
-    || Math.max(20, Math.min(60, Math.ceil(songDurationMs / (playerCount * 2 * 1000))));
+  const rawDurSec = Math.max(20, Math.min(60, Math.ceil(songDurationMs / (playerCount * 2 * 1000))));
   const segDurMs = Math.max(20000, Math.min(60000, rawDurSec * 1000));
 
   const rawCount = Math.ceil(songDurationMs / segDurMs);
-  const segCount = computeSegmentCount(songDurationMs, playerCount, rawCount);
+  let segCount = Math.max(playerCount, Math.ceil(rawCount / playerCount) * playerCount);
+  segCount = Math.min(segCount, playerCount * 5); // Cap at 5 rounds
 
   const adjustedDurMs = songDurationMs / segCount;
 
@@ -214,17 +240,4 @@ function generateTimeBasedSegments(
   return segments;
 }
 
-// ───────────────────────────────────────────────────────────
-// Shared helpers
-// ───────────────────────────────────────────────────────────
 
-function computeSegmentCount(
-  songDurationMs: number,
-  playerCount: number,
-  rawCountHint?: number,
-): number {
-  const rawDurSec = Math.max(20, Math.min(60, Math.ceil(songDurationMs / (playerCount * 2 * 1000))));
-  const segDurMs = Math.max(20000, Math.min(60000, rawDurSec * 1000));
-  const rawCount = rawCountHint ?? Math.ceil(songDurationMs / segDurMs);
-  return Math.max(playerCount, Math.ceil(rawCount / playerCount) * playerCount);
-}

@@ -95,7 +95,7 @@ export function PtmIntroScreen({
             {playersCount} {t('passTheMic.players')}
             {isMedleyMode
               ? ` - ${t('passTheMic.snippets').replace('{n}', String(medleySnippetCount))}`
-              : ` - ${t('passTheMic.segments').replace('{n}', String(safeSettings.segmentDuration))}`}
+              : ''}
             {safeSettings.sharedMicName && (
               <span> - 🎤 {safeSettings.sharedMicName}</span>
             )}
