@@ -109,13 +109,13 @@ export function PlayingView({
       <video
         ref={videoRef}
         className="fixed inset-0 w-full h-full object-cover -z-10"
-        style={{ opacity: 0.4 }}
+        style={{ opacity: 0.7 }}
         muted
         playsInline
         loop
         preload="auto"
       />
-      <div className="fixed inset-0 bg-black/50 -z-10" />
+      <div className="fixed inset-0 bg-black/30 -z-10" />
 
       {/* ─────────── Pause + Fullscreen (universal HUD) ─────────── */}
       <div className="absolute top-3 left-3 z-20 pointer-events-auto">
@@ -265,6 +265,59 @@ export function PlayingView({
           })}
         </div>
       </div>
+
+      {/* ─────────── NOTE HIGHWAY ─────────── */}
+      {currentSong?.lyrics && currentSong.lyrics.length > 0 && (
+        <div className="flex-shrink-0 px-3 pb-1">
+          <div className="w-full max-w-2xl mx-auto bg-black/20 rounded-lg p-1 overflow-hidden h-20 flex items-end">
+            {(() => {
+              // Collect all notes from all lyric lines
+              const allNotes: Array<{ startTime: number; duration: number; pitch: number; isGolden: boolean }> = [];
+              for (const line of currentSong.lyrics) {
+                for (const note of line.notes) {
+                  allNotes.push(note);
+                }
+              }
+              if (allNotes.length === 0) return null;
+              allNotes.sort((a, b) => a.startTime - b.startTime);
+              const lastNote = allNotes[allNotes.length - 1];
+              const totalDuration = (lastNote.startTime + lastNote.duration) - allNotes[0].startTime;
+              if (totalDuration <= 0) return null;
+              const firstNoteStart = allNotes[0].startTime;
+
+              return (
+                <div className="flex gap-0.5 w-full">
+                  {allNotes.map((note, i) => {
+                    const isActive = currentTime >= note.startTime && currentTime <= note.startTime + note.duration;
+                    const isPast = currentTime > note.startTime + note.duration;
+                    const isUpcoming = !isPast && currentTime >= note.startTime - 3000;
+                    const relStart = ((note.startTime - firstNoteStart) / totalDuration) * 100;
+                    const width = Math.max(1.5, (note.duration / totalDuration) * 100);
+                    const height = 15 + (note.pitch % 36) * 1.2;
+
+                    return (
+                      <div
+                        key={`${note.startTime}-${i}`}
+                        className={`flex-shrink-0 rounded-sm transition-all ${isActive ? 'opacity-100 scale-105' : isPast ? 'opacity-20' : isUpcoming ? 'opacity-60' : 'opacity-30'}`}
+                        style={{
+                          height: `${height}px`,
+                          width: `${width}%`,
+                          backgroundColor: isActive
+                            ? (note.isGolden ? '#fbbf24' : '#a855f7')
+                            : isPast
+                              ? (note.isGolden ? '#92400e' : '#581c87')
+                              : (note.isGolden ? '#fbbf2430' : '#a855f730'),
+                          marginLeft: i === 0 ? `${relStart}%` : '0',
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
 
       {/* ─────────── LOWER AREA: Lyrics ─────────── */}
       <div className="flex-1 flex items-end pb-4 px-4 min-h-0">

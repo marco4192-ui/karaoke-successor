@@ -4,7 +4,9 @@ import { useState, useCallback, useEffect } from 'react';
 import { usePartyStore } from '@/lib/game/party-store';
 import { PauseButton } from '@/components/game/hud/pause-button';
 import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
-import { WebcamButton } from '@/components/game/hud/webcam-button';
+import { WebcamBackground, WebcamQuickControls } from '@/components/game/webcam-background';
+import { loadWebcamConfig, saveWebcamConfig } from '@/components/game/webcam-background';
+import type { WebcamBackgroundConfig } from '@/components/game/webcam-background';
 import { DifficultyBadge } from '@/components/game/hud/difficulty-badge';
 import type { Difficulty } from '@/components/game/hud/difficulty-badge';
 import type { PassTheMicSettings } from '@/components/game/ptm-types';
@@ -19,17 +21,29 @@ interface PtmHudControlsProps {
 /**
  * PTM-specific HUD controls that delegate to universal HUD components.
  * Adds PTM-specific logic: difficulty cycling persisted to party store,
- * and pause dialog action sync via party store.
+ * pause dialog action sync via party store, and WebcamQuickControls
+ * (same as the regular game screen) instead of a simple toggle.
  */
 export function PtmHudControls({
   safeSettings,
   isPlaying,
   onTogglePause,
-  activeWebcamStreamsRef,
+  activeWebcamStreamsRef: _activeWebcamStreamsRef,
 }: PtmHudControlsProps) {
   const [difficulty, setDifficulty] = useState<Difficulty>(safeSettings.difficulty);
   const pauseDialogAction = usePartyStore(s => s.pauseDialogAction);
   const setPassTheMicSettings = usePartyStore(s => s.setPassTheMicSettings);
+
+  // Webcam config state (loaded from localStorage, same as regular GameScreen)
+  const [webcamConfig, setWebcamConfig] = useState<WebcamBackgroundConfig>(() => loadWebcamConfig());
+
+  const updateWebcamConfig = useCallback((updates: Partial<WebcamBackgroundConfig>) => {
+    setWebcamConfig(prev => {
+      const newConfig = { ...prev, ...updates };
+      saveWebcamConfig(newConfig);
+      return newConfig;
+    });
+  }, []);
 
   // Sync difficulty with safeSettings prop
   useEffect(() => {
@@ -45,9 +59,6 @@ export function PtmHudControls({
   }, [difficulty, safeSettings, setPassTheMicSettings]);
 
   // Sync pause state with party store (e.g. keyboard Escape sets it)
-  // NOTE: The hook (ptm-game-hook.tsx lines 307-315) also handles media pause/resume
-  // directly via pauseDialogAction. This effect calls togglePause() to update the
-  // isPlaying state as well, keeping UI and media in sync.
   useEffect(() => {
     if (pauseDialogAction === 'song-pause' && isPlaying) {
       onTogglePause();
@@ -56,18 +67,23 @@ export function PtmHudControls({
   }, [pauseDialogAction, isPlaying, onTogglePause]);
 
   return (
-    <div className="fixed inset-0 z-50 pointer-events-none">
-      {/* Top-left: Pause */}
-      <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-auto">
-        <PauseButton isPlaying={isPlaying} onTogglePause={onTogglePause} />
-      </div>
+    <>
+      {/* Webcam Background — rendered at its own z-level (config.zIndex, default 5) */}
+      <WebcamBackground config={webcamConfig} onConfigChange={updateWebcamConfig} />
 
-      {/* Top-right: Kamera + Difficulty + Vollbild */}
-      <div className="absolute top-4 right-4 z-20 flex items-center gap-2 pointer-events-auto">
-        <WebcamButton activeWebcamStreamsRef={activeWebcamStreamsRef} />
-        <DifficultyBadge difficulty={difficulty} onCycleDifficulty={cycleDifficulty} />
-        <FullscreenButton />
+      <div className="fixed inset-0 z-50 pointer-events-none">
+        {/* Top-left: Pause */}
+        <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-auto">
+          <PauseButton isPlaying={isPlaying} onTogglePause={onTogglePause} />
+        </div>
+
+        {/* Top-right: WebcamQuickControls + Difficulty + Vollbild */}
+        <div className="absolute top-4 right-4 z-20 flex items-center gap-2 pointer-events-auto">
+          <WebcamQuickControls config={webcamConfig} onConfigChange={updateWebcamConfig} />
+          <DifficultyBadge difficulty={difficulty} onCycleDifficulty={cycleDifficulty} />
+          <FullscreenButton />
+        </div>
       </div>
-    </div>
+    </>
   );
 }

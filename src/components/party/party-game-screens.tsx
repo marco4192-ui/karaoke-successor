@@ -82,6 +82,9 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       // Silently fail — default to Mic 1 / Mic 2
     }
 
+    // Store the match in party store so the countdown effect can access it
+    party.setCurrentTournamentMatch(match);
+
     // Show mic assignment overlay with countdown
     setMicOverlay({
       p1Name: match.player1.name,
@@ -90,7 +93,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       p2Mic,
       countdown: 3,
     });
-  }, [t]);
+  }, [party.setCurrentTournamentMatch, t]);
   useEffect(() => {
     if (!micOverlay) return;
 

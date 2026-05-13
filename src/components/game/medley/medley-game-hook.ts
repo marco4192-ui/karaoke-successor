@@ -388,15 +388,8 @@ export function useMedleyGame({
     setPhase('countdown');
     setCountdown(3);
 
-    // Initialize multi-pitch detection (one mic per player)
-    try {
-      const ok = await multiPitch.initialize();
-      if (ok) multiPitch.start();
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.warn('[Medley] Multi-pitch init failed:', e);
-    }
-
+    // Start countdown IMMEDIATELY — don't block on pitch init.
+    // multiPitch.initialize() may hang (e.g. no mic permission prompt shown).
     const interval = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
@@ -416,6 +409,16 @@ export function useMedleyGame({
       });
     }, 1000);
     countdownIntervalRef.current = interval;
+
+    // Initialize multi-pitch detection IN PARALLEL with countdown.
+    // If init fails or hangs, the game still proceeds (pitch just won't score).
+    try {
+      const ok = await multiPitch.initialize();
+      if (ok) multiPitch.start();
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('[Medley] Multi-pitch init failed:', e);
+    }
   }, [multiPitch]);
 
   // ── Round complete ──
