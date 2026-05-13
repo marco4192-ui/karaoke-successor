@@ -66,6 +66,9 @@ jobs:
         with:
           targets: x86_64-pc-windows-msvc
 
+      - name: Setup MSVC Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
         with:
@@ -85,9 +88,27 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Verify toolchain
+        shell: pwsh
+        run: |
+          Write-Host "=== Verifying build toolchain ==="
+          Write-Host "Node.js: $(node --version)"
+          Write-Host "Bun: $(bun --version)"
+          Write-Host "Rust: $(rustc --version)"
+          Write-Host "Cargo: $(cargo --version)"
+          Write-Host "MSVC cl.exe:"; cl.exe 2>&1 | Select-Object -First 1
+
+          # Verify cargo-tauri (will be installed by tauri-action if missing)
+          if (-not (Get-Command cargo-tauri -ErrorAction SilentlyContinue)) {
+            Write-Host "Installing tauri-cli via cargo..."
+            cargo install tauri-cli --version "^2" --locked
+          }
+          Write-Host "Tauri CLI: $(cargo tauri --version)"
+          Write-Host "=== Toolchain verified ==="
+
       - name: Build Next.js standalone
         run: |
-          bun run next build
+          bun run next build --webpack
           if (-not (Test-Path ".next\standalone")) {
             Write-Error "Standalone build failed!"
             exit 1
@@ -224,6 +245,11 @@ jobs:
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -248,8 +274,27 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Verify toolchain
+        run: |
+          echo "=== Verifying build toolchain ==="
+          echo "Node.js: $(node --version)"
+          echo "Bun: $(bun --version)"
+          echo "Rust: $(rustc --version)"
+          echo "Cargo: $(cargo --version)"
+          echo "Xcode CLT:"
+          xcode-select -p
+          echo "Clang: $(clang --version 2>&1 | head -1)"
+
+          # Verify cargo-tauri (will be installed by tauri-action if missing)
+          if ! command -v cargo-tauri &> /dev/null; then
+            echo "Installing tauri-cli via cargo..."
+            cargo install tauri-cli --version "^2" --locked
+          fi
+          echo "Tauri CLI: $(cargo tauri --version)"
+          echo "=== Toolchain verified ==="
+
       - name: Build Next.js standalone
-        run: bun run next build
+        run: bun run next build --webpack
 
       - name: Download Node.js portable (macOS)
         run: |
@@ -346,6 +391,11 @@ jobs:
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -371,6 +421,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
+            build-essential \
+            pkg-config \
+            libssl-dev \
             libwebkit2gtk-4.1-dev \
             libgtk-3-dev \
             libayatana-appindicator3-dev \
@@ -383,13 +436,32 @@ jobs:
             file \
             desktop-file-utils \
             appstream \
-            libasound2-dev
+            libasound2-dev \
+            libpulse-dev
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Verify toolchain
+        run: |
+          echo "=== Verifying build toolchain ==="
+          echo "Node.js: $(node --version)"
+          echo "Bun: $(bun --version)"
+          echo "Rust: $(rustc --version)"
+          echo "Cargo: $(cargo --version)"
+          echo "GCC: $(gcc --version | head -1)"
+          echo "PKG-Config: $(pkg-config --version)"
+
+          # Verify cargo-tauri (will be installed by tauri-action if missing)
+          if ! command -v cargo-tauri &> /dev/null; then
+            echo "Installing tauri-cli via cargo..."
+            cargo install tauri-cli --version "^2" --locked
+          fi
+          echo "Tauri CLI: $(cargo tauri --version)"
+          echo "=== Toolchain verified ==="
+
       - name: Build Next.js standalone
-        run: bun run next build
+        run: bun run next build --webpack
 
       - name: Download Node.js portable (Linux)
         run: |
