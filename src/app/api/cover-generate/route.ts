@@ -2,6 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import ZAI from 'z-ai-web-dev-sdk';
 import { isLocalRequest } from '@/app/api/lib/is-local-request';
 
+// Retry helper: executes async function up to maxRetries+1 times with delay between attempts
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, delayMs = 1500): Promise<T> {
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, delayMs * (attempt + 1)));
+      }
+    }
+  }
+  throw lastError;
+}
+
 // TypeScript types for cover generation
 interface CoverGenerateRequest {
   title: string;
@@ -104,22 +120,19 @@ Design requirements:
 - Visually striking and memorable
 - Suitable for digital music platforms`;
 
-    // Generate the image
+    // Generate the image (with retry on failure)
     try {
-      const imageResponse = await zai.images.generations.create({
-        prompt,
-        size: '1024x1024',
+      const base64Image = await withRetry(async () => {
+        const imageResponse = await zai.images.generations.create({
+          prompt,
+          size: '1024x1024',
+        });
+
+        const img = imageResponse.data?.[0]?.base64;
+        if (!img) throw new Error('Empty image response');
+        return img;
       });
-
-      const base64Image = imageResponse.data?.[0]?.base64;
       
-      if (!base64Image) {
-        return NextResponse.json(
-          { success: false, error: 'Failed to generate cover image' },
-          { status: 500 }
-        );
-      }
-
       return NextResponse.json({
         success: true,
         image: base64Image,

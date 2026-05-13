@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { getAllSongs, addSong, updateSong, getSongByIdWithLyrics } from '@/lib/game/song-library';
+import { getAllSongs, addSong, updateSong, getSongByIdWithLyrics, clearSongCache } from '@/lib/game/song-library';
 import { KaraokeEditor } from '@/components/editor/karaoke-editor';
 import { NewSongDialog } from '@/components/editor/new-song-dialog';
 import { Song } from '@/types/game';
@@ -246,7 +246,22 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   const { t } = useTranslation();
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [songs, setSongs] = useState<Song[]>(() => getAllSongs());
-  const refreshSongs = useCallback(() => setSongs(getAllSongs()), []);
+  const refreshSongs = useCallback(async () => {
+    // Invalidate cache and try Tauri rescan for fresh data from filesystem
+    clearSongCache();
+    try {
+      if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+        const { scanSongsFolderTauri } = await import('@/lib/tauri-file-storage');
+        const songsFolder = localStorage.getItem('songsFolder') || localStorage.getItem('karaoke_songs_folder');
+        if (songsFolder) {
+          await scanSongsFolderTauri(songsFolder);
+        }
+      }
+    } catch {
+      // Non-Tauri environment or scan failed — just use cleared cache
+    }
+    setSongs(getAllSongs());
+  }, []);
   const [filterMode, setFilterMode] = useState<'all' | 'no-genre' | 'no-language' | 'incomplete'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showMetadataPanel, setShowMetadataPanel] = useState(false); // Collapsible metadata panel

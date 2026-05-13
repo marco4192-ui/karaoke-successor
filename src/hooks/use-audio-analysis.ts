@@ -128,7 +128,7 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
     };
   }, []);
 
-  const analyzePitch = useCallback((_filePath: string, _options?: AnalysisOptions) => {
+  const analyzePitch = useCallback((filePath: string, options?: AnalysisOptions) => {
     const gen = ++analysisGenRef.current;
     setStatus('loading');
     setError(null);
@@ -167,6 +167,8 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
       channelsRef.current.errorCh = onError;
 
       invoke('audio_analyze_pitch', {
+        filePath,
+        options: options || {},
         onProgress,
         onComplete,
         onError,

@@ -24,6 +24,34 @@ interface SongIdentifyResponse {
   error?: string;
 }
 
+// Map ISO 639-1 codes to full language names
+const LANGUAGE_FULL_NAMES: Record<string, string> = {
+  en: 'English', de: 'Deutsch', es: 'Español', fr: 'Français',
+  it: 'Italiano', pt: 'Português', ja: '日本語', ko: '한국어',
+  zh: '中文', ru: 'Русский', nl: 'Nederlands', pl: 'Polski',
+  sv: 'Svenska', no: 'Norsk', da: 'Dansk', fi: 'Suomi',
+  ar: 'العربية', hi: 'हिन्दी', th: 'ไทย', vi: 'Tiếng Việt',
+  tr: 'Türkçe', cs: 'Čeština', el: 'Ελληνικά', he: 'עברית',
+  ro: 'Română', hu: 'Magyar', uk: 'Українська', bg: 'Български',
+  id: 'Bahasa Indonesia', ms: 'Bahasa Melayu', tl: 'Filipino',
+};
+
+// Retry helper: executes async function up to maxRetries+1 times with delay between attempts
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, delayMs = 1500): Promise<T> {
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, delayMs * (attempt + 1)));
+      }
+    }
+  }
+  throw lastError;
+}
+
 export async function POST(request: NextRequest): Promise<NextResponse<SongIdentifyResponse>> {
   if (!isLocalRequest(request)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
@@ -66,11 +94,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<SongIdent
 
     // Use LLM to extract metadata directly (faster than web search)
     try {
-      const completion = await zai.chat.completions.create({
-        messages: [
-          {
-            role: 'system',
-            content: `You are a music metadata expert. Extract song metadata from the provided filename or lyrics.
+      const completion = await withRetry<string>(async (): Promise<string> => {
+        const c = await zai.chat.completions.create({
+          messages: [
+            {
+              role: 'system',
+              content: `You are a music metadata expert. Extract song metadata from the provided filename or lyrics.
 
 Return ONLY a valid JSON object with the following structure:
 {
@@ -79,29 +108,34 @@ Return ONLY a valid JSON object with the following structure:
   "year": 2024 or null if unknown,
   "genre": "Genre" or null if unknown,
   "bpm": 120 or null if unknown,
-  "language": "en" or null if unknown,
+  "language": "English" or null if unknown,
   "confidence": 85
 }
 
 Rules:
 - confidence should be 0-100 based on how certain you are
-- For language, use ISO 639-1 codes (en, de, es, fr, it, pt, ja, ko, zh, etc.)
+- For language, use the FULL language name in its native form (e.g. "English", "Deutsch", "Español", "Français", "日本語", "한국어", "中文", "Русский", "Italiano", "Português", etc.) — NOT ISO codes
 - If you cannot determine a field, set it to null
 - For genre, use common genres: Pop, Rock, Hip-Hop, R&B, Country, Electronic, Jazz, Classical, Latin, K-Pop, etc.
 - BPM should be a number, not a string
 - Be conservative with confidence - only use 90+ if you're very certain`,
-          },
-          {
-            role: 'user',
-            content: `${body.type === 'filename' ? 'Filename' : 'Lyrics snippet'}: "${cleanInput}"
+            },
+            {
+              role: 'user',
+              content: `${body.type === 'filename' ? 'Filename' : 'Lyrics snippet'}: "${cleanInput}"
 
 Extract the song metadata and return ONLY the JSON object.`,
-          },
-        ],
-        temperature: 0.3,
+            },
+          ],
+          temperature: 0.3,
+        });
+
+        const content: string = c.choices?.[0]?.message?.content || '';
+        if (!content) throw new Error('Empty LLM response');
+        return content;
       });
 
-      const responseContent = completion.choices?.[0]?.message?.content;
+      const responseContent = completion;
       
       if (!responseContent) {
         return NextResponse.json(
@@ -125,6 +159,11 @@ Extract the song metadata and return ONLY the JSON object.`,
           { success: false, error: 'Failed to parse metadata response' },
           { status: 500 }
         );
+      }
+
+      // Normalize language: if LLM still returned an ISO code, map to full name
+      if (metadata.language && LANGUAGE_FULL_NAMES[metadata.language.toLowerCase()]) {
+        metadata.language = LANGUAGE_FULL_NAMES[metadata.language.toLowerCase()];
       }
 
       // Validate the response

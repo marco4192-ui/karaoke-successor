@@ -2,6 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import ZAI from 'z-ai-web-dev-sdk'; // NOTE: Uses ZAI SDK defaults (model, endpoint, etc.)
 import { isLocalRequest } from '@/app/api/lib/is-local-request';
 
+// Retry helper: executes async function up to maxRetries+1 times with delay between attempts
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, delayMs = 1500): Promise<T> {
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, delayMs * (attempt + 1)));
+      }
+    }
+  }
+  throw lastError;
+}
+
 // TypeScript types for lyrics suggestions
 interface LyricSuggestion {
   lineIndex: number;
@@ -52,14 +68,25 @@ export async function POST(request: NextRequest): Promise<NextResponse<LyricsSug
 
     try {
       // Analyze lyrics for issues and suggestions
-      const analysisCompletion = await zai.chat.completions.create({
-        messages: [
-          {
-            role: 'system',
-            content: `You are a lyrics expert and proofreader. Analyze the provided lyrics for:
+      // Increase character limit to 8000 for better coverage of longer songs
+      const lyricsSnippet = body.lyrics
+        .map((line, i) => `[${i}] ${line.replace(/[\]{}()[\\]]/g, '').substring(0, 200)}`)
+        .join('\n')
+        .substring(0, 8000);
+
+      const lineCount = body.lyrics.length;
+
+      const analysisResponse = await withRetry(async () => {
+        const c = await zai.chat.completions.create({
+          messages: [
+            {
+              role: 'system',
+              content: `You are a lyrics expert and proofreader. Analyze the provided song lyrics for:
 1. Typos and spelling errors
 2. Missing words or gaps
 3. Wrong words or misheard lyrics
+
+IMPORTANT: The lyrics have ${lineCount} lines. Be thorough but ONLY report actual errors — do not suggest stylistic changes.
 
 Return ONLY a JSON object with:
 {
@@ -67,9 +94,9 @@ Return ONLY a JSON object with:
   "suggestions": [
     {
       "lineIndex": 0,
-      "original": "the original line",
-      "suggested": "the corrected line",
-      "reason": "Brief explanation",
+      "original": "the original line text",
+      "suggested": "the corrected line text",
+      "reason": "Brief explanation of the correction",
       "confidence": 85
     }
   ]
@@ -77,23 +104,27 @@ Return ONLY a JSON object with:
 
 Rules:
 - lineIndex is the 0-based index in the lyrics array
-- Only suggest meaningful corrections, not stylistic changes
+- Only suggest meaningful corrections (actual typos, missing words, clearly wrong words)
+- Do NOT suggest stylistic changes, rewording, or subjective improvements
 - confidence should reflect how certain you are (0-100)
 - If no issues found, return empty suggestions array []
-- For language, use ISO 639-1 codes (en, de, es, fr, it, pt, ja, ko, zh, etc.)`,
-          },
-          {
-            role: 'user',
-            content: `Analyze these lyrics for errors and issues:
-${body.lyrics.map((line, i) => `[${i}] ${line.replace(/[\]{}()[\\]]/g, '').substring(0, 200)}`).join('\n').substring(0, 5000)}
+- For language, use ISO 639-1 codes (en, de, es, fr, it, pt, ja, ko, zh, etc.)
+- Maximum 20 suggestions — prioritize the most impactful corrections`,
+            },
+            {
+              role: 'user',
+              content: `Analyze these ${lineCount} lyrics lines for errors:\n${lyricsSnippet}
 
-Return ONLY the JSON object.`,
-          },
-        ],
-        temperature: 0.2,
+Return ONLY the JSON object. Focus only on real errors, not style.`,
+            },
+          ],
+          temperature: 0.1,
+        });
+
+        const content = c.choices?.[0]?.message?.content;
+        if (!content) throw new Error('Empty LLM response');
+        return content;
       });
-
-      const analysisResponse = analysisCompletion.choices?.[0]?.message?.content;
       
       if (!analysisResponse) {
         return NextResponse.json(
