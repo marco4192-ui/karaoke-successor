@@ -51,8 +51,10 @@ export interface DuetNoteHighwayProps {
   singLinePosition?: number;
   /** Time window for note display (milliseconds) */
   noteWindow?: number;
-  /** Note performance for lyrics display */
+  /** P1 note performance for visual display (fill-level, color-feedback, etc.) */
   notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
+  /** P2 note performance — separate map so P1 hits don't bleed into P2's highway */
+  p2NotePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
   /** Game mode */
   gameMode?: GameMode;
   /** Missing words indices for missing-words mode */
@@ -264,6 +266,7 @@ export function DuetNoteHighway({
   singLinePosition = 25,
   noteWindow = 4000,
   notePerformance,
+  p2NotePerformance,
   gameMode,
   missingWordsIndices,
   isBlindSection,
@@ -322,7 +325,7 @@ export function DuetNoteHighway({
           detectedPitch={p2DetectedPitch}
           noteShapeStyle={noteShapeStyle}
           noteDisplayStyle={noteDisplayStyle}
-          notePerformance={notePerformance}
+          notePerformance={p2NotePerformance || notePerformance}
           singLinePosition={singLinePosition}
           noteWindow={noteWindow}
           playerColor="#ec4899"

@@ -44,7 +44,8 @@ import { usePracticePlayback } from '@/hooks/use-practice-playback';
 import { useMediaSession } from '@/hooks/use-media-session';
 import { useReplayRecorder } from '@/hooks/use-replay-recorder';
 import { setLastReplayId } from '@/lib/replay-state';
-import { getPitchDetector } from '@/lib/audio/pitch-detector';
+import { getPitchDetector, PitchDetector } from '@/lib/audio/pitch-detector';
+import { getMultiMicrophoneManager } from '@/lib/audio/microphone-manager';
 import { cleanupOldReplays } from '@/lib/db/replay-db';
 import { isDuetSong } from '@/components/screens/library/utils';
 import { enterFullscreen } from '@/hooks/use-app-effects';
@@ -115,6 +116,7 @@ export interface GameScreenHookReturn {
   scoreEvents: ReturnType<typeof useNoteScoring>['scoreEvents'];
   notePerformance: ReturnType<typeof useNoteScoring>['notePerformance'];
   p2State: ReturnType<typeof useNoteScoring>['p2State'];
+  p2NotePerformance: ReturnType<typeof useNoteScoring>['p2NotePerformance'];
   p2DetectedPitch: number | null;
 
   // Timing
@@ -495,6 +497,7 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
   const {
     scoreEvents,
     notePerformance,
+    p2NotePerformance,
     p2State,
     p2DetectedPitch,
     setP2DetectedPitch,
@@ -531,6 +534,72 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
       });
     }
   }, [isDuetMode, mobilePitch, setP2DetectedPitch, setP2Volume]);
+
+  // ── P2 Local Microphone: Initialize a second pitch detector for P2 in duet/duel mode ──
+  // When two microphones are assigned (playerIndex 0 and 1), use the second one for P2
+  // instead of relying solely on the mobile companion app for P2 pitch data.
+  const p2DetectorRef = useRef<PitchDetector | null>(null);
+  const p2DetectorInitRef = useRef(false);
+
+  useEffect(() => {
+    if (!isDuetMode || !song) return;
+
+    // Check if there's a second microphone assigned to playerIndex 1
+    const micManager = getMultiMicrophoneManager();
+    const assignedMics = micManager.getAssignedMicrophones();
+    const p2Mic = assignedMics.find(m => m.playerIndex === 1);
+
+    if (!p2Mic?.deviceId || p2DetectorInitRef.current) return;
+
+    // Only initialize P2 detector if no mobile pitch is coming in
+    // (mobile companion takes priority for P2 pitch data)
+    if (mobilePitch?.frequency) return;
+
+    let destroyed = false;
+    const detector = new PitchDetector();
+
+    detector.initialize(p2Mic.deviceId).then((success) => {
+      if (!success || destroyed) {
+        detector.destroy();
+        return;
+      }
+
+      p2DetectorRef.current = detector;
+      p2DetectorInitRef.current = true;
+
+      detector.start((result) => {
+        if (result.frequency) {
+          setP2DetectedPitch(result.frequency);
+          setP2Volume(result.volume || 0);
+        }
+      });
+
+      // Set difficulty to match P1
+      detector.setDifficulty(gameState.difficulty);
+    }).catch(() => {
+      // Silently fail — P2 will just have no pitch from local mic
+      p2DetectorInitRef.current = false;
+    });
+
+    return () => {
+      destroyed = true;
+      detector.stop();
+      detector.destroy();
+      p2DetectorRef.current = null;
+      p2DetectorInitRef.current = false;
+    };
+  }, [isDuetMode, song, mobilePitch?.frequency, setP2DetectedPitch, setP2Volume, gameState.difficulty]);
+
+  // Stop P2 detector when game ends or component unmounts
+  useEffect(() => {
+    return () => {
+      if (p2DetectorRef.current) {
+        p2DetectorRef.current.stop();
+        p2DetectorRef.current.destroy();
+        p2DetectorRef.current = null;
+      }
+    };
+  }, []);
 
   // Mobile companion sync - periodic game state updates
   useMobileGameSync(song, isPlaying, gameState.gameMode, gameState.status === 'ended');
@@ -797,6 +866,7 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
     smoothedPitch,
     scoreEvents,
     notePerformance,
+    p2NotePerformance,
     p2State,
     p2DetectedPitch,
 

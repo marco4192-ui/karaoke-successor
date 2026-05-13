@@ -235,6 +235,7 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
             singLinePosition={SING_LINE_POSITION}
             noteWindow={NOTE_WINDOW}
             notePerformance={g.notePerformance}
+            p2NotePerformance={g.p2NotePerformance}
             gameMode={g.gameState.gameMode}
             missingWordsIndices={g.gameState.missingWordsIndices}
             isBlindSection={g.gameState.isBlindSection}

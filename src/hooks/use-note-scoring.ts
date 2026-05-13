@@ -77,6 +77,8 @@ interface UseNoteScoringReturn {
 
   // Note performance for visual display modes
   notePerformance: Map<string, NotePerformanceSample[]>;
+  // P2 note performance (separate map so P1 hits don't show on P2's highway)
+  p2NotePerformance: Map<string, NotePerformanceSample[]>;
   // P1 perfect notes count (all ticks hit) — updated via ref for 60fps accuracy
   p1PerfectNotesCount: number;
   // P2 state (for duet mode)
@@ -347,13 +349,19 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   const [scoreEvents, setScoreEvents] = useState<ScoreEvent[]>([]);
 
 
-  // Note performance tracking for visual display modes
+  // Note performance tracking for visual display modes (P1)
   // CRITICAL: Use a version counter instead of new Map() to trigger re-renders.
   // new Map() defeats React.memo on NoteBlock by creating a new object reference.
   const notePerformanceRef = useRef<Map<string, NotePerformanceSample[]>>(new Map());
   const [notePerformance, setNotePerformance] = useState<Map<string, NotePerformanceSample[]>>(new Map());
   const notePerfVersionRef = useRef(0);
   const lastNotePerfSyncRef = useRef(0);
+
+  // P2 note performance tracking — same pattern as P1
+  const p2NotePerformanceRef = useRef<Map<string, NotePerformanceSample[]>>(new Map());
+  const [p2NotePerformance, setP2NotePerformance] = useState<Map<string, NotePerformanceSample[]>>(new Map());
+  const p2NotePerfVersionRef = useRef(0);
+  const lastP2NotePerfSyncRef = useRef(0);
 
   // Additional player states (P2, P3, P4) - P1 uses the main store
   const [p2State, setP2State] = useState<PlayerScoringState>({ ...DEFAULT_PLAYER_SCORING_STATE });
@@ -401,6 +409,10 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     notePerformanceRef.current = new Map();
     notePerfVersionRef.current = 0;
     lastNotePerfSyncRef.current = 0;
+    setP2NotePerformance(new Map());
+    p2NotePerformanceRef.current = new Map();
+    p2NotePerfVersionRef.current = 0;
+    lastP2NotePerfSyncRef.current = 0;
     setP2State({ ...DEFAULT_PLAYER_SCORING_STATE });
     p1ComboRef.current = 0;
     p1MaxComboRef.current = 0;
@@ -448,6 +460,37 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         noteProgressMap.current, searchStartRef, noteIdPrefix,
         hasPerfectOnly, hasGoldenOnly, comboRef, maxComboRef,
       );
+
+      // Record performance samples for visual display modes (same pattern as P1)
+      if (result.activeNoteId) {
+        const perfRef = _playerIndex === 1 ? p2NotePerformanceRef : notePerformanceRef;
+        let samples = perfRef.current.get(result.activeNoteId);
+        if (!samples) {
+          samples = [];
+          perfRef.current.set(result.activeNoteId, samples);
+        }
+        samples.push({ time: currentTime, accuracy: result.lastTickAccuracy, hit: result.lastTickHit });
+        if (samples.length > MAX_SAMPLES_PER_NOTE) {
+          samples = samples.slice(-MAX_SAMPLES_PER_NOTE);
+          perfRef.current.set(result.activeNoteId, samples);
+        }
+
+        // Throttled state sync: flush to React state at ~30Hz (33ms)
+        const now = performance.now();
+        if (_playerIndex === 1) {
+          if (now - lastP2NotePerfSyncRef.current >= 33) {
+            lastP2NotePerfSyncRef.current = now;
+            p2NotePerfVersionRef.current++;
+            setP2NotePerformance(p2NotePerformanceRef.current);
+          }
+        } else {
+          if (now - lastNotePerfSyncRef.current >= 33) {
+            lastNotePerfSyncRef.current = now;
+            notePerfVersionRef.current++;
+            setNotePerformance(notePerformanceRef.current);
+          }
+        }
+      }
 
       // Flush: single setPlayerState call with all accumulated deltas
       if (result.hasUpdates) {
@@ -612,6 +655,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   return {
     scoreEvents,
     notePerformance,
+    p2NotePerformance,
     p2State,
     p2DetectedPitch,
     p1PerfectNotesCount,
