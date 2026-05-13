@@ -4,6 +4,56 @@ import { useState, useEffect, useCallback } from 'react';
 import { loadCustomSongsFromStorage } from '@/lib/game/song-library';
 import { applyTheme, getStoredTheme } from '@/lib/game/themes';
 
+/** Shared browser fullscreen helper (Escape exits — unavoidable with browser API) */
+function toggleBrowserFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+
+/**
+ * Enter fullscreen preferring Tauri native API.
+ * Exported so other components (auto-fullscreen, exit button) can reuse it.
+ */
+export async function enterFullscreen() {
+  if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+    try {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window');
+      const win = getCurrentWindow();
+      const isFs = await win.isFullscreen();
+      if (!isFs) await win.setFullscreen(true);
+      return;
+    } catch {
+      // Fall through to browser API
+    }
+  }
+  if (!document.fullscreenElement) {
+    await document.documentElement.requestFullscreen().catch(() => {});
+  }
+}
+
+/**
+ * Exit fullscreen preferring Tauri native API.
+ */
+export async function exitFullscreen() {
+  if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+    try {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window');
+      const win = getCurrentWindow();
+      const isFs = await win.isFullscreen();
+      if (isFs) await win.setFullscreen(false);
+      return;
+    } catch {
+      // Fall through to browser API
+    }
+  }
+  if (document.fullscreenElement) {
+    await document.exitFullscreen().catch(() => {});
+  }
+}
+
 /**
  * Encapsulates all app-level initialization effects that run on mount
  * and a few reactive effects (fullscreen tracking, theme sync, etc.).
@@ -16,7 +66,6 @@ export function useAppEffects() {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Mark as client-side mounted (Tauri hydration guard)
-
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
     setIsMounted(true);
@@ -69,17 +118,20 @@ export function useAppEffects() {
   const toggleFullscreen = useCallback(() => {
     // Prefer Tauri native fullscreen — it does NOT exit on Escape,
     // unlike the browser Fullscreen API which has hardcoded Escape-to-exit.
-    if (typeof window !== 'undefined' && (window.__TAURI__ || window.__TAURI_INTERNALS__)) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).__TAURI__?.window?.appWindow?.toggleFullscreen?.().catch(() => {});
+    if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+      import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+        const win = getCurrentWindow();
+        win.isFullscreen().then(isFs => {
+          win.setFullscreen(!isFs).catch(() => {});
+        }).catch(() => {
+          toggleBrowserFullscreen();
+        });
+      }).catch(() => {
+        toggleBrowserFullscreen();
+      });
       return;
     }
-    // Fallback: browser Fullscreen API (Escape will exit — unavoidable)
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    } else {
-      document.exitFullscreen().catch(() => {});
-    }
+    toggleBrowserFullscreen();
   }, []);
 
   // Track fullscreen state from both Tauri and browser sources
@@ -90,17 +142,17 @@ export function useAppEffects() {
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
 
-    // Tauri fullscreen change (if available)
+    // Tauri fullscreen change (if available) — use v2 API via dynamic import
     let tauriUnlisten: (() => void) | null = null;
-    if (typeof window !== 'undefined' && (window.__TAURI__ || window.__TAURI_INTERNALS__)) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).__TAURI__?.window?.appWindow?.onResized?.(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).__TAURI__?.window?.appWindow?.isFullscreen?.().then((isFs: boolean) => {
-          setIsFullscreen(isFs);
+    if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+      import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+        getCurrentWindow().onResized(() => {
+          getCurrentWindow().isFullscreen().then((isFs: boolean) => {
+            setIsFullscreen(isFs);
+          }).catch(() => {});
+        }).then((unlisten: () => void) => {
+          tauriUnlisten = unlisten;
         }).catch(() => {});
-      })?.then((unlisten: () => void) => {
-        tauriUnlisten = unlisten;
       }).catch(() => {});
     }
 

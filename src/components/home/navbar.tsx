@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/lib/i18n/translations';
 import { MusicIcon, LibraryIcon, PartyIcon, UserIcon, QueueIcon, StarIcon, TrophyIcon, SettingsIcon } from '@/components/icons';
 import type { Screen } from '@/types/screens';
+import { exitFullscreen } from '@/hooks/use-app-effects';
 
 interface NavBarProps {
   screen: Screen;
@@ -87,7 +88,7 @@ export function NavBar({ screen, setScreen, queueLength, isMounted, isFullscreen
 export function FullscreenExitButton() {
   return (
     <button
-      onClick={() => document.exitFullscreen().catch(() => {})}
+      onClick={() => exitFullscreen()}
       className="fixed top-4 right-4 z-50 p-3 rounded-full bg-black/50 backdrop-blur-sm border border-white/20 hover:bg-black/70 hover:border-white/40 transition-all group"
       title="Exit Fullscreen (ESC)"
     >

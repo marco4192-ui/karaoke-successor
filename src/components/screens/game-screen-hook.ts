@@ -47,6 +47,7 @@ import { setLastReplayId } from '@/lib/replay-state';
 import { getPitchDetector } from '@/lib/audio/pitch-detector';
 import { cleanupOldReplays } from '@/lib/db/replay-db';
 import { isDuetSong } from '@/components/screens/library/utils';
+import { enterFullscreen } from '@/hooks/use-app-effects';
 
 // ===================== HOOK INTERFACE =====================
 
@@ -201,8 +202,8 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
 
   // Smoothed pitch for visual display (prevents flickering/jitter)
   // Raw pitch is still used for scoring accuracy
-  // α=0.55 = responsive tracking, deadZone=0.15 = sensitive to small changes
-  const smoothedPitch = useSmoothedPitch(pitchResult?.note ?? null, 0.55, 0.15);
+  // α=0.85 = very responsive tracking with minimal lag, deadZone=0.05 = highly sensitive
+  const smoothedPitch = useSmoothedPitch(pitchResult?.note ?? null, 0.85, 0.05);
 
   // Current song reference - must be defined early as it's used by multiple hooks
   const song = gameState.currentSong;
@@ -685,10 +686,10 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
     if (videoRef.current) videoRef.current.volume = masterVolume / 100;
   }, [masterVolume, audioRef, videoRef]);
 
-  // Auto-fullscreen on game start
+  // Auto-fullscreen on game start (uses Tauri native API when available — Escape won't exit)
   useEffect(() => {
     if (isPlaying && autoFullscreen && !document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
+      enterFullscreen().catch(() => {});
     }
   }, [isPlaying, autoFullscreen]);
 
