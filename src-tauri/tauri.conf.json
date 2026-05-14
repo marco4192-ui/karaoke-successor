@@ -42,9 +42,6 @@
       "bundled/native/**/*"
     ],
     "windows": {
-      "wix": {
-        "language": "en-US"
-      },
       "nsis": {
         "installMode": "currentUser",
         "languages": ["English"],

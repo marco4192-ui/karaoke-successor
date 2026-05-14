@@ -48,7 +48,10 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-feature
 rusqlite = { version = "0.31", features = ["bundled"] }
 
 [features]
-default = ["crepe", "devtools"]
+# Production defaults: CREPE pitch detection only.
+# DevTools are NOT included in release builds for security.
+# For local dev with DevTools: cargo tauri dev --features devtools
+default = ["crepe"]
 devtools = ["tauri/devtools"]
 asio = ["cpal/asio"]
 crepe = ["ort", "ndarray"]
