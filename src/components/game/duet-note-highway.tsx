@@ -325,7 +325,7 @@ export function DuetNoteHighway({
           detectedPitch={p2DetectedPitch}
           noteShapeStyle={noteShapeStyle}
           noteDisplayStyle={noteDisplayStyle}
-          notePerformance={p2NotePerformance || notePerformance}
+          notePerformance={p2NotePerformance}
           singLinePosition={singLinePosition}
           noteWindow={noteWindow}
           playerColor="#ec4899"
@@ -343,7 +343,7 @@ export function DuetNoteHighway({
           currentTime={currentTime}
           playerColor="#ec4899"
           noteDisplayStyle={noteDisplayStyle}
-          notePerformance={notePerformance}
+          notePerformance={p2NotePerformance}
           gameMode={gameMode}
           missingWordsIndices={missingWordsIndices}
           isBlindSection={isBlindSection}
