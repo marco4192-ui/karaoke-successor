@@ -32,8 +32,10 @@ rubato = "0.15"
 rustfft = "6"
 
 # CREPE deep-learning pitch detection (bundled by default)
-# ort downloads the ONNX Runtime library automatically at build time.
-ort = { version = "2.0.0-rc.12", optional = true }
+# ort loads the ONNX Runtime DLL at runtime via load-dynamic to avoid
+# CRT mismatch with +crt-static. onnxruntime.dll is bundled in
+# bundled/native/ by the CI workflow.
+ort = { version = "2.0.0-rc.12", features = ["load-dynamic"], optional = true }
 ndarray = { version = "0.17", optional = true }
 
 # Async runtime for blocking analysis tasks & HTTP requests
