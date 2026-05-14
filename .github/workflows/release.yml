@@ -168,12 +168,13 @@ jobs:
           releaseBody: |
             # 🎤 Karaoke Successor - Standalone
             
-            **Fully standalone - no Node.js or Bun installation required!**
+            **Fully standalone installer - no additional downloads required!**
+            Includes Node.js runtime and Microsoft Visual C++ Redistributable.
             
             ## 📥 Installation
-            1. Download the `.msi` installer
-            2. Run the installer
-            3. Launch "Karaoke Successor" from Start Menu
+            1. Download the `.exe` installer
+            2. Run the installer (no admin rights needed)
+            3. Launch "Karaoke ZERO" from Start Menu
             4. Enjoy! 🎤
             
             ## ✨ Features
@@ -190,14 +191,15 @@ jobs:
             - Windows 10/11 (64-bit)
             - 4GB RAM minimum
             - Microphone (optional, for singing)
+            - No need to install Node.js, Bun, or Visual C++ Runtime
           releaseDraft: true
           prerelease: false
 
-      - name: Upload MSI installer
+      - name: Upload NSIS installer
         uses: actions/upload-artifact@v5
         with:
           name: windows-installer
-          path: src-tauri/target/release/bundle/msi/*.msi
+          path: src-tauri/target/release/bundle/nsis/*.exe
           retention-days: 30
 
   # Build macOS
