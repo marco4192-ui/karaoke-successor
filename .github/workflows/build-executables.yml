@@ -168,9 +168,9 @@ jobs:
       - name: Download ONNX Runtime DLL
         shell: pwsh
         run: |
-          Write-Host "=== Downloading ONNX Runtime 1.24.4 (ort-sys 2.0.0-rc.12 compatible) ==="
+          Write-Host "=== Downloading ONNX Runtime 1.24.2 (ort-sys 2.0.0-rc.12 target) ==="
           New-Item -ItemType Directory -Force -Path "src-tauri\bundled\native" | Out-Null
-          $ortVersion = "1.24.4"
+          $ortVersion = "1.24.2"
           $ortUrl = "https://github.com/microsoft/onnxruntime/releases/download/v$ortVersion/onnxruntime-win-x64-$ortVersion.zip"
           $ortZip = "onnxruntime.zip"
           Write-Host "Downloading from: $ortUrl"
@@ -346,6 +346,25 @@ jobs:
           releaseDraft: ${{ github.event.inputs.create_release != 'false' }}
           prerelease: false
           args: --bundles nsis
+
+      - name: Verify installer size
+        shell: pwsh
+        run: |
+          Write-Host "=== Verifying installer size ==="
+          $exe = Get-Item "src-tauri/target/release/bundle/nsis/*.exe" -ErrorAction Stop
+          $sizeMB = $exe.Length / 1MB
+          Write-Host "Installer: $($exe.Name) — $([math]::Round($sizeMB, 2)) MB"
+          # Minimum expected: ~55 MB (Tauri exe + node.exe + onnxruntime.dll + VC++ + server)
+          # Typical range: 65-85 MB depending on Next.js bundle size
+          if ($sizeMB -lt 55) {
+            Write-Error "Installer is too small ($([math]::Round($sizeMB, 2)) MB < 55 MB). Files are likely missing!"
+            Write-Host "=== Contents of bundled/native/ ==="
+            Get-ChildItem "src-tauri/bundled/native" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host ("  {0} ({1:N2} MB)" -f $_.Name, ($_.Length/1MB)) }
+            Write-Host "=== Contents of bundled/node/ ==="
+            Get-ChildItem "src-tauri/bundled/node" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host ("  {0} ({1:N2} MB)" -f $_.Name, ($_.Length/1MB)) }
+            exit 1
+          }
+          Write-Host "Size check passed."  
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v5
