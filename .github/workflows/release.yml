@@ -138,13 +138,18 @@ jobs:
           $totalSize = (Get-ChildItem "src-tauri\bundled" -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB
           Write-Host "`nTotal: $totalFiles files, $([math]::Round($totalSize, 2)) MB"
 
-      - name: Pre-build Rust code
+      - name: Build Tauri app
         shell: pwsh
         working-directory: src-tauri
         run: |
-          Write-Host "Pre-compiling Rust code (without devtools, with crepe)..."
+          Write-Host "Building Tauri app (portable — no installer)..."
           cargo build --release --no-default-features --features crepe 2>&1 | ForEach-Object { Write-Host $_ }
-          Write-Host "Pre-build complete."
+          $exePath = "target\release\karaoke-successor.exe"
+          if (-not (Test-Path $exePath)) {
+            Write-Error "Build failed — exe not found at $exePath"
+            exit 1
+          }
+          Write-Host ("Build complete: {0} ({1:N2} MB)" -f $exePath, ((Get-Item $exePath).Length / 1MB))
 
       - name: Download ONNX Runtime DLL
         shell: pwsh
@@ -256,86 +261,92 @@ jobs:
             Write-Host ("  {0} ({1:N2} MB)" -f $_.Name, ($_.Length / 1MB))
           }
 
-      - name: Create standalone launcher script
+      - name: Create portable ZIP
         shell: pwsh
         run: |
-          $launcherScript = "@echo off`ncd /d `"%~dp0`"`nset PORT=3000`nset HOSTNAME=0.0.0.0`nstart `"`" `"..\node\node.exe`" `"server.js`"`ntimeout /t 3 /nobreak >nul`nstart http://localhost:3000"
-          Set-Content -Path "src-tauri\bundled\server\start-server.bat" -Value $launcherScript -Encoding ASCII
-          Write-Host "Created start-server.bat"
+          Write-Host "=== Creating portable Windows ZIP ==="
+          $exePath = "src-tauri\target\release\karaoke-successor.exe"
+          if (-not (Test-Path $exePath)) {
+            Write-Error "EXE not found at $exePath — build failed?"
+            exit 1
+          }
 
-      - name: Free disk space before Tauri build
+          $outDir = "portable-dist"
+          if (Test-Path $outDir) { Remove-Item -Recurse -Force $outDir }
+          New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+
+          # 1) Main executable
+          Copy-Item $exePath "$outDir\karaoke-zero.exe" -Force
+          Write-Host ("  karaoke-zero.exe ({0:N2} MB)" -f ((Get-Item $exePath).Length / 1MB))
+
+          # 2) Bundled resources (node, server, native DLLs)
+          Copy-Item -Recurse "src-tauri\bundled" "$outDir\bundled" -Force
+
+          # 3) Summary
+          Write-Host ""
+          $totalFiles = (Get-ChildItem $outDir -Recurse -File).Count
+          $totalSize = (Get-ChildItem $outDir -Recurse -File | Measure-Object -Property Length -Sum).Sum / 1MB
+          Write-Host "  Total: $totalFiles files, $([math]::Round($totalSize, 2)) MB uncompressed"
+
+          # 4) Verify critical files
+          $critical = @(
+            "$outDir\karaoke-zero.exe",
+            "$outDir\bundled\node\node.exe",
+            "$outDir\bundled\native\onnxruntime.dll",
+            "$outDir\bundled\server\server.js"
+          )
+          $missing = @()
+          foreach ($f in $critical) {
+            if (-not (Test-Path $f)) {
+              Write-Error "  MISSING: $f"
+              $missing += $f
+            }
+          }
+          if ($missing.Count -gt 0) {
+            Write-Error "Critical files missing — aborting"
+            exit 1
+          }
+
+          # 5) Compress
+          $zipName = "Karaoke-ZERO-Windows-x64.zip"
+          if (Test-Path $zipName) { Remove-Item $zipName -Force }
+          Compress-Archive -Path "$outDir\*" -DestinationPath $zipName -Force
+          $zipMB = (Get-Item $zipName).Length / 1MB
+          Write-Host "  ZIP: $zipName ($([math]::Round($zipMB, 2)) MB)"
+
+          if ($zipMB -lt 40) {
+            Write-Error "ZIP too small ($([math]::Round($zipMB, 2)) MB < 40 MB) — files missing!"
+            exit 1
+          }
+          Write-Host "  Size check passed."
+
+      - name: Clean up build artefacts
         shell: pwsh
         run: |
-          Write-Host "Freeing disk space..."
+          Remove-Item -Recurse -Force "portable-dist" -ErrorAction SilentlyContinue
           Remove-Item -Recurse -Force "node.zip" -ErrorAction SilentlyContinue
           Remove-Item -Recurse -Force "node-v${{ env.NODE_VERSION }}-win-x64" -ErrorAction SilentlyContinue
-          Remove-Item -Recurse -Force "$env:LOCALAPPDATA\bun\install\cache\" -ErrorAction SilentlyContinue
           $drive = Get-PSDrive -Name C
           Write-Host "Free space on C: $([math]::Round($drive.Free / 1GB, 2)) GB"
 
-      - name: Ensure dist folder
-        run: New-Item -ItemType Directory -Force -Path "dist"
-
-      - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version || github.ref_name }}
+          name: 'Karaoke ZERO ${{ github.event.inputs.version || github.ref_name }}'
+          body: |
+            Portable Windows build — extract the ZIP and run `karaoke-zero.exe`.
+            No installer, no admin rights needed. All dependencies bundled.
+          draft: true
+          files: Karaoke-ZERO-Windows-x64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: ${{ github.event.inputs.version || github.ref_name }}
-          releaseName: 'Karaoke Successor ${{ github.event.inputs.version || github.ref_name }}'
-          releaseBody: |
-            # 🎤 Karaoke Successor - Standalone
-            
-            **Fully standalone installer - no additional downloads required!**
-            Includes Node.js runtime and Microsoft Visual C++ Redistributable.
-            
-            ## 📥 Installation
-            1. Download the `.exe` installer
-            2. Run the installer (no admin rights needed)
-            3. Launch "Karaoke ZERO" from Start Menu
-            4. Enjoy! 🎤
-            
-            ## ✨ Features
-            - Real-time pitch detection (YIN algorithm)
-            - 3 difficulty levels
-            - Party modes (Pass the Mic, Duel, Medley, etc.)
-            - Mobile companion app (use phone as microphone)
-            - Song import (UltraStar, MIDI, SingStar formats)
-            - Highscores with 21 funny ranking titles
-            - 25+ achievements
-            - 6 color themes
-            
-            ## 🖥️ System Requirements
-            - Windows 10/11 (64-bit)
-            - 4GB RAM minimum
-            - Microphone (optional, for singing)
-            - No need to install Node.js, Bun, or Visual C++ Runtime
-          releaseDraft: true
-          prerelease: false
-          args: --bundles nsis
 
-      - name: Verify installer size
-        shell: pwsh
-        run: |
-          Write-Host "=== Verifying installer size ==="
-          $exe = Get-Item "src-tauri/target/release/bundle/nsis/*.exe" -ErrorAction Stop
-          $sizeMB = $exe.Length / 1MB
-          Write-Host "Installer: $($exe.Name) — $([math]::Round($sizeMB, 2)) MB"
-          if ($sizeMB -lt 55) {
-            Write-Error "Installer is too small ($([math]::Round($sizeMB, 2)) MB < 55 MB). Files are likely missing!"
-            Write-Host "=== Contents of bundled/native/ ==="
-            Get-ChildItem "src-tauri/bundled/native" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host ("  {0} ({1:N2} MB)" -f $_.Name, ($_.Length/1MB)) }
-            Write-Host "=== Contents of bundled/node/ ==="
-            Get-ChildItem "src-tauri/bundled/node" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host ("  {0} ({1:N2} MB)" -f $_.Name, ($_.Length/1MB)) }
-            exit 1
-          }
-          Write-Host "Size check passed."
-
-      - name: Upload NSIS installer
+      - name: Upload portable ZIP
         uses: actions/upload-artifact@v5
         with:
-          name: windows-installer
-          path: src-tauri/target/release/bundle/nsis/*.exe
+          name: windows-portable
+          path: Karaoke-ZERO-Windows-x64.zip
           retention-days: 30
 
   # Build macOS

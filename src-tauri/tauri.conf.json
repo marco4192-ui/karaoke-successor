@@ -28,7 +28,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
+    "targets": [],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -36,18 +36,18 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": [
-      "bundled/server/**/*",
-      "bundled/node/**/*",
-      "bundled/native/**/*"
-    ],
     "windows": {
       "nsis": {
         "installMode": "currentUser",
         "languages": ["English"],
         "displayLanguageSelector": false
       }
-    }
+    },
+    "resources": [
+      "bundled/server/**/*",
+      "bundled/node/**/*",
+      "bundled/native/**/*"
+    ]
   },
   "plugins": {}
 }
