@@ -52,13 +52,15 @@ server.log
 src-tauri/target/
 
 # Bundled build artifacts (large binaries, generated during build)
-src-tauri/bundled/server/
-src-tauri/bundled/node/
-portable-node/bin/
+src-tauri/bundled/server/*
+src-tauri/bundled/node/*
+src-tauri/bundled/native/*
+portable-node/bin/*
 portable-node/node.exe
 !portable-node/.gitkeep
 !src-tauri/bundled/server/standalone-server.js
 !src-tauri/bundled/node/.gitkeep
+!src-tauri/bundled/native/.gitkeep
 
 # Skills directory
 /skills/src-tauri/target/
