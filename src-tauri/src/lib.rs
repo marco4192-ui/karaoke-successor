@@ -560,6 +560,30 @@ fn get_server_cwd(server_path: &PathBuf) -> PathBuf {
 }
 
 pub fn run() {
+    // ── Windows: Make bundled native DLLs discoverable ──
+    // On a clean Windows install, the Microsoft Visual C++ Runtime
+    // DLLs (msvcp140.dll, vcruntime140.dll) and ONNX Runtime
+    // (onnxruntime.dll) are not present. We bundle them in
+    // bundled/native/ via tauri.conf.json resources. Adding
+    // this directory to PATH + ORT_LIB_PATH ensures both
+    // Windows' DLL loader and ort's libloading can find them.
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(exe) = std::env::current_exe() {
+            if let Some(exe_dir) = exe.parent() {
+                let native_dir = exe_dir.join("bundled").join("native");
+                if native_dir.exists() {
+                    // ort crate checks ORT_LIB_PATH first when loading onnxruntime.dll
+                    std::env::set_var("ORT_LIB_PATH", &native_dir);
+                    // Windows DLL loader searches PATH directories for dependencies
+                    let path = std::env::var("PATH").unwrap_or_default();
+                    std::env::set_var("PATH", format!("{};{}", native_dir.display(), path));
+                    println!("[standalone] Added to PATH: {}", native_dir.display());
+                }
+            }
+        }
+    }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_fs::init())

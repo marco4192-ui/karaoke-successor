@@ -38,7 +38,8 @@
     ],
     "resources": [
       "bundled/server/**/*",
-      "bundled/node/**/*"
+      "bundled/node/**/*",
+      "bundled/native/**/*"
     ],
     "windows": {
       "wix": {
@@ -47,8 +48,7 @@
       "nsis": {
         "installMode": "currentUser",
         "languages": ["English"],
-        "displayLanguageSelector": false,
-        "bundleMicrosoftVisualCppRuntime": true
+        "displayLanguageSelector": false
       }
     }
   },

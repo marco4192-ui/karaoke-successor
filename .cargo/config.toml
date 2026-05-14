@@ -1,0 +1,12 @@
+# Cargo build configuration
+# See: https://doc.rust-lang.org/cargo/reference/config.html
+
+[target.x86_64-pc-windows-msvc]
+# Statically link the Microsoft C Runtime (CRT) into the binary.
+# This eliminates runtime dependencies on vcruntime140.dll and msvcp140.dll,
+# making the executable truly standalone on clean Windows installations.
+#
+# ONNX Runtime (ort / onnxruntime.dll) still loads dynamically and needs
+# these DLLs — they are bundled via tauri.conf.json resources and added
+# to PATH at startup in lib.rs.
+rustflags = ["-C", "target-feature=+crt-static"]

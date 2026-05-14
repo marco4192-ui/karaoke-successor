@@ -138,6 +138,50 @@ jobs:
           $totalSize = (Get-ChildItem "src-tauri\bundled" -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB
           Write-Host "`nTotal: $totalFiles files, $([math]::Round($totalSize, 2)) MB"
 
+      - name: Pre-build Rust code (triggers ONNX Runtime download)
+        shell: pwsh
+        working-directory: src-tauri
+        run: |
+          Write-Host "Pre-compiling Rust code to trigger ort's ONNX Runtime download..."
+          cargo build --release 2>&1 | ForEach-Object { Write-Host $_ }
+          Write-Host "Pre-build complete."
+
+      - name: Bundle native DLLs (VC++ Runtime + ONNX Runtime)
+        shell: pwsh
+        run: |
+          Write-Host "=== Bundling native DLLs for standalone Windows build ==="
+          New-Item -ItemType Directory -Force -Path "src-tauri\bundled\native" | Out-Null
+          $msvcPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" `
+            -latest -property installationPath -requires Microsoft.VisualStudio.Component.VC.Redist.x86.x64
+          if ($msvcPath) {
+            $redistDir = Get-ChildItem "$msvcPath\VC\Redist\MSVC" -Directory |
+              Sort-Object -Descending | Select-Object -First 1
+            $crtDir = Join-Path $redistDir.FullName "x64\Microsoft.VC143.CRT"
+            if (Test-Path $crtDir) {
+              foreach ($dll in @("msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll")) {
+                $src = Join-Path $crtDir $dll
+                if (Test-Path $src) {
+                  Copy-Item $src "src-tauri\bundled\native\$dll" -Force
+                  Write-Host "  Copied VC++ Runtime: $dll"
+                }
+              }
+            }
+          }
+          # ONNX Runtime DLL
+          $ortDll = $null
+          foreach ($sp in @("$env:LOCALAPPDATA\ort", "src-tauri\target\release", "src-tauri\target")) {
+            if (Test-Path $sp) {
+              $found = Get-ChildItem -Path $sp -Recurse -Filter "onnxruntime.dll" -ErrorAction SilentlyContinue | Select-Object -First 1
+              if ($found) { $ortDll = $found.FullName; break }
+            }
+          }
+          if ($ortDll) {
+            Copy-Item $ortDll "src-tauri\bundled\native\onnxruntime.dll" -Force
+            Write-Host ("  Copied onnxruntime.dll ({0:N2} MB)" -f ((Get-Item $ortDll).Length / 1MB))
+          } else {
+            Write-Warning "  onnxruntime.dll not found — CREPE analysis unavailable on clean installs"
+          }
+
       - name: Create standalone launcher script
         shell: pwsh
         run: |
