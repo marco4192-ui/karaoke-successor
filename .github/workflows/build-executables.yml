@@ -157,113 +157,127 @@ jobs:
           $totalSize = (Get-ChildItem "src-tauri\bundled" -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB
           Write-Host "Total: $totalFiles files, $([math]::Round($totalSize, 2)) MB"
 
-      - name: Pre-build Rust code (triggers ONNX Runtime download)
+      - name: Pre-build Rust code
         shell: pwsh
         working-directory: src-tauri
         run: |
-          Write-Host "Pre-compiling Rust code to trigger ort's ONNX Runtime download..."
+          Write-Host "Pre-compiling Rust code (without devtools, with crepe)..."
           cargo build --release --no-default-features --features crepe 2>&1 | ForEach-Object { Write-Host $_ }
-          Write-Host "Pre-build complete. ONNX Runtime should now be cached."
+          Write-Host "Pre-build complete."
 
-      - name: Bundle native DLLs (VC++ Runtime + ONNX Runtime)
+      - name: Download ONNX Runtime DLL
         shell: pwsh
         run: |
-          Write-Host "=== Bundling native DLLs for standalone Windows build ==="
+          Write-Host "=== Downloading ONNX Runtime 1.24.4 (ort-sys 2.0.0-rc.12 compatible) ==="
           New-Item -ItemType Directory -Force -Path "src-tauri\bundled\native" | Out-Null
+          $ortVersion = "1.24.4"
+          $ortUrl = "https://github.com/microsoft/onnxruntime/releases/download/v$ortVersion/onnxruntime-win-x64-$ortVersion.zip"
+          $ortZip = "onnxruntime.zip"
+          Write-Host "Downloading from: $ortUrl"
+          Invoke-WebRequest -Uri $ortUrl -OutFile $ortZip -TimeoutSec 300
+          Expand-Archive -Path $ortZip -DestinationPath "onnxruntime-extracted" -Force
+          # Copy onnxruntime.dll from the lib/ directory
+          $ortLibDir = "onnxruntime-extracted\onnxruntime-win-x64-$ortVersion\lib"
+          if (Test-Path "$ortLibDir\onnxruntime.dll") {
+            Copy-Item "$ortLibDir\onnxruntime.dll" "src-tauri\bundled\native\onnxruntime.dll" -Force
+            Write-Host ("  Copied onnxruntime.dll ({0:N2} MB)" -f ((Get-Item "$ortLibDir\onnxruntime.dll").Length / 1MB))
+          } else {
+            Write-Error "onnxruntime.dll not found in extracted archive at $ortLibDir"
+            exit 1
+          }
+          # Copy providers DLL if present
+          $providersDlls = @("onnxruntime_providers_shared.dll", "onnxruntime_providers_cuda.dll")
+          foreach ($pDll in $providersDlls) {
+            if (Test-Path "$ortLibDir\$pDll") {
+              Copy-Item "$ortLibDir\$pDll" "src-tauri\bundled\native\$pDll" -Force
+              Write-Host ("  Copied {0} ({1:N2} MB)" -f $pDll, ((Get-Item "$ortLibDir\$pDll").Length / 1MB))
+            }
+          }
+          # Cleanup
+          Remove-Item -Recurse -Force $ortZip, "onnxruntime-extracted" -ErrorAction SilentlyContinue
+          Write-Host "ONNX Runtime download complete."
 
-          # --- Microsoft Visual C++ Runtime DLLs ---
-          # On windows-latest runners, the VC++ Redistributable is already installed.
-          # We copy the runtime DLLs from the MSVC installation so that ONNX Runtime
-          # (onnxruntime.dll) can find them at runtime on clean Windows installs.
-          $msvcPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" `
-            -latest -property installationPath -requires Microsoft.VisualStudio.Component.VC.Redist.x86.x64
-          if ($msvcPath) {
-            $redistDir = Get-ChildItem "$msvcPath\VC\Redist\MSVC" -Directory |
-              Sort-Object -Descending | Select-Object -First 1
-            $crtDir = Join-Path $redistDir.FullName "x64\Microsoft.VC143.CRT"
-            if (Test-Path $crtDir) {
-              $vcDlls = @("msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll")
-              foreach ($dll in $vcDlls) {
-                $src = Join-Path $crtDir $dll
-                if (Test-Path $src) {
-                  Copy-Item $src "src-tauri\bundled\native\$dll" -Force
-                  Write-Host "  Copied VC++ Runtime: $dll"
-                } else {
-                  Write-Warning "  VC++ DLL not found: $dll"
+      - name: Bundle VC++ Runtime DLLs
+        shell: pwsh
+        run: |
+          Write-Host "=== Bundling VC++ Runtime DLLs ==="
+          $copied = 0
+          # Strategy 1: vswithout strict -requires filter
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (Test-Path $vswhere) {
+            $msvcPath = & $vswhere -latest -property installationPath 2>$null
+            if ($msvcPath) {
+              Write-Host "  Found VS at: $msvcPath"
+              $redistDir = Get-ChildItem "$msvcPath\VC\Redist\MSVC" -Directory -ErrorAction SilentlyContinue |
+                Sort-Object -Descending | Select-Object -First 1
+              if ($redistDir) {
+                $crtDir = Join-Path $redistDir.FullName "x64\Microsoft.VC143.CRT"
+                if (Test-Path $crtDir) {
+                  foreach ($dll in @("msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll")) {
+                    $src = Join-Path $crtDir $dll
+                    if (Test-Path $src) {
+                      Copy-Item $src "src-tauri\bundled\native\$dll" -Force
+                      Write-Host "  Copied from VS Redist: $dll"
+                      $copied++
+                    }
+                  }
                 }
               }
-            } else {
-              Write-Warning "VC++ Redist CRT directory not found: $crtDir"
             }
-          } else {
-            Write-Warning "MSVC installation not found via vswhere"
           }
-
-          # --- ONNX Runtime DLL (for CREPE pitch detection) ---
-          # The ort crate downloads onnxruntime.dll during cargo build.
-          # Search the ort cache directory and the cargo target directory.
-          $ortDll = $null
-          $ortSearchPaths = @(
-            "$env:LOCALAPPDATA\ort",
-            "src-tauri\target\release",
-            "src-tauri\target"
-          )
-          foreach ($searchPath in $ortSearchPaths) {
-            if (Test-Path $searchPath) {
-              $found = Get-ChildItem -Path $searchPath -Recurse -Filter "onnxruntime.dll" -ErrorAction SilentlyContinue |
-                Select-Object -First 1
-              if ($found) {
-                $ortDll = $found.FullName
-                Write-Host "  Found onnxruntime.dll at: $ortDll"
-                break
+          # Strategy 2: Fallback - copy from Windows System32 (always available on runners)
+          if ($copied -lt 3) {
+            Write-Host "  Falling back to System32..."
+            foreach ($dll in @("msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll")) {
+              $dest = "src-tauri\bundled\native\$dll"
+              if (-not (Test-Path $dest)) {
+                $sys32 = Join-Path $env:SystemRoot "System32\$dll"
+                if (Test-Path $sys32) {
+                  Copy-Item $sys32 $dest -Force
+                  Write-Host "  Copied from System32: $dll"
+                  $copied++
+                }
               }
             }
           }
-
-          if ($ortDll) {
-            Copy-Item $ortDll "src-tauri\bundled\native\onnxruntime.dll" -Force
-            Write-Host ("  Copied onnxruntime.dll ({0:N2} MB)" -f ((Get-Item $ortDll).Length / 1MB))
-
-            # Also copy onnxruntime_providers_shared.dll if present
-            $providersSrc = Join-Path (Split-Path $ortDll) "onnxruntime_providers_shared.dll"
-            if (-not (Test-Path $providersSrc)) {
-              $providersFile = Get-ChildItem -Path (Split-Path $ortDll) -Filter "onnxruntime_providers*.dll" -ErrorAction SilentlyContinue | Select-Object -First 1
-              if ($providersFile) { $providersSrc = $providersFile.FullName }
-            }
-            if ($providersSrc -and (Test-Path $providersSrc)) {
-              Copy-Item $providersSrc "src-tauri\bundled\native" -Force
-              Write-Host ("  Copied {0}" -f (Split-Path $providersSrc -Leaf))
-            }
-          } else {
-            Write-Error "onnxruntime.dll not found - cannot build standalone installer!"
-            Write-Error "  Searched in: $($ortSearchPaths -join ', ')"
+          if ($copied -lt 3) {
+            Write-Error "Could not find all VC++ Runtime DLLs (copied $copied/3)"
             exit 1
           }
 
-          # Verify all required DLLs are present
-          Write-Host ""
+      - name: Verify all required native DLLs
+        shell: pwsh
+        run: |
           Write-Host "=== Verifying bundled native DLLs ==="
-          $requiredDlls = @("onnxruntime.dll", "msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll")
+          $requiredDlls = @(
+            @{Name="onnxruntime.dll"; MinMB=5},
+            @{Name="msvcp140.dll"; MinMB=0.01},
+            @{Name="vcruntime140.dll"; MinMB=0.01},
+            @{Name="vcruntime140_1.dll"; MinMB=0.01}
+          )
           $missingDlls = @()
-          foreach ($dll in $requiredDlls) {
-            $dllPath = "src-tauri\bundled\native\$dll"
+          foreach ($item in $requiredDlls) {
+            $dllPath = "src-tauri\bundled\native\$($item.Name)"
             if (Test-Path $dllPath) {
-              $size = (Get-Item $dllPath).Length / 1MB
-              Write-Host ("  OK: {0} ({1:N2} MB)" -f $dll, $size)
+              $sizeMB = (Get-Item $dllPath).Length / 1MB
+              if ($sizeMB -ge $item.MinMB) {
+                Write-Host ("  OK: {0} ({1:N2} MB)" -f $item.Name, $sizeMB)
+              } else {
+                Write-Error ("  WRONG SIZE: {0} is only {1:N2} MB (expected >= {2} MB)" -f $item.Name, $sizeMB, $item.MinMB)
+                $missingDlls += $item.Name
+              }
             } else {
-              Write-Warning "  MISSING: $dll"
-              $missingDlls += $dll
+              Write-Error "  MISSING: $($item.Name)"
+              $missingDlls += $item.Name
             }
           }
           if ($missingDlls.Count -gt 0) {
-            Write-Error ("Missing required DLLs: {0}" -f ($missingDlls -join ', '))
+            Write-Error ("Missing/invalid DLLs: {0}" -f ($missingDlls -join ', '))
             exit 1
           }
-
-          # Summary
           Write-Host ""
-          Write-Host "=== Native DLLs bundled ==="
-          Get-ChildItem "src-tauri\bundled\native" | ForEach-Object {
+          Write-Host "=== Native DLLs summary ==="
+          Get-ChildItem "src-tauri\bundled\native" -Filter "*.dll" | ForEach-Object {
             Write-Host ("  {0} ({1:N2} MB)" -f $_.Name, ($_.Length / 1MB))
           }
 
