@@ -44,6 +44,8 @@ export interface PlayerPitchConfig {
   /** Specific microphone device ID (local only). If omitted, uses system default. */
   deviceId?: string;
   mobileClientId?: string; // Required for mobile type
+  /** Stereo channel index for stereo split mode (0=left, 1=right). If omitted, uses mono. */
+  stereoChannel?: number;
 }
 
 export interface UseMultiPitchDetectorOptions {
@@ -144,7 +146,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
       const initPromises = playersList.map(async (playerConfig) => {
         try {
           if (playerConfig.type === 'local') {
-            const success = await manager.addLocalPlayer(playerConfig.playerId, playerConfig.deviceId);
+            const success = await manager.addLocalPlayer(playerConfig.playerId, playerConfig.deviceId, playerConfig.stereoChannel);
             if (!success) {
               setErrors(prev => {
                 const newMap = new Map(prev);
@@ -241,7 +243,7 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
 
     try {
       if (config.type === 'local') {
-        const success = await managerRef.current.addLocalPlayer(config.playerId, config.deviceId);
+        const success = await managerRef.current.addLocalPlayer(config.playerId, config.deviceId, config.stereoChannel);
         if (success) {
           setPlayerPitches(prev => {
             const newMap = new Map(prev);

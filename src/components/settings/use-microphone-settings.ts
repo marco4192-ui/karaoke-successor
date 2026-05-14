@@ -79,6 +79,14 @@ export function useMicrophoneSettings(onSettingsChange?: MicrophoneSettingsPanel
     });
   };
 
+  const handleEnableStereoSplit = async (id: string) => {
+    await micManager.enableStereoSplit(id);
+  };
+
+  const handleDisableStereoSplit = async (id: string) => {
+    await micManager.disableStereoSplit(id);
+  };
+
   const handleApplyOptimalToAll = async () => {
     try {
       await micManager.applyOptimalSettingsToAll();
@@ -117,5 +125,7 @@ export function useMicrophoneSettings(onSettingsChange?: MicrophoneSettingsPanel
     handleApplyOptimalToAll,
     handleRefreshDevices,
     refreshMessage,
+    handleEnableStereoSplit,
+    handleDisableStereoSplit,
   };
 }

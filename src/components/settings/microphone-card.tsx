@@ -21,6 +21,8 @@ interface MicrophoneCardProps {
   onRemove: (_id: string) => void;
   isExpanded: boolean;
   onToggleExpand: () => void;
+  onEnableStereoSplit?: (_id: string) => void;
+  onDisableStereoSplit?: (_id: string) => void;
 }
 
 export function MicrophoneCard({
@@ -31,6 +33,8 @@ export function MicrophoneCard({
   onRemove,
   isExpanded,
   onToggleExpand,
+  onEnableStereoSplit,
+  onDisableStereoSplit,
 }: MicrophoneCardProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(mic.customName);
@@ -39,6 +43,9 @@ export function MicrophoneCard({
   const config = mic.config;
   const volume = mic.status.volume;
   const isConnected = mic.status.isConnected;
+  const isStereo = !!mic.stereoPartnerId;
+  const isStereoChannel = config.stereoChannel === 'left' || config.stereoChannel === 'right';
+  const channelLabel = config.stereoChannel === 'left' ? 'L' : config.stereoChannel === 'right' ? 'R' : '';
 
   const getSettingsStatus = () => {
     const issues: string[] = [];
@@ -92,11 +99,19 @@ export function MicrophoneCard({
                   <Badge variant="outline" className="text-xs border-white/20">
                     {t('settingsMicrophoneCard.player').replace('{n}', String(mic.playerIndex + 1))}
                   </Badge>
+                  {isStereoChannel && (
+                    <Badge className="text-xs bg-blue-500/20 text-blue-400 border-blue-500/30">
+                      {channelLabel}
+                    </Badge>
+                  )}
                 </div>
               )}
               <CardDescription className="text-xs">
                 {mic.deviceName}
                 {isConnected && <span className="text-green-400 ml-2">{t('settingsMicrophoneCard.connected')}</span>}
+                {isConnected && mic.status.channelCount && mic.status.channelCount >= 2 && !isStereoChannel && (
+                  <span className="text-blue-400 ml-2">{t('settingsMicrophoneCard.stereoDevice')}</span>
+                )}
               </CardDescription>
             </div>
           </div>
@@ -112,6 +127,29 @@ export function MicrophoneCard({
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {/* Stereo Split Toggle */}
+        {isConnected && !isStereoChannel && onEnableStereoSplit && (
+          <div className="flex items-center justify-between p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+            <div className="flex items-center gap-2">
+              <div className="text-sm">{t('settingsMicrophoneCard.stereoSplit')}</div>
+              {mic.status.channelCount && mic.status.channelCount >= 2 && (
+                <Badge className="text-[10px] bg-blue-500/20 text-blue-400 border-blue-500/30">2ch</Badge>
+              )}
+            </div>
+            <Button size="sm" variant="outline" onClick={() => onEnableStereoSplit(mic.id)} className="border-blue-500/40 text-xs text-blue-400 hover:bg-blue-500/20">
+              {t('settingsMicrophoneCard.stereoSplitEnable')}
+            </Button>
+          </div>
+        )}
+        {isConnected && isStereo && onDisableStereoSplit && (
+          <div className="flex items-center justify-between p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+            <div className="text-sm">{t('settingsMicrophoneCard.stereoSplitActive')}</div>
+            <Button size="sm" variant="outline" onClick={() => onDisableStereoSplit(mic.id)} className="border-blue-500/40 text-xs text-blue-400 hover:bg-blue-500/20">
+              {t('settingsMicrophoneCard.stereoSplitDisable')}
+            </Button>
+          </div>
+        )}
+
         {/* Volume Meter */}
         {isConnected && (
           <div className="space-y-2">

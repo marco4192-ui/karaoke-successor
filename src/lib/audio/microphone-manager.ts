@@ -42,6 +42,10 @@ export interface ExtendedMicConfig extends MicrophoneConfig {
   
   // Advanced
   clarityThreshold: number;     // 0.3 - 0.9 (pitch quality threshold)
+
+  // Stereo Split (for dual-mic adapters like SingStar USB)
+  stereoSplitMode: boolean;     // Enable stereo channel splitting
+  stereoChannel: 'left' | 'right' | 'both';  // Which channel to use
 }
 
 interface MicrophoneStatus {
@@ -50,6 +54,7 @@ interface MicrophoneStatus {
   volume: number; // 0-1
   peak: number; // 0-1
   deviceName: string;
+  channelCount?: number;  // Detected audio channel count (1=mono, 2=stereo)
 }
 
 // Assigned microphone with all individual settings
@@ -61,6 +66,7 @@ export interface AssignedMicrophone {
   playerIndex: number;          // 0-3 for up to 4 players
   config: ExtendedMicConfig;    // Full extended config per mic
   status: MicrophoneStatus;
+  stereoPartnerId?: string;     // ID of paired stereo mic (set when stereo split is active)
 }
 
 /**
@@ -98,6 +104,10 @@ export const OPTIMAL_EXTENDED_CONFIG: ExtendedMicConfig = {
   
   // Quality
   clarityThreshold: 0.5,        // Minimum clarity for valid pitch
+
+  // Stereo Split (default: off, mono mode)
+  stereoSplitMode: false,
+  stereoChannel: 'both',
 };
 
 // Maximum number of microphones supported
@@ -114,6 +124,8 @@ class MicrophoneInstance {
   private onStatusChange: ((_status: MicrophoneStatus) => void) | null = null;
   private animationFrame: number | null = null;
   private isListening = false;
+  private channelSplitter: ChannelSplitterNode | null = null;
+  private detectedChannelCount: number = 1;
   private deviceName: string = 'Unknown';
 
   constructor(config: ExtendedMicConfig, deviceName: string = 'Unknown') {
@@ -153,6 +165,7 @@ class MicrophoneInstance {
       const track = this.mediaStream.getAudioTracks()[0];
       if (track) {
         const settings = track.getSettings();
+        this.detectedChannelCount = settings.channelCount || 1;
         const devices = await navigator.mediaDevices.enumerateDevices();
         const device = devices.find(d => d.deviceId === settings.deviceId);
         if (device) {
@@ -168,9 +181,23 @@ class MicrophoneInstance {
       this.analyser.fftSize = this.config.fftSize;
       this.analyser.smoothingTimeConstant = this.config.smoothingFactor;
 
-      // Connect nodes: source -> gain -> analyser
+      // Connect nodes: source -> gain -> [splitter?] -> analyser
       this.sourceNode.connect(this.gainNode);
-      this.gainNode.connect(this.analyser);
+
+      if (this.config.stereoSplitMode && this.config.stereoChannel !== 'both') {
+        // Stereo split mode — extract a single channel via ChannelSplitterNode.
+        // Even if channelCount is not reliably requestable as a constraint,
+        // the browser preserves the device's native channel layout in the
+        // MediaStream, so a stereo device will produce 2 channels here.
+        this.channelSplitter = this.audioContext.createChannelSplitter(2);
+        this.gainNode.connect(this.channelSplitter);
+        const channelIndex = this.config.stereoChannel === 'left' ? 0 : 1;
+        this.channelSplitter.connect(this.analyser, channelIndex);
+      } else {
+        // Mono / default mode
+        this.channelSplitter = null;
+        this.gainNode.connect(this.analyser);
+      }
 
       // Start monitoring
       this.startMonitoring();
@@ -200,6 +227,7 @@ class MicrophoneInstance {
     this.sourceNode = null;
     this.gainNode = null;
     this.analyser = null;
+    this.channelSplitter = null;
   }
 
   getAudioData(): Float32Array | null {
@@ -254,6 +282,10 @@ class MicrophoneInstance {
     this.config = { ...this.config, ...config };
   }
 
+  getDetectedChannelCount(): number {
+    return this.detectedChannelCount;
+  }
+
   getDeviceName(): string {
     return this.deviceName;
   }
@@ -279,6 +311,7 @@ class MicrophoneInstance {
         volume: this.getVolume(),
         peak: this.getPeak(),
         deviceName: this.deviceName,
+        channelCount: this.detectedChannelCount,
       };
 
       if (this.onStatusChange) {
@@ -448,8 +481,26 @@ export class MultiMicrophoneManager {
     return assigned;
   }
 
-  // Unassign a microphone
+  // Unassign a microphone (also removes stereo partner if present)
   async unassignMicrophone(id: string): Promise<void> {
+    const assigned = this.assignedMics.get(id);
+    if (assigned?.stereoPartnerId) {
+      // Break bidirectional link first to prevent infinite recursion
+      const partnerId = assigned.stereoPartnerId;
+      assigned.stereoPartnerId = undefined;
+
+      const partner = this.assignedMics.get(partnerId);
+      if (partner) {
+        partner.stereoPartnerId = undefined;
+        const partnerInstance = this.micInstances.get(partnerId);
+        if (partnerInstance) {
+          await partnerInstance.destroy();
+          this.micInstances.delete(partnerId);
+        }
+        this.assignedMics.delete(partnerId);
+      }
+    }
+
     const instance = this.micInstances.get(id);
     if (instance) {
       await instance.destroy();
@@ -461,6 +512,150 @@ export class MultiMicrophoneManager {
     if (this.onAssignedMicsChange) {
       this.onAssignedMicsChange(Array.from(this.assignedMics.values()));
     }
+  }
+
+  // Enable stereo split for a microphone — creates a second entry for the other channel.
+  // The original mic becomes "left" channel, a new entry is created for "right".
+  async enableStereoSplit(id: string): Promise<AssignedMicrophone | null> {
+    const assigned = this.assignedMics.get(id);
+    if (!assigned) return null;
+    if (assigned.stereoPartnerId) return assigned; // Already in stereo split mode
+    if (this.assignedMics.size >= MAX_MICROPHONES) {
+      // eslint-disable-next-line no-console
+      console.warn(`Cannot enable stereo split: max ${MAX_MICROPHONES} microphones reached.`);
+      return null;
+    }
+
+    // Update current mic to left channel
+    assigned.config.stereoSplitMode = true;
+    assigned.config.stereoChannel = 'left';
+
+    // Reconnect with stereo routing
+    const instance = this.micInstances.get(id);
+    if (instance) {
+      await instance.disconnect();
+      instance.updateConfig(assigned.config);
+      await instance.connect();
+    }
+
+    // Store base name (strip existing L/R suffix if present)
+    const baseName = assigned.config.customName.replace(/ \([LR]\)$/, '');
+
+    // Create right channel partner
+    const partnerId = `mic-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+    const partnerConfig: ExtendedMicConfig = {
+      ...OPTIMAL_EXTENDED_CONFIG,
+      deviceId: assigned.deviceId,
+      customName: `${baseName} (R)`,
+      stereoSplitMode: true,
+      stereoChannel: 'right',
+    };
+
+    const partnerIndex = this.getNextPlayerIndex();
+    const partnerInstance = new MicrophoneInstance(partnerConfig, assigned.deviceName);
+    const connected = await partnerInstance.connect();
+    if (!connected) {
+      // Roll back — restore mono mode
+      assigned.config.stereoSplitMode = false;
+      assigned.config.stereoChannel = 'both';
+      if (instance) {
+        await instance.disconnect();
+        instance.updateConfig(assigned.config);
+        await instance.connect();
+      }
+      return null;
+    }
+
+    const partner: AssignedMicrophone = {
+      id: partnerId,
+      deviceId: assigned.deviceId,
+      deviceName: assigned.deviceName,
+      customName: `${baseName} (R)`,
+      playerIndex: partnerIndex,
+      config: partnerConfig,
+      status: {
+        isConnected: true,
+        isMuted: false,
+        volume: 0,
+        peak: 0,
+        deviceName: assigned.deviceName,
+      },
+      stereoPartnerId: id,
+    };
+
+    // Update original name to indicate left channel
+    assigned.customName = `${baseName} (L)`;
+    assigned.config.customName = assigned.customName;
+
+    // Set up partner monitoring
+    partnerInstance.onStatus((status) => {
+      partner.status = status;
+      if (this.onAssignedMicsChange) {
+        this.onAssignedMicsChange(Array.from(this.assignedMics.values()));
+      }
+    });
+
+    // Link them bidirectionally
+    assigned.stereoPartnerId = partnerId;
+    partner.stereoPartnerId = id;
+
+    this.micInstances.set(partnerId, partnerInstance);
+    this.assignedMics.set(partnerId, partner);
+    this.saveConfig();
+
+    if (this.onAssignedMicsChange) {
+      this.onAssignedMicsChange(Array.from(this.assignedMics.values()));
+    }
+
+    return partner;
+  }
+
+  // Disable stereo split — removes the partner and restores mono mode
+  async disableStereoSplit(id: string): Promise<void> {
+    const assigned = this.assignedMics.get(id);
+    if (!assigned) return;
+    if (!assigned.stereoPartnerId) return; // Not in stereo mode
+
+    // Remove partner
+    const partnerId = assigned.stereoPartnerId;
+    assigned.stereoPartnerId = undefined;
+
+    const partner = this.assignedMics.get(partnerId);
+    if (partner) {
+      partner.stereoPartnerId = undefined;
+      const partnerInstance = this.micInstances.get(partnerId);
+      if (partnerInstance) {
+        await partnerInstance.destroy();
+        this.micInstances.delete(partnerId);
+      }
+      this.assignedMics.delete(partnerId);
+    }
+
+    // Restore mono mode
+    assigned.config.stereoSplitMode = false;
+    assigned.config.stereoChannel = 'both';
+    assigned.customName = assigned.customName.replace(/ \([LR]\)$/, '');
+    assigned.config.customName = assigned.customName;
+
+    // Reconnect without stereo routing
+    const instance = this.micInstances.get(id);
+    if (instance) {
+      await instance.disconnect();
+      instance.updateConfig(assigned.config);
+      await instance.connect();
+    }
+
+    this.saveConfig();
+
+    if (this.onAssignedMicsChange) {
+      this.onAssignedMicsChange(Array.from(this.assignedMics.values()));
+    }
+  }
+
+  // Check if a mic is in stereo split mode
+  isStereoSplit(id: string): boolean {
+    const assigned = this.assignedMics.get(id);
+    return !!assigned?.stereoPartnerId;
   }
 
   // Update custom name for a microphone
@@ -501,7 +696,9 @@ export class MultiMicrophoneManager {
         config.echoCancellation !== assigned.config.echoCancellation ||
         config.noiseSuppression !== assigned.config.noiseSuppression ||
         config.autoGainControl !== assigned.config.autoGainControl ||
-        config.fftSize !== assigned.config.fftSize;
+        config.fftSize !== assigned.config.fftSize ||
+        config.stereoSplitMode !== assigned.config.stereoSplitMode ||
+        config.stereoChannel !== assigned.config.stereoChannel;
 
       assigned.config = { ...assigned.config, ...config };
       
@@ -593,6 +790,8 @@ export class MultiMicrophoneManager {
       ...OPTIMAL_EXTENDED_CONFIG,
       customName: assigned.customName, // Preserve custom name
       deviceId: assigned.config.deviceId, // Preserve device ID
+      stereoSplitMode: assigned.config.stereoSplitMode, // Preserve stereo mode
+      stereoChannel: assigned.config.stereoChannel,       // Preserve stereo channel
     };
 
     await this.updateExtendedConfig(id, optimalSettings);
@@ -612,6 +811,8 @@ export class MultiMicrophoneManager {
         ...OPTIMAL_EXTENDED_CONFIG,
         customName: assigned.customName,
         deviceId: assigned.config.deviceId,
+        stereoSplitMode: assigned.config.stereoSplitMode, // Preserve stereo mode
+        stereoChannel: assigned.config.stereoChannel,       // Preserve stereo channel
       };
 
       // Use updateExtendedConfig which handles reconnection when
@@ -656,6 +857,7 @@ export class MultiMicrophoneManager {
           customName: m.customName,
           playerIndex: m.playerIndex,
           config: m.config,
+          stereoPartnerId: m.stereoPartnerId,
         })),
       };
       setJson(StorageKeys.MULTI_MIC_CONFIG, config);
@@ -674,7 +876,7 @@ export class MultiMicrophoneManager {
         // Migration from old format
         if (config.assignedMics && Array.isArray(config.assignedMics)) {
           let needsSave = false;
-          config.assignedMics.forEach((mic: { id?: string; deviceId?: string; config?: { latency?: string; }; playerIndex?: number }) => {
+          config.assignedMics.forEach((mic: { id?: string; deviceId?: string; config?: { latency?: string; stereoSplitMode?: boolean; stereoChannel?: string; }; playerIndex?: number }) => {
             // Migrate missing id (was not saved before version bump)
             if (!mic.id && mic.deviceId) {
               mic.id = `mic-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
@@ -697,6 +899,17 @@ export class MultiMicrophoneManager {
             if (mic.playerIndex === undefined) {
               mic.playerIndex = 0;
               needsSave = true;
+            }
+            // Migrate stereo split fields (added after v2)
+            if (mic.config) {
+              if (mic.config.stereoSplitMode === undefined) {
+                mic.config.stereoSplitMode = false;
+                needsSave = true;
+              }
+              if (!mic.config.stereoChannel) {
+                mic.config.stereoChannel = 'both';
+                needsSave = true;
+              }
             }
           });
           // Persist migration results so they are not re-run every load

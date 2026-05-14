@@ -1133,7 +1133,12 @@ export const deTranslations = {
       soprano: '🎤 Sopran',
       latencyCorrection: 'Latenz-Korrektur',
       manualOffset: 'Manueller Offset',
-      offsetHelp: 'Negativ = Audio früher, Positiv = Audio später'
+      offsetHelp: 'Negativ = Audio früher, Positiv = Audio später',
+      stereoDevice: '(Stereo)',
+      stereoSplit: 'Stereo-Split (Dual-Mikrofon-Adapter)',
+      stereoSplitEnable: 'Aktivieren',
+      stereoSplitDisable: 'Deaktivieren',
+      stereoSplitActive: 'Stereo-Split aktiv — L/R Kanäle getrennt',
     },
     settingsMicPanel: {
       title: 'Mikrofon-Einstellungen',

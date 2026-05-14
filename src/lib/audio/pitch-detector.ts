@@ -107,7 +107,7 @@ export class PitchDetector {
    * @param deviceId - If provided, requests this specific audio device (multi-mic support).
    *                If omitted, uses the system default microphone.
    */
-  async initialize(deviceId?: string): Promise<boolean> {
+  async initialize(deviceId?: string, stereoChannel?: number): Promise<boolean> {
     try {
       // Build audio constraints — optionally target a specific device
       const audioConstraints: MediaTrackConstraints = {
@@ -149,7 +149,15 @@ export class PitchDetector {
       this.analyser.fftSize = this.bufferSize;
       this.analyser.smoothingTimeConstant = 0.8;
 
-      source.connect(this.analyser);
+      if (stereoChannel !== undefined && stereoChannel >= 0) {
+        // Stereo split mode — extract a single channel for this player
+        const splitter = this.audioContext.createChannelSplitter(2);
+        source.connect(splitter);
+        splitter.connect(this.analyser, stereoChannel);
+      } else {
+        // Mono / default mode
+        source.connect(this.analyser);
+      }
 
       this.buffer = new Float32Array(this.analyser.fftSize);
       this.frequencyBuffer = new Float32Array(this.analyser.frequencyBinCount);
@@ -495,6 +503,7 @@ interface ManagedPlayer {
   detector: PitchDetector | null;
   mobileClientId?: string;
   pollingInterval?: ReturnType<typeof setInterval>;
+  stereoChannel?: number;  // 0=left, 1=right for stereo split mode
 }
 
 export class PitchDetectorManager {
@@ -519,7 +528,7 @@ export class PitchDetectorManager {
    * @param playerId - Unique identifier for this player
    * @param deviceId - Optional specific microphone device ID (multi-mic support)
    */
-  async addLocalPlayer(playerId: string, deviceId?: string): Promise<boolean> {
+  async addLocalPlayer(playerId: string, deviceId?: string, stereoChannel?: number): Promise<boolean> {
     if (this.players.has(playerId)) {
       return true; // Already exists
     }
@@ -527,7 +536,7 @@ export class PitchDetectorManager {
     const detector = new PitchDetector();
     detector.setDifficulty(this.difficulty);
 
-    const success = await detector.initialize(deviceId);
+    const success = await detector.initialize(deviceId, stereoChannel);
     if (success) {
       this.players.set(playerId, {
         id: playerId,

@@ -30,6 +30,8 @@ export function MicrophoneSettingsPanel({
     handleApplyOptimalToAll,
     handleRefreshDevices,
     refreshMessage,
+    handleEnableStereoSplit,
+    handleDisableStereoSplit,
   } = useMicrophoneSettings(onSettingsChange);
 
   const { t } = useTranslation();
@@ -76,6 +78,8 @@ export function MicrophoneSettingsPanel({
           onRemove={handleRemoveMicrophone}
           isExpanded={expandedMics.has(mic.id)}
           onToggleExpand={() => toggleExpanded(mic.id)}
+          onEnableStereoSplit={handleEnableStereoSplit}
+          onDisableStereoSplit={handleDisableStereoSplit}
         />
       ))}
 
