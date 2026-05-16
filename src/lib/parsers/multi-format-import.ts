@@ -33,8 +33,13 @@ export function detectFileFormat(filename: string, content: string | ArrayBuffer
   if (ext === 'txt' && typeof content === 'string') {
     if (content.includes('#TITLE:') || content.includes('#ARTIST:')) {
       if (content.includes('NOTE=')) return 'singstar';
-      if (content.includes('#BPM:') || content.includes('#BPMS:')) return 'stepmania';
-      if (content.includes(':') && content.includes('-') && !content.includes('=')) return 'ultrastar';
+      // Ultrastar note lines start with : or * followed by a number (beat).
+      // They also contain line-break markers (- <beat>) and an end marker (E).
+      // These patterns are unique to Ultrastar and must be checked BEFORE the
+      // StepMania #BPM check, because both formats share #BPM:.
+      if (/^[:*]\s+\d+/m.test(content)) return 'ultrastar';
+      if (content.includes('#BPMS:')) return 'stepmania';
+      if (content.includes('#BPM:')) return 'stepmania';
     }
   }
 
