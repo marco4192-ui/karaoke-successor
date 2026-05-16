@@ -121,3 +121,29 @@ Stage Summary:
 - Jukebox setup view has visible heading
 - All jukebox field labels properly translated in German and English
 - CTRL-J navigates to jukebox and auto-starts playback
+---
+Task ID: 1
+Agent: main
+Task: Fix Ultrastar txt import — make all txt format conversions robust
+
+Work Log:
+- Investigated the complete import pipeline (3 paths: Ultrastar Tab, Folder Scan, Alternate Format Tab)
+- Found 3 bugs causing Ultrastar .txt files to be silently ignored:
+  1. detectFileFormat() note regex /^[:*]\s+\d+/m was too strict — didn't match compact notation (:0) or all note types (F, R, G)
+  2. alternate-format-tab.tsx always passed ArrayBuffer for .txt files — typeof check failed → returned 'unknown'
+  3. Ultrastar was completely missing from the alternate-format tab's FORMAT list and handleProcess switch
+- Rewrote detectFileFormat() with 5-tier heuristic detection:
+  a) Note lines regex: /^(?:P[12]:\s*)?[:*FGR]\s*-?\d+\s+\d+\s+-?\d+/m (compact+standard, all types, duet prefixes)
+  b) Line-break markers combined with UltraStar headers
+  c) End marker E + UltraStar headers
+  d) Header-only files (no notes, just metadata)
+  e) Ambiguous #BPM: resolved via companion headers (#GAP/#MP3 = Ultrastar, #STEPS/#DIFFICULTY = StepMania)
+- Fixed alternate-format-tab.tsx: passes string for text formats, ArrayBuffer only for MIDI
+- Added Ultrastar to alternate-format tab (FORMATS list + handleProcess case using parseUltraStarTxt + convertUltraStarToSong)
+- Fixed StepMania being blocked by lyrics check (it's a rhythm-game format without lyrics)
+- TypeScript compiles clean, all 28 Ultrastar parser tests pass
+
+Stage Summary:
+- Commit: f153a98 "fix: robust txt format detection for all karaoke variants"
+- Files changed: src/lib/parsers/multi-format-import.ts, src/components/import/alternate-format-tab.tsx
+- All txt karaoke formats now handled: Ultrastar (all variants), StepMania, SingStar, MIDI, KaraokeMugen
