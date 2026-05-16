@@ -172,19 +172,46 @@ fn native_read_file_bytes(file_path: String) -> Result<String, String> {
 }
 
 /// Read a file as text (for TXT, config files, etc.)
+/// Tries UTF-8 first, then falls back to Latin-1 (ISO-8859-1 / Windows-1252).
+/// Many UltraStar TXT files are encoded in Latin-1, especially older ones
+/// with French/German/Spanish accented characters.
 #[tauri::command]
 fn native_read_file_text(file_path: String) -> Result<String, String> {
     validate_safe_path(&file_path)?;
+
+    // Helper: try to read a file as text with encoding fallback.
+    // Returns Ok(content) or None if the file could not be read at all.
+    let try_read_text = |path: &PathBuf| -> Option<String> {
+        // Try UTF-8 first (standard for modern files)
+        if let Ok(content) = fs::read_to_string(path) {
+            return Some(content);
+        }
+        // UTF-8 failed — likely a Latin-1 / Windows-1252 file.
+        // Read as raw bytes and decode as Latin-1 (every byte is valid).
+        if let Ok(bytes) = fs::read(path) {
+            let latin1: String = bytes.iter().map(|&b| b as char).collect();
+            // Check if the content looks like it might actually be valid UTF-8
+            // but failed for another reason (e.g., path issues). If most
+            // characters are ASCII (< 0x80), assume Latin-1 is correct.
+            let high_bytes = bytes.iter().filter(|&&b| b >= 0x80).count();
+            if high_bytes > 0 {
+                println!("[native_read_file_text] UTF-8 failed, decoded as Latin-1 ({} non-ASCII bytes)", high_bytes);
+            }
+            return Some(latin1);
+        }
+        None
+    };
+
     // Attempt 1: use the path exactly as received
     let path = PathBuf::from(&file_path);
-    if let Ok(content) = fs::read_to_string(&path) {
+    if let Some(content) = try_read_text(&path) {
         return Ok(content);
     }
 
     // Attempt 2: normalize separators to OS-native and retry
     let normalized = file_path.replace('/', &std::path::MAIN_SEPARATOR.to_string());
     let path2 = PathBuf::from(&normalized);
-    if let Ok(content) = fs::read_to_string(&path2) {
+    if let Some(content) = try_read_text(&path2) {
         return Ok(content);
     }
 
@@ -193,11 +220,13 @@ fn native_read_file_text(file_path: String) -> Result<String, String> {
     {
         let backslash_path = file_path.replace('/', r"\");
         let verbatim = format!(r"\\?\{}", backslash_path);
-        if let Ok(content) = fs::read_to_string(&verbatim) {
+        let verbatim_path = PathBuf::from(&verbatim);
+        if let Some(content) = try_read_text(&verbatim_path) {
             return Ok(content);
         }
         let verbatim_norm = format!(r"\\?\{}", normalized);
-        if let Ok(content) = fs::read_to_string(&verbatim_norm) {
+        let verbatim_norm_path = PathBuf::from(&verbatim_norm);
+        if let Some(content) = try_read_text(&verbatim_norm_path) {
             return Ok(content);
         }
         // Canonicalize parent directory
@@ -205,7 +234,7 @@ fn native_read_file_text(file_path: String) -> Result<String, String> {
             if let Ok(canonical_parent) = parent.canonicalize() {
                 if let Some(file_name) = PathBuf::from(&backslash_path).file_name() {
                     let canonical_path = canonical_parent.join(file_name);
-                    if let Ok(content) = fs::read_to_string(&canonical_path) {
+                    if let Some(content) = try_read_text(&canonical_path) {
                         return Ok(content);
                     }
                 }
@@ -213,8 +242,10 @@ fn native_read_file_text(file_path: String) -> Result<String, String> {
         }
     }
 
-    // All attempts failed — report the last actual OS error for debugging
-    let last_err = fs::read_to_string(&path).err().unwrap_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "unknown"));
+    // All attempts failed
+    let last_err = fs::read(&path).err()
+        .map(|e| e.to_string())
+        .unwrap_or_else(|| "unknown error".to_string());
     Err(format!("File not found: {} ({})", file_path, last_err))
 }
 
