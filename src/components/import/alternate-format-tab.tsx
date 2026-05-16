@@ -12,6 +12,7 @@ import {
   convertToSong,
   type DetectedFormat,
 } from '@/lib/parsers/multi-format-import';
+import { parseUltraStarTxt, convertUltraStarToSong } from '@/lib/parsers/ultrastar-parser';
 import { addSong } from '@/lib/game/song-library';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from '@/lib/i18n/translations';
@@ -28,10 +29,11 @@ export interface AlternateFormatTabProps {
 
 /** Supported alternate formats with file extensions */
 const FORMATS: Array<{ id: DetectedFormat; label: string; extensions: string; description: string }> = [
+  { id: 'ultrastar', label: 'UltraStar', extensions: '.txt', description: 'UltraStar TXT-Format (Standard + kompakte Notation, Duette)' },
   { id: 'midi', label: 'MIDI Karaoke', extensions: '.kar, .mid', description: 'MIDI-Dateien mit eingebetteten Lyrics und Noten' },
   { id: 'karaoke-mugen', label: 'Karaoke Mugen', extensions: '.json', description: 'Karaoke Mugen JSON-Format' },
   { id: 'singstar', label: 'SingStar', extensions: '.txt (SingStar)', description: 'SingStar INI-Export-Format' },
-  { id: 'stepmania', label: 'StepMania', extensions: '.sm, .ssc', description: 'StepMania/StepFever Chart-Format' },
+  { id: 'stepmania', label: 'StepMania', extensions: '.sm, .ssc, .txt', description: 'StepMania/StepFever Chart-Format' },
 ];
 
 export function AlternateFormatTab({
@@ -71,9 +73,14 @@ export function AlternateFormatTab({
 
     // Auto-detect format
     try {
-      const content = await file.arrayBuffer();
       const textContent = await file.text();
-      const format = detectFileFormat(file.name, content.byteLength > 0 ? content : textContent);
+      // Binary formats (MIDI) need ArrayBuffer; text formats need string.
+      // detectFileFormat checks typeof content === 'string' for .txt heuristics.
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      const content: string | ArrayBuffer = (ext === 'kar' || ext === 'mid')
+        ? await file.arrayBuffer()
+        : textContent;
+      const format = detectFileFormat(file.name, content);
       setDetectedFormat(format);
       if (format !== 'unknown') {
         setSelectedFormat(format);
@@ -137,11 +144,25 @@ export function AlternateFormatTab({
           partialSong = convertToSong(data, 'stepmania');
           break;
         }
+        case 'ultrastar': {
+          const text = await songFile.text();
+          const data = parseUltraStarTxt(text);
+          const audioUrl = audioFile ? URL.createObjectURL(audioFile) : undefined;
+          const song = convertUltraStarToSong(data, audioUrl || '');
+          partialSong = song;
+          break;
+        }
         default:
           throw new Error(t('importAlternateFormat.unknownError'));
       }
 
-      if (!partialSong || !partialSong.lyrics || partialSong.lyrics.length === 0) {
+      if (!partialSong) {
+        throw new Error(t('importAlternateFormat.failedToParse'));
+      }
+      // StepMania is a rhythm-game format without lyrics — allow it through.
+      // All other formats (UltraStar, MIDI, KaraokeMugen, SingStar) must have lyrics.
+      const needsLyrics = selectedFormat !== 'stepmania';
+      if (needsLyrics && (!partialSong.lyrics || partialSong.lyrics.length === 0)) {
         throw new Error(t('importAlternateFormat.noLyricLines'));
       }
 
@@ -163,7 +184,7 @@ export function AlternateFormatTab({
         rating: 3,
         audioUrl: partialSong.audioUrl || (audioFile ? URL.createObjectURL(audioFile) : ''),
         videoBackground: partialSong.videoBackground || '',
-        lyrics: partialSong.lyrics,
+        lyrics: partialSong.lyrics || [],
         genre: partialSong.genre,
       };
 
