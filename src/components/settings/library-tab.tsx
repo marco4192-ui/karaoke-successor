@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -7,6 +8,11 @@ import { ImportScreen } from '@/components/import/import-screen';
 import { FolderIcon, CloudUploadIcon, TrashIcon } from '@/components/settings/settings-icons';
 import { useTranslation } from '@/lib/i18n/translations';
 import { ViralChartsSettings } from '@/components/settings/viral-charts-tab';
+import { StorageKeys, getJsonOptional, setJson, setItem } from '@/lib/storage';
+import { getAllSongs } from '@/lib/game/song-library';
+import { isTauri, normalizeFilePath } from '@/lib/tauri-file-storage';
+import { nativePickFolder } from '@/lib/native-fs';
+import { safeAlert } from '@/lib/safe-dialog';
 
 interface LibraryTabProps {
   songsFolder: string;
@@ -40,9 +46,63 @@ export function LibraryTab({
   handleClearAllData,
   isResetting,
   resetComplete,
+  folderSaveComplete,
   tx,
 }: LibraryTabProps) {
   const { t } = useTranslation();
+
+  // ── Additional library sources ──
+  const [additionalFolders, setAdditionalFolders] = useState<string[]>([]);
+
+  // Load additional folders from localStorage on mount
+  useEffect(() => {
+    const stored = getJsonOptional<string[]>(StorageKeys.ADDITIONAL_SONG_FOLDERS) ?? [];
+    setAdditionalFolders(stored);
+  }, []);
+
+  const saveAdditionalFolders = useCallback((folders: string[]) => {
+    setAdditionalFolders(folders);
+    setJson(StorageKeys.ADDITIONAL_SONG_FOLDERS, folders);
+  }, []);
+
+  const handleAddFolderPath = useCallback(() => {
+    const path = prompt(t('settingsLibrary.enterFolderPath'));
+    if (path && path.trim()) {
+      const normalized = normalizeFilePath(path.trim());
+      if (normalized === songsFolder || additionalFolders.includes(normalized)) {
+        safeAlert(t('settingsLibrary.folderAlreadyExists'));
+        return;
+      }
+      saveAdditionalFolders([...additionalFolders, normalized]);
+    }
+  }, [additionalFolders, songsFolder, saveAdditionalFolders, t]);
+
+  const handleBrowseAdditionalFolder = useCallback(async () => {
+    if (!isTauri()) {
+      safeAlert(t('settingsLibrary.folderPickerDesktopOnly'));
+      return;
+    }
+    try {
+      const selected = await nativePickFolder(t('settingsLibrary.selectAdditionalFolder'));
+      if (selected) {
+        const normalized = normalizeFilePath(selected);
+        if (normalized === songsFolder || additionalFolders.includes(normalized)) {
+          safeAlert(t('settingsLibrary.folderAlreadyExists'));
+          return;
+        }
+        saveAdditionalFolders([...additionalFolders, normalized]);
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('[Settings] Error browsing additional folder:', e);
+    }
+  }, [additionalFolders, songsFolder, saveAdditionalFolders, t]);
+
+  const handleRemoveAdditionalFolder = useCallback((index: number) => {
+    const updated = additionalFolders.filter((_, i) => i !== index);
+    saveAdditionalFolders(updated);
+  }, [additionalFolders, saveAdditionalFolders]);
+
   return (
     <div className="space-y-6">
       {/* Songs Base Folder */}
@@ -110,7 +170,70 @@ export function LibraryTab({
           )}
         </CardContent>
       </Card>
-      
+
+      {/* Additional Library Sources */}
+      <Card className="bg-white/5 border-white/10">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 theme-adaptive-text">
+            <FolderIcon className="w-5 h-5 text-purple-400" />
+            {t('settingsLibrary.additionalSources')}
+          </CardTitle>
+          <CardDescription>
+            {t('settingsLibrary.additionalSourcesDesc')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {additionalFolders.length === 0 && (
+            <p className="text-sm text-white/40">{t('settingsLibrary.noAdditionalSources')}</p>
+          )}
+          {additionalFolders.map((folder, index) => (
+            <div
+              key={`${folder}-${index}`}
+              className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2 group"
+            >
+              <FolderIcon className="w-4 h-4 text-purple-400 shrink-0" />
+              <span className="text-sm text-white/80 truncate flex-1 min-w-0" title={folder}>
+                {folder}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleRemoveAdditionalFolder(index)}
+                className="text-red-400/60 hover:text-red-400 hover:bg-red-500/10 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                title={t('settingsLibrary.removeFolder')}
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </Button>
+            </div>
+          ))}
+          <div className="flex items-center gap-2 pt-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAddFolderPath}
+              disabled={isScanning}
+              className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+            >
+              + {t('settingsLibrary.addFolderPath')}
+            </Button>
+            {isTauri() && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBrowseAdditionalFolder}
+                disabled={isScanning}
+                className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
+              >
+                {t('settingsLibrary.browse')}
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Library Stats */}
       <Card className="bg-white/5 border-white/10">
         <CardHeader>
@@ -131,7 +254,7 @@ export function LibraryTab({
           </div>
         </CardContent>
       </Card>
-      
+
       {/* Scan Progress */}
       {(isScanning || scanProgress) && (
         <Card className="bg-white/5 border-white/10 border-cyan-500/30">
@@ -156,7 +279,7 @@ export function LibraryTab({
           </CardContent>
         </Card>
       )}
-      
+
       {/* Import Songs Section */}
       <Card className="bg-white/5 border-white/10">
         <CardHeader>
@@ -169,7 +292,7 @@ export function LibraryTab({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ImportScreen 
+          <ImportScreen
             onImport={(_song) => {
               // Refresh song count after import
             }}
@@ -180,7 +303,7 @@ export function LibraryTab({
 
       {/* Viral Charts */}
       <ViralChartsSettings />
-      
+
       {/* Reset Library */}
       <Card className="bg-white/5 border-white/10 border-red-500/30">
         <CardHeader>
@@ -202,7 +325,7 @@ export function LibraryTab({
               <span className="text-green-400">{t('settingsLibrary.resetSuccess')}</span>
             </div>
           )}
-          
+
           <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
             <div>
               <h4 className="font-medium">{tx('settings.resetLibrary')}</h4>
@@ -222,7 +345,7 @@ export function LibraryTab({
               {tx('settings.resetLibrary')}
             </Button>
           </div>
-          
+
           <div className="flex items-center justify-between p-4 bg-red-500/10 rounded-lg border border-red-500/20">
             <div>
               <h4 className="font-medium text-red-400">{tx('settings.clearAll')}</h4>

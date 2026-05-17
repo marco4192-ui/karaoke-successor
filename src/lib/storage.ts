@@ -15,6 +15,7 @@
 export const StorageKeys = {
   // --- Song Library ---
   SONGS_FOLDER: 'karaoke-songs-folder',
+  ADDITIONAL_SONG_FOLDERS: 'karaoke-additional-song-folders',
   CUSTOM_SONGS: 'karaoke-successor-custom-songs',
   CUSTOM_SONG_IDS: 'karaoke-custom-song-ids',
   LIBRARY_SETTINGS: 'karaoke-library-settings',

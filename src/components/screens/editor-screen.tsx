@@ -34,6 +34,10 @@ function GenreLanguageEditor({
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const saveMessageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── AI metadata suggestion state ──
+  const [aiSuggestion, setAiSuggestion] = useState<{ genre?: string; language?: string } | null>(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+
   // Clear save-message timer on unmount
   useEffect(() => {
     return () => { if (saveMessageTimerRef.current) clearTimeout(saveMessageTimerRef.current); };
@@ -60,6 +64,46 @@ function GenreLanguageEditor({
     setCustomLanguage(value);
     onUpdate({ language: value });
   };
+
+  // ── AI Genre/Language suggestion ──
+  const needsAiSuggestion = !song.genre || !song.language;
+  const handleAiSuggest = useCallback(async () => {
+    setIsAiLoading(true);
+    setAiSuggestion(null);
+    try {
+      const input = `${song.artist} - ${song.title}`;
+      const res = await fetch('/api/song-identify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input, type: 'filename' }),
+      });
+      const data = await res.json();
+      if (data.success && data.metadata) {
+        setAiSuggestion({
+          genre: data.metadata.genre,
+          language: data.metadata.language,
+        });
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('[Editor] AI suggestion failed:', e);
+    } finally {
+      setIsAiLoading(false);
+    }
+  }, [song.artist, song.title]);
+
+  const handleAcceptSuggestion = useCallback((field: 'genre' | 'language') => {
+    if (!aiSuggestion) return;
+    const value = aiSuggestion[field];
+    if (!value) return;
+    if (field === 'genre') {
+      setCustomGenre(value);
+      onUpdate({ genre: value });
+    } else {
+      setCustomLanguage(value);
+      onUpdate({ language: value });
+    }
+  }, [aiSuggestion, onUpdate]);
 
   const handleSaveToTxt = async () => {
     setIsSaving(true);
@@ -108,6 +152,21 @@ function GenreLanguageEditor({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* AI Suggest Button — shown when genre or language is missing */}
+        {needsAiSuggestion && (
+          <button
+            onClick={handleAiSuggest}
+            disabled={isAiLoading}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-violet-500/20 to-cyan-500/20 border border-violet-500/30 text-white/80 hover:from-violet-500/30 hover:to-cyan-500/30 transition-all text-sm"
+          >
+            {isAiLoading ? (
+              <div className="w-4 h-4 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <span>🤖</span>
+            )}
+            {isAiLoading ? t('editor.aiSuggestLoading') : t('editor.aiSuggestMetadata')}
+          </button>
+        )}
         {/* Genre Section */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-white/80">{t('editor.genre')}</label>
@@ -152,6 +211,17 @@ function GenreLanguageEditor({
             onChange={(e) => handleCustomGenreChange(e.target.value)}
             className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
           />
+          {/* AI suggestion badge for genre */}
+          {aiSuggestion?.genre && aiSuggestion.genre !== customGenre && (
+            <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-violet-500/15 border border-violet-500/20">
+              <span className="text-xs text-white/50">🤖 {t('editor.aiSuggestion')}:</span>
+              <span className="text-xs font-medium text-violet-300">{aiSuggestion.genre}</span>
+              <button
+                onClick={() => handleAcceptSuggestion('genre')}
+                className="ml-auto text-xs px-2 py-0.5 rounded bg-violet-500/30 text-violet-300 hover:bg-violet-500/50 transition-colors"
+              >{t('editor.aiAccept')}</button>
+            </div>
+          )}
         </div>
 
         {/* Language Section */}
@@ -198,6 +268,17 @@ function GenreLanguageEditor({
             onChange={(e) => handleCustomLanguageChange(e.target.value)}
             className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
           />
+          {/* AI suggestion badge for language */}
+          {aiSuggestion?.language && aiSuggestion.language !== customLanguage && (
+            <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-violet-500/15 border border-violet-500/20">
+              <span className="text-xs text-white/50">🤖 {t('editor.aiSuggestion')}:</span>
+              <span className="text-xs font-medium text-violet-300">{aiSuggestion.language}</span>
+              <button
+                onClick={() => handleAcceptSuggestion('language')}
+                className="ml-auto text-xs px-2 py-0.5 rounded bg-violet-500/30 text-violet-300 hover:bg-violet-500/50 transition-colors"
+              >{t('editor.aiAccept')}</button>
+            </div>
+          )}
         </div>
 
         {/* Current Status */}
@@ -236,6 +317,173 @@ function GenreLanguageEditor({
           <p className="text-xs text-white/40 text-center mt-2">
             {t('editor.saveHint')}
           </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── AI Genre/Language Harmonization Card ──
+
+interface HarmonizeSuggestion {
+  songId: string;
+  title: string;
+  artist: string;
+  currentGenre: string | null;
+  currentLanguage: string | null;
+  suggestedGenre: string | null;
+  suggestedLanguage: string | null;
+  genreConfidence: number;
+  languageConfidence: number;
+  genreReason: string;
+  languageReason: string;
+}
+
+function AiHarmonizeCard({
+  songs,
+  onApplied,
+  t,
+}: {
+  songs: Song[];
+  onApplied: () => void;
+  t: (key: string) => string;
+}) {
+  const [suggestions, setSuggestions] = useState<HarmonizeSuggestion[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Only show songs that have genre or language missing
+  const songsToHarmonize = useMemo(() =>
+    songs.filter(s => !s.genre || !s.language).slice(0, 50),
+    [songs],
+  );
+
+  const handleHarmonize = useCallback(async () => {
+    if (songsToHarmonize.length === 0) return;
+    setIsLoading(true);
+    setError(null);
+    setSuggestions([]);
+
+    try {
+      const res = await fetch('/api/harmonize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          songs: songsToHarmonize.map(s => ({
+            id: s.id, title: s.title, artist: s.artist,
+            genre: s.genre || null, language: s.language || null,
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.suggestions) {
+        setSuggestions(data.suggestions.filter(
+          (s: HarmonizeSuggestion) => s.suggestedGenre || s.suggestedLanguage
+        ));
+      } else {
+        setError(data.error || 'Failed');
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Network error');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [songsToHarmonize]);
+
+  const handleApplySingle = useCallback((suggestion: HarmonizeSuggestion, field: 'genre' | 'language') => {
+    const value = field === 'genre' ? suggestion.suggestedGenre : suggestion.suggestedLanguage;
+    if (!value) return;
+    updateSong(suggestion.songId, { [field]: value });
+    setSuggestions(prev => prev.filter(s => s.songId !== suggestion.songId));
+    onApplied();
+  }, [onApplied]);
+
+  const handleApplyAll = useCallback(() => {
+    suggestions.forEach(s => {
+      const updates: Partial<Song> = {};
+      if (s.suggestedGenre) updates.genre = s.suggestedGenre;
+      if (s.suggestedLanguage) updates.language = s.suggestedLanguage;
+      if (Object.keys(updates).length > 0) {
+        updateSong(s.songId, updates);
+      }
+    });
+    setSuggestions([]);
+    onApplied();
+  }, [suggestions, onApplied]);
+
+  const dismissed = suggestions.length === 0 && !isLoading && !error;
+
+  return (
+    <Card className="bg-white/5 border-white/10">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center gap-2">
+          🤖 {t('editor.aiHarmonize')}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {dismissed ? (
+          <p className="text-xs text-white/40">{t('editor.aiHarmonizeDesc')}</p>
+        ) : null}
+
+        {suggestions.length > 0 && (
+          <div className="space-y-2 max-h-60 overflow-y-auto">
+            {suggestions.map(s => (
+              <div key={s.songId} className="bg-white/5 rounded-lg p-2 text-xs space-y-1">
+                <p className="font-medium text-white/80 truncate">{s.artist} - {s.title}</p>
+                {s.suggestedGenre && s.suggestedGenre !== s.currentGenre && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-red-400 line-through">{s.currentGenre || '-'}</span>
+                    <span className="text-white/40">→</span>
+                    <span className="text-green-400">{s.suggestedGenre}</span>
+                    <span className="text-white/30">({s.genreConfidence}%)</span>
+                    <button
+                      onClick={() => handleApplySingle(s, 'genre')}
+                      className="ml-auto px-1.5 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                    >✓</button>
+                  </div>
+                )}
+                {s.suggestedLanguage && s.suggestedLanguage !== s.currentLanguage && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-red-400 line-through">{s.currentLanguage || '-'}</span>
+                    <span className="text-white/40">→</span>
+                    <span className="text-green-400">{s.suggestedLanguage}</span>
+                    <span className="text-white/30">({s.languageConfidence}%)</span>
+                    <button
+                      onClick={() => handleApplySingle(s, 'language')}
+                      className="ml-auto px-1.5 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                    >✓</button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {error && <p className="text-xs text-red-400">{error}</p>}
+
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleHarmonize}
+            disabled={isLoading || songsToHarmonize.length === 0}
+            className="flex-1 border-violet-500/50 text-violet-400 hover:bg-violet-500/10 text-xs"
+          >
+            {isLoading ? (
+              <div className="w-3 h-3 border-2 border-violet-400 border-t-transparent rounded-full animate-spin mr-1" />
+            ) : null}
+            {isLoading ? t('editor.aiHarmonizeLoading') : t('editor.aiHarmonizeBtn')}
+          </Button>
+          {suggestions.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleApplyAll}
+              className="border-green-500/50 text-green-400 hover:bg-green-500/10 text-xs"
+            >
+              {t('editor.aiApplyAll')} ({suggestions.length})
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -482,7 +730,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
 
           {/* Right Sidebar - Genre/Language Editor - Collapsible */}
           {showMetadataPanel && (
-            <div className="w-80 flex-shrink-0 overflow-y-auto border-l border-white/10 p-4">
+            <div className="w-80 flex-shrink-0 overflow-y-auto border-l border-white/10 p-4 space-y-4">
               <GenreLanguageEditor
                 key={selectedSong?.id ?? 'none'}
                 song={selectedSong}
@@ -490,6 +738,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 onSaved={refreshSongs}
                 t={t}
               />
+              <AiHarmonizeCard songs={songs} onApplied={refreshSongs} t={t} />
             </div>
           )}
         </div>

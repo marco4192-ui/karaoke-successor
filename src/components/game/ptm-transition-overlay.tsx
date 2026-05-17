@@ -24,6 +24,7 @@ export interface PtmTransitionOverlayProps {
 // ===================== TIMING =====================
 
 const TYPEWRITER_MS_PER_CHAR = 35; // Fast typing — completes ~35 chars in ~1.2s
+const AUTO_DISMISS_MS = 5000; // Auto-hide 5s after typing finishes
 
 // ===================== TRANSITION OVERLAY =====================
 
@@ -52,6 +53,7 @@ export function PtmTransitionOverlay({
 
   // Full text for typewriter char counting
   const fullText = `${prefixText}${playerName}`;
+  const isTypingDone = visibleChars >= fullText.length;
 
   // Typing animation — starts when visible becomes true
   useEffect(() => {
@@ -86,6 +88,26 @@ export function PtmTransitionOverlay({
     };
   }, [visible, nextPlayer, fullText]);
 
+  // Auto-dismiss 5 seconds after typing animation completes
+  const autoDismissRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (autoDismissRef.current) {
+      clearTimeout(autoDismissRef.current);
+      autoDismissRef.current = null;
+    }
+    if (visible && isTypingDone && onSkip) {
+      autoDismissRef.current = setTimeout(() => {
+        onSkip();
+      }, AUTO_DISMISS_MS);
+    }
+    return () => {
+      if (autoDismissRef.current) {
+        clearTimeout(autoDismissRef.current);
+        autoDismissRef.current = null;
+      }
+    };
+  }, [visible, isTypingDone, onSkip]);
+
   // Space to dismiss
   useEffect(() => {
     if (!visible) return;
@@ -102,7 +124,6 @@ export function PtmTransitionOverlay({
   if (!visible || !nextPlayer) return null;
 
   const shown = fullText.slice(0, visibleChars);
-  const isTypingDone = visibleChars >= fullText.length;
   const prefixLen = prefixText.length;
 
   // Determine what portion of the prefix and name is visible
@@ -116,7 +137,7 @@ export function PtmTransitionOverlay({
       style={{ paddingBottom: 'clamp(180px, 28vh, 260px)' }}
       onClick={onSkip}
     >
-      <div className="flex justify-center px-4">
+      <div className="flex justify-center px-4 transition-opacity duration-500">
         <div
           className="px-6 py-3 rounded-2xl text-2xl md:text-3xl lg:text-4xl font-bold whitespace-nowrap"
           style={{

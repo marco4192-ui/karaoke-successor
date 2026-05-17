@@ -91,6 +91,11 @@ function SettingsScreen() {
     return typeof result === 'string' ? result : key;
   }, [translations]);
 
+  // Initialize folder from localStorage on mount (persists across restarts)
+  useEffect(() => {
+    folderScanner.initializeFromStorage();
+  }, [folderScanner]);
+
   // Load settings once on mount
   useEffect(() => {
     const isTauri = typeof window !== 'undefined' && (window.__TAURI__ || window.__TAURI_INTERNALS__);

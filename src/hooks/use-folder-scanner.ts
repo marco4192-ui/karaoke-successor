@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { StorageKeys, getString, setItem, removeItem, clearAll } from '@/lib/storage';
+import { StorageKeys, getString, setItem, removeItem, clearAll, getJsonOptional } from '@/lib/storage';
 import { getAllSongs, clearCustomSongs, replaceCustomSongs, acquireScanLock, invalidateSongCache, clearSongCache } from '@/lib/game/song-library';
 import { clearCustomSongsFromDB } from '@/lib/db/custom-songs-db';
 import { Song } from '@/types/game';
@@ -249,6 +249,75 @@ export function useFolderScanner(): UseFolderScannerReturn {
           replaceCustomSongs(songsToImport);
         }
 
+        // ── Scan additional library sources (additive, no reset) ──
+        const additionalFolders: string[] = getJsonOptional<string[]>(StorageKeys.ADDITIONAL_SONG_FOLDERS) ?? [];
+        let additionalImported = 0;
+        for (const extraFolder of additionalFolders) {
+          try {
+            setScanProgress({
+              stage: 'scanning',
+              message: `Scanning additional source: ${extraFolder.split(/[/\\]/).pop() || extraFolder}...`,
+              count: imported + additionalImported,
+            });
+            const extraResult = await scanSongsFolderTauri(normalizeFilePath(extraFolder));
+            if (extraResult.songs.length > 0) {
+              const extraSongs: Song[] = [];
+              for (const scanned of extraResult.songs) {
+                try {
+                  const songId = `song-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+                  let coverImage: string | undefined = undefined;
+                  try {
+                    if (scanned.relativeCoverPath) {
+                      coverImage = await getSongMediaUrl(scanned.relativeCoverPath, extraFolder) || undefined;
+                    }
+                  } catch {
+                    // Cover loading failed for this song — continue without cover
+                  }
+
+                  let calculatedDuration = 180000;
+                  if (scanned.end && scanned.end > 0) calculatedDuration = scanned.end;
+                  else if (scanned.lyrics && scanned.lyrics.length > 0) {
+                    calculatedDuration = Math.max(...scanned.lyrics.map(l => l.endTime)) + 5000;
+                  }
+
+                  extraSongs.push({
+                    id: songId, title: scanned.title, artist: scanned.artist,
+                    duration: calculatedDuration, bpm: scanned.bpm, difficulty: 'medium', rating: 3,
+                    gap: scanned.gap, baseFolder: extraFolder, folderPath: scanned.folderPath,
+                    relativeTxtPath: scanned.relativeTxtPath, relativeAudioPath: scanned.relativeAudioPath,
+                    relativeVideoPath: scanned.relativeVideoPath, relativeCoverPath: scanned.relativeCoverPath,
+                    relativeBackgroundPath: scanned.relativeBackgroundPath,
+                    videoBackground: scanned.videoFile?.startsWith('http') ? scanned.videoFile : undefined,
+                    coverImage, genre: scanned.genre, language: scanned.language,
+                    year: scanned.year, creator: scanned.creator, version: scanned.version,
+                    edition: scanned.edition, tags: scanned.tags, start: scanned.start, end: scanned.end,
+                    videoGap: scanned.videoGap, videoStart: scanned.videoStart,
+                    preview: scanned.previewStart ? { startTime: scanned.previewStart * 1000, duration: (scanned.previewDuration || 15) * 1000 } : undefined,
+                    previewStart: scanned.previewStart, previewDuration: scanned.previewDuration,
+                    medleyStartBeat: scanned.medleyStartBeat, medleyEndBeat: scanned.medleyEndBeat,
+                    isDuet: scanned.isDuet, duetPlayerNames: scanned.duetPlayerNames,
+                    lyrics: scanned.lyrics || [], storedTxt: false, storedMedia: false,
+                    hasEmbeddedAudio: scanned.hasEmbeddedAudio ?? (!scanned.relativeAudioPath && !!scanned.relativeVideoPath),
+                    mp3File: scanned.mp3File, coverFile: scanned.coverFile,
+                    backgroundFile: scanned.backgroundFile, videoFile: scanned.videoFile,
+                    dateAdded: Date.now(),
+                  });
+                  additionalImported++;
+                } catch {
+                  // Skip individual song errors in additional folders
+                }
+              }
+              if (extraSongs.length > 0) {
+                const existing = getAllSongs();
+                replaceCustomSongs([...existing, ...extraSongs]);
+              }
+            }
+          } catch (e) {
+            // eslint-disable-next-line no-console
+            console.warn(`[Settings] Failed to scan additional folder: ${extraFolder}`, e);
+          }
+        }
+
         // CRITICAL: Only invalidate songCache, NOT customSongsCache.
         // replaceCustomSongs already set customSongsCache correctly.
         // reloadLibrary() would clear it, causing getAllSongs() to return [].
@@ -257,10 +326,12 @@ export function useFolderScanner(): UseFolderScannerReturn {
         invalidateSongCache();
         setSongCount(getAllSongs().length);
         setFolderSaveComplete(true);
+        const totalImported = imported + additionalImported;
         setScanProgress({
           stage: 'complete',
-          message: `Successfully imported ${imported} songs!`,
-          count: imported
+          message: `Successfully imported ${totalImported} songs!` +
+            (additionalImported > 0 ? ` (${additionalImported} from additional sources)` : ''),
+          count: totalImported
         });
       } else {
         setScanProgress({

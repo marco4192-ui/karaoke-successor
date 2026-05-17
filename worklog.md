@@ -31,3 +31,47 @@ Work Log:
 Stage Summary:
 - virtualized-song-grid.tsx geändert: 24px Padding links/rechts als Scroll-Dead-Zone
 - PlaylistView automatisch betroffen (nutzt dieselbe Komponente)
+
+---
+Task ID: 1
+Agent: main
+Task: PTM - PauseButton routing through universal SongPauseDialog
+
+Work Log:
+- Analyzed pause flow: PauseButton called onTogglePause directly (no dialog)
+- Added setPauseDialogAction to PtmHudControls from party store
+- Created handlePauseButtonClick that sets pauseDialogAction='song-pause' instead of toggling audio directly
+- Existing effect in PtmHudControls syncs pauseDialogAction to onTogglePause
+- Existing effect in ptm-game-hook.ts handles resume when pauseDialogAction becomes null
+
+Stage Summary:
+- PauseButton now shows SongPauseDialog, matching regular game screen behavior
+- Both PauseButton click and Escape key produce the same pause dialog
+
+---
+Task ID: 2
+Agent: main
+Task: PTM - Show mic handover text on every segment switch
+
+Work Log:
+- Found transitionShownRef was reset but only segmentSwitchHandledRef was reset in useEffect
+- transitionShownRef.current stayed true after first segment, preventing future transitions
+- Added transitionShownRef.current = false to the segment change reset effect
+
+Stage Summary:
+- Pass-the-Mic text now appears before every segment boundary
+
+---
+Task ID: 3
+Agent: main
+Task: PTM - Player name colored in player color in transition overlay
+
+Work Log:
+- Rewrote ptm-transition-overlay.tsx to split text into prefix + playerName
+- Prefix rendered as white text, playerName rendered with nextPlayer.color
+- Typewriter animation preserved: cursor appears during typing, chars revealed progressively
+- Used useMemo for prefix/name split to avoid recalculation on every render
+
+Stage Summary:
+- Player name in transition overlay displays in the player's assigned color
+- Typewriter animation works correctly across both text segments
