@@ -204,10 +204,15 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
   const blindHardcore = usePartyStore(s => s.competitiveGame?.settings?.hardcore);
   const { pitchResult, initialize, start, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
 
-  // Smoothed pitch for visual display (prevents flickering/jitter)
-  // Raw pitch is still used for scoring accuracy
-  // α=0.85 = very responsive tracking with minimal lag, deadZone=0.05 = highly sensitive
-  const smoothedPitch = useSmoothedPitch(pitchResult?.note ?? null, 0.85, 0.05);
+  // Smoothed pitch for visual display (prevents flickering/jitter).
+  // Raw pitch is still used for scoring accuracy — this only affects visuals.
+  // α=0.55 (was 0.85): Reduced smoothing for faster visual response when pitch
+  //   changes. The old value caused ~2-3 frames of visible lag on note transitions,
+  //   making the indicator appear "lazy" when singing across different pitches.
+  // deadZone=0.15 (was 0.05): Increased to suppress micro-jitter from breath noise
+  //   and vibrato artifacts that caused the indicator to wobble in the middle of
+  //   sustained notes. Only pitch changes ≥0.15 semitones trigger a visual update.
+  const smoothedPitch = useSmoothedPitch(pitchResult?.note ?? null, 0.55, 0.15);
 
   // Current song reference - must be defined early as it's used by multiple hooks
   const song = gameState.currentSong;

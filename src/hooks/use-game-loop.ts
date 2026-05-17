@@ -756,15 +756,15 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       const currentPitch = pitchResultRef.current;
       if (currentPitch) {
         const pitchNow = performance.now();
-        // Throttle volume update to ~30fps (same as pitch store) to avoid
-        // excessive React re-renders from the VolumeMeter component.
-        if (pitchNow - lastVolumeUpdateRef.current >= 33) {
+        // Throttle volume update to ~60fps (16ms) for responsive volume meter.
+        if (pitchNow - lastVolumeUpdateRef.current >= 16) {
           setVolume(currentPitch.volume);
           lastVolumeUpdateRef.current = pitchNow;
         }
-        // Throttle detectedPitch store update to ~30fps (33ms interval).
+        // Throttle detectedPitch store update to ~60fps (16ms).
         // Scoring uses currentPitch directly (not the store), so accuracy is unaffected.
-        if (pitchNow - lastPitchStoreUpdateRef.current >= 33) {
+        // Previously 33ms (~30Hz), reduced for more responsive pitch indicator.
+        if (pitchNow - lastPitchStoreUpdateRef.current >= 16) {
           setDetectedPitch(currentPitch.frequency);
           lastPitchStoreUpdateRef.current = pitchNow;
         }

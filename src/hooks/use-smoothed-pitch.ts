@@ -12,6 +12,9 @@ import { useState, useEffect, useRef} from 'react';
  * @param deadZone - Minimum pitch change (in semitones) required to trigger an update.
  *                   Prevents tiny micro-jitters. Default: 0.3
  * @returns The smoothed pitch value, or null
+ *
+ * NOTE: This hook is for VISUAL DISPLAY only. Scoring uses raw pitch directly
+ * via refs to avoid any smoothing-induced delay.
  */
 export function useSmoothedPitch(
   rawPitch: number | null,
@@ -25,7 +28,10 @@ export function useSmoothedPitch(
     if (rawPitch === null) {
       // When no pitch is detected, fade out smoothly by keeping last value briefly
       // then clearing after a short delay
-      const timeout = setTimeout(() => setSmoothedPitch(null), 150);
+      // Fade-out: Keep last value briefly before clearing.
+      // Reduced from 150ms to 80ms so the indicator doesn't "linger"
+      // in a wrong position when the singer stops or changes notes.
+      const timeout = setTimeout(() => setSmoothedPitch(null), 80);
       return () => clearTimeout(timeout);
     }
 

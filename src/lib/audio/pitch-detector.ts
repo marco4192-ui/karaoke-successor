@@ -63,8 +63,10 @@ export class PitchDetector {
   private animationFrame: number | null = null;
   private onPitchDetected: ((_result: PitchDetectionResult) => void) | null = null;
 
-  // FFT buffer
-  private bufferSize = 4096;
+  // FFT buffer — 2048 samples for ~46ms latency at 44.1kHz.
+  // Previously 4096 (~93ms), reduced for faster response.
+  // YIN still accurate enough for singing pitch detection with this window size.
+  private bufferSize = 2048;
   private buffer: Float32Array<ArrayBuffer> | null = null;
   private frequencyBuffer: Float32Array<ArrayBuffer> | null = null;
 
@@ -147,7 +149,11 @@ export class PitchDetector {
 
       this.analyser = this.audioContext.createAnalyser();
       this.analyser.fftSize = this.bufferSize;
-      this.analyser.smoothingTimeConstant = 0.8;
+      // Reduced smoothing: 0.5 (was 0.8) for faster transient response.
+      // The YIN algorithm works on raw time-domain data, so FFT smoothing
+      // mainly affects the frequency-domain spectral flatness analysis used
+      // by VocalDetector, not the core pitch detection.
+      this.analyser.smoothingTimeConstant = 0.5;
 
       if (stereoChannel !== undefined && stereoChannel >= 0) {
         // Stereo split mode — extract a single channel for this player
