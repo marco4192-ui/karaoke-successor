@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { usePartyStore } from '@/lib/game/party-store';
 import { PauseButton } from '@/components/game/hud/pause-button';
 import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
@@ -77,9 +77,18 @@ export function PtmHudControls({
     }
   }, [isPlaying, setPauseDialogAction]);
 
-  // Sync pause state with party store (e.g. keyboard Escape sets it)
+  // Sync pause/resume state with party store (e.g. keyboard Escape sets it)
+  // Track previous pauseDialogAction to detect transitions in both directions.
+  const prevPauseDialogRef = useRef(pauseDialogAction);
   useEffect(() => {
-    if (pauseDialogAction === 'song-pause' && isPlaying) {
+    const prev = prevPauseDialogRef.current;
+    prevPauseDialogRef.current = pauseDialogAction;
+
+    if (prev === 'song-pause' && pauseDialogAction === null) {
+      // Dialog was dismissed (Resume clicked) — toggle back to playing
+      onTogglePause();
+    } else if (pauseDialogAction === 'song-pause' && isPlaying) {
+      // Pause triggered (button click or Escape) — toggle to paused
       onTogglePause();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

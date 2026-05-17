@@ -149,6 +149,7 @@ export default function KaraokeZERO() {
     if (party.passTheMicPlayers?.length > 0) {
       party.setPassTheMicSong(null);
       party.setPassTheMicSegments([]);
+      party.setIsSongPlaying(false);
       resetGame();
       setScreen('party-setup');
       return;
