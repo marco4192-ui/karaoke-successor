@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== TYPES =====================
@@ -36,14 +36,22 @@ export function PtmTransitionOverlay({
   const [visibleChars, setVisibleChars] = useState(0);
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Build the display text: "Gib das Mikro weiter an: [PlayerName]"
-  const displayText = useCallback(() => {
-    if (!nextPlayer) return '';
+  // Split text into prefix (white) and player name (colored)
+  const { prefixText, playerName } = useMemo(() => {
+    if (!nextPlayer) return { prefixText: '', playerName: '' };
     const base = t('passTheMic.handOverMic');
     // Strip trailing ":)" smiley from translation, add colon + player name
     const clean = base.replace(/\s*:\)\s*$/, '');
-    return `${clean}: ${nextPlayer.name}`;
+    const separator = ': ';
+    const playerNamePart = nextPlayer.name;
+    return {
+      prefixText: `${clean}${separator}`,
+      playerName: playerNamePart,
+    };
   }, [t, nextPlayer]);
+
+  // Full text for typewriter char counting
+  const fullText = `${prefixText}${playerName}`;
 
   // Typing animation — starts when visible becomes true
   useEffect(() => {
@@ -56,14 +64,13 @@ export function PtmTransitionOverlay({
       return;
     }
 
-    const text = displayText();
     let charIdx = 0;
     setVisibleChars(0);
 
     typingIntervalRef.current = setInterval(() => {
       charIdx++;
       setVisibleChars(charIdx);
-      if (charIdx >= text.length) {
+      if (charIdx >= fullText.length) {
         if (typingIntervalRef.current) {
           clearInterval(typingIntervalRef.current);
           typingIntervalRef.current = null;
@@ -77,7 +84,7 @@ export function PtmTransitionOverlay({
         typingIntervalRef.current = null;
       }
     };
-  }, [visible, nextPlayer, displayText]);
+  }, [visible, nextPlayer, fullText]);
 
   // Space to dismiss
   useEffect(() => {
@@ -94,9 +101,14 @@ export function PtmTransitionOverlay({
 
   if (!visible || !nextPlayer) return null;
 
-  const text = displayText();
-  const shown = text.slice(0, visibleChars);
-  const isTypingDone = visibleChars >= text.length;
+  const shown = fullText.slice(0, visibleChars);
+  const isTypingDone = visibleChars >= fullText.length;
+  const prefixLen = prefixText.length;
+
+  // Determine what portion of the prefix and name is visible
+  const visiblePrefix = shown.slice(0, prefixLen);
+  const visibleName = shown.slice(prefixLen);
+  const nameStartedTyping = visibleChars > prefixLen;
 
   return (
     <div
@@ -106,7 +118,7 @@ export function PtmTransitionOverlay({
     >
       <div className="flex justify-center px-4">
         <div
-          className="px-6 py-3 rounded-2xl text-2xl md:text-3xl lg:text-4xl font-bold text-white whitespace-nowrap"
+          className="px-6 py-3 rounded-2xl text-2xl md:text-3xl lg:text-4xl font-bold whitespace-nowrap"
           style={{
             fontFamily: "'Segoe Script', 'Apple Chancery', 'Comic Sans MS', 'Dancing Script', cursive",
             textShadow: `0 0 24px ${nextPlayer.color}88, 0 2px 6px rgba(0,0,0,0.95)`,
@@ -115,7 +127,13 @@ export function PtmTransitionOverlay({
             border: `1.5px solid ${nextPlayer.color}44`,
           }}
         >
-          {shown}
+          {/* Prefix text — always white */}
+          <span className="text-white">{visiblePrefix}</span>
+          {/* Player name — colored in their player color */}
+          {nameStartedTyping && (
+            <span style={{ color: nextPlayer.color }}>{visibleName}</span>
+          )}
+          {/* Typing cursor */}
           {!isTypingDone && (
             <span
               className="inline-block w-0.5 h-6 md:h-7 bg-white/90 ml-0.5 align-middle"

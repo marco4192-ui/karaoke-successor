@@ -373,8 +373,11 @@ export function usePtmGameLogic({
   }, [pauseDialogAction, isPlaying, phase, audioRef, videoRef, isYouTube]);
 
   // ── Reset transition refs when segment changes (prevents stale state) ──
+  // CRITICAL: transitionShownRef MUST be reset so the "Pass the mic" text
+  // appears for EVERY segment boundary, not just the first one.
   useEffect(() => {
     segmentSwitchHandledRef.current = false;
+    transitionShownRef.current = false;
     // Clean up transition hide timer from previous segment
     if (transitionHideTimerRef.current) {
       clearTimeout(transitionHideTimerRef.current);

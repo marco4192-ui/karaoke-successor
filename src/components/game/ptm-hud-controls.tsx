@@ -14,6 +14,7 @@ import type { PassTheMicSettings } from '@/components/game/ptm-types';
 interface PtmHudControlsProps {
   safeSettings: PassTheMicSettings;
   isPlaying: boolean;
+  /** Legacy toggle — NOT used for the PauseButton anymore. Kept for backward compat. */
   onTogglePause: () => void;
   activeWebcamStreamsRef: React.MutableRefObject<MediaStream[]>;
 }
@@ -32,6 +33,7 @@ export function PtmHudControls({
 }: PtmHudControlsProps) {
   const [difficulty, setDifficulty] = useState<Difficulty>(safeSettings.difficulty);
   const pauseDialogAction = usePartyStore(s => s.pauseDialogAction);
+  const setPauseDialogAction = usePartyStore(s => s.setPauseDialogAction);
   const setPassTheMicSettings = usePartyStore(s => s.setPassTheMicSettings);
 
   // Webcam config state (loaded from localStorage, same as regular GameScreen)
@@ -58,6 +60,23 @@ export function PtmHudControls({
     setPassTheMicSettings({ ...safeSettings, difficulty: next });
   }, [difficulty, safeSettings, setPassTheMicSettings]);
 
+  // Handle pause: route through the universal SongPauseDialog (via party store)
+  // instead of toggling audio directly. This ensures the pause dialog appears
+  // both when clicking the PauseButton and when pressing Escape, matching
+   // the regular game screen behavior.
+  // When the user clicks Resume in the dialog, closeDialog() resets
+   // pauseDialogAction to null, which triggers the effect in ptm-game-hook.ts
+  // to resume audio playback.
+  const handlePauseButtonClick = useCallback(() => {
+    if (isPlaying) {
+      // Show the universal SongPauseDialog
+      setPauseDialogAction('song-pause');
+    } else {
+      // Resume — close the dialog and let the hook resume audio
+      setPauseDialogAction(null);
+    }
+  }, [isPlaying, setPauseDialogAction]);
+
   // Sync pause state with party store (e.g. keyboard Escape sets it)
   useEffect(() => {
     if (pauseDialogAction === 'song-pause' && isPlaying) {
@@ -74,7 +93,7 @@ export function PtmHudControls({
       <div className="fixed inset-0 z-50 pointer-events-none">
         {/* Top-left: Pause */}
         <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-auto">
-          <PauseButton isPlaying={isPlaying} onTogglePause={onTogglePause} />
+          <PauseButton isPlaying={isPlaying} onTogglePause={handlePauseButtonClick} />
         </div>
 
         {/* Top-right: WebcamQuickControls + Difficulty + Vollbild */}
