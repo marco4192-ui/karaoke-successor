@@ -28,6 +28,10 @@ const BREAKPOINTS: [number, number][] = [
 ];
 
 const GAP = 16; // gap-4 = 1rem = 16px
+// Horizontal padding inside each row grid (px-6 = 24px each side).
+// Creates a dead zone at the left/right edges where scrolling does NOT
+// trigger onMouseEnter on any SongCard, preventing accidental previews.
+const HORIZONTAL_PADDING = 48;
 
 function getColumnCount(width: number): number {
   for (const [bp, cols] of BREAKPOINTS) {
@@ -91,11 +95,13 @@ export function VirtualizedSongGrid({ songs, songCardProps, renderSongCard }: Vi
     };
   }, []);
 
-  const columns = getColumnCount(containerWidth);
+  // Use effective width (minus horizontal padding) for column count and sizing
+  const effectiveWidth = containerWidth - HORIZONTAL_PADDING;
+  const columns = getColumnCount(effectiveWidth);
   const rowCount = Math.ceil(songs.length / columns);
 
   // Calculate row height: each card = square cover (width) + info section
-  const columnWidth = (containerWidth - (columns - 1) * GAP) / columns;
+  const columnWidth = (effectiveWidth - (columns - 1) * GAP) / columns;
   const cardHeight = columnWidth + INFO_SECTION_HEIGHT;
   const rowHeight = cardHeight + GAP; // card + gap
 
@@ -144,12 +150,12 @@ export function VirtualizedSongGrid({ songs, songCardProps, renderSongCard }: Vi
           return (
             <div
               key={virtualRow.key}
-              className={`grid ${gridColsClass} gap-4`}
+              className={`grid ${gridColsClass} gap-4 px-6`}
               style={{
                 position: 'absolute',
                 top: 0,
                 left: 0,
-                width: '100%',
+                width: `${containerWidth}px`,
                 transform: `translateY(${virtualRow.start}px)`,
               }}
             >
