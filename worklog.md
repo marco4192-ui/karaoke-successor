@@ -147,3 +147,141 @@ Stage Summary:
 - Commit: f153a98 "fix: robust txt format detection for all karaoke variants"
 - Files changed: src/lib/parsers/multi-format-import.ts, src/components/import/alternate-format-tab.tsx
 - All txt karaoke formats now handled: Ultrastar (all variants), StepMania, SingStar, MIDI, KaraokeMugen
+
+---
+Task ID: batch-1
+Agent: Main Agent
+Task: Medley Contest Improvements — Batch 1 (Foundations + Bugfixes + Core)
+
+Work Log:
+- Read all required source files: medley-types.ts, medley-setup.tsx, medley-game-hook.ts, medley-game-screen.tsx, medley-game-playing.tsx, medley-game-results.tsx, medley-game-components.tsx, medley-snippet-generator.ts, party-store.ts, de.ts, en.ts, unified-party-setup.config.ts, use-multi-pitch-detector.ts
+- Added 30 new translation keys to both de.ts and en.ts under the medley key (companion, scoring, team management, dynamic difficulty, highway)
+- Feature #2 (Companion App Integration):
+  - Added input mode toggle per player (local/mobile) in medley-setup.tsx
+  - Added companion profile fetching from /api/mobile?action=getprofiles
+  - Added companion picker dropdown with connected device list
+  - Added mobileClientId storage when companion profile matches
+  - Added companion badge (📱) next to player names in team view
+  - Updated game-screen.tsx intro to show i18n companion/local mic labels
+- Feature #3 (Doppelte Songs verhindern):
+  - Rewrote song selection in medley-snippet-generator.ts with pickSongsWithDedup()
+  - When fewer unique songs exist than requested, uses all unique first, then cycles with max spacing (round-robin by least-used)
+  - Added detailed deduplication logic comments
+- Feature #4 (Pitch-Highway für Medley):
+  - Created MiniNoteHighway component (160px tall, full width)
+  - Notes scroll right-to-left based on currentTimeMs
+  - Shows ~5s lookahead, 1s lookbehind
+  - Active notes highlighted (green/purple), past notes dimmed, golden notes gold
+  - 3 pitch lane markers (low/medium/high)
+  - Per-player pitch overlay as colored dots at playhead
+  - Replaced old horizontal bars display with new highway
+- Feature #5 (Scoring-Transparenz):
+  - Added MedleyScoringEvent type to medley-types.ts
+  - Added lastScoringEvents array to game state in medley-game-hook.ts (updated every ~100ms)
+  - Added floating +points popups (green for hits, red for misses, gold for golden)
+  - Added combo display: 3x yellow, 5x orange with pulse, 10x+ red with glow "MEGA COMBO!"
+  - Added score breakdown section in medley-game-results.tsx: base points, combo bonus, accuracy%
+  - Added accuracy display to PlayerStandingRow and final results standings
+- Feature #6 (Flexibles Team-Management):
+  - Rewrote team mode layout in medley-setup.tsx with two-column Team A / Team B
+  - Added click-to-toggle between teams (Team A ↔ Team B)
+  - Added visual slot system with empty slot placeholders (dashed border)
+  - Added "Team ist voll!" error toast when target team is full
+  - Added "Teams mischen" (Shuffle Teams) button with Fisher-Yates
+  - Added "Tauschen" (Swap) mode: click two players to swap their teams
+  - Team color coding: Team A = blue, Team B = red
+- Feature #8 (Intelligente Snippet-Positionierung):
+  - Added findBestSnippetStart() helper in medley-snippet-generator.ts
+  - Added scoreSnippetStart() function scoring: note density, position (20-80% bell curve), instrumental gap penalty, intro avoidance (first 10s)
+  - Added findChorusLine() heuristic (lyric line with most notes)
+  - Replaced random start position with smart positioning when no MEDLEY tags exist
+- Feature #9 (Dynamische Schwierigkeit):
+  - Added dynamicDifficulty: boolean to MedleySettings (default false)
+  - Added toggle in setup UI with description
+  - Added getDynamicDifficulty() helper: easy (0-33%) → medium (33-66%) → hard (66-100%)
+  - Applied dynamic difficulty via multiPitch.setDifficulty() when snippet changes
+  - Used effective difficulty in scoring evaluation
+  - Added DifficultyBadge component showing current difficulty (green/yellow/red)
+  - Exposed currentDynamicDifficulty from hook to UI
+- Updated medley-game-screen.tsx to pass new props (lastScoringEvents, currentDynamicDifficulty)
+- TypeScript check passed with zero errors
+
+Stage Summary:
+- Files modified: medley-types.ts, medley-setup.tsx, medley-game-hook.ts, medley-game-screen.tsx, medley-game-playing.tsx, medley-game-results.tsx, medley-snippet-generator.ts, de.ts, en.ts
+- All 7 features implemented: #2 (Companion), #3 (Dedup), #4 (Highway), #5 (Scoring), #6 (Teams), #8 (Smart Positioning), #9 (Dynamic Difficulty)
+- Build: ✅ npx tsc --noEmit passed clean
+
+---
+Task ID: batch-2-part2
+Agent: Main Agent
+Task: Medley Contest Improvements — Batch 2 Part 2 (Features #13, #15, #17)
+
+Work Log:
+- Read all required files: medley-types.ts, medley-setup.tsx, medley-game-hook.ts, medley-game-screen.tsx, medley-game-playing.tsx, medley-game-results.tsx, medley-game-components.tsx, storage.ts, de.ts, en.ts, party-game-screens.tsx, medley-ranking.ts
+- Verified that Batch 1 already implemented most infrastructure for features #13, #15, #17
+- Feature #13 (Medley Leaderboard & Statistiken):
+  - Storage keys MEDLEY_HISTORY and MEDLEY_DAILY already existed in storage.ts
+  - medley-ranking.ts already existed with all required functions (addMedleyEntry, addDailyMedleyEntry, getMedleyTopN, getDailyMedleyTopN, getPlayerMedleyStats)
+  - LeaderboardSection component already existed in medley-game-results.tsx with daily/alltime tabs
+  - Leaderboard saving already wired in party-game-screens.tsx via onRoundComplete callback
+  - Added toast notification "Im Leaderboard gespeichert!" when MedleyFinalResults mounts with showLeaderboard
+  - Added savedToLeaderboard i18n key to both de.ts and en.ts
+- Feature #15 (Voice-Effects / Modifier):
+  - VoiceModifier type, VOICE_MODIFIERS constant, modifiersEnabled setting already existed
+  - Setup toggle for voice effects already existed
+  - Game hook already had activeModifier, modifierJustRevealed states and pickRandomModifier()
+  - Playing UI already had modifier reveal overlay and active modifier badge
+  - Fixed modifier probability from 40% (Math.random() < 0.4) to 35% (Math.random() < 0.35) per spec
+- Feature #17 (Highlight-Reel & Replay):
+  - MedleyHighlight interface and highlight tracking already existed
+  - Highlights display in round results already existed with best snippet, best combo, biggest flop
+  - ShareButton component already existed in both round and final results
+  - Replaced button state copied feedback with toast notification for "In Zwischenablage kopiert!"
+  - Fixed share text format to match spec: "🎵 Medley Contest!\n🏆 Gewinner: {name} ({score} Pkt)\n🔥 Beste Combo: {combo}x\n{App Name}"
+  - Added ofSong and comboOnSong i18n keys to both de.ts and en.ts
+- Added toast import from @/hooks/use-toast to medley-game-results.tsx
+- TypeScript check passed with zero errors
+
+Stage Summary:
+- Files modified: medley-game-hook.ts (modifier probability), medley-game-results.tsx (toast for leaderboard save, toast for share copied, share text format), de.ts (3 new keys), en.ts (3 new keys)
+- All 3 features verified complete with targeted fixes: #13 (leaderboard toast), #15 (35% modifier probability), #17 (toast share feedback + text format)
+- Build: ✅ npx tsc --noEmit passed clean
+
+---
+Task ID: batch-2-part3
+Agent: Main Agent
+Task: Medley Contest Improvements — Batch 2 Part 3 (Features #10, #16, #18)
+
+Work Log:
+- Read all required source files to verify existing implementations
+- Found that Features #10, #16, and #18 were already largely implemented in prior work, but with critical bugs
+- Feature #10 (Elimination-Variante) fixes:
+  - Added early game termination: when only 1 non-eliminated player remains after a snippet ends, immediately go to 'round-results' instead of continuing with remaining snippets
+  - Elimination logic was already working (eliminateLowestScorer after each snippet, skip eliminated in scorePlayer)
+  - Player display already had grayed-out eliminated players with 💀 badge and "X von Y übrig" counter
+  - Round results already showed elimination order and survivors
+- Feature #16 (Mystery Mode) fixes:
+  - Added genre badge to mystery reveal overlay in medley-game-playing.tsx
+  - Added dramatic mystery reveal section during transition phase in medley-game-screen.tsx showing previous song's title, artist, and genre
+  - Hid next song info in transition when mystery mode is active (shows "🎰 ???" instead)
+  - Mystery mode was already working: song info hidden during playing, revealed after snippet ends
+- Feature #18 (Team-Bonus-Mechaniken) fixes:
+  - **Critical bug fix**: teamBonusResult was always a dummy empty object in medley-game-screen.tsx — now properly uses `state.teamBonusResult` from the hook
+  - Added `teamBonusResultState` state and `syncTeamBonusResult()` helper to expose teamBonusResultRef data to UI components
+  - Added `comebackActiveTeamId` state for tracking which team has active comeback multiplier
+  - Rewrote comeback boost: split into `preCheckComeback()` (runs before last snippet starts, during transition) and `finalizeComeback()` (runs after last snippet ends)
+  - Applied 1.5x scoring multiplier in real-time during the last snippet for underdog team players (in scorePlayer)
+  - Updated synergy flash text to use `t('medley.synergyTriggered')` key ("⚡ SYNERGIE! +300")
+  - Updated comeback boost indicator to use `t('medley.comebackBoost')` key ("🔥 COMEBACK ×1.5")
+  - Updated MVP badges in results to use `t('medley.mvpAward')` key ("⭐ MVP")
+  - Added syncTeamBonusResult calls in handleRoundComplete before and after computeMVP
+- Added `synergyTriggered` translation key to both de.ts and en.ts
+- Updated `comebackBoost` translation text to include emoji and multiplier symbol
+- Added elimination mode option to unified-party-setup.config.ts play mode selector
+- TypeScript check passed with zero errors
+
+Stage Summary:
+- Files modified: medley-game-hook.ts, medley-game-screen.tsx, medley-game-playing.tsx, medley-game-results.tsx, de.ts, en.ts, unified-party-setup.config.ts
+- Bug fixes: teamBonusResult now properly propagated to results UI, comeback multiplier now applies during scoring (not just after), elimination now ends early when 1 player remains
+- Enhancements: genre badge in mystery reveal, dramatic song reveal during transition, proper i18n keys for all team bonus display text
+- Build: ✅ npx tsc --noEmit passed clean
