@@ -68,6 +68,7 @@ export const StorageKeys = {
   // --- Rate My Song ---
   RATE_MY_SONG_HISTORY: 'karaoke-rate-my-song-history',
   RATE_MY_SONG_DAILY: 'karaoke-rate-my-song-daily',
+  RATE_MY_SONG_PLAYER_STATS: 'karaoke-rms-player-stats',
 
   // --- Native Audio ---
   NATIVE_AUDIO_DEVICE: 'karaoke-native-audio-device',

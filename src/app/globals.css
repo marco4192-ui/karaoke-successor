@@ -556,3 +556,35 @@
   pointer-events: none;
   z-index: 25;
 }
+
+/* Rate my Song animations */
+@keyframes rms-confetti-fall {
+  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+@keyframes rms-score-reveal {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes rms-float-emoji {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-200px) scale(1.5); opacity: 0; }
+}
+
+@keyframes rms-hype-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 165, 0, 0.3); }
+  50% { transform: scale(1.05); box-shadow: 0 0 40px rgba(255, 165, 0, 0.6); }
+}
+
+@keyframes rms-achievement-pop {
+  0% { transform: scale(0) rotate(-10deg); }
+  50% { transform: scale(1.2) rotate(5deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.animate-rms-score-reveal { animation: rms-score-reveal 0.6s ease-out; }
+.animate-rms-hype-pulse { animation: rms-hype-pulse 1.5s ease-in-out infinite; }
+.animate-rms-achievement-pop { animation: rms-achievement-pop 0.5s ease-out; }

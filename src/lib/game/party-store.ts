@@ -20,7 +20,7 @@ import type { PassTheMicSettings } from '@/components/game/ptm-game-screen';
 import type { CompanionPlayer, CompanionRoundResult } from '@/components/game/companion-singalong-screen';
 import type { CompanionSingAlongSettings } from '@/components/game/companion-singalong-screen';
 import type { CptmPlayer, CptmSegment, CptmSettings, CptmRoundResult } from '@/components/game/cptm-types';
-import type { RateMySongSettings } from '@/components/game/rate-my-song-screen';
+import type { RateMySongSettings, RateMySongRating } from '@/components/game/rate-my-song-screen';
 
 /** Per-player result for a single Pass-the-Mic round (song). */
 export interface PassTheMicRoundResult {
@@ -123,6 +123,17 @@ export interface PartyStore {
   setRateMySongSettings: (_settings: RateMySongSettings | null) => void;
   rateMySongPlayerIds: string[];
   setRateMySongPlayerIds: (_ids: string[]) => void;
+  // Rate my Song — series, challenges, betting, reactions
+  rateMySongSeriesHistory: RateMySongRating[][];
+  addRateMySongSeriesRound: (_round: RateMySongRating[]) => void;
+  rateMySongCurrentChallenge: { id: string; icon: string; title: string; description: string } | null;
+  setRateMySongCurrentChallenge: (_challenge: { id: string; icon: string; title: string; description: string } | null) => void;
+  rateMySongBettingEntries: Record<string, { predictedWinner: string; predictedScore: number }>;
+  rateMySongLiveReactions: Array<{ emoji: string; timestamp: number; x: number; y: number }>;
+  addRateMySongLiveReaction: (_emoji: string) => void;
+  rateMySongHypeMeter: number;
+  setRateMySongHypeMeter: (_value: number) => void;
+  resetRateMySongSeries: () => void;
 
   // PTM song selection mode (how the user originally chose their song: 'random' | 'vote' | 'medley' | 'library')
   // Used to determine what happens when the user clicks "next song" after a round.
@@ -243,6 +254,28 @@ export const usePartyStore = create<PartyStore>((set) => ({
   setRateMySongSettings: (rateMySongSettings) => set({ rateMySongSettings }),
   rateMySongPlayerIds: [],
   setRateMySongPlayerIds: (rateMySongPlayerIds) => set({ rateMySongPlayerIds }),
+  // Rate my Song — series, challenges, betting, reactions
+  rateMySongSeriesHistory: [] as RateMySongRating[][],
+  addRateMySongSeriesRound: (round) => set((s) => ({ rateMySongSeriesHistory: [...s.rateMySongSeriesHistory, round] })),
+  rateMySongCurrentChallenge: null as { id: string; icon: string; title: string; description: string } | null,
+  setRateMySongCurrentChallenge: (rateMySongCurrentChallenge) => set({ rateMySongCurrentChallenge }),
+  rateMySongBettingEntries: {} as Record<string, { predictedWinner: string; predictedScore: number }>,
+  rateMySongLiveReactions: [] as Array<{ emoji: string; timestamp: number; x: number; y: number }>,
+  addRateMySongLiveReaction: (emoji) => set((s) => ({
+    rateMySongLiveReactions: [
+      ...s.rateMySongLiveReactions.slice(-49),
+      { emoji, timestamp: Date.now(), x: 20 + Math.random() * 60, y: 20 + Math.random() * 60 },
+    ],
+  })),
+  rateMySongHypeMeter: 50,
+  setRateMySongHypeMeter: (rateMySongHypeMeter) => set({ rateMySongHypeMeter }),
+  resetRateMySongSeries: () => set({
+    rateMySongSeriesHistory: [],
+    rateMySongCurrentChallenge: null,
+    rateMySongBettingEntries: {},
+    rateMySongLiveReactions: [],
+    rateMySongHypeMeter: 50,
+  }),
 
   // PTM song selection mode
   ptmSongSelection: null,
@@ -303,6 +336,11 @@ export const usePartyStore = create<PartyStore>((set) => ({
     competitiveGame: null,
     rateMySongSettings: null,
     rateMySongPlayerIds: [],
+    rateMySongSeriesHistory: [],
+    rateMySongCurrentChallenge: null,
+    rateMySongBettingEntries: {},
+    rateMySongLiveReactions: [],
+    rateMySongHypeMeter: 50,
     librarySelectedSong: null,
     selectedGameMode: null,
     unifiedSetupResult: null,

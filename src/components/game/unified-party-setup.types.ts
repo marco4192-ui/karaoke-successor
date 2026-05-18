@@ -177,6 +177,11 @@ export interface BlindModeSettings extends BaseModeSettings {
 /** Rate My Song */
 export interface RateMySongModeSettings extends BaseModeSettings {
   duration?: 'short' | 'normal';
+  seriesRounds?: 1 | 3 | 5 | 7;
+  categoriesEnabled?: boolean;
+  challengesEnabled?: boolean;
+  bettingEnabled?: boolean;
+  anonymousRating?: boolean;
 }
 
 /** Duel — no extra config settings */
