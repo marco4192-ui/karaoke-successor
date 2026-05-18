@@ -75,3 +75,32 @@ Work Log:
 Stage Summary:
 - Player name in transition overlay displays in the player's assigned color
 - Typewriter animation works correctly across both text segments
+
+---
+Task ID: 4-de-double-elimination
+Agent: main
+Task: Implement Double Elimination for Tournament Mode (Punkt 4)
+
+Work Log:
+- Analyzed current tournament.ts (single elimination only)
+- Designed full DE bracket structure: WB + LB + Grand Finals
+- LB round formulas: 2*R-2 rounds for R WB rounds
+- LB alternates between WB-drop rounds (even) and consolidation rounds (odd)
+- Grand Finals: GF1 + optional GF2 reset when LB champ wins
+- Implemented core DE logic in tournament.ts (~560 lines)
+- Added lossCount to TournamentPlayer, bracketType to TournamentMatch
+- Created dropToLosersBracket() and advanceInLosersBracket() functions
+- Updated recordMatchResult() with DE-specific routing
+- Updated getPlayableMatches() for WB/LB/GF match detection
+- Created DoubleEliminationBracketView component (WB+LB+GF side by side)
+- Created DEMatchCard component with bracket-type styling
+- Added DE translations (de.ts, en.ts)
+- Fixed type errors in battle-royale.ts, party-setup-section.tsx
+- Type check: 0 errors
+- Committed: 9bc1315, pushed to main
+
+Stage Summary:
+- Full Double Elimination implemented across 7 files (+964/-136 lines)
+- DE requires exact power-of-2 players (validated)
+- Works seamlessly with existing match flow (startMatchWithMicOverlay, handleTournamentGameEnd)
+- Hall of Fame records tournamentType correctly

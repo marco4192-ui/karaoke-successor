@@ -6,6 +6,8 @@ import {
   getPlayersByScore,
   getBattleRoyaleStats,
   updatePlayerScore,
+  getBountyMultiplier,
+  getCurrentMedleySnippet,
   BattleRoyaleGame,
   BattleRoyalePlayer,
   BattleRoyaleRound,
@@ -13,21 +15,14 @@ import {
 import { Song, Note, Difficulty } from '@/types/game';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { calculateScoringMetadata } from '@/lib/game/scoring';
-import { evaluateAndScoreTick} from '@/lib/game/party-scoring';
+import { evaluateAndScoreTick } from '@/lib/game/party-scoring';
 import { useBattleRoyaleSongMedia } from '@/hooks/use-battle-royale-song-media';
 import { useBattleRoyaleCompanionPolling } from '@/hooks/use-battle-royale-companion-polling';
 import { useBattleRoyaleRoundTimer } from '@/hooks/use-battle-royale-round-timer';
 import { useBattleRoyaleRoundHandlers } from '@/hooks/use-battle-royale-round-handlers';
 
-/**
- * Find all notes active at a given time using binary search.
- * Notes are sorted by startTime — this is O(log n + k) instead of O(n)
- * where k = number of active notes (typically 2-5).
- */
 function getActiveNotesAtTime(notes: Note[], timeMs: number): Note[] {
   if (notes.length === 0) return [];
-
-  // Binary search for the first note whose startTime + duration >= timeMs
   let lo = 0;
   let hi = notes.length;
   while (lo < hi) {
@@ -38,13 +33,10 @@ function getActiveNotesAtTime(notes: Note[], timeMs: number): Note[] {
       hi = mid;
     }
   }
-
   const result: Note[] = [];
-  // Scan forward from the found index (notes starting before or at timeMs)
-  // and collect all notes whose time window includes timeMs
   for (let i = lo; i < notes.length; i++) {
     const note = notes[i];
-    if (note.startTime > timeMs) break; // past all possible active notes
+    if (note.startTime > timeMs) break;
     if (timeMs >= note.startTime && timeMs <= note.startTime + note.duration) {
       result.push(note);
     }
@@ -68,11 +60,20 @@ interface UseBattleRoyaleGameReturn {
   currentSong: Song | null;
   currentTime: number;
   roundTimeLeft: number;
+  snippetTimeLeft: number | null; // #1 Medley: time left in current snippet
+  currentSnippetIndex: number; // #1 Medley
+  totalSnippets: number; // #1 Medley
   audioRef: React.RefObject<HTMLAudioElement | null>;
   videoRef: React.RefObject<HTMLVideoElement | null>;
   handleRoundEnd: () => void;
   handleStartRound: () => void;
+  handleVoteSubmit: (_playerId: string, _songIndex: number) => void;
+  handleStartRoundAfterVote: () => void;
+  handleGrandFinaleIntroComplete: () => void;
   setCurrentTime: (_time: number) => void;
+  previousRoundScores: Record<string, number>; // #9 Trend tracking
+  bountyPlayerId: string | null; // #6 Bounty
+  bountyMultiplier: number; // #6 Bounty
 }
 
 export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoyaleGameParams): UseBattleRoyaleGameReturn {
@@ -83,10 +84,18 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   const activePlayers = useMemo(() => getActivePlayers(game), [game]);
   const currentRound = game.rounds[game.rounds.length - 1];
 
-  // Get difficulty from game settings
-  const difficulty = game.settings.difficulty || 'medium';
+  // Use effective difficulty (may be escalated) instead of base difficulty
+  const difficulty = game.effectiveDifficulty;
+
+  // #1 Medley: current snippet info
+  const currentSnippetIndex = game.currentSnippetIndex;
+  const totalSnippets = game.medleySnippetList.length;
 
   // ── Song & Media ───────────────────────────────────────────────────
+  // Determine which song to load: medley snippet or main round song
+  const currentMedleySnippet = getCurrentMedleySnippet(game);
+  const currentRoundSongId = currentMedleySnippet?.songId ?? currentRound?.songId;
+
   const {
     currentSong,
     mediaLoaded,
@@ -96,9 +105,10 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     resolvedVideoUrlRef,
     audioHasPlayedRef,
   } = useBattleRoyaleSongMedia({
-    currentRoundSongId: currentRound?.songId,
+    currentRoundSongId,
     songs,
     gameCurrentRound: game.currentRound,
+    medleySnippetIndex: game.medleySnippetList.length > 0 ? game.currentSnippetIndex : undefined,
   });
 
   // ── Companion Pitch Polling ────────────────────────────────────────
@@ -109,23 +119,17 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
   // ── Pitch Detection (local microphone) ────────────────────────────
   const { isInitialized: pitchInitialized, pitchResult, initialize: initPitch, start: startPitch, stop: stopPitch } = usePitchDetector();
-
-  // Ref for pitch result — avoids stale closure in game loop
   const pitchResultRef = useRef(pitchResult);
   pitchResultRef.current = pitchResult;
 
   // ── Game State ─────────────────────────────────────────────────────
   const [currentTime, setCurrentTime] = useState(0);
   const gameLoopRef = useRef<number | null>(null);
-  // Throttle setCurrentTime to ~40fps (25ms) — smoother note scrolling.
-  // Scoring uses audioRef.current.currentTime directly, not the state value.
   const lastCurrentTimeUpdateRef = useRef(0);
 
-  // ── Pre-compute timing data for scoring when song is loaded ────────
+  // ── Pre-compute timing data for scoring ────────────────────────────
   const timingData = useMemo(() => {
     if (!currentSong || currentSong.lyrics.length === 0) return null;
-
-    // Create flat array of all notes
     const allNotes: Array<Note & { lineIndex: number }> = [];
     currentSong.lyrics.forEach((line, lineIndex) => {
       line.notes.forEach(note => {
@@ -133,39 +137,44 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
       });
     });
     allNotes.sort((a, b) => a.startTime - b.startTime);
-
-    // Calculate beat duration
     const beatDurationMs = currentSong.bpm ? 15000 / currentSong.bpm : 500;
-
-    // Calculate scoring metadata
     const scoringMetadata = calculateScoringMetadata(allNotes, beatDurationMs);
-
     return { allNotes, beatDuration: beatDurationMs, scoringMetadata };
   }, [currentSong]);
 
-  // Ref for timing data — placed after declaration so TS is happy
   const timingDataRef = useRef(timingData);
   timingDataRef.current = timingData;
-  // Ref for currentSong — avoids stale closure in the game loop rAF
   const currentSongRef = useRef(currentSong);
   currentSongRef.current = currentSong;
-  // Ref for difficulty — avoids stale closure in the game loop rAF
   const difficultyRef = useRef(difficulty);
   difficultyRef.current = difficulty;
 
   // ── Random song picker ─────────────────────────────────────────────
-  const getRandomSong = useCallback((): Song | null => {
+  const getRandomSong = useCallback((excludeIds?: string[]): Song | null => {
     const playableSongs = songs.filter(s =>
-      s.audioUrl || s.relativeAudioPath || s.storedMedia
+      (s.audioUrl || s.relativeAudioPath || s.storedMedia) &&
+      (!excludeIds || !excludeIds.includes(s.id))
     );
     if (playableSongs.length === 0) return null;
     return playableSongs[Math.floor(Math.random() * playableSongs.length)];
   }, [songs]);
 
-  // ── Round Handlers (start/end/elimination) ────────────────────────
+  const getRandomSongs = useCallback((count: number, excludeIds?: string[]): Song[] => {
+    const playableSongs = songs.filter(s =>
+      (s.audioUrl || s.relativeAudioPath || s.storedMedia) &&
+      (!excludeIds || !excludeIds.includes(s.id))
+    );
+    const shuffled = [...playableSongs].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, count);
+  }, [songs]);
+
+  // ── Round Handlers ────────────────────────────────────────────────
   const {
     handleRoundEnd,
     handleStartRound,
+    handleVoteSubmit,
+    handleStartRoundAfterVote,
+    handleGrandFinaleIntroComplete,
     handleRoundEndRef,
     activePlayersRef,
     gameRef,
@@ -178,38 +187,34 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     videoRef,
     audioHasPlayedRef,
     getRandomSong,
+    getRandomSongs,
     setShowElimination,
   });
 
   // ── Round Timer ────────────────────────────────────────────────────
-  const { roundTimeLeft } = useBattleRoyaleRoundTimer({
+  const { roundTimeLeft, snippetTimeLeft } = useBattleRoyaleRoundTimer({
     gameStatus: game.status,
     roundDuration: currentRound?.duration,
     gameCurrentRound: game.currentRound,
     handleRoundEndRef,
+    medleySnippetList: game.medleySnippetList,
+    currentSnippetIndex: game.currentSnippetIndex,
   });
 
   // ── Game Initialization & Playback ─────────────────────────────────
   useEffect(() => {
     if (game.status === 'playing' && mediaLoaded && currentSong) {
-      // Cancellation flag — prevents the async body from continuing after cleanup
       let cancelled = false;
-
-      // Initialize pitch detection
       const initGame = async () => {
         if (!pitchInitialized) {
           await initPitch();
         }
-        // Guard: if the effect was cleaned up while awaiting initPitch(),
-        // do NOT start pitch detection, playback, or the game loop.
         if (cancelled) return;
-
         startPitch();
 
-        // Wait for audio element to be ready before playing
         const audio = audioRef.current;
         if (audio && resolvedAudioUrlRef.current) {
-          if (audio.readyState >= 3) { // HAVE_FUTURE_DATA or higher
+          if (audio.readyState >= 3) {
             audio.play()
               .then(() => { audioHasPlayedRef.current = true; })
               // eslint-disable-next-line no-console
@@ -228,17 +233,14 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
           }
         } else {
           // eslint-disable-next-line no-console
-          console.warn('[BattleRoyale] No audio URL resolved — starting without audio');
+          console.warn('[BattleRoyale] No audio URL resolved');
         }
         if (videoRef.current && resolvedVideoUrlRef.current) {
-          // eslint-disable-next-line no-console
           videoRef.current.play().catch(e => console.error('Video play error:', e));
         }
 
-        // Start game loop for simultaneous scoring
         startGameLoopRef.current();
       };
-
       initGame();
 
       return () => {
@@ -249,15 +251,14 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         }
       };
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- refs are stable, startGameLoopRef is used via ref
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [game.status, mediaLoaded, currentSong, pitchInitialized, initPitch, startPitch, stopPitch]);
 
-  // ── Game Loop for simultaneous scoring (Champions League) ──────────
-  // Use ref to avoid forward-reference immutability error
+  // ── Game Loop for simultaneous scoring ─────────────────────────────
   const startGameLoopRef = useRef<() => void>(() => {});
 
   const startGameLoop = useCallback(() => {
-    const TICK_INTERVAL = 100; // 100ms between scoring evaluations
+    const TICK_INTERVAL = 100;
     let lastTickTime = performance.now();
 
     const gameLoop = (timestamp: number) => {
@@ -265,7 +266,6 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
       const deltaTime = timestamp - lastTickTime;
 
-      // Update current time from audio (throttled to ~40fps)
       if (audioRef.current) {
         const now = performance.now();
         if (now - lastCurrentTimeUpdateRef.current >= 25) {
@@ -274,75 +274,63 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         }
       }
 
-      // Evaluate scoring for all active players simultaneously
       const td = timingDataRef.current;
       if (deltaTime >= TICK_INTERVAL && td && currentSongRef.current) {
         lastTickTime = timestamp;
 
-        // Get the detected pitch from local microphone (via ref — avoids stale closure)
         const currentPitchResult = pitchResultRef.current;
-        const detectedPitch = currentPitchResult?.note; // MIDI note number
+        const detectedPitch = currentPitchResult?.note;
         const isSinging = currentPitchResult?.isSinging;
 
-        // Find active notes at current time
         const currentAudioTime = audioRef.current ? audioRef.current.currentTime * 1000 : currentTime;
 
-        // Accumulate all score updates into a single batch to avoid losing
-        // intermediate results when multiple players score in the same tick.
         let batchedGame = gameRef.current;
         let scoreChanged = false;
 
         const activeNotes = getActiveNotesAtTime(td.allNotes, currentAudioTime);
-
-        // Only use the FIRST active note for scoring to prevent score inflation
-        // when multiple notes overlap (e.g., duet sections). Each player should
-        // only be scored once per tick against the best matching note.
         const activeNote = activeNotes.length > 0 ? activeNotes[0] : null;
 
         if (activeNote) {
-          // Pre-filter active players once per tick (not per iteration)
           const micPlayers = activePlayersRef.current.filter(p => p.playerType === 'microphone' && !p.eliminated);
           const companionPlayers = activePlayersRef.current.filter(p => p.playerType === 'companion' && !p.eliminated);
 
-          // Build O(1) lookup map for combo resets — avoids .find() per miss
           const comboMap = new Map(batchedGame.players.map(p => [p.id, p.currentCombo]));
 
-          // Score all active MICROPHONE players (local mic, shared pitch)
-          // Skip scoring if vocal detection classifies input as humming/noise
+          // Score all active MICROPHONE players (shared pitch)
           for (const player of micPlayers) {
-            if (isSinging === false) continue; // Humming/noise detected
-            // Skip scoring entirely when no pitch is detected - passing MIDI 0
-            // would cause false misses and incorrect combo resets
+            if (isSinging === false) continue;
             if (detectedPitch == null) continue;
+
             const tick = evaluateAndScoreTick(detectedPitch, activeNote, difficultyRef.current, td.scoringMetadata);
 
             if (tick.hit) {
+              // #6 Bounty: Apply multiplier for non-bounty players
+              const bountyMult = getBountyMultiplier(batchedGame, player.id);
+              const adjustedPoints = Math.round(tick.points * bountyMult);
               batchedGame = updatePlayerScore(
                 batchedGame,
                 player.id,
-                tick.points,
+                adjustedPoints,
                 tick.accuracy,
                 1, 0, 1
               );
               scoreChanged = true;
             } else {
-              // Miss: reset combo (but don't inflate notesMissed per tick)
               const currentCombo = comboMap.get(player.id) || 0;
               if (currentCombo > 0) {
                 batchedGame = updatePlayerScore(
                   batchedGame,
                   player.id,
                   0, 0, 0, 0,
-                  -currentCombo // Reset combo to 0
+                  -currentCombo
                 );
                 scoreChanged = true;
               }
             }
           }
 
-          // Score all active COMPANION players (pitch from their phones)
+          // Score all active COMPANION players
           for (const player of companionPlayers) {
-            // Look up companion's submitted pitch from cache
             const cachedPitch = player.connectionCode
               ? companionPitchCacheRef.current.get(player.connectionCode)
               : null;
@@ -351,23 +339,25 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
               const tick = evaluateAndScoreTick(cachedPitch.note, activeNote, difficultyRef.current, td.scoringMetadata);
 
               if (tick.hit) {
+                // #6 Bounty: Apply multiplier for non-bounty players
+                const bountyMult = getBountyMultiplier(batchedGame, player.id);
+                const adjustedPoints = Math.round(tick.points * bountyMult);
                 batchedGame = updatePlayerScore(
                   batchedGame,
                   player.id,
-                  tick.points,
+                  adjustedPoints,
                   tick.accuracy,
                   1, 0, 1
                 );
                 scoreChanged = true;
               } else {
-                // Miss: reset combo (but don't inflate notesMissed per tick)
                 const currentCombo = comboMap.get(player.id) || 0;
                 if (currentCombo > 0) {
                   batchedGame = updatePlayerScore(
                     batchedGame,
                     player.id,
                     0, 0, 0, 0,
-                    -currentCombo // Reset combo to 0
+                    -currentCombo
                   );
                   scoreChanged = true;
                 }
@@ -376,7 +366,6 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
           }
         }
 
-        // Single state update per tick — only when scores actually changed
         if (scoreChanged) {
           onUpdateGame(batchedGame);
         }
@@ -386,9 +375,8 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     };
 
     gameLoopRef.current = requestAnimationFrame(gameLoop);
-  }, []); // refs only — function reads all state via refs
+  }, []);
 
-  // Keep ref up-to-date for use in effect
   useEffect(() => { startGameLoopRef.current = startGameLoop; }, [startGameLoop]);
 
   return {
@@ -401,10 +389,19 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     currentSong,
     currentTime,
     roundTimeLeft,
+    snippetTimeLeft,
+    currentSnippetIndex,
+    totalSnippets,
     audioRef,
     videoRef,
     handleRoundEnd,
     handleStartRound,
+    handleVoteSubmit,
+    handleStartRoundAfterVote,
+    handleGrandFinaleIntroComplete,
     setCurrentTime,
+    previousRoundScores: game.previousRoundScores,
+    bountyPlayerId: game.bountyPlayerId,
+    bountyMultiplier: game.settings.bountyMultiplier,
   };
 }

@@ -1,43 +1,51 @@
 'use client';
 
-import { useState, useEffect, useRef} from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { MedleySnippet } from '@/lib/game/battle-royale';
 
 interface UseBattleRoyaleRoundTimerParams {
   gameStatus: string;
   roundDuration: number | undefined;
-  /** Included in effect deps to restart timer when round changes */
   gameCurrentRound: number;
-  /** Ref to the latest handleRoundEnd callback — avoids stale closure in interval */
   handleRoundEndRef: React.RefObject<() => void>;
+  // #1 Medley support
+  medleySnippetList: MedleySnippet[];
+  currentSnippetIndex: number;
 }
 
 interface UseBattleRoyaleRoundTimerReturn {
   roundTimeLeft: number;
+  snippetTimeLeft: number | null; // Time left in current medley snippet, null if not medley
 }
 
 /**
  * Counts down the round timer and triggers auto-elimination when time runs out.
- * Uses a ref for the end callback to avoid stale closures in the setInterval timer.
+ * Supports medley mode with per-snippet countdowns and snippet transition triggers.
  */
 export function useBattleRoyaleRoundTimer({
   gameStatus,
   roundDuration,
   gameCurrentRound: _gameCurrentRound,
   handleRoundEndRef,
+  medleySnippetList,
+  currentSnippetIndex,
 }: UseBattleRoyaleRoundTimerParams): UseBattleRoyaleRoundTimerReturn {
   const [roundTimeLeft, setRoundTimeLeft] = useState(roundDuration || 0);
+  const [snippetTimeLeft, setSnippetTimeLeft] = useState<number | null>(null);
 
-  // Guards against spurious auto-elimination when a new round starts.
-  // Without this, React batching can cause the auto-elimination effect to
-  // fire with the stale roundTimeLeft===0 from the previous round before
-  // the timer-reset effect has a chance to set the new duration.
   const skipAutoElimRef = useRef(false);
 
+  // Calculate snippet duration if in medley mode
+  const isMedley = medleySnippetList.length > 1;
+  const snippetDuration = isMedley
+    ? medleySnippetList[currentSnippetIndex]?.duration ?? null
+    : null;
+
+  // Main timer: countdown round time
   useEffect(() => {
     if (gameStatus === 'playing' && roundDuration) {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
       setRoundTimeLeft(roundDuration);
-      skipAutoElimRef.current = true; // suppress auto-elim on this render
+      skipAutoElimRef.current = true;
 
       const interval = setInterval(() => {
         setRoundTimeLeft(prev => {
@@ -53,10 +61,29 @@ export function useBattleRoyaleRoundTimer({
     }
   }, [gameStatus, roundDuration, _gameCurrentRound]);
 
-  // Trigger auto-elimination when the timer reaches zero.
-  // Kept separate from the setRoundTimeLeft updater to avoid
-  // side effects inside a React state updater function, which
-  // can be called multiple times in Concurrent Mode.
+  // Medley snippet timer: countdown within each snippet
+  useEffect(() => {
+    if (!isMedley || !snippetDuration || gameStatus !== 'playing') {
+      setSnippetTimeLeft(null);
+      return;
+    }
+
+    setSnippetTimeLeft(snippetDuration);
+
+    const interval = setInterval(() => {
+      setSnippetTimeLeft(prev => {
+        if (prev === null || prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [gameStatus, snippetDuration, currentSnippetIndex, isMedley]);
+
+  // Trigger auto-elimination when round timer reaches zero
   useEffect(() => {
     if (gameStatus === 'playing' && roundTimeLeft === 0 && roundDuration !== undefined && roundDuration > 0) {
       if (skipAutoElimRef.current) {
@@ -67,5 +94,5 @@ export function useBattleRoyaleRoundTimer({
     }
   }, [gameStatus, roundTimeLeft, roundDuration, handleRoundEndRef]);
 
-  return { roundTimeLeft };
+  return { roundTimeLeft, snippetTimeLeft };
 }

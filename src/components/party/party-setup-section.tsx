@@ -309,6 +309,16 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   medleySnippets: 3,
                   difficulty: result.difficulty,
                   eliminationAnimation: true,
+                  songSelection: (s.songSelection as 'random' | 'vote') || 'random',
+                  noRepeatProtection: s.noRepeatProtection ?? true,
+                  noRepeatCount: 10,
+                  grandFinaleBestOf: (s.grandFinaleBestOf as 1 | 3 | 5) || 1,
+                  bountyEnabled: s.bountyEnabled ?? true,
+                  bountyMultiplier: s.bountyMultiplier || 1.5,
+                  escalatingDifficulty: s.escalatingDifficulty || false,
+                  shrinkingTimer: s.shrinkingTimer || false,
+                  shrinkFactor: s.shrinkFactor || 5,
+                  minRoundDuration: s.minRoundDuration || 30,
                 };
                 try {
                   const game = createBattleRoyale(mappedPlayers, brSettings, filteredSongs.map(s => s.id));

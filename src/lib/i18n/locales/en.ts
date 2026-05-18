@@ -486,7 +486,76 @@ export const enTranslations = {
       returnToMenu: '🏠 Return to Menu',
       eliminationOrder: 'Elimination Order',
       noLyrics: 'No lyrics',
-      player: 'Player {n}'
+      player: 'Player {n}',
+      // #2 Song Voting
+      voteTitle: '🗳️ Vote for the Next Song!',
+      voteSubtitle: 'All players choose which song to sing',
+      voted: 'voted',
+      votes: 'votes',
+      skipVoting: 'Skip voting → random song',
+      leading: 'Leading',
+      winningSong: 'Winning Song!',
+      songSelectionLabel: 'Song Selection',
+      songSelectionRandom: 'Random',
+      songSelectionVote: 'Vote',
+      // #3 No-Repeat
+      noRepeatProtection: 'No-Repeat Protection',
+      noRepeatDesc: 'Songs won\'t repeat within the last {n} songs',
+      noRepeatCount: 'Remember last {n} songs',
+      // #4 Grand Finale
+      grandFinale: 'THE FINAL TWO',
+      grandFinaleRound: 'Final Round {n}',
+      bestOf: 'Best of {n}',
+      firstTo: 'First to {n}',
+      normalFinal: 'Normal Final',
+      startFinalRound: '🏆 Start Final Round {n}',
+      roundWinner: 'ROUND WINNER!',
+      roundScore: 'Round Score: {n}',
+      grandFinaleScore: 'Grand Finale Score',
+      // #6 Bounty
+      bountySystem: 'Bounty System',
+      bountyDesc: 'Non-leaders get ×{n} score multiplier',
+      bountyActive: 'Bounty Active',
+      bountyMultiplier: 'Bounty Multiplier',
+      bountyMultiplierLabel: 'Bounty Multiplier: ×{n}',
+      bountyClaimed: '🎯 Bounty Claimed!',
+      bountyMultiplierApplied: 'bonus applied',
+      // #7 Escalating Difficulty
+      escalatingDifficulty: 'Escalating Difficulty',
+      escalatingDesc: 'Difficulty increases every 3 rounds',
+      // #8 Shrinking Timer
+      shrinkingTimer: 'Shrinking Timer',
+      shrinkingDesc: 'Rounds get {n}s shorter each round',
+      shrinkFactorLabel: 'Shrink Factor: {n}s per round',
+      minDurationLabel: 'Min Round Duration: {n}s',
+      // #9 Trend
+      // (handled in code, no specific UI text needed)
+      // #10 Elimination Camera
+      // (handled via CSS, no specific UI text needed)
+      // #11 Spectator
+      spectatorLounge: 'Spectator Lounge',
+      spectatorDesc: 'Eliminated players predict who will be eliminated next round',
+      // #12 Statistics & Hall of Fame
+      showStats: '📊 Statistics',
+      hideStats: 'Hide Stats',
+      showHallOfFame: '🏆 Hall of Fame',
+      hideHallOfFame: 'Hide Hall of Fame',
+      gameStatistics: 'Game Statistics',
+      highestCombo: 'Highest Combo',
+      longestSurvival: 'Longest Survival (Rounds)',
+      bestRoundScore: 'Best Round Score',
+      totalNotesHit: 'Total Notes Hit',
+      misses: 'misses',
+      roundHighlights: 'Round Highlights',
+      eliminatedShort: 'eliminated',
+      finalRound: 'Final Round',
+      hallOfFame: 'Hall of Fame',
+      noHallOfFame: 'No entries yet. Be the first champion!',
+      wins: 'wins',
+      games: 'games',
+      avgSurvival: 'Avg Survival',
+      skip: 'Skip',
+      advancedSettings: 'Advanced Settings'
     },
     medley: {
       setupTitle: '🎵 Medley Contest',

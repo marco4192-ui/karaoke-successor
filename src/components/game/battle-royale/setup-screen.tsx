@@ -29,18 +29,40 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
   const { t } = useTranslation();
   const [micPlayers, setMicPlayers] = useState<string[]>([]);
   const [companionPlayers, setCompanionPlayers] = useState<string[]>([]);
-  const [roundDuration, setRoundDuration] = useState(60);
-  const [finalRoundDuration, setFinalRoundDuration] = useState(120);
-  const [medleyMode, setMedleyMode] = useState(false);
+
+  // Core settings
+  const [roundDuration, setRoundDuration] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.roundDuration);
+  const [finalRoundDuration, setFinalRoundDuration] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.finalRoundDuration);
+  const [medleyMode, setMedleyMode] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.medleyMode);
   const [error, setError] = useState<string | null>(null);
 
-  // Filter to only show active profiles (isActive === true or undefined for backwards compatibility)
-  const activeProfiles = useMemo(() => 
+  // #2 Song selection
+  const [songSelection, setSongSelection] = useState<'random' | 'vote'>(DEFAULT_BATTLE_ROYALE_SETTINGS.songSelection);
+
+  // #3 No-repeat protection
+  const [noRepeatProtection, setNoRepeatProtection] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.noRepeatProtection);
+  const [noRepeatCount, setNoRepeatCount] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.noRepeatCount);
+
+  // #4 Grand Finale
+  const [grandFinaleBestOf, setGrandFinaleBestOf] = useState<1 | 3 | 5>(DEFAULT_BATTLE_ROYALE_SETTINGS.grandFinaleBestOf);
+
+  // #6 Bounty
+  const [bountyEnabled, setBountyEnabled] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.bountyEnabled);
+  const [bountyMultiplier, setBountyMultiplier] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.bountyMultiplier);
+
+  // #7 Dynamic difficulty
+  const [escalatingDifficulty, setEscalatingDifficulty] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.escalatingDifficulty);
+
+  // #8 Shrinking timer
+  const [shrinkingTimer, setShrinkingTimer] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.shrinkingTimer);
+  const [shrinkFactor, setShrinkFactor] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.shrinkFactor);
+  const [minRoundDuration, setMinRoundDuration] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.minRoundDuration);
+
+  const activeProfiles = useMemo(() =>
     profiles.filter(p => p.isActive !== false),
     [profiles]
   );
 
-  // Use global difficulty from store instead of local state
   const globalDifficulty = useGameStore((state) => state.gameState.difficulty);
   const setGlobalDifficulty = useGameStore((state) => state.setDifficulty);
   const difficulty = globalDifficulty;
@@ -48,8 +70,6 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
   const totalPlayers = micPlayers.length + companionPlayers.length;
 
   const toggleMicPlayer = (playerId: string) => {
-    // H12: Don't call setState inside setState updater. Instead, compute the new
-    // companion players list here and set both states sequentially.
     if (micPlayers.includes(playerId)) {
       setMicPlayers(prev => prev.filter(id => id !== playerId));
       return;
@@ -58,15 +78,12 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       setError(t('battleRoyale.errorMaxLocalMic').replace('{n}', String(MAX_LOCAL_MIC_PLAYERS)));
       return;
     }
-    // Remove from companion if present
     setCompanionPlayers(cp => cp.filter(id => id !== playerId));
     setError(null);
     setMicPlayers(prev => [...prev, playerId]);
   };
 
   const toggleCompanionPlayer = (playerId: string) => {
-    // H11: Calculate total using micPlayers.length + prev.length inside the updater
-    // to avoid stale totalPlayers value.
     if (companionPlayers.includes(playerId)) {
       setCompanionPlayers(prev => prev.filter(id => id !== playerId));
       return;
@@ -75,12 +92,10 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       setError(t('battleRoyale.errorMaxCompanion').replace('{n}', String(MAX_COMPANION_PLAYERS)));
       return;
     }
-    // Check total limit using current micPlayers + new companion count
     if (micPlayers.length + companionPlayers.length >= MAX_BATTLE_ROYALE_PLAYERS) {
       setError(t('battleRoyale.errorMaxTotal').replace('{n}', String(MAX_BATTLE_ROYALE_PLAYERS)));
       return;
     }
-    // Remove from mic if present
     setMicPlayers(mp => mp.filter(id => id !== playerId));
     setError(null);
     setCompanionPlayers(prev => [...prev, playerId]);
@@ -100,7 +115,6 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       playerType: PlayerType;
     }> = [];
 
-    // Add microphone players
     micPlayers.forEach((id) => {
       const profile = profiles.find(p => p.id === id);
       players.push({
@@ -112,7 +126,6 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       });
     });
 
-    // Add companion players
     companionPlayers.forEach((id) => {
       const profile = profiles.find(p => p.id === id);
       players.push({
@@ -130,6 +143,16 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       finalRoundDuration,
       medleyMode,
       difficulty,
+      songSelection,
+      noRepeatProtection,
+      noRepeatCount,
+      grandFinaleBestOf,
+      bountyEnabled,
+      bountyMultiplier,
+      escalatingDifficulty,
+      shrinkingTimer,
+      shrinkFactor,
+      minRoundDuration,
     };
 
     const songIds = songs.map(s => s.id);
@@ -180,8 +203,8 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
         </div>
       )}
 
-      {/* Game Settings */}
-      <Card className="bg-white/5 border-white/10 mb-6">
+      {/* ── Core Game Settings ── */}
+      <Card className="bg-white/5 border-white/10 mb-4">
         <CardHeader>
           <CardTitle>{t('battleRoyale.gameSettings')}</CardTitle>
         </CardHeader>
@@ -218,6 +241,27 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
             />
           </div>
 
+          {/* #2 Song Selection */}
+          <div>
+            <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.songSelectionLabel')}</label>
+            <div className="flex gap-2">
+              <Button
+                variant={songSelection === 'random' ? 'default' : 'outline'}
+                onClick={() => setSongSelection('random')}
+                className={songSelection === 'random' ? 'bg-purple-500 hover:bg-purple-600' : 'border-white/20'}
+              >
+                🎲 {t('battleRoyale.songSelectionRandom')}
+              </Button>
+              <Button
+                variant={songSelection === 'vote' ? 'default' : 'outline'}
+                onClick={() => setSongSelection('vote')}
+                className={songSelection === 'vote' ? 'bg-amber-500 hover:bg-amber-600' : 'border-white/20'}
+              >
+                🗳️ {t('battleRoyale.songSelectionVote')}
+              </Button>
+            </div>
+          </div>
+
           {/* Medley Mode */}
           <div className="flex items-center justify-between">
             <div>
@@ -237,14 +281,14 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
           <div>
             <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.difficulty')}</label>
             <div className="flex gap-2">
-              {['easy', 'medium', 'hard'].map(diff => (
+              {(['easy', 'medium', 'hard'] as Difficulty[]).map(diff => (
                 <Button
                   key={diff}
                   variant={difficulty === diff ? 'default' : 'outline'}
-                  onClick={() => setGlobalDifficulty(diff as Difficulty)}
+                  onClick={() => setGlobalDifficulty(diff)}
                   className={difficulty === diff ? 'bg-red-500 hover:bg-red-600' : 'border-white/20'}
                 >
-                  {{easy: t('song.easy'), medium: t('song.medium'), hard: t('song.hard')}[diff] as string}
+                  {{ easy: t('song.easy'), medium: t('song.medium'), hard: t('song.hard') }[diff] as string}
                 </Button>
               ))}
             </div>
@@ -252,7 +296,151 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
         </CardContent>
       </Card>
 
-      {/* Player Selection - Two Columns */}
+      {/* ── Advanced Settings ── */}
+      <Card className="bg-white/5 border-white/10 mb-4">
+        <CardHeader>
+          <CardTitle>{t('battleRoyale.advancedSettings')}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* #3 No-Repeat Protection */}
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="font-medium">{t('battleRoyale.noRepeatProtection')}</label>
+              <p className="text-sm text-white/60">{t('battleRoyale.noRepeatDesc').replace('{n}', String(noRepeatCount))}</p>
+            </div>
+            <Button
+              variant={noRepeatProtection ? 'default' : 'outline'}
+              onClick={() => setNoRepeatProtection(!noRepeatProtection)}
+              className={noRepeatProtection ? 'bg-green-500 hover:bg-green-600' : 'border-white/20'}
+            >
+              {noRepeatProtection ? t('battleRoyale.on') : t('battleRoyale.off')}
+            </Button>
+          </div>
+          {noRepeatProtection && (
+            <div>
+              <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.noRepeatCount').replace('{n}', String(noRepeatCount))}</label>
+              <input
+                type="range"
+                min={3}
+                max={30}
+                step={1}
+                value={noRepeatCount}
+                onChange={(e) => setNoRepeatCount(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
+          )}
+
+          {/* #4 Grand Finale */}
+          <div>
+            <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.grandFinaleLabel')}</label>
+            <div className="flex gap-2">
+              {([1, 3, 5] as const).map(bo => (
+                <Button
+                  key={bo}
+                  variant={grandFinaleBestOf === bo ? 'default' : 'outline'}
+                  onClick={() => setGrandFinaleBestOf(bo)}
+                  className={grandFinaleBestOf === bo ? 'bg-amber-500 hover:bg-amber-600' : 'border-white/20'}
+                >
+                  {bo === 1
+                    ? t('battleRoyale.normalFinal')
+                    : t('battleRoyale.bestOf').replace('{n}', String(bo))
+                  }
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* #6 Bounty System */}
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="font-medium">{t('battleRoyale.bountySystem')}</label>
+              <p className="text-sm text-white/60">{t('battleRoyale.bountyDesc')}</p>
+            </div>
+            <Button
+              variant={bountyEnabled ? 'default' : 'outline'}
+              onClick={() => setBountyEnabled(!bountyEnabled)}
+              className={bountyEnabled ? 'bg-amber-500 hover:bg-amber-600' : 'border-white/20'}
+            >
+              {bountyEnabled ? t('battleRoyale.on') : t('battleRoyale.off')}
+            </Button>
+          </div>
+          {bountyEnabled && (
+            <div>
+              <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.bountyMultiplierLabel').replace('{n}', String(bountyMultiplier))}</label>
+              <input
+                type="range"
+                min={1.2}
+                max={3}
+                step={0.1}
+                value={bountyMultiplier}
+                onChange={(e) => setBountyMultiplier(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
+          )}
+
+          {/* #7 Escalating Difficulty */}
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="font-medium">{t('battleRoyale.escalatingDifficulty')}</label>
+              <p className="text-sm text-white/60">{t('battleRoyale.escalatingDesc')}</p>
+            </div>
+            <Button
+              variant={escalatingDifficulty ? 'default' : 'outline'}
+              onClick={() => setEscalatingDifficulty(!escalatingDifficulty)}
+              className={escalatingDifficulty ? 'bg-green-500 hover:bg-green-600' : 'border-white/20'}
+            >
+              {escalatingDifficulty ? t('battleRoyale.on') : t('battleRoyale.off')}
+            </Button>
+          </div>
+
+          {/* #8 Shrinking Timer */}
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="font-medium">{t('battleRoyale.shrinkingTimer')}</label>
+              <p className="text-sm text-white/60">{t('battleRoyale.shrinkingDesc').replace('{n}', String(shrinkFactor))}</p>
+            </div>
+            <Button
+              variant={shrinkingTimer ? 'default' : 'outline'}
+              onClick={() => setShrinkingTimer(!shrinkingTimer)}
+              className={shrinkingTimer ? 'bg-orange-500 hover:bg-orange-600' : 'border-white/20'}
+            >
+              {shrinkingTimer ? t('battleRoyale.on') : t('battleRoyale.off')}
+            </Button>
+          </div>
+          {shrinkingTimer && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.shrinkFactorLabel').replace('{n}', String(shrinkFactor))}</label>
+                <input
+                  type="range"
+                  min={2}
+                  max={15}
+                  step={1}
+                  value={shrinkFactor}
+                  onChange={(e) => setShrinkFactor(Number(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.minDurationLabel').replace('{n}', String(minRoundDuration))}</label>
+                <input
+                  type="range"
+                  min={15}
+                  max={60}
+                  step={5}
+                  value={minRoundDuration}
+                  onChange={(e) => setMinRoundDuration(Number(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Player Selection */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {/* Local Microphone Players */}
         <Card className="bg-white/5 border-white/10">
@@ -276,10 +464,10 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
                     key={profile.id}
                     onClick={() => !isCompanion && toggleMicPlayer(profile.id)}
                     className={`p-3 rounded-lg cursor-pointer transition-all ${
-                      isCompanion 
-                        ? 'opacity-30 cursor-not-allowed' 
-                        : isSelected 
-                          ? 'bg-gradient-to-br from-red-500/30 to-pink-500/30 border-2 border-red-500' 
+                      isCompanion
+                        ? 'opacity-30 cursor-not-allowed'
+                        : isSelected
+                          ? 'bg-gradient-to-br from-red-500/30 to-pink-500/30 border-2 border-red-500'
                           : 'bg-white/5 border border-white/10 hover:bg-white/10'
                     }`}
                   >
@@ -287,7 +475,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
                       {profile.avatar ? (
                         <img src={profile.avatar} alt={profile.name} className="w-8 h-8 rounded-full object-cover" />
                       ) : (
-                        <div 
+                        <div
                           className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
                           style={{ backgroundColor: profile.color }}
                         >
@@ -326,10 +514,10 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
                     key={profile.id}
                     onClick={() => !isMic && toggleCompanionPlayer(profile.id)}
                     className={`p-3 rounded-lg cursor-pointer transition-all ${
-                      isMic 
-                        ? 'opacity-30 cursor-not-allowed' 
-                        : isSelected 
-                          ? 'bg-gradient-to-br from-purple-500/30 to-indigo-500/30 border-2 border-purple-500' 
+                      isMic
+                        ? 'opacity-30 cursor-not-allowed'
+                        : isSelected
+                          ? 'bg-gradient-to-br from-purple-500/30 to-indigo-500/30 border-2 border-purple-500'
                           : 'bg-white/5 border border-white/10 hover:bg-white/10'
                     }`}
                   >
@@ -337,7 +525,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
                       {profile.avatar ? (
                         <img src={profile.avatar} alt={profile.name} className="w-8 h-8 rounded-full object-cover" />
                       ) : (
-                        <div 
+                        <div
                           className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
                           style={{ backgroundColor: profile.color }}
                         >

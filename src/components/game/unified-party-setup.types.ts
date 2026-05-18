@@ -146,6 +146,15 @@ export interface BattleRoyaleModeSettings extends BaseModeSettings {
   roundDuration?: number;
   finalRoundDuration?: number;
   medleyMode?: boolean;
+  songSelection?: 'random' | 'vote';
+  noRepeatProtection?: boolean;
+  grandFinaleBestOf?: 1 | 3 | 5;
+  bountyEnabled?: boolean;
+  bountyMultiplier?: number;
+  escalatingDifficulty?: boolean;
+  shrinkingTimer?: boolean;
+  shrinkFactor?: number;
+  minRoundDuration?: number;
 }
 
 /** Missing Words */
