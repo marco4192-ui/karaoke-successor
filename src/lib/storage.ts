@@ -80,6 +80,10 @@ export const StorageKeys = {
   // --- Webcam ---
   WEBCAM_CONFIG: 'karaoke-webcam-config',
 
+  // --- Medley Contest ---
+  MEDLEY_HISTORY: 'karaoke-medley-history',
+  MEDLEY_DAILY: 'karaoke-medley-daily',
+
   // --- Mobile / Companion ---
   CLIENT_ID: 'karaoke-client-id',
   MOBILE_PROFILE: 'karaoke-mobile-profile',

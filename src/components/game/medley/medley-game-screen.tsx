@@ -49,6 +49,7 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
     playersDisplay, multiPitch,
     snippetProgress, totalProgress, currentMatchup, currentLyricLine,
     isTeam,
+    lastScoringEvents, currentDynamicDifficulty,
     handleStart, handleEndEarly, handleRoundComplete, handleShowFinalResults,
   } = state;
 
@@ -70,6 +71,7 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
           <p className="text-white/60 mb-6">
             {medleySongs.length} {t('medley.snippets')} · {settings.snippetDuration}s {t('medley.proSong')}
             {isTeam && ` · ${settings.teamSize} ${t('medley.vs')} ${settings.teamSize}`}
+            {state.isEliminationMode && ` · ${t('medley.elimination')}`}
           </p>
 
           {/* Player cards */}
@@ -80,7 +82,7 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
                   <Badge className="bg-blue-500/30 text-blue-300 mb-2">{t('medley.teamA')}</Badge>
                   <div className="space-y-2">
                     {playersDisplay.filter(p => p.team === 0).map(p => (
-                      <PlayerIntroCard key={p.id} player={p} inputLabel={p.inputType === 'local' ? (p.micName || 'Mic') : 'Companion'} />
+                      <PlayerIntroCard key={p.id} player={p} inputLabel={p.inputType === 'local' ? (p.micName || t('medley.localMic')) : t('medley.companionMode')} />
                     ))}
                   </div>
                 </div>
@@ -88,7 +90,7 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
                   <Badge className="bg-red-500/30 text-red-300 mb-2">{t('medley.teamB')}</Badge>
                   <div className="space-y-2">
                     {playersDisplay.filter(p => p.team === 1).map(p => (
-                      <PlayerIntroCard key={p.id} player={p} inputLabel={p.inputType === 'local' ? (p.micName || 'Mic') : 'Companion'} />
+                      <PlayerIntroCard key={p.id} player={p} inputLabel={p.inputType === 'local' ? (p.micName || t('medley.localMic')) : t('medley.companionMode')} />
                     ))}
                   </div>
                 </div>
@@ -146,6 +148,24 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
           isTeam={isTeam}
           multiPitch={multiPitch}
           handleEndEarly={handleEndEarly}
+          lastScoringEvents={lastScoringEvents}
+          currentDynamicDifficulty={currentDynamicDifficulty}
+          // Feature #10
+          isEliminationMode={state.isEliminationMode}
+          activePlayerCount={state.activePlayerCount}
+          totalPlayerCount={state.totalPlayerCount}
+          // Feature #15
+          activeModifier={state.activeModifier}
+          modifierJustRevealed={state.modifierJustRevealed}
+          // Feature #16
+          isMysteryMode={state.isMysteryMode}
+          mysteryReveal={state.mysteryReveal}
+          mysteryRevealSong={state.mysteryRevealSong}
+          // Feature #18
+          synergyTriggered={state.synergyTriggered}
+          comebackTriggered={state.comebackTriggered}
+          comebackTeamId={state.comebackTeamId}
+          settings={settings}
         />
       )}
 
@@ -156,6 +176,20 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
           <div className="text-3xl font-bold text-pink-400 mb-2">{transitionCount}</div>
           <p className="text-white/60 mb-4">{t('medley.nextSnippet')}</p>
 
+          {/* Feature #16: Mystery reveal during transition (show previous song) */}
+          {settings.mysteryMode && currentSnippet && (
+            <div className="bg-gradient-to-b from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-xl p-6 text-center mb-4 animate-pulse">
+              <div className="text-2xl text-white/60 mb-2">{t('medley.songReveal')}</div>
+              <div className="text-3xl font-bold text-purple-400">{currentSnippet.song.title}</div>
+              <div className="text-xl text-white/80">{currentSnippet.song.artist}</div>
+              {currentSnippet.song.genre && (
+                <div className="mt-2">
+                  <span className="bg-purple-500/30 text-purple-300 text-xs px-3 py-1 rounded-full">{currentSnippet.song.genre}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Preview next players */}
           {isTeam && currentSnippetIdx + 1 < matchups.length && (() => {
             const next = matchups[currentSnippetIdx + 1];
@@ -163,8 +197,17 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
             return nextSong ? (
               <div className="bg-black/30 rounded-xl p-4 text-center">
                 <p className="text-sm text-white/40 mb-1">{t('medley.nextSong')}</p>
-                <h3 className="text-lg font-bold">{nextSong.title}</h3>
-                <p className="text-white/60 text-sm">{nextSong.artist}</p>
+                {settings.mysteryMode ? (
+                  <>
+                    <h3 className="text-lg font-bold">🎰 ???</h3>
+                    <p className="text-white/60 text-sm">{t('medley.mysterySong')}</p>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-lg font-bold">{nextSong.title}</h3>
+                    <p className="text-white/60 text-sm">{nextSong.artist}</p>
+                  </>
+                )}
                 <div className="flex items-center justify-center gap-3 mt-2">
                   <span className="text-sm" style={{ color: next.playerA.color }}>{next.playerA.name}</span>
                   <span className="text-white/40">{t('medley.vs')}</span>
@@ -177,9 +220,34 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
           {!isTeam && currentSnippetIdx + 1 < medleySongs.length && (
             <div className="bg-black/30 rounded-xl p-4 text-center">
               <p className="text-sm text-white/40 mb-1">{t('medley.nextSong')}</p>
-              <h3 className="text-lg font-bold">{medleySongs[currentSnippetIdx + 1]?.song.title}</h3>
-              <p className="text-white/60 text-sm">{medleySongs[currentSnippetIdx + 1]?.song.artist}</p>
+              {settings.mysteryMode ? (
+                <>
+                  <h3 className="text-lg font-bold">🎰 ???</h3>
+                  <p className="text-white/60 text-sm">{t('medley.mysterySong')}</p>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-lg font-bold">{medleySongs[currentSnippetIdx + 1]?.song.title}</h3>
+                  <p className="text-white/60 text-sm">{medleySongs[currentSnippetIdx + 1]?.song.artist}</p>
+                </>
+              )}
               <p className="text-xs text-white/40 mt-2">{t('medley.allPlayersContinue')}</p>
+            </div>
+          )}
+
+          {/* Feature #10: Elimination announcement in transition */}
+          {state.isEliminationMode && state.eliminationOrder.length > 0 && (
+            <div className="mt-4 bg-red-500/20 border border-red-500/30 rounded-lg px-4 py-2">
+              {(() => {
+                const lastEliminatedId = state.eliminationOrder[state.eliminationOrder.length - 1];
+                const lastEliminated = playersDisplay.find(p => p.id === lastEliminatedId);
+                if (!lastEliminated) return null;
+                return (
+                  <p className="text-red-400 font-bold">
+                    {t('medley.eliminatedPlayer').replace('{name}', lastEliminated.name)}
+                  </p>
+                );
+              })()}
             </div>
           )}
         </div>
@@ -199,6 +267,13 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
             }}
             onEndSeries={handleShowFinalResults}
             onRecordAndEnd={handleRoundComplete}
+            // Feature #10
+            eliminationOrder={state.eliminationOrder}
+            // Feature #17
+            highlights={state.highlights}
+            // Feature #18
+            teamBonusResult={settings.playMode === 'team' && settings.teamBonusesEnabled ? state.teamBonusResult : undefined}
+            medleySongs={medleySongs}
           />
         </div>
       )}
@@ -211,6 +286,14 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
             settings={settings}
             seriesHistory={seriesHistory}
             onBack={onEndGame}
+            // Feature #10
+            eliminationOrder={state.eliminationOrder}
+            // Feature #13
+            showLeaderboard={true}
+            // Feature #17
+            highlights={state.highlights}
+            // Feature #18
+            teamBonusResult={settings.playMode === 'team' && settings.teamBonusesEnabled ? state.teamBonusResult : undefined}
           />
         </div>
       )}

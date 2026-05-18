@@ -83,9 +83,10 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
     minPlayers: 2,
     maxPlayers: 4,
     settings: [
-      { key: 'playMode', label: 'Spielmodus', description: 'FFA oder Team', type: 'select', options: [
+      { key: 'playMode', label: 'Spielmodus', description: 'FFA, Team oder Elimination', type: 'select', options: [
         { value: 'ffa', label: 'FFA (Jeder gegen Jeden — 4 Spieler)' },
         { value: 'team', label: 'Team (1v1 oder 2v2)' },
+        { value: 'elimination', label: '💀 Elimination (2-4 Spieler)' },
       ], defaultValue: 'ffa' },
       { key: 'teamSize', label: 'Team-Größe', description: 'Für Team-Modus', type: 'select', options: [
         { value: 1, label: '1v1 (5 Snippets)' },

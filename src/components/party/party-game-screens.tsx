@@ -16,6 +16,7 @@ import { CptmGameScreen } from '@/components/game/cptm-singalong-screen';
 import { MedleySetupScreen } from '@/components/game/medley';
 import { MedleyGameScreen } from '@/components/game/medley/medley-game-screen';
 import type { MedleyPlayer, MedleySettings, MedleySong, SnippetMatchup} from '@/components/game/medley/medley-types';
+import { addMedleyEntry, addDailyMedleyEntry } from '@/lib/game/medley-ranking';
 import { CompetitiveSetupScreen, CompetitiveGameView } from '@/components/game/competitive-words-blind-screen';
 import { RateMySongSetupScreen, RateMySongRatingScreen, RateMySongResultsScreen, RateMySongSeriesResultsScreen } from '@/components/game/rate-my-song-screen';
 import type { RateMySongResult, RateMySongRating } from '@/components/game/rate-my-song-screen';
@@ -683,6 +684,27 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           onRoundComplete={(result, updatedPlayers) => {
             party.setMedleyPlayers(updatedPlayers);
             party.setMedleySeriesHistory([...party.medleySeriesHistory, result]);
+            // Feature #13: Save to leaderboard
+            try {
+              for (const p of updatedPlayers) {
+                const scores = result.playerScores[p.id];
+                if (!scores) continue;
+                const entry = {
+                  playerId: p.id,
+                  playerName: p.name,
+                  playerColor: p.color,
+                  score: scores.score,
+                  notesHit: scores.notesHit,
+                  notesMissed: scores.notesMissed,
+                  maxCombo: scores.maxCombo,
+                  snippetsSung: scores.snippetsSung,
+                  snippetCount: result.snippetCount,
+                  playMode: party.medleySettings?.playMode || 'ffa',
+                };
+                addMedleyEntry(entry);
+                addDailyMedleyEntry(entry);
+              }
+            } catch { /* ignore storage errors */ }
           }}
           onEndGame={() => {
             party.setMedleyPlayers([]);
