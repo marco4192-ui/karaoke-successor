@@ -11,6 +11,7 @@ import { BattleRoyaleSetupScreen, BattleRoyaleGameView } from '@/components/game
 import { PassTheMicSetupScreen } from '@/components/game/pass-the-mic-screen';
 import { PtmGameScreen } from '@/components/game/ptm-game-screen';
 import { CompanionSingAlongSetupScreen, CompanionGameView } from '@/components/game/companion-singalong-screen';
+import { CptmGameScreen } from '@/components/game/cptm-singalong-screen';
 import { MedleySetupScreen } from '@/components/game/medley';
 import { MedleyGameScreen } from '@/components/game/medley/medley-game-screen';
 import type { MedleyPlayer, MedleySettings, MedleySong, SnippetMatchup} from '@/components/game/medley/medley-types';
@@ -407,6 +408,80 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             party.setCompanionSong(null);
             party.setCompanionSettings(null);
             setScreen('home');
+          }}
+        />
+      )}
+
+      {/* Companion Pass-the-Mic Game Screen */}
+      {screen === 'companion-pass-the-mic-game' && party.cptmSong && party.cptmSegments.length > 0 && (
+        <CptmGameScreen
+          players={party.cptmPlayers}
+          song={party.cptmSong}
+          segments={party.cptmSegments}
+          settings={party.cptmSettings}
+          onUpdateGame={(players, segments) => {
+            party.setCptmPlayers(players);
+            party.setCptmSegments(segments);
+          }}
+          onEndGame={() => {
+            party.setCptmPlayers([]);
+            party.setCptmSong(null);
+            party.setCptmSegments([]);
+            party.setCptmSettings(null);
+            party.setIsSongPlaying(false);
+            if (party.cptmSeriesHistory.length === 0) {
+              setScreen('party-setup');
+            } else {
+              setScreen('library');
+            }
+          }}
+          onNavigate={async (targetScreen) => {
+            // Handle next-song navigation (same pattern as PtM)
+            if (targetScreen === 'ptm-next-random' || targetScreen === 'ptm-next-medley') {
+              setPtmNextLoading(true);
+              try {
+                const playerCount = party.cptmPlayers.length || 2;
+                const segDur = party.cptmSettings?.segmentDuration;
+                const action = await preparePtmNextSong(
+                  targetScreen === 'ptm-next-random' ? 'random' : 'medley',
+                  playerCount,
+                  segDur,
+                );
+                if (action.mode === 'random') {
+                  party.setCptmSegments(action.result.segments);
+                  party.setCptmSong(action.result.song);
+                  party.setIsSongPlaying(false);
+                  setScreen('companion-pass-the-mic-game');
+                } else if (action.mode === 'medley') {
+                  party.setPtmMedleySnippets(action.result.medleySnippets);
+                  party.setCptmSegments(action.result.segments);
+                  party.setCptmSong(action.result.song);
+                  party.setIsSongPlaying(false);
+                  setScreen('companion-pass-the-mic-game');
+                } else {
+                  setScreen('library');
+                }
+              } catch (err) {
+                console.error('[CPtM] Failed to prepare next song:', err);
+                toast({ title: 'Fehler', description: 'Nächstes Lied konnte nicht geladen werden.', variant: 'destructive' });
+                setScreen('library');
+              } finally {
+                setPtmNextLoading(false);
+              }
+            } else if (targetScreen === 'song-voting') {
+              const { filterSongs } = await import('@/lib/game/song-library');
+              const songs = getNonDuetSongs();
+              const filters = party.unifiedSetupResult?.settings;
+              const filtered = filterSongs(songs, filters?.filterGenre ?? 'all', filters?.filterLanguage ?? 'all', filters?.filterCombined ?? true);
+              const suggested = [...filtered].sort(() => Math.random() - 0.5).slice(0, 3);
+              party.setVotingSongs(suggested);
+              setScreen('song-voting');
+            } else {
+              setScreen(targetScreen as Screen);
+            }
+          }}
+          onPause={() => {
+            party.setPauseDialogAction('song-pause');
           }}
         />
       )}

@@ -114,6 +114,13 @@ export interface CompanionSingAlongSettings extends BaseModeSettings {
   blinkWarning?: number;
 }
 
+/** Companion Pass-the-Mic */
+export interface CompanionPassTheMicSettings extends BaseModeSettings {
+  minTurnDuration?: number;
+  maxTurnDuration?: number;
+  blinkWarning?: number;
+}
+
 /** Medley Contest */
 export interface MedleyModeSettings extends BaseModeSettings {
   playMode?: 'ffa' | 'team';
@@ -183,7 +190,8 @@ export type GameModeSettings =
   | DuelModeSettings
   | StandardModeSettings
   | DuetModeSettings
-  | OnlineModeSettings;
+  | OnlineModeSettings
+  | CompanionPassTheMicSettings;
 
 /** Discriminated union: maps each GameMode to its typed settings */
 export interface GameModeSettingsMap {
@@ -199,6 +207,7 @@ export interface GameModeSettingsMap {
   'duel': DuelModeSettings;
   'duet': DuetModeSettings;
   'online': OnlineModeSettings;
+  'companion-pass-the-mic': CompanionPassTheMicSettings;
 }
 
 // ===================== GAME SETUP RESULT =====================

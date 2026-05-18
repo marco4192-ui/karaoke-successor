@@ -19,6 +19,7 @@ interface RawGameState {
   queueLength?: number;
   isAdPlaying?: boolean;
   singalongTurn?: GameState['singalongTurn'];
+  cptmTurn?: GameState['cptmTurn'];
 }
 
 function parseGameState(raw: RawGameState): GameState {
@@ -29,6 +30,7 @@ function parseGameState(raw: RawGameState): GameState {
     queueLength: raw.queueLength ?? 0,
     isAdPlaying: raw.isAdPlaying ?? false,
     singalongTurn: raw.singalongTurn ?? null,
+    cptmTurn: raw.cptmTurn ?? null,
   };
 }
 
@@ -39,6 +41,7 @@ const INITIAL_GAME_STATE: GameState = {
   queueLength: 0,
   isAdPlaying: false,
   singalongTurn: null,
+  cptmTurn: null,
 };
 
 export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {

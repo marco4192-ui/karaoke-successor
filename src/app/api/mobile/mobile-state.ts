@@ -67,6 +67,7 @@ export const mutableState = {
     isAdPlaying: false,
     gameMode: null,
     singalongTurn: null,
+    cptmTurn: null,
   } as MobileGameState,
 
   // Queue for song requests from mobile clients
@@ -210,6 +211,7 @@ export function resetAllState() {
     isAdPlaying: false,
     gameMode: null,
     singalongTurn: null,
+    cptmTurn: null,
   };
   // Reset remote control state
   mutableState.remoteControlState = {

@@ -76,6 +76,13 @@ export interface MobileGameState {
     countdown: number | null; // 3 when switching, null when actively singing
     isActive: boolean;
   } | null;
+  // Companion Pass-the-Mic turn info
+  cptmTurn: {
+    profileId: string | null; // currently active singer
+    nextProfileId: string | null; // player whose phone will blink
+    countdown: number | null; // 3 when warning, null when actively singing
+    isActive: boolean;
+  } | null;
 }
 
 export interface GameResults {

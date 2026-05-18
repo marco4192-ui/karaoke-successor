@@ -16,9 +16,11 @@ import { createBattleRoyale, BattleRoyaleSettings } from '@/lib/game/battle-roya
 import { createCompetitiveGame, type CompetitiveModeType, type CompetitiveSettings } from '@/lib/game/competitive-words-blind';
 import { generateMedleySnippets } from '@/components/game/medley/medley-snippet-generator';
 import { storeSongFilters } from '@/lib/game/ptm-next-song';
+import { generatePtmSegments } from '@/lib/game/ptm-segments';
 import { toast } from '@/hooks/use-toast';
 import type { PassTheMicSettings } from '@/components/game/ptm-types';
 import type { CompanionSingAlongSettings } from '@/components/game/companion-singalong-screen';
+import type { CptmPlayer, CptmSegment, CptmSettings } from '@/components/game/cptm-types';
 
 interface PartySetupSectionProps {
   screen: Screen;
@@ -102,6 +104,16 @@ function toCompanionPlayers(players: { id: string; name: string; avatar?: string
   return players.map(p => ({ ...p, ...EMPTY_PLAYER_SCORE, isActive: false, turnCount: 0 }));
 }
 
+function toCptmPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]) {
+  return players.map(p => ({ ...p, ...EMPTY_PLAYER_SCORE, segmentsSung: 0 }));
+}
+
+function toCptmSettings(s: GameModeSettingsMap['companion-pass-the-mic']): CptmSettings {
+  return {
+    difficulty: s.difficulty ?? 'medium',
+  };
+}
+
 // ===================== PARTY SETUP + SONG VOTING SECTION =====================
 export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps) {
   const { profiles, setGameMode, setSong, setDifficulty, resetGame, addPlayer, setPlayers } = useGameStore();
@@ -150,6 +162,18 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               const compPlayers = party.companionPlayers;
               if (compPlayers.length > 0) {
                 addPlayer({ id: compPlayers[0].id, name: compPlayers[0].name, color: compPlayers[0].color, avatar: compPlayers[0].avatar });
+              }
+            } else if (mode === 'companion-pass-the-mic') {
+              const cptmPlayers = party.cptmPlayers;
+              const segments = generatePtmSegments(song.duration, cptmPlayers.length || 2, undefined, song.lyrics);
+              if (segments.length > 0) {
+                party.setCptmSegments(segments);
+                party.setCptmSong(song);
+                party.setIsSongPlaying(false);
+                setScreen('companion-pass-the-mic-game');
+              } else {
+                toast({ title: 'Song zu kurz', description: 'Song zu kurz für Companion Pass-the-Mic.', variant: 'destructive' });
+                return;
               }
             } else {
               // Standard/duel mode: add all players from setup result
@@ -444,6 +468,42 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 break;
               }
 
+              // ── Companion Pass-the-Mic: random song + score-based segments → CPtM game screen ──
+              case 'companion-pass-the-mic': {
+                const randomSong = pickRandomSong(filteredSongs);
+                if (randomSong) {
+                  let songWithUrls = randomSong;
+                  try {
+                    songWithUrls = await ensureSongUrls(randomSong);
+                    if (!songWithUrls.lyrics || songWithUrls.lyrics.length === 0) {
+                      try {
+                        const { loadSongLyrics } = await import('@/lib/game/song-lyrics-loader');
+                        const lyrics = await loadSongLyrics(songWithUrls);
+                        if (lyrics.length > 0) {
+                          songWithUrls = { ...songWithUrls, lyrics };
+                        }
+                      } catch { /* non-critical */ }
+                    }
+                  } catch { /* non-critical */ }
+
+                  const playerCount = result.players.length || 2;
+                  const segments = generatePtmSegments(songWithUrls.duration, playerCount, undefined, songWithUrls.lyrics);
+                  if (segments.length === 0) {
+                    toast({ title: t('partySetup.songTooShort'), description: 'Song zu kurz für Companion Pass-the-Mic.', variant: 'destructive' });
+                    break;
+                  }
+                  const cptmPlayers = toCptmPlayers(result.players);
+                  party.setCptmPlayers(cptmPlayers);
+                  party.setCptmSegments(segments);
+                  party.setCptmSong(songWithUrls);
+                  party.setCptmSettings(toCptmSettings(result.settings as GameModeSettingsMap['companion-pass-the-mic']));
+                  party.setCptmSongSelection(result.songSelection || 'random');
+                  party.setIsSongPlaying(false);
+                  setScreen('companion-pass-the-mic-game');
+                }
+                break;
+              }
+
               // ── Missing Words / Blind: create competitive game → competitive game view ──
               case 'missing-words':
               case 'blind': {
@@ -558,6 +618,10 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
             } else if (party.selectedGameMode === 'companion-singalong') {
               party.setCompanionPlayers(toCompanionPlayers(result.players));
               party.setCompanionSettings(toCompanionSettings(result.settings as GameModeSettingsMap['companion-singalong']));
+            } else if (party.selectedGameMode === 'companion-pass-the-mic') {
+              party.setCptmPlayers(toCptmPlayers(result.players));
+              party.setCptmSettings(toCptmSettings(result.settings as GameModeSettingsMap['companion-pass-the-mic']));
+              party.setCptmSongSelection(result.songSelection || 'random');
             } else if (party.selectedGameMode === 'rate-my-song') {
               const rateSettings = result.settings as GameModeSettingsMap['rate-my-song'];
               const duration = rateSettings.duration || 'normal';
@@ -652,6 +716,18 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 addPlayer({ id: compPlayers[0].id, name: compPlayers[0].name, color: compPlayers[0].color, avatar: compPlayers[0].avatar });
               }
               setScreen('game');
+            } else if (party.selectedGameMode === 'companion-pass-the-mic') {
+              const cptmPlayers = toCptmPlayers(party.unifiedSetupResult?.players || []);
+              const segments = generatePtmSegments(songWithUrls.duration, cptmPlayers.length || 2, undefined, songWithUrls.lyrics);
+              if (segments.length > 0) {
+                party.setCptmPlayers(cptmPlayers);
+                party.setCptmSegments(segments);
+                party.setCptmSong(songWithUrls);
+                party.setIsSongPlaying(false);
+                setScreen('companion-pass-the-mic-game');
+              } else {
+                toast({ title: t('partySetup.songTooShort'), description: 'Song zu kurz.', variant: 'destructive' });
+              }
             } else if (party.selectedGameMode === 'duel' || party.selectedGameMode === 'duet') {
               // Duel/Duet: add both players from setup result
               const setupPlayers = party.unifiedSetupResult?.players || [];

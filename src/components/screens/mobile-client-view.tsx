@@ -376,6 +376,20 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
           countdown={gameState.singalongTurn.countdown}
         />
       )}
+
+      {/* ── Companion Pass-the-Mic overlay: blink warning + YOUR TURN ── */}
+      {isConnected && profile && gameState.cptmTurn?.isActive && (
+        (gameState.cptmTurn.countdown !== null && gameState.cptmTurn.nextProfileId === profile.id) ? (
+          // Blink warning: player's phone blinks before their turn (decent, pulsing)
+          <CptmBlinkOverlay
+            countdown={gameState.cptmTurn.countdown}
+            playerColor={profile.color}
+          />
+        ) : (gameState.cptmTurn.profileId === profile.id && gameState.cptmTurn.countdown === null) ? (
+          // Active turn: "YOUR TURN!" display
+          <CptmYourTurnOverlay playerName={profile.name} playerColor={profile.color} />
+        ) : null
+      )}
     </div>
   );
 }
@@ -431,4 +445,89 @@ function SingalongOverlay({ isMyTurn, countdown }: SingalongOverlayProps) {
   }
 
   return null;
+}
+
+// ===================== CPTM BLINK OVERLAY =====================
+// Decent pulsing blink effect on the phone before the player's turn
+interface CptmBlinkOverlayProps {
+  countdown: number | null;
+  playerColor: string;
+}
+
+function CptmBlinkOverlay({ countdown, playerColor }: CptmBlinkOverlayProps) {
+  // The blink intensity increases as countdown decreases (3→2→1)
+  const intensity = countdown === 3 ? 0.15 : countdown === 2 ? 0.3 : 0.5;
+
+  if (countdown === null || countdown <= 0) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+      style={{ backgroundColor: playerColor, opacity: intensity }}
+    >
+      {/* Subtle pulsing animation that gets faster as countdown decreases */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundColor: playerColor,
+          animation: `cptm-blink ${countdown === 3 ? 2 : countdown === 2 ? 1 : 0.5}s ease-in-out infinite alternate`,
+        }}
+      />
+      {/* Countdown number (small, decent) */}
+      <div className="relative z-10 text-center">
+        <div className="text-8xl font-bold text-white/90 animate-pulse">{countdown}</div>
+        <div className="text-lg font-medium text-white/70 mt-2">Get Ready!</div>
+      </div>
+
+      {/* Inject keyframe animation */}
+      <style>{`
+        @keyframes cptm-blink {
+          0% { opacity: 0; }
+          100% { opacity: ${Math.min(intensity * 2.5, 0.8)}; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ===================== CPTM YOUR TURN OVERLAY =====================
+// Bold "YOUR TURN!" display when the player's segment starts
+interface CptmYourTurnOverlayProps {
+  playerName: string;
+  playerColor: string;
+}
+
+function CptmYourTurnOverlay({ playerName, playerColor }: CptmYourTurnOverlayProps) {
+  const [show, setShow] = useState(false);
+
+  // Brief flash-in animation
+  useEffect(() => {
+    queueMicrotask(() => setShow(true));
+  }, []);
+
+  if (!show) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none bg-black/60 backdrop-blur-sm">
+      {/* Background glow */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `radial-gradient(circle at center, ${playerColor}40, transparent 70%)`,
+        }}
+      />
+
+      {/* YOUR TURN text */}
+      <div className="relative z-10 text-center animate-[scale-in_0.3s_ease-out]">
+        <div className="text-sm font-bold text-white/60 uppercase tracking-[0.3em] mb-2">Your Turn!</div>
+        <div className="text-5xl font-bold text-white" style={{ textShadow: `0 0 30px ${playerColor}` }}>
+          {playerName}
+        </div>
+        <div
+          className="mt-4 mx-auto h-1.5 rounded-full"
+          style={{ width: '120px', backgroundColor: playerColor }}
+        />
+      </div>
+    </div>
+  );
 }

@@ -49,6 +49,12 @@ export interface GameState {
   queueLength: number;
   isAdPlaying: boolean;
   singalongTurn: SingalongTurn | null;
+  cptmTurn: {
+    profileId: string | null;
+    nextProfileId: string | null;
+    countdown: number | null;
+    isActive: boolean;
+  } | null;
 }
 
 export interface PitchData {

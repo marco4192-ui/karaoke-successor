@@ -19,6 +19,7 @@ import type { PassTheMicPlayer, PassTheMicSegment } from '@/components/game/ptm-
 import type { PassTheMicSettings } from '@/components/game/ptm-game-screen';
 import type { CompanionPlayer, CompanionRoundResult } from '@/components/game/companion-singalong-screen';
 import type { CompanionSingAlongSettings } from '@/components/game/companion-singalong-screen';
+import type { CptmPlayer, CptmSegment, CptmSettings, CptmRoundResult } from '@/components/game/cptm-types';
 import type { RateMySongSettings } from '@/components/game/rate-my-song-screen';
 
 /** Per-player result for a single Pass-the-Mic round (song). */
@@ -71,6 +72,20 @@ export interface PartyStore {
   // Series history: accumulated scores across multiple Companion Sing-A-Long songs
   companionSeriesHistory: CompanionRoundResult[];
   setCompanionSeriesHistory: (_history: CompanionRoundResult[]) => void;
+
+  // Companion Pass-the-Mic
+  cptmPlayers: CptmPlayer[];
+  setCptmPlayers: (_players: CptmPlayer[]) => void;
+  cptmSong: Song | null;
+  setCptmSong: (_song: Song | null) => void;
+  cptmSegments: CptmSegment[];
+  setCptmSegments: (_segments: CptmSegment[]) => void;
+  cptmSettings: CptmSettings | null;
+  setCptmSettings: (_settings: CptmSettings | null) => void;
+  cptmSeriesHistory: CptmRoundResult[];
+  setCptmSeriesHistory: (_history: CptmRoundResult[]) => void;
+  cptmSongSelection: string | null;
+  setCptmSongSelection: (_mode: string | null) => void;
 
   // Medley Contest
   medleyPlayers: MedleyPlayer[];
@@ -163,6 +178,20 @@ export const usePartyStore = create<PartyStore>((set) => ({
   companionSeriesHistory: [] as CompanionRoundResult[],
   setCompanionSeriesHistory: (companionSeriesHistory) => set({ companionSeriesHistory }),
 
+  // Companion Pass-the-Mic
+  cptmPlayers: [],
+  setCptmPlayers: (cptmPlayers) => set({ cptmPlayers }),
+  cptmSong: null,
+  setCptmSong: (cptmSong) => set({ cptmSong }),
+  cptmSegments: [],
+  setCptmSegments: (cptmSegments) => set({ cptmSegments }),
+  cptmSettings: null as CptmSettings | null,
+  setCptmSettings: (cptmSettings) => set({ cptmSettings }),
+  cptmSeriesHistory: [] as CptmRoundResult[],
+  setCptmSeriesHistory: (cptmSeriesHistory) => set({ cptmSeriesHistory }),
+  cptmSongSelection: null,
+  setCptmSongSelection: (cptmSongSelection) => set({ cptmSongSelection }),
+
   // Medley Contest
   medleyPlayers: [] as MedleyPlayer[],
   setMedleyPlayers: (medleyPlayers) => set({ medleyPlayers }),
@@ -225,6 +254,12 @@ export const usePartyStore = create<PartyStore>((set) => ({
     companionSong: null,
     companionSettings: null,
     companionSeriesHistory: [] as CompanionRoundResult[],
+    cptmPlayers: [],
+    cptmSong: null,
+    cptmSegments: [],
+    cptmSettings: null,
+    cptmSeriesHistory: [] as CptmRoundResult[],
+    cptmSongSelection: null,
     medleyPlayers: [] as MedleyPlayer[],
     medleySongs: [] as MedleySong[],
     medleySettings: null as MedleySettings | null,
