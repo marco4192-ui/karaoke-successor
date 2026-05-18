@@ -202,6 +202,8 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
   const blindFrequency = usePartyStore(s => s.competitiveGame?.settings?.blindFrequency);
   const missingWordFrequency = usePartyStore(s => s.competitiveGame?.settings?.missingWordFrequency);
   const blindHardcore = usePartyStore(s => s.competitiveGame?.settings?.hardcore);
+  const missingWordsGranularity = usePartyStore(s => s.competitiveGame?.settings?.missingWordsGranularity);
+  const escalating = usePartyStore(s => s.competitiveGame?.settings?.escalating);
   const { pitchResult, initialize, start, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
 
   // Smoothed pitch for visual display (prevents flickering/jitter).
@@ -623,6 +625,9 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
     blindFrequency,
     missingWordFrequency,
     hardcore: blindHardcore,
+    // New settings
+    missingWordsGranularity,
+    escalatingMultiplier: escalating ? 1.0 : undefined,
   });
 
   // Calculate pitch ranges

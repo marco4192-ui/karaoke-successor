@@ -12,8 +12,15 @@
  * Scoring:
  * - Standard tick-based scoring (same as normal mode)
  * - MISSING WORDS BONUS: Extra 50 points per correctly sung missing word
- *   (a missing word is "correctly sung" when the player scores ≥ "Good" on that note)
+ *   (a missing word is "correctly sung" when the player scores >= "Good" on that note)
  * - BLIND BONUS: Extra 30 points per note hit during a blind section
+ *
+ * Enhanced Features:
+ * - Swiss-System pairing: similar-strength players face each other
+ * - Dynamic difficulty: escalating frequency multiplier per round
+ * - Advanced bonus: streak, perfect, comeback bonuses
+ * - Smart song selection: no repeats, already-played tracking
+ * - Solo mode support (1 player)
  */
 
 import { Difficulty, PLAYER_COLORS } from '@/types/game';
@@ -21,11 +28,13 @@ import { Difficulty, PLAYER_COLORS } from '@/types/game';
 // ===================== TYPES =====================
 
 export type CompetitiveModeType = 'missing-words' | 'blind';
+export type PlayMode = 'competitive' | 'solo' | 'coop';
 type BestOfSetting = 1 | 3 | 5 | 7;
 
 export interface CompetitiveSettings {
   difficulty: Difficulty;
   modeType: CompetitiveModeType;
+  playMode: PlayMode;
   bestOf: BestOfSetting;
   /** Missing words: percentage of passages to hide (0.15 - 0.90) */
   missingWordFrequency: number;
@@ -33,6 +42,14 @@ export interface CompetitiveSettings {
   blindFrequency: number;
   /** Hardcore blind: text hidden when notes visible, and vice versa */
   hardcore: boolean;
+  /** Hardcore missing words: hidden words stay hidden until song ends */
+  hardcoreMissingWords: boolean;
+  /** Missing words granularity: 'word' | 'passage' | 'both' */
+  missingWordsGranularity: 'word' | 'passage' | 'both';
+  /** Escalating mode: frequency increases per round */
+  escalating: boolean;
+  /** Song selection mode */
+  songSelection: 'random' | 'smart';
 }
 
 interface CompetitivePlayer {
@@ -50,13 +67,27 @@ interface CompetitivePlayer {
   roundScores: number[];
   /** Per-round bonus points */
   roundBonuses: number[];
+  /** Current streak of consecutive hidden word hits (for bonus calc) */
+  currentStreak: number;
+  /** Max streak achieved in any round */
+  maxStreak: number;
+  /** Whether player missed their last hidden/blind note (for comeback bonus) */
+  lastHiddenMiss: boolean;
+  /** Total streak bonus points earned */
+  streakBonusTotal: number;
+  /** Total perfect bonus points earned */
+  perfectBonusTotal: number;
+  /** Total comeback bonus points earned */
+  comebackBonusTotal: number;
+  /** Songs already played by this player (for smart selection) */
+  playedSongIds: string[];
 }
 
 export interface CompetitiveRound {
   roundNumber: number;
   songId: string;
   songTitle: string;
-  /** Which two players are singing this round */
+  /** Which two players are singing this round (empty string = no player for solo) */
   player1Id: string;
   player2Id: string;
   /** Results after the round finishes */
@@ -64,6 +95,8 @@ export interface CompetitiveRound {
   player1Bonus: number;
   player2Score: number;
   player2Bonus: number;
+  /** Effective frequency multiplier for this round */
+  frequencyMultiplier: number;
   completed: boolean;
 }
 
@@ -74,8 +107,10 @@ export interface CompetitiveGame {
   currentRoundIndex: number;
   status: 'setup' | 'playing' | 'round-end' | 'game-over';
   winner: CompetitivePlayer | null;
-  /** Total songs needed (ceil of bestOf / 2 for each player pair) */
+  /** Total songs needed */
   totalRounds: number;
+  /** All song IDs already used in any round (for no-repeat) */
+  usedSongIds: Set<string>;
 }
 
 // ===================== GAME CREATION =====================
@@ -98,19 +133,30 @@ export function createCompetitiveGame(
     roundsPlayed: 0,
     roundScores: [],
     roundBonuses: [],
+    currentStreak: 0,
+    maxStreak: 0,
+    lastHiddenMiss: false,
+    streakBonusTotal: 0,
+    perfectBonusTotal: 0,
+    comebackBonusTotal: 0,
+    playedSongIds: [],
   }));
 
   // Calculate total rounds needed
-  // With N players, each round has 2 players singing simultaneously.
-  // For Best-of-X, each player should ideally sing X rounds.
-  // For odd N, one player sits out per round — so each player gets
-  // totalRounds * 2 / N turns. We ensure this is >= bestOf.
   const n = players.length;
   const x = settings.bestOf;
-  // Minimum rounds so every player gets at least bestOf turns:
-  // playerTurns = floor(totalRounds * 2 / n) >= bestOf
-  // => totalRounds >= ceil(n * bestOf / 2)
-  const totalRounds = Math.ceil((n * x) / 2);
+
+  let totalRounds: number;
+  if (settings.playMode === 'solo') {
+    // Solo: just bestOf rounds
+    totalRounds = x;
+  } else if (settings.playMode === 'coop') {
+    // Coop: bestOf rounds, all play together
+    totalRounds = x;
+  } else {
+    // Competitive: ceil(n * bestOf / 2)
+    totalRounds = Math.ceil((n * x) / 2);
+  }
 
   return {
     settings,
@@ -120,52 +166,104 @@ export function createCompetitiveGame(
     status: 'setup',
     winner: null,
     totalRounds,
+    usedSongIds: new Set<string>(),
   };
 }
 
-// ===================== ROUND MANAGEMENT =====================
+// ===================== ESCALATING DIFFICULTY =====================
 
 /**
- * Get the pairings for the current round.
- * Tries to distribute singing time evenly: rotate through players.
+ * Calculate the frequency multiplier for a given round number.
+ * Starts at 0.7x for round 1 and increases to 1.5x for later rounds.
+ */
+export function getEscalatingMultiplier(roundNumber: number, totalRounds: number): number {
+  if (totalRounds <= 1) return 1.0;
+  // Linear interpolation from 0.7 to 1.5 over total rounds
+  const minMult = 0.7;
+  const maxMult = 1.5;
+  const progress = (roundNumber - 1) / (totalRounds - 1);
+  return minMult + progress * (maxMult - minMult);
+}
+
+// ===================== SWISS-SYSTEM PAIRING =====================
+
+/**
+ * Swiss-System pairing: players with similar scores face each other.
+ * First round is random, subsequent rounds pair adjacent players in score ranking.
  */
 function getNextRoundPairing(game: CompetitiveGame): { player1Id: string; player2Id: string } | null {
-  // Filter out players who have already finished all their rounds
   const eligiblePlayers = game.players.filter(p => !isPlayerFinished(game, p.id));
   const n = eligiblePlayers.length;
 
   if (n < 2) return null;
 
-  // Track how many times each player has sung
-  const singCounts: Map<string, number> = new Map();
-  for (const player of eligiblePlayers) {
-    singCounts.set(player.id, player.roundsPlayed);
+  if (game.rounds.length === 0) {
+    // First round: random pairing
+    const shuffled = [...eligiblePlayers].sort(() => Math.random() - 0.5);
+    return { player1Id: shuffled[0].id, player2Id: shuffled[1].id };
   }
 
-  // Find the two players who have sung the least
-  const sorted = [...eligiblePlayers].sort((a, b) => {
-    const countA = singCounts.get(a.id) || 0;
-    const countB = singCounts.get(b.id) || 0;
-    return countA - countB;
-  });
+  // Swiss System: sort by total score, pair adjacent players
+  // Alternate pairing direction each round to avoid same matchups
+  const ranked = [...eligiblePlayers].sort((a, b) => b.totalScore - a.totalScore);
+  const direction = game.rounds.length % 2 === 0 ? 1 : -1;
+  if (direction === -1) ranked.reverse();
 
-  // Pair the two with the fewest rounds
-  const player1Id = sorted[0].id;
-  // Second player should be the one with the next fewest rounds
-  // (avoid pairing the same two players consecutively if possible)
-  let player2Id = sorted[1].id;
+  // Try to pair 1st with 2nd, 3rd with 4th, etc.
+  for (let i = 0; i < ranked.length - 1; i += 2) {
+    const p1 = ranked[i];
+    const p2 = ranked[i + 1];
 
-  // Check if this pair sang in the previous round — try to avoid repeats
-  const lastRound = game.rounds[game.rounds.length - 1];
-  if (lastRound && lastRound.player1Id === player1Id && lastRound.player2Id === player2Id && n >= 3) {
-    player2Id = sorted[2]?.id || player2Id;
+    // Check if this pair already played against each other
+    const alreadyPaired = game.rounds.some(r =>
+      (r.player1Id === p1.id && r.player2Id === p2.id) ||
+      (r.player1Id === p2.id && r.player2Id === p1.id)
+    );
+
+    if (!alreadyPaired) {
+      return { player1Id: p1.id, player2Id: p2.id };
+    }
   }
-  if (lastRound && lastRound.player1Id === player2Id && lastRound.player2Id === player1Id && n >= 3) {
-    player2Id = sorted[2]?.id || player2Id;
+
+  // Fallback: if all adjacent pairs already played, try cross-pairing
+  if (ranked.length >= 4) {
+    // Pair 1st with 3rd, 2nd with 4th
+    for (let offset = 1; offset < ranked.length - 1; offset++) {
+      const p1 = ranked[0];
+      const p2 = ranked[offset];
+      const alreadyPaired = game.rounds.some(r =>
+        (r.player1Id === p1.id && r.player2Id === p2.id) ||
+        (r.player1Id === p2.id && r.player2Id === p1.id)
+      );
+      if (!alreadyPaired) {
+        return { player1Id: p1.id, player2Id: p2.id };
+      }
+    }
   }
 
-  return { player1Id, player2Id };
+  // Last resort: just pair the two with fewest rounds
+  const byRounds = [...eligiblePlayers].sort((a, b) => a.roundsPlayed - b.roundsPlayed);
+  return { player1Id: byRounds[0].id, player2Id: byRounds[1].id };
 }
+
+// ===================== SMART SONG SELECTION =====================
+
+/**
+ * Pick a random song that hasn't been played yet.
+ * Returns null if no unplayed songs remain.
+ */
+export function pickSmartSong(
+  songs: { id: string; title: string }[],
+  usedSongIds: Set<string>,
+  playedByPlayer?: string[]
+): { id: string; title: string } | null {
+  const unplayed = songs.filter(s => !usedSongIds.has(s.id));
+  if (unplayed.length === 0) return null;
+  const pick = unplayed[Math.floor(Math.random() * unplayed.length)];
+  return { id: pick.id, title: pick.title };
+}
+
+// ===================== ROUND MANAGEMENT =====================
 
 /**
  * Start a new round with a song.
@@ -175,27 +273,53 @@ export function startCompetitiveRound(
   songId: string,
   songTitle: string
 ): CompetitiveGame {
-  const pairing = getNextRoundPairing(game);
-  if (!pairing) return game;
+  const roundNumber = game.rounds.length + 1;
+
+  // Calculate escalating multiplier
+  const frequencyMultiplier = game.settings.escalating
+    ? getEscalatingMultiplier(roundNumber, game.totalRounds)
+    : 1.0;
+
+  let player1Id: string;
+  let player2Id: string;
+
+  if (game.settings.playMode === 'solo') {
+    player1Id = game.players[0]?.id ?? '';
+    player2Id = '';
+  } else if (game.settings.playMode === 'coop') {
+    player1Id = game.players[0]?.id ?? '';
+    player2Id = game.players[1]?.id ?? game.players[0]?.id ?? '';
+  } else {
+    const pairing = getNextRoundPairing(game);
+    if (!pairing) return game;
+    player1Id = pairing.player1Id;
+    player2Id = pairing.player2Id;
+  }
 
   const newRound: CompetitiveRound = {
-    roundNumber: game.rounds.length + 1,
+    roundNumber,
     songId,
     songTitle,
-    player1Id: pairing.player1Id,
-    player2Id: pairing.player2Id,
+    player1Id,
+    player2Id,
     player1Score: 0,
     player1Bonus: 0,
     player2Score: 0,
     player2Bonus: 0,
+    frequencyMultiplier,
     completed: false,
   };
+
+  // Track used songs and per-player played songs
+  const newUsedSongIds = new Set(game.usedSongIds);
+  newUsedSongIds.add(songId);
 
   return {
     ...game,
     rounds: [...game.rounds, newRound],
     currentRoundIndex: game.rounds.length,
     status: 'playing',
+    usedSongIds: newUsedSongIds,
   };
 }
 
@@ -229,25 +353,29 @@ export function finishCompetitiveRound(
       updated.roundsPlayed += 1;
       updated.roundScores = [...updated.roundScores, player1Score];
       updated.roundBonuses = [...updated.roundBonuses, player1Bonus];
-    } else if (player.id === currentRound.player2Id) {
+      updated.playedSongIds = [...updated.playedSongIds, currentRound.songId];
+    } else if (player.id === currentRound.player2Id && currentRound.player2Id) {
       updated.totalScore += player2Score + player2Bonus;
       updated.totalBonusPoints += player2Bonus;
       updated.roundsPlayed += 1;
       updated.roundScores = [...updated.roundScores, player2Score];
       updated.roundBonuses = [...updated.roundBonuses, player2Bonus];
+      updated.playedSongIds = [...updated.playedSongIds, currentRound.songId];
     }
 
     return updated;
   });
 
-  // Check if all rounds are complete, OR if we can't form any more pairs
-  // (happens with odd player counts when one player is left without a partner)
+  // Check if game is over
   const allRoundsComplete = updatedRounds.length >= game.totalRounds && updatedRounds.every(r => r.completed);
-  const canFormNextPair = getNextRoundPairing({
-    ...game,
-    rounds: updatedRounds,
-    players: updatedPlayers,
-  }) !== null;
+  const isSoloOrCoop = game.settings.playMode === 'solo' || game.settings.playMode === 'coop';
+  const canFormNextPair = isSoloOrCoop
+    ? updatedRounds.length < game.totalRounds
+    : getNextRoundPairing({
+        ...game,
+        rounds: updatedRounds,
+        players: updatedPlayers,
+      }) !== null;
 
   const isGameOver = allRoundsComplete || !canFormNextPair;
 
@@ -267,6 +395,107 @@ export function finishCompetitiveRound(
   };
 }
 
+// ===================== ADVANCED BONUS CALCULATIONS =====================
+
+/** Base bonus per missing word */
+const MW_BASE_BONUS = 50;
+
+/** Base bonus per blind note */
+const BLIND_BASE_BONUS = 30;
+
+/** Bonus multiplier for perfect hits (vs. just "Good") */
+const PERFECT_MULTIPLIER = 2.0;
+
+/** Bonus multiplier for 3+ streak */
+const STREAK_MULTIPLIER = 1.5;
+
+/** Bonus multiplier for comeback (miss then hit) */
+const COMEBACK_MULTIPLIER = 1.5;
+
+/** Minimum streak length for streak bonus */
+const STREAK_THRESHOLD = 3;
+
+/**
+ * Calculate bonus points for a missing word hit.
+ * @param isPerfect - Whether the hit was "Perfect" (not just "Good")
+ * @param currentStreak - Consecutive hidden word hits before this one
+ * @param lastWasMiss - Whether the previous hidden word was missed
+ */
+export function calculateMissingWordsBonus(
+  isPerfect: boolean,
+  currentStreak: number,
+  lastWasMiss: boolean
+): { base: number; perfect: number; streak: number; comeback: number; total: number } {
+  let base = MW_BASE_BONUS;
+  let perfect = 0;
+  let streak = 0;
+  let comeback = 0;
+
+  // Perfect bonus: double the base
+  if (isPerfect) {
+    perfect = base; // same as base, so total from base+perfect = 2x
+  }
+
+  // Streak bonus: after STREAK_THRESHOLD consecutive hits, 1.5x for the threshold hit
+  if (currentStreak > 0 && (currentStreak + 1) >= STREAK_THRESHOLD && (currentStreak + 1) % STREAK_THRESHOLD === 0) {
+    streak = Math.round(base * (STREAK_MULTIPLIER - 1));
+  }
+
+  // Comeback bonus: after a miss, the next hit gets +50%
+  if (lastWasMiss) {
+    comeback = Math.round(base * (COMEBACK_MULTIPLIER - 1));
+  }
+
+  const total = base + perfect + streak + comeback;
+  return { base, perfect, streak, comeback, total };
+}
+
+/**
+ * Calculate bonus points for a blind note hit.
+ * @param isPerfect - Whether the hit was "Perfect"
+ * @param currentStreak - Consecutive blind note hits
+ * @param lastWasMiss - Whether the previous blind note was missed
+ */
+export function calculateBlindBonus(
+  isPerfect: boolean,
+  currentStreak: number,
+  lastWasMiss: boolean
+): { base: number; perfect: number; streak: number; comeback: number; total: number } {
+  let base = BLIND_BASE_BONUS;
+  let perfect = 0;
+  let streak = 0;
+  let comeback = 0;
+
+  if (isPerfect) {
+    perfect = base;
+  }
+
+  if (currentStreak > 0 && (currentStreak + 1) >= STREAK_THRESHOLD && (currentStreak + 1) % STREAK_THRESHOLD === 0) {
+    streak = Math.round(base * (STREAK_MULTIPLIER - 1));
+  }
+
+  if (lastWasMiss) {
+    comeback = Math.round(base * (COMEBACK_MULTIPLIER - 1));
+  }
+
+  const total = base + perfect + streak + comeback;
+  return { base, perfect, streak, comeback, total };
+}
+
+/** Legacy-compatible: calculate bonus for missing words (simple, flat) */
+export function calculateMissingWordsBonusLegacy(
+  notesHitOnMissingWords: number
+): number {
+  return notesHitOnMissingWords * MW_BASE_BONUS;
+}
+
+/** Legacy-compatible: calculate bonus for blind sections (simple, flat) */
+export function calculateBlindBonusLegacy(
+  notesHitInBlindSections: number
+): number {
+  return notesHitInBlindSections * BLIND_BASE_BONUS;
+}
+
 // ===================== HELPERS =====================
 
 /** Get players sorted by total score (descending) */
@@ -279,41 +508,35 @@ export function getCurrentRound(game: CompetitiveGame): CompetitiveRound | null 
   return game.rounds[game.currentRoundIndex] || null;
 }
 
-/** Check if a player has sung in all their required rounds.
- *  A player is "ready for results" when they've reached bestOf AND they
- *  have the fewest rounds among all eligible players (so the game
- *  doesn't end prematurely while others are catching up).
- *  In practice, finishCompetitiveRound() handles the actual end-check
- *  via allRoundsComplete — this function only answers the question
- *  "could we skip this player in future rounds?" */
+/** Get the escalating multiplier for the current round */
+export function getCurrentFrequencyMultiplier(game: CompetitiveGame): number {
+  const round = getCurrentRound(game);
+  return round?.frequencyMultiplier ?? 1.0;
+}
+
+/** Check if a player has sung in all their required rounds. */
 function isPlayerFinished(game: CompetitiveGame, playerId: string): boolean {
   const player = game.players.find(p => p.id === playerId);
   if (!player) return true;
   if (player.roundsPlayed < game.settings.bestOf) return false;
-  // Even if this player hit bestOf, don't mark them finished if any
-  // other eligible player has strictly fewer rounds.
-  // NOTE: The condition below is intentionally "roundsPlayed <= minRounds"
-  // (not "roundsPlayed >= minRounds").  This returns true ONLY for the
-  // player(s) with the *fewest* rounds who have ALSO reached bestOf.
-  // All other players who reached bestOf but played MORE rounds are
-  // considered finished too, because the game ends as soon as every
-  // player has completed at least bestOf rounds.
   const minRounds = Math.min(
     ...game.players.map(p => p.roundsPlayed)
   );
   return player.roundsPlayed <= minRounds && player.roundsPlayed >= game.settings.bestOf;
 }
 
-/** Calculate bonus points for missing words: 50 per correct hidden word hit */
-export function calculateMissingWordsBonus(
-  notesHitOnMissingWords: number
-): number {
-  return notesHitOnMissingWords * 50;
-}
+// ===================== DEFAULT SETTINGS =====================
 
-/** Calculate bonus points for blind sections: 30 per note hit during blind */
-export function calculateBlindBonus(
-  notesHitInBlindSections: number
-): number {
-  return notesHitInBlindSections * 30;
-}
+export const DEFAULT_COMPETITIVE_SETTINGS: CompetitiveSettings = {
+  difficulty: 'medium',
+  modeType: 'missing-words',
+  playMode: 'competitive',
+  bestOf: 3,
+  missingWordFrequency: 0.30,
+  blindFrequency: 0.30,
+  hardcore: false,
+  hardcoreMissingWords: false,
+  missingWordsGranularity: 'passage',
+  escalating: false,
+  songSelection: 'smart',
+};

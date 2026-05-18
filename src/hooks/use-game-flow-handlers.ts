@@ -6,7 +6,7 @@ import type { GameResult, GameState, Player } from '@/types/game';
 import type { PartyStore } from '@/lib/game/party-store';
 import { accuracyToRating } from '@/lib/game/rating-utils';
 import { recordMatchResult } from '@/lib/game/tournament';
-import { finishCompetitiveRound, calculateMissingWordsBonus, calculateBlindBonus } from '@/lib/game/competitive-words-blind';
+import { finishCompetitiveRound, calculateMissingWordsBonusLegacy, calculateBlindBonusLegacy } from '@/lib/game/competitive-words-blind';
 import { estimatePerfectNotes } from '@/lib/game/scoring';
 
 /**
@@ -155,11 +155,11 @@ export function useGameFlowHandlers(
       let bonus1 = 0;
       let bonus2 = 0;
       if (gameState.gameMode === 'missing-words') {
-        bonus1 = calculateMissingWordsBonus(Math.round(p1NotesHit * 0.25));
-        bonus2 = calculateMissingWordsBonus(Math.round(p2NotesHit * 0.25));
+        bonus1 = calculateMissingWordsBonusLegacy(Math.round(p1NotesHit * 0.25));
+        bonus2 = calculateMissingWordsBonusLegacy(Math.round(p2NotesHit * 0.25));
       } else if (gameState.gameMode === 'blind') {
-        bonus1 = calculateBlindBonus(Math.round(p1NotesHit * 0.40));
-        bonus2 = calculateBlindBonus(Math.round(p2NotesHit * 0.40));
+        bonus1 = calculateBlindBonusLegacy(Math.round(p1NotesHit * 0.40));
+        bonus2 = calculateBlindBonusLegacy(Math.round(p2NotesHit * 0.40));
       }
 
       const updatedGame = finishCompetitiveRound(

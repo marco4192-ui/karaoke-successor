@@ -147,6 +147,9 @@ export interface BattleRoyaleModeSettings extends BaseModeSettings {
 export interface MissingWordsModeSettings extends BaseModeSettings {
   missingWordFrequency?: 'light' | 'normal' | 'hard' | 'insane';
   bestOf?: 1 | 3 | 5 | 7;
+  granularity?: 'word' | 'passage' | 'both';
+  hardcoreMissingWords?: boolean;
+  escalating?: boolean;
 }
 
 /** Blind Karaoke */
@@ -154,6 +157,7 @@ export interface BlindModeSettings extends BaseModeSettings {
   blindFrequency?: 'light' | 'normal' | 'hard' | 'insane';
   hardcore?: boolean;
   bestOf?: 1 | 3 | 5 | 7;
+  escalating?: boolean;
 }
 
 /** Rate My Song */

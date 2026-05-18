@@ -554,21 +554,41 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             setScreen('home');
           }}
           onPlayMatch={(p1Id, p2Id, p1Name, p2Name, song) => {
-            // Start duel mode with the two players and the selected song
             const comp = party.competitiveGame;
             if (!comp) return;
             resetGame();
-            setPlayers([]); // Clear any leftover players from previous games
+            setPlayers([]);
             const p1Color = comp.players.find(p => p.id === p1Id)?.color || '#FF6B6B';
             const p2Color = comp.players.find(p => p.id === p2Id)?.color || '#4ECDC4';
             addPlayer({ id: p1Id, name: p1Name, color: p1Color });
             addPlayer({ id: p2Id, name: p2Name, color: p2Color });
-            // Set unifiedSetupResult so MicIndicator can display mic assignments
             const setupResult: GameSetupResult = {
               mode: 'missing-words',
               players: [
                 { id: p1Id, name: p1Name, color: p1Color, playerType: 'microphone', micId: 'default', micName: t('partyGameScreens.microphone1') },
                 { id: p2Id, name: p2Name, color: p2Color, playerType: 'microphone', micId: 'default', micName: t('partyGameScreens.microphone2') },
+              ],
+              settings: { difficulty: comp.settings.difficulty, filterGenre: 'all', filterLanguage: 'all', filterCombined: true },
+              songSelection: 'random',
+              difficulty: comp.settings.difficulty,
+              inputMode: 'microphone',
+            };
+            party.setUnifiedSetupResult(setupResult);
+            setGameMode('missing-words');
+            setSong(song);
+            setScreen('game');
+          }}
+          onPlaySolo={(pId, pName, song) => {
+            const comp = party.competitiveGame;
+            if (!comp) return;
+            resetGame();
+            setPlayers([]);
+            const pColor = comp.players.find(p => p.id === pId)?.color || '#FF6B6B';
+            addPlayer({ id: pId, name: pName, color: pColor });
+            const setupResult: GameSetupResult = {
+              mode: 'missing-words',
+              players: [
+                { id: pId, name: pName, color: pColor, playerType: 'microphone', micId: 'default', micName: t('partyGameScreens.microphone1') },
               ],
               settings: { difficulty: comp.settings.difficulty, filterGenre: 'all', filterLanguage: 'all', filterCombined: true },
               songSelection: 'random',
@@ -617,12 +637,33 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             const p2Color = comp.players.find(p => p.id === p2Id)?.color || '#4ECDC4';
             addPlayer({ id: p1Id, name: p1Name, color: p1Color });
             addPlayer({ id: p2Id, name: p2Name, color: p2Color });
-            // Set unifiedSetupResult so MicIndicator can display mic assignments
             const setupResult: GameSetupResult = {
               mode: 'blind',
               players: [
                 { id: p1Id, name: p1Name, color: p1Color, playerType: 'microphone', micId: 'default', micName: t('partyGameScreens.microphone1') },
                 { id: p2Id, name: p2Name, color: p2Color, playerType: 'microphone', micId: 'default', micName: t('partyGameScreens.microphone2') },
+              ],
+              settings: { difficulty: comp.settings.difficulty, filterGenre: 'all', filterLanguage: 'all', filterCombined: true },
+              songSelection: 'random',
+              difficulty: comp.settings.difficulty,
+              inputMode: 'microphone',
+            };
+            party.setUnifiedSetupResult(setupResult);
+            setGameMode('blind');
+            setSong(song);
+            setScreen('game');
+          }}
+          onPlaySolo={(pId, pName, song) => {
+            const comp = party.competitiveGame;
+            if (!comp) return;
+            resetGame();
+            setPlayers([]);
+            const pColor = comp.players.find(p => p.id === pId)?.color || '#FF6B6B';
+            addPlayer({ id: pId, name: pName, color: pColor });
+            const setupResult: GameSetupResult = {
+              mode: 'blind',
+              players: [
+                { id: pId, name: pName, color: pColor, playerType: 'microphone', micId: 'default', micName: t('partyGameScreens.microphone1') },
               ],
               settings: { difficulty: comp.settings.difficulty, filterGenre: 'all', filterLanguage: 'all', filterCombined: true },
               songSelection: 'random',

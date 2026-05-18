@@ -515,6 +515,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 const compSettings: CompetitiveSettings = {
                   difficulty: result.difficulty,
                   modeType,
+                  playMode: 'competitive',
                   bestOf: ([1, 3, 5, 7].includes(s.bestOf as number) ? s.bestOf : 3) as 1 | 3 | 5 | 7,
                   missingWordFrequency: modeType === 'missing-words'
                     ? (mwFreqMap[freqSetting] ?? 0.30)
@@ -523,6 +524,10 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                     ? (blindFreqMap[freqSetting] ?? 0.30)
                     : 0.30,
                   hardcore: !!(s.hardcore),
+                  hardcoreMissingWords: false,
+                  missingWordsGranularity: (s.granularity as 'word' | 'passage' | 'both') || 'passage',
+                  escalating: !!(s.escalating),
+                  songSelection: 'smart',
                 };
                 const compGame = createCompetitiveGame(
                   result.players.map(p => p.id),
