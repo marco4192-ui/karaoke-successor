@@ -285,3 +285,28 @@ Stage Summary:
 - Bug fixes: teamBonusResult now properly propagated to results UI, comeback multiplier now applies during scoring (not just after), elimination now ends early when 1 player remains
 - Enhancements: genre badge in mystery reveal, dramatic song reveal during transition, proper i18n keys for all team bonus display text
 - Build: ✅ npx tsc --noEmit passed clean
+---
+Task ID: 1
+Agent: Main
+Task: Review all changes from today and fix bugs/incompleteness
+
+Work Log:
+- Analyzed git log: 10+ commits today across Medley, Rate my Song, Battle Royale, Tournament, Blind Karaoke, CPtM
+- TypeScript check: 0 errors initially
+- Deep code review of all 14 Medley files (types, hook, setup, playing, results, screen, snippet-generator, ranking, party-game-screens, translations, storage)
+- Found and fixed 7 bugs:
+  1. medley-setup.tsx:498 — Template literal bug {t()} should be ${t()}
+  2. medley-game-results.tsx:570 — Rules of Hooks violation (useTranslation called conditionally)
+  3. medley-game-hook.ts — comebackActiveTeamId state causing game loop restart (now uses ref)
+  4. medley-game-screen.tsx:101 — Hardcoded English "Mic"/"Companion" instead of translation keys
+  5. medley-setup.tsx:767 — Hardcoded German "Verfügbare Spieler:" instead of translation key
+  6. party-game-screens.tsx:231/240/249 — Hardcoded German strings in tournament mic overlay
+  7. de.ts/en.ts — Missing translation keys: medley.back, medley.availablePlayers, tournament.micAssignment, tournament.singsWith
+- Verified TypeScript: 0 errors after fixes
+- Committed as 88ee383 and pushed to main
+
+Stage Summary:
+- 7 bugs fixed across 7 files (+28/-14 lines)
+- All 13 Medley features, 11 Rate my Song features, 11 Battle Royale features, 10 Tournament features, 10 Blind Karaoke features confirmed working
+- No TypeScript errors
+
