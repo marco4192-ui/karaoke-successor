@@ -5,6 +5,7 @@ import {
   startRound,
   endRoundAndEliminate,
   advanceToNextRound,
+  advanceToNextSnippet,
   enterGrandFinale,
   startVotingPhase,
   resolveVote,
@@ -34,6 +35,8 @@ interface UseBattleRoyaleRoundHandlersReturn {
   handleStartRoundAfterVote: () => void;
   handleGrandFinaleIntroComplete: () => void;
   handleRoundEndRef: React.RefObject<() => void>;
+  /** Ref to medley snippet transition handler for use by round timer */
+  onSnippetEndRef: React.RefObject<(() => void) | null>;
   activePlayersRef: React.RefObject<BattleRoyalePlayer[]>;
   gameRef: React.RefObject<BattleRoyaleGame>;
 }
@@ -63,6 +66,31 @@ export function useBattleRoyaleRoundHandlers({
 
   const roundEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleRoundEndRef = useRef<() => void>(() => {});
+  const onSnippetEndRef = useRef<(() => void) | null>(null);
+
+  // Medley snippet transition: advance to next snippet when timer reaches zero
+  const handleSnippetEnd = useCallback(() => {
+    const currentGame = gameRef.current;
+    if (currentGame.status !== 'playing' || currentGame.medleySnippetList.length <= 1) return;
+    const updated = advanceToNextSnippet(currentGame);
+    if (updated.currentSnippetIndex !== currentGame.currentSnippetIndex) {
+      // Pause current media before switching snippet
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
+      audioHasPlayedRef.current = false;
+      onUpdateGame(updated);
+    }
+  }, [onUpdateGame, audioRef, videoRef, audioHasPlayedRef]);
+
+  useEffect(() => {
+    onSnippetEndRef.current = handleSnippetEnd;
+  }, [handleSnippetEnd]);
 
   const handleRoundEnd = useCallback(() => {
     if (audioRef.current) {
@@ -215,6 +243,7 @@ export function useBattleRoyaleRoundHandlers({
     handleStartRoundAfterVote,
     handleGrandFinaleIntroComplete,
     handleRoundEndRef,
+    onSnippetEndRef,
     activePlayersRef,
     gameRef,
   };

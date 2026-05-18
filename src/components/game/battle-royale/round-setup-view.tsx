@@ -20,10 +20,11 @@ interface RoundSetupViewProps {
   stats: ReturnType<typeof getBattleRoyaleStats>;
   activePlayers: BattleRoyalePlayer[];
   onStartRound: () => void;
+  onUpdateGame: (_game: BattleRoyaleGame) => void;
   onBack?: () => void;
 }
 
-export function RoundSetupView({ game, stats, activePlayers, onStartRound, onBack }: RoundSetupViewProps) {
+export function RoundSetupView({ game, stats, activePlayers, onStartRound, onUpdateGame, onBack }: RoundSetupViewProps) {
   const { t } = useTranslation();
   const party = usePartyStore();
   const [showSpectatorPanel, setShowSpectatorPanel] = useState(false);
@@ -219,6 +220,7 @@ export function RoundSetupView({ game, stats, activePlayers, onStartRound, onBac
                     activePlayers={activePlayers}
                     game={game}
                     correctPredictions={game.correctPredictions[spectator.id] ?? 0}
+                    onUpdateGame={onUpdateGame}
                   />
                 ))}
               </div>
@@ -251,11 +253,13 @@ function SpectatorPredictionCard({
   activePlayers,
   game,
   correctPredictions,
+  onUpdateGame,
 }: {
   spectator: BattleRoyalePlayer;
   activePlayers: BattleRoyalePlayer[];
   game: BattleRoyaleGame;
   correctPredictions: number;
+  onUpdateGame: (_game: BattleRoyaleGame) => void;
 }) {
   const { t } = useTranslation();
   const [prediction, setPrediction] = useState<string | null>(
@@ -265,6 +269,8 @@ function SpectatorPredictionCard({
   const handlePredict = (playerId: string) => {
     const newPrediction = prediction === playerId ? null : playerId;
     setPrediction(newPrediction);
+    const updatedGame = submitPrediction(game, spectator.id, newPrediction);
+    onUpdateGame(updatedGame);
   };
 
   return (

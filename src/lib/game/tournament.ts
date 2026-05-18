@@ -593,9 +593,11 @@ export function getPlayableMatches(bracket: TournamentBracket): TournamentMatch[
     m => {
       if (m.completed || !m.player1 || !m.player2 || m.isBye) return false;
       if (m.round === 1) return true;
+      // Match IDs use 1-based position (generateMatchId uses pos + 1 in generation)
+      // but position field is 0-based, so we need +1 offset
       const pos = m.position;
-      const feeder1 = lookup.get(`${m.round - 1}-${pos * 2}`);
-      const feeder2 = lookup.get(`${m.round - 1}-${pos * 2 + 1}`);
+      const feeder1 = lookup.get(generateMatchId(m.round - 1, pos * 2 + 1, 'winners'));
+      const feeder2 = lookup.get(generateMatchId(m.round - 1, pos * 2 + 2, 'winners'));
       return !!(feeder1 && feeder1.completed) && !!(feeder2 && feeder2.completed);
     }
   );
@@ -613,8 +615,10 @@ function getPlayableMatchesDoubleElim(bracket: TournamentBracket): TournamentMat
     if (m.bracketType === 'winners') {
       // WB matches: same feeder logic as single elimination
       if (m.round === 1) return true;
-      const feeder1 = matchMap.get(generateMatchId(m.round - 1, m.position * 2, 'winners'));
-      const feeder2 = matchMap.get(generateMatchId(m.round - 1, m.position * 2 + 1, 'winners'));
+      // Match IDs use 1-based position (generateMatchId uses pos + 1 in generation)
+      // but position field is 0-based, so we need +1 offset
+      const feeder1 = matchMap.get(generateMatchId(m.round - 1, m.position * 2 + 1, 'winners'));
+      const feeder2 = matchMap.get(generateMatchId(m.round - 1, m.position * 2 + 2, 'winners'));
       return !!(feeder1 && feeder1.completed) && !!(feeder2 && feeder2.completed);
     }
 
@@ -651,9 +655,10 @@ function isLBMatchPlayable(
 
   if (lbRound === 1) {
     // LB R1: feeders are WB R1 matches (paired adjacently)
-    // feeder1 = WB R1 M(2*pos), feeder2 = WB R1 M(2*pos+1)
-    const feeder1 = matchMap.get(generateMatchId(1, lbMatch.position * 2, 'winners'));
-    const feeder2 = matchMap.get(generateMatchId(1, lbMatch.position * 2 + 1, 'winners'));
+    // Match IDs use 1-based position (generateMatchId uses pos + 1 in generation)
+    // but position field is 0-based, so we need +1 offset
+    const feeder1 = matchMap.get(generateMatchId(1, lbMatch.position * 2 + 1, 'winners'));
+    const feeder2 = matchMap.get(generateMatchId(1, lbMatch.position * 2 + 2, 'winners'));
     return !!(feeder1 && feeder1.completed) && !!(feeder2 && feeder2.completed);
   }
 

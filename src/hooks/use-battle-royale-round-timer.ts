@@ -11,6 +11,8 @@ interface UseBattleRoyaleRoundTimerParams {
   // #1 Medley support
   medleySnippetList: MedleySnippet[];
   currentSnippetIndex: number;
+  /** Called when a medley snippet timer reaches zero to advance to the next snippet */
+  onSnippetEndRef: React.RefObject<(() => void) | null>;
 }
 
 interface UseBattleRoyaleRoundTimerReturn {
@@ -29,6 +31,7 @@ export function useBattleRoyaleRoundTimer({
   handleRoundEndRef,
   medleySnippetList,
   currentSnippetIndex,
+  onSnippetEndRef,
 }: UseBattleRoyaleRoundTimerParams): UseBattleRoyaleRoundTimerReturn {
   const [roundTimeLeft, setRoundTimeLeft] = useState(roundDuration || 0);
   const [snippetTimeLeft, setSnippetTimeLeft] = useState<number | null>(null);
@@ -93,6 +96,20 @@ export function useBattleRoyaleRoundTimer({
       handleRoundEndRef.current();
     }
   }, [gameStatus, roundTimeLeft, roundDuration, handleRoundEndRef]);
+
+  // Trigger snippet transition when snippet timer reaches zero
+  useEffect(() => {
+    if (
+      gameStatus === 'playing' &&
+      isMedley &&
+      snippetTimeLeft === 0 &&
+      snippetDuration !== null &&
+      snippetDuration > 0 &&
+      onSnippetEndRef.current
+    ) {
+      onSnippetEndRef.current();
+    }
+  }, [gameStatus, isMedley, snippetTimeLeft, snippetDuration, onSnippetEndRef]);
 
   return { roundTimeLeft, snippetTimeLeft };
 }

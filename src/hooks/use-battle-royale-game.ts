@@ -176,6 +176,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     handleStartRoundAfterVote,
     handleGrandFinaleIntroComplete,
     handleRoundEndRef,
+    onSnippetEndRef,
     activePlayersRef,
     gameRef,
   } = useBattleRoyaleRoundHandlers({
@@ -199,6 +200,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     handleRoundEndRef,
     medleySnippetList: game.medleySnippetList,
     currentSnippetIndex: game.currentSnippetIndex,
+    onSnippetEndRef,
   });
 
   // ── Game Initialization & Playback ─────────────────────────────────

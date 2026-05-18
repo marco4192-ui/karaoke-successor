@@ -122,6 +122,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
         stats={stats}
         activePlayers={activePlayers}
         onStartRound={handleStartRound}
+        onUpdateGame={onUpdateGame}
         onBack={onBack}
       />
     );
