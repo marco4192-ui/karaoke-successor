@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,15 +16,12 @@ import {
   getFanFavorites,
   getMatchesByBracketType,
   getLBRoundName,
-  isInLosersBracket,
   type TournamentBracket,
   type TournamentPlayer,
   type TournamentMatch,
   type TournamentSettings,
-  type HallOfFameEntry,
-  type CrowdVoteMatch,
 } from '@/lib/game/tournament';
-import { Song, PlayerProfile, PLAYER_COLORS, Difficulty } from '@/types/game';
+import { PlayerProfile, PLAYER_COLORS, Difficulty } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { useTranslation } from '@/lib/i18n/translations';
@@ -33,7 +30,6 @@ import { MatchAbortDialog } from '@/components/game/match-abort-dialog';
 
 interface TournamentScreenProps {
   profiles: PlayerProfile[];
-  songs: Song[];
   onStartTournament: (_bracket: TournamentBracket, _songDuration: number) => void;
   onBack: () => void;
 }
@@ -127,6 +123,7 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
       seedingMode,
       filterGenre: 'all',
       filterLanguage: 'all',
+      // TODO: Add genre/language filter UI to tournament setup screen
     };
 
     try {
@@ -296,11 +293,11 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
           <div>
             <label className="text-sm text-white/60 mb-2 block">{t('tournament.difficulty')}</label>
             <div className="flex gap-2">
-              {['easy', 'medium', 'hard'].map(diff => (
+              {(['easy', 'medium', 'hard'] as const).map(diff => (
                 <Button
                   key={diff}
                   variant={difficulty === diff ? 'default' : 'outline'}
-                  onClick={() => setGlobalDifficulty(diff as Difficulty)}
+                  onClick={() => setGlobalDifficulty(diff)}
                   className={difficulty === diff ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}
                 >
                   {diff === 'easy' ? t('tournament.easy') : diff === 'medium' ? t('tournament.medium') : t('tournament.hard')}
@@ -517,8 +514,10 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
   }, [bracket, showResults]);
 
   // #7 Auto-add to Hall of Fame when tournament completes
+  const hofRecordedRef = useRef(false);
   useEffect(() => {
-    if (bracket.status === 'completed' && bracket.champion) {
+    if (bracket.status === 'completed' && bracket.champion && !hofRecordedRef.current) {
+      hofRecordedRef.current = true;
       const placements = getPlayerPlacements(bracket);
       addToHallOfFame(bracket, placements);
     }

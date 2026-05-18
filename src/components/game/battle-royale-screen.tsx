@@ -81,9 +81,10 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
   // Elimination animation
   if (showElimination) {
     const lastRound = game.rounds[game.rounds.length - 1];
-    const eliminatedPlayer = lastRound?.eliminatedPlayerId
+    const eliminatedPlayer = (lastRound?.eliminatedPlayerId
       ? game.players.find(p => p.id === lastRound.eliminatedPlayerId)
-      : sortedPlayers.find(p => p.eliminated);
+          || sortedPlayers.find(p => p.id === lastRound.eliminatedPlayerId)
+      : null) || sortedPlayers.find(p => p.eliminated);
     const bountyClaimed = lastRound?.bountyClaimed ?? false;
     const bountyClaimedById = lastRound?.bountyClaimedById;
 

@@ -33,6 +33,7 @@ export interface BattleRoyalePlayer extends TournamentPlayer {
   maxCombo: number;
   eliminated: boolean;
   eliminationRound: number | null;
+  // Note: 'active' is kept for compatibility but 'eliminated' is the authoritative field
   active: boolean;
   playerType: PlayerType;
   microphoneId?: string;
@@ -173,6 +174,7 @@ export interface BattleRoyaleSettings {
   medleyMode: boolean;
   medleySnippets: number;
   difficulty: Difficulty;
+  // TODO: Wire eliminationAnimation setting to UI toggle
   eliminationAnimation: boolean;
 
   // Song selection (#2)
@@ -249,7 +251,9 @@ export function getHallOfFame(): HallOfFameEntry[] {
   try {
     const stored = localStorage.getItem(HALL_OF_FAME_KEY);
     if (!stored) return [];
-    return JSON.parse(stored) as HallOfFameEntry[];
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) return [];
+    return parsed as HallOfFameEntry[];
   } catch {
     return [];
   }
@@ -264,7 +268,7 @@ function saveHallOfFame(entries: HallOfFameEntry[]): void {
   }
 }
 
-export function recordHallOfFame(game: BattleRoyaleGame): void {
+function recordHallOfFame(game: BattleRoyaleGame): void {
   if (!game.winner) return;
 
   const winner = game.winner;
@@ -476,7 +480,7 @@ export function getPlayersByScore(game: BattleRoyaleGame): BattleRoyalePlayer[] 
 // ==================== ROUND DURATION & DIFFICULTY ====================
 
 /** Calculate effective round duration considering shrinking timer, grand finale, etc. */
-export function getEffectiveRoundDuration(
+function getEffectiveRoundDuration(
   settings: BattleRoyaleSettings,
   roundNumber: number,
   activePlayerCount: number,
@@ -499,7 +503,7 @@ export function getEffectiveRoundDuration(
 }
 
 /** Calculate effective difficulty considering escalating setting */
-export function getEffectiveDifficulty(
+function getEffectiveDifficulty(
   settings: BattleRoyaleSettings,
   roundNumber: number
 ): Difficulty {
@@ -537,7 +541,7 @@ export function getBountyMultiplier(game: BattleRoyaleGame, playerId: string): n
 // ==================== SONG SELECTION HELPERS ====================
 
 /** Filter out recently played songs for no-repeat protection (#3) */
-export function filterRecentSongs(
+function filterRecentSongs(
   songIds: string[],
   recentlyPlayedIds: string[],
   noRepeatProtection: boolean,
@@ -673,6 +677,8 @@ export function startRound(
   );
 
   // Determine round type
+  // Note: 'short' and 'full' round types currently have no behavioral difference in game logic;
+  // they exist for potential future UI/display customization.
   let roundType: BattleRoyaleRound['roundType'] = 'short';
   if (isGrandFinaleRound) {
     roundType = 'grand-finale';
@@ -870,6 +876,18 @@ export function endRoundAndEliminate(game: BattleRoyaleGame): BattleRoyaleGame {
         };
       }
 
+      // Add round highlight for the winning grand finale round
+      const roundHighlight: RoundHighlight = {
+        roundNumber: game.currentRound,
+        eliminatedPlayerId: '', // No elimination in grand finale
+        eliminatedPlayerName: '',
+        topScorerId: roundWinner.id,
+        topScorerName: roundWinner.name,
+        topScoreDelta: roundScoreDeltas[roundWinner.id] ?? 0,
+        bountyClaimed,
+        bountyClaimedById,
+      };
+
       // Record Hall of Fame
       const gameWithStats = updateGameStats({
         ...game,
@@ -877,7 +895,7 @@ export function endRoundAndEliminate(game: BattleRoyaleGame): BattleRoyaleGame {
         finalWins: updatedFinalWins,
         winner: roundWinner,
         status: 'completed',
-        gameStats: { ...game.gameStats, roundHighlights: [...game.gameStats.roundHighlights] },
+        gameStats: { ...game.gameStats, roundHighlights: [...game.gameStats.roundHighlights, roundHighlight] },
       });
       recordHallOfFame(gameWithStats);
 
@@ -1040,7 +1058,7 @@ export function enterGrandFinale(game: BattleRoyaleGame): BattleRoyaleGame {
   return {
     ...game,
     isGrandFinale: true,
-    grandFinaleIntroShown: true,
+    grandFinaleIntroShown: false,
     bountyPlayerId: null, // No bounty in grand finale
     finalWins: {},
   };

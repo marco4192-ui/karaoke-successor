@@ -137,7 +137,7 @@ export const enTranslations = {
       aiSuggestLoading: 'Analyzing...',
       aiSuggestion: 'Suggestion',
       aiAccept: 'Accept',
-      aiHarmonize: 'KI-Harmonisierung',
+      aiHarmonize: 'AI Harmonization',
       aiHarmonizeDesc: 'Normalize genre and language across all songs with missing or inconsistent metadata.',
       aiHarmonizeBtn: 'Harmonize',
       aiHarmonizeLoading: 'Analyzing...',
@@ -736,7 +736,7 @@ export const enTranslations = {
     rateMySong: {
       title: '⭐ Rate my Song',
       subtitle: 'Sing a song and let your friends rate your performance!',
-      back: '← Zurück',
+      back: '← Back',
       mode: 'Mode',
       solo: 'Solo',
       duel: 'Duel',

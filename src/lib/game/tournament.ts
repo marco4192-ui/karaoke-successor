@@ -813,6 +813,12 @@ function recordDoubleEliminationResult(
       } else {
         updatedMatches[nextMatchIndex] = { ...updatedMatches[nextMatchIndex], player2: winner };
       }
+    } else {
+      // This is the WB final (no next WB match) - route winner to GF1 as player1
+      const gf1Index = updatedMatches.findIndex(m => m.id === 'GF1');
+      if (gf1Index >= 0) {
+        updatedMatches[gf1Index] = { ...updatedMatches[gf1Index], player1: winner };
+      }
     }
 
     // Drop loser to losers bracket (first loss)
@@ -909,7 +915,7 @@ function resolveTie(
   mode: TournamentSettings['tiebreakMode'],
   stats?: { accuracy1?: number; accuracy2?: number; maxCombo1?: number; maxCombo2?: number }
 ): TournamentPlayer {
-  if (!match.player1 || !match.player2) return match.player1!;
+  if (!match.player1 || !match.player2) return match.player1 ?? match.player2!;
 
   switch (mode) {
     case 'accuracy': {
@@ -1175,7 +1181,7 @@ export function getFanFavorites(
     .sort((a, b) => b.totalVotes - a.totalVotes);
 }
 
-export function isSpectator(
+function isSpectator(
   companionProfileId: string,
   bracket: TournamentBracket
 ): boolean {

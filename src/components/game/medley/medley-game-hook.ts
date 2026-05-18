@@ -158,15 +158,19 @@ export function useMedleyGame({
   songs: medleySongs,
   settings,
   matchups,
-  seriesHistory: _seriesHistory,
+  seriesHistory, // TODO: Use seriesHistory for adaptive difficulty/seeding across series rounds
   onRoundComplete,
-  onEndGame: _onEndGame,
+  onEndGame,
 }: MedleyGameScreenProps): MedleyGameState {
   // Subscribe to specific fields only (NOT the entire store) to minimize re-renders.
   const pauseDialogAction = usePartyStore(s => s.pauseDialogAction);
   const setIsSongPlaying = usePartyStore(s => s.setIsSongPlaying);
   const isTeam = settings.playMode === 'team';
   const isEliminationMode = settings.playMode === 'elimination';
+
+  // Store onEndGame in ref for use in game loop callbacks
+  const onEndGameRef = useRef(onEndGame);
+  onEndGameRef.current = onEndGame;
 
   // ── Phase ──
   const [phase, setPhase] = useState<MedleyGamePhase>('intro');
@@ -369,6 +373,7 @@ export function useMedleyGame({
         if (prepared.audioUrl) {
           setAudioUrl(prepared.audioUrl);
         } else {
+          // TODO: i18n - replace hardcoded German strings
           setAudioError('Kein Audio verfügbar');
         }
 
@@ -398,6 +403,7 @@ export function useMedleyGame({
           scoringMetaRef.current = null;
         }
       } catch {
+        // TODO: i18n - replace hardcoded German strings
         if (!cancelled) setAudioError('Audio-Laden fehlgeschlagen');
       }
     };
@@ -418,6 +424,7 @@ export function useMedleyGame({
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+    // TODO: i18n - replace hardcoded German strings
     const onErr = () => { setAudioError('Audio-Laden fehlgeschlagen'); };
     audio.addEventListener('error', onErr);
     return () => { audio.removeEventListener('error', onErr); };
@@ -617,7 +624,8 @@ export function useMedleyGame({
     // Check if only 2 remain — if so, we still continue with remaining songs
     const remainingActive = playersRef.current.filter(p => !p.isEliminated);
     if (remainingActive.length <= 2) {
-      // The next snippet will be the final
+      // TODO: Add an announcement system (e.g. setAnnouncement('Final Face-Off!')) and display
+      // a "Final Face-Off!" indicator in the UI when only 2 players remain.
     }
   }, [isEliminationMode, forceRender]);
 
@@ -794,7 +802,8 @@ export function useMedleyGame({
   // ── Transition: pulse then next snippet ──
   useEffect(() => {
     if (phase !== 'transition') return;
-    setTransitionCount(3);
+    const transitionTime = settings.transitionTime ?? 3;
+    setTransitionCount(transitionTime);
 
     const interval = setInterval(() => {
       setTransitionCount(prev => {
@@ -805,7 +814,7 @@ export function useMedleyGame({
           setPhase('playing');
           // Feature #18: Pre-check comeback boost before the last snippet starts
           preCheckComeback(nextIdx);
-          return 3;
+          return transitionTime;
         }
         return prev - 1;
       });
@@ -819,6 +828,7 @@ export function useMedleyGame({
 
   // ── Start game ──
   const handleStart = useCallback(async () => {
+    if (medleySongs.length === 0) return;
     setPhase('countdown');
     setCountdown(3);
 
@@ -903,14 +913,34 @@ export function useMedleyGame({
       audioRef.current.playbackRate = 1.0; // Reset playback rate
     }
     setIsPlaying(false);
+    setIsSongPlaying(false);
     multiPitch.stop();
+
+    // Count snippet as sung for active players
+    const activeIds = getActivePlayerIds();
+    activeIds.forEach(id => {
+      const p = playersRef.current.find(p => p.id === id);
+      if (p) p.snippetsSung++;
+    });
+
+    // Feature #17: Build highlight for this snippet
+    buildSnippetHighlight(currentSnippetIdx);
+
+    // Feature #18: Check team synergy at snippet end
+    checkSynergy();
+    // Feature #18: Finalize comeback bonus (if active on last snippet)
+    finalizeComeback();
+    // Sync team bonus result to state for UI
+    syncTeamBonusResult();
+
+    forceRender();
 
     if (currentSnippetIdx < medleySongs.length - 1) {
       setPhase('transition');
     } else {
       setPhase('round-results');
     }
-  }, [currentSnippetIdx, medleySongs.length, multiPitch]);
+  }, [currentSnippetIdx, medleySongs.length, multiPitch, getActivePlayerIds, buildSnippetHighlight, checkSynergy, finalizeComeback, syncTeamBonusResult, setIsSongPlaying, forceRender]);
 
   // ── Cleanup ──
   useEffect(() => {

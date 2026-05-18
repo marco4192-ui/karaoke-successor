@@ -39,7 +39,6 @@ export function useMobileClient({
   companionProfiles: import('@/hooks/use-companion-sync').CompanionProfile[];
   syncCompanionProfiles: () => Promise<void>;
   companionQueue: import('@/hooks/use-companion-sync').CompanionQueueItem[];
-  syncCompanionQueue: () => Promise<void>;
   syncSongLibrary: () => Promise<void>;
 } {
   // ── Sub-hooks ──
@@ -48,7 +47,6 @@ export function useMobileClient({
     companionProfiles,
     syncCompanionProfiles,
     companionQueue,
-    syncCompanionQueue,
   } = useCompanionSync();
   const profiles = useGameStore((state) => state.profiles);
   const { syncSongLibrary } = useSongLibrarySync(profiles);
@@ -122,7 +120,6 @@ export function useMobileClient({
     companionProfiles,
     syncCompanionProfiles,
     companionQueue,
-    syncCompanionQueue,
     syncSongLibrary,
   };
 }

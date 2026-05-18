@@ -34,7 +34,6 @@ export function useCompanionSync(): {
   companionProfiles: CompanionProfile[];
   syncCompanionProfiles: () => Promise<void>;
   companionQueue: CompanionQueueItem[];
-  syncCompanionQueue: () => Promise<void>;
 } {
   const [companionProfiles, setCompanionProfiles] = useState<CompanionProfile[]>([]);
   const [companionQueue, setCompanionQueue] = useState<CompanionQueueItem[]>([]);
@@ -85,11 +84,6 @@ export function useCompanionSync(): {
     }
   }, []);
 
-  // Sync companion queue - can be used by main app to show companion queue items
-  const syncCompanionQueue = useCallback(async () => {
-    await fetchCompanionQueue();
-  }, [fetchCompanionQueue]);
-
   // Periodically fetch companion queue (every 5 seconds)
   useEffect(() => {
     const syncInterval = setInterval(fetchCompanionQueue, 5000);
@@ -102,6 +96,5 @@ export function useCompanionSync(): {
     companionProfiles,
     syncCompanionProfiles,
     companionQueue,
-    syncCompanionQueue,
   };
 }

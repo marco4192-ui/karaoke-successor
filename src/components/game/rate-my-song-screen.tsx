@@ -23,11 +23,9 @@ import {
   getAICriticComment,
   getRateMySongPlayerStats,
   getSongSuggestions,
-  getRandomChallenge,
   updateRateMySongPlayerStats,
   getPlayerRank,
   getAchievementById,
-  RATE_MY_SONG_ACHIEVEMENTS,
   type RateMySongEntry,
   type RateMySongDailyEntry,
   type RateMySongPlayerStats,
@@ -525,6 +523,7 @@ export function RateMySongSetupScreen({ profiles, onStart, onBack }: RateMySongS
 }
 
 // ===================== RATING SCREEN =====================
+// TODO: Implement duel/duet-specific rating UI and scoring logic
 
 interface RateMySongRatingScreenProps {
   songTitle: string;
@@ -534,7 +533,6 @@ interface RateMySongRatingScreenProps {
   categoriesEnabled?: boolean;
   anonymousRating?: boolean;
   challengesEnabled?: boolean;
-  bettingEnabled?: boolean;
   currentChallenge?: RateMySongChallenge | null;
   onSubmit: (_ratings: RateMySongRating[]) => void;
   onBack: () => void;
@@ -548,7 +546,6 @@ export function RateMySongRatingScreen({
   categoriesEnabled = false,
   anonymousRating = false,
   challengesEnabled = false,
-  bettingEnabled = false,
   currentChallenge = null,
   onSubmit,
   onBack,
@@ -917,7 +914,6 @@ interface RateMySongResultsScreenProps {
   songGenre?: string;
   categoriesEnabled?: boolean;
   challengesEnabled?: boolean;
-  bettingEnabled?: boolean;
   seriesRound?: number;
   seriesTotalRounds?: number;
   onPlayAgain: () => void;
@@ -930,7 +926,6 @@ export function RateMySongResultsScreen({
   songGenre,
   categoriesEnabled = false,
   challengesEnabled = false,
-  bettingEnabled = false,
   seriesRound,
   seriesTotalRounds,
   onPlayAgain,
@@ -1443,11 +1438,13 @@ export function RateMySongSeriesResultsScreen({ seriesHistory, onEnd }: RateMySo
               </div>
             )}
             {/* Funniest Moment */}
+            {/* TODO: Implement real "Funniest Moment" based on audience reactions or ratings */}
             <div className="p-3 rounded-xl bg-pink-500/10 border border-pink-500/30">
               <div className="text-xs text-pink-400 font-semibold">{t('rateMySong.awardFunniest')}</div>
               <div className="text-sm text-gray-300 mt-1">🎉 {winner?.name || t('rateMySong.voteSongOfEvening')}</div>
             </div>
             {/* Biggest Surprise */}
+            {/* TODO: Implement real "Biggest Surprise" based on score deviation from expected */}
             <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30">
               <div className="text-xs text-purple-400 font-semibold">{t('rateMySong.awardBiggestSurprise')}</div>
               <div className="text-sm text-gray-300 mt-1">🎊 {t('rateMySong.songOfTheEvening')}</div>

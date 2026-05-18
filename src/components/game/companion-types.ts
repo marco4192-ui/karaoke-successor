@@ -26,10 +26,16 @@ export interface CompanionRoundResult {
 
 export interface CompanionSingAlongSettings {
   difficulty: Difficulty;
+  minTurnDuration?: number;
+  maxTurnDuration?: number;
+  blinkWarning?: number;
 }
 
 export const DEFAULT_SETTINGS: CompanionSingAlongSettings = {
   difficulty: 'medium',
+  minTurnDuration: 15,
+  maxTurnDuration: 45,
+  blinkWarning: 3,
 };
 
 export type GamePhase = 'intro' | 'countdown' | 'playing' | 'switching' | 'song-results' | 'series-results';

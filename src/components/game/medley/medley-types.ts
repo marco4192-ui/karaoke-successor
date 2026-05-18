@@ -74,7 +74,7 @@ export interface VoiceModifierDef {
 
 export const VOICE_MODIFIERS: VoiceModifierDef[] = [
   { id: 'none', labelKey: 'medley.modifierNone', icon: '🎵', descriptionKey: 'medley.modifierNoneDesc', playbackRate: 1.0 },
-  { id: 'chipmunk', labelKey: 'medley.chipmunk', icon: '🐿️', descriptionKey: 'medley.chipmunkDesc', playbackRate: 1.05 },
+  { id: 'chipmunk', labelKey: 'medley.chipmunk', icon: '🐿️', descriptionKey: 'medley.chipmunkDesc', playbackRate: 1.4 },
   { id: 'slow', labelKey: 'medley.slowMo', icon: '🐌', descriptionKey: 'medley.slowMoDesc', playbackRate: 0.8 },
   { id: 'fast', labelKey: 'medley.turbo', icon: '⚡', descriptionKey: 'medley.turboDesc', playbackRate: 1.2 },
   { id: 'acapella', labelKey: 'medley.acapella', icon: '🎤', descriptionKey: 'medley.acapellaDesc', playbackRate: 1.0 },

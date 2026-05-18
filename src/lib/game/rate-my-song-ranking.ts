@@ -299,6 +299,7 @@ export function updateRateMySongPlayerStats(
   return stats;
 }
 
+// TODO: Wire into results processing to enable crowd_favorite/centurion achievements
 /** Add audience rating count to a player's stats (called per audience vote) */
 export function addAudienceRatingToStats(playerId: string, count: number = 1): void {
   const allStats = loadAllPlayerStats();
@@ -309,10 +310,6 @@ export function addAudienceRatingToStats(playerId: string, count: number = 1): v
   }
 }
 
-/** Get stats for all players */
-export function getAllPlayerStats(): RateMySongPlayerStats[] {
-  return loadAllPlayerStats();
-}
 
 // ══════════════════════════════════════════════════════════════════════════
 // C. RANK SYSTEM

@@ -438,6 +438,7 @@ export function CompetitiveGameView({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [game.status, songs, game.players, game.rounds, onUpdateGame]);
 
+  // TODO: Add back navigation from competitive game view to setup screen
   // Delegate to game screen when round is ready to play
   useEffect(() => {
     if (game.status === 'playing' && currentRound && !hasTriggeredPlay.current) {
@@ -549,16 +550,21 @@ function CompetitiveScoreboard({ game, ranked, modeType, onNextRound }: Competit
                   <div className="text-green-400 text-sm">{t('competitiveWords.bonus').replace('{n}', String(lastRound.player1Bonus))}</div>
                 )}
               </div>
-              <div className="text-gray-500 self-center text-2xl">{t('competitiveWords.vs')}</div>
-              <div className="text-center">
-                <div className="text-lg font-bold">
-                  {game.players.find(p => p.id === lastRound.player2Id)?.name}
-                </div>
-                <div className="text-indigo-400 font-mono">{lastRound.player2Score} {t('competitiveWords.pts').replace('{n}', String(lastRound.player2Score))}</div>
-                {lastRound.player2Bonus > 0 && (
-                  <div className="text-green-400 text-sm">{t('competitiveWords.bonus').replace('{n}', String(lastRound.player2Bonus))}</div>
-                )}
-              </div>
+              {/* Only show Player 2 column in multi-player modes (solo uses empty string for player2Id) */}
+              {game.settings.playMode !== 'solo' && lastRound.player2Id && (
+                <>
+                  <div className="text-gray-500 self-center text-2xl">{t('competitiveWords.vs')}</div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold">
+                      {game.players.find(p => p.id === lastRound.player2Id)?.name}
+                    </div>
+                    <div className="text-indigo-400 font-mono">{lastRound.player2Score} {t('competitiveWords.pts').replace('{n}', String(lastRound.player2Score))}</div>
+                    {lastRound.player2Bonus > 0 && (
+                      <div className="text-green-400 text-sm">{t('competitiveWords.bonus').replace('{n}', String(lastRound.player2Bonus))}</div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -636,7 +642,7 @@ function CompetitiveScoreboard({ game, ranked, modeType, onNextRound }: Competit
 // ===================== WINNER SCREEN =====================
 
 function CompetitiveWinnerScreen({
-  game: _game,
+  game,
   ranked,
   modeType,
   onEndGame,
@@ -649,6 +655,14 @@ function CompetitiveWinnerScreen({
   const { t } = useTranslation();
   const winner = ranked[0];
   const modeIcon = modeType === 'missing-words' ? '📝' : '🙈';
+
+  // Game-level statistics from the competitive game object
+  const totalRoundsPlayed = game.rounds.length;
+  const playModeLabel = game.settings.playMode === 'solo'
+    ? t('competitiveWords.modeSolo')
+    : game.settings.playMode === 'coop'
+      ? t('competitiveWords.modeCoop')
+      : t('competitiveWords.modeCompetitive');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/30 to-gray-900 text-white p-4 md:p-8 flex items-center justify-center">
@@ -666,8 +680,16 @@ function CompetitiveWinnerScreen({
           </div>
         )}
 
-        <div className="text-5xl font-bold text-yellow-400 mb-8">
+        <div className="text-5xl font-bold text-yellow-400 mb-4">
           {winner?.totalScore} {t('competitiveWords.points').replace('{n}', String(winner?.totalScore))}
+        </div>
+
+        {/* Game statistics */}
+        <div className="flex items-center justify-center gap-4 mb-6 text-sm text-gray-400">
+          <span className="bg-gray-700/50 px-3 py-1 rounded-full">{playModeLabel}</span>
+          <span className="bg-gray-700/50 px-3 py-1 rounded-full">
+            {totalRoundsPlayed} {t('competitiveWords.roundsPlayed').replace('{n}', String(totalRoundsPlayed))}
+          </span>
         </div>
 
         {/* Final rankings */}

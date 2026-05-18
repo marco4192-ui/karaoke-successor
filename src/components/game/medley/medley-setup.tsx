@@ -28,6 +28,7 @@ import { generateMedleySnippets, getAvailableGenres, getAvailableLanguages } fro
 import type { Language } from '@/lib/i18n/translations';
 import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
 import { useTranslation } from '@/lib/i18n/translations';
+import { StorageKeys, getJsonOptional } from '@/lib/storage';
 
 // ===================== COMPANION PROFILE TYPE =====================
 
@@ -299,8 +300,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
       }
       setSwapSelection([]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [swapSelection.length]);
+  }, [swapSelection.length, teamAIds, teamBIds]);
 
   // ── Start Game ──
   const handleStart = useCallback(() => {
@@ -315,11 +315,40 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
       }
     }
 
+    // Load mic preferences from localStorage (same as unified-party-setup)
+    let micPreferences: Record<string, string> = {};
+    let savedMics: Array<{ id: string; deviceId: string; customName: string; deviceName: string }> = [];
+    try {
+      micPreferences = getJsonOptional<Record<string, string>>(StorageKeys.PLAYER_MIC_PREFERENCES) || {};
+      const micConfig = getJsonOptional<{ assignedMics?: Array<{ id: string; deviceId: string; customName: string; deviceName: string }> }>(StorageKeys.MULTI_MIC_CONFIG);
+      if (micConfig) savedMics = micConfig.assignedMics || [];
+    } catch { /* ignore */ }
+
     // Build players
     const players: MedleyPlayer[] = selectedProfileIds.map((id, i) => {
       const profile = profiles.find(p => p.id === id);
       const team = isTeam ? (teamBIds.includes(id) ? 1 : 0) : 0;
       const inputType = playerInputModes[id] || 'local';
+
+      // Resolve mic assignment for local players
+      let resolvedMicId: string | undefined;
+      let resolvedMicName: string | undefined;
+      if (inputType === 'local') {
+        const micEntry = Object.entries(micPreferences).find(([, pid]) => pid === id);
+        const assignedMic = micEntry ? savedMics.find(m => m.id === micEntry[0]) : null;
+        if (assignedMic) {
+          resolvedMicId = assignedMic.deviceId;
+          resolvedMicName = assignedMic.customName || assignedMic.deviceName;
+        } else {
+          // Auto-assign by index if no explicit assignment
+          const autoMic = savedMics[i];
+          if (autoMic) {
+            resolvedMicId = autoMic.deviceId;
+            resolvedMicName = autoMic.customName || autoMic.deviceName;
+          }
+        }
+      }
+
       return {
         id,
         name: profile?.name || 'Unknown',
@@ -327,8 +356,8 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
         color: profile?.color || `hsl(${(i * 90) % 360}, 70%, 60%)`,
         team,
         inputType,
-        micId: inputType === 'local' ? undefined : undefined,
-        micName: inputType === 'local' ? `Mic ${i + 1}` : undefined,
+        micId: resolvedMicId,
+        micName: resolvedMicName,
         mobileClientId: inputType === 'mobile' ? playerMobileClientIds[id] : undefined,
         score: 0,
         notesHit: 0,
@@ -856,7 +885,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-purple-400">
-                {Math.ceil(snippetCount * settings.snippetDuration / 60)} {t('medley.min')}
+                {Math.ceil((snippetCount * settings.snippetDuration + (snippetCount - 1) * (settings.transitionTime ?? 3)) / 60)} {t('medley.min')}
               </div>
               <div className="text-xs text-white/40">{t('medley.approxTotalDuration')}</div>
             </div>

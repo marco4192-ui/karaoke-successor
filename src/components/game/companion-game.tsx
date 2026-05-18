@@ -73,7 +73,7 @@ export function CompanionGameView({
   const currentPlayer = playersSnapshot[currentPlayerIndex];
 
   // ── Switch timer ──
-  const initialTurnDuration = randomTurnDuration();
+  const [initialTurnDuration] = useState(() => randomTurnDuration());
   const timeUntilSwitchRef = useRef(initialTurnDuration);
   const [timeUntilSwitchDisplay, setTimeUntilSwitchDisplay] = useState(initialTurnDuration);
   const [timeUntilSwitchTotal, setTimeUntilSwitchTotal] = useState(initialTurnDuration);
@@ -152,7 +152,7 @@ export function CompanionGameView({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'gamestate', payload: { singalongTurn: null } }),
       }).catch(() => {});
-      stop();
+      // NOTE: stop() is called in the dedicated cleanup useEffect below; not duplicated here (CP-M3).
     };
   }, [stop]);
 
@@ -245,6 +245,11 @@ export function CompanionGameView({
     if (phase !== 'switching' || switchCountdown === null) return;
 
     if (switchCountdown <= 0) {
+      // Reset scoring refs so stale note state doesn't bleed into the next player (CP-M1)
+      lastActiveNoteStartRef.current = null;
+      lastNoteWasHitRef.current = false;
+      lastEvalTimeRef.current = 0;
+
       // Activate the next player
       setCurrentPlayerIndex(nextPlayerIndexRef.current);
       timeUntilSwitchRef.current = randomTurnDuration();
@@ -348,9 +353,12 @@ export function CompanionGameView({
       ...p, ...EMPTY_PLAYER_SCORE, turnCount: 0,
     }));
     setCompanionPlayers(resetPlayers);
-    onEndGame();
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- setCompanionPlayers excluded; stable setState
-  }, [onEndGame]);
+    // Reset song so the library/pick screen shows again (CP-C2)
+    setCompanionSong(null);
+    setPhase('intro');
+    // Do NOT call onEndGame() — it wipes companionPlayers via party-store.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- setCompanionPlayers/setCompanionSong excluded; stable setState
+  }, []);
 
   // ── End series ──
   const handleEndSeries = useCallback(() => {
@@ -540,7 +548,7 @@ export function CompanionGameView({
             </CardContent>
           </Card>
 
-          <Button onClick={() => { setIsPlaying(false); recordRound(); setPhase('song-results'); }}
+          <Button onClick={() => { if (audioRef.current) audioRef.current.pause(); setIsPlaying(false); recordRound(); setPhase('song-results'); }}
             variant="outline" className="w-full mt-3 border-white/20 text-white/60 hover:text-white">
             {t('companion.endSongEarly')}
           </Button>

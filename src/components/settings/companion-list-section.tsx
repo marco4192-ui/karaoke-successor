@@ -26,8 +26,6 @@ interface CompanionClient {
 interface CompanionListResponse {
   success: boolean;
   clients: CompanionClient[];
-  connectedCount: number;
-  remoteControl?: { isLocked: boolean; lockedByName: string | null };
 }
 
 // ===================== HELPERS =====================

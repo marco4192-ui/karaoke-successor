@@ -21,7 +21,6 @@ import { CompetitiveSetupScreen, CompetitiveGameView } from '@/components/game/c
 import { RateMySongSetupScreen, RateMySongRatingScreen, RateMySongResultsScreen, RateMySongSeriesResultsScreen } from '@/components/game/rate-my-song-screen';
 import type { RateMySongResult, RateMySongRating } from '@/components/game/rate-my-song-screen';
 import { getRandomChallenge } from '@/lib/game/rate-my-song-ranking';
-import type { RateMySongChallenge } from '@/lib/game/rate-my-song-ranking';
 import type { GameSetupResult } from '@/components/game/unified-party-setup';
 import { preparePtmNextSong } from '@/lib/game/ptm-next-song';
 import { toast } from '@/hooks/use-toast';
@@ -30,6 +29,14 @@ import type { Screen } from '@/types/screens';
 interface PartyGameScreensProps {
   screen: Screen;
   setScreen: (_s: Screen) => void;
+}
+
+/** Convert a numeric blind/missing-word frequency (0.15–0.90) to the string label used by GameSetupResult settings */
+function freqNumberToLabel(freq: number): 'light' | 'normal' | 'hard' | 'insane' {
+  if (freq >= 0.75) return 'insane';
+  if (freq >= 0.45) return 'hard';
+  if (freq >= 0.20) return 'normal';
+  return 'light';
 }
 
 // ===================== PARTY GAME MODE SCREENS =====================
@@ -43,15 +50,11 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
   // Track current series round (1-based)
   const [rateMySongSeriesRound, setRateMySongSeriesRound] = useState(1);
 
-  // State for PTM next-song loading
-  const [__ptmNextLoading, setPtmNextLoading] = useState(false);
-
   // #7 Tournament results screen
   const [showTournamentResults, setShowTournamentResults] = useState(false);
 
   // #8 Tournament song voting state
   const [tournamentVotingActive, setTournamentVotingActive] = useState(false);
-  const votedSongRef = useRef<import('@/types/game').Song | null>(null);
 
   // ── Tournament mic assignment overlay state ──
   const [micOverlay, setMicOverlay] = useState<{ p1Name: string; p2Name: string; p1Mic: string; p2Mic: string; countdown: number } | null>(null);
@@ -177,9 +180,9 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           { id: match.player1.id, name: match.player1.name, color: match.player1.color || '#FF6B6B', playerType: micOverlay.p1Mic === t('partyGameScreens.companion') ? 'companion' : 'microphone', micId: 'default', micName: micOverlay.p1Mic },
           { id: match.player2.id, name: match.player2.name, color: match.player2.color || '#4ECDC4', playerType: micOverlay.p2Mic === t('partyGameScreens.companion') ? 'companion' : 'microphone', micId: 'default', micName: micOverlay.p2Mic },
         ],
-        settings: { difficulty: 'medium', filterGenre: 'all', filterLanguage: 'all', filterCombined: true },
+        settings: { difficulty: party.tournamentBracket?.settings?.difficulty ?? 'medium', filterGenre: 'all', filterLanguage: 'all', filterCombined: true },
         songSelection: 'random',
-        difficulty: 'medium',
+        difficulty: party.tournamentBracket?.settings?.difficulty ?? 'medium',
         inputMode: 'microphone',
       };
       party.setUnifiedSetupResult(setupResult);
@@ -283,6 +286,9 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             party.setPassTheMicSong(null);
             party.setPassTheMicSegments([]);
             party.setIsSongPlaying(false);
+            // Correct legacy flow: no series history = first/only song done, go to setup;
+            // has series history = more songs to sing, continue to library.
+            // NOTE: In the unified flow, series history is never populated via this path.
             if (party.passTheMicSeriesHistory.length === 0) {
               setScreen('party-setup');
             } else {
@@ -293,7 +299,6 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           onNavigate={async (targetScreen) => {
             // Handle special PTM next-song navigation
             if (targetScreen === 'ptm-next-random' || targetScreen === 'ptm-next-medley') {
-              setPtmNextLoading(true);
               try {
                 const playerCount = party.passTheMicPlayers.length || 2;
                 const segDur = party.passTheMicSettings?.segmentDuration;
@@ -330,10 +335,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               } catch (err) {
                 // eslint-disable-next-line no-console
                 console.error('[PTM] Failed to prepare next song:', err);
-                toast({ title: 'Fehler', description: 'Nächstes Lied konnte nicht geladen werden.', variant: 'destructive' });
+                toast({ title: t('common.error') || 'Error', description: t('partyGameSongs.nextSongError') || 'Could not load next song.', variant: 'destructive' });
                 setScreen('library');
-              } finally {
-                setPtmNextLoading(false);
               }
             } else if (targetScreen === 'song-voting') {
               // Re-generate voting songs from filtered pool
@@ -410,7 +413,6 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       {screen === 'tournament' && (
         <TournamentSetupScreen
           profiles={profiles}
-          songs={getNonDuetSongs()}
           onStartTournament={(bracket, songDuration) => {
             party.setTournamentBracket(bracket);
             party.setTournamentSongDuration(songDuration);
@@ -435,6 +437,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             // #8 Check if voting mode — show voting overlay instead of starting directly
             const bracket = party.tournamentBracket;
             if (bracket && bracket.settings.songSelectionMode === 'vote') {
+              // TODO: Use filterSongs utility with filterCombined setting for tournament voting
               // Pick 3 random songs for voting (same pool logic as pickTournamentSong)
               const usedIds = new Set(party.tournamentUsedSongIds);
               const pool = getNonDuetSongs().filter(s => {
@@ -607,7 +610,6 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           onNavigate={async (targetScreen) => {
             // Handle next-song navigation (same pattern as PtM)
             if (targetScreen === 'ptm-next-random' || targetScreen === 'ptm-next-medley') {
-              setPtmNextLoading(true);
               try {
                 const playerCount = party.cptmPlayers.length || 2;
                 const segDur = party.cptmSettings?.segmentDuration;
@@ -632,10 +634,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                 }
               } catch (err) {
                 console.error('[CPtM] Failed to prepare next song:', err);
-                toast({ title: 'Fehler', description: 'Nächstes Lied konnte nicht geladen werden.', variant: 'destructive' });
+                toast({ title: t('common.error') || 'Error', description: t('partyGameSongs.nextSongError') || 'Could not load next song.', variant: 'destructive' });
                 setScreen('library');
-              } finally {
-                setPtmNextLoading(false);
               }
             } else if (targetScreen === 'song-voting') {
               const { filterSongs } = await import('@/lib/game/song-library');
@@ -758,12 +758,23 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                 { id: p1Id, name: p1Name, color: p1Color, playerType: 'microphone', micId: 'default', micName: t('partyGameScreens.microphone1') },
                 { id: p2Id, name: p2Name, color: p2Color, playerType: 'microphone', micId: 'default', micName: t('partyGameScreens.microphone2') },
               ],
-              settings: { difficulty: comp.settings.difficulty, filterGenre: 'all', filterLanguage: 'all', filterCombined: true },
+              settings: {
+                difficulty: comp.settings.difficulty,
+                filterGenre: 'all',
+                filterLanguage: 'all',
+                filterCombined: true,
+                missingWordFrequency: freqNumberToLabel(comp.settings.missingWordFrequency),
+                bestOf: comp.settings.bestOf,
+                granularity: comp.settings.missingWordsGranularity,
+                hardcoreMissingWords: comp.settings.hardcoreMissingWords,
+                escalating: comp.settings.escalating,
+              },
               songSelection: 'random',
               difficulty: comp.settings.difficulty,
               inputMode: 'microphone',
             };
             party.setUnifiedSetupResult(setupResult);
+            // TODO: Add back navigation from competitive game view to setup screen
             setGameMode('missing-words');
             setSong(song);
             setScreen('game');
@@ -780,7 +791,17 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               players: [
                 { id: pId, name: pName, color: pColor, playerType: 'microphone', micId: 'default', micName: t('partyGameScreens.microphone1') },
               ],
-              settings: { difficulty: comp.settings.difficulty, filterGenre: 'all', filterLanguage: 'all', filterCombined: true },
+              settings: {
+                difficulty: comp.settings.difficulty,
+                filterGenre: 'all',
+                filterLanguage: 'all',
+                filterCombined: true,
+                missingWordFrequency: freqNumberToLabel(comp.settings.missingWordFrequency),
+                bestOf: comp.settings.bestOf,
+                granularity: comp.settings.missingWordsGranularity,
+                hardcoreMissingWords: comp.settings.hardcoreMissingWords,
+                escalating: comp.settings.escalating,
+              },
               songSelection: 'random',
               difficulty: comp.settings.difficulty,
               inputMode: 'microphone',
@@ -833,12 +854,22 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                 { id: p1Id, name: p1Name, color: p1Color, playerType: 'microphone', micId: 'default', micName: t('partyGameScreens.microphone1') },
                 { id: p2Id, name: p2Name, color: p2Color, playerType: 'microphone', micId: 'default', micName: t('partyGameScreens.microphone2') },
               ],
-              settings: { difficulty: comp.settings.difficulty, filterGenre: 'all', filterLanguage: 'all', filterCombined: true },
+              settings: {
+                difficulty: comp.settings.difficulty,
+                filterGenre: 'all',
+                filterLanguage: 'all',
+                filterCombined: true,
+                blindFrequency: freqNumberToLabel(comp.settings.blindFrequency),
+                bestOf: comp.settings.bestOf,
+                hardcore: comp.settings.hardcore,
+                escalating: comp.settings.escalating,
+              },
               songSelection: 'random',
               difficulty: comp.settings.difficulty,
               inputMode: 'microphone',
             };
             party.setUnifiedSetupResult(setupResult);
+            // TODO: Add back navigation from competitive game view to setup screen
             setGameMode('blind');
             setSong(song);
             setScreen('game');
@@ -855,7 +886,16 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               players: [
                 { id: pId, name: pName, color: pColor, playerType: 'microphone', micId: 'default', micName: t('partyGameScreens.microphone1') },
               ],
-              settings: { difficulty: comp.settings.difficulty, filterGenre: 'all', filterLanguage: 'all', filterCombined: true },
+              settings: {
+                difficulty: comp.settings.difficulty,
+                filterGenre: 'all',
+                filterLanguage: 'all',
+                filterCombined: true,
+                blindFrequency: freqNumberToLabel(comp.settings.blindFrequency),
+                bestOf: comp.settings.bestOf,
+                hardcore: comp.settings.hardcore,
+                escalating: comp.settings.escalating,
+              },
               songSelection: 'random',
               difficulty: comp.settings.difficulty,
               inputMode: 'microphone',
@@ -953,7 +993,6 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           categoriesEnabled={rms.categoriesEnabled}
           anonymousRating={rms.anonymousRating}
           challengesEnabled={rms.challengesEnabled}
-          bettingEnabled={rms.bettingEnabled}
           currentChallenge={party.rateMySongCurrentChallenge}
           onSubmit={(ratings) => {
             const avg = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
@@ -964,6 +1003,12 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               averageRating: Math.round(avg * 10) / 10,
             };
             setRateMySongResult(result);
+            // Save round to series history ONCE at submit time, not during render
+            const totalRounds = rms.seriesRounds || 1;
+            const isSeries = totalRounds > 1;
+            if (isSeries && ratings.length > 0) {
+              party.addRateMySongSeriesRound(ratings);
+            }
             setScreen('rate-my-song-results');
           }}
           onBack={() => setScreen('party')}
@@ -980,11 +1025,6 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
         const totalRounds = rms.seriesRounds || 1;
         const isLastRound = rateMySongSeriesRound >= totalRounds;
         const isSeries = totalRounds > 1;
-
-        // Save round to series history
-        if (isSeries && rateMySongResult.ratings.length > 0) {
-          party.addRateMySongSeriesRound(rateMySongResult.ratings);
-        }
 
         // If last round of a series, show series results
         if (isSeries && isLastRound) {
@@ -1010,7 +1050,6 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             songGenre={rmsSong?.genre}
             categoriesEnabled={rms.categoriesEnabled}
             challengesEnabled={rms.challengesEnabled}
-            bettingEnabled={rms.bettingEnabled}
             seriesRound={rateMySongSeriesRound}
             seriesTotalRounds={totalRounds}
             onPlayAgain={() => {

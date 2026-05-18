@@ -27,7 +27,7 @@ interface UseBattleRoyaleRoundTimerReturn {
 export function useBattleRoyaleRoundTimer({
   gameStatus,
   roundDuration,
-  gameCurrentRound: _gameCurrentRound,
+  gameCurrentRound,
   handleRoundEndRef,
   medleySnippetList,
   currentSnippetIndex,
@@ -62,7 +62,7 @@ export function useBattleRoyaleRoundTimer({
 
       return () => clearInterval(interval);
     }
-  }, [gameStatus, roundDuration, _gameCurrentRound]);
+  }, [gameStatus, roundDuration, gameCurrentRound]);
 
   // Medley snippet timer: countdown within each snippet
   useEffect(() => {

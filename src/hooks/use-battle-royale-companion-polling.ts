@@ -70,17 +70,17 @@ export function useBattleRoyaleCompanionPolling({
         if (!res.ok) return;
         const data = await res.json();
 
-        // data is expected to be an array of { clientId, note, accuracy } objects
-        const pitchEntries = Array.isArray(data) ? data : [];
+        // data is expected to be { success: true, pitches: [...] } — extract the pitches array
+        const pitchEntries = Array.isArray(data?.pitches) ? data.pitches : [];
 
         const now = Date.now();
 
-        // Build the set of active companion client IDs from the response
-        const activeClientIds = new Set<string>();
+        // Build the set of active companion connection codes from the response
+        const activeCodes = new Set<string>();
         for (const entry of pitchEntries) {
-          if (entry.clientId && entry.note !== undefined) {
-            activeClientIds.add(entry.clientId);
-            companionPitchCacheRef.current.set(entry.clientId, {
+          if (entry.code && entry.note !== undefined) {
+            activeCodes.add(entry.code);
+            companionPitchCacheRef.current.set(entry.code, {
               note: entry.note,
               accuracy: entry.accuracy || 0,
               isSinging: entry.isSinging,
@@ -93,7 +93,7 @@ export function useBattleRoyaleCompanionPolling({
         // the grace period). Companions that simply missed one poll cycle
         // retain their cached pitch data for up to STALE_PITCH_MS.
         for (const [cachedId, cachedEntry] of companionPitchCacheRef.current.entries()) {
-          if (!activeClientIds.has(cachedId) && (now - cachedEntry.lastUpdated) > STALE_PITCH_MS) {
+          if (!activeCodes.has(cachedId) && (now - cachedEntry.lastUpdated) > STALE_PITCH_MS) {
             companionPitchCacheRef.current.delete(cachedId);
           }
         }

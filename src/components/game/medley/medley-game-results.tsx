@@ -11,7 +11,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { MedleyPlayer, MedleySettings, MedleyRoundResult, MedleyHighlight, MedleySong, TeamBonusResult } from './medley-types';
+import type { MedleyPlayer, MedleySettings, MedleyRoundResult, MedleyHighlight, TeamBonusResult } from './medley-types';
 import { getDailyMedleyTopN, getMedleyTopN, type MedleyHistoryEntry } from '@/lib/game/medley-ranking';
 import { useTranslation } from '@/lib/i18n/translations';
 import { toast } from '@/hooks/use-toast';
@@ -32,8 +32,6 @@ export interface MedleyRoundResultsProps {
   highlights?: MedleyHighlight[];
   // Feature #18
   teamBonusResult?: TeamBonusResult;
-  // For highlights
-  medleySongs?: MedleySong[];
 }
 
 export function MedleyRoundResults({
@@ -171,7 +169,8 @@ export function MedleyRoundResults({
             const totalNotes = player.notesHit + player.notesMissed;
             const accuracy = totalNotes > 0 ? Math.round((player.notesHit / totalNotes) * 100) : 0;
             const basePoints = player.notesHit * 50;
-            const comboBonus = Math.max(0, player.score - basePoints);
+            // Combo bonus based on max combo streak (avoids negative when scoring varies per hit)
+            const comboBonus = player.maxCombo > 1 ? Math.round(player.maxCombo * 10) : 0;
 
             return (
               <div key={player.id} className="flex items-center gap-3 text-sm">
@@ -457,7 +456,7 @@ export function MedleyFinalResults({
       <ShareButton players={players} winner={winner ? { name: winner[1].name, score: winner[1].totalScore } as { name: string; score: number } : null} settings={settings} />
 
       {/* Feature #13: Leaderboard */}
-      {showLeaderboard && <LeaderboardSection />}
+      {showLeaderboard && <LeaderboardSection showLeaderboard={showLeaderboard} />}
 
       <Button onClick={onBack}
         className="w-full py-4 text-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 mt-4">
@@ -469,7 +468,7 @@ export function MedleyFinalResults({
 
 // ===================== FEATURE #13: LEADERBOARD =====================
 
-function LeaderboardSection() {
+function LeaderboardSection({ showLeaderboard }: { showLeaderboard: boolean }) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<'daily' | 'alltime'>('daily');
   const [dailyEntries, setDailyEntries] = useState<MedleyHistoryEntry[]>([]);
@@ -478,7 +477,7 @@ function LeaderboardSection() {
   useEffect(() => {
     setDailyEntries(getDailyMedleyTopN(5));
     setAllTimeEntries(getMedleyTopN(5));
-  }, []);
+  }, [showLeaderboard]);
 
   const entries = tab === 'daily' ? dailyEntries : allTimeEntries;
 
@@ -588,6 +587,7 @@ function ShareButton({
   const handleShare = useCallback(() => {
     if (!winner) return;
 
+    // TODO: Show cumulative max combo across series rounds in share text
     const bestCombo = Math.max(...players.map(p => p.maxCombo));
     const text = `🎵 Medley Contest!\n🏆 Gewinner: ${winner.name} (${winner.score} Pkt)\n🔥 Beste Combo: ${bestCombo}x\n${t('medley.shareText')}`;
 

@@ -143,10 +143,8 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
       { key: 'roundDuration', label: 'Round Duration', type: 'slider', min: 30, max: 180, step: 15, defaultValue: 60, unit: 's' },
       { key: 'finalRoundDuration', label: 'Final Round Duration', type: 'slider', min: 60, max: 300, step: 30, defaultValue: 120, unit: 's' },
       { key: 'medleyMode', label: 'Medley Mode', description: 'Multiple song snippets per round', type: 'toggle', defaultValue: false },
-      { key: 'songSelection', label: 'Song Selection', description: 'How songs are chosen', type: 'select', options: [
-        { value: 'random', label: '🎲 Random' },
-        { value: 'vote', label: '🗳️ Vote (3 Songs)' },
-      ], defaultValue: 'random' },
+      // NOTE: Song selection method is controlled by the top-level songSelectionOptions (random|vote),
+      // NOT by an inner setting. The UI renders selection buttons based on songSelectionOptions.
       { key: 'grandFinaleBestOf', label: 'Grand Finale', description: 'Final 2 players format', type: 'select', options: [
         { value: 1, label: 'Normal Final' },
         { value: 3, label: '🏆 Best of 3' },

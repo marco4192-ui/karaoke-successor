@@ -123,7 +123,7 @@ export interface CompanionPassTheMicSettings extends BaseModeSettings {
 
 /** Medley Contest */
 export interface MedleyModeSettings extends BaseModeSettings {
-  playMode?: 'ffa' | 'team';
+  playMode?: 'ffa' | 'team' | 'elimination';
   teamSize?: 1 | 2;
   snippetCount?: number;
   snippetDuration?: number;
@@ -159,6 +159,7 @@ export interface BattleRoyaleModeSettings extends BaseModeSettings {
 
 /** Missing Words */
 export interface MissingWordsModeSettings extends BaseModeSettings {
+  // Labels are mapped to numbers in CompetitiveSetupScreen via freqMap
   missingWordFrequency?: 'light' | 'normal' | 'hard' | 'insane';
   bestOf?: 1 | 3 | 5 | 7;
   granularity?: 'word' | 'passage' | 'both';
@@ -168,6 +169,7 @@ export interface MissingWordsModeSettings extends BaseModeSettings {
 
 /** Blind Karaoke */
 export interface BlindModeSettings extends BaseModeSettings {
+  // Labels are mapped to numbers in CompetitiveSetupScreen via freqMap
   blindFrequency?: 'light' | 'normal' | 'hard' | 'insane';
   hardcore?: boolean;
   bestOf?: 1 | 3 | 5 | 7;

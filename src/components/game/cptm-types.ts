@@ -30,11 +30,13 @@ export interface CptmSegment {
 export interface CptmSettings {
   difficulty: Difficulty;
   segmentDuration?: number;
+  blinkWarning?: number;
 }
 
 export const DEFAULT_CPTM_SETTINGS: CptmSettings = {
   difficulty: 'medium',
   segmentDuration: 30,
+  blinkWarning: 3,
 };
 
 export type GamePhase = 'intro' | 'countdown' | 'playing' | 'song-results' | 'series-results';

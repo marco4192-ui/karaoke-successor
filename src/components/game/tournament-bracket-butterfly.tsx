@@ -390,7 +390,6 @@ function MatchCard({
   isPlayable,
   onPlay,
   done,
-  isFinal: _isFinal = false,
   isFirstRound = false,
 }: {
   match: TournamentMatch;

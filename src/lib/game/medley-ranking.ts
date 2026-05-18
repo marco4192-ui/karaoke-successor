@@ -96,9 +96,8 @@ function getDailyHistory(): MedleyHistoryEntry[] {
   return all;
 }
 
-/** Add or update daily entry (keep best raw score per player per day) */
+/** Convenience alias — delegates to addMedleyEntry. */
 export function addDailyMedleyEntry(entry: Omit<MedleyHistoryEntry, 'id' | 'timestamp' | 'date'>): void {
-  // The daily entry is also stored in the all-time history via addMedleyEntry
   addMedleyEntry(entry);
 }
 
@@ -109,56 +108,3 @@ export function getDailyMedleyTopN(n: number): MedleyHistoryEntry[] {
     .slice(0, n);
 }
 
-// ===================== PLAYER STATS =====================
-
-export interface PlayerMedleyStats {
-  totalGames: number;
-  totalScore: number;
-  bestScore: number;
-  totalSnippets: number;
-  avgAccuracy: number;
-  winCount: number; // Times they were top scorer
-}
-
-/** Get cumulative stats for a player */
-export function getPlayerMedleyStats(playerId: string): PlayerMedleyStats {
-  const history = getAllHistory().filter(e => e.playerId === playerId);
-  if (history.length === 0) {
-    return { totalGames: 0, totalScore: 0, bestScore: 0, totalSnippets: 0, avgAccuracy: 0, winCount: 0 };
-  }
-
-  const totalScore = history.reduce((s, e) => s + e.score, 0);
-  const bestScore = Math.max(...history.map(e => e.score));
-  const totalSnippets = history.reduce((s, e) => s + e.snippetsSung, 0);
-  const totalHits = history.reduce((s, e) => s + e.notesHit, 0);
-  const totalNotes = history.reduce((s, e) => s + e.notesHit + e.notesMissed, 0);
-  const avgAccuracy = totalNotes > 0 ? totalHits / totalNotes : 0;
-
-  // Count wins: times this player was the top scorer in their game group
-  // Group by timestamp (within 5 minutes) and check if they were top
-  const timestamps = [...new Set(history.map(e => {
-    // Round to nearest 5 min bucket
-    return Math.floor(e.timestamp / 300000);
-  }))];
-  let winCount = 0;
-  for (const ts of timestamps) {
-    const group = history.filter(e => Math.floor(e.timestamp / 300000) === ts);
-    const best = group.reduce((best, e) => e.score > best.score ? e : best, group[0]);
-    if (best.playerId === playerId) winCount++;
-  }
-
-  return {
-    totalGames: history.length,
-    totalScore,
-    bestScore,
-    totalSnippets,
-    avgAccuracy,
-    winCount,
-  };
-}
-
-/** Calculate win rate for a player */
-export function getMedleyWinRate(playerId: string): number {
-  const stats = getPlayerMedleyStats(playerId);
-  return stats.totalGames > 0 ? stats.winCount / stats.totalGames : 0;
-}

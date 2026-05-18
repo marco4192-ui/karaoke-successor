@@ -49,9 +49,13 @@ export interface CompetitiveSettings {
   /** Escalating mode: frequency increases per round */
   escalating: boolean;
   /** Song selection mode */
+  // TODO: Implement distinct 'random' selection logic (currently same as 'smart')
   songSelection: 'random' | 'smart';
 }
 
+// TODO: The following fields need to be updated during gameplay:
+// totalNotesHit, totalNotesMissed, currentStreak, maxStreak,
+// lastHiddenMiss, streakBonusTotal, perfectBonusTotal, comebackBonusTotal
 interface CompetitivePlayer {
   id: string;
   name: string;
@@ -176,7 +180,7 @@ export function createCompetitiveGame(
  * Calculate the frequency multiplier for a given round number.
  * Starts at 0.7x for round 1 and increases to 1.5x for later rounds.
  */
-export function getEscalatingMultiplier(roundNumber: number, totalRounds: number): number {
+function getEscalatingMultiplier(roundNumber: number, totalRounds: number): number {
   if (totalRounds <= 1) return 1.0;
   // Linear interpolation from 0.7 to 1.5 over total rounds
   const minMult = 0.7;
@@ -254,8 +258,7 @@ function getNextRoundPairing(game: CompetitiveGame): { player1Id: string; player
  */
 export function pickSmartSong(
   songs: { id: string; title: string }[],
-  usedSongIds: Set<string>,
-  playedByPlayer?: string[]
+  usedSongIds: Set<string>
 ): { id: string; title: string } | null {
   const unplayed = songs.filter(s => !usedSongIds.has(s.id));
   if (unplayed.length === 0) return null;
@@ -333,6 +336,8 @@ export function finishCompetitiveRound(
   player2Score: number,
   player2Bonus: number
 ): CompetitiveGame {
+  if (game.currentRoundIndex < 0 || game.currentRoundIndex >= game.rounds.length) return game;
+
   const updatedRounds = [...game.rounds];
   const currentRound = { ...updatedRounds[game.currentRoundIndex] };
 
@@ -403,9 +408,6 @@ const MW_BASE_BONUS = 50;
 /** Base bonus per blind note */
 const BLIND_BASE_BONUS = 30;
 
-/** Bonus multiplier for perfect hits (vs. just "Good") */
-const PERFECT_MULTIPLIER = 2.0;
-
 /** Bonus multiplier for 3+ streak */
 const STREAK_MULTIPLIER = 1.5;
 
@@ -415,6 +417,7 @@ const COMEBACK_MULTIPLIER = 1.5;
 /** Minimum streak length for streak bonus */
 const STREAK_THRESHOLD = 3;
 
+// TODO: Wire calculateMissingWordsBonus into game flow handlers
 /**
  * Calculate bonus points for a missing word hit.
  * @param isPerfect - Whether the hit was "Perfect" (not just "Good")
@@ -450,6 +453,7 @@ export function calculateMissingWordsBonus(
   return { base, perfect, streak, comeback, total };
 }
 
+// TODO: Wire calculateBlindBonus into game flow handlers
 /**
  * Calculate bonus points for a blind note hit.
  * @param isPerfect - Whether the hit was "Perfect"
@@ -509,7 +513,7 @@ export function getCurrentRound(game: CompetitiveGame): CompetitiveRound | null 
 }
 
 /** Get the escalating multiplier for the current round */
-export function getCurrentFrequencyMultiplier(game: CompetitiveGame): number {
+function getCurrentFrequencyMultiplier(game: CompetitiveGame): number {
   const round = getCurrentRound(game);
   return round?.frequencyMultiplier ?? 1.0;
 }
@@ -518,11 +522,7 @@ export function getCurrentFrequencyMultiplier(game: CompetitiveGame): number {
 function isPlayerFinished(game: CompetitiveGame, playerId: string): boolean {
   const player = game.players.find(p => p.id === playerId);
   if (!player) return true;
-  if (player.roundsPlayed < game.settings.bestOf) return false;
-  const minRounds = Math.min(
-    ...game.players.map(p => p.roundsPlayed)
-  );
-  return player.roundsPlayed <= minRounds && player.roundsPlayed >= game.settings.bestOf;
+  return player.roundsPlayed >= game.settings.bestOf;
 }
 
 // ===================== DEFAULT SETTINGS =====================

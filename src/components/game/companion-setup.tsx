@@ -10,7 +10,6 @@ import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlayerProfile, PLAYER_COLORS, Difficulty, EMPTY_PLAYER_SCORE } from '@/types/game';
-import { useGameStore } from '@/lib/game/store';
 import { useTranslation } from '@/lib/i18n/translations';
 import type { CompanionPlayer, CompanionSingAlongSettings } from './companion-types';
 import { DEFAULT_SETTINGS } from './companion-types';
@@ -33,8 +32,7 @@ export function CompanionSingAlongSetupScreen({ profiles, onSelectSong, onBack }
     [profiles]
   );
 
-  const globalDifficulty = useGameStore((state) => state.gameState.difficulty);
-  const setGlobalDifficulty = useGameStore((state) => state.setDifficulty);
+  const [difficulty, setDifficulty] = useState<Difficulty>('medium');
 
   const togglePlayer = (playerId: string) => {
     setSelectedPlayers(prev => {
@@ -58,7 +56,7 @@ export function CompanionSingAlongSetupScreen({ profiles, onSelectSong, onBack }
       };
     });
 
-    onSelectSong(_players, { ...DEFAULT_SETTINGS, difficulty: globalDifficulty });
+    onSelectSong(_players, { ...DEFAULT_SETTINGS, difficulty });
   };
 
   return (
@@ -95,9 +93,9 @@ export function CompanionSingAlongSetupScreen({ profiles, onSelectSong, onBack }
             <label className="text-sm text-white/60 mb-2 block">{t('companion.difficulty')}</label>
             <div className="flex gap-2">
               {(['easy', 'medium', 'hard'] as Difficulty[]).map(diff => (
-                <Button key={diff} variant={globalDifficulty === diff ? 'default' : 'outline'}
-                  onClick={() => setGlobalDifficulty(diff)}
-                  className={globalDifficulty === diff ? 'bg-emerald-500 hover:bg-emerald-600' : 'border-white/20'}>
+                <Button key={diff} variant={difficulty === diff ? 'default' : 'outline'}
+                  onClick={() => setDifficulty(diff)}
+                  className={difficulty === diff ? 'bg-emerald-500 hover:bg-emerald-600' : 'border-white/20'}>
                   {diff.charAt(0).toUpperCase() + diff.slice(1)}
                 </Button>
               ))}

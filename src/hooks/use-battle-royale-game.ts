@@ -10,9 +10,8 @@ import {
   getCurrentMedleySnippet,
   BattleRoyaleGame,
   BattleRoyalePlayer,
-  BattleRoyaleRound,
 } from '@/lib/game/battle-royale';
-import { Song, Note, Difficulty } from '@/types/game';
+import { Song, Note } from '@/types/game';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { calculateScoringMetadata } from '@/lib/game/scoring';
 import { evaluateAndScoreTick } from '@/lib/game/party-scoring';
@@ -55,8 +54,6 @@ interface UseBattleRoyaleGameReturn {
   stats: ReturnType<typeof getBattleRoyaleStats>;
   sortedPlayers: BattleRoyalePlayer[];
   activePlayers: BattleRoyalePlayer[];
-  currentRound: BattleRoyaleRound | undefined;
-  difficulty: Difficulty;
   currentSong: Song | null;
   currentTime: number;
   roundTimeLeft: number;
@@ -77,6 +74,9 @@ interface UseBattleRoyaleGameReturn {
 }
 
 export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoyaleGameParams): UseBattleRoyaleGameReturn {
+  const onUpdateGameRef = useRef(onUpdateGame);
+  onUpdateGameRef.current = onUpdateGame;
+
   const [showElimination, setShowElimination] = useState(false);
   const stats = getBattleRoyaleStats(game);
 
@@ -293,8 +293,8 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         const activeNote = activeNotes.length > 0 ? activeNotes[0] : null;
 
         if (activeNote) {
-          const micPlayers = activePlayersRef.current.filter(p => p.playerType === 'microphone' && !p.eliminated);
-          const companionPlayers = activePlayersRef.current.filter(p => p.playerType === 'companion' && !p.eliminated);
+          const micPlayers = activePlayersRef.current.filter(p => p.playerType === 'microphone');
+          const companionPlayers = activePlayersRef.current.filter(p => p.playerType === 'companion');
 
           const comboMap = new Map(batchedGame.players.map(p => [p.id, p.currentCombo]));
 
@@ -369,7 +369,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         }
 
         if (scoreChanged) {
-          onUpdateGame(batchedGame);
+          onUpdateGameRef.current(batchedGame);
         }
       }
 
@@ -386,8 +386,6 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     stats,
     sortedPlayers,
     activePlayers,
-    currentRound,
-    difficulty,
     currentSong,
     currentTime,
     roundTimeLeft,

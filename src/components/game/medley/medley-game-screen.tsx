@@ -9,7 +9,6 @@
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { usePartyStore } from '@/lib/game/party-store';
 import { useMedleyGame, type MedleyGameScreenProps } from './medley-game-hook';
 import { PlayerIntroCard } from './medley-game-components';
 import { MedleyPlayingUI } from './medley-game-playing';
@@ -29,8 +28,6 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
     onRoundComplete,
     onEndGame,
   } = props;
-
-  const setIsSongPlaying = usePartyStore(s => s.setIsSongPlaying);
 
   const state = useMedleyGame({
     players: initialPlayers,
@@ -262,7 +259,6 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
             seriesHistory={seriesHistory}
             roundNumber={seriesHistory.length + 1}
             onNextRound={() => {
-              setIsSongPlaying(false);
               onEndGame();
             }}
             onEndSeries={handleShowFinalResults}
@@ -273,7 +269,7 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
             highlights={state.highlights}
             // Feature #18
             teamBonusResult={settings.playMode === 'team' && settings.teamBonusesEnabled ? state.teamBonusResult : undefined}
-            medleySongs={medleySongs}
+
           />
         </div>
       )}
