@@ -17,8 +17,10 @@ import { MedleySetupScreen } from '@/components/game/medley';
 import { MedleyGameScreen } from '@/components/game/medley/medley-game-screen';
 import type { MedleyPlayer, MedleySettings, MedleySong, SnippetMatchup} from '@/components/game/medley/medley-types';
 import { CompetitiveSetupScreen, CompetitiveGameView } from '@/components/game/competitive-words-blind-screen';
-import { RateMySongSetupScreen, RateMySongRatingScreen, RateMySongResultsScreen } from '@/components/game/rate-my-song-screen';
-import type { RateMySongResult } from '@/components/game/rate-my-song-screen';
+import { RateMySongSetupScreen, RateMySongRatingScreen, RateMySongResultsScreen, RateMySongSeriesResultsScreen } from '@/components/game/rate-my-song-screen';
+import type { RateMySongResult, RateMySongRating } from '@/components/game/rate-my-song-screen';
+import { getRandomChallenge } from '@/lib/game/rate-my-song-ranking';
+import type { RateMySongChallenge } from '@/lib/game/rate-my-song-ranking';
 import type { GameSetupResult } from '@/components/game/unified-party-setup';
 import { preparePtmNextSong } from '@/lib/game/ptm-next-song';
 import { toast } from '@/hooks/use-toast';
@@ -37,6 +39,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
 
   // State for Rate my Song results
   const [rateMySongResult, setRateMySongResult] = useState<RateMySongResult | null>(null);
+  // Track current series round (1-based)
+  const [rateMySongSeriesRound, setRateMySongSeriesRound] = useState(1);
 
   // State for PTM next-song loading
   const [__ptmNextLoading, setPtmNextLoading] = useState(false);
@@ -850,6 +854,21 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             party.setRateMySongSettings(settings);
             party.setRateMySongPlayerIds(playerIds);
             setRateMySongResult(null);
+
+            // Reset series state for new game
+            if (!party.rateMySongSeriesHistory || party.rateMySongSeriesHistory.length === 0) {
+              setRateMySongSeriesRound(1);
+              party.resetRateMySongSeries();
+            }
+
+            // Draw a challenge if enabled
+            if (settings.challengesEnabled) {
+              const challenge = getRandomChallenge();
+              party.setRateMySongCurrentChallenge(challenge);
+            } else {
+              party.setRateMySongCurrentChallenge(null);
+            }
+
             const song = getAllSongs().find(s => s.id === settings.songId);
             if (!song) return;
 
@@ -909,14 +928,20 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             return { id, name: p?.name || 'Player', color: p?.color || '#FF6B6B' };
           })}
           allProfiles={profiles}
+          categoriesEnabled={rms.categoriesEnabled}
+          anonymousRating={rms.anonymousRating}
+          challengesEnabled={rms.challengesEnabled}
+          bettingEnabled={rms.bettingEnabled}
+          currentChallenge={party.rateMySongCurrentChallenge}
           onSubmit={(ratings) => {
             const avg = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
-            setRateMySongResult({
+            const result: RateMySongResult = {
               songTitle: rmsSong?.title || '',
               songArtist: rmsSong?.artist || '',
               ratings,
               averageRating: Math.round(avg * 10) / 10,
-            });
+            };
+            setRateMySongResult(result);
             setScreen('rate-my-song-results');
           }}
           onBack={() => setScreen('party')}
@@ -926,22 +951,73 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       )}
 
       {/* Rate my Song — Results */}
-      {screen === 'rate-my-song-results' && rateMySongResult && (
-        <RateMySongResultsScreen
-          result={rateMySongResult}
-          songId={party.rateMySongSettings?.songId}
-          onPlayAgain={() => {
-            setRateMySongResult(null);
-            setScreen('rate-my-song');
-          }}
-          onEnd={() => {
-            party.setRateMySongSettings(null);
-            party.setRateMySongPlayerIds([]);
-            setRateMySongResult(null);
-            setScreen('home');
-          }}
-        />
-      )}
+      {screen === 'rate-my-song-results' && (() => {
+        if (!rateMySongResult || !party.rateMySongSettings) return null;
+        const rms = party.rateMySongSettings;
+        const rmsSong = getAllSongs().find(s => s.id === rms.songId);
+        const totalRounds = rms.seriesRounds || 1;
+        const isLastRound = rateMySongSeriesRound >= totalRounds;
+        const isSeries = totalRounds > 1;
+
+        // Save round to series history
+        if (isSeries && rateMySongResult.ratings.length > 0) {
+          party.addRateMySongSeriesRound(rateMySongResult.ratings);
+        }
+
+        // If last round of a series, show series results
+        if (isSeries && isLastRound) {
+          return (
+            <RateMySongSeriesResultsScreen
+              seriesHistory={party.rateMySongSeriesHistory}
+              onEnd={() => {
+                party.setRateMySongSettings(null);
+                party.setRateMySongPlayerIds([]);
+                setRateMySongResult(null);
+                party.resetRateMySongSeries();
+                setRateMySongSeriesRound(1);
+                setScreen('home');
+              }}
+            />
+          );
+        }
+
+        return (
+          <RateMySongResultsScreen
+            result={rateMySongResult}
+            songId={rms.songId}
+            songGenre={rmsSong?.genre}
+            categoriesEnabled={rms.categoriesEnabled}
+            challengesEnabled={rms.challengesEnabled}
+            bettingEnabled={rms.bettingEnabled}
+            seriesRound={rateMySongSeriesRound}
+            seriesTotalRounds={totalRounds}
+            onPlayAgain={() => {
+              setRateMySongResult(null);
+              // Advance series round
+              if (isSeries && !isLastRound) {
+                setRateMySongSeriesRound(prev => prev + 1);
+              } else {
+                setRateMySongSeriesRound(1);
+              }
+              // Draw new challenge for next round
+              if (rms.challengesEnabled) {
+                const prevChallenge = party.rateMySongCurrentChallenge;
+                const challenge = getRandomChallenge(prevChallenge?.id);
+                party.setRateMySongCurrentChallenge(challenge);
+              }
+              setScreen('rate-my-song');
+            }}
+            onEnd={() => {
+              party.setRateMySongSettings(null);
+              party.setRateMySongPlayerIds([]);
+              setRateMySongResult(null);
+              party.resetRateMySongSeries();
+              setRateMySongSeriesRound(1);
+              setScreen('home');
+            }}
+          />
+        );
+      })()}
     </>
   );
 }

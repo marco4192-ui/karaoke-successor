@@ -21,6 +21,7 @@ import type { CompanionPlayer, CompanionRoundResult } from '@/components/game/co
 import type { CompanionSingAlongSettings } from '@/components/game/companion-singalong-screen';
 import type { CptmPlayer, CptmSegment, CptmSettings, CptmRoundResult } from '@/components/game/cptm-types';
 import type { RateMySongSettings, RateMySongRating } from '@/components/game/rate-my-song-screen';
+import type { RateMySongChallenge } from '@/lib/game/rate-my-song-ranking';
 
 /** Per-player result for a single Pass-the-Mic round (song). */
 export interface PassTheMicRoundResult {
@@ -126,8 +127,8 @@ export interface PartyStore {
   // Rate my Song — series, challenges, betting, reactions
   rateMySongSeriesHistory: RateMySongRating[][];
   addRateMySongSeriesRound: (_round: RateMySongRating[]) => void;
-  rateMySongCurrentChallenge: { id: string; icon: string; title: string; description: string } | null;
-  setRateMySongCurrentChallenge: (_challenge: { id: string; icon: string; title: string; description: string } | null) => void;
+  rateMySongCurrentChallenge: RateMySongChallenge | null;
+  setRateMySongCurrentChallenge: (_challenge: RateMySongChallenge | null) => void;
   rateMySongBettingEntries: Record<string, { predictedWinner: string; predictedScore: number }>;
   rateMySongLiveReactions: Array<{ emoji: string; timestamp: number; x: number; y: number }>;
   addRateMySongLiveReaction: (_emoji: string) => void;
@@ -257,9 +258,10 @@ export const usePartyStore = create<PartyStore>((set) => ({
   // Rate my Song — series, challenges, betting, reactions
   rateMySongSeriesHistory: [] as RateMySongRating[][],
   addRateMySongSeriesRound: (round) => set((s) => ({ rateMySongSeriesHistory: [...s.rateMySongSeriesHistory, round] })),
-  rateMySongCurrentChallenge: null as { id: string; icon: string; title: string; description: string } | null,
-  setRateMySongCurrentChallenge: (rateMySongCurrentChallenge) => set({ rateMySongCurrentChallenge }),
+  rateMySongCurrentChallenge: null as RateMySongChallenge | null,
+  setRateMySongCurrentChallenge: (ch: RateMySongChallenge | null) => set({ rateMySongCurrentChallenge: ch }),
   rateMySongBettingEntries: {} as Record<string, { predictedWinner: string; predictedScore: number }>,
+  setRateMySongBettingEntries: (rateMySongBettingEntries: Record<string, { predictedWinner: string; predictedScore: number }>) => set({ rateMySongBettingEntries }),
   rateMySongLiveReactions: [] as Array<{ emoji: string; timestamp: number; x: number; y: number }>,
   addRateMySongLiveReaction: (emoji) => set((s) => ({
     rateMySongLiveReactions: [
