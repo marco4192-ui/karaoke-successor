@@ -134,6 +134,11 @@ export interface MedleyModeSettings extends BaseModeSettings {
 export interface TournamentModeSettings extends BaseModeSettings {
   maxPlayers?: 2 | 4 | 8 | 16 | 32;
   shortMode?: boolean;
+  tournamentType?: 'single' | 'double';
+  tiebreakMode?: 'coinflip' | 'accuracy' | 'combo' | 'goldenmic';
+  dynamicDifficulty?: boolean;
+  songSelectionMode?: 'random' | 'vote';
+  seedingMode?: 'random' | 'manual';
 }
 
 /** Battle Royale */

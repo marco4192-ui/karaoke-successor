@@ -244,6 +244,13 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   songDuration: shortMode ? 60 : 180,
                   randomSongs: true,
                   difficulty: result.difficulty,
+                  tournamentType: 'single',
+                  tiebreakMode: 'accuracy',
+                  dynamicDifficulty: false,
+                  songSelectionMode: 'random',
+                  seedingMode: 'random',
+                  filterGenre: result.settings.filterGenre || 'all',
+                  filterLanguage: result.settings.filterLanguage || 'all',
                 };
                 // Validate player count before creating tournament
                 const playerCount = tournamentPlayers.length;

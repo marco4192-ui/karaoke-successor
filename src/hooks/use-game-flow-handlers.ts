@@ -94,11 +94,18 @@ export function useGameFlowHandlers(
     const score1 = results.players[0]?.score || 0;
     const score2 = results.players[1]?.score || 0;
 
+    // #3 Pass extended stats for tiebreak resolution
+    const accuracy1 = results.players[0]?.accuracy ?? 0;
+    const accuracy2 = results.players[1]?.accuracy ?? 0;
+    const maxCombo1 = results.players[0]?.maxCombo ?? 0;
+    const maxCombo2 = results.players[1]?.maxCombo ?? 0;
+
     const updatedBracket = recordMatchResult(
       party.tournamentBracket as Parameters<typeof recordMatchResult>[0],
       party.currentTournamentMatch.id,
       score1,
       score2,
+      { accuracy1, accuracy2, maxCombo1, maxCombo2 },
     );
 
     party.setTournamentBracket(updatedBracket);

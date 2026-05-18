@@ -3,10 +3,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
-import { getAllSongs, getNonDuetSongs } from '@/lib/game/song-library';
-import { recordMatchResult } from '@/lib/game/tournament';
+import { getAllSongs, getNonDuetSongs, filterSongs } from '@/lib/game/song-library';
+import { recordMatchResult, getEffectiveDifficulty } from '@/lib/game/tournament';
 import { useTranslation } from '@/lib/i18n/translations';
-import { TournamentSetupScreen, TournamentBracketView } from '@/components/game/tournament-screen';
+import { TournamentSetupScreen, TournamentBracketView, TournamentResultsScreen } from '@/components/game/tournament-screen';
 import { BattleRoyaleSetupScreen, BattleRoyaleGameView } from '@/components/game/battle-royale-screen';
 import { PassTheMicSetupScreen } from '@/components/game/pass-the-mic-screen';
 import { PtmGameScreen } from '@/components/game/ptm-game-screen';
@@ -39,6 +39,9 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
 
   // State for PTM next-song loading
   const [__ptmNextLoading, setPtmNextLoading] = useState(false);
+
+  // #7 Tournament results screen
+  const [showTournamentResults, setShowTournamentResults] = useState(false);
 
   // ── Tournament mic assignment overlay state ──
   const [micOverlay, setMicOverlay] = useState<{ p1Name: string; p2Name: string; p1Mic: string; p2Mic: string; countdown: number } | null>(null);
@@ -95,6 +98,51 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       countdown: 3,
     });
   }, [party.setCurrentTournamentMatch, t]);
+
+  // #1 #2 #5 #6 Helper: Pick a tournament song (no repeats, filter, trim duration)
+  const pickTournamentSong = useCallback((): import('@/types/game').Song | null => {
+    const bracket = party.tournamentBracket;
+    if (!bracket) return null;
+
+    // #5 Apply genre/language filters
+    let pool = getNonDuetSongs();
+    const genre = bracket.settings.filterGenre;
+    const lang = bracket.settings.filterLanguage;
+    if (genre && genre !== 'all' && lang && lang !== 'all') {
+      pool = filterSongs(pool, genre, lang, true);
+    } else if (genre && genre !== 'all') {
+      pool = filterSongs(pool, genre, 'all', true);
+    } else if (lang && lang !== 'all') {
+      pool = filterSongs(pool, 'all', lang, true);
+    }
+
+    // #2 Exclude already-used songs
+    const usedIds = new Set(party.tournamentUsedSongIds);
+    let available = pool.filter(s => !usedIds.has(s.id));
+
+    // If all songs are used, reset the pool
+    if (available.length === 0) {
+      party.resetTournamentUsedSongIds();
+      available = pool;
+    }
+
+    if (available.length === 0) return null;
+
+    const chosen = available[Math.floor(Math.random() * available.length)];
+
+    // #1 Trim song duration for short mode
+    if (party.tournamentSongDuration === 60) {
+      const startTime = chosen.start || 0;
+      const endTime = Math.min(startTime + 60000, chosen.end || chosen.duration);
+      const trimmed = { ...chosen, start: startTime, end: endTime };
+      party.addTournamentUsedSongId(chosen.id);
+      return trimmed;
+    }
+
+    party.addTournamentUsedSongId(chosen.id);
+    return chosen;
+  }, [party]);
+
   useEffect(() => {
     if (!micOverlay) return;
 
@@ -131,12 +179,23 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       if (match.player1) addPlayer({ id: match.player1.id, name: match.player1.name, avatar: match.player1.avatar, color: match.player1.color });
       if (match.player2) addPlayer({ id: match.player2.id, name: match.player2.name, avatar: match.player2.avatar, color: match.player2.color });
 
+      // #6 Set dynamic difficulty if enabled
+      const bracket = party.tournamentBracket;
+      if (bracket && bracket.settings.dynamicDifficulty) {
+        const effectiveDiff = getEffectiveDifficulty(
+          bracket.settings.difficulty,
+          bracket.currentRound,
+          bracket.totalRounds,
+          true,
+        );
+        useGameStore.getState().setDifficulty(effectiveDiff);
+      }
+
       setGameMode('duel');
 
-      const songs = getNonDuetSongs();
-      if (songs.length > 0) {
-        const randomSong = songs[Math.floor(Math.random() * songs.length)];
-        setSong(randomSong);
+      const song = pickTournamentSong();
+      if (song) {
+        setSong(song);
         setScreen('game');
       }
       return;
@@ -292,6 +351,9 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           onStartTournament={(bracket, songDuration) => {
             party.setTournamentBracket(bracket);
             party.setTournamentSongDuration(songDuration);
+            // #2 Reset used songs when a new tournament starts
+            party.resetTournamentUsedSongIds();
+            setShowTournamentResults(false);
             setScreen('tournament-game');
           }}
           onBack={() => setScreen('party')}
@@ -299,7 +361,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       )}
 
       {/* Tournament Game Screen */}
-      {screen === 'tournament-game' && party.tournamentBracket && (
+      {screen === 'tournament-game' && party.tournamentBracket && !showTournamentResults && (
         <TournamentBracketView
           bracket={party.tournamentBracket}
           currentMatch={party.currentTournamentMatch}
@@ -339,17 +401,29 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               color: match.player2.color,
             });
             setGameMode('duel');
-            const songs = getNonDuetSongs();
-            if (songs.length > 0) {
-              const randomSong = songs[Math.floor(Math.random() * songs.length)];
-              setSong(randomSong);
-              setScreen('game');
-            }
+            const song = pickTournamentSong();
+            if (song) setSong(song);
+            setScreen('game');
           }}
           onAbortHandled={() => {
             party.setTournamentMatchAborted(false);
           }}
           shortMode={party.tournamentSongDuration === 60}
+          showResults={showTournamentResults}
+          onShowResults={() => setShowTournamentResults(true)}
+        />
+      )}
+
+      {/* #7 Tournament Results Screen */}
+      {screen === 'tournament-game' && party.tournamentBracket && showTournamentResults && (
+        <TournamentResultsScreen
+          bracket={party.tournamentBracket}
+          onBack={() => setShowTournamentResults(false)}
+          onNewTournament={() => {
+            party.setTournamentBracket(null);
+            setShowTournamentResults(false);
+            setScreen('tournament');
+          }}
         />
       )}
 

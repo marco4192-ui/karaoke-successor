@@ -198,7 +198,13 @@ export default function KaraokeZERO() {
     const score1 = results?.players?.[0]?.score || players?.[0]?.score || 0;
     const score2 = results?.players?.[1]?.score || players?.[1]?.score || 0;
 
-    const updatedBracket = recordMatchResult(party.tournamentBracket, match.id, score1, score2);
+    // #3 Pass extended stats for tiebreak
+    const accuracy1 = results?.players?.[0]?.accuracy ?? 0;
+    const accuracy2 = results?.players?.[1]?.accuracy ?? 0;
+    const maxCombo1 = results?.players?.[0]?.maxCombo ?? 0;
+    const maxCombo2 = results?.players?.[1]?.maxCombo ?? 0;
+
+    const updatedBracket = recordMatchResult(party.tournamentBracket, match.id, score1, score2, { accuracy1, accuracy2, maxCombo1, maxCombo2 });
     party.setTournamentBracket(updatedBracket);
     party.setCurrentTournamentMatch(null);
     party.setTournamentMatchAborted(false);

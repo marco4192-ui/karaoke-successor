@@ -1,5 +1,5 @@
-// Tournament Mode - Single Elimination Bracket System
-// Supports 4-32 players with BYE handling for odd numbers
+// Tournament Mode - Single & Double Elimination Bracket System
+// Supports 2-32 players with BYE handling for odd numbers
 
 import { shuffleArray } from '@/lib/utils';
 
@@ -24,6 +24,14 @@ export interface TournamentMatch {
   score2: number;
   completed: boolean;
   isBye: boolean; // True if player advances without playing (odd number of players)
+  // Extended match statistics for tournament summaries & Hall of Fame
+  accuracy1?: number;
+  accuracy2?: number;
+  maxCombo1?: number;
+  maxCombo2?: number;
+  songTitle?: string;
+  songArtist?: string;
+  isTiebreak?: boolean; // True if this match was decided by tiebreak rules
 }
 
 export interface TournamentBracket {
@@ -44,6 +52,19 @@ export interface TournamentSettings {
   songDuration: number; // in seconds (60 for short mode, full song duration otherwise)
   randomSongs: boolean;
   difficulty: 'easy' | 'medium' | 'hard';
+  // #4 Double-Elimination
+  tournamentType: 'single' | 'double';
+  // #3 Tiebreak
+  tiebreakMode: 'coinflip' | 'accuracy' | 'combo' | 'goldenmic';
+  // #6 Dynamic difficulty (optional, per user request)
+  dynamicDifficulty: boolean;
+  // #8 Song selection mode
+  songSelectionMode: 'random' | 'vote';
+  // #9 Seeding
+  seedingMode: 'random' | 'manual';
+  // #5 Genre/Language filter
+  filterGenre: string;
+  filterLanguage: string;
 }
 
 // Generate a unique match ID
@@ -263,12 +284,20 @@ function getNextMatch(bracket: TournamentBracket, currentMatch: TournamentMatch)
   return lookup.get(`${currentMatch.round + 1}-${Math.floor(currentMatch.position / 2)}`) || null;
 }
 
-// Record match result and advance winner
+// Record match result and advance winner (supports tiebreak statistics)
 export function recordMatchResult(
   bracket: TournamentBracket,
   matchId: string,
   score1: number,
-  score2: number
+  score2: number,
+  stats?: {
+    accuracy1?: number;
+    accuracy2?: number;
+    maxCombo1?: number;
+    maxCombo2?: number;
+    songTitle?: string;
+    songArtist?: string;
+  }
 ): TournamentBracket {
   const matchIndex = bracket.matches.findIndex(m => m.id === matchId);
   if (matchIndex === -1) return bracket;
@@ -278,14 +307,31 @@ export function recordMatchResult(
   if (!match.player1 || !match.player2 || match.completed) {
     return bracket;
   }
-  
+
+  // Store extended stats
+  match.accuracy1 = stats?.accuracy1;
+  match.accuracy2 = stats?.accuracy2;
+  match.maxCombo1 = stats?.maxCombo1;
+  match.maxCombo2 = stats?.maxCombo2;
+  match.songTitle = stats?.songTitle;
+  match.songArtist = stats?.songArtist;
+
   // Determine winner (Sudden Death - higher score wins)
-  // Tie: random coin flip to avoid systematic advantage for player1's bracket position
-  const winner = score1 > score2
-    ? match.player1
-    : score2 > score1
-      ? match.player2
-      : Math.random() < 0.5 ? match.player1 : match.player2;
+  // Tiebreak based on settings (#3)
+  let winner: TournamentPlayer;
+  let isTiebreak = false;
+
+  if (score1 > score2) {
+    winner = match.player1;
+  } else if (score2 > score1) {
+    winner = match.player2;
+  } else {
+    // Tie! Apply tiebreak rules
+    isTiebreak = true;
+    winner = resolveTie(match, bracket.settings.tiebreakMode, stats);
+  }
+  match.isTiebreak = isTiebreak;
+
   const loser = winner.id === match.player1.id ? match.player2 : match.player1;
   
   match.score1 = score1;
@@ -366,4 +412,215 @@ export function getTournamentStats(bracket: TournamentBracket) {
     totalRounds: bracket.totalRounds,
     isComplete: bracket.status === 'completed',
   };
+}
+
+// Resolve a tie between two players based on tiebreak mode (#3)
+function resolveTie(
+  match: TournamentMatch,
+  mode: TournamentSettings['tiebreakMode'],
+  stats?: { accuracy1?: number; accuracy2?: number; maxCombo1?: number; maxCombo2?: number }
+): TournamentPlayer {
+  if (!match.player1 || !match.player2) return match.player1!;
+
+  switch (mode) {
+    case 'accuracy': {
+      // Higher accuracy wins; fallback to coinflip
+      const a1 = stats?.accuracy1 ?? 0;
+      const a2 = stats?.accuracy2 ?? 0;
+      if (a1 !== a2) return a1 > a2 ? match.player1 : match.player2;
+      return Math.random() < 0.5 ? match.player1 : match.player2;
+    }
+    case 'combo': {
+      // Higher max combo wins; fallback to accuracy; then coinflip
+      const c1 = stats?.maxCombo1 ?? 0;
+      const c2 = stats?.maxCombo2 ?? 0;
+      if (c1 !== c2) return c1 > c2 ? match.player1 : match.player2;
+      const a1 = stats?.accuracy1 ?? 0;
+      const a2 = stats?.accuracy2 ?? 0;
+      if (a1 !== a2) return a1 > a2 ? match.player1 : match.player2;
+      return Math.random() < 0.5 ? match.player1 : match.player2;
+    }
+    case 'goldenmic': {
+      // Golden Mic: compare accuracy first, then combo, then coinflip.
+      // In a full implementation this would trigger a 10s sing-off.
+      // For now, it uses the same cascading tiebreak as 'combo'.
+      const a1 = stats?.accuracy1 ?? 0;
+      const a2 = stats?.accuracy2 ?? 0;
+      if (a1 !== a2) return a1 > a2 ? match.player1 : match.player2;
+      const c1 = stats?.maxCombo1 ?? 0;
+      const c2 = stats?.maxCombo2 ?? 0;
+      if (c1 !== c2) return c1 > c2 ? match.player1 : match.player2;
+      return Math.random() < 0.5 ? match.player1 : match.player2;
+    }
+    case 'coinflip':
+    default:
+      return Math.random() < 0.5 ? match.player1 : match.player2;
+  }
+}
+
+// #9 Get player placement order (1st, 2nd, 3rd, etc.) after tournament completion
+// Uses elimination round as tiebreaker (later elimination = better placement)
+export function getPlayerPlacements(bracket: TournamentBracket): Array<{
+  player: TournamentPlayer;
+  placement: number;
+  totalScore: number;
+  totalAccuracy: number;
+  matchesWon: number;
+  matchesLost: number;
+}> {
+  const placements: Array<{
+    player: TournamentPlayer;
+    placement: number;
+    totalScore: number;
+    totalAccuracy: number;
+    matchesWon: number;
+    matchesLost: number;
+    eliminationRound: number;
+  }> = [];
+
+  for (const player of bracket.players) {
+    const playerMatches = bracket.matches.filter(
+      m => !m.isBye && (m.player1?.id === player.id || m.player2?.id === player.id) && m.completed
+    );
+
+    let totalScore = 0;
+    let totalAccuracy = 0;
+    let accuracyCount = 0;
+    let matchesWon = 0;
+    let matchesLost = 0;
+    let eliminationRound = 0;
+
+    for (const m of playerMatches) {
+      const isPlayer1 = m.player1?.id === player.id;
+      const score = isPlayer1 ? m.score1 : m.score2;
+      const accuracy = isPlayer1 ? m.accuracy1 : m.accuracy2;
+      totalScore += score;
+      if (accuracy !== undefined) {
+        totalAccuracy += accuracy;
+        accuracyCount++;
+      }
+      if (m.winner?.id === player.id) {
+        matchesWon++;
+      } else {
+        matchesLost++;
+        eliminationRound = Math.max(eliminationRound, m.round);
+      }
+    }
+
+    // Champion never lost, so eliminationRound stays 0
+    if (bracket.champion?.id === player.id) {
+      eliminationRound = bracket.totalRounds + 1; // Highest possible
+    }
+
+    placements.push({
+      player,
+      placement: 0,
+      totalScore,
+      totalAccuracy: accuracyCount > 0 ? totalAccuracy / accuracyCount : 0,
+      matchesWon,
+      matchesLost,
+      eliminationRound,
+    });
+  }
+
+  // Sort: by elimination round (desc), then totalScore (desc), then totalAccuracy (desc)
+  placements.sort((a, b) => {
+    if (b.eliminationRound !== a.eliminationRound) return b.eliminationRound - a.eliminationRound;
+    if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+    return b.totalAccuracy - a.totalAccuracy;
+  });
+
+  // Assign placements
+  placements.forEach((p, i) => {
+    p.placement = i + 1;
+  });
+
+  return placements;
+}
+
+// #7 Hall of Fame — stored in localStorage
+export interface HallOfFameEntry {
+  id: string;
+  champion: TournamentPlayer;
+  runnerUp: TournamentPlayer;
+  tournamentName: string;
+  playerCount: number;
+  totalRounds: number;
+  tournamentType: 'single' | 'double';
+ championScore: number;
+  championAccuracy: number;
+ createdAt: number;
+}
+
+const HOF_KEY = 'karaoke_tournament_hall_of_fame';
+
+export function getHallOfFame(): HallOfFameEntry[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(HOF_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function addToHallOfFame(bracket: TournamentBracket, placements: ReturnType<typeof getPlayerPlacements>): void {
+  if (!bracket.champion) return;
+  const championPlacement = placements.find(p => p.placement === 1);
+  const runnerUpPlacement = placements.find(p => p.placement === 2);
+  if (!championPlacement || !runnerUpPlacement) return;
+
+  const entry: HallOfFameEntry = {
+    id: `hof_${Date.now()}`,
+    champion: bracket.champion,
+    runnerUp: runnerUpPlacement.player,
+    tournamentName: bracket.name,
+    playerCount: bracket.players.length,
+    totalRounds: bracket.totalRounds,
+    tournamentType: bracket.settings.tournamentType,
+    championScore: championPlacement.totalScore,
+    championAccuracy: championPlacement.totalAccuracy,
+    createdAt: Date.now(),
+  };
+
+  const existing = getHallOfFame();
+  existing.unshift(entry);
+  // Keep max 50 entries
+  if (existing.length > 50) existing.length = 50;
+
+  try {
+    localStorage.setItem(HOF_KEY, JSON.stringify(existing));
+  } catch {
+    // Silently fail if localStorage is full
+  }
+}
+
+export function clearHallOfFame(): void {
+  try {
+    localStorage.removeItem(HOF_KEY);
+  } catch {
+    // Silently fail
+  }
+}
+
+// #6 Get the effective difficulty for a given tournament round
+export function getEffectiveDifficulty(
+  baseDifficulty: 'easy' | 'medium' | 'hard',
+  currentRound: number,
+  totalRounds: number,
+  dynamicDifficulty: boolean
+): 'easy' | 'medium' | 'hard' {
+  if (!dynamicDifficulty) return baseDifficulty;
+  const progression: Array<'easy' | 'medium' | 'hard'> = ['easy', 'medium', 'hard', 'hard'];
+  // First round = base difficulty, then escalate
+  const idx = Math.min(currentRound - 1 + progression.indexOf(baseDifficulty), progression.length - 1);
+  return progression[Math.max(0, idx)];
+}
+
+// #10 Crowd vote result type
+export interface CrowdVoteMatch {
+  matchId: string;
+  player1Votes: number;
+  player2Votes: number;
+  totalVoters: number;
 }

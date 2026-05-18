@@ -41,6 +41,13 @@ export interface PartyStore {
   setCurrentTournamentMatch: (_match: TournamentMatch | null) => void;
   tournamentMatchAborted: boolean;
   setTournamentMatchAborted: (_aborted: boolean) => void;
+  // #2 No song repeats
+  tournamentUsedSongIds: string[];
+  addTournamentUsedSongId: (_id: string) => void;
+  resetTournamentUsedSongIds: () => void;
+  // #8 Song voting
+  tournamentVotingSongs: import('@/types/game').Song[];
+  setTournamentVotingSongs: (_songs: import('@/types/game').Song[]) => void;
 
   // Battle Royale
   battleRoyaleGame: BattleRoyaleGame | null;
@@ -149,6 +156,13 @@ export const usePartyStore = create<PartyStore>((set) => ({
   setCurrentTournamentMatch: (currentTournamentMatch) => set({ currentTournamentMatch }),
   tournamentMatchAborted: false,
   setTournamentMatchAborted: (tournamentMatchAborted) => set({ tournamentMatchAborted }),
+  // #2 No song repeats
+  tournamentUsedSongIds: [] as string[],
+  addTournamentUsedSongId: (id) => set((s) => ({ tournamentUsedSongIds: [...s.tournamentUsedSongIds, id] })),
+  resetTournamentUsedSongIds: () => set({ tournamentUsedSongIds: [] }),
+  // #8 Song voting
+  tournamentVotingSongs: [] as import('@/types/game').Song[],
+  setTournamentVotingSongs: (tournamentVotingSongs) => set({ tournamentVotingSongs }),
 
   // Battle Royale
   battleRoyaleGame: null,
@@ -242,6 +256,8 @@ export const usePartyStore = create<PartyStore>((set) => ({
     tournamentSongDuration: 60,
     currentTournamentMatch: null,
     tournamentMatchAborted: false,
+    tournamentUsedSongIds: [],
+    tournamentVotingSongs: [],
     battleRoyaleGame: null,
     passTheMicPlayers: [],
     passTheMicSong: null,
