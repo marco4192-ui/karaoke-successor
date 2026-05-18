@@ -87,13 +87,17 @@ export function TournamentBracketButterfly({
   };
 
   // ── Split rounds into left (top-half), right (bottom-half, reversed) and final ──
+  // Filter to winners bracket only (single elimination uses this component)
   const { leftRounds, rightRounds, finalMatch } = useMemo(() => {
     const left: { rn: number; matches: TournamentMatch[] }[] = [];
     const right: { rn: number; matches: TournamentMatch[] }[] = [];
     let fm: TournamentMatch | null = null;
 
     for (let r = 1; r <= bracket.totalRounds; r++) {
-      const matches = getMatchesForRound(bracket, r);
+      // For single elimination, bracketType may be undefined; for DE, filter winners
+      const matches = getMatchesForRound(bracket, r, 'winners').length > 0
+        ? getMatchesForRound(bracket, r, 'winners')
+        : getMatchesForRound(bracket, r);
       if (r === bracket.totalRounds) {
         fm = matches[0] || null;
         continue;

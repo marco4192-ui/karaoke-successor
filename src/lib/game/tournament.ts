@@ -1,7 +1,10 @@
 // Tournament Mode - Single & Double Elimination Bracket System
 // Supports 2-32 players with BYE handling for odd numbers
+// Double Elimination: Winners Bracket + Losers Bracket + Grand Finals
 
 import { shuffleArray } from '@/lib/utils';
+
+export type BracketType = 'winners' | 'losers' | 'grand_finals';
 
 export interface TournamentPlayer {
   id: string;
@@ -10,12 +13,16 @@ export interface TournamentPlayer {
   color: string;
   eliminated: boolean;
   seed: number;
+  /** #4 Double Elimination: number of losses (0 = fresh, 1 = in losers bracket, 2 = eliminated) */
+  lossCount: number;
 }
 
 export interface TournamentMatch {
   id: string;
   round: number;
   position: number;
+  /** #4 Which bracket this match belongs to */
+  bracketType: BracketType;
   player1: TournamentPlayer | null;
   player2: TournamentPlayer | null;
   winner: TournamentPlayer | null;
@@ -32,6 +39,8 @@ export interface TournamentMatch {
   songTitle?: string;
   songArtist?: string;
   isTiebreak?: boolean; // True if this match was decided by tiebreak rules
+  /** #4 True if this is the Grand Finals reset match (GF2) */
+  isReset?: boolean;
 }
 
 export interface TournamentBracket {
@@ -40,11 +49,15 @@ export interface TournamentBracket {
   players: TournamentPlayer[];
   matches: TournamentMatch[];
   currentRound: number;
-  totalRounds: number;
+  totalRounds: number; // Winners bracket rounds
+  /** #4 Total rounds in the losers bracket (2*totalRounds - 2, or 0 for single elim) */
+  losersTotalRounds: number;
   champion: TournamentPlayer | null;
   status: 'setup' | 'in_progress' | 'completed';
   createdAt: number;
   settings: TournamentSettings;
+  /** #4 True if GF1 was won by the LB champion → GF2 (reset) is needed */
+  grandFinalsResetNeeded: boolean;
 }
 
 export interface TournamentSettings {
@@ -67,23 +80,40 @@ export interface TournamentSettings {
   filterLanguage: string;
 }
 
-// Generate a unique match ID
-function generateMatchId(round: number, position: number): string {
-  return `R${round}M${position}`;
+// ─── Match ID Generation ──────────────────────────────────────────
+
+function generateMatchId(round: number, position: number, bracketType?: BracketType): string {
+  if (bracketType === 'grand_finals') {
+    return `GF${round}`; // GF1, GF2
+  }
+  const prefix = bracketType === 'losers' ? 'LR' : bracketType === 'winners' ? 'WR' : 'R';
+  return `${prefix}${round}M${position}`;
 }
 
-// Calculate number of rounds needed
+// ─── Utility Functions ────────────────────────────────────────────
+
 function calculateRounds(numPlayers: number): number {
   return Math.ceil(Math.log2(numPlayers));
 }
 
-// Calculate number of BYEs needed for bracket balance
 function calculateByes(numPlayers: number): number {
   const nextPowerOfTwo = Math.pow(2, Math.ceil(Math.log2(numPlayers)));
   return nextPowerOfTwo - numPlayers;
 }
 
-// Create initial bracket with seeded players
+// ─── Build Lookup Map ─────────────────────────────────────────────
+
+/** Build an ID-based lookup for O(1) match access */
+function buildMatchMap(matches: TournamentMatch[]): Map<string, TournamentMatch> {
+  const map = new Map<string, TournamentMatch>();
+  for (const m of matches) {
+    map.set(m.id, m);
+  }
+  return map;
+}
+
+// ─── Create Tournament ────────────────────────────────────────────
+
 export function createTournament(
   players: TournamentPlayer[],
   settings: TournamentSettings
@@ -98,10 +128,14 @@ export function createTournament(
   const totalRounds = calculateRounds(players.length);
   const byesNeeded = calculateByes(players.length);
 
+  // #4 Double Elimination requires exact power-of-2 players (no BYEs)
+  if (settings.tournamentType === 'double' && byesNeeded > 0) {
+    throw new Error('Double Elimination requires exactly 2, 4, 8, 16, or 32 players');
+  }
+
   // #9 Seed players: random shuffle or by strength
   let seededPlayers: typeof players;
   if (settings.seedingMode === 'strength') {
-    // Sort by seed (strength) descending — highest strength = seed 1
     seededPlayers = [...players].sort((a, b) => a.seed - b.seed);
   } else {
     seededPlayers = shuffleArray(players);
@@ -110,10 +144,20 @@ export function createTournament(
     ...p,
     seed: i + 1,
     eliminated: false,
+    lossCount: 0, // #4 Initialize loss count for double elimination
   }));
 
-  // Generate bracket structure
-  const matches = generateBracket(shuffledPlayers, totalRounds, byesNeeded);
+  // Generate winners bracket structure (same for single and double elimination)
+  const matches = generateWinnersBracket(shuffledPlayers, totalRounds, byesNeeded);
+
+  // #4 Generate losers bracket and grand finals for double elimination
+  const losersTotalRounds = settings.tournamentType === 'double' ? (totalRounds <= 1 ? 0 : 2 * totalRounds - 2) : 0;
+
+  if (settings.tournamentType === 'double' && losersTotalRounds > 0) {
+    const lbMatches = generateLosersBracket(totalRounds, players.length);
+    const gfMatches = generateGrandFinals();
+    matches.push(...lbMatches, ...gfMatches);
+  }
 
   return {
     id: `tournament_${Date.now()}`,
@@ -122,68 +166,68 @@ export function createTournament(
     matches,
     currentRound: 1,
     totalRounds,
+    losersTotalRounds,
     champion: null,
     status: 'in_progress',
     createdAt: Date.now(),
     settings,
+    grandFinalsResetNeeded: false,
   };
 }
 
-// Generate the complete bracket structure
-function generateBracket(
+// ─── Winners Bracket Generation ───────────────────────────────────
+
+function generateWinnersBracket(
   players: TournamentPlayer[],
   totalRounds: number,
   byesNeeded: number
 ): TournamentMatch[] {
   const matches: TournamentMatch[] = [];
   const firstRoundMatches = Math.pow(2, totalRounds - 1);
-  
-  // Distribute players and BYEs
+
   const playerQueue = [...players];
   const byePositions = selectByePositions(firstRoundMatches, byesNeeded);
-  
+
   // Create first round matches
   for (let i = 0; i < firstRoundMatches; i++) {
     const isByeMatch = byePositions.includes(i);
-    
     let player1: TournamentPlayer | null = null;
     let player2: TournamentPlayer | null = null;
-    
+
     if (!isByeMatch && playerQueue.length > 0) {
       player1 = playerQueue.shift() || null;
     }
     if (!isByeMatch && playerQueue.length > 0) {
       player2 = playerQueue.shift() || null;
     } else if (isByeMatch && playerQueue.length > 0) {
-      // BYE match - only one player advances
       player1 = playerQueue.shift() || null;
     }
-    
-    const match: TournamentMatch = {
-      id: generateMatchId(1, i + 1),
+
+    matches.push({
+      id: generateMatchId(1, i + 1, 'winners'),
       round: 1,
       position: i,
+      bracketType: 'winners',
       player1,
       player2,
-      winner: isByeMatch && player1 ? player1 : null, // BYE advances automatically
+      winner: isByeMatch && player1 ? player1 : null,
       loser: null,
       score1: 0,
       score2: 0,
       completed: isByeMatch && !!player1,
       isBye: isByeMatch && !player2,
-    };
-    
-    matches.push(match);
+    });
   }
-  
+
   // Create subsequent round matches (empty placeholders)
   for (let round = 2; round <= totalRounds; round++) {
     const roundMatches = Math.pow(2, totalRounds - round);
     for (let i = 0; i < roundMatches; i++) {
       matches.push({
-        id: generateMatchId(round, i + 1),
+        id: generateMatchId(round, i + 1, 'winners'),
         round,
         position: i,
+        bracketType: 'winners',
         player1: null,
         player2: null,
         winner: null,
@@ -196,16 +240,10 @@ function generateBracket(
     }
   }
 
-  // Advance BYE winners into their next-round match slots.
-  // Without this, BYE matches are marked completed with a winner, but the
-  // winner is never placed into the round-2 match → tournament is permanently stuck.
+  // Advance BYE winners into their next-round match slots
   for (const match of matches) {
     if (match.isBye && match.winner) {
-      const nextRound = match.round + 1;
-      const nextPosition = Math.floor(match.position / 2);
-      const nextMatch = matches.find(
-        m => m.round === nextRound && m.position === nextPosition
-      );
+      const nextMatch = findWBNextMatch(matches, match);
       if (nextMatch) {
         if (match.position % 2 === 0) {
           nextMatch.player1 = match.winner;
@@ -219,63 +257,342 @@ function generateBracket(
   return matches;
 }
 
-// Select random positions for BYEs in first round
+function findWBNextMatch(matches: TournamentMatch[], currentMatch: TournamentMatch): TournamentMatch | null {
+  const nextRound = currentMatch.round + 1;
+  const nextPosition = Math.floor(currentMatch.position / 2);
+  return matches.find(m => m.round === nextRound && m.position === nextPosition && m.bracketType === 'winners') || null;
+}
+
+// ─── Losers Bracket Generation (#4 Double Elimination) ───────────
+
+/**
+ * Losers Bracket Structure for N players with R = log2(N) WB rounds:
+ *
+ * The LB has (2*R - 2) rounds. It alternates between:
+ * - "WB drop" rounds (even): WB losers enter and face LB winners from previous round
+ * - "Consolidation" rounds (odd, >1): LB winners face each other
+ * - Round 1 (special): WB R1 losers face each other, paired adjacently
+ *
+ * For 8 players (R=3): LB R1→2→3→4 (4 rounds)
+ * For 16 players (R=4): LB R1→2→3→4→5→6 (6 rounds)
+ */
+function generateLosersBracket(
+  wbRounds: number,
+  numPlayers: number
+): TournamentMatch[] {
+  const lbMatches: TournamentMatch[] = [];
+  const lbTotalRounds = 2 * wbRounds - 2;
+
+  for (let lbRound = 1; lbRound <= lbTotalRounds; lbRound++) {
+    const matchesCount = getLBMatchesCount(lbRound, wbRounds, numPlayers);
+
+    for (let pos = 0; pos < matchesCount; pos++) {
+      lbMatches.push({
+        id: generateMatchId(lbRound, pos, 'losers'),
+        round: lbRound,
+        position: pos,
+        bracketType: 'losers',
+        player1: null,
+        player2: null,
+        winner: null,
+        loser: null,
+        score1: 0,
+        score2: 0,
+        completed: false,
+        isBye: false,
+      });
+    }
+  }
+
+  return lbMatches;
+}
+
+/** Calculate the number of matches in a given losers bracket round */
+function getLBMatchesCount(lbRound: number, wbRounds: number, numPlayers: number): number {
+  const N = Math.pow(2, wbRounds); // Use power-of-2 size (DE always uses exact Po2)
+
+  if (lbRound === 1) {
+    // WB R1 losers face each other: N/4 matches
+    return N / 4;
+  }
+  if (lbRound % 2 === 0) {
+    // WB drop round: WB R(lbRound/2+1) has N/(2^(lbRound/2+1)) matches
+    return Math.pow(2, wbRounds - lbRound / 2 - 1);
+  }
+  // Consolidation round (odd, >1): half of previous round's matches
+  return Math.pow(2, wbRounds - Math.floor(lbRound / 2) - 2);
+}
+
+// ─── Grand Finals Generation (#4) ─────────────────────────────────
+
+function generateGrandFinals(): TournamentMatch[] {
+  return [
+    {
+      id: 'GF1',
+      round: 1,
+      position: 0,
+      bracketType: 'grand_finals',
+      player1: null,
+      player2: null,
+      winner: null,
+      loser: null,
+      score1: 0,
+      score2: 0,
+      completed: false,
+      isBye: false,
+    },
+    {
+      id: 'GF2',
+      round: 2,
+      position: 0,
+      bracketType: 'grand_finals',
+      player1: null,
+      player2: null,
+      winner: null,
+      loser: null,
+      score1: 0,
+      score2: 0,
+      completed: false,
+      isBye: false,
+      isReset: true,
+    },
+  ];
+}
+
+// ─── Double Elimination: Drop to Losers Bracket ───────────────────
+
+/**
+ * When a player loses in the winners bracket, they drop to the losers bracket.
+ * This function finds the correct LB match and assigns the loser to it.
+ *
+ * - WB R1 losers: paired adjacently → LB R1 M(floor(pos/2))
+ * - WB R(r) losers (r>1): drop to LB R(2*(r-1)) M(pos) as player1
+ */
+function dropToLosersBracket(
+  matches: TournamentMatch[],
+  wbMatch: TournamentMatch,
+  loser: TournamentPlayer
+): TournamentMatch[] {
+  const updated = [...matches];
+
+  let targetLBMatch: TournamentMatch | null = null;
+  let assignAs: 'player1' | 'player2';
+
+  if (wbMatch.round === 1) {
+    // WB R1 losers are paired adjacently
+    const lbPosition = Math.floor(wbMatch.position / 2);
+    targetLBMatch = updated.find(m => m.round === 1 && m.position === lbPosition && m.bracketType === 'losers') || null;
+    assignAs = wbMatch.position % 2 === 0 ? 'player1' : 'player2';
+  } else {
+    // WB R(r) losers (r>1) drop to LB R(2*(r-1))
+    const lbRound = 2 * (wbMatch.round - 1);
+    const lbPosition = wbMatch.position;
+    targetLBMatch = updated.find(m => m.round === lbRound && m.position === lbPosition && m.bracketType === 'losers') || null;
+    assignAs = 'player1'; // WB losers are always player1 in drop rounds
+  }
+
+  if (targetLBMatch) {
+    const idx = updated.findIndex(m => m.id === targetLBMatch!.id);
+    if (idx !== -1) {
+      updated[idx] = { ...updated[idx], [assignAs]: loser };
+    }
+  }
+
+  return updated;
+}
+
+// ─── Double Elimination: Advance in Losers Bracket ────────────────
+
+/**
+ * When a player wins in the losers bracket, they advance to the next LB round.
+ *
+ * - After LB R(k) where k is odd (consolidation): winner goes to LB R(k+1) M(pos) as player2
+ *   (next round is a WB drop round, and LB winners are always player2)
+ * - After LB R(k) where k is even (WB drop): winner goes to LB R(k+1) M(floor(pos/2))
+ *   (next round is consolidation, paired adjacently)
+ * - After last LB round (2R-2): winner goes to Grand Finals as player2
+ */
+function advanceInLosersBracket(
+  matches: TournamentMatch[],
+  lbMatch: TournamentMatch,
+  winner: TournamentPlayer,
+  losersTotalRounds: number
+): TournamentMatch[] {
+  const updated = [...matches];
+
+  // Check if this is the last LB round → advance to Grand Finals
+  if (lbMatch.round >= losersTotalRounds) {
+    const gf1 = updated.find(m => m.id === 'GF1');
+    if (gf1) {
+      const idx = updated.findIndex(m => m.id === 'GF1');
+      updated[idx] = { ...gf1, player2: winner };
+    }
+    return updated;
+  }
+
+  const nextRound = lbMatch.round + 1;
+  let nextPosition: number;
+  let assignAs: 'player1' | 'player2';
+
+  if (lbMatch.round % 2 === 1) {
+    // Current round is odd (consolidation) → next is even (WB drop)
+    // Winner goes to next round same position as player2
+    nextPosition = lbMatch.position;
+    assignAs = 'player2';
+  } else {
+    // Current round is even (WB drop) → next is odd (consolidation)
+    // Winners are paired adjacently
+    nextPosition = Math.floor(lbMatch.position / 2);
+    assignAs = lbMatch.position % 2 === 0 ? 'player1' : 'player2';
+  }
+
+  const nextMatch = updated.find(
+    m => m.round === nextRound && m.position === nextPosition && m.bracketType === 'losers'
+  );
+  if (nextMatch) {
+    const idx = updated.findIndex(m => m.id === nextMatch!.id);
+    if (idx !== -1) {
+      updated[idx] = { ...updated[idx], [assignAs]: winner };
+    }
+  }
+
+  return updated;
+}
+
+// ─── Double Elimination: Grand Finals Logic ───────────────────────
+
+function handleGrandFinalsResult(
+  matches: TournamentMatch[],
+  gfMatch: TournamentMatch,
+  winner: TournamentPlayer,
+  loser: TournamentPlayer,
+  grandFinalsResetNeeded: boolean,
+  players: TournamentPlayer[]
+): { matches: TournamentMatch[]; players: TournamentPlayer[]; champion: TournamentPlayer | null; status: 'in_progress' | 'completed'; grandFinalsResetNeeded: boolean } {
+  const updated = [...matches];
+  let updatedPlayers = [...players];
+
+  if (gfMatch.isReset) {
+    // GF2 (reset match): whoever wins is champion, loser is eliminated
+    updatedPlayers = updatedPlayers.map(p =>
+      p.id === loser.id ? { ...p, eliminated: true, lossCount: (p.lossCount || 0) + 1 } : p
+    );
+    return {
+      matches: updated,
+      players: updatedPlayers,
+      champion: winner,
+      status: 'completed',
+      grandFinalsResetNeeded: false,
+    };
+  }
+
+  // GF1
+  // Check if the WB champion (lossCount === 0) won
+  const winnerLossCount = players.find(p => p.id === winner.id)?.lossCount || 0;
+  const loserLossCount = players.find(p => p.id === loser.id)?.lossCount || 0;
+
+  if (winnerLossCount === 0) {
+    // WB champion won GF1 → tournament over
+    return {
+      matches: updated,
+      players: updatedPlayers,
+      champion: winner,
+      status: 'completed',
+      grandFinalsResetNeeded: false,
+    };
+  }
+
+  // LB champion (1 loss) won GF1 → WB champion gets first loss → need reset
+  updatedPlayers = updatedPlayers.map(p =>
+    p.id === loser.id ? { ...p, lossCount: (p.lossCount || 0) + 1 } : p
+  );
+
+  // Set up GF2 with the same two players
+  const gf2Idx = updated.findIndex(m => m.id === 'GF2');
+  if (gf2Idx !== -1) {
+    // In GF2, the WB champion (who just got their first loss) is player1, LB champ is player2
+    updated[gf2Idx] = {
+      ...updated[gf2Idx],
+      player1: loser,   // WB champion (now with 1 loss)
+      player2: winner,  // LB champion (still with 1 loss)
+    };
+  }
+
+  return {
+    matches: updated,
+    players: updatedPlayers,
+    champion: null,
+    status: 'in_progress',
+    grandFinalsResetNeeded: true,
+  };
+}
+
+// ─── Select Bye Positions ─────────────────────────────────────────
+
 function selectByePositions(totalMatches: number, byesNeeded: number): number[] {
   const positions: number[] = [];
   const available = [...Array(totalMatches).keys()];
-  
-  // Distribute BYEs evenly (top and bottom halves)
   const halfSize = Math.floor(totalMatches / 2);
-  
+
   for (let i = 0; i < byesNeeded && available.length > 0; i++) {
-    // Alternate between halves for fairness
     const half = i % 2 === 0 ? 0 : 1;
-    const halfPositions = available.filter(p => 
+    const halfPositions = available.filter(p =>
       half === 0 ? p < halfSize : p >= halfSize
     );
-    
+
     if (halfPositions.length > 0) {
       const randomIndex = Math.floor(Math.random() * halfPositions.length);
       const position = halfPositions[randomIndex];
       positions.push(position);
       available.splice(available.indexOf(position), 1);
     } else {
-      // Fallback to any available position
       const randomIndex = Math.floor(Math.random() * available.length);
       positions.push(available[randomIndex]);
       available.splice(randomIndex, 1);
     }
   }
-  
+
   return positions;
 }
 
-// Build a lookup map for O(1) match access by round+position.
-// Key format: "round-position" (e.g. "1-0", "2-1").
-function buildMatchLookup(bracket: TournamentBracket): Map<string, TournamentMatch> {
-  const map = new Map<string, TournamentMatch>();
-  for (const m of bracket.matches) {
-    map.set(`${m.round}-${m.position}`, m);
-  }
-  return map;
+// ─── Query Functions ──────────────────────────────────────────────
+
+/** Get matches for a specific round, optionally filtered by bracket type */
+export function getMatchesForRound(
+  bracket: TournamentBracket,
+  round: number,
+  bracketType?: BracketType
+): TournamentMatch[] {
+  return bracket.matches.filter(m =>
+    m.round === round && (!bracketType || m.bracketType === bracketType)
+  );
 }
 
-// Get matches for a specific round
-export function getMatchesForRound(bracket: TournamentBracket, round: number): TournamentMatch[] {
-  return bracket.matches.filter(m => m.round === round);
+/** Get all matches of a specific bracket type */
+export function getMatchesByBracketType(
+  bracket: TournamentBracket,
+  bracketType: BracketType
+): TournamentMatch[] {
+  return bracket.matches.filter(m => m.bracketType === bracketType);
 }
 
-// Get all matches that are ready to play (both players assigned AND
-// both feeder matches have completed so the winner has been determined).
-// This allows clicking on any match in the bracket to start it out of order.
+/**
+ * Get all matches that are ready to play.
+ * For single elimination: same logic as before.
+ * For double elimination: includes WB, LB, and GF matches that have both players
+ * and all feeder matches completed.
+ */
 export function getPlayableMatches(bracket: TournamentBracket): TournamentMatch[] {
-  const lookup = buildMatchLookup(bracket);
+  if (bracket.settings.tournamentType === 'double') {
+    return getPlayableMatchesDoubleElim(bracket);
+  }
+
+  // Single elimination: original logic
+  const lookup = buildMatchMap(bracket.matches);
   return bracket.matches.filter(
     m => {
       if (m.completed || !m.player1 || !m.player2 || m.isBye) return false;
-      // For round 1 matches, no feeder matches exist — always playable
       if (m.round === 1) return true;
-      // For round 2+, check that both feeder matches are completed
       const pos = m.position;
       const feeder1 = lookup.get(`${m.round - 1}-${pos * 2}`);
       const feeder2 = lookup.get(`${m.round - 1}-${pos * 2 + 1}`);
@@ -284,14 +601,78 @@ export function getPlayableMatches(bracket: TournamentBracket): TournamentMatch[
   );
 }
 
-// Get the next match a winner advances to
-function getNextMatch(bracket: TournamentBracket, currentMatch: TournamentMatch): TournamentMatch | null {
-  if (currentMatch.round >= bracket.totalRounds) return null;
-  const lookup = buildMatchLookup(bracket);
-  return lookup.get(`${currentMatch.round + 1}-${Math.floor(currentMatch.position / 2)}`) || null;
+/** Get playable matches for double elimination */
+function getPlayableMatchesDoubleElim(bracket: TournamentBracket): TournamentMatch[] {
+  const matchMap = buildMatchMap(bracket.matches);
+  const wbRounds = bracket.totalRounds;
+  const lbTotalRounds = bracket.losersTotalRounds;
+
+  return bracket.matches.filter(m => {
+    if (m.completed || !m.player1 || !m.player2 || m.isBye) return false;
+
+    if (m.bracketType === 'winners') {
+      // WB matches: same feeder logic as single elimination
+      if (m.round === 1) return true;
+      const feeder1 = matchMap.get(generateMatchId(m.round - 1, m.position * 2, 'winners'));
+      const feeder2 = matchMap.get(generateMatchId(m.round - 1, m.position * 2 + 1, 'winners'));
+      return !!(feeder1 && feeder1.completed) && !!(feeder2 && feeder2.completed);
+    }
+
+    if (m.bracketType === 'losers') {
+      return isLBMatchPlayable(m, matchMap, wbRounds);
+    }
+
+    if (m.bracketType === 'grand_finals') {
+      if (m.isReset) {
+        // GF2: playable only if GF1 is completed
+        const gf1 = matchMap.get('GF1');
+        return !!(gf1 && gf1.completed && bracket.grandFinalsResetNeeded);
+      }
+      // GF1: playable when WB champion and LB champion are determined
+      const wbFinal = matchMap.get(generateMatchId(wbRounds, 1, 'winners'));
+      const lbFinal = lbTotalRounds > 0
+        ? matchMap.get(generateMatchId(lbTotalRounds, 0, 'losers'))
+        : null;
+      return !!(wbFinal && wbFinal.completed) &&
+        (lbTotalRounds === 0 || !!(lbFinal && lbFinal.completed));
+    }
+
+    return false;
+  });
 }
 
-// Record match result and advance winner (supports tiebreak statistics)
+/** Check if a losers bracket match has all its feeders completed */
+function isLBMatchPlayable(
+  lbMatch: TournamentMatch,
+  matchMap: Map<string, TournamentMatch>,
+  wbRounds: number
+): boolean {
+  const lbRound = lbMatch.round;
+
+  if (lbRound === 1) {
+    // LB R1: feeders are WB R1 matches (paired adjacently)
+    // feeder1 = WB R1 M(2*pos), feeder2 = WB R1 M(2*pos+1)
+    const feeder1 = matchMap.get(generateMatchId(1, lbMatch.position * 2, 'winners'));
+    const feeder2 = matchMap.get(generateMatchId(1, lbMatch.position * 2 + 1, 'winners'));
+    return !!(feeder1 && feeder1.completed) && !!(feeder2 && feeder2.completed);
+  }
+
+  if (lbRound % 2 === 0) {
+    // WB drop round: feeder1 = WB R(lbRound/2+1) M(pos), feeder2 = LB R(lbRound-1) M(pos)
+    const wbRound = lbRound / 2 + 1;
+    const feeder1 = matchMap.get(generateMatchId(wbRound, lbMatch.position + 1, 'winners'));
+    const feeder2 = matchMap.get(generateMatchId(lbRound - 1, lbMatch.position, 'losers'));
+    return !!(feeder1 && feeder1.completed) && !!(feeder2 && feeder2.completed);
+  }
+
+  // Consolidation round (odd, >1): feeder1 = LB R(lbRound-1) M(2*pos), feeder2 = LB R(lbRound-1) M(2*pos+1)
+  const feeder1 = matchMap.get(generateMatchId(lbRound - 1, lbMatch.position * 2, 'losers'));
+  const feeder2 = matchMap.get(generateMatchId(lbRound - 1, lbMatch.position * 2 + 1, 'losers'));
+  return !!(feeder1 && feeder1.completed) && !!(feeder2 && feeder2.completed);
+}
+
+// ─── Record Match Result ─────────────────────────────────────────
+
 export function recordMatchResult(
   bracket: TournamentBracket,
   matchId: string,
@@ -308,9 +689,9 @@ export function recordMatchResult(
 ): TournamentBracket {
   const matchIndex = bracket.matches.findIndex(m => m.id === matchId);
   if (matchIndex === -1) return bracket;
-  
+
   const match = { ...bracket.matches[matchIndex] };
-  
+
   if (!match.player1 || !match.player2 || match.completed) {
     return bracket;
   }
@@ -323,8 +704,7 @@ export function recordMatchResult(
   match.songTitle = stats?.songTitle;
   match.songArtist = stats?.songArtist;
 
-  // Determine winner (Sudden Death - higher score wins)
-  // Tiebreak based on settings (#3)
+  // Determine winner
   let winner: TournamentPlayer;
   let isTiebreak = false;
 
@@ -333,59 +713,61 @@ export function recordMatchResult(
   } else if (score2 > score1) {
     winner = match.player2;
   } else {
-    // Tie! Apply tiebreak rules
     isTiebreak = true;
     winner = resolveTie(match, bracket.settings.tiebreakMode, stats);
   }
   match.isTiebreak = isTiebreak;
 
   const loser = winner.id === match.player1.id ? match.player2 : match.player1;
-  
+
   match.score1 = score1;
   match.score2 = score2;
   match.winner = winner;
   match.loser = loser;
   match.completed = true;
-  
-  // Update bracket
+
+  // Update matches array
   const updatedMatches = [...bracket.matches];
   updatedMatches[matchIndex] = match;
-  
+
+  // Route based on tournament type and bracket type
+  if (bracket.settings.tournamentType === 'double') {
+    return recordDoubleEliminationResult(
+      { ...bracket, matches: updatedMatches },
+      match,
+      winner,
+      loser,
+    );
+  }
+
+  // ── Single Elimination ──
   // Mark loser as eliminated
-  const updatedPlayers = bracket.players.map(p => 
+  const updatedPlayers = bracket.players.map(p =>
     p.id === loser.id ? { ...p, eliminated: true } : p
   );
-  
-  // Advance winner to next round
-  const nextMatch = getNextMatch({ ...bracket, matches: updatedMatches }, match);
+
+  // Advance winner in WB
+  const nextMatch = findWBNextMatch(updatedMatches, match);
   if (nextMatch) {
-    const nextMatchIndex = updatedMatches.findIndex(m => m.id === nextMatch.id);
-    
-    // Winner goes to position 0 (player1) for even match positions, player2 for odd
+    const nextMatchIndex = updatedMatches.findIndex(m => m.id === nextMatch!.id);
     if (match.position % 2 === 0) {
-      updatedMatches[nextMatchIndex] = {
-        ...updatedMatches[nextMatchIndex],
-        player1: winner,
-      };
+      updatedMatches[nextMatchIndex] = { ...updatedMatches[nextMatchIndex], player1: winner };
     } else {
-      updatedMatches[nextMatchIndex] = {
-        ...updatedMatches[nextMatchIndex],
-        player2: winner,
-      };
+      updatedMatches[nextMatchIndex] = { ...updatedMatches[nextMatchIndex], player2: winner };
     }
   }
-  
-  // Check if round is complete
-  const currentRoundMatches = updatedMatches.filter(m => m.round === bracket.currentRound);
+
+  // Check round completion
+  const currentRoundMatches = updatedMatches.filter(
+    m => m.round === bracket.currentRound && m.bracketType === 'winners'
+  );
   const roundComplete = currentRoundMatches.every(m => m.completed);
-  
-  // Check for tournament completion
+
   let newStatus = bracket.status;
   let champion = bracket.champion;
   let newCurrentRound = bracket.currentRound;
-  
+
   if (roundComplete) {
-    // Check if this was the final
     if (bracket.currentRound === bracket.totalRounds) {
       newStatus = 'completed';
       champion = winner;
@@ -393,7 +775,7 @@ export function recordMatchResult(
       newCurrentRound = bracket.currentRound + 1;
     }
   }
-  
+
   return {
     ...bracket,
     matches: updatedMatches,
@@ -404,24 +786,119 @@ export function recordMatchResult(
   };
 }
 
-// Get tournament statistics
+// ─── Double Elimination Result Handling ───────────────────────────
+
+function recordDoubleEliminationResult(
+  bracket: TournamentBracket,
+  match: TournamentMatch,
+  winner: TournamentPlayer,
+  loser: TournamentPlayer,
+): TournamentBracket {
+  let updatedMatches = [...bracket.matches];
+  let updatedPlayers = [...bracket.players];
+
+  if (match.bracketType === 'winners') {
+    // ── Winners Bracket Match ──
+    // Advance winner in WB (same as single elimination)
+    const nextMatch = findWBNextMatch(updatedMatches, match);
+    if (nextMatch) {
+      const nextMatchIndex = updatedMatches.findIndex(m => m.id === nextMatch!.id);
+      if (match.position % 2 === 0) {
+        updatedMatches[nextMatchIndex] = { ...updatedMatches[nextMatchIndex], player1: winner };
+      } else {
+        updatedMatches[nextMatchIndex] = { ...updatedMatches[nextMatchIndex], player2: winner };
+      }
+    }
+
+    // Drop loser to losers bracket (first loss)
+    updatedPlayers = updatedPlayers.map(p =>
+      p.id === loser.id ? { ...p, lossCount: (p.lossCount || 0) + 1 } : p
+    );
+    updatedMatches = dropToLosersBracket(updatedMatches, match, loser);
+
+    // Check if WB round is complete → advance currentRound for display
+    const wbRoundMatches = updatedMatches.filter(
+      m => m.round === bracket.currentRound && m.bracketType === 'winners'
+    );
+    const wbRoundComplete = wbRoundMatches.every(m => m.completed);
+    let newCurrentRound = bracket.currentRound;
+    if (wbRoundComplete && bracket.currentRound < bracket.totalRounds) {
+      newCurrentRound = bracket.currentRound + 1;
+    }
+
+    return {
+      ...bracket,
+      matches: updatedMatches,
+      players: updatedPlayers,
+      currentRound: newCurrentRound,
+    };
+  }
+
+  if (match.bracketType === 'losers') {
+    // ── Losers Bracket Match ──
+    // Advance winner in LB
+    updatedMatches = advanceInLosersBracket(updatedMatches, match, winner, bracket.losersTotalRounds);
+
+    // Eliminate loser (second loss)
+    updatedPlayers = updatedPlayers.map(p =>
+      p.id === loser.id ? { ...p, eliminated: true, lossCount: (p.lossCount || 0) + 1 } : p
+    );
+
+    return {
+      ...bracket,
+      matches: updatedMatches,
+      players: updatedPlayers,
+    };
+  }
+
+  if (match.bracketType === 'grand_finals') {
+    // ── Grand Finals ──
+    const gfResult = handleGrandFinalsResult(
+      updatedMatches,
+      match,
+      winner,
+      loser,
+      bracket.grandFinalsResetNeeded,
+      updatedPlayers,
+    );
+
+    return {
+      ...bracket,
+      matches: gfResult.matches,
+      players: gfResult.players,
+      champion: gfResult.champion,
+      status: gfResult.status,
+      grandFinalsResetNeeded: gfResult.grandFinalsResetNeeded,
+    };
+  }
+
+  return bracket;
+}
+
+// ─── Tournament Statistics ────────────────────────────────────────
+
 export function getTournamentStats(bracket: TournamentBracket) {
   const completedMatches = bracket.matches.filter(m => m.completed && !m.isBye);
-  const totalMatches = bracket.matches.filter(m => !m.isBye).length;
-  
+  const totalNonByeMatches = bracket.matches.filter(m => !m.isBye && !m.isReset).length;
+  const isDouble = bracket.settings.tournamentType === 'double';
+
   return {
     totalPlayers: bracket.players.length,
     eliminatedPlayers: bracket.players.filter(p => p.eliminated).length,
     remainingPlayers: bracket.players.filter(p => !p.eliminated).length,
     matchesPlayed: completedMatches.length,
-    totalMatches,
+    totalMatches: totalNonByeMatches,
     currentRound: bracket.currentRound,
     totalRounds: bracket.totalRounds,
+    losersTotalRounds: bracket.losersTotalRounds,
+    isDoubleElimination: isDouble,
+    grandFinalsResetNeeded: bracket.grandFinalsResetNeeded,
     isComplete: bracket.status === 'completed',
   };
 }
 
-// Resolve a tie between two players based on tiebreak mode (#3)
+// ─── Tiebreak Resolution (#3) ────────────────────────────────────
+
 function resolveTie(
   match: TournamentMatch,
   mode: TournamentSettings['tiebreakMode'],
@@ -431,14 +908,12 @@ function resolveTie(
 
   switch (mode) {
     case 'accuracy': {
-      // Higher accuracy wins; fallback to coinflip
       const a1 = stats?.accuracy1 ?? 0;
       const a2 = stats?.accuracy2 ?? 0;
       if (a1 !== a2) return a1 > a2 ? match.player1 : match.player2;
       return Math.random() < 0.5 ? match.player1 : match.player2;
     }
     case 'combo': {
-      // Higher max combo wins; fallback to accuracy; then coinflip
       const c1 = stats?.maxCombo1 ?? 0;
       const c2 = stats?.maxCombo2 ?? 0;
       if (c1 !== c2) return c1 > c2 ? match.player1 : match.player2;
@@ -448,9 +923,6 @@ function resolveTie(
       return Math.random() < 0.5 ? match.player1 : match.player2;
     }
     case 'goldenmic': {
-      // Golden Mic: compare accuracy first, then combo, then coinflip.
-      // In a full implementation this would trigger a 10s sing-off.
-      // For now, it uses the same cascading tiebreak as 'combo'.
       const a1 = stats?.accuracy1 ?? 0;
       const a2 = stats?.accuracy2 ?? 0;
       if (a1 !== a2) return a1 > a2 ? match.player1 : match.player2;
@@ -465,8 +937,8 @@ function resolveTie(
   }
 }
 
-// #9 Get player placement order (1st, 2nd, 3rd, etc.) after tournament completion
-// Uses elimination round as tiebreaker (later elimination = better placement)
+// ─── Player Placements (#9) ──────────────────────────────────────
+
 export function getPlayerPlacements(bracket: TournamentBracket): Array<{
   player: TournamentPlayer;
   placement: number;
@@ -475,6 +947,7 @@ export function getPlayerPlacements(bracket: TournamentBracket): Array<{
   matchesWon: number;
   matchesLost: number;
 }> {
+  const isDouble = bracket.settings.tournamentType === 'double';
   const placements: Array<{
     player: TournamentPlayer;
     placement: number;
@@ -482,7 +955,8 @@ export function getPlayerPlacements(bracket: TournamentBracket): Array<{
     totalAccuracy: number;
     matchesWon: number;
     matchesLost: number;
-    eliminationRound: number;
+    /** Higher = better placement. For DE: combines WB progress + LB survival */
+    survivalScore: number;
   }> = [];
 
   for (const player of bracket.players) {
@@ -495,7 +969,7 @@ export function getPlayerPlacements(bracket: TournamentBracket): Array<{
     let accuracyCount = 0;
     let matchesWon = 0;
     let matchesLost = 0;
-    let eliminationRound = 0;
+    let survivalScore = 0;
 
     for (const m of playerMatches) {
       const isPlayer1 = m.player1?.id === player.id;
@@ -510,13 +984,44 @@ export function getPlayerPlacements(bracket: TournamentBracket): Array<{
         matchesWon++;
       } else {
         matchesLost++;
-        eliminationRound = Math.max(eliminationRound, m.round);
       }
     }
 
-    // Champion never lost, so eliminationRound stays 0
+    // Survival score: how deep the player went
+    if (isDouble) {
+      // For DE: WB round reached + LB round reached (if applicable)
+      const wbMatches = playerMatches.filter(m => m.bracketType === 'winners');
+      const lbMatches = playerMatches.filter(m => m.bracketType === 'losers');
+      const gfMatches = playerMatches.filter(m => m.bracketType === 'grand_finals');
+
+      let wbDepth = 0;
+      for (const m of wbMatches) {
+        wbDepth = Math.max(wbDepth, m.round);
+        if (m.winner?.id === player.id) {
+          wbDepth += 0.5; // Bonus for winning in WB (went deeper)
+        }
+      }
+
+      let lbDepth = 0;
+      for (const m of lbMatches) {
+        lbDepth = Math.max(lbDepth, m.round);
+        if (m.winner?.id === player.id) {
+          lbDepth += 0.5;
+        }
+      }
+
+      // GF matches add significant survival score
+      const gfBonus = gfMatches.length * (bracket.totalRounds * 2);
+
+      survivalScore = wbDepth * 2 + lbDepth + gfBonus;
+    } else {
+      // Single elimination: use max round reached
+      const maxRound = Math.max(...playerMatches.map(m => m.round), 0);
+      survivalScore = maxRound * 2;
+    }
+
     if (bracket.champion?.id === player.id) {
-      eliminationRound = bracket.totalRounds + 1; // Highest possible
+      survivalScore = 999; // Highest possible
     }
 
     placements.push({
@@ -526,18 +1031,17 @@ export function getPlayerPlacements(bracket: TournamentBracket): Array<{
       totalAccuracy: accuracyCount > 0 ? totalAccuracy / accuracyCount : 0,
       matchesWon,
       matchesLost,
-      eliminationRound,
+      survivalScore,
     });
   }
 
-  // Sort: by elimination round (desc), then totalScore (desc), then totalAccuracy (desc)
+  // Sort: by survivalScore (desc), then totalScore (desc), then totalAccuracy (desc)
   placements.sort((a, b) => {
-    if (b.eliminationRound !== a.eliminationRound) return b.eliminationRound - a.eliminationRound;
+    if (b.survivalScore !== a.survivalScore) return b.survivalScore - a.survivalScore;
     if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
     return b.totalAccuracy - a.totalAccuracy;
   });
 
-  // Assign placements
   placements.forEach((p, i) => {
     p.placement = i + 1;
   });
@@ -545,7 +1049,8 @@ export function getPlayerPlacements(bracket: TournamentBracket): Array<{
   return placements;
 }
 
-// #7 Hall of Fame — stored in localStorage
+// ─── Hall of Fame (#7) ────────────────────────────────────────────
+
 export interface HallOfFameEntry {
   id: string;
   champion: TournamentPlayer;
@@ -554,9 +1059,9 @@ export interface HallOfFameEntry {
   playerCount: number;
   totalRounds: number;
   tournamentType: 'single' | 'double';
- championScore: number;
+  championScore: number;
   championAccuracy: number;
- createdAt: number;
+  createdAt: number;
 }
 
 const HOF_KEY = 'karaoke_tournament_hall_of_fame';
@@ -592,7 +1097,6 @@ export function addToHallOfFame(bracket: TournamentBracket, placements: ReturnTy
 
   const existing = getHallOfFame();
   existing.unshift(entry);
-  // Keep max 50 entries
   if (existing.length > 50) existing.length = 50;
 
   try {
@@ -610,7 +1114,8 @@ export function clearHallOfFame(): void {
   }
 }
 
-// #6 Get the effective difficulty for a given tournament round
+// ─── #6 Effective Difficulty ──────────────────────────────────────
+
 export function getEffectiveDifficulty(
   baseDifficulty: 'easy' | 'medium' | 'hard',
   currentRound: number,
@@ -619,12 +1124,12 @@ export function getEffectiveDifficulty(
 ): 'easy' | 'medium' | 'hard' {
   if (!dynamicDifficulty) return baseDifficulty;
   const progression: Array<'easy' | 'medium' | 'hard'> = ['easy', 'medium', 'hard', 'hard'];
-  // First round = base difficulty, then escalate
   const idx = Math.min(currentRound - 1 + progression.indexOf(baseDifficulty), progression.length - 1);
   return progression[Math.max(0, idx)];
 }
 
-// #10 Crowd vote result type
+// ─── #10 Crowd Votes & Spectators ─────────────────────────────────
+
 export interface CrowdVoteMatch {
   matchId: string;
   player1Votes: number;
@@ -632,7 +1137,6 @@ export interface CrowdVoteMatch {
   totalVoters: number;
 }
 
-// #10 Compute fan favorite from crowd votes across all completed matches
 export function getFanFavorites(
   bracket: TournamentBracket,
   crowdVotes: CrowdVoteMatch[]
@@ -666,10 +1170,36 @@ export function getFanFavorites(
     .sort((a, b) => b.totalVotes - a.totalVotes);
 }
 
-// #10 Check if a companion client is a spectator (not a tournament player)
 export function isSpectator(
   companionProfileId: string,
   bracket: TournamentBracket
 ): boolean {
   return !bracket.players.some(p => p.id === companionProfileId);
+}
+
+// ─── #4 Double Elimination Helpers ────────────────────────────────
+
+/** Get the losers bracket round name (for display) */
+export function getLBRoundName(
+  lbRound: number,
+  wbRounds: number,
+  totalLB: number,
+  t: (_key: string) => string,
+): string {
+  if (lbRound === totalLB) {
+    return t('tournament.losersFinal');
+  }
+  if (lbRound === totalLB - 1) {
+    return t('tournament.losersSemiFinals');
+  }
+  return t('tournament.losersRound').replace('{n}', String(lbRound));
+}
+
+/** Check if a player is in the losers bracket (has exactly 1 loss) */
+export function isInLosersBracket(
+  player: TournamentPlayer,
+  bracket: TournamentBracket,
+): boolean {
+  if (bracket.settings.tournamentType !== 'double') return false;
+  return (player.lossCount || 0) === 1 && !player.eliminated;
 }

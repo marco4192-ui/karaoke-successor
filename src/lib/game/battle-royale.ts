@@ -121,6 +121,7 @@ export function createBattleRoyale(
     color: p.color,
     seed: 1,
     eliminated: false,
+    lossCount: 0,
     score: 0,
     accuracy: 0,
     totalEvaluatedTicks: 0,

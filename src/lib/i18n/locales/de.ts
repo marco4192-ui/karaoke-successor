@@ -723,6 +723,17 @@ export const deTranslations = {
       doubleElimination: 'Doppelte Elimination',
       doubleEliminationShort: 'Double-Elim',
       doubleEliminationDesc: 'Jeder Spieler hat ein zweites Leben — erst nach zwei Niederlagen scheidet man aus.',
+      doubleEliminationError: 'Doppelte Elimination erfordert genau 2, 4, 8, 16 oder 32 Spieler.',
+      winnersBracket: 'Sieger-Bracket',
+      losersBracket: 'Verlierer-Bracket',
+      grandFinals: 'Grand Finals',
+      grandFinalsReset: 'Grand Finals (Reset)',
+      losersRound: 'Verlierer Runde {n}',
+      losersFinal: 'Verlierer-Finale',
+      losersSemiFinals: 'Verlierer-Halbfinale',
+      firstLoss: '1. Niederlage',
+      secondLoss: '2. Niederlage (ausgeschieden)',
+      droppedToLB: 'Abgestiegen in Verlierer-Bracket',
       // #3 Tiebreak
       tiebreakMode: 'Tiebreak-Regel',
       tiebreakCoinflip: 'Münzwurf',
@@ -775,6 +786,7 @@ export const deTranslations = {
       votes: ' Stimmen',
       matchesVoted: 'Matches',
     },
+    // Note: Tournament keys above already contain DE additions
     companion: {
       title: '📱 Companion Sing-A-Long',
       subtitle: 'Dein Handy leuchtet zufällig auf — dann bist du dran!',

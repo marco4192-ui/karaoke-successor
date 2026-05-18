@@ -232,6 +232,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   avatar: p.avatar,
                   color: p.color,
                   eliminated: false,
+                  lossCount: 0,
                   seed: i + 1,
                 }));
                 // Clamp to nearest valid tournament size: 2, 4, 8, 16, or 32
