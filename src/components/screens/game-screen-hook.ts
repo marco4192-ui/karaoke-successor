@@ -609,7 +609,10 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
   }, []);
 
   // Mobile companion sync - periodic game state updates
-  useMobileGameSync(song, isPlaying, gameState.gameMode, gameState.status === 'ended');
+  // #10 Pass tournament match ID for spectator voting
+  const party = usePartyStore();
+  const tournamentMatchId = party.currentTournamentMatch?.id || null;
+  useMobileGameSync(song, isPlaying, gameState.gameMode, gameState.status === 'ended', tournamentMatchId);
 
   // Special game modes (blind + missing words)
   useGameModes({

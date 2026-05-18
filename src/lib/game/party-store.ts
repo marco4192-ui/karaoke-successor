@@ -4,7 +4,7 @@
 import { create } from 'zustand';
 import { Song } from '@/types/game';
 import type { GameMode } from '@/types/game';
-import type { TournamentBracket, TournamentMatch } from '@/lib/game/tournament';
+import type { TournamentBracket, TournamentMatch, CrowdVoteMatch } from '@/lib/game/tournament';
 import type { GameSetupResult } from '@/components/game/unified-party-setup';
 import type { BattleRoyaleGame } from '@/lib/game/battle-royale';
 import type {
@@ -48,6 +48,14 @@ export interface PartyStore {
   // #8 Song voting
   tournamentVotingSongs: import('@/types/game').Song[];
   setTournamentVotingSongs: (_songs: import('@/types/game').Song[]) => void;
+  tournamentVotingMatch: TournamentMatch | null;
+  setTournamentVotingMatch: (_match: TournamentMatch | null) => void;
+  tournamentVotedSong: import('@/types/game').Song | null;
+  setTournamentVotedSong: (_song: import('@/types/game').Song | null) => void;
+  // #10 Crowd votes for spectator interaction
+  tournamentCrowdVotes: CrowdVoteMatch[];
+  addTournamentCrowdVote: (_vote: CrowdVoteMatch) => void;
+  resetTournamentCrowdVotes: () => void;
 
   // Battle Royale
   battleRoyaleGame: BattleRoyaleGame | null;
@@ -163,6 +171,14 @@ export const usePartyStore = create<PartyStore>((set) => ({
   // #8 Song voting
   tournamentVotingSongs: [] as import('@/types/game').Song[],
   setTournamentVotingSongs: (tournamentVotingSongs) => set({ tournamentVotingSongs }),
+  tournamentVotingMatch: null as TournamentMatch | null,
+  setTournamentVotingMatch: (tournamentVotingMatch) => set({ tournamentVotingMatch }),
+  tournamentVotedSong: null as import('@/types/game').Song | null,
+  setTournamentVotedSong: (tournamentVotedSong) => set({ tournamentVotedSong }),
+  // #10 Crowd votes
+  tournamentCrowdVotes: [] as CrowdVoteMatch[],
+  addTournamentCrowdVote: (vote) => set((s) => ({ tournamentCrowdVotes: [...s.tournamentCrowdVotes, vote] })),
+  resetTournamentCrowdVotes: () => set({ tournamentCrowdVotes: [] }),
 
   // Battle Royale
   battleRoyaleGame: null,
@@ -258,6 +274,9 @@ export const usePartyStore = create<PartyStore>((set) => ({
     tournamentMatchAborted: false,
     tournamentUsedSongIds: [],
     tournamentVotingSongs: [],
+    tournamentVotingMatch: null,
+    tournamentVotedSong: null,
+    tournamentCrowdVotes: [],
     battleRoyaleGame: null,
     passTheMicPlayers: [],
     passTheMicSong: null,

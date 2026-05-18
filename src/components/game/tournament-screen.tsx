@@ -13,14 +13,17 @@ import {
   getHallOfFame,
   clearHallOfFame,
   getEffectiveDifficulty,
+  getFanFavorites,
   type TournamentBracket,
   type TournamentPlayer,
   type TournamentMatch,
   type TournamentSettings,
   type HallOfFameEntry,
+  type CrowdVoteMatch,
 } from '@/lib/game/tournament';
 import { Song, PlayerProfile, PLAYER_COLORS, Difficulty } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
+import { usePartyStore } from '@/lib/game/party-store';
 import { useTranslation } from '@/lib/i18n/translations';
 import { TournamentBracketButterfly } from '@/components/game/tournament-bracket-butterfly';
 import { MatchAbortDialog } from '@/components/game/match-abort-dialog';
@@ -41,6 +44,7 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
   const [tiebreakMode, setTiebreakMode] = useState<TournamentSettings['tiebreakMode']>('accuracy');
   const [dynamicDifficulty, setDynamicDifficulty] = useState(false);
   const [songSelectionMode, setSongSelectionMode] = useState<'random' | 'vote'>('random');
+  const [seedingMode, setSeedingMode] = useState<'random' | 'strength'>('random');
   const [error, setError] = useState<string | null>(null);
   const [showHallOfFame, setShowHallOfFame] = useState(false);
 
@@ -74,8 +78,26 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
       setError(t('tournament.errorMinPlayers'));
       return;
     }
+
+    // #9 Calculate player strength for seeding
+    const hofEntries = getHallOfFame();
+    const playerStrengths: Record<string, number> = {};
+    for (const id of selectedPlayers) {
+      const profile = profiles.find(p => p.id === id);
+      if (!profile) { playerStrengths[id] = 0; continue; }
+      // Strength = (HoF championships * 25) + (averageAccuracy * 0.3) + (level * 2) + (totalGames * 0.1)
+      const championships = hofEntries.filter(e => e.champion.id === id).length;
+      const acc = profile.stats?.averageAccuracy ?? 0;
+      const lvl = profile.level ?? 0;
+      const games = profile.stats?.totalGamesPlayed ?? 0;
+      playerStrengths[id] = (championships * 25) + (acc * 0.3) + (lvl * 2) + (games * 0.1);
+    }
+    // Sort by strength descending to assign seeds (strength-based seeding)
+    const sortedByStrength = seedingMode === 'strength'
+      ? [...selectedPlayers].sort((a, b) => (playerStrengths[b] ?? 0) - (playerStrengths[a] ?? 0))
+      : selectedPlayers;
     
-    const players: TournamentPlayer[] = selectedPlayers.map((id, index) => {
+    const players: TournamentPlayer[] = sortedByStrength.map((id, index) => {
       const profile = profiles.find(p => p.id === id);
       return {
         id,
@@ -83,6 +105,8 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
         avatar: profile?.avatar,
         color: profile?.color || PLAYER_COLORS[index % PLAYER_COLORS.length],
         eliminated: false,
+        // #9 For strength seeding, seed is set by the sorting (lower index = stronger = better seed)
+        // createTournament uses this seed to place players in bracket
         seed: index + 1,
       };
     });
@@ -96,7 +120,7 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
       tiebreakMode,
       dynamicDifficulty,
       songSelectionMode,
-      seedingMode: 'random',
+      seedingMode,
       filterGenre: 'all',
       filterLanguage: 'all',
     };
@@ -336,6 +360,32 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
                 </Button>
               ))}
             </div>
+            {songSelectionMode === 'vote' && (
+              <p className="text-xs text-pink-400/70 mt-1">{t('tournament.songVoteDesc')}</p>
+            )}
+          </div>
+
+          {/* #9 Seeding Mode */}
+          <div>
+            <label className="text-sm text-white/60 mb-2 block">{t('tournament.seedingMode')}</label>
+            <div className="flex gap-2">
+              {([
+                { key: 'random' as const, label: t('tournament.seedingRandom') },
+                { key: 'strength' as const, label: t('tournament.seedingStrength') },
+              ]).map(mode => (
+                <Button
+                  key={mode.key}
+                  variant={seedingMode === mode.key ? 'default' : 'outline'}
+                  onClick={() => setSeedingMode(mode.key)}
+                  className={seedingMode === mode.key ? 'bg-indigo-500 hover:bg-indigo-600' : 'border-white/20'}
+                >
+                  {mode.label}
+                </Button>
+              ))}
+            </div>
+            {seedingMode === 'strength' && (
+              <p className="text-xs text-indigo-400/70 mt-1">{t('tournament.seedingStrengthDesc')}</p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -415,6 +465,7 @@ interface TournamentBracketViewProps {
 export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onManualWinner, onRepeatMatch, matchAborted, onAbortHandled, shortMode, showResults, onShowResults }: TournamentBracketViewProps) {
   const { t } = useTranslation();
   const stats = getTournamentStats(bracket);
+  const party = usePartyStore();
 
   // Get next match to play
   const playableMatches = getPlayableMatches(bracket);
@@ -428,6 +479,15 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
     bracket.settings.dynamicDifficulty,
   );
   const showDiffBadge = bracket.settings.dynamicDifficulty && effectiveDiff !== bracket.settings.difficulty;
+
+  // #9 Seeding mode indicator
+  const isSeededByStrength = bracket.settings.seedingMode === 'strength';
+
+  // #10 Fan favorites from crowd votes
+  const fanFavorites = useMemo(() => {
+    if (party.tournamentCrowdVotes.length === 0) return [];
+    return getFanFavorites(bracket, party.tournamentCrowdVotes);
+  }, [bracket, party.tournamentCrowdVotes]);
 
   // Auto-scale bracket to fit available viewport height
   const bracketWrapperRef = useRef<HTMLDivElement>(null);
@@ -471,6 +531,9 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
           {shortMode && <Badge className="bg-green-500/20 text-green-400 text-xs">60s</Badge>}
           {bracket.settings.tournamentType === 'double' && <Badge className="bg-purple-500/20 text-purple-400 text-xs">{t('tournament.doubleEliminationShort')}</Badge>}
           {showDiffBadge && <Badge className="bg-orange-500/20 text-orange-400 text-xs">{t('tournament.' + effectiveDiff)}</Badge>}
+          {bracket.settings.songSelectionMode === 'vote' && <Badge className="bg-pink-500/20 text-pink-400 text-xs">{t('tournament.songVote')}</Badge>}
+          {isSeededByStrength && <Badge className="bg-indigo-500/20 text-indigo-400 text-xs">{t('tournament.seeded')}</Badge>}
+          {fanFavorites.length > 0 && <Badge className="bg-rose-500/20 text-rose-400 text-xs">{t('tournament.crowdVoting')}</Badge>}
         </div>
       </div>
 
@@ -560,6 +623,24 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
         </div>
       )}
 
+      {/* #10 Fan Favorites — crowd vote results */}
+      {fanFavorites.length > 0 && (
+        <div className="mt-1 bg-gradient-to-r from-rose-500/10 to-pink-500/10 rounded-lg p-1.5 shrink-0">
+          <h4 className="text-xs text-white/60 mb-1">{t('tournament.fanFavorites')}</h4>
+          <div className="flex flex-wrap gap-1">
+            {fanFavorites.slice(0, 5).map((fav, i) => (
+              <div key={fav.playerId} className="bg-white/5 rounded px-2 py-0.5 text-xs border border-rose-500/20">
+                <span className={i === 0 ? 'text-amber-400' : 'text-white/60'}>
+                  {i === 0 ? '❤️' : `${i + 1}.`}
+                </span>{' '}
+                <span className={i === 0 ? 'text-amber-300 font-medium' : 'text-white/80'}>{fav.playerName}</span>
+                <span className="text-rose-400/60 ml-1">{fav.totalVotes}{t('tournament.votes')}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Match Abort Dialog */}
       {matchAborted && currentMatch && onManualWinner && onRepeatMatch && onAbortHandled && (
         <MatchAbortDialog
@@ -591,6 +672,13 @@ interface TournamentResultsProps {
 export function TournamentResultsScreen({ bracket, onBack, onNewTournament }: TournamentResultsProps) {
   const { t } = useTranslation();
   const placements = useMemo(() => getPlayerPlacements(bracket), [bracket]);
+  const party = usePartyStore();
+
+  // #10 Fan favorites from crowd votes
+  const fanFavorites = useMemo(() => {
+    if (party.tournamentCrowdVotes.length === 0) return [];
+    return getFanFavorites(bracket, party.tournamentCrowdVotes);
+  }, [bracket, party.tournamentCrowdVotes]);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
@@ -689,6 +777,32 @@ export function TournamentResultsScreen({ bracket, onBack, onNewTournament }: To
           )
         );
       })()}
+
+      {/* #10 Fan Favorites — Spectator Crowd Vote Results */}
+      {fanFavorites.length > 0 && (
+        <Card className="bg-gradient-to-br from-rose-500/5 to-pink-500/5 border-rose-500/20 mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">{t('tournament.fanFavoriteTitle')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {fanFavorites.slice(0, 5).map((fav, i) => (
+                <div key={fav.playerId} className={`flex items-center gap-3 p-2 rounded-lg ${i === 0 ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-white/5'}`}>
+                  <div className="w-8 text-center text-lg">{i === 0 ? '❤️' : i === 1 ? '🧡' : i === 2 ? '💛' : `#${i + 1}`}</div>
+                  <div className="flex-1">
+                    <span className="font-medium">{fav.playerName}</span>
+                    <span className="text-xs text-white/40 ml-2">({fav.matchesVoted} {t('tournament.matchesVoted')})</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-bold text-rose-400">{fav.totalVotes}</span>
+                    <span className="text-xs text-white/40 ml-1">{t('tournament.votes')}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Action buttons */}
       <div className="flex gap-3">

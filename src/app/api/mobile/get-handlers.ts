@@ -382,6 +382,13 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         count: mutableState.songLibrary.length,
       });
 
+    // #10 Get tournament crowd votes for spectator UI
+    case 'get_crowd_votes':
+      return Response.json({
+        success: true,
+        votes: mutableState.tournamentCrowdVotes || [],
+      });
+
     default:
       return Response.json({
         success: true,

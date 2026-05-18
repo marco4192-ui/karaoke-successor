@@ -48,6 +48,7 @@ export interface GameState {
   songEnded: boolean;
   queueLength: number;
   isAdPlaying: boolean;
+  gameMode: string | null;
   singalongTurn: SingalongTurn | null;
   cptmTurn: {
     profileId: string | null;
@@ -55,6 +56,8 @@ export interface GameState {
     countdown: number | null;
     isActive: boolean;
   } | null;
+  // #10 Tournament match ID for spectator voting
+  tournamentMatchId: string | null;
 }
 
 export interface PitchData {

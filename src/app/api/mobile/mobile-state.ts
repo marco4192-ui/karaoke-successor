@@ -68,6 +68,7 @@ export const mutableState = {
     gameMode: null,
     singalongTurn: null,
     cptmTurn: null,
+    tournamentMatchId: null,
   } as MobileGameState,
 
   // Queue for song requests from mobile clients
@@ -93,6 +94,16 @@ export const mutableState = {
   // Host Profiles - Characters from main app for companion to choose from
   // (Cannot use localStorage in API route - must store in server memory)
   hostProfiles: [] as HostProfile[],
+
+  // #10 Tournament crowd votes from companion spectators
+  tournamentCrowdVotes: [] as Array<{
+    clientId: string;
+    profileId: string | null;
+    profileName: string;
+    matchId: string;
+    playerSide: 1 | 2;
+    timestamp: number;
+  }>,
 };
 
 // ===================== HELPER FUNCTIONS =====================
@@ -212,6 +223,7 @@ export function resetAllState() {
     gameMode: null,
     singalongTurn: null,
     cptmTurn: null,
+    tournamentMatchId: null,
   };
   // Reset remote control state
   mutableState.remoteControlState = {

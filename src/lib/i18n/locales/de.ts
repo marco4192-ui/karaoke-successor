@@ -379,7 +379,10 @@ export const deTranslations = {
       mobileQueue: 'Mobile Warteschlange',
       queueSongs: 'Warteschlange: {n}/3 Songs',
       moreSongs: '+{n} weitere Songs',
-      retry: 'Erneut versuchen'
+      retry: 'Erneut versuchen',
+      // #10 Tournament spectator voting
+      tournamentVoteTitle: 'Für wen stimmst du?',
+      tournamentVoteDesc: 'Wähle deinen Favoriten in diesem Match',
     },
     achievements: {
       title: 'Erfolge',
@@ -756,6 +759,21 @@ export const deTranslations = {
       songSelectionMode: 'Song-Auswahl',
       songRandom: '🎲 Zufällig',
       songVote: '🗳️ Abstimmung',
+      songVoteDesc: 'Spieler wählen aus 3 vorgeschlagenen Songs vor jedem Match',
+      songVoteTitle: 'Wählt einen Song!',
+      songVoteSkip: 'Stattdessen zufällig wählen',
+      // #9 Seeding
+      seedingMode: 'Setzung',
+      seedingRandom: '🎲 Zufällig',
+      seedingStrength: '📊 Nach Stärke',
+      seedingStrengthDesc: 'Spieler werden nach ihrer Statistik gesetzt (Hall of Fame, Level, Genauigkeit)',
+      seeded: 'Gesetzt',
+      // #10 Spectator interaction
+      crowdVoting: 'Publikum',
+      fanFavorites: 'Fan-Lieblinge',
+      fanFavoriteTitle: '❤️ Fan-Lieblinge des Publikums',
+      votes: ' Stimmen',
+      matchesVoted: 'Matches',
     },
     companion: {
       title: '📱 Companion Sing-A-Long',

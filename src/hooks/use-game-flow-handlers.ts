@@ -110,6 +110,31 @@ export function useGameFlowHandlers(
 
     party.setTournamentBracket(updatedBracket);
     party.setCurrentTournamentMatch(null);
+
+    // #10 Poll crowd votes from companion spectators and store in party store
+    (async () => {
+      try {
+        const res = await fetch('/api/mobile?action=get_crowd_votes');
+        if (res.ok) {
+          const data = await res.json();
+          const allVotes: Array<{ matchId: string; playerSide: 1 | 2 }> = data.votes || [];
+          const matchVotes = allVotes.filter((v: { matchId: string }) => v.matchId === party.currentTournamentMatch?.id);
+          if (matchVotes.length > 0) {
+            const p1Votes = matchVotes.filter((v: { playerSide: number }) => v.playerSide === 1).length;
+            const p2Votes = matchVotes.filter((v: { playerSide: number }) => v.playerSide === 2).length;
+            party.addTournamentCrowdVote({
+              matchId: party.currentTournamentMatch!.id,
+              player1Votes: p1Votes,
+              player2Votes: p2Votes,
+              totalVoters: matchVotes.length,
+            });
+          }
+        }
+      } catch {
+        // Silently fail — crowd votes are optional
+      }
+    })();
+
     setScreen('tournament-game');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [party.tournamentBracket, party.currentTournamentMatch, party.setTournamentBracket, party.setCurrentTournamentMatch, gameState.results, gameState.players, gameState.currentSong, gameState.currentTime, actions.setResults, setScreen]);

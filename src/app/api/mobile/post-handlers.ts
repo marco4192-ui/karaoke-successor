@@ -547,6 +547,28 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         return Response.json({ success: false, message: 'Invalid songs payload' }, { status: 400 });
       }
 
+      // #10 Tournament crowd vote — companion spectators vote on match results
+      case 'tournament_crowd_vote': {
+        const votePayload = payload as { matchId: string; playerSide: 1 | 2 };
+        if (!clientId || !votePayload.matchId || !votePayload.playerSide) {
+          return Response.json({ success: false, message: 'Invalid vote payload' }, { status: 400 });
+        }
+        // Store vote in mutable state for the main app to pick up
+        if (!mutableState.tournamentCrowdVotes) {
+          mutableState.tournamentCrowdVotes = [];
+        }
+        const client = mobileClients.get(clientId);
+        mutableState.tournamentCrowdVotes.push({
+          clientId,
+          profileId: client?.profile?.id || null,
+          profileName: client?.profile?.name || client?.name || 'Anonymous',
+          matchId: votePayload.matchId,
+          playerSide: votePayload.playerSide,
+          timestamp: Date.now(),
+        });
+        return Response.json({ success: true, message: 'Vote recorded' });
+      }
+
       default:
         return Response.json({ success: false, message: 'Unknown message type' }, { status: 400 });
     }

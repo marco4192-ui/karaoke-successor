@@ -83,6 +83,8 @@ export interface MobileGameState {
     countdown: number | null; // 3 when warning, null when actively singing
     isActive: boolean;
   } | null;
+  // #10 Tournament match ID — spectators use this to vote on the current match
+  tournamentMatchId: string | null;
 }
 
 export interface GameResults {

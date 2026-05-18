@@ -61,7 +61,7 @@ export interface TournamentSettings {
   // #8 Song selection mode
   songSelectionMode: 'random' | 'vote';
   // #9 Seeding
-  seedingMode: 'random' | 'manual';
+  seedingMode: 'random' | 'strength';
   // #5 Genre/Language filter
   filterGenre: string;
   filterLanguage: string;
@@ -97,9 +97,16 @@ export function createTournament(
 
   const totalRounds = calculateRounds(players.length);
   const byesNeeded = calculateByes(players.length);
-  
-  // Shuffle and seed players
-  const shuffledPlayers = shuffleArray(players).map((p, i) => ({
+
+  // #9 Seed players: random shuffle or by strength
+  let seededPlayers: typeof players;
+  if (settings.seedingMode === 'strength') {
+    // Sort by seed (strength) descending — highest strength = seed 1
+    seededPlayers = [...players].sort((a, b) => a.seed - b.seed);
+  } else {
+    seededPlayers = shuffleArray(players);
+  }
+  const shuffledPlayers = seededPlayers.map((p, i) => ({
     ...p,
     seed: i + 1,
     eliminated: false,
@@ -623,4 +630,46 @@ export interface CrowdVoteMatch {
   player1Votes: number;
   player2Votes: number;
   totalVoters: number;
+}
+
+// #10 Compute fan favorite from crowd votes across all completed matches
+export function getFanFavorites(
+  bracket: TournamentBracket,
+  crowdVotes: CrowdVoteMatch[]
+): Array<{ playerId: string; playerName: string; totalVotes: number; matchesVoted: number }> {
+  const playerVotes: Record<string, { total: number; matches: number; name: string }> = {};
+
+  for (const cv of crowdVotes) {
+    const match = bracket.matches.find(m => m.id === cv.matchId);
+    if (!match || !match.completed) continue;
+    if (!match.player1 || !match.player2) continue;
+
+    for (const [player, votes] of [
+      [match.player1, cv.player1Votes],
+      [match.player2, cv.player2Votes],
+    ] as const) {
+      if (!playerVotes[player.id]) {
+        playerVotes[player.id] = { total: 0, matches: 0, name: player.name };
+      }
+      playerVotes[player.id].total += votes;
+      playerVotes[player.id].matches += 1;
+    }
+  }
+
+  return Object.entries(playerVotes)
+    .map(([playerId, data]) => ({
+      playerId,
+      playerName: data.name,
+      totalVotes: data.total,
+      matchesVoted: data.matches,
+    }))
+    .sort((a, b) => b.totalVotes - a.totalVotes);
+}
+
+// #10 Check if a companion client is a spectator (not a tournament player)
+export function isSpectator(
+  companionProfileId: string,
+  bracket: TournamentBracket
+): boolean {
+  return !bracket.players.some(p => p.id === companionProfileId);
 }

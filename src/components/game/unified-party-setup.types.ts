@@ -138,7 +138,7 @@ export interface TournamentModeSettings extends BaseModeSettings {
   tiebreakMode?: 'coinflip' | 'accuracy' | 'combo' | 'goldenmic';
   dynamicDifficulty?: boolean;
   songSelectionMode?: 'random' | 'vote';
-  seedingMode?: 'random' | 'manual';
+  seedingMode?: 'random' | 'strength';
 }
 
 /** Battle Royale */

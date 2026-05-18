@@ -43,6 +43,8 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const [profileColor, setProfileColor] = useState('#06B6D4');
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // #10 Tournament spectator vote state
+  const [votedMatchIds, setVotedMatchIds] = useState<Set<string>>(new Set());
   const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -389,6 +391,47 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
           // Active turn: "YOUR TURN!" display
           <CptmYourTurnOverlay playerName={profile.name} playerColor={profile.color} />
         ) : null
+      )}
+
+      {/* #10 Tournament Spectator Vote Overlay — show when a duel is in progress */}
+      {isConnected && profile && gameState.isPlaying && gameState.gameMode === 'duel' && gameState.tournamentMatchId && !votedMatchIds.has(gameState.tournamentMatchId) && (
+        <div className="fixed bottom-4 left-4 right-4 z-50 bg-zinc-900/95 backdrop-blur-sm border border-rose-500/30 rounded-2xl p-4 shadow-2xl">
+          <div className="text-center mb-3">
+            <span className="text-2xl">❤️</span>
+            <p className="text-sm font-bold text-white mt-1">{t('mobile.tournamentVoteTitle')}</p>
+            <p className="text-xs text-white/50">{t('mobile.tournamentVoteDesc')}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              className="flex-1 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 text-sm py-3"
+              onClick={() => {
+                if (!clientId || !gameState.tournamentMatchId) return;
+                setVotedMatchIds(prev => new Set(prev).add(gameState.tournamentMatchId!));
+                fetch('/api/mobile', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ type: 'tournament_crowd_vote', payload: { matchId: gameState.tournamentMatchId, playerSide: 1 }, clientId }),
+                }).catch(() => {});
+              }}
+            >
+              P1
+            </Button>
+            <Button
+              className="flex-1 bg-pink-500/20 hover:bg-pink-500/30 border border-pink-500/40 text-pink-300 text-sm py-3"
+              onClick={() => {
+                if (!clientId || !gameState.tournamentMatchId) return;
+                setVotedMatchIds(prev => new Set(prev).add(gameState.tournamentMatchId!));
+                fetch('/api/mobile', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ type: 'tournament_crowd_vote', payload: { matchId: gameState.tournamentMatchId, playerSide: 2 }, clientId }),
+                }).catch(() => {});
+              }}
+            >
+              P2
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );

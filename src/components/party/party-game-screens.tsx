@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Button } from '@/components/ui/button';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { getAllSongs, getNonDuetSongs, filterSongs } from '@/lib/game/song-library';
-import { recordMatchResult, getEffectiveDifficulty } from '@/lib/game/tournament';
+import { recordMatchResult, getEffectiveDifficulty, type CrowdVoteMatch } from '@/lib/game/tournament';
 import { useTranslation } from '@/lib/i18n/translations';
 import { TournamentSetupScreen, TournamentBracketView, TournamentResultsScreen } from '@/components/game/tournament-screen';
 import { BattleRoyaleSetupScreen, BattleRoyaleGameView } from '@/components/game/battle-royale-screen';
@@ -43,6 +44,10 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
   // #7 Tournament results screen
   const [showTournamentResults, setShowTournamentResults] = useState(false);
 
+  // #8 Tournament song voting state
+  const [tournamentVotingActive, setTournamentVotingActive] = useState(false);
+  const votedSongRef = useRef<import('@/types/game').Song | null>(null);
+
   // ── Tournament mic assignment overlay state ──
   const [micOverlay, setMicOverlay] = useState<{ p1Name: string; p2Name: string; p1Mic: string; p2Mic: string; countdown: number } | null>(null);
   const micOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -55,6 +60,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
   // Helper: fetch connected companion profiles and compute mic assignments
   const startMatchWithMicOverlay = useCallback(async (
     match: import('@/lib/game/tournament').TournamentMatch,
+    preSelectedSong?: import('@/types/game').Song | null,
   ) => {
     if (!match.player1 || !match.player2) return;
 
@@ -78,16 +84,14 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
         // Companion-connected players sing via companion app
         if (p1Companion) p1Mic = t('partyGameScreens.companion');
         if (p2Companion) p2Mic = t('partyGameScreens.companion');
-
-        // If both players are companions, one still needs a mic (shouldn't happen in 1v1)
-        // If both use mics, that's the default
       }
     } catch {
       // Silently fail — default to Mic 1 / Mic 2
     }
 
-    // Store the match in party store so the countdown effect can access it
+    // Store the match and pre-selected song in party store
     party.setCurrentTournamentMatch(match);
+    if (preSelectedSong) party.setTournamentVotedSong(preSelectedSong);
 
     // Show mic assignment overlay with countdown
     setMicOverlay({
@@ -97,7 +101,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       p2Mic,
       countdown: 3,
     });
-  }, [party.setCurrentTournamentMatch, t]);
+  }, [party.setCurrentTournamentMatch, party.setTournamentVotedSong, t]);
 
   // #1 #2 #5 #6 Helper: Pick a tournament song (no repeats, filter, trim duration)
   const pickTournamentSong = useCallback((): import('@/types/game').Song | null => {
@@ -193,7 +197,10 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
 
       setGameMode('duel');
 
-      const song = pickTournamentSong();
+      // #8 Use voted song if available, otherwise pick randomly
+      const votedSong = party.tournamentVotedSong;
+      party.setTournamentVotedSong(null);
+      const song = votedSong || pickTournamentSong();
       if (song) {
         setSong(song);
         setScreen('game');
@@ -343,6 +350,57 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
         />
       )}
 
+      {/* Tournament Song Voting Overlay (#8) */}
+      {tournamentVotingActive && party.tournamentVotingSongs.length > 0 && party.tournamentVotingMatch && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="bg-zinc-900 border border-pink-500/30 rounded-2xl p-6 max-w-2xl w-full mx-4 shadow-2xl">
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-2">🗳️</div>
+              <h2 className="text-xl font-bold text-white">{t('tournament.songVoteTitle')}</h2>
+              <p className="text-sm text-white/60 mt-1">
+                {party.tournamentVotingMatch.player1?.name} {t('tournament.vs')} {party.tournamentVotingMatch.player2?.name}
+              </p>
+            </div>
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              {party.tournamentVotingSongs.map((song) => (
+                <div
+                  key={song.id}
+                  onClick={() => {
+                    // Mark as voted and proceed to mic overlay
+                    const voted = song;
+                    setTournamentVotingActive(false);
+                    party.setTournamentVotingSongs([]);
+                    party.setTournamentVotedSong(voted);
+                    party.addTournamentUsedSongId(song.id);
+                    startMatchWithMicOverlay(party.tournamentVotingMatch!, voted);
+                  }}
+                  className="bg-white/5 hover:bg-white/15 border border-white/10 hover:border-pink-500/50 rounded-xl p-3 cursor-pointer transition-all hover:scale-[1.02]"
+                >
+                  {song.coverImage ? (
+                    <img src={song.coverImage} alt={song.title} className="w-full aspect-square object-cover rounded-lg mb-2" />
+                  ) : (
+                    <div className="w-full aspect-square bg-gradient-to-br from-pink-500/20 to-purple-500/20 rounded-lg mb-2 flex items-center justify-center text-3xl">🎵</div>
+                  )}
+                  <div className="font-medium text-sm text-white truncate">{song.title}</div>
+                  <div className="text-xs text-white/50 truncate">{song.artist}</div>
+                </div>
+              ))}
+            </div>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setTournamentVotingActive(false);
+                party.setTournamentVotingSongs([]);
+                party.setTournamentVotingMatch(null);
+              }}
+              className="w-full text-white/40 hover:text-white/70"
+            >
+              {t('tournament.songVoteSkip')}
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Tournament Setup Screen */}
       {screen === 'tournament' && (
         <TournamentSetupScreen
@@ -353,6 +411,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             party.setTournamentSongDuration(songDuration);
             // #2 Reset used songs when a new tournament starts
             party.resetTournamentUsedSongIds();
+            // #10 Reset crowd votes when a new tournament starts
+            party.resetTournamentCrowdVotes();
             setShowTournamentResults(false);
             setScreen('tournament-game');
           }}
@@ -367,7 +427,37 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           currentMatch={party.currentTournamentMatch}
           matchAborted={party.tournamentMatchAborted}
           onPlayMatch={(match) => {
-            startMatchWithMicOverlay(match);
+            // #8 Check if voting mode — show voting overlay instead of starting directly
+            const bracket = party.tournamentBracket;
+            if (bracket && bracket.settings.songSelectionMode === 'vote') {
+              // Pick 3 random songs for voting (same pool logic as pickTournamentSong)
+              const usedIds = new Set(party.tournamentUsedSongIds);
+              const pool = getNonDuetSongs().filter(s => {
+                if (usedIds.has(s.id)) return false;
+                const genre = bracket.settings.filterGenre;
+                const lang = bracket.settings.filterLanguage;
+                if (genre && genre !== 'all') {
+                  if (!s.genre || s.genre !== genre) return false;
+                }
+                if (lang && lang !== 'all') {
+                  if (!s.language || s.language !== lang) return false;
+                }
+                return true;
+              });
+              if (pool.length >= 3) {
+                const shuffled = [...pool].sort(() => Math.random() - 0.5);
+                party.setTournamentVotingSongs(shuffled.slice(0, 3));
+                party.setTournamentVotingMatch(match);
+                setTournamentVotingActive(true);
+              } else if (pool.length > 0) {
+                // Not enough songs for voting, pick randomly
+                startMatchWithMicOverlay(match);
+              } else {
+                startMatchWithMicOverlay(match);
+              }
+            } else {
+              startMatchWithMicOverlay(match);
+            }
           }}
           onManualWinner={(matchId, winnerId) => {
             if (!party.tournamentBracket || !party.currentTournamentMatch) return;

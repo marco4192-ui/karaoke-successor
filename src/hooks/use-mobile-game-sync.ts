@@ -12,15 +12,18 @@ export function useMobileGameSync(
   isPlaying: boolean,
   gameMode: string,
   songEnded: boolean = false,
+  tournamentMatchId?: string | null,
 ) {
   const isPlayingRef = useRef(isPlaying);
   const gameModeRef = useRef(gameMode);
   const songEndedRef = useRef(songEnded);
+  const tournamentMatchIdRef = useRef(tournamentMatchId);
   useEffect(() => {
     isPlayingRef.current = isPlaying;
     gameModeRef.current = gameMode;
     songEndedRef.current = songEnded;
-  }, [isPlaying, gameMode, songEnded]);
+    tournamentMatchIdRef.current = tournamentMatchId;
+  }, [isPlaying, gameMode, songEnded, tournamentMatchId]);
 
   useEffect(() => {
     if (!song) return;
@@ -37,6 +40,8 @@ export function useMobileGameSync(
               isPlaying: isPlayingRef.current,
               gameMode: gameModeRef.current,
               songEnded: songEndedRef.current,
+              // #10 Broadcast tournament match ID for spectator voting
+              tournamentMatchId: tournamentMatchIdRef.current || null,
             },
           }),
         });
