@@ -483,9 +483,9 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
     });
 
     const beatDurationMs = src.bpm ? 15000 / src.bpm : 500;
-    const scoringMetadata = calculateScoringMetadata(allNotes, beatDurationMs);
-    const p1ScoringMetadata = calculateScoringMetadata(p1Notes, beatDurationMs);
-    const p2ScoringMetadata = calculateScoringMetadata(p2Notes, beatDurationMs);
+    const scoringMetadata = calculateScoringMetadata(allNotes, beatDurationMs, gameState.difficulty);
+    const p1ScoringMetadata = calculateScoringMetadata(p1Notes, beatDurationMs, gameState.difficulty);
+    const p2ScoringMetadata = calculateScoringMetadata(p2Notes, beatDurationMs, gameState.difficulty);
 
     return {
       allNotes, sortedLines, noteCount: allNotes.length, lineCount: sortedLines.length,
@@ -494,7 +494,7 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
       scoringMetadata, p1ScoringMetadata, p2ScoringMetadata,
       beatDuration: beatDurationMs,
     };
-  }, [songForTiming, isDuetMode]);
+  }, [songForTiming, isDuetMode, gameState.difficulty]);
 
   const beatDuration = timingData?.beatDuration || (song?.bpm ? 15000 / song.bpm : 500);
 

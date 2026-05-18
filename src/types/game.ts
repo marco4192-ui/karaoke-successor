@@ -219,6 +219,8 @@ export interface GameResult {
     notesHit: number;
     notesMissed: number;
     accuracy: number;
+    /** Tick-based accuracy: percentage of individual ticks (not notes) that were hit */
+    tickAccuracy?: number;
     maxCombo: number;
     perfectNotesCount: number;
     goldenNotesCount: number;

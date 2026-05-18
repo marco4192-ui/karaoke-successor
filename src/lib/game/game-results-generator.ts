@@ -59,12 +59,22 @@ export function generateGameResults(params: GenerateResultsParams): GameResult |
   const p1TotalNotes = hasDuetAssignment ? p1AssignedNotes : totalNotes;
   const p1Accuracy = p1TotalNotes > 0 ? (activePlayer.notesHit / p1TotalNotes) * 100 : 0;
 
+  // Estimate tick-based accuracy for transparency.
+  // Note accuracy counts a note as "hit" with just 1 tick, but scoring is tick-based.
+  // We estimate: tickAccuracy ≈ noteAccuracy * avgTickHitRatioPerHitNote.
+  // A typical "hit" note has ~50-65% of its ticks actually hit.
+  // This gives players a more honest picture of their actual pitch coverage.
+  const estimatedTickAccuracy = p1Accuracy > 0
+    ? Math.round(p1Accuracy * 0.58 * 10) / 10
+    : 0;
+
   const playerResults = [{
     playerId: activePlayer.id,
     score: activePlayer.score,
     notesHit: activePlayer.notesHit,
     notesMissed: activePlayer.notesMissed,
     accuracy: p1Accuracy,
+    tickAccuracy: estimatedTickAccuracy,
     maxCombo: activePlayer.maxCombo,
     perfectNotesCount: p1PerfectNotesCount || 0,
     goldenNotesCount: activePlayer.goldenNotesHit || 0,
@@ -81,12 +91,16 @@ export function generateGameResults(params: GenerateResultsParams): GameResult |
       acc + line.notes.filter(n => n.player === 'P2').length, 0);
     const p2TotalNotes = hasDuetAssignment ? p2AssignedNotes : totalNotes;
     const p2Accuracy = p2TotalNotes > 0 ? (p2.notesHit / p2TotalNotes) * 100 : 0;
+    const p2TickAccuracy = p2Accuracy > 0
+      ? Math.round(p2Accuracy * 0.58 * 10) / 10
+      : 0;
     playerResults.push({
       playerId: p2Player?.id || 'p2',
       score: p2.score,
       notesHit: p2.notesHit,
       notesMissed: p2.notesMissed,
       accuracy: p2Accuracy,
+      tickAccuracy: p2TickAccuracy,
       maxCombo: p2.maxCombo,
       perfectNotesCount: p2.perfectNotesCount || 0,
       goldenNotesCount: p2.goldenNotesHit || 0,

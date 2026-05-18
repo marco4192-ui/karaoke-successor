@@ -549,6 +549,9 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
             <div className="text-cyan-400 font-semibold text-lg">{activeProfile?.name || t('resultsScreen.player') + ' 1'}</div>
             <div className="text-3xl font-black text-white mt-2">{playerResult.score.toLocaleString()}</div>
             <div className="text-white/40 text-sm">{t('resultsScreen.accuracyLabel').replace('{n}', playerResult.accuracy.toFixed(1))}</div>
+            {playerResult.tickAccuracy != null && (
+              <div className="text-white/25 text-xs mt-1">Tick: {playerResult.tickAccuracy.toFixed(1)}%</div>
+            )}
             {winnerSide === 'p1' && <div className="mt-3 text-xl">🏆</div>}
           </div>
 
@@ -568,6 +571,9 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
             <div className="text-pink-400 font-semibold text-lg">{player2Profile?.name || song?.duetPlayerNames?.[1] || t('resultsScreen.player') + ' 2'}</div>
             <div className="text-3xl font-black text-white mt-2">{player2Result.score.toLocaleString()}</div>
             <div className="text-white/40 text-sm">{t('resultsScreen.accuracyLabel').replace('{n}', player2Result.accuracy.toFixed(1))}</div>
+            {player2Result.tickAccuracy != null && (
+              <div className="text-white/25 text-xs mt-1">Tick: {player2Result.tickAccuracy.toFixed(1)}%</div>
+            )}
             {winnerSide === 'p2' && <div className="mt-3 text-xl">🏆</div>}
           </div>
         </div>

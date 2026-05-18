@@ -5,6 +5,9 @@ import { DIFFICULTY_SETTINGS, Difficulty, Note, LyricLine } from '@/types/game';
 import {
   evaluateTick,
   calculateTickPoints,
+  calculateNoteCompletionBonus,
+  calculateNoteConsolation,
+  getComboFactor,
   NoteProgress,
   ScoringMetadata,
 } from '@/lib/game/scoring';
@@ -233,10 +236,12 @@ function runScoringPass(
             tickPoints = 0;
           }
 
-          const finalPoints = Math.max(1, Math.round(tickPoints));
-
-          if (finalPoints > 0) {
+          if (tickPoints > 0) {
             const newCombo = comboRef.current + 1;
+
+            // Apply combo multiplier (ramps from 1.0 to comboMultiplier over 50 hits)
+            const comboFactor = getComboFactor(newCombo, scoringMeta.comboMultiplier);
+            const finalPoints = Math.max(1, Math.round(tickPoints * comboFactor));
 
             scoreDelta += finalPoints;
             noteProgress.accumulatedPoints += finalPoints;
@@ -273,10 +278,32 @@ function runScoringPass(
         if (progress.ticksHit >= progress.totalTicks) {
           progress.wasPerfect = true;
           perfectNotesDelta++;
+
+          // Completion bonus: all ticks hit -> extra 15% of note's max points
+          const completionBonus = calculateNoteCompletionBonus(
+            { totalTicks: progress.totalTicks, isGolden: progress.isGolden },
+            scoringMeta,
+          );
+          if (completionBonus > 0) {
+            scoreDelta += completionBonus;
+            progress.accumulatedPoints += completionBonus;
+          }
         }
         // Track golden notes hit (note was golden and at least one tick hit)
         if (progress.isGolden && progress.ticksHit > 0) {
           goldenNotesDelta++;
+        }
+
+        // Consolation: note was attempted but every tick missed -> 10% of max points
+        if (progress.ticksHit === 0 && progress.ticksEvaluated > 0) {
+          const consolation = calculateNoteConsolation(
+            { totalTicks: progress.totalTicks, isGolden: progress.isGolden },
+            scoringMeta,
+          );
+          if (consolation > 0) {
+            scoreDelta += consolation;
+            progress.accumulatedPoints += consolation;
+          }
         }
 
         // Determine aggregated displayType based on hit ratio across all ticks
