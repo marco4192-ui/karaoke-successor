@@ -98,7 +98,7 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {playersDisplay.map(p => (
-                  <PlayerIntroCard key={p.id} player={p} inputLabel={p.inputType === 'local' ? (p.micName || 'Mic') : 'Companion'} />
+                  <PlayerIntroCard key={p.id} player={p} inputLabel={p.inputType === 'local' ? (p.micName || t('medley.localMic')) : t('medley.companionMode')} />
                 ))}
               </div>
             )}

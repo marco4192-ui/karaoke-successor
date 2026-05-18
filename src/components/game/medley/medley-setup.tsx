@@ -495,7 +495,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
           {/* Elimination info */}
           {isElimination && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-300">
-              💀 {t('medley.eliminationDesc')} {selectedProfileIds.length > 0 && `(${selectedProfileIds.length} {t('medley.snippets')})`}
+              💀 {t('medley.eliminationDesc')} {selectedProfileIds.length > 0 && `(${selectedProfileIds.length} ${t('medley.snippets')})`}
             </div>
           )}
         </CardContent>
@@ -764,7 +764,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
 
               {/* Unselected players available for adding */}
               <div className="mt-4">
-                <p className="text-xs text-white/30 mb-2">Verfügbare Spieler:</p>
+                <p className="text-xs text-white/30 mb-2">{t('medley.availablePlayers')}</p>
                 <div className="flex flex-wrap gap-2">
                   {activeProfiles
                     .filter(p => !selectedProfileIds.includes(p.id))

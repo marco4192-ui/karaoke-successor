@@ -609,6 +609,8 @@ export const deTranslations = {
       missOf: '{n} Fehl',
       bestComboOf: '{n}x Best Combo',
       backToMenu: '🏠 Zurück',
+      back: '← Zurück',
+      availablePlayers: 'Verfügbare Spieler:',
       errorMaxPlayers: 'Maximal {n} Spieler erlaubt',
       errorMinPlayers: 'Mindestens 2 Spieler erforderlich',
       errorNoSongs: 'Keine passenden Songs gefunden...',
@@ -995,6 +997,8 @@ export const deTranslations = {
       fanFavoriteTitle: '❤️ Fan-Lieblinge des Publikums',
       votes: ' Stimmen',
       matchesVoted: 'Matches',
+      micAssignment: 'Mikrofon-Zuweisung',
+      singsWith: 'singt mit',
     },
     // Note: Tournament keys above already contain DE additions
     companion: {

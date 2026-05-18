@@ -613,6 +613,8 @@ export const enTranslations = {
       missOf: '{n} Miss',
       bestComboOf: '{n}x Best Combo',
       backToMenu: '🏠 Back',
+      back: '← Back',
+      availablePlayers: 'Available Players:',
       errorMaxPlayers: 'Maximum {n} players allowed',
       errorMinPlayers: 'Minimum 2 players required',
       errorNoSongs: 'No matching songs found...',
@@ -999,6 +1001,8 @@ export const enTranslations = {
       fanFavoriteTitle: '❤️ Crowd Fan Favorites',
       votes: ' votes',
       matchesVoted: 'matches',
+      micAssignment: 'Microphone Assignment',
+      singsWith: 'sings with',
     },
     companion: {
       title: '📱 Companion Sing-A-Long',

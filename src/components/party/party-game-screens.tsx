@@ -228,7 +228,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
           <div className="bg-zinc-900 border border-amber-500/30 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl text-center">
             <div className="text-4xl mb-4">🎤</div>
-            <h2 className="text-xl font-bold text-white mb-6">Mikrofon-Zuweisung</h2>
+            <h2 className="text-xl font-bold text-white mb-6">{t('tournament.micAssignment')}</h2>
             <div className="text-lg font-bold text-amber-400 animate-pulse mb-6">{micOverlay.countdown}</div>
             <div className="space-y-3 text-left">
               <div className="flex items-center gap-3 bg-white/5 rounded-lg p-3">
@@ -237,7 +237,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-white truncate">{micOverlay.p1Name}</div>
-                  <div className="text-sm text-cyan-400">singt mit <b>{micOverlay.p1Mic}</b></div>
+                  <div className="text-sm text-cyan-400">{t('tournament.singsWith')} <b>{micOverlay.p1Mic}</b></div>
                 </div>
               </div>
               <div className="flex items-center gap-3 bg-white/5 rounded-lg p-3">
@@ -246,7 +246,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-white truncate">{micOverlay.p2Name}</div>
-                  <div className="text-sm text-purple-400">singt mit <b>{micOverlay.p2Mic}</b></div>
+                  <div className="text-sm text-purple-400">{t('tournament.singsWith')} <b>{micOverlay.p2Mic}</b></div>
                 </div>
               </div>
             </div>

@@ -549,6 +549,7 @@ function HighlightRow({
   players: MedleyPlayer[];
   flop?: boolean;
 }) {
+  const { t } = useTranslation();
   const player = playerId ? players.find(p => p.id === playerId) : null;
 
   return (
@@ -567,7 +568,7 @@ function HighlightRow({
         </span>
       )}
       {flop && (
-        <span className="text-xs text-white/30 italic">{useTranslation().t('medley.flopComment')}</span>
+        <span className="text-xs text-white/30 italic">{t('medley.flopComment')}</span>
       )}
     </div>
   );

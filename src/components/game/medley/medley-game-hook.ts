@@ -230,7 +230,9 @@ export function useMedleyGame({
   const [synergyTriggered, setSynergyTriggered] = useState(false);
   const [comebackTriggered, setComebackTriggered] = useState(false);
   const [comebackTeamId, setComebackTeamId] = useState<number | null>(null);
-  const [comebackActiveTeamId, setComebackActiveTeamId] = useState<number | null>(null);
+  const [comebackActiveTeamIdState, setComebackActiveTeamIdState] = useState<number | null>(null);
+  /** Ref for comeback team — used in game loop scoring to avoid stale closures & game loop restarts */
+  const comebackActiveTeamIdRef = useRef<number | null>(null);
   const [teamBonusResultState, setTeamBonusResultState] = useState<TeamBonusResult>({
     synergyPoints: {},
     comebackTeamId: null,
@@ -501,12 +503,14 @@ export function useMedleyGame({
       teamBonusResultRef.current.comebackTeamId = teamId;
       teamBonusResultRef.current.comebackMultiplier = 1.5;
       // Set the active flag so scorePlayer can apply 1.5x multiplier
-      setComebackActiveTeamId(underdogTeam);
+      comebackActiveTeamIdRef.current = underdogTeam;
+      setComebackActiveTeamIdState(underdogTeam);
       setComebackTriggered(true);
       setComebackTeamId(underdogTeam);
       setTimeout(() => { setComebackTriggered(false); setComebackTeamId(null); }, 3000);
     } else {
-      setComebackActiveTeamId(null);
+      comebackActiveTeamIdRef.current = null;
+      setComebackActiveTeamIdState(null);
     }
   }, [isTeam, settings.teamBonusesEnabled, medleySongs.length]);
 
@@ -528,7 +532,8 @@ export function useMedleyGame({
     // Since we multiplied by 1.5 during scoring, the bonus is the 0.5x extra
     const bonus = Math.round(totalSnippetScore / 3); // 0.5x of the total (which already includes the 1.5x)
     teamBonusResultRef.current.teamBonusTotal[teamId] = currentBonus + bonus;
-    setComebackActiveTeamId(null);
+    comebackActiveTeamIdRef.current = null;
+    setComebackActiveTeamIdState(null);
   }, [isTeam, settings.teamBonusesEnabled]);
 
   // ── Feature #17: Build highlight for a snippet that just ended ──
@@ -653,7 +658,7 @@ export function useMedleyGame({
     if (tick.hit) {
       // Feature #18: Apply comeback multiplier for underdog team players
       let points = tick.points;
-      if (comebackActiveTeamId !== null && p.team === comebackActiveTeamId) {
+      if (comebackActiveTeamIdRef.current !== null && p.team === comebackActiveTeamIdRef.current) {
         points = Math.round(points * 1.5);
       }
       p.score += points;
@@ -684,7 +689,7 @@ export function useMedleyGame({
     }
 
     playersRef.current[pIdx] = { ...p };
-  }, [snippetNotes, currentSnippet, settings.difficulty, settings.dynamicDifficulty, currentSnippetIdx, medleySongs.length, comebackActiveTeamId]);
+  }, [snippetNotes, currentSnippet, settings.difficulty, settings.dynamicDifficulty, currentSnippetIdx, medleySongs.length]);
 
   // ── Game loop ──
   useEffect(() => {
@@ -977,7 +982,7 @@ export function useMedleyGame({
     synergyTriggered,
     comebackTriggered,
     comebackTeamId,
-    comebackActiveTeamId,
+    comebackActiveTeamId: comebackActiveTeamIdState,
     teamBonusResult: teamBonusResultState,
     // Core
     multiPitch,
