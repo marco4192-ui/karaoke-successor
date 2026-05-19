@@ -41,6 +41,7 @@ export interface RateMySongResult {
   songArtist: string;
   ratings: RateMySongRating[];
   averageRating: number;
+  challengeBonus?: number;
 }
 
 // ===================== PROPS INTERFACES =====================
@@ -59,6 +60,7 @@ export interface RateMySongRatingScreenProps {
   categoriesEnabled?: boolean;
   anonymousRating?: boolean;
   challengesEnabled?: boolean;
+  bettingEnabled?: boolean;
   currentChallenge?: RateMySongChallenge | null;
   onSubmit: (_ratings: RateMySongRating[]) => void;
   onBack: () => void;

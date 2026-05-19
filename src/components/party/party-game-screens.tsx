@@ -35,6 +35,7 @@ interface PartyGameScreensProps {
 // ===================== PARTY GAME MODE SCREENS =====================
 export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
   const { profiles, setGameMode, setSong, resetGame, addPlayer, setPlayers } = useGameStore();
+  const rmsGameMode = useGameStore((s) => s.gameState.gameMode);
   const party = usePartyStore();
   const { t } = useTranslation();
 
@@ -42,6 +43,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
   const [rateMySongResult, setRateMySongResult] = useState<RateMySongResult | null>(null);
   // Track current series round (1-based)
   const [rateMySongSeriesRound, setRateMySongSeriesRound] = useState(1);
+  // Track whether the challenge pre-singing overlay has been dismissed
+  const [challengeOverlayDismissed, setChallengeOverlayDismissed] = useState(true);
 
   // #7 Tournament results screen
   const [showTournamentResults, setShowTournamentResults] = useState(false);
@@ -893,6 +896,28 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
         />
       )}
 
+      {/* Challenge Pre-Singing Overlay (Rate my Song) */}
+      {screen === 'game' && rmsGameMode === 'rate-my-song' && party.rateMySongCurrentChallenge && !challengeOverlayDismissed && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="bg-gradient-to-br from-purple-900/90 to-pink-900/90 border border-purple-500/30 rounded-2xl p-8 max-w-md text-center animate-fade-in">
+            <div className="text-5xl mb-4">{party.rateMySongCurrentChallenge.icon}</div>
+            <h2 className="text-xl font-bold text-white mb-2">
+              {party.rateMySongCurrentChallenge.titleDe || party.rateMySongCurrentChallenge.titleEn}
+            </h2>
+            <p className="text-white/70 text-sm mb-6">
+              {party.rateMySongCurrentChallenge.descriptionDe || party.rateMySongCurrentChallenge.descriptionEn}
+            </p>
+            <p className="text-amber-400 text-xs mb-4">+50 Bonus Points if mastered!</p>
+            <button
+              onClick={() => setChallengeOverlayDismissed(true)}
+              className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg text-white font-medium hover:from-purple-400 hover:to-pink-400 transition-all"
+            >
+              Let&apos;s go! 🎤
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Rate my Song Setup */}
       {screen === 'rate-my-song' && (
         <RateMySongSetupScreen
@@ -901,6 +926,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             party.setRateMySongSettings(settings);
             party.setRateMySongPlayerIds(playerIds);
             setRateMySongResult(null);
+            // Reset challenge overlay so it shows for the new round
+            setChallengeOverlayDismissed(false);
 
             // Reset series state for new game
             if (!party.rateMySongSeriesHistory || party.rateMySongSeriesHistory.length === 0) {
@@ -981,12 +1008,24 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           currentChallenge={party.rateMySongCurrentChallenge}
           onSubmit={(ratings) => {
             const avg = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
+            // Resolve spectator bets
+            if (party.rateMySongSettings?.bettingEnabled) {
+              const totalBetPoints = ratings.reduce((sum, r) => sum + (r.betPoints || 0), 0);
+              if (totalBetPoints > 0) {
+                toast({ title: '💰 Betting Result', description: `${totalBetPoints} total bet points exchanged this round!` });
+              }
+            }
             const result: RateMySongResult = {
               songTitle: rmsSong?.title || '',
               songArtist: rmsSong?.artist || '',
               ratings,
               averageRating: Math.round(avg * 10) / 10,
+              challengeBonus: ratings.some(r => r.challengeMastered) ? 50 : 0,
             };
+            // Notify if challenge bonus earned
+            if (result.challengeBonus && result.challengeBonus > 0) {
+              toast({ title: '🏆 Challenge Mastered!', description: `+${result.challengeBonus} bonus points earned!` });
+            }
             setRateMySongResult(result);
             // Save round to series history ONCE at submit time, not during render
             const totalRounds = rms.seriesRounds || 1;

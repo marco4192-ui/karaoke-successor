@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
 import type { RateMySongRating } from './rate-my-song-types';
 import type { RateMySongRatingScreenProps } from './rate-my-song-types';
@@ -21,6 +21,7 @@ export function RateMySongRatingScreen({
   categoriesEnabled = false,
   anonymousRating = false,
   challengesEnabled = false,
+  bettingEnabled = false,
   currentChallenge = null,
   onSubmit,
   onBack,
@@ -70,6 +71,13 @@ export function RateMySongRatingScreen({
 
   const [currentAudienceIdx, setCurrentAudienceIdx] = useState(0);
 
+  // Live Reactions
+  const [floatingEmojis, setFloatingEmojis] = useState<{ id: number; emoji: string; x: number }[]>([]);
+  const [hypeLevel, setHypeLevel] = useState(0);
+
+  // Spectator Betting
+  const [betRange, setBetRange] = useState<string | null>(null);
+
   const updateRating = (singerId: string, audienceId: string, rating: number) => {
     setAudienceRatings(prev => ({
       ...prev,
@@ -116,25 +124,55 @@ export function RateMySongRatingScreen({
     return avg;
   };
 
+  // Reaction handler
+  const handleReaction = useCallback((emoji: string) => {
+    const id = Date.now();
+    const x = 20 + Math.random() * 60;
+    setFloatingEmojis(prev => [...prev, { id, emoji, x }]);
+    setHypeLevel(prev => Math.min(prev + 0.15, 1.5));
+    setTimeout(() => {
+      setFloatingEmojis(prev => prev.filter(e => e.id !== id));
+    }, 2000);
+  }, []);
+
+  // Hype decay
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHypeLevel(prev => Math.max(prev - 0.02, 0));
+    }, 200);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleSubmit = () => {
     const ratings: RateMySongRating[] = singingPlayers.map(singer => {
+      const singerId = singer.id;
       if (categoriesEnabled) {
-        const cats = getCategoryAverage(singer.id);
+        const cats = getCategoryAverage(singerId);
         return {
-          playerId: singer.id,
+          playerId: singerId,
           playerName: singer.name,
           playerColor: singer.color,
           rating: cats ? calcWeightedTotal(cats) : 5.0,
           categories: cats || undefined,
-          challengeMastered: challengesEnabled ? challengeMastery[singer.id] : undefined,
+          challengeMastered: challengesEnabled ? challengeMastery[singerId] : undefined,
+          betPoints: betRange ? (
+            getAverageForSinger(singerId) < 5.0 && betRange === 'under' ? 1 :
+            getAverageForSinger(singerId) >= 5.0 && getAverageForSinger(singerId) <= 7.0 && betRange === 'mid' ? 1 :
+            getAverageForSinger(singerId) > 7.0 && betRange === 'over' ? 1 : 0
+          ) : undefined,
         };
       }
       return {
-        playerId: singer.id,
+        playerId: singerId,
         playerName: singer.name,
         playerColor: singer.color,
-        rating: getAverageForSinger(singer.id),
-        challengeMastered: challengesEnabled ? challengeMastery[singer.id] : undefined,
+        rating: getAverageForSinger(singerId),
+        challengeMastered: challengesEnabled ? challengeMastery[singerId] : undefined,
+        betPoints: betRange ? (
+          getAverageForSinger(singerId) < 5.0 && betRange === 'under' ? 1 :
+          getAverageForSinger(singerId) >= 5.0 && getAverageForSinger(singerId) <= 7.0 && betRange === 'mid' ? 1 :
+          getAverageForSinger(singerId) > 7.0 && betRange === 'over' ? 1 : 0
+        ) : undefined,
       };
     });
     onSubmit(ratings);
@@ -212,6 +250,85 @@ export function RateMySongRatingScreen({
                 : t('rateMySong.ratedAs').replace('{n}', audienceProfiles[currentAudienceIdx]?.name || '')}
             </p>
           </>
+        )}
+
+        {/* Live Reactions & Hype Meter */}
+        {!anonymousRating && (
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-white/70 mb-3">{t('rateMySong.liveReactions')}</h3>
+
+            {/* Emoji reaction buttons */}
+            <div className="flex gap-3 mb-4 justify-center">
+              {['🔥', '😍', '🎉', '👏', '💀'].map(emoji => (
+                <button
+                  key={emoji}
+                  onClick={() => handleReaction(emoji)}
+                  className="text-3xl hover:scale-125 active:scale-90 transition-transform"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+
+            {/* Floating emojis animation */}
+            <div className="relative h-16 overflow-hidden">
+              {floatingEmojis.map((fe) => (
+                <span
+                  key={`${fe.id}`}
+                  className="absolute animate-rms-float-emoji text-2xl pointer-events-none"
+                  style={{ left: `${fe.x}%`, animationDuration: '2s' }}
+                >
+                  {fe.emoji}
+                </span>
+              ))}
+            </div>
+
+            {/* Hype Meter bar */}
+            <div className="mt-2">
+              <div className="flex justify-between text-xs text-white/50 mb-1">
+                <span>{t('rateMySong.hypeMeter')}</span>
+                <span>{Math.round(hypeLevel * 100)}%</span>
+              </div>
+              <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    hypeLevel >= 1.0 ? 'bg-gradient-to-r from-yellow-400 via-red-500 to-purple-500 animate-rms-hype-pulse' :
+                    hypeLevel >= 0.7 ? 'bg-gradient-to-r from-orange-400 to-red-500' :
+                    hypeLevel >= 0.4 ? 'bg-gradient-to-r from-yellow-400 to-orange-400' :
+                    'bg-gradient-to-r from-green-400 to-yellow-400'
+                  }`}
+                  style={{ width: `${Math.min(hypeLevel * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Spectator Betting */}
+        {bettingEnabled && (
+          <div className="mb-6 bg-white/5 border border-white/10 rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-amber-400 mb-3">🎯 {t('rateMySong.placeBet')}</h3>
+            <p className="text-xs text-white/50 mb-3">{t('rateMySong.predictScore')}</p>
+            <div className="flex gap-3">
+              {[
+                { label: t('rateMySong.underFive'), range: 'under', max: 5.0 },
+                { label: '5.0 - 7.0', range: 'mid', max: 7.0 },
+                { label: t('rateMySong.overSeven'), range: 'over', max: 10.0 },
+              ].map(opt => (
+                <button
+                  key={opt.range}
+                  onClick={() => setBetRange(opt.range)}
+                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                    betRange === opt.range
+                      ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30'
+                      : 'bg-white/10 text-white/70 hover:bg-white/15'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Rating sliders — per singer, for the selected audience member */}

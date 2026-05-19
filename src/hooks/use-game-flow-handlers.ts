@@ -6,7 +6,7 @@ import type { GameResult, GameState, Player } from '@/types/game';
 import type { PartyStore } from '@/lib/game/party-store';
 import { accuracyToRating } from '@/lib/game/rating-utils';
 import { recordMatchResult } from '@/lib/game/tournament';
-import { finishCompetitiveRound, calculateMissingWordsBonusLegacy, calculateBlindBonusLegacy } from '@/lib/game/competitive-words-blind';
+import { finishCompetitiveRound, calculateMissingWordsBonus, calculateBlindBonus } from '@/lib/game/competitive-words-blind';
 import { estimatePerfectNotes } from '@/lib/game/scoring';
 
 /**
@@ -179,20 +179,30 @@ export function useGameFlowHandlers(
       const score2 = results?.players?.[1]?.score || players?.[1]?.score || 0;
       const p1NotesHit = results?.players?.[0]?.notesHit || players?.[0]?.notesHit || 0;
       const p2NotesHit = results?.players?.[1]?.notesHit || players?.[1]?.notesHit || 0;
+      const p1NotesMissed = results?.players?.[0]?.notesMissed || players?.[0]?.notesMissed || 0;
+      const p2NotesMissed = results?.players?.[1]?.notesMissed || players?.[1]?.notesMissed || 0;
 
-      // Estimate bonus points based on game mode and player accuracy:
-      // - Missing Words: ~25% of words hidden, accuracy on hidden words ≈ overall accuracy
-      //   Estimate: 25% of hit notes are on hidden words → bonus = hitNotes * 0.25 * 50
-      // - Blind: ~40% of time in blind sections, accuracy during blind ≈ overall accuracy
-      //   Estimate: 40% of hit notes are during blind → bonus = hitNotes * 0.40 * 30
+      // Advanced bonus calculation using per-note breakdowns
+      // NOTE: uses estimated streak/perfect data until real-time tracking is wired
       let bonus1 = 0;
       let bonus2 = 0;
+
+      // Calculate accuracy percentages
+      const p1Total = p1NotesHit + p1NotesMissed;
+      const p2Total = p2NotesHit + p2NotesMissed;
+      const p1Accuracy = p1Total > 0 ? p1NotesHit / p1Total : 0;
+      const p2Accuracy = p2Total > 0 ? p2NotesHit / p2Total : 0;
+
       if (gameState.gameMode === 'missing-words') {
-        bonus1 = calculateMissingWordsBonusLegacy(Math.round(p1NotesHit * 0.25));
-        bonus2 = calculateMissingWordsBonusLegacy(Math.round(p2NotesHit * 0.25));
+        const result1 = calculateMissingWordsBonus(p1Accuracy > 0.95, Math.floor(p1NotesHit / 3), false);
+        const result2 = calculateMissingWordsBonus(p2Accuracy > 0.95, Math.floor(p2NotesHit / 3), false);
+        bonus1 = result1.total;
+        bonus2 = result2.total;
       } else if (gameState.gameMode === 'blind') {
-        bonus1 = calculateBlindBonusLegacy(Math.round(p1NotesHit * 0.40));
-        bonus2 = calculateBlindBonusLegacy(Math.round(p2NotesHit * 0.40));
+        const result1 = calculateBlindBonus(p1Accuracy > 0.95, Math.floor(p1NotesHit / 3), false);
+        const result2 = calculateBlindBonus(p2Accuracy > 0.95, Math.floor(p2NotesHit / 3), false);
+        bonus1 = result1.total;
+        bonus2 = result2.total;
       }
 
       const updatedGame = finishCompetitiveRound(

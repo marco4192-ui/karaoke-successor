@@ -93,6 +93,8 @@ interface MedleyGameState {
   eliminationOrder: string[];
   activePlayerCount: number;
   totalPlayerCount: number;
+  /** True when exactly 2 players remain in elimination mode (final face-off) */
+  finalFaceOff: boolean;
 
   // Feature #15: Voice modifier
   activeModifier: VoiceModifier;
@@ -192,6 +194,7 @@ export function useMedleyGame({
   // ── Feature #10: Elimination ──
   const [eliminationOrder, setEliminationOrder] = useState<string[]>([]);
   const eliminationOrderRef = useRef<string[]>([]);
+  const [finalFaceOff, setFinalFaceOff] = useState(false);
 
   // ── Feature #15: Voice modifier ──
   const [activeModifier, setActiveModifier] = useState<VoiceModifier>('none');
@@ -539,10 +542,9 @@ export function useMedleyGame({
 
     forceRender();
 
-    // Check if only 2 remain — if so, we still continue with remaining songs
-    if (result.remainingCount <= 2) {
-      // TODO: Add an announcement system (e.g. setAnnouncement('Final Face-Off!')) and display
-      // a "Final Face-Off!" indicator in the UI when only 2 players remain.
+    // Check if only 2 remain — trigger final face-off flag
+    if (result.remainingCount === 2) {
+      setFinalFaceOff(true);
     }
   }, [isEliminationMode, forceRender]);
 
@@ -557,7 +559,11 @@ export function useMedleyGame({
     const player = playersRef.current.find(p => p.id === playerId);
     if (player?.isEliminated) return;
 
-    if (shouldSkipPitch(pitch, settings.difficulty)) return;
+    // Use dynamic difficulty for pitch filtering when available
+    const effectiveDiff = settings.dynamicDifficulty
+      ? getDynamicDifficulty(currentSnippetIdx, medleySongs.length)
+      : settings.difficulty;
+    if (shouldSkipPitch(pitch, effectiveDiff)) return;
     if (!scoringMetaRef.current || !currentSnippet) return;
 
     const activeNote = findActiveNoteFlat(snippetNotes, absTime);
@@ -570,12 +576,7 @@ export function useMedleyGame({
 
     if (pitch.note == null) return;
 
-    // Feature #9: Use dynamic difficulty for evaluation if enabled
-    const effectiveDifficulty = settings.dynamicDifficulty
-      ? getDynamicDifficulty(currentSnippetIdx, medleySongs.length)
-      : settings.difficulty;
-
-    const tick = evaluateAndScoreTick(pitch.note, activeNote, effectiveDifficulty, scoringMetaRef.current);
+    const tick = evaluateAndScoreTick(pitch.note, activeNote, effectiveDiff, scoringMetaRef.current);
     const pIdx = playersRef.current.findIndex(p => p.id === playerId);
     if (pIdx === -1) return;
     const p = playersRef.current[pIdx];
@@ -614,7 +615,7 @@ export function useMedleyGame({
     }
 
     playersRef.current[pIdx] = { ...p };
-  }, [snippetNotes, currentSnippet, settings.difficulty, settings.dynamicDifficulty, currentSnippetIdx, medleySongs.length]);
+  }, [snippetNotes, currentSnippet, settings.difficulty, settings.dynamicDifficulty, currentSnippetIdx, medleySongs.length, multiPitch]);
 
   // ── Game loop ──
   useEffect(() => {
@@ -748,6 +749,7 @@ export function useMedleyGame({
     if (medleySongs.length === 0) return;
     setPhase('countdown');
     setCountdown(3);
+    setFinalFaceOff(false);
 
     const interval = setInterval(() => {
       setCountdown(prev => {
@@ -916,6 +918,7 @@ export function useMedleyGame({
     eliminationOrder,
     activePlayerCount,
     totalPlayerCount,
+    finalFaceOff,
     // Feature #15
     activeModifier,
     modifierJustRevealed,

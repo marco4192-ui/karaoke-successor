@@ -158,43 +158,27 @@ export function MedleyRoundResults({
         ))}
       </div>
 
-      {/* Feature #5: Score breakdown */}
+      {/* Feature #5: Score summary (accuracy, combo, notes — honest data matching game state) */}
       <div className="bg-white/5 border border-white/10 rounded-lg p-4 mb-6">
         <h3 className="font-bold text-sm mb-3 text-purple-400">{t('medley.scoreBreakdown')}</h3>
-        <div className="space-y-3">
-          {sorted.map(player => {
-            const totalNotes = player.notesHit + player.notesMissed;
-            const accuracy = totalNotes > 0 ? Math.round((player.notesHit / totalNotes) * 100) : 0;
-            const basePoints = player.notesHit * 50;
-            // Combo bonus based on max combo streak (avoids negative when scoring varies per hit)
-            const comboBonus = player.maxCombo > 1 ? Math.round(player.maxCombo * 10) : 0;
-
-            return (
-              <div key={player.id} className="flex items-center gap-3 text-sm">
-                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold"
-                  style={{ backgroundColor: player.color }}>
-                  {player.name.charAt(0).toUpperCase()}
-                </div>
-                <div className="flex-1">
-                  <div className="font-medium text-xs" style={{ color: player.color }}>
-                    {player.name}
-                    {/* Feature #10: Eliminated badge */}
-                    {player.isEliminated && <span className="ml-2 text-red-400">💀 {t('medley.eliminated')}</span>}
-                    {/* Feature #18: MVP badge */}
-                    {teamBonusResult?.mvpPlayerId === player.id && (
-                      <span className="ml-2 text-amber-400">🏅 {t('medley.mvpAward')}</span>
-                    )}
-                  </div>
-                  <div className="flex gap-3 text-xs text-white/50">
-                    <span>{t('medley.basePoints')}: {basePoints}</span>
-                    <span>{t('medley.comboBonus')}: +{comboBonus}</span>
-                    <span>{t('medley.accuracy')}: {accuracy}%</span>
-                  </div>
-                </div>
-                <div className="font-bold text-purple-400">{player.score}</div>
-              </div>
-            );
-          })}
+        <div className="grid grid-cols-3 gap-2 text-center text-sm">
+          <div>
+            <div className="text-white/50 text-xs">{t('medley.accuracy')}</div>
+            <div className="font-bold text-white">{(() => {
+              const t = sorted.reduce((s, p) => s + p.notesHit, 0);
+              const m = sorted.reduce((s, p) => s + p.notesMissed, 0);
+              const total = t + m;
+              return total > 0 ? Math.round((t / total) * 100) : 0;
+            })()}%</div>
+          </div>
+          <div>
+            <div className="text-white/50 text-xs">{t('medley.maxCombo')}</div>
+            <div className="font-bold text-white">{Math.max(...sorted.map(p => p.maxCombo))}x</div>
+          </div>
+          <div>
+            <div className="text-white/50 text-xs">{t('medley.notesHit')}</div>
+            <div className="font-bold text-white">{sorted.reduce((s, p) => s + p.notesHit, 0)}/{sorted.reduce((s, p) => s + p.notesHit + p.notesMissed, 0)}</div>
+          </div>
         </div>
       </div>
 

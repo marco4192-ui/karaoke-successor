@@ -15,6 +15,7 @@ import {
   getRateMySongPlayerStats,
   getSongSuggestions,
   updateRateMySongPlayerStats,
+  addAudienceRatingToStats,
   getPlayerRank,
   getAchievementById,
   type RateMySongEntry,
@@ -47,6 +48,10 @@ export function RateMySongResultsScreen({
   const [playerStatsMap, setPlayerStatsMap] = useState<Map<string, RateMySongPlayerStats>>(new Map());
   const [newAchievementsMap, setNewAchievementsMap] = useState<Map<string, Achievement[]>>(new Map());
   const [songSuggestions, setSongSuggestions] = useState<SongSuggestion[]>([]);
+  const [displayedScore, setDisplayedScore] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [displayedComment, setDisplayedComment] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
 
   useEffect(() => {
     // Save each player's rating and update stats
@@ -77,6 +82,8 @@ export function RateMySongResultsScreen({
         result.songTitle,
         songGenre || '',
       );
+
+      addAudienceRatingToStats(r.playerId, 1);
 
       setPlayerStatsMap(prev => {
         const next = new Map(prev);
@@ -110,12 +117,80 @@ export function RateMySongResultsScreen({
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
   }, [result, songId, songGenre]);
 
-  // AI critic comment for the top-rated player
+  // ── AI critic comment (needed before typewriter effect) ──
   const topRating = result.ratings.length > 0
     ? Math.max(...result.ratings.map(r => r.rating))
     : 5;
   const lang = language === 'de' ? 'de' : 'en';
   const aiComment = useMemo(() => getAICriticComment(topRating, lang), [topRating, lang]);
+
+  // ── Animated Score Counter ──
+  useEffect(() => {
+    const target = result.averageRating;
+    const duration = 1500;
+    const start = performance.now();
+
+    const animate = (now: number) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayedScore(eased * target);
+      if (progress < 1) requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
+  }, [result.averageRating]);
+
+  // ── Confetti Trigger (9.0+) ──
+  useEffect(() => {
+    if (result.averageRating >= 9.0) {
+      const timer = setTimeout(() => setShowConfetti(true), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [result.averageRating]);
+
+  // ── AI-Critic Typewriter Animation ──
+  useEffect(() => {
+    const fullComment = aiComment;
+    if (!fullComment) return;
+    setDisplayedComment('');
+    setIsTyping(true);
+    let idx = 0;
+    const interval = setInterval(() => {
+      idx++;
+      setDisplayedComment(fullComment.slice(0, idx));
+      if (idx >= fullComment.length) {
+        clearInterval(interval);
+        setIsTyping(false);
+      }
+    }, 30);
+    return () => clearInterval(interval);
+  }, [aiComment]);
+
+  // ── Dynamic Score Color ──
+  const scoreColor = result.averageRating >= 9.0 ? 'text-yellow-300' :
+                    result.averageRating >= 7.0 ? 'text-amber-400' :
+                    result.averageRating >= 5.0 ? 'text-orange-400' :
+                    result.averageRating >= 3.0 ? 'text-red-400' : 'text-gray-400';
+
+  // ── Wall of Fame: top 3 all-time players by best rating ──
+  const allTimeRanking = useMemo(() => {
+    const bestByPlayer = new Map<string, { playerId: string; playerName: string; bestRating: number }>();
+    for (const entry of topRanking) {
+      const existing = bestByPlayer.get(entry.playerId);
+      if (!existing || entry.rating > existing.bestRating) {
+        bestByPlayer.set(entry.playerId, {
+          playerId: entry.playerId,
+          playerName: entry.playerName,
+          bestRating: entry.rating,
+        });
+      }
+    }
+    return Array.from(bestByPlayer.values()).sort((a, b) => b.bestRating - a.bestRating);
+  }, [topRanking]);
+
+  const wallOfFameEntries = useMemo(() => {
+    return allTimeRanking.slice(0, 3);
+  }, [allTimeRanking]);
 
   const categoryLabels: Record<CategoryKey, { icon: string; label: string }> = {
     voice: { icon: '🎤', label: t('rateMySong.voice') },
@@ -141,16 +216,40 @@ export function RateMySongResultsScreen({
         <div className="text-6xl mb-4">🏆</div>
         <h1 className="text-3xl font-bold mb-2">{t('rateMySong.ratingComplete')}</h1>
         <p className="text-gray-400 mb-2">{result.songTitle}</p>
-        <div className="text-5xl font-bold text-amber-400 mb-6 animate-rms-score-reveal">
-          {result.averageRating.toFixed(1)}
+        <div className={`text-5xl font-bold ${scoreColor} mb-6 animate-rms-score-reveal`}>
+          {displayedScore.toFixed(1)}
           <span className="text-2xl text-gray-400"> / 10</span>
         </div>
+
+        {showConfetti && (
+          <div className="fixed inset-0 pointer-events-none z-50">
+            {Array.from({ length: 50 }).map((_, i) => (
+              <div
+                key={i}
+                className="absolute animate-rms-confetti-fall"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: '-20px',
+                  animationDelay: `${Math.random() * 2}s`,
+                  animationDuration: `${2 + Math.random() * 3}s`,
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: Math.random() > 0.5 ? '50%' : '0',
+                  backgroundColor: ['#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#22c55e', '#ec4899'][Math.floor(Math.random() * 6)],
+                }}
+              />
+            ))}
+          </div>
+        )}
 
         {/* AI Critic Comment */}
         <div className="mb-6 mx-auto max-w-md">
           <div className="relative bg-gray-700/30 rounded-2xl p-4 border border-white/10">
             <div className="text-sm font-semibold text-amber-400 mb-2">{t('rateMySong.aiCritic')}</div>
-            <p className="text-gray-200 text-sm italic">&ldquo;{aiComment}&rdquo;</p>
+            <p className="text-white/80 italic text-sm">
+              &ldquo;{displayedComment}&rdquo;
+              {isTyping && <span className="inline-block w-0.5 h-4 bg-white/60 ml-0.5 animate-pulse" />}
+            </p>
             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-gray-700/30 border-b border-r border-white/10 rotate-45" />
           </div>
         </div>
@@ -243,6 +342,27 @@ export function RateMySongResultsScreen({
             );
           })}
         </div>
+
+        {/* Best / Worst Genre Display */}
+        {songGenre && (
+          <div className="bg-white/5 border border-white/10 rounded-lg p-4 mb-4">
+            <h3 className="font-bold text-sm mb-2 text-purple-400">{t('rateMySong.genreStats')}</h3>
+            {Object.entries(playerStatsMap).map(([playerId, stats]) => {
+              if (!stats?.genresPerformed || Object.keys(stats.genresPerformed).length === 0) return null;
+              const genres = Object.entries(stats.genresPerformed) as [string, number][];
+              const sorted = genres.sort((a, b) => b[1] - a[1]);
+              const best = sorted[0];
+              const worst = sorted[sorted.length - 1];
+              return (
+                <div key={playerId} className="text-sm text-white/70">
+                  <span className="font-medium text-white/90">{stats.playerName}:</span>{' '}
+                  Best: <span className="text-green-400">{best[0]}</span> ({best[1]}x) |{' '}
+                  Worst: <span className="text-red-400">{worst[0]}</span> ({worst[1]}x)
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* New Achievements */}
         {newAchievementsMap.size > 0 && (
@@ -374,6 +494,22 @@ export function RateMySongResultsScreen({
                 <p className="text-[10px] text-gray-500 text-center mt-2">{t('rateMySong.scoreFormula')}</p>
               </>
             )}
+          </div>
+        )}
+
+        {/* Wall of Fame */}
+        {wallOfFameEntries.length > 0 && (
+          <div className="bg-gradient-to-br from-amber-900/20 to-purple-900/20 border border-amber-500/30 rounded-lg p-4 mb-6">
+            <h3 className="font-bold text-sm mb-3 text-amber-400">🏆 {t('rateMySong.wallOfFame')}</h3>
+            <div className="flex justify-center gap-6">
+              {wallOfFameEntries.map((entry, idx) => (
+                <div key={entry.playerId} className="text-center">
+                  <div className="text-2xl mb-1">{idx === 0 ? '\u{1F947}' : idx === 1 ? '\u{1F948}' : '\u{1F949}'}</div>
+                  <div className="text-sm font-medium text-white">{entry.playerName}</div>
+                  <div className="text-xs text-amber-400">{entry.bestRating.toFixed(1)}</div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
