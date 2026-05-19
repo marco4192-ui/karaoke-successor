@@ -197,12 +197,13 @@ export function AppearanceTab({
           {/* Note Display Style */}
           <div className={isLowPerf ? 'opacity-40 pointer-events-none' : ''}>
             <label className="text-sm theme-adaptive-text-secondary mb-2 block">{tx('settingsGraphicSound.noteDisplay')} {isLowPerf && <span>({tx('settingsGraphicSound.lowPerfNote')})</span>}</label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               {[
                 { id: 'classic', name: tx('settingsGraphicSound.noteStyleClassic'), icon: '➡️', desc: tx('settingsGraphicSound.noteStyleUltraStar') },
                 { id: 'fill-level', name: tx('settingsGraphicSound.noteStyleFill'), icon: '📊', desc: tx('settingsGraphicSound.noteStyleGaps') },
                 { id: 'color-feedback', name: tx('settingsGraphicSound.noteStyleColor'), icon: '🎨', desc: tx('settingsGraphicSound.noteStyleColorDesc') },
                 { id: 'glow-intensity', name: tx('settingsGraphicSound.noteStyleGlow'), icon: '✨', desc: tx('settingsGraphicSound.noteStyleGlowDesc') },
+                { id: 'hit-fill', name: tx('settingsGraphicSound.noteStyleHitFill'), icon: '🥊', desc: tx('settingsGraphicSound.noteStyleHitFillDesc') },
               ].map((style) => (
                 <button
                   key={style.id}

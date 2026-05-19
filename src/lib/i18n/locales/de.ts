@@ -1448,6 +1448,8 @@ export const deTranslations = {
       noteStyleColorDesc: 'Farbe nach Treffgenauigkeit',
       noteStyleGlow: 'Glow-Intensität',
       noteStyleGlowDesc: 'Helligkeit zeigt Qualität',
+      noteStyleHitFill: 'Beat-Treffer',
+      noteStyleHitFillDesc: 'Nur getroffene Beats füllen sich',
       noteShape: 'Notenform',
       shapeRounded: 'Abgerundet',
       shapeRectangle: 'Rechteck mit Rahmen',

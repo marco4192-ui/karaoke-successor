@@ -94,6 +94,7 @@ interface PlayingViewProps {
   // Multi-pitch detection
   playerPitchMap: Map<string, PitchDetectionResult | null>;
   multiPitchErrors: Map<string, string>;
+  notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
 }
 
 export function PlayingView({
@@ -120,6 +121,7 @@ export function PlayingView({
   countdown,
   playerPitchMap,
   multiPitchErrors,
+  notePerformance,
 }: PlayingViewProps) {
   const { t } = useTranslation();
   const currentRound = game.rounds[game.rounds.length - 1];
@@ -598,6 +600,7 @@ export function PlayingView({
             noteWindow={NOTE_WINDOW}
             visibleTop={VISIBLE_TOP}
             visibleRange={VISIBLE_RANGE}
+            notePerformance={notePerformance}
           />
         </div>
       )}

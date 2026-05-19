@@ -79,6 +79,7 @@ interface UseBattleRoyaleGameReturn {
   multiPitchErrors: Map<string, string>; // Per-player pitch errors
   songProgress: number; // 0-100
   countdown: number;
+  notePerformance: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
 }
 
 export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoyaleGameParams): UseBattleRoyaleGameReturn {
@@ -152,6 +153,11 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   const [currentTime, setCurrentTime] = useState(0);
   const gameLoopRef = useRef<number | null>(null);
   const lastCurrentTimeUpdateRef = useRef(0);
+
+  // Note performance tracking for display styles (fill-level, color-feedback, etc.)
+  const notePerformanceRef = useRef<Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>>(new Map());
+  const [notePerformance, setNotePerformance] = useState<Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>>(new Map());
+  const lastNotePerfSyncRef = useRef(0);
 
   // ── Countdown state (V3) ───────────────────────────────────────────
   const [countdown, setCountdown] = useState(0);
@@ -313,6 +319,8 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         if (gameLoopRef.current) {
           cancelAnimationFrame(gameLoopRef.current);
         }
+        notePerformanceRef.current.clear();
+        setNotePerformance(new Map());
       };
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -396,6 +404,18 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
                 scoreChanged = true;
               }
             }
+
+            // Record performance sample for note display styles
+            const perfNoteId = activeNote.id || `note-${activeNote.startTime}`;
+            let perfSamples = notePerformanceRef.current.get(perfNoteId);
+            if (!perfSamples) {
+              perfSamples = [];
+              notePerformanceRef.current.set(perfNoteId, perfSamples);
+            }
+            perfSamples.push({ time: currentAudioTime, accuracy: tick.accuracy, hit: tick.hit });
+            if (perfSamples.length > 100) {
+              notePerformanceRef.current.set(perfNoteId, perfSamples.slice(-100));
+            }
           }
 
           // Score all active COMPANION players (unchanged — uses polling cache)
@@ -433,6 +453,13 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
               }
             }
           }
+        }
+
+        // Sync note performance to state at ~60Hz for visual display
+        const perfNow = performance.now();
+        if (perfNow - lastNotePerfSyncRef.current >= 16) {
+          lastNotePerfSyncRef.current = perfNow;
+          setNotePerformance(notePerformanceRef.current);
         }
 
         if (scoreChanged) {
@@ -504,5 +531,6 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
       ? Math.min(100, Math.max(0, (currentTime / currentSong.duration) * 100))
       : 0,
     countdown,
+    notePerformance,
   };
 }

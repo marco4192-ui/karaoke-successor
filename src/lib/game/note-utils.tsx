@@ -5,7 +5,7 @@ import { Note, LyricLine } from '@/types/game';
 export type NoteShapeStyle = 'rounded' | 'sharp' | 'pill' | 'diamond';
 
 // Note display style type
-export type NoteDisplayStyle = 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity';
+export type NoteDisplayStyle = 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity' | 'hit-fill';
 
 // Note display constants
 export const NOTE_HEIGHT = 52;
@@ -100,7 +100,8 @@ export function getNoteDisplayStyleClasses(
   displayStyle: NoteDisplayStyle,
   accuracy: number = 1, // 0-1, how accurate the player is
   isGolden: boolean = false,
-  isBonus: boolean = false
+  isBonus: boolean = false,
+  performanceSamples?: Array<{ time: number; accuracy: number; hit: boolean }>
 ): {
   additionalClasses: string;
   inlineStyle: React.CSSProperties;
@@ -140,7 +141,7 @@ export function getNoteDisplayStyleClasses(
               style={{
                 width: `${accuracy * 100}%`,
                 background: fillColor,
-                transition: 'width 200ms ease-out',
+                transition: 'width 50ms linear',
                 borderTopLeftRadius: 'inherit',
                 borderBottomLeftRadius: 'inherit',
               }}
@@ -175,7 +176,7 @@ export function getNoteDisplayStyleClasses(
           ? 'linear-gradient(90deg, #ec4899, #f472b6)'
           : bgColor;
       return {
-        additionalClasses: 'transition-all duration-200 ease-out',
+        additionalClasses: 'transition-all duration-50 ease-linear',
         inlineStyle: {
           background: finalBg,
           boxShadow: `0 0 12px ${borderColor}, inset 0 1px 0 rgba(255,255,255,0.2)`,
@@ -200,12 +201,67 @@ export function getNoteDisplayStyleClasses(
         ? `inset 0 0 ${4 + accuracy * 16}px rgba(255,255,255,${accuracy * 0.3})`
         : 'none';
       return {
-        additionalClasses: 'transition-all duration-200 ease-out',
+        additionalClasses: 'transition-all duration-50 ease-linear',
         inlineStyle: {
           boxShadow: `${innerGlow}, 0 0 ${glowSpread1}px ${glowColor}, 0 0 ${glowSpread2}px ${glowColor}`,
           filter: `brightness(${0.4 + accuracy * 0.6})`,
         },
         overlayElement: null
+      };
+    }
+
+    case 'hit-fill': {
+      // Hit-fill: Segmented bar where each beat shows hit (filled) or miss (empty)
+      const samples = performanceSamples || [];
+      const segmentCount = Math.max(4, Math.min(12, samples.length || 4));
+      const hitColor = isGolden
+        ? 'rgba(251, 191, 36, 0.95)'
+        : isBonus
+          ? 'rgba(236, 72, 153, 0.95)'
+          : 'rgba(34, 211, 238, 0.95)';
+      const missColor = 'rgba(255, 255, 255, 0.08)';
+
+      // Build segments: map samples to segments
+      const segments: Array<{ hit: boolean }> = [];
+      for (let i = 0; i < segmentCount; i++) {
+        // Check if any sample in this segment's time range was a hit
+        const segmentHit = samples.length > 0
+          ? samples.some((s, idx) => {
+              // Distribute samples across segments
+              const segStart = (i / segmentCount) * samples.length;
+              const segEnd = ((i + 1) / segmentCount) * samples.length;
+              return idx >= segStart && idx < segEnd && s.hit;
+            })
+          : false;
+        segments.push({ hit: segmentHit });
+      }
+
+      const hitRatio = segments.filter(s => s.hit).length / segments.length;
+
+      return {
+        additionalClasses: 'overflow-hidden',
+        inlineStyle: {
+          backgroundImage: 'none',
+          backgroundColor: 'rgba(255, 255, 255, 0.06)',
+          border: '1.5px solid rgba(255, 255, 255, 0.2)',
+          boxShadow: hitRatio > 0.5
+            ? `0 0 ${6 + hitRatio * 8}px rgba(34, 211, 238, ${hitRatio * 0.4})`
+            : 'none',
+        },
+        overlayElement: (
+          <div className="absolute inset-y-0 left-0 right-0 flex" style={{ gap: '1px', padding: '2px' }}>
+            {segments.map((seg, idx) => (
+              <div
+                key={idx}
+                className="flex-1 rounded-sm"
+                style={{
+                  backgroundColor: seg.hit ? hitColor : missColor,
+                  transition: 'background-color 50ms linear',
+                }}
+              />
+            ))}
+          </div>
+        )
       };
     }
 

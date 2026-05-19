@@ -156,9 +156,9 @@ const NoteBlock = React.memo(function NoteBlock({
 
   // Determine note styling based on type and player color
   const getBackgroundClasses = () => {
-    // In fill-level mode, skip Tailwind gradient classes — the display style
-    // manages its own background via inline styles (empty shell + fill overlay).
-    if (noteDisplayStyle === 'fill-level') return '';
+    // In fill-level and hit-fill modes, skip Tailwind gradient classes —
+    // the display style manages its own background via inline styles.
+    if (noteDisplayStyle === 'fill-level' || noteDisplayStyle === 'hit-fill') return '';
     if (note.isGolden) {
       return 'bg-gradient-to-r from-yellow-400 to-orange-500 shadow-lg shadow-yellow-500/50';
     }
@@ -186,18 +186,24 @@ const NoteBlock = React.memo(function NoteBlock({
 
   const accuracy = getNoteAccuracy();
 
+  // Extract raw performance samples for hit-fill display style
+  const notePerfSamples = notePerformance
+    ? (notePerformance.get(note.id || `note-${note.startTime}`) || [])
+    : [];
+
   // Apply note display style
   const displayStyle = getNoteDisplayStyleClasses(
     noteDisplayStyle,
     accuracy,
     note.isGolden || false,
-    note.isBonus || false
+    note.isBonus || false,
+    notePerfSamples
   );
 
   return (
     <div
       key={note.id || `note-${note.startTime}`}
-      className={`absolute ${noteShape.baseClass} ${getBackgroundClasses()} ${displayStyle.additionalClasses} ${isActive ? noteShape.activeClass : ''} ${isPast ? 'opacity-60' : ''}`}
+      className={`absolute ${noteShape.baseClass} ${getBackgroundClasses()} ${displayStyle.additionalClasses} ${isActive ? noteShape.activeClass : ''} ${isPast ? (accuracy > 0.3 ? 'opacity-80' : 'opacity-30') : ''}`}
       style={{
         left: `${x}%`,
         top: `${pitchY}%`,
@@ -205,7 +211,7 @@ const NoteBlock = React.memo(function NoteBlock({
         height: `${noteHeight}px`,
         transform: 'translateY(-50%)',
         boxShadow: isActive ? `0 0 15px ${glowColor}` : 'none',
-        opacity: isPast ? 0.6 : 1,
+        opacity: isPast ? (accuracy > 0.3 ? 0.8 : 0.3) : 1,
         ...noteShape.style,
         ...displayStyle.inlineStyle,
       }}

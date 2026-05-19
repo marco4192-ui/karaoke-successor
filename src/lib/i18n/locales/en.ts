@@ -1451,6 +1451,8 @@ export const enTranslations = {
       noteStyleColorDesc: 'Color by hit accuracy',
       noteStyleGlow: 'Glow Intensity',
       noteStyleGlowDesc: 'Brightness shows quality',
+      noteStyleHitFill: 'Beat Hit Fill',
+      noteStyleHitFillDesc: 'Only hit beats get filled',
       noteShape: 'Note Shape',
       shapeRounded: 'Rounded',
       shapeRectangle: 'Rectangle with border',

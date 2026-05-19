@@ -596,14 +596,14 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
           <div>
             <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.noteDisplayStyleLabel')}</label>
             <div className="flex gap-2">
-              {(['classic', 'fill-level', 'color-feedback', 'glow-intensity'] as const).map(style => (
+              {(['classic', 'fill-level', 'color-feedback', 'glow-intensity', 'hit-fill'] as const).map(style => (
                 <Button
                   key={style}
                   variant={noteDisplayStyle === style ? 'default' : 'outline'}
                   onClick={() => setNoteDisplayStyle(style)}
                   className={noteDisplayStyle === style ? 'bg-indigo-500 hover:bg-indigo-600' : 'border-white/20'}
                 >
-                  {style}
+                  {{ classic: '➡️ classic', 'fill-level': '📊 fill-level', 'color-feedback': '🎨 color-feedback', 'glow-intensity': '✨ glow', 'hit-fill': '🥊 hit-fill' }[style] as string}
                 </Button>
               ))}
             </div>
