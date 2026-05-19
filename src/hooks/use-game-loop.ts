@@ -3,9 +3,18 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Song, Difficulty, GameResult, PitchDetectionResult, GameMode } from '@/types/game';
 import type { AudioEffectsEngine } from '@/lib/audio/audio-effects';
-import { normalizeFilePath } from '@/lib/tauri-file-storage';
 import { useGameStore } from '@/lib/game/store';
-import { generateGameResults } from '@/lib/game/game-results-generator';
+import { useGameResults } from '@/hooks/use-game-results';
+import { playSongMedia, scheduleMediaWatchdog } from '@/hooks/use-media-playback';
+import { computeGameElapsedMs, buildP2PitchResult, getEffectiveSongEnd } from '@/hooks/game-loop-utils';
+
+// ── Re-exports ──
+export { useGameResults } from '@/hooks/use-game-results';
+export type { PlayerScoreSnapshot, P2ScoringSnapshot, UseGameResultsOptions } from '@/hooks/use-game-results';
+export { playSongMedia, scheduleMediaWatchdog } from '@/hooks/use-media-playback';
+export type { PlayMediaParams, MediaWatchdogParams } from '@/hooks/use-media-playback';
+export { computeGameElapsedMs, buildP2PitchResult, getEffectiveSongEnd } from '@/hooks/game-loop-utils';
+export type { ComputeElapsedParams, BuildP2PitchParams } from '@/hooks/game-loop-utils';
 
 interface UseGameLoopOptions {
   // Song / media
@@ -155,7 +164,8 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   const hasEndedRef = useRef(false); // Guard against double endGameAndCleanup
   const abortedRef = useRef(false);   // Set when user aborts to prevent endGameAndCleanup
   const comebackRef = useRef(false);  // Tracks if player had a comeback (combo >= 50 after missing >= 10)
-  const mediaPlayWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Stores cleanup function returned by scheduleMediaWatchdog (replaces raw timeout ref)
+  const mediaPlayWatchdogRef = useRef<(() => void) | null>(null);
   // ── Pause position tracking ──
   // When pausing during countdown, remember the countdown value so resume can restart it.
   const pausedAtCountdownRef = useRef<number | null>(null);
@@ -169,13 +179,24 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   const p2IsSingingRef = useRef(p2IsSinging);
   const youtubeTimeRef = useRef(youtubeTime);
   const nativeAudioTimeRef = useRef(nativeAudioTime);
-  // Ref for p1PerfectNotesCount — ensure generateResults reads the latest value
-  const p1PerfectNotesCountRef = useRef(p1PerfectNotesCount);
-  const playersRef = useRef(players);
   // Refs for checkNoteHits / checkP2NoteHits — prevents game loop restart
   // when these callbacks are recreated (e.g. inline arrow functions in caller).
   const checkNoteHitsRef = useRef(checkNoteHits);
   const checkP2NoteHitsRef = useRef(checkP2NoteHits);
+
+  // ── Result generation hook (extracted) ──
+  const { generateResults, playersRef, p1PerfectNotesCountRef } = useGameResults({
+    song,
+    gameMode,
+    isDuetMode,
+    playbackRate,
+    players,
+    p2ScoringState,
+    p1PerfectNotesCount,
+    setResults,
+    comebackRef,
+  });
+
   // Sync all frequently-changing values to refs via effect (avoids ref access during render)
   useEffect(() => {
     pitchResultRef.current = pitchResult;
@@ -184,11 +205,9 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     p2IsSingingRef.current = p2IsSinging;
     youtubeTimeRef.current = youtubeTime;
     nativeAudioTimeRef.current = nativeAudioTime;
-    p1PerfectNotesCountRef.current = p1PerfectNotesCount;
-    playersRef.current = players;
     checkNoteHitsRef.current = checkNoteHits;
     checkP2NoteHitsRef.current = checkP2NoteHits;
-  }, [pitchResult, p2DetectedPitch, p2Volume, p2IsSinging, youtubeTime, nativeAudioTime, p1PerfectNotesCount, players, checkNoteHits, checkP2NoteHits]);
+  }, [pitchResult, p2DetectedPitch, p2Volume, p2IsSinging, youtubeTime, nativeAudioTime, checkNoteHits, checkP2NoteHits]);
   // Throttle detectedPitch store updates to ~30fps.
   // Pitch visualization doesn't need 60fps — scoring reads pitch directly
   // from the ref, not from the store, so accuracy is unaffected.
@@ -203,47 +222,22 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   // that resume picks up from that exact wall-clock offset instead of from 0.
   const pausedAtElapsedMsRef = useRef<number | null>(null);
 
-  // ── Generate results at song end ──
-  const generateResults = useCallback(() => {
-    // Use ref (not closure) to read the latest player state — avoids reading
-    // a slightly stale snapshot if endGameAndCleanup fires between scoring ticks.
-    const results = generateGameResults({
-      song,
-      gameMode,
-      isDuetMode,
-      playbackRate,
-      players: playersRef.current,
-      p2ScoringState: p2ScoringState || null,
-      p1PerfectNotesCount: p1PerfectNotesCountRef.current || 0,
-      hadComeback: comebackRef.current ?? false,
+  // ── Helper: schedule the media playback watchdog ──
+  const scheduleWatchdog = useCallback((isNonScoringMode: boolean) => {
+    // Clear any previous watchdog
+    mediaPlayWatchdogRef.current?.();
+    mediaPlayWatchdogRef.current = scheduleMediaWatchdog({
+      audioRef,
+      videoRef,
+      isYouTube,
+      isNativeAudio,
+      youtubeTimeRef,
+      nativeAudioTimeRef,
+      wasPausedByStoreRef,
+      endGameAndCleanupRef,
+      isNonScoringMode,
     });
-
-    if (!results) return;
-
-    setResults(results);
-
-    // Send results to mobile clients for social features
-    const activePlayer = playersRef.current[0];
-    const p1Accuracy = results.players[0]?.accuracy ?? 0;
-    fetch('/api/mobile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'results',
-        payload: {
-          songId: song?.id,
-          songTitle: song?.title,
-          songArtist: song?.artist,
-          score: activePlayer?.score,
-          accuracy: p1Accuracy,
-          maxCombo: activePlayer?.maxCombo,
-          rating: results.players[0]?.rating,
-          playedAt: results.playedAt,
-        },
-      }),
-    }).catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- players read via ref; gameMode changes should not restart the init effect (handled separately)
-  }, [song, setResults, isDuetMode, p2ScoringState, gameMode, playbackRate]);
+  }, [audioRef, videoRef, isYouTube, isNativeAudio]);
 
   // ── End game and cleanup - stops all audio/microphone ──
   const endGameAndCleanup = useCallback(() => {
@@ -255,7 +249,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
 
     // Clear the media play watchdog timeout (if song ended before the 10s watchdog fired)
     if (mediaPlayWatchdogRef.current) {
-      clearTimeout(mediaPlayWatchdogRef.current);
+      mediaPlayWatchdogRef.current();
       mediaPlayWatchdogRef.current = null;
     }
 
@@ -337,39 +331,6 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     setIsPlaying(true);
   }, [audioRef, videoRef, setIsPlaying, nativeAudioResume]);
 
-  // ── Media playback watchdog helper ──
-  // Shared by both initial countdown and resume-from-pause paths.
-  // If no media source is actually playing after 10 seconds, the game
-  // either logs a warning (non-scoring modes) or aborts to prevent hang.
-  const scheduleMediaWatchdog = useCallback((isNonScoringMode: boolean) => {
-    if (mediaPlayWatchdogRef.current) {
-      clearTimeout(mediaPlayWatchdogRef.current);
-      mediaPlayWatchdogRef.current = null;
-    }
-
-    mediaPlayWatchdogRef.current = setTimeout(() => {
-      // Do NOT abort if the user paused during the watchdog window
-      if (wasPausedByStoreRef.current) return;
-
-      const audioPlaying = audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2;
-      const videoPlaying = videoRef.current && !videoRef.current.paused && videoRef.current.readyState >= 2;
-      const youTubeActive = isYouTube;
-      const nativePlaying = isNativeAudio && nativeAudioTimeRef.current > 0;
-      const youTubePlaying = youTubeActive && youtubeTimeRef.current > 0;
-
-      if (!audioPlaying && !videoPlaying && !youTubePlaying && !nativePlaying) {
-        if (isNonScoringMode) {
-          // eslint-disable-next-line no-console
-          console.warn('[GameLoop] Media playback watchdog: no media playing after 10s in non-scoring mode — continuing with wall-clock timing');
-        } else {
-          // eslint-disable-next-line no-console
-          console.error('[GameLoop] Media playback watchdog: no media actually playing after 10s — ending game to prevent hang');
-          endGameAndCleanupRef.current();
-        }
-      }
-    }, 10000);
-  }, [audioRef, videoRef, isYouTube, isNativeAudio]);
-
   // ── Initialize and start game - countdown + media playback ──
   useEffect(() => {
     if (!effectiveSong || !mediaLoaded) return;
@@ -400,96 +361,15 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         // Reset scoring state (note progress tracking is handled by the hook)
         resetScoring();
 
-        // ── Extracted media playback function (shared by countdown + medley skip) ──
-        const playMedia = async () => {
-          try {
-            const currentSong = effectiveSong;
-            if (!currentSong) return;
-
-            const startPosition = (currentSong.start || 0) / 1000;
-
-            const currentAudioUrl = currentSong.audioUrl;
-            const currentVideoUrl = currentSong.videoBackground;
-
-            // PRIORITY 1: Separate audio file (most common case)
-            if (audioRef.current && currentAudioUrl) {
-              // Only set src if it differs — avoids resetting playback
-              if (audioRef.current.src !== currentAudioUrl) {
-                audioRef.current.src = currentAudioUrl;
-              }
-              audioRef.current.currentTime = startPosition;
-              // When native audio is active, mute the browser audio element
-              if (isNativeAudio) {
-                audioRef.current.muted = true;
-              }
-              await audioRef.current.play();
-
-              // Start native audio playback if enabled and file path is available
-              if (isNativeAudio && nativeAudioPlay && currentSong.baseFolder && currentSong.relativeAudioPath) {
-                // Use centralized normalizeFilePath for consistent path construction
-                // (handles backslashes, trailing slashes, and HTML entities like &amp;)
-                const normalizedBase = normalizeFilePath(currentSong.baseFolder);
-                const normalizedRelative = normalizeFilePath(currentSong.relativeAudioPath);
-                const nativePath = `${normalizedBase}/${normalizedRelative}`;
-                nativeAudioPlay(nativePath).catch((err) => {
-                  // eslint-disable-next-line no-console
-                  console.error('[GameScreen] Native audio play failed, falling back to browser:', err);
-                  if (audioRef.current) audioRef.current.muted = false;
-                });
-                // Seek to start position after native audio begins
-                if (nativeAudioSeek) {
-                nativeAudioSeek(currentSong.start || 0).catch(() => {});
-                }
-              }
-            }
-
-            // PRIORITY 2: Video with embedded audio
-            else if (currentSong.hasEmbeddedAudio && videoRef.current && currentVideoUrl && !currentAudioUrl) {
-              if (videoRef.current.src !== currentVideoUrl) {
-                videoRef.current.src = currentVideoUrl;
-              }
-              videoRef.current.currentTime = startPosition;
-
-              try {
-                videoRef.current.muted = false;
-                await videoRef.current.play();
-              } catch (error) {
-                console.debug('[useGameLoop]: video autoplay failed, retrying muted', error);
-                videoRef.current.muted = true;
-                await videoRef.current.play();
-                setTimeout(() => {
-      if (videoRef.current) {
-                    videoRef.current.muted = false;
-                  }
-                }, 100);
-              }
-            }
-
-            // PRIORITY 3: YouTube video
-            // YouTube playback is handled by the YouTube IFrame Player API
-            // (use-youtube-game.ts), which manages its own play/pause/seek
-            // lifecycle independently. No action needed here — the game loop
-            // receives time via youtubeTimeRef.current from the YT player.
-            // else if (isYouTube && youtubeVideoId) { }
-
-            // BACKGROUND VIDEO (muted, synced with audio)
-            if (videoRef.current && currentVideoUrl && !currentSong.hasEmbeddedAudio) {
-              // Only set src if it differs — avoids resetting playback
-              if (videoRef.current.src !== currentVideoUrl) {
-                videoRef.current.src = currentVideoUrl;
-              }
-              const videoGapSeconds = (currentSong.videoGap || 0) / 1000;
-              videoRef.current.currentTime = Math.max(0, startPosition - videoGapSeconds);
-              videoRef.current.muted = true;
-              videoRef.current.play().catch(() => {});
-            }
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error('[GameScreen] Media playback failed:', error);
-            // Do NOT set isPlaying(true) — the media didn't start,
-            // so the game loop must not run (would cause infinite wall-clock hang).
-          }
-        };
+        // ── Media playback function (extracted to use-media-playback.ts) ──
+        const playMedia = () => playSongMedia({
+          audioRef,
+          videoRef,
+          song: effectiveSong,
+          isNativeAudio,
+          nativeAudioPlay,
+          nativeAudioSeek,
+        });
 
         // Store playMedia in ref so the pause-resume effect can call it
         // when restarting an interrupted countdown.
@@ -533,7 +413,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
             startTimeRef.current = Date.now();
             playMedia();
 
-            scheduleMediaWatchdog(isNonScoringMode);
+            scheduleWatchdog(isNonScoringMode);
           } else {
             setCountdown(currentCount);
           }
@@ -551,7 +431,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         countdownIntervalRef.current = null;
       }
       if (mediaPlayWatchdogRef.current) {
-        clearTimeout(mediaPlayWatchdogRef.current);
+        mediaPlayWatchdogRef.current();
         mediaPlayWatchdogRef.current = null;
       }
       stop();
@@ -680,7 +560,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
             playMediaRef.current();
 
             const nonScoring = gameMode === 'rate-my-song';
-            scheduleMediaWatchdog(nonScoring);
+            scheduleWatchdog(nonScoring);
           } else {
             setCountdown(currentCount);
           }
@@ -721,27 +601,18 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   useEffect(() => {
     if (!isPlaying || !effectiveSong) return;
 
-    const startPositionMs = effectiveSong.start || 0;
-
     const gameLoop = () => {
-      let elapsed: number;
-
-      // Priority: native audio time (ASIO / WASAPI)
-      if (isNativeAudio && nativeAudioTimeRef.current > 0) {
-        elapsed = nativeAudioTimeRef.current;
-      }
-      else if (isYouTube && youtubeTimeRef.current > 0) {
-        elapsed = youtubeTimeRef.current;
-      }
-      else if (audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2) {
-        elapsed = audioRef.current.currentTime * 1000;
-      }
-      else if (effectiveSong.hasEmbeddedAudio && videoRef.current && !videoRef.current.paused && videoRef.current.readyState >= 2) {
-        elapsed = videoRef.current.currentTime * 1000;
-      }
-      else {
-        elapsed = (Date.now() - startTimeRef.current) + startPositionMs;
-      }
+      // Compute elapsed time using extracted utility
+      const elapsed = computeGameElapsedMs({
+        audioRef,
+        videoRef,
+        song: effectiveSong,
+        isNativeAudio,
+        isYouTube,
+        youtubeTimeRef,
+        nativeAudioTimeRef,
+        startTimeRef,
+      });
 
       const adjustedTime = elapsed + timingOffset;
 
@@ -785,26 +656,18 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       const currentP2Pitch = p2DetectedPitchRef.current;
       const currentP2Vol = p2VolumeRef.current;
       if (isDuetMode && currentP2Pitch !== null && currentP2Pitch > 0) {
-        const p2PitchResult = {
+        const p2PitchResult = buildP2PitchResult({
           frequency: currentP2Pitch,
-          note: Math.round(12 * (Math.log2(currentP2Pitch / 440)) + 69),
-          // P2's clarity is not tracked by our local pitch detector (only frequency is).
-          // Use a moderate default — clarity is only used for display, not scoring.
-          clarity: 0.7,
           volume: currentP2Vol,
           isSinging: p2IsSingingRef.current ?? true,
-        };
+        });
         checkP2NoteHitsRef.current(adjustedTime, p2PitchResult);
       } else if (isDuetMode) {
         setP2Volume(0);
       }
 
       // End song by time ONLY when #END: tag is explicitly defined.
-      // When #END: is not defined, the audio/video element's natural
-      // "ended" event (handled via onEnded prop) terminates the game.
-      // For non-scoring modes (rate-my-song), fall back to song.duration
-      // when no media is playing, so the game doesn't run forever.
-      const effectiveEnd = effectiveSong.end || (gameMode === 'rate-my-song' ? effectiveSong.duration : 0);
+      const effectiveEnd = getEffectiveSongEnd(effectiveSong, gameMode);
       if (effectiveEnd && adjustedTime >= effectiveEnd) {
         endGameAndCleanupRef.current();
         return;
@@ -821,7 +684,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- isNativeAudio read from options but not needed as dep for game loop (read via ref)
-  }, [isPlaying, effectiveSong, setCurrentTime, setDetectedPitch, isYouTube, timingOffset, isDuetMode, setP2Volume, audioRef, videoRef, startTimeRef]);
+  }, [isPlaying, effectiveSong, setCurrentTime, setDetectedPitch, isYouTube, timingOffset, isDuetMode, setP2Volume, audioRef, videoRef]);
 
   // ── Abort: immediately stop game loop without saving results ──
   const abortGameLoop = useCallback(() => {

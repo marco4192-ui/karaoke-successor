@@ -1,9 +1,9 @@
 /**
  * Medley Contest — Core Game Logic Hook
  *
- * Contains all state management, audio control, scoring, and game loop
- * for the Medley game mode.  The UI components consume this hook via
- * a thin wrapper (MedleyGameScreen).
+ * Composes sub-modules for scoring, team bonuses, elimination, and
+ * highlights.  This hook owns all React state, effects, and the game
+ * loop; pure computations are delegated to focused modules.
  *
  * Batch 1 additions:
  * - `lastScoringEvents` array for floating +points popups
@@ -32,6 +32,12 @@ import type {
   VoiceModifier, MedleyHighlight, TeamBonusResult,
 } from './medley-types';
 import { VOICE_MODIFIERS } from './medley-types';
+
+// ── Sub-module imports ──
+import { getDynamicDifficulty, pickRandomModifier } from './medley-scoring';
+import { computeSynergy, computeComebackPreCheck, computeComebackFinalize, computeMVP as computeMVPPure } from './medley-team-bonuses';
+import { computeElimination } from './medley-elimination';
+import { buildSnippetHighlight as buildHighlightPure } from './medley-highlights';
 
 // ===================== PROPS =====================
 
@@ -121,34 +127,6 @@ export interface MedleyGameState {
   handleRoundComplete: () => void;
   handleShowFinalResults: () => void;
   forceRender: () => void;
-}
-
-// ===================== HELPERS =====================
-
-/**
- * Compute the dynamic difficulty for a given snippet index.
- * Ramps from 'easy' on the first snippet to 'hard' on the last.
- */
-function getDynamicDifficulty(
-  snippetIdx: number,
-  totalSnippets: number,
-): Difficulty {
-  if (totalSnippets <= 1) return 'medium';
-  const ratio = snippetIdx / (totalSnippets - 1); // 0→1
-  if (ratio < 0.33) return 'easy';
-  if (ratio < 0.66) return 'medium';
-  return 'hard';
-}
-
-/**
- * Pick a random voice modifier.
- * 40% chance of 'none' (no effect).
- */
-function pickRandomModifier(): VoiceModifier {
-  if (Math.random() < 0.35) return 'none';
-  const nonNone = VOICE_MODIFIERS.filter(m => m.id !== 'none');
-  const pick = nonNone[Math.floor(Math.random() * nonNone.length)];
-  return pick.id;
 }
 
 // ===================== HOOK =====================
@@ -460,170 +438,110 @@ export function useMedleyGame({
     return playersRef.current.map(p => p.id);
   }, [isTeam, isEliminationMode, currentSnippetIdx, matchups]);
 
-  // ── Feature #18: Check for team synergy ──
+  // ── Feature #18: Check for team synergy (delegates to pure function) ──
   const checkSynergy = useCallback(() => {
-    if (!isTeam || !settings.teamBonusesEnabled) return;
-    if (currentSnippetIdx >= matchups.length) return;
-    const matchup = matchups[currentSnippetIdx];
-    const playerA = playersRef.current.find(p => p.id === matchup.playerA.id);
-    const playerB = playersRef.current.find(p => p.id === matchup.playerB.id);
-    if (!playerA || !playerB) return;
+    const result = computeSynergy({
+      isTeam,
+      teamBonusesEnabled: settings.teamBonusesEnabled,
+      snippetIdx: currentSnippetIdx,
+      matchups,
+      players: playersRef.current,
+      currentBonusResult: teamBonusResultRef.current,
+    });
+    if (!result) return;
 
-    const accA = playerA.notesHit + playerA.notesMissed > 0
-      ? playerA.notesHit / (playerA.notesHit + playerA.notesMissed)
-      : 0;
-    const accB = playerB.notesHit + playerB.notesMissed > 0
-      ? playerB.notesHit / (playerB.notesHit + playerB.notesMissed)
-      : 0;
-
-    if (accA > 0.8 && accB > 0.8) {
-      // Synergy! Add 300 to both teams
-      const teamAId = String(playerA.team);
-      const teamBId = String(playerB.team);
-      const prevA = teamBonusResultRef.current.synergyPoints[teamAId] || 0;
-      const prevB = teamBonusResultRef.current.synergyPoints[teamBId] || 0;
-      teamBonusResultRef.current.synergyPoints[teamAId] = prevA + 300;
-      teamBonusResultRef.current.synergyPoints[teamBId] = prevB + 300;
-      teamBonusResultRef.current.teamBonusTotal[teamAId] = (teamBonusResultRef.current.teamBonusTotal[teamAId] || 0) + 300;
-      teamBonusResultRef.current.teamBonusTotal[teamBId] = (teamBonusResultRef.current.teamBonusTotal[teamBId] || 0) + 300;
-      // Add to player scores too
-      playerA.score += 300;
-      playerB.score += 300;
-      setSynergyTriggered(true);
-      setTimeout(() => setSynergyTriggered(false), 2000);
+    // Apply synergy results to refs
+    for (const [teamId, pts] of Object.entries(result.synergyPoints)) {
+      teamBonusResultRef.current.synergyPoints[teamId] = pts;
+      teamBonusResultRef.current.teamBonusTotal[teamId] = (teamBonusResultRef.current.teamBonusTotal[teamId] || 0) + 300;
     }
+    for (const bonus of result.playerBonuses) {
+      const p = playersRef.current.find(p => p.id === bonus.playerId);
+      if (p) p.score += bonus.points;
+    }
+    setSynergyTriggered(true);
+    setTimeout(() => setSynergyTriggered(false), 2000);
   }, [isTeam, settings.teamBonusesEnabled, currentSnippetIdx, matchups]);
 
   // ── Feature #18: Pre-check comeback boost BEFORE the last snippet starts ──
-  // This runs when transitioning TO the last snippet, so the multiplier applies during scoring.
   const preCheckComeback = useCallback((snippetIdx: number) => {
-    if (!isTeam || !settings.teamBonusesEnabled) return;
-    const isLastSnippet = snippetIdx === medleySongs.length - 1;
-    if (!isLastSnippet) return;
-
-    const teamAScore = playersRef.current.filter(p => p.team === 0).reduce((s, p) => s + p.score, 0);
-    const teamBScore = playersRef.current.filter(p => p.team === 1).reduce((s, p) => s + p.score, 0);
-
-    const underdogTeam = teamAScore < teamBScore ? 0 : teamBScore < teamAScore ? 1 : null;
-    if (underdogTeam !== null) {
-      const teamId = String(underdogTeam);
-      teamBonusResultRef.current.comebackTeamId = teamId;
-      teamBonusResultRef.current.comebackMultiplier = 1.5;
-      // Set the active flag so scorePlayer can apply 1.5x multiplier
-      comebackActiveTeamIdRef.current = underdogTeam;
-      setComebackActiveTeamIdState(underdogTeam);
-      setComebackTriggered(true);
-      setComebackTeamId(underdogTeam);
-      setTimeout(() => { setComebackTriggered(false); setComebackTeamId(null); }, 3000);
-    } else {
+    const result = computeComebackPreCheck({
+      isTeam,
+      teamBonusesEnabled: settings.teamBonusesEnabled,
+      snippetIdx,
+      totalSnippets: medleySongs.length,
+      players: playersRef.current,
+    });
+    if (!result) {
       comebackActiveTeamIdRef.current = null;
       setComebackActiveTeamIdState(null);
+      return;
     }
+
+    teamBonusResultRef.current.comebackTeamId = result.teamId;
+    teamBonusResultRef.current.comebackMultiplier = result.multiplier;
+    comebackActiveTeamIdRef.current = result.underdogTeam;
+    setComebackActiveTeamIdState(result.underdogTeam);
+    setComebackTriggered(true);
+    setComebackTeamId(result.underdogTeam);
+    setTimeout(() => { setComebackTriggered(false); setComebackTeamId(null); }, 3000);
   }, [isTeam, settings.teamBonusesEnabled, medleySongs.length]);
 
   // ── Feature #18: Calculate comeback bonus AFTER the last snippet ends ──
   const finalizeComeback = useCallback(() => {
-    if (!isTeam || !settings.teamBonusesEnabled) return;
-    if (!teamBonusResultRef.current.comebackTeamId) return;
-
-    const underdogTeam = parseInt(teamBonusResultRef.current.comebackTeamId, 10);
-    const teamId = teamBonusResultRef.current.comebackTeamId;
-    const currentBonus = teamBonusResultRef.current.teamBonusTotal[teamId] || 0;
-    // Calculate the extra bonus that was applied during scoring via the 1.5x multiplier
-    const teamPlayers = playersRef.current.filter(p => p.team === underdogTeam);
-    const snippetScores = teamPlayers.map(p => {
-      const start = snippetScoreSnapshotsRef.current[p.id];
-      return start ? p.score - start.score : 0;
+    const bonus = computeComebackFinalize({
+      isTeam,
+      teamBonusesEnabled: settings.teamBonusesEnabled,
+      comebackTeamId: teamBonusResultRef.current.comebackTeamId,
+      players: playersRef.current,
+      snippetScoreSnapshots: snippetScoreSnapshotsRef.current,
     });
-    const totalSnippetScore = snippetScores.reduce((s, v) => s + v, 0);
-    // Since we multiplied by 1.5 during scoring, the bonus is the 0.5x extra
-    const bonus = Math.round(totalSnippetScore / 3); // 0.5x of the total (which already includes the 1.5x)
-    teamBonusResultRef.current.teamBonusTotal[teamId] = currentBonus + bonus;
+    if (bonus > 0 && teamBonusResultRef.current.comebackTeamId) {
+      const teamId = teamBonusResultRef.current.comebackTeamId;
+      const currentBonus = teamBonusResultRef.current.teamBonusTotal[teamId] || 0;
+      teamBonusResultRef.current.teamBonusTotal[teamId] = currentBonus + bonus;
+    }
     comebackActiveTeamIdRef.current = null;
     setComebackActiveTeamIdState(null);
   }, [isTeam, settings.teamBonusesEnabled]);
 
-  // ── Feature #17: Build highlight for a snippet that just ended ──
+  // ── Feature #17: Build highlight for a snippet that just ended (delegates to pure function) ──
   const buildSnippetHighlight = useCallback((snippetIdx: number) => {
-    const snapshot = snippetScoreSnapshotsRef.current;
     const song = medleySongs[snippetIdx];
     if (!song) return;
 
-    const activeIds = isEliminationMode
-      ? playersRef.current.filter(p => !p.isEliminated).map(p => p.id)
-      : isTeam && snippetIdx < matchups.length
-        ? [matchups[snippetIdx].playerA.id, matchups[snippetIdx].playerB.id]
-        : playersRef.current.map(p => p.id);
-
-    let bestPlayerId: string | undefined;
-    let bestPlayerScore = -Infinity;
-    let worstPlayerId: string | undefined;
-    let worstPlayerScore = Infinity;
-    let highestComboPlayerId: string | undefined;
-    let highestComboValue = 0;
-
-    for (const pid of activeIds) {
-      const player = playersRef.current.find(p => p.id === pid);
-      if (!player) continue;
-      const start = snapshot[pid];
-      const snippetScore = start ? player.score - start.score : player.score;
-
-      if (snippetScore > bestPlayerScore) {
-        bestPlayerScore = snippetScore;
-        bestPlayerId = pid;
-      }
-      if (snippetScore < worstPlayerScore) {
-        worstPlayerScore = snippetScore;
-        worstPlayerId = pid;
-      }
-      if (player.maxCombo > highestComboValue) {
-        highestComboValue = player.maxCombo;
-        highestComboPlayerId = pid;
-      }
-    }
-
-    highlightsRef.current.push({
+    const highlight = buildHighlightPure({
       snippetIdx,
-      songTitle: song.song.title,
-      songArtist: song.song.artist,
-      bestPlayerId,
-      bestPlayerScore: bestPlayerScore > -Infinity ? bestPlayerScore : undefined,
-      worstPlayerId,
-      worstPlayerScore: worstPlayerScore < Infinity ? worstPlayerScore : undefined,
-      highestComboPlayerId,
-      highestComboValue: highestComboValue > 0 ? highestComboValue : undefined,
+      song,
+      players: playersRef.current,
+      isEliminationMode,
+      isTeam,
+      matchups,
+      snippetScoreSnapshots: snippetScoreSnapshotsRef.current,
     });
+    highlightsRef.current.push(highlight);
     setHighlights([...highlightsRef.current]);
   }, [isEliminationMode, isTeam, matchups, medleySongs]);
 
-  // ── Feature #10: Eliminate lowest scorer ──
+  // ── Feature #10: Eliminate lowest scorer (delegates to pure function) ──
   const eliminateLowestScorer = useCallback(() => {
-    if (!isEliminationMode) return;
+    const result = computeElimination({
+      isEliminationMode,
+      players: playersRef.current,
+    });
+    if (!result.toEliminateId) return;
 
-    const activePlayers = playersRef.current.filter(p => !p.isEliminated);
-    if (activePlayers.length <= 2) return; // Don't eliminate if only 2 remain
-
-    // Sort by score ascending
-    const sorted = [...activePlayers].sort((a, b) => a.score - b.score);
-    const lowestScore = sorted[0].score;
-
-    // Find all players tied for lowest
-    const tied = sorted.filter(p => p.score === lowestScore);
-    // Randomly eliminate one of the tied players
-    const toEliminate = tied[Math.floor(Math.random() * tied.length)];
-
-    const pIdx = playersRef.current.findIndex(p => p.id === toEliminate.id);
+    const pIdx = playersRef.current.findIndex(p => p.id === result.toEliminateId);
     if (pIdx !== -1) {
-      playersRef.current[pIdx] = { ...toEliminate, isEliminated: true };
-      eliminationOrderRef.current = [...eliminationOrderRef.current, toEliminate.id];
+      playersRef.current[pIdx] = { ...playersRef.current[pIdx], isEliminated: true };
+      eliminationOrderRef.current = [...eliminationOrderRef.current, result.toEliminateId!];
       setEliminationOrder([...eliminationOrderRef.current]);
     }
 
     forceRender();
 
     // Check if only 2 remain — if so, we still continue with remaining songs
-    const remainingActive = playersRef.current.filter(p => !p.isEliminated);
-    if (remainingActive.length <= 2) {
+    if (result.remainingCount <= 2) {
       // TODO: Add an announcement system (e.g. setAnnouncement('Final Face-Off!')) and display
       // a "Final Face-Off!" indicator in the UI when only 2 players remain.
     }
@@ -862,20 +780,18 @@ export function useMedleyGame({
     }
   }, [multiPitch]);
 
-  // ── Feature #18: Compute MVP ──
-  const computeMVP = useCallback(() => {
+  // ── Feature #18: Compute MVP (delegates to pure function) ──
+  const computeMVPHook = useCallback(() => {
     if (!isTeam || !settings.teamBonusesEnabled) return;
-    const allPlayers = playersRef.current;
-    if (allPlayers.length === 0) return;
-    const best = allPlayers.reduce((best, p) => p.score > best.score ? p : best, allPlayers[0]);
-    teamBonusResultRef.current.mvpPlayerId = best.id;
+    const mvpId = computeMVPPure(playersRef.current);
+    if (mvpId) teamBonusResultRef.current.mvpPlayerId = mvpId;
   }, [isTeam, settings.teamBonusesEnabled]);
 
   // ── Round complete ──
   const handleRoundComplete = useCallback(() => {
     // Final sync of team bonus result before recording
     syncTeamBonusResult();
-    computeMVP();
+    computeMVPHook();
     syncTeamBonusResult(); // Sync again after MVP is computed
 
     const roundResult: MedleyRoundResult = {
@@ -904,7 +820,7 @@ export function useMedleyGame({
     }
 
     onRoundComplete(roundResult, [...playersRef.current]);
-  }, [medleySongs.length, isTeam, isEliminationMode, onRoundComplete, settings.playMode, settings.teamBonusesEnabled, computeMVP, syncTeamBonusResult]);
+  }, [medleySongs.length, isTeam, isEliminationMode, onRoundComplete, settings.playMode, settings.teamBonusesEnabled, computeMVPHook, syncTeamBonusResult]);
 
   // ── End song early ──
   const handleEndEarly = useCallback(() => {

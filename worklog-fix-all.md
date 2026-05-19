@@ -552,3 +552,700 @@ Stage Summary:
 - SettingControl (unexported helper) co-located with its sole consumer SettingsPanel
 - SongFilterSectionProps (local interface) kept as file-internal in game file
 - No shared types needed extraction (all come from existing type files)
+---
+Task ID: sp8
+Agent: split-editor-screen
+Task: Split editor-screen.tsx into focused sub-components
+
+Work Log:
+- Read 760-line editor-screen.tsx in full
+- Identified 3 logical sections: GenreLanguageEditor (lines 18-324, ~307 lines), AiHarmonizeCard (lines 328-491, ~164 lines), EditorScreen (lines 493-760, ~268 lines, sole export)
+- Extracted GenreLanguageEditor to src/components/editor/genre-language-editor.tsx (exported, with its own imports for useState/useCallback/useRef/useEffect, UI components, song-library, Song, saveSongToTxt, GENRES/LANGUAGES)
+- Extracted AiHarmonizeCard + HarmonizeSuggestion interface to src/components/editor/ai-harmonize-card.tsx (exported, with its own imports for useState/useMemo/useCallback, UI components, song-library/updateSong, Song)
+- Refactored editor-screen.tsx to import both from new files, removed extracted code and unused imports (useEffect, useRef, Card/CardContent/CardHeader/CardTitle/CardDescription, saveSongToTxt, GENRES, LANGUAGES)
+- TypeScript compilation passes: zero new errors (3 pre-existing errors in unrelated files)
+
+Stage Summary:
+- 760-line file split into 3 focused files:
+  - editor-screen.tsx: ~235 lines (main screen with song list + editor view)
+  - genre-language-editor.tsx: ~265 lines (genre/language metadata editor with AI suggestions)
+  - ai-harmonize-card.tsx: ~150 lines (batch AI harmonization card)
+- Single export (EditorScreen) preserved
+- No behavioral changes; all components are state-internal to editor sidebar
+- No other files modified
+
+---
+
+## Task sp9 — Split folder-scanner.ts (755 → 6 focused modules)
+
+**Date:** $(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+### What was done
+Split `src/lib/parsers/folder-scanner.ts` (755 lines) into 6 focused modules by concern:
+
+| New file | Lines | Purpose |
+|---|---|---|
+| `scan-types.ts` | ~49 | `ScannedSong`, `ScanResult` interfaces + `COVER_PATTERNS`, `BACKGROUND_PATTERNS` constants |
+| `blob-url-tracker.ts` | ~18 | `createTrackedBlobUrl()`, `revokeAllScanBlobUrls()` — blob URL lifecycle |
+| `ultrastar-metadata.ts` | ~175 | `parseUltraStarMetadata()` + `parseUltraStarFull()` — UltraStar .txt parsing |
+| `media-duration.ts` | ~49 | `getAudioDuration()`, `getVideoDuration()` — media duration extraction |
+| `folder-discovery.ts` | ~290 | `isFileSystemAccessSupported()`, `scanFolderWithPicker()`, `scanFilesFromFileList()` + internal `scanDirectoryHandle()` — file system scanning |
+| `song-converter.ts` | ~172 | `convertScannedSongToSong()` — ScannedSong → Song conversion |
+
+Original `folder-scanner.ts` is now a **barrel file** with re-exports for full backward compatibility.
+
+### Exports preserved (7 total)
+- `ScannedSong` (type)
+- `ScanResult` (type)
+- `COVER_PATTERNS`, `BACKGROUND_PATTERNS` (constants)
+- `revokeAllScanBlobUrls` (function)
+- `isFileSystemAccessSupported`, `scanFolderWithPicker`, `scanFilesFromFileList` (functions)
+- `convertScannedSongToSong` (function)
+
+### Verification
+- `npx tsc --noEmit` passes with zero errors
+
+### Notes
+- No other files modified (all imports of `folder-scanner` resolve through barrel)
+- `export type` used for interface re-exports (isolatedModules compliance)
+
+---
+
+## Task sp17 — Split webcam-background.tsx (657 → 3 focused modules + barrel)
+
+**Date:** $(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+### What was done
+Split `src/components/game/webcam-background.tsx` (657 lines) into 3 focused modules by concern:
+
+| New file | Lines | Purpose |
+|---|---|---|
+| `webcam-types.ts` | ~85 | `WebcamSizeMode`, `WebcamPosition`, `WebcamFilter`, `WebcamBackgroundConfig` types + `DEFAULT_WEBCAM_CONFIG` constant + `saveWebcamConfig()`/`loadWebcamConfig()` storage utilities + `getFilterStyle()` helper |
+| `use-webcam-background.ts` | ~95 | `useWebcamBackground()` custom hook — webcam stream management, device enumeration, start/stop/switch |
+| `webcam-settings-panel.tsx` | ~270 | `WebcamIcon`, `WebcamSettingsPanel`, `WebcamQuickControls` — UI components for configuration |
+
+Original `webcam-background.tsx` retains the `WebcamBackground` component and re-exports everything for backward compatibility.
+
+### Exports preserved (10 total)
+- Types: `WebcamSizeMode`, `WebcamPosition`, `WebcamFilter`, `WebcamBackgroundConfig`
+- Constants: `DEFAULT_WEBCAM_CONFIG`
+- Functions: `saveWebcamConfig`, `loadWebcamConfig`
+- Hook: `useWebcamBackground`
+- Components: `WebcamBackground`, `WebcamSettingsPanel`, `WebcamQuickControls`, `WebcamIcon`
+- Default export: `WebcamBackground`
+
+### Verification
+- `npx tsc --noEmit` passes: zero new errors (3 pre-existing errors in unrelated `use-ptm-scoring.ts`)
+
+### Notes
+- No other files modified (all 7 consumers import from `webcam-background` which re-exports everything)
+- `getFilterStyle` was previously private; now exported from `webcam-types.ts` for use by the main component
+- `WebcamIcon` was previously private; now exported from `webcam-settings-panel.tsx`
+
+---
+
+## Task sp14 — Split use-note-scoring.ts (695 → 3 focused modules)
+
+**Date:** $(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+### What was done
+Split `src/hooks/use-note-scoring.ts` (695 lines) into 3 focused modules by concern:
+
+| New file | Lines | Purpose |
+|---|---|---|
+| `src/lib/game/scoring-types.ts` | ~133 | `ScoreEvent`, `NotePerformanceSample`, `PlayerScoringState`, `TimingDataForScoring`, `ScoringPassResult`, `UseNoteScoringOptions`, `UseNoteScoringReturn` interfaces + `MAX_SAMPLES_PER_NOTE`, `DEFAULT_PLAYER_SCORING_STATE` constants |
+| `src/lib/game/run-scoring-pass.ts` | ~163 | `runScoringPass()` — pure scoring loop function (no React dependency), iterates notes, evaluates ticks, applies challenge modifiers, tracks combo, computes score deltas |
+| `src/hooks/use-note-scoring.ts` | ~332 | `useNoteScoring()` React hook — imports types + pure function from new modules, retains all state management, refs, callbacks, and P1/P2 routing |
+
+### Exports preserved (1)
+- `useNoteScoring` (function) — sole export, unchanged API
+
+### Additional exports from new modules (for internal use)
+- `scoring-types.ts`: 7 interfaces + 2 constants
+- `run-scoring-pass.ts`: `runScoringPass` function
+
+### Verification
+- `npx tsc --noEmit` passes: zero errors in changed files (3 pre-existing errors in unrelated `use-ptm-scoring.ts`)
+
+### Notes
+- No other files modified (sole consumer `game-screen-hook.ts` imports `useNoteScoring` from original path)
+- `runScoringPass` uses generic `{ current: number }` instead of `React.MutableRefObject<number>` to stay React-free
+- Types placed in `src/lib/game/` alongside existing `scoring.ts` for co-location
+
+---
+
+## Task sp11 — Split tournament.ts (1216 lines) into focused modules
+
+**File:** `src/lib/game/tournament.ts`
+
+### Problem
+Single 1216-line file contained types, bracket generation, single/double elimination logic, stats, Hall of Fame, crowd voting, and difficulty — all mixed together.
+
+### Changes
+
+#### New files created
+| File | Lines | Purpose |
+|---|---|---|
+| `tournament-types.ts` | 78 | All shared types/interfaces: `BracketType`, `TournamentPlayer`, `TournamentMatch`, `TournamentBracket`, `TournamentSettings` |
+| `tournament-utils.ts` | 112 | Shared utilities: `generateMatchId`, `calculateRounds`, `calculateByes`, `buildMatchMap`, `selectByePositions`, `findWBNextMatch`, `resolveTie` |
+| `tournament-double-elim.ts` | 466 | All DE-specific logic: LB generation, Grand Finals, drop/advance routing, `recordDoubleEliminationResult`, playable-match logic, `getLBRoundName`, `isInLosersBracket` |
+| `tournament-stats.ts` | 266 | Stats & extras: `getTournamentStats`, `getPlayerPlacements`, `HallOfFameEntry`, HOF CRUD, `getEffectiveDifficulty`, `CrowdVoteMatch`, `getFanFavorites`, `isSpectator` |
+
+#### Modified file
+| File | Lines | Purpose |
+|---|---|---|
+| `tournament.ts` | 360 | Barrel with re-exports + core logic: `createTournament`, `generateWinnersBracket`, `getMatchesForRound`, `getMatchesByBracketType`, `getPlayableMatches`, `recordMatchResult` |
+
+### Verification
+- `npx tsc --noEmit` — passes (3 pre-existing errors in `use-ptm-scoring.ts`, zero new errors)
+- All 10 consumer files still import from `@/lib/game/tournament` — no external changes needed
+- Largest file is now 466 lines (`tournament-double-elim.ts`), down from 1216
+
+### Notes
+- `export type` used for all interface re-exports (isolatedModules compliance)
+- Internal functions made `export` only in sub-modules where needed by sibling modules (e.g., `generateLosersBracket`, `generateGrandFinals`, `recordDoubleEliminationResult`, `getPlayableMatchesDoubleElim` are exported from `tournament-double-elim.ts` for use in the barrel)
+- No other files modified
+
+
+---
+
+## Task sp18 — Split queue-screen.tsx (652 → 4 focused modules + main orchestrator)
+
+**File:** `src/components/screens/queue-screen.tsx`
+
+### Problem
+Single 652-line file contained types, queue list rendering (with drag-and-drop), player reassignment dialog, queue rules card, companion API sync, song preparation logic, and auto-play orchestration — all mixed together.
+
+### Changes
+
+#### New files created
+| File | Lines | Purpose |
+|---|---|---|
+| `queue/queue-types.ts` | 31 | Shared types: `CompanionQueueItem`, `UnifiedQueueItem`, `QueueScreenProps` |
+| `queue/queue-item-card.tsx` | 135 | `QueueItemCard` — individual queue list item with position, song info, game mode badge, player avatars, play/remove buttons, drag-and-drop support |
+| `queue/player-reassign-dialog.tsx` | 118 | `PlayerReassignDialog` — player re-selection dialog for deactivated duel/duet players with internal selection state |
+| `queue/queue-rules-card.tsx` | 24 | `QueueRulesCard` — static rules info card at bottom of screen |
+
+#### Modified file
+| File | Lines | Purpose |
+|---|---|---|
+| `queue-screen.tsx` | 278 | Main orchestrator — all state management, effects, business logic (song prep, media resolution, companion API sync), auto-play, drag handlers; imports and composes 3 sub-components |
+
+### Exports preserved (1)
+- `QueueScreen` (named export) — sole export, unchanged API, still re-exported from `index.ts`
+
+### Verification
+- `npx tsc --noEmit` passes: zero new errors (3 pre-existing errors in unrelated `use-ptm-scoring.ts`)
+- All existing imports from `index.ts` and `queue-screen` still resolve correctly
+- No other files modified
+
+### Notes
+- `UnifiedQueueItem` is `QueueItem & { isFromCompanion: boolean; status: "pending" | "playing" | "completed" }` — extracted as named type for cross-component use
+- `PlayerReassignDialog` manages its own `sel1`/`sel2` state internally, reducing parent complexity
+- `getGameModeBadge` helper moved into `queue-item-card.tsx` as a module-level function (only used by that component)
+- Drag-and-drop handlers remain in the orchestrator since they need `unifiedQueue` ordering context
+
+
+## Task sp6 — Split tauri-file-storage.ts (952 → 5 focused modules + barrel)
+
+**File:** `src/lib/tauri-file-storage.ts`
+
+### Problem
+Single 952-line file contained path utilities, type definitions, song folder scanning with TXT parsing, media URL loading with blob caching, and file writing — all mixed together.
+
+### Changes
+
+#### New files created
+| File | Lines | Purpose |
+|---|---|---|
+| `file-storage-utils.ts` | ~120 | Shared utilities: `sanitizeFileName()`, `normalizeFilePath()`, `isTauri()`, `isAbsoluteFileSystemPath()` + constants `MIME_TYPES`, `COVER_PATTERNS` |
+| `file-storage-types.ts` | ~50 | Type interfaces: `TauriScannedSong`, `TauriScanResult` |
+| `file-storage-scanner.ts` | ~400 | Song folder scanning: `scanSongsFolderTauri()` + internal `collectAllFiles()`, `processFolder()`, `parseLyricsFromTxt()` |
+| `file-storage-media.ts` | ~220 | Media loading: `getSongMediaUrl()`, `clearBlobUrlCache()` + internal blob URL cache, `loadFileAsBlobUrl()`, `findFileByScanningParentFolder()` |
+| `file-storage-writer.ts` | ~60 | File writing: `generateSongFolderName()`, `storeSongFiles()` |
+
+#### Modified file
+| File | Lines | Purpose |
+|---|---|---|
+| `tauri-file-storage.ts` | ~30 | Barrel file with re-exports from all 5 sub-modules |
+
+### Exports preserved (9 total)
+- `normalizeFilePath`, `isTauri`, `sanitizeFileName`, `isAbsoluteFileSystemPath` (from utils)
+- `MIME_TYPES`, `COVER_PATTERNS` (constants from utils)
+- `TauriScannedSong`, `TauriScanResult` (types)
+- `scanSongsFolderTauri` (from scanner)
+- `getSongMediaUrl`, `clearBlobUrlCache` (from media)
+- `generateSongFolderName`, `storeSongFiles` (from writer)
+
+### Verification
+- `npx tsc --noEmit` passes: zero errors from any file-storage module (4 pre-existing errors in unrelated files)
+- No other files modified (all consumers import from `@/lib/tauri-file-storage` which re-exports everything)
+
+### Notes
+- `sanitizeFileName` was previously private; now exported from `file-storage-utils.ts` (needed by writer module)
+- `isAbsoluteFileSystemPath`, `MIME_TYPES`, `COVER_PATTERNS` were previously private; now exported from `file-storage-utils.ts` (needed by media/scanner modules)
+- `export type` used for interface re-exports (isolatedModules compliance)
+
+---
+
+## Task sp13 — Split pitch-detector.ts (695 → 5 focused modules)
+
+**File:** `src/lib/audio/pitch-detector.ts`
+
+### Problem
+Single 695-line file contained config types, YIN pitch algorithm, clarity calculation, pitch stability smoothing, single-player audio management (PitchDetector class), multi-player manager (PitchDetectorManager class), and singletons — all mixed together.
+
+### Changes
+
+#### New files created
+| File | Lines | Purpose |
+|---|---|---|
+| `pitch-config.ts` | ~56 | `PitchDetectorConfig` interface + `KARAOKE_DEFAULT_CONFIG` + `DIFFICULTY_PITCH_CONFIGS` constants |
+| `pitch-algorithm.ts` | ~92 | `yinPitchDetection()` — standalone YIN algorithm (pure function, pre-allocated buffer passed in) + `calculateClarity()` — autocorrelation-based clarity metric |
+| `pitch-smoothing.ts` | ~58 | `PitchStabilizer` class — sliding-window pitch stability check (replaces inline `checkPitchStability` method) |
+| `pitch-detector-manager.ts` | ~170 | `PitchDetectorManager` class + `getPitchDetectorManager()` singleton — multi-player pitch detection orchestration |
+
+#### Modified file
+| File | Lines | Purpose |
+|---|---|---|
+| `pitch-detector.ts` | ~285 | `PitchDetector` class (uses extracted modules) + `getPitchDetector()`/`resetPitchDetector()` singletons + barrel re-exports |
+
+### Exports preserved (5 total — all via barrel re-exports in pitch-detector.ts)
+- `PitchDetector` (class) — single-player pitch detection
+- `getPitchDetector()` (function) — singleton accessor
+- `resetPitchDetector()` (function) — singleton reset
+- `PitchDetectorManager` (class) — multi-player manager
+- `getPitchDetectorManager()` (function) — manager singleton
+
+### Additional exports from new modules
+- `pitch-config.ts`: `PitchDetectorConfig` (type), `KARAOKE_DEFAULT_CONFIG`, `DIFFICULTY_PITCH_CONFIGS`
+- `pitch-algorithm.ts`: `yinPitchDetection()`, `calculateClarity()`
+- `pitch-smoothing.ts`: `PitchStabilizer` (class)
+
+### Verification
+- `npx tsc --noEmit` — passes (2 pre-existing errors in unrelated `use-ptm-scoring.ts`, zero new errors)
+- All 5 consumer files still import from `@/lib/audio/pitch-detector` — no external changes needed
+
+### Notes
+- YIN algorithm extracted as pure function with pre-allocated buffer parameter (avoids per-frame heap allocation)
+- PitchStabilizer encapsulates sliding-window logic previously inlined as `checkPitchStability()` private method
+- `export type` used for interface re-exports (isolatedModules compliance)
+- No other files modified
+
+---
+
+## Task sp4 — Split rate-my-song-ranking.ts (903 → 6 focused modules + barrel)
+
+**File:** `src/lib/game/rate-my-song-ranking.ts`
+
+### Problem
+Single 903-line file contained ranking, daily highscores, player stats, ranks, achievements, AI critic comments, challenge cards, and song suggestions — all mixed together.
+
+### Changes
+
+#### New files created
+| File | Lines | Purpose |
+|---|---|---|
+| `rate-my-song-ranking-core.ts` | ~165 | Core ranking: `RateMySongEntry`, `RateMySongDailyEntry` interfaces, alltime/daily entry CRUD, `getTodayString()` shared helper |
+| `rate-my-song-stats.ts` | ~225 | Player stats: `RateMySongPlayerStats` interface, stats CRUD, audience rating tracking + Rank system: `RateMySongRank`, `RankResult`, `getPlayerRank()` |
+| `rate-my-song-achievements.ts` | ~100 | `Achievement` interface, `RATE_MY_SONG_ACHIEVEMENTS` definitions, `checkRateMySongAchievements()`, `getAchievementById()` |
+| `rate-my-song-critic.ts` | ~180 | `CommentBucket` type, `CRITIC_COMMENTS` data, `getAICriticComment()` — bilingual snarky AI critic |
+| `rate-my-song-challenges.ts` | ~150 | `RateMySongChallenge` interface, `RATE_MY_SONG_CHALLENGES` definitions, `getRandomChallenge()` |
+| `rate-my-song-suggestions.ts` | ~60 | `SongSuggestion` interface, `getSongSuggestions()`, `shuffleArray()` helper |
+
+#### Modified file
+| File | Lines | Purpose |
+|---|---|---|
+| `rate-my-song-ranking.ts` | ~55 | Barrel with re-exports only — preserves all public API |
+
+### Exports preserved (17 total)
+- Types: `RateMySongEntry`, `RateMySongDailyEntry`, `RateMySongPlayerStats`, `RateMySongRank`, `RankResult`, `Achievement`, `RateMySongChallenge`, `SongSuggestion`
+- Constants: `RATE_MY_SONG_ACHIEVEMENTS`, `RATE_MY_SONG_CHALLENGES`
+- Functions: `addRateMySongEntry`, `getRateMySongTopN`, `addDailyRateMySongEntry`, `getDailyRateMySongTopN`, `getTodayString`, `getRateMySongPlayerStats`, `updateRateMySongPlayerStats`, `addAudienceRatingToStats`, `getPlayerRank`, `checkRateMySongAchievements`, `getAchievementById`, `getAICriticComment`, `getRandomChallenge`, `getSongSuggestions`
+
+### Circular dependency handling
+- `rate-my-song-stats.ts` imports `checkRateMySongAchievements` (runtime value) from `rate-my-song-achievements.ts`
+- `rate-my-song-achievements.ts` uses `import type { RateMySongPlayerStats }` from `rate-my-song-stats.ts` — type-only import, no runtime circular dependency
+
+### Verification
+- `npx tsc --noEmit` passes (2 pre-existing errors in `use-ptm-scoring.ts`, zero new errors)
+- All 6 consumer files (`party-store.ts`, `party-game-screens.tsx`, `rate-my-song-results.tsx`, `rate-my-song-types.ts`, `party-game-screens.tsx`) still import from `@/lib/game/rate-my-song-ranking` barrel — no external changes needed
+- Largest new file is ~225 lines (`rate-my-song-stats.ts`), down from 903
+
+### Notes
+- No other files modified
+- `export type` used for all interface re-exports (isolatedModules compliance)
+- `getTodayString` previously internal; now exported from core module for use by stats module
+- `checkRateMySongAchievements` previously internal; now exported from achievements module for use by stats module
+
+---
+
+---
+
+## Task sp10 — Split battle-royale.ts (1227 → 4 focused modules + barrel)
+
+**File:** `src/lib/game/battle-royale.ts`
+
+### Problem
+Single 1227-line file contained types, constants, Hall of Fame persistence, game creation, player queries, round management, scoring, elimination logic, grand finale, voting, medley, bounty, spectator predictions, and statistics — all mixed together.
+
+### Changes
+
+#### New files created
+| File | Lines | Purpose |
+|---|---|---|
+| `battle-royale-types.ts` | ~180 | All shared types/interfaces (11 types + 12 interfaces) + constants (`MAX_*`, `DEFAULT_BATTLE_ROYALE_SETTINGS`, `DIFFICULTY_ORDER`, `ESCALATION_INTERVAL`, `MIN_BATTLE_ROYALE_PLAYERS`) |
+| `battle-royale-hall-of-fame.ts` | ~95 | `getHallOfFame()`, `saveHallOfFame()`, `recordHallOfFame()` — localStorage persistence for winner history |
+| `battle-royale-stats.ts` | ~140 | `getActivePlayers()`, `getPlayersByScore()`, `submitPrediction()`, `getSpectators()`, `getEliminationOrder()`, `updateGameStats()`, `getBattleRoyaleStats()` — queries, spectator predictions, and statistics |
+| `battle-royale-elimination.ts` | ~280 | `endRoundAndEliminate()`, `enterGrandFinale()`, `advanceToNextRound()` — round-end elimination, bounty resolution, Grand Finale best-of logic, round transitions |
+
+#### Modified file
+| File | Lines | Purpose |
+|---|---|---|
+| `battle-royale.ts` | ~370 | Barrel with re-exports + core logic: `createBattleRoyale()`, `startRound()`, `updatePlayerScore()`, bounty system, song voting, medley mode, song selection helpers |
+
+### Exports preserved (all 25 public exports)
+- **Types (11):** `PlayerType`, `BattleRoyalePlayer`, `MedleySnippet`, `SongVoteOption`, `BattleRoyaleRound`, `RoundHighlight`, `BattleRoyaleGameStats`, `HallOfFameEntry`, `BattleRoyaleStatus`, `BattleRoyaleGame`, `BattleRoyaleSettings`
+- **Constants (4):** `MAX_LOCAL_MIC_PLAYERS`, `MAX_COMPANION_PLAYERS`, `MAX_BATTLE_ROYALE_PLAYERS`, `DEFAULT_BATTLE_ROYALE_SETTINGS`
+- **Functions (17):** `getHallOfFame`, `createBattleRoyale`, `getActivePlayers`, `getPlayersByScore`, `calculateBountyTarget`, `getBountyMultiplier`, `addToRecentPlays`, `startVotingPhase`, `submitVote`, `resolveVote`, `getCurrentMedleySnippet`, `advanceToNextSnippet`, `calculateSnippetDuration`, `startRound`, `updatePlayerScore`, `endRoundAndEliminate`, `enterGrandFinale`, `advanceToNextRound`, `submitPrediction`, `getSpectators`, `getEliminationOrder`, `updateGameStats`, `getBattleRoyaleStats`
+
+### Verification
+- `npx tsc --noEmit` passes: zero new errors (2 pre-existing errors in unrelated `use-ptm-scoring.ts`)
+- All 13 consumer files still import from `@/lib/game/battle-royale` — no external changes needed
+- Largest file is now ~370 lines (barrel), down from 1227
+
+### Notes
+- `export type` used for all interface re-exports (isolatedModules compliance)
+- `saveHallOfFame` and `recordHallOfFame` exported from sub-module for internal use by elimination module, but NOT re-exported from barrel (preserving original visibility)
+- `getActivePlayers` moved to stats module — barrel file imports it for `calculateBountyTarget` and `startRound`
+- No circular dependencies: types → hall-of-fame, types → stats, stats + hall-of-fame → elimination, types + stats → barrel
+- No other files modified
+
+---
+
+## Task sp15 — Split results-screen.tsx (691 → 210 main + 5 focused modules)
+
+**File:** `src/components/screens/results-screen.tsx`
+
+### Problem
+Single 691-line file contained replay loading, queue management, post-game processing (highscore saving, achievements, XP, daily challenge, leaderboard upload), rating header UI, action buttons UI, and main screen orchestration — all mixed together.
+
+### Changes
+
+#### New files created
+| File | Lines | Purpose |
+|---|---|---|
+| `results-rating-header.tsx` | 104 | `ResultsRatingHeader` — rating banner for single player and side-by-side comparison cards for duel/duet multiplayer modes |
+| `results-actions.tsx` | 62 | `ResultsActions` — action bar with Scores, Replay, Play Again, and Back to Home buttons |
+| `use-post-game-processing.ts` | 285 | `usePostGameProcessing()` custom hook — highscore saving, achievement checking/unlocking, XP/level updates, daily challenge submission, global leaderboard upload |
+| `use-queue-next-song.ts` | 186 | `useQueueNextSong()` custom hook — companion queue fetching and play-next handler with song resolution, media checks, and party mode routing |
+| `use-replay-loading.ts` | 41 | `useReplayLoading()` custom hook — loads most recent replay from IndexedDB with retry polling |
+
+#### Modified file
+| File | Lines | Purpose |
+|---|---|---|
+| `results-screen.tsx` | 210 | Main orchestrator — composes extracted hooks/components, manages local UI state (modals), renders layout |
+
+### Exports preserved (8 total)
+- Components: `SongHighscoreModal`, `ScoreVisualization`
+- Types: `VisualizationMode`
+- Constants: `getCountryFlag`, `TrophyIcon`, `MAX_POINTS_PER_SONG`
+
+### Verification
+- `npx tsc --noEmit` passes: zero errors in changed files (3 pre-existing errors in unrelated files)
+- No other files modified
+
+### Notes
+- `awardXPToProfile` helper function moved into `use-post-game-processing.ts` alongside its sole consumer
+- `useQueueNextSong` handles its own `usePartyStore` and `useGameStore` access internally
+- All previously extracted `@/components/results/*` components remain unchanged
+- `activeProfileId` type aligned to `string | null` matching store definition (was `string | undefined`)
+---
+Task ID: sp1
+Agent: split-ptm-hook
+Task: Split ptm-game-hook.ts into focused sub-hooks
+
+Work Log:
+- Read entire ptm-game-hook.ts (1143 lines) and analyzed logical sections
+- Identified 7 extractable concerns: schedule building, note data, scoring, time tracking, song energy, medley mode, series navigation
+- Created ptm-schedule.ts (87 lines) — pure utility: buildPlayerSchedule() with Fisher-Yates shuffle + anti-consecutive constraint
+- Created use-ptm-note-data.ts (59 lines) — hook: allNotes, sortedLines, pitchStats, scoringMeta, visibleNotes computation
+- Created use-ptm-scoring.ts (83 lines) — hook: scoring RAF loop with throttled evaluation
+- Created use-ptm-time-tracking.ts (95 lines) — hook: RAF-based ~40fps time tracking + legacy timeupdate fallback
+- Created use-ptm-song-energy.ts (60 lines) — hook: binary-search-based song energy for animated backgrounds
+- Created use-ptm-medley.ts (220 lines) — hook: medley mode state, snippet preloading, seek-on-segment-change, media error recovery
+- Created use-ptm-series-nav.ts (95 lines) — hook: handleContinue, handleEndSeriesComplete, handleContinueWithPlayers
+- Rewrote ptm-game-hook.ts (696 lines) as slim orchestrator composing all sub-hooks
+- Fixed TypeScript errors: GamePhase type for setPhase, Difficulty type for scoring
+- Verified zero TypeScript errors with npx tsc --noEmit
+- All existing exports (PtmGameScreenProps, PtmGameHookReturn, usePtmGameLogic) preserved at original import path
+
+Stage Summary:
+- Original: 1 file, 1143 lines → 8 files (1 main + 7 sub-files)
+- Main hook reduced from 1143 → 696 lines (39% reduction)
+- Largest sub-file: use-ptm-medley.ts at 220 lines
+- Zero TypeScript compilation errors
+- No changes to external consumers (ptm-game-screen.tsx imports unchanged)
+
+---
+
+## Task sp16 — Split shorts-creator.tsx (690 → 4 focused files)
+
+**File:** `src/components/social/shorts-creator.tsx`
+
+### Problem
+Single 690-line file contained types/constants, canvas rendering (drawFrame), animation loop, camera management, recording/export logic, and 7 distinct UI sections — all in one component.
+
+### Changes
+
+#### New files created
+| File | Lines | Purpose |
+|---|---|---|
+| `shorts-types.ts` | 26 | `VideoStyle`, `CameraPosition` types + `VIDEO_STYLES`, `VIDEO_STYLE_KEYS`, `CAMERA_POSITIONS` constants |
+| `shorts-canvas.tsx` | 275 | `useCanvasRenderer()` hook (drawFrame + animation loop) + `ShortsCanvas` component (canvas + hidden video + REC badge) |
+| `shorts-controls.tsx` | 282 | 5 presentational components: `CameraControls` (camera source + position), `StyleSelector`, `DurationSlider`, `RecordingProgress`, `RecordingActions` |
+
+#### Modified file
+| File | Lines | Purpose |
+|---|---|---|
+| `shorts-creator.tsx` | 349 | Main orchestrator — state management, camera/recording/export logic, composes sub-components via props |
+
+### Exports preserved (1)
+- `ShortsCreator` (function) — sole export, unchanged API; sole consumer is `share-section.tsx`
+
+### New exports from sub-modules
+- `shorts-types.ts`: 2 types + 3 constants
+- `shorts-canvas.tsx`: `useCanvasRenderer` hook + `ShortsCanvas` component
+- `shorts-controls.tsx`: `CameraControls`, `StyleSelector`, `DurationSlider`, `RecordingProgress`, `RecordingActions`
+
+### Verification
+- `npx tsc --noEmit` passes with zero errors
+
+### Notes
+- `drawFrame`'s `setProgress` call replaced with `onProgress` callback in `useCanvasRenderer` hook (decouples rendering from state management)
+- No other files modified (sole consumer `share-section.tsx` imports `ShortsCreator` from original path)
+- All i18n calls remain in the components that render the translated strings
+
+
+---
+
+## Task sp7 — Split player-progression.ts (773 → 3 focused modules + barrel)
+
+**File:** `src/lib/game/player-progression.ts`
+
+### Problem
+Single 773-line file contained XP/level calculations, rank definitions, challenge mode definitions, player statistics tracking, persistence, and achievement/title logic — all mixed together.
+
+### Changes
+
+#### New files created
+| File | Lines | Purpose |
+|---|---|---|
+| `progression-levels.ts` | 320 | Level calculations, XP thresholds, accuracy/combo constants, Rank interface + RANKS array, ChallengeMode/ChallengeModifier interfaces + CHALLENGE_MODES + CHALLENGE_GAME_MODE_MAP, calculateSongXP, getRankForXP, getLevelForXP |
+| `progression-achievements.ts` | 80 | Title unlock threshold constants (TITLE_*), getChallengeRequirementStatus |
+| `progression-stats.ts` | 404 | ExtendedPlayerStats + PlayerGameResult interfaces, persistence (getExtendedStats/saveExtendedStats/getDefaultStats), all update helpers (updateLevelProgression, updateSessionStats, updatePerformanceStats, updateTimeStats, updateGenreStats, updateDifficultyStats, checkMilestones, updateRecentGames, checkTitleUnlocks), updateStatsAfterGame coordinator |
+
+#### Modified file
+| File | Lines | Purpose |
+|---|---|---|
+| `player-progression.ts` | 58 | Barrel with re-exports from all 3 sub-modules |
+
+### Dependency graph (no circular dependencies)
+- `progression-levels.ts` → `@/types/game` (only)
+- `progression-achievements.ts` → `progression-levels` (RANKS, CHALLENGE_MODES)
+- `progression-stats.ts` → `progression-levels` (calculateSongXP, getLevelForXP, getRankForXP, Rank, RANKS, constants) + `progression-achievements` (TITLE_* constants) + `@/lib/storage`
+
+### Exports preserved (11 total)
+- Types: `ChallengeModifier`, `ChallengeMode`, `ExtendedPlayerStats`
+- Constants: `CHALLENGE_MODES`, `CHALLENGE_GAME_MODE_MAP`, `PERFECT_ACCURACY`, `EXCELLENT_ACCURACY`, combo milestones, XP tier constants, level tier constants, `RANKS`, title thresholds
+- Functions: `calculateSongXP`, `getRankForXP`, `getLevelForXP`, `getChallengeRequirementStatus`, `getExtendedStats`, `saveExtendedStats`, `updateStatsAfterGame`
+
+### Verification
+- `npx tsc --noEmit` passes with zero errors
+- Unit tests: 31/34 pass (3 pre-existing failures in getLevelForXP boundary conditions — confirmed identical before/after split)
+- No other files modified (all 12 consumers import from `@/lib/game/player-progression` which re-exports everything)
+
+### Notes
+- CHALLENGE_MODES kept in `progression-levels.ts` (not `progression-achievements.ts`) to avoid circular dependency with RANKS — both are used by each other's domain functions
+- Internal helper functions (updateLevelProgression, checkTitleUnlocks, etc.) remain non-exported in `progression-stats.ts`
+
+---
+
+## Task sp12 — Split medley-game-hook.ts (1027 → main hook + 4 pure-logic sub-modules)
+
+**File:** `src/components/game/medley/medley-game-hook.ts`
+
+### Problem
+Single 1027-line file contained all game state management, audio control, scoring formulas, team bonus logic, elimination logic, highlight building, and the game loop — mixed together with pure helper functions inlined.
+
+### Approach
+Extracted **pure computation functions** (no React dependencies) into focused sub-modules. The main hook imports these and delegates computation, while retaining all state/effects/callbacks locally. This preserves the hook's single-consumer contract while making the extracted logic independently testable.
+
+### Changes
+
+#### New files created
+| File | Lines | Purpose |
+|---|---|---|
+| `medley/medley-scoring.ts` | 40 | `getDynamicDifficulty()` — easy→medium→hard ramp across snippets; `pickRandomModifier()` — ~35% chance of 'none' |
+| `medley/medley-team-bonuses.ts` | 161 | `computeSynergy()` — >80% accuracy both players → +300 bonus; `computeComebackPreCheck()` — underdog team gets 1.5x on last snippet; `computeComebackFinalize()` — calculate 0.5x bonus after last snippet; `computeMVP()` — highest scorer |
+| `medley/medley-elimination.ts` | 55 | `computeElimination()` — lowest scorer eliminated, ties broken randomly, won't eliminate if ≤2 remain |
+| `medley/medley-highlights.ts` | 73 | `buildSnippetHighlight()` — best/worst scorer, highest combo per snippet from score snapshots |
+
+#### Modified file
+| File | Lines | Purpose |
+|---|---|---|
+| `medley-game-hook.ts` | ~780 | Main hook — imports from 4 sub-modules, delegates computation in `checkSynergy`, `preCheckComeback`, `finalizeComeback`, `buildSnippetHighlight`, `eliminateLowestScorer`, `computeMVPHook`; retains all React state, effects, game loop, and callbacks |
+
+### Exports preserved (2)
+- `MedleyGameScreenProps` (interface)
+- `MedleyGameState` (interface)
+- `useMedleyGame` (function)
+
+### New exports from sub-modules
+- `medley-scoring.ts`: `getDynamicDifficulty`, `pickRandomModifier`
+- `medley-team-bonuses.ts`: `computeSynergy`, `computeComebackPreCheck`, `computeComebackFinalize`, `computeMVP` + input/output interfaces
+- `medley-elimination.ts`: `computeElimination` + input/output interfaces
+- `medley-highlights.ts`: `buildSnippetHighlight` + input interface
+
+### Verification
+- `npx tsc --noEmit` passes: zero new errors in medley files (2 pre-existing errors in unrelated `game-screen-hook.ts`)
+
+### Notes
+- No other files modified (sole consumer `medley-game-screen.tsx` imports from original path, which re-exports `useMedleyGame` and `MedleyGameScreenProps`)
+- All sub-module functions are **pure** (no React hooks, no side effects) — they accept dependencies as parameters and return results for the hook to apply
+- The `scorePlayer` callback remains in the main hook because it mutates multiple refs simultaneously (players, scoring events, eval times)
+
+---
+
+## Task sp5 — Split use-game-loop.ts (849 → 4 focused modules)
+
+**File:** `src/hooks/use-game-loop.ts`
+
+### Problem
+Single 849-line file contained result generation, media playback logic, timing computation, P2 pitch construction, and the main game loop orchestrator — all in one monolithic hook with deeply nested closures sharing many refs.
+
+### Changes
+
+#### New files created
+| File | Lines | Purpose |
+|---|---|---|
+| `use-game-results.ts` | 111 | `useGameResults()` hook — result generation callback + mobile API notification, manages `playersRef` and `p1PerfectNotesCountRef` with sync effects |
+| `use-media-playback.ts` | 175 | `playSongMedia()` — standalone async function for audio/video/YouTube/native-audio playback with 3-priority system + `scheduleMediaWatchdog()` — 10s watchdog timer returning cleanup function |
+| `game-loop-utils.ts` | 109 | `computeGameElapsedMs()` — elapsed time from audio/video/YouTube/native/wall-clock sources; `buildP2PitchResult()` — P2 pitch result construction from raw frequency; `getEffectiveSongEnd()` — song end time computation |
+
+#### Modified file
+| File | Lines | Purpose |
+|---|---|---|
+| `use-game-loop.ts` | 711 | Main orchestrator — imports from 3 new modules, retains interfaces, countdown, pause/resume, game loop, cleanup, abort. Added re-exports for all new modules |
+
+### Key design decisions
+- `useGameResults` is a **hook** because it manages refs (`playersRef`, `p1PerfectNotesCountRef`) that update on every render and need sync effects
+- `playSongMedia` and `scheduleMediaWatchdog` are **standalone functions** (not hooks) because they take all dependencies as parameters and have no React state
+- `computeGameElapsedMs`, `buildP2PitchResult`, `getEffectiveSongEnd` are **pure utility functions** with no React dependency
+- `mediaPlayWatchdogRef` changed from storing a raw timeout to storing the cleanup function returned by `scheduleMediaWatchdog`
+- `comebackRef` stays in the main hook (shared between game loop comeback detection and `useGameResults`)
+
+### Exports preserved (1)
+- `useGameLoop` (function) — sole external export, unchanged API
+
+### Additional re-exports from use-game-loop.ts
+- `useGameResults` + types (`PlayerScoreSnapshot`, `P2ScoringSnapshot`, `UseGameResultsOptions`)
+- `playSongMedia`, `scheduleMediaWatchdog` + types (`PlayMediaParams`, `MediaWatchdogParams`)
+- `computeGameElapsedMs`, `buildP2PitchResult`, `getEffectiveSongEnd` + types (`ComputeElapsedParams`, `BuildP2PitchParams`)
+
+### Verification
+- `npx tsc --noEmit` passes: zero new errors in changed files (2 pre-existing errors in unrelated files)
+
+### Notes
+- No other files modified (sole consumer `game-screen-hook.ts` imports `useGameLoop` from original path)
+- `scheduleMediaWatchdog` returns a cleanup function instead of storing raw timeout — cleaner API, easier cleanup
+- All extracted functions are independently testable
+
+---
+
+## Task sp3 — Split cptm-game-hook.ts (917 → 5 focused modules)
+
+**File:** `src/components/game/cptm-game-hook.ts`
+
+### Problem
+Single 917-line hook file contained companion pitch polling, scoring evaluation, player schedule/segment switching, series management, media playback, time tracking, pause/resume, and note data computation — all mixed into one monolithic `useCptmGameLogic` hook.
+
+### Changes
+
+#### New files created
+| File | Lines | Purpose |
+|---|---|---|
+| `cptm-companion-polling.ts` | 107 | `useCompanionPitchPolling(phase, isPlaying)` hook — polls `/api/mobile?action=getpitch` at 200ms intervals during playing phase, caches pitch data per profileId, evicts stale entries. Exports `CompanionPitchEntry` interface. Self-cleaning on unmount. |
+| `cptm-scoring.ts` | 108 | `useCptmScoring(params)` hook — RAF-based scoring loop evaluating current player's cached pitch against active notes. Uses `shouldSkipPitch`, `findActiveNote`, `evaluateAndScoreTick` from party-scoring. Throttled to 250ms. Pure side-effect hook (void return). |
+| `cptm-turn-management.ts` | 292 | `useCptmTurnManagement(params)` hook — builds player-to-segment schedule (Fisher-Yates shuffle + no-consecutive constraint), manages segment switching with blink warnings (configurable lead time), sends companion turn signals. Exports `CptmScheduleEntry` interface and standalone `sendCompanionTurnSignal()` function. Self-cleaning on unmount. |
+| `cptm-series.ts` | 133 | `useCptmSeries(params)` hook — series round recording (`recordRound`), continue to next song (`handleContinue`), end series / end series complete handlers. Clears companion turn signals on transitions. |
+
+#### Modified file
+| File | Lines | Purpose |
+|---|---|---|
+| `cptm-game-hook.ts` | 544 | Main orchestrator hook — imports and composes 4 sub-hooks, retains phase management, media/lyrics, time tracking, pause/resume, note data computation, startGame, togglePause, handleEndSong, handleMediaEnded. Re-exports `CptmGameHookProps`, `CptmGameHookReturn`, `useCptmGameLogic` for backward compatibility. |
+
+### Exports preserved (3 total)
+- `CptmGameHookProps` (interface) — unchanged
+- `CptmGameHookReturn` (interface) — unchanged
+- `useCptmGameLogic` (function) — sole consumer export, identical API
+
+### Additional exports from new modules (for internal use)
+- `cptm-companion-polling.ts`: `CompanionPitchEntry` interface
+- `cptm-scoring.ts`: `CptmScoringParams` interface
+- `cptm-turn-management.ts`: `CptmScheduleEntry` interface, `CptmTurnManagementParams`/`CptmTurnManagementReturn` interfaces, `sendCompanionTurnSignal()` standalone function
+- `cptm-series.ts`: `CptmSeriesParams`/`CptmSeriesReturn` interfaces
+
+### Dependency flow
+```
+cptm-turn-management.ts ← exports sendCompanionTurnSignal (standalone)
+       ↑
+cptm-series.ts ← imports sendCompanionTurnSignal
+       ↑
+cptm-game-hook.ts ← composes all 4 sub-hooks
+       ↑
+cptm-companion-polling.ts, cptm-scoring.ts (no cross-dependencies)
+```
+
+### Verification
+- `npx tsc --noEmit` passes: zero errors in cptm-* files (2 pre-existing errors in unrelated `game-screen-hook.ts`)
+- Both consumers (`cptm-game-screen.tsx`, `cptm-singalong-screen.tsx`) import `useCptmGameLogic` from `cptm-game-hook` — no changes needed
+
+### Notes
+- `sendCompanionTurnSignal` is a standalone function (not a hook) since it has zero dependencies — used by turn-management, series, and main hook
+- Largest file is now 544 lines (main orchestrator), down from 917
+- No behavioral changes; all logic preserved exactly
+- No other files modified
+---
+Task ID: sp2
+Agent: split-game-screen-hook
+Task: Split game-screen-hook.ts into sub-hooks
+
+Work Log:
+- Read 948-line game-screen-hook.ts and identified logical sections
+- Identified exports: GameScreenProps, TimingData, GameScreenHookReturn (types), useGameScreenLogic (function)
+- Confirmed sole consumer: game-screen.tsx imports only useGameScreenLogic
+- Extracted types (146 lines) to game-screen-types.ts
+- Extracted localStorage settings + challenge/practice mode state (72 lines) to use-game-screen-settings.ts
+- Extracted timing data computation + pitch stats + visible notes (181 lines) to use-game-timing-data.ts
+- Extracted P2 duet pitch detection (119 lines) to use-duet-p2-pitch.ts
+- Extracted display duration computation (52 lines) to use-display-duration.ts
+- Rewrote main file (565 lines) as composer importing from sub-hooks
+- Re-exported types from main file for backward compatibility
+- Fixed type mismatch: MobilePitchData vs PitchDetectionResult in use-duet-p2-pitch.ts
+- Restored missing getPitchDetector import in main file
+- Removed unused imports (useMemo, GameState, LyricLine)
+- Ran npx tsc --noEmit — zero errors
+
+Stage Summary:
+- 948-line file split into 6 focused files (5 new + 1 refactored main)
+- game-screen-hook.ts: 948 → 565 lines (40% reduction)
+- game-screen-types.ts: 146 lines (new)
+- use-game-screen-settings.ts: 72 lines (new)
+- use-game-timing-data.ts: 181 lines (new)
+- use-duet-p2-pitch.ts: 119 lines (new)
+- use-display-duration.ts: 52 lines (new)
+- All exports preserved via re-exports from main file
+- No other files modified
+- TypeScript compilation passes with zero errors
+

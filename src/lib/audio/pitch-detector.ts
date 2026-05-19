@@ -2,58 +2,23 @@ import { PitchDetectionResult, frequencyToMidi, Difficulty } from '@/types/game'
 import { VocalDetector, VocalDetectionResult } from './vocal-detector';
 import { registerCleanup } from '@/lib/utils/app-cleanup';
 
-// Karaoke-optimized pitch detection settings
-interface PitchDetectorConfig {
-  volumeThreshold: number;        // Minimum volume to register (0-1)
-  pitchStabilityFrames: number;   // Consecutive frames required for stable pitch
-  yinThreshold: number;           // YIN algorithm threshold (0.1-0.3, lower = more sensitive)
-  noiseGateEnabled: boolean;      // Enable noise gate
-  noiseGateThreshold: number;     // Noise gate threshold in dB (-60 to -20)
-  minFrequency: number;           // Minimum frequency to detect (Hz)
-  maxFrequency: number;           // Maximum frequency to detect (Hz)
-}
+// --- Extracted modules ---
+import { PitchDetectorConfig, KARAOKE_DEFAULT_CONFIG, DIFFICULTY_PITCH_CONFIGS } from './pitch-config';
+import { yinPitchDetection, calculateClarity } from './pitch-algorithm';
+import { PitchStabilizer } from './pitch-smoothing';
 
-// Karaoke-optimized defaults - more lenient for casual singing
-const KARAOKE_DEFAULT_CONFIG: PitchDetectorConfig = {
-  volumeThreshold: 0.03,          // Sensitive - picks up normal singing
-  pitchStabilityFrames: 3,        // Quick response (~50ms at 60fps)
-  yinThreshold: 0.12,             // Lenient YIN threshold for better detection
-  noiseGateEnabled: true,
-  noiseGateThreshold: -45,        // -45dB noise gate
-  minFrequency: 65,               // C2
-  maxFrequency: 1047,             // C6
-};
+// Re-export config types and constants
+export type { PitchDetectorConfig } from './pitch-config';
+export { KARAOKE_DEFAULT_CONFIG, DIFFICULTY_PITCH_CONFIGS } from './pitch-config';
 
-// Difficulty-based configurations - optimized for karaoke
-const DIFFICULTY_PITCH_CONFIGS: Record<Difficulty, PitchDetectorConfig> = {
-  easy: {
-    volumeThreshold: 0.02,        // Very sensitive - picks up quiet singing
-    pitchStabilityFrames: 2,      // Quick response
-    yinThreshold: 0.10,           // Very lenient pitch detection
-    noiseGateEnabled: true,
-    noiseGateThreshold: -50,      // Lenient noise gate
-    minFrequency: 65,
-    maxFrequency: 1047,
-  },
-  medium: {
-    volumeThreshold: 0.04,        // Sensitive
-    pitchStabilityFrames: 3,      // Quick but stable
-    yinThreshold: 0.12,           // Standard detection
-    noiseGateEnabled: true,
-    noiseGateThreshold: -45,
-    minFrequency: 65,
-    maxFrequency: 1047,
-  },
-  hard: {
-    volumeThreshold: 0.06,        // Moderate sensitivity
-    pitchStabilityFrames: 5,      // More stable pitch required
-    yinThreshold: 0.15,           // Stricter detection
-    noiseGateEnabled: true,
-    noiseGateThreshold: -40,
-    minFrequency: 65,
-    maxFrequency: 1047,
-  },
-};
+// Re-export algorithm functions
+export { yinPitchDetection, calculateClarity } from './pitch-algorithm';
+
+// Re-export smoothing
+export { PitchStabilizer } from './pitch-smoothing';
+
+// Re-export manager
+export { PitchDetectorManager, getPitchDetectorManager } from './pitch-detector-manager';
 
 export class PitchDetector {
   private audioContext: AudioContext | null = null;
@@ -75,26 +40,25 @@ export class PitchDetector {
 
   // Configuration
   private config: PitchDetectorConfig;
-  
+
   // Pitch stability tracking
-  private recentPitches: number[] = [];
-  private lastStablePitch: number | null = null;
+  private pitchStabilizer: PitchStabilizer;
 
   // Vocal detection (singing vs. humming/noise)
   private vocalDetector: VocalDetector;
   private lastVocalResult: VocalDetectionResult | null = null;
-  
+
   constructor(config: Partial<PitchDetectorConfig> = {}) {
     this.config = { ...KARAOKE_DEFAULT_CONFIG, ...config };
     this.vocalDetector = new VocalDetector();
+    this.pitchStabilizer = new PitchStabilizer(this.config.pitchStabilityFrames);
   }
 
   // Update configuration
   setConfig(config: Partial<PitchDetectorConfig>): void {
     this.config = { ...this.config, ...config };
-    // Clear stability buffer when config changes
-    this.recentPitches = [];
-    this.lastStablePitch = null;
+    this.pitchStabilizer.setStabilityFrames(this.config.pitchStabilityFrames);
+    this.pitchStabilizer.reset();
   }
 
   // Set configuration based on difficulty
@@ -186,8 +150,7 @@ export class PitchDetector {
 
     this.onPitchDetected = callback;
     this.isListening = true;
-    this.recentPitches = [];
-    this.lastStablePitch = null;
+    this.pitchStabilizer.reset();
     this.vocalDetector.reset();
     this.lastVocalResult = null;
     this.detect();
@@ -200,8 +163,7 @@ export class PitchDetector {
       this.animationFrame = null;
     }
     // Clear pitch history to prevent stale data on next start
-    this.recentPitches = [];
-    this.lastStablePitch = null;
+    this.pitchStabilizer.reset();
     this.vocalDetector.reset();
     this.lastVocalResult = null;
   }
@@ -271,7 +233,9 @@ export class PitchDetector {
 
     // Use YIN algorithm for pitch detection
     const sampleRate = this.audioContext.sampleRate;
-    const frequency = this.yinPitchDetection(this.buffer, sampleRate, this.config.yinThreshold);
+    const frequency = this.yinBuffer
+      ? yinPitchDetection(this.buffer, this.yinBuffer, sampleRate, this.config.yinThreshold)
+      : null;
 
     // Re-run vocal detection now with known pitch for better accuracy
     const detectedNote = (frequency !== null && frequency >= this.config.minFrequency && frequency <= this.config.maxFrequency)
@@ -287,10 +251,10 @@ export class PitchDetector {
 
     if (frequency !== null && frequency >= this.config.minFrequency && frequency <= this.config.maxFrequency) {
       const note = frequencyToMidi(frequency);
-      const clarity = this.calculateClarity(this.buffer, frequency, sampleRate);
-      
+      const clarity = calculateClarity(this.buffer, frequency, sampleRate);
+
       // Pitch stability check
-      const stablePitch = this.checkPitchStability(note);
+      const stablePitch = this.pitchStabilizer.process(note);
 
       // Attach vocal detection result
       const vocalIsSinging = this.lastVocalResult?.isSinging ?? true;
@@ -326,7 +290,7 @@ export class PitchDetector {
         singingConfidence: 0,
       });
       // Reset stability on no pitch
-      this.recentPitches = [];
+      this.pitchStabilizer.reset();
     }
 
     // Only schedule next frame if still listening — prevents infinite rAF chains
@@ -334,107 +298,6 @@ export class PitchDetector {
     if (this.isListening) {
       this.animationFrame = requestAnimationFrame(() => this.detect());
     }
-  }
-
-  // Check if pitch has been stable for required frames
-  private checkPitchStability(currentPitch: number): number | null {
-    // Add current pitch to history
-    this.recentPitches.push(currentPitch);
-    
-    // Keep only required number of frames
-    if (this.recentPitches.length > this.config.pitchStabilityFrames) {
-      this.recentPitches.shift();
-    }
-    
-    // Not enough frames yet
-    if (this.recentPitches.length < this.config.pitchStabilityFrames) {
-      return this.lastStablePitch;
-    }
-    
-    // Check if all recent pitches are within 1 semitone
-    const avgPitch = this.recentPitches.reduce((a, b) => a + b, 0) / this.recentPitches.length;
-    const maxDiff = Math.max(...this.recentPitches.map(p => Math.abs(p - avgPitch)));
-    
-    if (maxDiff <= 1) {
-      this.lastStablePitch = Math.round(avgPitch * 10) / 10; // Round to 0.1 semitone
-      return this.lastStablePitch;
-    }
-    
-    return this.lastStablePitch;
-  }
-
-  private yinPitchDetection(buffer: Float32Array<ArrayBufferLike>, sampleRate: number, threshold: number = 0.15): number | null {
-    if (!this.yinBuffer) return null;
-    const yinBuffer = this.yinBuffer;
-    const yinBufferLength = yinBuffer.length;
-
-    // Compute difference function
-    for (let tau = 0; tau < yinBufferLength; tau++) {
-      yinBuffer[tau] = 0;
-      for (let i = 0; i + tau < buffer.length; i++) {
-        const delta = buffer[i] - buffer[i + tau];
-        yinBuffer[tau] += delta * delta;
-      }
-    }
-
-    // Cumulative mean normalized difference function
-    yinBuffer[0] = 1;
-    let runningSum = 0;
-    for (let tau = 1; tau < yinBufferLength; tau++) {
-      runningSum += yinBuffer[tau];
-      yinBuffer[tau] *= tau / runningSum;
-    }
-
-    // Find the first tau where the value is below threshold
-    let tauEstimate = -1;
-    for (let tau = 2; tau < yinBufferLength; tau++) {
-      if (yinBuffer[tau] < threshold) {
-        while (tau + 1 < yinBufferLength && yinBuffer[tau + 1] < yinBuffer[tau]) {
-          tau++;
-        }
-        tauEstimate = tau;
-        break;
-      }
-    }
-
-    if (tauEstimate === -1) {
-      return null;
-    }
-
-    // Parabolic interpolation for better accuracy
-    let betterTau: number;
-    const x0 = tauEstimate < 1 ? tauEstimate : tauEstimate - 1;
-    const x2 = tauEstimate + 1 < yinBufferLength ? tauEstimate + 1 : tauEstimate;
-
-    if (x0 === tauEstimate) {
-      betterTau = yinBuffer[tauEstimate] <= yinBuffer[x2] ? tauEstimate : x2;
-    } else if (x2 === tauEstimate) {
-      betterTau = yinBuffer[tauEstimate] <= yinBuffer[x0] ? tauEstimate : x0;
-    } else {
-      const s0 = yinBuffer[x0];
-      const s1 = yinBuffer[tauEstimate];
-      const s2 = yinBuffer[x2];
-      const denominator = 2 * s1 - s2 - s0;
-      betterTau = Math.abs(denominator) < 1e-10
-        ? tauEstimate
-        : tauEstimate + (s2 - s0) / (2 * denominator);
-    }
-
-    return sampleRate / betterTau;
-  }
-
-  private calculateClarity(buffer: Float32Array<ArrayBufferLike>, frequency: number, sampleRate: number): number {
-    const period = Math.round(sampleRate / frequency);
-    let correlation = 0;
-    let energy = 0;
-
-    for (let i = 0; i < buffer.length - period; i++) {
-      correlation += buffer[i] * buffer[i + period];
-      energy += buffer[i] * buffer[i];
-    }
-
-    if (energy === 0) return 0;
-    return Math.min(1, Math.abs(correlation / energy));
   }
 
   /** Return the current MediaStream so other components (e.g. audio effects)
@@ -492,204 +355,4 @@ export async function resetPitchDetector(): Promise<void> {
     await pitchDetectorInstance.destroy();
     pitchDetectorInstance = null;
   }
-}
-
-// ===================== PITCH DETECTOR MANAGER =====================
-// Manages multiple PitchDetector instances for multi-player karaoke
-
-interface PitchDetectorManagerCallbacks {
-  onPitchDetected: (playerId: string, result: import('@/types/game').PitchDetectionResult) => void;
-}
-
-type PlayerType = 'local' | 'mobile';
-
-interface ManagedPlayer {
-  id: string;
-  type: PlayerType;
-  detector: PitchDetector | null;
-  mobileClientId?: string;
-  pollingInterval?: ReturnType<typeof setInterval>;
-  stereoChannel?: number;  // 0=left, 1=right for stereo split mode
-}
-
-export class PitchDetectorManager {
-  private players: Map<string, ManagedPlayer> = new Map();
-  private callbacks: PitchDetectorManagerCallbacks | null = null;
-  private difficulty: Difficulty = 'medium';
-  private isRunning = false;
-
-  setCallbacks(callbacks: PitchDetectorManagerCallbacks): void {
-    this.callbacks = callbacks;
-  }
-
-  setDifficulty(difficulty: Difficulty): void {
-    this.difficulty = difficulty;
-    this.players.forEach((player) => {
-      player.detector?.setDifficulty(difficulty);
-    });
-  }
-
-  /**
-   * Add a local player with their own pitch detector.
-   * @param playerId - Unique identifier for this player
-   * @param deviceId - Optional specific microphone device ID (multi-mic support)
-   */
-  async addLocalPlayer(playerId: string, deviceId?: string, stereoChannel?: number): Promise<boolean> {
-    if (this.players.has(playerId)) {
-      return true; // Already exists
-    }
-
-    const detector = new PitchDetector();
-    detector.setDifficulty(this.difficulty);
-
-    const success = await detector.initialize(deviceId, stereoChannel);
-    if (success) {
-      this.players.set(playerId, {
-        id: playerId,
-        type: 'local',
-        detector,
-      });
-
-      // If already running, start this detector immediately
-      if (this.isRunning) {
-        detector.start((_result) => {
-          this.callbacks?.onPitchDetected(playerId, _result);
-        });
-      }
-
-      return true;
-    }
-
-    return false;
-  }
-
-  addMobilePlayer(playerId: string, mobileClientId: string): void {
-    if (this.players.has(playerId)) {
-      return; // Already exists
-    }
-
-    this.players.set(playerId, {
-      id: playerId,
-      type: 'mobile',
-      detector: null,
-      mobileClientId,
-    });
-
-    // Start polling for mobile player pitch if already running
-    if (this.isRunning) {
-      this.startMobilePolling(playerId, mobileClientId);
-    }
-  }
-
-  async removePlayer(playerId: string): Promise<void> {
-    const player = this.players.get(playerId);
-    if (!player) return;
-
-    // Stop and destroy detector for local players
-    if (player.detector) {
-      player.detector.stop();
-      await player.detector.destroy();
-    }
-
-    // Clear polling interval for mobile players
-    if (player.pollingInterval) {
-      clearInterval(player.pollingInterval);
-    }
-
-    this.players.delete(playerId);
-  }
-
-  start(): void {
-    this.isRunning = true;
-    this.players.forEach((player, playerId) => {
-      if (player.type === 'local' && player.detector) {
-        player.detector.start((result) => {
-          this.callbacks?.onPitchDetected(playerId, result);
-        });
-      } else if (player.type === 'mobile' && player.mobileClientId) {
-        this.startMobilePolling(playerId, player.mobileClientId);
-      }
-    });
-  }
-
-  stop(): void {
-    this.isRunning = false;
-    this.players.forEach((player) => {
-      player.detector?.stop();
-      if (player.pollingInterval) {
-        clearInterval(player.pollingInterval);
-        player.pollingInterval = undefined;
-      }
-    });
-  }
-
-  getPlayerIds(): string[] {
-    return Array.from(this.players.keys());
-  }
-
-  private startMobilePolling(playerId: string, mobileClientId: string): void {
-    const player = this.players.get(playerId);
-    if (!player) return;
-
-    // Clear existing interval if any
-    if (player.pollingInterval) {
-      clearInterval(player.pollingInterval);
-    }
-
-    player.pollingInterval = setInterval(async () => {
-      try {
-        const response = await fetch('/api/mobile?action=getpitch');
-        const data = await response.json();
-        // Server returns "pitches" array — find the pitch for THIS specific
-        // mobile client instead of blindly using pitches[0] (which could be
-        // another player's data when multiple companions are connected).
-        if (data.success && Array.isArray(data.pitches) && data.pitches.length > 0) {
-          const matchingEntry = data.pitches.find(
-            (p: { clientId?: string }) => p.clientId === mobileClientId
-          );
-          if (matchingEntry?.data) {
-            const pitchData = matchingEntry.data;
-            this.callbacks?.onPitchDetected(playerId, {
-              frequency: pitchData.frequency,
-              note: pitchData.note,
-              clarity: pitchData.clarity || 0,
-              volume: pitchData.volume || 0,
-              isSinging: pitchData.isSinging,
-              singingConfidence: pitchData.singingConfidence,
-            });
-          }
-        }
-      } catch (error) {
-        console.debug('[pitch-detector]: mobile pitch polling error', error);
-      }
-    }, 100); // Poll every 100ms — sufficient for real-time sync, reduces server load
-  }
-
-  async destroy(): Promise<void> {
-    this.stop();
-    const destroyPromises = Array.from(this.players.entries()).map(async ([, player]) => {
-      if (player.detector) {
-        await player.detector.destroy();
-      }
-    });
-    await Promise.all(destroyPromises);
-    this.players.clear();
-    this.callbacks = null;
-  }
-}
-
-// Singleton instance for PitchDetectorManager
-let pitchDetectorManagerInstance: PitchDetectorManager | null = null;
-
-export function getPitchDetectorManager(): PitchDetectorManager {
-  if (!pitchDetectorManagerInstance) {
-    pitchDetectorManagerInstance = new PitchDetectorManager();
-    registerCleanup('pitch-detector-manager', () => {
-      pitchDetectorManagerInstance?.stop();
-      // Fire-and-forget async destroy for individual detectors
-      pitchDetectorManagerInstance?.destroy().catch(() => {});
-      pitchDetectorManagerInstance = null;
-    });
-  }
-  return pitchDetectorManagerInstance;
 }

@@ -1,31 +1,17 @@
 'use client';
 
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useNoteScoring } from '@/hooks/use-note-scoring';
 import { useGameSettings } from '@/hooks/use-game-settings';
 import { useGameStore } from '@/lib/game/store';
-import type { GameState } from '@/types/game';
 import { usePartyStore } from '@/lib/game/party-store';
-import { LyricLine, Note } from '@/types/game';
-import { PRACTICE_MODE_DEFAULTS, PracticeModeConfig } from '@/lib/game/practice-mode';
-import { CHALLENGE_MODES } from '@/lib/game/player-progression';
-import { StorageKeys, getJson, getItem, removeItem, getBool, getNumber, getString } from '@/lib/storage';
 import {
   WebcamBackgroundConfig,
   DEFAULT_WEBCAM_CONFIG,
   loadWebcamConfig,
   saveWebcamConfig,
 } from '@/components/game/webcam-background';
-import {
-  calculateScoringMetadata,
-} from '@/lib/game/scoring';
-import {
-  calculatePitchStats,
-  PitchStats,
-  NOTE_WINDOW,
-  getVisibleNotes,
-} from '@/lib/game/note-utils';
 import {
   useParticleEmitter,
   useSongEnergy,
@@ -44,143 +30,21 @@ import { usePracticePlayback } from '@/hooks/use-practice-playback';
 import { useMediaSession } from '@/hooks/use-media-session';
 import { useReplayRecorder } from '@/hooks/use-replay-recorder';
 import { setLastReplayId } from '@/lib/replay-state';
-import { getPitchDetector, PitchDetector } from '@/lib/audio/pitch-detector';
-import { getMultiMicrophoneManager } from '@/lib/audio/microphone-manager';
+import { getPitchDetector } from '@/lib/audio/pitch-detector';
 import { cleanupOldReplays } from '@/lib/db/replay-db';
 import { isDuetSong } from '@/components/screens/library/utils';
 import { enterFullscreen } from '@/hooks/use-app-effects';
 
-// ===================== HOOK INTERFACE =====================
+// ── Re-export types from dedicated file ──
+export type { GameScreenProps, TimingData, GameScreenHookReturn } from './game-screen-types';
 
-export interface GameScreenProps {
-  onEnd: () => void;
-  onBack: () => void;
-  onPause?: () => void;
-}
+// ── Sub-hooks ──
+import { useGameScreenSettings } from '@/hooks/use-game-screen-settings';
+import { useGameTimingData } from '@/hooks/use-game-timing-data';
+import { useDuetP2Pitch } from '@/hooks/use-duet-p2-pitch';
+import { useDisplayDuration } from '@/hooks/use-display-duration';
 
-export interface TimingData {
-  allNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
-  sortedLines: LyricLine[];
-  noteCount: number;
-  lineCount: number;
-  p1Notes: Array<Note & { lineIndex: number; line: LyricLine }>;
-  p2Notes: Array<Note & { lineIndex: number; line: LyricLine }>;
-  p1Lines: LyricLine[];
-  p2Lines: LyricLine[];
-  p1NoteCount: number;
-  p2NoteCount: number;
-  scoringMetadata: ReturnType<typeof calculateScoringMetadata> | null;
-  p1ScoringMetadata: ReturnType<typeof calculateScoringMetadata> | null;
-  p2ScoringMetadata: ReturnType<typeof calculateScoringMetadata> | null;
-  beatDuration: number;
-}
-
-export interface GameScreenHookReturn {
-  // Game state
-  gameState: GameState;
-  song: GameState['currentSong'];
-  isPlaying: boolean;
-  setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
-  isDuetMode: boolean;
-  isLowPerf: boolean;
-
-  // Media
-  effectiveSong: ReturnType<typeof useGameMedia>['effectiveSong'];
-  mediaLoaded: ReturnType<typeof useGameMedia>['mediaLoaded'];
-  audioRef: React.RefObject<HTMLAudioElement | null>;
-  videoRef: React.RefObject<HTMLVideoElement | null>;
-  audioLoadedRef: React.RefObject<boolean>;
-  videoLoadedRef: React.RefObject<boolean>;
-  spectrogramAudioEl: HTMLAudioElement | null;
-  audioElRefCallback: (el: HTMLAudioElement | null) => void;
-  displayDuration: number;
-  setDisplayDuration: React.Dispatch<React.SetStateAction<number>>;
-  nativeAudio: ReturnType<typeof useNativeAudio>;
-
-  // YouTube
-  youtubeVideoId: string | null;
-  isYouTube: boolean;
-  useYouTubeAudio: boolean;
-  isAdPlaying: boolean;
-  adCountdown: number | null;
-  handleAdStart: () => void;
-  handleAdEnd: () => void;
-  youtubeTime: number;
-  setYoutubeTime: React.Dispatch<React.SetStateAction<number>>;
-  youtubeError: string | null;
-  setYoutubeError: React.Dispatch<React.SetStateAction<string | null>>;
-
-  // Pitch & Scoring
-  pitchResult: ReturnType<typeof usePitchDetector>['pitchResult'];
-  smoothedPitch: number | null;
-  scoreEvents: ReturnType<typeof useNoteScoring>['scoreEvents'];
-  notePerformance: ReturnType<typeof useNoteScoring>['notePerformance'];
-  p2State: ReturnType<typeof useNoteScoring>['p2State'];
-  p2NotePerformance: ReturnType<typeof useNoteScoring>['p2NotePerformance'];
-  p2DetectedPitch: number | null;
-
-  // Timing
-  timingData: TimingData | null;
-  visibleNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
-  p1VisibleNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
-  p2VisibleNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
-  pitchStats: PitchStats;
-  p1PitchStats: PitchStats;
-  p2PitchStats: PitchStats;
-
-  // Settings
-  showBackgroundVideo: boolean;
-  showPitchGuide: boolean;
-  useAnimatedBackground: boolean;
-  noteDisplayStyle: string;
-  noteShapeStyle: 'rounded' | 'sharp' | 'pill' | 'diamond';
-  hasChallengeNoPitchGuide: boolean;
-  activeChallenge: typeof CHALLENGE_MODES[0] | null;
-  showScore: boolean;
-  showParticles: boolean;
-  showCombo: boolean;
-  autoFullscreen: boolean;
-  masterVolume: number;
-  lyricsSize: string;
-  youtubeQuality: string;
-
-  // Practice mode
-  practiceMode: PracticeModeConfig;
-  showPracticeControls: boolean;
-  setShowPracticeControls: React.Dispatch<React.SetStateAction<boolean>>;
-  setPracticeMode: React.Dispatch<React.SetStateAction<PracticeModeConfig>>;
-
-  // Audio effects
-  audioEffects: ReturnType<typeof useGameAudioEffects>['audioEffects'];
-  showAudioEffects: boolean;
-  toggleAudioEffects: () => void;
-  reverbAmount: number;
-  setReverbAmount: React.Dispatch<React.SetStateAction<number>>;
-  echoAmount: number;
-  setEchoAmount: React.Dispatch<React.SetStateAction<number>>;
-  applyEffectPreset: (preset: 'pop' | 'rock' | 'concert' | 'studio' | 'vintage' | 'ethereal' | 'power' | 'intimate') => void;
-
-  // Webcam
-  webcamConfig: WebcamBackgroundConfig;
-  updateWebcamConfig: (updates: Partial<WebcamBackgroundConfig>) => void;
-
-  // Visual effects
-  songEnergy: number | undefined;
-  particles: ReturnType<typeof useParticleEmitter>['particles'];
-
-  // Game loop
-  countdown: number;
-  volume: number;
-  pauseGame: () => void;
-  resumeGame: () => void;
-  endGameAndCleanup: () => void;
-  abortGameLoop: () => void;
-  resetScoring: () => void;
-  stop: () => void;
-
-  // Callbacks
-  handleEnd: () => void;
-}
+import type { GameScreenProps, GameScreenHookReturn } from './game-screen-types';
 
 // ===================== MAIN HOOK =====================
 
@@ -229,18 +93,25 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
     videoLoadedRef,
   } = useGameMedia(song);
 
-  // Replay recording: enabled by default, persisted in localStorage
-  const [replayEnabled] = useState(() => {
-    return getJson<boolean>(StorageKeys.REPLAY_ENABLED, true);
-  });
-
-  const [showScore] = useState(() => getBool(StorageKeys.SHOW_SCORE, true));
-  const [showParticles] = useState(() => getBool(StorageKeys.SHOW_PARTICLES, true));
-  const [showCombo] = useState(() => getBool(StorageKeys.SHOW_COMBO, true));
-  const [autoFullscreen] = useState(() => getBool(StorageKeys.AUTO_FULLSCREEN, false));
-  const [masterVolume] = useState(() => getNumber(StorageKeys.MASTER_VOLUME, 100));
-  const [lyricsSize] = useState(() => getString(StorageKeys.LYRICS_SIZE, 'medium'));
-  const [youtubeQuality] = useState(() => getString(StorageKeys.YOUTUBE_QUALITY, 'default'));
+  // ── Settings: localStorage-backed display settings + challenge/practice mode ──
+  const settings = useGameScreenSettings();
+  const {
+    showScore,
+    showParticles,
+    showCombo,
+    autoFullscreen,
+    masterVolume,
+    lyricsSize,
+    youtubeQuality,
+    replayEnabled,
+    activeChallenge,
+    hasChallengeNoPitchGuide,
+    challengeModifiers,
+    practiceMode,
+    setPracticeMode,
+    showPracticeControls,
+    setShowPracticeControls,
+  } = settings;
 
   const [youtubeTime, setYoutubeTime] = useState(0);
   const [youtubeError, setYoutubeError] = useState<string | null>(null);
@@ -270,35 +141,6 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
   // Derived: is low-performance mode?
   const isLowPerf = performanceMode === 'low';
 
-  // Practice mode UI controls
-  const [showPracticeControls, setShowPracticeControls] = useState(false);
-
-  // Challenge mode state - read from localStorage when game starts
-  const [activeChallenge] = useState<typeof CHALLENGE_MODES[0] | null>(() => {
-    const savedChallengeId = getItem(StorageKeys.CHALLENGE_MODE);
-    if (savedChallengeId) {
-      const challenge = CHALLENGE_MODES.find(c => c.id === savedChallengeId);
-      if (challenge) {
-        removeItem(StorageKeys.CHALLENGE_MODE); // Clear after reading
-        return challenge;
-      }
-    }
-    return null;
-  });
-
-  // Derive challenge modifier flags for use throughout the component
-  const hasChallengeNoPitchGuide = activeChallenge?.modifiers.some(m => m.type === 'no_pitch_guide') ?? false;
-  const challengeSpeedModifier = activeChallenge?.modifiers.find(m => m.type === 'double_speed');
-
-  // Practice mode state - initialize with challenge speed modifier if present
-  const [practiceMode, setPracticeMode] = useState<PracticeModeConfig>(() => {
-    const speedValue = challengeSpeedModifier?.value;
-    if (speedValue && speedValue > 1.0) {
-      return { ...PRACTICE_MODE_DEFAULTS, playbackRate: speedValue, enabled: true };
-    }
-    return { ...PRACTICE_MODE_DEFAULTS };
-  });
-
   // Practice playback: apply playbackRate to audio/video, loop detection
   usePracticePlayback({
     practiceMode,
@@ -312,8 +154,6 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
   const { mobilePitch } = useMobilePitchPolling(song);
 
   // Audio effects - lazy init, cleanup managed by hook.
-  // Pass audioRef/videoRef so the hook can resume media playback
-  // after effects init (Tauri/WebView may pause them).
   const {
     audioEffects,
     setAudioEffects,
@@ -372,9 +212,6 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
     });
   }, []);
 
-  // Duet mode state - P2 volume
-  const [p2Volume, setP2Volume] = useState(0);
-
   // Visual Effects - Particle system for score feedback
   const {
     particles,
@@ -403,102 +240,22 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
   const isDuelOrDuetGameMode = gameState.gameMode === 'duet' || gameState.gameMode === 'duel';
   const isDuetMode = !isLowPerf && ((song ? isDuetSong(song) : false) || isDuelOrDuetGameMode || isCompetitiveMultiplayer);
 
-  // ── Safety: load lyrics on-demand for duel/duet mode when effectiveSong has none ──
-  const [duetFallbackLyrics, setDuetFallbackLyrics] = useState<LyricLine[] | null>(null);
-  useEffect(() => {
-    if (!isDuetMode || !effectiveSong || (effectiveSong.lyrics && effectiveSong.lyrics.length > 0)) {
-      setDuetFallbackLyrics(null);
-      return;
-    }
-    // effectiveSong has no lyrics but we need them for the highway — try loading
-    let cancelled = false;
-    import('@/lib/game/song-lyrics-loader').then(({ loadSongLyrics }) => {
-      loadSongLyrics(effectiveSong).then(lyrics => {
-        if (cancelled || lyrics.length === 0) return;
-        setDuetFallbackLyrics(lyrics);
-      }).catch(() => {});
-    }).catch(() => {});
-    return () => { cancelled = true; };
-  }, [isDuetMode, effectiveSong]);
-
-  // ── Song with fallback lyrics for timing computation ──
-  const songForTiming = useMemo(() => {
-    if (!effectiveSong) return null;
-    if (duetFallbackLyrics && duetFallbackLyrics.length > 0) {
-      return { ...effectiveSong, lyrics: duetFallbackLyrics };
-    }
-    return effectiveSong;
-  }, [effectiveSong, duetFallbackLyrics]);
-
-  // =====================================================
-  // PRE-COMPUTE ALL TIMING DATA ONCE WHEN SONG LOADS
-  // MUST be defined BEFORE useNoteScoring hook!
-  // =====================================================
-  const timingData = useMemo<TimingData | null>(() => {
-    const src = songForTiming || effectiveSong;
-    if (!src || src.lyrics.length === 0) return null;
-
-    const allNotes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
-    const p1Notes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
-    const p2Notes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
-
-    // Determine if notes have explicit P1/P2 markers — needed before the forEach below
-    const sortedLines = [...src.lyrics].sort((a, b) => a.startTime - b.startTime);
-    const hasExplicitPlayerMarkers = sortedLines.some(line => line.player === 'P1' || line.player === 'P2');
-
-    sortedLines.forEach((line, lineIndex) => {
-      line.notes.forEach(note => {
-        const noteWithLine = { ...note, lineIndex, line };
-        allNotes.push(noteWithLine);
-
-        if (isDuetMode) {
-          if (hasExplicitPlayerMarkers) {
-            // P1 notes only for player 1, P2 notes only for player 2
-            // Notes with player 'both' are sung by BOTH players
-            if (note.player === 'P1' || note.player === 'both') {
-              p1Notes.push(noteWithLine);
-            }
-            if (note.player === 'P2' || note.player === 'both') {
-              p2Notes.push(noteWithLine);
-            }
-          } else {
-            // Duel / no markers — both players sing all notes
-            p1Notes.push(noteWithLine);
-            p2Notes.push(noteWithLine);
-          }
-        }
-      });
-    });
-
-    allNotes.sort((a, b) => a.startTime - b.startTime);
-    p1Notes.sort((a, b) => a.startTime - b.startTime);
-    p2Notes.sort((a, b) => a.startTime - b.startTime);
-
-    const p1Lines = sortedLines.filter(line => {
-      if (hasExplicitPlayerMarkers) return line.player === 'P1' || line.player === 'both';
-      return true;
-    });
-
-    const p2Lines = sortedLines.filter(line => {
-      if (hasExplicitPlayerMarkers) return line.player === 'P2' || line.player === 'both';
-      return true;
-    });
-
-    const beatDurationMs = src.bpm ? 15000 / src.bpm : 500;
-    const scoringMetadata = calculateScoringMetadata(allNotes, beatDurationMs, gameState.difficulty);
-    const p1ScoringMetadata = calculateScoringMetadata(p1Notes, beatDurationMs, gameState.difficulty);
-    const p2ScoringMetadata = calculateScoringMetadata(p2Notes, beatDurationMs, gameState.difficulty);
-
-    return {
-      allNotes, sortedLines, noteCount: allNotes.length, lineCount: sortedLines.length,
-      p1Notes, p2Notes, p1Lines, p2Lines,
-      p1NoteCount: p1Notes.length, p2NoteCount: p2Notes.length,
-      scoringMetadata, p1ScoringMetadata, p2ScoringMetadata,
-      beatDuration: beatDurationMs,
-    };
-  }, [songForTiming, isDuetMode, gameState.difficulty]);
-
-  const beatDuration = timingData?.beatDuration || (song?.bpm ? 15000 / song.bpm : 500);
+  // ── Timing data, pitch stats, visible notes ──
+  const {
+    timingData,
+    beatDuration,
+    pitchStats,
+    p1PitchStats,
+    p2PitchStats,
+    visibleNotes,
+    p1VisibleNotes,
+    p2VisibleNotes,
+  } = useGameTimingData({
+    effectiveSong,
+    isDuetMode,
+    difficulty: gameState.difficulty,
+    currentTime: gameState.currentTime,
+  });
 
   // Note scoring hook - handles all scoring logic
   const {
@@ -521,95 +278,22 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
     isDuetMode,
     beatDuration,
     updatePlayer,
-    challengeModifiers: activeChallenge?.modifiers,
+    challengeModifiers,
     onPerfectHit: emitPerfectHit,
     onGoldenNote: emitGoldenNote,
     onComboMilestone: useCallback((combo: number, x: number, y: number) => emitComboFirework(x, y, combo), [emitComboFirework]),
   });
 
-  // Use mobile pitch for P2 in duet/duel mode
-  useEffect(() => {
-    if (isDuetMode && mobilePitch) {
-      queueMicrotask(() => {
-        setP2DetectedPitch(mobilePitch.frequency);
-        setP2Volume(mobilePitch.volume || 0);
-      });
-    } else if (isDuetMode && !mobilePitch?.frequency) {
-      queueMicrotask(() => {
-        setP2DetectedPitch(null);
-        setP2Volume(0);
-      });
-    }
-  }, [isDuetMode, mobilePitch, setP2DetectedPitch, setP2Volume]);
-
-  // ── P2 Local Microphone: Initialize a second pitch detector for P2 in duet/duel mode ──
-  // When two microphones are assigned (playerIndex 0 and 1), use the second one for P2
-  // instead of relying solely on the mobile companion app for P2 pitch data.
-  const p2DetectorRef = useRef<PitchDetector | null>(null);
-  const p2DetectorInitRef = useRef(false);
-
-  useEffect(() => {
-    if (!isDuetMode || !song) return;
-
-    // Check if there's a second microphone assigned to playerIndex 1
-    const micManager = getMultiMicrophoneManager();
-    const assignedMics = micManager.getAssignedMicrophones();
-    const p2Mic = assignedMics.find(m => m.playerIndex === 1);
-
-    if (!p2Mic?.deviceId || p2DetectorInitRef.current) return;
-
-    // Only initialize P2 detector if no mobile pitch is coming in
-    // (mobile companion takes priority for P2 pitch data)
-    if (mobilePitch?.frequency) return;
-
-    let destroyed = false;
-    const detector = new PitchDetector();
-
-    detector.initialize(p2Mic.deviceId).then((success) => {
-      if (!success || destroyed) {
-        detector.destroy();
-        return;
-      }
-
-      p2DetectorRef.current = detector;
-      p2DetectorInitRef.current = true;
-
-      detector.start((result) => {
-        if (result.frequency) {
-          setP2DetectedPitch(result.frequency);
-          setP2Volume(result.volume || 0);
-        }
-      });
-
-      // Set difficulty to match P1
-      detector.setDifficulty(gameState.difficulty);
-    }).catch(() => {
-      // Silently fail — P2 will just have no pitch from local mic
-      p2DetectorInitRef.current = false;
-    });
-
-    return () => {
-      destroyed = true;
-      detector.stop();
-      detector.destroy();
-      p2DetectorRef.current = null;
-      p2DetectorInitRef.current = false;
-    };
-  }, [isDuetMode, song, mobilePitch?.frequency, setP2DetectedPitch, setP2Volume, gameState.difficulty]);
-
-  // Stop P2 detector when game ends or component unmounts
-  useEffect(() => {
-    return () => {
-      if (p2DetectorRef.current) {
-        p2DetectorRef.current.stop();
-        p2DetectorRef.current.destroy();
-        p2DetectorRef.current = null;
-      }
-    };
-  }, []);
+  // ── P2 pitch detection (duet/duel mode) ──
+  const { p2Volume, setP2Volume } = useDuetP2Pitch({
+    isDuetMode,
+    song,
+    mobilePitch,
+    setP2DetectedPitch,
+    difficulty: gameState.difficulty,
+  });
 
   // Mobile companion sync - periodic game state updates
-  // #10 Pass tournament match ID for spectator voting
   const party = usePartyStore();
   const tournamentMatchId = party.currentTournamentMatch?.id || null;
   useMobileGameSync(song, isPlaying, gameState.gameMode, gameState.status === 'ended', tournamentMatchId);
@@ -624,31 +308,12 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
     setBlindSection,
     setBlindHardcore,
     setMissingWordsIndices,
-    // Pass competitive settings frequencies if available
     blindFrequency,
     missingWordFrequency,
     hardcore: blindHardcore,
-    // New settings
     missingWordsGranularity,
     escalatingMultiplier: escalating ? 1.0 : undefined,
   });
-
-  // Calculate pitch ranges
-  const pitchStats = useMemo<PitchStats>(() => {
-    return calculatePitchStats(timingData?.allNotes);
-  }, [timingData]);
-
-  const p1PitchStats = useMemo<PitchStats>(() => {
-    const notes = timingData?.p1Notes;
-    if (!notes || notes.length === 0) return pitchStats;
-    return calculatePitchStats(notes);
-  }, [timingData, pitchStats]);
-
-  const p2PitchStats = useMemo<PitchStats>(() => {
-    const notes = timingData?.p2Notes;
-    if (!notes || notes.length === 0) return pitchStats;
-    return calculatePitchStats(notes);
-  }, [timingData, pitchStats]);
 
   // ── Replay Recorder: mic + webcam during gameplay ──
   const {
@@ -674,10 +339,15 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
   // Run replay cleanup on mount (delete replays >30 days, keep max 50)
   useEffect(() => { cleanupOldReplays().catch(() => {}); }, []);
 
+  // ── Display duration for progress bar & time display ──
+  const { displayDuration, setDisplayDuration } = useDisplayDuration({
+    effectiveSong,
+    mediaLoaded,
+    audioRef,
+    videoRef,
+  });
+
   // ── Replay: stop recording BEFORE navigating to results screen ──
-  // CRITICAL: This must be synchronous in the onEnd callback, NOT in a useEffect.
-  // A useEffect watching gameState.status === 'ended' will never fire because
-  // onEnd() navigates away and unmounts this component before the effect runs.
   const handleEnd = useCallback(() => {
     if (replayEnabled) {
       replayStop(gameState.results);
@@ -686,7 +356,6 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
   }, [replayEnabled, replayStop, gameState.results, onEnd]);
 
   // Remote control polling - commands from mobile companions
-  // MUST be defined AFTER handleEnd to avoid TDZ (Temporal Dead Zone) error
   useRemoteControl({
     audioRef,
     videoRef,
@@ -741,13 +410,9 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
     setAudioEffects,
     song,
     players: gameState.players,
-    // P2 scoring state for duel/duet results
     p2ScoringState: p2State,
-    // P1 perfect notes count for daily challenge / leaderboard
     p1PerfectNotesCount,
-    // Practice mode playback rate (for speed_demon achievement)
     playbackRate: practiceMode.playbackRate,
-    // Native audio support
     isNativeAudio: nativeAudio.enabled,
     nativeAudioTime: nativeAudio.currentPosition,
     nativeAudioPlay: nativeAudio.play,
@@ -779,65 +444,17 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
     }
   }, [isPlaying, autoFullscreen]);
 
-  // ── Replay: start recording when gameplay begins (after countdown) ──
+  // ── Replay: start/pause/resume recording based on isPlaying transitions ──
   useEffect(() => {
     if (isPlaying && !wasPlayingRef.current) {
-      // isPlaying went from false → true (gameplay just started)
       replayStart();
     } else if (!isPlaying && wasPlayingRef.current) {
-      // isPlaying went from true → false (game ended or paused)
-      // Pause the replay recorder (stop happens on game end)
       replayPause();
     } else if (isPlaying && wasPlayingRef.current) {
-      // Resumed from pause
       replayResume();
     }
     wasPlayingRef.current = isPlaying;
   }, [isPlaying, replayStart, replayPause, replayResume]);
-
-  // Get visible notes using shared utility
-  const visibleNotes = useMemo(() =>
-    getVisibleNotes(timingData?.allNotes, gameState.currentTime, NOTE_WINDOW),
-    [gameState.currentTime, timingData]
-  );
-
-  const p1VisibleNotes = useMemo(() =>
-    getVisibleNotes(timingData?.p1Notes, gameState.currentTime, NOTE_WINDOW),
-    [gameState.currentTime, timingData]
-  );
-
-  const p2VisibleNotes = useMemo(() =>
-    getVisibleNotes(timingData?.p2Notes, gameState.currentTime, NOTE_WINDOW),
-    [gameState.currentTime, timingData]
-  );
-
-  // Compute display duration for progress bar & time display:
-  // - If #END: tag exists → use that value
-  // - Otherwise → use the audio/video element's actual media duration
-  //   (avoids showing ~999999s when #END: is not defined)
-  const [displayDuration, setDisplayDuration] = useState(0);
-
-  useEffect(() => {
-    if (!effectiveSong) return;
-    const compute = () => {
-      if (effectiveSong.end) {
-        setDisplayDuration(effectiveSong.end);
-        return;
-      }
-      const audioDur = audioRef.current?.duration;
-      if (audioDur && isFinite(audioDur) && audioDur > 0) {
-        setDisplayDuration(audioDur * 1000);
-        return;
-      }
-      const videoDur = videoRef.current?.duration;
-      if (videoDur && isFinite(videoDur) && videoDur > 0) {
-        setDisplayDuration(videoDur * 1000);
-        return;
-      }
-      setDisplayDuration(effectiveSong.duration);
-    };
-    queueMicrotask(compute);
-  }, [effectiveSong, mediaLoaded, audioRef, videoRef]);
 
   return {
     // Game state

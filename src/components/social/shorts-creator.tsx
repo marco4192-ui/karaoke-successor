@@ -1,13 +1,17 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { RATING_HEX_COLORS } from '@/lib/game/rating-utils';
 import { useTranslation } from '@/lib/i18n/translations';
 import type { Song, HighscoreEntry, GameResult } from '@/types/game';
+import type { VideoStyle, CameraPosition } from './shorts-types';
+import { useCanvasRenderer, ShortsCanvas } from './shorts-canvas';
+import {
+  CameraControls,
+  StyleSelector,
+  DurationSlider,
+  RecordingProgress,
+  RecordingActions,
+} from './shorts-controls';
 
 interface ShortsCreatorProps {
   song: Song;
@@ -17,34 +21,7 @@ interface ShortsCreatorProps {
   onClose?: () => void;
 }
 
-type VideoStyle = 'neon' | 'retro' | 'minimal' | 'gradient';
-
-const VIDEO_STYLES: { id: VideoStyle; name: string; bg: string; accent: string }[] = [
-  { id: 'neon', name: 'Neon', bg: '#0a0a0a', accent: '#00ffff' },
-  { id: 'retro', name: 'Retro', bg: '#1a0a2e', accent: '#ff00ff' },
-  { id: 'minimal', name: 'Minimal', bg: '#ffffff', accent: '#000000' },
-  { id: 'gradient', name: 'Gradient', bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', accent: '#ffffff' },
-];
-
-const VIDEO_STYLE_KEYS: Record<VideoStyle, string> = {
-  neon: 'shortsCreator.styleNeon',
-  retro: 'shortsCreator.styleRetro',
-  minimal: 'shortsCreator.styleMinimal',
-  gradient: 'shortsCreator.styleGradient',
-};
-
-type CameraPosition = 'pip-top-right' | 'pip-top-left' | 'pip-bottom-right' | 'pip-bottom-left' | 'fullscreen' | 'none';
-
-const CAMERA_POSITIONS: { id: CameraPosition; name: string }[] = [
-  { id: 'pip-top-right', name: 'Top Right' },
-  { id: 'pip-top-left', name: 'Top Left' },
-  { id: 'pip-bottom-right', name: 'Bottom Right' },
-  { id: 'pip-bottom-left', name: 'Bottom Left' },
-  { id: 'fullscreen', name: 'Full Screen' },
-  { id: 'none', name: 'No Camera' },
-];
-
-export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
+export function ShortsCreator({ song, score, audioUrl }: ShortsCreatorProps) {
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -70,6 +47,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
       }
     };
   }, [recordedUrl]);
+
   const [duration, setDuration] = useState(15);
   const [style, setStyle] = useState<VideoStyle>('neon');
   const [cameraPosition, setCameraPosition] = useState<CameraPosition>('pip-top-right');
@@ -80,7 +58,26 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
   const [isRequestingMobileCamera, setIsRequestingMobileCamera] = useState(false);
   const [mobileCameraConnected, setMobileCameraConnected] = useState(false);
 
-  const styleConfig = VIDEO_STYLES.find(s => s.id === style) || VIDEO_STYLES[0];
+  // -----------------------------------------------------------------------
+  // Canvas renderer hook — handles drawFrame + animation loop
+  // -----------------------------------------------------------------------
+  useCanvasRenderer({
+    canvasRef,
+    cameraVideoRef,
+    song,
+    score,
+    style,
+    cameraPosition,
+    hasCamera,
+    isRecording,
+    duration,
+    recordingStartTime,
+    onProgress: setProgress,
+  });
+
+  // -----------------------------------------------------------------------
+  // Camera management
+  // -----------------------------------------------------------------------
 
   // Request mobile camera from companion app
   const requestMobileCamera = useCallback(async () => {
@@ -123,200 +120,6 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
     setMobileCameraConnected(false);
   }, []);
 
-  const progressLastUpdateRef = useRef(0);
-
-  // Draw frame on canvas
-  const drawFrame = useCallback((timestamp: number) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const width = canvas.width;
-    const height = canvas.height;
-
-    // Background
-    if (styleConfig.bg.startsWith('linear-gradient')) {
-      const gradient = ctx.createLinearGradient(0, 0, width, height);
-      gradient.addColorStop(0, '#667eea');
-      gradient.addColorStop(1, '#764ba2');
-      ctx.fillStyle = gradient;
-    } else {
-      ctx.fillStyle = styleConfig.bg;
-    }
-    ctx.fillRect(0, 0, width, height);
-
-    // Animated background particles
-    ctx.globalAlpha = 0.3;
-    for (let i = 0; i < 20; i++) {
-      const x = (Math.sin(timestamp / 1000 + i) * 0.5 + 0.5) * width;
-      const y = (Math.cos(timestamp / 800 + i * 2) * 0.5 + 0.5) * height;
-      ctx.beginPath();
-      ctx.arc(x, y, 20 + Math.sin(timestamp / 500 + i) * 10, 0, Math.PI * 2);
-      ctx.fillStyle = styleConfig.accent;
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-
-    // Draw camera feed (PiP or fullscreen)
-    if (hasCamera && cameraPosition !== 'none' && cameraVideoRef.current) {
-      const camVideo = cameraVideoRef.current;
-      
-      if (cameraPosition === 'fullscreen') {
-        // Full screen camera with overlay
-        ctx.globalAlpha = 0.9;
-        ctx.drawImage(camVideo, 0, 0, width, height);
-        ctx.globalAlpha = 1;
-        
-        // Dark overlay for text readability
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
-        ctx.fillRect(0, height - 300, width, 300);
-      } else {
-        // Picture-in-Picture
-        const pipWidth = 280;
-        const pipHeight = 500;
-        const margin = 20;
-        
-        let pipX = margin;
-        let pipY = margin;
-        
-        switch (cameraPosition) {
-          case 'pip-top-right':
-            pipX = width - pipWidth - margin;
-            break;
-          case 'pip-bottom-left':
-            pipY = height - pipHeight - margin;
-            break;
-          case 'pip-bottom-right':
-            pipX = width - pipWidth - margin;
-            pipY = height - pipHeight - margin;
-            break;
-        }
-        
-        // PiP border
-        ctx.fillStyle = styleConfig.accent;
-        ctx.beginPath();
-        ctx.roundRect(pipX - 4, pipY - 4, pipWidth + 8, pipHeight + 8, 20);
-        ctx.fill();
-        
-        // PiP video
-        ctx.save();
-        ctx.beginPath();
-        ctx.roundRect(pipX, pipY, pipWidth, pipHeight, 16);
-        ctx.clip();
-        ctx.drawImage(camVideo, pipX, pipY, pipWidth, pipHeight);
-        ctx.restore();
-      }
-    }
-
-    // Score circle (skip if fullscreen camera)
-    if (cameraPosition !== 'fullscreen') {
-      const scoreScale = 1 + Math.sin(timestamp / 200) * 0.05;
-      ctx.save();
-      ctx.translate(width / 2, height / 3);
-      ctx.scale(scoreScale, scoreScale);
-      
-      // Outer ring
-      ctx.strokeStyle = styleConfig.accent;
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.arc(0, 0, 120, 0, Math.PI * 2);
-      ctx.stroke();
-      
-      // Score text
-      ctx.fillStyle = styleConfig.accent;
-      ctx.font = 'bold 80px Arial, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(score.score.toLocaleString(), 0, 0);
-      
-      ctx.restore();
-    } else {
-      // Smaller score for fullscreen camera mode
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 60px Arial, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(score.score.toLocaleString(), width / 2, height - 200);
-    }
-
-    // Song title
-    ctx.fillStyle = style === 'minimal' ? '#000000' : '#ffffff';
-    ctx.font = 'bold 36px Arial, sans-serif';
-    ctx.textAlign = 'center';
-    
-    const titleY = cameraPosition === 'fullscreen' ? height - 140 : height / 2 + 60;
-    ctx.fillText(song.title.substring(0, 20), width / 2, titleY);
-    
-    ctx.fillStyle = style === 'minimal' ? '#666666' : '#aaaaaa';
-    ctx.font = '28px Arial, sans-serif';
-    ctx.fillText(song.artist.substring(0, 25), width / 2, titleY + 40);
-
-    // Stats bar
-    const statsY = cameraPosition === 'fullscreen' ? height - 80 : height / 2 + 160;
-    ctx.font = '24px Arial, sans-serif';
-    ctx.fillStyle = style === 'minimal' ? '#000000' : '#ffffff';
-    
-    ctx.textAlign = 'left';
-    ctx.fillText(`🎯 ${score.accuracy.toFixed(1)}%`, width / 4, statsY);
-    ctx.fillText(`⚡ ${score.maxCombo}x`, width / 2, statsY);
-    ctx.textAlign = 'right';
-    ctx.fillText(score.difficulty.toUpperCase(), (width * 3) / 4, statsY);
-
-    // Rating badge
-    ctx.fillStyle = RATING_HEX_COLORS[score.rating] || styleConfig.accent;
-    ctx.font = 'bold 48px Arial, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(score.rating.toUpperCase() + '!', width / 2, cameraPosition === 'fullscreen' ? height - 30 : height - 100);
-
-    // App branding
-    ctx.fillStyle = style === 'minimal' ? '#cccccc' : '#ffffff66';
-    ctx.font = '20px Arial, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(t('shortsCreator.branding'), width / 2, cameraPosition === 'fullscreen' ? 30 : height - 40);
-
-    // Progress bar (during recording)
-    if (isRecording && duration > 0 && recordingStartTime > 0) {
-      const elapsed = (Date.now() - recordingStartTime) / 1000;
-      const progressPercent = Math.min(elapsed / duration, 1);
-      
-      ctx.fillStyle = style === 'minimal' ? '#00000033' : '#ffffff33';
-      ctx.fillRect(0, height - 8, width, 8);
-      ctx.fillStyle = styleConfig.accent;
-      ctx.fillRect(0, height - 8, width * progressPercent, 8);
-      
-      // Throttle progress state updates to ~10fps to reduce re-renders
-      const now = performance.now();
-      if (now - progressLastUpdateRef.current > 100) {
-        progressLastUpdateRef.current = now;
-        setProgress(progressPercent * 100);
-      }
-    }
-  }, [song, score, style, styleConfig, cameraPosition, hasCamera, isRecording, duration, recordingStartTime, t]);
-
-  // Animation loop — only run continuous rAF during recording; draw single static preview otherwise
-  useEffect(() => {
-    let animationId: number;
-
-    if (!isRecording) {
-      // Draw a single preview frame when not recording
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional state sync
-      drawFrame(performance.now());
-      return undefined;
-    }
-
-    const animate = (timestamp: number) => {
-      drawFrame(timestamp);
-      animationId = requestAnimationFrame(animate);
-    };
-
-    animationId = requestAnimationFrame(animate);
-
-    return () => {
-      cancelAnimationFrame(animationId);
-    };
-  }, [drawFrame, isRecording]);
-
   // Cleanup camera on unmount
   useEffect(() => {
     return () => {
@@ -324,13 +127,17 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
     };
   }, [stopCamera]);
 
+  // -----------------------------------------------------------------------
+  // Recording logic
+  // -----------------------------------------------------------------------
+
   // Start recording
   const startRecording = useCallback(async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const stream = canvas.captureStream(30);
-    
+
     // Add audio if available
     if (audioUrl) {
       try {
@@ -347,7 +154,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
         const destination = audioContext.createMediaStreamDestination();
         source.connect(destination);
         source.connect(audioContext.destination);
-        
+
         stream.addTrack(destination.stream.getAudioTracks()[0]);
         audioRef.current = audioElement;
       } catch (error) {
@@ -381,7 +188,7 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
       setRecordedUrl(URL.createObjectURL(blob));
       setIsRecording(false);
       setProgress(0);
-      
+
       if (autoStopTimerRef.current) {
         clearTimeout(autoStopTimerRef.current);
         autoStopTimerRef.current = null;
@@ -466,214 +273,66 @@ export function ShortsCreator({ song, score, audioUrl}: ShortsCreatorProps) {
     setProgress(0);
   }, []);
 
+  // -----------------------------------------------------------------------
+  // Render
+  // -----------------------------------------------------------------------
   return (
     <div className="space-y-4">
       {/* Canvas Preview */}
-      <div className="relative mx-auto" style={{ maxWidth: 360 }}>
-        <canvas
-          ref={canvasRef}
-          width={720}
-          height={1280}
-          className="w-full rounded-xl border border-white/10"
-          style={{ aspectRatio: '9/16' }}
-        />
-        
-        {/* Hidden camera video element */}
-        <video
-          ref={cameraVideoRef}
-          autoPlay
-          playsInline
-          muted
-          className="hidden"
-        />
-        
-        {/* Recording indicator */}
-        {isRecording && (
-          <div className="absolute top-4 right-4 flex items-center gap-2 bg-red-500 px-3 py-1 rounded-full">
-            <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
-            <span className="text-white text-sm font-medium">REC</span>
-          </div>
-        )}
-      </div>
+      <ShortsCanvas
+        canvasRef={canvasRef}
+        cameraVideoRef={cameraVideoRef}
+        isRecording={isRecording}
+      />
 
       {/* Camera Controls */}
       {!recordedBlob && (
-        <Card className="bg-white/5 border-white/10">
-          <CardHeader className="py-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              {t('shortsCreator.camera')}
-              {hasCamera && <Badge className="bg-green-500/30 text-green-400">{t('shortsCreator.active')}</Badge>}
-              {mobileCameraConnected && <Badge className="bg-blue-500/30 text-blue-400">{t('shortsCreator.mobileConnected')}</Badge>}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {/* Camera Source */}
-            <div className="flex gap-2">
-              {!hasCamera ? (
-                <>
-                  <Button 
-                    onClick={startLocalCamera}
-                    size="sm"
-                    className="flex-1 bg-gradient-to-r from-pink-500 to-rose-500"
-                  >
-                    {t('shortsCreator.useDeviceCamera')}
-                  </Button>
-                  <Button 
-                    onClick={requestMobileCamera}
-                    size="sm"
-                    variant="outline"
-                    className="flex-1 border-white/20 text-white"
-                    disabled={isRequestingMobileCamera}
-                  >
-                    {isRequestingMobileCamera ? t('shortsCreator.connecting') : t('shortsCreator.mobileCamera')}
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button onClick={stopCamera} size="sm" variant="outline" className="flex-1 border-white/20 text-white">
-                    {t('shortsCreator.turnOff')}
-                  </Button>
-                  {!mobileCameraConnected && (
-                    <Button
-                      onClick={requestMobileCamera}
-                      size="sm"
-                      variant="outline"
-                      className="flex-1 border-white/20 text-white"
-                      disabled={isRequestingMobileCamera}
-                    >
-                      {isRequestingMobileCamera ? t('shortsCreator.connecting') : t('shortsCreator.mobileCamera')}
-                    </Button>
-                  )}
-                  {mobileCameraConnected && (
-                    <Button
-                      onClick={() => setMobileCameraConnected(false)}
-                      size="sm"
-                      variant="outline"
-                      className="flex-1 border-red-500/30 text-red-400"
-                    >
-                      {t('shortsCreator.disconnectMobile')}
-                    </Button>
-                  )}
-                </>
-              )}
-            </div>
-            
-            {cameraError && (
-              <p className="text-xs text-red-400">{cameraError}</p>
-            )}
-            
-            {/* Camera Position */}
-            {hasCamera && (
-              <div className="space-y-2">
-                <label className="text-xs text-white/60">{t('shortsCreator.position')}</label>
-                <div className="flex gap-1 flex-wrap">
-                  {CAMERA_POSITIONS.map((pos) => (
-                    <button
-                      key={pos.id}
-                      onClick={() => setCameraPosition(pos.id)}
-                      className={`px-2 py-1 rounded text-xs transition-all ${
-                        cameraPosition === pos.id
-                          ? 'bg-cyan-500 text-black'
-                          : 'bg-white/10 text-white hover:bg-white/20'
-                      }`}
-                    >
-                      {t(`shortsCreator.cameraPosition${pos.id.split('-').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('')}`)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <CameraControls
+          hasCamera={hasCamera}
+          mobileCameraConnected={mobileCameraConnected}
+          isRequestingMobileCamera={isRequestingMobileCamera}
+          cameraError={cameraError}
+          cameraPosition={cameraPosition}
+          onStartLocalCamera={startLocalCamera}
+          onRequestMobileCamera={requestMobileCamera}
+          onStopCamera={stopCamera}
+          onSetCameraPosition={setCameraPosition}
+          onSetMobileCameraConnected={setMobileCameraConnected}
+        />
       )}
 
       {/* Duration Slider */}
       {!recordedBlob && (
-        <div className="space-y-2">
-          <label className="text-white/60 text-sm">{t('shortsCreator.duration').replace('{n}', String(duration))}</label>
-          <Slider
-            value={[duration]}
-            onValueChange={([v]) => setDuration(v)}
-            min={5}
-            max={60}
-            step={5}
-            className="w-full"
-          />
-        </div>
+        <DurationSlider
+          duration={duration}
+          onSetDuration={setDuration}
+        />
       )}
 
       {/* Style Selection */}
       {!recordedBlob && (
-        <div className="space-y-2">
-          <label className="text-white/60 text-sm">{t('shortsCreator.style')}</label>
-          <div className="flex gap-2 flex-wrap">
-            {VIDEO_STYLES.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => setStyle(s.id)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  style === s.id
-                    ? 'ring-2 ring-cyan-500 bg-white/10'
-                    : 'bg-white/5 hover:bg-white/10'
-                }`}
-              >
-                {s.name}
-              </button>
-            ))}
-          </div>
-        </div>
+        <StyleSelector
+          style={style}
+          onSetStyle={setStyle}
+        />
       )}
 
       {/* Progress */}
       {isRecording && (
-        <div className="space-y-1">
-          <div className="flex justify-between text-xs text-white/60">
-            <span>{t('shortsCreator.recording')}</span>
-            <span>{Math.round(progress)}%</span>
-          </div>
-          <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 transition-all"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
+        <RecordingProgress progress={progress} />
       )}
 
       {/* Actions */}
-      <div className="flex gap-2">
-        {!recordedBlob && !isRecording && (
-          <Button 
-            onClick={startRecording}
-            className="flex-1 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-400 hover:to-pink-400"
-          >
-            {t('shortsCreator.record').replace('{n}', String(duration))}
-          </Button>
-        )}
-        
-        {isRecording && (
-          <Button 
-            onClick={stopRecording}
-            className="flex-1 bg-white/10 text-white"
-          >
-            {t('shortsCreator.stop')}
-          </Button>
-        )}
-
-        {recordedBlob && (
-          <>
-            <Button onClick={resetRecording} variant="outline" className="border-white/20 text-white">
-              {t('shortsCreator.new')}
-            </Button>
-            <Button onClick={downloadVideo} className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500">
-              {t('shortsCreator.download')}
-            </Button>
-            <Button onClick={shareVideo} variant="outline" className="flex-1 border-white/20 text-white">
-              {t('shortsCreator.share')}
-            </Button>
-          </>
-        )}
-      </div>
+      <RecordingActions
+        hasRecording={!!recordedBlob}
+        isRecording={isRecording}
+        duration={duration}
+        onStartRecording={startRecording}
+        onStopRecording={stopRecording}
+        onResetRecording={resetRecording}
+        onDownloadVideo={downloadVideo}
+        onShareVideo={shareVideo}
+      />
 
       {/* Video Preview */}
       {recordedUrl && (
