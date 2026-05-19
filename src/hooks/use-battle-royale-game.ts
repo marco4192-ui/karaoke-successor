@@ -11,9 +11,9 @@ import {
   BattleRoyaleGame,
   BattleRoyalePlayer,
 } from '@/lib/game/battle-royale';
-import { Song, Note, LyricLine } from '@/types/game';
+import { Song, Note, LyricLine, PitchDetectionResult } from '@/types/game';
 import { calculatePitchStats, getVisibleNotes, PitchStats, NOTE_WINDOW, SING_LINE_POSITION } from '@/lib/game/note-utils';
-import { usePitchDetector } from '@/hooks/use-pitch-detector';
+import { useMultiPitchDetector, type PlayerPitchConfig } from '@/hooks/use-multi-pitch-detector';
 import { calculateScoringMetadata } from '@/lib/game/scoring';
 import { evaluateAndScoreTick } from '@/lib/game/party-scoring';
 import { useBattleRoyaleSongMedia } from '@/hooks/use-battle-royale-song-media';
@@ -74,7 +74,9 @@ interface UseBattleRoyaleGameReturn {
   bountyMultiplier: number; // #6 Bounty
   pitchStats: PitchStats | null;
   visibleNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
-  detectedPitch: number | null; // smoothed MIDI note from pitch detector
+  detectedPitch: number | null; // Leading player's MIDI note for NoteHighway
+  playerPitchMap: Map<string, PitchDetectionResult | null>; // Per-player pitch data
+  multiPitchErrors: Map<string, string>; // Per-player pitch errors
   songProgress: number; // 0-100
   countdown: number;
 }
@@ -123,10 +125,28 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     players: game.players,
   });
 
-  // ── Pitch Detection (local microphone) ────────────────────────────
-  const { isInitialized: pitchInitialized, pitchResult, initialize: initPitch, start: startPitch, stop: stopPitch } = usePitchDetector();
-  const pitchResultRef = useRef(pitchResult);
-  pitchResultRef.current = pitchResult;
+  // ── Multi-Pitch Detection (one detector per local mic player) ─────
+  // Build player configs from active mic players, each with their own microphoneId
+  const playerConfigs = useMemo<PlayerPitchConfig[]>(() =>
+    game.players
+      .filter(p => p.playerType === 'microphone')
+      .map(p => ({
+        playerId: p.id,
+        type: 'local' as const,
+        deviceId: p.microphoneId,
+      })),
+    [game.players],
+  );
+
+  const multiPitch = useMultiPitchDetector({
+    players: playerConfigs,
+    difficulty,
+    autoStart: false,
+  });
+
+  // Ref to multiPitch for use in game loop callbacks (avoids stale closure)
+  const multiPitchRef = useRef(multiPitch);
+  multiPitchRef.current = multiPitch;
 
   // ── Game State ─────────────────────────────────────────────────────
   const [currentTime, setCurrentTime] = useState(0);
@@ -135,6 +155,9 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
   // ── Countdown state (V3) ───────────────────────────────────────────
   const [countdown, setCountdown] = useState(0);
+  const gameRefRef = useRef<{ current: BattleRoyaleGame }>({ current: game } as { current: BattleRoyaleGame });
+  // gameRef is provided by round handlers below, but we need a placeholder here
+
   useEffect(() => {
     if (game.status === 'countdown') {
       setCountdown(game.settings.countdownDuration);
@@ -147,7 +170,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     const timer = setTimeout(() => {
       const next = countdown - 1;
       if (next <= 0) {
-        onUpdateGame({ ...gameRef.current, status: 'playing' });
+        onUpdateGame({ ...gameRefRef.current.current, status: 'playing' });
       }
       setCountdown(next);
     }, 1000);
@@ -216,7 +239,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     game,
     activePlayers,
     onUpdateGame,
-    stopPitch,
+    stopPitch: multiPitch.stop,
     audioRef,
     videoRef,
     audioHasPlayedRef,
@@ -224,6 +247,11 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     getRandomSongs,
     setShowElimination,
   });
+
+  // Keep gameRefRef in sync with gameRef from round handlers
+  useEffect(() => {
+    gameRefRef.current = gameRef;
+  }, [gameRef]);
 
   // ── Round Timer ────────────────────────────────────────────────────
   const { roundTimeLeft, snippetTimeLeft } = useBattleRoyaleRoundTimer({
@@ -241,11 +269,12 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     if (game.status === 'playing' && mediaLoaded && currentSong) {
       let cancelled = false;
       const initGame = async () => {
-        if (!pitchInitialized) {
-          await initPitch();
-        }
+        // Initialize multi-pitch detector (one per local mic player)
+        const ok = await multiPitch.initialize();
         if (cancelled) return;
-        startPitch();
+        if (ok) {
+          multiPitch.start();
+        }
 
         const audio = audioRef.current;
         if (audio && resolvedAudioUrlRef.current) {
@@ -280,16 +309,16 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
       return () => {
         cancelled = true;
-        stopPitch();
+        multiPitch.stop();
         if (gameLoopRef.current) {
           cancelAnimationFrame(gameLoopRef.current);
         }
       };
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game.status, mediaLoaded, currentSong, pitchInitialized, initPitch, startPitch, stopPitch]);
+  }, [game.status, mediaLoaded, currentSong]);
 
-  // ── Game Loop for simultaneous scoring ─────────────────────────────
+  // ── Game Loop for simultaneous per-player scoring ──────────────────
   const startGameLoopRef = useRef<() => void>(() => {});
 
   const startGameLoop = useCallback(() => {
@@ -320,10 +349,6 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
       if (deltaTime >= TICK_INTERVAL && td && currentSongRef.current) {
         lastTickTime = timestamp;
 
-        const currentPitchResult = pitchResultRef.current;
-        const detectedPitch = currentPitchResult?.note;
-        const isSinging = currentPitchResult?.isSinging;
-
         const currentAudioTime = audioRef.current ? audioRef.current.currentTime * 1000 : currentTime;
 
         let batchedGame = gameRef.current;
@@ -338,12 +363,14 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
           const comboMap = new Map(batchedGame.players.map(p => [p.id, p.currentCombo]));
 
-          // Score all active MICROPHONE players (shared pitch)
+          // Score all active MICROPHONE players — each with THEIR OWN pitch detector
           for (const player of micPlayers) {
-            if (isSinging === false) continue;
-            if (detectedPitch == null) continue;
+            const playerPitch = multiPitchRef.current.getPlayerPitch(player.id);
+            if (!playerPitch) continue;
+            if (playerPitch.isSinging === false) continue;
+            if (playerPitch.note == null) continue;
 
-            const tick = evaluateAndScoreTick(detectedPitch, activeNote, difficultyRef.current, td.scoringMetadata);
+            const tick = evaluateAndScoreTick(playerPitch.note, activeNote, difficultyRef.current, td.scoringMetadata);
 
             if (tick.hit) {
               // #6 Bounty: Apply multiplier for non-bounty players
@@ -371,7 +398,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
             }
           }
 
-          // Score all active COMPANION players
+          // Score all active COMPANION players (unchanged — uses polling cache)
           for (const player of companionPlayers) {
             const cachedPitch = player.connectionCode
               ? companionPitchCacheRef.current.get(player.connectionCode)
@@ -421,6 +448,31 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
   useEffect(() => { startGameLoopRef.current = startGameLoop; }, [startGameLoop]);
 
+  // ── Derive detectedPitch for NoteHighway (leading active mic player) ─
+  // The NoteHighway can only show one pitch line, so we use the leading
+  // (highest-scoring) active mic player's pitch for visual feedback.
+  const detectedPitch = useMemo(() => {
+    const activeMicPlayers = game.players
+      .filter(p => p.playerType === 'microphone' && !p.eliminated)
+      .sort((a, b) => b.score - a.score);
+
+    for (const player of activeMicPlayers) {
+      const pitch = multiPitch.getPlayerPitch(player.id);
+      if (pitch?.note != null && pitch.isSinging !== false) {
+        return pitch.note;
+      }
+    }
+    return null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game.players, multiPitch.playerPitches]);
+
+  // ── Cleanup on unmount ─────────────────────────────────────────────
+  useEffect(() => {
+    return () => {
+      multiPitch.stop();
+    };
+  }, [multiPitch]);
+
   return {
     showElimination,
     stats,
@@ -445,7 +497,9 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     bountyMultiplier: game.settings.bountyMultiplier,
     pitchStats: pitchStatsRef.current,
     visibleNotes: visibleNotesRef.current,
-    detectedPitch: pitchResult?.note ?? null,
+    detectedPitch,
+    playerPitchMap: multiPitch.playerPitches,
+    multiPitchErrors: multiPitch.errors,
     songProgress: currentSong && currentSong.duration > 0
       ? Math.min(100, Math.max(0, (currentTime / currentSong.duration) * 100))
       : 0,

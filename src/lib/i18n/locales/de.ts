@@ -478,6 +478,8 @@ export const deTranslations = {
       localMicrophoneDesc: 'Spieler an diesem Gerät mit Mikrofon',
       companionApp: 'Companion-App',
       companionAppDesc: 'Spieler über die mobile Companion-App',
+      defaultMicrophone: 'Standard-Mikrofon',
+      selectMicrophone: 'Mikrofon auswählen',
       readyToBattle: 'Bereit zum Kämpfen!',
       playersSelected: 'Spieler ausgewählt',
       startBattle: '👑 Battle Royale starten ({n} Spieler)',
@@ -574,7 +576,7 @@ export const deTranslations = {
       skip: 'Überspringen',
       advancedSettings: 'Erweiterte Einstellungen',
       // V1/V2 Visual enhancements
-      sharedPitchWarning: '⚠️ Mehrere lokale Mikrofone teilen sich denselben Pitch-Eingang. Alle erhalten die gleiche Bewertung.',
+      multiPitchActive: 'Miks aktiv',
       songProgress: 'Song-Fortschritt',
       roundResults: 'Runden-Ergebnis',
       eliminatedPlayerName: '{name} wurde eliminiert!',

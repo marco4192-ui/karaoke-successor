@@ -53,6 +53,8 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
     detectedPitch,
     songProgress,
     countdown,
+    playerPitchMap,
+    multiPitchErrors,
   } = useBattleRoyaleGame({ game, songs, onUpdateGame });
 
   // Winner celebration
@@ -145,6 +147,8 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
         detectedPitch={detectedPitch}
         songProgress={songProgress}
         countdown={countdown}
+        playerPitchMap={playerPitchMap}
+        multiPitchErrors={multiPitchErrors}
       />
     );
   }
@@ -187,6 +191,8 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
       detectedPitch={detectedPitch}
       songProgress={songProgress}
       countdown={countdown}
+      playerPitchMap={playerPitchMap}
+      multiPitchErrors={multiPitchErrors}
     />
   );
 }

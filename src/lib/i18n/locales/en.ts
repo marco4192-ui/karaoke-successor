@@ -478,6 +478,8 @@ export const enTranslations = {
       localMicrophoneDesc: 'Players at this device with microphone',
       companionApp: 'Companion App',
       companionAppDesc: 'Players using the mobile companion app',
+      defaultMicrophone: 'Default Microphone',
+      selectMicrophone: 'Select Microphone',
       readyToBattle: 'Ready to Battle!',
       playersSelected: 'players selected',
       startBattle: '👑 Start Battle Royale ({n} Players)',
@@ -578,7 +580,7 @@ export const enTranslations = {
       skip: 'Skip',
       advancedSettings: 'Advanced Settings',
       // V1/V2 Visual enhancements
-      sharedPitchWarning: '⚠️ Multiple local microphones share the same pitch input. All receive identical scoring.',
+      multiPitchActive: 'mics active',
       songProgress: 'Song Progress',
       roundResults: 'Round Results',
       eliminatedPlayerName: '{name} was eliminated!',

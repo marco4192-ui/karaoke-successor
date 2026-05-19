@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +29,8 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
   const { t } = useTranslation();
   const [micPlayers, setMicPlayers] = useState<string[]>([]);
   const [companionPlayers, setCompanionPlayers] = useState<string[]>([]);
+  const [availableMics, setAvailableMics] = useState<Array<{ deviceId: string; label: string }>>([]);
+  const [playerMicDevices, setPlayerMicDevices] = useState<Record<string, string>>({});
 
   // Core settings
   const [roundDuration, setRoundDuration] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.roundDuration);
@@ -66,6 +68,32 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
   const [showVideoBackground, setShowVideoBackground] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.showVideoBackground);
   const [countdownDuration, setCountdownDuration] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.countdownDuration);
 
+  useEffect(() => {
+    const enumerateMics = async () => {
+      try {
+        let devices = await navigator.mediaDevices.enumerateDevices();
+        const hasLabels = devices.some(d => d.kind === 'audioinput' && d.label);
+        if (!hasLabels) {
+          // Request permission to get labels
+          const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          tempStream.getTracks().forEach(track => track.stop());
+          devices = await navigator.mediaDevices.enumerateDevices();
+        }
+        setAvailableMics(
+          devices
+            .filter(d => d.kind === 'audioinput')
+            .map(d => ({
+              deviceId: d.deviceId,
+              label: d.label || `Microphone (${d.deviceId.slice(0, 8)}...)`,
+            }))
+        );
+      } catch {
+        // Silently fail — mic selection just won't be available
+      }
+    };
+    enumerateMics();
+  }, []);
+
   const activeProfiles = useMemo(() =>
     profiles.filter(p => p.isActive !== false),
     [profiles]
@@ -80,6 +108,11 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
   const toggleMicPlayer = (playerId: string) => {
     if (micPlayers.includes(playerId)) {
       setMicPlayers(prev => prev.filter(id => id !== playerId));
+      setPlayerMicDevices(prev => {
+        const next = { ...prev };
+        delete next[playerId];
+        return next;
+      });
       return;
     }
     if (micPlayers.length >= MAX_LOCAL_MIC_PLAYERS) {
@@ -121,6 +154,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       avatar?: string;
       color: string;
       playerType: PlayerType;
+      microphoneId?: string;
     }> = [];
 
     micPlayers.forEach((id) => {
@@ -131,6 +165,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
         avatar: profile?.avatar,
         color: profile?.color || PLAYER_COLORS[players.length % PLAYER_COLORS.length],
         playerType: 'microphone',
+        microphoneId: playerMicDevices[id] || undefined,
       });
     });
 
@@ -599,6 +634,24 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
                       <span className="font-medium truncate text-sm">{profile.name}</span>
                       {isSelected && <span className="ml-auto text-red-400 text-lg">🎤</span>}
                     </div>
+                    {isSelected && availableMics.length > 0 && (
+                      <div className="mt-1.5" onClick={(e) => e.stopPropagation()}>
+                        <select
+                          value={playerMicDevices[profile.id] || ''}
+                          onChange={(e) => setPlayerMicDevices(prev => ({ ...prev, [profile.id]: e.target.value }))}
+                          className="w-full text-[10px] bg-white/10 border border-white/20 rounded px-1.5 py-1 text-white/80 focus:outline-none focus:border-purple-400"
+                        >
+                          <option value="" className="bg-gray-900">
+                            {t('battleRoyale.defaultMicrophone')}
+                          </option>
+                          {availableMics.map(mic => (
+                            <option key={mic.deviceId} value={mic.deviceId} className="bg-gray-900">
+                              {mic.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                   </div>
                 );
               })}

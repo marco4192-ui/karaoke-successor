@@ -10,7 +10,7 @@ import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
 import { NoteHighway } from '@/components/game/note-highway';
 import { GameBackground } from '@/components/game/game-background';
 import { GameCountdown } from '@/components/game/game-countdown';
-import { Song, Note, LyricLine } from '@/types/game';
+import { Song, Note, LyricLine, PitchDetectionResult } from '@/types/game';
 import { PitchStats } from '@/lib/game/note-utils';
 import { VISIBLE_TOP, VISIBLE_RANGE, SING_LINE_POSITION, NOTE_WINDOW } from '@/lib/game/note-utils';
 import {
@@ -91,6 +91,9 @@ interface PlayingViewProps {
   detectedPitch: number | null;
   songProgress: number;
   countdown: number;
+  // Multi-pitch detection
+  playerPitchMap: Map<string, PitchDetectionResult | null>;
+  multiPitchErrors: Map<string, string>;
 }
 
 export function PlayingView({
@@ -115,6 +118,8 @@ export function PlayingView({
   detectedPitch,
   songProgress,
   countdown,
+  playerPitchMap,
+  multiPitchErrors,
 }: PlayingViewProps) {
   const { t } = useTranslation();
   const currentRound = game.rounds[game.rounds.length - 1];
@@ -229,9 +234,13 @@ export function PlayingView({
   const eliminationAnimationEnabled = game.settings.eliminationAnimation;
   const isEliminationCamera = eliminationAnimationEnabled && roundTimeLeft <= 10 && roundTimeLeft > 0;
 
-  // V5: Shared pitch warning
+  // V5: Multi-pitch mic status — count players with active pitch detection
   const activeMicPlayers = activePlayers.filter(p => p.playerType === 'microphone');
-  const showSharedPitchWarning = activeMicPlayers.length >= 2;
+  const activePitchCount = activeMicPlayers.filter(p => {
+    const pitch = playerPitchMap.get(p.id);
+    return pitch && pitch.isSinging !== false;
+  }).length;
+  const hasPitchErrors = multiPitchErrors.size > 0;
 
   // V1: Note highway visibility
   const showNoteHighway = game.settings.showNoteHighway && pitchStats !== null && visibleNotes.length > 0;
@@ -333,13 +342,23 @@ export function PlayingView({
         </div>
       )}
 
-      {/* ─────────── V5: Shared Pitch Warning ─────────── */}
-      {showSharedPitchWarning && (
+      {/* ─────────── V5: Multi-Pitch Mic Status ─────────── */}
+      {activeMicPlayers.length >= 2 && (
         <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-          <div className="flex items-center gap-1.5 bg-amber-500/20 border border-amber-500/40 rounded-full px-3 py-1 backdrop-blur-sm">
-            <AlertTriangle className="w-3 h-3 text-amber-400" />
-            <span className="text-[10px] text-amber-300 font-medium whitespace-nowrap">
-              {t('battleRoyale.sharedPitchWarning')}
+          <div className={`flex items-center gap-1.5 rounded-full px-3 py-1 backdrop-blur-sm ${
+            hasPitchErrors
+              ? 'bg-amber-500/20 border border-amber-500/40'
+              : 'bg-green-500/20 border border-green-500/40'
+          }`}>
+            {hasPitchErrors ? (
+              <AlertTriangle className="w-3 h-3 text-amber-400" />
+            ) : (
+              <span className="text-[10px] text-green-400">●</span>
+            )}
+            <span className={`text-[10px] font-medium whitespace-nowrap ${
+              hasPitchErrors ? 'text-amber-300' : 'text-green-300'
+            }`}>
+              {activePitchCount}/{activeMicPlayers.length} {t('battleRoyale.multiPitchActive')}
             </span>
           </div>
         </div>
@@ -540,6 +559,16 @@ export function PlayingView({
                         🔥{player.currentCombo}
                       </span>
                     )}
+
+                    {/* Multi-pitch: per-player mic singing indicator */}
+                    {!eliminated && player.playerType === 'microphone' && activeMicPlayers.length >= 2 && (() => {
+                      const pp = playerPitchMap.get(player.id);
+                      const hasError = multiPitchErrors.has(player.id);
+                      if (hasError) return <span className="text-[8px] text-red-400">⚠ Mic</span>;
+                      if (pp && pp.isSinging && pp.note != null) return <span className="text-[8px] text-green-400">🎤●</span>;
+                      if (pp && pp.volume > 0.01) return <span className="text-[8px] text-yellow-400">🎤○</span>;
+                      return <span className="text-[8px] text-white/20">🎤</span>;
+                    })()}
                   </div>
                 </div>
 
