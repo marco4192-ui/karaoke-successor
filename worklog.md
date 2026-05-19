@@ -310,3 +310,24 @@ Stage Summary:
 - All 13 Medley features, 11 Rate my Song features, 11 Battle Royale features, 10 Tournament features, 10 Blind Karaoke features confirmed working
 - No TypeScript errors
 
+---
+Task ID: 2
+Agent: Main Agent
+Task: Editor UX improvements — button labels, cover reliability, AI prompts
+
+Work Log:
+- Analyzed editor-screen.tsx button layout and cover loading logic
+- Task 1: Added text labels to reload button (🔄 Neu laden) and metadata panel toggle (🏷️ KI-Assistent)
+- Task 2: Added loading="lazy" and onError handler to cover images; made 🎵 fallback always-rendered behind image with pointer-events-none
+- Task 3a: Improved song-identify AI prompt — expanded genre whitelist to 26 genres, added sub-genre normalization, language detection heuristics for 6 languages, Schlager/Volksmusik disambiguation
+- Task 3b: Improved harmonize AI prompt — expanded normalization hints with 15 parent genre mappings, fixed Schlager rule (keep as-is), added language detection from artist patterns and genre-language correlations
+- Added i18n keys (refreshBtn, metadataPanelBtn) to all 16 locale files
+- Resolved merge conflict with remote multi-select feature
+- Ran npx tsc — 0 errors
+- Committed as f3b8630 and pushed to main
+
+Stage Summary:
+- 19 files changed, 94 insertions, 32 deletions
+- Button UX: emoji-only → emoji + text labels
+- Cover reliability: lazy loading + error handling + always-visible fallback
+- AI accuracy: improved prompts with genre normalization, language heuristics, and Schlager disambiguation
