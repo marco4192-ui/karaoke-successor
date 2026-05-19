@@ -572,7 +572,23 @@ export const deTranslations = {
       games: 'Spiele',
       avgSurvival: 'Durchschn. Überleben',
       skip: 'Überspringen',
-      advancedSettings: 'Erweiterte Einstellungen'
+      advancedSettings: 'Erweiterte Einstellungen',
+      // V1/V2 Visual enhancements
+      sharedPitchWarning: '⚠️ Mehrere lokale Mikrofone teilen sich denselben Pitch-Eingang. Alle erhalten die gleiche Bewertung.',
+      songProgress: 'Song-Fortschritt',
+      roundResults: 'Runden-Ergebnis',
+      eliminatedPlayerName: '{name} wurde eliminiert!',
+      survivedPlayers: 'Überlebende Spieler',
+      countdownGo: 'LOS!',
+      // V13 Settings
+      noteHighwayLabel: 'Note-Highway',
+      noteHighwayDesc: 'Echte Noten-Anzeige mit Sing-Line und Pitch-Anzeige',
+      noteShapeLabel: 'Noten-Form',
+      noteDisplayStyleLabel: 'Anzeigestil',
+      videoBackgroundLabel: 'Video-Hintergrund',
+      videoBackgroundDesc: 'Zeigt Video-Hintergrund während des Singens',
+      countdownLabel: 'Countdown',
+      countdownDesc: 'Sekunden bis zum Rundenstart'
     },
     medley: {
       setupTitle: '🎵 Medley-Wettbewerb',

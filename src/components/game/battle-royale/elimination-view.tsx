@@ -30,6 +30,7 @@ export function EliminationView({
   const { t } = useTranslation();
   const bountyClaimer = bountyClaimedById ? players.find(p => p.id === bountyClaimedById) : null;
   const winsNeeded = Math.ceil(bestOf / 2);
+  const survivingPlayers = players.filter(p => !p.eliminated);
 
   // In grand finale: show round winner instead of eliminated player
   const isGrandFinaleRound = isGrandFinale && !eliminatedPlayer;
@@ -123,6 +124,49 @@ export function EliminationView({
             </div>
           </div>
         </div>
+
+        {/* V12 Surviving Players */}
+        {!isGrandFinaleRound && eliminatedPlayer && survivingPlayers.length > 0 && (
+          <div className="mt-6 pt-4 border-t border-emerald-500/20">
+            <h2 className="text-lg font-bold text-emerald-400 mb-4">
+              {t('battleRoyale.survivedPlayers')}
+            </h2>
+            <div className="flex gap-3 overflow-x-auto pb-2 justify-center flex-wrap">
+              {survivingPlayers.map((player, index) => (
+                <div
+                  key={player.id}
+                  className="flex flex-col items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2 min-w-[100px] shadow-[0_0_12px_rgba(34,197,94,0.15)] animate-fade-in"
+                  style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'both' }}
+                >
+                  <div className="relative">
+                    {player.avatar ? (
+                      <img
+                        src={player.avatar}
+                        alt={player.name}
+                        className="w-12 h-12 rounded-full object-cover border-2 border-emerald-500/50"
+                      />
+                    ) : (
+                      <div
+                        className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold border-2 border-emerald-500/50"
+                        style={{ backgroundColor: player.color ?? '#22c55e' }}
+                      >
+                        {player.name?.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center text-white text-xs font-bold border-2 border-emerald-700">
+                      ✓
+                    </div>
+                  </div>
+                  <span className="text-sm font-semibold text-white/80 truncate max-w-[90px]">{player.name}</span>
+                  <span className="text-xs text-white/50">{player.score?.toLocaleString() ?? 0}</span>
+                  <Badge className="bg-emerald-500/20 text-emerald-400 text-[10px] px-1.5 py-0">
+                    SURVIVED!
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* #6 Bounty Claimed notification */}
         {bountyClaimed && bountyClaimer && (

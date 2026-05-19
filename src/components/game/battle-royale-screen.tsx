@@ -48,6 +48,11 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
     previousRoundScores,
     bountyPlayerId,
     bountyMultiplier,
+    pitchStats,
+    visibleNotes,
+    detectedPitch,
+    songProgress,
+    countdown,
   } = useBattleRoyaleGame({ game, songs, onUpdateGame });
 
   // Winner celebration
@@ -115,6 +120,35 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
     );
   }
 
+  // Countdown phase (V3)
+  if (game.status === 'countdown' || countdown > 0) {
+    return (
+      <PlayingView
+        game={game}
+        sortedPlayers={sortedPlayers}
+        activePlayers={activePlayers}
+        currentSong={currentSong}
+        currentTime={currentTime}
+        roundTimeLeft={roundTimeLeft}
+        snippetTimeLeft={snippetTimeLeft}
+        currentSnippetIndex={currentSnippetIndex}
+        totalSnippets={totalSnippets}
+        audioRef={audioRef}
+        videoRef={videoRef}
+        setCurrentTime={setCurrentTime}
+        onRoundEnd={handleRoundEnd}
+        previousRoundScores={previousRoundScores}
+        bountyPlayerId={bountyPlayerId}
+        bountyMultiplier={bountyMultiplier}
+        pitchStats={pitchStats}
+        visibleNotes={visibleNotes}
+        detectedPitch={detectedPitch}
+        songProgress={songProgress}
+        countdown={countdown}
+      />
+    );
+  }
+
   // Setup phase
   if (game.status === 'setup') {
     return (
@@ -148,6 +182,11 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
       previousRoundScores={previousRoundScores}
       bountyPlayerId={bountyPlayerId}
       bountyMultiplier={bountyMultiplier}
+      pitchStats={pitchStats}
+      visibleNotes={visibleNotes}
+      detectedPitch={detectedPitch}
+      songProgress={songProgress}
+      countdown={countdown}
     />
   );
 }

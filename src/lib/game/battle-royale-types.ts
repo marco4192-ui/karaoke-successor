@@ -2,6 +2,7 @@
 
 import { TournamentPlayer } from './tournament';
 import { Difficulty } from '@/types/game';
+import type { NoteShapeStyle, NoteDisplayStyle } from '@/lib/game/note-utils';
 
 // ==================== TYPES ====================
 
@@ -182,6 +183,13 @@ export interface BattleRoyaleSettings {
   shrinkingTimer: boolean;
   shrinkFactor: number; // seconds to reduce per round
   minRoundDuration: number;
+
+  // Visual settings
+  noteShapeStyle: NoteShapeStyle;
+  noteDisplayStyle: NoteDisplayStyle;
+  showNoteHighway: boolean;
+  showVideoBackground: boolean;
+  countdownDuration: number; // seconds (default 3)
 }
 
 // ==================== CONSTANTS ====================
@@ -221,6 +229,13 @@ export const DEFAULT_BATTLE_ROYALE_SETTINGS: BattleRoyaleSettings = {
   shrinkingTimer: false,
   shrinkFactor: 5,
   minRoundDuration: 30,
+
+  // Visual settings
+  noteShapeStyle: 'rounded' as NoteShapeStyle,
+  noteDisplayStyle: 'classic' as NoteDisplayStyle,
+  showNoteHighway: true,
+  showVideoBackground: true,
+  countdownDuration: 3,
 };
 
 export const DIFFICULTY_ORDER: Difficulty[] = ['easy', 'medium', 'hard'];

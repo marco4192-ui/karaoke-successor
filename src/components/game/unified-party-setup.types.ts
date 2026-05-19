@@ -157,6 +157,11 @@ export interface BattleRoyaleModeSettings extends BaseModeSettings {
   shrinkingTimer?: boolean;
   shrinkFactor?: number;
   minRoundDuration?: number;
+  noteShapeStyle?: 'rounded' | 'sharp' | 'pill' | 'diamond';
+  noteDisplayStyle?: 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity';
+  showNoteHighway?: boolean;
+  showVideoBackground?: boolean;
+  countdownDuration?: number;
 }
 
 /** Missing Words */

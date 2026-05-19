@@ -328,6 +328,11 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   shrinkingTimer: s.shrinkingTimer || false,
                   shrinkFactor: s.shrinkFactor || 5,
                   minRoundDuration: s.minRoundDuration || 30,
+                  noteShapeStyle: (s.noteShapeStyle as 'rounded' | 'sharp' | 'pill' | 'diamond') || 'rounded',
+                  noteDisplayStyle: (s.noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity') || 'classic',
+                  showNoteHighway: s.showNoteHighway ?? true,
+                  showVideoBackground: s.showVideoBackground ?? true,
+                  countdownDuration: s.countdownDuration || 3,
                 };
                 try {
                   const game = createBattleRoyale(mappedPlayers, brSettings, filteredSongs.map(s => s.id));

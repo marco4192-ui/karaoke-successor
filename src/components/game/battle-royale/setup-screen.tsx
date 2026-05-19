@@ -59,6 +59,13 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
   const [shrinkFactor, setShrinkFactor] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.shrinkFactor);
   const [minRoundDuration, setMinRoundDuration] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.minRoundDuration);
 
+  // V13 Visual settings
+  const [showNoteHighway, setShowNoteHighway] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.showNoteHighway);
+  const [noteShapeStyle, setNoteShapeStyle] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.noteShapeStyle);
+  const [noteDisplayStyle, setNoteDisplayStyle] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.noteDisplayStyle);
+  const [showVideoBackground, setShowVideoBackground] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.showVideoBackground);
+  const [countdownDuration, setCountdownDuration] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.countdownDuration);
+
   const activeProfiles = useMemo(() =>
     profiles.filter(p => p.isActive !== false),
     [profiles]
@@ -155,6 +162,11 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       shrinkFactor,
       minRoundDuration,
       medleySnippets,
+      showNoteHighway,
+      noteShapeStyle,
+      noteDisplayStyle,
+      showVideoBackground,
+      countdownDuration,
     };
 
     const songIds = songs.map(s => s.id);
@@ -453,6 +465,92 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* ── V13 Visual Settings ── */}
+      <Card className="bg-white/5 border-white/10 mb-4">
+        <CardHeader>
+          <CardTitle>{t('battleRoyale.visualSettings')}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Note Highway */}
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="font-medium">{t('battleRoyale.noteHighwayLabel')}</label>
+              <p className="text-sm text-white/60">{t('battleRoyale.noteHighwayDesc')}</p>
+            </div>
+            <Button
+              variant={showNoteHighway ? 'default' : 'outline'}
+              onClick={() => setShowNoteHighway(!showNoteHighway)}
+              className={showNoteHighway ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}
+            >
+              {showNoteHighway ? t('battleRoyale.on') : t('battleRoyale.off')}
+            </Button>
+          </div>
+
+          {/* Note Shape Style */}
+          <div>
+            <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.noteShapeLabel')}</label>
+            <div className="flex gap-2">
+              {(['rounded', 'sharp', 'pill', 'diamond'] as const).map(shape => (
+                <Button
+                  key={shape}
+                  variant={noteShapeStyle === shape ? 'default' : 'outline'}
+                  onClick={() => setNoteShapeStyle(shape)}
+                  className={noteShapeStyle === shape ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}
+                >
+                  {{ rounded: '⬭', sharp: '◆', pill: '💊', diamond: '◇' }[shape] as string} {shape}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Note Display Style */}
+          <div>
+            <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.noteDisplayStyleLabel')}</label>
+            <div className="flex gap-2">
+              {(['classic', 'fill-level', 'color-feedback', 'glow-intensity'] as const).map(style => (
+                <Button
+                  key={style}
+                  variant={noteDisplayStyle === style ? 'default' : 'outline'}
+                  onClick={() => setNoteDisplayStyle(style)}
+                  className={noteDisplayStyle === style ? 'bg-indigo-500 hover:bg-indigo-600' : 'border-white/20'}
+                >
+                  {style}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Video Background */}
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="font-medium">{t('battleRoyale.videoBackgroundLabel')}</label>
+              <p className="text-sm text-white/60">{t('battleRoyale.videoBackgroundDesc')}</p>
+            </div>
+            <Button
+              variant={showVideoBackground ? 'default' : 'outline'}
+              onClick={() => setShowVideoBackground(!showVideoBackground)}
+              className={showVideoBackground ? 'bg-purple-500 hover:bg-purple-600' : 'border-white/20'}
+            >
+              {showVideoBackground ? t('battleRoyale.on') : t('battleRoyale.off')}
+            </Button>
+          </div>
+
+          {/* Countdown Duration */}
+          <div>
+            <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.countdownLabel').replace('{n}', String(countdownDuration))}</label>
+            <input
+              type="number"
+              min={1}
+              max={10}
+              value={countdownDuration}
+              onChange={(e) => setCountdownDuration(Math.min(10, Math.max(1, Number(e.target.value))))}
+              className="w-24 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white"
+            />
+            <p className="text-xs text-white/40 mt-1">{t('battleRoyale.countdownDesc')}</p>
+          </div>
         </CardContent>
       </Card>
 

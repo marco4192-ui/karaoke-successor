@@ -11,7 +11,8 @@ import {
   BattleRoyaleGame,
   BattleRoyalePlayer,
 } from '@/lib/game/battle-royale';
-import { Song, Note } from '@/types/game';
+import { Song, Note, LyricLine } from '@/types/game';
+import { calculatePitchStats, getVisibleNotes, PitchStats, NOTE_WINDOW, SING_LINE_POSITION } from '@/lib/game/note-utils';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { calculateScoringMetadata } from '@/lib/game/scoring';
 import { evaluateAndScoreTick } from '@/lib/game/party-scoring';
@@ -71,6 +72,11 @@ interface UseBattleRoyaleGameReturn {
   previousRoundScores: Record<string, number>; // #9 Trend tracking
   bountyPlayerId: string | null; // #6 Bounty
   bountyMultiplier: number; // #6 Bounty
+  pitchStats: PitchStats | null;
+  visibleNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
+  detectedPitch: number | null; // smoothed MIDI note from pitch detector
+  songProgress: number; // 0-100
+  countdown: number;
 }
 
 export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoyaleGameParams): UseBattleRoyaleGameReturn {
@@ -127,23 +133,50 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   const gameLoopRef = useRef<number | null>(null);
   const lastCurrentTimeUpdateRef = useRef(0);
 
+  // ── Countdown state (V3) ───────────────────────────────────────────
+  const [countdown, setCountdown] = useState(0);
+  useEffect(() => {
+    if (game.status === 'countdown') {
+      setCountdown(game.settings.countdownDuration);
+    } else {
+      setCountdown(0);
+    }
+  }, [game.status, game.settings.countdownDuration]);
+  useEffect(() => {
+    if (countdown <= 0 || game.status !== 'countdown') return;
+    const timer = setTimeout(() => {
+      const next = countdown - 1;
+      if (next <= 0) {
+        onUpdateGame({ ...gameRef.current, status: 'playing' });
+      }
+      setCountdown(next);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [countdown, game.status]);
+
   // ── Pre-compute timing data for scoring ────────────────────────────
   const timingData = useMemo(() => {
     if (!currentSong || currentSong.lyrics.length === 0) return null;
-    const allNotes: Array<Note & { lineIndex: number }> = [];
+    const allNotes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
     currentSong.lyrics.forEach((line, lineIndex) => {
       line.notes.forEach(note => {
-        allNotes.push({ ...note, lineIndex });
+        allNotes.push({ ...note, lineIndex, line });
       });
     });
     allNotes.sort((a, b) => a.startTime - b.startTime);
     const beatDurationMs = currentSong.bpm ? 15000 / currentSong.bpm : 500;
     const scoringMetadata = calculateScoringMetadata(allNotes, beatDurationMs);
-    return { allNotes, beatDuration: beatDurationMs, scoringMetadata };
+    const pitchStats = calculatePitchStats(allNotes);
+    return { allNotes, beatDuration: beatDurationMs, scoringMetadata, pitchStats };
   }, [currentSong]);
+
+  // ── Visible notes ref (updated every frame) ────────────────────────
+  const visibleNotesRef = useRef<Array<Note & { lineIndex: number; line: LyricLine }>>([]);
+  const pitchStatsRef = useRef<PitchStats | null>(null);
 
   const timingDataRef = useRef(timingData);
   timingDataRef.current = timingData;
+  pitchStatsRef.current = timingData?.pitchStats ?? null;
   const currentSongRef = useRef(currentSong);
   currentSongRef.current = currentSong;
   const difficultyRef = useRef(difficulty);
@@ -267,6 +300,13 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
       if (gameRef.current.status !== 'playing') return;
 
       const deltaTime = timestamp - lastTickTime;
+
+      // Update visible notes every frame
+      const tdForVis = timingDataRef.current;
+      const currentAudioTimeForVis = audioRef.current ? audioRef.current.currentTime * 1000 : 0;
+      if (tdForVis) {
+        visibleNotesRef.current = getVisibleNotes(tdForVis.allNotes, currentAudioTimeForVis, NOTE_WINDOW);
+      }
 
       if (audioRef.current) {
         const now = performance.now();
@@ -403,5 +443,12 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     previousRoundScores: game.previousRoundScores,
     bountyPlayerId: game.bountyPlayerId,
     bountyMultiplier: game.settings.bountyMultiplier,
+    pitchStats: pitchStatsRef.current,
+    visibleNotes: visibleNotesRef.current,
+    detectedPitch: pitchResult?.note ?? null,
+    songProgress: currentSong && currentSong.duration > 0
+      ? Math.min(100, Math.max(0, (currentTime / currentSong.duration) * 100))
+      : 0,
+    countdown,
   };
 }
