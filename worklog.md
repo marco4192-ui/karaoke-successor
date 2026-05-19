@@ -353,3 +353,25 @@ Stage Summary:
 - Bug 6: Stream sharing for same-device mics (ref counting in PitchDetectorManager)
 - Bug 7: mountedRef guard prevents stale state updates in round transitions
 - Bug 8: Timer bar padding increased to avoid fullscreen button overlap
+
+---
+Task ID: 1
+Agent: main
+Task: Notendarstellung und Notenformen verbessern
+
+Work Log:
+- Analysed note-utils.tsx (8 display styles, 8 shape styles) and note-highway.tsx
+- Identified 6 issues: empty notes too dim, music-note unrecognizable, star distorted, triangle too elongated, color gradient not visible, particle-fade broken
+- Fixed music-note: changed borderRadius to clipPath polygon (note head left + stem right)
+- Fixed star: changed from aggressive 5-point star to star-shaped bar (3 top + 3 bottom protrusions) with 3D drop-shadow
+- Fixed triangle: changed from right-pointing arrow to equilateral triangle left + rectangular bar right
+- Enhanced empty notes: increased alpha (0.05-0.08 → 0.15), added gradient overlay, added 3D inset shadows and drop-shadow filter across all display modes
+- Fixed particle-fade: added missing @keyframes particleFade CSS animation, fixed gradient syntax bug (missing closing paren), increased particle size, lowered visibility threshold
+- Enhanced rounded shape 3D effect
+- TypeScript check passed, committed and pushed as 3465a1e
+
+Stage Summary:
+- 2 files changed: src/lib/game/note-utils.tsx (68 insertions, 41 deletions), src/app/globals.css (15 insertions)
+- All 6 display modes now have visible empty states with 3D effect and subtle gradient
+- 3 shape forms redesigned for better recognition
+- Particle-fade fully functional with CSS animation
