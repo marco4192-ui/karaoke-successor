@@ -114,6 +114,7 @@ export const zhTranslations = {
       subtitle: '编辑你的歌曲',
       back: '返回',
       refreshTitle: '重新加载歌曲列表',
+      refreshBtn: 'Reload',
       searchPlaceholder: '搜索歌曲...',
       noGenre: '无风格',
       noLanguage: '无语言',
@@ -157,7 +158,8 @@ export const zhTranslations = {
       saveError: '保存错误',
       saveHint: '向TXT文件添加#GENRE:和#LANGUAGE:标签',
       showMetadata: '显示元数据',
-      hideMetadata: '隐藏元数据'
+      hideMetadata: '隐藏元数据',
+      metadataPanelBtn: 'AI Assistant'
     },
     settings: {
       title: '设置',

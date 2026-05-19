@@ -114,6 +114,7 @@ export const fiTranslations = {
       subtitle: 'Muokkaa kappaleitasi',
       back: 'Takaisin',
       refreshTitle: 'Lataa kappalelista uudelleen',
+      refreshBtn: 'Reload',
       searchPlaceholder: 'Hae kappaleita...',
       noGenre: 'Ei genreä',
       noLanguage: 'Ei kieltä',
@@ -157,7 +158,8 @@ export const fiTranslations = {
       saveError: 'Virhe tallennettaessa',
       saveHint: 'Lisää #GENRE: ja #LANGUAGE: -tagit TXT-tiedostoon',
       showMetadata: 'Näytä metatiedot',
-      hideMetadata: 'Piilota metatiedot'
+      hideMetadata: 'Piilota metatiedot',
+      metadataPanelBtn: 'AI Assistant'
     },
     settings: {
       title: 'Asetukset',

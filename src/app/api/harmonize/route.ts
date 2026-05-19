@@ -37,15 +37,29 @@ interface HarmonizeResponse {
 // ── Genre normalization map (common sub-genres → parent genres) ──
 
 const NORMALIZATION_HINTS = `
-Common normalizations:
-- "Bubblegum Pop", "Dance Pop", "Synthpop", "Electropop", "Indie Pop" → "Pop"
-- "Alternative Rock", "Classic Rock", "Progressive Rock", "Punk Rock", "Hard Rock" → "Rock"
+Common normalizations (sub-genres → parent genre):
+- "Bubblegum Pop", "Dance Pop", "Synthpop", "Electropop", "Indie Pop", "Art Pop", "Bedroom Pop" → "Pop"
+- "Alternative Rock", "Classic Rock", "Progressive Rock", "Punk Rock", "Hard Rock", "Grunge" → "Rock"
 - "Contemporary R&B", "Neo Soul", "New Jack Swing" → "R&B"
-- "Trance", "Drum and Bass", "Dubstep", "Deep House" → "Electronic"
-- " Schlager", "Austropop", "Deutschpop", "Neue Deutsche Welle" → "Schlager" or "Pop"
+- "Trance", "Drum and Bass", "Dubstep", "Deep House", "Techno", "House", "Ambient" → "Electronic"
+- "Schlager", "Austropop", "Deutschpop", "Neue Deutsche Welle" → "Schlager" (keep as Schlager, NOT Pop — it's a distinct German genre)
 - "K-Pop", "J-Pop", "J-Rock" → keep as-is (well-known genres)
 - "Vocal Jazz", "Smooth Jazz", "Bebop" → "Jazz"
 - "Country Pop", "Outlaw Country", "Bro-Country" → "Country"
+- "Indie Folk", "Folk Rock", "Americana", "Bluegrass" → "Folk"
+- "Post-Punk", "Emo", "Screamo", "Gothic Rock" → "Punk" or "Rock"
+- "Reggaeton", "Latin Pop", "Bachata", "Salsa", "Cumbia" → "Latin"
+- "Afrobeats", "Amapiano", "Afro Pop" → "Afrobeats" (keep as-is)
+- "Singer-Songwriter", "Chanson", "Liedermacher" → "Singer-Songwriter"
+- "Heavy Metal", "Death Metal", "Black Metal", "Thrash Metal" → "Metal"
+- "Children's", "Kindermusik", "Kinderlied" → "Children's"
+
+Language detection hints:
+- Artist names ending in common patterns: "-ovic", "-ova" → Slavic language; "-sson", "-sen" → Scandinavian
+- Known non-English genres hint at language: "Schlager"/"Volksmusik" → Deutsch; "Chanson" → Français; "Canzone" → Italiano
+- If lyrics are in the input and contain common words from a language, use that (e.g. "ich", "du", "der" → Deutsch)
+- "Volksmusik" is traditional German/Austrian/Swiss folk → Deutsch
+- Keep "K-Pop" songs as "한국어" (Korean), "J-Pop" as "日本語" (Japanese)
 `;
 
 export async function POST(request: NextRequest) {

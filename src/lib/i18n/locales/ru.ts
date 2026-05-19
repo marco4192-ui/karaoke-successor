@@ -114,6 +114,7 @@ export const ruTranslations = {
       subtitle: 'Редактирование песен',
       back: 'Назад',
       refreshTitle: 'Обновить список песен',
+      refreshBtn: 'Reload',
       searchPlaceholder: 'Поиск песен...',
       noGenre: 'Нет жанра',
       noLanguage: 'Нет языка',
@@ -157,7 +158,8 @@ export const ruTranslations = {
       saveError: 'Ошибка сохранения',
       saveHint: 'Добавляет теги #GENRE: и #LANGUAGE: в TXT-файл',
       showMetadata: 'Показать метаданные',
-      hideMetadata: 'Скрыть метаданные'
+      hideMetadata: 'Скрыть метаданные',
+      metadataPanelBtn: 'AI Assistant'
     },
     settings: {
       title: 'Настройки',

@@ -114,6 +114,7 @@ export const itTranslations = {
       subtitle: 'Modifica le tue canzoni',
       back: 'Indietro',
       refreshTitle: 'Ricarica lista',
+      refreshBtn: 'Reload',
       searchPlaceholder: 'Cerca canzoni...',
       noGenre: 'Nessun Genere',
       noLanguage: 'Nessuna Lingua',
@@ -157,7 +158,8 @@ export const itTranslations = {
       saveError: 'Errore durante il salvataggio',
       saveHint: 'Aggiunge i tag #GENRE: e #LANGUAGE: al file TXT',
       showMetadata: 'Mostra metadati',
-      hideMetadata: 'Nascondi metadati'
+      hideMetadata: 'Nascondi metadati',
+      metadataPanelBtn: 'AI Assistant'
     },
     settings: {
       title: 'Impostazioni',

@@ -114,6 +114,7 @@ export const deTranslations = {
       subtitle: 'Bearbeite deine Songs',
       back: 'Zurück',
       refreshTitle: 'Songliste neu laden',
+      refreshBtn: 'Neu laden',
       searchPlaceholder: 'Songs suchen...',
       noGenre: 'Kein Genre',
       noLanguage: 'Keine Sprache',
@@ -166,7 +167,8 @@ export const deTranslations = {
       saveError: 'Fehler beim Speichern',
       saveHint: 'Fügt #GENRE: und #LANGUAGE: Tags in die TXT-Datei ein',
       showMetadata: 'Metadaten anzeigen',
-      hideMetadata: 'Metadaten ausblenden'
+      hideMetadata: 'Metadaten ausblenden',
+      metadataPanelBtn: 'KI-Assistent'
     },
     settings: {
       title: 'Einstellungen',

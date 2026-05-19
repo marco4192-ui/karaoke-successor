@@ -143,6 +143,7 @@ export const jaTranslations = {
       subtitle: '曲を編集',
       back: '戻る',
       refreshTitle: '曲リストを再読み込み',
+      refreshBtn: 'Reload',
       searchPlaceholder: '曲を検索...',
       noGenre: 'ジャンルなし',
       noLanguage: '言語なし',
@@ -186,7 +187,8 @@ export const jaTranslations = {
       saveError: '保存エラー',
       saveHint: 'TXTファイルに#GENRE:と#LANGUAGE:タグを追加',
       showMetadata: 'メタデータを表示',
-      hideMetadata: 'メタデータを非表示'
+      hideMetadata: 'メタデータを非表示',
+      metadataPanelBtn: 'AI Assistant'
     },
     mobile: {
       useAsMicrophone: 'マイクとして使用',

@@ -114,6 +114,7 @@ export const svTranslations = {
       subtitle: 'Redigera dina låtar',
       back: 'Tillbaka',
       refreshTitle: 'Ladda om låtlistan',
+      refreshBtn: 'Reload',
       searchPlaceholder: 'Sök låtar...',
       noGenre: 'Ingen Genre',
       noLanguage: 'Inget Språk',
@@ -157,7 +158,8 @@ export const svTranslations = {
       saveError: 'Fel vid sparande',
       saveHint: 'Lägger till #GENRE: och #LANGUAGE: taggar i TXT-filen',
       showMetadata: 'Visa metadata',
-      hideMetadata: 'Dölj metadata'
+      hideMetadata: 'Dölj metadata',
+      metadataPanelBtn: 'AI Assistant'
     },
     settings: {
       title: 'Inställningar',

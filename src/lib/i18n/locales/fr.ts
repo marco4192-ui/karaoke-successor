@@ -116,6 +116,7 @@ export const frTranslations = {
       subtitle: 'Modifiez vos chansons',
       back: 'Retour',
       refreshTitle: 'Recharger la liste',
+      refreshBtn: 'Reload',
       searchPlaceholder: 'Rechercher des chansons...',
       noGenre: 'Sans Genre',
       noLanguage: 'Sans Langue',
@@ -159,7 +160,8 @@ export const frTranslations = {
       saveError: 'Erreur d\'enregistrement',
       saveHint: 'Ajoute les tags #GENRE: et #LANGUAGE: au fichier TXT',
       showMetadata: 'Afficher métadonnées',
-      hideMetadata: 'Masquer métadonnées'
+      hideMetadata: 'Masquer métadonnées',
+      metadataPanelBtn: 'AI Assistant'
     },
     settings: {
       title: 'Paramètres',

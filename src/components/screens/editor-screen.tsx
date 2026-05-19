@@ -379,7 +379,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
             </div>
             <div className="flex gap-2">
               <Button onClick={refreshSongs} variant="outline" className="border-white/20 hover:bg-white/10" title={t('editor.refreshTitle')}>
-                🔄
+                🔄 {t('editor.refreshBtn')}
               </Button>
               <Button
                 onClick={() => setSelectMode(!selectMode)}
@@ -479,12 +479,17 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 {/* Cover Image */}
                 <div className="relative aspect-square bg-gradient-to-br from-purple-600/30 to-blue-600/30 overflow-hidden">
                   {song.coverImage ? (
-                    <img src={song.coverImage} alt={song.title} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-lg opacity-50">🎵</span>
-                    </div>
-                  )}
+                    <img
+                      src={song.coverImage}
+                      alt={song.title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  ) : null}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <span className="text-lg opacity-50">🎵</span>
+                  </div>
                 </div>
                 {/* Song Info */}
                 <div className="p-1.5">
@@ -515,10 +520,10 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
             {/* Toggle Metadata Panel Button */}
             <button
               onClick={() => setShowMetadataPanel(!showMetadataPanel)}
-              className="absolute top-2 right-2 z-10 p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+              className="absolute top-2 right-2 z-10 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors flex items-center gap-1.5 text-sm text-white/80"
               title={showMetadataPanel ? t('editor.hideMetadata') : t('editor.showMetadata')}
             >
-              🏷️
+              🏷️ {t('editor.metadataPanelBtn')}
             </button>
             <KaraokeEditor
               song={selectedSong}

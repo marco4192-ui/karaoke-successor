@@ -114,6 +114,7 @@ export const esTranslations = {
       subtitle: 'Edita tus canciones',
       back: 'Atrás',
       refreshTitle: 'Recargar lista',
+      refreshBtn: 'Reload',
       searchPlaceholder: 'Buscar canciones...',
       noGenre: 'Sin Género',
       noLanguage: 'Sin Idioma',
@@ -157,7 +158,8 @@ export const esTranslations = {
       saveError: 'Error al guardar',
       saveHint: 'Añade etiquetas #GENRE: y #LANGUAGE: al TXT',
       showMetadata: 'Mostrar metadatos',
-      hideMetadata: 'Ocultar metadatos'
+      hideMetadata: 'Ocultar metadatos',
+      metadataPanelBtn: 'AI Assistant'
     },
     settings: {
       title: 'Ajustes',

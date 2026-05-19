@@ -114,6 +114,7 @@ export const noTranslations = {
       subtitle: 'Rediger sangene dine',
       back: 'Tilbake',
       refreshTitle: 'Last inn sangliste på nytt',
+      refreshBtn: 'Reload',
       searchPlaceholder: 'Søk etter sanger...',
       noGenre: 'Ingen sjanger',
       noLanguage: 'Intet språk',
@@ -157,7 +158,8 @@ export const noTranslations = {
       saveError: 'Feil ved lagring',
       saveHint: 'Legger til #GENRE: og #LANGUAGE:-tagger i TXT-filen',
       showMetadata: 'Vis metadata',
-      hideMetadata: 'Skjul metadata'
+      hideMetadata: 'Skjul metadata',
+      metadataPanelBtn: 'AI Assistant'
     },
     settings: {
       title: 'Innstillinger',

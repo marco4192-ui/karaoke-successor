@@ -114,6 +114,7 @@ export const daTranslations = {
       subtitle: 'Redigér dine sange',
       back: 'Tilbage',
       refreshTitle: 'Genindlæs sangliste',
+      refreshBtn: 'Reload',
       searchPlaceholder: 'Søg sange...',
       noGenre: 'Ingen genre',
       noLanguage: 'Intet sprog',
@@ -157,7 +158,8 @@ export const daTranslations = {
       saveError: 'Fejl ved gemning',
       saveHint: 'Tilføjer #GENRE: og #LANGUAGE: tags til TXT-filen',
       showMetadata: 'Vis metadata',
-      hideMetadata: 'Skjul metadata'
+      hideMetadata: 'Skjul metadata',
+      metadataPanelBtn: 'AI Assistant'
     },
     settings: {
       title: 'Indstillinger',

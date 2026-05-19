@@ -114,6 +114,7 @@ export const enTranslations = {
       subtitle: 'Edit your songs',
       back: 'Back',
       refreshTitle: 'Reload song list',
+      refreshBtn: 'Reload',
       searchPlaceholder: 'Search songs...',
       noGenre: 'No Genre',
       noLanguage: 'No Language',
@@ -166,7 +167,8 @@ export const enTranslations = {
       saveError: 'Error saving',
       saveHint: 'Adds #GENRE: and #LANGUAGE: tags to the TXT file',
       showMetadata: 'Show metadata',
-      hideMetadata: 'Hide metadata'
+      hideMetadata: 'Hide metadata',
+      metadataPanelBtn: 'AI Assistant'
     },
     settings: {
       title: 'Settings',

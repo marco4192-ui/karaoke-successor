@@ -114,6 +114,7 @@ export const nlTranslations = {
       subtitle: 'Bewerk je nummers',
       back: 'Terug',
       refreshTitle: 'Nummerlijst herladen',
+      refreshBtn: 'Reload',
       searchPlaceholder: 'Nummers zoeken...',
       noGenre: 'Geen genre',
       noLanguage: 'Geen taal',
@@ -157,7 +158,8 @@ export const nlTranslations = {
       saveError: 'Fout bij opslaan',
       saveHint: 'Voegt #GENRE: en #LANGUAGE: tags toe aan het TXT-bestand',
       showMetadata: 'Metagegevens tonen',
-      hideMetadata: 'Metagegevens verbergen'
+      hideMetadata: 'Metagegevens verbergen',
+      metadataPanelBtn: 'AI Assistant'
     },
     settings: {
       title: 'Instellingen',

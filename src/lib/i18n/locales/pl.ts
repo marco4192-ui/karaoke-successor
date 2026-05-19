@@ -114,6 +114,7 @@ export const plTranslations = {
       subtitle: 'Edytuj swoje piosenki',
       back: 'Wróć',
       refreshTitle: 'Odśwież listę piosenek',
+      refreshBtn: 'Reload',
       searchPlaceholder: 'Szukaj piosenek...',
       noGenre: 'Brak gatunku',
       noLanguage: 'Brak języka',
@@ -157,7 +158,8 @@ export const plTranslations = {
       saveError: 'Błąd zapisu',
       saveHint: 'Dodaje tagi #GENRE: i #LANGUAGE: do pliku TXT',
       showMetadata: 'Pokaż metadane',
-      hideMetadata: 'Ukryj metadane'
+      hideMetadata: 'Ukryj metadane',
+      metadataPanelBtn: 'AI Assistant'
     },
     settings: {
       title: 'Ustawienia',

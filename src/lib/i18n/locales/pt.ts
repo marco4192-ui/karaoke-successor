@@ -114,6 +114,7 @@ export const ptTranslations = {
       subtitle: 'Edite suas músicas',
       back: 'Voltar',
       refreshTitle: 'Recarregar lista',
+      refreshBtn: 'Reload',
       searchPlaceholder: 'Buscar músicas...',
       noGenre: 'Sem Gênero',
       noLanguage: 'Sem Idioma',
@@ -157,7 +158,8 @@ export const ptTranslations = {
       saveError: 'Erro ao salvar',
       saveHint: 'Adiciona tags #GENRE: e #LANGUAGE: ao TXT',
       showMetadata: 'Mostrar metadados',
-      hideMetadata: 'Ocultar metadados'
+      hideMetadata: 'Ocultar metadados',
+      metadataPanelBtn: 'AI Assistant'
     },
     settings: {
       title: 'Configurações',

@@ -114,6 +114,7 @@ export const koTranslations = {
       subtitle: '곡 편집',
       back: '뒤로',
       refreshTitle: '곡 목록 새로고침',
+      refreshBtn: 'Reload',
       searchPlaceholder: '곡 검색...',
       noGenre: '장르 없음',
       noLanguage: '언어 없음',
@@ -157,7 +158,8 @@ export const koTranslations = {
       saveError: '저장 오류',
       saveHint: 'TXT 파일에 #GENRE: 및 #LANGUAGE: 태그를 추가합니다',
       showMetadata: '메타데이터 표시',
-      hideMetadata: '메타데이터 숨기기'
+      hideMetadata: '메타데이터 숨기기',
+      metadataPanelBtn: 'AI Assistant'
     },
     settings: {
       title: '설정',

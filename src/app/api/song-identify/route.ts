@@ -116,9 +116,20 @@ Rules:
 - confidence should be 0-100 based on how certain you are
 - For language, use the FULL language name in its native form (e.g. "English", "Deutsch", "Español", "Français", "日本語", "한국어", "中文", "Русский", "Italiano", "Português", etc.) — NOT ISO codes
 - If you cannot determine a field, set it to null
-- For genre, use common genres: Pop, Rock, Hip-Hop, R&B, Country, Electronic, Jazz, Classical, Latin, K-Pop, etc.
+- For genre, use ONE of these well-known genres: Pop, Rock, Hip-Hop, R&B, Country, Electronic, Jazz, Classical, Latin, K-Pop, J-Pop, Schlager, Volksmusik, Singer-Songwriter, Reggae, Soul, Funk, Metal, Punk, Indie, Folk, Blues, Dance, Reggaeton, Afrobeats, Alternative, Children's
+- Sub-genres should be normalized to their parent genre. Examples: "Synthpop" → "Pop", "Alternative Rock" → "Rock", "Deep House" → "Electronic", "Contemporary R&B" → "R&B", "Indie Folk" → "Folk", "Neo Soul" → "Soul"
+- For language detection from lyrics: look at the actual words used. Common indicators:
+  - German: "ich", "du", "der", "die", "das", "und", "nicht", "ein", "ist", "mir"
+  - English: "the", "is", "and", "you", "I", "to", "a", "in", "it", "of"
+  - Spanish: "el", "la", "que", "de", "en", "y", "a", "los", "las", "un"
+  - French: "le", "la", "de", "et", "en", "un", "une", "les", "des", "que"
+  - Japanese: "の", "に", "は", "て", "だ", "する", "な", "か", "た", "い" (hiragana presence)
+  - Korean: "의", "에", "은", "는", "이", "가", "을", "를", "하고", "합니다"
 - BPM should be a number, not a string
-- Be conservative with confidence - only use 90+ if you're very certain`,
+- Be conservative with confidence - only use 90+ if you're very certain
+- If the input is just a filename with no lyrics, genre and language may be guessable from the artist name and song title — use world knowledge about known artists
+- "Schlager" is a distinct German-language genre — do NOT merge it with Pop. Apply it for typical German hits (Helene Fischer, Andrea Berg, Roland Kaiser, etc.)
+- "Volksmusik" is traditional German/Austrian/Swiss folk music — distinct from "Folk" (which is English-language singer-songwriter style)`,
             },
             {
               role: 'user',
