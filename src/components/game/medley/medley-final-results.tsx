@@ -102,16 +102,14 @@ export function MedleyFinalResults({
           <h3 className="font-bold text-sm mb-2 text-red-400">{t('medley.eliminationOrder')}</h3>
           <div className="space-y-1">
             {/* Show from last eliminated to first (winner at bottom) */}
-            {[...eliminationOrder].reverse().map((id, idx) => {
+            {[...eliminationOrder].reverse().map((id) => {
               const p = players.find(pl => pl.id === id);
               if (!p) return null;
-              const isWinner = idx === eliminationOrder.length - 1;
               return (
-                <div key={id} className={`flex items-center gap-2 text-sm ${isWinner ? 'font-bold text-green-400' : 'opacity-60'}`}>
-                  <span>{isWinner ? '👑' : '💀'}</span>
+                <div key={id} className="flex items-center gap-2 text-sm opacity-60">
+                  <span>💀</span>
                   <span style={{ color: p.color }}>{p.name}</span>
                   <span className="text-white/40 text-xs">({p.score} Pkt)</span>
-                  {isWinner && <span className="text-green-400 font-bold ml-auto">SIEGER</span>}
                 </div>
               );
             })}

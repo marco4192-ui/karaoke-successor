@@ -437,6 +437,7 @@ export const ptTranslations = {
       long: '180s (Longo)',
       medleyMode: 'Modo Medley',
       medleyModeDesc: 'Vários trechos de música por rodada',
+      medleySnippetsLabel: 'Trechos por rodada: {n}',
       on: '✓ Ligado',
       off: 'Desligado',
       difficulty: 'Dificuldade',

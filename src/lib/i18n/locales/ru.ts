@@ -437,6 +437,7 @@ export const ruTranslations = {
       long: '180с (Долго)',
       medleyMode: 'Режим медли',
       medleyModeDesc: 'Несколько отрывков песен за раунд',
+      medleySnippetsLabel: 'Отрывков за раунд: {n}',
       on: '✓ Вкл',
       off: 'Выкл',
       difficulty: 'Сложность',

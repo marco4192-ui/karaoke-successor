@@ -123,8 +123,9 @@ export function PlayingView({
   const isLowest = (player: BattleRoyalePlayer) =>
     !player.eliminated && activeSorted.length > 0 && activeSorted[activeSorted.length - 1].id === player.id;
 
-  // #10 Elimination camera: dramatic effects in last 10 seconds
-  const isEliminationCamera = roundTimeLeft <= 10 && roundTimeLeft > 0;
+  // #10 Elimination camera: dramatic effects in last 10 seconds (respects settings toggle)
+  const eliminationAnimationEnabled = game.settings.eliminationAnimation;
+  const isEliminationCamera = eliminationAnimationEnabled && roundTimeLeft <= 10 && roundTimeLeft > 0;
 
   return (
     <div className={`h-screen flex flex-col relative overflow-hidden ${isEliminationCamera ? 'elimination-camera-active' : ''}`}>
@@ -170,7 +171,7 @@ export function PlayingView({
       )}
 
       {/* #10 Elimination Camera: Pulsing border in last 5 seconds */}
-      {isDangerZone && (
+      {eliminationAnimationEnabled && isDangerZone && (
         <div className="fixed inset-0 border-4 border-red-500/0 animate-elimination-pulse pointer-events-none z-30" />
       )}
 
@@ -473,7 +474,7 @@ export function PlayingView({
       )}
 
       {/* Danger Warning Overlay */}
-      {isDangerZone && (
+      {eliminationAnimationEnabled && isDangerZone && (
         <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-red-500/20 to-transparent pointer-events-none transition-opacity duration-500" />
       )}
 

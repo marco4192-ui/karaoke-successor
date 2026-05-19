@@ -5,6 +5,8 @@ import { Difficulty, GameMode } from '@/types/game';
 export interface GameSettingConfig {
   key: string;
   label: string;
+  /** i18n key for translated label (used when available, falls back to label) */
+  labelKey?: string;
   description?: string;
   type: 'slider' | 'toggle' | 'select';
   min?: number;

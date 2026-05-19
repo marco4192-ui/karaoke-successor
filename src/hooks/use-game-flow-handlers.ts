@@ -109,6 +109,7 @@ export function useGameFlowHandlers(
     );
 
     party.setTournamentBracket(updatedBracket);
+    const matchId = party.currentTournamentMatch?.id;
     party.setCurrentTournamentMatch(null);
 
     // #10 Poll crowd votes from companion spectators and store in party store
@@ -118,12 +119,12 @@ export function useGameFlowHandlers(
         if (res.ok) {
           const data = await res.json();
           const allVotes: Array<{ matchId: string; playerSide: 1 | 2 }> = data.votes || [];
-          const matchVotes = allVotes.filter((v: { matchId: string }) => v.matchId === party.currentTournamentMatch?.id);
+          const matchVotes = allVotes.filter((v: { matchId: string }) => v.matchId === matchId);
           if (matchVotes.length > 0) {
             const p1Votes = matchVotes.filter((v: { playerSide: number }) => v.playerSide === 1).length;
             const p2Votes = matchVotes.filter((v: { playerSide: number }) => v.playerSide === 2).length;
             party.addTournamentCrowdVote({
-              matchId: party.currentTournamentMatch!.id,
+              matchId: matchId,
               player1Votes: p1Votes,
               player2Votes: p2Votes,
               totalVoters: matchVotes.length,

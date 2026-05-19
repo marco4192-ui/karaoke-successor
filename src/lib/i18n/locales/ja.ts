@@ -240,6 +240,7 @@ export const jaTranslations = {
       long: '180秒 (長)',
       medleyMode: 'メドレーモード',
       medleyModeDesc: 'ラウンドごとに複数の曲の断片',
+      medleySnippetsLabel: 'ラウンドごとの断片数: {n}',
       on: '✓ オン',
       off: 'オフ',
       difficulty: '難易度',

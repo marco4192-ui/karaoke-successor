@@ -118,6 +118,25 @@ export const PARTY_GAME_CONFIGS: Record<string, PartyGameConfig> = {
         { value: 8, label: '8 Players' }, { value: 16, label: '16 Players' }, { value: 32, label: '32 Players' },
       ], defaultValue: 8 },
       { key: 'shortMode', label: 'Short Mode', description: 'Each match lasts only 60 seconds', type: 'toggle', defaultValue: true },
+      { key: 'tournamentType', label: 'Tournament Type', labelKey: 'tournament.type', type: 'select', options: [
+        { value: 'single', label: 'Single Elimination' },
+        { value: 'double', label: 'Double Elimination' },
+      ], defaultValue: 'single' },
+      { key: 'tiebreakMode', label: 'Tiebreak Mode', labelKey: 'tournament.tiebreak', type: 'select', options: [
+        { value: 'coinflip', label: 'Coin Flip' },
+        { value: 'accuracy', label: 'Accuracy' },
+        { value: 'combo', label: 'Max Combo' },
+        { value: 'goldenmic', label: 'Golden Mic' },
+      ], defaultValue: 'accuracy' },
+      { key: 'dynamicDifficulty', label: 'Dynamic Difficulty', labelKey: 'tournament.dynamicDifficulty', type: 'toggle', defaultValue: false },
+      { key: 'songSelectionMode', label: 'Song Selection Mode', labelKey: 'tournament.songSelection', type: 'select', options: [
+        { value: 'random', label: 'Random' },
+        { value: 'vote', label: 'Vote' },
+      ], defaultValue: 'random' },
+      { key: 'seedingMode', label: 'Seeding Mode', labelKey: 'tournament.seeding', type: 'select', options: [
+        { value: 'random', label: 'Random' },
+        { value: 'strength', label: 'By Strength' },
+      ], defaultValue: 'random' },
     ],
     songSelectionOptions: ['random'],
     supportsCompanionApp: false,

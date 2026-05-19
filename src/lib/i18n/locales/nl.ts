@@ -437,6 +437,7 @@ export const nlTranslations = {
       long: '180s (Lang)',
       medleyMode: 'Medleymodus',
       medleyModeDesc: 'Meerdere nummerfragmenten per ronde',
+      medleySnippetsLabel: 'Fragmenten per ronde: {n}',
       on: '✓ Aan',
       off: 'Uit',
       difficulty: 'Moeilijkheid',

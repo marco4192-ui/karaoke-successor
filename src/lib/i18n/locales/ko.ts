@@ -437,6 +437,7 @@ export const koTranslations = {
       long: '180초 (길음)',
       medleyMode: '메들리 모드',
       medleyModeDesc: '라운드당 여러 곡의 일부',
+      medleySnippetsLabel: '라운드당 조각 수: {n}',
       on: '✓ 켜기',
       off: '끄기',
       difficulty: '난이도',

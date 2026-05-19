@@ -451,6 +451,7 @@ export const enTranslations = {
       long: '180s (Long)',
       medleyMode: 'Medley Mode',
       medleyModeDesc: 'Multiple song snippets per round',
+      medleySnippetsLabel: 'Snippets per round: {n}',
       on: '✓ On',
       off: 'Off',
       difficulty: 'Difficulty',
@@ -504,6 +505,7 @@ export const enTranslations = {
       noRepeatCount: 'Remember last {n} songs',
       // #4 Grand Finale
       grandFinale: 'THE FINAL TWO',
+      grandFinaleLabel: 'Grand Finale Format',
       grandFinaleRound: 'Final Round {n}',
       bestOf: 'Best of {n}',
       firstTo: 'First to {n}',

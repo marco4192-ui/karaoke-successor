@@ -829,7 +829,9 @@ export function useMedleyGame({
     }
     setIsPlaying(false);
     setIsSongPlaying(false);
-    multiPitch.stop();
+    // NOTE: Do NOT call multiPitch.stop() here. Pitch detection must remain
+    // alive across snippets — it is only started once in handleStart() and
+    // cleaned up on unmount / full game end.
 
     // Count snippet as sung for active players
     const activeIds = getActivePlayerIds();
@@ -855,7 +857,7 @@ export function useMedleyGame({
     } else {
       setPhase('round-results');
     }
-  }, [currentSnippetIdx, medleySongs.length, multiPitch, getActivePlayerIds, buildSnippetHighlight, checkSynergy, finalizeComeback, syncTeamBonusResult, setIsSongPlaying, forceRender]);
+  }, [currentSnippetIdx, medleySongs.length, getActivePlayerIds, buildSnippetHighlight, checkSynergy, finalizeComeback, syncTeamBonusResult, setIsSongPlaying, forceRender]);
 
   // ── Cleanup ──
   useEffect(() => {

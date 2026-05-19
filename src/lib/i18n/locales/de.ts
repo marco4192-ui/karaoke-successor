@@ -451,6 +451,7 @@ export const deTranslations = {
       long: '180s (Lang)',
       medleyMode: 'Medley-Modus',
       medleyModeDesc: 'Mehrere Song-Snippets pro Runde',
+      medleySnippetsLabel: 'Snippets pro Runde: {n}',
       on: '✓ An',
       off: 'Aus',
       difficulty: 'Schwierigkeit',
@@ -504,6 +505,7 @@ export const deTranslations = {
       noRepeatCount: 'Letzte {n} Songs merken',
       // #4 Grand Finale
       grandFinale: 'DIE LETZTEN ZWEI',
+      grandFinaleLabel: 'Grand-Finale-Format',
       grandFinaleRound: 'Finalrunde {n}',
       bestOf: 'Best of {n}',
       firstTo: 'Zuerst {n}',

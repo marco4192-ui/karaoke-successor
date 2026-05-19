@@ -34,6 +34,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
   const [roundDuration, setRoundDuration] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.roundDuration);
   const [finalRoundDuration, setFinalRoundDuration] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.finalRoundDuration);
   const [medleyMode, setMedleyMode] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.medleyMode);
+  const [medleySnippets, setMedleySnippets] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.medleySnippets);
   const [error, setError] = useState<string | null>(null);
 
   // #2 Song selection
@@ -153,6 +154,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       shrinkingTimer,
       shrinkFactor,
       minRoundDuration,
+      medleySnippets,
     };
 
     const songIds = songs.map(s => s.id);
@@ -276,6 +278,20 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
               {medleyMode ? t('battleRoyale.on') : t('battleRoyale.off')}
             </Button>
           </div>
+          {medleyMode && (
+            <div>
+              <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.medleySnippetsLabel').replace('{n}', String(medleySnippets))}</label>
+              <input
+                type="range"
+                min={2}
+                max={8}
+                step={1}
+                value={medleySnippets}
+                onChange={(e) => setMedleySnippets(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
+          )}
 
           {/* Difficulty */}
           <div>

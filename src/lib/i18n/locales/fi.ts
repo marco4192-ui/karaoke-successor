@@ -437,6 +437,7 @@ export const fiTranslations = {
       long: '180s (Pitkä)',
       medleyMode: 'Medley-tila',
       medleyModeDesc: 'Useita kappalepätkiä kierrosta kohti',
+      medleySnippetsLabel: 'Pätkiä kierrosta kohti: {n}',
       on: '✓ Päällä',
       off: 'Pois',
       difficulty: 'Vaikeustaso',

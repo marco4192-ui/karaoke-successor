@@ -437,6 +437,7 @@ export const esTranslations = {
       long: '180s (Largo)',
       medleyMode: 'Modo Popurrí',
       medleyModeDesc: 'Múltiples fragmentos de canción por ronda',
+      medleySnippetsLabel: 'Fragmentos por ronda: {n}',
       on: '✓ Activado',
       off: 'Desactivado',
       difficulty: 'Dificultad',

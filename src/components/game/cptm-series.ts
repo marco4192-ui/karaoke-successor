@@ -95,9 +95,9 @@ export function useCptmSeries(params: CptmSeriesParams): CptmSeriesReturn {
     sendCompanionTurnSignal(null, null, null, false);
     // Navigate based on song selection mode
     const sel = cptmSongSelection || 'library';
-    const targetScreen = sel === 'random' ? 'cptm-next-random'
+    const targetScreen = sel === 'random' ? 'ptm-next-random'
       : sel === 'vote' ? 'song-voting'
-      : sel === 'medley' ? 'cptm-next-medley'
+      : sel === 'medley' ? 'ptm-next-medley'
       : 'library';
     setTimeout(() => onNavigate?.(targetScreen), 0);
   }, [cptmSongSelection, setCptmPlayers, setCptmSong, setCptmSegments, setGameMode, onNavigate, setIsSongPlaying, lastIsSongPlayingRef, playersRef]);

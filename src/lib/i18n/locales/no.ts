@@ -437,6 +437,7 @@ export const noTranslations = {
       long: '180s (Lang)',
       medleyMode: 'Medleymodus',
       medleyModeDesc: 'Flere sangutdrag per runde',
+      medleySnippetsLabel: 'Utdrag per runde: {n}',
       on: '✓ På',
       off: 'Av',
       difficulty: 'Vanskelighetsgrad',

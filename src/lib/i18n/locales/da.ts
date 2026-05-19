@@ -437,6 +437,7 @@ export const daTranslations = {
       long: '180s (Lang)',
       medleyMode: 'Medley-tilstand',
       medleyModeDesc: 'Flere sanguddrag pr. runde',
+      medleySnippetsLabel: 'Uddrag pr. runde: {n}',
       on: '✓ Til',
       off: 'Fra',
       difficulty: 'Sværhedsgrad',

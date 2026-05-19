@@ -298,6 +298,14 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
   const tournamentMatchId = party.currentTournamentMatch?.id || null;
   useMobileGameSync(song, isPlaying, gameState.gameMode, gameState.status === 'ended', tournamentMatchId);
 
+  // Warning callbacks for blind / missing-words passages (stable refs for useEffect deps)
+  const onBlindWarning = useCallback((_countdown: number, _isActive: boolean) => {
+    console.log(`[blind-warning] countdown=${_countdown}, active=${_isActive}`);
+  }, []);
+  const onMissingWordsWarning = useCallback((_countdown: number, _isActive: boolean) => {
+    console.log(`[missing-words-warning] countdown=${_countdown}, active=${_isActive}`);
+  }, []);
+
   // Special game modes (blind + missing words)
   useGameModes({
     gameMode: gameState.gameMode,
@@ -308,11 +316,13 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
     setBlindSection,
     setBlindHardcore,
     setMissingWordsIndices,
+    onBlindWarning,
+    onMissingWordsWarning,
     blindFrequency,
     missingWordFrequency,
     hardcore: blindHardcore,
     missingWordsGranularity,
-    escalatingMultiplier: escalating ? 1.0 : undefined,
+    escalatingMultiplier: escalating ? (party.competitiveGame?.rounds[party.competitiveGame.currentRoundIndex]?.frequencyMultiplier ?? 1.0) : undefined,
   });
 
   // ── Replay Recorder: mic + webcam during gameplay ──

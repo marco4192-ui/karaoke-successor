@@ -437,6 +437,7 @@ export const zhTranslations = {
       long: '180秒（长）',
       medleyMode: '混唱模式',
       medleyModeDesc: '每轮多首歌曲片段',
+      medleySnippetsLabel: '每轮片段数: {n}',
       on: '✓ 开',
       off: '关',
       difficulty: '难度',

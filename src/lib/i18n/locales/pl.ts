@@ -437,6 +437,7 @@ export const plTranslations = {
       long: '180s (Długo)',
       medleyMode: 'Tryb medleyowy',
       medleyModeDesc: 'Wiele fragmentów piosenek na rundę',
+      medleySnippetsLabel: 'Fragmentów na rundę: {n}',
       on: '✓ Włączone',
       off: 'Wyłączone',
       difficulty: 'Trudność',

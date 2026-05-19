@@ -437,6 +437,7 @@ export const svTranslations = {
       long: '180s (Lång)',
       medleyMode: 'Medleyläge',
       medleyModeDesc: 'Flera låtutdrag per omgång',
+      medleySnippetsLabel: 'Utdrag per omgång: {n}',
       on: '✓ På',
       off: 'Av',
       difficulty: 'Svårighetsgrad',
