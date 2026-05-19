@@ -23,7 +23,6 @@ interface TimelineProps {
   onPlayPause: () => void;
   onNoteSelect: (_noteId: string | undefined) => void;
   onNoteUpdate: (_noteId: string, _updates: Partial<Note>) => void;
-  onNoteDelete: (_noteId: string) => void;
   onNoteAdd: (_startTime: number, _pitch: number) => void;
   onLyricChange: (_noteId: string, _newLyric: string) => void;
 }
@@ -486,7 +485,6 @@ export function Timeline({
                 zoom={zoom}
                 pixelsPerSecond={pixelsPerSecond}
                 scrollOffset={scrollOffset}
-                minPitch={visibleMinPitch}
                 maxPitch={visibleMaxPitch}
                 pitchHeight={pitchHeight}
                 onClick={handleNoteClick}
@@ -506,7 +504,6 @@ export function Timeline({
         >
           <LyricTrack
             notes={allNotes}
-            zoom={zoom}
             pixelsPerSecond={pixelsPerSecond}
             scrollOffset={scrollOffset}
             height={lyricTrackHeight}

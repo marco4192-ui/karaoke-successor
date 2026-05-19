@@ -5,7 +5,7 @@ import { StorageKeys, getBool, getString } from '@/lib/storage';
 import { getStoredTheme } from '@/lib/game/themes';
 import type { NoteShapeStyle } from '@/lib/game/note-utils';
 
-export type PerformanceMode = 'full' | 'low';
+type PerformanceMode = 'full' | 'low';
 
 const VALID_NOTE_SHAPES: readonly string[] = ['rounded', 'sharp', 'pill', 'diamond'];
 
@@ -21,7 +21,7 @@ function parsePerformanceMode(raw: string | null): PerformanceMode | null {
   return null;
 }
 
-export interface GameSettings {
+interface GameSettings {
   showBackgroundVideo: boolean;
   showPitchGuide: boolean;
   useAnimatedBackground: boolean;

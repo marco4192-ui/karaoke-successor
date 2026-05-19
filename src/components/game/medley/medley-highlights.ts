@@ -8,7 +8,7 @@ import type {
   MedleyPlayer, MedleySong, SnippetMatchup, MedleyHighlight,
 } from './medley-types';
 
-export interface HighlightBuildInput {
+interface HighlightBuildInput {
   snippetIdx: number;
   song: MedleySong;
   players: MedleyPlayer[];

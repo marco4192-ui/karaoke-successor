@@ -512,12 +512,6 @@ export function getCurrentRound(game: CompetitiveGame): CompetitiveRound | null 
   return game.rounds[game.currentRoundIndex] || null;
 }
 
-/** Get the escalating multiplier for the current round */
-function getCurrentFrequencyMultiplier(game: CompetitiveGame): number {
-  const round = getCurrentRound(game);
-  return round?.frequencyMultiplier ?? 1.0;
-}
-
 /** Check if a player has sung in all their required rounds. */
 function isPlayerFinished(game: CompetitiveGame, playerId: string): boolean {
   const player = game.players.find(p => p.id === playerId);

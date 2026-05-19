@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { YTPlayer } from '@/types/youtube';
-export { isYouTubeUrl, isDirectVideoUrl } from '@/lib/url-utils';
+export { isYouTubeUrl } from '@/lib/url-utils';
 
 // Extract YouTube video ID from various URL formats
 export function extractYouTubeId(url: string): string | null {

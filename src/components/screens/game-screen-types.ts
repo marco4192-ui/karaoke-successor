@@ -1,6 +1,6 @@
 'use client';
 
-import type { GameState, LyricLine, Note, Difficulty } from '@/types/game';
+import type { GameState, LyricLine, Note } from '@/types/game';
 import { usePitchDetector } from '@/hooks/use-pitch-detector';
 import { useNoteScoring } from '@/hooks/use-note-scoring';
 import { useGameMedia } from '@/hooks/use-game-media';

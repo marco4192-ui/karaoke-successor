@@ -9,13 +9,6 @@ export const VIDEO_STYLES: { id: VideoStyle; name: string; bg: string; accent: s
   { id: 'gradient', name: 'Gradient', bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', accent: '#ffffff' },
 ];
 
-export const VIDEO_STYLE_KEYS: Record<VideoStyle, string> = {
-  neon: 'shortsCreator.styleNeon',
-  retro: 'shortsCreator.styleRetro',
-  minimal: 'shortsCreator.styleMinimal',
-  gradient: 'shortsCreator.styleGradient',
-};
-
 export const CAMERA_POSITIONS: { id: CameraPosition; name: string }[] = [
   { id: 'pip-top-right', name: 'Top Right' },
   { id: 'pip-top-left', name: 'Top Left' },

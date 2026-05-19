@@ -67,16 +67,6 @@ export function groupIntoPassages(lines: LyricLine[]): LyricLine[][] {
 }
 
 /**
- * Get the end time of the first passage (used to protect the first verse).
- */
-function getFirstPassageEndTime(lines: LyricLine[]): number {
-  const passages = groupIntoPassages(lines);
-  if (passages.length === 0) return 0;
-  const firstPassage = passages[0];
-  return firstPassage[firstPassage.length - 1]?.endTime ?? 0;
-}
-
-/**
  * Generate a deterministic seed sequence (xorshift32).
  */
 function generateSeedSequence(maxValues: number): number[] {

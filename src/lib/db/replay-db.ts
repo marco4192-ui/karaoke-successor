@@ -99,29 +99,6 @@ export async function getReplay(id: string): Promise<ReplayRecord | null> {
   });
 }
 
-/** Get all replays for a specific song, sorted by most recent first. */
-export async function getReplaysForSong(songId: string): Promise<ReplayRecord[]> {
-  const db = await openDB();
-
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction([STORE_NAME], 'readonly');
-    const store = tx.objectStore(STORE_NAME);
-    const index = store.index('songId');
-    const request = index.getAll(songId);
-
-    request.onsuccess = () => {
-      const results = (request.result as ReplayRecord[])
-        .sort((a, b) => b.recordedAt - a.recordedAt);
-      resolve(results);
-    };
-    request.onerror = () => {
-      // eslint-disable-next-line no-console
-      console.error('[ReplayDB] Failed to get replays for song:', request.error);
-      reject(request.error);
-    };
-  });
-}
-
 /** Get all replays, sorted by most recent first. */
 async function getAllReplays(): Promise<ReplayRecord[]> {
   const db = await openDB();

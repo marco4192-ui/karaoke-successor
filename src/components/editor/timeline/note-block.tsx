@@ -11,7 +11,6 @@ interface NoteBlockProps {
   zoom: number;
   pixelsPerSecond: number;
   scrollOffset: number;
-  minPitch: number;
   maxPitch: number;
   pitchHeight: number;
   onClick: (noteId: string, _event: React.MouseEvent) => void;

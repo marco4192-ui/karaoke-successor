@@ -74,7 +74,7 @@ export const CONFIDENCE_COLORS: Record<ConfidenceLevel, { bg: string; border: st
 // Hook
 // ============================================================================
 
-export type AnalysisStatus = 'idle' | 'loading' | 'analyzing' | 'complete' | 'error';
+type AnalysisStatus = 'idle' | 'loading' | 'analyzing' | 'complete' | 'error';
 
 interface UseAudioAnalysisReturn {
   status: AnalysisStatus;

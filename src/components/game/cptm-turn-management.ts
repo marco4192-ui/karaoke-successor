@@ -3,15 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { CptmPlayer, CptmSegment, GamePhase } from './cptm-types';
 
-// ===================== CONSTANTS =====================
-
-/** Default lead time in seconds before segment end to start blink warning */
-const DEFAULT_BLINK_LEAD_TIME = 3;
-
 // ===================== TYPES =====================
 
 /** Maps a segment index to the player index who sings that segment. */
-export interface CptmScheduleEntry {
+interface CptmScheduleEntry {
   segmentIndex: number;
   playerIndex: number;
 }
@@ -48,7 +43,7 @@ export function sendCompanionTurnSignal(
 
 // ===================== HOOK PARAMS =====================
 
-export interface CptmTurnManagementParams {
+interface CptmTurnManagementParams {
   initialPlayers: CptmPlayer[];
   initialSegments: CptmSegment[];
   playersRef: React.MutableRefObject<CptmPlayer[]>;
@@ -62,12 +57,11 @@ export interface CptmTurnManagementParams {
   setPhase: (p: GamePhase) => void;
 }
 
-export interface CptmTurnManagementReturn {
+interface CptmTurnManagementReturn {
   currentPlayerIndex: number;
   currentSegmentIndex: number;
   currentPlayer: CptmPlayer | undefined;
   currentPlayerIndexRef: React.MutableRefObject<number>;
-  scheduleRef: React.MutableRefObject<CptmScheduleEntry[]>;
 }
 
 // ===================== HOOK =====================
@@ -266,11 +260,6 @@ export function useCptmTurnManagement(
           sendCompanionTurnSignal(nextPlayer.id, null, null, true);
         }
 
-        // Auto-hide any transition after 1.5s
-        if (transitionHideTimerRef.current) clearTimeout(transitionHideTimerRef.current);
-        transitionHideTimerRef.current = setTimeout(() => {
-          transitionHideTimerRef.current = null;
-        }, 1500);
       } else {
         // Song finished
         setIsPlaying(false);
@@ -287,6 +276,5 @@ export function useCptmTurnManagement(
     currentSegmentIndex,
     currentPlayer,
     currentPlayerIndexRef,
-    scheduleRef,
   };
 }

@@ -16,7 +16,7 @@ interface RemoteCommand {
 /**
  * Props for the useGlobalRemoteControl hook
  */
-export interface UseGlobalRemoteControlProps {
+interface UseGlobalRemoteControlProps {
   /** Navigate to a screen */
   navigateToScreen: (_screen: string) => void;
   /** Whether currently in a game */

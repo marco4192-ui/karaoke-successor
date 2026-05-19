@@ -7,15 +7,8 @@ import { PitchDetectorConfig, KARAOKE_DEFAULT_CONFIG, DIFFICULTY_PITCH_CONFIGS }
 import { yinPitchDetection, calculateClarity } from './pitch-algorithm';
 import { PitchStabilizer } from './pitch-smoothing';
 
-// Re-export config types and constants
+// Re-export config types
 export type { PitchDetectorConfig } from './pitch-config';
-export { KARAOKE_DEFAULT_CONFIG, DIFFICULTY_PITCH_CONFIGS } from './pitch-config';
-
-// Re-export algorithm functions
-export { yinPitchDetection, calculateClarity } from './pitch-algorithm';
-
-// Re-export smoothing
-export { PitchStabilizer } from './pitch-smoothing';
 
 // Re-export manager
 export { PitchDetectorManager, getPitchDetectorManager } from './pitch-detector-manager';

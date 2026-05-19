@@ -261,18 +261,6 @@ export function getBountyMultiplier(game: BattleRoyaleGame, playerId: string): n
 
 // ==================== SONG SELECTION HELPERS ====================
 
-/** Filter out recently played songs for no-repeat protection (#3) */
-function filterRecentSongs(
-  songIds: string[],
-  recentlyPlayedIds: string[],
-  noRepeatProtection: boolean,
-  noRepeatCount: number
-): string[] {
-  if (!noRepeatProtection) return songIds;
-  const recentSet = new Set(recentlyPlayedIds.slice(-noRepeatCount));
-  return songIds.filter(id => !recentSet.has(id));
-}
-
 /** Add a song ID to the recent plays list */
 export function addToRecentPlays(game: BattleRoyaleGame, songId: string): string[] {
   const updated = [...game.recentlyPlayedSongIds, songId];

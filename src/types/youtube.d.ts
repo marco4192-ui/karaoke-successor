@@ -19,30 +19,31 @@ export interface YTPlayer {
   getVideoData(): { video_id: string; title: string; author: string };
 }
 
-export interface YTPlayerOptions {
-  videoId?: string;
-  playerVars?: {
-    autoplay?: number;
-    controls?: number;
-    disablekb?: number;
-    fs?: number;
-    modestbranding?: number;
-    rel?: number;
-    showinfo?: number;
-    start?: number;
-    origin?: string;
-    playsinline?: number;
-    iv_load_policy?: number;
-  };
-  events?: {
-    onReady?: (event: { target: YTPlayer }) => void;
-    onStateChange?: (event: { data: number; target: YTPlayer }) => void;
-    onError?: (event: { data: number }) => void;
-  };
-}
-
-export interface YTStatic {
-  Player: new (_id: string | HTMLElement, _options: YTPlayerOptions) => YTPlayer;
+interface YTPlayerAPI {
+  Player: new (
+    _id: string | HTMLElement,
+    _options?: {
+      videoId?: string;
+      playerVars?: {
+        autoplay?: number;
+        controls?: number;
+        disablekb?: number;
+        fs?: number;
+        modestbranding?: number;
+        rel?: number;
+        showinfo?: number;
+        start?: number;
+        origin?: string;
+        playsinline?: number;
+        iv_load_policy?: number;
+      };
+      events?: {
+        onReady?: (event: { target: YTPlayer }) => void;
+        onStateChange?: (event: { data: number; target: YTPlayer }) => void;
+        onError?: (event: { data: number }) => void;
+      };
+    },
+  ) => YTPlayer;
   PlayerState: {
     UNSTARTED: number;
     ENDED: number;
@@ -55,11 +56,11 @@ export interface YTStatic {
 
 declare global {
   interface Window {
-    YT: YTStatic;
+    YT: YTPlayerAPI;
     onYouTubeIframeAPIReady: () => void;
   }
-  
-  const YT: YTStatic | undefined;
+
+  const YT: YTPlayerAPI | undefined;
 }
 
 export {};

@@ -64,7 +64,7 @@ export type TeamSize = 1 | 2; // 1 = 1v1, 2 = 2v2
 
 export type VoiceModifier = 'none' | 'chipmunk' | 'slow' | 'fast' | 'acapella';
 
-export interface VoiceModifierDef {
+interface VoiceModifierDef {
   id: VoiceModifier;
   labelKey: string;  // translation key
   icon: string;
@@ -227,7 +227,7 @@ export interface MedleyRoundResult {
   playMode: MedleyPlayMode;
 }
 
-export interface MedleyPlayerRoundScore {
+interface MedleyPlayerRoundScore {
   score: number;
   notesHit: number;
   notesMissed: number;

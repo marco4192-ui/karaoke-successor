@@ -514,7 +514,6 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
             onPlayPause={handlePlayPause}
             onNoteSelect={handleNoteSelect}
             onNoteUpdate={handleNoteUpdate}
-            onNoteDelete={handleNoteDelete}
             onNoteAdd={handleNoteAdd}
             onLyricChange={handleLyricChange}
           />

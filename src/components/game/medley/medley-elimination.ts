@@ -6,12 +6,12 @@
 
 import type { MedleyPlayer } from './medley-types';
 
-export interface EliminationInput {
+interface EliminationInput {
   isEliminationMode: boolean;
   players: MedleyPlayer[];
 }
 
-export interface EliminationOutput {
+interface EliminationOutput {
   /** ID of the player to eliminate, or null if no elimination should happen */
   toEliminateId: string | null;
   /** Number of players remaining active AFTER this elimination */

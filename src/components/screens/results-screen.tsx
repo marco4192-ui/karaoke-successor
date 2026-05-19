@@ -8,11 +8,9 @@ import { useTranslation } from '@/lib/i18n/translations';
 // Imports from extracted components (also re-exported for backward compatibility)
 import { SongHighscoreModal } from '@/components/results/song-highscore-modal';
 import { ScoreVisualization } from '@/components/results/score-visualization';
-import type { VisualizationMode } from '@/components/results/score-visualization';
-import { getCountryFlag, TrophyIcon, MAX_POINTS_PER_SONG } from '@/components/results/constants';
-export { SongHighscoreModal, ScoreVisualization };
-export type { VisualizationMode };
-export { getCountryFlag, TrophyIcon, MAX_POINTS_PER_SONG };
+import { MAX_POINTS_PER_SONG } from '@/components/results/constants';
+export { SongHighscoreModal };
+
 
 // Internal imports from extracted components
 import { UploadStatus } from '@/components/results/upload-status';

@@ -121,7 +121,7 @@ export function detectFileFormat(filename: string, content: string | ArrayBuffer
 
 // ─── KaraokeMugen Parser (.json) ─────────────────────────────────────
 
-export interface KaraokeMugenSong {
+interface KaraokeMugenSong {
   title: string;
   artist: string;
   lyrics: Array<{ start: number; end: number; text: string }>;
@@ -150,7 +150,7 @@ export function parseKaraokeMugen(data: string): KaraokeMugenSong | null {
 
 // ─── MIDI Karaoke Parser (.kar/.mid) ─────────────────────────────────
 
-export interface MIDIKaraokeData {
+interface MIDIKaraokeData {
   tempo: number;
   ticksPerBeat: number;
   tracks: Array<{ name: string; events: Array<{ tick: number; type: string; data: unknown }> }>;
@@ -330,7 +330,7 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
 
 // ─── SingStar Parser ─────────────────────────────────────────────────
 
-export interface SingStarSongData {
+interface SingStarSongData {
   title: string;
   artist: string;
   genre?: string;
@@ -368,7 +368,7 @@ export function parseSingStarData(data: string): SingStarSongData | null {
 
 // ─── StepMania Parser (.sm/.ssc) ─────────────────────────────────────
 
-export interface StepManiaData {
+interface StepManiaData {
   title: string;
   artist: string;
   bpm: number[];

@@ -256,4 +256,3 @@ export function useRemoteControl({
   }, [audioRef, videoRef, pollInterval]);
 }
 
-export default useRemoteControl;

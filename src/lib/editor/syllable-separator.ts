@@ -66,7 +66,7 @@ export function parseLyricsToSyllables(text: string): SyllableResult {
  * @param beatsPerSyllable - How many beats each syllable gets (default 4)
  * @param lineBreakBeats - How many beats between lines (default 8)
  */
-export function syllablesToUltraStarNotes(
+function syllablesToUltraStarNotes(
   result: SyllableResult,
   startBeat: number = 0,
   beatsPerSyllable: number = 4,

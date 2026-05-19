@@ -24,7 +24,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== PROPS =====================
 
-export interface MedleyPlayingProps {
+interface MedleyPlayingProps {
   currentSnippet: MedleySong;
   currentSnippetIdx: number;
   snippetCount: number;

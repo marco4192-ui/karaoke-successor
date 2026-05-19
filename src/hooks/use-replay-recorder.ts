@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import type { GameResult } from '@/types/game';
 import { storeReplay, type ReplayRecord } from '@/lib/db/replay-db';
 
-export interface ReplayData {
+interface ReplayData {
   id: string;
   songId: string;
   songTitle: string;
@@ -17,7 +17,7 @@ export interface ReplayData {
   playerName: string;
 }
 
-export interface UseReplayRecorderOptions {
+interface UseReplayRecorderOptions {
   enabled: boolean;                         // user has enabled replay recording in settings
   songId: string | null;
   songTitle: string;
@@ -28,7 +28,7 @@ export interface UseReplayRecorderOptions {
   onReplaySaved: (_replay: ReplayData) => void;
 }
 
-export interface UseReplayRecorderResult {
+interface UseReplayRecorderResult {
   isRecording: boolean;
   startRecording: () => void;
   stopRecording: (gameResult?: GameResult | null) => void;

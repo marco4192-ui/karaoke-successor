@@ -6,7 +6,6 @@ import type { Note } from '@/types/game';
 
 interface LyricTrackProps {
   notes: Note[];
-  zoom: number;
   pixelsPerSecond: number;
   scrollOffset: number;
   height: number;

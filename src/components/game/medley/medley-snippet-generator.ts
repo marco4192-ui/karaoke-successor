@@ -94,7 +94,7 @@ function findChorusLine(lyrics: LyricLine[]): number {
  * 4. Pick the highest-scoring position
  * 5. If lyrics exist, bias towards the chorus (densest lyric line)
  */
-export function findBestSnippetStart(
+function findBestSnippetStart(
   song: Song,
   snippetMs: number,
 ): number {

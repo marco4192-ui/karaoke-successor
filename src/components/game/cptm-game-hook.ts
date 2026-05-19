@@ -25,7 +25,7 @@ const DEFAULT_BLINK_LEAD_TIME = 3;
 
 // ===================== HOOK INTERFACES =====================
 
-export interface CptmGameHookProps {
+interface CptmGameHookProps {
   players: CptmPlayer[];
   song: Song;
   segments: CptmSegment[];
@@ -36,7 +36,7 @@ export interface CptmGameHookProps {
   onPause?: () => void;
 }
 
-export interface CptmGameHookReturn {
+interface CptmGameHookReturn {
   // Phase
   phase: GamePhase;
   countdown: number;

@@ -54,7 +54,7 @@ export interface MedleyGameScreenProps {
 
 // ===================== RETURN TYPE =====================
 
-export interface MedleyGameState {
+interface MedleyGameState {
   // Phase
   phase: MedleyGamePhase;
   countdown: number;
@@ -136,7 +136,6 @@ export function useMedleyGame({
   songs: medleySongs,
   settings,
   matchups,
-  seriesHistory, // TODO: Use seriesHistory for adaptive difficulty/seeding across series rounds
   onRoundComplete,
   onEndGame,
 }: MedleyGameScreenProps): MedleyGameState {

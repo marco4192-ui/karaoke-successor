@@ -27,7 +27,7 @@ import { usePtmSeriesNav } from './use-ptm-series-nav';
 
 // ===================== HOOK INTERFACE =====================
 
-export interface PtmGameScreenProps {
+interface PtmGameScreenProps {
   players: PtmPlayer[];
   song: Song;
   segments: PtmSegment[];
@@ -38,7 +38,7 @@ export interface PtmGameScreenProps {
   onPause?: () => void;
 }
 
-export interface PtmGameHookReturn {
+interface PtmGameHookReturn {
   // Phase
   phase: GamePhase;
   countdown: number;

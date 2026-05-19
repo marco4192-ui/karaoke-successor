@@ -12,7 +12,7 @@ import type {
 
 // ── Synergy ──
 
-export interface SynergyCheckInput {
+interface SynergyCheckInput {
   isTeam: boolean;
   teamBonusesEnabled: boolean;
   snippetIdx: number;
@@ -21,7 +21,7 @@ export interface SynergyCheckInput {
   currentBonusResult: TeamBonusResult;
 }
 
-export interface SynergyCheckOutput {
+interface SynergyCheckOutput {
   /** Per-team points to add */
   synergyPoints: Record<string, number>;
   /** Per-player bonus to add directly */
@@ -71,7 +71,7 @@ export function computeSynergy(input: SynergyCheckInput): SynergyCheckOutput | n
 
 // ── Comeback (pre-check) ──
 
-export interface ComebackPreCheckInput {
+interface ComebackPreCheckInput {
   isTeam: boolean;
   teamBonusesEnabled: boolean;
   snippetIdx: number;
@@ -79,7 +79,7 @@ export interface ComebackPreCheckInput {
   players: MedleyPlayer[];
 }
 
-export interface ComebackPreCheckOutput {
+interface ComebackPreCheckOutput {
   /** The underdog team number (0 or 1) */
   underdogTeam: number;
   /** Team ID as string for storage */
@@ -113,7 +113,7 @@ export function computeComebackPreCheck(input: ComebackPreCheckInput): ComebackP
 
 // ── Comeback (finalize) ──
 
-export interface ComebackFinalizeInput {
+interface ComebackFinalizeInput {
   isTeam: boolean;
   teamBonusesEnabled: boolean;
   comebackTeamId: string | null;
