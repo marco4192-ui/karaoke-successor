@@ -377,7 +377,7 @@ export function PlayingView({
 
       {/* ─────────── 1. TIMER BAR + ROUND INFO ─────────── */}
       <div className="flex-shrink-0 px-3 pt-3 pb-1">
-        <div className="flex items-center justify-between mb-1.5 pl-16 pr-2">
+        <div className="flex items-center justify-between mb-1.5 pl-16 pr-14">
           <div className="flex items-center gap-2">
             <h1 className="text-sm font-bold">
               {game.isGrandFinale

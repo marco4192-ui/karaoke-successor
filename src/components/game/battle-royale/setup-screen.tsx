@@ -578,15 +578,25 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
           {/* Note Shape Style */}
           <div>
             <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.noteShapeLabel')}</label>
-            <div className="flex gap-2">
-              {(['rounded', 'sharp', 'pill', 'music-note', 'star', 'circle', 'hexagon', 'triangle'] as const).map(shape => (
+            <div className="grid grid-cols-4 gap-1.5">
+              {([
+                { id: 'rounded' as const, icon: '⬭' },
+                { id: 'sharp' as const, icon: '◆' },
+                { id: 'pill' as const, icon: '💊' },
+                { id: 'music-note' as const, icon: '♪' },
+                { id: 'star' as const, icon: '⭐' },
+                { id: 'circle' as const, icon: '⭕' },
+                { id: 'hexagon' as const, icon: '⬡' },
+                { id: 'triangle' as const, icon: '◀' },
+              ]).map(({ id, icon }) => (
                 <Button
-                  key={shape}
-                  variant={noteShapeStyle === shape ? 'default' : 'outline'}
-                  onClick={() => setNoteShapeStyle(shape)}
-                  className={noteShapeStyle === shape ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}
+                  key={id}
+                  variant={noteShapeStyle === id ? 'default' : 'outline'}
+                  onClick={() => setNoteShapeStyle(id)}
+                  size="sm"
+                  className={`text-xs ${noteShapeStyle === id ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}`}
                 >
-                  {{ rounded: '⬭', sharp: '◆', pill: '💊', 'music-note': '♪', star: '⭐', circle: '⭕', hexagon: '⬡', triangle: '◀' }[shape] as string} {shape}
+                  {icon} {id}
                 </Button>
               ))}
             </div>
@@ -595,15 +605,25 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
           {/* Note Display Style */}
           <div>
             <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.noteDisplayStyleLabel')}</label>
-            <div className="flex gap-2">
-              {(['classic', 'fill-level', 'color-feedback', 'glow-intensity', 'hit-fill', 'trail-effect', 'retro-bars', 'particle-fade'] as const).map(style => (
+            <div className="grid grid-cols-4 gap-1.5">
+              {([
+                { id: 'classic' as const, label: '➡️ Classic' },
+                { id: 'fill-level' as const, label: '📊 Fill' },
+                { id: 'color-feedback' as const, label: '🎨 Color' },
+                { id: 'glow-intensity' as const, label: '✨ Glow' },
+                { id: 'hit-fill' as const, label: '🥊 Hit Fill' },
+                { id: 'trail-effect' as const, label: '🌌 Trail' },
+                { id: 'retro-bars' as const, label: '🕹️ Retro' },
+                { id: 'particle-fade' as const, label: '💫 Particle' },
+              ]).map(({ id, label }) => (
                 <Button
-                  key={style}
-                  variant={noteDisplayStyle === style ? 'default' : 'outline'}
-                  onClick={() => setNoteDisplayStyle(style)}
-                  className={noteDisplayStyle === style ? 'bg-indigo-500 hover:bg-indigo-600' : 'border-white/20'}
+                  key={id}
+                  variant={noteDisplayStyle === id ? 'default' : 'outline'}
+                  onClick={() => setNoteDisplayStyle(id)}
+                  size="sm"
+                  className={`text-xs ${noteDisplayStyle === id ? 'bg-indigo-500 hover:bg-indigo-600' : 'border-white/20'}`}
                 >
-                  {{ classic: '➡️ classic', 'fill-level': '📊 fill-level', 'color-feedback': '🎨 color-feedback', 'glow-intensity': '✨ glow', 'hit-fill': '🥊 hit-fill', 'trail-effect': '🌌 trail', 'retro-bars': '🕹️ retro', 'particle-fade': '💫 particles' }[style] as string}
+                  {label}
                 </Button>
               ))}
             </div>

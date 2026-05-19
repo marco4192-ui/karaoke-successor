@@ -59,6 +59,7 @@ export function useBattleRoyaleRoundHandlers({
 }: UseBattleRoyaleRoundHandlersParams): UseBattleRoyaleRoundHandlersReturn {
   const activePlayersRef = useRef(activePlayers);
   const gameRef = useRef(game);
+  const mountedRef = useRef(true);
   useEffect(() => {
     activePlayersRef.current = activePlayers;
     gameRef.current = game;
@@ -67,6 +68,13 @@ export function useBattleRoyaleRoundHandlers({
   const roundEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleRoundEndRef = useRef<() => void>(() => {});
   const onSnippetEndRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   // Medley snippet transition: advance to next snippet when timer reaches zero
   const handleSnippetEnd = useCallback(() => {
@@ -121,6 +129,7 @@ export function useBattleRoyaleRoundHandlers({
       }
       roundEndTimerRef.current = setTimeout(() => {
         roundEndTimerRef.current = null;
+        if (!mountedRef.current) return;
         setShowElimination(false);
         const advanced = advanceToNextRound(withFinale);
         onUpdateGame(advanced);
@@ -136,6 +145,7 @@ export function useBattleRoyaleRoundHandlers({
     }
     roundEndTimerRef.current = setTimeout(() => {
       roundEndTimerRef.current = null;
+      if (!mountedRef.current) return;
       setShowElimination(false);
       if (updatedGame.winner) return;
       const nextGame = advanceToNextRound(updatedGame);
@@ -190,7 +200,7 @@ export function useBattleRoyaleRoundHandlers({
     // #1 Medley Mode: pick additional songs for snippets
     if (game.settings.medleyMode && game.settings.medleySnippets > 1) {
       const medleyExcludes = [...excludeIds, song.id];
-      const medleySongs = getRandomSongs(game.settings.medleySnippets - 1, medleyExcludes);
+      const medleySongs = getRandomSongs(game.settings.medleySnippets - 1, medleyExcludes).filter(s => s.lyrics && s.lyrics.length > 0);
       const allSnippets = [
         { songId: song.id, songName: song.title },
         ...medleySongs.map(s => ({ songId: s.id, songName: s.title })),
@@ -218,7 +228,7 @@ export function useBattleRoyaleRoundHandlers({
       const excludeIds = game.settings.noRepeatProtection
         ? [...game.recentlyPlayedSongIds.slice(-game.settings.noRepeatCount), songId]
         : [songId];
-      const medleySongs = getRandomSongs(game.settings.medleySnippets - 1, excludeIds);
+      const medleySongs = getRandomSongs(game.settings.medleySnippets - 1, excludeIds).filter(s => s.lyrics && s.lyrics.length > 0);
       const allSnippets = [
         { songId, songName },
         ...medleySongs.map(s => ({ songId: s.id, songName: s.title })),

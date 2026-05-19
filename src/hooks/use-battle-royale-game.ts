@@ -19,6 +19,7 @@ import { evaluateAndScoreTick } from '@/lib/game/party-scoring';
 import { useBattleRoyaleSongMedia } from '@/hooks/use-battle-royale-song-media';
 import { useBattleRoyaleCompanionPolling } from '@/hooks/use-battle-royale-companion-polling';
 import { useBattleRoyaleRoundTimer } from '@/hooks/use-battle-royale-round-timer';
+import { usePartyStore } from '@/lib/game/party-store';
 import { useBattleRoyaleRoundHandlers } from '@/hooks/use-battle-royale-round-handlers';
 
 function getActiveNotesAtTime(notes: Note[], timeMs: number): Note[] {
@@ -259,6 +260,11 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     gameRefRef.current = gameRef;
   }, [gameRef]);
 
+  // ── Pause state (read from store, used by game loop + round timer) ───
+  const pauseDialogAction = usePartyStore(s => s.pauseDialogAction);
+  const pausedRef = useRef(pauseDialogAction === 'song-pause');
+  pausedRef.current = pauseDialogAction === 'song-pause';
+
   // ── Round Timer ────────────────────────────────────────────────────
   const { roundTimeLeft, snippetTimeLeft } = useBattleRoyaleRoundTimer({
     gameStatus: game.status,
@@ -268,6 +274,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     medleySnippetList: game.medleySnippetList,
     currentSnippetIndex: game.currentSnippetIndex,
     onSnippetEndRef,
+    isPaused: pauseDialogAction === 'song-pause',
   });
 
   // ── Game Initialization & Playback ─────────────────────────────────
@@ -335,6 +342,8 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
     const gameLoop = (timestamp: number) => {
       if (gameRef.current.status !== 'playing') return;
+      // Skip scoring ticks while paused (audio is paused, don't score silence)
+      if (pausedRef.current) { gameLoopRef.current = requestAnimationFrame(gameLoop); return; }
 
       const deltaTime = timestamp - lastTickTime;
 

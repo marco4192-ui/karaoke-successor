@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import type { Song } from '@/types/game';
 import { YouTubePlayer } from '@/components/game/youtube-player';
 import { MusicReactiveBackground } from '@/components/game/music-reactive-background';
@@ -54,6 +55,17 @@ export function GameBackground({
   const videoGap = effectiveSong?.videoGap || 0;
   // Fallback: try videoBackground, then videoUrl, then youtubeUrl
   const effectiveVideoUrl = effectiveSong?.videoBackground || effectiveSong?.videoUrl || effectiveSong?.youtubeUrl;
+
+  // Sync video play/pause with isPlaying prop
+  useEffect(() => {
+    if (!videoRef?.current) return;
+    const video = videoRef.current;
+    if (isPlaying) {
+      video.play().catch(() => {});
+    } else {
+      video.pause();
+    }
+  }, [isPlaying, videoRef]);
 
   // YouTube video (visible + audio)
   if (showBackgroundVideo && isYouTube && youtubeVideoId) {

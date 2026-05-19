@@ -24,7 +24,6 @@ export function LyricsDisplay({ lyrics, currentTime }: { lyrics: LyricLine[]; cu
   }
 
   const currentLine = lyrics[currentLineIndex] || null;
-  const prevLine = currentLineIndex > 0 ? lyrics[currentLineIndex - 1] : null;
   const nextLine = currentLineIndex >= 0 && currentLineIndex < lyrics.length - 1 ? lyrics[currentLineIndex + 1] : null;
 
   // Check if we are actually in the current line (before song starts = upcoming)
@@ -77,11 +76,6 @@ export function LyricsDisplay({ lyrics, currentTime }: { lyrics: LyricLine[]; cu
 
   return (
     <div className="text-center select-none">
-      {/* Previous line — fully dimmed */}
-      {prevLine && (
-        <div className="text-white/30 text-sm mb-1 leading-relaxed">{prevLine.text}</div>
-      )}
-
       {/* Current line — karaoke-style sweeping highlight */}
       {currentLine && (
         <div className="relative text-xl font-bold leading-relaxed">

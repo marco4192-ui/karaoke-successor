@@ -26,6 +26,11 @@ export class PitchDetectorManager {
   private difficulty: Difficulty = 'medium';
   private isRunning = false;
 
+  /** Tracks which device streams are already open. Key is the deviceId (or '__default__' for undefined). */
+  private deviceStreamMap: Map<string, MediaStream> = new Map();
+  /** Reference count per device key — stream is stopped only when count reaches 0. */
+  private deviceStreamRefCount: Map<string, number> = new Map();
+
   setCallbacks(callbacks: PitchDetectorManagerCallbacks): void {
     this.callbacks = callbacks;
   }
@@ -38,7 +43,16 @@ export class PitchDetectorManager {
   }
 
   /**
+   * Normalize a deviceId into a map key. Undefined / empty → '__default__'.
+   */
+  private static deviceKey(deviceId?: string): string {
+    return deviceId || '__default__';
+  }
+
+  /**
    * Add a local player with their own pitch detector.
+   * If another player has already opened the same microphone device, the
+   * existing MediaStream is reused instead of requesting a second one.
    * @param playerId - Unique identifier for this player
    * @param deviceId - Optional specific microphone device ID (multi-mic support)
    */
@@ -50,12 +64,37 @@ export class PitchDetectorManager {
     const detector = new PitchDetector();
     detector.setDifficulty(this.difficulty);
 
-    const success = await detector.initialize(deviceId, stereoChannel);
+    const key = PitchDetectorManager.deviceKey(deviceId);
+    const existingStream = this.deviceStreamMap.get(key);
+
+    let success: boolean;
+    if (existingStream) {
+      // Another player already opened this device — reuse the stream.
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[PitchDetectorManager] Player "${playerId}" shares the same device (key=${JSON.stringify(deviceId ?? undefined)}) as an existing player. Reusing stream.`
+      );
+      success = await detector.initializeWithStream(existingStream, stereoChannel);
+      if (success) {
+        this.deviceStreamRefCount.set(key, (this.deviceStreamRefCount.get(key) ?? 0) + 1);
+      }
+    } else {
+      success = await detector.initialize(deviceId, stereoChannel);
+      if (success) {
+        const stream = detector.getMediaStream();
+        if (stream) {
+          this.deviceStreamMap.set(key, stream);
+          this.deviceStreamRefCount.set(key, 1);
+        }
+      }
+    }
+
     if (success) {
       this.players.set(playerId, {
         id: playerId,
         type: 'local',
         detector,
+        stereoChannel,
       });
 
       // If already running, start this detector immediately
@@ -95,6 +134,28 @@ export class PitchDetectorManager {
 
     // Stop and destroy detector for local players
     if (player.detector) {
+      // Check if this player was using a shared stream — decrement ref count
+      // and stop the underlying stream only when no other player needs it.
+      if (player.type === 'local') {
+        const stream = player.detector.getMediaStream();
+        if (stream) {
+          // Find which device key this stream belongs to
+          for (const [key, mappedStream] of this.deviceStreamMap.entries()) {
+            if (mappedStream === stream) {
+              const newCount = (this.deviceStreamRefCount.get(key) ?? 1) - 1;
+              if (newCount <= 0) {
+                // Last user — stop the stream tracks and clean up
+                stream.getTracks().forEach(track => track.stop());
+                this.deviceStreamMap.delete(key);
+                this.deviceStreamRefCount.delete(key);
+              } else {
+                this.deviceStreamRefCount.set(key, newCount);
+              }
+              break;
+            }
+          }
+        }
+      }
       player.detector.stop();
       await player.detector.destroy();
     }
@@ -175,6 +236,12 @@ export class PitchDetectorManager {
 
   async destroy(): Promise<void> {
     this.stop();
+    // Clean up any remaining device streams
+    for (const stream of this.deviceStreamMap.values()) {
+      stream.getTracks().forEach(track => track.stop());
+    }
+    this.deviceStreamMap.clear();
+    this.deviceStreamRefCount.clear();
     const destroyPromises = Array.from(this.players.entries()).map(async ([, player]) => {
       if (player.detector) {
         await player.detector.destroy();

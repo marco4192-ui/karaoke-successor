@@ -146,7 +146,9 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
       const initPromises = playersList.map(async (playerConfig) => {
         try {
           if (playerConfig.type === 'local') {
-            const success = await manager.addLocalPlayer(playerConfig.playerId, playerConfig.deviceId, playerConfig.stereoChannel);
+            // Normalize deviceId: treat empty string same as undefined (use default mic)
+            const deviceId = playerConfig.deviceId || undefined;
+            const success = await manager.addLocalPlayer(playerConfig.playerId, deviceId, playerConfig.stereoChannel);
             if (!success) {
               setErrors(prev => {
                 const newMap = new Map(prev);
@@ -243,7 +245,9 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
 
     try {
       if (config.type === 'local') {
-        const success = await managerRef.current.addLocalPlayer(config.playerId, config.deviceId, config.stereoChannel);
+        // Normalize deviceId: treat empty string same as undefined (use default mic)
+        const deviceId = config.deviceId || undefined;
+        const success = await managerRef.current.addLocalPlayer(config.playerId, deviceId, config.stereoChannel);
         if (success) {
           setPlayerPitches(prev => {
             const newMap = new Map(prev);

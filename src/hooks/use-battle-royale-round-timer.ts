@@ -13,6 +13,7 @@ interface UseBattleRoyaleRoundTimerParams {
   currentSnippetIndex: number;
   /** Called when a medley snippet timer reaches zero to advance to the next snippet */
   onSnippetEndRef: React.RefObject<(() => void) | null>;
+  isPaused?: boolean;
 }
 
 interface UseBattleRoyaleRoundTimerReturn {
@@ -32,6 +33,7 @@ export function useBattleRoyaleRoundTimer({
   medleySnippetList,
   currentSnippetIndex,
   onSnippetEndRef,
+  isPaused,
 }: UseBattleRoyaleRoundTimerParams): UseBattleRoyaleRoundTimerReturn {
   const [roundTimeLeft, setRoundTimeLeft] = useState(roundDuration || 0);
   const [snippetTimeLeft, setSnippetTimeLeft] = useState<number | null>(null);
@@ -46,7 +48,7 @@ export function useBattleRoyaleRoundTimer({
 
   // Main timer: countdown round time
   useEffect(() => {
-    if (gameStatus === 'playing' && roundDuration) {
+    if (gameStatus === 'playing' && roundDuration && !isPaused) {
       setRoundTimeLeft(roundDuration);
       skipAutoElimRef.current = true;
 
@@ -62,11 +64,11 @@ export function useBattleRoyaleRoundTimer({
 
       return () => clearInterval(interval);
     }
-  }, [gameStatus, roundDuration, gameCurrentRound]);
+  }, [gameStatus, roundDuration, gameCurrentRound, isPaused]);
 
   // Medley snippet timer: countdown within each snippet
   useEffect(() => {
-    if (!isMedley || !snippetDuration || gameStatus !== 'playing') {
+    if (!isMedley || !snippetDuration || gameStatus !== 'playing' || isPaused) {
       setSnippetTimeLeft(null);
       return;
     }
@@ -84,7 +86,7 @@ export function useBattleRoyaleRoundTimer({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [gameStatus, snippetDuration, currentSnippetIndex, isMedley]);
+  }, [gameStatus, snippetDuration, currentSnippetIndex, isMedley, isPaused]);
 
   // Trigger auto-elimination when round timer reaches zero
   useEffect(() => {
