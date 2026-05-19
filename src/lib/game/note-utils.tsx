@@ -44,17 +44,17 @@ const NOTE_SHAPE_CONFIGS: Record<NoteShapeStyle, NoteShapeConfig> = {
   },
   'music-note': {
     style: {
-      borderRadius: '4px 50% 50% 4px',
-      border: 'none',
-      transition: 'border-radius 0.3s ease',
+      clipPath: 'polygon(0% 25%, 8% 0%, 25% 0%, 25% 22%, 100% 22%, 100% 78%, 25% 78%, 25% 100%, 8% 100%, 0% 75%)',
+      transition: 'clip-path 0.3s ease',
     },
-    activeClass: 'ring-2 ring-white/70 brightness-110',
-    laneActiveClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent brightness-110',
+    activeClass: 'brightness-110',
+    laneActiveClass: 'brightness-110',
   },
   star: {
     style: {
-      clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)',
+      clipPath: 'polygon(0% 40%, 10% 40%, 15% 15%, 20% 40%, 45% 40%, 50% 5%, 55% 40%, 80% 40%, 85% 15%, 90% 40%, 100% 40%, 100% 60%, 90% 60%, 85% 85%, 80% 60%, 55% 60%, 50% 95%, 45% 60%, 20% 60%, 15% 85%, 10% 60%, 0% 60%)',
       transition: 'clip-path 0.3s ease',
+      filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.5)) drop-shadow(0 1px 0 rgba(255,255,255,0.08))',
     },
     activeClass: 'brightness-125',
     laneActiveClass: 'brightness-125',
@@ -79,7 +79,7 @@ const NOTE_SHAPE_CONFIGS: Record<NoteShapeStyle, NoteShapeConfig> = {
   },
   triangle: {
     style: {
-      clipPath: 'polygon(0% 50%, 100% 0%, 100% 100%)',
+      clipPath: 'polygon(0% 50%, 25% 0%, 100% 0%, 100% 100%, 25% 100%)',
       transition: 'clip-path 0.3s ease',
     },
     activeClass: 'brightness-110',
@@ -89,7 +89,7 @@ const NOTE_SHAPE_CONFIGS: Record<NoteShapeStyle, NoteShapeConfig> = {
     style: {
       borderRadius: '10px',
       border: '1.5px solid rgba(255,255,255,0.25)',
-      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.1)',
+      boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.18), inset 0 -2px 0 rgba(0,0,0,0.22), 0 3px 6px rgba(0,0,0,0.3)',
       transition: 'border-radius 0.3s ease',
     },
     activeClass: 'ring-2 ring-white/80 brightness-125',
@@ -162,10 +162,11 @@ export function getNoteDisplayStyleClasses(
         // backgroundColor sets the dark shell base. A visible border makes
         // the empty shell clearly distinguishable from the background.
         inlineStyle: {
-          backgroundImage: 'none',
-          backgroundColor: 'rgba(255, 255, 255, 0.08)',
-          border: '1.5px solid rgba(255, 255, 255, 0.25)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.1)',
+          backgroundImage: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(120, 160, 200, 0.08) 100%)',
+          backgroundColor: 'rgba(100, 130, 160, 0.18)',
+          border: '1.5px solid rgba(255, 255, 255, 0.2)',
+          boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.18), inset 0 -2px 0 rgba(0,0,0,0.22), 0 3px 6px rgba(0,0,0,0.3)',
+          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.35))',
         },
         overlayElement: (
           <>
@@ -213,7 +214,8 @@ export function getNoteDisplayStyleClasses(
         additionalClasses: 'transition-all duration-50 ease-linear',
         inlineStyle: {
           background: finalBg,
-          boxShadow: `0 0 12px ${borderColor}, inset 0 1px 0 rgba(255,255,255,0.2)`,
+          boxShadow: `0 0 12px ${borderColor}, inset 0 2px 0 rgba(255,255,255,0.2), inset 0 -2px 0 rgba(0,0,0,0.2), 0 3px 6px rgba(0,0,0,0.3)`,
+          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))',
         },
         overlayElement: null
       };
@@ -234,11 +236,14 @@ export function getNoteDisplayStyleClasses(
       const innerGlow = accuracy > 0.4
         ? `inset 0 0 ${4 + accuracy * 16}px rgba(255,255,255,${accuracy * 0.3})`
         : 'none';
+      const emptyShadow = accuracy < 0.3
+        ? ', inset 0 2px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.2), 0 3px 6px rgba(0,0,0,0.3)'
+        : '';
       return {
         additionalClasses: 'transition-all duration-50 ease-linear',
         inlineStyle: {
-          boxShadow: `${innerGlow}, 0 0 ${glowSpread1}px ${glowColor}, 0 0 ${glowSpread2}px ${glowColor}`,
-          filter: `brightness(${0.4 + accuracy * 0.6})`,
+          boxShadow: `${innerGlow}, 0 0 ${glowSpread1}px ${glowColor}, 0 0 ${glowSpread2}px ${glowColor}${emptyShadow}`,
+          filter: `brightness(${0.5 + accuracy * 0.5}) drop-shadow(0 2px 3px rgba(0,0,0,0.35))`,
         },
         overlayElement: null
       };
@@ -275,12 +280,13 @@ export function getNoteDisplayStyleClasses(
       return {
         additionalClasses: 'overflow-hidden',
         inlineStyle: {
-          backgroundImage: 'none',
-          backgroundColor: 'rgba(255, 255, 255, 0.06)',
-          border: '1.5px solid rgba(255, 255, 255, 0.2)',
+          backgroundImage: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(120, 160, 200, 0.06) 100%)',
+          backgroundColor: 'rgba(100, 130, 160, 0.15)',
+          border: '1.5px solid rgba(255, 255, 255, 0.18)',
           boxShadow: hitRatio > 0.5
-            ? `0 0 ${6 + hitRatio * 8}px rgba(34, 211, 238, ${hitRatio * 0.4})`
-            : 'none',
+            ? `0 0 ${6 + hitRatio * 8}px rgba(34, 211, 238, ${hitRatio * 0.4}), inset 0 2px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.2)`
+            : 'inset 0 2px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.2), 0 3px 5px rgba(0,0,0,0.25)',
+          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))',
         },
         overlayElement: (
           <div className="absolute inset-y-0 left-0 right-0 flex" style={{ gap: '1px', padding: '2px' }}>
@@ -312,9 +318,11 @@ export function getNoteDisplayStyleClasses(
       return {
         additionalClasses: 'overflow-hidden',
         inlineStyle: {
-          backgroundImage: 'none',
-          backgroundColor: 'rgba(255, 255, 255, 0.06)',
-          border: '1.5px solid rgba(255, 255, 255, 0.15)',
+          backgroundImage: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(120, 160, 200, 0.06) 100%)',
+          backgroundColor: 'rgba(100, 130, 160, 0.15)',
+          border: '1.5px solid rgba(255, 255, 255, 0.18)',
+          boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.2), 0 3px 5px rgba(0,0,0,0.25)',
+          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))',
         },
         overlayElement: (
           <div
@@ -342,12 +350,13 @@ export function getNoteDisplayStyleClasses(
       return {
         additionalClasses: 'overflow-hidden',
         inlineStyle: {
-          backgroundImage: 'none',
-          backgroundColor: 'rgba(255, 255, 255, 0.06)',
-          border: '1.5px solid rgba(255, 255, 255, 0.2)',
+          backgroundImage: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(120, 160, 200, 0.06) 100%)',
+          backgroundColor: 'rgba(100, 130, 160, 0.15)',
+          border: '1.5px solid rgba(255, 255, 255, 0.18)',
           boxShadow: accuracy > 0.6
-            ? `0 0 8px ${barColor}40`
-            : 'none',
+            ? `0 0 8px ${barColor}40, inset 0 2px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.2), 0 3px 5px rgba(0,0,0,0.25)`
+            : 'inset 0 2px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.2), 0 3px 5px rgba(0,0,0,0.25)',
+          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))',
         },
         overlayElement: (
           <div className="absolute bottom-0 left-0 right-0 flex gap-px" style={{ padding: '2px', height: '100%' }}>
@@ -389,16 +398,19 @@ export function getNoteDisplayStyleClasses(
         return { left, top, size, delay };
       });
       return {
-        additionalClasses: accuracy > 0.3 ? 'overflow-hidden' : '',
+        additionalClasses: accuracy > 0.15 ? 'overflow-hidden' : '',
         inlineStyle: {
           background: accuracy > 0.1
-            ? `linear-gradient(90deg, ${particleColor}${alpha * 0.3}), ${particleColor}${alpha * 0.8})`
-            : 'none',
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-          opacity: accuracy > 0.1 ? 0.6 + accuracy * 0.4 : 0.3,
-          filter: accuracy > 0.7 ? `blur(${Math.max(0, (1 - accuracy) * 2)}px)` : 'none',
+            ? `linear-gradient(90deg, ${particleColor}${alpha * 0.3}), ${particleColor}${alpha * 0.8}))`
+            : 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(120, 160, 200, 0.06) 100%)',
+          backgroundColor: 'rgba(100, 130, 160, 0.15)',
+          opacity: accuracy > 0.1 ? 0.7 + accuracy * 0.3 : 0.45,
+          filter: accuracy > 0.7
+            ? `blur(${Math.max(0, (1 - accuracy) * 2)}px) drop-shadow(0 1px 2px rgba(0,0,0,0.3))`
+            : 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))',
+          boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.2), 0 3px 5px rgba(0,0,0,0.25)',
         },
-        overlayElement: accuracy > 0.2 ? (
+        overlayElement: accuracy > 0.1 ? (
           <div className="absolute inset-0 pointer-events-none">
             {particles.map((p, i) => (
               <div
@@ -407,12 +419,12 @@ export function getNoteDisplayStyleClasses(
                 style={{
                   left: `${p.left}%`,
                   top: `${p.top}%`,
-                  width: `${p.size}px`,
-                  height: `${p.size}px`,
-                  backgroundColor: `${particleColor}${alpha * 0.8})`,
-                  boxShadow: `0 0 ${p.size * 2}px ${particleColor}${alpha * 0.5})`,
-                  animation: `particleFade ${0.8 + accuracy * 0.5}s ease-out ${p.delay}s infinite alternate`,
-                  opacity: accuracy,
+                  width: `${p.size + 2}px`,
+                  height: `${p.size + 2}px`,
+                  backgroundColor: `${particleColor}${alpha * 0.9})`,
+                  boxShadow: `0 0 ${p.size * 3}px ${particleColor}${alpha * 0.6})`,
+                  animation: `particleFade ${0.6 + accuracy * 0.8}s ease-out ${p.delay}s infinite alternate`,
+                  opacity: Math.min(1, accuracy + 0.3),
                 }}
               />
             ))}
