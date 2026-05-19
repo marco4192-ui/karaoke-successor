@@ -331,3 +331,25 @@ Stage Summary:
 - Button UX: emoji-only → emoji + text labels
 - Cover reliability: lazy loading + error handling + always-visible fallback
 - AI accuracy: improved prompts with genre normalization, language heuristics, and Schlager disambiguation
+---
+Task ID: 3
+Agent: Main Agent (3 parallel agents for independent files)
+Task: Fix 8 Battle Royale bugs
+
+Work Log:
+- Wave 1 (parallel): Bug 8 direct edit (pr-2→pr-14), Bug 1 timer agent, Bug 2 video agent, Bug 5 settings agent
+- Wave 2 (parallel): Bug 6 mic agent (3 files), Bug 3+7 round-handlers agent, Bug 1+7 game hook direct edits
+- Wave 3: Bug 4 lyrics-display direct edit (remove prevLine)
+- Ran npx tsc — 0 errors after fixing pauseDialogAction declaration order
+- Committed as 931424b and pushed to main
+
+Stage Summary:
+- 10 files changed, 209 insertions, 32 deletions
+- Bug 1: Game loop + round timer respect pause state
+- Bug 2: GameBackground useEffect syncs video play/pause with isPlaying
+- Bug 3: Medley songs filtered for lyrics content
+- Bug 4: Previous line removed from lyrics display
+- Bug 5: Settings shape/style buttons use grid-cols-4 compact layout
+- Bug 6: Stream sharing for same-device mics (ref counting in PitchDetectorManager)
+- Bug 7: mountedRef guard prevents stale state updates in round transitions
+- Bug 8: Timer bar padding increased to avoid fullscreen button overlap
