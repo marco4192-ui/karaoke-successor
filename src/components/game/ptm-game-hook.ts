@@ -80,7 +80,7 @@ interface PtmGameHookReturn {
   showBackgroundVideo: boolean;
   useAnimatedBackground: boolean;
   noteDisplayStyle: string;
-  noteShapeStyle: 'rounded' | 'sharp' | 'pill' | 'diamond';
+  noteShapeStyle: 'rounded' | 'sharp' | 'pill' | 'music-note' | 'star' | 'circle' | 'hexagon' | 'triangle';
   safeSettings: PassTheMicSettings;
 
   // Transition

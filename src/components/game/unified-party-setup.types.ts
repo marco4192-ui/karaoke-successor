@@ -157,8 +157,8 @@ export interface BattleRoyaleModeSettings extends BaseModeSettings {
   shrinkingTimer?: boolean;
   shrinkFactor?: number;
   minRoundDuration?: number;
-  noteShapeStyle?: 'rounded' | 'sharp' | 'pill' | 'diamond';
-  noteDisplayStyle?: 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity';
+  noteShapeStyle?: 'rounded' | 'sharp' | 'pill' | 'music-note' | 'star' | 'circle' | 'hexagon' | 'triangle';
+  noteDisplayStyle?: 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity' | 'hit-fill' | 'trail-effect' | 'retro-bars' | 'particle-fade';
   showNoteHighway?: boolean;
   showVideoBackground?: boolean;
   countdownDuration?: number;

@@ -7,7 +7,7 @@ import type { NoteShapeStyle } from '@/lib/game/note-utils';
 
 type PerformanceMode = 'full' | 'low';
 
-const VALID_NOTE_SHAPES: readonly string[] = ['rounded', 'sharp', 'pill', 'diamond'];
+const VALID_NOTE_SHAPES: readonly string[] = ['rounded', 'sharp', 'pill', 'music-note', 'star', 'circle', 'hexagon', 'triangle'];
 
 /** Safely parse a stored string into NoteShapeStyle, returning null if invalid. */
 export function parseNoteShape(raw: string | null): NoteShapeStyle | null {

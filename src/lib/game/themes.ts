@@ -24,7 +24,7 @@ export interface Theme {
   description: string;
   colors: ThemeColors;
   backgroundImage?: string;
-  noteStyle: 'rounded' | 'sharp' | 'pill' | 'diamond';
+  noteStyle: 'rounded' | 'sharp' | 'pill' | 'music-note' | 'star' | 'circle' | 'hexagon' | 'triangle';
   fontFamily: string;
   borderRadius: number;
   // Enhanced theme features
@@ -177,7 +177,7 @@ export const THEMES: Theme[] = [
       combo: '#ec4899',
 
     },
-    noteStyle: 'diamond',
+    noteStyle: 'hexagon',
     fontFamily: 'Inter, sans-serif',
     borderRadius: 6,
     genres: ['k-pop', 'pop', 'disco'],

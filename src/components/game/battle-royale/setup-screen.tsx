@@ -579,14 +579,14 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
           <div>
             <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.noteShapeLabel')}</label>
             <div className="flex gap-2">
-              {(['rounded', 'sharp', 'pill', 'diamond'] as const).map(shape => (
+              {(['rounded', 'sharp', 'pill', 'music-note', 'star', 'circle', 'hexagon', 'triangle'] as const).map(shape => (
                 <Button
                   key={shape}
                   variant={noteShapeStyle === shape ? 'default' : 'outline'}
                   onClick={() => setNoteShapeStyle(shape)}
                   className={noteShapeStyle === shape ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}
                 >
-                  {{ rounded: '⬭', sharp: '◆', pill: '💊', diamond: '◇' }[shape] as string} {shape}
+                  {{ rounded: '⬭', sharp: '◆', pill: '💊', 'music-note': '♪', star: '⭐', circle: '⭕', hexagon: '⬡', triangle: '◀' }[shape] as string} {shape}
                 </Button>
               ))}
             </div>
@@ -596,14 +596,14 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
           <div>
             <label className="text-sm text-white/60 mb-2 block">{t('battleRoyale.noteDisplayStyleLabel')}</label>
             <div className="flex gap-2">
-              {(['classic', 'fill-level', 'color-feedback', 'glow-intensity', 'hit-fill'] as const).map(style => (
+              {(['classic', 'fill-level', 'color-feedback', 'glow-intensity', 'hit-fill', 'trail-effect', 'retro-bars', 'particle-fade'] as const).map(style => (
                 <Button
                   key={style}
                   variant={noteDisplayStyle === style ? 'default' : 'outline'}
                   onClick={() => setNoteDisplayStyle(style)}
                   className={noteDisplayStyle === style ? 'bg-indigo-500 hover:bg-indigo-600' : 'border-white/20'}
                 >
-                  {{ classic: '➡️ classic', 'fill-level': '📊 fill-level', 'color-feedback': '🎨 color-feedback', 'glow-intensity': '✨ glow', 'hit-fill': '🥊 hit-fill' }[style] as string}
+                  {{ classic: '➡️ classic', 'fill-level': '📊 fill-level', 'color-feedback': '🎨 color-feedback', 'glow-intensity': '✨ glow', 'hit-fill': '🥊 hit-fill', 'trail-effect': '🌌 trail', 'retro-bars': '🕹️ retro', 'particle-fade': '💫 particles' }[style] as string}
                 </Button>
               ))}
             </div>

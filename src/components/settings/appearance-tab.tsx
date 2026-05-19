@@ -197,13 +197,16 @@ export function AppearanceTab({
           {/* Note Display Style */}
           <div className={isLowPerf ? 'opacity-40 pointer-events-none' : ''}>
             <label className="text-sm theme-adaptive-text-secondary mb-2 block">{tx('settingsGraphicSound.noteDisplay')} {isLowPerf && <span>({tx('settingsGraphicSound.lowPerfNote')})</span>}</label>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
                 { id: 'classic', name: tx('settingsGraphicSound.noteStyleClassic'), icon: '➡️', desc: tx('settingsGraphicSound.noteStyleUltraStar') },
                 { id: 'fill-level', name: tx('settingsGraphicSound.noteStyleFill'), icon: '📊', desc: tx('settingsGraphicSound.noteStyleGaps') },
                 { id: 'color-feedback', name: tx('settingsGraphicSound.noteStyleColor'), icon: '🎨', desc: tx('settingsGraphicSound.noteStyleColorDesc') },
                 { id: 'glow-intensity', name: tx('settingsGraphicSound.noteStyleGlow'), icon: '✨', desc: tx('settingsGraphicSound.noteStyleGlowDesc') },
                 { id: 'hit-fill', name: tx('settingsGraphicSound.noteStyleHitFill'), icon: '🥊', desc: tx('settingsGraphicSound.noteStyleHitFillDesc') },
+                { id: 'trail-effect', name: tx('settingsGraphicSound.noteStyleTrail'), icon: '🌌', desc: tx('settingsGraphicSound.noteStyleTrailDesc') },
+                { id: 'retro-bars', name: tx('settingsGraphicSound.noteStyleRetroBars'), icon: '🕹️', desc: tx('settingsGraphicSound.noteStyleRetroBarsDesc') },
+                { id: 'particle-fade', name: tx('settingsGraphicSound.noteStyleParticleFade'), icon: '💫', desc: tx('settingsGraphicSound.noteStyleParticleFadeDesc') },
               ].map((style) => (
                 <button
                   key={style.id}
@@ -231,7 +234,11 @@ export function AppearanceTab({
                 { id: 'rounded', name: tx('settingsGraphicSound.shapeRounded'), icon: '🔵', desc: tx('settingsGraphicSound.shapeRectangle') },
                 { id: 'sharp', name: tx('settingsGraphicSound.shapeAngular'), icon: '🔷', desc: tx('settingsGraphicSound.shapeAngularDesc') },
                 { id: 'pill', name: tx('settingsGraphicSound.shapePill'), icon: '💊', desc: tx('settingsGraphicSound.shapePillDesc') },
-                { id: 'diamond', name: tx('settingsGraphicSound.shapeDiamond'), icon: '💎', desc: tx('settingsGraphicSound.shapeDiamondDesc') },
+                { id: 'music-note', name: tx('settingsGraphicSound.shapeMusicNote'), icon: '♪', desc: tx('settingsGraphicSound.shapeMusicNoteDesc') },
+                { id: 'star', name: tx('settingsGraphicSound.shapeStar'), icon: '⭐', desc: tx('settingsGraphicSound.shapeStarDesc') },
+                { id: 'circle', name: tx('settingsGraphicSound.shapeCircle'), icon: '⭕', desc: tx('settingsGraphicSound.shapeCircleDesc') },
+                { id: 'hexagon', name: tx('settingsGraphicSound.shapeHexagon'), icon: '⬡', desc: tx('settingsGraphicSound.shapeHexagonDesc') },
+                { id: 'triangle', name: tx('settingsGraphicSound.shapeTriangle'), icon: '◀', desc: tx('settingsGraphicSound.shapeTriangleDesc') },
               ].map((shape) => (
                 <button
                   key={shape.id}

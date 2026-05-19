@@ -2,10 +2,10 @@ import React from 'react';
 import { Note, LyricLine } from '@/types/game';
 
 // Note shape style type
-export type NoteShapeStyle = 'rounded' | 'sharp' | 'pill' | 'diamond';
+export type NoteShapeStyle = 'rounded' | 'sharp' | 'pill' | 'music-note' | 'star' | 'circle' | 'hexagon' | 'triangle';
 
 // Note display style type
-export type NoteDisplayStyle = 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity' | 'hit-fill';
+export type NoteDisplayStyle = 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity' | 'hit-fill' | 'trail-effect' | 'retro-bars' | 'particle-fade';
 
 // Note display constants
 export const NOTE_HEIGHT = 52;
@@ -42,13 +42,47 @@ const NOTE_SHAPE_CONFIGS: Record<NoteShapeStyle, NoteShapeConfig> = {
     activeClass: 'ring-2 ring-white/60 brightness-110',
     laneActiveClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent brightness-110',
   },
-  diamond: {
+  'music-note': {
     style: {
-      clipPath: 'polygon(10% 50%, 50% 5%, 90% 50%, 50% 95%)',
+      borderRadius: '4px 50% 50% 4px',
+      border: 'none',
+      transition: 'border-radius 0.3s ease',
+    },
+    activeClass: 'ring-2 ring-white/70 brightness-110',
+    laneActiveClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent brightness-110',
+  },
+  star: {
+    style: {
+      clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)',
       transition: 'clip-path 0.3s ease',
     },
-    // NOTE: Do NOT use Tailwind scale-* — it overrides inline translateY(-50%)
     activeClass: 'brightness-125',
+    laneActiveClass: 'brightness-125',
+  },
+  circle: {
+    style: {
+      borderRadius: '50%',
+      border: '1.5px solid rgba(255,255,255,0.2)',
+      transition: 'border-radius 0.3s ease',
+    },
+    activeClass: 'ring-2 ring-white/70 brightness-110',
+    laneActiveClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent brightness-110',
+    laneBorderRadius: '50%',
+  },
+  hexagon: {
+    style: {
+      clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
+      transition: 'clip-path 0.3s ease',
+    },
+    activeClass: 'ring-2 ring-white/80 brightness-110',
+    laneActiveClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent brightness-125',
+  },
+  triangle: {
+    style: {
+      clipPath: 'polygon(0% 50%, 100% 0%, 100% 100%)',
+      transition: 'clip-path 0.3s ease',
+    },
+    activeClass: 'brightness-110',
     laneActiveClass: 'brightness-125',
   },
   rounded: {
@@ -262,6 +296,128 @@ export function getNoteDisplayStyleClasses(
             ))}
           </div>
         )
+      };
+    }
+
+    case 'trail-effect': {
+      // Trail-effect: A directional gradient that creates a "comet tail" effect.
+      // The right edge (closest to sing line) is bright, fading to transparent
+      // toward the left (already-passed portion). Intensity scales with accuracy.
+      const trailColor = isGolden
+        ? 'rgba(251, 191, 36, '
+        : isBonus
+          ? 'rgba(236, 72, 153, '
+          : 'rgba(34, 211, 238, ';
+      const trailAlpha = Math.max(0.05, accuracy);
+      return {
+        additionalClasses: 'overflow-hidden',
+        inlineStyle: {
+          backgroundImage: 'none',
+          backgroundColor: 'rgba(255, 255, 255, 0.06)',
+          border: '1.5px solid rgba(255, 255, 255, 0.15)',
+        },
+        overlayElement: (
+          <div
+            className="absolute inset-y-0 left-0 right-0"
+            style={{
+              background: `linear-gradient(90deg, transparent 0%, ${trailColor}${trailAlpha * 0.2}) 40%, ${trailColor}${trailAlpha * 0.6}) 70%, ${trailColor}${trailAlpha * 0.95}) 100%)`,
+              transition: 'background 50ms linear',
+            }}
+          />
+        )
+      };
+    }
+
+    case 'retro-bars': {
+      // Retro-bars: A vertical bar meter (like an arcade health bar) at the
+      // bottom of the note. Fills from bottom to top based on accuracy.
+      // Segmented for a classic retro look.
+      const barColor = isGolden
+        ? '#fbbf24'
+        : isBonus
+          ? '#ec4899'
+          : '#22d3ee';
+      const barSegments = 5;
+      const filledSegments = Math.round(accuracy * barSegments);
+      return {
+        additionalClasses: 'overflow-hidden',
+        inlineStyle: {
+          backgroundImage: 'none',
+          backgroundColor: 'rgba(255, 255, 255, 0.06)',
+          border: '1.5px solid rgba(255, 255, 255, 0.2)',
+          boxShadow: accuracy > 0.6
+            ? `0 0 8px ${barColor}40`
+            : 'none',
+        },
+        overlayElement: (
+          <div className="absolute bottom-0 left-0 right-0 flex gap-px" style={{ padding: '2px', height: '100%' }}>
+            {Array.from({ length: barSegments }).map((_, idx) => {
+              const segFill = idx >= (barSegments - filledSegments);
+              return (
+                <div
+                  key={idx}
+                  className="flex-1 rounded-sm"
+                  style={{
+                    backgroundColor: segFill ? barColor : 'rgba(255, 255, 255, 0.06)',
+                    transition: 'background-color 50ms linear',
+                  }}
+                />
+              );
+            })}
+          </div>
+        )
+      };
+    }
+
+    case 'particle-fade': {
+      // Particle-fade: Hit notes dissolve into floating particles.
+      // As accuracy increases, particles appear brighter and more opaque.
+      // Past notes with hits get a dissolving effect via reduced opacity + scale.
+      const particleColor = isGolden
+        ? 'rgba(251, 191, 36, '
+        : isBonus
+          ? 'rgba(236, 72, 153, '
+          : 'rgba(34, 211, 238, ';
+      const alpha = 0.1 + accuracy * 0.9;
+      // Generate deterministic particle positions using accuracy as seed
+      const particleCount = Math.floor(3 + accuracy * 5);
+      const particles = Array.from({ length: particleCount }).map((_, i) => {
+        const left = ((i * 37 + 13) % 90) + 5; // Pseudo-random distribution
+        const top = ((i * 53 + 7) % 70) + 15;
+        const size = 2 + ((i * 19) % 4);
+        const delay = (i * 0.15) % 1;
+        return { left, top, size, delay };
+      });
+      return {
+        additionalClasses: accuracy > 0.3 ? 'overflow-hidden' : '',
+        inlineStyle: {
+          background: accuracy > 0.1
+            ? `linear-gradient(90deg, ${particleColor}${alpha * 0.3}), ${particleColor}${alpha * 0.8})`
+            : 'none',
+          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          opacity: accuracy > 0.1 ? 0.6 + accuracy * 0.4 : 0.3,
+          filter: accuracy > 0.7 ? `blur(${Math.max(0, (1 - accuracy) * 2)}px)` : 'none',
+        },
+        overlayElement: accuracy > 0.2 ? (
+          <div className="absolute inset-0 pointer-events-none">
+            {particles.map((p, i) => (
+              <div
+                key={i}
+                className="absolute rounded-full"
+                style={{
+                  left: `${p.left}%`,
+                  top: `${p.top}%`,
+                  width: `${p.size}px`,
+                  height: `${p.size}px`,
+                  backgroundColor: `${particleColor}${alpha * 0.8})`,
+                  boxShadow: `0 0 ${p.size * 2}px ${particleColor}${alpha * 0.5})`,
+                  animation: `particleFade ${0.8 + accuracy * 0.5}s ease-out ${p.delay}s infinite alternate`,
+                  opacity: accuracy,
+                }}
+              />
+            ))}
+          </div>
+        ) : null
       };
     }
 

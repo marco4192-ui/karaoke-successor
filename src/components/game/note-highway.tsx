@@ -158,7 +158,7 @@ const NoteBlock = React.memo(function NoteBlock({
   const getBackgroundClasses = () => {
     // In fill-level and hit-fill modes, skip Tailwind gradient classes —
     // the display style manages its own background via inline styles.
-    if (noteDisplayStyle === 'fill-level' || noteDisplayStyle === 'hit-fill') return '';
+    if (noteDisplayStyle === 'fill-level' || noteDisplayStyle === 'hit-fill' || noteDisplayStyle === 'trail-effect' || noteDisplayStyle === 'retro-bars' || noteDisplayStyle === 'particle-fade') return '';
     if (note.isGolden) {
       return 'bg-gradient-to-r from-yellow-400 to-orange-500 shadow-lg shadow-yellow-500/50';
     }
