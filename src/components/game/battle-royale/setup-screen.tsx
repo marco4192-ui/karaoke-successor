@@ -32,6 +32,16 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
   const [availableMics, setAvailableMics] = useState<Array<{ deviceId: string; label: string }>>([]);
   const [playerMicDevices, setPlayerMicDevices] = useState<Record<string, string>>({});
 
+  // Companion auto-registration
+  const [connectedCompanionClients, setConnectedCompanionClients] = useState<Array<{
+    id: string;
+    connectionCode: string;
+    name: string;
+    profile: { id: string; name: string; avatar?: string; color: string } | null;
+    hasPitch: boolean;
+  }>>([]);
+  const [autoCompanionIds, setAutoCompanionIds] = useState<Set<string>>(new Set());
+
   // Core settings
   const [roundDuration, setRoundDuration] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.roundDuration);
   const [finalRoundDuration, setFinalRoundDuration] = useState(DEFAULT_BATTLE_ROYALE_SETTINGS.finalRoundDuration);
@@ -94,9 +104,43 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
     enumerateMics();
   }, []);
 
+  // Auto-detect companion clients on mount
+  useEffect(() => {
+    const fetchCompanions = async () => {
+      try {
+        const res = await fetch('/api/mobile?action=clients');
+        const data = await res.json();
+        if (data.success && data.clients) {
+          setConnectedCompanionClients(data.clients);
+          const autoIds: string[] = [];
+          data.clients.forEach((client: typeof connectedCompanionClients[0]) => {
+            if (client.profile && client.hasPitch) {
+              autoIds.push(client.profile.id);
+            }
+          });
+          if (autoIds.length > 0) {
+            setAutoCompanionIds(new Set(autoIds));
+            setCompanionPlayers(prev => {
+              const merged = [...new Set([...prev, ...autoIds])];
+              return merged;
+            });
+          }
+        }
+      } catch {
+        // Silently fail
+      }
+    };
+    fetchCompanions();
+  }, []);
+
   const activeProfiles = useMemo(() =>
     profiles.filter(p => p.isActive !== false),
     [profiles]
+  );
+
+  const micAvailableProfiles = useMemo(() =>
+    activeProfiles.filter(p => !autoCompanionIds.has(p.id)),
+    [activeProfiles, autoCompanionIds]
   );
 
   const globalDifficulty = useGameStore((state) => state.gameState.difficulty);
@@ -125,6 +169,10 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
   };
 
   const toggleCompanionPlayer = (playerId: string) => {
+    // Prevent removing auto-registered companion players
+    if (autoCompanionIds.has(playerId)) {
+      return;
+    }
     if (companionPlayers.includes(playerId)) {
       setCompanionPlayers(prev => prev.filter(id => id !== playerId));
       return;
@@ -155,6 +203,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       color: string;
       playerType: PlayerType;
       microphoneId?: string;
+      connectionCode?: string;
     }> = [];
 
     micPlayers.forEach((id) => {
@@ -171,12 +220,14 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
 
     companionPlayers.forEach((id) => {
       const profile = profiles.find(p => p.id === id);
+      const companionClient = connectedCompanionClients.find(c => c.profile?.id === id);
       players.push({
         id,
         name: profile?.name || 'Unknown',
         avatar: profile?.avatar,
         color: profile?.color || PLAYER_COLORS[players.length % PLAYER_COLORS.length],
         playerType: 'companion',
+        connectionCode: companionClient?.connectionCode,
       });
     });
 
@@ -605,7 +656,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-3">
-              {activeProfiles.map(profile => {
+              {micAvailableProfiles.map(profile => {
                 const isSelected = micPlayers.includes(profile.id);
                 const isCompanion = companionPlayers.includes(profile.id);
                 return (
@@ -619,6 +670,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
                           ? 'bg-gradient-to-br from-red-500/30 to-pink-500/30 border-2 border-red-500'
                           : 'bg-white/5 border border-white/10 hover:bg-white/10'
                     }`}
+                    title={isCompanion ? t('battleRoyale.companionNotAssignable') : undefined}
                   >
                     <div className="flex items-center gap-2">
                       {profile.avatar ? (
@@ -676,17 +728,23 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
               {activeProfiles.map(profile => {
                 const isSelected = companionPlayers.includes(profile.id);
                 const isMic = micPlayers.includes(profile.id);
+                const isAutoCompanion = autoCompanionIds.has(profile.id);
+                const companionClient = connectedCompanionClients.find(c => c.profile?.id === profile.id);
+                const isLocked = isAutoCompanion || isMic;
                 return (
                   <div
                     key={profile.id}
-                    onClick={() => !isMic && toggleCompanionPlayer(profile.id)}
-                    className={`p-3 rounded-lg cursor-pointer transition-all ${
+                    onClick={() => !isLocked && toggleCompanionPlayer(profile.id)}
+                    className={`p-3 rounded-lg transition-all ${
                       isMic
                         ? 'opacity-30 cursor-not-allowed'
-                        : isSelected
-                          ? 'bg-gradient-to-br from-purple-500/30 to-indigo-500/30 border-2 border-purple-500'
-                          : 'bg-white/5 border border-white/10 hover:bg-white/10'
+                        : isAutoCompanion
+                          ? 'bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-2 border-green-500 cursor-default'
+                          : isSelected
+                            ? 'bg-gradient-to-br from-purple-500/30 to-indigo-500/30 border-2 border-purple-500 cursor-pointer'
+                            : 'bg-white/5 border border-white/10 hover:bg-white/10 cursor-pointer'
                     }`}
+                    title={isMic ? t('battleRoyale.companionNotAssignable') : undefined}
                   >
                     <div className="flex items-center gap-2">
                       {profile.avatar ? (
@@ -700,8 +758,24 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
                         </div>
                       )}
                       <span className="font-medium truncate text-sm">{profile.name}</span>
-                      {isSelected && <span className="ml-auto text-purple-400 text-lg">📱</span>}
+                      {isAutoCompanion && (
+                        <Badge variant="outline" className="ml-auto border-green-500 text-green-400 text-[10px] px-1.5 py-0">
+                          {t('battleRoyale.companionConnectedBadge')}
+                        </Badge>
+                      )}
+                      {!isAutoCompanion && isSelected && <span className="ml-auto text-purple-400 text-lg">📱</span>}
                     </div>
+                    {isAutoCompanion && companionClient && (
+                      <div className="mt-1.5 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                        <span className="text-[10px] text-white/50">
+                          {t('battleRoyale.companionCodeLabel').replace('{code}', companionClient.connectionCode)}
+                        </span>
+                        <span className="text-[10px] text-white/30">
+                          · {t('battleRoyale.companionAutoDetected')}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 );
               })}

@@ -590,7 +590,12 @@ export const deTranslations = {
       videoBackgroundLabel: 'Video-Hintergrund',
       videoBackgroundDesc: 'Zeigt Video-Hintergrund während des Singens',
       countdownLabel: 'Countdown',
-      countdownDesc: 'Sekunden bis zum Rundenstart'
+      countdownDesc: 'Sekunden bis zum Rundenstart',
+      // Companion auto-registration
+      companionAutoDetected: 'Automatisch erkannt',
+      companionConnectedBadge: 'Verbunden',
+      companionNotAssignable: 'Dieser Spieler ist bereits über die Companion-App verbunden',
+      companionCodeLabel: 'Code: {code}',
     },
     medley: {
       setupTitle: '🎵 Medley-Wettbewerb',

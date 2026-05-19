@@ -594,7 +594,12 @@ export const enTranslations = {
       videoBackgroundLabel: 'Video Background',
       videoBackgroundDesc: 'Show video background while singing',
       countdownLabel: 'Countdown',
-      countdownDesc: 'Seconds until round starts'
+      countdownDesc: 'Seconds until round starts',
+      // Companion auto-registration
+      companionAutoDetected: 'Auto-detected',
+      companionConnectedBadge: 'Connected',
+      companionNotAssignable: 'This player is already connected via Companion App',
+      companionCodeLabel: 'Code: {code}',
     },
     medley: {
       setupTitle: '🎵 Medley Contest',
