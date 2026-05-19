@@ -476,3 +476,79 @@ Work Log:
 Stage Summary:
 - Central orchestrator cleaned up, render-time side effects removed, dead code eliminated, German hardcoded strings internationalized, tournament difficulty now respects bracket settings
 - TypeScript compilation passes with zero errors in this file
+---
+Task ID: s6
+Agent: refactor-party-game-screens
+Task: Extract helpers from party-game-screens.tsx
+
+Work Log:
+- Read 1,084-line file (3 chunks: 1-200, 200-895, 895-1085)
+- Identified extractable helper functions: freqNumberToLabel (module-level pure function), trimSongToShortMode (duplicated in pickTournamentSong + rate-my-song), pickRandomVotingSongs (duplicated in PTM + CPtM navigation)
+- Confirmed all other functions (startMatchWithMicOverlay, pickTournamentSong, useEffect blocks, JSX callbacks) use React hooks/state and cannot be extracted
+- Created party-game-helpers.ts (40 lines) with 3 exported pure functions
+- Updated party-game-screens.tsx: added import, removed inline freqNumberToLabel definition, replaced 3 inline trim/voting patterns with helper calls
+- Removed 2 dynamic `import()` calls (filterSongs from song-library) in PTM/CPtM voting handlers — now uses static import via helper
+- TypeScript compilation passes with zero errors
+
+Stage Summary:
+- Helper functions extracted, main component stays focused
+- party-game-screens.tsx: 1,084 → 1,069 lines (-15 lines)
+- party-game-helpers.ts: 40 lines (new file)
+- No behavioral changes; all extracted functions are pure/stateless
+Agent: split-medley-results
+Task: Split medley-game-results.tsx into 3 files
+
+Work Log:
+- Created medley-round-results.tsx
+- Created medley-final-results.tsx
+- Replaced original with barrel
+
+Stage Summary:
+- 663-line file split into 2 focused files + barrel
+---
+Task ID: s3
+Agent: split-medley-setup
+Task: Extract sub-components from medley-setup.tsx
+
+Work Log:
+- Read 991-line file in 5 chunks
+- Identified 2 internal sub-components: `ToggleSwitch` (lines 54-66) and `InputModeToggle` (lines 913-990), plus shared `CompanionProfile` interface (lines 33-39)
+- Created medley-setup-components.tsx (113 lines) with exported `CompanionProfile`, `ToggleSwitch`, `InputModeToggle`
+- Updated medley-setup.tsx to import from new file, removed extracted code
+- TypeScript compilation passes with zero errors
+
+Stage Summary:
+- 991-line file split into 2 focused files (892 + 113 = 1005 total with new imports/comments)
+---
+Task ID: s4
+Agent: split-tournament-screen
+Task: Split tournament-screen.tsx into 4 files
+
+Work Log:
+- Read 1.145-line file
+- Created tournament-setup-screen.tsx
+- Created tournament-bracket-view.tsx
+- Created tournament-results-screen.tsx
+- Replaced original with barrel
+
+Stage Summary:
+- 1.145-line file split into 3 focused files + barrel
+---
+Task ID: s5
+Agent: split-unified-components
+Task: Split unified-party-setup.components.tsx into 5 files
+
+Work Log:
+- Read 867-line file
+- Created unified-party-setup-mic.tsx (SingleMicSelector, InputModeSelector, MicAssignmentPanel)
+- Created unified-party-setup-voting.tsx (SongVotingModal)
+- Created unified-party-setup-layout.tsx (GameSidebar, MobileGameHeader, SettingsPanel, internal SettingControl)
+- Created unified-party-setup-game.tsx (PlayerGrid, SongFilterSection, SongSelectionGrid, ReadySummary)
+- Replaced original with barrel re-exports
+
+Stage Summary:
+- 867-line file split into 4 focused files + barrel
+- All 11 exported components preserved (10 named exports + 1 inline-exported)
+- SettingControl (unexported helper) co-located with its sole consumer SettingsPanel
+- SongFilterSectionProps (local interface) kept as file-internal in game file
+- No shared types needed extraction (all come from existing type files)

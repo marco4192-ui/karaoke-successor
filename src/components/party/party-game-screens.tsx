@@ -25,18 +25,11 @@ import type { GameSetupResult } from '@/components/game/unified-party-setup';
 import { preparePtmNextSong } from '@/lib/game/ptm-next-song';
 import { toast } from '@/hooks/use-toast';
 import type { Screen } from '@/types/screens';
+import { freqNumberToLabel, trimSongToShortMode, pickRandomVotingSongs } from './party-game-helpers';
 
 interface PartyGameScreensProps {
   screen: Screen;
   setScreen: (_s: Screen) => void;
-}
-
-/** Convert a numeric blind/missing-word frequency (0.15–0.90) to the string label used by GameSetupResult settings */
-function freqNumberToLabel(freq: number): 'light' | 'normal' | 'hard' | 'insane' {
-  if (freq >= 0.75) return 'insane';
-  if (freq >= 0.45) return 'hard';
-  if (freq >= 0.20) return 'normal';
-  return 'light';
 }
 
 // ===================== PARTY GAME MODE SCREENS =====================
@@ -144,9 +137,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
 
     // #1 Trim song duration for short mode
     if (party.tournamentSongDuration === 60) {
-      const startTime = chosen.start || 0;
-      const endTime = Math.min(startTime + 60000, chosen.end || chosen.duration);
-      const trimmed = { ...chosen, start: startTime, end: endTime };
+      const trimmed = trimSongToShortMode(chosen);
       party.addTournamentUsedSongId(chosen.id);
       return trimmed;
     }
@@ -341,11 +332,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             } else if (targetScreen === 'song-voting') {
               // Re-generate voting songs from filtered pool
               // IMPORTANT: always limit to 3 songs (matching initial setup behavior)
-              const { filterSongs } = await import('@/lib/game/song-library');
-              const songs = getNonDuetSongs();
               const filters = party.unifiedSetupResult?.settings;
-              const filtered = filterSongs(songs, filters?.filterGenre ?? 'all', filters?.filterLanguage ?? 'all', filters?.filterCombined ?? true);
-              const suggested = [...filtered].sort(() => Math.random() - 0.5).slice(0, 3);
+              const suggested = pickRandomVotingSongs(filters?.filterGenre, filters?.filterLanguage, filters?.filterCombined);
               party.setVotingSongs(suggested);
               setScreen('song-voting');
             } else {
@@ -638,11 +626,8 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                 setScreen('library');
               }
             } else if (targetScreen === 'song-voting') {
-              const { filterSongs } = await import('@/lib/game/song-library');
-              const songs = getNonDuetSongs();
               const filters = party.unifiedSetupResult?.settings;
-              const filtered = filterSongs(songs, filters?.filterGenre ?? 'all', filters?.filterLanguage ?? 'all', filters?.filterCombined ?? true);
-              const suggested = [...filtered].sort(() => Math.random() - 0.5).slice(0, 3);
+              const suggested = pickRandomVotingSongs(filters?.filterGenre, filters?.filterLanguage, filters?.filterCombined);
               party.setVotingSongs(suggested);
               setScreen('song-voting');
             } else {
@@ -939,7 +924,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
 
             // If short mode, trim song to 60 seconds
             if (settings.duration === 'short') {
-              setSong({ ...song, start: song.start, end: Math.min((song.start || 0) + 60000, song.end || song.duration) });
+              setSong(trimSongToShortMode(song));
             } else {
               setSong(song);
             }

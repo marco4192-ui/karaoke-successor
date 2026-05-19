@@ -104,3 +104,24 @@ Stage Summary:
 - DE requires exact power-of-2 players (validated)
 - Works seamlessly with existing match flow (startMatchWithMicOverlay, handleTournamentGameEnd)
 - Hall of Fame records tournamentType correctly
+
+---
+Task ID: s1
+Agent: split-rate-my-song
+Task: Split rate-my-song-screen.tsx into 5 files
+
+Work Log:
+- Read original 1.464 line file in 3 chunks
+- Identified component boundaries: Setup (L130-523), Rating (L541-907), Results (L923-1288), SeriesResults (L1297-1464)
+- Identified shared constants: CATEGORY_WEIGHTS, CATEGORY_KEYS, CategoryKey, calcWeightedTotal
+- Created rate-my-song-types.ts (98 lines) — 5 types, 4 props interfaces, shared constants
+- Created rate-my-song-setup.tsx (441 lines) — ToggleSwitch + RateMySongSetupScreen
+- Created rate-my-song-rating.tsx (382 lines) — RateMySongRatingScreen
+- Created rate-my-song-results.tsx (568 lines) — RateMySongResultsScreen + RateMySongSeriesResultsScreen
+- Replaced original with barrel re-export (8 lines)
+- TypeScript check: 0 errors
+
+Stage Summary:
+- 1.464-line file split into 4 focused files + barrel
+- All 9 exports remain importable from original path via barrel re-exports
+- Existing consumers (party-game-screens.tsx, party-store.ts) unchanged
