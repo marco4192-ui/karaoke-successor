@@ -61,7 +61,6 @@ export function GenreLanguageEditor({
   };
 
   // ── AI Genre/Language suggestion ──
-  const needsAiSuggestion = !song.genre || !song.language;
   const handleAiSuggest = useCallback(async () => {
     setIsAiLoading(true);
     setAiSuggestion(null);
@@ -147,21 +146,19 @@ export function GenreLanguageEditor({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* AI Suggest Button — shown when genre or language is missing */}
-        {needsAiSuggestion && (
-          <button
-            onClick={handleAiSuggest}
-            disabled={isAiLoading}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-violet-500/20 to-cyan-500/20 border border-violet-500/30 text-white/80 hover:from-violet-500/30 hover:to-cyan-500/30 transition-all text-sm"
-          >
-            {isAiLoading ? (
-              <div className="w-4 h-4 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <span>🤖</span>
-            )}
-            {isAiLoading ? t('editor.aiSuggestLoading') : t('editor.aiSuggestMetadata')}
-          </button>
-        )}
+        {/* AI Suggest Button — always available for suggestion or verification */}
+        <button
+          onClick={handleAiSuggest}
+          disabled={isAiLoading}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-violet-500/20 to-cyan-500/20 border border-violet-500/30 text-white/80 hover:from-violet-500/30 hover:to-cyan-500/30 transition-all text-sm"
+        >
+          {isAiLoading ? (
+            <div className="w-4 h-4 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <span>🤖</span>
+          )}
+          {isAiLoading ? t('editor.aiSuggestLoading') : t('editor.aiSuggestMetadata')}
+        </button>
         {/* Genre Section */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-white/80">{t('editor.genre')}</label>
