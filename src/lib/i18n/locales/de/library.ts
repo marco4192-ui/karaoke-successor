@@ -568,6 +568,8 @@ export const libraryTranslations = {
   // Import-Hook-Nachrichten
   importHook: {
     failedToParse: 'UltraStar-Datei konnte nicht geparst werden: {error}',
+    unknownError: 'Unbekannter Fehler',
+    failedToScanFolder: 'Ordner-Scan fehlgeschlagen: {error}',
     pleaseProvideTxt: 'Bitte eine UltraStar txt-Datei angeben',
     pleaseProvideMedia: 'Bitte eine Audio- oder Videodatei angeben',
     processingImport: 'UltraStar-Import wird verarbeitet...',
@@ -587,6 +589,7 @@ export const libraryTranslations = {
     failedToImportSong: 'Import von {title} fehlgeschlagen: {error}',
     importedCount: '{count} Songs importiert!',
     tauriImportFailed: 'Tauri-Import fehlgeschlagen: {error}',
+    errors: '({count} Fehler)',
   },
 
   // Import Ordner-Scan-Badges

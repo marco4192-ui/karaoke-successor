@@ -1,6 +1,7 @@
 'use client';
 
 import React, { ReactNode } from 'react';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface DropZoneProps {
   file: File | null;
@@ -21,6 +22,7 @@ interface DropZoneProps {
 export function DropZone({ file, accept, inputRef, icon, label, description, accentColor = 'cyan', extra, onDrop, onFileChange,
   tauriFilter, tauriPickerTitle,
 }: DropZoneProps) {
+  const { t } = useTranslation();
   const hoverBorder = accentColor === 'purple' ? 'hover:border-purple-500/50' : 'hover:border-cyan-500/50';
   const textColor = accentColor === 'purple' ? 'text-purple-400' : 'text-cyan-400';
 
@@ -33,7 +35,7 @@ export function DropZone({ file, accept, inputRef, icon, label, description, acc
           const { nativePickFileOpen } = await import('@/lib/native-fs');
           const { nativeReadFileBytes } = await import('@/lib/native-fs');
           const selected = await nativePickFileOpen(
-            tauriPickerTitle || 'Select File',
+            tauriPickerTitle || t('importExtra.selectFile'),
             tauriFilter.name,
             tauriFilter.extensions
           );

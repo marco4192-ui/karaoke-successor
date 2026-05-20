@@ -568,6 +568,8 @@ export const libraryTranslations = {
   // Import hook messages
   importHook: {
     failedToParse: 'Failed to parse UltraStar file: {error}',
+    unknownError: 'Unknown error',
+    failedToScanFolder: 'Failed to scan folder: {error}',
     pleaseProvideTxt: 'Please provide an UltraStar txt file',
     pleaseProvideMedia: 'Please provide an audio or video file',
     processingImport: 'Processing UltraStar import...',
@@ -587,6 +589,7 @@ export const libraryTranslations = {
     failedToImportSong: 'Failed to import {title}: {error}',
     importedCount: 'Imported {count} songs!',
     tauriImportFailed: 'Tauri import failed: {error}',
+    errors: '({count} errors)',
   },
 
   // Import folder scan badges

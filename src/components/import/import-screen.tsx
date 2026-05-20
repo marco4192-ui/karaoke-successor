@@ -11,6 +11,8 @@ import { ImportPreview } from './import-preview';
 import { useTranslation } from '@/lib/i18n/translations';
 
 export function ImportScreen({ onImport }: ImportScreenProps) {
+  const { t } = useTranslation();
+
   const {
     importType, setImportType, isProcessing, progress, error, setError,
     audioFile, videoFile, ultrastarFile, audioUrl, videoUrl,
@@ -21,9 +23,7 @@ export function ImportScreen({ onImport }: ImportScreenProps) {
     audioInputRef, videoInputRef, ultrastarInputRef, folderInputRef,
     handleFileSelect, handleDrop, processUltrastarImport,
     handleScanFolder, importSelectedScanned, confirmImport,
-  } = useImportScreen(onImport);
-
-  const { t } = useTranslation();
+  } = useImportScreen(onImport, t);
 
   return (
     <div className="space-y-6">

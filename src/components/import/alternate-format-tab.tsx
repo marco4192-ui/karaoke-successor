@@ -28,12 +28,12 @@ export interface AlternateFormatTabProps {
 }
 
 /** Supported alternate formats with file extensions */
-const FORMATS: Array<{ id: DetectedFormat; label: string; extensions: string; description: string }> = [
-  { id: 'ultrastar', label: 'UltraStar', extensions: '.txt', description: 'UltraStar TXT-Format (Standard + kompakte Notation, Duette)' },
-  { id: 'midi', label: 'MIDI Karaoke', extensions: '.kar, .mid', description: 'MIDI-Dateien mit eingebetteten Lyrics und Noten' },
-  { id: 'karaoke-mugen', label: 'Karaoke Mugen', extensions: '.json', description: 'Karaoke Mugen JSON-Format' },
-  { id: 'singstar', label: 'SingStar', extensions: '.txt (SingStar)', description: 'SingStar INI-Export-Format' },
-  { id: 'stepmania', label: 'StepMania', extensions: '.sm, .ssc, .txt', description: 'StepMania/StepFever Chart-Format' },
+const FORMATS: Array<{ id: DetectedFormat; label: string; extensions: string; descriptionKey: string }> = [
+  { id: 'ultrastar', label: 'UltraStar', extensions: '.txt', descriptionKey: 'importAlternateFormat.formatDescriptions.ultrastar' },
+  { id: 'midi', label: 'MIDI Karaoke', extensions: '.kar, .mid', descriptionKey: 'importAlternateFormat.formatDescriptions.midi' },
+  { id: 'karaoke-mugen', label: 'Karaoke Mugen', extensions: '.json', descriptionKey: 'importAlternateFormat.formatDescriptions.karaokeMugen' },
+  { id: 'singstar', label: 'SingStar', extensions: '.txt (SingStar)', descriptionKey: 'importAlternateFormat.formatDescriptions.singstar' },
+  { id: 'stepmania', label: 'StepMania', extensions: '.sm, .ssc, .txt', descriptionKey: 'importAlternateFormat.formatDescriptions.stepmania' },
 ];
 
 export function AlternateFormatTab({
@@ -221,7 +221,7 @@ export function AlternateFormatTab({
             >
               <div className="text-sm font-medium">{fmt.label}</div>
               <div className="text-[10px] text-slate-500">{fmt.extensions}</div>
-              <div className="text-[10px] text-slate-400 mt-1">{fmt.description}</div>
+              <div className="text-[10px] text-slate-400 mt-1">{t(fmt.descriptionKey)}</div>
             </button>
           ))}
         </div>

@@ -384,5 +384,10 @@ export const medleyTournamentTranslations = {
     confettiMessage: 'UNGlaubliche Leistung!',
     genreStats: 'Genre-Statistiken',
     wallOfFame: 'Ruhmeshalle',
+    bonusPointsIfMastered: '+50 Bonuspunkte wenn gemeistert!',
+    letsGo: 'Los geht\'s! 🎤',
+    bettingResultTitle: '💰 Wette-Ergebnis',
+    bettingResultDesc: '{n} Wette-Punkte insgesamt diese Runde getauscht!',
+    challengeBonusDesc: '+{n} Bonuspunkte earned!',
   },
 };

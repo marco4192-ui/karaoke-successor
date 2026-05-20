@@ -39,7 +39,7 @@ export function NavBar({ screen, setScreen, queueLength, isMounted, isFullscreen
             <PartyIcon className="w-5 h-5" /> {t('nav.party')}
           </NavButton>
           <NavButton active={screen === 'dailyChallenge'} onClick={() => setScreen('dailyChallenge')}>
-            <StarIcon className="w-5 h-5" /> Challenges
+            <StarIcon className="w-5 h-5" /> {t('nav.daily')}
           </NavButton>
           <NavButton active={screen === 'queue'} onClick={() => setScreen('queue')}>
             <QueueIcon className="w-5 h-5" /> {t('nav.queue')}

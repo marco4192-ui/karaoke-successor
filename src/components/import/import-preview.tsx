@@ -51,7 +51,7 @@ export function ImportPreview({ progress, error, previewSong, audioUrl, videoUrl
                 {previewSong.lyrics.reduce((acc, l) => acc + l.notes.length, 0)} {t('game.notes')}
               </Badge>
               {previewSong.hasEmbeddedAudio && (
-                <Badge className="bg-purple-500">Video Audio</Badge>
+                <Badge className="bg-purple-500">{t('importExtra.videoAudio')}</Badge>
               )}
             </div>
             {audioUrl && (

@@ -17,7 +17,7 @@ import { storeMedia } from '@/lib/db/media-db';
 import { Song } from '@/types/game';
 import { findDuplicates, DuplicateInfo, ProgressInfo } from './import-types';
 
-export function useImportScreen(onImport: (_song: Song) => void) {
+export function useImportScreen(onImport: (_song: Song) => void, translateFn: (key: string) => string = (key: string) => key) {
   const [importType, setImportType] = useState<'ultrastar' | 'folder' | 'alt-format'>('ultrastar');
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState<ProgressInfo | null>(null);
@@ -84,7 +84,7 @@ export function useImportScreen(onImport: (_song: Song) => void) {
       setTitle(ultraStar.title);
       setArtist(ultraStar.artist);
     } catch (err) {
-      setError('Failed to parse UltraStar file: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      setError(translateFn('importHook.failedToParse').replace('{error}', err instanceof Error ? err.message : translateFn('importHook.unknownError')));
     }
   };
 
@@ -122,11 +122,11 @@ export function useImportScreen(onImport: (_song: Song) => void) {
   }, [handleFileSelect]);
 
   const processUltrastarImport = async () => {
-    if (!ultrastarFile) { setError('Please provide an UltraStar txt file'); return; }
-    if (!audioFile && !videoFile) { setError('Please provide an audio or video file'); return; }
+    if (!ultrastarFile) { setError(translateFn('importHook.pleaseProvideTxt')); return; }
+    if (!audioFile && !videoFile) { setError(translateFn('importHook.pleaseProvideMedia')); return; }
 
     setIsProcessing(true);
-    setProgress({ stage: 'loading', progress: 0, message: 'Processing UltraStar import...' });
+    setProgress({ stage: 'loading', progress: 0, message: translateFn('importHook.processingImport') });
 
     try {
       const text = await ultrastarFile.text();
@@ -141,7 +141,7 @@ export function useImportScreen(onImport: (_song: Song) => void) {
         song.audioUrl = videoUrl;
       }
 
-      setProgress({ stage: 'processing', progress: 50, message: 'Storing media files...' });
+      setProgress({ stage: 'processing', progress: 50, message: translateFn('importHook.storingMedia') });
 
       try {
         if (ultrastarFile) {
@@ -171,10 +171,10 @@ export function useImportScreen(onImport: (_song: Song) => void) {
       }
 
       setPreviewSong(song);
-      setProgress({ stage: 'complete', progress: 100, message: 'Import complete!' });
+      setProgress({ stage: 'complete', progress: 100, message: translateFn('importHook.importComplete') });
     } catch (err) {
-      setError('Failed to import: ' + (err instanceof Error ? err.message : 'Unknown error'));
-      setProgress({ stage: 'error', progress: 0, message: 'Import failed' });
+      setError(translateFn('importHook.failedToImport').replace('{error}', err instanceof Error ? err.message : translateFn('importHook.unknownError')));
+      setProgress({ stage: 'error', progress: 0, message: translateFn('importHook.importFailed') });
     }
     setIsProcessing(false);
   };
@@ -187,7 +187,7 @@ export function useImportScreen(onImport: (_song: Song) => void) {
     setDuplicates([]);
     tauriScanResultRef.current = null;
     tauriScanFolderRef.current = null;
-    setProgress({ stage: 'loading', progress: 0, message: 'Scanning folder...' });
+    setProgress({ stage: 'loading', progress: 0, message: translateFn('importHook.scanningFolder') });
 
     try {
       // ── Tauri: Use native folder picker and filesystem scanner ──
@@ -196,7 +196,7 @@ export function useImportScreen(onImport: (_song: Song) => void) {
         const { nativePickFolder } = await import('@/lib/native-fs');
         const { scanSongsFolderTauri } = await import('@/lib/tauri-file-storage');
 
-        const folderPath = await nativePickFolder('Select Songs Folder');
+        const folderPath = await nativePickFolder(translateFn('importHook.selectSongsFolder'));
         if (!folderPath) {
           // User cancelled
           setIsProcessing(false);
@@ -204,7 +204,7 @@ export function useImportScreen(onImport: (_song: Song) => void) {
           return;
         }
 
-        setProgress({ stage: 'scanning', progress: 10, message: `Scanning ${folderPath}...` });
+        setProgress({ stage: 'scanning', progress: 10, message: translateFn('importHook.scanningPath').replace('{path}', folderPath) });
         const result = await scanSongsFolderTauri(folderPath);
 
         // Store Tauri result for later import
@@ -227,7 +227,7 @@ export function useImportScreen(onImport: (_song: Song) => void) {
 
         setScannedSongs(displaySongs);
         setScanErrors(result.errors);
-        setProgress({ stage: 'processing', progress: 90, message: 'Checking for duplicates...' });
+        setProgress({ stage: 'processing', progress: 90, message: translateFn('importHook.checkingDuplicates') });
 
         const duplicateResults = findDuplicates(displaySongs, existingSongs);
         setDuplicates(duplicateResults);
@@ -236,7 +236,7 @@ export function useImportScreen(onImport: (_song: Song) => void) {
 
         setProgress({
           stage: 'complete', progress: 100,
-          message: `Found ${result.songs.length} songs${result.errors.length ? ` (${result.errors.length} errors)` : ''}`,
+          message: translateFn('importHook.foundSongs').replace('{count}', String(result.songs.length)).replace('{duplicates}', result.errors.length ? translateFn('importHook.errors').replace('{count}', String(result.errors.length)) : ''),
         });
         setIsProcessing(false);
         return;
@@ -249,14 +249,14 @@ export function useImportScreen(onImport: (_song: Song) => void) {
       } else if (folderInputRef.current?.files?.length) {
         result = await scanFilesFromFileList(folderInputRef.current.files);
       } else {
-        setError('Folder scanning not supported. Please use Chrome or Edge browser.');
+        setError(translateFn('importHook.folderScanNotSupported'));
         setIsProcessing(false);
         return;
       }
 
       setScannedSongs(result.songs);
       setScanErrors(result.errors);
-      setProgress({ stage: 'processing', progress: 90, message: 'Checking for duplicates...' });
+      setProgress({ stage: 'processing', progress: 90, message: translateFn('importHook.checkingDuplicates') });
 
       const duplicateResults = findDuplicates(result.songs, existingSongs);
       setDuplicates(duplicateResults);
@@ -265,19 +265,19 @@ export function useImportScreen(onImport: (_song: Song) => void) {
 
       setProgress({
         stage: 'complete', progress: 100,
-        message: `Found ${result.songs.length} songs${result.errors.length ? ` (${result.errors.length} errors)` : ''}`,
+        message: translateFn('importHook.foundSongs').replace('{count}', String(result.songs.length)).replace('{duplicates}', result.errors.length ? translateFn('importHook.errors').replace('{count}', String(result.errors.length)) : ''),
       });
     } catch (err) {
-      setError('Failed to scan folder: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      setError(translateFn('importHook.failedToScanFolder').replace('{error}', err instanceof Error ? err.message : translateFn('importHook.unknownError')));
     }
     setIsProcessing(false);
   };
 
   const importSelectedScanned = async () => {
-    if (selectedScanned.size === 0) { setError('No songs selected'); return; }
+    if (selectedScanned.size === 0) { setError(translateFn('importHook.noSongsSelected')); return; }
 
     setIsProcessing(true);
-    setProgress({ stage: 'loading', progress: 0, message: 'Importing songs...' });
+    setProgress({ stage: 'loading', progress: 0, message: translateFn('importHook.importingSongs') });
 
     // ── Tauri: Import using native scan result (no File objects needed) ──
     if (tauriScanResultRef.current && tauriScanFolderRef.current) {
@@ -391,10 +391,10 @@ export function useImportScreen(onImport: (_song: Song) => void) {
             setProgress({
               stage: 'processing',
               progress: ((i + 1) / selectedArray.length) * 100,
-              message: `Importing ${i + 1}/${selectedArray.length}: ${scanned.title}`,
+              message: translateFn('importHook.importingProgress').replace('{current}', String(i + 1)).replace('{total}', String(selectedArray.length)).replace('{title}', scanned.title),
             });
           } catch (err) {
-            setScanErrors(prev => [...prev, `Failed to import ${scanned.title}: ${(err as Error).message}`]);
+            setScanErrors(prev => [...prev, translateFn('importHook.failedToImportSong').replace('{title}', scanned.title).replace('{error}', (err as Error).message)]);
           }
         }
 
@@ -405,7 +405,7 @@ export function useImportScreen(onImport: (_song: Song) => void) {
 
         setProgress({
           stage: 'complete', progress: 100,
-          message: `Imported ${songsToImport.length} songs!`,
+          message: translateFn('importHook.importedCount').replace('{count}', String(songsToImport.length)),
         });
 
         if (songsToImport.length > 0) {
@@ -413,7 +413,7 @@ export function useImportScreen(onImport: (_song: Song) => void) {
           autoNavTimerRef.current = setTimeout(() => onImport(songsToImport[0]), 1500);
         }
       } catch (err) {
-        setError('Tauri import failed: ' + (err instanceof Error ? err.message : 'Unknown error'));
+        setError(translateFn('importHook.tauriImportFailed').replace('{error}', err instanceof Error ? err.message : translateFn('importHook.unknownError')));
       } finally {
         scanLock.release();
         tauriScanResultRef.current = null;
@@ -438,10 +438,10 @@ export function useImportScreen(onImport: (_song: Song) => void) {
         songsToImport.push(song);
         setProgress({
           stage: 'processing', progress: ((i + 1) / selectedArray.length) * 100,
-          message: `Importing ${i + 1}/${selectedArray.length}: ${scanned.title}`,
+          message: translateFn('importHook.importingProgress').replace('{current}', String(i + 1)).replace('{total}', String(selectedArray.length)).replace('{title}', scanned.title),
         });
       } catch (err) {
-        setScanErrors(prev => [...prev, `Failed to import ${scanned.title}: ${(err as Error).message}`]);
+        setScanErrors(prev => [...prev, translateFn('importHook.failedToImportSong').replace('{title}', scanned.title).replace('{error}', (err as Error).message)]);
       }
     }
 
@@ -454,7 +454,7 @@ export function useImportScreen(onImport: (_song: Song) => void) {
       }
     }
 
-    setProgress({ stage: 'complete', progress: 100, message: `Imported ${songsToImport.length} songs!` });
+    setProgress({ stage: 'complete', progress: 100, message: translateFn('importHook.importedCount').replace('{count}', String(songsToImport.length)) });
     setIsProcessing(false);
 
     if (songsToImport.length > 0) {

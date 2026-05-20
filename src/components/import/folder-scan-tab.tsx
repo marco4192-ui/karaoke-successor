@@ -70,7 +70,7 @@ export function FolderScanTab({
       setScanErrors(result.errors);
       setSelectedScanned(new Set(result.songs.map((_, i) => i)));
     } catch (err) {
-      setScanErrors([...scanErrors, `Drop failed: ${(err as Error).message}`]);
+      setScanErrors([...scanErrors, t('importExtra.dropFailed').replace('{error}', (err as Error).message)]);
     } finally {
       setIsProcessing(false);
     }
@@ -248,6 +248,7 @@ function SongListItem({ song, dupInfo, selected, onToggle }: {
   song: ScannedSong; index: number; dupInfo: DuplicateInfo; selected: boolean;
   onToggle: (_checked: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const isDuplicate = dupInfo?.matchType === 'exact';
   const isSimilar = dupInfo?.matchType === 'similar';
 
@@ -270,15 +271,15 @@ function SongListItem({ song, dupInfo, selected, onToggle }: {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <p className="font-medium truncate">{song.title}</p>
-          {isDuplicate && <Badge className="bg-yellow-500 text-xs">Duplicate</Badge>}
-          {isSimilar && <Badge className="bg-orange-500 text-xs">Similar</Badge>}
+          {isDuplicate && <Badge className="bg-yellow-500 text-xs">{t('importFolderBadges.duplicate')}</Badge>}
+          {isSimilar && <Badge className="bg-orange-500 text-xs">{t('importFolderBadges.similar')}</Badge>}
         </div>
         <p className="text-sm text-white/60 truncate">{song.artist}</p>
       </div>
       <div className="flex gap-1 flex-shrink-0">
-        {song.audioFile && <Badge variant="outline" className="text-xs">Audio</Badge>}
-        {song.videoFile && <Badge variant="outline" className="text-xs">Video</Badge>}
-        {song.txtFile && <Badge variant="outline" className="text-xs">TXT</Badge>}
+        {song.audioFile && <Badge variant="outline" className="text-xs">{t('importFolderBadges.audio')}</Badge>}
+        {song.videoFile && <Badge variant="outline" className="text-xs">{t('importFolderBadges.video')}</Badge>}
+        {song.txtFile && <Badge variant="outline" className="text-xs">{t('importFolderBadges.txt')}</Badge>}
       </div>
     </label>
   );

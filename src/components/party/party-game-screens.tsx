@@ -329,7 +329,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               } catch (err) {
                 // eslint-disable-next-line no-console
                 console.error('[PTM] Failed to prepare next song:', err);
-                toast({ title: t('common.error') || 'Error', description: t('partyGameSongs.nextSongError') || 'Could not load next song.', variant: 'destructive' });
+                toast({ title: t('common.error') || 'Error', description: t('partyGameScreens.nextSongFailedDesc') || 'Could not load next song.', variant: 'destructive' });
                 setScreen('library');
               }
             } else if (targetScreen === 'song-voting') {
@@ -625,7 +625,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                 }
               } catch (err) {
                 console.error('[CPtM] Failed to prepare next song:', err);
-                toast({ title: t('common.error') || 'Error', description: t('partyGameSongs.nextSongError') || 'Could not load next song.', variant: 'destructive' });
+                toast({ title: t('common.error') || 'Error', description: t('partyGameScreens.nextSongFailedDesc') || 'Could not load next song.', variant: 'destructive' });
                 setScreen('library');
               }
             } else if (targetScreen === 'song-voting') {
@@ -907,12 +907,12 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             <p className="text-white/70 text-sm mb-6">
               {language === 'de' ? party.rateMySongCurrentChallenge.descriptionDe : party.rateMySongCurrentChallenge.descriptionEn}
             </p>
-            <p className="text-amber-400 text-xs mb-4">+50 Bonus Points if mastered!</p>
+            <p className="text-amber-400 text-xs mb-4">{t('rateMySong.bonusPointsIfMastered')}</p>
             <button
               onClick={() => setChallengeOverlayDismissed(true)}
               className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg text-white font-medium hover:from-purple-400 hover:to-pink-400 transition-all"
             >
-              Let&apos;s go! 🎤
+              {t('rateMySong.letsGo')}
             </button>
           </div>
         </div>
@@ -964,7 +964,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                 const p = profiles.find(pr => pr.id === id);
                 return {
                   id,
-                  name: p?.name || `Player ${i + 1}`,
+                  name: p?.name || t('battleRoyale.player').replace('{n}', String(i + 1)),
                   color: p?.color || '#FF6B6B',
                   playerType: 'microphone' as const,
                   micId: 'default',
@@ -999,7 +999,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           songArtist={rmsSong?.artist || ''}
           singingPlayers={party.rateMySongPlayerIds.map(id => {
             const p = profiles.find(pr => pr.id === id);
-            return { id, name: p?.name || 'Player', color: p?.color || '#FF6B6B' };
+            return { id, name: p?.name || t('game.player'), color: p?.color || '#FF6B6B' };
           })}
           allProfiles={profiles}
           categoriesEnabled={rms.categoriesEnabled}
@@ -1012,7 +1012,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             if (party.rateMySongSettings?.bettingEnabled) {
               const totalBetPoints = ratings.reduce((sum, r) => sum + (r.betPoints || 0), 0);
               if (totalBetPoints > 0) {
-                toast({ title: '💰 Betting Result', description: `${totalBetPoints} total bet points exchanged this round!` });
+                toast({ title: t('rateMySong.bettingResultTitle'), description: t('rateMySong.bettingResultDesc').replace('{n}', String(totalBetPoints)) });
               }
             }
             const result: RateMySongResult = {
@@ -1024,7 +1024,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             };
             // Notify if challenge bonus earned
             if (result.challengeBonus && result.challengeBonus > 0) {
-              toast({ title: '🏆 Challenge Mastered!', description: `+${result.challengeBonus} bonus points earned!` });
+              toast({ title: '🏆 ' + t('rateMySong.challengeMastered'), description: t('rateMySong.challengeBonusDesc').replace('{n}', String(result.challengeBonus)) });
             }
             setRateMySongResult(result);
             // Save round to series history ONCE at submit time, not during render
