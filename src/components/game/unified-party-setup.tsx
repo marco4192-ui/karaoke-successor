@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Song, PlayerProfile, GameMode } from '@/types/game';
 import { usePartySetup } from './unified-party-setup.hook';
+import { useTranslation } from '@/lib/i18n/translations';
 import { GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, InputModeSelector, MicAssignmentPanel, SingleMicSelector } from './unified-party-setup.components';
 
 // Re-export public API (only exports actually consumed by other modules)
@@ -32,6 +33,7 @@ export function UnifiedPartySetup({
   gameMode, profiles, songs, onStartGame, onSelectLibrary, onVoteMode, onBack,
   preSelectedSong, onStartWithPreselectedSong, onChangePreselectedSong,
 }: UnifiedPartySetupProps) {
+  const { t } = useTranslation();
   const {
     config, activeProfiles, selectedPlayers, settings, setSettings,
     error, difficulty, setDifficulty, togglePlayer, handleSongSelection,
@@ -53,7 +55,7 @@ export function UnifiedPartySetup({
       <div className="flex-1 min-w-0">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" onClick={onBack} className="text-white/60">← Back</Button>
+          <Button variant="ghost" onClick={onBack} className="text-white/60">{t('unifiedSetup.back')}</Button>
           <div>
             <h1 className="text-3xl font-bold">{config.icon} {config.title}</h1>
             <p className="text-white/60">{config.description}</p>
@@ -128,7 +130,7 @@ export function UnifiedPartySetup({
                 🎵
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-green-400 font-medium uppercase tracking-wider">Song Selected</p>
+                <p className="text-xs text-green-400 font-medium uppercase tracking-wider">{t('unifiedSetup.songSelected')}</p>
                 <h3 className="text-white font-bold text-lg truncate">{preSelectedSong.title}</h3>
                 <p className="text-white/60 text-sm truncate">{preSelectedSong.artist}</p>
               </div>
@@ -140,7 +142,7 @@ export function UnifiedPartySetup({
                     onClick={onChangePreselectedSong}
                     className="border-white/20 text-white/80 hover:bg-white/10"
                   >
-                    Change
+                    {t('unifiedSetup.change')}
                   </Button>
                 )}
                 {onStartWithPreselectedSong && (
@@ -149,7 +151,7 @@ export function UnifiedPartySetup({
                     onClick={onStartWithPreselectedSong}
                     className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold"
                   >
-                    Start Game
+                    {t('unifiedSetup.startGame')}
                   </Button>
                 )}
               </div>

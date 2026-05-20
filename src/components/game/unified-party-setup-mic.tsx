@@ -6,6 +6,7 @@ import { PlayerProfile } from '@/types/game';
 import type { InputMode } from './unified-party-setup.types';
 import { INPUT_MODE_CONFIG } from './unified-party-setup.types';
 import { StorageKeys, getJsonOptional } from '@/lib/storage';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== SINGLE MIC SELECTOR =====================
 
@@ -16,6 +17,8 @@ export function SingleMicSelector({
   selectedMicId: string | null;
   onMicChange: (_micId: string, _micName: string) => void;
 }) {
+  const { t } = useTranslation();
+
   // Load savedMics synchronously from localStorage to avoid initial render
   // with empty list (which resets the selectedMicId to default)
   const [savedMics, setSavedMics] = useState<Array<{ id: string; customName: string; deviceName: string }>>(() => {
@@ -74,7 +77,7 @@ export function SingleMicSelector({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <span className="text-xl">🎤</span>
-          Mikrofon-Auswahl
+          {t('unifiedSetup.microphoneSelection')}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -92,7 +95,7 @@ export function SingleMicSelector({
             <option value="">
               {selectedMicDisplayName
                 ? `${selectedMicDisplayName}`
-                : '— Mikrofon auswählen —'}
+                : t('unifiedSetup.selectMicrophone')}
             </option>
             {micOptions.map(mic => (
               <option key={mic.id} value={mic.id}>
@@ -102,11 +105,11 @@ export function SingleMicSelector({
           </select>
         </div>
         <p className="text-xs text-white/40 mt-2">
-          Dieses Mikrofon wird von allen Spielern geteilt und bei jedem Spielerwechsel weitergegeben.
+          {t('unifiedSetup.micSharedDesc')}
         </p>
         {savedMics.length === 0 && (
           <p className="text-xs text-yellow-400 mt-3">
-            Keine Mikrofone konfiguriert. Gehe zu Settings &rarr; Mikrofon, um Mikrofone hinzuzufügen.
+            {t('unifiedSetup.noMicsConfigured')}
           </p>
         )}
       </CardContent>
@@ -127,6 +130,8 @@ export function InputModeSelector({
   supportsCompanionApp?: boolean;
   forceInputMode?: InputMode;
 }) {
+  const { t } = useTranslation();
+
   // If input mode is forced (e.g. companion-singalong requires companion-only),
   // don't show the selector at all.
   if (forceInputMode) return null;
@@ -140,7 +145,7 @@ export function InputModeSelector({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <span className="text-xl">🎮</span>
-          Input Mode
+          {t('unifiedSetup.inputMode')}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -159,8 +164,8 @@ export function InputModeSelector({
                 }`}
               >
                 <div className="text-2xl mb-1">{modeConfig.icon}</div>
-                <div className="font-bold text-sm">{modeConfig.label}</div>
-                <div className="text-xs opacity-70 mt-1">{modeConfig.description}</div>
+                <div className="font-bold text-sm">{modeConfig.labelKey ? t(modeConfig.labelKey) : modeConfig.label}</div>
+                <div className="text-xs opacity-70 mt-1">{modeConfig.descriptionKey ? t(modeConfig.descriptionKey) : modeConfig.description}</div>
               </button>
             );
           })}
@@ -186,6 +191,8 @@ export function MicAssignmentPanel({
   onRemoveMic: (_micId: string) => void;
   inputMode?: InputMode;
 }) {
+  const { t } = useTranslation();
+
   // Load saved mic configs from localStorage
   const [savedMics, setSavedMics] = useState<Array<{ id: string; customName: string; deviceName: string }>>([]);
 
@@ -211,7 +218,7 @@ export function MicAssignmentPanel({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <span className="text-xl">🎤</span>
-          Mikrofon-Zuordnung
+          {t('unifiedSetup.micAssignment')}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -249,7 +256,7 @@ export function MicAssignmentPanel({
                   }}
                   className="flex-1 bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
                 >
-                  <option value="">— Kein Mikro zugewiesen —</option>
+                  <option value="">{t('unifiedSetup.noMicAssigned')}</option>
                   {savedMics
                     .filter(m => !usedMicIds.has(m.id) || m.id === currentMicId)
                     .map(mic => (
@@ -263,7 +270,7 @@ export function MicAssignmentPanel({
                   <button
                     onClick={() => currentMicId && onRemoveMic(currentMicId)}
                     className="text-red-400/60 hover:text-red-400 transition-colors p-1"
-                    title="Zuordnung entfernen"
+                    title={t('unifiedSetup.removeAssignment')}
                   >
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -276,7 +283,7 @@ export function MicAssignmentPanel({
         </div>
         {savedMics.length === 0 && (
           <p className="text-xs text-white/40 mt-3">
-            ⚠️ Keine Mikrofone konfiguriert. Gehe zu Settings → Mikrofon, um Mikrofone hinzuzufügen.
+            {t('unifiedSetup.noMicsConfigured')}
           </p>
         )}
       </CardContent>

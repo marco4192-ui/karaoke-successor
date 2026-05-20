@@ -9,6 +9,7 @@ import type { PartyGameConfig, SongSelectionOption, InputMode } from './unified-
 import { INPUT_MODE_CONFIG } from './unified-party-setup.types';
 import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
 import type { Language } from '@/lib/i18n/translations';
+import { useTranslation } from '@/lib/i18n/translations';
 import { ConnectionStatusBadge } from './connection-status-badge';
 
 // ===================== PLAYER GRID =====================
@@ -23,6 +24,8 @@ export function PlayerGrid({
   inputMode?: InputMode;
 }) {
 
+  const { t } = useTranslation();
+
   // Check if any input mode involves companion app
   const showConnectionStatus = inputMode === 'companion' || inputMode === 'mixed';
 
@@ -31,10 +34,10 @@ export function PlayerGrid({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <span className="text-xl">👥</span>
-          Player Selection ({selectedPlayers.length}/{config.maxPlayers})
+          {t('unifiedSetup.playerSelectionCount').replace('{n}', String(selectedPlayers.length)).replace('{m}', String(config.maxPlayers))}
           {showConnectionStatus && (
             <span className="text-xs text-white/40 font-normal ml-2">
-              (🎮 Mic-Spieler • 📱 Companion)
+              {t('unifiedSetup.micPlayersCompanion')}
             </span>
           )}
         </CardTitle>
@@ -95,7 +98,7 @@ export function PlayerGrid({
                         </span>
                         {isCompanionPlayer && (
                           <span className="text-[10px] text-white/40">
-                            (nicht verbunden)
+                            {t('unifiedSetup.notConnected')}
                           </span>
                         )}
                       </div>
@@ -109,7 +112,7 @@ export function PlayerGrid({
         </div>
         {activeProfiles.length < config.minPlayers && (
           <p className="text-yellow-400 mt-4">
-            ⚠️ Mindestens {config.minPlayers} aktive Profile benötigt. Erstelle weitere in der Charakterauswahl oder aktiviere bestehende.
+            {t('unifiedSetup.minPlayersRequired').replace('{n}', String(config.minPlayers))}
           </p>
         )}
       </CardContent>
@@ -144,16 +147,17 @@ export function SongFilterSection({
   onFilterLanguageChange,
   onFilterCombinedChange,
 }: SongFilterSectionProps) {
+  const { t } = useTranslation();
   const hasActiveFilter = filterGenre !== 'all' || filterLanguage !== 'all';
 
   return (
     <Card className="bg-white/5 border-white/10 mb-6">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span className="flex items-center gap-2"><span className="text-xl">🔍</span>Song Filter</span>
+          <span className="flex items-center gap-2"><span className="text-xl">🔍</span>{t('unifiedSetup.songFilter')}</span>
           {hasActiveFilter && (
             <Badge className="bg-indigo-500/20 text-indigo-400">
-              {filteredSongs} von {totalSongs} Songs
+              {t('unifiedSetup.songsOfTotal').replace('{n}', String(filteredSongs)).replace('{m}', String(totalSongs))}
             </Badge>
           )}
         </CardTitle>
@@ -162,13 +166,13 @@ export function SongFilterSection({
         <div className="flex flex-wrap gap-4 items-end">
           {/* Genre Dropdown */}
           <div className="flex-1 min-w-[180px]">
-            <label className="text-sm text-white/60 mb-1 block">🎸 Genre</label>
+            <label className="text-sm text-white/60 mb-1 block">{t('unifiedSetup.genre')}</label>
             <select
               value={filterGenre}
               onChange={(e) => onFilterGenreChange(e.target.value)}
               className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
             >
-              <option value="all">Alle Genres</option>
+              <option value="all">{t('unifiedSetup.allGenres')}</option>
               {availableGenres.map(g => (
                 <option key={g} value={g}>{g}</option>
               ))}
@@ -177,13 +181,13 @@ export function SongFilterSection({
 
           {/* Language Dropdown */}
           <div className="flex-1 min-w-[180px]">
-            <label className="text-sm text-white/60 mb-1 block">🌍 Sprache</label>
+            <label className="text-sm text-white/60 mb-1 block">{t('unifiedSetup.language')}</label>
             <select
               value={filterLanguage}
               onChange={(e) => onFilterLanguageChange(e.target.value)}
               className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
             >
-              <option value="all">Alle Sprachen</option>
+              <option value="all">{t('unifiedSetup.allLanguages')}</option>
               {availableLanguages.map(l => (
                 <option key={l} value={l}>{LANGUAGE_NAMES[l as Language] || l}</option>
               ))}
@@ -192,7 +196,7 @@ export function SongFilterSection({
 
           {/* Combined Toggle */}
           <div className="min-w-[160px]">
-            <label className="text-sm text-white/60 mb-1 block">🔗 Filter-Logik</label>
+            <label className="text-sm text-white/60 mb-1 block">{t('unifiedSetup.filterLogic')}</label>
             <div className="flex gap-1">
               <button
                 onClick={() => onFilterCombinedChange(true)}
@@ -202,7 +206,7 @@ export function SongFilterSection({
                     : 'bg-gray-700 text-white/60 hover:bg-gray-600'
                 }`}
               >
-                Kombiniert (UND)
+                {t('unifiedSetup.combined')}
               </button>
               <button
                 onClick={() => onFilterCombinedChange(false)}
@@ -212,7 +216,7 @@ export function SongFilterSection({
                     : 'bg-gray-700 text-white/60 hover:bg-gray-600'
                 }`}
               >
-                Unabhängig (ODER)
+                {t('unifiedSetup.independent')}
               </button>
             </div>
           </div>
@@ -225,7 +229,7 @@ export function SongFilterSection({
                 onFilterLanguageChange('all');
               }}
               className="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm text-white/60 hover:text-white transition-all"
-              title="Filter zurücksetzen"
+              title={t('unifiedSetup.resetFilter')}
             >
               ✕
             </button>
@@ -237,8 +241,8 @@ export function SongFilterSection({
           <div className="mt-3 pt-3 border-t border-white/10">
             <p className="text-xs text-white/40">
               {filteredSongs === totalSongs
-                ? 'Kein Filter aktiv — alle Songs verfügbar'
-                : `${filteredSongs} Song${filteredSongs !== 1 ? 's' : ''} passen auf die Filter${filterCombined ? ' (beide Bedingungen müssen erfüllt sein)' : ' (mindestens eine Bedingung)'}`
+                ? t('unifiedSetup.noFilterActive')
+                : (filterCombined ? t('unifiedSetup.songsMatchFilter') : t('unifiedSetup.songsMatchAnyFilter')).replace('{n}', String(filteredSongs))
               }
             </p>
           </div>
@@ -257,10 +261,11 @@ export function SongSelectionGrid({
   selectedPlayerCount: number;
   onSongSelection: (_option: SongSelectionOption) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <Card className="bg-white/5 border-white/10 mb-6">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><span className="text-xl">🎵</span>Song Selection</CardTitle>
+        <CardTitle className="flex items-center gap-2"><span className="text-xl">🎵</span>{t('unifiedSetup.songSelection')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -279,8 +284,8 @@ export function SongSelectionGrid({
                 }`}
               >
                 <div className="text-4xl mb-2">{optConfig.icon}</div>
-                <div className="font-bold">{optConfig.label}</div>
-                <div className="text-xs opacity-80 mt-1">{optConfig.description}</div>
+                <div className="font-bold">{t(optConfig.labelKey)}</div>
+                <div className="text-xs opacity-80 mt-1">{t(optConfig.descriptionKey)}</div>
               </button>
             );
           })}
@@ -300,20 +305,21 @@ export function ReadySummary({
   difficulty: Difficulty;
   inputMode?: InputMode;
 }) {
+  const { t } = useTranslation();
   const modeLabel = inputMode
-    ? INPUT_MODE_CONFIG[inputMode].label
-    : 'Mikrofone';
+    ? t(INPUT_MODE_CONFIG[inputMode].labelKey)
+    : t('unifiedSetup.fallbackMicrophones');
   return (
     <Card className={`bg-gradient-to-r ${config.color} border-0 mb-6`}>
       <CardContent className="py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-bold text-lg text-white">Ready to Play!</h3>
-            <p className="text-sm text-white/80">{selectedPlayerCount} players • {difficulty} • {modeLabel}</p>
+            <h3 className="font-bold text-lg text-white">{t('unifiedSetup.readyToPlay')}</h3>
+            <p className="text-sm text-white/80">{selectedPlayerCount} {t('unifiedSetup.playerCountLabel')} • {difficulty} • {modeLabel}</p>
           </div>
           <div className="text-right">
             <div className="text-3xl font-bold text-white">{selectedPlayerCount}</div>
-            <div className="text-xs text-white/60">players</div>
+            <div className="text-xs text-white/60">{t('unifiedSetup.playerCountLabel')}</div>
           </div>
         </div>
       </CardContent>

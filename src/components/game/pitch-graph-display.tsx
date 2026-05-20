@@ -5,6 +5,7 @@ import {
   PitchGraphRenderer,
   PitchGraphConfig,
 } from '@/lib/game/pitch-graph';
+import { useTranslation } from '@/lib/i18n/translations';
 
 export interface PitchGraphDisplayProps {
   currentPitch: number | null;
@@ -41,6 +42,7 @@ export function PitchGraphDisplay({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<PitchGraphRenderer | null>(null);
+  const { t } = useTranslation();
 
   // Measure container and resize canvas to match (with devicePixelRatio)
   const resizeCanvas = useCallback(() => {
@@ -132,7 +134,7 @@ export function PitchGraphDisplay({
       />
       {/* Current pitch indicator — kept as technical display */}
       <div className="absolute bottom-1 right-2 text-xs text-white/60">
-        {currentPitch !== null ? `Pitch: ${currentPitch.toFixed(1)}` : 'No pitch detected'}
+        {currentPitch !== null ? t('pitchGraph.pitch').replace('{n}', currentPitch.toFixed(1)) : t('pitchGraph.noPitch')}
       </div>
     </div>
   );

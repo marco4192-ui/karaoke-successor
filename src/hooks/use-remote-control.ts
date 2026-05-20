@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, RefObject } from 'react';
 import { toast } from '@/hooks/use-toast';
+import { t } from '@/lib/i18n/translations';
 
 /**
  * Remote control command types from mobile companions
@@ -132,8 +133,8 @@ export function useRemoteControl({
                 // If ad is playing, show toast to guide user
                 if (isAdPlayingRef.current) {
                   toast({
-                    title: '⏭️ Werbung überspringen',
-                    description: 'Klicke auf das Video, um den "Skip Ad" Button zu drücken!',
+                    title: t('remoteControl.skipAdTitle'),
+                    description: t('remoteControl.skipAdDesc'),
                   });
                 } else {
                   // End current song and go to results

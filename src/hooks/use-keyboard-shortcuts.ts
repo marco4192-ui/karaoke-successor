@@ -10,6 +10,7 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import type { Screen } from '@/types/screens';
+import { t } from '@/lib/i18n/translations';
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -39,18 +40,20 @@ export const FKEY_SCREEN_MAP: Record<string, Screen> = {
 
 // ── All shortcut definitions (for settings display) ──────────────
 
-export const SHORTCUT_REFERENCE: Array<{ keys: string; label: string }> = [
-  { keys: 'Esc', label: 'Pause / Zurück / Exit' },
-  { keys: 'Enter', label: 'Spiel fortsetzen (Pause)' },
-  { keys: 'F12', label: 'Fullscreen umschalten' },
-  { keys: 'F1–F10', label: 'Menü-Navigation' },
-  { keys: 'Ctrl+L', label: 'Suche in Library' },
-  { keys: 'Ctrl+R', label: 'Random Song (Solo)' },
-  { keys: 'Ctrl+D', label: 'Random Song (Duell)' },
-  { keys: 'Ctrl+Q', label: 'Queue Song starten' },
-  { keys: 'Ctrl+J', label: 'Jukebox starten' },
-  { keys: '↑↓←→', label: 'Navigation' },
-];
+export function getShortcutReference(): Array<{ keys: string; label: string }> {
+  return [
+    { keys: 'Esc', label: t('keyboardShortcuts.esc') },
+    { keys: 'Enter', label: t('keyboardShortcuts.enter') },
+    { keys: 'F12', label: t('keyboardShortcuts.f12') },
+    { keys: 'F1–F10', label: t('keyboardShortcuts.f1f10') },
+    { keys: 'Ctrl+L', label: t('keyboardShortcuts.ctrlL') },
+    { keys: 'Ctrl+R', label: t('keyboardShortcuts.ctrlR') },
+    { keys: 'Ctrl+D', label: t('keyboardShortcuts.ctrlD') },
+    { keys: 'Ctrl+Q', label: t('keyboardShortcuts.ctrlQ') },
+    { keys: 'Ctrl+J', label: t('keyboardShortcuts.ctrlJ') },
+    { keys: '↑↓←→', label: t('keyboardShortcuts.arrows') },
+  ];
+}
 
 // ── Core hook: registers keyboard shortcuts ───────────────────────
 

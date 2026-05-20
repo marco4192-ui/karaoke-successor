@@ -44,6 +44,13 @@ export function flattenObject(obj: Record<string, unknown>, prefix = ''): Record
     const newKey = prefix ? `${prefix}.${key}` : key;
     if (value && typeof value === 'object' && !Array.isArray(value)) {
       Object.assign(result, flattenObject(value as Record<string, unknown>, newKey));
+    } else if (Array.isArray(value)) {
+      // Flatten arrays with index-based keys (e.g. extendedDesc.passTheMic.0, .1, ...)
+      value.forEach((item, idx) => {
+        if (typeof item === 'string') {
+          result[`${newKey}.${idx}`] = item;
+        }
+      });
     } else if (typeof value === 'string') {
       result[newKey] = value;
     }

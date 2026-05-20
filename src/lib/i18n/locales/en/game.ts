@@ -215,4 +215,44 @@ export const gameTranslations = {
     maxComboLabel: '{n}x max combo',
     totalPoints: 'total points'
   },
+
+  keyboardShortcuts: {
+    esc: 'Pause / Back / Exit',
+    enter: 'Resume game (Pause)',
+    f12: 'Toggle fullscreen',
+    f1f10: 'Menu navigation',
+    ctrlL: 'Search in Library',
+    ctrlR: 'Random Song (Solo)',
+    ctrlD: 'Random Song (Duel)',
+    ctrlQ: 'Start queue song',
+    ctrlJ: 'Start Jukebox',
+    arrows: 'Navigation',
+  },
+
+  audioAnalysis: {
+    confidenceHigh: 'Green — Reliable',
+    confidenceMedium: 'Yellow — Probably correct',
+    confidenceLow: 'Orange — Uncertain',
+    confidenceVeryLow: 'Red — Manual check recommended',
+  },
+
+  pitchGraph: {
+    pitch: 'Pitch: {n}',
+    noPitch: 'No pitch detected',
+  },
+
+  battleRoyaleGame: {
+    survived: 'SURVIVED!',
+  },
+
+  remoteControl: {
+    skipAdTitle: '⏭️ Skip Ad',
+    skipAdDesc: 'Click on the video to press the "Skip Ad" button!',
+  },
+
+  mobilePage: {
+    loadingCompanion: 'Loading companion app…',
+    failedToLoad: 'Failed to load companion app',
+    retry: 'Retry',
+  },
 };

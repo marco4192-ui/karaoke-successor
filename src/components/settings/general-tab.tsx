@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Difficulty } from '@/types/game';
 import { Language, LANGUAGE_NAMES, LANGUAGE_FLAGS } from '@/lib/i18n/translations';
 import { LanguageIcon, KeyboardIcon } from '@/components/settings/settings-icons';
-import { SHORTCUT_REFERENCE } from '@/hooks/use-keyboard-shortcuts';
+import { getShortcutReference } from '@/hooks/use-keyboard-shortcuts';
 
 interface GeneralTabProps {
   language: string;
@@ -117,7 +117,7 @@ export function GeneralTab({
         </CardHeader>
         <CardContent>
           <div className="space-y-1 text-sm">
-            {SHORTCUT_REFERENCE.map((s) => (
+            {getShortcutReference().map((s) => (
               <div key={s.keys} className="flex items-center justify-between p-2 bg-white/5 rounded">
                 <span className="text-white/60">{s.label}</span>
                 <kbd className="px-2 py-1 bg-white/10 rounded text-xs font-mono">{s.keys}</kbd>

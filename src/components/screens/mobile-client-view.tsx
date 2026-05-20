@@ -498,6 +498,7 @@ interface CptmBlinkOverlayProps {
 }
 
 function CptmBlinkOverlay({ countdown, playerColor }: CptmBlinkOverlayProps) {
+  const { t } = useTranslation();
   // The blink intensity increases as countdown decreases (3→2→1)
   const intensity = countdown === 3 ? 0.15 : countdown === 2 ? 0.3 : 0.5;
 
@@ -519,7 +520,7 @@ function CptmBlinkOverlay({ countdown, playerColor }: CptmBlinkOverlayProps) {
       {/* Countdown number (small, decent) */}
       <div className="relative z-10 text-center">
         <div className="text-8xl font-bold text-white/90 animate-pulse">{countdown}</div>
-        <div className="text-lg font-medium text-white/70 mt-2">Get Ready!</div>
+        <div className="text-lg font-medium text-white/70 mt-2">{t('mobileCompanion.getReady')}</div>
       </div>
 
       {/* Inject keyframe animation */}
@@ -541,6 +542,7 @@ interface CptmYourTurnOverlayProps {
 }
 
 function CptmYourTurnOverlay({ playerName, playerColor }: CptmYourTurnOverlayProps) {
+  const { t } = useTranslation();
   const [show, setShow] = useState(false);
 
   // Brief flash-in animation
@@ -562,7 +564,7 @@ function CptmYourTurnOverlay({ playerName, playerColor }: CptmYourTurnOverlayPro
 
       {/* YOUR TURN text */}
       <div className="relative z-10 text-center animate-[scale-in_0.3s_ease-out]">
-        <div className="text-sm font-bold text-white/60 uppercase tracking-[0.3em] mb-2">Your Turn!</div>
+        <div className="text-sm font-bold text-white/60 uppercase tracking-[0.3em] mb-2">{t('mobileCompanion.yourTurn')}</div>
         <div className="text-5xl font-bold text-white" style={{ textShadow: `0 0 30px ${playerColor}` }}>
           {playerName}
         </div>

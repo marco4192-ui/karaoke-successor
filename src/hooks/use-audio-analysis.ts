@@ -63,11 +63,11 @@ export interface AnalysisOptions {
 // Confidence colour mapping
 // ============================================================================
 
-export const CONFIDENCE_COLORS: Record<ConfidenceLevel, { bg: string; border: string; text: string; label: string }> = {
-  High: { bg: 'bg-green-500/20', border: 'border-green-500/40', text: 'text-green-400', label: 'Grün — Zuverlässig' },
-  Medium: { bg: 'bg-yellow-500/20', border: 'border-yellow-500/40', text: 'text-yellow-400', label: 'Gelb — Wahrscheinlich korrekt' },
-  Low: { bg: 'bg-orange-500/20', border: 'border-orange-500/40', text: 'text-orange-400', label: 'Orange — Unsicher' },
-  VeryLow: { bg: 'bg-red-500/20', border: 'border-red-500/40', text: 'text-red-400', label: 'Rot — Manuelle Prüfung empfohlen' },
+export const CONFIDENCE_COLORS: Record<ConfidenceLevel, { bg: string; border: string; text: string; label: string; labelKey: string }> = {
+  High: { bg: 'bg-green-500/20', border: 'border-green-500/40', text: 'text-green-400', label: 'Green — Reliable', labelKey: 'audioAnalysis.confidenceHigh' },
+  Medium: { bg: 'bg-yellow-500/20', border: 'border-yellow-500/40', text: 'text-yellow-400', label: 'Yellow — Probably correct', labelKey: 'audioAnalysis.confidenceMedium' },
+  Low: { bg: 'bg-orange-500/20', border: 'border-orange-500/40', text: 'text-orange-400', label: 'Orange — Uncertain', labelKey: 'audioAnalysis.confidenceLow' },
+  VeryLow: { bg: 'bg-red-500/20', border: 'border-red-500/40', text: 'text-red-400', label: 'Red — Manual check recommended', labelKey: 'audioAnalysis.confidenceVeryLow' },
 };
 
 // ============================================================================

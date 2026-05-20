@@ -212,7 +212,7 @@ export function AudioAnalysisPanel({
                   return (
                     <div key={level} className="flex items-center gap-2 text-[10px]">
                       <div className={`w-2.5 h-2.5 rounded-sm ${colors.bg} border ${colors.border}`} />
-                      <span className={`flex-1 ${colors.text}`}>{colors.label.split(' — ')[0]}</span>
+                      <span className={`flex-1 ${colors.text}`}>{t(colors.labelKey).split(' — ')[0]}</span>
                       <span className="text-slate-500">{count} {t('editor.audioAnalysis.notesLabel')} ({pct}%)</span>
                     </div>
                   );

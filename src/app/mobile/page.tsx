@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import { t } from '@/lib/i18n/translations';
 
 // Dynamic import with ssr: false prevents white-screen SSR/hydration failures
 // when the companion phone loads /mobile via the QR code.
@@ -14,7 +15,7 @@ const MobileClientView = dynamic(
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin w-10 h-10 border-3 border-cyan-500 border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-white/60 text-sm">Loading companion app…</p>
+          <p className="text-white/60 text-sm">{t('mobilePage.loadingCompanion')}</p>
         </div>
       </div>
     ),
@@ -55,13 +56,13 @@ class ErrorBoundary extends Component<{ children: ReactNode }, EBState> {
       return (
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex items-center justify-center p-8">
           <div className="text-center max-w-md">
-            <p className="text-red-400 text-lg font-semibold mb-2">Failed to load companion app</p>
+            <p className="text-red-400 text-lg font-semibold mb-2">{t('mobilePage.failedToLoad')}</p>
             <p className="text-white/50 text-sm mb-4">{this.state.error?.message || 'Unknown error'}</p>
             <button
               onClick={() => window.location.reload()}
               className="px-4 py-2 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-sm"
             >
-              Retry
+              {t('mobilePage.retry')}
             </button>
           </div>
         </div>

@@ -349,4 +349,9 @@ export const mobileTranslations = {
     shareTitle: 'Mein Karaoke-Ergebnis!',
     shareText: 'Ich habe {n} Punkte bei "{title}" erreicht!'
   },
+
+  mobileCompanion: {
+    getReady: 'Mach dich bereit!',
+    yourTurn: 'Du bist dran!',
+  },
 };

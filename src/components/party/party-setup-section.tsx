@@ -181,7 +181,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 party.setIsSongPlaying(false);
                 setScreen('companion-pass-the-mic-game');
               } else {
-                toast({ title: 'Song zu kurz', description: 'Song zu kurz für Companion Pass-the-Mic.', variant: 'destructive' });
+                toast({ title: t('partySetup.songTooShort'), description: t('partySetup.songTooShortCptm'), variant: 'destructive' });
                 return;
               }
             } else {
@@ -521,7 +521,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   const playerCount = result.players.length || 2;
                   const segments = generatePtmSegments(songWithUrls.duration, playerCount, undefined, songWithUrls.lyrics);
                   if (segments.length === 0) {
-                    toast({ title: t('partySetup.songTooShort'), description: 'Song zu kurz für Companion Pass-the-Mic.', variant: 'destructive' });
+                    toast({ title: t('partySetup.songTooShort'), description: t('partySetup.songTooShortCptm'), variant: 'destructive' });
                     break;
                   }
                   const cptmPlayers = toCptmPlayers(result.players);
@@ -764,7 +764,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 party.setIsSongPlaying(false);
                 setScreen('companion-pass-the-mic-game');
               } else {
-                toast({ title: t('partySetup.songTooShort'), description: 'Song zu kurz.', variant: 'destructive' });
+                toast({ title: t('partySetup.songTooShort'), description: t('partySetup.songTooShortGeneric'), variant: 'destructive' });
               }
             } else if (party.selectedGameMode === 'duel' || party.selectedGameMode === 'duet') {
               // Duel/Duet: add both players from setup result

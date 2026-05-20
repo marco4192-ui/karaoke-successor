@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Song } from '@/types/game';
 import type { SelectedPlayer } from './unified-party-setup.types';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== SONG VOTING MODAL =====================
 
@@ -15,6 +16,7 @@ export function SongVotingModal({ songs, onVote, onClose, gameColor }: {
   onClose: () => void;
   gameColor: string;
 }) {
+  const { t } = useTranslation();
   const coverBlobUrlsRef = useRef<string[]>([]);
 
   // Restore cover URLs for voting songs (Tauri: relative paths, Browser: IndexedDB)
@@ -75,11 +77,11 @@ export function SongVotingModal({ songs, onVote, onClose, gameColor }: {
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <Card className="bg-gray-900 border-white/20 max-w-4xl w-full max-h-[90vh] overflow-auto">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-2xl">🎵 Choose a Song!</CardTitle>
+          <CardTitle className="text-2xl">{t('unifiedSetup.chooseSong')}</CardTitle>
           <Button variant="ghost" onClick={onClose} className="text-white/60">✕</Button>
         </CardHeader>
         <CardContent>
-          <p className="text-white/60 mb-6">Click on a song to start playing!</p>
+          <p className="text-white/60 mb-6">{t('unifiedSetup.clickSongToPlay')}</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {enrichedSongs.map((song, index) => (
               <div

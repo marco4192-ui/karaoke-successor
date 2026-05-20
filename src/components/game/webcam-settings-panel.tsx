@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { useWebcamBackground } from './use-webcam-background';
 import type { WebcamBackgroundConfig, WebcamSizeMode, WebcamPosition, WebcamFilter } from './webcam-types';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== Webcam Icon =====================
 
@@ -34,30 +35,31 @@ export function WebcamSettingsPanel({ config, onConfigChange, compact = false }:
   // TODO: This creates an independent hook instance separate from the actual
   // webcam background being rendered. Device list and permission state may
   // diverge from the active WebcamBackground. Consider passing these as props instead.
+  const { t } = useTranslation();
   const { devices, hasPermission: _hasPermission, refreshDevices } = useWebcamBackground();
   
   const sizeOptions: { value: WebcamSizeMode; label: string; description: string }[] = [
-    { value: 'fullscreen', label: 'Fullscreen', description: 'Fill entire background' },
-    { value: '2:10', label: '20%', description: 'Small strip (20% height)' },
-    { value: '3:10', label: '30%', description: 'Medium strip (30% height)' },
-    { value: '4:10', label: '40%', description: 'Large strip (40% height)' },
+    { value: 'fullscreen', label: t('webcamSettings.fullscreen'), description: t('webcamSettings.fullscreenDesc') },
+    { value: '2:10', label: t('webcamSettings.smallStrip'), description: t('webcamSettings.smallStripDesc') },
+    { value: '3:10', label: t('webcamSettings.mediumStrip'), description: t('webcamSettings.mediumStripDesc') },
+    { value: '4:10', label: t('webcamSettings.largeStrip'), description: t('webcamSettings.largeStripDesc') },
   ];
   
   const positionOptions: { value: WebcamPosition; label: string }[] = [
-    { value: 'top', label: 'Top' },
-    { value: 'bottom', label: 'Bottom' },
-    { value: 'left', label: 'Left' },
-    { value: 'right', label: 'Right' },
+    { value: 'top', label: t('webcamSettings.top') },
+    { value: 'bottom', label: t('webcamSettings.bottom') },
+    { value: 'left', label: t('webcamSettings.left') },
+    { value: 'right', label: t('webcamSettings.right') },
   ];
   
   const filterOptions: { value: WebcamFilter; label: string }[] = [
-    { value: 'none', label: 'None' },
-    { value: 'grayscale', label: 'Grayscale' },
-    { value: 'sepia', label: 'Sepia' },
-    { value: 'contrast', label: 'Contrast' },
-    { value: 'brightness', label: 'Brightness' },
-    { value: 'saturate', label: 'Vibrant' },
-    { value: 'blur', label: 'Blur' },
+    { value: 'none', label: t('webcamSettings.filterNone') },
+    { value: 'grayscale', label: t('webcamSettings.filterGrayscale') },
+    { value: 'sepia', label: t('webcamSettings.filterSepia') },
+    { value: 'contrast', label: t('webcamSettings.filterContrast') },
+    { value: 'brightness', label: t('webcamSettings.filterBrightness') },
+    { value: 'saturate', label: t('webcamSettings.filterVibrant') },
+    { value: 'blur', label: t('webcamSettings.filterBlur') },
   ];
   
   return (
@@ -65,16 +67,16 @@ export function WebcamSettingsPanel({ config, onConfigChange, compact = false }:
       <CardHeader className={compact ? 'py-3' : undefined}>
         <CardTitle className={`flex items-center gap-2 ${compact ? 'text-sm' : ''}`}>
           <WebcamIcon className="w-5 h-5 text-cyan-400" />
-          Webcam Background
-          {config.enabled && <Badge className="bg-green-500/30 text-green-400 text-xs">Active</Badge>}
+          {t('webcamSettings.title')}
+          {config.enabled && <Badge className="bg-green-500/30 text-green-400 text-xs">{t('webcamSettings.active')}</Badge>}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Enable/Disable Toggle */}
         <div className="flex items-center justify-between">
           <div>
-            <Label className="text-sm text-white">Enable Webcam</Label>
-            <p className="text-xs text-white/40">Film singers while they perform</p>
+            <Label className="text-sm text-white">{t('webcamSettings.enableWebcam')}</Label>
+            <p className="text-xs text-white/40">{t('webcamSettings.enableWebcamDesc')}</p>
           </div>
           <Switch
             checked={config.enabled}
@@ -89,16 +91,16 @@ export function WebcamSettingsPanel({ config, onConfigChange, compact = false }:
           <>
             {/* Device Selection */}
             <div className="space-y-2">
-              <Label className="text-xs text-white/60">Camera Device</Label>
+              <Label className="text-xs text-white/60">{t('webcamSettings.cameraDevice')}</Label>
               <Select
                 value={config.deviceId || 'default'}
                 onValueChange={(value) => onConfigChange({ deviceId: value === 'default' ? null : value })}
               >
                 <SelectTrigger className="w-full bg-gray-800 border-white/20 text-white">
-                  <SelectValue placeholder="Select camera" />
+                  <SelectValue placeholder={t('webcamSettings.selectCamera')} />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-white/20">
-                  <SelectItem value="default">Default Camera</SelectItem>
+                  <SelectItem value="default">{t('webcamSettings.defaultCamera')}</SelectItem>
                   {devices.filter(d => d.deviceId).map(device => (
                     <SelectItem key={device.deviceId} value={device.deviceId}>
                       {device.label || `Camera ${device.deviceId.slice(0, 8)}`}
@@ -110,13 +112,13 @@ export function WebcamSettingsPanel({ config, onConfigChange, compact = false }:
                 onClick={refreshDevices}
                 className="text-xs text-cyan-400 hover:text-cyan-300"
               >
-                🔄 Refresh devices
+                {t('webcamSettings.refreshDevices')}
               </button>
             </div>
             
             {/* Size Selection */}
             <div className="space-y-2">
-              <Label className="text-xs text-white/60">Size</Label>
+              <Label className="text-xs text-white/60">{t('webcamSettings.size')}</Label>
               <div className="grid grid-cols-4 gap-1">
                 {sizeOptions.map(option => (
                   <button
@@ -138,7 +140,7 @@ export function WebcamSettingsPanel({ config, onConfigChange, compact = false }:
             {/* Position (for non-fullscreen modes) */}
             {config.sizeMode !== 'fullscreen' && (
               <div className="space-y-2">
-                <Label className="text-xs text-white/60">Position</Label>
+                <Label className="text-xs text-white/60">{t('webcamSettings.position')}</Label>
                 <div className="grid grid-cols-4 gap-1">
                   {positionOptions.map(option => (
                     <button
@@ -159,7 +161,7 @@ export function WebcamSettingsPanel({ config, onConfigChange, compact = false }:
             
             {/* Mirror Toggle */}
             <div className="flex items-center justify-between">
-              <Label className="text-sm text-white">Mirror (Selfie Mode)</Label>
+              <Label className="text-sm text-white">{t('webcamSettings.mirror')}</Label>
               <Switch
                 checked={config.mirrored}
                 onCheckedChange={(checked) => onConfigChange({ mirrored: checked })}
@@ -168,7 +170,7 @@ export function WebcamSettingsPanel({ config, onConfigChange, compact = false }:
             
             {/* Filter Selection */}
             <div className="space-y-2">
-              <Label className="text-xs text-white/60">Filter</Label>
+              <Label className="text-xs text-white/60">{t('webcamSettings.filter')}</Label>
               <div className="grid grid-cols-4 gap-1">
                 {filterOptions.map(option => (
                   <button
@@ -189,7 +191,7 @@ export function WebcamSettingsPanel({ config, onConfigChange, compact = false }:
             {/* Opacity Slider */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label className="text-xs text-white/60">Opacity</Label>
+                <Label className="text-xs text-white/60">{t('webcamSettings.opacity')}</Label>
                 <span className="text-xs text-white/40">{Math.round(config.opacity * 100)}%</span>
               </div>
               <Slider
@@ -204,7 +206,7 @@ export function WebcamSettingsPanel({ config, onConfigChange, compact = false }:
             
             {/* Border Options */}
             <div className="flex items-center justify-between">
-              <Label className="text-sm text-white">Show Border</Label>
+              <Label className="text-sm text-white">{t('webcamSettings.showBorder')}</Label>
               <Switch
                 checked={config.showBorder}
                 onCheckedChange={(checked) => onConfigChange({ showBorder: checked })}
@@ -225,6 +227,7 @@ interface WebcamQuickControlsProps {
 }
 
 export function WebcamQuickControls({ config, onConfigChange }: WebcamQuickControlsProps) {
+  const { t } = useTranslation();
   const { devices, refreshDevices: _refreshDevices } = useWebcamBackground();
   
   return (
@@ -240,7 +243,7 @@ export function WebcamQuickControls({ config, onConfigChange }: WebcamQuickContr
             ? 'bg-cyan-500 text-white' 
             : 'bg-white/10 text-white/60 hover:bg-white/20'
         }`}
-        title={config.enabled ? 'Disable Webcam' : 'Enable Webcam'}
+        title={config.enabled ? t('webcamSettings.disableWebcam') : t('webcamSettings.enableWebcamTooltip')}
       >
         <WebcamIcon className="w-4 h-4" />
       </button>
@@ -253,10 +256,10 @@ export function WebcamQuickControls({ config, onConfigChange }: WebcamQuickContr
             onChange={(e) => onConfigChange({ sizeMode: e.target.value as WebcamSizeMode })}
             className="bg-gray-800 border border-white/20 rounded px-2 py-1 text-xs text-white"
           >
-            <option value="fullscreen">Fullscreen</option>
-            <option value="2:10">20%</option>
-            <option value="3:10">30%</option>
-            <option value="4:10">40%</option>
+            <option value="fullscreen">{t('webcamSettings.fullscreen')}</option>
+            <option value="2:10">{t('webcamSettings.smallStrip')}</option>
+            <option value="3:10">{t('webcamSettings.mediumStrip')}</option>
+            <option value="4:10">{t('webcamSettings.largeStrip')}</option>
           </select>
           
           {/* Position Quick Select */}
@@ -266,10 +269,10 @@ export function WebcamQuickControls({ config, onConfigChange }: WebcamQuickContr
               onChange={(e) => onConfigChange({ position: e.target.value as WebcamPosition })}
               className="bg-gray-800 border border-white/20 rounded px-2 py-1 text-xs text-white"
             >
-              <option value="top">Top</option>
-              <option value="bottom">Bottom</option>
-              <option value="left">Left</option>
-              <option value="right">Right</option>
+              <option value="top">{t('webcamSettings.top')}</option>
+              <option value="bottom">{t('webcamSettings.bottom')}</option>
+              <option value="left">{t('webcamSettings.left')}</option>
+              <option value="right">{t('webcamSettings.right')}</option>
             </select>
           )}
           
@@ -279,7 +282,7 @@ export function WebcamQuickControls({ config, onConfigChange }: WebcamQuickContr
             onChange={(e) => onConfigChange({ deviceId: e.target.value === 'default' ? null : e.target.value })}
             className="bg-gray-800 border border-white/20 rounded px-2 py-1 text-xs text-white min-w-[120px]"
           >
-            <option value="default">Default Camera</option>
+            <option value="default">{t('webcamSettings.defaultCamera')}</option>
             {devices.map(device => (
               <option key={device.deviceId} value={device.deviceId}>
                 {device.label || `Camera ${device.deviceId.slice(0, 8)}`}
@@ -295,7 +298,7 @@ export function WebcamQuickControls({ config, onConfigChange }: WebcamQuickContr
                 ? 'bg-purple-500/30 text-purple-300' 
                 : 'bg-white/10 text-white/60'
             }`}
-            title={config.mirrored ? 'Disable Mirror' : 'Enable Mirror (Selfie Mode)'}
+            title={config.mirrored ? t('webcamSettings.disableMirror') : t('webcamSettings.enableMirrorTooltip')}
           >
             🪞
           </button>

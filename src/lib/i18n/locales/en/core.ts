@@ -270,4 +270,10 @@ export const coreTranslations = {
     songsInPlaylist: '{n} songs in playlist',
     youtubeRemove: 'YouTube',
   },
+
+  errorBoundary: {
+    title: 'Something went wrong',
+    description: 'An unexpected error occurred. Try reloading the page.',
+    tryAgain: 'Try Again',
+  },
 };

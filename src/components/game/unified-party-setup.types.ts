@@ -8,11 +8,13 @@ export interface GameSettingConfig {
   /** i18n key for translated label (used when available, falls back to label) */
   labelKey?: string;
   description?: string;
+  /** i18n key for translated description (used when available, falls back to description) */
+  descriptionKey?: string;
   type: 'slider' | 'toggle' | 'select';
   min?: number;
   max?: number;
   step?: number;
-  options?: { value: string | number; label: string }[];
+  options?: { value: string | number; label: string; labelKey?: string }[];
   defaultValue: string | number | boolean;
   unit?: string;
 }
@@ -22,7 +24,8 @@ export interface PartyGameConfig {
   title: string;
   icon: string;
   description: string;
-  extendedDescription: string[];
+  /** i18n key for extended description lookup: t(`extendedDesc.${extendedDescriptionKey}`) */
+  extendedDescriptionKey: string;
   color: string;
   minPlayers: number;
   maxPlayers: number;
@@ -46,24 +49,34 @@ export const INPUT_MODE_CONFIG: Record<InputMode, {
   icon: string;
   label: string;
   description: string;
+  /** i18n key for translated label (used when available, falls back to label) */
+  labelKey: string;
+  /** i18n key for translated description (used when available, falls back to description) */
+  descriptionKey: string;
   color: string;
 }> = {
   microphone: {
     icon: '🎤',
-    label: 'Nur Mikrofone',
-    description: 'Alle Spieler nutzen die Mikrofone am Gerät',
+    label: 'Microphones only',
+    labelKey: 'unifiedSetup.inputMicrophoneOnly',
+    description: 'All players use the device microphones',
+    descriptionKey: 'unifiedSetup.inputMicrophoneOnlyDesc',
     color: 'bg-cyan-500 hover:bg-cyan-600',
   },
   companion: {
     icon: '📱',
-    label: 'Nur Companion-App',
-    description: 'Alle Spieler nutzen ihr Handy als Mikro',
+    label: 'Companion App only',
+    labelKey: 'unifiedSetup.inputCompanionOnly',
+    description: 'All players use their phone as a microphone',
+    descriptionKey: 'unifiedSetup.inputCompanionOnlyDesc',
     color: 'bg-purple-500 hover:bg-purple-600',
   },
   mixed: {
     icon: '🎤📱',
-    label: 'Gemischt',
-    description: 'Einige am Gerät, einige über Companion-App',
+    label: 'Mixed',
+    labelKey: 'unifiedSetup.inputMixed',
+    description: 'Some on device, some via Companion App',
+    descriptionKey: 'unifiedSetup.inputMixedDesc',
     color: 'bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400',
   },
 };

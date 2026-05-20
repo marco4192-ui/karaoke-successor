@@ -270,4 +270,10 @@ export const coreTranslations = {
     songsInPlaylist: '{n} Songs in der Playlist',
     youtubeRemove: 'YouTube',
   },
+
+  errorBoundary: {
+    title: 'Etwas ist schiefgelaufen',
+    description: 'Ein unerwarteter Fehler ist aufgetreten. Versuche, die Seite neu zu laden.',
+    tryAgain: 'Erneut versuchen',
+  },
 };
