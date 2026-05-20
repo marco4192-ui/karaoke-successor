@@ -33,7 +33,10 @@ export const mobileTranslations = {
     mobileQueue: 'Coda Mobile',
     queueSongs: 'Coda: {n}/3 canzoni',
     moreSongs: '+{n} canzoni in più',
-    retry: 'Riprova'
+    retry: 'Riprova',
+    // #10 Tournament spectator voting
+    tournamentVoteTitle: 'Per chi stai votando?',
+    tournamentVoteDesc: 'Scegli il tuo preferito in questa partita',
   },
 
   mobileClient: {
@@ -345,5 +348,10 @@ export const mobileTranslations = {
     share: '📤 Condividi',
     shareTitle: 'Il mio Punteggio Karaoke!',
     shareText: 'Ho ottenuto {n} punti su "{title}"!'
+  },
+
+  mobileCompanion: {
+    getReady: 'Preparati!',
+    yourTurn: 'Il tuo turno!',
   },
 };

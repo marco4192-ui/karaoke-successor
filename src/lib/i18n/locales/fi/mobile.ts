@@ -33,7 +33,9 @@ export const mobileTranslations = {
     mobileQueue: 'Mobiilijono',
     queueSongs: 'Jono: {n}/3 kappaletta',
     moreSongs: '+{n} lisää kappaletta',
-    retry: 'Yritä uudelleen'
+    retry: 'Yritä uudelleen',
+    tournamentVoteTitle: 'Kenelle äänestät?',
+    tournamentVoteDesc: 'Valitse suosikkisi tässä ottelussa',
   },
 
   mobileClient: {
@@ -345,5 +347,10 @@ export const mobileTranslations = {
     share: '📤 Jaa',
     shareTitle: 'Karaoke-tulokseni!',
     shareText: 'Sain {n} pistettä kappaleella "{title}"!'
+  },
+
+  mobileCompanion: {
+    getReady: 'Valmistaudu!',
+    yourTurn: 'Sinun vuorosi!',
   },
 };

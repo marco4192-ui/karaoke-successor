@@ -215,4 +215,44 @@ export const gameTranslations = {
     maxComboLabel: '{n}x max combo',
     totalPoints: 'total point'
   },
+
+  keyboardShortcuts: {
+    esc: 'Pause / Tilbage / Afslut',
+    enter: 'Genoptag spil (Pause)',
+    f12: 'Fuldskærm til/fra',
+    f1f10: 'Menunavigation',
+    ctrlL: 'Søg i bibliotek',
+    ctrlR: 'Tilfældig sang (Solo)',
+    ctrlD: 'Tilfældig sang (Duel)',
+    ctrlQ: 'Start kø-sang',
+    ctrlJ: 'Start jukebox',
+    arrows: 'Navigation',
+  },
+
+  audioAnalysis: {
+    confidenceHigh: 'Grøn — Pålidelig',
+    confidenceMedium: 'Gul — Sandsynligvis korrekt',
+    confidenceLow: 'Orange — Usikker',
+    confidenceVeryLow: 'Rød — Manuelt tjek anbefalet',
+  },
+
+  pitchGraph: {
+    pitch: 'Tonehøjde: {n}',
+    noPitch: 'Ingen tonehøjde registreret',
+  },
+
+  battleRoyaleGame: {
+    survived: 'OVERLEVEDE!',
+  },
+
+  remoteControl: {
+    skipAdTitle: '⏭️ Spring reklame over',
+    skipAdDesc: 'Klik på videoen for at trykke på "Spring reklame over"-knappen!',
+  },
+
+  mobilePage: {
+    loadingCompanion: 'Indlæser companion-app…',
+    failedToLoad: 'Kunne ikke indlæse companion-app',
+    retry: 'Prøv igen',
+  },
 };

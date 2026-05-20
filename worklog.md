@@ -125,3 +125,40 @@ Stage Summary:
 - 1.464-line file split into 4 focused files + barrel
 - All 9 exports remain importable from original path via barrel re-exports
 - Existing consumers (party-game-screens.tsx, party-store.ts) unchanged
+---
+Task ID: 1
+Agent: Main
+Task: Replace all remaining hardcoded text strings with i18n translation keys
+
+Work Log:
+- Analyzed all .tsx/.ts files for hardcoded text (~90 strings in ~15 files identified)
+- Added ~150 new translation keys to EN and DE locale files (party.ts, game.ts, settings.ts, core.ts, mobile.ts)
+- Fixed unified-party-setup.config.ts: extendedDescription arrays → extendedDescriptionKey strings, setting labels → labelKey/descriptionKey
+- Fixed unified-party-setup.types.ts: INPUT_MODE_CONFIG → labelKey/descriptionKey, added descriptionKey to GameSettingConfig
+- Fixed unified-party-setup-mic.tsx: 11 hardcoded strings replaced (Microphone selection, assignment, input mode)
+- Fixed unified-party-setup-game.tsx: 20+ strings replaced (Player selection, song filter, ready summary)
+- Fixed unified-party-setup-layout.tsx: SettingControl, GameSidebar, SettingsPanel — labelKey/descriptionKey resolution, extendedDesc rendering
+- Fixed unified-party-setup.tsx: Back, Song Selected, Change, Start Game
+- Fixed unified-party-setup-voting.tsx: Choose a Song, Click to play
+- Fixed webcam-settings-panel.tsx: 30+ strings replaced (all labels, options, tooltips, quick controls)
+- Fixed error-boundary.tsx: 3 strings replaced
+- Fixed use-keyboard-shortcuts.ts: SHORTCUT_REFERENCE → getShortcutReference() function with t()
+- Fixed use-audio-analysis.ts: CONFIDENCE_COLORS → added labelKey field
+- Fixed use-remote-control.ts: 2 German toast strings
+- Fixed party-setup-section.tsx: 3 German toast messages
+- Fixed mobile-client-view.tsx: Get Ready!, Your Turn!
+- Fixed mobile/page.tsx: Loading, Error, Retry
+- Fixed battle-royale/elimination-view.tsx: SURVIVED!
+- Fixed pitch-graph-display.tsx: Pitch display, No pitch detected
+- Updated i18n/locales/index.ts: flattenObject() now handles arrays
+- Updated general-tab.tsx: SHORTCUT_REFERENCE → getShortcutReference()
+- Updated audio-analysis-panel.tsx: label → t(labelKey)
+- TypeScript check passed (npx tsc --noEmit)
+- Git commit and push successful
+
+Stage Summary:
+- 30 files changed, 651 insertions, 235 deletions
+- Commit: 3a2ec21 "i18n: Replace all remaining hardcoded text with translation keys"
+- Party mode titles kept hardcoded in English as requested
+- Common terms like 'Highscore' kept hardcoded as requested
+- All EN and DE translations added; 14 other locales fall back to English

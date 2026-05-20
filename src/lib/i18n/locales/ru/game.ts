@@ -215,4 +215,44 @@ export const gameTranslations = {
     maxComboLabel: '{n}x макс. комбо',
     totalPoints: 'всего очков'
   },
+
+  keyboardShortcuts: {
+    esc: 'Пауза / Назад / Выход',
+    enter: 'Продолжить игру (из паузы)',
+    f12: 'Полноэкранный режим',
+    f1f10: 'Навигация по меню',
+    ctrlL: 'Поиск в библиотеке',
+    ctrlR: 'Случайная песня (соло)',
+    ctrlD: 'Случайная песня (дуэль)',
+    ctrlQ: 'Начать песню из очереди',
+    ctrlJ: 'Запустить джукбокс',
+    arrows: 'Навигация',
+  },
+
+  audioAnalysis: {
+    confidenceHigh: 'Зелёный — Надёжно',
+    confidenceMedium: 'Жёлтый — Вероятно верно',
+    confidenceLow: 'Оранжевый — Неопределённо',
+    confidenceVeryLow: 'Красный — Рекомендуется ручная проверка',
+  },
+
+  pitchGraph: {
+    pitch: 'Тональность: {n}',
+    noPitch: 'Тональность не обнаружена',
+  },
+
+  battleRoyaleGame: {
+    survived: 'ВЫЖИЛ!',
+  },
+
+  remoteControl: {
+    skipAdTitle: '⏭️ Пропустить рекламу',
+    skipAdDesc: 'Нажмите на видео, чтобы нажать кнопку "Пропустить рекламу"!',
+  },
+
+  mobilePage: {
+    loadingCompanion: 'Загрузка Companion-приложения…',
+    failedToLoad: 'Не удалось загрузить Companion-приложение',
+    retry: 'Повторить',
+  },
 };

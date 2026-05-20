@@ -33,7 +33,10 @@ export const mobileTranslations = {
     mobileQueue: 'File Mobile',
     queueSongs: 'File : {n}/3 chansons',
     moreSongs: '+{n} chansons supplémentaires',
-    retry: 'Réessayer'
+    retry: 'Réessayer',
+    // #10 Tournament spectator voting
+    tournamentVoteTitle: 'Pour qui votez-vous ?',
+    tournamentVoteDesc: 'Choisissez votre favori dans ce match',
   },
 
   mobileClient: {
@@ -344,6 +347,11 @@ export const mobileTranslations = {
     download: '📥 Télécharger',
     share: '📤 Partager',
     shareTitle: 'Mon Score de Karaoké !',
-    shareText: 'J\'ai obtenu {n} points sur "{title}" !'
+    shareText: 'J\'ai obtenu {n} points sur "{title}" !',
+  },
+
+  mobileCompanion: {
+    getReady: 'Préparez-vous !',
+    yourTurn: 'C\'est votre tour !',
   },
 };

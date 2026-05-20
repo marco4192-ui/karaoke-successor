@@ -215,4 +215,44 @@ export const gameTranslations = {
     maxComboLabel: '{n}x 最大コンボ',
     totalPoints: '合計ポイント'
   },
+
+  keyboardShortcuts: {
+    esc: '一時停止 / 戻る / 終了',
+    enter: 'ゲームを再開（一時停止中）',
+    f12: 'フルスクリーン切替',
+    f1f10: 'メニュー操作',
+    ctrlL: 'ライブラリで検索',
+    ctrlR: 'ランダム曲（ソロ）',
+    ctrlD: 'ランダム曲（デュエル）',
+    ctrlQ: 'キューの曲を開始',
+    ctrlJ: 'ジュークボックスを開始',
+    arrows: '操作',
+  },
+
+  audioAnalysis: {
+    confidenceHigh: '緑 — 信頼性高い',
+    confidenceMedium: '黄 — ほぼ正確',
+    confidenceLow: '橙 — 不確実',
+    confidenceVeryLow: '赤 — 手動確認を推奨',
+  },
+
+  pitchGraph: {
+    pitch: 'ピッチ: {n}',
+    noPitch: 'ピッチが検出されません',
+  },
+
+  battleRoyaleGame: {
+    survived: 'サバイバル成功！',
+  },
+
+  remoteControl: {
+    skipAdTitle: '⏭️ 広告をスキップ',
+    skipAdDesc: '動画をクリックして「広告をスキップ」ボタンを押してください！',
+  },
+
+  mobilePage: {
+    loadingCompanion: 'コンパニオンアプリを読み込み中…',
+    failedToLoad: 'コンパニオンアプリの読み込みに失敗しました',
+    retry: '再試行',
+  },
 };

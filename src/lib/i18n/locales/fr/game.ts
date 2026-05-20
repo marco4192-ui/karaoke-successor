@@ -215,4 +215,44 @@ export const gameTranslations = {
     maxComboLabel: '{n}x combo max',
     totalPoints: 'points totaux'
   },
+
+  keyboardShortcuts: {
+    esc: 'Pause / Retour / Quitter',
+    enter: 'Reprendre le jeu (Pause)',
+    f12: 'Basculer le plein écran',
+    f1f10: 'Navigation dans le menu',
+    ctrlL: 'Rechercher dans la Bibliothèque',
+    ctrlR: 'Chanson Aléatoire (Solo)',
+    ctrlD: 'Chanson Aléatoire (Duel)',
+    ctrlQ: 'Démarrer la chanson en file',
+    ctrlJ: 'Démarrer le Jukebox',
+    arrows: 'Navigation',
+  },
+
+  audioAnalysis: {
+    confidenceHigh: 'Vert — Fiable',
+    confidenceMedium: 'Jaune — Probablement correct',
+    confidenceLow: 'Orange — Incertain',
+    confidenceVeryLow: 'Rouge — Vérification manuelle recommandée',
+  },
+
+  pitchGraph: {
+    pitch: 'Ton : {n}',
+    noPitch: 'Aucun ton détecté',
+  },
+
+  battleRoyaleGame: {
+    survived: 'SURVÉCU !',
+  },
+
+  remoteControl: {
+    skipAdTitle: '⏭️ Passer la Pub',
+    skipAdDesc: 'Cliquez sur la vidéo pour appuyer sur le bouton « Passer la Pub » !',
+  },
+
+  mobilePage: {
+    loadingCompanion: 'Chargement de l\'app compagnon…',
+    failedToLoad: 'Échec du chargement de l\'app compagnon',
+    retry: 'Réessayer',
+  },
 };

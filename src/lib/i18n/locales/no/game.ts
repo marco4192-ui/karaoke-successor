@@ -215,4 +215,44 @@ export const gameTranslations = {
     maxComboLabel: '{n}x maks combo',
     totalPoints: 'totalt antall poeng'
   },
+
+  keyboardShortcuts: {
+    esc: 'Pause / Tilbake / Avslutt',
+    enter: 'Fortsett spill (Pause)',
+    f12: 'Slå fullskjerm av/på',
+    f1f10: 'Menynavigasjon',
+    ctrlL: 'Søk i bibliotek',
+    ctrlR: 'Tilfeldig sang (Solo)',
+    ctrlD: 'Tilfeldig sang (Duell)',
+    ctrlQ: 'Start køsang',
+    ctrlJ: 'Start Jukebox',
+    arrows: 'Navigasjon',
+  },
+
+  audioAnalysis: {
+    confidenceHigh: 'Grønn — Pålitelig',
+    confidenceMedium: 'Gul — Sannsynligvis riktig',
+    confidenceLow: 'Oransje — Usikker',
+    confidenceVeryLow: 'Rød — Manuell kontroll anbefalt',
+  },
+
+  pitchGraph: {
+    pitch: 'Tone: {n}',
+    noPitch: 'Ingen tone oppdaget',
+  },
+
+  battleRoyaleGame: {
+    survived: 'OVERLEVDE!',
+  },
+
+  remoteControl: {
+    skipAdTitle: '⏭️ Hopp over reklame',
+    skipAdDesc: 'Klikk på videoen for å trykke «Hopp over reklame»-knappen!',
+  },
+
+  mobilePage: {
+    loadingCompanion: 'Laster companion-app…',
+    failedToLoad: 'Kunne ikke laste companion-app',
+    retry: 'Prøv igjen',
+  },
 };

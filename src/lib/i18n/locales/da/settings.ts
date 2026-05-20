@@ -78,16 +78,35 @@ export const settingsTranslations = {
     feature2: 'Flere selskabsspiltilstande',
     feature3: 'Mobilapp-integration til fjernbetjening',
     feature4: 'Importér dine egne UltraStar-format sange',
-    feature5: 'Offline-kapabel med lokal SQLite-database'
+    feature5: 'Offline-kapabel med lokal SQLite-database',
+    autoFullscreen: 'Auto-fuldskærm',
+    autoFullscreenDesc: 'Skift automatisk til fuldskærm når en sang starter.'
   },
 
   settingsTabs: {
+    gameplay: 'Gameplay',
+    appearance: 'Udseende',
     graphicSound: 'Grafik / Lyd',
     microphone: 'Mikrofon',
     mobileCompanion: 'Mobil companion',
     webcam: 'Webcam',
     editor: 'Editor',
     viralCharts: 'Viral Charts'
+  },
+
+  settingsGameplay: {
+    title: 'Gameplay-indstillinger',
+    description: 'Tilpas gameplay-oplevelsen til dine præferencer.',
+    scoring: 'Score-visning',
+    scoringDesc: 'Viser den nuværende score mens du synger.',
+    particles: 'Partikeleffekter',
+    particlesDesc: 'Visuelle effekter når noder rammes.',
+    combo: 'Combo-visning',
+    comboDesc: 'Viser combo-tælleren for på hinanden følgende træffere.',
+    replay: 'Optag sang-replay',
+    replayDesc: 'Optager lyd og webcam mens du synger. Replay tilgængelig på resultatskærmen.',
+    autoFullscreen: 'Auto-fuldskærm',
+    autoFullscreenDesc: 'Går automatisk i fuldskærmstilstand når en sang starter.',
   },
 
   settingsGraphicSound: {
@@ -128,11 +147,11 @@ export const settingsTranslations = {
     noteStyleGlow: 'Glød-intensitet',
     noteStyleGlowDesc: 'Lysstyrke viser kvalitet',
     noteStyleTrail: 'Trail Effect',
-    noteStyleTrailDesc: 'Color trail behind the note',
+    noteStyleTrailDesc: 'Farve-trail bag noden',
     noteStyleRetroBars: 'Retro Bars',
     noteStyleRetroBarsDesc: 'Classic arcade bars',
     noteStyleParticleFade: 'Particle Fade',
-    noteStyleParticleFadeDesc: 'Notes dissolve into particles',
+    noteStyleParticleFadeDesc: 'Noder opløses i partikler',
     noteShape: 'Nodeform',
     shapeRounded: 'Afrundet',
     shapeRectangle: 'Rektangel med kant',
@@ -141,22 +160,36 @@ export const settingsTranslations = {
     shapePill: 'Pille',
     shapePillDesc: 'Glatt kapsel',
     shapeMusicNote: 'Music Note',
-    shapeMusicNoteDesc: '♪ Note shape',
+    shapeMusicNoteDesc: '♪ Nodeform',
     shapeStar: 'Star',
-    shapeStarDesc: 'Star shape',
+    shapeStarDesc: 'Stjerneform',
     shapeCircle: 'Circle',
-    shapeCircleDesc: 'Round shape',
+    shapeCircleDesc: 'Rund form',
     shapeHexagon: 'Hexagon',
-    shapeHexagonDesc: 'Hexagonal shape',
+    shapeHexagonDesc: 'Sekskantet form',
     shapeTriangle: 'Triangle',
-    shapeTriangleDesc: 'Arrow pointing left',
+    shapeTriangleDesc: 'Pil der peger til venstre',
     lyricsDisplay: 'Sangtekstvisning',
     lyricsDisplayDesc: 'Tilpas hvordan sangtekst vises under gameplay',
     lyricsClassic: 'Klassisk',
     lyricsConcert: 'Koncert',
     lyricsRetro: 'Retro',
     lyricsNeon: 'Neon',
-    lyricsMinimal: 'Minimal'
+    lyricsMinimal: 'Minimal',
+    lyricsSize: 'Sangtekststørrelse',
+    lyricsSizeSmall: 'Lille',
+    lyricsSizeMedium: 'Normal',
+    lyricsSizeLarge: 'Stor',
+    lyricsSizeDesc: 'Skriftstørrelse på sangtekst under sang.',
+    masterVolume: 'Hovedlydstyrke',
+    masterVolumeDesc: 'Samlet afspilningslydstyrke mens du synger.',
+    youtubeQuality: 'YouTube-kvalitet',
+    youtubeQualityDesc: 'Videokvalitet for YouTube-afspilning. Lavere kvalitet sparer båndbredde.',
+    youtubeQualityAuto: 'Auto',
+    youtubeQuality1080: '1080p',
+    youtubeQuality720: '720p',
+    youtubeQuality480: '480p',
+    youtubeQuality360: '360p'
   },
 
   settingsMicrophoneCard: {
@@ -202,7 +235,12 @@ export const settingsTranslations = {
     soprano: '🎤 Sopran',
     latencyCorrection: 'Forsinkelseskorrektion',
     manualOffset: 'Manuel forskydning',
-    offsetHelp: 'Negativ = Lyd tidligere, Positiv = Lyd senere'
+    offsetHelp: 'Negativ = Lyd tidligere, Positiv = Lyd senere',
+    stereoDevice: '(Stereo)',
+    stereoSplit: 'Stereo Split (Dual-Mic-adapter)',
+    stereoSplitEnable: 'Aktivér',
+    stereoSplitDisable: 'Deaktivér',
+    stereoSplitActive: 'Stereo Split aktiv — L/R-kanaler adskilt'
   },
 
   settingsMicPanel: {
@@ -224,7 +262,19 @@ export const settingsTranslations = {
     maxReached: '✓ Maksimalt {max} mikrofoner nået',
     applyOptimal: '⚡ Anvend optimale indstillinger til alle',
     refreshDevices: '🔄 Opdater enheder',
-    supportedMics: 'Understøttede mikrofoner'
+    supportedMics: 'Understøttede mikrofoner',
+    usbMics: 'USB-mikrofoner',
+    usbMicsDesc: 'Blue Yeti, AT2020',
+    singstarMics: 'SingStar-mikrofoner',
+    singstarMicsDesc: 'PS2/PS3 Dongles',
+    jack35: '3,5mm Jack',
+    jack35Desc: 'Headset-mikrofoner',
+    mobile: 'Mobil',
+    mobileDesc: 'Telefon som mikrofon',
+    agcLabel: 'AGC (Auto Gain Control)',
+    echoLabel: 'Ekkokansellering',
+    noiseLabel: 'Støjdæmpning',
+    fftLabel: 'FFT-størrelse 4096'
   },
 
   settingsMobileDevice: {
@@ -295,7 +345,25 @@ export const settingsTranslations = {
     autoUpdate: 'Charts opdateres automatisk ved åbning af biblioteket (én gang dagligt).',
     regionSaved: 'Region gemt. Charts opdateres ved næste indlæsning.',
     chartsRefreshed: 'Charts opdateret!',
-    errorPrefix: 'Fejl:'
+    errorPrefix: 'Fejl:',
+    country: {
+      de: 'Tyskland',
+      at: 'Østrig',
+      ch: 'Schweiz',
+      us: 'USA',
+      gb: 'UK',
+      fr: 'Frankrig',
+      es: 'Spanien',
+      it: 'Italien',
+      nl: 'Holland',
+      pl: 'Polen',
+      se: 'Sverige',
+      jp: 'Japan',
+      br: 'Brasilien',
+      mx: 'Mexico',
+      kr: 'Sydkorea',
+      au: 'Australien',
+    }
   },
 
   settingsLibrary: {
@@ -313,7 +381,16 @@ export const settingsTranslations = {
     importSongs: 'Importér sange',
     importSongsDesc: 'Importér nye sange til dit bibliotek',
     cannotUndo: 'Disse handlinger kan ikke nemt fortrydes',
-    resetSuccess: 'Biblioteket er nulstillet!'
+    resetSuccess: 'Biblioteket er nulstillet!',
+    additionalSources: 'Ekstra bibliotekskilder',
+    additionalSourcesDesc: 'Tilføj flere mapper for at supplere dit hovedbibliotek. Sange fra disse mapper tilføjes til det eksisterende bibliotek (ingen nulstilling).',
+    noAdditionalSources: 'Ingen ekstra kilder konfigureret.',
+    addFolderPath: 'Tilføj sti manuelt',
+    selectAdditionalFolder: 'Vælg ekstra sangmappe',
+    removeFolder: 'Fjern mappe',
+    folderAlreadyExists: 'Denne mappe er allerede i dit bibliotek.',
+    enterFolderPath: 'Indtast mappestien:',
+    folderPickerDesktopOnly: 'Mappevælger er kun tilgængelig i desktop-appen.'
   },
 
   settingsCompanion: {
@@ -340,7 +417,10 @@ export const settingsTranslations = {
     notAssigned: 'Ikke tildelt',
     removeCharacter: 'Fjern profil',
     kicking: 'Smider ud...',
-    kick: 'Smid ud'
+    kick: 'Smid ud',
+    active: 'aktiv',
+    secondsAgo: '{n}s siden',
+    minutesAgo: '{n}m siden'
   },
 
   settingsAudioOutput: {
@@ -357,7 +437,35 @@ export const settingsTranslations = {
     active: '✓ Aktiv',
     currentDevice: 'Nuværende enhed',
     asioDetected: '✓ ASIO-enheder registreret. Native lydudgang er aktiv for lav-forsinkelsesafspilning.',
-    noAsio: 'Ingen ASIO-enheder registreret. Dine lydgrænsefladedrivers er muligvis ikke installeret.'
+    noAsio: 'Ingen ASIO-enheder registreret. Dine lydgrænsefladedrivers er muligvis ikke installeret.',
+    backend: 'Backend:',
+    sampleRate: 'Sample-rate:',
+    channels: 'Kanaler:'
+  },
+
+  settingsMicPresets: {
+    optimalName: 'Optimal (anbefalet)',
+    optimalDesc: 'Bedste indstillinger til UltraStar/SingStar',
+    lowLatencyName: 'Lav forsinkelse',
+    lowLatencyDesc: 'Minimal forsinkelse',
+    highAccuracyName: 'Høj nøjagtighed',
+    highAccuracyDesc: 'Præcis tonegenkendelse',
+    noisyName: 'Støjfyldt miljø',
+    noisyDesc: 'Mere støjdæmpning',
+    bassName: 'Dybe stemmer (Bass)',
+    bassDesc: 'Optimeret til dybe stemmer',
+    sopranoName: 'Høje stemmer (Sopran)',
+    sopranoDesc: 'Optimeret til høje stemmer',
+    allApplied: 'Optimale indstillinger anvendt på alle mikrofoner',
+    applyError: 'Fejl ved anvendelse af optimale indstillinger',
+    removed: 'Fjernede {count} afbrudt(e) mikrofon(er)',
+    allConnected: 'Alle mikrofoner er forbundet',
+  },
+
+  settingsGeneral: {
+    difficultyEasy: 'Nem',
+    difficultyMedium: 'Medium',
+    difficultyHard: 'Svær',
   },
 
   settingsAbout: {
@@ -369,5 +477,45 @@ export const settingsTranslations = {
     notConnected: '❌ Kunne ikke forbinde til rangliste',
     desktopInstalled: 'Desktop-app installeret',
     desktopInstalledDesc: 'Denne app kører som en native desktop-applikation med fuld offline-understøttelse.'
+  },
+
+  webcamSettings: {
+    title: 'Webcam-baggrund',
+    active: 'Aktiv',
+    enableWebcam: 'Aktivér webcam',
+    enableWebcamDesc: 'Optag sangere mens de optræder',
+    cameraDevice: 'Kameraenhed',
+    selectCamera: 'Vælg kamera',
+    defaultCamera: 'Standardkamera',
+    refreshDevices: '🔄 Opdater enheder',
+    size: 'Størrelse',
+    fullscreen: 'Fuldskærm',
+    fullscreenDesc: 'Fyld hele baggrunden',
+    smallStrip: '20%',
+    smallStripDesc: 'Lille bånd (20% højde)',
+    mediumStrip: '30%',
+    mediumStripDesc: 'Mediumt bånd (30% højde)',
+    largeStrip: '40%',
+    largeStripDesc: 'Stort bånd (40% højde)',
+    position: 'Placering',
+    top: 'Top',
+    bottom: 'Bund',
+    left: 'Venstre',
+    right: 'Højre',
+    mirror: 'Spejl (Selfie-tilstand)',
+    filter: 'Filter',
+    filterNone: 'Intet',
+    filterGrayscale: 'Gråtoner',
+    filterSepia: 'Sepia',
+    filterContrast: 'Kontrast',
+    filterBrightness: 'Lysstyrke',
+    filterVibrant: 'Levende',
+    filterBlur: 'Sløring',
+    opacity: 'Gennemsigtighed',
+    showBorder: 'Vis kant',
+    disableWebcam: 'Deaktivér webcam',
+    enableWebcamTooltip: 'Aktivér webcam',
+    disableMirror: 'Deaktivér spejling',
+    enableMirrorTooltip: 'Aktivér spejling (Selfie-tilstand)',
   },
 };

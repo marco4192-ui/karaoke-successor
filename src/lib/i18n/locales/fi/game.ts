@@ -215,4 +215,44 @@ export const gameTranslations = {
     maxComboLabel: '{n}x max combo',
     totalPoints: 'pistettä yhteensä'
   },
+
+  keyboardShortcuts: {
+    esc: 'Tauko / Takaisin / Poistu',
+    enter: 'Jatka peliä (Tauko)',
+    f12: 'Kokonäytön vaihto',
+    f1f10: 'Valikkonavigointi',
+    ctrlL: 'Hae kirjastosta',
+    ctrlR: 'Satunnainen kappale (Soolo)',
+    ctrlD: 'Satunnainen kappale (Kaksinkamppailu)',
+    ctrlQ: 'Aloita jonon kappale',
+    ctrlJ: 'Aloita Jukebox',
+    arrows: 'Navigointi',
+  },
+
+  audioAnalysis: {
+    confidenceHigh: 'Vihreä — Luotettava',
+    confidenceMedium: 'Keltainen — Todennäköisesti oikein',
+    confidenceLow: 'Oranssi — Epävarma',
+    confidenceVeryLow: 'Punainen — Manuaalinen tarkistus suositeltu',
+  },
+
+  pitchGraph: {
+    pitch: 'Sävelkorkeus: {n}',
+    noPitch: 'Sävelkorkeutta ei tunnistettu',
+  },
+
+  battleRoyaleGame: {
+    survived: 'SELVIYTYI!',
+  },
+
+  remoteControl: {
+    skipAdTitle: '⏭️ Ohita mainos',
+    skipAdDesc: 'Napsauta videota painaaksesi "Ohita mainos" -painiketta!',
+  },
+
+  mobilePage: {
+    loadingCompanion: 'Ladataan companion-sovellusta…',
+    failedToLoad: 'Companion-sovelluksen lataus epäonnistui',
+    retry: 'Yritä uudelleen',
+  },
 };

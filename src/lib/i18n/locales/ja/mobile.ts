@@ -33,7 +33,10 @@ export const mobileTranslations = {
     retryDetection: '再検出',
     connectedDevices: '接続済みデバイス',
     noDevices: '接続されたデバイスはありません',
-    scanQrToConnect: 'QRコードをスキャンして携帯電話を接続'
+    scanQrToConnect: 'QRコードをスキャンして携帯電話を接続',
+    // #10 Tournament spectator voting
+    tournamentVoteTitle: '誰に投票しますか？',
+    tournamentVoteDesc: 'このマッチで一番好きなプレイヤーを選んでください',
   },
 
   mobileClient: {
@@ -345,5 +348,10 @@ export const mobileTranslations = {
     share: '📤 シェア',
     shareTitle: '私のカラオケスコア！',
     shareText: '私は"{title}"で{n}ポイントを獲得しました！'
+  },
+
+  mobileCompanion: {
+    getReady: '準備はいいか！',
+    yourTurn: 'あなたの番！',
   },
 };

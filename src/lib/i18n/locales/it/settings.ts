@@ -78,16 +78,35 @@ export const settingsTranslations = {
     feature2: 'Diverse modalità di giochi di festa',
     feature3: 'Integrazione app mobile per controllo remoto',
     feature4: 'Importa le tue canzoni in formato UltraStar',
-    feature5: 'Funziona offline con database SQLite locale'
+    feature5: 'Funziona offline con database SQLite locale',
+    autoFullscreen: 'Schermo Intero Automatico',
+    autoFullscreenDesc: 'Passa automaticamente a schermo intero quando inizi una canzone.',
   },
 
   settingsTabs: {
+    gameplay: 'Gioco',
+    appearance: 'Aspetto',
     graphicSound: 'Grafica / Suono',
     microphone: 'Microfono',
     mobileCompanion: 'Compagno Mobile',
     webcam: 'Webcam',
     editor: 'Editor',
     viralCharts: 'Classifiche Virali'
+  },
+
+  settingsGameplay: {
+    title: 'Impostazioni di Gioco',
+    description: 'Personalizza l\'esperienza di gioco secondo le tue preferenze.',
+    scoring: 'Visualizzazione Punteggio',
+    scoringDesc: 'Mostra il punteggio attuale mentre canti.',
+    particles: 'Effetti Particelle',
+    particlesDesc: 'Effetti visivi quando colpisci le note.',
+    combo: 'Visualizzazione Combo',
+    comboDesc: 'Mostra il contatore combo per i colpi consecutivi.',
+    replay: 'Registra Replay Canzone',
+    replayDesc: 'Registra audio e webcam mentre canti. Replay disponibile nella schermata risultati.',
+    autoFullscreen: 'Schermo Intero Automatico',
+    autoFullscreenDesc: 'Entra automaticamente in modalità schermo intero quando inizi una canzone.',
   },
 
   settingsGraphicSound: {
@@ -129,6 +148,8 @@ export const settingsTranslations = {
     noteStyleGlowDesc: 'La luminosità mostra la qualità',
     noteStyleTrail: 'Trail Effect',
     noteStyleTrailDesc: 'Color trail behind the note',
+    noteStyleHitFill: 'Riempimento Colpo',
+    noteStyleHitFillDesc: 'Solo i colpi centrati vengono riempiti',
     noteStyleRetroBars: 'Retro Bars',
     noteStyleRetroBarsDesc: 'Classic arcade bars',
     noteStyleParticleFade: 'Particle Fade',
@@ -156,7 +177,21 @@ export const settingsTranslations = {
     lyricsConcert: 'Concerto',
     lyricsRetro: 'Retro',
     lyricsNeon: 'Neon',
-    lyricsMinimal: 'Minimalista'
+    lyricsMinimal: 'Minimalista',
+    lyricsSize: 'Dimensione Testo',
+    lyricsSizeSmall: 'Piccolo',
+    lyricsSizeMedium: 'Normale',
+    lyricsSizeLarge: 'Grande',
+    lyricsSizeDesc: 'Dimensione del testo durante il canto.',
+    masterVolume: 'Volume Principale',
+    masterVolumeDesc: 'Volume generale di riproduzione durante il canto.',
+    youtubeQuality: 'Qualità YouTube',
+    youtubeQualityDesc: 'Qualità video per la riproduzione YouTube. Qualità inferiore risparmia banda.',
+    youtubeQualityAuto: 'Auto',
+    youtubeQuality1080: '1080p',
+    youtubeQuality720: '720p',
+    youtubeQuality480: '480p',
+    youtubeQuality360: '360p',
   },
 
   settingsMicrophoneCard: {
@@ -202,7 +237,12 @@ export const settingsTranslations = {
     soprano: '🎤 Soprano',
     latencyCorrection: 'Correzione Latenza',
     manualOffset: 'Offset Manuale',
-    offsetHelp: 'Negativo = Audio prima, Positivo = Audio dopo'
+    offsetHelp: 'Negativo = Audio prima, Positivo = Audio dopo',
+    stereoDevice: '(Stereo)',
+    stereoSplit: 'Divisione Stereo (Adattatore Dual-Mic)',
+    stereoSplitEnable: 'Attiva',
+    stereoSplitDisable: 'Disattiva',
+    stereoSplitActive: 'Divisione Stereo attiva — canali L/R separati',
   },
 
   settingsMicPanel: {
@@ -224,7 +264,19 @@ export const settingsTranslations = {
     maxReached: '✓ Massimo di {max} microfoni raggiunto',
     applyOptimal: '⚡ Applica impostazioni ottimali a tutti',
     refreshDevices: '🔄 Aggiorna dispositivi',
-    supportedMics: 'Microfoni Supportati'
+    supportedMics: 'Microfoni Supportati',
+    usbMics: 'Microfoni USB',
+    usbMicsDesc: 'Blue Yeti, AT2020',
+    singstarMics: 'Microfoni SingStar',
+    singstarMicsDesc: 'Dongle PS2/PS3',
+    jack35: 'Jack 3.5mm',
+    jack35Desc: 'Microfoni Auricolare',
+    mobile: 'Mobile',
+    mobileDesc: 'Telefono come Mic',
+    agcLabel: 'AGC (Controllo Guadagno Automatico)',
+    echoLabel: 'Cancellazione Eco',
+    noiseLabel: 'Soppressione Rumore',
+    fftLabel: 'Dimensione FFT 4096',
   },
 
   settingsMobileDevice: {
@@ -295,7 +347,25 @@ export const settingsTranslations = {
     autoUpdate: 'Le classifiche vengono aggiornate automaticamente all\'apertura della libreria (una volta al giorno).',
     regionSaved: 'Regione salvata. Le classifiche verranno aggiornate al prossimo caricamento.',
     chartsRefreshed: 'Classifiche aggiornate con successo!',
-    errorPrefix: 'Errore:'
+    errorPrefix: 'Errore:',
+    country: {
+      de: 'Germania',
+      at: 'Austria',
+      ch: 'Svizzera',
+      us: 'USA',
+      gb: 'Regno Unito',
+      fr: 'Francia',
+      es: 'Spagna',
+      it: 'Italia',
+      nl: 'Paesi Bassi',
+      pl: 'Polonia',
+      se: 'Svezia',
+      jp: 'Giappone',
+      br: 'Brasile',
+      mx: 'Messico',
+      kr: 'Corea del Sud',
+      au: 'Australia',
+    },
   },
 
   settingsLibrary: {
@@ -313,7 +383,16 @@ export const settingsTranslations = {
     importSongs: 'Importa Canzoni',
     importSongsDesc: 'Importa nuove canzoni nella tua libreria',
     cannotUndo: 'Queste azioni non possono essere annullate facilmente',
-    resetSuccess: 'La libreria è stata reimpostata con successo!'
+    resetSuccess: 'La libreria è stata reimpostata con successo!',
+    additionalSources: 'Fonti Aggiuntive della Libreria',
+    additionalSourcesDesc: 'Aggiungi altre cartelle per integrare la tua libreria principale. Le canzoni da queste cartelle vengono aggiunte alla libreria esistente (nessun reset).',
+    noAdditionalSources: 'Nessuna fonte aggiuntiva configurata.',
+    addFolderPath: 'Aggiungi Percorso Manualmente',
+    selectAdditionalFolder: 'Seleziona Cartella Canzoni Aggiuntiva',
+    removeFolder: 'Rimuovi cartella',
+    folderAlreadyExists: 'Questa cartella è già nella tua libreria.',
+    enterFolderPath: 'Inserisci il percorso della cartella:',
+    folderPickerDesktopOnly: 'Il selettore cartelle è disponibile solo nell\'app desktop.',
   },
 
   settingsCompanion: {
@@ -340,7 +419,10 @@ export const settingsTranslations = {
     notAssigned: 'Non assegnato',
     removeCharacter: 'Rimuovi personaggio',
     kicking: 'Espulsione...',
-    kick: 'Espelli'
+    kick: 'Espelli',
+    active: 'attivo',
+    secondsAgo: '{n}s fa',
+    minutesAgo: '{n}m fa',
   },
 
   settingsAudioOutput: {
@@ -357,7 +439,10 @@ export const settingsTranslations = {
     active: '✓ Attivo',
     currentDevice: 'Dispositivo Attuale',
     asioDetected: '✓ Dispositivi ASIO rilevati. L\'uscita audio nativa è attiva per la riproduzione a bassa latenza.',
-    noAsio: 'Nessun dispositivo ASIO rilevato. I driver della tua interfaccia audio potrebbero non essere installati.'
+    noAsio: 'Nessun dispositivo ASIO rilevato. I driver della tua interfaccia audio potrebbero non essere installati.',
+    backend: 'Backend:',
+    sampleRate: 'Frequenza di Campionamento:',
+    channels: 'Canali:',
   },
 
   settingsAbout: {
@@ -369,5 +454,70 @@ export const settingsTranslations = {
     notConnected: '❌ Impossibile connettersi alla classifica',
     desktopInstalled: 'App Desktop Installata',
     desktopInstalledDesc: 'Questa app viene eseguita come applicazione desktop nativa con supporto completo offline.'
+  },
+
+  settingsMicPresets: {
+    optimalName: 'Ottimale (Consigliato)',
+    optimalDesc: 'Migliori impostazioni per UltraStar/SingStar',
+    lowLatencyName: 'Bassa Latenza',
+    lowLatencyDesc: 'Ritardo minimo',
+    highAccuracyName: 'Alta Precisione',
+    highAccuracyDesc: 'Rilevamento tono preciso',
+    noisyName: 'Ambiente Rumoroso',
+    noisyDesc: 'Più soppressione del rumore',
+    bassName: 'Voci Profonde (Basso)',
+    bassDesc: 'Ottimizzato per voci profonde',
+    sopranoName: 'Voci Alte (Soprano)',
+    sopranoDesc: 'Ottimizzato per voci alte',
+    allApplied: 'Impostazioni ottimali applicate a tutti i microfoni',
+    applyError: 'Errore nell\'applicazione delle impostazioni ottimali',
+    removed: 'Rimossi {count} microfono/i disconnesso/i',
+    allConnected: 'Tutti i microfoni sono connessi',
+  },
+
+  settingsGeneral: {
+    difficultyEasy: 'Facile',
+    difficultyMedium: 'Medio',
+    difficultyHard: 'Difficile',
+  },
+
+  webcamSettings: {
+    title: 'Sfondo Webcam',
+    active: 'Attivo',
+    enableWebcam: 'Attiva Webcam',
+    enableWebcamDesc: 'Registra i cantanti durante l\'esibizione',
+    cameraDevice: 'Dispositivo Fotocamera',
+    selectCamera: 'Seleziona fotocamera',
+    defaultCamera: 'Fotocamera Predefinita',
+    refreshDevices: '🔄 Aggiorna dispositivi',
+    size: 'Dimensione',
+    fullscreen: 'Schermo Intero',
+    fullscreenDesc: 'Riempi tutto lo sfondo',
+    smallStrip: '20%',
+    smallStripDesc: 'Fascia piccola (20% altezza)',
+    mediumStrip: '30%',
+    mediumStripDesc: 'Fascia media (30% altezza)',
+    largeStrip: '40%',
+    largeStripDesc: 'Fascia grande (40% altezza)',
+    position: 'Posizione',
+    top: 'In Alto',
+    bottom: 'In Basso',
+    left: 'Sinistra',
+    right: 'Destra',
+    mirror: 'Specchio (Modalità Selfie)',
+    filter: 'Filtro',
+    filterNone: 'Nessuno',
+    filterGrayscale: 'Scala di Grigi',
+    filterSepia: 'Seppia',
+    filterContrast: 'Contrasto',
+    filterBrightness: 'Luminosità',
+    filterVibrant: 'Vivace',
+    filterBlur: 'Sfocatura',
+    opacity: 'Opacità',
+    showBorder: 'Mostra Bordo',
+    disableWebcam: 'Disattiva Webcam',
+    enableWebcamTooltip: 'Attiva Webcam',
+    disableMirror: 'Disattiva Specchio',
+    enableMirrorTooltip: 'Attiva Specchio (Modalità Selfie)',
   },
 };

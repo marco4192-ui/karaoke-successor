@@ -33,7 +33,9 @@ export const mobileTranslations = {
     mobileQueue: 'Мобильная очередь',
     queueSongs: 'Очередь: {n}/3 песен',
     moreSongs: '+{n} ещё песен',
-    retry: 'Повторить'
+    retry: 'Повторить',
+    tournamentVoteTitle: 'За кого вы голосуете?',
+    tournamentVoteDesc: 'Выберите фаворита в этом матче',
   },
 
   mobileClient: {
@@ -345,5 +347,10 @@ export const mobileTranslations = {
     share: '📤 Поделиться',
     shareTitle: 'Мой результат караоке!',
     shareText: 'Я набрал {n} очков на "{title}"!'
+  },
+
+  mobileCompanion: {
+    getReady: 'Приготовьтесь!',
+    yourTurn: 'Ваша очередь!',
   },
 };

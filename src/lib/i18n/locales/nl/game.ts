@@ -215,4 +215,44 @@ export const gameTranslations = {
     maxComboLabel: '{n}x max combo',
     totalPoints: 'totaal punten'
   },
+
+  keyboardShortcuts: {
+    esc: 'Pauzeren / Terug / Afsluiten',
+    enter: 'Spel hervatten (Pauze)',
+    f12: 'Volledig scherm in/uitschakelen',
+    f1f10: 'Menunavigatie',
+    ctrlL: 'Zoeken in bibliotheek',
+    ctrlR: 'Willekeurig nummer (Solo)',
+    ctrlD: 'Willekeurig nummer (Duel)',
+    ctrlQ: 'Wachtrijnummer starten',
+    ctrlJ: 'Jukebox starten',
+    arrows: 'Navigatie',
+  },
+
+  audioAnalysis: {
+    confidenceHigh: 'Groen — Betrouwbaar',
+    confidenceMedium: 'Geel — Waarschijnlijk correct',
+    confidenceLow: 'Oranje — Onzeker',
+    confidenceVeryLow: 'Rood — Handmatige controle aanbevolen',
+  },
+
+  pitchGraph: {
+    pitch: 'Toonhoogte: {n}',
+    noPitch: 'Geen toonhoogte gedetecteerd',
+  },
+
+  battleRoyaleGame: {
+    survived: 'OVERLEefd!',
+  },
+
+  remoteControl: {
+    skipAdTitle: '⏭️ Reclame overslaan',
+    skipAdDesc: 'Klik op de video om de knop "Reclame overslaan" te activeren!',
+  },
+
+  mobilePage: {
+    loadingCompanion: 'Companion-app laden…',
+    failedToLoad: 'Companion-app laden mislukt',
+    retry: 'Opnieuw proberen',
+  },
 };

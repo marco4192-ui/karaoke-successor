@@ -33,7 +33,10 @@ export const mobileTranslations = {
     mobileQueue: 'Fila Móvel',
     queueSongs: 'Fila: {n}/3 músicas',
     moreSongs: '+{n} mais músicas',
-    retry: 'Tentar novamente'
+    retry: 'Tentar novamente',
+    // #10 Tournament spectator voting
+    tournamentVoteTitle: 'Por quem você está votando?',
+    tournamentVoteDesc: 'Escolha seu favorito nesta partida',
   },
 
   mobileClient: {
@@ -345,5 +348,10 @@ export const mobileTranslations = {
     share: '📤 Compartilhar',
     shareTitle: 'Minha Pontuação de Karaoke!',
     shareText: 'Eu pontuei {n} pontos em "{title}"!'
+  },
+
+  mobileCompanion: {
+    getReady: 'Prepare-se!',
+    yourTurn: 'Sua Vez!',
   },
 };

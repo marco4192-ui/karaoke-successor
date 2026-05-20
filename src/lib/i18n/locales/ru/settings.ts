@@ -78,10 +78,14 @@ export const settingsTranslations = {
     feature2: 'Несколько игровых режимов для вечеринок',
     feature3: 'Интеграция с мобильным приложением для удалённого управления',
     feature4: 'Импорт собственных песен в формате UltraStar',
-    feature5: 'Работа офлайн с локальной базой данных SQLite'
+    feature5: 'Работа офлайн с локальной базой данных SQLite',
+    autoFullscreen: 'Автоматический полный экран',
+    autoFullscreenDesc: 'Автоматический переход в полноэкранный режим при начале песни.'
   },
 
   settingsTabs: {
+    gameplay: 'Игровой процесс',
+    appearance: 'Внешний вид',
     graphicSound: 'Графика / Звук',
     microphone: 'Микрофон',
     mobileCompanion: 'Мобильный компаньон',
@@ -156,7 +160,21 @@ export const settingsTranslations = {
     lyricsConcert: 'Концертный',
     lyricsRetro: 'Ретро',
     lyricsNeon: 'Неоновый',
-    lyricsMinimal: 'Минимальный'
+    lyricsMinimal: 'Минимальный',
+    lyricsSize: 'Размер текста',
+    lyricsSizeSmall: 'Маленький',
+    lyricsSizeMedium: 'Обычный',
+    lyricsSizeLarge: 'Большой',
+    lyricsSizeDesc: 'Размер шрифта текста во время пения.',
+    masterVolume: 'Общая громкость',
+    masterVolumeDesc: 'Общая громкость воспроизведения во время пения.',
+    youtubeQuality: 'Качество YouTube',
+    youtubeQualityDesc: 'Качество видео для воспроизведения YouTube. Более низкое качество экономит трафик.',
+    youtubeQualityAuto: 'Авто',
+    youtubeQuality1080: '1080p',
+    youtubeQuality720: '720p',
+    youtubeQuality480: '480p',
+    youtubeQuality360: '360p'
   },
 
   settingsMicrophoneCard: {
@@ -202,7 +220,12 @@ export const settingsTranslations = {
     soprano: '🎤 Сопрано',
     latencyCorrection: 'Коррекция задержки',
     manualOffset: 'Ручное смещение',
-    offsetHelp: 'Отрицательное = аудио раньше, Положительное = аудио позже'
+    offsetHelp: 'Отрицательное = аудио раньше, Положительное = аудио позже',
+    stereoDevice: '(Стерео)',
+    stereoSplit: 'Стерео-разделение (адаптер для двух микрофонов)',
+    stereoSplitEnable: 'Включить',
+    stereoSplitDisable: 'Отключить',
+    stereoSplitActive: 'Стерео-разделение активно — каналы L/R разделены'
   },
 
   settingsMicPanel: {
@@ -224,7 +247,19 @@ export const settingsTranslations = {
     maxReached: '✓ Максимум {max} микрофонов достигнут',
     applyOptimal: '⚡ Применить оптимальные настройки ко всем',
     refreshDevices: '🔄 Обновить устройства',
-    supportedMics: 'Поддерживаемые микрофоны'
+    supportedMics: 'Поддерживаемые микрофоны',
+    usbMics: 'USB-микрофоны',
+    usbMicsDesc: 'Blue Yeti, AT2020',
+    singstarMics: 'Микрофоны SingStar',
+    singstarMicsDesc: 'Донглы PS2/PS3',
+    jack35: 'Разъём 3.5 мм',
+    jack35Desc: 'Гарнитуры',
+    mobile: 'Мобильный',
+    mobileDesc: 'Телефон как микрофон',
+    agcLabel: 'AGC (автоматическая регулировка усиления)',
+    echoLabel: 'Подавление эха',
+    noiseLabel: 'Шумоподавление',
+    fftLabel: 'Размер FFT 4096'
   },
 
   settingsMobileDevice: {
@@ -295,7 +330,25 @@ export const settingsTranslations = {
     autoUpdate: 'Чарты обновляются автоматически при открытии библиотеки (раз в день).',
     regionSaved: 'Регион сохранён. Чарты обновятся при следующей загрузке.',
     chartsRefreshed: 'Чарты успешно обновлены!',
-    errorPrefix: 'Ошибка:'
+    errorPrefix: 'Ошибка:',
+    country: {
+      de: 'Германия',
+      at: 'Австрия',
+      ch: 'Швейцария',
+      us: 'США',
+      gb: 'Великобритания',
+      fr: 'Франция',
+      es: 'Испания',
+      it: 'Италия',
+      nl: 'Нидерланды',
+      pl: 'Польша',
+      se: 'Швеция',
+      jp: 'Япония',
+      br: 'Бразилия',
+      mx: 'Мексика',
+      kr: 'Южная Корея',
+      au: 'Австралия',
+    },
   },
 
   settingsLibrary: {
@@ -313,7 +366,16 @@ export const settingsTranslations = {
     importSongs: 'Импортировать песни',
     importSongsDesc: 'Импортировать новые песни в библиотеку',
     cannotUndo: 'Эти действия нельзя легко отменить',
-    resetSuccess: 'Библиотека успешно сброшена!'
+    resetSuccess: 'Библиотека успешно сброшена!',
+    additionalSources: 'Дополнительные источники библиотеки',
+    additionalSourcesDesc: 'Добавьте папки для дополнения основной библиотеки. Песни из этих папок добавляются к существующей библиотеке (без сброса).',
+    noAdditionalSources: 'Дополнительные источники не настроены.',
+    addFolderPath: 'Добавить путь вручную',
+    selectAdditionalFolder: 'Выберите дополнительную папку с песнями',
+    removeFolder: 'Удалить папку',
+    folderAlreadyExists: 'Эта папка уже есть в вашей библиотеке.',
+    enterFolderPath: 'Введите путь к папке:',
+    folderPickerDesktopOnly: 'Выбор папки доступен только в десктоп-приложении.'
   },
 
   settingsCompanion: {
@@ -340,7 +402,10 @@ export const settingsTranslations = {
     notAssigned: 'Не назначен',
     removeCharacter: 'Удалить профиль',
     kicking: 'Отключение...',
-    kick: 'Отключить'
+    kick: 'Отключить',
+    active: 'активен',
+    secondsAgo: '{n}с назад',
+    minutesAgo: '{n}м назад'
   },
 
   settingsAudioOutput: {
@@ -357,7 +422,10 @@ export const settingsTranslations = {
     active: '✓ Активно',
     currentDevice: 'Текущее устройство',
     asioDetected: '✓ Обнаружены устройства ASIO. Нативный вывод аудио активен для воспроизведения с низкой задержкой.',
-    noAsio: 'Устройства ASIO не обнаружены. Возможно, драйверы аудиоинтерфейса не установлены.'
+    noAsio: 'Устройства ASIO не обнаружены. Возможно, драйверы аудиоинтерфейса не установлены.',
+    backend: 'Бэкенд:',
+    sampleRate: 'Частота дискретизации:',
+    channels: 'Каналы:'
   },
 
   settingsAbout: {
@@ -369,5 +437,85 @@ export const settingsTranslations = {
     notConnected: '❌ Не удалось подключиться к таблице лидеров',
     desktopInstalled: 'Десктоп-приложение установлено',
     desktopInstalledDesc: 'Это приложение работает как нативное десктоп-приложение с полной офлайн-поддержкой.'
+  },
+
+  settingsGameplay: {
+    title: 'Настройки игрового процесса',
+    description: 'Настройте игровой процесс по своим предпочтениям.',
+    scoring: 'Отображение счёта',
+    scoringDesc: 'Показывает текущий счёт во время пения.',
+    particles: 'Частицы',
+    particlesDesc: 'Визуальные эффекты при попадании в ноты.',
+    combo: 'Отображение комбо',
+    comboDesc: 'Показывает счётчик комбо для последовательных попаданий.',
+    replay: 'Запись повтора песни',
+    replayDesc: 'Записывает аудио и веб-камеру во время пения. Повтор доступен на экране результатов.',
+    autoFullscreen: 'Автоматический полный экран',
+    autoFullscreenDesc: 'Автоматический переход в полноэкранный режим при начале песни.',
+  },
+
+  settingsMicPresets: {
+    optimalName: 'Оптимальный (рекомендуется)',
+    optimalDesc: 'Лучшие настройки для UltraStar/SingStar',
+    lowLatencyName: 'Низкая задержка',
+    lowLatencyDesc: 'Минимальная задержка',
+    highAccuracyName: 'Высокая точность',
+    highAccuracyDesc: 'Точное определение тональности',
+    noisyName: 'Шумная среда',
+    noisyDesc: 'Усиленное шумоподавление',
+    bassName: 'Низкие голоса (бас)',
+    bassDesc: 'Оптимизировано для низких голосов',
+    sopranoName: 'Высокие голоса (сопрано)',
+    sopranoDesc: 'Оптимизировано для высоких голосов',
+    allApplied: 'Оптимальные настройки применены ко всем микрофонам',
+    applyError: 'Ошибка применения оптимальных настроек',
+    removed: 'Удалено {count} отключённых микрофонов',
+    allConnected: 'Все микрофоны подключены',
+  },
+
+  settingsGeneral: {
+    difficultyEasy: 'Легко',
+    difficultyMedium: 'Средне',
+    difficultyHard: 'Сложно',
+  },
+
+  webcamSettings: {
+    title: 'Фон с веб-камеры',
+    active: 'Активна',
+    enableWebcam: 'Включить веб-камеру',
+    enableWebcamDesc: 'Снимайте певцов во время выступления',
+    cameraDevice: 'Устройство камеры',
+    selectCamera: 'Выберите камеру',
+    defaultCamera: 'Камера по умолчанию',
+    refreshDevices: '🔄 Обновить устройства',
+    size: 'Размер',
+    fullscreen: 'Полный экран',
+    fullscreenDesc: 'Заполнить весь фон',
+    smallStrip: '20%',
+    smallStripDesc: 'Малая полоса (20% высоты)',
+    mediumStrip: '30%',
+    mediumStripDesc: 'Средняя полоса (30% высоты)',
+    largeStrip: '40%',
+    largeStripDesc: 'Большая полоса (40% высоты)',
+    position: 'Позиция',
+    top: 'Сверху',
+    bottom: 'Снизу',
+    left: 'Слева',
+    right: 'Справа',
+    mirror: 'Зеркало (режим селфи)',
+    filter: 'Фильтр',
+    filterNone: 'Без фильтра',
+    filterGrayscale: 'Чёрно-белый',
+    filterSepia: 'Сепия',
+    filterContrast: 'Контраст',
+    filterBrightness: 'Яркость',
+    filterVibrant: 'Яркий',
+    filterBlur: 'Размытие',
+    opacity: 'Непрозрачность',
+    showBorder: 'Показать рамку',
+    disableWebcam: 'Отключить веб-камеру',
+    enableWebcamTooltip: 'Включить веб-камеру',
+    disableMirror: 'Отключить зеркало',
+    enableMirrorTooltip: 'Включить зеркало (режим селфи)',
   },
 };

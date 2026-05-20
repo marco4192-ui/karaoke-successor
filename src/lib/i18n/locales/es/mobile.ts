@@ -33,7 +33,9 @@ export const mobileTranslations = {
     mobileQueue: 'Cola Móvil',
     queueSongs: 'Cola: {n}/3 canciones',
     moreSongs: '+{n} canciones más',
-    retry: 'Reintentar'
+    retry: 'Reintentar',
+    tournamentVoteTitle: '¿Por quién votas?',
+    tournamentVoteDesc: 'Elige tu favorito en esta partida',
   },
 
   mobileClient: {
@@ -344,6 +346,11 @@ export const mobileTranslations = {
     download: '📥 Descargar',
     share: '📤 Compartir',
     shareTitle: '¡Mi Puntuación de Karaoke!',
-    shareText: '¡Obtuve {n} puntos en "{title}"!'
+    shareText: '¡Obtuve {n} puntos en "{title}"!',
+  },
+
+  mobileCompanion: {
+    getReady: '¡Prepárate!',
+    yourTurn: '¡Tu Turno!',
   },
 };

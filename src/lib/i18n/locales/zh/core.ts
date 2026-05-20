@@ -77,20 +77,20 @@ export const coreTranslations = {
   },
 
   dialogs: {
-    partyExitTitle: 'Leave Party Mode?',
-    partyExitDesc: 'A party mode is currently running. If you leave, your current game progress will be lost.',
-    stay: 'Stay',
-    leave: 'Leave',
-    partyLeaveTitle: 'Leave Party Mode?',
-    partyLeaveDesc: 'You are about to leave party mode. Your current game progress will be lost.',
-    back: 'Back',
-    endParty: 'End Party Mode',
-    pauseTitle: 'Game Paused',
-    pauseDesc: 'Do you want to continue or abort?',
-    resume: 'Resume',
-    rematch: '🔄 Rematch',
-    setWinner: '🏆 Set winner automatically',
-    abort: 'Abort'
+    partyExitTitle: '离开派对模式？',
+    partyExitDesc: '派对模式正在运行。如果离开，当前游戏进度将会丢失。',
+    stay: '留下',
+    leave: '离开',
+    partyLeaveTitle: '离开派对模式？',
+    partyLeaveDesc: '你即将离开派对模式，当前游戏进度将会丢失。',
+    back: '返回',
+    endParty: '结束派对模式',
+    pauseTitle: '游戏已暂停',
+    pauseDesc: '你想继续还是中止？',
+    resume: '继续',
+    rematch: '🔄 再来一局',
+    setWinner: '🏆 自动设定获胜者',
+    abort: '中止'
   },
 
   connectionStatus: {
@@ -100,57 +100,57 @@ export const coreTranslations = {
   },
 
   offlineBanner: {
-    songsPlaylists: '{songs} Songs, {playlists} Playlists saved locally',
-    localData: 'Local data available',
-    offline: 'Offline — ',
-    serverUnreachable: 'Server unreachable — Leaderboard and online features unavailable'
+    songsPlaylists: '{songs} 首歌曲，{playlists} 个播放列表已本地保存',
+    localData: '本地数据可用',
+    offline: '离线 — ',
+    serverUnreachable: '服务器不可达 — 排行榜和在线功能不可用'
   },
 
   uploadStatus: {
-    uploading: 'Uploading to global leaderboard...'
+    uploading: '正在上传到全球排行榜...'
   },
 
   shareSection: {
-    title: '📤 Share Your Score',
-    scoreCard: '📸 Score Card',
-    videoShort: '🎬 Video Short',
-    textCopied: 'Score text copied!',
-    textCopyFailed: 'Failed to copy',
-    imageCopied: 'Score image copied!',
-    imageCopyFailed: 'Failed to copy image',
-    sharingNotSupported: 'Sharing not supported. Card downloaded instead.',
-    copyText: '📋 Copy Text',
-    copyImage: '🖼️ Copy Image',
-    downloadCard: '📥 Download Card',
-    shareScore: '📤 Share Score'
+    title: '📤 分享你的分数',
+    scoreCard: '📸 分数卡片',
+    videoShort: '🎬 视频短片',
+    textCopied: '分数文本已复制！',
+    textCopyFailed: '复制失败',
+    imageCopied: '分数图片已复制！',
+    imageCopyFailed: '复制图片失败',
+    sharingNotSupported: '不支持分享，已改为下载卡片。',
+    copyText: '📋 复制文本',
+    copyImage: '🖼️ 复制图片',
+    downloadCard: '📥 下载卡片',
+    shareScore: '📤 分享分数'
   },
 
   replayModal: {
-    copyrightNotice: 'Note: For copyright reasons, no original audio or vocals can be included in exported replays. Only your microphone recording will be used.',
-    exportFailed: 'Export failed. Please try again.',
-    deleteFailed: 'Delete failed. Please try again.',
-    close: 'Close',
-    audioOnly: 'Audio-Only Replay',
-    originalSong: '🎵 Original Song',
-    export: 'Export…',
-    exportShort: '⬇ Export',
-    delete: '🗑 Delete',
-    volume: '🎵 Volume',
-    replay: 'Replay'
+    copyrightNotice: '注意：出于版权原因，导出的回放中不能包含原音频或人声。仅使用你的麦克风录音。',
+    exportFailed: '导出失败，请重试。',
+    deleteFailed: '删除失败，请重试。',
+    close: '关闭',
+    audioOnly: '仅音频回放',
+    originalSong: '🎵 原曲',
+    export: '导出…',
+    exportShort: '⬇ 导出',
+    delete: '🗑 删除',
+    volume: '🎵 音量',
+    replay: '回放'
   },
 
   scoreCardSocial: {
     branding: 'Karaoke ZERO',
-    accuracyLabel: 'Accuracy:',
-    maxComboLabel: 'Max Combo:',
-    difficultyLabel: 'Difficulty:',
+    accuracyLabel: '准确率：',
+    maxComboLabel: '最大连击：',
+    difficultyLabel: '难度：',
     playerLabel: '🎤 {name}',
     hashtags: '#KaraokeZERO #Karaoke #Singing',
-    shareTitle: 'My Karaoke Score!',
-    shareText: 'I scored {n} points on "{title}" by {artist}!',
-    points: 'points',
-    download: '📥 Download',
-    share: '📤 Share'
+    shareTitle: '我的卡拉OK分数！',
+    shareText: '我在 {artist} 的《{title}》中获得了 {n} 分！',
+    points: '分',
+    download: '📥 下载',
+    share: '📤 分享'
   },
 
   queue: {
@@ -193,10 +193,10 @@ export const coreTranslations = {
   },
 
   queueNextSong: {
-    label: 'Next in Queue',
-    duel: '⚔️ Duel',
-    duet: '🎭 Duet',
-    playNext: '▶ Play Next'
+    label: '队列下一首',
+    duel: '⚔️ 对决',
+    duet: '🎭 二重唱',
+    playNext: '▶ 播放下一首'
   },
 
   jukebox: {
@@ -226,24 +226,54 @@ export const coreTranslations = {
   },
 
   jukeboxPlayer: {
-    nowPlaying: 'NOW PLAYING',
-    lyrics: '🎤 Lyrics',
-    showPlaylist: '📖 Show Playlist',
-    hidePlaylist: '📖 Hide Playlist',
-    exitFullscreen: '⤓ Exit Fullscreen',
-    stopJukebox: 'Stop Jukebox',
-    upNext: 'Up Next',
-    jukeboxMode: '🎵 Jukebox Mode',
-    sitBack: 'Sit back and enjoy the music!',
-    removeYoutubeVideo: 'Remove YouTube video',
+    nowPlaying: '正在播放',
+    lyrics: '🎤 歌词',
+    showPlaylist: '📖 显示播放列表',
+    hidePlaylist: '📖 隐藏播放列表',
+    exitFullscreen: '⤓ 退出全屏',
+    stopJukebox: '停止点唱',
+    upNext: '下一首',
+    jukeboxMode: '🎵 点唱机模式',
+    sitBack: '坐下来享受音乐！',
+    sitBackEnjoy: '坐下来享受音乐！',
+    removeYoutubeVideo: '移除YouTube视频',
     youtube: 'YouTube',
-    fullscreen: '⤢ Fullscreen',
-    singAlong: 'Sing-Along Mode: Show Lyrics',
-    invalidYoutubeUrl: 'Invalid YouTube URL',
-    youtubeBackground: 'Optional YouTube video as background',
-    activate: 'Set',
-    active: 'Active:',
-    remove: 'Remove',
-    noMatchingSongs: 'No songs match your filters. Try different settings or import some songs.'
+    fullscreen: '⤢ 全屏',
+    singAlong: '跟唱模式：显示歌词',
+    singAlongMode: '跟唱模式',
+    invalidYoutubeUrl: '无效的YouTube链接',
+    youtubeBackground: '可选YouTube视频作为背景',
+    activate: '设置',
+    active: '已激活：',
+    remove: '移除',
+    noMatchingSongs: '没有匹配筛选条件的歌曲。请尝试不同的设置或导入歌曲。',
+    searchPlaceholder: '搜索歌曲...',
+    allGenres: '所有风格',
+    allArtists: '所有歌手',
+    filterByGenre: '按风格筛选',
+    filterByArtist: '按歌手筛选',
+    shuffle: '随机播放',
+    noRepeat: '不重复',
+    repeatAll: '全部重复',
+    repeatOne: '单曲重复',
+    songsFound: '找到 {n} 首歌曲',
+    songsAvailable: '可用歌曲',
+    startJukebox: '开始点唱',
+    playlistSettings: '播放列表设置',
+    customizeExperience: '自定义收听体验',
+    youtubeVideo: 'YouTube视频',
+    youtubeVideoDesc: '播放自定义YouTube视频作为当前歌曲的背景',
+    youtubeUrlPlaceholder: '在此粘贴YouTube链接...',
+    set: '设置',
+    activeLabel: '当前视频：{id}',
+    noSongsMatchFilters: '没有匹配筛选条件的歌曲。请尝试不同的设置或导入歌曲。',
+    songsInPlaylist: '播放列表中有 {n} 首歌曲',
+    youtubeRemove: 'YouTube',
+  },
+
+  errorBoundary: {
+    title: '出了点问题',
+    description: '发生了意外错误。请尝试刷新页面。',
+    tryAgain: '重试',
   },
 };

@@ -78,16 +78,35 @@ export const settingsTranslations = {
     feature2: 'Múltiples modos de juegos de fiesta',
     feature3: 'Integración de app móvil para control remoto',
     feature4: 'Importa tus propias canciones en formato UltraStar',
-    feature5: 'Compatible con modo offline con base de datos SQLite local'
+    feature5: 'Compatible con modo offline con base de datos SQLite local',
+    autoFullscreen: 'Pantalla Completa Automática',
+    autoFullscreenDesc: 'Cambiar automáticamente a pantalla completa al iniciar una canción.'
   },
 
   settingsTabs: {
+    gameplay: 'Juego',
+    appearance: 'Apariencia',
     graphicSound: 'Gráficos / Sonido',
     microphone: 'Micrófono',
     mobileCompanion: 'Compañero Móvil',
     webcam: 'Cámara Web',
     editor: 'Editor',
     viralCharts: 'Charts Virales'
+  },
+
+  settingsGameplay: {
+    title: 'Ajustes de Juego',
+    description: 'Personaliza la experiencia de juego a tus preferencias.',
+    scoring: 'Mostrar Puntuación',
+    scoringDesc: 'Muestra la puntuación actual mientras cantas.',
+    particles: 'Efectos de Partículas',
+    particlesDesc: 'Efectos visuales al acertar notas.',
+    combo: 'Mostrar Combo',
+    comboDesc: 'Muestra el contador de combo para aciertos consecutivos.',
+    replay: 'Grabar Repetición',
+    replayDesc: 'Graba audio y cámara web mientras cantas. La repetición está disponible en la pantalla de resultados.',
+    autoFullscreen: 'Pantalla Completa Automática',
+    autoFullscreenDesc: 'Entra automáticamente en modo pantalla completa al iniciar una canción.',
   },
 
   settingsGraphicSound: {
@@ -295,7 +314,25 @@ export const settingsTranslations = {
     autoUpdate: 'Los charts se actualizan automáticamente al abrir la biblioteca (una vez al día).',
     regionSaved: 'Región guardada. Los charts se actualizarán en la próxima carga.',
     chartsRefreshed: '¡Charts actualizados correctamente!',
-    errorPrefix: 'Error:'
+    errorPrefix: 'Error:',
+    country: {
+      de: 'Alemania',
+      at: 'Austria',
+      ch: 'Suiza',
+      us: 'EE.UU.',
+      gb: 'Reino Unido',
+      fr: 'Francia',
+      es: 'España',
+      it: 'Italia',
+      nl: 'Países Bajos',
+      pl: 'Polonia',
+      se: 'Suecia',
+      jp: 'Japón',
+      br: 'Brasil',
+      mx: 'México',
+      kr: 'Corea del Sur',
+      au: 'Australia',
+    },
   },
 
   settingsLibrary: {
@@ -360,6 +397,31 @@ export const settingsTranslations = {
     noAsio: 'No se detectaron dispositivos ASIO. Es posible que los drivers de tu interfaz de audio no estén instalados.'
   },
 
+  settingsMicPresets: {
+    optimalName: 'Óptimo (Recomendado)',
+    optimalDesc: 'Mejores ajustes para UltraStar/SingStar',
+    lowLatencyName: 'Baja Latencia',
+    lowLatencyDesc: 'Retraso mínimo',
+    highAccuracyName: 'Alta Precisión',
+    highAccuracyDesc: 'Detección de tono precisa',
+    noisyName: 'Entorno Ruidoso',
+    noisyDesc: 'Mayor supresión de ruido',
+    bassName: 'Voces Graves (Bajo)',
+    bassDesc: 'Optimizado para voces graves',
+    sopranoName: 'Voces Agudas (Soprano)',
+    sopranoDesc: 'Optimizado para voces agudas',
+    allApplied: 'Ajustes óptimos aplicados a todos los micrófonos',
+    applyError: 'Error al aplicar ajustes óptimos',
+    removed: 'Se eliminaron {count} micrófono(s) desconectado(s)',
+    allConnected: 'Todos los micrófonos están conectados',
+  },
+
+  settingsGeneral: {
+    difficultyEasy: 'Fácil',
+    difficultyMedium: 'Medio',
+    difficultyHard: 'Difícil',
+  },
+
   settingsAbout: {
     technologyStack: 'Stack Tecnológico',
     onlineLeaderboard: 'Tabla de Clasificación Online',
@@ -369,5 +431,45 @@ export const settingsTranslations = {
     notConnected: '❌ No se pudo conectar a la tabla de clasificación',
     desktopInstalled: 'App de Escritorio Instalada',
     desktopInstalledDesc: 'Esta app se ejecuta como aplicación de escritorio nativa con soporte completo offline.'
+  },
+
+  webcamSettings: {
+    title: 'Fondo de Cámara Web',
+    active: 'Activo',
+    enableWebcam: 'Activar Cámara Web',
+    enableWebcamDesc: 'Grabar a los cantantes mientras actúan',
+    cameraDevice: 'Dispositivo de Cámara',
+    selectCamera: 'Seleccionar cámara',
+    defaultCamera: 'Cámara Predeterminada',
+    refreshDevices: '🔄 Actualizar dispositivos',
+    size: 'Tamaño',
+    fullscreen: 'Pantalla Completa',
+    fullscreenDesc: 'Llenar todo el fondo',
+    smallStrip: '20%',
+    smallStripDesc: 'Franja pequeña (20% de altura)',
+    mediumStrip: '30%',
+    mediumStripDesc: 'Franja mediana (30% de altura)',
+    largeStrip: '40%',
+    largeStripDesc: 'Franja grande (40% de altura)',
+    position: 'Posición',
+    top: 'Arriba',
+    bottom: 'Abajo',
+    left: 'Izquierda',
+    right: 'Derecha',
+    mirror: 'Espejo (Modo Selfie)',
+    filter: 'Filtro',
+    filterNone: 'Ninguno',
+    filterGrayscale: 'Escala de Grises',
+    filterSepia: 'Sepia',
+    filterContrast: 'Contraste',
+    filterBrightness: 'Brillo',
+    filterVibrant: 'Vibrante',
+    filterBlur: 'Desenfoque',
+    opacity: 'Opacidad',
+    showBorder: 'Mostrar Borde',
+    disableWebcam: 'Desactivar Cámara Web',
+    enableWebcamTooltip: 'Activar Cámara Web',
+    disableMirror: 'Desactivar Espejo',
+    enableMirrorTooltip: 'Activar Espejo (Modo Selfie)',
   },
 };

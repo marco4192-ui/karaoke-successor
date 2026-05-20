@@ -77,20 +77,20 @@ export const coreTranslations = {
   },
 
   dialogs: {
-    partyExitTitle: 'Leave Party Mode?',
-    partyExitDesc: 'A party mode is currently running. If you leave, your current game progress will be lost.',
-    stay: 'Stay',
-    leave: 'Leave',
-    partyLeaveTitle: 'Leave Party Mode?',
-    partyLeaveDesc: 'You are about to leave party mode. Your current game progress will be lost.',
-    back: 'Back',
-    endParty: 'End Party Mode',
-    pauseTitle: 'Game Paused',
-    pauseDesc: 'Do you want to continue or abort?',
-    resume: 'Resume',
-    rematch: '🔄 Rematch',
-    setWinner: '🏆 Set winner automatically',
-    abort: 'Abort'
+    partyExitTitle: '파티 모드를 나가시겠습니까?',
+    partyExitDesc: '파티 모드가 현재 실행 중입니다. 나가면 현재 게임 진행 상황이 손실됩니다.',
+    stay: '머물기',
+    leave: '나가기',
+    partyLeaveTitle: '파티 모드를 나가시겠습니까?',
+    partyLeaveDesc: '파티 모드에서 나가려고 합니다. 현재 게임 진행 상황이 손실됩니다.',
+    back: '뒤로',
+    endParty: '파티 모드 종료',
+    pauseTitle: '게임 일시정지',
+    pauseDesc: '계속하시겠습니까, 아니면 중단하시겠습니까?',
+    resume: '계속하기',
+    rematch: '🔄 재대결',
+    setWinner: '🏆 자동으로 승자 지정',
+    abort: '중단'
   },
 
   connectionStatus: {
@@ -100,57 +100,57 @@ export const coreTranslations = {
   },
 
   offlineBanner: {
-    songsPlaylists: '{songs} Songs, {playlists} Playlists saved locally',
-    localData: 'Local data available',
-    offline: 'Offline — ',
-    serverUnreachable: 'Server unreachable — Leaderboard and online features unavailable'
+    songsPlaylists: '{songs}곡, {playlists}개 플레이리스트가 로컬에 저장됨',
+    localData: '로컬 데이터 사용 가능',
+    offline: '오프라인 — ',
+    serverUnreachable: '서버에 연결할 수 없음 — 리더보드 및 온라인 기능을 사용할 수 없습니다'
   },
 
   uploadStatus: {
-    uploading: 'Uploading to global leaderboard...'
+    uploading: '전체 리더보드에 업로드 중...'
   },
 
   shareSection: {
-    title: '📤 Share Your Score',
-    scoreCard: '📸 Score Card',
-    videoShort: '🎬 Video Short',
-    textCopied: 'Score text copied!',
-    textCopyFailed: 'Failed to copy',
-    imageCopied: 'Score image copied!',
-    imageCopyFailed: 'Failed to copy image',
-    sharingNotSupported: 'Sharing not supported. Card downloaded instead.',
-    copyText: '📋 Copy Text',
-    copyImage: '🖼️ Copy Image',
-    downloadCard: '📥 Download Card',
-    shareScore: '📤 Share Score'
+    title: '📤 점수 공유하기',
+    scoreCard: '📸 점수 카드',
+    videoShort: '🎬 숏 영상',
+    textCopied: '점수 텍스트가 복사되었습니다!',
+    textCopyFailed: '복사 실패',
+    imageCopied: '점수 이미지가 복사되었습니다!',
+    imageCopyFailed: '이미지 복사 실패',
+    sharingNotSupported: '공유를 지원하지 않습니다. 대신 카드를 다운로드합니다.',
+    copyText: '📋 텍스트 복사',
+    copyImage: '🖼️ 이미지 복사',
+    downloadCard: '📥 카드 다운로드',
+    shareScore: '📤 점수 공유'
   },
 
   replayModal: {
-    copyrightNotice: 'Note: For copyright reasons, no original audio or vocals can be included in exported replays. Only your microphone recording will be used.',
-    exportFailed: 'Export failed. Please try again.',
-    deleteFailed: 'Delete failed. Please try again.',
-    close: 'Close',
-    audioOnly: 'Audio-Only Replay',
-    originalSong: '🎵 Original Song',
-    export: 'Export…',
-    exportShort: '⬇ Export',
-    delete: '🗑 Delete',
-    volume: '🎵 Volume',
-    replay: 'Replay'
+    copyrightNotice: '참고: 저작권 문제로 인해 내보낸 리플레이에 원본 오디오나 보컬을 포함할 수 없습니다. 마이크 녹음만 사용됩니다.',
+    exportFailed: '내보내기 실패. 다시 시도해 주세요.',
+    deleteFailed: '삭제 실패. 다시 시도해 주세요.',
+    close: '닫기',
+    audioOnly: '오디오 전용 리플레이',
+    originalSong: '🎵 원본 곡',
+    export: '내보내기…',
+    exportShort: '⬇ 내보내기',
+    delete: '🗑 삭제',
+    volume: '🎵 볼륨',
+    replay: '리플레이'
   },
 
   scoreCardSocial: {
     branding: 'Karaoke ZERO',
-    accuracyLabel: 'Accuracy:',
+    accuracyLabel: '정확도:',
     maxComboLabel: 'Max Combo:',
-    difficultyLabel: 'Difficulty:',
+    difficultyLabel: '난이도:',
     playerLabel: '🎤 {name}',
     hashtags: '#KaraokeZERO #Karaoke #Singing',
-    shareTitle: 'My Karaoke Score!',
-    shareText: 'I scored {n} points on "{title}" by {artist}!',
-    points: 'points',
-    download: '📥 Download',
-    share: '📤 Share'
+    shareTitle: '나의 노래방 점수!',
+    shareText: '{artist}의 "{title}"에서 {n}점을 획득했습니다!',
+    points: '점',
+    download: '📥 다운로드',
+    share: '📤 공유'
   },
 
   queue: {
@@ -193,10 +193,10 @@ export const coreTranslations = {
   },
 
   queueNextSong: {
-    label: 'Next in Queue',
-    duel: '⚔️ Duel',
-    duet: '🎭 Duet',
-    playNext: '▶ Play Next'
+    label: '다음 곡',
+    duel: '⚔️ 듀얼',
+    duet: '🎭 듀엣',
+    playNext: '▶ 다음 곡 재생'
   },
 
   jukebox: {
@@ -227,23 +227,53 @@ export const coreTranslations = {
 
   jukeboxPlayer: {
     nowPlaying: 'NOW PLAYING',
-    lyrics: '🎤 Lyrics',
-    showPlaylist: '📖 Show Playlist',
-    hidePlaylist: '📖 Hide Playlist',
-    exitFullscreen: '⤓ Exit Fullscreen',
-    stopJukebox: 'Stop Jukebox',
-    upNext: 'Up Next',
-    jukeboxMode: '🎵 Jukebox Mode',
-    sitBack: 'Sit back and enjoy the music!',
-    removeYoutubeVideo: 'Remove YouTube video',
+    lyrics: '🎤 가사',
+    showPlaylist: '📖 플레이리스트 보기',
+    hidePlaylist: '📖 플레이리스트 숨기기',
+    exitFullscreen: '⤓ 전체 화면 종료',
+    stopJukebox: '주크박스 정지',
+    upNext: '다음 곡',
+    jukeboxMode: '🎵 주크박스 모드',
+    sitBack: '편안하게 음악을 즐기세요!',
+    sitBackEnjoy: '편안하게 음악을 즐기세요!',
+    removeYoutubeVideo: 'YouTube 영상 제거',
     youtube: 'YouTube',
-    fullscreen: '⤢ Fullscreen',
-    singAlong: 'Sing-Along Mode: Show Lyrics',
-    invalidYoutubeUrl: 'Invalid YouTube URL',
-    youtubeBackground: 'Optional YouTube video as background',
-    activate: 'Set',
-    active: 'Active:',
-    remove: 'Remove',
-    noMatchingSongs: 'No songs match your filters. Try different settings or import some songs.'
+    fullscreen: '⤢ 전체 화면',
+    singAlong: '따라부르기 모드: 가사 표시',
+    singAlongMode: '따라부르기 모드',
+    invalidYoutubeUrl: '잘못된 YouTube URL',
+    youtubeBackground: 'YouTube 영상을 배경으로 설정 (선택)',
+    activate: '설정',
+    active: '활성:',
+    remove: '제거',
+    noMatchingSongs: '필터 조건에 맞는 곡이 없습니다. 다른 설정을 시도하거나 곡을 가져오세요.',
+    searchPlaceholder: '곡 검색...',
+    allGenres: '모든 장르',
+    allArtists: '모든 아티스트',
+    filterByGenre: '장르로 필터링',
+    filterByArtist: '아티스트로 필터링',
+    shuffle: '셔플',
+    noRepeat: '반복 없음',
+    repeatAll: '전체 반복',
+    repeatOne: '한 곡 반복',
+    songsFound: '{n}곡 발견',
+    songsAvailable: '사용 가능한 곡',
+    startJukebox: '주크박스 시작',
+    playlistSettings: '플레이리스트 설정',
+    customizeExperience: '청취 경험 사용자 지정',
+    youtubeVideo: 'YouTube 영상',
+    youtubeVideoDesc: '현재 곡의 배경으로 사용자 지정 YouTube 영상 재생',
+    youtubeUrlPlaceholder: '여기에 YouTube URL을 붙여넣기...',
+    set: '설정',
+    activeLabel: '활성 영상: {id}',
+    noSongsMatchFilters: '필터 조건에 맞는 곡이 없습니다. 다른 설정을 시도하거나 곡을 가져오세요.',
+    songsInPlaylist: '{n}곡이 플레이리스트에 있음',
+    youtubeRemove: 'YouTube'
+  },
+
+  errorBoundary: {
+    title: '문제가 발생했습니다',
+    description: '예상치 못한 오류가 발생했습니다. 페이지를 새로고침해 보세요.',
+    tryAgain: '다시 시도',
   },
 };

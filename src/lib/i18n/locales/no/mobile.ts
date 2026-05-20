@@ -33,7 +33,10 @@ export const mobileTranslations = {
     mobileQueue: 'Mobilkø',
     queueSongs: 'Kø: {n}/3 sanger',
     moreSongs: '+{n} flere sanger',
-    retry: 'Prøv igjen'
+    retry: 'Prøv igjen',
+    // Tournament spectator voting
+    tournamentVoteTitle: 'Hvem stemmer du på?',
+    tournamentVoteDesc: 'Velg din favoritt i denne kampen',
   },
 
   mobileClient: {
@@ -344,6 +347,11 @@ export const mobileTranslations = {
     download: '📥 Last ned',
     share: '📤 Del',
     shareTitle: 'Min karaoke-poengsum!',
-    shareText: 'Jeg fikk {n} poeng på «{title}»!'
+    shareText: 'Jeg fikk {n} poeng på «{title}»!',
+  },
+
+  mobileCompanion: {
+    getReady: 'Gjør deg klar!',
+    yourTurn: 'Din tur!',
   },
 };
