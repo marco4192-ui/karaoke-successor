@@ -77,7 +77,7 @@ export function PartyScreen({ onSelectMode }: PartyScreenProps) {
       titleKey: 'party.battleRoyaleTitle',
       descKey: 'party.battleRoyaleDesc',
       icon: '👑',
-      players: '2-8',
+      players: '2-24',
       color: 'from-red-600 to-pink-600',
       isNew: true,
     },
