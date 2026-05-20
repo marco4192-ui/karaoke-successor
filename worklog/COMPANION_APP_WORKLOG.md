@@ -1,7 +1,7 @@
 # Companion App — Fixes, Verbesserungen & Ideen
 
 > Erstellt: 2026-05-21
-> Status: **DONE**
+> Status: **ABGESCHLOSSEN** — Alle Fixes & Features implementiert (F16 WebSocket/SSE als Architektur-Upgrade dauerhaft deferred)
 
 ---
 
