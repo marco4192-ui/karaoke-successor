@@ -345,7 +345,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
           {currentView === 'songs' && (
             <MobileSongsView
               songSearch={data.songSearch} onSongSearchChange={data.setSongSearch}
-              songsLoading={data.songsLoading} filteredSongs={data.filteredSongs}
+              songsLoading={data.songsLoading} songsError={data.songsError} filteredSongs={data.filteredSongs}
               showSongOptions={data.showSongOptions} selectedGameMode={data.selectedGameMode}
               selectedPartner={data.selectedPartner} availablePartners={data.availablePartners}
               onShowSongOptions={data.setShowSongOptions} onSelectGameMode={data.setSelectedGameMode}
@@ -355,7 +355,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
           )}
           {currentView === 'queue' && <MobileQueueView queue={data.queue} slotsRemaining={data.slotsRemaining} queueError={data.queueError} onRemoveFromQueue={data.removeFromQueue} onNavigate={setCurrentView} clientId={clientId} />}
           {currentView === 'results' && <MobileResultsView gameResults={data.gameResults} onNavigate={setCurrentView} />}
-          {currentView === 'jukebox' && <MobileJukeboxView jukeboxWishlist={data.jukeboxWishlist} onNavigate={setCurrentView} />}
+          {currentView === 'jukebox' && <MobileJukeboxView jukeboxWishlist={data.jukeboxWishlist} onNavigate={setCurrentView} onRemoveFromWishlist={data.removeFromJukeboxWishlist} />}
           {currentView === 'remote' && <RemoteControlView clientId={clientId} onBack={() => setCurrentView('home')} />}
           {currentView === 'profile' && (
             <MobileProfileEditView

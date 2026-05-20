@@ -66,7 +66,9 @@ export const mobileTranslations = {
     tapToSing: 'Нажмите для пения',
     step1: 'Нажмите на значок замка рядом с URL',
     step2: 'Найдите "Микрофон" и выберите "Разрешить"',
-    step3: 'Перезагрузите страницу'
+    step3: 'Перезагрузите страницу',
+    volumeLevel: 'Уровень громкости микрофона',
+    currentPitch: 'Текущая высота тона'
   },
 
   mobileViews: {
@@ -109,6 +111,7 @@ export const mobileTranslations = {
     noSongsWishlist: 'Нет песен в списке желаний',
     songsWillAppear: 'Добавленные песни появятся здесь',
     addedByMobile: 'Добавлено {n}',
+    removeFromWishlist: 'Удалить из списка желаний',
     createProfile: 'Создайте свой профиль',
     profileSyncDesc: 'Ваш профиль синхронизируется с основным приложением',
     selectExisting: 'Выбрать существующий профиль',
@@ -126,6 +129,9 @@ export const mobileTranslations = {
     switchProfile: 'Сменить профиль',
     switchProfileDesc: 'Выберите профиль из основного приложения',
     select: 'Выбрать',
+    switchProfileConfirm: 'Сменить профиль?',
+    switchProfileWarning: 'Данные вашего текущего профиля будут потеряны.',
+    cancel: 'Отмена',
     orEdit: 'или редактировать',
     name: 'Имя',
     color: 'Цвет',
@@ -137,7 +143,9 @@ export const mobileTranslations = {
     partnerOptional: 'Партнёр (необязательно)',
     accuracy: 'Точность',
     saveScoreCardSoon: 'Карточка сохранена в ваши фото! (Функция скоро появится)',
-    addSongsToWishlistBtn: '+ Добавить песни в список желаний'
+    addSongsToWishlistBtn: '+ Добавить песни в список желаний',
+    shareHashtag: '#KaraokeZERO',
+    copyFailed: 'Не удалось скопировать в буфер обмена.'
   },
 
   mobileNav: {
@@ -195,7 +203,10 @@ export const mobileTranslations = {
     switching: 'Смена...',
     getReady: 'Приготовьтесь...',
     roundLabel: 'Раунд {n}:',
-    pts: 'очков'
+    pts: 'очков',
+    endSongEarlyConfirm: 'Действительно завершить песню досрочно?',
+    confirm: 'Подтвердить',
+    cancel: 'Отмена'
   },
 
   remoteControl: {

@@ -67,7 +67,9 @@ export const mobileTranslations = {
     tapToSing: 'Appuyez pour chanter',
     step1: 'Appuyez sur l\'icône cadenas à côté de l\'URL',
     step2: 'Trouvez "Microphone" et sélectionnez "Autoriser"',
-    step3: 'Rechargez la page'
+    step3: 'Rechargez la page',
+    volumeLevel: 'Niveau de volume du microphone',
+    currentPitch: 'Hauteur de ton actuelle'
   },
 
   mobileViews: {
@@ -110,6 +112,7 @@ export const mobileTranslations = {
     noSongsWishlist: 'Pas de chansons dans la liste de souhaits',
     songsWillAppear: 'Les chansons que vous ajoutez apparaîtront ici',
     addedByMobile: 'Ajouté par {n}',
+    removeFromWishlist: 'Retirer de la liste de souhaits',
     createProfile: 'Créez votre Profil',
     profileSyncDesc: 'Votre profil sera synchronisé avec l\'app principale',
     selectExisting: 'Sélectionner un profil existant',
@@ -127,6 +130,9 @@ export const mobileTranslations = {
     switchProfile: 'Changer de profil',
     switchProfileDesc: 'Sélectionnez un profil de l\'app principale',
     select: 'Sélectionner',
+    switchProfileConfirm: 'Changer de profil ?',
+    switchProfileWarning: 'Les données de votre profil actuel seront perdues.',
+    cancel: 'Annuler',
     orEdit: 'ou modifier',
     name: 'Nom',
     color: 'Couleur',
@@ -138,7 +144,9 @@ export const mobileTranslations = {
     partnerOptional: 'Partenaire (facultatif)',
     accuracy: 'Précision',
     saveScoreCardSoon: 'Carte de score sauvegardée dans vos photos ! (Fonctionnalité à venir)',
-    addSongsToWishlistBtn: '+ Ajouter des Chansons à la Liste'
+    addSongsToWishlistBtn: '+ Ajouter des Chansons à la Liste',
+    shareHashtag: '#KaraokeZERO',
+    copyFailed: 'Échec de la copie dans le presse-papiers.'
   },
 
   mobileNav: {
@@ -196,7 +204,10 @@ export const mobileTranslations = {
     switching: 'Changement...',
     getReady: 'Préparez-vous...',
     roundLabel: 'Tour {n} :',
-    pts: 'pts'
+    pts: 'pts',
+    endSongEarlyConfirm: 'Vraiment terminer la chanson en avance ?',
+    confirm: 'Confirmer',
+    cancel: 'Annuler'
   },
 
   remoteControl: {

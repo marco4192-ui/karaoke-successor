@@ -295,7 +295,8 @@ export const settingsTranslations = {
     step1: 'Scan QR-koden eller åbn URL\'en på din telefon',
     step2: 'Opret en profil på mobil-appen',
     step3: 'Din telefon bliver en trådløs mikrofon',
-    step4: 'Syng trådløst fra hvor som helst i rummet!'
+    step4: 'Syng trådløst fra hvor som helst i rummet!',
+    copyFailed: 'Kunne ikke kopiere URL til udklipsholder'
   },
 
   settingsWebcam: {
@@ -398,6 +399,9 @@ export const settingsTranslations = {
     kickConfirm: 'Smid "{name}" ud? De vil blive afbrudt og deres kø ryddet.',
     kickSuccess: '"{name}" er blevet smidt ud',
     kickFailed: 'Kunne ikke smide companion ud',
+    connectionError: 'Forbindelsesfejl. Tjek dit netværk.',
+    kickReally: 'Smide ud for alvor?',
+    confirm: 'Bekræft',
     assignFailed: 'Kunne ikke tildele profil',
     title: 'Forbundne companions',
     loading: 'Indlæser companions...',

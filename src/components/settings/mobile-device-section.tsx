@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -21,7 +21,16 @@ interface ConnectedClient {
 export function MobileDeviceMicrophoneSection() {
   const [localIP, setLocalIP] = useState<string>('');
   const [connectedClients, setConnectedClients] = useState<ConnectedClient[]>([]);
+  const [copyError, setCopyError] = useState(false);
+  const copyErrorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { t } = useTranslation();
+
+  const clearCopyError = useCallback(() => {
+    setCopyError(false);
+    if (copyErrorTimer.current) clearTimeout(copyErrorTimer.current);
+  }, []);
+
+  useEffect(() => () => { if (copyErrorTimer.current) clearTimeout(copyErrorTimer.current); }, []);
   
   // Get local IP address using the shared detection function
   useEffect(() => {
@@ -100,10 +109,12 @@ export function MobileDeviceMicrophoneSection() {
                   variant="outline"
                   size="sm"
                   onClick={async () => {
+                    clearCopyError();
                     try {
                       await navigator.clipboard.writeText(mobileUrl);
                     } catch {
-                      // Clipboard API may fail in non-secure contexts
+                      setCopyError(true);
+                      copyErrorTimer.current = setTimeout(clearCopyError, 3000);
                     }
                   }}
                   className="border-white/20 text-white hover:bg-white/10"
@@ -111,6 +122,11 @@ export function MobileDeviceMicrophoneSection() {
                   {t('settingsMobileDevice.copy')}
                 </Button>
               </div>
+              {copyError && (
+                <p className="text-xs text-red-400 mt-2">
+                  {t('settingsMobileDevice.copyFailed')}
+                </p>
+              )}
               {localIP && (
                 <p className="text-xs text-green-400 mt-2">
                   {t('settingsMobileDevice.ipDetected')} {localIP}

@@ -66,7 +66,9 @@ export const mobileTranslations = {
     tapToSing: '点击演唱',
     step1: '点击URL旁边的锁图标',
     step2: '找到"麦克风"并选择"允许"',
-    step3: '刷新页面'
+    step3: '刷新页面',
+    volumeLevel: '麦克风音量等级',
+    currentPitch: '当前音高'
   },
 
   mobileViews: {
@@ -109,6 +111,7 @@ export const mobileTranslations = {
     noSongsWishlist: '心愿单中没有歌曲',
     songsWillAppear: '你添加的歌曲将显示在这里',
     addedByMobile: '由 {n} 添加',
+    removeFromWishlist: '从心愿单中移除',
     createProfile: '创建你的档案',
     profileSyncDesc: '你的档案将与主应用同步',
     selectExisting: '选择已有档案',
@@ -126,6 +129,9 @@ export const mobileTranslations = {
     switchProfile: '切换档案',
     switchProfileDesc: '从主应用选择一个档案',
     select: '选择',
+    switchProfileConfirm: '切换个人资料？',
+    switchProfileWarning: '您当前的个人信息数据将会丢失。',
+    cancel: '取消',
     orEdit: '或编辑',
     name: '名称',
     color: '颜色',
@@ -137,7 +143,9 @@ export const mobileTranslations = {
     partnerOptional: '搭档（可选）',
     accuracy: '准确度',
     saveScoreCardSoon: '分数卡片已保存到你的相册！（功能即将推出）',
-    addSongsToWishlistBtn: '+ 添加歌曲到心愿单'
+    addSongsToWishlistBtn: '+ 添加歌曲到心愿单',
+    shareHashtag: '#KaraokeZERO',
+    copyFailed: '复制到剪贴板失败。'
   },
 
   mobileNav: {
@@ -195,7 +203,10 @@ export const mobileTranslations = {
     switching: '轮换中...',
     getReady: '准备...',
     roundLabel: '第{n}轮:',
-    pts: '分'
+    pts: '分',
+    endSongEarlyConfirm: '真的要提前结束歌曲吗？',
+    confirm: '确认',
+    cancel: '取消'
   },
 
   remoteControl: {

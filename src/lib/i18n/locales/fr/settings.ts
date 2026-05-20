@@ -297,7 +297,8 @@ export const settingsTranslations = {
     step1: 'Scannez le QR code ou ouvrez l\'URL sur votre téléphone',
     step2: 'Créez un profil sur l\'app mobile',
     step3: 'Votre téléphone devient un microphone sans fil',
-    step4: 'Chantez sans fil depuis n\'importe où dans la pièce !'
+    step4: 'Chantez sans fil depuis n\'importe où dans la pièce !',
+    copyFailed: 'Impossible de copier l\'URL dans le presse-papiers'
   },
 
   settingsWebcam: {
@@ -400,6 +401,9 @@ export const settingsTranslations = {
     kickConfirm: 'Expulser "{name}" ? Il sera déconnecté et sa file sera vidée.',
     kickSuccess: '"{name}" a été expulsé',
     kickFailed: 'Échec de l\'expulsion du compagnon',
+    connectionError: 'Erreur de connexion. Vérifiez votre réseau.',
+    kickReally: 'Expulser vraiment ?',
+    confirm: 'Confirmer',
     assignFailed: 'Échec de l\'assignation du personnage',
     title: 'Compagnons Connectés',
     loading: 'Chargement des compagnons...',

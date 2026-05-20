@@ -297,7 +297,8 @@ export const settingsTranslations = {
     step1: 'Zeskanuj kod QR lub otwórz adres URL w telefonie',
     step2: 'Utwórz profil w aplikacji mobilnej',
     step3: 'Twój telefon staje się bezprzewodowym mikrofonem',
-    step4: 'Śpiewaj bezprzewodowo z dowolnego miejsca w pokoju!'
+    step4: 'Śpiewaj bezprzewodowo z dowolnego miejsca w pokoju!',
+    copyFailed: 'Nie udało się skopiować URL do schowka'
   },
 
   settingsWebcam: {
@@ -400,6 +401,9 @@ export const settingsTranslations = {
     kickConfirm: 'Wyrzucić "{name}"? Zostanie odłączony, a jego kolejka wyczyszczona.',
     kickSuccess: '"{name}" został wyrzucony',
     kickFailed: 'Nie udało się wyrzucić kompana',
+    connectionError: 'Błąd połączenia. Sprawdź sieć.',
+    kickReally: 'Na pewno wyrzucić?',
+    confirm: 'Potwierdź',
     assignFailed: 'Nie udało się przypisać profilu',
     title: 'Podłączone kompany',
     loading: 'Ładowanie kompanów...',

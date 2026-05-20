@@ -64,6 +64,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
   const [songs, setSongs] = useState<MobileSong[]>([]);
   const [songSearch, setSongSearch] = useState('');
   const [songsLoading, setSongsLoading] = useState(true);
+  const [songsError, setSongsError] = useState<string | null>(null);
 
   // Queue state
   const [queue, setQueue] = useState<QueueItem[]>([]);
@@ -93,6 +94,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
   // ---- Song library ----
   const loadSongs = useCallback(async () => {
     setSongsLoading(true);
+    setSongsError(null);
     try {
       const response = await fetch('/api/songs');
       if (response.ok) {
@@ -101,11 +103,13 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
       } else {
         // eslint-disable-next-line no-console
         console.error('[MobileClient] Failed to load songs, status:', response.status);
+        setSongsError('Failed to load songs. Please try again.');
         setSongs([]);
       }
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('[MobileClient] Error loading songs:', error);
+      setSongsError('Network error while loading songs. Check your connection.');
       setSongs([]);
     }
     setSongsLoading(false);
@@ -282,7 +286,10 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
         }),
       });
       if (!response.ok) return;
-      setJukeboxWishlist(prev => [...prev, { songId: song.id, songTitle: song.title, songArtist: song.artist, addedBy: profile.name }]);
+      const data = await response.json();
+      if (data.success && data.wishlistItem) {
+        setJukeboxWishlist(prev => [...prev, data.wishlistItem]);
+      }
     } catch (error) {
       // eslint-disable-next-line no-console
       console.debug('[useMobileData] addToJukeboxWishlist failed:', error);
@@ -303,6 +310,25 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
     }
   }, []);
 
+  const removeFromJukeboxWishlist = useCallback(async (itemId: string) => {
+    if (!clientId) return;
+    try {
+      const response = await fetch('/api/mobile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'jukebox_wishlist_remove', clientId, payload: { itemId } }),
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.success) {
+        setJukeboxWishlist(prev => prev.filter(item => item.id !== itemId));
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.debug('[useMobileData] removeFromJukeboxWishlist failed:', error);
+    }
+  }, [clientId]);
+
   // ---- Helpers ----
   const formatDuration = (ms: number) => {
     const minutes = Math.floor(ms / 60000);
@@ -316,6 +342,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
     songSearch,
     setSongSearch,
     songsLoading,
+    songsError,
     filteredSongs,
     loadSongs,
     // Queue
@@ -340,6 +367,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
     // Jukebox
     jukeboxWishlist,
     addToJukeboxWishlist,
+    removeFromJukeboxWishlist,
     loadJukeboxWishlist,
     // Helpers
     formatDuration,

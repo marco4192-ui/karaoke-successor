@@ -67,7 +67,9 @@ export const mobileTranslations = {
     tapToSing: 'Toque para cantar',
     step1: 'Toque no ícone de cadeado ao lado do URL',
     step2: 'Encontre "Microfone" e selecione "Permitir"',
-    step3: 'Recarregue a página'
+    step3: 'Recarregue a página',
+    volumeLevel: 'Nível de volume do microfone',
+    currentPitch: 'Tom atual'
   },
 
   mobileViews: {
@@ -110,6 +112,7 @@ export const mobileTranslations = {
     noSongsWishlist: 'Nenhuma música na lista de desejos',
     songsWillAppear: 'As músicas que você adicionar aparecerão aqui',
     addedByMobile: 'Adicionado por {n}',
+    removeFromWishlist: 'Remover da lista de desejos',
     createProfile: 'Criar Seu Perfil',
     profileSyncDesc: 'Seu perfil será sincronizado com o aplicativo principal',
     selectExisting: 'Selecionar perfil existente',
@@ -127,6 +130,9 @@ export const mobileTranslations = {
     switchProfile: 'Trocar perfil',
     switchProfileDesc: 'Selecione um perfil do aplicativo principal',
     select: 'Selecionar',
+    switchProfileConfirm: 'Trocar de perfil?',
+    switchProfileWarning: 'Os dados do seu perfil atual serão perdidos.',
+    cancel: 'Cancelar',
     orEdit: 'ou editar',
     name: 'Nome',
     color: 'Cor',
@@ -138,7 +144,9 @@ export const mobileTranslations = {
     partnerOptional: 'Parceiro (opcional)',
     accuracy: 'Precisão',
     saveScoreCardSoon: 'Cartão de pontuação salvo em suas fotos! (Recurso em breve)',
-    addSongsToWishlistBtn: '+ Adicionar Músicas à Lista de Desejos'
+    addSongsToWishlistBtn: '+ Adicionar Músicas à Lista de Desejos',
+    shareHashtag: '#KaraokeZERO',
+    copyFailed: 'Falha ao copiar para a área de transferência.'
   },
 
   mobileNav: {
@@ -162,6 +170,9 @@ export const mobileTranslations = {
     getReady: 'Prepare-se...',
     roundLabel: 'Rodada {n}:',
     pts: 'pts',
+    endSongEarlyConfirm: 'Realmente finalizar a música antecipadamente?',
+    confirm: 'Confirmar',
+    cancel: 'Cancelar',
     title: '📱 Companion Sing-A-Long',
     subtitle: 'Seu telefone acende aleatoriamente — é sua vez de cantar!',
     back: '← Voltar',

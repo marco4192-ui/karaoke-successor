@@ -66,7 +66,9 @@ export const mobileTranslations = {
     tapToSing: '탭하여 부르기',
     step1: 'URL 옆의 자물쇄 아이콘을 탭하세요',
     step2: '"마이크"를 찾아 "허용"을 선택하세요',
-    step3: '페이지 새로고침'
+    step3: '페이지 새로고침',
+    volumeLevel: '마이크 음량 수준',
+    currentPitch: '현재 음높이'
   },
 
   mobileViews: {
@@ -109,6 +111,7 @@ export const mobileTranslations = {
     noSongsWishlist: '위시리스트에 곡이 없습니다',
     songsWillAppear: '추가한 곡이 여기에 표시됩니다',
     addedByMobile: '{n}님이 추가',
+    removeFromWishlist: '위시리스트에서 제거',
     createProfile: '프로필 만들기',
     profileSyncDesc: '프로필이 메인 앱과 동기화됩니다',
     selectExisting: '기존 프로필 선택',
@@ -126,6 +129,9 @@ export const mobileTranslations = {
     switchProfile: '프로필 전환',
     switchProfileDesc: '메인 앱에서 프로필을 선택하세요',
     select: '선택',
+    switchProfileConfirm: '프로필을 전환하시겠습니까?',
+    switchProfileWarning: '현재 프로필 데이터가 손실됩니다.',
+    cancel: '취소',
     orEdit: '또는 편집',
     name: '이름',
     color: '색상',
@@ -137,7 +143,9 @@ export const mobileTranslations = {
     partnerOptional: '파트너 (선택)',
     accuracy: '정확도',
     saveScoreCardSoon: '점수 카드가 사진에 저장됩니다! (기능 출시 예정)',
-    addSongsToWishlistBtn: '+ 위시리스트에 곡 추가'
+    addSongsToWishlistBtn: '+ 위시리스트에 곡 추가',
+    shareHashtag: '#KaraokeZERO',
+    copyFailed: '클립보드에 복사하지 못했습니다.'
   },
 
   mobileNav: {
@@ -195,7 +203,10 @@ export const mobileTranslations = {
     switching: '교체 중...',
     getReady: '준비...',
     roundLabel: '라운드 {n}:',
-    pts: '점'
+    pts: '점',
+    endSongEarlyConfirm: '정말로 곡을 조기 종료하시겠습니까?',
+    confirm: '확인',
+    cancel: '취소'
   },
 
   remoteControl: {

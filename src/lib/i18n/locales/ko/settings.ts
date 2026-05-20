@@ -292,7 +292,8 @@ export const settingsTranslations = {
     step1: 'QR 코드를 스캔하거나 휴대폰에서 URL 열기',
     step2: '모바일 앱에서 프로필 만들기',
     step3: '휴대폰이 무선 마이크가 됩니다',
-    step4: '방 안 어디서나 무선으로 노래하세요!'
+    step4: '방 안 어디서나 무선으로 노래하세요!',
+    copyFailed: 'URL을 클립보드에 복사하지 못했습니다'
   },
 
   settingsWebcam: {
@@ -395,6 +396,9 @@ export const settingsTranslations = {
     kickConfirm: '"{name}"을(를) 추방하시겠습니까? 연결이 해제되고 대기열이 지워집니다.',
     kickSuccess: '"{name}"이(가) 추방되었습니다',
     kickFailed: '컴패니언 추방 실패',
+    connectionError: '연결 오류. 네트워크를 확인하세요.',
+    kickReally: '정말 추방하시겠습니까?',
+    confirm: '확인',
     assignFailed: '캐릭터 할당 실패',
     title: '연결된 컴패니언',
     loading: '컴패니언을 불러오는 중...',

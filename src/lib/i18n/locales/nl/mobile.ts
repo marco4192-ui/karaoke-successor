@@ -67,7 +67,9 @@ export const mobileTranslations = {
     tapToSing: 'Tik om te zingen',
     step1: 'Tik op het sloticoon naast de URL',
     step2: 'Zoek "Microfoon" en selecteer "Toestaan"',
-    step3: 'Herlaad de pagina'
+    step3: 'Herlaad de pagina',
+    volumeLevel: 'Microfoon volumeniveau',
+    currentPitch: 'Huidige toonhoogte'
   },
 
   mobileViews: {
@@ -110,6 +112,7 @@ export const mobileTranslations = {
     noSongsWishlist: 'Geen nummers in verlanglijstje',
     songsWillAppear: 'Nummers die je toevoegt verschijnen hier',
     addedByMobile: 'Toegevoegd door {n}',
+    removeFromWishlist: 'Verwijderen van verlanglijstje',
     createProfile: 'Maak je profiel aan',
     profileSyncDesc: 'Je profiel wordt gesynchroniseerd met de hoofdapp',
     selectExisting: 'Bestaand profiel selecteren',
@@ -127,6 +130,9 @@ export const mobileTranslations = {
     switchProfile: 'Profiel wisselen',
     switchProfileDesc: 'Selecteer een profiel uit de hoofdapp',
     select: 'Selecteren',
+    switchProfileConfirm: 'Profiel wisselen?',
+    switchProfileWarning: 'Je huidige profielgegevens gaan verloren.',
+    cancel: 'Annuleren',
     orEdit: 'of bewerken',
     name: 'Naam',
     color: 'Kleur',
@@ -138,7 +144,9 @@ export const mobileTranslations = {
     partnerOptional: 'Partner (optioneel)',
     accuracy: 'Nauwkeurigheid',
     saveScoreCardSoon: 'Scorekaart opgeslagen in je foto\'s! (Functie binnenkort beschikbaar)',
-    addSongsToWishlistBtn: '+ Nummers toevoegen aan verlanglijstje'
+    addSongsToWishlistBtn: '+ Nummers toevoegen aan verlanglijstje',
+    shareHashtag: '#KaraokeZERO',
+    copyFailed: 'Kopiëren naar klembord mislukt.'
   },
 
   mobileNav: {
@@ -196,7 +204,10 @@ export const mobileTranslations = {
     switching: 'Wisselen...',
     getReady: 'Maak je klaar...',
     roundLabel: 'Ronde {n}:',
-    pts: 'pts'
+    pts: 'pts',
+    endSongEarlyConfirm: 'Nummer echt vroegtijdig beëindigen?',
+    confirm: 'Bevestigen',
+    cancel: 'Annuleren'
   },
 
   remoteControl: {

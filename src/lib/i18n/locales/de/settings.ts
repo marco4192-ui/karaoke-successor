@@ -296,7 +296,8 @@ export const settingsTranslations = {
     step1: 'Scanne den QR-Code oder öffne die URL auf deinem Handy',
     step2: 'Erstelle ein Profil in der Companion-App',
     step3: 'Dein Handy wird zum kabellosen Mikrofon',
-    step4: 'Singe kabellos von überall im Raum!'
+    step4: 'Singe kabellos von überall im Raum!',
+    copyFailed: 'URL konnte nicht kopiert werden'
   },
 
   settingsWebcam: {
@@ -399,6 +400,9 @@ export const settingsTranslations = {
     kickConfirm: '"{name}" kicken? Die Verbindung wird getrennt und die Warteschlange geleert.',
     kickSuccess: '"{name}" wurde gekickt',
     kickFailed: 'Kicken fehlgeschlagen',
+    connectionError: 'Verbindungsfehler. Bitte Netzwerk prüfen.',
+    kickReally: 'Wirklich kicken?',
+    confirm: 'Bestätigen',
     assignFailed: 'Charakter-Zuweisung fehlgeschlagen',
     title: 'Verbundene Companions',
     loading: 'Lade Companions...',

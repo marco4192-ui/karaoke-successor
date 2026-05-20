@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Song } from '@/types/game';
 
 /**
@@ -18,6 +18,20 @@ export function useMobileGameSync(
   const gameModeRef = useRef(gameMode);
   const songEndedRef = useRef(songEnded);
   const tournamentMatchIdRef = useRef(tournamentMatchId);
+  const [lastSyncError, setLastSyncError] = useState<string | null>(null);
+  const syncErrorTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const clearSyncError = (err: string) => {
+    setLastSyncError(err);
+    if (syncErrorTimerRef.current) clearTimeout(syncErrorTimerRef.current);
+    syncErrorTimerRef.current = setTimeout(() => setLastSyncError(null), 5000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (syncErrorTimerRef.current) clearTimeout(syncErrorTimerRef.current);
+    };
+  }, []);
   useEffect(() => {
     isPlayingRef.current = isPlaying;
     gameModeRef.current = gameMode;
@@ -45,9 +59,15 @@ export function useMobileGameSync(
             },
           }),
         });
-        if (!res.ok) return;
+        if (!res.ok) {
+          clearSyncError(`Game state sync failed (${res.status})`);
+          return;
+        }
+        setLastSyncError(null);
       } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Network error';
         console.warn('Game state sync failed:', err);
+        clearSyncError(`Game state sync failed: ${msg}`);
       }
     };
 
@@ -59,4 +79,6 @@ export function useMobileGameSync(
 
     return () => clearInterval(syncInterval);
   }, [song]);
+
+  return { lastSyncError };
 }

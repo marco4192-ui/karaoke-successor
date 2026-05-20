@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,6 +46,28 @@ export function MobileSongsView({
   const { t } = useTranslation();
   const songListRef = useRef<HTMLDivElement>(null);
 
+  // Debounced search: local state for immediate UI, ref timer for delayed propagation
+  const [searchInput, setSearchInput] = useState(songSearch);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync external songSearch into local state when it changes externally
+  useEffect(() => {
+    setSearchInput(songSearch);
+  }, [songSearch]);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchInput(value);
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(() => {
+      onSongSearchChange(value);
+    }, 300);
+  }, [onSongSearchChange]);
+
+  // Clear debounce timer on unmount
+  useEffect(() => {
+    return () => { if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current); };
+  }, []);
+
   // Scroll song list to top when search query changes
   useEffect(() => {
     songListRef.current?.scrollTo(0, 0);
@@ -58,8 +80,8 @@ export function MobileSongsView({
         <Input
           id="song-search-modal"
           name="song-search-modal"
-          value={songSearch}
-          onChange={(e) => onSongSearchChange(e.target.value)}
+          value={searchInput}
+          onChange={(e) => handleSearchChange(e.target.value)}
           placeholder={t('mobileViews.searchPlaceholder')}
           className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
         />

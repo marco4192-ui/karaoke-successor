@@ -72,6 +72,30 @@ export function CompanionGameView({
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const currentPlayer = playersSnapshot[currentPlayerIndex];
 
+  // ── End Song Early confirmation ──
+  const [pendingEndSong, setPendingEndSong] = useState(false);
+  const pendingEndSongTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const requestEndSong = useCallback(() => {
+    setPendingEndSong(true);
+    if (pendingEndSongTimerRef.current) clearTimeout(pendingEndSongTimerRef.current);
+    pendingEndSongTimerRef.current = setTimeout(() => {
+      setPendingEndSong(false);
+      pendingEndSongTimerRef.current = null;
+    }, 3000);
+  }, []);
+
+  const cancelEndSong = useCallback(() => {
+    if (pendingEndSongTimerRef.current) clearTimeout(pendingEndSongTimerRef.current);
+    setPendingEndSong(false);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (pendingEndSongTimerRef.current) clearTimeout(pendingEndSongTimerRef.current);
+    };
+  }, []);
+
   // ── Switch timer ──
   const [initialTurnDuration] = useState(() => randomTurnDuration(safeSettings));
   const timeUntilSwitchRef = useRef(initialTurnDuration);
@@ -347,6 +371,17 @@ export function CompanionGameView({
     setCompanionSeriesHistory([...companionSeriesHistory, round]);
   }, [song, companionSeriesHistory, setCompanionSeriesHistory]);
 
+  // ── Confirm end song early (after recordRound is defined) ──
+  const confirmEndSong = useCallback(() => {
+    if (pendingEndSongTimerRef.current) clearTimeout(pendingEndSongTimerRef.current);
+    setPendingEndSong(false);
+    if (audioRef.current) audioRef.current.pause();
+    setIsPlaying(false);
+    recordRound();
+    setPlayersSnapshot([...playersRef.current]);
+    setPhase('song-results');
+  }, [recordRound]);
+
   // ── Continue series: pick next song ──
   const handleContinue = useCallback(() => {
     const resetPlayers = playersRef.current.map(p => ({
@@ -549,10 +584,26 @@ export function CompanionGameView({
             </CardContent>
           </Card>
 
-          <Button onClick={() => { if (audioRef.current) audioRef.current.pause(); setIsPlaying(false); recordRound(); setPlayersSnapshot([...playersRef.current]); setPhase('song-results'); }}
-            variant="outline" className="w-full mt-3 border-white/20 text-white/60 hover:text-white">
-            {t('companion.endSongEarly')}
-          </Button>
+          {pendingEndSong ? (
+            <div className="mt-3 p-3 rounded-lg bg-red-500/15 border border-red-500/30">
+              <div className="text-sm text-center text-red-300 mb-2">{t('companion.endSongEarlyConfirm')}</div>
+              <div className="flex gap-2">
+                <Button onClick={confirmEndSong}
+                  className="flex-1 bg-red-500 hover:bg-red-400 text-white">
+                  {t('companion.confirm')}
+                </Button>
+                <Button onClick={cancelEndSong}
+                  variant="outline" className="flex-1 border-white/20 text-white/60 hover:text-white">
+                  {t('companion.cancel')}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button onClick={requestEndSong}
+              variant="outline" className="w-full mt-3 border-white/20 text-white/60 hover:text-white">
+              {t('companion.endSongEarly')}
+            </Button>
+          )}
         </>
       )}
 

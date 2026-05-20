@@ -262,7 +262,8 @@ export const settingsTranslations = {
     step1: 'Skanna QR-koden eller öppna URL:en på din telefon',
     step2: 'Skapa en profil i mobilappen',
     step3: 'Din telefon blir en trådlös mikrofon',
-    step4: 'Sjung trådlöst var som helst i rummet!'
+    step4: 'Sjung trådlöst var som helst i rummet!',
+    copyFailed: 'Kunde inte kopiera URL till urklipp'
   },
 
   settingsWebcam: {
@@ -356,6 +357,9 @@ export const settingsTranslations = {
     kickConfirm: 'Sparka ut "{name}"? De kommer att kopplas ifrån och deras kö kommer att rensas.',
     kickSuccess: '"{name}" har sparkats ut',
     kickFailed: 'Misslyckades att sparka Companion',
+    connectionError: 'Anslutningsfel. Kontrollera nätverket.',
+    kickReally: 'Sparka ut verkligen?',
+    confirm: 'Bekräfta',
     assignFailed: 'Misslyckades att tilldela karaktär',
     title: 'Anslutna Companions',
     loading: 'Laddar Companions...',

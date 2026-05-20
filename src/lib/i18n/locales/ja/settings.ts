@@ -282,7 +282,8 @@ export const settingsTranslations = {
     step1: 'QRコードをスキャンするか、電話でURLを開く',
     step2: 'モバイルアプリでプロファイルを作成',
     step3: '電話がワイヤレスマイクになります',
-    step4: '部屋のどこからでもワイヤレスで歌いましょう!'
+    step4: '部屋のどこからでもワイヤレスで歌いましょう!',
+    copyFailed: 'URLをクリップボードにコピーできませんでした'
   },
 
   settingsWebcam: {
@@ -385,6 +386,9 @@ export const settingsTranslations = {
     kickConfirm: '"{name}"をキックしますか？彼らは切断され、キューがクリアされます。',
     kickSuccess: '"{name}"がキックされました',
     kickFailed: 'コンパニオンをキックできませんでした',
+    connectionError: '接続エラー。ネットワークを確認してください。',
+    kickReally: '本当にキックしますか？',
+    confirm: '確認',
     assignFailed: 'キャラクターの割り当てに失敗しました',
     title: '接続されたコンパニオン',
     loading: 'コンパニオンを読み込み中...',

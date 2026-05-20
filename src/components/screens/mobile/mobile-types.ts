@@ -15,13 +15,15 @@ export interface MobileSong {
   coverImage?: string;
 }
 
+export type QueueItemStatus = 'pending' | 'playing' | 'completed';
+
 export interface QueueItem {
   id: string;
   songId: string;
   songTitle: string;
   songArtist: string;
   addedBy: string;
-  status: string;
+  status: QueueItemStatus;
   companionCode?: string;
   partnerId?: string;
   partnerName?: string;
@@ -29,6 +31,7 @@ export interface QueueItem {
 }
 
 export interface JukeboxWishlistItem {
+  id: string;
   songId: string;
   songTitle: string;
   songArtist: string;

@@ -297,7 +297,8 @@ export const settingsTranslations = {
     step1: 'Scansiona il QR code o apri l\'URL sul tuo telefono',
     step2: 'Crea un profilo nell\'app mobile',
     step3: 'Il tuo telefono diventa un microfono wireless',
-    step4: 'Canta wireless da qualsiasi punto della stanza!'
+    step4: 'Canta wireless da qualsiasi punto della stanza!',
+    copyFailed: 'Impossibile copiare l\'URL negli appunti'
   },
 
   settingsWebcam: {
@@ -400,6 +401,9 @@ export const settingsTranslations = {
     kickConfirm: 'Espelli "{name}"? Verrà disconnesso e la sua coda verrà cancellata.',
     kickSuccess: '"{name}" è stato espulso',
     kickFailed: 'Impossibile espellere il compagno',
+    connectionError: 'Errore di connessione. Controlla la rete.',
+    kickReally: 'Espellere davvero?',
+    confirm: 'Conferma',
     assignFailed: 'Impossibile assegnare il personaggio',
     title: 'Compagni Connessi',
     loading: 'Caricamento compagni...',

@@ -104,7 +104,14 @@ export function MobileMicView({ gameState, clientId, currentPitch, isListening, 
         <CardContent className="py-8">
           <div className="flex flex-col items-center">
             {/* Volume Indicator */}
-            <div className="w-full h-4 bg-white/10 rounded-full overflow-hidden mb-6">
+            <div
+              role="progressbar"
+              aria-label={t('mobileMicView.volumeLevel')}
+              aria-valuenow={Math.round(Math.min(100, Math.max(0, currentPitch.volume * 100)))}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              className="w-full h-4 bg-white/10 rounded-full overflow-hidden mb-6"
+            >
               <div 
                 className="h-full bg-gradient-to-r from-green-400 to-cyan-400 transition-all duration-75"
                 style={{ width: `${Math.min(100, Math.max(0, currentPitch.volume * 100))}%` }}
@@ -113,7 +120,7 @@ export function MobileMicView({ gameState, clientId, currentPitch, isListening, 
             
             {/* Pitch Display */}
             {currentPitch.note !== null && (
-              <div className="text-center mb-6">
+              <div aria-label={t('mobileMicView.currentPitch')} aria-live="polite" className="text-center mb-6">
                 <div className="text-6xl font-bold text-cyan-400">
                   {midiToNoteName(Math.round(currentPitch.note))}
                 </div>

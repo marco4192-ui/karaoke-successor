@@ -33,7 +33,7 @@ export function MobileResultsView({ gameResults, onNavigate }: ResultsViewProps)
                   <p className="text-xs text-white/40">{t('mobileViews.score')}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-purple-400">{(gameResults.accuracy ?? 0).toFixed(1)}%</p>
+                  <p className="text-3xl font-bold text-purple-400">{(gameResults.accuracy != null && !isNaN(gameResults.accuracy) ? gameResults.accuracy : 0).toFixed(1)}%</p>
                   <p className="text-xs text-white/40">{t('mobileViews.accuracy')}</p>
                 </div>
                 <div className="text-center">
@@ -60,7 +60,7 @@ export function MobileResultsView({ gameResults, onNavigate }: ResultsViewProps)
             </Button>
             <Button 
               onClick={async () => {
-                const text = `🎤 I scored ${gameResults.score.toLocaleString()} points on "${gameResults.songTitle}" by ${gameResults.songArtist}! 🎵\n\n#KaraokeZERO`;
+                const text = `🎤 I scored ${gameResults.score.toLocaleString()} points on "${gameResults.songTitle}" by ${gameResults.songArtist}! 🎵\n\n${t('mobileViews.shareHashtag')}`;
                 if (navigator.share) {
                   navigator.share({ text }).catch(() => {});
                 } else {
@@ -68,7 +68,7 @@ export function MobileResultsView({ gameResults, onNavigate }: ResultsViewProps)
                     await navigator.clipboard.writeText(text);
                     safeAlert(t('mobileViews.scoreCopied'));
                   } catch {
-                    safeAlert(t('mobileViews.scoreCopied'));
+                    safeAlert(t('mobileViews.copyFailed'));
                   }
                 }
               }}

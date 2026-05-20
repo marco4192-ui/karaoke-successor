@@ -67,7 +67,9 @@ export const mobileTranslations = {
     tapToSing: 'Tryck för att sjunga',
     step1: 'Tryck på låsikonen bredvid URL:en',
     step2: 'Hitta "Mikrofon" och välj "Tillåt"',
-    step3: 'Ladda om sidan'
+    step3: 'Ladda om sidan',
+    volumeLevel: 'Mikrofonvolymnivå',
+    currentPitch: 'Aktuell tonhöjd'
   },
 
   mobileViews: {
@@ -110,6 +112,7 @@ export const mobileTranslations = {
     noSongsWishlist: 'Inga låtar i önskelistan',
     songsWillAppear: 'Låtar du lägger till visas här',
     addedByMobile: 'Tillagd av {n}',
+    removeFromWishlist: 'Ta bort från önskelistan',
     createProfile: 'Skapa Din Profil',
     profileSyncDesc: 'Din profil synkroniseras med huvudappen',
     selectExisting: 'Välj befintlig profil',
@@ -127,6 +130,9 @@ export const mobileTranslations = {
     switchProfile: 'Byt profil',
     switchProfileDesc: 'Välj en profil från huvudappen',
     select: 'Välj',
+    switchProfileConfirm: 'Byta profil?',
+    switchProfileWarning: 'Dina nuvarande profildata kommer att gå förlorade.',
+    cancel: 'Avbryt',
     orEdit: 'eller redigera',
     name: 'Namn',
     color: 'Färg',
@@ -138,7 +144,9 @@ export const mobileTranslations = {
     partnerOptional: 'Partner (valfritt)',
     accuracy: 'Noggrannhet',
     saveScoreCardSoon: 'Poängkort sparat i dina foton! (Funktion kommer snart)',
-    addSongsToWishlistBtn: '+ Lägg till Låtar i Önskelista'
+    addSongsToWishlistBtn: '+ Lägg till Låtar i Önskelista',
+    shareHashtag: '#KaraokeZERO',
+    copyFailed: 'Kunde inte kopiera till urklipp.'
   },
 
   mobileNav: {
@@ -196,7 +204,10 @@ export const mobileTranslations = {
     switching: 'Byter...',
     getReady: 'Gör dig redo...',
     roundLabel: 'Omgång {n}:',
-    pts: 'poäng'
+    pts: 'poäng',
+    endSongEarlyConfirm: 'Vill du verkligen avsluta låten tidigt?',
+    confirm: 'Bekräfta',
+    cancel: 'Avbryt'
   },
 
   remoteControl: {

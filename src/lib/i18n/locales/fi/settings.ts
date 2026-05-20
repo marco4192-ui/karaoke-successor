@@ -294,7 +294,8 @@ export const settingsTranslations = {
     step1: 'Skannaa QR-koodi tai avaa URL osoite puhelimellasi',
     step2: 'Luo profiili mobiilisovelluksessa',
     step3: 'Puhelimestasi tulee langaton mikrofoni',
-    step4: 'Laula langattomasti mistä tahansa huoneessa!'
+    step4: 'Laula langattomasti mistä tahansa huoneessa!',
+    copyFailed: 'URL:n kopioiminen leikepöydälle epäonnistui'
   },
 
   settingsWebcam: {
@@ -388,6 +389,9 @@ export const settingsTranslations = {
     kickConfirm: 'Potkitaanko "{name}" ulos? Heidän yhteytensä katkeaa ja jono tyhjennetään.',
     kickSuccess: '"{name}" on potkittu ulos',
     kickFailed: 'Companionin potkaiseminen epäonnistui',
+    connectionError: 'Yhteysvirhe. Tarkista verkko.',
+    kickReally: 'Potkaiseanko todella?',
+    confirm: 'Vahvista',
     assignFailed: 'Profiilin liittäminen epäonnistui',
     title: 'Yhdistetyt companionit',
     loading: 'Ladataan companionia...',

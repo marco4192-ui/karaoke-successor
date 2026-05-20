@@ -292,7 +292,8 @@ export const settingsTranslations = {
     step1: '扫描二维码或在手机上打开链接',
     step2: '在移动应用上创建档案',
     step3: '你的手机成为无线麦克风',
-    step4: '在房间任何地方无线演唱！'
+    step4: '在房间任何地方无线演唱！',
+    copyFailed: '无法复制URL到剪贴板'
   },
 
   settingsWebcam: {
@@ -395,6 +396,9 @@ export const settingsTranslations = {
     kickConfirm: '踢出"{name}"？他们将断开连接，其队列将被清空。',
     kickSuccess: '"{name}"已被踢出',
     kickFailed: '踢出伴侣失败',
+    connectionError: '连接错误，请检查网络。',
+    kickReally: '真的要踢出吗？',
+    confirm: '确认',
     assignFailed: '分配角色失败',
     title: '已连接的伴侣',
     loading: '加载伴侣中...',

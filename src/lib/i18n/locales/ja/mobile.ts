@@ -67,7 +67,9 @@ export const mobileTranslations = {
     tapToSing: 'タップして歌う',
     step1: 'URLの隣のロックアイコンをタップ',
     step2: '「マイク」を見つけて「許可」を選択',
-    step3: 'ページを再読み込み'
+    step3: 'ページを再読み込み',
+    volumeLevel: 'マイク音量レベル',
+    currentPitch: '現在の音程'
   },
 
   mobileViews: {
@@ -110,6 +112,7 @@ export const mobileTranslations = {
     noSongsWishlist: 'ウィッシュリストに曲がありません',
     songsWillAppear: '追加した曲はここに表示されます',
     addedByMobile: '{n}によって追加',
+    removeFromWishlist: 'ウィッシュリストから削除',
     createProfile: 'プロフィールを作成',
     profileSyncDesc: 'プロフィールはメインアプリと同期されます',
     selectExisting: '既存のプロフィールを選択',
@@ -127,6 +130,9 @@ export const mobileTranslations = {
     switchProfile: 'プロファイルを切り替え',
     switchProfileDesc: 'メインアプリからプロファイルを選択',
     select: '選択',
+    switchProfileConfirm: 'プロフィールを切り替えますか？',
+    switchProfileWarning: '現在のプロフィールデータは失われます。',
+    cancel: 'キャンセル',
     orEdit: 'または編集',
     name: '名前',
     color: '色',
@@ -138,7 +144,9 @@ export const mobileTranslations = {
     partnerOptional: 'パートナー（任意）',
     accuracy: '正確さ',
     saveScoreCardSoon: 'スコアカードが写真に保存されました！（機能は近日公開）',
-    addSongsToWishlistBtn: '+ 曲をウィッシュリストに追加'
+    addSongsToWishlistBtn: '+ 曲をウィッシュリストに追加',
+    shareHashtag: '#KaraokeZERO',
+    copyFailed: 'クリップボードへのコピーに失敗しました。'
   },
 
   mobileNav: {
@@ -196,7 +204,10 @@ export const mobileTranslations = {
     switching: '交代中...',
     getReady: '準備...',
     roundLabel: 'ラウンド {n}:',
-    pts: 'pt'
+    pts: 'pt',
+    endSongEarlyConfirm: '本当に途中で終了しますか？',
+    confirm: '確認',
+    cancel: 'キャンセル'
   },
 
   remoteControl: {

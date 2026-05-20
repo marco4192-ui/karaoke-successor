@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/lib/i18n/translations';
 import type { QueueItem, MobileView } from './mobile-types';
 
+const MAX_QUEUE_SLOTS = 3;
+
 interface QueueViewProps {
   queue: QueueItem[];
   slotsRemaining: number;
@@ -25,7 +27,7 @@ export function MobileQueueView({ queue, slotsRemaining, queueError, onNavigate,
         <div className="flex items-center gap-2">
           <span className="text-sm text-white/40">{t('mobileViews.slots')}</span>
           <div className="flex gap-1">
-            {[1, 2, 3].map((slot) => (
+            {Array.from({ length: MAX_QUEUE_SLOTS }, (_, i) => i + 1).map((slot) => (
               <div 
                 key={slot}
                 className={`w-4 h-4 rounded-full ${slot <= slotsRemaining ? 'bg-cyan-500' : 'bg-white/20'}`}

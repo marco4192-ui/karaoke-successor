@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -41,6 +41,46 @@ export function MobileProfileEditView({
   const [hostProfiles, setHostProfiles] = useState<MobileProfile[]>([]);
   const [claimedProfileIds, setClaimedProfileIds] = useState<string[]>([]);
   const [hostProfilesError, setHostProfilesError] = useState<string | null>(null);
+  const [confirmSwitchId, setConfirmSwitchId] = useState<string | null>(null);
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Reset confirmation state after 3 seconds
+  const requestSwitchConfirm = useCallback((profileId: string) => {
+    if (confirmTimerRef.current) {
+      clearTimeout(confirmTimerRef.current);
+    }
+    setConfirmSwitchId(profileId);
+    confirmTimerRef.current = setTimeout(() => {
+      setConfirmSwitchId(null);
+      confirmTimerRef.current = null;
+    }, 3000);
+  }, []);
+
+  const cancelSwitch = useCallback(() => {
+    if (confirmTimerRef.current) {
+      clearTimeout(confirmTimerRef.current);
+      confirmTimerRef.current = null;
+    }
+    setConfirmSwitchId(null);
+  }, []);
+
+  const confirmSwitch = useCallback((hp: MobileProfile) => {
+    if (confirmTimerRef.current) {
+      clearTimeout(confirmTimerRef.current);
+      confirmTimerRef.current = null;
+    }
+    setConfirmSwitchId(null);
+    onSwitchToHostProfile?.(hp);
+  }, [onSwitchToHostProfile]);
+
+  // Clean up timer on unmount
+  React.useEffect(() => {
+    return () => {
+      if (confirmTimerRef.current) {
+        clearTimeout(confirmTimerRef.current);
+      }
+    };
+  }, []);
 
   // Fetch host profiles so the user can switch to a different host character
   React.useEffect(() => {
@@ -117,24 +157,62 @@ export function MobileProfileEditView({
               </p>
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {availableHostProfiles.map((hp) => (
-                  <button
-                    key={hp.id}
-                    onClick={() => onSwitchToHostProfile(hp)}
-                    className="flex items-center gap-3 p-2 rounded-lg w-full text-left bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
-                  >
+                  confirmSwitchId === hp.id ? (
                     <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-                      style={{ backgroundColor: hp.color }}
+                      key={hp.id}
+                      className="flex items-center gap-3 p-2 rounded-lg w-full bg-cyan-500/15 border border-cyan-500/30"
                     >
-                      {hp.avatar ? (
-                        <img src={hp.avatar} alt={hp.name} className="w-full h-full rounded-full object-cover" />
-                      ) : (
-                        hp.name.charAt(0).toUpperCase()
-                      )}
+                      <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                        style={{ backgroundColor: hp.color }}
+                      >
+                        {hp.avatar ? (
+                          <img src={hp.avatar} alt={hp.name} className="w-full h-full rounded-full object-cover" />
+                        ) : (
+                          hp.name.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-semibold block truncate">{hp.name}</span>
+                        <span className="text-xs text-amber-400/80 block truncate">
+                          {t('mobileViews.switchProfileWarning')}
+                        </span>
+                      </div>
+                      <div className="flex gap-1.5 flex-shrink-0">
+                        <button
+                          onClick={() => confirmSwitch(hp)}
+                          className="text-xs px-2.5 py-1 rounded-md bg-cyan-500 text-white font-medium hover:bg-cyan-400 transition-colors"
+                        >
+                          {t('mobileViews.confirm')}
+                        </button>
+                        <button
+                          onClick={cancelSwitch}
+                          className="text-xs px-2.5 py-1 rounded-md bg-white/10 text-white/70 font-medium hover:bg-white/20 transition-colors"
+                        >
+                          {t('mobileViews.cancel')}
+                        </button>
+                      </div>
                     </div>
-                    <span className="text-sm truncate flex-1">{hp.name}</span>
-                    <span className="text-xs text-cyan-400">{t('mobileViews.select')}</span>
-                  </button>
+                  ) : (
+                    <button
+                      key={hp.id}
+                      onClick={() => requestSwitchConfirm(hp.id)}
+                      className="flex items-center gap-3 p-2 rounded-lg w-full text-left bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+                    >
+                      <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                        style={{ backgroundColor: hp.color }}
+                      >
+                        {hp.avatar ? (
+                          <img src={hp.avatar} alt={hp.name} className="w-full h-full rounded-full object-cover" />
+                        ) : (
+                          hp.name.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      <span className="text-sm truncate flex-1">{hp.name}</span>
+                      <span className="text-xs text-cyan-400">{t('mobileViews.select')}</span>
+                    </button>
+                  )
                 ))}
               </div>
             </div>

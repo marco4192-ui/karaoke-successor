@@ -264,7 +264,8 @@ export const settingsTranslations = {
     step1: 'Escanea el código QR o abre la URL en tu teléfono',
     step2: 'Crea un perfil en la app móvil',
     step3: 'Tu teléfono se convierte en un micrófono inalámbrico',
-    step4: '¡Canta inalámbricamente desde cualquier lugar de la sala!'
+    step4: '¡Canta inalámbricamente desde cualquier lugar de la sala!',
+    copyFailed: 'No se pudo copiar la URL al portapapeles'
   },
 
   settingsWebcam: {
@@ -358,6 +359,9 @@ export const settingsTranslations = {
     kickConfirm: '¿Expulsar a "{name}"? Se desconectará y su cola se borrará.',
     kickSuccess: '"{name}" ha sido expulsado',
     kickFailed: 'Error al expulsar al compañero',
+    connectionError: 'Error de conexión. Verifica tu red.',
+    kickReally: '¿Expulsar de verdad?',
+    confirm: 'Confirmar',
     assignFailed: 'Error al asignar personaje',
     title: 'Compañeros Conectados',
     loading: 'Cargando compañeros...',

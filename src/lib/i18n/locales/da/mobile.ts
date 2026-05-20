@@ -67,7 +67,9 @@ export const mobileTranslations = {
     tapToSing: 'Tryk for at synge',
     step1: 'Tryk på lås-ikonet ved siden af URL\'en',
     step2: 'Find "Mikrofon" og vælg "Tillad"',
-    step3: 'Genindlæs siden'
+    step3: 'Genindlæs siden',
+    volumeLevel: 'Mikrofon lydstyrkeniveau',
+    currentPitch: 'Aktuel tonehøjde'
   },
 
   mobileViews: {
@@ -110,6 +112,7 @@ export const mobileTranslations = {
     noSongsWishlist: 'Ingen sange i ønskeliste',
     songsWillAppear: 'Sange du tilføjer vises her',
     addedByMobile: 'Tilføjet af {n}',
+    removeFromWishlist: 'Fjern fra ønskeliste',
     createProfile: 'Opret din profil',
     profileSyncDesc: 'Din profil synkroniseres med hoved-appen',
     selectExisting: 'Vælg eksisterende profil',
@@ -127,6 +130,9 @@ export const mobileTranslations = {
     switchProfile: 'Skift profil',
     switchProfileDesc: 'Vælg en profil fra hoved-appen',
     select: 'Vælg',
+    switchProfileConfirm: 'Skift profil?',
+    switchProfileWarning: 'Dine nuværende profildata vil gå tabt.',
+    cancel: 'Annuller',
     orEdit: 'eller redigér',
     name: 'Navn',
     color: 'Farve',
@@ -138,7 +144,9 @@ export const mobileTranslations = {
     partnerOptional: 'Partner (valgfrit)',
     accuracy: 'Nøjagtighed',
     saveScoreCardSoon: 'Pointkort gemt i dine fotos! (Funktion kommer snart)',
-    addSongsToWishlistBtn: '+ Tilføj sange til ønskeliste'
+    addSongsToWishlistBtn: '+ Tilføj sange til ønskeliste',
+    shareHashtag: '#KaraokeZERO',
+    copyFailed: 'Kunne ikke kopiere til udklipsholder.'
   },
 
   mobileNav: {
@@ -196,7 +204,10 @@ export const mobileTranslations = {
     switching: 'Skifter...',
     getReady: 'Gør dig klar...',
     roundLabel: 'Runde {n}:',
-    pts: 'point'
+    pts: 'point',
+    endSongEarlyConfirm: 'Virkelig afslutte sangen tidligt?',
+    confirm: 'Bekræft',
+    cancel: 'Annuller'
   },
 
   remoteControl: {

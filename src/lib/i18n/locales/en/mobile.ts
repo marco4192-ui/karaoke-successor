@@ -67,7 +67,9 @@ export const mobileTranslations = {
     tapToSing: 'Tap to sing',
     step1: 'Tap the lock icon next to the URL',
     step2: 'Find "Microphone" and select "Allow"',
-    step3: 'Reload the page'
+    step3: 'Reload the page',
+    volumeLevel: 'Microphone volume level',
+    currentPitch: 'Current pitch'
   },
 
   mobileViews: {
@@ -110,6 +112,7 @@ export const mobileTranslations = {
     noSongsWishlist: 'No songs in wishlist',
     songsWillAppear: 'Songs you add will appear here',
     addedByMobile: 'Added by {n}',
+    removeFromWishlist: 'Remove from wishlist',
     createProfile: 'Create Your Profile',
     profileSyncDesc: 'Your profile will sync with the main app',
     selectExisting: 'Select existing profile',
@@ -127,6 +130,9 @@ export const mobileTranslations = {
     switchProfile: 'Switch profile',
     switchProfileDesc: 'Select a profile from the main app',
     select: 'Select',
+    switchProfileConfirm: 'Switch profile?',
+    switchProfileWarning: 'Your current profile data will be lost.',
+    cancel: 'Cancel',
     orEdit: 'or edit',
     name: 'Name',
     color: 'Color',
@@ -138,7 +144,9 @@ export const mobileTranslations = {
     partnerOptional: 'Partner (optional)',
     accuracy: 'Accuracy',
     saveScoreCardSoon: 'Score card saved to your photos! (Feature coming soon)',
-    addSongsToWishlistBtn: '+ Add Songs to Wishlist'
+    addSongsToWishlistBtn: '+ Add Songs to Wishlist',
+    shareHashtag: '#KaraokeZERO',
+    copyFailed: 'Failed to copy to clipboard.'
   },
 
   mobileNav: {
@@ -196,7 +204,10 @@ export const mobileTranslations = {
     switching: 'Switching...',
     getReady: 'Get ready...',
     roundLabel: 'Round {n}:',
-    pts: 'pts'
+    pts: 'pts',
+    endSongEarlyConfirm: 'Really end song early?',
+    confirm: 'Confirm',
+    cancel: 'Cancel'
   },
 
   remoteControl: {

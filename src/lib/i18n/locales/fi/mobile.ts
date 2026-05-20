@@ -66,7 +66,9 @@ export const mobileTranslations = {
     tapToSing: 'Napsauta laulamaan',
     step1: 'Napsauta lukkokuvaketta URL:n vieressä',
     step2: 'Etsi "Mikrofoni" ja valitse "Salli"',
-    step3: 'Lataa sivu uudelleen'
+    step3: 'Lataa sivu uudelleen',
+    volumeLevel: 'Mikrofonin äänenvoimakkuus',
+    currentPitch: 'Nykyinen sävelkorkeus'
   },
 
   mobileViews: {
@@ -109,6 +111,7 @@ export const mobileTranslations = {
     noSongsWishlist: 'Ei kappaleita toivelistalla',
     songsWillAppear: 'Lisäämäsi kappaleet näkyvät tässä',
     addedByMobile: 'Lisännyt {n}',
+    removeFromWishlist: 'Poista toivelistalta',
     createProfile: 'Luo profiilisi',
     profileSyncDesc: 'Profiilisi synkronoituu pääsovelluksen kanssa',
     selectExisting: 'Valitse olemassa oleva profiili',
@@ -126,6 +129,9 @@ export const mobileTranslations = {
     switchProfile: 'Vaihda profiilia',
     switchProfileDesc: 'Valitse profiili pääsovelluksesta',
     select: 'Valitse',
+    switchProfileConfirm: 'Vaihda profiilia?',
+    switchProfileWarning: 'Nykyiset profiilitietosi menetetään.',
+    cancel: 'Peruuta',
     orEdit: 'tai muokkaa',
     name: 'Nimi',
     color: 'Väri',
@@ -137,7 +143,9 @@ export const mobileTranslations = {
     partnerOptional: 'Parineri (valinnainen)',
     accuracy: 'Tarkkuus',
     saveScoreCardSoon: 'Tuloskortti tallennettu kuvagalleriaasi! (Ominaisuus tulossa pian)',
-    addSongsToWishlistBtn: '+ Lisää kappaleita toivelistalle'
+    addSongsToWishlistBtn: '+ Lisää kappaleita toivelistalle',
+    shareHashtag: '#KaraokeZERO',
+    copyFailed: 'Kopiointi leikepöydälle epäonnistui.'
   },
 
   mobileNav: {
@@ -195,7 +203,10 @@ export const mobileTranslations = {
     switching: 'Vaihdetaan...',
     getReady: 'Valmistaudu...',
     roundLabel: 'Kierros {n}:',
-    pts: 'pistettä'
+    pts: 'pistettä',
+    endSongEarlyConfirm: 'Haluatko varmasti lopettaa kappaleen ennenaikaisesti?',
+    confirm: 'Vahvista',
+    cancel: 'Peruuta'
   },
 
   remoteControl: {

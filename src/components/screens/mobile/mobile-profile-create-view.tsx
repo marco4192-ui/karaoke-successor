@@ -191,29 +191,32 @@ export function MobileProfileCreateView({
             </div>
           )}
 
-          {/* Avatar Upload */}
-          <div className="flex flex-col items-center">
-            <button 
-              onClick={() => fileInputRef.current?.click()}
-              className="w-24 h-24 rounded-full bg-white/10 border-2 border-dashed border-white/30 flex items-center justify-center overflow-hidden hover:border-cyan-400 transition-colors"
-            >
-              {avatarPreview ? (
-                <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
-              ) : (
-                <div className="text-center">
-                  <span className="text-2xl">📷</span>
-                  <p className="text-xs text-white/40 mt-1">{t('mobileViews.addPhoto')}</p>
-                </div>
-              )}
-            </button>
-            <input 
-              ref={fileInputRef}
-              type="file" 
-              accept="image/*" 
-              onChange={onPhotoUpload}
-              className="hidden" 
-            />
-          </div>
+          {/* Avatar Upload — hidden when a host profile is selected (it has its own avatar button) */}
+          {!selectedHostProfile && (
+            <div className="flex flex-col items-center">
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="w-24 h-24 rounded-full bg-white/10 border-2 border-dashed border-white/30 flex items-center justify-center overflow-hidden hover:border-cyan-400 transition-colors"
+              >
+                {avatarPreview ? (
+                  <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="text-center">
+                    <span className="text-2xl">📷</span>
+                    <p className="text-xs text-white/40 mt-1">{t('mobileViews.addPhoto')}</p>
+                  </div>
+                )}
+              </button>
+            </div>
+          )}
+          {/* Hidden file input — always rendered so the host-profile avatar button can trigger it */}
+          <input 
+            ref={fileInputRef}
+            type="file" 
+            accept="image/*" 
+            onChange={onPhotoUpload}
+            className="hidden" 
+          />
           
           {/* Name Input */}
           <div>

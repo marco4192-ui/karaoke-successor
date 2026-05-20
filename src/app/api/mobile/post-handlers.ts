@@ -362,6 +362,30 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         });
       }
 
+      case 'jukebox_wishlist_remove': {
+        // Remove song from jukebox wishlist — only the creator (matching companionCode) can remove
+        if (!clientId) {
+          return Response.json({ success: false, message: 'Not connected' }, { status: 401 });
+        }
+        const removeWishPayload = payload as { itemId: string };
+        const requestingWishClient = mobileClients.get(clientId);
+        if (!requestingWishClient) {
+          return Response.json({ success: false, message: 'Not connected' }, { status: 401 });
+        }
+        const wishIndex = mutableState.jukeboxWishlist.findIndex(q => q.id === removeWishPayload.itemId);
+
+        if (wishIndex !== -1) {
+          const wishItem = mutableState.jukeboxWishlist[wishIndex];
+          // Ownership check: only the companion that added this song can remove it
+          if (wishItem.companionCode !== requestingWishClient.connectionCode) {
+            return Response.json({ success: false, message: 'You can only remove your own songs' }, { status: 403 });
+          }
+          mutableState.jukeboxWishlist.splice(wishIndex, 1);
+          return Response.json({ success: true, message: 'Song removed from wishlist' });
+        }
+        return Response.json({ success: false, message: 'Item not found' }, { status: 404 });
+      }
+
       case 'results':
         // Store game results for social features
         // Auth: require admin PIN

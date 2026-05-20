@@ -58,14 +58,19 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [kickingId, setKickingId] = useState<string | null>(null);
   const [assigningId, setAssigningId] = useState<string | null>(null);
+  const [pendingKickClientId, setPendingKickClientId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingKickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { t } = useTranslation();
 
-  // Clear success-message timer on unmount
+  // Clear timers on unmount
   useEffect(() => {
-    return () => { if (successTimerRef.current) clearTimeout(successTimerRef.current); };
+    return () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+      if (pendingKickTimerRef.current) clearTimeout(pendingKickTimerRef.current);
+    };
   }, []);
 
   // Get active profiles from store for character assignment dropdown
@@ -98,9 +103,30 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
     wasVisible.current = isVisible;
   }, [isVisible, fetchCompanions]);
 
-  // Kick a companion
+  // Cancel pending kick confirmation
+  const cancelKickConfirmation = useCallback(() => {
+    setPendingKickClientId(null);
+    if (pendingKickTimerRef.current) {
+      clearTimeout(pendingKickTimerRef.current);
+      pendingKickTimerRef.current = null;
+    }
+  }, []);
+
+  // Kick a companion (first click → inline confirm, second click → execute)
   const handleKick = async (companionId: string, companionName: string) => {
-    if (!confirm(t('settingsCompanion.kickConfirm').replace('{name}', companionName))) return;
+    // First click: show inline confirmation
+    if (pendingKickClientId !== companionId) {
+      cancelKickConfirmation();
+      setPendingKickClientId(companionId);
+      pendingKickTimerRef.current = setTimeout(() => {
+        setPendingKickClientId(null);
+        pendingKickTimerRef.current = null;
+      }, 3000);
+      return;
+    }
+
+    // Second click: execute the kick
+    cancelKickConfirmation();
     setKickingId(companionId);
     try {
       const res = await fetch(`/api/mobile?action=kick&kickClientId=${encodeURIComponent(companionId)}`);
@@ -113,7 +139,8 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
         setError(data.message || t('settingsCompanion.kickFailed'));
       }
     } catch {
-      setError(t('settingsCompanion.kickFailed'));
+      // Network/fetch error — different message from server rejection
+      setError(t('settingsCompanion.connectionError'));
     } finally {
       setKickingId(null);
     }
@@ -238,7 +265,9 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
                 activeProfiles={activeProfiles}
                 isKicking={kickingId === companion.id}
                 isAssigning={assigningId === companion.id}
+                isPendingKick={pendingKickClientId === companion.id}
                 onKick={handleKick}
+                onCancelKick={cancelKickConfirmation}
                 onAssignCharacter={handleAssignCharacter}
               />
             ))}
@@ -255,7 +284,9 @@ interface CompanionCardProps {
   activeProfiles: PlayerProfile[];
   isKicking: boolean;
   isAssigning: boolean;
+  isPendingKick: boolean;
   onKick: (_id: string, _name: string) => void;
+  onCancelKick: () => void;
   onAssignCharacter: (_id: string, _profile: PlayerProfile | null) => void;
 }
 
@@ -264,7 +295,9 @@ function CompanionCard({
   activeProfiles,
   isKicking,
   isAssigning,
+  isPendingKick,
   onKick,
+  onCancelKick,
   onAssignCharacter,
 }: CompanionCardProps) {
   const [showCharacterDropdown, setShowCharacterDropdown] = useState(false);
@@ -430,26 +463,48 @@ function CompanionCard({
           )}
         </div>
 
-        {/* Kick Button */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onKick(companion.id, companionName)}
-          disabled={isKicking}
-          className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 hover:border-red-500/50 text-xs px-3"
-        >
-          {isKicking ? (
-            <>
-              <div className="w-3 h-3 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin mr-1" />
-              {t('settingsCompanion.kicking')}
-            </>
-          ) : (
-            <>
-              <TrashIcon className="w-3.5 h-3.5 mr-1" />
-              {t('settingsCompanion.kick')}
-            </>
-          )}
-        </Button>
+        {/* Kick Button / Inline Confirmation */}
+        {isPendingKick ? (
+          <>
+            {/* Backdrop — click elsewhere to cancel */}
+            <div className="fixed inset-0 z-40" onClick={onCancelKick} />
+            <div className="relative z-50 flex items-center gap-1.5">
+              <span className="text-xs text-orange-300 font-medium">
+                {t('settingsCompanion.kickReally')}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onKick(companion.id, companionName)}
+                disabled={isKicking}
+                className="border-red-500/50 bg-red-500/20 text-red-300 hover:bg-red-500/30 hover:text-red-200 hover:border-red-500/70 text-xs px-3"
+              >
+                <CheckIcon className="w-3.5 h-3.5 mr-1" />
+                {t('settingsCompanion.confirm')}
+              </Button>
+            </div>
+          </>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onKick(companion.id, companionName)}
+            disabled={isKicking}
+            className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 hover:border-red-500/50 text-xs px-3"
+          >
+            {isKicking ? (
+              <>
+                <div className="w-3 h-3 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin mr-1" />
+                {t('settingsCompanion.kicking')}
+              </>
+            ) : (
+              <>
+                <TrashIcon className="w-3.5 h-3.5 mr-1" />
+                {t('settingsCompanion.kick')}
+              </>
+            )}
+          </Button>
+        )}
       </div>
     </div>
   );

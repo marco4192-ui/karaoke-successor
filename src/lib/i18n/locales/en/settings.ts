@@ -296,7 +296,8 @@ export const settingsTranslations = {
     step1: 'Scan the QR code or open the URL on your phone',
     step2: 'Create a profile on the mobile app',
     step3: 'Your phone becomes a wireless microphone',
-    step4: 'Sing wirelessly from anywhere in the room!'
+    step4: 'Sing wirelessly from anywhere in the room!',
+    copyFailed: 'Failed to copy URL to clipboard'
   },
 
   settingsWebcam: {
@@ -399,6 +400,9 @@ export const settingsTranslations = {
     kickConfirm: 'Kick "{name}"? They will be disconnected and their queue will be cleared.',
     kickSuccess: '"{name}" has been kicked',
     kickFailed: 'Failed to kick companion',
+    connectionError: 'Connection error. Please check your network.',
+    kickReally: 'Really kick?',
+    confirm: 'Confirm',
     assignFailed: 'Failed to assign character',
     title: 'Connected Companions',
     loading: 'Loading companions...',

@@ -67,7 +67,9 @@ export const mobileTranslations = {
     tapToSing: 'Tocca per cantare',
     step1: 'Tocca l\'icona del lucchetto accanto all\'URL',
     step2: 'Trova "Microfono" e seleziona "Consenti"',
-    step3: 'Ricarica la pagina'
+    step3: 'Ricarica la pagina',
+    volumeLevel: 'Livello volume del microfono',
+    currentPitch: 'Tono attuale'
   },
 
   mobileViews: {
@@ -110,6 +112,7 @@ export const mobileTranslations = {
     noSongsWishlist: 'Nessuna canzone nella lista desideri',
     songsWillAppear: 'Le canzoni che aggiungi appariranno qui',
     addedByMobile: 'Aggiunto da {n}',
+    removeFromWishlist: 'Rimuovi dalla lista desideri',
     createProfile: 'Crea il tuo Profilo',
     profileSyncDesc: 'Il tuo profilo verrà sincronizzato con l\'app principale',
     selectExisting: 'Seleziona profilo esistente',
@@ -127,6 +130,9 @@ export const mobileTranslations = {
     switchProfile: 'Cambia profilo',
     switchProfileDesc: 'Seleziona un profilo dall\'app principale',
     select: 'Seleziona',
+    switchProfileConfirm: 'Cambiare profilo?',
+    switchProfileWarning: 'I dati del tuo profilo attuale andranno persi.',
+    cancel: 'Annulla',
     orEdit: 'o modifica',
     name: 'Nome',
     color: 'Colore',
@@ -138,7 +144,9 @@ export const mobileTranslations = {
     partnerOptional: 'Compagno (opzionale)',
     accuracy: 'Precisione',
     saveScoreCardSoon: 'Scheda punteggio salvata nelle tue foto! (Funzionalità in arrivo)',
-    addSongsToWishlistBtn: '+ Aggiungi Canzoni alla Lista'
+    addSongsToWishlistBtn: '+ Aggiungi Canzoni alla Lista',
+    shareHashtag: '#KaraokeZERO',
+    copyFailed: 'Impossibile copiare negli appunti.'
   },
 
   mobileNav: {
@@ -196,7 +204,10 @@ export const mobileTranslations = {
     switching: 'Cambio...',
     getReady: 'Preparati...',
     roundLabel: 'Turno {n}:',
-    pts: 'pts'
+    pts: 'pts',
+    endSongEarlyConfirm: 'Terminare davvero la canzone in anticipo?',
+    confirm: 'Conferma',
+    cancel: 'Annulla'
   },
 
   remoteControl: {

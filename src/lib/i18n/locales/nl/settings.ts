@@ -280,7 +280,8 @@ export const settingsTranslations = {
     step1: 'Scan de QR-code of open de URL op je telefoon',
     step2: 'Maak een profiel aan op de mobiele app',
     step3: 'Je telefoon wordt een draadloze microfoon',
-    step4: 'Zing draadloos vanaf elke plek in de kamer!'
+    step4: 'Zing draadloos vanaf elke plek in de kamer!',
+    copyFailed: 'URL kon niet naar klembord worden gekopieerd'
   },
 
   settingsWebcam: {
@@ -383,6 +384,9 @@ export const settingsTranslations = {
     kickConfirm: 'Kick "{name}"? Ze worden verbroken en hun wachtrij wordt gewist.',
     kickSuccess: '"{name}" is gekickt',
     kickFailed: 'Kick van companion mislukt',
+    connectionError: 'Verbindingsfout. Controleer je netwerk.',
+    kickReally: 'Echt kicken?',
+    confirm: 'Bevestigen',
     assignFailed: 'Profiel toewijzen mislukt',
     title: 'Verbonden Companions',
     loading: 'Companions laden...',
