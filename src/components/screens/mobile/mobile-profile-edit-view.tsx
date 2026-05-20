@@ -40,6 +40,7 @@ export function MobileProfileEditView({
   const { t } = useTranslation();
   const [hostProfiles, setHostProfiles] = useState<MobileProfile[]>([]);
   const [claimedProfileIds, setClaimedProfileIds] = useState<string[]>([]);
+  const [hostProfilesError, setHostProfilesError] = useState<string | null>(null);
 
   // Fetch host profiles so the user can switch to a different host character
   React.useEffect(() => {
@@ -48,12 +49,17 @@ export function MobileProfileEditView({
         const storedClientId = getItem(StorageKeys.CLIENT_ID);
         const clientIdParam = storedClientId ? `&clientId=${storedClientId}` : '';
         const response = await fetch(`/api/mobile?action=hostprofiles${clientIdParam}`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
         const data = await response.json();
         if (data.success && data.profiles) {
           setHostProfiles(data.profiles);
           setClaimedProfileIds(data.claimedProfileIds || []);
         }
-      } catch { /* ignore */ }
+      } catch (err) {
+        setHostProfilesError(err instanceof Error ? err.message : 'Failed to load profiles');
+      }
     };
     fetchHostProfiles();
   }, []);
@@ -94,6 +100,10 @@ export function MobileProfileEditView({
               </Badge>
             )}
           </div>
+
+          {hostProfilesError && (
+            <div className="text-red-400 text-sm text-center mb-4">{hostProfilesError}</div>
+          )}
 
           {/* Switch to Host Profile */}
           {availableHostProfiles.length > 0 && onSwitchToHostProfile && (
@@ -169,7 +179,8 @@ export function MobileProfileEditView({
             {/* Save Button */}
             <Button 
               onClick={onSave}
-              className="w-full bg-gradient-to-r from-cyan-500 to-purple-500"
+              disabled={!profileName.trim()}
+              className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 disabled:opacity-50"
             >
               {t('mobileViews.saveChanges')}
             </Button>

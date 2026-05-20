@@ -7,8 +7,13 @@ import {
   latestPitchData,
   mutableState,
   getUniqueConnectionCode,
+  registerClient,
   removeClient,
   requireAuth,
+  requireAuthOrRemoteHolder,
+  MAX_JUKEBOX_PER_CLIENT,
+  MAX_TOURNAMENT_VOTES,
+  tournamentVoteDedup,
 } from './mobile-state';
 
 // ===================== POST HANDLER =====================
@@ -45,8 +50,12 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           hasRemoteControl: false,
           clientIp: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || undefined,
         };
-        
-        mobileClients.set(newClientId, newClient);
+
+        // Check max client limit before registering
+        const regError = registerClient(newClientId, newClient);
+        if (regError) {
+          return Response.json({ success: false, message: regError }, { status: 503 });
+        }
         connectionCodes.set(connectionCode, newClientId);
         
         if (regPayload.profile) {
@@ -65,6 +74,18 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
       case 'pitch': {
         // Mobile client sends pitch data
         const pitchPayload = payload as PitchData;
+        // Input validation: frequency 20-2000 Hz, clarity 0-1, volume 0-1
+        if (pitchPayload.frequency !== null && pitchPayload.frequency !== undefined) {
+          if (typeof pitchPayload.frequency !== 'number' || pitchPayload.frequency < 20 || pitchPayload.frequency > 2000) {
+            return Response.json({ success: false, message: 'Invalid frequency (must be 20-2000 Hz)' }, { status: 400 });
+          }
+        }
+        if (typeof pitchPayload.clarity !== 'number' || pitchPayload.clarity < 0 || pitchPayload.clarity > 1) {
+          return Response.json({ success: false, message: 'Invalid clarity (must be 0-1)' }, { status: 400 });
+        }
+        if (typeof pitchPayload.volume !== 'number' || pitchPayload.volume < 0 || pitchPayload.volume > 1) {
+          return Response.json({ success: false, message: 'Invalid volume (must be 0-1)' }, { status: 400 });
+        }
         if (clientId) {
           const client = mobileClients.get(clientId);
           if (!client) return Response.json({ success: true, received: true });
@@ -98,7 +119,15 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
 
       case 'gamestate': {
         // PC updates game state for mobile clients to see
+        // Auth: require admin PIN or current remote control holder
+        if (!requireAuthOrRemoteHolder(request, clientId)) {
+          return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN or hold remote control.' }, { status: 401 });
+        }
         const gsPayload = payload as typeof mutableState.gameState;
+        // Clear tournament vote dedup when matchId changes
+        if (gsPayload.tournamentMatchId !== mutableState.gameState.tournamentMatchId) {
+          tournamentVoteDedup.clear();
+        }
         mutableState.gameState = { ...gsPayload };
         
         // If song ended, notify all clients and clear pitch data
@@ -116,6 +145,13 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         // Update profile for a client
         if (clientId) {
           const profilePayload = payload as MobileProfile;
+          // Input validation: name max 50 chars, color must be hex format
+          if (!profilePayload.name || typeof profilePayload.name !== 'string' || profilePayload.name.length > 50) {
+            return Response.json({ success: false, message: 'Invalid name (max 50 characters)' }, { status: 400 });
+          }
+          if (!/^#[0-9A-Fa-f]{6}$/.test(profilePayload.color || '')) {
+            return Response.json({ success: false, message: 'Invalid color (must be hex format #RRGGBB)' }, { status: 400 });
+          }
           const client = mobileClients.get(clientId);
           if (!client) return Response.json({ success: false, message: 'Client not found' }, { status: 404 });
           
@@ -153,6 +189,13 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           partnerName?: string;
           gameMode?: 'single' | 'duel' | 'duet';
         };
+        // Input validation: songTitle and songArtist max 200 chars
+        if (!queuePayload.songTitle || typeof queuePayload.songTitle !== 'string' || queuePayload.songTitle.length > 200) {
+          return Response.json({ success: false, message: 'Invalid song title (max 200 characters)' }, { status: 400 });
+        }
+        if (!queuePayload.songArtist || typeof queuePayload.songArtist !== 'string' || queuePayload.songArtist.length > 200) {
+          return Response.json({ success: false, message: 'Invalid song artist (max 200 characters)' }, { status: 400 });
+        }
         const clientForQueue = mobileClients.get(clientId);
         if (!clientForQueue) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         
@@ -228,6 +271,10 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
 
       case 'markplaying': {
         // Mark a song as currently playing (called by main app or queue screen)
+        // Auth: require admin PIN
+        if (!requireAuth(request)) {
+          return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN.' }, { status: 401 });
+        }
         const playingPayload = payload as { itemId: string };
         const playingItem = mutableState.songQueue.find(q => q.id === playingPayload.itemId);
         
@@ -252,6 +299,10 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
 
       case 'queuecompleted': {
         // Mark a song as completed (called by main app)
+        // Auth: require admin PIN
+        if (!requireAuth(request)) {
+          return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN.' }, { status: 401 });
+        }
         const completedPayload = payload as { itemId: string };
         const completedItem = mutableState.songQueue.find(q => q.id === completedPayload.itemId);
         
@@ -282,6 +333,17 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         const clientForJukebox = mobileClients.get(clientId);
         if (!clientForJukebox) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         
+        // Enforce max 20 items per clientId
+        const clientWishlistCount = mutableState.jukeboxWishlist.filter(
+          q => q.companionCode === clientForJukebox.connectionCode
+        ).length;
+        if (clientWishlistCount >= MAX_JUKEBOX_PER_CLIENT) {
+          return Response.json({
+            success: false,
+            message: `Maximum ${MAX_JUKEBOX_PER_CLIENT} wishlist songs per companion`,
+          }, { status: 400 });
+        }
+
         const wishlistItem: QueueItem = {
           id: `wish-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
           ...jukeboxPayload,
@@ -302,6 +364,10 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
 
       case 'results':
         // Store game results for social features
+        // Auth: require admin PIN
+        if (!requireAuth(request)) {
+          return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN.' }, { status: 401 });
+        }
         mutableState.lastGameResults = payload as typeof mutableState.lastGameResults;
         return Response.json({ success: true, message: 'Results stored' });
 
@@ -411,6 +477,10 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
 
       case 'setAdPlaying': {
         // Set ad playing state (from main app)
+        // Auth: require admin PIN
+        if (!requireAuth(request)) {
+          return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN.' }, { status: 401 });
+        }
         const adPayload = payload as { isAdPlaying: boolean };
         mutableState.gameState.isAdPlaying = adPayload.isAdPlaying;
         return Response.json({ success: true, isAdPlaying: mutableState.gameState.isAdPlaying });
@@ -501,6 +571,10 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
 
       case 'sethostprofiles':
         // Main app syncs its character profiles for companion to choose from
+        // Auth: require admin PIN
+        if (!requireAuth(request)) {
+          return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN.' }, { status: 401 });
+        }
         {
           const profilesPayload = payload as Array<{
             id: string;
@@ -553,6 +627,15 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         if (!clientId || !votePayload.matchId || !votePayload.playerSide) {
           return Response.json({ success: false, message: 'Invalid vote payload' }, { status: 400 });
         }
+        // Deduplication: check if this clientId already voted for this matchId
+        const voteKey = `${clientId}:${votePayload.matchId}`;
+        if (tournamentVoteDedup.has(voteKey)) {
+          return Response.json({ success: false, message: 'Already voted for this match' });
+        }
+        // Enforce max 500 total votes (prune oldest)
+        if (mutableState.tournamentCrowdVotes.length >= MAX_TOURNAMENT_VOTES) {
+          mutableState.tournamentCrowdVotes = mutableState.tournamentCrowdVotes.slice(-MAX_TOURNAMENT_VOTES + 1);
+        }
         // Store vote in mutable state for the main app to pick up
         if (!mutableState.tournamentCrowdVotes) {
           mutableState.tournamentCrowdVotes = [];
@@ -566,6 +649,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           playerSide: votePayload.playerSide,
           timestamp: Date.now(),
         });
+        tournamentVoteDedup.add(voteKey);
         return Response.json({ success: true, message: 'Vote recorded' });
       }
 

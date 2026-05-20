@@ -33,10 +33,10 @@ function formatDuration(connectedAt: number, t: (k: string) => string): string {
   const diff = Date.now() - connectedAt;
   const minutes = Math.floor(diff / 60000);
   if (minutes < 1) return t('settingsCompanion.justNow');
-  if (minutes < 60) return `${minutes}m`;
+  if (minutes < 60) return `${minutes} ${t('settingsCompanion.min')}`;
   const hours = Math.floor(minutes / 60);
   const remainMin = minutes % 60;
-  return `${hours}h ${remainMin}m`;
+  return `${hours} ${t('settingsCompanion.hr')} ${remainMin} ${t('settingsCompanion.min')}`;
 }
 
 function getLastSeen(lastActivity: number, t: (k: string) => string): string {
@@ -76,13 +76,14 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
   const fetchCompanions = useCallback(async () => {
     try {
       const res = await fetch('/api/mobile?action=clients');
+      if (!res.ok) { setError(t('settingsCompanion.errorLoading')); return; }
       const data: CompanionListResponse = await res.json();
       if (data.success) {
         setCompanions(data.clients || []);
       }
       setError(null);
     } catch {
-      setError(t('settingsCompanion.kickFailed'));
+      setError(t('settingsCompanion.errorLoading'));
     } finally {
       setIsLoading(false);
     }
@@ -103,6 +104,7 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
     setKickingId(companionId);
     try {
       const res = await fetch(`/api/mobile?action=kick&kickClientId=${encodeURIComponent(companionId)}`);
+      if (!res.ok) { setError(t('settingsCompanion.kickFailed')); return; }
       const data = await res.json();
       if (data.success) {
         showSuccess(t('settingsCompanion.kickSuccess').replace('{name}', companionName));
@@ -130,6 +132,7 @@ export function CompanionListSection({ isVisible }: CompanionListSectionProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'assigncharacter', payload }),
       });
+      if (!res.ok) { setError(t('settingsCompanion.assignFailed')); return; }
       const data = await res.json();
       if (data.success) {
         showSuccess(data.message);

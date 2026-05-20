@@ -111,7 +111,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
           syncProfile(hostProfile);
         }
       })
-      .catch(() => {});
+      .catch(() => { console.warn('Failed to auto-adopt profile'); });
   }, [profileId, isConnected, clientId, syncProfile]);
 
   // Profile callbacks
@@ -180,6 +180,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     removeItem(StorageKeys.MOBILE_PROFILE);
     setCurrentView('home');
     // Re-connect after a short delay to allow fresh profile creation
+    if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
     reconnectTimerRef.current = setTimeout(() => connect(), 500);
   }, [disconnect, connect]);
 
@@ -297,7 +298,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
             {profile && currentView !== 'home' && (
               <button onClick={() => setCurrentView('home')} className="text-white/60 hover:text-white">{t('mobileClient.back')}</button>
             )}
-            <h1 className="text-lg font-bold">Karaoke ZERO</h1>
+            <h1 className="text-lg font-bold">{t('app.title')}</h1>
           </div>
           <div className="flex items-center gap-3">
             {connectionCode && <Badge variant="outline" className="border-cyan-500/50 text-cyan-400 font-mono">{connectionCode}</Badge>}
@@ -355,7 +356,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
           {currentView === 'queue' && <MobileQueueView queue={data.queue} slotsRemaining={data.slotsRemaining} queueError={data.queueError} onRemoveFromQueue={data.removeFromQueue} onNavigate={setCurrentView} clientId={clientId} />}
           {currentView === 'results' && <MobileResultsView gameResults={data.gameResults} onNavigate={setCurrentView} />}
           {currentView === 'jukebox' && <MobileJukeboxView jukeboxWishlist={data.jukeboxWishlist} onNavigate={setCurrentView} />}
-          {currentView === 'remote' && <RemoteControlView clientId={clientId} profile={profile} onBack={() => setCurrentView('home')} />}
+          {currentView === 'remote' && <RemoteControlView clientId={clientId} onBack={() => setCurrentView('home')} />}
           {currentView === 'profile' && (
             <MobileProfileEditView
               profile={profile} profileName={profileName} onProfileNameChange={setProfileName}
@@ -411,10 +412,10 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ type: 'tournament_crowd_vote', payload: { matchId: gameState.tournamentMatchId, playerSide: 1 }, clientId }),
-                }).catch(() => {});
+                }).catch(() => { console.warn('Failed to cast tournament vote for P1'); });
               }}
             >
-              P1
+              {t('companion.player1')}
             </Button>
             <Button
               className="flex-1 bg-pink-500/20 hover:bg-pink-500/30 border border-pink-500/40 text-pink-300 text-sm py-3"
@@ -425,10 +426,10 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ type: 'tournament_crowd_vote', payload: { matchId: gameState.tournamentMatchId, playerSide: 2 }, clientId }),
-                }).catch(() => {});
+                }).catch(() => { console.warn('Failed to cast tournament vote for P2'); });
               }}
             >
-              P2
+              {t('companion.player2')}
             </Button>
           </div>
         </div>

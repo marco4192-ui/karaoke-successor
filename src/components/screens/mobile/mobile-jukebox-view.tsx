@@ -36,7 +36,7 @@ export function MobileJukeboxView({ jukeboxWishlist, onNavigate }: JukeboxViewPr
         <div className="space-y-2">
           {jukeboxWishlist.map((item, i) => (
             <div 
-              key={i}
+              key={item.songId || i}
               className="flex items-center gap-3 p-3 bg-white/5 rounded-xl"
             >
               <span className="text-white/40 font-bold w-6">{i + 1}</span>

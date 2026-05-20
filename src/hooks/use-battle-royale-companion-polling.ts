@@ -45,6 +45,9 @@ export function useBattleRoyaleCompanionPolling({
   useEffect(() => { playersRef.current = players; }, [players]);
 
   useEffect(() => {
+    // Clear stale cache when game status changes
+    companionPitchCacheRef.current.clear();
+
     if (gameStatus !== 'playing') {
       if (companionPollRef.current) {
         clearInterval(companionPollRef.current);

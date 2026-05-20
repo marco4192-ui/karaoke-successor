@@ -37,6 +37,7 @@ export function MobileDeviceMicrophoneSection() {
     const pollClients = async () => {
       try {
         const res = await fetch('/api/mobile?action=clients');
+        if (!res.ok) return;
         const data = await res.json();
         if (data.clients) {
           setConnectedClients(data.clients);
@@ -98,8 +99,12 @@ export function MobileDeviceMicrophoneSection() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    navigator.clipboard.writeText(mobileUrl);
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(mobileUrl);
+                    } catch {
+                      // Clipboard API may fail in non-secure contexts
+                    }
                   }}
                   className="border-white/20 text-white hover:bg-white/10"
                 >

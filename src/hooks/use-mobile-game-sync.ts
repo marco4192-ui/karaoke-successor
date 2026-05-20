@@ -30,7 +30,7 @@ export function useMobileGameSync(
 
     const syncGameState = async () => {
       try {
-        await fetch('/api/mobile', {
+        const res = await fetch('/api/mobile', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -45,8 +45,9 @@ export function useMobileGameSync(
             },
           }),
         });
-      } catch {
-        // Ignore sync errors — mobile client will reconnect
+        if (!res.ok) return;
+      } catch (err) {
+        console.warn('Game state sync failed:', err);
       }
     };
 

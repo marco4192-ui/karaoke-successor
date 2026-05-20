@@ -7,4 +7,4 @@
 export { CompanionSingAlongSetupScreen } from './companion-setup';
 export { CompanionGameView } from './companion-game';
 export { CompanionSeriesResults } from './companion-series-results';
-export type { CompanionPlayer, CompanionRoundResult, CompanionSingAlongSettings } from './companion-types';
+export type { CompanionPlayer, CompanionRoundResult, CompanionSingAlongSettings, GamePhase } from './companion-types';

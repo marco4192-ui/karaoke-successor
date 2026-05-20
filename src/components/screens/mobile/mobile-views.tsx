@@ -7,3 +7,4 @@ export { MobileJukeboxView } from './mobile-jukebox-view';
 export { MobileProfileCreateView } from './mobile-profile-create-view';
 export { MobileProfileEditView } from './mobile-profile-edit-view';
 export { MobileBottomNav } from './mobile-bottom-nav';
+export { RemoteControlView } from './remote-control-view';

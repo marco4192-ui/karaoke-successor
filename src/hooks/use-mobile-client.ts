@@ -25,6 +25,11 @@ interface UseMobileClientOptions {
  *
  * Game state sending and ad state are kept inline because they're small
  * and tightly coupled to the hook's caller-provided props.
+ *
+ * KNOWN LIMITATION: If both this hook and useMobileGameSync are active on the
+ * same screen, they will both POST gamestate to /api/mobile at overlapping
+ * intervals, causing duplicate/conflicting updates on the server side.
+ * Ensure only one of the two hooks is mounted at a time, or deduplicate at the API layer.
  */
 export function useMobileClient({
   song,
@@ -56,6 +61,7 @@ export function useMobileClient({
   const isPlayingRef = useRef(isPlaying);
   const gameModeRef = useRef(gameMode);
   const lastSentRef = useRef(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
   useEffect(() => {
     currentTimeRef.current = currentTime;
     isPlayingRef.current = isPlaying;
@@ -81,8 +87,10 @@ export function useMobileClient({
             gameMode: gameModeRef.current || 'standard',
           },
         }),
+        signal: abortControllerRef.current?.signal,
       });
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       console.debug('[useMobileClient]: sendGameState failed', error);
     }
   }, [song]);
@@ -90,9 +98,14 @@ export function useMobileClient({
   // Poll game state at throttle rate
   useEffect(() => {
     if (!song) return;
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
     sendGameState(); // immediate first send
     const interval = setInterval(sendGameState, 500); // poll at max 2 Hz
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      controller.abort();
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- song may change identity but effect only cares about song.id via ref
   }, [sendGameState]);
 
@@ -106,8 +119,10 @@ export function useMobileClient({
           type: 'setAdPlaying',
           payload: { isAdPlaying },
         }),
+        signal: abortControllerRef.current?.signal,
       });
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       console.debug('[useMobileClient]: sendAdState failed', error);
     }
   }, []);

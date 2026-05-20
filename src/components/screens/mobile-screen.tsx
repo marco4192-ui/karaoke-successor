@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/lib/i18n/translations';
 
-import { buildCompanionUrl } from '@/lib/qr-code';
+import { buildCompanionUrl, detectLocalIP } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
 import { PhoneIcon, MicIcon, LibraryIcon, QueueIcon } from '@/components/icons';
 
@@ -26,83 +26,18 @@ export function MobileScreen() {
   const [ipDetectionAttempts, setIpDetectionAttempts] = useState(0);
   const [mobileQueue, setMobileQueue] = useState<Array<{ id: string; songTitle: string; songArtist: string; companionCode: string; status: string }>>([]);
 
-  // One-shot IP detection — runs once on mount.
-  const detectLocalIP = useCallback(() => {
-    let isMounted = true;
-    let detectedIP: string | null = null;
-    
-    const getLocalIP = async () => {
-      try {
-        const pc = new RTCPeerConnection({ iceServers: [] });
-        pc.createDataChannel('');
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        
-        pc.onicecandidate = (event) => {
-          if (event?.candidate && isMounted && !detectedIP) {
-            const candidate = event.candidate.candidate;
-            const ipMatch = candidate.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/);
-            if (ipMatch && ipMatch[1]) {
-              const ip = ipMatch[1];
-              if (!ip.endsWith('.local') && ip !== '0.0.0.0' && !ip.startsWith('127.')) {
-                detectedIP = ip;
-                setLocalIP(ip);
-                sessionStorage.setItem('karaoke-detected-ip', ip);
-                pc.close();
-              }
-            }
-          }
-        };
-        
-        const storedIP = sessionStorage.getItem('karaoke-detected-ip');
-        if (storedIP && !storedIP.startsWith('127.') && storedIP !== 'localhost') {
-          detectedIP = storedIP;
-          setLocalIP(storedIP);
-          pc.close();
-          return;
-        }
-        
-        setTimeout(() => {
-          if (isMounted && !detectedIP) {
-            const hostname = window.location.hostname;
-            if (hostname && hostname !== 'localhost' && !hostname.startsWith('127.')) {
-              detectedIP = hostname;
-              setLocalIP(hostname);
-              sessionStorage.setItem('karaoke-detected-ip', hostname);
-            } else {
-              setIpDetectionAttempts(prev => prev + 1);
-            }
-          }
-          try { pc.close(); } catch { /* already closed */ }
-        }, 5000);
-      } catch {
-        if (isMounted) {
-          const storedIP = sessionStorage.getItem('karaoke-detected-ip');
-          if (storedIP && !storedIP.startsWith('127.') && storedIP !== 'localhost') {
-            setLocalIP(storedIP);
-          } else {
-            const hostname = window.location.hostname;
-            if (hostname && hostname !== 'localhost' && !hostname.startsWith('127.')) {
-              setLocalIP(hostname);
-              sessionStorage.setItem('karaoke-detected-ip', hostname);
-            } else {
-              setIpDetectionAttempts(prev => prev + 1);
-            }
-          }
-        }
-      }
-    };
-    
-    getLocalIP();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
+  // One-shot IP detection — runs once on mount using shared utility.
   useEffect(() => {
-    return detectLocalIP();
-  }, [detectLocalIP]);
+    let cancelled = false;
+    detectLocalIP().then(ip => {
+      if (!cancelled && ip) {
+        setLocalIP(ip);
+      } else if (!cancelled) {
+        setIpDetectionAttempts(prev => prev + 1);
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
   
   // Poll for connected clients
   useEffect(() => {
@@ -111,6 +46,7 @@ export function MobileScreen() {
     const pollClients = async () => {
       try {
         const response = await fetch('/api/mobile?action=status');
+        if (!response.ok) return;
         const data = await response.json();
         if (data.success) {
           setConnectedClients(data.clients || []);
@@ -133,8 +69,12 @@ export function MobileScreen() {
   const retryIPDetection = useCallback(() => {
     sessionStorage.removeItem('karaoke-detected-ip');
     setLocalIP('');
-    detectLocalIP();
-  }, [detectLocalIP]);
+    setIpDetectionAttempts(0);
+    detectLocalIP().then(ip => {
+      if (ip) setLocalIP(ip);
+      else setIpDetectionAttempts(prev => prev + 1);
+    });
+  }, []);
   
   const connectionUrl = localIP ? buildCompanionUrl(localIP) : '';
   const qrCodeSrc = useQRCode(connectionUrl);

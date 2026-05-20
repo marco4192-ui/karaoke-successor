@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslation } from '@/lib/i18n/translations';
-import type { MobileProfile } from './mobile-types';
 
 // ===================== REMOTE CONTROL VIEW =====================
 export function RemoteControlView({ 
@@ -12,7 +11,6 @@ export function RemoteControlView({
   onBack 
 }: { 
   clientId: string | null; 
-  profile: MobileProfile | null;
   onBack: () => void;
 }) {
   const { t } = useTranslation();
@@ -31,14 +29,17 @@ export function RemoteControlView({
   });
   
   const [commandSent, setCommandSent] = useState<string | null>(null);
-  
+  const isMountedRef = useRef(true);
+
   // Poll remote control state
   useEffect(() => {
+    isMountedRef.current = true;
     const pollRemoteState = async () => {
       try {
         const response = await fetch(`/api/mobile?action=remotecontrol&clientId=${clientId}`);
+        if (!response.ok) return;
         const data = await response.json();
-        if (data.success) {
+        if (data.success && isMountedRef.current) {
           setRemoteState(prev => ({
             ...prev,
             hasControl: data.remoteControl.iHaveControl,
@@ -48,13 +49,18 @@ export function RemoteControlView({
           }));
         }
       } catch {
-        setRemoteState(prev => ({ ...prev, isLoading: false }));
+        if (isMountedRef.current) {
+          setRemoteState(prev => ({ ...prev, isLoading: false }));
+        }
       }
     };
     
     pollRemoteState();
     const interval = setInterval(pollRemoteState, 2000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      isMountedRef.current = false;
+    };
   }, [clientId]);
   
   // Acquire remote control
@@ -73,6 +79,7 @@ export function RemoteControlView({
         }),
       });
       
+      if (!response.ok) throw new Error();
       const data = await response.json();
       
       if (data.success) {
@@ -87,14 +94,14 @@ export function RemoteControlView({
         setRemoteState(prev => ({
           ...prev,
           isLoading: false,
-          error: data.message || 'Failed to acquire control',
+          error: data.message || t('remoteControl.acquireFailed'),
         }));
       }
     } catch {
       setRemoteState(prev => ({
         ...prev,
         isLoading: false,
-        error: 'Connection error',
+        error: t('remoteControl.connectionError'),
       }));
     }
   };
@@ -115,6 +122,7 @@ export function RemoteControlView({
         }),
       });
       
+      if (!response.ok) return;
       const data = await response.json();
       
       if (data.success) {
@@ -131,10 +139,18 @@ export function RemoteControlView({
     }
   };
   
-  // Send command
+  // Send command (with debounce to ignore rapid duplicate presses)
+  const lastCommandRef = useRef<{ command: string; timestamp: number } | null>(null);
   const sendCommand = async (command: 'play' | 'pause' | 'stop' | 'next' | 'previous' | 'restart' | 'home' | 'library' | 'settings' | 'up' | 'down' | 'left' | 'right' | 'enter') => {
     if (!clientId || !remoteState.hasControl) return;
-    
+
+    // Debounce: ignore same command within 300ms
+    const now = Date.now();
+    if (lastCommandRef.current && lastCommandRef.current.command === command && now - lastCommandRef.current.timestamp < 300) {
+      return;
+    }
+    lastCommandRef.current = { command, timestamp: now };
+
     try {
       const response = await fetch('/api/mobile', {
         method: 'POST',
@@ -146,6 +162,7 @@ export function RemoteControlView({
         }),
       });
       
+      if (!response.ok) throw new Error();
       const data = await response.json();
       
       if (data.success) {
@@ -156,22 +173,22 @@ export function RemoteControlView({
         // Show error from server (e.g., "no active game")
         setRemoteState(prev => ({
           ...prev,
-          error: data.message || `Command "${command}" failed`,
+          error: data.message || t('remoteControl.commandFailed'),
         }));
       }
     } catch {
       // Connection lost — show clear error with reconnection hint
       setRemoteState(prev => ({
         ...prev,
-        error: 'Connection lost. Check if the main app is running. Retrying...',
+        error: t('remoteControl.connectionLost'),
         hasControl: false, // Release control since we can't communicate
       }));
       // Re-poll after a delay to detect when connection is restored
       setTimeout(() => {
         fetch(`/api/mobile?action=remotecontrol&clientId=${clientId}`)
-          .then(r => r.json())
+          .then(r => { if (!r.ok) throw new Error(); return r.json(); })
           .then(data => {
-            if (data.success) {
+            if (data.success && isMountedRef.current) {
               setRemoteState(prev => ({
                 ...prev,
                 hasControl: data.remoteControl.iHaveControl,

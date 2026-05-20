@@ -17,7 +17,7 @@ export function MobileHomeView({ gameState, queue, onNavigate }: HomeViewProps) 
   return (
     <div className="p-4 space-y-4">
       {/* Now Playing */}
-      {gameState.currentSong && (
+      {gameState.currentSong ? (
         <Card className="bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border-cyan-500/30">
           <CardContent className="py-4">
             <p className="text-xs text-white/60 mb-1">{t('mobileViews.nowPlaying')}</p>
@@ -25,6 +25,8 @@ export function MobileHomeView({ gameState, queue, onNavigate }: HomeViewProps) 
             <p className="text-white/60">{gameState.currentSong.artist}</p>
           </CardContent>
         </Card>
+      ) : (
+        <p className="text-center text-white/20 text-sm py-4">{t('mobileViews.nothingPlaying')}</p>
       )}
       
       {/* Quick Actions */}
@@ -84,7 +86,7 @@ export function MobileHomeView({ gameState, queue, onNavigate }: HomeViewProps) 
           </CardHeader>
           <CardContent className="space-y-2">
             {queue.slice(0, 3).map((item, i) => (
-              <div key={i} className="flex items-center gap-3 p-2 bg-white/5 rounded-lg">
+              <div key={item.id || i} className="flex items-center gap-3 p-2 bg-white/5 rounded-lg">
                 <span className="text-white/40 text-sm">{i + 1}</span>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{item.songTitle}</p>

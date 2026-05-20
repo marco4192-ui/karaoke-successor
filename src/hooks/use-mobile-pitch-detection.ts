@@ -78,9 +78,12 @@ export function useMobilePitchDetection({
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const vocalDetectorRef = useRef<VocalDetector | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   // Throttle pitch uploads to max ~20 requests/second (50ms interval)
   const lastPitchSendRef = useRef<number>(0);
   const PITCH_SEND_INTERVAL = 50;
+  // Throttle setCurrentPitch to ~20fps to avoid excessive re-renders
+  const lastPitchUpdateRef = useRef<number>(0);
 
   // Refs for values consumed inside the requestAnimationFrame loop.
   // Without these, detectPitch would capture stale snapshots of
@@ -94,8 +97,27 @@ export function useMobilePitchDetection({
     clientIdRef.current = clientId;
   }, [isPlaying, songEnded, clientId]);
 
+  const stopMicrophone = useCallback(() => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+    }
+    setIsListening(false);
+    setCurrentPitch({ frequency: null, note: null, volume: 0 });
+  }, []);
+
   const startMicrophone = useCallback(async () => {
     if (!clientIdRef.current) return;
+
+    // Guard: if already running, stop first
+    if (audioContextRef.current && mediaStreamRef.current) {
+      stopMicrophone();
+    }
     
     // Reset permission denied state on retry so the user gets another chance
     setMicPermissionDenied(false);
@@ -191,7 +213,12 @@ export function useMobilePitchDetection({
         const isSinging = vocalResult?.isSinging ?? true;
         const singingConfidence = vocalResult?.singingConfidence ?? 1;
         
-        setCurrentPitch({ frequency, note, volume });
+        // Throttle setCurrentPitch to ~20fps to avoid excessive re-renders from 60fps RAF loop
+        const pitchNow = performance.now();
+        if (pitchNow - lastPitchUpdateRef.current >= 50) {
+          setCurrentPitch({ frequency, note, volume });
+          lastPitchUpdateRef.current = pitchNow;
+        }
         
         // Only send pitch if song is playing and not ended (via refs)
         // Throttled to max ~20 requests/second to avoid server overload
@@ -200,9 +227,13 @@ export function useMobilePitchDetection({
         if (activeClientId && currentlyPlaying && !currentlyEnded && (volume > 0.01 || frequency !== null)
             && (now - lastPitchSendRef.current) >= PITCH_SEND_INTERVAL) {
           lastPitchSendRef.current = now;
+          if (abortControllerRef.current) abortControllerRef.current.abort();
+          const controller = new AbortController();
+          abortControllerRef.current = controller;
           fetch('/api/mobile', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
             body: JSON.stringify({
               type: 'pitch',
               clientId: activeClientId,
@@ -246,26 +277,13 @@ export function useMobilePitchDetection({
         );
       }
     }
-  }, [onError]);
-
-  const stopMicrophone = useCallback(() => {
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach(track => track.stop());
-    }
-    if (audioContextRef.current) {
-      audioContextRef.current.close();
-    }
-    setIsListening(false);
-    setCurrentPitch({ frequency: null, note: null, volume: 0 });
-  }, []);
+  }, [onError, stopMicrophone]);
 
   // Clean up microphone resources on unmount to prevent leaking
   // the media stream, audio context, and animation frame loop.
   useEffect(() => {
     return () => {
+      abortControllerRef.current?.abort();
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;

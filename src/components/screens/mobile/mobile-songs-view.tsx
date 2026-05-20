@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +12,7 @@ interface SongsViewProps {
   songSearch: string;
   onSongSearchChange: (_value: string) => void;
   songsLoading: boolean;
+  songsError?: string | null;
   filteredSongs: MobileSong[];
   showSongOptions: MobileSong | null;
   selectedGameMode: 'single' | 'duel' | 'duet';
@@ -28,6 +30,7 @@ export function MobileSongsView({
   songSearch,
   onSongSearchChange,
   songsLoading,
+  songsError,
   filteredSongs,
   showSongOptions,
   selectedGameMode,
@@ -41,6 +44,12 @@ export function MobileSongsView({
   formatDuration,
 }: SongsViewProps) {
   const { t } = useTranslation();
+  const songListRef = useRef<HTMLDivElement>(null);
+
+  // Scroll song list to top when search query changes
+  useEffect(() => {
+    songListRef.current?.scrollTo(0, 0);
+  }, [songSearch]);
 
   return (
     <div className="p-4">
@@ -164,6 +173,13 @@ export function MobileSongsView({
         </Card>
       )}
       
+      {/* Error State */}
+      {songsError && (
+        <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3 mb-4 text-red-400 text-sm">
+          {songsError}
+        </div>
+      )}
+
       {/* Song List */}
       {songsLoading ? (
         <div className="flex items-center justify-center py-12">
@@ -171,7 +187,7 @@ export function MobileSongsView({
           <span className="text-white/60">{t('common.loading')}</span>
         </div>
       ) : (
-        <div className="space-y-2 pb-4">
+        <div ref={songListRef} className="space-y-2 pb-4">
           {filteredSongs.map((song) => (
             <div 
               key={song.id || `song-${song.title}-${song.artist}`}
@@ -203,8 +219,8 @@ export function MobileSongsView({
               
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate text-sm">{song.title || 'Unknown'}</p>
-                <p className="text-xs text-white/40 truncate">{song.artist || 'Unknown'}</p>
+                <p className="font-medium truncate text-sm">{song.title || t('common.unknown')}</p>
+                <p className="text-xs text-white/40 truncate">{song.artist || t('common.unknown')}</p>
               </div>
               
               {/* Duration */}

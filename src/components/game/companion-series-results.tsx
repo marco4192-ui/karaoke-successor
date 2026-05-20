@@ -28,13 +28,13 @@ export function CompanionSeriesResults({ onBack }: { onBack: () => void }) {
     if (Object.keys(agg).length === 0) {
       for (const round of history) {
         for (const [id] of Object.entries(round.playerScores)) {
-          if (!agg[id]) agg[id] = { name: id, color: '#888', totalScore: 0, totalHits: 0, totalMisses: 0, bestCombo: 0, roundsPlayed: 0 };
+          if (!agg[id]) agg[id] = { name: `Player ${Object.keys(agg).length + 1}`, color: '#888', totalScore: 0, totalHits: 0, totalMisses: 0, bestCombo: 0, roundsPlayed: 0 };
         }
       }
     }
     for (const round of history) {
       for (const [id, scores] of Object.entries(round.playerScores)) {
-        if (!agg[id]) agg[id] = { name: id, color: '#888', totalScore: 0, totalHits: 0, totalMisses: 0, bestCombo: 0, roundsPlayed: 0 };
+        if (!agg[id]) agg[id] = { name: `Player ${Object.keys(agg).length + 1}`, color: '#888', totalScore: 0, totalHits: 0, totalMisses: 0, bestCombo: 0, roundsPlayed: 0 };
         agg[id].totalScore += scores.score;
         agg[id].totalHits += scores.notesHit;
         agg[id].totalMisses += scores.notesMissed;

@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import type { PitchData, MobileProfile } from './mobile-types';
+import type { PitchData, MobileProfile, MobileClient } from './mobile-types';
 import {
   mobileClients,
   connectionCodes,
@@ -27,6 +27,7 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
   const action = searchParams.get('action');
   const clientId = searchParams.get('clientId');
   const companionCode = searchParams.get('code');
+  const reconnectCode = searchParams.get('reconnectCode');
 
   // Throttled cleanup: only run once every 30 seconds
   const now = Date.now();
@@ -35,22 +36,43 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
     cleanupInactiveClients();
   }
 
+  try {
   switch (action) {
     case 'connect':
       // Generate new client with unique connection code
       {
         const clientIp = getClientIp(request);
         
-        // CRITICAL FIX (IP-based reconnection): Before creating a new client,
-        // check if there's an existing zombie client from the same IP.
+        // CRITICAL FIX (Session reconnection): Before creating a new client,
+        // check if there's an existing zombie client to merge into.
         // On refresh, the old client session should be merged into the new one
         // to preserve profile, queue, and remote control state.
-        const existingClients = Array.from(mobileClients.values());
-        const zombieClient = existingClients.find(
-          (c) => c.clientIp === clientIp && c.id !== 'active'
-        );
+        //
+        // Strategy (Fix 1 — IP-based NAT session theft prevention):
+        //   1. If caller provides a `reconnectCode`, look up the zombie by that code.
+        //      The stored code is authoritative — no IP check required.
+        //   2. Fall back to IP-based search only when no code is provided
+        //      (backward compatibility for old clients).
+        let zombieClient: MobileClient | null = null;
+        if (reconnectCode) {
+          // Code-based lookup: trust the stored connection code
+          const existingClientId = connectionCodes.get(reconnectCode);
+          if (existingClientId) {
+            const candidate = mobileClients.get(existingClientId);
+            if (candidate) {
+              zombieClient = candidate;
+            }
+          }
+        }
+        // Fallback: IP-based zombie detection (backward compatibility)
+        if (!zombieClient) {
+          const existingClients = Array.from(mobileClients.values());
+          zombieClient = existingClients.find(
+            (c) => c.clientIp === clientIp
+          ) ?? null;
+        }
         
-        // If a zombie with same IP exists, reuse its session instead of creating new
+        // If a zombie was found, reuse its session instead of creating new
         if (zombieClient) {
           
           // Update the zombie's activity timestamp
@@ -59,8 +81,7 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
           zombieClient.clientIp = clientIp;
           zombieClient.pitchData = null; // Clear stale pitch data
           
-          // Regenerate connection code (the old one may have been saved in client's localStorage)
-          // but reuse if possible so the client doesn't need to update
+          // Keep the zombie's connection code so the client stays consistent
           const connectionCode = zombieClient.connectionCode;
           
           // Return the zombie's session as if reconnect succeeded
@@ -68,12 +89,15 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
             success: true,
             clientId: zombieClient.id,
             connectionCode,
-            message: 'Reconnected via IP recognition',
+            message: reconnectCode
+              ? 'Reconnected via connection code'
+              : 'Reconnected via IP recognition',
             gameState: mutableState.gameState,
             profile: zombieClient.profile || null,
             hasRemoteControl: zombieClient.hasRemoteControl,
             type: zombieClient.type,
-            ipReconnected: true, // Flag to tell client this was IP-based
+            ipReconnected: !reconnectCode, // Flag: true only when IP-based
+            codeReconnected: !!reconnectCode, // Flag: true when code-based
           });
         }
         
@@ -127,7 +151,7 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         success: true,
         clients: Array.from(mobileClients.values()).map(c => ({
           id: c.id,
-          connectionCode: c.connectionCode,
+          // connectionCode intentionally excluded — sensitive, only returned to owner
           name: c.name,
           type: c.type,
           connected: c.connected,
@@ -175,7 +199,7 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         success: true,
         clients: Array.from(mobileClients.values()).map(c => ({
           id: c.id,
-          connectionCode: c.connectionCode,
+          // connectionCode intentionally excluded — sensitive, only returned to owner
           name: c.name,
           type: c.type,
           connected: c.connected,
@@ -406,5 +430,12 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
           clearall: '/api/mobile?action=clearall',
         },
       });
+  }
+  } catch (error) {
+    console.error('[mobile GET] Internal error:', error);
+    return Response.json(
+      { success: false, message: 'Internal error' },
+      { status: 500 }
+    );
   }
 }

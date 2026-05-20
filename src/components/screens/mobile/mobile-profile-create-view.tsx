@@ -34,7 +34,8 @@ export function MobileProfileCreateView({
   const { t } = useTranslation();
   const [hostProfiles, setHostProfiles] = useState<MobileProfile[]>([]);
   const [claimedProfileIds, setClaimedProfileIds] = useState<string[]>([]);
-  const [__isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hostProfilesError, setHostProfilesError] = useState<string | null>(null);
   // Track a selected host profile before confirming — allows deselection
   const [selectedHostProfile, setSelectedHostProfile] = useState<MobileProfile | null>(null);
 
@@ -47,12 +48,17 @@ export function MobileProfileCreateView({
         const storedClientId = getItem(StorageKeys.CLIENT_ID);
         const clientIdParam = storedClientId ? `&clientId=${storedClientId}` : '';
         const response = await fetch(`/api/mobile?action=hostprofiles${clientIdParam}`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
         const data = await response.json();
         if (data.success && data.profiles) {
           setHostProfiles(data.profiles);
           setClaimedProfileIds(data.claimedProfileIds || []);
         }
-      } catch { /* ignore */ } finally {
+      } catch (err) {
+        setHostProfilesError(err instanceof Error ? err.message : 'Failed to load profiles');
+      } finally {
         setIsLoading(false);
       }
     };
@@ -92,7 +98,16 @@ export function MobileProfileCreateView({
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Choose Existing Profile from Host */}
-          {hostProfiles.length > 0 && !selectedHostProfile && (
+          {isLoading && (
+            <div className="flex items-center justify-center py-6">
+              <div className="animate-spin w-5 h-5 border-2 border-cyan-500 border-t-transparent rounded-full mr-2" />
+              <span className="text-white/60 text-sm">{t('common.loading')}</span>
+            </div>
+          )}
+          {hostProfilesError && (
+            <div className="text-red-400 text-sm text-center py-2">{hostProfilesError}</div>
+          )}
+          {!isLoading && hostProfiles.length > 0 && !selectedHostProfile && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <span className="text-lg">👤</span>
@@ -209,6 +224,7 @@ export function MobileProfileCreateView({
               value={profileName}
               onChange={(e) => onProfileNameChange(e.target.value)}
               placeholder={t('mobileViews.enterName')}
+              maxLength={50}
               className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
             />
           </div>

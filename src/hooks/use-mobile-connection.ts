@@ -31,7 +31,7 @@ function parseGameState(raw: RawGameState): GameState {
     songEnded: raw.songEnded ?? false,
     queueLength: raw.queueLength ?? 0,
     isAdPlaying: raw.isAdPlaying ?? false,
-    gameMode: raw.gameMode ?? null,
+    gameMode: (raw.gameMode as GameState['gameMode']) ?? null,
     singalongTurn: raw.singalongTurn ?? null,
     cptmTurn: raw.cptmTurn ?? null,
     tournamentMatchId: raw.tournamentMatchId ?? null,
@@ -65,6 +65,10 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
   const gameStateRef = useRef(gameState);
   gameStateRef.current = gameState;
 
+  // Keep isConnectedRef in sync for use in setTimeout callbacks
+  const isConnectedRef = useRef(isConnected);
+  useEffect(() => { isConnectedRef.current = isConnected; }, [isConnected]);
+
   // clientIdRef tracks the latest clientId for use in callbacks that run
   // after the component may have re-rendered (e.g. disconnect, wake-up).
   // Declared early because it's used by disconnect() (line ~172).
@@ -97,6 +101,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
               setGameState(parsed);
               callbacksRef.current.onGameStateUpdate(parsed);
             }
+            reconnectBackoffRef.current = 0;
             isConnectingRef.current = false;
             return;
           }
@@ -107,6 +112,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
       const response = await fetch('/api/mobile?action=connect');
       const data = await response.json();
       if (data.success) {
+        reconnectBackoffRef.current = 0;
         const newClientId = data.clientId;
         const newCode = data.connectionCode;
         setClientId(newClientId);
@@ -144,6 +150,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
         callbacksRef.current.onError('Failed to connect to server');
       }
     } catch {
+      reconnectBackoffRef.current = Math.min(reconnectBackoffRef.current * 2 + 1000, 60000); // max 60s
       callbacksRef.current.onError('Connection failed - is the server running?');
     } finally {
       isConnectingRef.current = false;
@@ -234,7 +241,11 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
       // If too many missed heartbeats, try reconnecting
       if (missedHeartbeats >= MAX_MISSED) {
         setIsConnected(false);
-        reconnectInternal(true).catch(() => {});
+        setTimeout(() => {
+          if (isConnectedRef.current === false) {
+            reconnectInternal(true).catch(() => {});
+          }
+        }, reconnectBackoffRef.current);
       }
     };
 
@@ -254,6 +265,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
   // Debounce wake-up handler: visibilitychange, pageshow, and focus can
   // all fire within milliseconds of each other. We only need one reconnect.
   const wakeUpTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectBackoffRef = useRef<number>(0);
 
   const handleWakeUp = useCallback(() => {
     // Debounce: ignore subsequent calls within 2 seconds
@@ -306,6 +318,16 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [handleWakeUp]);
+
+  // Clear wake-up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (wakeUpTimerRef.current) {
+        clearTimeout(wakeUpTimerRef.current);
+        wakeUpTimerRef.current = null;
+      }
+    };
+  }, []);
 
   // Sync game state periodically and detect song end
   useEffect(() => {

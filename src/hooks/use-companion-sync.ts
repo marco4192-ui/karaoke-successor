@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useGameStore } from '@/lib/game/store';
 
 export interface CompanionProfile {
@@ -38,9 +38,11 @@ export function useCompanionSync(): {
   const [companionProfiles, setCompanionProfiles] = useState<CompanionProfile[]>([]);
   const [companionQueue, setCompanionQueue] = useState<CompanionQueueItem[]>([]);
   const importProfileFromMobile = useGameStore((state) => state.importProfileFromMobile);
+  const syncVersionRef = useRef(0);
 
   // Sync companion profiles: fetch from server AND import into main app's character list
   const syncCompanionProfiles = useCallback(async () => {
+    const myVersion = ++syncVersionRef.current;
     try {
       const response = await fetch('/api/mobile?action=getprofiles');
       if (!response.ok) {
@@ -49,6 +51,7 @@ export function useCompanionSync(): {
         return;
       }
       const data = await response.json();
+      if (myVersion !== syncVersionRef.current) return; // stale, newer call superseded
       if (data.success && data.profiles) {
         setCompanionProfiles(data.profiles);
         data.profiles.forEach((profile: CompanionProfile) => {

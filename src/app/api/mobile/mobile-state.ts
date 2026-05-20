@@ -8,19 +8,103 @@ import type { MobileClient, PitchData, MobileProfile, QueueItem, RemoteControlSt
 // If no PIN is configured, all requests are allowed (backward compatible).
 const adminPin: string | null = process.env.GAME_PIN || null;
 
+// ===================== BRUTE-FORCE PIN PROTECTION =====================
+// Tracks failed PIN attempts per IP with timestamps.
+// If an IP has more than 5 failed attempts in 60 seconds,
+// PIN auth is blocked for that IP for 5 minutes.
+const MAX_PIN_FAILURES = 5;
+const PIN_FAILURE_WINDOW_MS = 60 * 1000;      // 60 seconds
+const PIN_BLOCK_DURATION_MS = 5 * 60 * 1000;   // 5 minutes
+
+const failedPinAttempts: Map<string, number[]> = new Map();
+
+function isIpBlocked(ip: string): boolean {
+  const attempts = failedPinAttempts.get(ip);
+  if (!attempts) return false;
+
+  const now = Date.now();
+
+  // Clean up old entries beyond block duration
+  const active = attempts.filter(t => now - t < PIN_BLOCK_DURATION_MS);
+  if (active.length === 0) {
+    failedPinAttempts.delete(ip);
+    return false;
+  }
+  if (active.length !== attempts.length) {
+    failedPinAttempts.set(ip, active);
+  }
+
+  // Check if there are more than MAX_PIN_FAILURES in the rolling window
+  const recentCount = active.filter(t => now - t < PIN_FAILURE_WINDOW_MS).length;
+  return recentCount > MAX_PIN_FAILURES;
+}
+
+function recordFailedPinAttempt(ip: string): void {
+  const attempts = failedPinAttempts.get(ip) || [];
+  attempts.push(Date.now());
+  failedPinAttempts.set(ip, attempts);
+}
+
+function clearFailedPinAttempts(ip: string): void {
+  failedPinAttempts.delete(ip);
+}
+
+// ===================== HELPER FUNCTIONS =====================
+// Extract client IP from request headers (works with proxies and Tauri)
+export function getClientIp(request: NextRequest): string {
+  const forwarded = request.headers.get('x-forwarded-for');
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  const realIp = request.headers.get('x-real-ip');
+  if (realIp) return realIp;
+  return '127.0.0.1'; // Default for Tauri/localhost
+}
+
 /**
  * Check if a request is authorized for privileged actions.
  * Returns true if authorized, false if not.
  * - If no PIN is configured, always returns true (backward compatible).
  * - Checks for 'pin' header or 'pin' query parameter.
+ * - Includes brute-force protection: blocks IPs with >5 failures in 60s for 5 minutes.
  */
 export function requireAuth(req: NextRequest): boolean {
   if (!adminPin) return true; // No PIN configured → allow all
+
+  const ip = getClientIp(req);
+
+  // Brute-force protection check
+  if (isIpBlocked(ip)) return false;
+
   const headerPin = req.headers.get('pin');
   const queryPin = req.nextUrl.searchParams.get('pin');
   const providedPin = headerPin || queryPin;
-  return providedPin === adminPin;
+
+  if (providedPin === adminPin) {
+    clearFailedPinAttempts(ip);
+    return true;
+  }
+
+  recordFailedPinAttempt(ip);
+  return false;
 }
+
+/**
+ * Check if a request is authorized for gamestate mutations.
+ * Allows if: admin PIN is correct OR clientId holds the remote control lock.
+ */
+export function requireAuthOrRemoteHolder(req: NextRequest, clientId: string | undefined): boolean {
+  if (requireAuth(req)) return true;
+  if (!clientId) return false;
+  return mutableState.remoteControlState.lockedBy === clientId;
+}
+
+// ===================== MAX CLIENTS =====================
+export const MAX_CLIENTS = 50;
+
+// ===================== BOUND CONSTANTS =====================
+export const MAX_JUKEBOX_PER_CLIENT = 20;
+export const MAX_TOURNAMENT_VOTES = 500;
 
 // ===================== PERSISTENT PROFILE CLEANUP =====================
 // Periodically clean up persistentProfileByIp entries older than 24 hours
@@ -40,6 +124,21 @@ if (typeof globalThis !== 'undefined') {
   originals.__persistentProfileCleanup = () => {
     if (persistentProfileCleanupTimer) clearInterval(persistentProfileCleanupTimer);
   };
+}
+
+// ===================== VOTE DEDUPLICATION REGISTRY =====================
+// Tracks "clientId:matchId" pairs to prevent duplicate tournament votes
+export const tournamentVoteRegistry: Set<string> = new Set();
+
+// Also export as tournamentVoteDedup alias for compatibility
+export { tournamentVoteRegistry as tournamentVoteDedup };
+
+export function hasVoted(clientId: string, matchId: string): boolean {
+  return tournamentVoteRegistry.has(`${clientId}:${matchId}`);
+}
+
+export function recordVote(clientId: string, matchId: string): void {
+  tournamentVoteRegistry.add(`${clientId}:${matchId}`);
 }
 
 // ===================== GLOBAL STATE =====================
@@ -106,18 +205,6 @@ export const mutableState = {
   }>,
 };
 
-// ===================== HELPER FUNCTIONS =====================
-// Extract client IP from request headers (works with proxies and Tauri)
-export function getClientIp(request: NextRequest): string {
-  const forwarded = request.headers.get('x-forwarded-for');
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
-  }
-  const realIp = request.headers.get('x-real-ip');
-  if (realIp) return realIp;
-  return '127.0.0.1'; // Default for Tauri/localhost
-}
-
 export function generateConnectionCode(): string {
   return generateCode(4, COMPANION_CODE_CHARS);
 }
@@ -130,6 +217,19 @@ export function getUniqueConnectionCode(): string {
     attempts++;
   }
   return code;
+}
+
+// ===================== CLIENT REGISTRATION =====================
+/**
+ * Register a new mobile client with connection limit enforcement.
+ * Returns an error string if the limit is reached, or null on success.
+ */
+export function registerClient(clientId: string, client: MobileClient): string | null {
+  if (mobileClients.size >= MAX_CLIENTS) {
+    return `Maximum client limit (${MAX_CLIENTS}) reached. Try again later.`;
+  }
+  mobileClients.set(clientId, client);
+  return null;
 }
 
 // ===================== CLIENT CLEANUP =====================
@@ -174,7 +274,19 @@ export function removeClient(
   return client;
 }
 
+// Purge completed queue items older than 10 minutes to prevent memory bloat
+export function purgeCompletedQueueItems(): void {
+  const now = Date.now();
+  const COMPLETED_TTL_MS = 10 * 60 * 1000; // 10 minutes
+  mutableState.songQueue = mutableState.songQueue.filter(item => {
+    if (item.status !== 'completed') return true;
+    // Remove completed items that are older than the TTL (using addedAt as age reference)
+    return (now - item.addedAt) < COMPLETED_TTL_MS;
+  });
+}
+
 // Clean up inactive clients (older than 5 minutes without activity)
+// Also purges old completed queue items and prunes tournament crowd votes.
 export function cleanupInactiveClients() {
   const now = Date.now();
   const timeout = 5 * 60 * 1000; // 5 minutes
@@ -189,6 +301,20 @@ export function cleanupInactiveClients() {
   for (const id of inactiveIds) {
     removeClient(id, { persistProfile: true, purgeQueue: true });
   }
+
+  // Periodic purge of completed queue items
+  purgeCompletedQueueItems();
+
+  // Prune tournament crowd votes to keep only the last MAX_TOURNAMENT_VOTES entries
+  if (mutableState.tournamentCrowdVotes.length > MAX_TOURNAMENT_VOTES) {
+    mutableState.tournamentCrowdVotes = mutableState.tournamentCrowdVotes.slice(-MAX_TOURNAMENT_VOTES);
+  }
+
+  // Purge jukebox wishlist completed items older than 10 minutes
+  mutableState.jukeboxWishlist = mutableState.jukeboxWishlist.filter(item => {
+    if (item.status !== 'completed') return true;
+    return (now - item.addedAt) < (10 * 60 * 1000);
+  });
 }
 
 // ===================== HELPER =====================
@@ -212,6 +338,7 @@ export function resetAllState() {
   profileToClient.clear();
   persistentProfileByIp.clear();
   latestPitchData.clear();
+  tournamentVoteRegistry.clear();
   mutableState.songQueue = [];
   mutableState.jukeboxWishlist = [];
   mutableState.gameState = {
@@ -232,4 +359,6 @@ export function resetAllState() {
     lockedAt: null,
     pendingCommands: [],
   };
+  // Clear tournament crowd votes
+  mutableState.tournamentCrowdVotes = [];
 }

@@ -50,7 +50,7 @@ export function CompanionSingAlongSetupScreen({ profiles, onSelectSong, onBack }
     const _players: CompanionPlayer[] = selectedPlayers.map((id, index) => {
       const profile = profiles.find(p => p.id === id);
       return {
-        id, name: profile?.name || 'Unknown', avatar: profile?.avatar,
+        id, name: profile?.name || t('companion.unknownPlayer'), avatar: profile?.avatar,
         color: profile?.color || PLAYER_COLORS[index % PLAYER_COLORS.length],
         ...EMPTY_PLAYER_SCORE, turnCount: 0,
       };
@@ -96,7 +96,7 @@ export function CompanionSingAlongSetupScreen({ profiles, onSelectSong, onBack }
                 <Button key={diff} variant={difficulty === diff ? 'default' : 'outline'}
                   onClick={() => setDifficulty(diff)}
                   className={difficulty === diff ? 'bg-emerald-500 hover:bg-emerald-600' : 'border-white/20'}>
-                  {diff.charAt(0).toUpperCase() + diff.slice(1)}
+                  {t(`companion.difficulty${diff.charAt(0).toUpperCase() + diff.slice(1)}`)}
                 </Button>
               ))}
             </div>
@@ -140,7 +140,7 @@ export function CompanionSingAlongSetupScreen({ profiles, onSelectSong, onBack }
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-bold text-lg">{t('companion.readyToPlay')}</h3>
-              <p className="text-sm text-white/60">{selectedPlayers.length} {t('companion.playersSelected')}</p>
+              <p className="text-sm text-white/60">{t('companion.playersSelectedCount').replace('{n}', String(selectedPlayers.length))}</p>
               <p className="text-xs text-white/40 mt-1">{t('companion.turnDuration')}</p>
             </div>
             <div className="text-right">

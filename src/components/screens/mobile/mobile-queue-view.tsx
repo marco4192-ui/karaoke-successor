@@ -57,6 +57,7 @@ export function MobileQueueView({ queue, slotsRemaining, queueError, onNavigate,
         </div>
       ) : (
         <div className="space-y-2">
+          {/* Position numbers are based on the filtered (non-completed) list index */}
           {queue.filter(q => q.status !== 'completed').map((item, i) => (
             <div 
               key={item.id || i}

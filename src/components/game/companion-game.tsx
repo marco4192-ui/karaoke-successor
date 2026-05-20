@@ -73,7 +73,7 @@ export function CompanionGameView({
   const currentPlayer = playersSnapshot[currentPlayerIndex];
 
   // ── Switch timer ──
-  const [initialTurnDuration] = useState(() => randomTurnDuration());
+  const [initialTurnDuration] = useState(() => randomTurnDuration(safeSettings));
   const timeUntilSwitchRef = useRef(initialTurnDuration);
   const [timeUntilSwitchDisplay, setTimeUntilSwitchDisplay] = useState(initialTurnDuration);
   const [timeUntilSwitchTotal, setTimeUntilSwitchTotal] = useState(initialTurnDuration);
@@ -252,7 +252,7 @@ export function CompanionGameView({
 
       // Activate the next player
       setCurrentPlayerIndex(nextPlayerIndexRef.current);
-      timeUntilSwitchRef.current = randomTurnDuration();
+      timeUntilSwitchRef.current = randomTurnDuration(safeSettings);
       const newDuration = timeUntilSwitchRef.current;
       setTimeUntilSwitchDisplay(newDuration);
       setTimeUntilSwitchTotal(newDuration);
@@ -293,7 +293,7 @@ export function CompanionGameView({
           setPhase('playing');
           setIsPlaying(true);
           setCurrentTime(0);
-          timeUntilSwitchRef.current = randomTurnDuration();
+          timeUntilSwitchRef.current = randomTurnDuration(safeSettings);
           const newSwitchDuration = timeUntilSwitchRef.current;
           setTimeUntilSwitchDisplay(newSwitchDuration);
           setTimeUntilSwitchTotal(newSwitchDuration);
@@ -387,6 +387,7 @@ export function CompanionGameView({
           if (phase === 'playing' || phase === 'switching') {
             setIsPlaying(false);
             recordRound();
+            setPlayersSnapshot([...playersRef.current]);
             setPhase('song-results');
           }
         }}
@@ -451,7 +452,7 @@ export function CompanionGameView({
           {/* Header */}
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Badge className="bg-emerald-500/20 text-emerald-400 text-lg px-3 py-1">📱 COMPANION SING-A-LONG</Badge>
+              <Badge className="bg-emerald-500/20 text-emerald-400 text-lg px-3 py-1">📱 {t('companion.singAlongTitle')}</Badge>
               <span className="text-white/60 text-sm">{song.title}</span>
             </div>
             <div className="flex items-center gap-3 pointer-events-auto">
@@ -487,7 +488,7 @@ export function CompanionGameView({
                   <div className="text-3xl font-bold text-emerald-400" style={{ textShadow: '0 0 12px rgba(52,211,153,0.4)' }}>{currentPlayer?.score.toLocaleString()}</div>
                   <div className="text-xs text-white/40">{t('companion.points')}</div>
                   {currentPlayer?.combo > 0 && (
-                    <div className="text-sm text-amber-400">🔥 {currentPlayer.combo}x combo</div>
+                    <div className="text-sm text-amber-400">🔥 {currentPlayer.combo}x {t('companion.combo')}</div>
                   )}
                 </div>
               </div>
@@ -548,7 +549,7 @@ export function CompanionGameView({
             </CardContent>
           </Card>
 
-          <Button onClick={() => { if (audioRef.current) audioRef.current.pause(); setIsPlaying(false); recordRound(); setPhase('song-results'); }}
+          <Button onClick={() => { if (audioRef.current) audioRef.current.pause(); setIsPlaying(false); recordRound(); setPlayersSnapshot([...playersRef.current]); setPhase('song-results'); }}
             variant="outline" className="w-full mt-3 border-white/20 text-white/60 hover:text-white">
             {t('companion.endSongEarly')}
           </Button>

@@ -107,7 +107,7 @@ export function MobileMicView({ gameState, clientId, currentPitch, isListening, 
             <div className="w-full h-4 bg-white/10 rounded-full overflow-hidden mb-6">
               <div 
                 className="h-full bg-gradient-to-r from-green-400 to-cyan-400 transition-all duration-75"
-                style={{ width: `${currentPitch.volume * 100}%` }}
+                style={{ width: `${Math.min(100, Math.max(0, currentPitch.volume * 100))}%` }}
               />
             </div>
             
@@ -126,6 +126,7 @@ export function MobileMicView({ gameState, clientId, currentPitch, isListening, 
             {/* Microphone Button */}
             <button
               onClick={isListening ? onStopMic : onStartMic}
+              aria-label={isListening ? t('mobileMicView.tapToStop') : t('mobileMicView.tapToSing')}
               className={`w-40 h-40 rounded-full flex items-center justify-center transition-all ${
                 isListening 
                   ? 'bg-red-500 hover:bg-red-400 animate-pulse shadow-lg shadow-red-500/50' 

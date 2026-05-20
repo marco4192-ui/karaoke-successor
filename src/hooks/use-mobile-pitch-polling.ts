@@ -61,6 +61,7 @@ export function useMobilePitchPolling(song: { id: string } | null): {
           signal: abortController.signal,
         });
         if (aborted) return;
+        if (!response.ok) return;
 
         const data = await response.json();
         if (aborted) return;

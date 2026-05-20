@@ -40,7 +40,9 @@ export const DEFAULT_SETTINGS: CompanionSingAlongSettings = {
 
 export type GamePhase = 'intro' | 'countdown' | 'playing' | 'switching' | 'song-results' | 'series-results';
 
-/** Generate a random interval between 20 and 45 seconds (in ms) */
-export function randomTurnDuration(): number {
-  return (20 + Math.random() * 25) * 1000; // 20,000 – 45,000 ms
+/** Generate a random interval between min and max turn durations (in ms) */
+export function randomTurnDuration(settings?: { minTurnDuration?: number; maxTurnDuration?: number }): number {
+  const min = (settings?.minTurnDuration ?? DEFAULT_SETTINGS.minTurnDuration ?? 15) * 1000;
+  const max = (settings?.maxTurnDuration ?? DEFAULT_SETTINGS.maxTurnDuration ?? 45) * 1000;
+  return min + Math.random() * (max - min);
 }

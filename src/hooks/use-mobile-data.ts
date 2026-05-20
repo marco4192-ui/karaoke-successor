@@ -136,6 +136,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
   const loadAvailablePartners = useCallback(async () => {
     try {
       const response = await fetch('/api/mobile?action=status');
+      if (!response.ok) return;
       const data = await response.json();
       if (data.success && data.clients) {
         const partners = data.clients
@@ -183,6 +184,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
           payload: { songId: song.id, songTitle: song.title, songArtist: song.artist, partnerId, partnerName, gameMode },
         }),
       });
+      if (!response.ok) return;
       const data = await response.json();
       if (data.success) {
         setQueue(prev => [...prev, {
@@ -215,6 +217,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'removequeue', clientId, payload: { itemId } }),
       });
+      if (!response.ok) return;
       const data = await response.json();
       if (data.success) {
         setQueue(prev => prev.filter(q => q.id !== itemId));
@@ -235,6 +238,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
   const loadQueue = useCallback(async () => {
     try {
       const response = await fetch('/api/mobile?action=getqueue');
+      if (!response.ok) return;
       const data = await response.json();
       if (data.success) {
         const serverQueue = data.queue || [];
@@ -251,6 +255,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
   const loadGameResults = useCallback(async () => {
     try {
       const response = await fetch('/api/mobile?action=results');
+      if (!response.ok) return;
       const data = await response.json();
       if (data.success && data.results) {
         setGameResults(data.results);
@@ -287,6 +292,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
   const loadJukeboxWishlist = useCallback(async () => {
     try {
       const response = await fetch('/api/mobile?action=getjukebox');
+      if (!response.ok) return;
       const data = await response.json();
       if (data.success) {
         setJukeboxWishlist(data.wishlist || []);
