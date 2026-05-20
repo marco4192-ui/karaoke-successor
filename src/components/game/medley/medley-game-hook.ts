@@ -617,6 +617,70 @@ export function useMedleyGame({
     playersRef.current[pIdx] = { ...p };
   }, [snippetNotes, currentSnippet, settings.difficulty, settings.dynamicDifficulty, currentSnippetIdx, medleySongs.length, multiPitch]);
 
+  // ── Audio stall fallback timer ──
+  // If audio fails to play or stalls (paused but phase=playing), auto-advance
+  // after a short grace period so the game doesn't hang forever.
+  useEffect(() => {
+    if (phase !== 'playing' || !isPlaying || !currentSnippet) return;
+
+    const snippet = currentSnippet;
+    const snippetDuration = snippet.endTime - snippet.startTime;
+    // Grace period: 3 seconds for audio to start, then fall back to timer
+    const STALL_GRACE_MS = 3000;
+    let stallDetected = false;
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+    let fallbackInterval: ReturnType<typeof setInterval> | null = null;
+    let fallbackStartTime = 0;
+
+    const checkStall = () => {
+      const audio = audioRef.current;
+      if (audio && !audio.paused) return; // Audio is playing fine
+      if (!stallDetected) {
+        stallDetected = true;
+        fallbackStartTime = Date.now();
+        // eslint-disable-next-line no-console
+        console.warn('[Medley] Audio stalled, starting fallback timer');
+      }
+    };
+
+    // Check periodically if audio is stalled
+    fallbackInterval = setInterval(() => {
+      checkStall();
+      if (stallDetected && fallbackInterval) {
+        clearInterval(fallbackInterval);
+        fallbackInterval = null;
+        // Start fallback timer that advances currentTimeMs
+        // eslint-disable-next-line no-console
+        console.warn('[Medley] Running in fallback mode (no audio)');
+        const startOffset = Date.now() - fallbackStartTime;
+        const startMs = currentTimeMs + startOffset;
+        fallbackTimer = setInterval(() => {
+          const elapsed = Date.now() - fallbackStartTime + startOffset;
+          const time = startMs + elapsed;
+          setCurrentTimeMs(time);
+
+          // Check snippet end in fallback mode
+          if (time >= snippetDuration) {
+            if (fallbackTimer) clearInterval(fallbackTimer);
+            fallbackTimer = null;
+            setIsPlaying(false);
+            // Move to next snippet or round-results
+            if (currentSnippetIdx < medleySongs.length - 1) {
+              setPhase('transition');
+            } else {
+              setPhase('round-results');
+            }
+          }
+        }, 80);
+      }
+    }, 500);
+
+    return () => {
+      if (fallbackInterval) clearInterval(fallbackInterval);
+      if (fallbackTimer) clearInterval(fallbackTimer);
+    };
+  }, [phase, isPlaying, currentSnippet, currentSnippetIdx, medleySongs.length]);
+
   // ── Game loop ──
   useEffect(() => {
     if (phase !== 'playing' || !isPlaying || !currentSnippet) return;
@@ -750,26 +814,7 @@ export function useMedleyGame({
     setPhase('countdown');
     setCountdown(3);
     setFinalFaceOff(false);
-
-    const interval = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          countdownIntervalRef.current = null;
-          setPhase('playing');
-          if (audioRef.current && currentSnippetRef.current) {
-            audioRef.current.currentTime = currentSnippetRef.current.startTime / 1000;
-            // eslint-disable-next-line no-console
-            audioRef.current.play().catch(e => console.warn('[Medley] Play failed:', e));
-            setIsPlaying(true);
-            setCurrentTimeMs(0);
-          }
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    countdownIntervalRef.current = interval;
+    setCurrentTimeMs(0);
 
     // Initialize multi-pitch detection IN PARALLEL with countdown.
     try {
@@ -779,6 +824,30 @@ export function useMedleyGame({
       // eslint-disable-next-line no-console
       console.warn('[Medley] Multi-pitch init failed:', e);
     }
+
+    const interval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          countdownIntervalRef.current = null;
+          setPhase('playing');
+          setIsPlaying(true);
+          setCurrentTimeMs(0);
+          // Attempt to play audio — may fail if URL not ready yet
+          // The stall fallback timer will handle the case where audio never starts
+          if (audioRef.current && currentSnippetRef.current) {
+            audioRef.current.currentTime = currentSnippetRef.current.startTime / 1000;
+            audioRef.current.play().catch(e => {
+              // eslint-disable-next-line no-console
+              console.warn('[Medley] Play failed, fallback timer will advance:', e);
+            });
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    countdownIntervalRef.current = interval;
   }, [multiPitch]);
 
   // ── Feature #18: Compute MVP (delegates to pure function) ──

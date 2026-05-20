@@ -228,8 +228,12 @@ export function LyricLineDisplay({
         const isHyphenOnly = displayLyric.trim() === '-';
 
         // MISSING WORDS MODE: Hide entire lines belonging to hidden passages
-        // missingWordsIndices now stores LINE startTimes (not note startTimes)
-        const isMissingWord = gameMode === 'missing-words' && missingWordsIndices.includes(line.startTime);
+        // missingWordsIndices stores LINE startTimes for passage mode,
+        // and individual NOTE startTimes for word mode.
+        // Check line-level (passage mode) AND note-level (word mode).
+        const isMissingWordLine = gameMode === 'missing-words' && missingWordsIndices.includes(line.startTime);
+        const isMissingWordNote = gameMode === 'missing-words' && !isMissingWordLine && missingWordsIndices.includes(note.startTime);
+        const isMissingWord = isMissingWordLine || isMissingWordNote;
 
         // BLIND KARAOKE MODE (new concept): Text always shown unless Hardcore
         // Normal blind: text always fully visible (notes hidden on highway instead)

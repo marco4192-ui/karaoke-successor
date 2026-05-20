@@ -310,6 +310,7 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
   useGameModes({
     gameMode: gameState.gameMode,
     status: gameState.status,
+    isPlaying,
     currentTime: gameState.currentTime,
     songId: song?.id,
     sortedLines: timingData?.sortedLines,

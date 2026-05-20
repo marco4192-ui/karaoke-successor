@@ -10,6 +10,8 @@ export type MissingWordsGranularity = 'word' | 'passage' | 'both';
 interface UseGameModesParams {
   gameMode: string;
   status: string;
+  /** Whether the game is currently playing (audio/video active). More reliable than status === 'playing' */
+  isPlaying?: boolean;
   currentTime: number;
   songId?: string;
   sortedLines?: LyricLine[];
@@ -147,6 +149,7 @@ function hideEveryNthNote(noteStartTimes: number[], n: number): number[] {
 export function useGameModes({
   gameMode,
   status,
+  isPlaying: isActivelyPlaying,
   currentTime,
   songId,
   sortedLines,
@@ -161,6 +164,9 @@ export function useGameModes({
   missingWordsGranularity,
   escalatingMultiplier,
 }: UseGameModesParams) {
+  // Use isActivelyPlaying (from game loop) as primary signal,
+  // fall back to status === 'playing' for store-based pause/resume.
+  const isGameActive = isActivelyPlaying === true || status === 'playing';
   // BLIND KARAOKE: Pre-computed passage-based blind pattern
   const blindPatternRef = useRef<BlindPassagePattern | null>(null);
 
@@ -182,7 +188,7 @@ export function useGameModes({
   // Notes on the highway are hidden for entire musical passages.
   // First passage is always fully visible.
   useEffect(() => {
-    if (gameMode === 'blind' && status === 'playing' && sortedLines && sortedLines.length > 0) {
+    if (gameMode === 'blind' && isGameActive && sortedLines && sortedLines.length > 0) {
       // Generate passage-based blind pattern once per song
       if (!blindPatternRef.current) {
         const passages = groupIntoPassages(sortedLines);
@@ -259,7 +265,7 @@ export function useGameModes({
         setBlindSection(isBlind);
       }
     }
-  }, [gameMode, status, currentTime, sortedLines, setBlindSection, setBlindHardcore, blindFrequency, escalatingMultiplier, onBlindWarning]);
+  }, [gameMode, isGameActive, currentTime, sortedLines, setBlindSection, setBlindHardcore, blindFrequency, escalatingMultiplier, onBlindWarning]);
 
   // ── MISSING WORDS MODE — Multi-granularity ──
   // Supports three modes:
@@ -267,7 +273,7 @@ export function useGameModes({
   // - 'passage': Entire passages hidden
   // - 'both': Mix of passage hiding + scattered words
   useEffect(() => {
-    if (gameMode === 'missing-words' && sortedLines && status === 'playing') {
+    if (gameMode === 'missing-words' && sortedLines && isGameActive) {
       if (missingWordsGeneratedRef.current) return;
       missingWordsGeneratedRef.current = true;
 
@@ -334,11 +340,11 @@ export function useGameModes({
 
       setMissingWordsIndices(hiddenStartTimes);
     }
-  }, [gameMode, sortedLines, status, setMissingWordsIndices, missingWordFrequency, missingWordsGranularity, escalatingMultiplier]);
+  }, [gameMode, sortedLines, isGameActive, setMissingWordsIndices, missingWordFrequency, missingWordsGranularity, escalatingMultiplier]);
 
   // ── Missing Words Warning: signal before hidden passages approach ──
   useEffect(() => {
-    if (gameMode === 'missing-words' && status === 'playing' && sortedLines && onMissingWordsWarning) {
+    if (gameMode === 'missing-words' && isGameActive && sortedLines && onMissingWordsWarning) {
       const passages = groupIntoPassages(sortedLines);
       if (passages.length <= 1) return;
 
@@ -368,7 +374,7 @@ export function useGameModes({
       onMissingWordsWarning(0, false);
       lastMWWarningKeyRef.current = '';
     }
-  }, [gameMode, status, currentTime, sortedLines, onMissingWordsWarning]);
+  }, [gameMode, isGameActive, currentTime, sortedLines, onMissingWordsWarning]);
 
   // Reset both modes when song changes
   useEffect(() => {

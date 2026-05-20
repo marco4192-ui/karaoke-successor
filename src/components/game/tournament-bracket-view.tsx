@@ -187,29 +187,7 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
         </div>
       </div>
 
-      {/* Upcoming Duels — compact overlay at bottom */}
-      {playableMatches.length > 1 && !bracket.champion && (
-        <div className="mt-1 bg-white/5 rounded-lg p-1.5 shrink-0">
-          <h4 className="text-xs text-white/60 mb-1">{t('tournament.upcomingDuels')}</h4>
-          <div className="flex flex-wrap gap-1">
-            {playableMatches.slice(1, 5).map((match, i) => (
-              <div key={match.id} className="bg-white/5 rounded px-2 py-0.5 text-xs border border-white/10">
-                <span className="text-white/60">{i + 2}.</span>{' '}
-                <span className="text-cyan-400">{match.player1?.name || t('tournament.tbd')}</span>
-                <span className="text-white/40 mx-0.5">{t('tournament.vs')}</span>
-                <span className="text-pink-400">{match.player2?.name || t('tournament.tbd')}</span>
-              </div>
-            ))}
-            {playableMatches.length > 5 && (
-              <div className="text-white/40 text-xs self-center">
-                {t('tournament.moreMatches').replace('{n}', String(playableMatches.length - 5))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* #10 Fan Favorites — crowd vote results */}
+      {/* Fan Favorites — crowd vote results */}
       {fanFavorites.length > 0 && (
         <div className="mt-1 bg-gradient-to-r from-rose-500/10 to-pink-500/10 rounded-lg p-1.5 shrink-0">
           <h4 className="text-xs text-white/60 mb-1">{t('tournament.fanFavorites')}</h4>
