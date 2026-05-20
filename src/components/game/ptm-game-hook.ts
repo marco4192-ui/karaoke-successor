@@ -172,9 +172,11 @@ export function usePtmGameLogic({
     setIsPlaying,
   });
 
-  // ── Smoothed pitch ──
+  // ── Smoothed pitch (visual display only) ──
+  // Uses rawNote (un-stabilized) for responsive pitch indicator.
+  // Scoring uses pitchResult.note (stabilized) separately.
   const { pitchResult, stop, switchMicrophone } = usePitchDetector();
-  const smoothedPitch = useSmoothedPitch(pitchResult?.note ?? null, 0.55, 0.15);
+  const smoothedPitch = useSmoothedPitch(pitchResult?.rawNote ?? null, 0.80, 0.08);
 
   // ── Player state (local, mutable for performance) ──
   const playersRef = useRef<PtmPlayer[]>(

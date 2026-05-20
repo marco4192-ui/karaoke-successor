@@ -38,7 +38,9 @@ export function useDuetP2Pitch({
   useEffect(() => {
     if (isDuetMode && mobilePitch) {
       queueMicrotask(() => {
-        setP2DetectedPitch(mobilePitch.frequency);
+        // Use MIDI note (not frequency) for visual display consistency.
+        // MobilePitchData.note is already a MIDI note number.
+        setP2DetectedPitch(mobilePitch.note);
         setP2Volume(mobilePitch.volume || 0);
       });
     } else if (isDuetMode && !mobilePitch?.frequency) {
@@ -83,7 +85,8 @@ export function useDuetP2Pitch({
 
       detector.start((result) => {
         if (result.frequency) {
-          setP2DetectedPitch(result.frequency);
+          // Use rawNote (un-stabilized MIDI) for responsive P2 visual display
+          setP2DetectedPitch(result.rawNote ?? result.note);
           setP2Volume(result.volume || 0);
         }
       });

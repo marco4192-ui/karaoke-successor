@@ -494,8 +494,11 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
     for (const player of activeMicPlayers) {
       const pitch = multiPitch.getPlayerPitch(player.id);
-      if (pitch?.note != null && pitch.isSinging !== false) {
-        return pitch.note;
+      // Use rawNote (un-stabilized) for responsive visual feedback.
+      // Fall back to stabilized note if rawNote is unavailable.
+      const visualPitch = pitch?.rawNote ?? pitch?.note;
+      if (visualPitch != null && pitch?.isSinging !== false) {
+        return visualPitch;
       }
     }
     return null;

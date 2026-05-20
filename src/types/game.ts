@@ -256,7 +256,8 @@ export interface QueueItem {
 
 export interface PitchDetectionResult {
   frequency: number | null;
-  note: number | null;
+  note: number | null; // Stabilized pitch (after PitchStabilizer) — used by scoring
+  rawNote: number | null; // Raw, un-stabilized pitch — used for real-time visual display
   clarity: number; // 0-1 confidence
   volume: number; // 0-1
   isSinging?: boolean; // Vocal detection: true if singing (not humming/noise)

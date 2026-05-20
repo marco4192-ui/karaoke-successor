@@ -255,6 +255,7 @@ export class PitchDetector {
         this.onPitchDetected?.({
           frequency: null,
           note: null,
+          rawNote: null,
           clarity: 0,
           volume,
           isSinging: false,
@@ -270,6 +271,7 @@ export class PitchDetector {
       this.onPitchDetected?.({
         frequency: null,
         note: null,
+        rawNote: null,
         clarity: 0,
         volume,
         isSinging: false,
@@ -308,20 +310,27 @@ export class PitchDetector {
       const vocalIsSinging = this.lastVocalResult?.isSinging ?? true;
       const vocalConfidence = this.lastVocalResult?.singingConfidence ?? 1;
 
+      // Always report the raw (un-stabilized) note for real-time visual display.
+      // The stabilized `note` is used by scoring for accuracy;
+      // `rawNote` provides a responsive, lag-free pitch indicator.
+      const rawNote = note;
+
       if (stablePitch !== null) {
         this.onPitchDetected?.({
           frequency,
           note: stablePitch,
+          rawNote,
           clarity,
           volume,
           isSinging: vocalIsSinging,
           singingConfidence: vocalConfidence,
         });
       } else {
-        // Still updating stability, use current pitch
+        // Still updating stability, use current pitch for both fields
         this.onPitchDetected?.({
           frequency,
           note,
+          rawNote,
           clarity,
           volume,
           isSinging: vocalIsSinging,
@@ -332,6 +341,7 @@ export class PitchDetector {
       this.onPitchDetected?.({
         frequency: null,
         note: null,
+        rawNote: null,
         clarity: 0,
         volume,
         isSinging: false,

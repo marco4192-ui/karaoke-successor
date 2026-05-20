@@ -221,6 +221,7 @@ export class PitchDetectorManager {
             this.callbacks?.onPitchDetected(playerId, {
               frequency: pitchData.frequency,
               note: pitchData.note,
+              rawNote: pitchData.note,
               clarity: pitchData.clarity || 0,
               volume: pitchData.volume || 0,
               isSinging: pitchData.isSinging,

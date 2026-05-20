@@ -634,9 +634,10 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         }
         // Throttle detectedPitch store update to ~60fps (16ms).
         // Scoring uses currentPitch directly (not the store), so accuracy is unaffected.
-        // Previously 33ms (~30Hz), reduced for more responsive pitch indicator.
+        // Store rawNote (MIDI note) instead of frequency (Hz) for consistency —
+        // the store's detectedPitch is read as a MIDI note by components.
         if (pitchNow - lastPitchStoreUpdateRef.current >= 16) {
-          setDetectedPitch(currentPitch.frequency);
+          setDetectedPitch(currentPitch.rawNote ?? currentPitch.note ?? null);
           lastPitchStoreUpdateRef.current = pitchNow;
         }
         checkNoteHitsRef.current(adjustedTime, currentPitch);

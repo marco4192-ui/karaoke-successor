@@ -61,6 +61,7 @@ export function useCptmScoring(params: CptmScoringParams): void {
     // Build a fake pitchResult from cached data
     const pitchResult = {
       note: cachedPitch.note,
+      rawNote: cachedPitch.note, // Companion pitch is not stabilized
       frequency: cachedPitch.frequency ?? 0,
       clarity: cachedPitch.clarity,
       volume: cachedPitch.volume,

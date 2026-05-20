@@ -82,9 +82,11 @@ export function computeGameElapsedMs(params: ComputeElapsedParams): number {
  */
 export function buildP2PitchResult(params: BuildP2PitchParams): PitchDetectionResult {
   const { frequency, volume, isSinging } = params;
+  const note = Math.round(12 * (Math.log2(frequency / 440)) + 69);
   return {
     frequency,
-    note: Math.round(12 * (Math.log2(frequency / 440)) + 69),
+    note,
+    rawNote: note, // P2 pitch is not stabilized, so rawNote == note
     clarity: 0.7,
     volume,
     isSinging: isSinging ?? true,

@@ -71,14 +71,18 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
   const { pitchResult, initialize, start, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
 
   // Smoothed pitch for visual display (prevents flickering/jitter).
-  // Raw pitch is still used for scoring accuracy — this only affects visuals.
-  // α=0.55 (was 0.85): Reduced smoothing for faster visual response when pitch
-  //   changes. The old value caused ~2-3 frames of visible lag on note transitions,
-  //   making the indicator appear "lazy" when singing across different pitches.
-  // deadZone=0.15 (was 0.05): Increased to suppress micro-jitter from breath noise
-  //   and vibrato artifacts that caused the indicator to wobble in the middle of
-  //   sustained notes. Only pitch changes ≥0.15 semitones trigger a visual update.
-  const smoothedPitch = useSmoothedPitch(pitchResult?.note ?? null, 0.55, 0.15);
+  // Uses rawNote (un-stabilized) instead of the stabilized `note` field
+  // for maximum responsiveness. Scoring continues to use the stabilized
+  // `note` for accuracy — this only affects the visual pitch indicator.
+  //
+  // α=0.80 (was 0.55): Much lighter EMA smoothing for near-real-time tracking.
+  //   The old 0.55 combined with PitchStabilizer created 65-150ms lag on
+  //   note transitions, making the indicator feel disconnected from the voice.
+  //   0.80 lets the indicator follow the singer within 1-2 frames (~16-33ms).
+  // deadZone=0.08 (was 0.15): Tighter dead zone so even small pitch movements
+  //   register visually. The old 0.15ST threshold swallowed quick melodic
+  //   ornaments and vibrato, making the indicator feel "stuck".
+  const smoothedPitch = useSmoothedPitch(pitchResult?.rawNote ?? null, 0.80, 0.08);
 
   // Current song reference - must be defined early as it's used by multiple hooks
   const song = gameState.currentSong;

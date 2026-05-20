@@ -135,7 +135,6 @@ const PitchIndicator = React.memo(function PitchIndicator({ pitchY, windowHeight
         left: '4%',
         top: `${(pitchY / windowHeight) * 100}%`,
         transform: 'translateY(-50%)',
-        transition: 'top 40ms linear',
       }}
     >
       <div className="w-12 h-12 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 shadow-lg shadow-green-500/50 animate-pulse flex items-center justify-center">
