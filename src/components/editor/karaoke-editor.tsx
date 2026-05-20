@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import type { Song, Note, LyricLine } from '@/types/game';
 import { v4 as uuidv4 } from 'uuid';
+import { useTranslation } from '@/lib/i18n/translations';
 import { saveSongToTxt, type SaveResult } from '@/lib/editor/save-to-file';
 import { Timeline } from './timeline/timeline';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -32,6 +33,7 @@ interface KaraokeEditorProps {
 }
 
 export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEditorProps) {
+  const { t } = useTranslation();
   const [currentSong, setCurrentSong] = useState<Song>(initialSong);
   const [selectedNoteId, setSelectedNoteId] = useState<string | undefined>();
   const [audioBuffer, _setAudioBuffer] = useState<AudioBuffer | undefined>();
@@ -187,7 +189,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
       console.error('Save error:', error);
       setSaveResult({
         success: false,
-        message: `Fehler: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`,
+        message: `${t('editor.saveFailed')}: ${error instanceof Error ? error.message : t('editor.unknownError')}`,
       });
     } finally {
       setIsSaving(false);
@@ -212,7 +214,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
       console.error('Save error:', error);
       setSaveResult({
         success: false,
-        message: `Fehler: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`,
+        message: `${t('editor.saveFailed')}: ${error instanceof Error ? error.message : t('editor.unknownError')}`,
       });
     } finally {
       setIsSaving(false);
@@ -495,7 +497,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
           <button
             onClick={() => setShowSidebar(!showSidebar)}
             className="absolute top-2 right-2 z-10 p-1.5 rounded-md bg-slate-800/80 hover:bg-slate-700 border border-slate-600 transition-colors"
-            title={showSidebar ? 'Panel ausblenden' : 'Panel einblenden'}
+            title={showSidebar ? t('editor.header.hidePanel') : t('editor.header.showPanel')}
           >
             {showSidebar
               ? <PanelRightClose className="w-4 h-4 text-slate-400" />

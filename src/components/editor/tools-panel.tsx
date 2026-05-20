@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Music, Mic, Star, Zap, Users, Copy, Trash2, Scissors, Hand } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { useTranslation } from '@/lib/i18n/translations';
 import type { Note, DuetPlayer } from '@/types/game';
 
 interface ToolsPanelProps {
@@ -34,10 +35,11 @@ export function ToolsPanel({
   onUpdateSelectedNote,
   tapMode,
 }: ToolsPanelProps) {
+  const { t } = useTranslation();
   return (
     <aside className="w-56 bg-slate-900 border-r border-slate-700 flex flex-col overflow-y-auto flex-shrink-0">
       <div className="p-4 border-b border-slate-700">
-        <h2 className="text-sm font-semibold text-slate-300 mb-3">Tools</h2>
+        <h2 className="text-sm font-semibold text-slate-300 mb-3">{t('editor.toolsPanel.tools')}</h2>
         <div className="grid grid-cols-2 gap-1.5">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -48,10 +50,10 @@ export function ToolsPanel({
                 className="justify-start border-slate-600 text-slate-300 whitespace-nowrap overflow-hidden"
               >
                 <Plus className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
-                <span className="truncate">+ Add Note</span>
+                <span className="truncate">{t('editor.toolsPanel.addNote')}</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">+ Add Note</TooltipContent>
+            <TooltipContent side="right">{t('editor.toolsPanel.addNote')}</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -63,10 +65,10 @@ export function ToolsPanel({
                 className="justify-start border-slate-600 text-slate-300 whitespace-nowrap overflow-hidden"
               >
                 <Copy className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
-                <span className="truncate">Duplicate</span>
+                <span className="truncate">{t('editor.toolsPanel.duplicate')}</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">Duplicate Note</TooltipContent>
+            <TooltipContent side="right">{t('editor.toolsPanel.duplicateNote')}</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -78,10 +80,10 @@ export function ToolsPanel({
                 className="justify-start border-slate-600 text-slate-300 hover:border-red-500 hover:text-red-400 whitespace-nowrap overflow-hidden"
               >
                 <Trash2 className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
-                <span className="truncate">Delete</span>
+                <span className="truncate">{t('editor.toolsPanel.delete')}</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">Delete Note</TooltipContent>
+            <TooltipContent side="right">{t('editor.toolsPanel.deleteNote')}</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -93,16 +95,16 @@ export function ToolsPanel({
                 className="justify-start border-slate-600 text-slate-300 whitespace-nowrap overflow-hidden"
               >
                 <Scissors className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
-                <span className="truncate">Split</span>
+                <span className="truncate">{t('editor.toolsPanel.split')}</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">Split Note</TooltipContent>
+            <TooltipContent side="right">{t('editor.toolsPanel.splitNote')}</TooltipContent>
           </Tooltip>
         </div>
       </div>
 
       <div className="p-4 border-b border-slate-700">
-        <h2 className="text-sm font-semibold text-slate-300 mb-3">Note Type</h2>
+        <h2 className="text-sm font-semibold text-slate-300 mb-3">{t('editor.toolsPanel.noteType')}</h2>
         <div className="grid grid-cols-3 gap-2">
           <Button
             variant={selectedNote && !selectedNote.isGolden && !selectedNote.isBonus ? 'default' : 'outline'}
@@ -130,14 +132,14 @@ export function ToolsPanel({
           </Button>
         </div>
         <div className="flex justify-between text-xs text-slate-500 mt-2">
-          <span>Normal</span>
-          <span>Golden</span>
-          <span>Bonus</span>
+          <span>{t('editor.toolsPanel.normal')}</span>
+          <span>{t('editor.toolsPanel.golden')}</span>
+          <span>{t('editor.toolsPanel.bonus')}</span>
         </div>
       </div>
 
       <div className="p-4 border-b border-slate-700">
-        <h2 className="text-sm font-semibold text-slate-300 mb-3">Duet Player</h2>
+        <h2 className="text-sm font-semibold text-slate-300 mb-3">{t('editor.toolsPanel.duetPlayer')}</h2>
         <Select
           value={selectedNote?.player || 'both'}
           onValueChange={(value: DuetPlayer | 'both') =>
@@ -146,25 +148,25 @@ export function ToolsPanel({
           disabled={!selectedNote}
         >
           <SelectTrigger className="bg-slate-800 border-slate-600">
-            <SelectValue placeholder="Select player" />
+            <SelectValue placeholder={t('editor.toolsPanel.selectPlayer')} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="both">
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
-                Both Players
+                {t('editor.toolsPanel.bothPlayers')}
               </div>
             </SelectItem>
             <SelectItem value="P1">
               <div className="flex items-center gap-2">
                 <Mic className="w-4 h-4 text-cyan-400" />
-                Player 1
+                {t('editor.toolsPanel.player1')}
               </div>
             </SelectItem>
             <SelectItem value="P2">
               <div className="flex items-center gap-2">
                 <Mic className="w-4 h-4 text-purple-400" />
-                Player 2
+                {t('editor.toolsPanel.player2')}
               </div>
             </SelectItem>
           </SelectContent>
@@ -175,7 +177,7 @@ export function ToolsPanel({
       <div className="p-4 border-b border-slate-700">
         <h2 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
           <Hand className="w-3.5 h-3.5" />
-          Tap-Modus
+          {t('editor.toolsPanel.tapMode')}
         </h2>
         <Button
           variant={tapMode?.isActive ? 'default' : 'outline'}
@@ -187,16 +189,16 @@ export function ToolsPanel({
           }
         >
           <Hand className="w-4 h-4 mr-2" />
-          {tapMode?.isActive ? 'Tap-Modus AN' : 'Tap-Modus AUS'}
+          {tapMode?.isActive ? t('editor.toolsPanel.tapModeOn') : t('editor.toolsPanel.tapModeOff')}
         </Button>
         {tapMode?.isActive && (
           <div className="mt-2 space-y-1.5">
             <div className={`text-xs px-2 py-1.5 rounded ${tapMode.isHolding ? 'bg-green-500/30 text-green-300 animate-pulse' : 'bg-slate-800 text-slate-400'}`}>
-              {tapMode.isHolding ? '⏺ Halte Space... (Note wird erstellt)' : 'Space drücken = Note setzen'}
+              {tapMode.isHolding ? t('editor.toolsPanel.holdSpace') : t('editor.toolsPanel.pressSpace')}
             </div>
             <div className="text-xs text-slate-500 flex justify-between">
-              <span>Noten: {tapMode.notesPlaced}</span>
-              <span>Nächste: #{tapMode.nextLyricIndex}</span>
+              <span>{t('editor.toolsPanel.notesCount')}: {tapMode.notesPlaced}</span>
+              <span>{t('editor.toolsPanel.nextBeat')}: #{tapMode.nextLyricIndex}</span>
             </div>
             <Button
               variant="ghost"
@@ -204,40 +206,39 @@ export function ToolsPanel({
               onClick={tapMode.resetSession}
               className="w-full text-slate-500 hover:text-slate-300 text-xs mt-1"
             >
-              Zähler zurücksetzen
+              {t('editor.toolsPanel.resetCounter')}
             </Button>
           </div>
         )}
         {!tapMode?.isActive && (
           <p className="text-xs text-slate-600 mt-2">
-            Space drücken & halten = Note erstellen.
-            Loslassen = Dauer festlegen.
+            {t('editor.toolsPanel.tapModeDesc')}
           </p>
         )}
       </div>
 
       {/* Keyboard shortcuts reference */}
       <div className="p-4 mt-auto">
-        <h2 className="text-sm font-semibold text-slate-300 mb-3">Shortcuts</h2>
+        <h2 className="text-sm font-semibold text-slate-300 mb-3">{t('editor.toolsPanel.shortcuts')}</h2>
         <div className="space-y-1 text-xs text-slate-500">
           <div className="flex justify-between">
-            <span>Play/Pause</span>
+            <span>{t('editor.toolsPanel.playPause')}</span>
             <kbd className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-400">Space</kbd>
           </div>
           <div className="flex justify-between">
-            <span>Delete Note</span>
+            <span>{t('editor.toolsPanel.deleteNote')}</span>
             <kbd className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-400">Del</kbd>
           </div>
           <div className="flex justify-between">
-            <span>Save</span>
+            <span>{t('editor.toolsPanel.save')}</span>
             <kbd className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-400">Ctrl+S</kbd>
           </div>
           <div className="flex justify-between">
-            <span>Undo</span>
+            <span>{t('editor.toolsPanel.undo')}</span>
             <kbd className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-400">Ctrl+Z</kbd>
           </div>
           <div className="flex justify-between">
-            <span>Add Note</span>
+            <span>{t('editor.toolsPanel.addNote')}</span>
             <kbd className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-400">Shift+Click</kbd>
           </div>
         </div>

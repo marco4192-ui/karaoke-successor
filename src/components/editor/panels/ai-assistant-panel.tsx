@@ -27,6 +27,7 @@ import { identifySong, SongMetadata } from '@/lib/ai/song-identifier';
 import { analyzeLyrics, LyricSuggestion } from '@/lib/ai/lyrics-assistant';
 import { generateCoverArt } from '@/lib/ai/cover-generator';
 import { Song, LyricLine } from '@/types/game';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== Types =====================
 
@@ -39,11 +40,12 @@ interface AIAssistantPanelProps {
 // ===================== AI Status Badge =====================
 
 function AIStatusBadge({ status }: { status: 'idle' | 'loading' | 'success' | 'error' }) {
+  const { t } = useTranslation();
   const config = {
-    idle: { label: 'Bereit', className: 'bg-gray-500/20 text-gray-400' },
-    loading: { label: 'Lädt...', className: 'bg-yellow-500/20 text-yellow-400 animate-pulse' },
-    success: { label: 'Fertig', className: 'bg-green-500/20 text-green-400' },
-    error: { label: 'Fehler', className: 'bg-red-500/20 text-red-400' },
+    idle: { label: t('editor.aiAssistant.statusReady'), className: 'bg-gray-500/20 text-gray-400' },
+    loading: { label: t('editor.aiAssistant.statusLoading'), className: 'bg-yellow-500/20 text-yellow-400 animate-pulse' },
+    success: { label: t('editor.aiAssistant.statusDone'), className: 'bg-green-500/20 text-green-400' },
+    error: { label: t('editor.aiAssistant.statusError'), className: 'bg-red-500/20 text-red-400' },
   };
 
   const { label, className } = config[status];
@@ -84,6 +86,7 @@ interface SuggestionCardProps {
 }
 
 function SuggestionCard({ suggestion, onAccept, onDismiss }: SuggestionCardProps) {
+  const { t } = useTranslation();
   const typeIcons = {
     correction: '✏️',
     timing: '⏱️',
@@ -97,7 +100,7 @@ function SuggestionCard({ suggestion, onAccept, onDismiss }: SuggestionCardProps
         <div className="flex items-center gap-2">
           <span>{typeIcons[suggestion.type]}</span>
           <Badge variant="outline" className="text-xs border-white/20">
-            Zeile {suggestion.lineIndex + 1}
+            {t('editor.aiAssistant.lineLabel')} {suggestion.lineIndex + 1}
           </Badge>
         </div>
         <ConfidenceBar confidence={suggestion.confidence} />
@@ -112,10 +115,10 @@ function SuggestionCard({ suggestion, onAccept, onDismiss }: SuggestionCardProps
       
       <div className="flex gap-2 pt-1">
         <Button size="sm" onClick={onAccept} className="flex-1 bg-green-500/20 hover:bg-green-500/30 text-green-400">
-          ✓ Übernehmen
+          {t('editor.aiAssistant.acceptSuggestion')}
         </Button>
         <Button size="sm" onClick={onDismiss} variant="outline" className="flex-1 border-white/10 text-white/60">
-          ✗ Verwerfen
+          {t('editor.aiAssistant.rejectSuggestion')}
         </Button>
       </div>
     </div>
@@ -125,6 +128,8 @@ function SuggestionCard({ suggestion, onAccept, onDismiss }: SuggestionCardProps
 // ===================== Main Component =====================
 
 export function AIAssistantPanel({ song, onSongUpdate, onLyricsUpdate }: AIAssistantPanelProps) {
+  const { t } = useTranslation();
+
   // State
   const [identifyStatus, setIdentifyStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [lyricsStatus, setLyricsStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -149,7 +154,7 @@ export function AIAssistantPanel({ song, onSongUpdate, onLyricsUpdate }: AIAssis
       setIdentifyStatus('success');
     } else {
       setIdentifyStatus('error');
-      setError(result.error || 'Erkennung fehlgeschlagen');
+      setError(result.error || t('editor.aiAssistant.recognitionFailed'));
     }
   }, [song.artist, song.title]);
 
@@ -192,7 +197,7 @@ export function AIAssistantPanel({ song, onSongUpdate, onLyricsUpdate }: AIAssis
       setLyricsStatus(result.suggestions.length > 0 ? 'success' : 'idle');
     } else {
       setLyricsStatus('error');
-      setError(result.error || 'Analyse fehlgeschlagen');
+      setError(result.error || t('editor.aiAssistant.analysisFailed'));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- song.bpm and song.lyrics excluded; song.title/artist/genre are the stable deps
   }, [song.title, song.artist, song.genre]);
@@ -264,7 +269,7 @@ export function AIAssistantPanel({ song, onSongUpdate, onLyricsUpdate }: AIAssis
       setCoverStatus('success');
     } else {
       setCoverStatus('error');
-      setError(result.error || 'Generierung fehlgeschlagen');
+      setError(result.error || t('editor.aiAssistant.generationFailed'));
     }
   }, [song.title, song.artist, song.genre]);
 
@@ -281,7 +286,7 @@ export function AIAssistantPanel({ song, onSongUpdate, onLyricsUpdate }: AIAssis
     <Card className="bg-white/5 border-white/10">
       <CardHeader className="py-3">
         <CardTitle className="text-sm flex items-center gap-2">
-          🤖 KI-ASSISTENT
+          {t('editor.aiAssistant.title')}
           <AIStatusBadge status={identifyStatus === 'loading' || lyricsStatus === 'loading' || coverStatus === 'loading' ? 'loading' : 'idle'} />
         </CardTitle>
       </CardHeader>
@@ -301,7 +306,7 @@ export function AIAssistantPanel({ song, onSongUpdate, onLyricsUpdate }: AIAssis
             disabled={identifyStatus === 'loading'}
             className="w-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/30"
           >
-            🎵 Lied erkennen
+            {t('editor.aiAssistant.recognizeSong')}
           </Button>
 
           <Button
@@ -309,7 +314,7 @@ export function AIAssistantPanel({ song, onSongUpdate, onLyricsUpdate }: AIAssis
             disabled={lyricsStatus === 'loading'}
             className="w-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 border border-purple-500/30"
           >
-            📝 Lyrics analysieren
+            {t('editor.aiAssistant.analyzeLyrics')}
           </Button>
 
           <Button
@@ -317,7 +322,7 @@ export function AIAssistantPanel({ song, onSongUpdate, onLyricsUpdate }: AIAssis
             disabled={coverStatus === 'loading'}
             className="w-full bg-gradient-to-r from-orange-500/20 to-yellow-500/20 hover:from-orange-500/30 hover:to-yellow-500/30 border border-orange-500/30"
           >
-            🖼️ Cover generieren
+            {t('editor.aiAssistant.generateCover')}
           </Button>
         </div>
 
@@ -326,22 +331,22 @@ export function AIAssistantPanel({ song, onSongUpdate, onLyricsUpdate }: AIAssis
         {/* Identified Metadata */}
         {identifiedMetadata && (
           <div className="space-y-2">
-            <h4 className="text-xs font-semibold text-cyan-400">Erkannte Metadaten</h4>
+            <h4 className="text-xs font-semibold text-cyan-400">{t('editor.aiAssistant.recognizedMetadata')}</h4>
             <ConfidenceBar confidence={identifiedMetadata.confidence} />
             
             <div className="p-2 rounded bg-white/5 text-xs space-y-1">
-              <p><span className="text-white/50">Titel:</span> {identifiedMetadata.title}</p>
-              <p><span className="text-white/50">Artist:</span> {identifiedMetadata.artist}</p>
+              <p><span className="text-white/50">{t('editor.aiAssistant.detectedTitle')}</span> {identifiedMetadata.title}</p>
+              <p><span className="text-white/50">{t('editor.aiAssistant.detectedArtist')}</span> {identifiedMetadata.artist}</p>
               {identifiedMetadata.genre && (
-                <p><span className="text-white/50">Genre:</span> {identifiedMetadata.genre}</p>
+                <p><span className="text-white/50">{t('editor.aiAssistant.detectedGenre')}</span> {identifiedMetadata.genre}</p>
               )}
               {identifiedMetadata.bpm && (
-                <p><span className="text-white/50">BPM:</span> {identifiedMetadata.bpm}</p>
+                <p><span className="text-white/50">{t('editor.aiAssistant.detectedBpm')}</span> {identifiedMetadata.bpm}</p>
               )}
             </div>
             
             <Button size="sm" onClick={applyIdentifiedMetadata} className="w-full">
-              ✓ Übernehmen
+              {t('editor.aiAssistant.acceptMetadata')}
             </Button>
           </div>
         )}
@@ -349,7 +354,7 @@ export function AIAssistantPanel({ song, onSongUpdate, onLyricsUpdate }: AIAssis
         {/* Generated Cover Preview */}
         {generatedCover && (
           <div className="space-y-2">
-            <h4 className="text-xs font-semibold text-orange-400">Generiertes Cover</h4>
+            <h4 className="text-xs font-semibold text-orange-400">{t('editor.aiAssistant.generatedCover')}</h4>
             <img 
               src={`data:image/png;base64,${generatedCover}`} 
               alt="Generated cover"
@@ -357,7 +362,7 @@ export function AIAssistantPanel({ song, onSongUpdate, onLyricsUpdate }: AIAssis
             />
             <div className="flex gap-2">
               <Button size="sm" onClick={applyGeneratedCover} className="flex-1">
-                ✓ Verwenden
+                {t('editor.aiAssistant.useCover')}
               </Button>
               <Button 
                 size="sm" 
@@ -365,7 +370,7 @@ export function AIAssistantPanel({ song, onSongUpdate, onLyricsUpdate }: AIAssis
                 onClick={() => setGeneratedCover(null)}
                 className="flex-1 border-white/10"
               >
-                ✗ Verwerfen
+                {t('editor.aiAssistant.rejectCover')}
               </Button>
             </div>
           </div>
@@ -376,7 +381,7 @@ export function AIAssistantPanel({ song, onSongUpdate, onLyricsUpdate }: AIAssis
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-semibold text-purple-400">
-                💡 Vorschläge ({suggestions.length})
+                {t('editor.aiAssistant.suggestions').replace('{count}', String(suggestions.length))}
               </h4>
               <Button 
                 size="sm" 
@@ -384,7 +389,7 @@ export function AIAssistantPanel({ song, onSongUpdate, onLyricsUpdate }: AIAssis
                 onClick={acceptAllSuggestions}
                 className="text-xs text-green-400 hover:text-green-300"
               >
-                Alle übernehmen
+                {t('editor.aiAssistant.acceptAll')}
               </Button>
             </div>
             
@@ -405,7 +410,7 @@ export function AIAssistantPanel({ song, onSongUpdate, onLyricsUpdate }: AIAssis
 
         {/* Info */}
         <div className="text-xs text-white/40 pt-2">
-          <p>💡 Tipp: KI-Vorschläge sind immer nur Hilfestellungen. Überprüfe alle Änderungen vor dem Speichern.</p>
+          <p>{t('editor.aiAssistant.aiTip')}</p>
         </div>
       </CardContent>
     </Card>

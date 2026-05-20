@@ -9,6 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Users } from 'lucide-react';
 import type { Song } from '@/types/game';
 import { isYouTubeUrl } from '@/components/game/youtube-player';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface EditorSongInfoTabProps {
   song: Song;
@@ -18,12 +19,13 @@ interface EditorSongInfoTabProps {
 }
 
 export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsavedChanges }: EditorSongInfoTabProps) {
+  const { t } = useTranslation();
   return (
     <ScrollArea className="h-full">
       <div className="p-4 space-y-4">
         {/* Title */}
         <div className="space-y-2">
-          <Label htmlFor="song-title" className="text-slate-400 text-xs">Titel</Label>
+          <Label htmlFor="song-title" className="text-slate-400 text-xs">{t('editor.songInfoTab.title')}</Label>
           <Input
             id="song-title"
             name="song-title"
@@ -38,7 +40,7 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
 
         {/* Artist */}
         <div className="space-y-2">
-          <Label htmlFor="song-artist" className="text-slate-400 text-xs">Künstler</Label>
+          <Label htmlFor="song-artist" className="text-slate-400 text-xs">{t('editor.songInfoTab.artist')}</Label>
           <Input
             id="song-artist"
             name="song-artist"
@@ -53,7 +55,7 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
 
         {/* BPM */}
         <div className="space-y-2">
-          <Label htmlFor="song-bpm" className="text-slate-400 text-xs">BPM</Label>
+          <Label htmlFor="song-bpm" className="text-slate-400 text-xs">{t('editor.songInfoTab.bpm')}</Label>
           <Input
             id="song-bpm"
             name="song-bpm"
@@ -68,12 +70,12 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
             step={0.01}
             className="bg-slate-800 border-slate-600"
           />
-          <p className="text-xs text-slate-500">Beats pro Minute</p>
+          <p className="text-xs text-slate-500">{t('editor.songInfoTab.bpmDesc')}</p>
         </div>
 
         {/* GAP */}
         <div className="space-y-2">
-          <Label htmlFor="song-gap" className="text-slate-400 text-xs">GAP (ms)</Label>
+          <Label htmlFor="song-gap" className="text-slate-400 text-xs">{t('editor.songInfoTab.gap')}</Label>
           <Input
             id="song-gap"
             name="song-gap"
@@ -85,12 +87,12 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
             }}
             className="bg-slate-800 border-slate-600"
           />
-          <p className="text-xs text-slate-500">Verzögerung vor Lyrics-Start</p>
+          <p className="text-xs text-slate-500">{t('editor.songInfoTab.gapDesc')}</p>
         </div>
 
         {/* START */}
         <div className="space-y-2">
-          <Label htmlFor="song-start" className="text-slate-400 text-xs">START (ms)</Label>
+          <Label htmlFor="song-start" className="text-slate-400 text-xs">{t('editor.songInfoTab.start')}</Label>
           <Input
             id="song-start"
             name="song-start"
@@ -102,14 +104,14 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
             }}
             className="bg-slate-800 border-slate-600"
           />
-          <p className="text-xs text-slate-500">Zeit überspringen am Anfang</p>
+          <p className="text-xs text-slate-500">{t('editor.songInfoTab.startDesc')}</p>
         </div>
 
         <Separator className="bg-slate-700" />
 
         {/* Video URL */}
         <div className="space-y-2">
-          <Label htmlFor="song-video" className="text-slate-400 text-xs">Video URL</Label>
+          <Label htmlFor="song-video" className="text-slate-400 text-xs">{t('editor.songInfoTab.videoUrl')}</Label>
           <Input
             id="song-video"
             name="song-video"
@@ -133,14 +135,14 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
               }
               onSetUnsavedChanges();
             }}
-            placeholder="YouTube URL, direkte Video-URL (.mp4, .webm, .avi, .mkv) oder lokaler Pfad"
+            placeholder={t('editor.songInfoTab.videoUrlPlaceholder')}
             className="bg-slate-800 border-slate-600"
           />
         </div>
 
         {/* Video Gap */}
         <div className="space-y-2">
-          <Label htmlFor="song-videogap" className="text-slate-400 text-xs">Video GAP (ms)</Label>
+          <Label htmlFor="song-videogap" className="text-slate-400 text-xs">{t('editor.songInfoTab.videoGap')}</Label>
           <Input
             id="song-videogap"
             name="song-videogap"
@@ -152,14 +154,14 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
             }}
             className="bg-slate-800 border-slate-600"
           />
-          <p className="text-xs text-slate-500">Video-Versatz zur Audio</p>
+          <p className="text-xs text-slate-500">{t('editor.songInfoTab.videoGapDesc')}</p>
         </div>
 
         <Separator className="bg-slate-700" />
 
         {/* Genre */}
         <div className="space-y-2">
-          <Label htmlFor="song-genre" className="text-slate-400 text-xs">Genre</Label>
+          <Label htmlFor="song-genre" className="text-slate-400 text-xs">{t('editor.songInfoTab.genre')}</Label>
           <Select
             value={song.genre || ''}
             onValueChange={(value) => {
@@ -168,7 +170,7 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
             }}
           >
             <SelectTrigger className="bg-slate-800 border-slate-600">
-              <SelectValue placeholder="Genre wählen" />
+              <SelectValue placeholder={t('editor.songInfoTab.genrePlaceholder')} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="Pop">Pop</SelectItem>
@@ -205,14 +207,14 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
               onSongChange(prev => ({ ...prev, genre: e.target.value || undefined }));
               onSetUnsavedChanges();
             }}
-            placeholder="Oder eigenes Genre eingeben..."
+            placeholder={t('editor.songInfoTab.customGenrePlaceholder')}
             className="bg-slate-800 border-slate-600"
           />
         </div>
 
         {/* Year */}
         <div className="space-y-2">
-          <Label htmlFor="song-year" className="text-slate-400 text-xs">Jahr</Label>
+          <Label htmlFor="song-year" className="text-slate-400 text-xs">{t('editor.songInfoTab.year')}</Label>
           <Input
             id="song-year"
             name="song-year"
@@ -222,14 +224,14 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
               onSongChange(prev => ({ ...prev, year: parseInt(e.target.value) || undefined }));
               onSetUnsavedChanges();
             }}
-            placeholder="z.B. 2024"
+            placeholder={t('editor.songInfoTab.yearPlaceholder')}
             className="bg-slate-800 border-slate-600"
           />
         </div>
 
         {/* Language */}
         <div className="space-y-2">
-          <Label htmlFor="song-language" className="text-slate-400 text-xs">Sprache</Label>
+          <Label htmlFor="song-language" className="text-slate-400 text-xs">{t('editor.songInfoTab.language')}</Label>
           <Select
             value={song.language || ''}
             onValueChange={(value) => {
@@ -239,7 +241,7 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
             }}
           >
             <SelectTrigger className="bg-slate-800 border-slate-600">
-              <SelectValue placeholder="Sprache wählen" />
+              <SelectValue placeholder={t('editor.songInfoTab.languagePlaceholder')} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="Deutsch">Deutsch</SelectItem>
@@ -267,14 +269,14 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
               onSongChange(prev => ({ ...prev, language: e.target.value || undefined }));
               onSetUnsavedChanges();
             }}
-            placeholder="Oder eigene Sprache eingeben..."
+            placeholder={t('editor.songInfoTab.customLanguagePlaceholder')}
             className="bg-slate-800 border-slate-600 h-8"
           />
         </div>
 
         {/* Edition */}
         <div className="space-y-2">
-          <Label htmlFor="song-edition" className="text-slate-400 text-xs">Edition / Album</Label>
+          <Label htmlFor="song-edition" className="text-slate-400 text-xs">{t('editor.songInfoTab.edition')}</Label>
           <Input
             id="song-edition"
             name="song-edition"
@@ -294,7 +296,7 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
           <div className="flex items-center justify-between">
             <Label className="text-slate-400 text-xs flex items-center gap-2">
               <Users className="w-3 h-3" />
-              Duet Mode
+              {t('editor.songInfoTab.duetMode')}
             </Label>
             <Switch
               checked={song.isDuet || false}
@@ -312,7 +314,7 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
           {song.isDuet && song.duetPlayerNames && (
             <div className="space-y-2 pl-2">
               <div className="space-y-1">
-                <Label className="text-slate-500 text-xs">Spieler 1 Name</Label>
+                <Label className="text-slate-500 text-xs">{t('editor.songInfoTab.player1Name')}</Label>
                 <Input
                   value={song.duetPlayerNames[0]}
                   onChange={(e) => {
@@ -326,7 +328,7 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-slate-500 text-xs">Spieler 2 Name</Label>
+                <Label className="text-slate-500 text-xs">{t('editor.songInfoTab.player2Name')}</Label>
                 <Input
                   value={song.duetPlayerNames[1]}
                   onChange={(e) => {
@@ -347,11 +349,11 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
 
         {/* File Info */}
         <div className="text-xs text-slate-500 space-y-1">
-          <div>Dauer: <span className="text-slate-300">{Math.round(song.duration / 1000)}s</span></div>
-          <div>Noten: <span className="text-slate-300">{allNotesCount}</span></div>
-          <div>Zeilen: <span className="text-slate-300">{song.lyrics.length}</span></div>
+          <div>{t('editor.songInfoTab.duration')}: <span className="text-slate-300">{Math.round(song.duration / 1000)}s</span></div>
+          <div>{t('editor.songInfoTab.notes')}: <span className="text-slate-300">{allNotesCount}</span></div>
+          <div>{t('editor.songInfoTab.lines')}: <span className="text-slate-300">{song.lyrics.length}</span></div>
           {song.relativeTxtPath && (
-            <div>Datei: <span className="text-slate-300">{song.relativeTxtPath}</span></div>
+            <div>{t('editor.songInfoTab.file')}: <span className="text-slate-300">{song.relativeTxtPath}</span></div>
           )}
         </div>
       </div>

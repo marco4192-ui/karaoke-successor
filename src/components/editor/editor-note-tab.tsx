@@ -10,6 +10,7 @@ import { Music, Star, Zap, Users } from 'lucide-react';
 import type { Note, DuetPlayer } from '@/types/game';
 import { midiToNoteName } from '@/types/game';
 import { midiPitchToFrequency } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface EditorNoteTabProps {
   selectedNote: Note;
@@ -17,12 +18,13 @@ interface EditorNoteTabProps {
 }
 
 export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNoteTabProps) {
+  const { t } = useTranslation();
   return (
     <ScrollArea className="h-full">
       <div className="p-4 space-y-4">
         {/* Lyric */}
         <div className="space-y-2">
-          <Label htmlFor="note-lyric" className="text-slate-400 text-xs">Lyric</Label>
+          <Label htmlFor="note-lyric" className="text-slate-400 text-xs">{t('editor.noteTab.lyric')}</Label>
           <Input
             id="note-lyric"
             name="note-lyric"
@@ -31,7 +33,7 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
             className="bg-slate-800 border-slate-600"
           />
           <p className="text-xs text-slate-500">
-            Tipp: Leerzeichen am Ende = Wortende
+            {t('editor.noteTab.spaceTip')}
           </p>
         </div>
 
@@ -74,7 +76,7 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
 
         {/* Start Time */}
         <div className="space-y-2">
-          <Label htmlFor="note-start-time" className="text-slate-400 text-xs">Start Time (ms)</Label>
+          <Label htmlFor="note-start-time" className="text-slate-400 text-xs">{t('editor.noteTab.startTime')}</Label>
           <Input
             id="note-start-time"
             name="note-start-time"
@@ -87,7 +89,7 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
 
         {/* Duration */}
         <div className="space-y-2">
-          <Label htmlFor="note-duration" className="text-slate-400 text-xs">Duration (ms)</Label>
+          <Label htmlFor="note-duration" className="text-slate-400 text-xs">{t('editor.noteTab.duration')}</Label>
           <Input
             id="note-duration"
             name="note-duration"
@@ -112,7 +114,7 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
           <div className="flex items-center justify-between">
             <Label className="text-slate-400 text-xs flex items-center gap-2">
               <Star className="w-3 h-3 text-amber-400" />
-              Golden Note
+              {t('editor.noteTab.goldenNote')}
             </Label>
             <Switch
               checked={selectedNote.isGolden}
@@ -125,7 +127,7 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
           <div className="flex items-center justify-between">
             <Label className="text-slate-400 text-xs flex items-center gap-2">
               <Zap className="w-3 h-3 text-pink-400" />
-              Bonus Note
+              {t('editor.noteTab.bonusNote')}
             </Label>
             <Switch
               checked={selectedNote.isBonus}
@@ -141,7 +143,7 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
         <div className="space-y-2 pt-2 border-t border-slate-700">
           <Label className="text-slate-400 text-xs flex items-center gap-2">
             <Users className="w-3 h-3" />
-            Spieler
+            {t('editor.noteTab.player')}
           </Label>
           <Select
             value={selectedNote.player || 'both'}
@@ -150,12 +152,12 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
             }
           >
             <SelectTrigger className="bg-slate-800 border-slate-600">
-              <SelectValue placeholder="Spieler wählen" />
+              <SelectValue placeholder={t('editor.noteTab.playerPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="both">Beide Spieler</SelectItem>
-              <SelectItem value="P1">Spieler 1</SelectItem>
-              <SelectItem value="P2">Spieler 2</SelectItem>
+              <SelectItem value="both">{t('editor.noteTab.bothPlayers')}</SelectItem>
+              <SelectItem value="P1">{t('editor.noteTab.player1')}</SelectItem>
+              <SelectItem value="P2">{t('editor.noteTab.player2')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -163,7 +165,7 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
         {/* Frequency display */}
         <div className="pt-2 border-t border-slate-700">
           <div className="text-xs text-slate-500">
-            Frequenz: <span className="text-slate-300">{selectedNote.frequency.toFixed(2)} Hz</span>
+            {t('editor.noteTab.frequency')} <span className="text-slate-300">{selectedNote.frequency.toFixed(2)} Hz</span>
           </div>
         </div>
       </div>
@@ -172,12 +174,13 @@ export function EditorNoteTab({ selectedNote, onUpdateSelectedNote }: EditorNote
 }
 
 export function EditorNoteTabPlaceholder() {
+  const { t } = useTranslation();
   return (
     <div className="flex-1 flex items-center justify-center p-4">
       <div className="text-center text-slate-500">
         <Music className="w-12 h-12 mx-auto mb-2 opacity-50" />
-        <p className="text-sm">Wähle eine Note aus</p>
-        <p className="text-xs mt-1">Shift+Click zum Hinzufügen</p>
+        <p className="text-sm">{t('editor.noteTab.selectNote')}</p>
+        <p className="text-xs mt-1">{t('editor.noteTab.shiftClickHint')}</p>
       </div>
     </div>
   );

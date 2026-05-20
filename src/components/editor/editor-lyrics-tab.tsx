@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import type { Song, Note } from '@/types/game';
 import { BookOpen, FileText } from 'lucide-react';
 import { parseLyricsToSyllables } from '@/lib/editor/syllable-separator';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface EditorLyricsTabProps {
   song: Song;
@@ -33,6 +34,7 @@ export function EditorLyricsTab({
   onTimeChange,
 }: EditorLyricsTabProps) {
   const activeLineRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
 
   // Count how many syllables have been assigned to notes
   const assignedNoteCount = useMemo(() => {
@@ -75,12 +77,12 @@ export function EditorLyricsTab({
             <div className="flex justify-between items-center">
               <span className="flex items-center gap-1">
                 <FileText className="w-3 h-3" />
-                Songtext
+                {t('editor.lyricsTab.lyrics')}
               </span>
-              <span>{totalSyllables} Silben</span>
+              <span>{totalSyllables} {t('editor.lyricsTab.syllables')}</span>
             </div>
             <p className="mt-1 text-slate-600">
-              Nutze den Tap-Modus (Leertaste), um Noten einzufügen. Die Silben werden automatisch zugewiesen.
+              {t('editor.lyricsTab.tapModeHint')}
             </p>
           </div>
 
@@ -172,14 +174,14 @@ export function EditorLyricsTab({
           {/* Header info */}
           <div className="text-xs text-slate-500 px-1 pb-2 border-b border-slate-700 mb-2">
             <div className="flex justify-between items-center">
-              <span>{song.lyrics.length} Zeilen</span>
-              <span>{assignedNoteCount} Noten</span>
+              <span>{song.lyrics.length} {t('editor.lyricsTab.linesCount')}</span>
+              <span>{assignedNoteCount} {t('editor.lyricsTab.notesCount')}</span>
             </div>
-            <p className="mt-1 text-slate-600">Klick auf ein Wort springt zur Note</p>
+            <p className="mt-1 text-slate-600">{t('editor.lyricsTab.clickWordHint')}</p>
             {rawSyllableData && unassignedCount > 0 && (
               <div className="mt-1.5 flex items-center gap-2 px-2 py-1 bg-amber-500/10 border border-amber-500/20 rounded-md">
                 <span className="text-amber-400 text-[10px]">
-                  {unassignedCount} Silben noch nicht zugewiesen
+                  {t('editor.lyricsTab.syllablesUnassigned').replace('{count}', String(unassignedCount))}
                 </span>
                 <span className="text-amber-500/60 text-[10px]">
                   ({assignedNoteCount}/{allRawSyllables.length})
@@ -189,7 +191,7 @@ export function EditorLyricsTab({
             {rawSyllableData && unassignedCount === 0 && allRawSyllables.length > 0 && (
               <div className="mt-1.5 flex items-center gap-2 px-2 py-1 bg-green-500/10 border border-green-500/20 rounded-md">
                 <span className="text-green-400 text-[10px]">
-                  Alle {allRawSyllables.length} Silben zugewiesen
+                  {t('editor.lyricsTab.allSyllablesAssigned').replace('{count}', String(allRawSyllables.length))}
                 </span>
               </div>
             )}
@@ -276,7 +278,7 @@ export function EditorLyricsTab({
                   </div>
                 ) : (
                   <div className="pl-7 text-xs text-slate-600 italic">
-                    {line.text || '(leere Zeile)'}
+                    {line.text || t('editor.lyricsTab.emptyLine')}
                   </div>
                 )}
               </div>
@@ -287,8 +289,8 @@ export function EditorLyricsTab({
           {rawSyllableData && unassignedCount > 0 && (
             <div className="mt-4 pt-3 border-t border-slate-700/50">
               <div className="text-xs text-amber-400/60 px-1 mb-2 flex items-center gap-1">
-                <span>Noch nicht zugewiesen:</span>
-                <span className="text-amber-400/40">({unassignedCount} Silben)</span>
+                <span>{t('editor.lyricsTab.notAssigned')}</span>
+                <span className="text-amber-400/40">({unassignedCount} {t('editor.lyricsTab.syllables')})</span>
               </div>
               {/* Build the pending syllables display by skipping assigned ones */}
               {rawSyllableData.lines.map((line, lineIndex) => {
@@ -362,8 +364,8 @@ export function EditorLyricsTab({
     <div className="flex-1 flex items-center justify-center p-4">
       <div className="text-center text-slate-500">
         <BookOpen className="w-12 h-12 mx-auto mb-2 opacity-50" />
-        <p className="text-sm">Keine Lyrics vorhanden</p>
-        <p className="text-xs mt-1">Erstelle einen neuen Song mit Songtext oder öffne einen Song mit Noten</p>
+        <p className="text-sm">{t('editor.lyricsTab.noLyrics')}</p>
+        <p className="text-xs mt-1">{t('editor.lyricsTab.noLyricsHint')}</p>
       </div>
     </div>
   );

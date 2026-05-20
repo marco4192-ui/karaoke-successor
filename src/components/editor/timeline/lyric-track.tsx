@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n/translations';
 import type { Note } from '@/types/game';
 
 interface LyricTrackProps {
@@ -21,6 +22,7 @@ export function LyricTrack({
   onLyricChange,
   selectedNoteId
 }: LyricTrackProps) {
+  const { t } = useTranslation();
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -117,7 +119,7 @@ export function LyricTrack({
       {/* Empty state */}
       {notes.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center text-slate-500 text-sm">
-          No lyrics - double-click to add notes
+          {t('editor.timeline.noLyrics')}
         </div>
       )}
     </div>

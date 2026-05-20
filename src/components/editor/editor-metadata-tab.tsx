@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { Song } from '@/types/game';
+import { useTranslation } from '@/lib/i18n/translations';
 
 interface EditorMetadataTabProps {
   song: Song;
@@ -13,11 +14,12 @@ interface EditorMetadataTabProps {
 }
 
 export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: EditorMetadataTabProps) {
+  const { t } = useTranslation();
   return (
     <ScrollArea className="h-full">
       <div className="p-4 space-y-4">
         <div className="text-xs text-slate-400 mb-2">
-          UltraStar TXT Metadaten - werden direkt in die Datei gespeichert
+          {t('editor.metadataTab.title')}
         </div>
 
         {/* VERSION */}
@@ -30,7 +32,7 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
               onSongChange(prev => ({ ...prev, version: e.target.value || undefined }));
               onSetUnsavedChanges();
             }}
-            placeholder="z.B. 1.0.0"
+            placeholder={t('editor.metadataTab.versionPlaceholder')}
             className="bg-slate-800 border-slate-600 h-8"
           />
         </div>
@@ -45,7 +47,7 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
               onSongChange(prev => ({ ...prev, creator: e.target.value || undefined }));
               onSetUnsavedChanges();
             }}
-            placeholder="Ersteller der TXT-Datei"
+            placeholder={t('editor.metadataTab.creatorPlaceholder')}
             className="bg-slate-800 border-slate-600 h-8"
           />
         </div>
@@ -116,7 +118,7 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
 
         {/* PREVIEWSTART */}
         <div className="space-y-2">
-          <Label htmlFor="meta-previewstart" className="text-slate-400 text-xs">#PREVIEWSTART: (Sekunden)</Label>
+          <Label htmlFor="meta-previewstart" className="text-slate-400 text-xs">#PREVIEWSTART: ({t('editor.metadataTab.seconds')})</Label>
           <Input
             id="meta-previewstart"
             type="number"
@@ -125,14 +127,14 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
               onSongChange(prev => ({ ...prev, previewStart: parseFloat(e.target.value) || undefined }));
               onSetUnsavedChanges();
             }}
-            placeholder="z.B. 30"
+            placeholder={t('editor.metadataTab.gapPlaceholder')}
             className="bg-slate-800 border-slate-600 h-8"
           />
         </div>
 
         {/* PREVIEWDURATION */}
         <div className="space-y-2">
-          <Label htmlFor="meta-previewduration" className="text-slate-400 text-xs">#PREVIEWDURATION: (Sekunden)</Label>
+          <Label htmlFor="meta-previewduration" className="text-slate-400 text-xs">#PREVIEWDURATION: ({t('editor.metadataTab.seconds')})</Label>
           <Input
             id="meta-previewduration"
             type="number"
@@ -141,7 +143,7 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
               onSongChange(prev => ({ ...prev, previewDuration: parseFloat(e.target.value) || undefined }));
               onSetUnsavedChanges();
             }}
-            placeholder="z.B. 15"
+            placeholder={t('editor.metadataTab.endGapPlaceholder')}
             className="bg-slate-800 border-slate-600 h-8"
           />
         </div>
@@ -159,7 +161,7 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
               onSongChange(prev => ({ ...prev, medleyStartBeat: parseInt(e.target.value) ?? undefined }));
               onSetUnsavedChanges();
             }}
-            placeholder="Beat-Nummer"
+            placeholder={t('editor.metadataTab.beatPlaceholder')}
             className="bg-slate-800 border-slate-600 h-8"
           />
         </div>
@@ -175,7 +177,7 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
               onSongChange(prev => ({ ...prev, medleyEndBeat: parseInt(e.target.value) ?? undefined }));
               onSetUnsavedChanges();
             }}
-            placeholder="Beat-Nummer"
+            placeholder={t('editor.metadataTab.beatPlaceholder')}
             className="bg-slate-800 border-slate-600 h-8"
           />
         </div>
@@ -184,7 +186,7 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
 
         {/* END */}
         <div className="space-y-2">
-          <Label htmlFor="meta-end" className="text-slate-400 text-xs">#END: (Millisekunden)</Label>
+          <Label htmlFor="meta-end" className="text-slate-400 text-xs">#END: ({t('editor.metadataTab.milliseconds')})</Label>
           <Input
             id="meta-end"
             type="number"
@@ -193,7 +195,7 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
               onSongChange(prev => ({ ...prev, end: parseInt(e.target.value) ?? undefined }));
               onSetUnsavedChanges();
             }}
-            placeholder="Song-Ende in ms"
+            placeholder={t('editor.metadataTab.songEndPlaceholder')}
             className="bg-slate-800 border-slate-600 h-8"
           />
         </div>
@@ -211,14 +213,14 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
             placeholder="tag1, tag2, tag3"
             className="bg-slate-800 border-slate-600 h-8"
           />
-          <p className="text-xs text-slate-500">Kommagetrennte Tags</p>
+          <p className="text-xs text-slate-500">{t('editor.metadataTab.commaSeparatedTags')}</p>
         </div>
 
         <Separator className="bg-slate-700" />
 
         {/* P1 / P2 Names for Duet */}
         <div className="space-y-2">
-          <Label htmlFor="meta-p1" className="text-slate-400 text-xs">#P1: (Duet Spieler 1)</Label>
+          <Label htmlFor="meta-p1" className="text-slate-400 text-xs">{t('editor.metadataTab.duetPlayer1')}</Label>
           <Input
             id="meta-p1"
             value={song.duetPlayerNames?.[0] || ''}
@@ -230,13 +232,13 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
               }));
               onSetUnsavedChanges();
             }}
-            placeholder="Spieler 1 Name"
+            placeholder={t('editor.metadataTab.duetPlayer1Placeholder')}
             className="bg-slate-800 border-slate-600 h-8"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="meta-p2" className="text-slate-400 text-xs">#P2: (Duet Spieler 2)</Label>
+          <Label htmlFor="meta-p2" className="text-slate-400 text-xs">{t('editor.metadataTab.duetPlayer2')}</Label>
           <Input
             id="meta-p2"
             value={song.duetPlayerNames?.[1] || ''}
@@ -248,7 +250,7 @@ export function EditorMetadataTab({ song, onSongChange, onSetUnsavedChanges }: E
               }));
               onSetUnsavedChanges();
             }}
-            placeholder="Spieler 2 Name"
+            placeholder={t('editor.metadataTab.duetPlayer2Placeholder')}
             className="bg-slate-800 border-slate-600 h-8"
           />
         </div>

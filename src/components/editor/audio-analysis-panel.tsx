@@ -17,6 +17,7 @@ import {
   type ConfidenceLevel,
   type DetectedNote,
 } from '@/hooks/use-audio-analysis';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // ============================================================================
 // Types
@@ -48,6 +49,8 @@ export function AudioAnalysisPanel({
     detectBpm,
     reset,
   } = useAudioAnalysis();
+
+  const { t } = useTranslation();
 
   const [algorithm, setAlgorithm] = React.useState<'yin' | 'crepe'>('yin');
 
@@ -84,10 +87,10 @@ export function AudioAnalysisPanel({
       <div>
         <h3 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
           <Waves className="w-4 h-4 text-cyan-400" />
-          Audio-Analyse
+          {t('editor.audioAnalysis.title')}
         </h3>
         <p className="text-xs text-slate-500 mt-1">
-          Automatische Tonhöhen- und BPM-Erkennung
+          {t('editor.audioAnalysis.desc')}
         </p>
       </div>
 
@@ -95,7 +98,7 @@ export function AudioAnalysisPanel({
       {isWorking && (
         <div className="flex items-center gap-2 text-xs text-cyan-400 animate-pulse">
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          {progress?.message || 'Analysiere...'}
+          {progress?.message || t('editor.audioAnalysis.analyzing')}
         </div>
       )}
 
@@ -115,7 +118,7 @@ export function AudioAnalysisPanel({
         <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-xs text-red-400">
           <div className="flex items-center gap-1.5 font-medium mb-1">
             <XCircle className="w-3.5 h-3.5" />
-            Fehler
+            {t('editor.audioAnalysis.error')}
           </div>
           {error}
           <Button
@@ -124,7 +127,7 @@ export function AudioAnalysisPanel({
             onClick={reset}
             className="mt-2 text-xs text-red-300 hover:text-red-200 h-6"
           >
-            Erneut versuchen
+            {t('editor.audioAnalysis.retry')}
           </Button>
         </div>
       )}
@@ -133,7 +136,7 @@ export function AudioAnalysisPanel({
 
       {/* Algorithm selection */}
       <div className="space-y-2">
-        <label className="text-xs text-slate-400">Algorithmus</label>
+        <label className="text-xs text-slate-400">{t('editor.audioAnalysis.algorithm')}</label>
         <Select value={algorithm} onValueChange={(v) => setAlgorithm(v as 'yin' | 'crepe')}>
           <SelectTrigger className="bg-slate-800 border-slate-600 h-9 text-xs">
             <SelectValue />
@@ -143,8 +146,8 @@ export function AudioAnalysisPanel({
               <div className="flex items-center gap-2">
                 <Brain className="w-3.5 h-3.5 text-cyan-400" />
                 <div>
-                  <div className="text-xs">YIN (3-Schichten)</div>
-                  <div className="text-[10px] text-slate-500">Schnell, gute Genauigkeit</div>
+                  <div className="text-xs">{t('editor.audioAnalysis.yin')}</div>
+                  <div className="text-[10px] text-slate-500">{t('editor.audioAnalysis.yinDesc')}</div>
                 </div>
               </div>
             </SelectItem>
@@ -152,9 +155,9 @@ export function AudioAnalysisPanel({
               <div className="flex items-center gap-2">
                 <Zap className="w-3.5 h-3.5 text-yellow-400" />
                 <div>
-                  <div className="text-xs">CREPE (Deep Learning)</div>
+                  <div className="text-xs">{t('editor.audioAnalysis.crepe')}</div>
                   <div className="text-[10px] text-slate-500">
-                    {crepeAvailable ? 'Höchste Genauigkeit' : 'Nicht verfügbar (Feature aktivieren)'}
+                    {crepeAvailable ? t('editor.audioAnalysis.crepeDesc') : t('editor.audioAnalysis.crepeNotAvailable')}
                   </div>
                 </div>
               </div>
@@ -171,9 +174,9 @@ export function AudioAnalysisPanel({
           className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-xs h-9"
         >
           {isWorking ? (
-            <><Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />Analysiere...</>
+            <><Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />{t('editor.audioAnalysis.analyzing')}</>
           ) : (
-            <><Waves className="w-3.5 h-3.5 mr-2" />Pitch-Analyse starten</>
+            <><Waves className="w-3.5 h-3.5 mr-2" />{t('editor.audioAnalysis.startPitchAnalysis')}</>
           )}
         </Button>
 
@@ -184,7 +187,7 @@ export function AudioAnalysisPanel({
           className="w-full border-slate-600 text-slate-300 text-xs h-9"
         >
           <Activity className="w-3.5 h-3.5 mr-2" />
-          Nur BPM erkennen
+          {t('editor.audioAnalysis.bpmOnly')}
         </Button>
       </div>
 
@@ -197,7 +200,7 @@ export function AudioAnalysisPanel({
           {confidenceSummary && (
             <div className="space-y-2">
               <h4 className="text-xs font-semibold text-slate-400">
-                Konfidenz-Übersicht
+                {t('editor.audioAnalysis.confidenceOverview')}
               </h4>
               <div className="space-y-1.5">
                 {(['High', 'Medium', 'Low', 'VeryLow'] as ConfidenceLevel[]).map((level) => {
@@ -210,7 +213,7 @@ export function AudioAnalysisPanel({
                     <div key={level} className="flex items-center gap-2 text-[10px]">
                       <div className={`w-2.5 h-2.5 rounded-sm ${colors.bg} border ${colors.border}`} />
                       <span className={`flex-1 ${colors.text}`}>{colors.label.split(' — ')[0]}</span>
-                      <span className="text-slate-500">{count} Noten ({pct}%)</span>
+                      <span className="text-slate-500">{count} {t('editor.audioAnalysis.notesLabel')} ({pct}%)</span>
                     </div>
                   );
                 })}
@@ -224,7 +227,7 @@ export function AudioAnalysisPanel({
               <div className="flex items-center justify-between">
                 <span className="text-xs text-slate-400 flex items-center gap-1.5">
                   <Activity className="w-3.5 h-3.5" />
-                  Erkanntes BPM
+                  {t('editor.audioAnalysis.detectedBpm')}
                 </span>
                 <span className="text-lg font-bold text-cyan-400">
                   {bpmResult?.bpm || result?.bpm || '—'}
@@ -232,10 +235,10 @@ export function AudioAnalysisPanel({
               </div>
               {result && (
                 <div className="text-[10px] text-slate-500 space-y-0.5">
-                  <div>Algorithmus: {result.algorithm}</div>
-                  <div>Dauer: {(result.analysis_duration_ms / 1000).toFixed(1)}s</div>
-                  <div>Sample-Rate: {result.sample_rate} Hz</div>
-                  <div>Noten: {result.notes.length}</div>
+                  <div>{t('editor.audioAnalysis.algorithmLabel')} {result.algorithm}</div>
+                  <div>{t('editor.audioAnalysis.durationLabel')} {(result.analysis_duration_ms / 1000).toFixed(1)}s</div>
+                  <div>{t('editor.audioAnalysis.sampleRateLabel')} {result.sample_rate} Hz</div>
+                  <div>{t('editor.audioAnalysis.notesLabel')}: {result.notes.length}</div>
                 </div>
               )}
             </div>
@@ -250,8 +253,8 @@ export function AudioAnalysisPanel({
               >
                 <CheckCircle className="w-3.5 h-3.5 mr-2" />
                 {confidenceSummary
-                  ? `Pitches anwenden (${confidenceSummary.highPct}% zuverlässig)`
-                  : 'Pitches anwenden'
+                  ? t('editor.audioAnalysis.applyPitches').replace('{percent}', String(confidenceSummary.highPct))
+                  : t('editor.audioAnalysis.applyBpm')
                 }
               </Button>
             )}
@@ -263,7 +266,7 @@ export function AudioAnalysisPanel({
                 className="w-full border-slate-600 text-slate-300 text-xs h-9"
               >
                 <Music className="w-3.5 h-3.5 mr-2" />
-                BPM übernehmen
+                {t('editor.audioAnalysis.applyBpm')}
               </Button>
             )}
 
@@ -272,7 +275,7 @@ export function AudioAnalysisPanel({
               variant="ghost"
               className="w-full text-slate-500 hover:text-slate-300 text-xs h-8"
             >
-              Zurücksetzen
+              {t('editor.audioAnalysis.reset')}
             </Button>
           </div>
         </>
@@ -281,10 +284,9 @@ export function AudioAnalysisPanel({
       {/* Info */}
       {!isComplete && !isWorking && !isError && !audioFilePath && (
         <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-xs text-amber-300">
-          <p className="font-semibold">Keine Audiodatei zugewiesen</p>
+          <p className="font-semibold">{t('editor.audioAnalysis.noAudio')}</p>
           <p className="text-slate-500 mt-1">
-            Die Analyse-Funktionen erfordern eine Audiodatei. Bitte weise im Editor eine Audio-Datei zu,
-            oder stelle sicher dass der Song korrekt importiert wurde.
+            {t('editor.audioAnalysis.noAudioDesc')}
           </p>
         </div>
       )}
@@ -297,11 +299,11 @@ export function AudioAnalysisPanel({
           </p>
           <p className="flex items-start gap-1.5">
             <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0 text-yellow-600" />
-            Noten werden farblich markiert: Grün = sicher, Rot = manuell prüfen
+            {t('editor.audioAnalysis.noteColorsHint')}
           </p>
           <p className="flex items-start gap-1.5">
             <Activity className="w-3 h-3 mt-0.5 flex-shrink-0 text-purple-600" />
-            BPM wird aus dem Rhythmus des Liedes automatisch erkannt
+            {t('editor.audioAnalysis.bpmHint')}
           </p>
         </div>
       )}
