@@ -3,6 +3,15 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import type { MobileSong, MobileProfile, QueueItem, GameResults, JukeboxWishlistItem, GameMode } from '@/components/screens/mobile/mobile-types';
 
+// F19: Opponent profile for duel/duet mode
+export interface OpponentProfile {
+  id: string;
+  name: string;
+  avatar?: string;
+  color: string;
+  connectionCode: string;
+}
+
 interface UseMobileDataOptions {
   clientId: string | null;
   profile: MobileProfile | null;
@@ -85,6 +94,10 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
   const [availablePartners, setAvailablePartners] = useState<Array<{ id: string; name: string; code: string }>>([]);
   const [showSongOptions, setShowSongOptions] = useState<MobileSong | null>(null);
 
+  // F19: Enhanced opponent list (with profiles)
+  const [opponents, setOpponents] = useState<OpponentProfile[]>([]);
+  const [availableProfiles, setAvailableProfiles] = useState<OpponentProfile[]>([]);
+
   // Game results
   const [gameResults, setGameResults] = useState<GameResults | null>(null);
 
@@ -160,6 +173,23 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
     }
   }, [clientId]);
 
+  // F19: Load opponents with full profile data (avatar, color)
+  const loadOpponents = useCallback(async () => {
+    if (!clientId) return;
+    try {
+      const response = await fetch(`/api/mobile?action=getopponents&clientId=${encodeURIComponent(clientId)}`);
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.success) {
+        setOpponents(data.opponents || []);
+        setAvailableProfiles(data.availableProfiles || []);
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.debug('[useMobileData] loadOpponents failed:', error);
+    }
+  }, [clientId]);
+
   // ---- Queue ----
   const addToQueue = useCallback(async (song: MobileSong) => {
     if (!profile || !clientId) {
@@ -212,6 +242,51 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
       queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
     }
   }, [profile, clientId, slotsRemaining, selectedGameMode, selectedPartner, onNavigateToProfile]);
+
+  const reorderQueue = useCallback(async (orderedIds: string[]) => {
+    if (!clientId) return;
+    try {
+      const response = await fetch('/api/mobile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'reorderqueue', clientId, payload: { orderedIds } }),
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.success) {
+        setQueue(prev => {
+          // Rebuild full queue using server-confirmed order
+          const orderedSet = new Set(orderedIds);
+          const reordered = orderedIds
+            .map(id => prev.find(q => q.id === id))
+            .filter(Boolean) as typeof prev;
+
+          let newQueue: typeof prev = [];
+          let inserted = false;
+          for (const item of prev) {
+            if (orderedSet.has(item.id)) {
+              if (!inserted) {
+                newQueue.push(...reordered);
+                inserted = true;
+              }
+            } else {
+              newQueue.push(item);
+            }
+          }
+          return newQueue;
+        });
+      } else {
+        setQueueError(data.message || 'Failed to reorder queue');
+        if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);
+        queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
+      }
+    } catch (error) {
+      console.debug('[useMobileData]: reorderQueue failed', error);
+      setQueueError('Failed to reorder queue');
+      if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);
+      queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
+    }
+  }, [clientId]);
 
   const removeFromQueue = useCallback(async (itemId: string) => {
     if (!clientId) return;
@@ -351,6 +426,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
     queueError,
     addToQueue,
     removeFromQueue,
+    reorderQueue,
     loadQueue,
     // Partners
     selectedPartner,
@@ -361,6 +437,10 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
     setSelectedGameMode,
     setShowSongOptions,
     loadAvailablePartners,
+    // F19: Opponents
+    opponents,
+    availableProfiles,
+    loadOpponents,
     // Results
     gameResults,
     loadGameResults,

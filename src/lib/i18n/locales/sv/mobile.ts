@@ -69,7 +69,8 @@ export const mobileTranslations = {
     step2: 'Hitta "Mikrofon" och välj "Tillåt"',
     step3: 'Ladda om sidan',
     volumeLevel: 'Mikrofonvolymnivå',
-    currentPitch: 'Aktuell tonhöjd'
+    currentPitch: 'Aktuell tonhöjd',
+    pitchHistory: 'Tonhöjdshistorik'
   },
 
   mobileViews: {
@@ -142,11 +143,22 @@ export const mobileTranslations = {
     gameModeDuel: 'Duell',
     gameModeDuet: 'Duett',
     partnerOptional: 'Partner (valfritt)',
+    // F19: Duel/Duet opponent selection
+    selectOpponent: 'Välj motståndare',
+    onlineNow: 'Online nu',
+    availableProfiles: 'Tillgängliga profiler',
+    randomOpponent: '🎲 Slumpmässig',
+    noOpponents: 'Inga andra companions med profiler anslutna.',
     accuracy: 'Noggrannhet',
     saveScoreCardSoon: 'Poängkort sparat i dina foton! (Funktion kommer snart)',
     addSongsToWishlistBtn: '+ Lägg till Låtar i Önskelista',
     shareHashtag: '#KaraokeZERO',
-    copyFailed: 'Kunde inte kopiera till urklipp.'
+    copyFailed: 'Kunde inte kopiera till urklipp.',
+    playAgain: 'Spela igen',
+    playAgainSuccess: 'Låten tillagd i kön!',
+    playAgainError: 'Kunde inte lägga till låten i kön.',
+    swipeToDelete: 'Dra för att radera',
+    reorderHint: 'Håll ner och dra för att ändra ordning'
   },
 
   mobileNav: {
@@ -364,5 +376,96 @@ export const mobileTranslations = {
   mobileCompanion: {
     getReady: 'Gör dig redo!',
     yourTurn: 'Din tur!',
+  },
+  mobileLeaderboard: {
+    title: 'Live-leaderboard',
+    currentSinger: 'Sjunger nu',
+    score: 'Poäng',
+    noPlayers: 'Inga spelare ännu',
+  },
+
+  mobileErrorBoundary: {
+    title: 'Något gick fel',
+    message: 'Ett oväntat fel uppstod. Försök igen.',
+    retry: 'Försök igen',
+    goHome: 'Gå Hem',
+  },
+
+  mobileOffline: {
+    title: 'Du är offline',
+    subtitle: 'Vissa funktioner kanske inte fungerar',
+  },
+
+  mobilePullRefresh: {
+    pullToRefresh: 'Dra för att uppdatera',
+    releaseToRefresh: 'Släpp för att uppdatera',
+    refreshing: 'Uppdaterar...',
+  },
+
+  mobileMoods: {
+    all: 'Alla',
+    party: 'Fest',
+    chill: 'Chill',
+    power: 'Power',
+    romantic: 'Romantiskt',
+    classic: 'Klassiker',
+    fun: 'Kul',
+    noSongs: 'Inga låtar matchar denna stämning',
+  },
+  mobileChallenge: {
+    title: 'Låtutmaning',
+    challenged: 'Utmanad med:',
+    noSongs: 'Inga låtar tillgängliga',
+  },
+
+  mobileOnboarding: {
+    welcome: 'Välkommen till Karaoke ZERO',
+    subtitle: 'Din mobila karaoke-companion-app',
+    next: 'Nästa',
+    back: 'Tillbaka',
+    featuresTitle: 'Funktioner',
+    features: 'Funktioner',
+    featureSing: 'Sjung med',
+    featureSingDesc: 'Sjung med realtids tonhöjdsdetektering',
+    featureQueue: 'Köa låtar',
+    featureQueueDesc: 'Bläddra och lägg till låtar i kön',
+    featureRemote: 'Fjärrkontroll',
+    featureRemoteDesc: 'Styr uppspelning från telefonen',
+    featureCompete: 'Tävla',
+    featureCompeteDesc: 'Utmana vänner och klättra på leaderboard',
+    getStarted: 'Kom igång',
+    connectHint: 'Se till att du är på samma WiFi som huvudappen',
+    scanHint: 'Skanna QR-koden på huvudskärmen',
+    letsGo: 'Kör!',
+  },
+  mobileChat: {
+    title: 'Chatt',
+    placeholder: 'Skriv ett meddelande...',
+    send: 'Skicka',
+    noMessages: 'Inga meddelanden ännu',
+    host: 'Värd',
+  },
+
+  mobilePreview: {
+    preview: 'Förhandslyssning',
+    listening: 'Lyssnar...',
+    preview15s: '15s förhandslyssning',
+  },
+  mobileAchievements: {
+    title: 'Prestationer',
+    unlocked: 'Låsta upp',
+    locked: 'Låsta',
+    progress: 'Framsteg',
+    newAchievement: 'Ny prestation!',
+  },
+  mobilePhotoBooth: {
+    title: 'Fotobås',
+    capture: 'Ta foto',
+    save: 'Spara',
+    share: 'Dela',
+    cameraError: 'Kameråtkomst nekad',
+    cameraUnavailable: 'Kamera inte tillgängligt',
+    retake: 'Ta om',
+    noResults: 'Inga resultat att visa',
   },
 };

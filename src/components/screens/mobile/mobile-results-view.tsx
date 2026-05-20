@@ -1,18 +1,42 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { safeAlert } from '@/lib/safe-dialog';
 import { useTranslation } from '@/lib/i18n/translations';
+import { MobilePhotoBooth } from './mobile-photo-booth';
 import type { GameResults, MobileView } from './mobile-types';
+import {
+  loadUserStats,
+  saveUserStats,
+  updateStatsFromResults,
+  checkNewAchievements,
+} from '@/lib/mobile-achievements';
 
 interface ResultsViewProps {
   gameResults: GameResults | null;
   onNavigate: (_view: MobileView) => void;
+  onPlayAgain?: () => void;
 }
 
-export function MobileResultsView({ gameResults, onNavigate }: ResultsViewProps) {
+export function MobileResultsView({ gameResults, onNavigate, onPlayAgain }: ResultsViewProps) {
   const { t } = useTranslation();
+  const [showPhotoBooth, setShowPhotoBooth] = useState(false);
+
+  // Update user stats and check for new achievements when results come in
+  useEffect(() => {
+    if (!gameResults) return;
+    const currentStats = loadUserStats();
+    const updatedStats = updateStatsFromResults(currentStats, gameResults);
+    saveUserStats(updatedStats);
+
+    // Dispatch a custom event so the profile view can refresh stats
+    const newAchievements = checkNewAchievements(updatedStats);
+    if (newAchievements.length > 0) {
+      window.dispatchEvent(new CustomEvent('mobile-achievements-updated'));
+    }
+  }, [gameResults]);
 
   return (
     <div className="p-4 max-w-md mx-auto">
@@ -47,14 +71,31 @@ export function MobileResultsView({ gameResults, onNavigate }: ResultsViewProps)
               </div>
             </CardContent>
           </Card>
+
+          {/* Play Again */}
+          {onPlayAgain && gameResults.songId && (
+            <Button
+              onClick={onPlayAgain}
+              className="w-full h-12 text-lg font-bold bg-cyan-500 hover:bg-cyan-400 text-white shadow-lg shadow-cyan-500/25"
+            >
+              🔄 {t('mobileViews.playAgain')}
+            </Button>
+          )}
           
           {/* Social Actions */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-2">
+            <Button 
+              onClick={() => setShowPhotoBooth(true)}
+              variant="outline"
+              className="border-white/20"
+            >
+              📸 Photo
+            </Button>
             <Button 
               onClick={() => {
                 safeAlert(t('mobileViews.saveScoreCardSoon'));
               }}
-              className="bg-gradient-to-r from-cyan-500 to-purple-500"
+              className="bg-gradient-to-r from-cyan-500 to-purple-500 col-span-1"
             >
               {t('mobileViews.saveScoreCard')}
             </Button>
@@ -73,11 +114,19 @@ export function MobileResultsView({ gameResults, onNavigate }: ResultsViewProps)
                 }
               }}
               variant="outline"
-              className="border-white/20"
+              className="border-white/20 col-span-1"
             >
               {t('mobileViews.shareScore')}
             </Button>
           </div>
+
+          {/* Photo Booth Overlay */}
+          {showPhotoBooth && (
+            <MobilePhotoBooth
+              gameResults={gameResults}
+              onClose={() => setShowPhotoBooth(false)}
+            />
+          )}
           
           {/* Quick Actions */}
           <div className="flex gap-2">

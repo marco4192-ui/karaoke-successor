@@ -11,6 +11,14 @@ interface BottomNavProps {
 export function MobileBottomNav({ currentView, onNavigate }: BottomNavProps) {
   const { t } = useTranslation();
 
+  const handleTabSwitch = (view: MobileView) => {
+    if (view === currentView) return;
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(10);
+    }
+    onNavigate(view);
+  };
+
   return (
     <nav
       role="tablist"
@@ -19,7 +27,7 @@ export function MobileBottomNav({ currentView, onNavigate }: BottomNavProps) {
     >
       <div className="flex justify-around py-2">
         <button 
-          onClick={() => onNavigate('home')}
+          onClick={() => handleTabSwitch('home')}
           role="tab"
           aria-selected={currentView === 'home'}
           aria-label={t('mobileNav.home')}
@@ -29,7 +37,7 @@ export function MobileBottomNav({ currentView, onNavigate }: BottomNavProps) {
           <span className="text-xs mt-1">{t('mobileNav.home')}</span>
         </button>
         <button 
-          onClick={() => onNavigate('mic')}
+          onClick={() => handleTabSwitch('mic')}
           role="tab"
           aria-selected={currentView === 'mic'}
           aria-label={t('mobileNav.sing')}
@@ -39,7 +47,7 @@ export function MobileBottomNav({ currentView, onNavigate }: BottomNavProps) {
           <span className="text-xs mt-1">{t('mobileNav.sing')}</span>
         </button>
         <button 
-          onClick={() => onNavigate('songs')}
+          onClick={() => handleTabSwitch('songs')}
           role="tab"
           aria-selected={currentView === 'songs'}
           aria-label={t('mobileNav.songs')}
@@ -49,7 +57,7 @@ export function MobileBottomNav({ currentView, onNavigate }: BottomNavProps) {
           <span className="text-xs mt-1">{t('mobileNav.songs')}</span>
         </button>
         <button 
-          onClick={() => onNavigate('remote')}
+          onClick={() => handleTabSwitch('remote')}
           role="tab"
           aria-selected={currentView === 'remote'}
           aria-label={t('mobileNav.remote')}
@@ -59,7 +67,7 @@ export function MobileBottomNav({ currentView, onNavigate }: BottomNavProps) {
           <span className="text-xs mt-1">{t('mobileNav.remote')}</span>
         </button>
         <button 
-          onClick={() => onNavigate('profile')}
+          onClick={() => handleTabSwitch('profile')}
           role="tab"
           aria-selected={currentView === 'profile'}
           aria-label={t('mobileNav.profile')}

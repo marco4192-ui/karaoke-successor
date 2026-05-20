@@ -68,7 +68,8 @@ export const mobileTranslations = {
     step2: '找到"麦克风"并选择"允许"',
     step3: '刷新页面',
     volumeLevel: '麦克风音量等级',
-    currentPitch: '当前音高'
+    currentPitch: '当前音高',
+    pitchHistory: '音高历史'
   },
 
   mobileViews: {
@@ -141,11 +142,22 @@ export const mobileTranslations = {
     gameModeDuel: '对决',
     gameModeDuet: '二重唱',
     partnerOptional: '搭档（可选）',
+    // F19: Duel/Duet opponent selection
+    selectOpponent: '选择对手',
+    onlineNow: '在线中',
+    availableProfiles: '可用档案',
+    randomOpponent: '🎲 随机',
+    noOpponents: '没有其他带档案的伴侣已连接。',
     accuracy: '准确度',
     saveScoreCardSoon: '分数卡片已保存到你的相册！（功能即将推出）',
     addSongsToWishlistBtn: '+ 添加歌曲到心愿单',
     shareHashtag: '#KaraokeZERO',
-    copyFailed: '复制到剪贴板失败。'
+    copyFailed: '复制到剪贴板失败。',
+    playAgain: '再次演唱',
+    playAgainSuccess: '歌曲已添加到队列！',
+    playAgainError: '无法将歌曲添加到队列。',
+    swipeToDelete: '滑动删除',
+    reorderHint: '长按并拖动以重新排序'
   },
 
   mobileNav: {
@@ -363,5 +375,96 @@ export const mobileTranslations = {
   mobileCompanion: {
     getReady: '准备！',
     yourTurn: '轮到你了！',
+  },
+  mobileLeaderboard: {
+    title: '实时排行榜',
+    currentSinger: '正在演唱',
+    score: '得分',
+    noPlayers: '还没有玩家',
+  },
+
+  mobileErrorBoundary: {
+    title: '出了点问题',
+    message: '发生意外错误，请重试。',
+    retry: '重试',
+    goHome: '返回首页',
+  },
+
+  mobileOffline: {
+    title: '您处于离线状态',
+    subtitle: '某些功能可能无法使用',
+  },
+
+  mobilePullRefresh: {
+    pullToRefresh: '下拉刷新',
+    releaseToRefresh: '释放刷新',
+    refreshing: '刷新中...',
+  },
+
+  mobileMoods: {
+    all: '全部',
+    party: '派对',
+    chill: '放松',
+    power: '力量',
+    romantic: '浪漫',
+    classic: '经典',
+    fun: '趣味',
+    noSongs: '没有符合此氛围的歌曲',
+  },
+  mobileChallenge: {
+    title: '歌曲挑战',
+    challenged: '挑战歌曲：',
+    noSongs: '没有可用的歌曲',
+  },
+
+  mobileOnboarding: {
+    welcome: '欢迎使用 Karaoke ZERO',
+    subtitle: '你的移动端卡拉OK伴侣应用',
+    next: '下一步',
+    back: '返回',
+    featuresTitle: '功能',
+    features: '功能',
+    featureSing: '跟唱',
+    featureSingDesc: '实时音高检测跟唱',
+    featureQueue: '添加歌曲',
+    featureQueueDesc: '浏览并将歌曲加入队列',
+    featureRemote: '遥控',
+    featureRemoteDesc: '用手机控制播放',
+    featureCompete: '竞赛',
+    featureCompeteDesc: '挑战好友，攀登排行榜',
+    getStarted: '开始使用',
+    connectHint: '确保与主应用连接到同一WiFi',
+    scanHint: '扫描主屏幕上的二维码进行连接',
+    letsGo: '开始吧！',
+  },
+  mobileChat: {
+    title: '聊天',
+    placeholder: '输入消息...',
+    send: '发送',
+    noMessages: '暂无消息',
+    host: '主机',
+  },
+
+  mobilePreview: {
+    preview: '预览',
+    listening: '试听中...',
+    preview15s: '15秒预览',
+  },
+  mobileAchievements: {
+    title: '成就',
+    unlocked: '已解锁',
+    locked: '未解锁',
+    progress: '进度',
+    newAchievement: '新成就！',
+  },
+  mobilePhotoBooth: {
+    title: '自拍亭',
+    capture: '拍照',
+    save: '保存',
+    share: '分享',
+    cameraError: '摄像头访问被拒绝',
+    cameraUnavailable: '摄像头不可用',
+    retake: '重拍',
+    noResults: '没有可显示的结果',
   },
 };

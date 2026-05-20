@@ -69,7 +69,8 @@ export const mobileTranslations = {
     step2: 'Find "Microphone" and select "Allow"',
     step3: 'Reload the page',
     volumeLevel: 'Microphone volume level',
-    currentPitch: 'Current pitch'
+    currentPitch: 'Current pitch',
+    pitchHistory: 'Pitch History'
   },
 
   mobileViews: {
@@ -142,11 +143,22 @@ export const mobileTranslations = {
     gameModeDuel: 'Duel',
     gameModeDuet: 'Duet',
     partnerOptional: 'Partner (optional)',
+    // F19: Duel/Duet opponent selection
+    selectOpponent: 'Select Opponent',
+    onlineNow: 'Online Now',
+    availableProfiles: 'Available Profiles',
+    randomOpponent: '🎲 Random',
+    noOpponents: 'No other companions with profiles connected.',
     accuracy: 'Accuracy',
     saveScoreCardSoon: 'Score card saved to your photos! (Feature coming soon)',
     addSongsToWishlistBtn: '+ Add Songs to Wishlist',
     shareHashtag: '#KaraokeZERO',
-    copyFailed: 'Failed to copy to clipboard.'
+    copyFailed: 'Failed to copy to clipboard.',
+    playAgain: 'Play Again',
+    playAgainSuccess: 'Song added to queue!',
+    playAgainError: 'Could not add song to queue.',
+    swipeToDelete: 'Swipe to delete',
+    reorderHint: 'Long press and drag to reorder'
   },
 
   mobileNav: {
@@ -364,5 +376,98 @@ export const mobileTranslations = {
   mobileCompanion: {
     getReady: 'Get Ready!',
     yourTurn: 'Your Turn!',
+  },
+
+  mobileLeaderboard: {
+    title: 'Live Leaderboard',
+    currentSinger: 'Now singing',
+    score: 'Score',
+    noPlayers: 'No players yet',
+  },
+
+  mobileErrorBoundary: {
+    title: 'Something went wrong',
+    message: 'An unexpected error occurred. Please try again.',
+    retry: 'Retry',
+    goHome: 'Go to Home',
+  },
+
+  mobileOffline: {
+    title: 'You are offline',
+    subtitle: 'Some features may not work',
+  },
+
+  mobilePullRefresh: {
+    pullToRefresh: 'Pull to refresh',
+    releaseToRefresh: 'Release to refresh',
+    refreshing: 'Refreshing...',
+  },
+
+  mobileMoods: {
+    all: 'All',
+    party: 'Party',
+    chill: 'Chill',
+    power: 'Power',
+    romantic: 'Romantic',
+    classic: 'Classic',
+    fun: 'Fun',
+    noSongs: 'No songs match this mood',
+  },
+  mobileChallenge: {
+    title: 'Song Challenge',
+    challenged: 'Challenged with:',
+    noSongs: 'No songs available',
+  },
+
+  mobileOnboarding: {
+    welcome: 'Welcome to Karaoke ZERO',
+    subtitle: 'Your mobile karaoke companion app',
+    next: 'Next',
+    back: 'Back',
+    featuresTitle: 'Features',
+    features: 'Features',
+    featureSing: 'Sing Along',
+    featureSingDesc: 'Sing along with real-time pitch detection',
+    featureQueue: 'Queue Songs',
+    featureQueueDesc: 'Browse and add songs to the queue',
+    featureRemote: 'Remote Control',
+    featureRemoteDesc: 'Control playback from your phone',
+    featureCompete: 'Compete',
+    featureCompeteDesc: 'Challenge friends and climb the leaderboard',
+    getStarted: 'Get Started',
+    connectHint: 'Make sure you\'re on the same WiFi as the main app',
+    scanHint: 'Scan the QR code on the main screen to connect',
+    letsGo: 'Let\'s Go!',
+  },
+  mobileChat: {
+    title: 'Chat',
+    placeholder: 'Type a message...',
+    send: 'Send',
+    noMessages: 'No messages yet',
+    host: 'Host',
+  },
+
+  mobilePreview: {
+    preview: 'Preview',
+    listening: 'Listening...',
+    preview15s: '15s preview',
+  },
+
+  mobileAchievements: {
+    title: 'Achievements',
+    unlocked: 'Unlocked',
+    locked: 'Locked',
+    progress: 'Progress',
+    newAchievement: 'New Achievement!',
+  },
+  mobilePhotoBooth: {
+    title: 'Photo Booth',
+    capture: 'Take Photo',
+    save: 'Save',
+    share: 'Share',
+    cameraError: 'Camera access denied',
+    cameraUnavailable: 'Camera not available',
+    retake: 'Retake',
+    noResults: 'No results to show',
   },
 };

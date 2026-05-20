@@ -68,7 +68,8 @@ export const mobileTranslations = {
     step2: 'Найдите "Микрофон" и выберите "Разрешить"',
     step3: 'Перезагрузите страницу',
     volumeLevel: 'Уровень громкости микрофона',
-    currentPitch: 'Текущая высота тона'
+    currentPitch: 'Текущая высота тона',
+    pitchHistory: 'История высоты тона'
   },
 
   mobileViews: {
@@ -141,11 +142,22 @@ export const mobileTranslations = {
     gameModeDuel: 'Дуэль',
     gameModeDuet: 'Дуэт',
     partnerOptional: 'Партнёр (необязательно)',
+    // F19: Duel/Duet opponent selection
+    selectOpponent: 'Выберите соперника',
+    onlineNow: 'Онлайн сейчас',
+    availableProfiles: 'Доступные профили',
+    randomOpponent: '🎲 Случайный',
+    noOpponents: 'Нет других компаньонов с профилями в сети.',
     accuracy: 'Точность',
     saveScoreCardSoon: 'Карточка сохранена в ваши фото! (Функция скоро появится)',
     addSongsToWishlistBtn: '+ Добавить песни в список желаний',
     shareHashtag: '#KaraokeZERO',
-    copyFailed: 'Не удалось скопировать в буфер обмена.'
+    copyFailed: 'Не удалось скопировать в буфер обмена.',
+    playAgain: 'Играть снова',
+    playAgainSuccess: 'Песня добавлена в очередь!',
+    playAgainError: 'Не удалось добавить песню в очередь.',
+    swipeToDelete: 'Свайп для удаления',
+    reorderHint: 'Удерживайте и перетаскивайте для изменения порядка'
   },
 
   mobileNav: {
@@ -363,5 +375,96 @@ export const mobileTranslations = {
   mobileCompanion: {
     getReady: 'Приготовьтесь!',
     yourTurn: 'Ваша очередь!',
+  },
+  mobileLeaderboard: {
+    title: 'Живой рейтинг',
+    currentSinger: 'Поёт сейчас',
+    score: 'Очки',
+    noPlayers: 'Игроков пока нет',
+  },
+
+  mobileErrorBoundary: {
+    title: 'Что-то пошло не так',
+    message: 'Произошла неожиданная ошибка. Пожалуйста, попробуйте снова.',
+    retry: 'Повторить',
+    goHome: 'На главную',
+  },
+
+  mobileOffline: {
+    title: 'Вы не в сети',
+    subtitle: 'Некоторые функции могут быть недоступны',
+  },
+
+  mobilePullRefresh: {
+    pullToRefresh: 'Потяните для обновления',
+    releaseToRefresh: 'Отпустите для обновления',
+    refreshing: 'Обновление...',
+  },
+
+  mobileMoods: {
+    all: 'Все',
+    party: 'Вечеринка',
+    chill: 'Расслабление',
+    power: 'Мощь',
+    romantic: 'Романтика',
+    classic: 'Классика',
+    fun: 'Веселье',
+    noSongs: 'Нет песен для этого настроения',
+  },
+  mobileChallenge: {
+    title: 'Музыкальный вызов',
+    challenged: 'Вызов принят:',
+    noSongs: 'Нет доступных песен',
+  },
+
+  mobileOnboarding: {
+    welcome: 'Добро пожаловать в Karaoke ZERO',
+    subtitle: 'Ваше мобильное приложение-компаньон для караоке',
+    next: 'Далее',
+    back: 'Назад',
+    featuresTitle: 'Функции',
+    features: 'Функции',
+    featureSing: 'Петь',
+    featureSingDesc: 'Пойте с определением тональности в реальном времени',
+    featureQueue: 'Очередь песен',
+    featureQueueDesc: 'Просматривайте и добавляйте песни в очередь',
+    featureRemote: 'Пульт управления',
+    featureRemoteDesc: 'Управляйте воспроизведением с телефона',
+    featureCompete: 'Соревноваться',
+    featureCompeteDesc: 'Бросьте вызов друзьям и поднимайтесь в рейтинге',
+    getStarted: 'Начать',
+    connectHint: 'Убедитесь, что вы в том же WiFi, что и основное приложение',
+    scanHint: 'Отсканируйте QR-код на главном экране',
+    letsGo: 'Поехали!',
+  },
+  mobileChat: {
+    title: 'Чат',
+    placeholder: 'Введите сообщение...',
+    send: 'Отправить',
+    noMessages: 'Пока нет сообщений',
+    host: 'Хост',
+  },
+
+  mobilePreview: {
+    preview: 'Предпрослушивание',
+    listening: 'Слушаем...',
+    preview15s: '15с предпрослушивание',
+  },
+  mobileAchievements: {
+    title: 'Достижения',
+    unlocked: 'Разблокировано',
+    locked: 'Заблокировано',
+    progress: 'Прогресс',
+    newAchievement: 'Новое достижение!',
+  },
+  mobilePhotoBooth: {
+    title: 'Фотобудка',
+    capture: 'Сделать фото',
+    save: 'Сохранить',
+    share: 'Поделиться',
+    cameraError: 'Доступ к камере запрещён',
+    cameraUnavailable: 'Камера недоступна',
+    retake: 'Переснять',
+    noResults: 'Нет результатов для отображения',
   },
 };

@@ -69,7 +69,8 @@ export const mobileTranslations = {
     step2: 'Encontre "Microfone" e selecione "Permitir"',
     step3: 'Recarregue a página',
     volumeLevel: 'Nível de volume do microfone',
-    currentPitch: 'Tom atual'
+    currentPitch: 'Tom atual',
+    pitchHistory: 'Histórico do tom'
   },
 
   mobileViews: {
@@ -142,11 +143,22 @@ export const mobileTranslations = {
     gameModeDuel: 'Duelo',
     gameModeDuet: 'Duet',
     partnerOptional: 'Parceiro (opcional)',
+    // F19: Duel/Duet opponent selection
+    selectOpponent: 'Selecionar oponente',
+    onlineNow: 'Online agora',
+    availableProfiles: 'Perfis disponíveis',
+    randomOpponent: '🎲 Aleatório',
+    noOpponents: 'Nenhum outro companheiro com perfil conectado.',
     accuracy: 'Precisão',
     saveScoreCardSoon: 'Cartão de pontuação salvo em suas fotos! (Recurso em breve)',
     addSongsToWishlistBtn: '+ Adicionar Músicas à Lista de Desejos',
     shareHashtag: '#KaraokeZERO',
-    copyFailed: 'Falha ao copiar para a área de transferência.'
+    copyFailed: 'Falha ao copiar para a área de transferência.',
+    playAgain: 'Jogar novamente',
+    playAgainSuccess: 'Música adicionada à fila!',
+    playAgainError: 'Não foi possível adicionar a música à fila.',
+    swipeToDelete: 'Deslize para excluir',
+    reorderHint: 'Mantenha pressionado e arraste para reordenar'
   },
 
   mobileNav: {
@@ -364,5 +376,96 @@ export const mobileTranslations = {
   mobileCompanion: {
     getReady: 'Prepare-se!',
     yourTurn: 'Sua Vez!',
+  },
+  mobileLeaderboard: {
+    title: 'Classificação ao vivo',
+    currentSinger: 'Cantando agora',
+    score: 'Pontuação',
+    noPlayers: 'Nenhum jogador',
+  },
+
+  mobileErrorBoundary: {
+    title: 'Algo correu mal',
+    message: 'Ocorreu um erro inesperado. Por favor, tente novamente.',
+    retry: 'Tentar novamente',
+    goHome: 'Ir para Início',
+  },
+
+  mobileOffline: {
+    title: 'Você está offline',
+    subtitle: 'Algumas funcionalidades podem não funcionar',
+  },
+
+  mobilePullRefresh: {
+    pullToRefresh: 'Puxe para atualizar',
+    releaseToRefresh: 'Solte para atualizar',
+    refreshing: 'Atualizando...',
+  },
+
+  mobileMoods: {
+    all: 'Todos',
+    party: 'Festa',
+    chill: 'Relaxante',
+    power: 'Potência',
+    romantic: 'Romântico',
+    classic: 'Clássico',
+    fun: 'Diversão',
+    noSongs: 'Nenhuma música corresponde a este clima',
+  },
+  mobileChallenge: {
+    title: 'Desafio Musical',
+    challenged: 'Desafiado com:',
+    noSongs: 'Nenhuma música disponível',
+  },
+
+  mobileOnboarding: {
+    welcome: 'Bem-vindo ao Karaoke ZERO',
+    subtitle: 'Seu app de karaoke mobile',
+    next: 'Próximo',
+    back: 'Voltar',
+    featuresTitle: 'Recursos',
+    features: 'Recursos',
+    featureSing: 'Cantar',
+    featureSingDesc: 'Cante com detecção de tom em tempo real',
+    featureQueue: 'Enfileirar músicas',
+    featureQueueDesc: 'Navegue e adicione músicas à fila',
+    featureRemote: 'Controle remoto',
+    featureRemoteDesc: 'Controle a reprodução do seu telefone',
+    featureCompete: 'Competir',
+    featureCompeteDesc: 'Desafie amigos e suba no ranking',
+    getStarted: 'Começar',
+    connectHint: 'Certifique-se de estar na mesma WiFi que o app principal',
+    scanHint: 'Escaneie o código QR na tela principal',
+    letsGo: 'Vamos!',
+  },
+  mobileChat: {
+    title: 'Chat',
+    placeholder: 'Digite uma mensagem...',
+    send: 'Enviar',
+    noMessages: 'Nenhuma mensagem ainda',
+    host: 'Anfitrião',
+  },
+
+  mobilePreview: {
+    preview: 'Pré-visualização',
+    listening: 'Ouvindo...',
+    preview15s: '15s pré-visualização',
+  },
+  mobileAchievements: {
+    title: 'Conquistas',
+    unlocked: 'Desbloqueadas',
+    locked: 'Bloqueadas',
+    progress: 'Progresso',
+    newAchievement: 'Nova conquista!',
+  },
+  mobilePhotoBooth: {
+    title: 'Cabine de Fotos',
+    capture: 'Tirar foto',
+    save: 'Guardar',
+    share: 'Partilhar',
+    cameraError: 'Acesso à câmara negado',
+    cameraUnavailable: 'Câmara não disponível',
+    retake: 'Tirar novamente',
+    noResults: 'Sem resultados para mostrar',
   },
 };

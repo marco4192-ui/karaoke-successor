@@ -168,6 +168,7 @@ export const mutableState = {
     singalongTurn: null,
     cptmTurn: null,
     tournamentMatchId: null,
+    companionScores: null,
   } as MobileGameState,
 
   // Queue for song requests from mobile clients
@@ -202,6 +203,26 @@ export const mutableState = {
     matchId: string;
     playerSide: 1 | 2;
     timestamp: number;
+  }>,
+
+  // F19: Pending duel/duet requests — stored so the partner's companion can poll
+  pendingDuelRequests: [] as Array<{
+    fromClientId: string;
+    fromProfileName: string;
+    targetClientId: string;
+    songTitle: string;
+    gameMode: 'duel' | 'duet';
+    timestamp: number;
+  }>,
+
+  // F4: In-game chat messages between companion and host
+  chatMessages: [] as Array<{
+    id: string;
+    from: string;
+    fromName: string;
+    text: string;
+    timestamp: number;
+    isHost: boolean;
   }>,
 };
 
@@ -351,6 +372,7 @@ export function resetAllState() {
     singalongTurn: null,
     cptmTurn: null,
     tournamentMatchId: null,
+    companionScores: null,
   };
   // Reset remote control state
   mutableState.remoteControlState = {
@@ -361,4 +383,8 @@ export function resetAllState() {
   };
   // Clear tournament crowd votes
   mutableState.tournamentCrowdVotes = [];
+  // Clear pending duel requests
+  mutableState.pendingDuelRequests = [];
+  // Clear chat messages
+  mutableState.chatMessages = [];
 }

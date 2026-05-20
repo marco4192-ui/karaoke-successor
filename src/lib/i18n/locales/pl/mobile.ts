@@ -68,7 +68,8 @@ export const mobileTranslations = {
     step2: 'Znajdź "Mikrofon" i wybierz "Zezwalaj"',
     step3: 'Odśwież stronę',
     volumeLevel: 'Poziom głośności mikrofonu',
-    currentPitch: 'Aktualna wysokość dźwięku'
+    currentPitch: 'Aktualna wysokość dźwięku',
+    pitchHistory: 'Historia wysokości dźwięku'
   },
 
   mobileViews: {
@@ -141,11 +142,22 @@ export const mobileTranslations = {
     gameModeDuel: 'Duel',
     gameModeDuet: 'Duet',
     partnerOptional: 'Partner (opcjonalnie)',
+    // F19: Duel/Duet opponent selection
+    selectOpponent: 'Wybierz przeciwnika',
+    onlineNow: 'Online teraz',
+    availableProfiles: 'Dostępne profile',
+    randomOpponent: '🎲 Losowy',
+    noOpponents: 'Brak innych companionów z profilami.',
     accuracy: 'Celność',
     saveScoreCardSoon: 'Karta wyników zapisana w Twoich zdjęciach! (Funkcja wkrótce)',
     addSongsToWishlistBtn: '+ Dodaj piosenki do listy życzeń',
     shareHashtag: '#KaraokeZERO',
-    copyFailed: 'Nie udało się skopiować do schowka.'
+    copyFailed: 'Nie udało się skopiować do schowka.',
+    playAgain: 'Zagraj ponownie',
+    playAgainSuccess: 'Piosenka dodana do kolejki!',
+    playAgainError: 'Nie udało się dodać piosenki do kolejki.',
+    swipeToDelete: 'Przesuń, aby usunąć',
+    reorderHint: 'Przytrzymaj i przeciągnij, aby zmienić kolejność'
   },
 
   mobileNav: {
@@ -363,5 +375,96 @@ export const mobileTranslations = {
   mobileCompanion: {
     getReady: 'Przygotuj się!',
     yourTurn: 'Twoja kolej!',
+  },
+  mobileLeaderboard: {
+    title: 'Ranking na żywo',
+    currentSinger: 'Śpiewa teraz',
+    score: 'Wynik',
+    noPlayers: 'Brak graczy',
+  },
+
+  mobileErrorBoundary: {
+    title: 'Coś poszło nie tak',
+    message: 'Wystąpił nieoczekiwany błąd. Spróbuj ponownie.',
+    retry: 'Spróbuj ponownie',
+    goHome: 'Strona główna',
+  },
+
+  mobileOffline: {
+    title: 'Jesteś offline',
+    subtitle: 'Niektóre funkcje mogą nie działać',
+  },
+
+  mobilePullRefresh: {
+    pullToRefresh: 'Pociągnij, aby odświeżyć',
+    releaseToRefresh: 'Puść, aby odświeżyć',
+    refreshing: 'Odświeżanie...',
+  },
+
+  mobileMoods: {
+    all: 'Wszystkie',
+    party: 'Impreza',
+    chill: 'Relaks',
+    power: 'Moc',
+    romantic: 'Romantyczne',
+    classic: 'Klasyka',
+    fun: 'Zabawa',
+    noSongs: 'Brak utworów pasujących do tego nastroju',
+  },
+  mobileChallenge: {
+    title: 'Muzyczne wyzwanie',
+    challenged: 'Wyzwanie:',
+    noSongs: 'Brak dostępnych utworów',
+  },
+
+  mobileOnboarding: {
+    welcome: 'Witamy w Karaoke ZERO',
+    subtitle: 'Twoja mobilna aplikacja do karaoke',
+    next: 'Dalej',
+    back: 'Wstecz',
+    featuresTitle: 'Funkcje',
+    features: 'Funkcje',
+    featureSing: 'Śpiewaj',
+    featureSingDesc: 'Śpiewaj z wykrywaniem wysokości dźwięku w czasie rzeczywistym',
+    featureQueue: 'Kolejkuj piosenki',
+    featureQueueDesc: 'Przeglądaj i dodawaj piosenki do kolejki',
+    featureRemote: 'Pilot',
+    featureRemoteDesc: 'Steruj odtwarzaniem z telefonu',
+    featureCompete: 'Rywalizuj',
+    featureCompeteDesc: 'Wyzwij znajomych i awansuj w rankingu',
+    getStarted: 'Zacznij',
+    connectHint: 'Upewnij się, że jesteś w tej samej WiFi co główna aplikacja',
+    scanHint: 'Zeskanuj kod QR na głównym ekranie',
+    letsGo: 'Zaczynamy!',
+  },
+  mobileChat: {
+    title: 'Czat',
+    placeholder: 'Wpisz wiadomość...',
+    send: 'Wyślij',
+    noMessages: 'Brak wiadomości',
+    host: 'Host',
+  },
+
+  mobilePreview: {
+    preview: 'Podgląd',
+    listening: 'Słucham...',
+    preview15s: '15s podgląd',
+  },
+  mobileAchievements: {
+    title: 'Osiągnięcia',
+    unlocked: 'Odblokowane',
+    locked: 'Zablokowane',
+    progress: 'Postęp',
+    newAchievement: 'Nowe osiągnięcie!',
+  },
+  mobilePhotoBooth: {
+    title: 'Fotobudka',
+    capture: 'Zrób zdjęcie',
+    save: 'Zapisz',
+    share: 'Udostępnij',
+    cameraError: 'Odmowa dostępu do kamery',
+    cameraUnavailable: 'Kamera niedostępna',
+    retake: 'Zrób ponownie',
+    noResults: 'Brak wyników do wyświetlenia',
   },
 };

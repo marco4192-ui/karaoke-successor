@@ -69,7 +69,8 @@ export const mobileTranslations = {
     step2: 'Trouvez "Microphone" et sélectionnez "Autoriser"',
     step3: 'Rechargez la page',
     volumeLevel: 'Niveau de volume du microphone',
-    currentPitch: 'Hauteur de ton actuelle'
+    currentPitch: 'Hauteur de ton actuelle',
+    pitchHistory: 'Historique de la hauteur de ton'
   },
 
   mobileViews: {
@@ -142,11 +143,22 @@ export const mobileTranslations = {
     gameModeDuel: 'Duel',
     gameModeDuet: 'Duo',
     partnerOptional: 'Partenaire (facultatif)',
+    // F19: Duel/Duet opponent selection
+    selectOpponent: 'Choisir un adversaire',
+    onlineNow: 'En ligne',
+    availableProfiles: 'Profils disponibles',
+    randomOpponent: '🎲 Aléatoire',
+    noOpponents: 'Aucun autre compagnon avec un profil connecté.',
     accuracy: 'Précision',
     saveScoreCardSoon: 'Carte de score sauvegardée dans vos photos ! (Fonctionnalité à venir)',
     addSongsToWishlistBtn: '+ Ajouter des Chansons à la Liste',
     shareHashtag: '#KaraokeZERO',
-    copyFailed: 'Échec de la copie dans le presse-papiers.'
+    copyFailed: 'Échec de la copie dans le presse-papiers.',
+    playAgain: 'Rejouer',
+    playAgainSuccess: 'Chanson ajoutée à la file d\'attente !',
+    playAgainError: 'Impossible d\'ajouter la chanson à la file d\'attente.',
+    swipeToDelete: 'Glisser pour supprimer',
+    reorderHint: 'Appuyez longuement et glissez pour réorganiser'
   },
 
   mobileNav: {
@@ -364,5 +376,96 @@ export const mobileTranslations = {
   mobileCompanion: {
     getReady: 'Préparez-vous !',
     yourTurn: 'C\'est votre tour !',
+  },
+  mobileLeaderboard: {
+    title: 'Classement en direct',
+    currentSinger: 'Chante maintenant',
+    score: 'Score',
+    noPlayers: 'Aucun joueur',
+  },
+
+  mobileErrorBoundary: {
+    title: 'Un problème est survenu',
+    message: 'Une erreur inattendue s\'est produite. Veuillez réessayer.',
+    retry: 'Réessayer',
+    goHome: 'Aller à l\'accueil',
+  },
+
+  mobileOffline: {
+    title: 'Vous êtes hors ligne',
+    subtitle: 'Certaines fonctionnalités peuvent ne pas fonctionner',
+  },
+
+  mobilePullRefresh: {
+    pullToRefresh: 'Tirer pour actualiser',
+    releaseToRefresh: 'Relâcher pour actualiser',
+    refreshing: 'Actualisation...',
+  },
+
+  mobileMoods: {
+    all: 'Tout',
+    party: 'Fête',
+    chill: 'Détente',
+    power: 'Puissance',
+    romantic: 'Romantique',
+    classic: 'Classique',
+    fun: 'Fun',
+    noSongs: 'Aucune chanson ne correspond à cette ambiance',
+  },
+  mobileChallenge: {
+    title: 'Défi Musical',
+    challenged: 'Défié avec :',
+    noSongs: 'Aucune chanson disponible',
+  },
+
+  mobileOnboarding: {
+    welcome: 'Bienvenue sur Karaoke ZERO',
+    subtitle: 'Votre application karaoké mobile',
+    next: 'Suivant',
+    back: 'Retour',
+    featuresTitle: 'Fonctionnalités',
+    features: 'Fonctionnalités',
+    featureSing: 'Chanter',
+    featureSingDesc: 'Chantez avec détection de ton en temps réel',
+    featureQueue: 'Mettre en file',
+    featureQueueDesc: 'Parcourez et ajoutez des chansons à la file',
+    featureRemote: 'Télécommande',
+    featureRemoteDesc: 'Contrôlez la lecture depuis votre téléphone',
+    featureCompete: 'Compétir',
+    featureCompeteDesc: 'Défiez vos amis et grimpez au classement',
+    getStarted: 'Commencer',
+    connectHint: 'Assurez-vous d\'être sur le même WiFi que l\'app principale',
+    scanHint: 'Scannez le code QR sur l\'écran principal',
+    letsGo: 'Allons-y !',
+  },
+  mobileChat: {
+    title: 'Chat',
+    placeholder: 'Tapez un message...',
+    send: 'Envoyer',
+    noMessages: 'Pas encore de messages',
+    host: 'Hôte',
+  },
+
+  mobilePreview: {
+    preview: 'Aperçu',
+    listening: 'Écoute en cours...',
+    preview15s: 'Aperçu 15s',
+  },
+  mobileAchievements: {
+    title: 'Succes',
+    unlocked: 'Debloques',
+    locked: 'Verrouilles',
+    progress: 'Progression',
+    newAchievement: 'Nouveau succes !',
+  },
+  mobilePhotoBooth: {
+    title: 'Photomaton',
+    capture: 'Prendre une photo',
+    save: 'Enregistrer',
+    share: 'Partager',
+    cameraError: 'Accès à la caméra refusé',
+    cameraUnavailable: 'Caméra non disponible',
+    retake: 'Reprendre',
+    noResults: 'Aucun résultat à afficher',
   },
 };

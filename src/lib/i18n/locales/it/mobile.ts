@@ -69,7 +69,8 @@ export const mobileTranslations = {
     step2: 'Trova "Microfono" e seleziona "Consenti"',
     step3: 'Ricarica la pagina',
     volumeLevel: 'Livello volume del microfono',
-    currentPitch: 'Tono attuale'
+    currentPitch: 'Tono attuale',
+    pitchHistory: 'Cronologia del tono'
   },
 
   mobileViews: {
@@ -142,11 +143,22 @@ export const mobileTranslations = {
     gameModeDuel: 'Duello',
     gameModeDuet: 'Duetto',
     partnerOptional: 'Compagno (opzionale)',
+    // F19: Duel/Duet opponent selection
+    selectOpponent: 'Seleziona avversario',
+    onlineNow: 'Online ora',
+    availableProfiles: 'Profili disponibili',
+    randomOpponent: '🎲 Casuale',
+    noOpponents: 'Nessun altro compagno con profilo connesso.',
     accuracy: 'Precisione',
     saveScoreCardSoon: 'Scheda punteggio salvata nelle tue foto! (Funzionalità in arrivo)',
     addSongsToWishlistBtn: '+ Aggiungi Canzoni alla Lista',
     shareHashtag: '#KaraokeZERO',
-    copyFailed: 'Impossibile copiare negli appunti.'
+    copyFailed: 'Impossibile copiare negli appunti.',
+    playAgain: 'Gioca di nuovo',
+    playAgainSuccess: 'Canzone aggiunta alla coda!',
+    playAgainError: 'Impossibile aggiungere la canzone alla coda.',
+    swipeToDelete: 'Scorri per eliminare',
+    reorderHint: 'Premi a lungo e trascina per riordinare'
   },
 
   mobileNav: {
@@ -364,5 +376,96 @@ export const mobileTranslations = {
   mobileCompanion: {
     getReady: 'Preparati!',
     yourTurn: 'Il tuo turno!',
+  },
+  mobileLeaderboard: {
+    title: 'Classifica in tempo reale',
+    currentSinger: 'Sta cantando',
+    score: 'Punteggio',
+    noPlayers: 'Nessun giocatore',
+  },
+
+  mobileErrorBoundary: {
+    title: 'Qualcosa è andato storto',
+    message: 'Si è verificato un errore imprevisto. Riprova.',
+    retry: 'Riprova',
+    goHome: 'Vai alla Home',
+  },
+
+  mobileOffline: {
+    title: 'Sei offline',
+    subtitle: 'Alcune funzionalità potrebbero non funzionare',
+  },
+
+  mobilePullRefresh: {
+    pullToRefresh: 'Scorri per aggiornare',
+    releaseToRefresh: 'Rilascia per aggiornare',
+    refreshing: 'Aggiornamento...',
+  },
+
+  mobileMoods: {
+    all: 'Tutti',
+    party: 'Festa',
+    chill: 'Rilassato',
+    power: 'Potenza',
+    romantic: 'Romantico',
+    classic: 'Classico',
+    fun: 'Divertimento',
+    noSongs: 'Nessuna canzone corrisponde a questa atmosfera',
+  },
+  mobileChallenge: {
+    title: 'Sfida Musicale',
+    challenged: 'Sfidato con:',
+    noSongs: 'Nessuna canzone disponibile',
+  },
+
+  mobileOnboarding: {
+    welcome: 'Benvenuto in Karaoke ZERO',
+    subtitle: 'La tua app di karaoke mobile',
+    next: 'Avanti',
+    back: 'Indietro',
+    featuresTitle: 'Funzionalità',
+    features: 'Funzionalità',
+    featureSing: 'Canta',
+    featureSingDesc: 'Canta con rilevamento del tono in tempo reale',
+    featureQueue: 'In coda',
+    featureQueueDesc: 'Sfoglia e aggiungi canzoni alla coda',
+    featureRemote: 'Telecomando',
+    featureRemoteDesc: 'Controlla la riproduzione dal telefono',
+    featureCompete: 'Gareggia',
+    featureCompeteDesc: 'Sfida gli amici e scala la classifica',
+    getStarted: 'Inizia',
+    connectHint: 'Assicurati di essere sulla stesso WiFi dell\'app principale',
+    scanHint: 'Scansiona il codice QR sullo schermo principale',
+    letsGo: 'Forza!',
+  },
+  mobileChat: {
+    title: 'Chat',
+    placeholder: 'Scrivi un messaggio...',
+    send: 'Invia',
+    noMessages: 'Nessun messaggio ancora',
+    host: 'Host',
+  },
+
+  mobilePreview: {
+    preview: 'Anteprima',
+    listening: 'In ascolto...',
+    preview15s: '15s anteprima',
+  },
+  mobileAchievements: {
+    title: 'Obiettivi',
+    unlocked: 'Sbloccati',
+    locked: 'Bloccati',
+    progress: 'Progresso',
+    newAchievement: 'Nuovo obiettivo!',
+  },
+  mobilePhotoBooth: {
+    title: 'Foto Booth',
+    capture: 'Scatta foto',
+    save: 'Salva',
+    share: 'Condividi',
+    cameraError: 'Accesso alla fotocamera negato',
+    cameraUnavailable: 'Fotocamera non disponibile',
+    retake: 'Ripeti',
+    noResults: 'Nessun risultato da mostrare',
   },
 };

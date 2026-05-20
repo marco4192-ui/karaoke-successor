@@ -69,7 +69,8 @@ export const mobileTranslations = {
     step2: 'Zoek "Microfoon" en selecteer "Toestaan"',
     step3: 'Herlaad de pagina',
     volumeLevel: 'Microfoon volumeniveau',
-    currentPitch: 'Huidige toonhoogte'
+    currentPitch: 'Huidige toonhoogte',
+    pitchHistory: 'Toonhoogtegeschiedenis'
   },
 
   mobileViews: {
@@ -142,11 +143,22 @@ export const mobileTranslations = {
     gameModeDuel: 'Duel',
     gameModeDuet: 'Duet',
     partnerOptional: 'Partner (optioneel)',
+    // F19: Duel/Duet opponent selection
+    selectOpponent: 'Tegenstander kiezen',
+    onlineNow: 'Nu online',
+    availableProfiles: 'Beschikbare profielen',
+    randomOpponent: '🎲 Willekeurig',
+    noOpponents: 'Geen andere companions met profiel verbonden.',
     accuracy: 'Nauwkeurigheid',
     saveScoreCardSoon: 'Scorekaart opgeslagen in je foto\'s! (Functie binnenkort beschikbaar)',
     addSongsToWishlistBtn: '+ Nummers toevoegen aan verlanglijstje',
     shareHashtag: '#KaraokeZERO',
-    copyFailed: 'Kopiëren naar klembord mislukt.'
+    copyFailed: 'Kopiëren naar klembord mislukt.',
+    playAgain: 'Opnieuw spelen',
+    playAgainSuccess: 'Nummer toegevoegd aan de wachtrij!',
+    playAgainError: 'Kon nummer niet toevoegen aan de wachtrij.',
+    swipeToDelete: 'Veeg om te verwijderen',
+    reorderHint: 'Lang indrukken en slepen om te herschikken'
   },
 
   mobileNav: {
@@ -364,5 +376,96 @@ export const mobileTranslations = {
   mobileCompanion: {
     getReady: 'Maak je klaar!',
     yourTurn: 'Jouw beurt!',
+  },
+  mobileLeaderboard: {
+    title: 'Live ranglijst',
+    currentSinger: 'Zingt nu',
+    score: 'Score',
+    noPlayers: 'Nog geen spelers',
+  },
+
+  mobileErrorBoundary: {
+    title: 'Er is iets misgegaan',
+    message: 'Er is een onverwachte fout opgetreden. Probeer het opnieuw.',
+    retry: 'Opnieuw proberen',
+    goHome: 'Naar startpagina',
+  },
+
+  mobileOffline: {
+    title: 'Je bent offline',
+    subtitle: 'Sommige functies werken mogelijk niet',
+  },
+
+  mobilePullRefresh: {
+    pullToRefresh: 'Omlaag trekken om te vernieuwen',
+    releaseToRefresh: 'Loslaten om te vernieuwen',
+    refreshing: 'Vernieuwen...',
+  },
+
+  mobileMoods: {
+    all: 'Alles',
+    party: 'Feest',
+    chill: 'Chill',
+    power: 'Power',
+    romantic: 'Romantisch',
+    classic: 'Klassiek',
+    fun: 'Plezier',
+    noSongs: 'Geen nummers gevonden voor deze sfeer',
+  },
+  mobileChallenge: {
+    title: 'Nummer Uitdaging',
+    challenged: 'Uitgedaagd met:',
+    noSongs: 'Geen nummers beschikbaar',
+  },
+
+  mobileOnboarding: {
+    welcome: 'Welkom bij Karaoke ZERO',
+    subtitle: 'Je mobiele karaoke-companion app',
+    next: 'Volgende',
+    back: 'Terug',
+    featuresTitle: 'Functies',
+    features: 'Functies',
+    featureSing: 'Meedoen',
+    featureSingDesc: 'Zing mee met real-time toondetectie',
+    featureQueue: 'Nummers in wachtrij',
+    featureQueueDesc: 'Blader en voeg nummers toe aan de wachtrij',
+    featureRemote: 'Afstandsbediening',
+    featureRemoteDesc: 'Bedien afspelen vanaf je telefoon',
+    featureCompete: 'Competitie',
+    featureCompeteDesc: 'Daag vrienden uit en beklim het leaderboard',
+    getStarted: 'Aan de slag',
+    connectHint: 'Zorg dat je op hetzelfde WiFi zit als de hoofdapp',
+    scanHint: 'Scan de QR-code op het hoofdscherm',
+    letsGo: 'Let\'s Go!',
+  },
+  mobileChat: {
+    title: 'Chat',
+    placeholder: 'Typ een bericht...',
+    send: 'Verstuur',
+    noMessages: 'Nog geen berichten',
+    host: 'Host',
+  },
+
+  mobilePreview: {
+    preview: 'Voorbeeld',
+    listening: 'Luisteren...',
+    preview15s: '15s voorbeeld',
+  },
+  mobileAchievements: {
+    title: 'Prestaties',
+    unlocked: 'Ontgrendeld',
+    locked: 'Vergrendeld',
+    progress: 'Voortgang',
+    newAchievement: 'Nieuwe prestatie!',
+  },
+  mobilePhotoBooth: {
+    title: 'Fotobooth',
+    capture: 'Foto maken',
+    save: 'Opslaan',
+    share: 'Delen',
+    cameraError: 'Cameratoegang geweigerd',
+    cameraUnavailable: 'Camera niet beschikbaar',
+    retake: 'Opnieuw',
+    noResults: 'Geen resultaten om te tonen',
   },
 };

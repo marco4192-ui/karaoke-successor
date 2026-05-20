@@ -68,7 +68,8 @@ export const mobileTranslations = {
     step2: '"마이크"를 찾아 "허용"을 선택하세요',
     step3: '페이지 새로고침',
     volumeLevel: '마이크 음량 수준',
-    currentPitch: '현재 음높이'
+    currentPitch: '현재 음높이',
+    pitchHistory: '음높이 기록'
   },
 
   mobileViews: {
@@ -141,11 +142,22 @@ export const mobileTranslations = {
     gameModeDuel: '듀얼',
     gameModeDuet: '듀엣',
     partnerOptional: '파트너 (선택)',
+    // F19: Duel/Duet opponent selection
+    selectOpponent: '상대 선택',
+    onlineNow: '온라인',
+    availableProfiles: '사용 가능한 프로필',
+    randomOpponent: '🎲 랜덤',
+    noOpponents: '프로필이 있는 다른 컴패니언이 연결되어 있지 않습니다.',
     accuracy: '정확도',
     saveScoreCardSoon: '점수 카드가 사진에 저장됩니다! (기능 출시 예정)',
     addSongsToWishlistBtn: '+ 위시리스트에 곡 추가',
     shareHashtag: '#KaraokeZERO',
-    copyFailed: '클립보드에 복사하지 못했습니다.'
+    copyFailed: '클립보드에 복사하지 못했습니다.',
+    playAgain: '다시 재생',
+    playAgainSuccess: '곡이 대기열에 추가되었습니다!',
+    playAgainError: '곡을 대기열에 추가할 수 없습니다.',
+    swipeToDelete: '삭제하려면 스와이프',
+    reorderHint: '길게 누른 후 드래그하여 순서 변경'
   },
 
   mobileNav: {
@@ -363,5 +375,96 @@ export const mobileTranslations = {
   mobileCompanion: {
     getReady: '준비하세요!',
     yourTurn: '당신 차례입니다!',
+  },
+  mobileLeaderboard: {
+    title: '라이브 리더보드',
+    currentSinger: '부르는 중',
+    score: '점수',
+    noPlayers: '아직 플레이어가 없습니다',
+  },
+
+  mobileErrorBoundary: {
+    title: '문제가 발생했습니다',
+    message: '예상치 못한 오류가 발생했습니다. 다시 시도해 주세요.',
+    retry: '재시도',
+    goHome: '홈으로',
+  },
+
+  mobileOffline: {
+    title: '오프라인 상태입니다',
+    subtitle: '일부 기능이 작동하지 않을 수 있습니다',
+  },
+
+  mobilePullRefresh: {
+    pullToRefresh: '당겨서 새로고침',
+    releaseToRefresh: '놓아서 새로고침',
+    refreshing: '새로고침 중...',
+  },
+
+  mobileMoods: {
+    all: '전체',
+    party: '파티',
+    chill: '차분',
+    power: '파워',
+    romantic: '로맨틱',
+    classic: '클래식',
+    fun: '재미',
+    noSongs: '이 분위기에 맞는 곡이 없습니다',
+  },
+  mobileChallenge: {
+    title: '노래 도전',
+    challenged: '도전 곡:',
+    noSongs: '사용 가능한 노래가 없습니다',
+  },
+
+  mobileOnboarding: {
+    welcome: 'Karaoke ZERO에 오신 것을 환영합니다',
+    subtitle: '모바일 카라오키 동반 앱',
+    next: '다음',
+    back: '뒤로',
+    featuresTitle: '기능',
+    features: '기능',
+    featureSing: '함께 부르기',
+    featureSingDesc: '실시간 음정 감지로 노래하기',
+    featureQueue: '곡 대기열 추가',
+    featureQueueDesc: '곡을 탐색하고 대기열에 추가',
+    featureRemote: '리모컨',
+    featureRemoteDesc: '휴대폰에서 재생 제어',
+    featureCompete: '경쟁',
+    featureCompeteDesc: '친구에게 도전하고 리더보드 상승',
+    getStarted: '시작하기',
+    connectHint: '메인 앱과 동일한 WiFi에 연결되어 있는지 확인하세요',
+    scanHint: '메인 화면의 QR 코드를 스캔하여 연결',
+    letsGo: '시작!',
+  },
+  mobileChat: {
+    title: '채팅',
+    placeholder: '메시지를 입력하세요...',
+    send: '보내기',
+    noMessages: '아직 메시지가 없습니다',
+    host: '호스트',
+  },
+
+  mobilePreview: {
+    preview: '미리듣기',
+    listening: '듣는 중...',
+    preview15s: '15초 미리듣기',
+  },
+  mobileAchievements: {
+    title: '업적',
+    unlocked: '달성',
+    locked: '미달성',
+    progress: '진행률',
+    newAchievement: '새 업적!',
+  },
+  mobilePhotoBooth: {
+    title: '포토 부스',
+    capture: '사진 찍기',
+    save: '저장',
+    share: '공유',
+    cameraError: '카메라 접근이 거부되었습니다',
+    cameraUnavailable: '카메라를 사용할 수 없습니다',
+    retake: '다시 찍기',
+    noResults: '표시할 결과가 없습니다',
   },
 };

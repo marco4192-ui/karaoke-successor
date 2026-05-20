@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,6 +8,9 @@ import { StorageKeys, getItem } from '@/lib/storage';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/lib/i18n/translations';
 import type { MobileProfile } from './mobile-types';
+import { loadUserStats } from '@/lib/mobile-achievements';
+import type { UserStats } from '@/lib/mobile-achievements';
+import { MobileAchievements } from './mobile-achievements';
 
 interface ProfileEditViewProps {
   profile: MobileProfile;
@@ -43,6 +46,7 @@ export function MobileProfileEditView({
   const [hostProfilesError, setHostProfilesError] = useState<string | null>(null);
   const [confirmSwitchId, setConfirmSwitchId] = useState<string | null>(null);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
 
   // Reset confirmation state after 3 seconds
   const requestSwitchConfirm = useCallback((profileId: string) => {
@@ -72,6 +76,11 @@ export function MobileProfileEditView({
     setConfirmSwitchId(null);
     onSwitchToHostProfile?.(hp);
   }, [onSwitchToHostProfile]);
+
+  // Load user stats for achievements
+  useEffect(() => {
+    setUserStats(loadUserStats());
+  }, []);
 
   // Clean up timer on unmount
   React.useEffect(() => {
@@ -265,6 +274,15 @@ export function MobileProfileEditView({
           </div>
         </CardContent>
       </Card>
+
+      {/* Achievements Section */}
+      {userStats && (
+        <Card className="bg-white/10 border-white/20 mt-4">
+          <CardContent className="py-6">
+            <MobileAchievements stats={userStats} />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

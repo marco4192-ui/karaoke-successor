@@ -4,14 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/lib/i18n/translations';
 import type { GameState, QueueItem, MobileView } from './mobile-types';
+import { MobileLeaderboard } from './mobile-leaderboard';
 
 interface HomeViewProps {
   gameState: GameState;
   queue: QueueItem[];
   onNavigate: (_view: MobileView) => void;
+  onOpenChat: () => void;
 }
 
-export function MobileHomeView({ gameState, queue, onNavigate }: HomeViewProps) {
+export function MobileHomeView({ gameState, queue, onNavigate, onOpenChat }: HomeViewProps) {
   const { t } = useTranslation();
 
   return (
@@ -28,6 +30,9 @@ export function MobileHomeView({ gameState, queue, onNavigate }: HomeViewProps) 
       ) : (
         <p className="text-center text-white/20 text-sm py-4">{t('mobileViews.nothingPlaying')}</p>
       )}
+
+      {/* Live Leaderboard (shown during companion singalong) */}
+      <MobileLeaderboard gameState={gameState} />
       
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-3">
@@ -75,6 +80,13 @@ export function MobileHomeView({ gameState, queue, onNavigate }: HomeViewProps) 
         >
           <span className="text-3xl mb-2 block">📻</span>
           <span className="text-sm">{t('mobileViews.jukebox')}</span>
+        </button>
+        <button
+          onClick={onOpenChat}
+          className="bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-xl p-4 text-center hover:from-cyan-500/30 hover:to-blue-500/30 transition-colors border border-cyan-500/30"
+        >
+          <span className="text-3xl mb-2 block">💬</span>
+          <span className="text-sm font-medium">{t('mobileChat.title')}</span>
         </button>
       </div>
       

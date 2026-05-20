@@ -22,6 +22,7 @@ interface RawGameState {
   singalongTurn?: GameState['singalongTurn'];
   cptmTurn?: GameState['cptmTurn'];
   tournamentMatchId?: string | null;
+  companionScores?: GameState['companionScores'];
 }
 
 function parseGameState(raw: RawGameState): GameState {
@@ -35,6 +36,7 @@ function parseGameState(raw: RawGameState): GameState {
     singalongTurn: raw.singalongTurn ?? null,
     cptmTurn: raw.cptmTurn ?? null,
     tournamentMatchId: raw.tournamentMatchId ?? null,
+    companionScores: raw.companionScores ?? null,
   };
 }
 
@@ -48,6 +50,7 @@ const INITIAL_GAME_STATE: GameState = {
   singalongTurn: null,
   cptmTurn: null,
   tournamentMatchId: null,
+  companionScores: null,
 };
 
 export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {

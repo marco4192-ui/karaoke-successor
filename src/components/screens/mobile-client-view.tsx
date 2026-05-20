@@ -8,6 +8,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 
 // Types & constants
 import type { MobileView, MobileProfile } from './mobile/mobile-types';
+import { MobileChat } from './mobile/mobile-chat';
 import { PROFILE_COLORS } from './mobile/mobile-types';
 
 // View components
@@ -23,6 +24,10 @@ import {
   MobileProfileEditView,
   MobileBottomNav,
 } from './mobile/mobile-views';
+import { MobileOfflineIndicator } from './mobile/mobile-offline-indicator';
+
+// Error boundary
+import { MobileErrorBoundary } from './mobile/mobile-error-boundary';
 
 // Hooks
 import { useMobileConnection } from '@/hooks/use-mobile-connection';
@@ -45,6 +50,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const [error, setError] = useState<string | null>(null);
   // #10 Tournament spectator vote state
   const [votedMatchIds, setVotedMatchIds] = useState<Set<string>>(new Set());
+  const [showChat, setShowChat] = useState(false);
   const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -58,7 +64,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   });
 
   // Pitch detection
-  const { isListening, currentPitch, micPermissionDenied, startMicrophone, stopMicrophone } = useMobilePitchDetection({
+  const { isListening, currentPitch, micPermissionDenied, startMicrophone, stopMicrophone, getPitchHistory } = useMobilePitchDetection({
     clientId, isPlaying: gameState.isPlaying, songEnded: gameState.songEnded, onError: setError,
   });
 
@@ -169,6 +175,28 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
     setJson(StorageKeys.MOBILE_PROFILE, switchedProfile);
     syncProfile(switchedProfile);
   }, [syncProfile]);
+
+  // Play Again: re-queue the last played song
+  const handlePlayAgain = useCallback(async () => {
+    const results = data.gameResults;
+    if (!results || !results.songId) return;
+
+    // Build a MobileSong-like object from game results
+    const song: import('./mobile/mobile-types').MobileSong = {
+      id: results.songId,
+      title: results.songTitle,
+      artist: results.songArtist,
+      duration: 0,
+    };
+
+    // Default to single mode for play again (user can change before it plays)
+    data.setSelectedGameMode('single');
+    data.setSelectedPartner(null);
+
+    await data.addToQueue(song);
+    // Navigate to queue view after adding
+    setCurrentView('queue');
+  }, [data]);
 
   // Disconnect from server and reset local state
   const handleDisconnect = useCallback(async () => {
@@ -291,6 +319,9 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   // ===================== RENDER =====================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white">
+      <MobileOfflineIndicator />
+      <MobileErrorBoundary>
+
       {/* Header */}
       <div className="sticky top-0 z-20 bg-black/30 backdrop-blur-xl border-b border-white/10">
         <div className="flex items-center justify-between px-4 py-3">
@@ -337,25 +368,29 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
         />
       ) : (
         <div className="pb-20">
-          {currentView === 'home' && <MobileHomeView gameState={gameState} queue={data.queue} onNavigate={setCurrentView} />}
+          {currentView === 'home' && <MobileHomeView gameState={gameState} queue={data.queue} onNavigate={setCurrentView} onOpenChat={() => setShowChat(true)} />}
           {currentView === 'mic' && (
             <MobileMicView gameState={gameState} clientId={clientId} currentPitch={currentPitch}
-              isListening={isListening} micPermissionDenied={micPermissionDenied} onStartMic={startMicrophone} onStopMic={stopMicrophone} />
+              isListening={isListening} micPermissionDenied={micPermissionDenied} onStartMic={startMicrophone} onStopMic={stopMicrophone}
+              getPitchHistory={getPitchHistory} />
           )}
           {currentView === 'songs' && (
             <MobileSongsView
               songSearch={data.songSearch} onSongSearchChange={data.setSongSearch}
-              songsLoading={data.songsLoading} songsError={data.songsError} filteredSongs={data.filteredSongs}
+              songsLoading={data.songsLoading} songsError={data.songsError} songs={data.songs} filteredSongs={data.filteredSongs}
               showSongOptions={data.showSongOptions} selectedGameMode={data.selectedGameMode}
               selectedPartner={data.selectedPartner} availablePartners={data.availablePartners}
+              opponents={data.opponents} availableProfiles={data.availableProfiles}
               onShowSongOptions={data.setShowSongOptions} onSelectGameMode={data.setSelectedGameMode}
               onSelectPartner={data.setSelectedPartner} onAddToQueue={data.addToQueue}
-              onLoadPartners={data.loadAvailablePartners} formatDuration={data.formatDuration}
+              onLoadPartners={data.loadAvailablePartners} onLoadOpponents={data.loadOpponents}
+              onRefresh={data.loadSongs}
+              formatDuration={data.formatDuration}
             />
           )}
-          {currentView === 'queue' && <MobileQueueView queue={data.queue} slotsRemaining={data.slotsRemaining} queueError={data.queueError} onRemoveFromQueue={data.removeFromQueue} onNavigate={setCurrentView} clientId={clientId} />}
-          {currentView === 'results' && <MobileResultsView gameResults={data.gameResults} onNavigate={setCurrentView} />}
-          {currentView === 'jukebox' && <MobileJukeboxView jukeboxWishlist={data.jukeboxWishlist} onNavigate={setCurrentView} onRemoveFromWishlist={data.removeFromJukeboxWishlist} />}
+          {currentView === 'queue' && <MobileQueueView queue={data.queue} slotsRemaining={data.slotsRemaining} queueError={data.queueError} onRemoveFromQueue={data.removeFromQueue} onReorderQueue={data.reorderQueue} onNavigate={setCurrentView} clientId={clientId} />}
+          {currentView === 'results' && <MobileResultsView gameResults={data.gameResults} onNavigate={setCurrentView} onPlayAgain={handlePlayAgain} />}
+          {currentView === 'jukebox' && <MobileJukeboxView jukeboxWishlist={data.jukeboxWishlist} onNavigate={setCurrentView} onRemoveFromWishlist={data.removeFromJukeboxWishlist} onRefresh={data.loadJukeboxWishlist} />}
           {currentView === 'remote' && <RemoteControlView clientId={clientId} onBack={() => setCurrentView('home')} />}
           {currentView === 'profile' && (
             <MobileProfileEditView
@@ -371,6 +406,13 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       )}
 
       {isConnected && profile && <MobileBottomNav currentView={currentView} onNavigate={setCurrentView} />}
+
+      {/* F4: Chat overlay */}
+      {showChat && clientId && (
+        <div className="fixed inset-0 z-50 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white">
+          <MobileChat clientId={clientId} onClose={() => setShowChat(false)} />
+        </div>
+      )}
 
       {/* ── Companion Sing-A-Long overlay ── */}
       {isConnected && profile && gameState.singalongTurn?.isActive && gameState.singalongTurn.profileId === profile.id && (
@@ -434,6 +476,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
           </div>
         </div>
       )}
+      </MobileErrorBoundary>
     </div>
   );
 }

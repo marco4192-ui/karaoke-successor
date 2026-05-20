@@ -68,7 +68,8 @@ export const mobileTranslations = {
     step2: 'Etsi "Mikrofoni" ja valitse "Salli"',
     step3: 'Lataa sivu uudelleen',
     volumeLevel: 'Mikrofonin äänenvoimakkuus',
-    currentPitch: 'Nykyinen sävelkorkeus'
+    currentPitch: 'Nykyinen sävelkorkeus',
+    pitchHistory: 'Sävelkorkeushistoria'
   },
 
   mobileViews: {
@@ -141,11 +142,22 @@ export const mobileTranslations = {
     gameModeDuel: 'Kaksinkamppailu',
     gameModeDuet: 'Duetto',
     partnerOptional: 'Parineri (valinnainen)',
+    // F19: Duel/Duet opponent selection
+    selectOpponent: 'Valitse vastustaja',
+    onlineNow: 'Online nyt',
+    availableProfiles: 'Saatavilla olevat profiilit',
+    randomOpponent: '🎲 Satunnainen',
+    noOpponents: 'Muita companioneja profiilien kanssa ei ole yhdistetty.',
     accuracy: 'Tarkkuus',
     saveScoreCardSoon: 'Tuloskortti tallennettu kuvagalleriaasi! (Ominaisuus tulossa pian)',
     addSongsToWishlistBtn: '+ Lisää kappaleita toivelistalle',
     shareHashtag: '#KaraokeZERO',
-    copyFailed: 'Kopiointi leikepöydälle epäonnistui.'
+    copyFailed: 'Kopiointi leikepöydälle epäonnistui.',
+    playAgain: 'Soita uudelleen',
+    playAgainSuccess: 'Kappale lisätty jonoon!',
+    playAgainError: 'Kappaletta ei voitu lisätä jonoon.',
+    swipeToDelete: 'Pyyhki poistaaksesi',
+    reorderHint: 'Paina pitkään ja vedä uudelleenjärjestääksesi'
   },
 
   mobileNav: {
@@ -363,5 +375,96 @@ export const mobileTranslations = {
   mobileCompanion: {
     getReady: 'Valmistaudu!',
     yourTurn: 'Sinun vuorosi!',
+  },
+  mobileLeaderboard: {
+    title: 'Live-tulostaulu',
+    currentSinger: 'Laulaa nyt',
+    score: 'Pisteet',
+    noPlayers: 'Ei vielä pelaajia',
+  },
+
+  mobileErrorBoundary: {
+    title: 'Jokin meni pieleen',
+    message: 'Tapahtui odottamaton virhe. Yritä uudelleen.',
+    retry: 'Yritä uudelleen',
+    goHome: 'Kotisivulle',
+  },
+
+  mobileOffline: {
+    title: 'Olet offline-tilassa',
+    subtitle: 'Osa ominaisuuksista ei välttämättä toimi',
+  },
+
+  mobilePullRefresh: {
+    pullToRefresh: 'Vedä päivittääksesi',
+    releaseToRefresh: 'Vapauta päivittääksesi',
+    refreshing: 'Päivitetään...',
+  },
+
+  mobileMoods: {
+    all: 'Kaikki',
+    party: 'Juhlat',
+    chill: 'Chill',
+    power: 'Voima',
+    romantic: 'Romanttinen',
+    classic: 'Klassikko',
+    fun: 'Hauska',
+    noSongs: 'Mikään kappale ei vastaa tätä tunnelmaa',
+  },
+  mobileChallenge: {
+    title: 'Kappalehaaste',
+    challenged: 'Haastettu kappaleella:',
+    noSongs: 'Ei kappaleita saatavilla',
+  },
+
+  mobileOnboarding: {
+    welcome: 'Tervetuloa Karaoke ZERO -sovellukseen',
+    subtitle: 'Mobiili karaoke-seurasovelluksesi',
+    next: 'Seuraava',
+    back: 'Takaisin',
+    featuresTitle: 'Ominaisuudet',
+    features: 'Ominaisuudet',
+    featureSing: 'Laula mukana',
+    featureSingDesc: 'Laula reaaliaikaisella sävelkorkeuden tunnistuksella',
+    featureQueue: 'Lisää kappaleita jonoon',
+    featureQueueDesc: 'Selaa ja lisää kappaleita jonoon',
+    featureRemote: 'Etäohjaus',
+    featureRemoteDesc: 'Hallitse toistoa puhelimellasi',
+    featureCompete: 'Kilpaile',
+    featureCompeteDesc: 'Haasta ystävät ja nouse tulostaululle',
+    getStarted: 'Aloita',
+    connectHint: 'Varmista, että olet samassa WiFi-verkossa kuin pääsovellus',
+    scanHint: 'Skannaa QR-koodi pääruudulta',
+    letsGo: 'Mennään!',
+  },
+  mobileChat: {
+    title: 'Chat',
+    placeholder: 'Kirjoita viesti...',
+    send: 'Lähetä',
+    noMessages: 'Ei vielä viestejä',
+    host: 'Isäntä',
+  },
+
+  mobilePreview: {
+    preview: 'Esikuuntelu',
+    listening: 'Kuunnellaan...',
+    preview15s: '15s esikuuntelu',
+  },
+  mobileAchievements: {
+    title: 'Saavutukset',
+    unlocked: 'Avattu',
+    locked: 'Lukittu',
+    progress: 'Edistyminen',
+    newAchievement: 'Uusi saavutus!',
+  },
+  mobilePhotoBooth: {
+    title: 'Valokuvakoppi',
+    capture: 'Ota kuva',
+    save: 'Tallenna',
+    share: 'Jaa',
+    cameraError: 'Kameran käyttöoikeus evätty',
+    cameraUnavailable: 'Kamera ei ole käytettävissä',
+    retake: 'Ota uudelleen',
+    noResults: 'Ei näytettäviä tuloksia',
   },
 };

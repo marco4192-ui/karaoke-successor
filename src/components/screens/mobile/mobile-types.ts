@@ -38,6 +38,14 @@ export interface JukeboxWishlistItem {
   addedBy: string;
 }
 
+export interface CompanionScoreEntry {
+  profileId: string;
+  name: string;
+  avatar?: string;
+  color: string;
+  score: number;
+}
+
 export interface SingalongTurn {
   profileId: string | null;
   nextProfileId: string | null;
@@ -56,6 +64,8 @@ export interface GameState {
   cptmTurn: SingalongTurn | null;
   // #10 Tournament match ID for spectator voting
   tournamentMatchId: string | null;
+  // Live leaderboard: companion player scores during singalong
+  companionScores: CompanionScoreEntry[] | null;
 }
 
 export interface PitchData {

@@ -9,6 +9,7 @@ import { useTranslation } from '@/lib/i18n/translations';
 import { buildCompanionUrl, detectLocalIP } from '@/lib/qr-code';
 import { useQRCode } from '@/hooks/use-qr-code';
 import { PhoneIcon, MicIcon, LibraryIcon, QueueIcon } from '@/components/icons';
+import { MobileOnboarding } from './mobile/mobile-onboarding';
 
 // ===================== MOBILE SCREEN =====================
 export function MobileScreen() {
@@ -25,6 +26,22 @@ export function MobileScreen() {
   const [isPolling, setIsPolling] = useState(false);
   const [ipDetectionAttempts, setIpDetectionAttempts] = useState(0);
   const [mobileQueue, setMobileQueue] = useState<Array<{ id: string; songTitle: string; songArtist: string; companionCode: string; status: string }>>([]);
+
+  // Onboarding state
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const completed = localStorage.getItem('mobile-onboarding-completed');
+      if (!completed) {
+        setShowOnboarding(true);
+      }
+    }
+  }, []);
+
+  const handleOnboardingComplete = useCallback(() => {
+    setShowOnboarding(false);
+  }, []);
 
   // One-shot IP detection — runs once on mount using shared utility.
   useEffect(() => {
@@ -80,7 +97,10 @@ export function MobileScreen() {
   const qrCodeSrc = useQRCode(connectionUrl);
   
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+    <div className="relative w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+      {/* Onboarding overlay */}
+      {showOnboarding && <MobileOnboarding onComplete={handleOnboardingComplete} />}
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">{t('mobile.title')}</h1>
         <p className="text-white/60">{t('mobile.subtitle')}</p>

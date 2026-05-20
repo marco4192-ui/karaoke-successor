@@ -5,7 +5,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { midiToNoteName } from '@/types/game';
 import { MicIcon } from '@/components/icons';
 import { useTranslation } from '@/lib/i18n/translations';
-import type { GameState} from './mobile-types';
+import type { GameState, PitchData } from './mobile-types';
+import { MobilePitchVisualizer } from './mobile-pitch-visualizer';
 
 interface MicViewProps {
   gameState: GameState;
@@ -15,9 +16,10 @@ interface MicViewProps {
   micPermissionDenied?: boolean;
   onStartMic: () => void;
   onStopMic: () => void;
+  getPitchHistory: () => PitchData[];
 }
 
-export function MobileMicView({ gameState, clientId, currentPitch, isListening, micPermissionDenied, onStartMic, onStopMic }: MicViewProps) {
+export function MobileMicView({ gameState, clientId, currentPitch, isListening, micPermissionDenied, onStartMic, onStopMic, getPitchHistory }: MicViewProps) {
   const { t } = useTranslation();
 
   return (
@@ -145,6 +147,12 @@ export function MobileMicView({ gameState, clientId, currentPitch, isListening, 
             <p className="mt-6 text-lg text-white/60">
               {isListening ? t('mobileMicView.tapToStop') : t('mobileMicView.tapToSing')}
             </p>
+
+            {/* Pitch History Visualizer */}
+            <MobilePitchVisualizer
+              pitchHistory={getPitchHistory()}
+              isListening={isListening}
+            />
           </div>
         </CardContent>
       </Card>

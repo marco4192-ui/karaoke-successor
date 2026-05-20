@@ -147,9 +147,17 @@ export function CompanionGameView({
   const lastActiveNoteStartRef = useRef<number | null>(null);
   const lastNoteWasHitRef = useRef(false);
 
-  // ── Send singalong turn info to companion apps via server ──
+  // ── Send singalong turn info + scores to companion apps via server ──
   const sendSingalongTurn = useCallback(async (profileId: string | null, nextProfileId: string | null, countdown: number | null) => {
     try {
+      // Build companion score entries from current player state
+      const companionScores = playersRef.current.map(p => ({
+        profileId: p.id,
+        name: p.name,
+        avatar: p.avatar,
+        color: p.color,
+        score: p.score,
+      }));
       await fetch('/api/mobile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -162,19 +170,20 @@ export function CompanionGameView({
               countdown,
               isActive: true,
             },
+            companionScores,
           },
         }),
       });
     } catch { /* ignore — companion is optional for the main screen */ }
   }, []);
 
-  // ── Clear singalong turn on unmount ──
+  // ── Clear singalong turn and scores on unmount ──
   useEffect(() => {
     return () => {
       fetch('/api/mobile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'gamestate', payload: { singalongTurn: null } }),
+        body: JSON.stringify({ type: 'gamestate', payload: { singalongTurn: null, companionScores: null } }),
       }).catch(() => {});
       // NOTE: stop() is called in the dedicated cleanup useEffect below; not duplicated here (CP-M3).
     };

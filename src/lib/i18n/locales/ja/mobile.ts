@@ -69,7 +69,8 @@ export const mobileTranslations = {
     step2: '「マイク」を見つけて「許可」を選択',
     step3: 'ページを再読み込み',
     volumeLevel: 'マイク音量レベル',
-    currentPitch: '現在の音程'
+    currentPitch: '現在の音程',
+    pitchHistory: '音程の推移'
   },
 
   mobileViews: {
@@ -142,11 +143,22 @@ export const mobileTranslations = {
     gameModeDuel: 'デュエル',
     gameModeDuet: 'デュエット',
     partnerOptional: 'パートナー（任意）',
+    // F19: Duel/Duet opponent selection
+    selectOpponent: '対戦相手を選択',
+    onlineNow: 'オンライン中',
+    availableProfiles: '利用可能なプロファイル',
+    randomOpponent: '🎲 ランダム',
+    noOpponents: 'プロファイルを持つ他のコンパニオンが接続されていません。',
     accuracy: '正確さ',
     saveScoreCardSoon: 'スコアカードが写真に保存されました！（機能は近日公開）',
     addSongsToWishlistBtn: '+ 曲をウィッシュリストに追加',
     shareHashtag: '#KaraokeZERO',
-    copyFailed: 'クリップボードへのコピーに失敗しました。'
+    copyFailed: 'クリップボードへのコピーに失敗しました。',
+    playAgain: 'もう一度再生',
+    playAgainSuccess: '曲がキューに追加されました！',
+    playAgainError: '曲をキューに追加できませんでした。',
+    swipeToDelete: 'スワイプして削除',
+    reorderHint: '長押ししてドラッグで並び替え'
   },
 
   mobileNav: {
@@ -364,5 +376,96 @@ export const mobileTranslations = {
   mobileCompanion: {
     getReady: '準備はいいか！',
     yourTurn: 'あなたの番！',
+  },
+  mobileLeaderboard: {
+    title: 'ライブランキング',
+    currentSinger: '歌唱中',
+    score: 'スコア',
+    noPlayers: 'プレイヤーなし',
+  },
+
+  mobileErrorBoundary: {
+    title: '問題が発生しました',
+    message: '予期しないエラーが発生しました。もう一度お試しください。',
+    retry: '再試行',
+    goHome: 'ホームに戻る',
+  },
+
+  mobileOffline: {
+    title: 'オフラインです',
+    subtitle: '一部の機能が動作しない場合があります',
+  },
+
+  mobilePullRefresh: {
+    pullToRefresh: '引っ張って更新',
+    releaseToRefresh: '離して更新',
+    refreshing: '更新中...',
+  },
+
+  mobileMoods: {
+    all: 'すべて',
+    party: 'パーティー',
+    chill: 'リラックス',
+    power: 'パワー',
+    romantic: 'ロマンチック',
+    classic: 'クラシック',
+    fun: 'ファン',
+    noSongs: 'このムードに一致する曲がありません',
+  },
+  mobileChallenge: {
+    title: 'ソングチャレンジ',
+    challenged: 'チャレンジ曲:',
+    noSongs: '利用可能な曲がありません',
+  },
+
+  mobileOnboarding: {
+    welcome: 'Karaoke ZEROへようこそ',
+    subtitle: 'あなたのモバイルカラオケコンパニオンアプリ',
+    next: '次へ',
+    back: '戻る',
+    featuresTitle: '機能',
+    features: '機能',
+    featureSing: '一緒に歌う',
+    featureSingDesc: 'リアルタイム音程検出で歌おう',
+    featureQueue: '曲をキューに入れる',
+    featureQueueDesc: '曲を閲覧してキューに追加',
+    featureRemote: 'リモコン',
+    featureRemoteDesc: 'スマホから再生をコントロール',
+    featureCompete: '競う',
+    featureCompeteDesc: '友達に挑戦してランキングを上昇',
+    getStarted: '始めよう',
+    connectHint: 'メインアプリと同じWiFiに接続してください',
+    scanHint: 'メイン画面のQRコードをスキャンして接続',
+    letsGo: 'スタート！',
+  },
+  mobileChat: {
+    title: 'チャット',
+    placeholder: 'メッセージを入力...',
+    send: '送信',
+    noMessages: 'メッセージはまだありません',
+    host: 'ホスト',
+  },
+
+  mobilePreview: {
+    preview: 'プレビュー',
+    listening: '再生中...',
+    preview15s: '15秒プレビュー',
+  },
+  mobileAchievements: {
+    title: '実績',
+    unlocked: '解除済み',
+    locked: '未解除',
+    progress: '進捗',
+    newAchievement: '新しい実績！',
+  },
+  mobilePhotoBooth: {
+    title: 'フォトブース',
+    capture: '写真を撮る',
+    save: '保存',
+    share: '共有',
+    cameraError: 'カメラへのアクセスが拒否されました',
+    cameraUnavailable: 'カメラは利用できません',
+    retake: '撮り直す',
+    noResults: '表示する結果がありません',
   },
 };

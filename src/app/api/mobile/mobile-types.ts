@@ -63,6 +63,14 @@ export interface RemoteControlState {
 }
 
 // Additional type aliases used in state declarations
+export interface CompanionScoreEntry {
+  profileId: string;
+  name: string;
+  avatar?: string;
+  color: string;
+  score: number;
+}
+
 export interface MobileGameState {
   currentSong: { id: string; title: string; artist: string } | null;
   isPlaying: boolean;
@@ -85,6 +93,8 @@ export interface MobileGameState {
   } | null;
   // #10 Tournament match ID — spectators use this to vote on the current match
   tournamentMatchId: string | null;
+  // Live leaderboard: companion player scores during singalong
+  companionScores: CompanionScoreEntry[] | null;
 }
 
 export interface GameResults {

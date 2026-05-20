@@ -406,12 +406,71 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
         count: mutableState.songLibrary.length,
       });
 
+    // F4: Get chat messages (last 50)
+    case 'getchat':
+      return Response.json({
+        success: true,
+        messages: mutableState.chatMessages.slice(-50),
+      });
+
     // #10 Get tournament crowd votes for spectator UI
     case 'get_crowd_votes':
       return Response.json({
         success: true,
         votes: mutableState.tournamentCrowdVotes || [],
       });
+
+    // F19: Get opponents for duel/duet mode (only clients WITH profiles)
+    case 'getopponents': {
+      if (!clientId) {
+        return Response.json({ success: false, message: 'Client ID required' }, { status: 400 });
+      }
+      const requestingClient = mobileClients.get(clientId);
+
+      // Collect opponents: connected clients with profiles, excluding the requester
+      const connectedOpponents: Array<{
+        id: string;
+        name: string;
+        avatar?: string;
+        color: string;
+        connectionCode: string;
+      }> = [];
+
+      // Track which profile IDs are claimed by connected companions
+      const claimedProfileIds = new Set<string>();
+      mobileClients.forEach((client) => {
+        if (client.profile) {
+          claimedProfileIds.add(client.profile.id);
+          if (client.id !== clientId) {
+            connectedOpponents.push({
+              id: client.profile.id,
+              name: client.profile.name,
+              avatar: client.profile.avatar,
+              color: client.profile.color,
+              connectionCode: client.connectionCode,
+            });
+          }
+        }
+      });
+
+      // Also include host profiles not yet claimed by any connected companion
+      // (these are available for companions to adopt)
+      const availableHostProfiles = mutableState.hostProfiles.filter(
+        (hp) => !claimedProfileIds.has(hp.id) && hp.id !== requestingClient?.profile?.id
+      ).map((hp) => ({
+        id: hp.id,
+        name: hp.name,
+        avatar: hp.avatar,
+        color: hp.color,
+        connectionCode: '',
+      }));
+
+      return Response.json({
+        success: true,
+        opponents: connectedOpponents,
+        availableProfiles: availableHostProfiles,
+      });
+    }
 
     default:
       return Response.json({

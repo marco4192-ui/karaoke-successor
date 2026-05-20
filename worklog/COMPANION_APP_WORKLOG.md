@@ -115,26 +115,27 @@
 
 ## 💡 Neue Feature-Ideen (Backlog)
 
-| # | Idee | Priorität |
-|---|------|-----------|
-| F1 | Realtime Pitch Visualizer auf dem Handy | Mittel |
-| F2 | Live-Leaderboard während Sing-A-Long | Mittel |
-| F3 | Song-Challenge-Mode (zufälliger Song für nächsten Spieler) | Niedrig |
-| F4 | In-Game Chat (Companion → Host) | Niedrig |
-| F5 | Mood-Based Queue (Party/Chill/Power) | Niedrig |
-| F6 | Photo-Booth (Selfie + Score-Card Overlay) | Niedrig |
-| F7 | Achievements auf dem Companion-Profil | Niedrig |
-| F8 | Error Boundary um alle Mobile-Views | Hoch |
-| F9 | Offline-Indikator / Fallback-UI | Hoch |
-| F10 | Onboarding-Flow für neue Nutzer | Mittel |
-| F11 | Swipe-to-Remove in Queue | Mittel |
-| F12 | Song-Vorschau (15s Clip auf dem Handy) | Mittel |
-| F13 | Haptic Feedback auf Tab-Wechsel | Niedrig |
-| F14 | Pull-to-Refresh in Listen-Views | Mittel |
-| F15 | Queue-Reorder Endpoint | Mittel |
-| F16 | WebSocket/SSE statt Polling | Hoch |
-| F17 | Batch-Pitch API (ein Request für mehrere Frames) | Mittel |
-| F18 | Play Again mit gleicher Spieler-Konfiguration | Mittel |
+| # | Idee | Priorität | Status |
+|---|------|-----------|--------|
+| F1 | Realtime Pitch Visualizer auf dem Handy | Mittel | ✅ DONE |
+| F2 | Live-Leaderboard während Sing-A-Long | Mittel | ✅ DONE |
+| F3 | Song-Challenge-Mode (zufälliger Song für nächsten Spieler) | Niedrig | ✅ DONE |
+| F4 | In-Game Chat (Companion → Host) | Niedrig | ✅ DONE |
+| F5 | Mood-Based Queue (Party/Chill/Power) | Niedrig | ✅ DONE |
+| F6 | Photo-Booth (Selfie + Score-Card Overlay) | Niedrig | ✅ DONE |
+| F7 | Achievements auf dem Companion-Profil | Niedrig | ✅ DONE |
+| F8 | Error Boundary um alle Mobile-Views | Hoch | ✅ DONE |
+| F9 | Offline-Indikator / Fallback-UI | Hoch | ✅ DONE |
+| F10 | Onboarding-Flow für neue Nutzer | Mittel | ✅ DONE |
+| F11 | Swipe-to-Remove in Queue | Mittel | ✅ DONE |
+| F12 | Song-Vorschau (15s Clip auf dem Handy) | Mittel | ✅ DONE |
+| F13 | Haptic Feedback auf Tab-Wechsel | Niedrig | ✅ DONE |
+| F14 | Pull-to-Refresh in Listen-Views | Mittel | ✅ DONE |
+| F15 | Queue-Reorder Endpoint | Mittel | ✅ DONE |
+| F16 | WebSocket/SSE statt Polling | Hoch | ⏸️ DEFERRED (Architektur-Upgrade) |
+| F17 | Batch-Pitch API (ein Request für mehrere Frames) | Mittel | ✅ DONE |
+| F18 | Play Again mit gleicher Spieler-Konfiguration | Mittel | ✅ DONE |
+| F19 | Duet/Duel Gegner-Auswahl aus aktiven Profilen | Neu | ✅ DONE |
 
 ---
 
@@ -149,10 +150,16 @@
 - Batch 7 (UI Fixes Teil 2): ✅ DONE (7/7 Fixes)
 - Batch 8 (Code Quality Teil 2): ✅ DONE (6/6 Fixes)
 - Batch 9 (Accessibility + Types): ✅ DONE (3/3 Fixes)
+- Feature Batch A (F8 Error Boundary, F9 Offline, F13 Haptic): ✅ DONE
+- Feature Batch B (F19 Gegner-Auswahl, F18 Play Again, F2 Leaderboard): ✅ DONE
+- Feature Batch C (F1 Pitch Visualizer, F14 Pull-to-Refresh, F11 Swipe-to-Remove): ✅ DONE
+- Feature Batch D (F15 Queue-Reorder, F10 Onboarding, F17 Batch-Pitch, F5 Mood Queue): ✅ DONE
+- Feature Batch E (F3 Challenge, F4 Chat, F12 Preview, F7 Achievements, F6 Photo-Booth): ✅ DONE
+- F16 WebSocket/SSE: ⏸️ DEFERRED (requires full architecture overhaul)
 - TypeScript-Check: ✅ PASSED
 - Git Push: ✅ DONE
 
-**Gesamt: 72/73 Items erledigt (1 Deferred)**
+**Gesamt: 72/73 Bug-Fixes + 17/18 Features implementiert (1 Feature deferred)**
 
 ---
 

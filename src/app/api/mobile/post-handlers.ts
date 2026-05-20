@@ -97,6 +97,48 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         return Response.json({ success: true, received: true });
       }
 
+      case 'batch_pitch': {
+        // Batch pitch upload: receives multiple pitch frames in one request.
+        // Stores only the LAST frame in latestPitchData (for the 10Hz host polling).
+        const batchPayload = payload as { frames: PitchData[] };
+
+        // Validate payload shape
+        if (!Array.isArray(batchPayload.frames) || batchPayload.frames.length === 0) {
+          return Response.json({ success: false, message: 'batch_pitch requires a non-empty frames array' }, { status: 400 });
+        }
+        if (batchPayload.frames.length > 20) {
+          return Response.json({ success: false, message: 'batch_pitch max 20 frames per request' }, { status: 400 });
+        }
+
+        // Validate each frame (same rules as single pitch)
+        for (const frame of batchPayload.frames) {
+          if (frame.frequency !== null && frame.frequency !== undefined) {
+            if (typeof frame.frequency !== 'number' || frame.frequency < 20 || frame.frequency > 2000) {
+              return Response.json({ success: false, message: 'Invalid frequency in batch frame (must be 20-2000 Hz)' }, { status: 400 });
+            }
+          }
+          if (typeof frame.clarity !== 'number' || frame.clarity < 0 || frame.clarity > 1) {
+            return Response.json({ success: false, message: 'Invalid clarity in batch frame (must be 0-1)' }, { status: 400 });
+          }
+          if (typeof frame.volume !== 'number' || frame.volume < 0 || frame.volume > 1) {
+            return Response.json({ success: false, message: 'Invalid volume in batch frame (must be 0-1)' }, { status: 400 });
+          }
+        }
+
+        if (clientId) {
+          const client = mobileClients.get(clientId);
+          if (!client) return Response.json({ success: true, received: true, frameCount: 0 });
+          client.lastActivity = Date.now();
+
+          // Store only the last frame — this is what the host polls via latestPitchData
+          const lastFrame = batchPayload.frames[batchPayload.frames.length - 1];
+          client.pitchData = lastFrame;
+          mobileClients.set(clientId, client);
+          latestPitchData.set(clientId, lastFrame);
+        }
+        return Response.json({ success: true, received: true, frameCount: batchPayload.frames.length });
+      }
+
       case 'volume':
         if (clientId) {
           const client = mobileClients.get(clientId);
@@ -212,6 +254,53 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
             currentCount: clientPendingCount,
           }, { status: 400 });
         }
+
+        // F19: Validate partner exists for duel/duet mode
+        if ((queuePayload.gameMode === 'duel' || queuePayload.gameMode === 'duet') && queuePayload.partnerId) {
+          // Look up partner by connection code or profile ID
+          let partnerFound = false;
+          let partnerClientId: string | null = null;
+          
+          mobileClients.forEach((client) => {
+            if (client.id === clientId) return; // Skip self
+            if (client.connectionCode === queuePayload.partnerId ||
+                client.profile?.id === queuePayload.partnerId) {
+              partnerFound = true;
+              partnerClientId = client.id;
+            }
+          });
+
+          if (!partnerFound && queuePayload.partnerId) {
+            // Partner might be a host profile not yet adopted — allow it
+            // (the main app will match it when starting the game)
+            const isHostProfile = mutableState.hostProfiles.some(
+              (hp) => hp.id === queuePayload.partnerId
+            );
+            if (!isHostProfile) {
+              return Response.json({
+                success: false,
+                message: 'Selected opponent is no longer connected',
+              }, { status: 400 });
+            }
+          }
+
+          // F19: Store pending duel request so the partner's companion can poll it
+          if (partnerClientId && clientForQueue.profile) {
+            mutableState.pendingDuelRequests = mutableState.pendingDuelRequests || [];
+            // Remove any existing pending request to the same partner
+            mutableState.pendingDuelRequests = mutableState.pendingDuelRequests.filter(
+              (r: { targetClientId: string }) => r.targetClientId !== partnerClientId
+            );
+            mutableState.pendingDuelRequests.push({
+              fromClientId: clientId,
+              fromProfileName: clientForQueue.profile.name,
+              targetClientId: partnerClientId,
+              songTitle: queuePayload.songTitle,
+              gameMode: queuePayload.gameMode || 'duel',
+              timestamp: Date.now(),
+            });
+          }
+        }
         
         const queueItem: QueueItem = {
           id: `queue-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
@@ -237,6 +326,65 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           queue: mutableState.songQueue.filter(q => q.status !== 'completed'),
           message: 'Song added to queue',
           slotsRemaining: 3 - clientForQueue.queueCount,
+        });
+      }
+
+      case 'reorderqueue': {
+        // Reorder pending queue items — only the user's own items
+        if (!clientId) {
+          return Response.json({ success: false, message: 'Not connected' }, { status: 401 });
+        }
+        const reorderPayload = payload as { orderedIds: string[] };
+        const reorderClient = mobileClients.get(clientId);
+        if (!reorderClient) {
+          return Response.json({ success: false, message: 'Not connected' }, { status: 401 });
+        }
+
+        if (!Array.isArray(reorderPayload.orderedIds) || reorderPayload.orderedIds.length === 0) {
+          return Response.json({ success: false, message: 'Invalid ordered IDs' }, { status: 400 });
+        }
+
+        // Get all pending items belonging to this user
+        const userPendingItems = mutableState.songQueue.filter(
+          q => q.companionCode === reorderClient.connectionCode && q.status === 'pending'
+        );
+
+        // Verify all orderedIds belong to this user and are pending
+        const userPendingIds = new Set(userPendingItems.map(q => q.id));
+        for (const id of reorderPayload.orderedIds) {
+          if (!userPendingIds.has(id)) {
+            return Response.json({ success: false, message: 'Cannot reorder items that are not yours' }, { status: 403 });
+          }
+        }
+
+        // Rebuild the global queue: keep non-user items in place, reorder user's items
+        const orderedSet = new Set(reorderPayload.orderedIds);
+        const reorderedUserItems = reorderPayload.orderedIds
+          .map(id => mutableState.songQueue.find(q => q.id === id))
+          .filter(Boolean) as typeof mutableState.songQueue;
+
+        // Build new queue: insert reordered items where the first user item was
+        let newQueue: typeof mutableState.songQueue = [];
+        let userItemsInserted = false;
+
+        for (const item of mutableState.songQueue) {
+          if (orderedSet.has(item.id)) {
+            if (!userItemsInserted) {
+              newQueue.push(...reorderedUserItems);
+              userItemsInserted = true;
+            }
+            // Skip — already inserted in new order
+          } else {
+            newQueue.push(item);
+          }
+        }
+
+        mutableState.songQueue = newQueue;
+
+        return Response.json({
+          success: true,
+          message: 'Queue reordered',
+          queue: mutableState.songQueue.filter(q => q.status !== 'completed'),
         });
       }
 
@@ -643,6 +791,73 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           });
         }
         return Response.json({ success: false, message: 'Invalid songs payload' }, { status: 400 });
+      }
+
+      // F4: Companion sends a chat message
+      case 'chat': {
+        if (!clientId) {
+          return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
+        }
+        const chatPayload = payload as { text: string };
+        const chatClient = mobileClients.get(clientId);
+        if (!chatClient) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
+
+        const chatText = typeof chatPayload.text === 'string' ? chatPayload.text.trim() : '';
+        if (!chatText || chatText.length > 200) {
+          return Response.json({ success: false, message: 'Message must be 1-200 characters' }, { status: 400 });
+        }
+
+        const chatMsg = {
+          id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+          from: clientId,
+          fromName: chatClient.profile?.name || chatClient.name,
+          text: chatText,
+          timestamp: Date.now(),
+          isHost: false,
+        };
+
+        mutableState.chatMessages.push(chatMsg);
+
+        // Keep max 100 messages (FIFO)
+        if (mutableState.chatMessages.length > 100) {
+          mutableState.chatMessages = mutableState.chatMessages.slice(-100);
+        }
+
+        // Update activity
+        chatClient.lastActivity = Date.now();
+        mobileClients.set(clientId, chatClient);
+
+        return Response.json({ success: true, message: 'Message sent' });
+      }
+
+      // F4: Host sends a chat message (authenticated)
+      case 'chat_host': {
+        if (!requireAuth(request)) {
+          return Response.json({ success: false, message: 'Unauthorized. Provide correct PIN.' }, { status: 401 });
+        }
+        const hostChatPayload = payload as { text: string; fromName?: string };
+        const hostChatText = typeof hostChatPayload.text === 'string' ? hostChatPayload.text.trim() : '';
+        if (!hostChatText || hostChatText.length > 200) {
+          return Response.json({ success: false, message: 'Message must be 1-200 characters' }, { status: 400 });
+        }
+
+        const hostChatMsg = {
+          id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+          from: 'host',
+          fromName: hostChatPayload.fromName || 'Host',
+          text: hostChatText,
+          timestamp: Date.now(),
+          isHost: true,
+        };
+
+        mutableState.chatMessages.push(hostChatMsg);
+
+        // Keep max 100 messages (FIFO)
+        if (mutableState.chatMessages.length > 100) {
+          mutableState.chatMessages = mutableState.chatMessages.slice(-100);
+        }
+
+        return Response.json({ success: true, message: 'Host message sent' });
       }
 
       // #10 Tournament crowd vote — companion spectators vote on match results
