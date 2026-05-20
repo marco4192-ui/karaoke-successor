@@ -10,7 +10,9 @@ interface GameScoreDisplayProps {
     icon: string;
     name: string;
     xpReward: number;
+    timeLimit?: number;
   } | null;
+  timeRemaining?: number | null;
 }
 
 /**
@@ -20,6 +22,7 @@ interface GameScoreDisplayProps {
 export const GameScoreDisplay = React.memo(function GameScoreDisplay({
   difficulty,
   activeChallenge,
+  timeRemaining,
 }: GameScoreDisplayProps) {
   return (
     <div className="flex items-center gap-3">
@@ -38,6 +41,15 @@ export const GameScoreDisplay = React.memo(function GameScoreDisplay({
           }`}
         >
           {activeChallenge.icon} {activeChallenge.name} (+{activeChallenge.xpReward} XP)
+        </Badge>
+      )}
+      {timeRemaining !== null && timeRemaining !== undefined && timeRemaining > 0 && (
+        <Badge className={`px-3 py-1 text-sm font-bold animate-pulse ${
+          timeRemaining <= 30 ? 'bg-red-500/30 text-red-300 border border-red-500/50' :
+          timeRemaining <= 60 ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50' :
+          'bg-cyan-500/30 text-cyan-300 border border-cyan-500/50'
+        }`}>
+          ⏱️ {Math.floor(timeRemaining / 60)}:{String(timeRemaining % 60).padStart(2, '0')}
         </Badge>
       )}
     </div>

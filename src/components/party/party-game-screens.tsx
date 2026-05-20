@@ -37,7 +37,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
   const { profiles, setGameMode, setSong, resetGame, addPlayer, setPlayers } = useGameStore();
   const rmsGameMode = useGameStore((s) => s.gameState.gameMode);
   const party = usePartyStore();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   // State for Rate my Song results
   const [rateMySongResult, setRateMySongResult] = useState<RateMySongResult | null>(null);
@@ -902,10 +902,10 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           <div className="bg-gradient-to-br from-purple-900/90 to-pink-900/90 border border-purple-500/30 rounded-2xl p-8 max-w-md text-center animate-fade-in">
             <div className="text-5xl mb-4">{party.rateMySongCurrentChallenge.icon}</div>
             <h2 className="text-xl font-bold text-white mb-2">
-              {party.rateMySongCurrentChallenge.titleDe || party.rateMySongCurrentChallenge.titleEn}
+              {language === 'de' ? party.rateMySongCurrentChallenge.titleDe : party.rateMySongCurrentChallenge.titleEn}
             </h2>
             <p className="text-white/70 text-sm mb-6">
-              {party.rateMySongCurrentChallenge.descriptionDe || party.rateMySongCurrentChallenge.descriptionEn}
+              {language === 'de' ? party.rateMySongCurrentChallenge.descriptionDe : party.rateMySongCurrentChallenge.descriptionEn}
             </p>
             <p className="text-amber-400 text-xs mb-4">+50 Bonus Points if mastered!</p>
             <button

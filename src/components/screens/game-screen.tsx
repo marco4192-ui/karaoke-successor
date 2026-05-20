@@ -79,6 +79,7 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
           <GameScoreDisplay
             difficulty={g.gameState.difficulty}
             activeChallenge={g.activeChallenge}
+            timeRemaining={g.timeRemaining}
           />
           {!g.isLowPerf && (
             <WebcamQuickControls

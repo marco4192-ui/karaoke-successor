@@ -26,6 +26,10 @@ export {
   type ChallengeMode,
   CHALLENGE_MODES,
   CHALLENGE_GAME_MODE_MAP,
+  // Challenge Mixer
+  type CustomChallengeConfig,
+  createCustomChallenge,
+  AVAILABLE_MODIFIERS,
   // XP functions
   calculateSongXP,
   getRankForXP,

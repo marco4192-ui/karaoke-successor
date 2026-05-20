@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { CHALLENGE_GAME_MODE_MAP } from '@/lib/game/player-progression';
-import { StorageKeys, getItem } from '@/lib/storage';
+import { StorageKeys, getItem, removeItem } from '@/lib/storage';
 import { useGlobalKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useGlobalRemoteControl } from '@/hooks/use-global-remote-control';
 import { useMobileClient } from '@/hooks/use-mobile-client';
@@ -41,7 +41,7 @@ import { OfflineBanner } from '@/components/ui/offline-banner';
 // ===================== MAIN APP =====================
 export default function KaraokeZERO() {
   // ── Store hooks (must be called before any conditional returns) ──
-  const { gameState, setSong, setGameMode, setChallengeMode, profiles, queue, resetGame, addPlayer, setResults, pauseGame, resumeGame } = useGameStore();
+  const { gameState, setSong, setGameMode, setChallengeMode, setActiveProfile, profiles, queue, resetGame, addPlayer, setResults, pauseGame, resumeGame } = useGameStore();
   const party = usePartyStore();
 
   // ── Screen navigation (screen state + party-mode guard) ──
@@ -488,6 +488,7 @@ export default function KaraokeZERO() {
         {screen === 'dailyChallenge' && <DailyChallengeScreen onPlayChallenge={(song) => {
           // Look up the stored challenge mode ID and map it to a built-in game mode
           const challengeId = getItem(StorageKeys.CHALLENGE_MODE);
+          if (challengeId) removeItem(StorageKeys.CHALLENGE_MODE); // Clear after reading
           const mappedMode = challengeId ? CHALLENGE_GAME_MODE_MAP[challengeId] : undefined;
           setGameMode(mappedMode || 'standard');
           setChallengeMode(challengeId || undefined);

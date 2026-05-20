@@ -99,6 +99,7 @@ export interface GameScreenHookReturn {
   noteShapeStyle: 'rounded' | 'sharp' | 'pill' | 'music-note' | 'star' | 'circle' | 'hexagon' | 'triangle';
   hasChallengeNoPitchGuide: boolean;
   activeChallenge: typeof CHALLENGE_MODES[0] | null;
+  challengePitchShift: number;
   showScore: boolean;
   showParticles: boolean;
   showCombo: boolean;
@@ -112,6 +113,11 @@ export interface GameScreenHookReturn {
   showPracticeControls: boolean;
   setShowPracticeControls: React.Dispatch<React.SetStateAction<boolean>>;
   setPracticeMode: React.Dispatch<React.SetStateAction<PracticeModeConfig>>;
+
+  // Challenge time limit
+  challengeTimeLimit: number | null;
+  timeRemaining: number | null;
+  setTimeRemaining: React.Dispatch<React.SetStateAction<number | null>>;
 
   // Audio effects
   audioEffects: ReturnType<typeof useGameAudioEffects>['audioEffects'];

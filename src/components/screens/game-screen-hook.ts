@@ -107,10 +107,14 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
     activeChallenge,
     hasChallengeNoPitchGuide,
     challengeModifiers,
+    challengeTimeLimit,
+    challengePitchShift,
     practiceMode,
     setPracticeMode,
     showPracticeControls,
     setShowPracticeControls,
+    timeRemaining,
+    setTimeRemaining,
   } = settings;
 
   const [youtubeTime, setYoutubeTime] = useState(0);
@@ -433,6 +437,30 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
     nativeAudioSeek: nativeAudio.seek,
   });
 
+  // ── Challenge Time Limit: countdown timer that ends the game when expired ──
+  // Uses a ref so the interval callback always calls the latest endGameAndCleanup
+  const endGameAndCleanupForTimerRef = useRef(endGameAndCleanup);
+  useEffect(() => { endGameAndCleanupForTimerRef.current = endGameAndCleanup; }, [endGameAndCleanup]);
+
+  useEffect(() => {
+    if (!challengeTimeLimit || !isPlaying) return;
+
+    setTimeRemaining(challengeTimeLimit);
+    const interval = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev === null || prev <= 1) {
+          clearInterval(interval);
+          // Trigger end of game via the same cleanup path as song-end
+          endGameAndCleanupForTimerRef.current?.();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [challengeTimeLimit, isPlaying, setTimeRemaining]);
+
   // ── OS Media Controls: song metadata, media keys, position seekbar ──
   useMediaSession({
     song,
@@ -528,6 +556,10 @@ export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScr
     noteShapeStyle,
     hasChallengeNoPitchGuide,
     activeChallenge,
+    challengeTimeLimit,
+    timeRemaining,
+    setTimeRemaining,
+    challengePitchShift,
     showScore,
     showParticles,
     showCombo,

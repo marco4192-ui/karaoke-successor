@@ -157,6 +157,28 @@ export const CHALLENGE_MODES: ChallengeMode[] = [
     xpReward: 300,
   },
   {
+    id: 'half-speed',
+    name: 'Slow Motion',
+    description: '0.75x speed — perfect for practice!',
+    icon: '🐌',
+    difficulty: 'easy',
+    modifiers: [{ type: 'half_speed', value: 0.75, description: 'Song plays at 0.75x speed' }],
+    xpReward: 100,
+  },
+  {
+    id: 'blind-master',
+    name: 'Blind Master',
+    description: 'No lyrics AND no pitch guide — true blind singing!',
+    icon: '🕶️',
+    difficulty: 'extreme',
+    modifiers: [
+      { type: 'no_lyrics', description: 'Lyrics are hidden' },
+      { type: 'no_pitch_guide', description: 'Pitch guide is hidden' },
+    ],
+    xpReward: 600,
+    requirements: [{ type: 'min_level', value: 15 }],
+  },
+  {
     id: 'ultimate',
     name: 'Ultimate Challenge',
     description: 'All modifiers combined - for the brave!',
@@ -168,8 +190,55 @@ export const CHALLENGE_MODES: ChallengeMode[] = [
       { type: 'double_speed', value: 1.25, description: '1.25x speed' },
     ],
     xpReward: 1000,
+    timeLimit: 180,
     requirements: [{ type: 'min_level', value: 25 }],
   },
+];
+
+// ===================== CHALLENGE MIXER =====================
+
+export interface CustomChallengeConfig {
+  name: string;
+  modifiers: ChallengeModifier[];
+  difficulty: 'easy' | 'medium' | 'hard' | 'extreme';
+  timeLimit?: number;
+}
+
+/**
+ * Create a custom challenge mode from a combination of modifiers.
+ * Calculates XP reward based on the combined difficulty of modifiers.
+ * Returns a ChallengeMode object compatible with the existing system.
+ */
+export function createCustomChallenge(config: CustomChallengeConfig): ChallengeMode {
+  // Base XP: 150
+  // Per modifier bonus: +50 per modifier
+  // Difficulty multiplier: easy 1x, medium 1.5x, hard 2x, extreme 3x
+  const baseXP = 150;
+  const modifierBonus = config.modifiers.length * 50;
+  const difficultyMultiplier = { easy: 1, medium: 1.5, hard: 2, extreme: 3 }[config.difficulty];
+  const xpReward = Math.round((baseXP + modifierBonus) * difficultyMultiplier);
+
+  return {
+    id: `custom-${Date.now()}`,
+    name: config.name,
+    description: config.modifiers.map(m => m.description).join(', '),
+    icon: '🔧',
+    difficulty: config.difficulty,
+    modifiers: config.modifiers,
+    xpReward,
+    timeLimit: config.timeLimit,
+  };
+}
+
+export const AVAILABLE_MODIFIERS: Array<{ type: ChallengeModifier['type']; label: string; description: string; defaultValue?: number; difficulty: 'easy' | 'medium' | 'hard' | 'extreme' }> = [
+  { type: 'no_lyrics', label: 'No Lyrics', description: 'Lyrics are hidden', difficulty: 'medium' },
+  { type: 'no_pitch_guide', label: 'No Pitch Guide', description: 'Pitch guide is hidden', difficulty: 'hard' },
+  { type: 'double_speed', label: 'Speed Boost', description: 'Song plays faster', defaultValue: 1.5, difficulty: 'hard' },
+  { type: 'half_speed', label: 'Slow Motion', description: 'Song plays slower', defaultValue: 0.75, difficulty: 'easy' },
+  { type: 'perfect_only', label: 'Perfectionist', description: 'Only perfect notes count', difficulty: 'extreme' },
+  { type: 'golden_only', label: 'Golden Hunter', description: 'Only golden notes count', difficulty: 'hard' },
+  { type: 'missing_words', label: 'Missing Words', description: 'Some words are hidden', defaultValue: 20, difficulty: 'medium' },
+  { type: 'blind', label: 'Blind', description: 'No lyrics and no pitch guide', difficulty: 'hard' },
 ];
 
 /**

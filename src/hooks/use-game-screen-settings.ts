@@ -39,6 +39,13 @@ export function useGameScreenSettings() {
     return null;
   });
 
+  // Time limit from the active challenge (in seconds)
+  const challengeTimeLimit = activeChallenge?.timeLimit ?? null;
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+
+  // Pitch shift modifier from the active challenge
+  const challengePitchShift = activeChallenge?.modifiers.find(m => m.type === 'pitch_shift')?.value ?? 0;
+
   // Derive challenge modifier flags for use throughout the component
   const hasChallengeNoPitchGuide = activeChallenge?.modifiers.some(m => m.type === 'no_pitch_guide') ?? false;
   const challengeSpeedModifier = activeChallenge?.modifiers.find(m => m.type === 'double_speed');
@@ -64,6 +71,10 @@ export function useGameScreenSettings() {
     activeChallenge,
     hasChallengeNoPitchGuide,
     challengeModifiers: activeChallenge?.modifiers,
+    challengeTimeLimit,
+    timeRemaining,
+    setTimeRemaining,
+    challengePitchShift,
     practiceMode,
     setPracticeMode,
     showPracticeControls,
