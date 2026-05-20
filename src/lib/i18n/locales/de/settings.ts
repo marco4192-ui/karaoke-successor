@@ -263,7 +263,19 @@ export const settingsTranslations = {
     maxReached: '✓ Maximale Anzahl von {max} Mikrofonen erreicht',
     applyOptimal: '⚡ Optimale Einstellungen auf alle anwenden',
     refreshDevices: '🔄 Geräte aktualisieren',
-    supportedMics: 'Unterstützte Mikrofone'
+    supportedMics: 'Unterstützte Mikrofone',
+    usbMics: 'USB-Mikrofone',
+    usbMicsDesc: 'Blue Yeti, AT2020',
+    singstarMics: 'SingStar-Mikrofone',
+    singstarMicsDesc: 'PS2/PS3-Dongles',
+    jack35: '3,5mm Klinke',
+    jack35Desc: 'Headset-Mikrofone',
+    mobile: 'Mobil',
+    mobileDesc: 'Telefon als Mikrofon',
+    agcLabel: 'AGC (Auto Gain Control)',
+    echoLabel: 'Echo-Unterdrückung',
+    noiseLabel: 'Rausch-Unterdrückung',
+    fftLabel: 'FFT-Größe 4096',
   },
 
   settingsMobileDevice: {
@@ -334,7 +346,25 @@ export const settingsTranslations = {
     autoUpdate: 'Charts werden automatisch beim Öffnen der Bibliothek aktualisiert (1x pro Tag).',
     regionSaved: 'Region gespeichert. Charts werden beim nächsten Laden aktualisiert.',
     chartsRefreshed: 'Charts erfolgreich aktualisiert!',
-    errorPrefix: 'Fehler:'
+    errorPrefix: 'Fehler:',
+    country: {
+      de: 'Deutschland',
+      at: 'Österreich',
+      ch: 'Schweiz',
+      us: 'USA',
+      gb: 'UK',
+      fr: 'Frankreich',
+      es: 'Spanien',
+      it: 'Italien',
+      nl: 'Niederlande',
+      pl: 'Polen',
+      se: 'Schweden',
+      jp: 'Japan',
+      br: 'Brasilien',
+      mx: 'Mexiko',
+      kr: 'Südkorea',
+      au: 'Australien',
+    },
   },
 
   settingsLibrary: {
@@ -388,7 +418,10 @@ export const settingsTranslations = {
     notAssigned: 'Nicht zugewiesen',
     removeCharacter: 'Charakter entfernen',
     kicking: 'Kicke...',
-    kick: 'Kicken'
+    kick: 'Kicken',
+    active: 'Aktiv',
+    secondsAgo: 'vor {n}s',
+    minutesAgo: 'vor {n} Min.',
   },
 
   settingsAudioOutput: {
@@ -405,7 +438,35 @@ export const settingsTranslations = {
     active: '✓ Aktiv',
     currentDevice: 'Aktuelles Gerät',
     asioDetected: '✓ ASIO-Geräte erkannt. Native Audio-Ausgabe ist für Low-Latency-Wiedergabe aktiv.',
-    noAsio: 'Keine ASIO-Geräte erkannt. Möglicherweise sind die Treiber deines Audio-Interfaces nicht installiert.'
+    noAsio: 'Keine ASIO-Geräte erkannt. Möglicherweise sind die Treiber deines Audio-Interfaces nicht installiert.',
+    backend: 'Backend:',
+    sampleRate: 'Abtastrate:',
+    channels: 'Kanäle:',
+  },
+
+  settingsMicPresets: {
+    optimalName: 'Optimal (Empfohlen)',
+    optimalDesc: 'Beste Einstellungen für UltraStar/SingStar',
+    lowLatencyName: 'Niedrige Latenz',
+    lowLatencyDesc: 'Minimale Verzögerung',
+    highAccuracyName: 'Hohe Genauigkeit',
+    highAccuracyDesc: 'Präzise Pitch-Detection',
+    noisyName: 'Laute Umgebung',
+    noisyDesc: 'Mehr Noise-Suppression',
+    bassName: 'Tiefe Stimmen (Bass)',
+    bassDesc: 'Optimiert für tiefe Stimmen',
+    sopranoName: 'Hohe Stimmen (Sopran)',
+    sopranoDesc: 'Optimiert für hohe Stimmen',
+    allApplied: 'Optimale Einstellungen auf alle Mikrofone angewendet',
+    applyError: 'Fehler beim Anwenden der optimalen Einstellungen',
+    removed: '{count} nicht verbundene(s) Mikrofon(e) entfernt',
+    allConnected: 'Alle Mikrofone sind verbunden',
+  },
+
+  settingsGeneral: {
+    difficultyEasy: 'Leicht',
+    difficultyMedium: 'Mittel',
+    difficultyHard: 'Schwer',
   },
 
   settingsAbout: {

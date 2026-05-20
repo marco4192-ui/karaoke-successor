@@ -78,7 +78,7 @@ export function GeneralTab({
                       : 'border-white/10 bg-white/5 hover:border-white/30 text-white'
                   }`}
                 >
-                  {diff}
+                  {tx('settingsGeneral.difficulty' + diff.charAt(0).toUpperCase() + diff.slice(1))}
                 </button>
               ))}
             </div>

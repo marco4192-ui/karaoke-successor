@@ -5,22 +5,22 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useTranslation } from '@/lib/i18n/translations';
 
 const COUNTRY_OPTIONS = [
-  { code: 'de', name: 'Deutschland', flag: '🇩🇪' },
-  { code: 'at', name: 'Österreich', flag: '🇦🇹' },
-  { code: 'ch', name: 'Schweiz', flag: '🇨🇭' },
-  { code: 'us', name: 'USA', flag: '🇺🇸' },
-  { code: 'gb', name: 'UK', flag: '🇬🇧' },
-  { code: 'fr', name: 'Frankreich', flag: '🇫🇷' },
-  { code: 'es', name: 'Spanien', flag: '🇪🇸' },
-  { code: 'it', name: 'Italien', flag: '🇮🇹' },
-  { code: 'nl', name: 'Niederlande', flag: '🇳🇱' },
-  { code: 'pl', name: 'Polen', flag: '🇵🇱' },
-  { code: 'se', name: 'Schweden', flag: '🇸🇪' },
-  { code: 'jp', name: 'Japan', flag: '🇯🇵' },
-  { code: 'br', name: 'Brasilien', flag: '🇧🇷' },
-  { code: 'mx', name: 'Mexiko', flag: '🇲🇽' },
-  { code: 'kr', name: 'Südkorea', flag: '🇰🇷' },
-  { code: 'au', name: 'Australien', flag: '🇦🇺' },
+  { code: 'de', name: 'settingsViralCharts.country.de', flag: '🇩🇪' },
+  { code: 'at', name: 'settingsViralCharts.country.at', flag: '🇦🇹' },
+  { code: 'ch', name: 'settingsViralCharts.country.ch', flag: '🇨🇭' },
+  { code: 'us', name: 'settingsViralCharts.country.us', flag: '🇺🇸' },
+  { code: 'gb', name: 'settingsViralCharts.country.gb', flag: '🇬🇧' },
+  { code: 'fr', name: 'settingsViralCharts.country.fr', flag: '🇫🇷' },
+  { code: 'es', name: 'settingsViralCharts.country.es', flag: '🇪🇸' },
+  { code: 'it', name: 'settingsViralCharts.country.it', flag: '🇮🇹' },
+  { code: 'nl', name: 'settingsViralCharts.country.nl', flag: '🇳🇱' },
+  { code: 'pl', name: 'settingsViralCharts.country.pl', flag: '🇵🇱' },
+  { code: 'se', name: 'settingsViralCharts.country.se', flag: '🇸🇪' },
+  { code: 'jp', name: 'settingsViralCharts.country.jp', flag: '🇯🇵' },
+  { code: 'br', name: 'settingsViralCharts.country.br', flag: '🇧🇷' },
+  { code: 'mx', name: 'settingsViralCharts.country.mx', flag: '🇲🇽' },
+  { code: 'kr', name: 'settingsViralCharts.country.kr', flag: '🇰🇷' },
+  { code: 'au', name: 'settingsViralCharts.country.au', flag: '🇦🇺' },
 ];
 
 interface ViralChartsStatus {
@@ -139,7 +139,7 @@ export function ViralChartsSettings() {
           >
             {COUNTRY_OPTIONS.map(c => (
               <option key={c.code} value={c.code} className="bg-gray-800 text-white">
-                {c.flag} {c.name}
+                {c.flag} {t(c.name)}
               </option>
             ))}
           </select>
@@ -168,7 +168,7 @@ export function ViralChartsSettings() {
           <div className="bg-white/5 rounded-lg p-3 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-white/60">{t('settingsViralCharts.regionLabel')}</span>
-              <span>{selectedCountryData?.flag} {selectedCountryData?.name}</span>
+              <span>{selectedCountryData?.flag} {selectedCountryData ? t(selectedCountryData.name) : ''}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-white/60">{t('settingsViralCharts.chartEntries')}</span>

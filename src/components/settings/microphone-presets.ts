@@ -3,18 +3,24 @@ import { ExtendedMicConfig, OPTIMAL_EXTENDED_CONFIG } from '@/lib/audio/micropho
 export interface MicPreset {
   name: string;
   description: string;
+  nameKey: string;
+  descKey: string;
   settings: ExtendedMicConfig;
 }
 
 export const MIC_PRESETS: Record<string, MicPreset> = {
   optimal: {
-    name: 'Optimal (Empfohlen)',
-    description: 'Beste Einstellungen für UltraStar/SingStar',
+    name: 'Optimal (Recommended)',
+    description: 'Best settings for UltraStar/SingStar',
+    nameKey: 'settingsMicPresets.optimalName',
+    descKey: 'settingsMicPresets.optimalDesc',
     settings: OPTIMAL_EXTENDED_CONFIG,
   },
   lowLatency: {
-    name: 'Niedrige Latenz',
-    description: 'Minimale Verzögerung',
+    name: 'Low Latency',
+    description: 'Minimal delay',
+    nameKey: 'settingsMicPresets.lowLatencyName',
+    descKey: 'settingsMicPresets.lowLatencyDesc',
     settings: {
       ...OPTIMAL_EXTENDED_CONFIG,
       fftSize: 2048,
@@ -23,8 +29,10 @@ export const MIC_PRESETS: Record<string, MicPreset> = {
     },
   },
   highAccuracy: {
-    name: 'Hohe Genauigkeit',
-    description: 'Präzise Pitch-Detection',
+    name: 'High Accuracy',
+    description: 'Precise pitch detection',
+    nameKey: 'settingsMicPresets.highAccuracyName',
+    descKey: 'settingsMicPresets.highAccuracyDesc',
     settings: {
       ...OPTIMAL_EXTENDED_CONFIG,
       fftSize: 8192,
@@ -33,8 +41,10 @@ export const MIC_PRESETS: Record<string, MicPreset> = {
     },
   },
   noisy: {
-    name: 'Laute Umgebung',
-    description: 'Mehr Noise-Suppression',
+    name: 'Noisy Environment',
+    description: 'More noise suppression',
+    nameKey: 'settingsMicPresets.noisyName',
+    descKey: 'settingsMicPresets.noisyDesc',
     settings: {
       ...OPTIMAL_EXTENDED_CONFIG,
       noiseSuppression: true,
@@ -44,8 +54,10 @@ export const MIC_PRESETS: Record<string, MicPreset> = {
     },
   },
   bass: {
-    name: 'Tiefe Stimmen (Bass)',
-    description: 'Optimiert für tiefe Stimmen',
+    name: 'Deep Voices (Bass)',
+    description: 'Optimized for deep voices',
+    nameKey: 'settingsMicPresets.bassName',
+    descKey: 'settingsMicPresets.bassDesc',
     settings: {
       ...OPTIMAL_EXTENDED_CONFIG,
       minFrequency: 60,
@@ -53,8 +65,10 @@ export const MIC_PRESETS: Record<string, MicPreset> = {
     },
   },
   soprano: {
-    name: 'Hohe Stimmen (Sopran)',
-    description: 'Optimiert für hohe Stimmen',
+    name: 'High Voices (Soprano)',
+    description: 'Optimized for high voices',
+    nameKey: 'settingsMicPresets.sopranoName',
+    descKey: 'settingsMicPresets.sopranoDesc',
     settings: {
       ...OPTIMAL_EXTENDED_CONFIG,
       minFrequency: 150,

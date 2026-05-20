@@ -263,7 +263,19 @@ export const settingsTranslations = {
     maxReached: '✓ Maximum of {max} microphones reached',
     applyOptimal: '⚡ Apply optimal settings to all',
     refreshDevices: '🔄 Refresh devices',
-    supportedMics: 'Supported Microphones'
+    supportedMics: 'Supported Microphones',
+    usbMics: 'USB Mics',
+    usbMicsDesc: 'Blue Yeti, AT2020',
+    singstarMics: 'SingStar Mics',
+    singstarMicsDesc: 'PS2/PS3 Dongles',
+    jack35: '3.5mm Jack',
+    jack35Desc: 'Headset Mics',
+    mobile: 'Mobile',
+    mobileDesc: 'Phone as Mic',
+    agcLabel: 'AGC (Auto Gain Control)',
+    echoLabel: 'Echo Cancellation',
+    noiseLabel: 'Noise Suppression',
+    fftLabel: 'FFT Size 4096',
   },
 
   settingsMobileDevice: {
@@ -334,7 +346,25 @@ export const settingsTranslations = {
     autoUpdate: 'Charts are automatically refreshed when opening the library (once per day).',
     regionSaved: 'Region saved. Charts will be updated on next load.',
     chartsRefreshed: 'Charts refreshed successfully!',
-    errorPrefix: 'Error:'
+    errorPrefix: 'Error:',
+    country: {
+      de: 'Germany',
+      at: 'Austria',
+      ch: 'Switzerland',
+      us: 'USA',
+      gb: 'UK',
+      fr: 'France',
+      es: 'Spain',
+      it: 'Italy',
+      nl: 'Netherlands',
+      pl: 'Poland',
+      se: 'Sweden',
+      jp: 'Japan',
+      br: 'Brazil',
+      mx: 'Mexico',
+      kr: 'South Korea',
+      au: 'Australia',
+    },
   },
 
   settingsLibrary: {
@@ -388,7 +418,10 @@ export const settingsTranslations = {
     notAssigned: 'Not assigned',
     removeCharacter: 'Remove character',
     kicking: 'Kicking...',
-    kick: 'Kick'
+    kick: 'Kick',
+    active: 'active',
+    secondsAgo: '{n}s ago',
+    minutesAgo: '{n}m ago',
   },
 
   settingsAudioOutput: {
@@ -405,7 +438,35 @@ export const settingsTranslations = {
     active: '✓ Active',
     currentDevice: 'Current Device',
     asioDetected: '✓ ASIO devices detected. Native audio output is active for low-latency playback.',
-    noAsio: 'No ASIO devices detected. Your audio interface drivers may not be installed.'
+    noAsio: 'No ASIO devices detected. Your audio interface drivers may not be installed.',
+    backend: 'Backend:',
+    sampleRate: 'Sample Rate:',
+    channels: 'Channels:',
+  },
+
+  settingsMicPresets: {
+    optimalName: 'Optimal (Recommended)',
+    optimalDesc: 'Best settings for UltraStar/SingStar',
+    lowLatencyName: 'Low Latency',
+    lowLatencyDesc: 'Minimal delay',
+    highAccuracyName: 'High Accuracy',
+    highAccuracyDesc: 'Precise pitch detection',
+    noisyName: 'Noisy Environment',
+    noisyDesc: 'More noise suppression',
+    bassName: 'Deep Voices (Bass)',
+    bassDesc: 'Optimized for deep voices',
+    sopranoName: 'High Voices (Soprano)',
+    sopranoDesc: 'Optimized for high voices',
+    allApplied: 'Optimal settings applied to all microphones',
+    applyError: 'Error applying optimal settings',
+    removed: 'Removed {count} disconnected microphone(s)',
+    allConnected: 'All microphones are connected',
+  },
+
+  settingsGeneral: {
+    difficultyEasy: 'Easy',
+    difficultyMedium: 'Medium',
+    difficultyHard: 'Hard',
   },
 
   settingsAbout: {

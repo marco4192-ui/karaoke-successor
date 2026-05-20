@@ -206,8 +206,8 @@ export function MicrophoneCard({
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {Object.entries(MIC_PRESETS).map(([key, preset]) => (
                   <button key={key} onClick={() => applyPreset(key as keyof typeof MIC_PRESETS)} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-cyan-500/50 transition-all text-left">
-                    <div className="font-medium text-xs">{preset.name}</div>
-                    <div className="text-xs text-white/40">{preset.description}</div>
+                    <div className="font-medium text-xs">{t(preset.nameKey)}</div>
+                    <div className="text-xs text-white/40">{t(preset.descKey)}</div>
                   </button>
                 ))}
               </div>

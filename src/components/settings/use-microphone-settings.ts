@@ -90,9 +90,9 @@ export function useMicrophoneSettings(onSettingsChange?: MicrophoneSettingsPanel
   const handleApplyOptimalToAll = async () => {
     try {
       await micManager.applyOptimalSettingsToAll();
-      setRefreshMessage('Optimale Einstellungen auf alle Mikrofone angewendet');
+      setRefreshMessage('settingsMicPresets.allApplied');
     } catch (error) {
-      setRefreshMessage('Fehler beim Anwenden der optimalen Einstellungen');
+      setRefreshMessage('settingsMicPresets.applyError');
       // eslint-disable-next-line no-console
       console.error('Failed to apply optimal settings:', error);
     }
@@ -102,9 +102,9 @@ export function useMicrophoneSettings(onSettingsChange?: MicrophoneSettingsPanel
   const handleRefreshDevices = async () => {
     const removedCount = await micManager.removeDisconnectedDevices();
     if (removedCount > 0) {
-      setRefreshMessage(`${removedCount} nicht verbundene(s) Mikrofon(e) entfernt`);
+      setRefreshMessage(`settingsMicPresets.removed|${removedCount}`);
     } else {
-      setRefreshMessage('Alle Mikrofone sind verbunden');
+      setRefreshMessage('settingsMicPresets.allConnected');
     }
     setTimeout(() => setRefreshMessage(null), 3000);
   };

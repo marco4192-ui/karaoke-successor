@@ -37,10 +37,10 @@ export function MicrophoneSettingsPanel({
   const { t } = useTranslation();
 
   const SUPPORTED_MICS = [
-    { icon: '🎤', title: 'USB Mics', desc: 'Blue Yeti, AT2020' },
-    { icon: '🎮', title: 'SingStar Mics', desc: 'PS2/PS3 Dongles' },
-    { icon: '🔌', title: '3.5mm Jack', desc: 'Headset Mics' },
-    { icon: '📱', title: 'Mobile', desc: 'Phone as Mic' },
+    { icon: '🎤', nameKey: 'settingsMicPanel.usbMics', descKey: 'settingsMicPanel.usbMicsDesc' },
+    { icon: '🎮', nameKey: 'settingsMicPanel.singstarMics', descKey: 'settingsMicPanel.singstarMicsDesc' },
+    { icon: '🔌', nameKey: 'settingsMicPanel.jack35', descKey: 'settingsMicPanel.jack35Desc' },
+    { icon: '📱', nameKey: 'settingsMicPanel.mobile', descKey: 'settingsMicPanel.mobileDesc' },
   ];
 
   return (
@@ -59,9 +59,9 @@ export function MicrophoneSettingsPanel({
             <p><strong className="text-white">{t('settingsMicPanel.ultraStarStandard')}</strong> {t('settingsMicPanel.ultraStarDesc')}</p>
             <p><strong className="text-white">{t('settingsMicPanel.customNames')}</strong> {t('settingsMicPanel.customNamesDesc')}</p>
             <ul className="text-xs text-white/50 mt-3 space-y-1">
-              <li>• <strong>AGC (Auto Gain Control)</strong> {t('settingsMicPanel.agcInfo')}</li>
-              <li>• <strong>Echo Cancellation</strong> / <strong>Noise Suppression</strong> {t('settingsMicPanel.echoInfo')}</li>
-              <li>• <strong>FFT Size 4096</strong> {t('settingsMicPanel.fftInfo')}</li>
+              <li>• <strong>{t('settingsMicPanel.agcLabel')}</strong> {t('settingsMicPanel.agcInfo')}</li>
+              <li>• <strong>{t('settingsMicPanel.echoLabel')}</strong> / <strong>{t('settingsMicPanel.noiseLabel')}</strong> {t('settingsMicPanel.echoInfo')}</li>
+              <li>• <strong>{t('settingsMicPanel.fftLabel')}</strong> {t('settingsMicPanel.fftInfo')}</li>
             </ul>
           </div>
         </CardContent>
@@ -136,7 +136,7 @@ export function MicrophoneSettingsPanel({
       {/* Refresh Message */}
       {refreshMessage && (
         <div className="p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg text-center">
-          <p className="text-cyan-400 text-sm">🔄 {refreshMessage}</p>
+          <p className="text-cyan-400 text-sm">🔄 {refreshMessage.startsWith('settingsMicPresets.removed|') ? t('settingsMicPresets.removed').replace('{count}', refreshMessage.split('|')[1]) : t(refreshMessage)}</p>
         </div>
       )}
 
@@ -145,11 +145,11 @@ export function MicrophoneSettingsPanel({
         <CardHeader><CardTitle className="text-sm">{t('settingsMicPanel.supportedMics')}</CardTitle></CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {SUPPORTED_MICS.map(({ icon, title, desc }) => (
-              <div key={title} className="text-center p-2 bg-white/5 rounded-lg">
+            {SUPPORTED_MICS.map(({ icon, nameKey, descKey }) => (
+              <div key={nameKey} className="text-center p-2 bg-white/5 rounded-lg">
                 <div className="text-xl mb-1">{icon}</div>
-                <p className="text-xs font-medium">{title}</p>
-                <p className="text-xs text-white/40">{desc}</p>
+                <p className="text-xs font-medium">{t(nameKey)}</p>
+                <p className="text-xs text-white/40">{t(descKey)}</p>
               </div>
             ))}
           </div>

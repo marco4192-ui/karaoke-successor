@@ -39,13 +39,13 @@ function formatDuration(connectedAt: number, t: (k: string) => string): string {
   return `${hours}h ${remainMin}m`;
 }
 
-function getLastSeen(lastActivity: number): string {
+function getLastSeen(lastActivity: number, t: (k: string) => string): string {
   const diff = Date.now() - lastActivity;
   const seconds = Math.floor(diff / 1000);
-  if (seconds < 5) return 'active';
-  if (seconds < 60) return `${seconds}s ago`;
+  if (seconds < 5) return t('settingsCompanion.active');
+  if (seconds < 60) return t('settingsCompanion.secondsAgo').replace('{n}', String(seconds));
   const minutes = Math.floor(seconds / 60);
-  return `${minutes}m ago`;
+  return t('settingsCompanion.minutesAgo').replace('{n}', String(minutes));
 }
 
 // ===================== COMPONENT =====================
@@ -310,7 +310,7 @@ function CompanionCard({
             </span>
             <span className="text-xs text-white/20">|</span>
             <span className="text-xs text-white/40">
-              {t('settingsCompanion.lastSeen')} {getLastSeen(companion.lastActivity)}
+              {t('settingsCompanion.lastSeen')} {getLastSeen(companion.lastActivity, t)}
             </span>
           </div>
         </div>

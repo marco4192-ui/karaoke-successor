@@ -149,9 +149,9 @@ export function AudioOutputSection() {
                 <h4 className="text-sm font-medium text-cyan-400 mb-1">{t('settingsAudioOutput.currentDevice')}</h4>
                 <p className="text-sm text-white/80">{currentDevice.name}</p>
                 <div className="flex gap-4 mt-1 text-xs text-white/50">
-                  <span>Backend: {currentDevice.host_name}</span>
-                  <span>Sample Rate: {currentDevice.default_sample_rate} Hz</span>
-                  <span>Channels: {currentDevice.max_channels}</span>
+                  <span>{t('settingsAudioOutput.backend')} {currentDevice.host_name}</span>
+                  <span>{t('settingsAudioOutput.sampleRate')} {currentDevice.default_sample_rate} Hz</span>
+                  <span>{t('settingsAudioOutput.channels')} {currentDevice.max_channels}</span>
                 </div>
               </div>
             )}
