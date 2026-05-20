@@ -1,0 +1,249 @@
+// PL translations — core
+// Auto-split from monolithic locale file
+
+export const coreTranslations = {
+  nav: {
+    library: 'Biblioteka',
+    import: 'Import',
+    party: 'Impreza',
+    profiles: 'Profile',
+    queue: 'Kolejka',
+    highscores: 'Najlepsze wyniki',
+    jukebox: 'Jukebox',
+    mobile: 'Mobilne',
+    achievements: 'Osiągnięcia',
+    daily: 'Codzienne',
+    settings: 'Ustawienia'
+  },
+
+  home: {
+    title: 'Karaoke ZERO',
+    subtitle: 'Ostateczne doświadczenie karaoke. Śpiewaj z detekcją wysokości dźwięku w czasie rzeczywistym, rywalizuj z przyjaciółmi i baw się dobrze podczas imprez!',
+    startSinging: 'Zacznij śpiewać',
+    partyMode: 'Tryb imprezy',
+    songsAvailable: 'Dostępne piosenki',
+    profilesCreated: 'Utworzone profile',
+    partyGames: 'Gry imprezowe',
+    difficultyLevels: 'Poziomy trudności',
+    selectProfile: 'Wybierz swój profil',
+    createNew: 'Utwórz nowy'
+  },
+
+  homeScreen: {
+    subtitle: 'Ostateczne doświadczenie karaoke. Śpiewaj z detekcją wysokości dźwięku w czasie rzeczywistym, rywalizuj z przyjaciółmi i baw się dobrze podczas imprez!',
+    loadingStats: 'Ładowanie statystyk...',
+    realTimePitch: 'Detekcja wysokości dźwięku w czasie rzeczywistym',
+    realTimePitchDesc: 'Zaawansowany algorytm YIN wykrywa wysokość dźwięku śpiewu w czasie rzeczywistym z wysoką dokładnością. Zobacz wizualizację swojego głosu podczas śpiewania!',
+    partyGamesFeature: 'Gry imprezowe',
+    partyGamesFeatureDesc: 'Podaj mikrofon, Konkurs medleyowy, Brakujące słowa, Tryb duelu i Ślepe karaoke — nieskończona rozrywka na Twoje imprezy!',
+    mobileCompanion: 'Mobilny kompan',
+    mobileCompanionDesc: 'Użyj swojego smartfona jako mikrofonu lub pilota! Zeskanuj kod QR, aby się połączyć.',
+    wifiStep1: '1. Ta sama sieć WiFi',
+    wifiStep2: '2. Zeskanuj QR aparatem',
+    wifiStep3: '3. Otwórz link w przeglądarce',
+    detectingNetwork: 'Wykrywanie adresu sieci...',
+    selectCharacter: 'Wybierz swój profil',
+    inactiveProfiles: 'nieaktywne profile ukryte. Włącz je w ustawieniach profilu.'
+  },
+
+  common: {
+    loading: 'Ładowanie...',
+    error: 'Błąd',
+    success: 'Sukces',
+    cancel: 'Anuluj',
+    confirm: 'Potwierdź',
+    delete: 'Usuń',
+    edit: 'Edytuj',
+    save: 'Zapisz',
+    back: 'Wróć',
+    next: 'Dalej',
+    previous: 'Wstecz',
+    start: 'Start',
+    stop: 'Stop',
+    play: 'Odtwórz',
+    pause: 'Pauza',
+    reset: 'Reset',
+    clear: 'Wyczyść',
+    all: 'Wszystko',
+    none: 'Brak',
+    yes: 'Tak',
+    no: 'Nie',
+    ok: 'OK',
+    close: 'Zamknij',
+    search: 'Szukaj',
+    filter: 'Filtr',
+    sort: 'Sortuj',
+    refresh: 'Odśwież'
+  },
+
+  dialogs: {
+    partyExitTitle: 'Opuścić tryb imprezy?',
+    partyExitDesc: 'Tryb imprezy jest obecnie uruchomiony. Jeśli odejdziesz, obecny postęp gry zostanie utracony.',
+    stay: 'Zostań',
+    leave: 'Opuść',
+    partyLeaveTitle: 'Opuścić tryb imprezy?',
+    partyLeaveDesc: 'Zaraz opuścisz tryb imprezy. Obecny postęp gry zostanie utracony.',
+    back: 'Wróć',
+    endParty: 'Zakończ tryb imprezy',
+    pauseTitle: 'Gra wstrzymana',
+    pauseDesc: 'Czy chcesz kontynuować czy przerwać?',
+    resume: 'Wznów',
+    rematch: '🔄 Rewanż',
+    setWinner: '🏆 Ustaw zwycięzcę automatycznie',
+    abort: 'Przerwij'
+  },
+
+  connectionStatus: {
+    micPlayer: 'Gracz z mikrofonem',
+    connected: '{n} jest połączony',
+    disconnected: '{n} nie jest połączony'
+  },
+
+  offlineBanner: {
+    songsPlaylists: '{songs} piosenek, {playlists} list odtwarzania zapisanych lokalnie',
+    localData: 'Lokalne dane dostępne',
+    offline: 'Offline — ',
+    serverUnreachable: 'Serwer niedostępny — Tabela wyników i funkcje online niedostępne'
+  },
+
+  uploadStatus: {
+    uploading: 'Przesyłanie do globalnej tabeli wyników...'
+  },
+
+  shareSection: {
+    title: '📤 Udostępnij swój wynik',
+    scoreCard: '📸 Karta wyników',
+    videoShort: '🎬 Krótkie wideo',
+    textCopied: 'Tekst wyniku skopiowany!',
+    textCopyFailed: 'Nie udało się skopiować',
+    imageCopied: 'Obraz wyniku skopiowany!',
+    imageCopyFailed: 'Nie udało się skopiować obrazu',
+    sharingNotSupported: 'Udostępnianie nie jest obsługiwane. Karta została pobrana.',
+    copyText: '📋 Kopiuj tekst',
+    copyImage: '🖼️ Kopiuj obraz',
+    downloadCard: '📥 Pobierz kartę',
+    shareScore: '📤 Udostępnij wynik'
+  },
+
+  replayModal: {
+    copyrightNotice: 'Uwaga: Ze względu na prawa autorskie, oryginalne audio lub wokale nie mogą być dołączone do eksportowanych powtórek. Zostanie użyte tylko nagranie z mikrofonu.',
+    exportFailed: 'Eksport nie powiódł się. Spróbuj ponownie.',
+    deleteFailed: 'Usunięcie nie powiodło się. Spróbuj ponownie.',
+    close: 'Zamknij',
+    audioOnly: 'Powtórka tylko audio',
+    originalSong: '🎵 Oryginalna piosenka',
+    export: 'Eksportuj…',
+    exportShort: '⬇ Eksportuj',
+    delete: '🗑 Usuń',
+    volume: '🎵 Głośność',
+    replay: 'Powtórka'
+  },
+
+  scoreCardSocial: {
+    branding: 'Karaoke ZERO',
+    accuracyLabel: 'Celność:',
+    maxComboLabel: 'Max Combo:',
+    difficultyLabel: 'Trudność:',
+    playerLabel: '🎤 {name}',
+    hashtags: '#KaraokeZERO #Karaoke #Śpiew',
+    shareTitle: 'Mój wynik karaoke!',
+    shareText: 'Zdobyłem {n} punktów na "{title}" — {artist}!',
+    points: 'punktów',
+    download: '📥 Pobierz',
+    share: '📤 Udostępnij'
+  },
+
+  queue: {
+    title: 'Kolejka piosenek',
+    empty: 'Kolejka jest pusta',
+    emptyDesc: 'Dodaj piosenki z biblioteki, aby utworzyć kolejkę',
+    removeFromQueue: 'Usuń z kolejki',
+    clearQueue: 'Wyczyść kolejkę',
+    upNext: 'Następne',
+    nowPlaying: 'Teraz odtwarzane',
+    startQueue: 'Rozpocznij kolejkę'
+  },
+
+  queueScreen: {
+    title: 'Kolejka piosenek',
+    songsInQueue: 'piosenek w kolejce • Max 3 na gracza',
+    noSongs: 'Brak piosenek w kolejce',
+    noSongsDesc: 'Dodaj piosenki z biblioteki lub przez aplikację kompana',
+    duel: '⚔️ Duel',
+    duet: '🎭 Duet',
+    single: '🎤 Solo',
+    playerDeactivated: 'Gracz dezaktywowany',
+    play: '▶ Odtwórz',
+    clearAll: 'Wyczyść wszystko',
+    playNextSong: '▶ Odtwórz następną piosenkę',
+    playerReselectNeeded: '⚠ Wymagany ponowny wybór gracza',
+    playerReselectDesc: 'Gracz dla <strong>{song}</strong> ({mode}) został dezaktywowany. Wybierz nowych graczy lub usuń piosenkę.',
+    assignPlayers: '✓ Przypisz graczy',
+    deleteSong: '✕ Usuń piosenkę',
+    later: 'Później',
+    notEnoughPlayers: 'Brak wystarczającej liczby aktywnych graczy (wymagane minimum 2).',
+    deleteFromQueue: '✕ Usuń piosenkę z kolejki',
+    rules: 'Zasady kolejki',
+    rule1: '• Maksymalnie 3 piosenki na gracza naraz',
+    rule2: '• Piosenki odtwarzane są w kolejności dodania',
+    rule3: '• Możesz usunąć swoje piosenki z kolejki',
+    rule4: '• Wybierz profil przed dodaniem do kolejki',
+    rule5: '• Żądania z aplikacji kompana pojawiają się z cyjanową ramką',
+    rule6: '• Kliknij piosenkę, aby odtworzyć ją natychmiast'
+  },
+
+  queueNextSong: {
+    label: 'Następna w kolejce',
+    duel: '⚔️ Duel',
+    duet: '🎭 Duet',
+    playNext: '▶ Odtwórz następną'
+  },
+
+  jukebox: {
+    title: 'Tryb Jukebox',
+    subtitle: 'Usiądź wygodnie i ciesz się muzyką!',
+    songsInPlaylist: 'piosenek na liście odtwarzania',
+    searchPlaceholder: 'Szukaj piosenek, wykonawców, albumów...',
+    allGenres: 'Wszystkie gatunki',
+    allArtists: 'Wszyscy wykonawcy',
+    songsFound: 'znalezionych piosenek',
+    startJukebox: 'Rozpocznij Jukebox',
+    stopJukebox: 'Zatrzymaj Jukebox',
+    nowPlaying: 'TERAZ ODTWARZANE',
+    upNext: 'Następne',
+    exitFullscreen: 'Zamknij pełny ekran',
+    hidePlaylist: 'Ukryj listę odtwarzania',
+    showPlaylist: 'Pokaż listę odtwarzania',
+    playlistSettings: 'Ustawienia listy odtwarzania',
+    customizeExperience: 'Dostosuj swoje muzyczne doświadczenie',
+    filterByGenre: 'Filtruj według gatunku',
+    filterByArtist: 'Filtruj według wykonawcy',
+    shuffle: 'Losowo',
+    repeat: 'Powtarzaj',
+    repeatNone: 'Bez powtarzania',
+    repeatAll: 'Powtarzaj wszystko',
+    repeatOne: 'Powtarzaj jedną'
+  },
+
+  jukeboxPlayer: {
+    nowPlaying: 'TERAZ ODTWARZANE',
+    lyrics: '🎤 Tekst',
+    showPlaylist: '📖 Pokaż listę odtwarzania',
+    hidePlaylist: '📖 Ukryj listę odtwarzania',
+    exitFullscreen: '⤓ Zamknij pełny ekran',
+    stopJukebox: 'Zatrzymaj Jukebox',
+    upNext: 'Następne',
+    jukeboxMode: '🎵 Tryb Jukebox',
+    sitBack: 'Usiądź wygodnie i ciesz się muzyką!',
+    removeYoutubeVideo: 'Usuń wideo YouTube',
+    youtube: 'YouTube',
+    fullscreen: '⤢ Pełny ekran',
+    singAlong: 'Tryb karaoke: Pokaż tekst',
+    invalidYoutubeUrl: 'Nieprawidłowy adres URL YouTube',
+    youtubeBackground: 'Opcjonalne wideo YouTube jako tło',
+    activate: 'Ustaw',
+    active: 'Aktywne:',
+    remove: 'Usuń',
+    noMatchingSongs: 'Żadne piosenki nie pasują do Twoich filtrów. Spróbuj innych ustawień lub zaimportuj piosenki.'
+  },
+};

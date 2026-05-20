@@ -1,0 +1,249 @@
+// IT translations — core
+// Auto-split from monolithic locale file
+
+export const coreTranslations = {
+  nav: {
+    library: 'Libreria',
+    import: 'Importa',
+    party: 'Festa',
+    profiles: 'Profili',
+    queue: 'Coda',
+    highscores: 'Punteggi',
+    jukebox: 'Jukebox',
+    mobile: 'Mobile',
+    achievements: 'Obiettivi',
+    daily: 'Giornaliero',
+    settings: 'Impostazioni'
+  },
+
+  home: {
+    title: 'Karaoke ZERO',
+    subtitle: 'L\'esperienza karaoke definitiva. Canta con rilevamento del tono in tempo reale, competi con gli amici e divertiti con i giochi di festa!',
+    startSinging: 'Inizia a Cantare',
+    partyMode: 'Modalità Festa',
+    songsAvailable: 'Canzoni Disponibili',
+    profilesCreated: 'Profili Creati',
+    partyGames: 'Giochi di Festa',
+    difficultyLevels: 'Livelli di Difficoltà',
+    selectProfile: 'Seleziona il tuo Profilo',
+    createNew: 'Crea Nuovo'
+  },
+
+  homeScreen: {
+    subtitle: 'L\'esperienza karaoke definitiva. Canta con rilevamento del tono in tempo reale, competi con gli amici e divertiti con i giochi di festa!',
+    loadingStats: 'Caricamento statistiche...',
+    realTimePitch: 'Rilevamento Tono in Tempo Reale',
+    realTimePitchDesc: 'L\'avanzato algoritmo YIN rileva il tuo tono di canto in tempo reale con alta precisione.',
+    partyGamesFeature: 'Giochi di Festa',
+    partyGamesFeatureDesc: 'Passa il Microfono, Concorso Medley, Parole Mancanti, Modalità Duello e Karaoke Cieco — divertimento infinito per le tue feste!',
+    mobileCompanion: 'Compagno Mobile',
+    mobileCompanionDesc: 'Usa il tuo smartphone come microfono o telecomando! Scansiona il QR code per connetterti.',
+    wifiStep1: '1. Stessa rete WiFi',
+    wifiStep2: '2. Scansiona il QR con la fotocamera',
+    wifiStep3: '3. Apri il link nel browser',
+    detectingNetwork: 'Rilevamento indirizzo di rete...',
+    selectCharacter: 'Seleziona il tuo Personaggio',
+    inactiveProfiles: 'profilo/i inattivo/i nascosto/i. Attivali nelle impostazioni Profilo.'
+  },
+
+  common: {
+    loading: 'Caricamento...',
+    error: 'Errore',
+    success: 'Successo',
+    cancel: 'Annulla',
+    confirm: 'Conferma',
+    delete: 'Elimina',
+    edit: 'Modifica',
+    save: 'Salva',
+    back: 'Indietro',
+    next: 'Avanti',
+    previous: 'Indietro',
+    start: 'Inizia',
+    stop: 'Ferma',
+    play: 'Riproduci',
+    pause: 'Pausa',
+    reset: 'Reimposta',
+    clear: 'Cancella',
+    all: 'Tutto',
+    none: 'Nessuno',
+    yes: 'Sì',
+    no: 'No',
+    ok: 'OK',
+    close: 'Chiudi',
+    search: 'Cerca',
+    filter: 'Filtra',
+    sort: 'Ordina',
+    refresh: 'Aggiorna'
+  },
+
+  dialogs: {
+    partyExitTitle: 'Uscire dalla Modalità Festa?',
+    partyExitDesc: 'Una modalità festa è in corso. Se esci, il progresso attuale verrà perso.',
+    stay: 'Resta',
+    leave: 'Esci',
+    partyLeaveTitle: 'Uscire dalla Modalità Festa?',
+    partyLeaveDesc: 'Stai per uscire dalla modalità festa. Il tuo progresso attuale verrà perso.',
+    back: 'Indietro',
+    endParty: 'Termina la Festa',
+    pauseTitle: 'Gioco in Pausa',
+    pauseDesc: 'Vuoi continuare o interrompere?',
+    resume: 'Riprendi',
+    rematch: '🔄 Rivincita',
+    setWinner: '🏆 Imposta vincitore automaticamente',
+    abort: 'Interrompi'
+  },
+
+  connectionStatus: {
+    micPlayer: 'Giocatore con Microfono',
+    connected: '{n} è connesso',
+    disconnected: '{n} non è connesso'
+  },
+
+  offlineBanner: {
+    songsPlaylists: '{songs} Canzoni, {playlists} Playlist salvate localmente',
+    localData: 'Dati locali disponibili',
+    offline: 'Offline — ',
+    serverUnreachable: 'Server non raggiungibile — Classifica e funzionalità online non disponibili'
+  },
+
+  uploadStatus: {
+    uploading: 'Caricamento nella classifica globale...'
+  },
+
+  shareSection: {
+    title: '📤 Condividi il tuo Punteggio',
+    scoreCard: '📸 Scheda Punteggio',
+    videoShort: '🎬 Video Breve',
+    textCopied: 'Testo del punteggio copiato!',
+    textCopyFailed: 'Copia fallita',
+    imageCopied: 'Immagine del punteggio copiata!',
+    imageCopyFailed: 'Copia immagine fallita',
+    sharingNotSupported: 'Condivisione non supportata. Scheda scaricata invece.',
+    copyText: '📋 Copia Testo',
+    copyImage: '🖼️ Copia Immagine',
+    downloadCard: '📥 Scarica Scheda',
+    shareScore: '📤 Condividi Punteggio'
+  },
+
+  replayModal: {
+    copyrightNotice: 'Nota: Per ragioni di copyright, nessun audio o voce originale può essere incluso nei replay esportati. Verrà usata solo la tua registrazione dal microfono.',
+    exportFailed: 'Esportazione fallita. Riprova.',
+    deleteFailed: 'Eliminazione fallita. Riprova.',
+    close: 'Chiudi',
+    audioOnly: 'Replay Solo Audio',
+    originalSong: '🎵 Canzone Originale',
+    export: 'Esporta…',
+    exportShort: '⬇ Esporta',
+    delete: '🗑 Elimina',
+    volume: '🎵 Volume',
+    replay: 'Replay'
+  },
+
+  scoreCardSocial: {
+    branding: 'Karaoke ZERO',
+    accuracyLabel: 'Precisione:',
+    maxComboLabel: 'Combo Max:',
+    difficultyLabel: 'Difficoltà:',
+    playerLabel: '🎤 {name}',
+    hashtags: '#KaraokeZERO #Karaoke #Cantare',
+    shareTitle: 'Il mio Punteggio Karaoke!',
+    shareText: 'Ho ottenuto {n} punti su "{title}" di {artist}!',
+    points: 'punti',
+    download: '📥 Scarica',
+    share: '📤 Condividi'
+  },
+
+  queue: {
+    title: 'Coda Canzoni',
+    empty: 'La coda è vuota',
+    emptyDesc: 'Aggiungi canzoni dalla libreria per iniziare una coda',
+    removeFromQueue: 'Rimuovi dalla Coda',
+    clearQueue: 'Svuota Coda',
+    upNext: 'Prossimo',
+    nowPlaying: 'In Riproduzione',
+    startQueue: 'Avvia Coda'
+  },
+
+  queueScreen: {
+    title: 'Coda Canzoni',
+    songsInQueue: 'canzoni in coda • Max 3 per giocatore',
+    noSongs: 'Nessuna canzone in coda',
+    noSongsDesc: 'Aggiungi canzoni dalla libreria o tramite App Compagna',
+    duel: '⚔️ Duello',
+    duet: '🎭 Duetto',
+    single: '🎤 Singolo',
+    playerDeactivated: 'Giocatore disattivato',
+    play: '▶ Riproduci',
+    clearAll: 'Cancella Tutto',
+    playNextSong: '▶ Riproduci Prossima Canzone',
+    playerReselectNeeded: '⚠ Ri-selezione giocatore necessaria',
+    playerReselectDesc: 'Un giocatore per <strong>{song}</strong> ({mode}) è stato disattivato. Seleziona nuovi giocatori o elimina la canzone.',
+    assignPlayers: '✓ Assegna giocatori',
+    deleteSong: '✕ Elimina canzone',
+    later: 'Dopo',
+    notEnoughPlayers: 'Non ci sono abbastanza giocatori attivi (minimo 2 richiesti).',
+    deleteFromQueue: '✕ Elimina canzone dalla coda',
+    rules: 'Regole della Coda',
+    rule1: '• Massimo 3 canzoni per giocatore alla volta',
+    rule2: '• Le canzoni vengono riprodotte nell\'ordine in cui sono state aggiunte',
+    rule3: '• Puoi rimuovere le tue canzoni dalla coda',
+    rule4: '• Seleziona un personaggio prima di aggiungere alla coda',
+    rule5: '• Le richieste dell\'app compagna appaiono con bordo ciano',
+    rule6: '• Clicca su una canzone per riprodurla immediatamente'
+  },
+
+  queueNextSong: {
+    label: 'Prossimo in Coda',
+    duel: '⚔️ Duello',
+    duet: '🎭 Duetto',
+    playNext: '▶ Riproduci Successivo'
+  },
+
+  jukebox: {
+    title: 'Modalità Jukebox',
+    subtitle: 'Siediti e goditi la musica!',
+    songsInPlaylist: 'canzoni nella playlist',
+    searchPlaceholder: 'Cerca canzoni, artisti, album...',
+    allGenres: 'Tutti i Generi',
+    allArtists: 'Tutti gli Artisti',
+    songsFound: 'canzoni trovate',
+    startJukebox: 'Avvia Jukebox',
+    stopJukebox: 'Ferma Jukebox',
+    nowPlaying: 'IN RIPRODUZIONE',
+    upNext: 'Prossimo',
+    exitFullscreen: 'Esci da Schermo Intero',
+    hidePlaylist: 'Nascondi Playlist',
+    showPlaylist: 'Mostra Playlist',
+    playlistSettings: 'Impostazioni Playlist',
+    customizeExperience: 'Personalizza la tua esperienza musicale',
+    filterByGenre: 'Filtra per Genere',
+    filterByArtist: 'Filtra per Artista',
+    shuffle: 'Casuale',
+    repeat: 'Ripeti',
+    repeatNone: 'Non Ripetere',
+    repeatAll: 'Ripeti Tutto',
+    repeatOne: 'Ripeti Uno'
+  },
+
+  jukeboxPlayer: {
+    nowPlaying: 'IN RIPRODUZIONE',
+    lyrics: '🎤 Testo',
+    showPlaylist: '📖 Mostra Playlist',
+    hidePlaylist: '📖 Nascondi Playlist',
+    exitFullscreen: '⤓ Esci da Schermo Intero',
+    stopJukebox: 'Ferma Jukebox',
+    upNext: 'Prossimo',
+    jukeboxMode: '🎵 Modalità Jukebox',
+    sitBack: 'Siediti e goditi la musica!',
+    removeYoutubeVideo: 'Rimuovi video YouTube',
+    youtube: 'YouTube',
+    fullscreen: '⤢ Schermo Intero',
+    singAlong: 'Modalità Karaoke: Mostra Testo',
+    invalidYoutubeUrl: 'URL YouTube non valido',
+    youtubeBackground: 'Video YouTube opzionale come sfondo',
+    activate: 'Imposta',
+    active: 'Attivo:',
+    remove: 'Rimuovi',
+    noMatchingSongs: 'Nessuna canzone corrisponde ai tuoi filtri. Prova impostazioni diverse o importa alcune canzoni.'
+  },
+};

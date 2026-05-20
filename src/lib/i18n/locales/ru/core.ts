@@ -1,0 +1,249 @@
+// RU translations — core
+// Auto-split from monolithic locale file
+
+export const coreTranslations = {
+  nav: {
+    library: 'Библиотека',
+    import: 'Импорт',
+    party: 'Вечеринка',
+    profiles: 'Профили',
+    queue: 'Очередь',
+    highscores: 'Рекорды',
+    jukebox: 'Джукбокс',
+    mobile: 'Мобильный',
+    achievements: 'Достижения',
+    daily: 'Ежедневное',
+    settings: 'Настройки'
+  },
+
+  home: {
+    title: 'Karaoke ZERO',
+    subtitle: 'Непревзойдённый караоке-опыт. Пойте с определением тона в реальном времени, соревнуйтесь с друзьями и наслаждайтесь играми для вечеринок!',
+    startSinging: 'Начать петь',
+    partyMode: 'Режим вечеринки',
+    songsAvailable: 'Доступных песен',
+    profilesCreated: 'Профилей создано',
+    partyGames: 'Игры для вечеринки',
+    difficultyLevels: 'Уровни сложности',
+    selectProfile: 'Выберите профиль',
+    createNew: 'Создать новый'
+  },
+
+  homeScreen: {
+    subtitle: 'Непревзойдённый караоке-опыт. Пойте с определением тона в реальном времени, соревнуйтесь с друзьями и наслаждайтесь играми для вечеринок!',
+    loadingStats: 'Загрузка статистики...',
+    realTimePitch: 'Определение тона в реальном времени',
+    realTimePitchDesc: 'Продвинутый алгоритм YIN определяет тональность вашего голоса в реальном времени с высокой точностью. Видьте свою голосовую визуализацию во время пения!',
+    partyGamesFeature: 'Игры для вечеринки',
+    partyGamesFeatureDesc: 'Передай микрофон, Медли-конкурс, Пропущенные слова, Режим дуэли и Караоке вслепую — бесконечное веселье!',
+    mobileCompanion: 'Мобильный компаньон',
+    mobileCompanionDesc: 'Используйте смартфон как микрофон или пульт! Отсканируйте QR-код для подключения.',
+    wifiStep1: '1. Общая WiFi-сеть',
+    wifiStep2: '2. Сканируйте QR камерой',
+    wifiStep3: '3. Откройте ссылку в браузере',
+    detectingNetwork: 'Определение сетевого адреса...',
+    selectCharacter: 'Выберите профиль',
+    inactiveProfiles: 'неактивные профили скрыты. Включите их в настройках профилей.'
+  },
+
+  common: {
+    loading: 'Загрузка...',
+    error: 'Ошибка',
+    success: 'Успех',
+    cancel: 'Отмена',
+    confirm: 'Подтвердить',
+    delete: 'Удалить',
+    edit: 'Редактировать',
+    save: 'Сохранить',
+    back: 'Назад',
+    next: 'Далее',
+    previous: 'Предыдущий',
+    start: 'Начать',
+    stop: 'Стоп',
+    play: 'Играть',
+    pause: 'Пауза',
+    reset: 'Сброс',
+    clear: 'Очистить',
+    all: 'Все',
+    none: 'Нет',
+    yes: 'Да',
+    no: 'Нет',
+    ok: 'ОК',
+    close: 'Закрыть',
+    search: 'Поиск',
+    filter: 'Фильтр',
+    sort: 'Сортировать',
+    refresh: 'Обновить'
+  },
+
+  dialogs: {
+    partyExitTitle: 'Покинуть режим вечеринки?',
+    partyExitDesc: 'Режим вечеринки сейчас активен. Если вы выйдете, текущий прогресс будет потерян.',
+    stay: 'Остаться',
+    leave: 'Выйти',
+    partyLeaveTitle: 'Покинуть режим вечеринки?',
+    partyLeaveDesc: 'Вы собираетесь покинуть режим вечеринки. Текущий прогресс будет потерян.',
+    back: 'Назад',
+    endParty: 'Завершить режим вечеринки',
+    pauseTitle: 'Игра на паузе',
+    pauseDesc: 'Продолжить или прервать?',
+    resume: 'Продолжить',
+    rematch: '🔄 Реванш',
+    setWinner: '🏆 Назначить победителя автоматически',
+    abort: 'Прервать'
+  },
+
+  connectionStatus: {
+    micPlayer: 'Игрок с микрофоном',
+    connected: '{n} подключён',
+    disconnected: '{n} не подключён'
+  },
+
+  offlineBanner: {
+    songsPlaylists: '{songs} песен, {playlists} плейлистов сохранено локально',
+    localData: 'Локальные данные доступны',
+    offline: 'Офлайн — ',
+    serverUnreachable: 'Сервер недоступен — Таблица лидеров и онлайн-функции недоступны'
+  },
+
+  uploadStatus: {
+    uploading: 'Загрузка в глобальную таблицу лидеров...'
+  },
+
+  shareSection: {
+    title: '📤 Поделиться результатом',
+    scoreCard: '📸 Карточка результата',
+    videoShort: '🎬 Короткое видео',
+    textCopied: 'Текст результата скопирован!',
+    textCopyFailed: 'Не удалось скопировать',
+    imageCopied: 'Изображение результата скопировано!',
+    imageCopyFailed: 'Не удалось скопировать изображение',
+    sharingNotSupported: 'Отправка не поддерживается. Карточка скачана.',
+    copyText: '📋 Копировать текст',
+    copyImage: '🖼️ Копировать изображение',
+    downloadCard: '📥 Скачать карточку',
+    shareScore: '📤 Поделиться результатом'
+  },
+
+  replayModal: {
+    copyrightNotice: 'Примечание: по причинам авторского права, оригинальное аудио или вокал не могут быть включены в экспортированные повторы. Будет использоваться только запись с вашего микрофона.',
+    exportFailed: 'Ошибка экспорта. Попробуйте снова.',
+    deleteFailed: 'Ошибка удаления. Попробуйте снова.',
+    close: 'Закрыть',
+    audioOnly: 'Повтор (только аудио)',
+    originalSong: '🎵 Оригинальная песня',
+    export: 'Экспорт…',
+    exportShort: '⬇ Экспорт',
+    delete: '🗑 Удалить',
+    volume: '🎵 Громкость',
+    replay: 'Повтор'
+  },
+
+  scoreCardSocial: {
+    branding: 'Karaoke ZERO',
+    accuracyLabel: 'Точность:',
+    maxComboLabel: 'Макс. комбо:',
+    difficultyLabel: 'Сложность:',
+    playerLabel: '🎤 {name}',
+    hashtags: '#KaraokeZERO #Караоке #Пение',
+    shareTitle: 'Мой результат караоке!',
+    shareText: 'Я набрал {n} очков на "{title}" от {artist}!',
+    points: 'очков',
+    download: '📥 Скачать',
+    share: '📤 Поделиться'
+  },
+
+  queue: {
+    title: 'Очередь песен',
+    empty: 'Очередь пуста',
+    emptyDesc: 'Добавьте песни из библиотеки для создания очереди',
+    removeFromQueue: 'Убрать из очереди',
+    clearQueue: 'Очистить очередь',
+    upNext: 'Далее',
+    nowPlaying: 'Сейчас играет',
+    startQueue: 'Начать очередь'
+  },
+
+  queueScreen: {
+    title: 'Очередь песен',
+    songsInQueue: 'песен в очереди • Максимум 3 на игрока',
+    noSongs: 'Очередь пуста',
+    noSongsDesc: 'Добавьте песни из библиотеки или через Companion App',
+    duel: '⚔️ Дуэль',
+    duet: '🎭 Дуэт',
+    single: '🎤 Соло',
+    playerDeactivated: 'Игрок деактивирован',
+    play: '▶ Играть',
+    clearAll: 'Очистить все',
+    playNextSong: '▶ Играть следующую песню',
+    playerReselectNeeded: '⚠ Необходим повторный выбор игрока',
+    playerReselectDesc: 'Игрок для <strong>{song}</strong> ({mode}) был деактивирован. Выберите новых игроков или удалите песню.',
+    assignPlayers: '✓ Назначить игроков',
+    deleteSong: '✕ Удалить песню',
+    later: 'Позже',
+    notEnoughPlayers: 'Недостаточно активных игроков (минимум 2).',
+    deleteFromQueue: '✕ Удалить песню из очереди',
+    rules: 'Правила очереди',
+    rule1: '• Максимум 3 песни на игрока одновременно',
+    rule2: '• Песни воспроизводятся в порядке добавления',
+    rule3: '• Вы можете удалить свои песни из очереди',
+    rule4: '• Выберите профиль перед добавлением в очередь',
+    rule5: '• Запросы из Companion App отображаются с голубой рамкой',
+    rule6: '• Нажмите на песню, чтобы воспроизвести её сразу'
+  },
+
+  queueNextSong: {
+    label: 'Далее в очереди',
+    duel: '⚔️ Дуэль',
+    duet: '🎭 Дуэт',
+    playNext: '▶ Играть следующую'
+  },
+
+  jukebox: {
+    title: 'Режим джукбокса',
+    subtitle: 'Откиньтесь и наслаждайтесь музыкой!',
+    songsInPlaylist: 'песен в плейлисте',
+    searchPlaceholder: 'Поиск песен, исполнителей, альбомов...',
+    allGenres: 'Все жанры',
+    allArtists: 'Все исполнители',
+    songsFound: 'песен найдено',
+    startJukebox: 'Запустить джукбокс',
+    stopJukebox: 'Остановить джукбокс',
+    nowPlaying: 'СЕЙЧАС ИГРАЕТ',
+    upNext: 'Далее',
+    exitFullscreen: 'Выйти из полноэкранного режима',
+    hidePlaylist: 'Скрыть плейлист',
+    showPlaylist: 'Показать плейлист',
+    playlistSettings: 'Настройки плейлиста',
+    customizeExperience: 'Настройте музыкальный опыт',
+    filterByGenre: 'Фильтр по жанру',
+    filterByArtist: 'Фильтр по исполнителю',
+    shuffle: 'Перемешать',
+    repeat: 'Повтор',
+    repeatNone: 'Без повтора',
+    repeatAll: 'Повторить все',
+    repeatOne: 'Повторить одну'
+  },
+
+  jukeboxPlayer: {
+    nowPlaying: 'СЕЙЧАС ИГРАЕТ',
+    lyrics: '🎤 Текст песни',
+    showPlaylist: '📖 Показать плейлист',
+    hidePlaylist: '📖 Скрыть плейлист',
+    exitFullscreen: '⤓ Выйти из полноэкранного режима',
+    stopJukebox: 'Остановить джукбокс',
+    upNext: 'Далее',
+    jukeboxMode: '🎵 Режим джукбокса',
+    sitBack: 'Откиньтесь и наслаждайтесь музыкой!',
+    removeYoutubeVideo: 'Удалить видео YouTube',
+    youtube: 'YouTube',
+    fullscreen: '⤢ Полный экран',
+    singAlong: 'Режим караоке: показать текст',
+    invalidYoutubeUrl: 'Неверный URL YouTube',
+    youtubeBackground: 'Необязательное фоновое видео YouTube',
+    activate: 'Установить',
+    active: 'Активно:',
+    remove: 'Удалить',
+    noMatchingSongs: 'Нет песен, соответствующих фильтрам. Попробуйте другие настройки или импортируйте песни.'
+  },
+};

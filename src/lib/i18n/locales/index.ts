@@ -1,5 +1,15 @@
 // Translation data for Karaoke ZERO
-// All language translations are defined in separate files (en.ts, de.ts, etc.)
+// Each language has its own directory with domain-based sub-files:
+//   locales/en/index.ts   (barrel file — imports and merges sub-files)
+//   locales/en/core.ts    (nav, home, common, queue, jukebox, ...)
+//   locales/en/library.ts (library, song, imports, editor)
+//   locales/en/game.ts    (game, results, highscore, mic, webcam)
+//   locales/en/settings.ts(settings, settingsTabs, settingsGameplay, ...)
+//   locales/en/party.ts   (party, battleRoyale, cptm, passTheMic, ...)
+//   locales/en/medleyTournament.ts (medley, tournament, rateMySong)
+//   locales/en/profile.ts (profile, achievements, character, badges)
+//   locales/en/mobile.ts  (mobile, companion, multiplayer, daily, ...)
+//
 // The getTranslations() function lazily flattens them on first call,
 // which avoids TDZ issues when webpack code-splits this module.
 

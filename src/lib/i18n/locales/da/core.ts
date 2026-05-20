@@ -1,0 +1,249 @@
+// DA translations — core
+// Auto-split from monolithic locale file
+
+export const coreTranslations = {
+  nav: {
+    library: 'Bibliotek',
+    import: 'Importér',
+    party: 'Fest',
+    profiles: 'Profiler',
+    queue: 'Kø',
+    highscores: 'Point',
+    jukebox: 'Jukebox',
+    mobile: 'Mobil',
+    achievements: 'Præstationer',
+    daily: 'Daglig',
+    settings: 'Indstillinger'
+  },
+
+  home: {
+    title: 'Karaoke ZERO',
+    subtitle: 'Den ultimative karaokeoplevelse. Syng hjertet ud med realtids-tonegenkendelse, konkurrér med venner og nyd selskabslege!',
+    startSinging: 'Start med at synge',
+    partyMode: 'Festtilstand',
+    songsAvailable: 'Sange tilgængelige',
+    profilesCreated: 'Profiler oprettet',
+    partyGames: 'Selskabslege',
+    difficultyLevels: 'Sværhedsgrader',
+    selectProfile: 'Vælg din profil',
+    createNew: 'Opret ny'
+  },
+
+  homeScreen: {
+    subtitle: 'Den ultimative karaokeoplevelse. Syng hjertet ud med realtids-tonegenkendelse, konkurrér med venner og nyd selskabslege!',
+    loadingStats: 'Indlæser statistik...',
+    realTimePitch: 'Realtids-tonegenkendelse',
+    realTimePitchDesc: 'Avanceret YIN-algoritme registrerer din sangtone i realtid med høj nøjagtighed. Se din stemme visualiseret mens du synger!',
+    partyGamesFeature: 'Selskabslege',
+    partyGamesFeatureDesc: 'Giv mikrofonen videre, Medley-konkurrence, Manglende ord, Dueltilstand og Blind karaoke — uendelig underholdning til dine fester!',
+    mobileCompanion: 'Mobil companion',
+    mobileCompanionDesc: 'Brug din smartphone som mikrofon eller fjernbetjening! Scan QR-koden for at forbinde.',
+    wifiStep1: '1. Samme WiFi-netværk',
+    wifiStep2: '2. Scan QR med kamera',
+    wifiStep3: '3. Åbn link i browser',
+    detectingNetwork: 'Registrerer netværksadresse...',
+    selectCharacter: 'Vælg din profil',
+    inactiveProfiles: 'inaktiv(e) profil(er) skjult. Aktivér dem i profil-indstillinger.'
+  },
+
+  common: {
+    loading: 'Indlæser...',
+    error: 'Fejl',
+    success: 'Succes',
+    cancel: 'Annuller',
+    confirm: 'Bekræft',
+    delete: 'Slet',
+    edit: 'Redigér',
+    save: 'Gem',
+    back: 'Tilbage',
+    next: 'Næste',
+    previous: 'Forrige',
+    start: 'Start',
+    stop: 'Stop',
+    play: 'Afspil',
+    pause: 'Pause',
+    reset: 'Nulstil',
+    clear: 'Ryd',
+    all: 'Alle',
+    none: 'Ingen',
+    yes: 'Ja',
+    no: 'Nej',
+    ok: 'OK',
+    close: 'Luk',
+    search: 'Søg',
+    filter: 'Filter',
+    sort: 'Sortér',
+    refresh: 'Opdater'
+  },
+
+  dialogs: {
+    partyExitTitle: 'Forlad festtilstand?',
+    partyExitDesc: 'En festtilstand kører i øjeblikket. Hvis du forlader, vil dit nuværende spilfremskridt gå tabt.',
+    stay: 'Bliv',
+    leave: 'Forlad',
+    partyLeaveTitle: 'Forlad festtilstand?',
+    partyLeaveDesc: 'Du er ved at forlade festtilstanden. Dit nuværende spilfremskridt vil gå tabt.',
+    back: 'Tilbage',
+    endParty: 'Afslut festtilstand',
+    pauseTitle: 'Spil pauset',
+    pauseDesc: 'Vil du fortsætte eller afbryde?',
+    resume: 'Genoptag',
+    rematch: '🔄 Omkamp',
+    setWinner: '🏆 Sæt vinder automatisk',
+    abort: 'Afbryd'
+  },
+
+  connectionStatus: {
+    micPlayer: 'Mikrofonspiller',
+    connected: '{n} er forbundet',
+    disconnected: '{n} er ikke forbundet'
+  },
+
+  offlineBanner: {
+    songsPlaylists: '{songs} sange, {playlists} spillelister gemt lokalt',
+    localData: 'Lokale data tilgængelige',
+    offline: 'Offline — ',
+    serverUnreachable: 'Server utilgængelig — Rangliste og online-funktioner utilgængelige'
+  },
+
+  uploadStatus: {
+    uploading: 'Uploader til global rangliste...'
+  },
+
+  shareSection: {
+    title: '📤 Del dit resultat',
+    scoreCard: '📸 Pointkort',
+    videoShort: '🎬 Video-short',
+    textCopied: 'Resultattekst kopieret!',
+    textCopyFailed: 'Kunne ikke kopiere',
+    imageCopied: 'Resultatbillede kopieret!',
+    imageCopyFailed: 'Kunne ikke kopiere billede',
+    sharingNotSupported: 'Deling ikke understøttet. Kort downloadet i stedet.',
+    copyText: '📋 Kopiér tekst',
+    copyImage: '🖼️ Kopiér billede',
+    downloadCard: '📥 Download kort',
+    shareScore: '📤 Del resultat'
+  },
+
+  replayModal: {
+    copyrightNotice: 'Bemærk: Af ophavsretsgrunde kan ingen original lyd eller vokaler inkluderes i eksporterede replays. Kun din mikrofonoptagelse vil blive brugt.',
+    exportFailed: 'Eksport mislykkedes. Prøv igen.',
+    deleteFailed: 'Sletning mislykkedes. Prøv igen.',
+    close: 'Luk',
+    audioOnly: 'Kun lyd replay',
+    originalSong: '🎵 Original sang',
+    export: 'Eksportér…',
+    exportShort: '⬇ Eksportér',
+    delete: '🗑 Slet',
+    volume: '🎵 Lydstyrke',
+    replay: 'Replay'
+  },
+
+  scoreCardSocial: {
+    branding: 'Karaoke ZERO',
+    accuracyLabel: 'Nøjagtighed:',
+    maxComboLabel: 'Max Combo:',
+    difficultyLabel: 'Sværhedsgrad:',
+    playerLabel: '🎤 {name}',
+    hashtags: '#KaraokeZERO #Karaoke #Singing',
+    shareTitle: 'Mit karaoke-resultat!',
+    shareText: 'Jeg scorede {n} point på "{title}" af {artist}!',
+    points: 'point',
+    download: '📥 Download',
+    share: '📤 Del'
+  },
+
+  queue: {
+    title: 'Sangkø',
+    empty: 'Køen er tom',
+    emptyDesc: 'Tilføj sange fra biblioteket for at starte en kø',
+    removeFromQueue: 'Fjern fra kø',
+    clearQueue: 'Ryd kø',
+    upNext: 'Næste',
+    nowPlaying: 'Spiller nu',
+    startQueue: 'Start kø'
+  },
+
+  queueScreen: {
+    title: 'Sangkø',
+    songsInQueue: 'sange i kø • Max 3 pr. spiller',
+    noSongs: 'Ingen sange i kø',
+    noSongsDesc: 'Tilføj sange fra biblioteket eller via Companion-app',
+    duel: '⚔️ Duel',
+    duet: '🎭 Duet',
+    single: '🎤 Single',
+    playerDeactivated: 'Spiller deaktiveret',
+    play: '▶ Afspil',
+    clearAll: 'Ryd alle',
+    playNextSong: '▶ Afspil næste sang',
+    playerReselectNeeded: '⚠ Spiller-genudvælgelse nødvendig',
+    playerReselectDesc: 'En spiller for <strong>{song}</strong> ({mode}) er blevet deaktiveret. Vælg nye spillere eller slet sangen.',
+    assignPlayers: '✓ Tildel spillere',
+    deleteSong: '✕ Slet sang',
+    later: 'Senere',
+    notEnoughPlayers: 'Ikke nok aktive spillere tilgængelige (mindst 2 kræves).',
+    deleteFromQueue: '✕ Slet sang fra kø',
+    rules: 'Køregler',
+    rule1: '• Maksimalt 3 sange pr. spiller ad gangen',
+    rule2: '• Sange afspilles i den rækkefølge de blev tilføjet',
+    rule3: '• Du kan fjerne dine egne sange fra køen',
+    rule4: '• Vælg en profil inden tilføjelse til kø',
+    rule5: '• Companion-app-anmodninger vises med en cyan kant',
+    rule6: '• Klik på en sang for at afspille den med det samme'
+  },
+
+  queueNextSong: {
+    label: 'Næste i kø',
+    duel: '⚔️ Duel',
+    duet: '🎭 Duet',
+    playNext: '▶ Afspil næste'
+  },
+
+  jukebox: {
+    title: 'Jukebox-tilstand',
+    subtitle: 'Læn dig tilbage og nyd musikken!',
+    songsInPlaylist: 'sange i spilleliste',
+    searchPlaceholder: 'Søg sange, kunstnere, album...',
+    allGenres: 'Alle genrer',
+    allArtists: 'Alle kunstnere',
+    songsFound: 'sange fundet',
+    startJukebox: 'Start jukebox',
+    stopJukebox: 'Stop jukebox',
+    nowPlaying: 'SPILLER NU',
+    upNext: 'Næste',
+    exitFullscreen: 'Afslut fuldskærm',
+    hidePlaylist: 'Skjul spilleliste',
+    showPlaylist: 'Vis spilleliste',
+    playlistSettings: 'Spilleliste-indstillinger',
+    customizeExperience: 'Tilpas din musikoplevelse',
+    filterByGenre: 'Filtrér efter genre',
+    filterByArtist: 'Filtrér efter kunstner',
+    shuffle: 'Bland',
+    repeat: 'Gentag',
+    repeatNone: 'Ingen gentagelse',
+    repeatAll: 'Gentag alle',
+    repeatOne: 'Gentag én'
+  },
+
+  jukeboxPlayer: {
+    nowPlaying: 'SPILLER NU',
+    lyrics: '🎤 Sangtekst',
+    showPlaylist: '📖 Vis spilleliste',
+    hidePlaylist: '📖 Skjul spilleliste',
+    exitFullscreen: '⤓ Afslut fuldskærm',
+    stopJukebox: 'Stop jukebox',
+    upNext: 'Næste',
+    jukeboxMode: '🎵 Jukebox-tilstand',
+    sitBack: 'Læn dig tilbage og nyd musikken!',
+    removeYoutubeVideo: 'Fjern YouTube-video',
+    youtube: 'YouTube',
+    fullscreen: '⤢ Fuldskærm',
+    singAlong: 'Syng-med-tilstand: Vis sangtekst',
+    invalidYoutubeUrl: 'Ugyldig YouTube-URL',
+    youtubeBackground: 'Valgfri YouTube-video som baggrund',
+    activate: 'Angiv',
+    active: 'Aktiv:',
+    remove: 'Fjern',
+    noMatchingSongs: 'Ingen sange matcher dine filtre. Prøv andre indstillinger eller importér nogle sange.'
+  },
+};

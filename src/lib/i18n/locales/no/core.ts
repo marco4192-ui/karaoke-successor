@@ -1,0 +1,249 @@
+// NO translations — core
+// Auto-split from monolithic locale file
+
+export const coreTranslations = {
+  nav: {
+    library: 'Bibliotek',
+    import: 'Importer',
+    party: 'Fest',
+    profiles: 'Profiler',
+    queue: 'Kø',
+    highscores: 'Rekorder',
+    jukebox: 'Jukebox',
+    mobile: 'Mobil',
+    achievements: 'Prestasjoner',
+    daily: 'Daglig',
+    settings: 'Innstillinger'
+  },
+
+  home: {
+    title: 'Karaoke ZERO',
+    subtitle: 'Den ultimate karaokeopplevelsen. Syng hjertet ut med sanntids tonegjenkjenning, konkurrer med venner, og nyt festleker!',
+    startSinging: 'Start å synge',
+    partyMode: 'Festmodus',
+    songsAvailable: 'Sanger tilgjengelige',
+    profilesCreated: 'Profiler opprettet',
+    partyGames: 'Festleker',
+    difficultyLevels: 'Vanskelighetsgrader',
+    selectProfile: 'Velg din profil',
+    createNew: 'Opprett ny'
+  },
+
+  homeScreen: {
+    subtitle: 'Den ultimate karaokeopplevelsen. Syng hjertet ut med sanntids tonegjenkjenning, konkurrer med venner, og nyt festleker!',
+    loadingStats: 'Laster statistikk...',
+    realTimePitch: 'Sanntids tonegjenkjenning',
+    realTimePitchDesc: 'Avansert YIN-algoritme gjenkjenner sangtonen din i sanntid med høy nøyaktighet. Se stemmen din visualisert mens du synger!',
+    partyGamesFeature: 'Festleker',
+    partyGamesFeatureDesc: 'Gi mikrofonen, medleykonkurranse, manglende ord, duellmodus og blind karaoke – endeløs underholdning for festene dine!',
+    mobileCompanion: 'Mobil Companion',
+    mobileCompanionDesc: 'Bruk smarttelefonen din som mikrofon eller fjernkontroll! Skann QR-koden for å koble til.',
+    wifiStep1: '1. Samme WiFi-nettverk',
+    wifiStep2: '2. Skann QR med kamera',
+    wifiStep3: '3. Åpne lenke i nettleser',
+    detectingNetwork: 'Gjenkjenner nettverksadresse...',
+    selectCharacter: 'Velg din profil',
+    inactiveProfiles: 'inaktiv(e) profil(er) skjult. Aktiver dem i profilinnstillingene.'
+  },
+
+  common: {
+    loading: 'Laster...',
+    error: 'Feil',
+    success: 'Vellykket',
+    cancel: 'Avbryt',
+    confirm: 'Bekreft',
+    delete: 'Slett',
+    edit: 'Rediger',
+    save: 'Lagre',
+    back: 'Tilbake',
+    next: 'Neste',
+    previous: 'Forrige',
+    start: 'Start',
+    stop: 'Stopp',
+    play: 'Spill',
+    pause: 'Pause',
+    reset: 'Tilbakestill',
+    clear: 'Tøm',
+    all: 'Alle',
+    none: 'Ingen',
+    yes: 'Ja',
+    no: 'Nei',
+    ok: 'OK',
+    close: 'Lukk',
+    search: 'Søk',
+    filter: 'Filter',
+    sort: 'Sorter',
+    refresh: 'Oppdater'
+  },
+
+  dialogs: {
+    partyExitTitle: 'Forlate festmodus?',
+    partyExitDesc: 'En festmodus kjører for tiden. Hvis du forlater, vil din nåværende spillframgang gå tapt.',
+    stay: 'Bli',
+    leave: 'Forlat',
+    partyLeaveTitle: 'Forlate festmodus?',
+    partyLeaveDesc: 'Du er i ferd med å forlate festmodus. Din nåværende spillframgang vil gå tapt.',
+    back: 'Tilbake',
+    endParty: 'Avslutt festmodus',
+    pauseTitle: 'Spill pauset',
+    pauseDesc: 'Vil du fortsette eller avbryte?',
+    resume: 'Fortsett',
+    rematch: '🔄 Omkamp',
+    setWinner: '🏆 Sett vinner automatisk',
+    abort: 'Avbryt'
+  },
+
+  connectionStatus: {
+    micPlayer: 'Mikrofonspiller',
+    connected: '{n} er tilkoblet',
+    disconnected: '{n} er ikke tilkoblet'
+  },
+
+  offlineBanner: {
+    songsPlaylists: '{songs} sanger, {playlists} spillelister lagret lokalt',
+    localData: 'Lokale data tilgjengelige',
+    offline: 'Frakoblet — ',
+    serverUnreachable: 'Server utilgjengelig — Ledertavle og online-funksjoner utilgjengelige'
+  },
+
+  uploadStatus: {
+    uploading: 'Laster opp til global ledertavle...'
+  },
+
+  shareSection: {
+    title: '📤 Del poengsummen din',
+    scoreCard: '📸 Poengkort',
+    videoShort: '🎬 Kort video',
+    textCopied: 'Poengtekst kopiert!',
+    textCopyFailed: 'Kunne ikke kopiere',
+    imageCopied: 'Poengbilde kopiert!',
+    imageCopyFailed: 'Kunne ikke kopiere bilde',
+    sharingNotSupported: 'Deling støttes ikke. Kort lastet ned i stedet.',
+    copyText: '📋 Kopier tekst',
+    copyImage: '🖼️ Kopier bilde',
+    downloadCard: '📥 Last ned kort',
+    shareScore: '📤 Del poeng'
+  },
+
+  replayModal: {
+    copyrightNotice: 'Merk: Av opphavsrettslige årsaker kan ingen original lyd eller vokaler inkluderes i eksporterte repriser. Bare opptaket fra mikrofonen din vil bli brukt.',
+    exportFailed: 'Eksport mislyktes. Prøv igjen.',
+    deleteFailed: 'Sletting mislyktes. Prøv igjen.',
+    close: 'Lukk',
+    audioOnly: 'Kun lyd-reprise',
+    originalSong: '🎵 Original sang',
+    export: 'Eksporter…',
+    exportShort: '⬇ Eksporter',
+    delete: '🗑 Slett',
+    volume: '🎵 Volum',
+    replay: 'Spill igjen'
+  },
+
+  scoreCardSocial: {
+    branding: 'Karaoke ZERO',
+    accuracyLabel: 'Presisjon:',
+    maxComboLabel: 'Maks Combo:',
+    difficultyLabel: 'Vanskelighetsgrad:',
+    playerLabel: '🎤 {name}',
+    hashtags: '#KaraokeZERO #Karaoke #Singing',
+    shareTitle: 'Min karaoke-poengsum!',
+    shareText: 'Jeg fikk {n} poeng på «{title}» av {artist}!',
+    points: 'poeng',
+    download: '📥 Last ned',
+    share: '📤 Del'
+  },
+
+  queue: {
+    title: 'Sangkø',
+    empty: 'Køen er tom',
+    emptyDesc: 'Legg til sanger fra biblioteket for å starte en kø',
+    removeFromQueue: 'Fjern fra kø',
+    clearQueue: 'Tøm køen',
+    upNext: 'Neste',
+    nowPlaying: 'Spiller nå',
+    startQueue: 'Start kø'
+  },
+
+  queueScreen: {
+    title: 'Sangkø',
+    songsInQueue: 'sanger i kø • Maks 3 per spiller',
+    noSongs: 'Ingen sanger i kø',
+    noSongsDesc: 'Legg til sanger fra biblioteket eller via Companion App',
+    duel: '⚔️ Duell',
+    duet: '🎭 Duett',
+    single: '🎤 Solo',
+    playerDeactivated: 'Spiller deaktivert',
+    play: '▶ Spill',
+    clearAll: 'Tøm alt',
+    playNextSong: '▶ Spill neste sang',
+    playerReselectNeeded: '⚠ Spiller må velges på nytt',
+    playerReselectDesc: 'En spiller for <strong>{song}</strong> ({mode}) har blitt deaktivert. Velg nye spillere eller slett sangen.',
+    assignPlayers: '✓ Tildel spillere',
+    deleteSong: '✕ Slett sang',
+    later: 'Senere',
+    notEnoughPlayers: 'Ikke nok aktive spillere tilgjengelige (minimum 2 kreves).',
+    deleteFromQueue: '✕ Slett sang fra kø',
+    rules: 'Køregler',
+    rule1: '• Maksimalt 3 sanger per spiller av gangen',
+    rule2: '• Sanger spilles i den rekkefølgen de ble lagt til',
+    rule3: '• Du kan fjerne dine egne sanger fra køen',
+    rule4: '• Velg en profil før du legger til i kø',
+    rule5: '• Companion app-forespørsler vises med cyan kant',
+    rule6: '• Klikk på en sang for å spille den umiddelbart'
+  },
+
+  queueNextSong: {
+    label: 'Neste i kø',
+    duel: '⚔️ Duell',
+    duet: '🎭 Duett',
+    playNext: '▶ Spill neste'
+  },
+
+  jukebox: {
+    title: 'Jukebox-modus',
+    subtitle: 'Sett deg tilbake og nyt musikken!',
+    songsInPlaylist: 'sanger i spilleliste',
+    searchPlaceholder: 'Søk sanger, artister, album...',
+    allGenres: 'Alle sjangre',
+    allArtists: 'Alle artister',
+    songsFound: 'sanger funnet',
+    startJukebox: 'Start Jukebox',
+    stopJukebox: 'Stopp Jukebox',
+    nowPlaying: 'SPILLER NÅ',
+    upNext: 'Neste',
+    exitFullscreen: 'Avslutt fullskjerm',
+    hidePlaylist: 'Skjul spilleliste',
+    showPlaylist: 'Vis spilleliste',
+    playlistSettings: 'Spillelisteinnstillinger',
+    customizeExperience: 'Tilpass musikkopplevelsen din',
+    filterByGenre: 'Filtrer etter sjanger',
+    filterByArtist: 'Filtrer etter artist',
+    shuffle: 'Tilfeldig rekkefølge',
+    repeat: 'Gjenta',
+    repeatNone: 'Ingen gjentakelse',
+    repeatAll: 'Gjenta alle',
+    repeatOne: 'Gjenta én'
+  },
+
+  jukeboxPlayer: {
+    nowPlaying: 'SPILLER NÅ',
+    lyrics: '🎤 Sangtekst',
+    showPlaylist: '📖 Vis spilleliste',
+    hidePlaylist: '📖 Skjul spilleliste',
+    exitFullscreen: '⤓ Avslutt fullskjerm',
+    stopJukebox: 'Stopp Jukebox',
+    upNext: 'Neste',
+    jukeboxMode: '🎵 Jukebox-modus',
+    sitBack: 'Sett deg tilbake og nyt musikken!',
+    removeYoutubeVideo: 'Fjern YouTube-video',
+    youtube: 'YouTube',
+    fullscreen: '⤢ Fullskjerm',
+    singAlong: 'Syng-med-modus: Vis sangtekst',
+    invalidYoutubeUrl: 'Ugyldig YouTube-URL',
+    youtubeBackground: 'Valgfri YouTube-video som bakgrunn',
+    activate: 'Sett',
+    active: 'Aktiv:',
+    remove: 'Fjern',
+    noMatchingSongs: 'Ingen sanger matcher filtrene dine. Prøg andre innstillinger eller importer noen sanger.'
+  },
+};

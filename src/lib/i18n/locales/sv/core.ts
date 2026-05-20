@@ -1,0 +1,249 @@
+// SV translations — core
+// Auto-split from monolithic locale file
+
+export const coreTranslations = {
+  nav: {
+    library: 'Bibliotek',
+    import: 'Importera',
+    party: 'Fest',
+    profiles: 'Karaktärer',
+    queue: 'Kö',
+    highscores: 'Poäng',
+    jukebox: 'Jukebox',
+    mobile: 'Mobil',
+    achievements: 'Prestationer',
+    daily: 'Daglig',
+    settings: 'Inställningar'
+  },
+
+  home: {
+    title: 'Karaoke ZERO',
+    subtitle: 'Den ultimata karaokeupplevelsen. Sjung ur hjärtat med Realtidstonhöjdsavkänning, tävla med vänner och njut av festspel!',
+    startSinging: 'Börja Sjunga',
+    partyMode: 'Festläge',
+    songsAvailable: 'Tillgängliga Låtar',
+    profilesCreated: 'Skapade Profiler',
+    partyGames: 'Festspel',
+    difficultyLevels: 'Svårighetsgrader',
+    selectProfile: 'Välj Din Profil',
+    createNew: 'Skapa Ny'
+  },
+
+  homeScreen: {
+    subtitle: 'Den ultimata karaokeupplevelsen. Sjung ur hjärtat med Realtidstonhöjdsavkänning, tävla med vänner och njut av festspel!',
+    loadingStats: 'Laddar statistik...',
+    realTimePitch: 'Realtidstonhöjdsavkänning',
+    realTimePitchDesc: 'Avancerad YIN-algoritm avkänner din sångtonhöjd i Realtid med hög noggrannhet. Se din röst visualiserad medan du sjunger!',
+    partyGamesFeature: 'Festspel',
+    partyGamesFeatureDesc: 'Ge över Micen, Medleytävling, Saknade Ord, Duelläge och Blind Karaoke — oändlig underhållning för dina fester!',
+    mobileCompanion: 'Mobil Companion',
+    mobileCompanionDesc: 'Använd din smartphone som mikrofon eller fjärrkontroll! Skanna QR-koden för att ansluta.',
+    wifiStep1: '1. Samma WiFi-nätverk',
+    wifiStep2: '2. Skanna QR med kamera',
+    wifiStep3: '3. Öppna länk i webbläsare',
+    detectingNetwork: 'Detekterar nätverksadress...',
+    selectCharacter: 'Välj Din Karaktär',
+    inactiveProfiles: 'inaktiva profiler dolda. Aktivera dem i Profilinställningar.'
+  },
+
+  common: {
+    loading: 'Laddar...',
+    error: 'Fel',
+    success: 'Klart',
+    cancel: 'Avbryt',
+    confirm: 'Bekräfta',
+    delete: 'Ta bort',
+    edit: 'Redigera',
+    save: 'Spara',
+    back: 'Tillbaka',
+    next: 'Nästa',
+    previous: 'Föregående',
+    start: 'Starta',
+    stop: 'Stopp',
+    play: 'Spela',
+    pause: 'Pausa',
+    reset: 'Återställ',
+    clear: 'Rensa',
+    all: 'Alla',
+    none: 'Inga',
+    yes: 'Ja',
+    no: 'Nej',
+    ok: 'OK',
+    close: 'Stäng',
+    search: 'Sök',
+    filter: 'Filtrera',
+    sort: 'Sortera',
+    refresh: 'Uppdatera'
+  },
+
+  dialogs: {
+    partyExitTitle: 'Lämna Festläge?',
+    partyExitDesc: 'Ett festläge körs för närvarande. Om du lämnar kommer ditt nuvarande spel att gå förlorat.',
+    stay: 'Stanna',
+    leave: 'Lämna',
+    partyLeaveTitle: 'Lämna Festläge?',
+    partyLeaveDesc: 'Du är på väg att lämna festläget. Ditt nuvarande spel kommer att gå förlorat.',
+    back: 'Tillbaka',
+    endParty: 'Avsluta Festläge',
+    pauseTitle: 'Spel Pausat',
+    pauseDesc: 'Vill du fortsätta eller avbryta?',
+    resume: 'Återuppta',
+    rematch: '🔄 Revansch',
+    setWinner: '🏆 Sätt vinnare automatiskt',
+    abort: 'Avbryt'
+  },
+
+  connectionStatus: {
+    micPlayer: 'Mikrofonspelare',
+    connected: '{n} är ansluten',
+    disconnected: '{n} är inte ansluten'
+  },
+
+  offlineBanner: {
+    songsPlaylists: '{songs} Låtar, {playlists} Spellistor sparade lokalt',
+    localData: 'Lokal data tillgänglig',
+    offline: 'Offline — ',
+    serverUnreachable: 'Server onåbar — Poänglista och online-funktioner otillgängliga'
+  },
+
+  uploadStatus: {
+    uploading: 'Laddar upp till globala poänglistan...'
+  },
+
+  shareSection: {
+    title: '📤 Dela Ditt Resultat',
+    scoreCard: '📸 Poängkort',
+    videoShort: '🎬 Kort Video',
+    textCopied: 'Poängtext kopierad!',
+    textCopyFailed: 'Misslyckades att kopiera',
+    imageCopied: 'Poängbild kopierad!',
+    imageCopyFailed: 'Misslyckades att kopiera bild',
+    sharingNotSupported: 'Delning stöds inte. Kort nedladdat istället.',
+    copyText: '📋 Kopiera Text',
+    copyImage: '🖼️ Kopiera Bild',
+    downloadCard: '📥 Ladda ner Kort',
+    shareScore: '📤 Dela Poäng'
+  },
+
+  replayModal: {
+    copyrightNotice: 'Obs: Av upphovsrättsskäl kan inget originalt ljud eller sång inkluderas i exporterade repriser. Endast din mikrofoninspelning används.',
+    exportFailed: 'Export misslyckades. Försök igen.',
+    deleteFailed: 'Borttagning misslyckades. Försök igen.',
+    close: 'Stäng',
+    audioOnly: 'Ljud-repris',
+    originalSong: '🎵 Original Låt',
+    export: 'Exportera…',
+    exportShort: '⬇ Exportera',
+    delete: '🗑 Ta bort',
+    volume: '🎵 Volym',
+    replay: 'Repris'
+  },
+
+  scoreCardSocial: {
+    branding: 'Karaoke ZERO',
+    accuracyLabel: 'Noggrannhet:',
+    maxComboLabel: 'Max Combo:',
+    difficultyLabel: 'Svårighetsgrad:',
+    playerLabel: '🎤 {name}',
+    hashtags: '#KaraokeZERO #Karaoke #Sång',
+    shareTitle: 'Min Karaoke-poäng!',
+    shareText: 'Jag fick {n} poäng på "{title}" av {artist}!',
+    points: 'poäng',
+    download: '📥 Ladda ner',
+    share: '📤 Dela'
+  },
+
+  queue: {
+    title: 'Låtkö',
+    empty: 'Kön är tom',
+    emptyDesc: 'Lägg till låtar från biblioteket för att skapa en kö',
+    removeFromQueue: 'Ta bort från Kö',
+    clearQueue: 'Rensa Kö',
+    upNext: 'Kommer Näst',
+    nowPlaying: 'Spelas Nu',
+    startQueue: 'Starta Kö'
+  },
+
+  queueScreen: {
+    title: 'Låtkö',
+    songsInQueue: 'låtar i kön • Max 3 per spelare',
+    noSongs: 'Inga låtar i kön',
+    noSongsDesc: 'Lägg till låtar från biblioteket eller via Companion App',
+    duel: '⚔️ Duell',
+    duet: '🎭 Duett',
+    single: '🎤 Solo',
+    playerDeactivated: 'Spelare avaktiverad',
+    play: '▶ Spela',
+    clearAll: 'Rensa Alla',
+    playNextSong: '▶ Spela Nästa Låt',
+    playerReselectNeeded: '⚠ Spelarval behövs',
+    playerReselectDesc: 'En spelare för <strong>{song}</strong> ({mode}) har avaktiverats. Vänligen välj nya spelare eller ta bort låten.',
+    assignPlayers: '✓ Tilldela spelare',
+    deleteSong: '✕ Ta bort låt',
+    later: 'Senare',
+    notEnoughPlayers: 'Inte tillräckligt med aktiva spelare tillgängliga (minst 2 krävs).',
+    deleteFromQueue: '✕ Ta bort låt från kön',
+    rules: 'Köregler',
+    rule1: '• Maximalt 3 låtar per spelare åt gången',
+    rule2: '• Låtarna spelas i den ordning de lades till',
+    rule3: '• Du kan ta bort dina egna låtar från kön',
+    rule4: '• Välj en karaktär innan du lägger till i kön',
+    rule5: '• Companion-appens förfrågningar visas med en cyan ram',
+    rule6: '• Klicka på en låt för att spela den omedelbart'
+  },
+
+  queueNextSong: {
+    label: 'Kommer i Kö',
+    duel: '⚔️ Duell',
+    duet: '🎭 Duett',
+    playNext: '▶ Spela Nästa'
+  },
+
+  jukebox: {
+    title: 'Jukeboxläge',
+    subtitle: 'Luta dig tillbaka och njut av musiken!',
+    songsInPlaylist: 'låtar i spellista',
+    searchPlaceholder: 'Sök låtar, artister, album...',
+    allGenres: 'Alla Genrer',
+    allArtists: 'Alla Artister',
+    songsFound: 'låtar hittades',
+    startJukebox: 'Starta Jukebox',
+    stopJukebox: 'Stoppa Jukebox',
+    nowPlaying: 'SPELAS NU',
+    upNext: 'Kommer Näst',
+    exitFullscreen: 'Avsluta Helskärm',
+    hidePlaylist: 'Dölj Spellista',
+    showPlaylist: 'Visa Spellista',
+    playlistSettings: 'Spellisteinställningar',
+    customizeExperience: 'Anpassa din musikupplevelse',
+    filterByGenre: 'Filtrera efter Genre',
+    filterByArtist: 'Filtrera efter Artist',
+    shuffle: 'Blanda',
+    repeat: 'Upprepa',
+    repeatNone: 'Ingen Upprepning',
+    repeatAll: 'Upprepa Alla',
+    repeatOne: 'Upprepa En'
+  },
+
+  jukeboxPlayer: {
+    nowPlaying: 'SPELAS NU',
+    lyrics: '🎤 Sångtexter',
+    showPlaylist: '📖 Visa Spellista',
+    hidePlaylist: '📖 Dölj Spellista',
+    exitFullscreen: '⤓ Avsluta Helskärm',
+    stopJukebox: 'Stoppa Jukebox',
+    upNext: 'Kommer Näst',
+    jukeboxMode: '🎵 Jukeboxläge',
+    sitBack: 'Luta dig tillbaka och njut av musiken!',
+    removeYoutubeVideo: 'Ta bort YouTube-video',
+    youtube: 'YouTube',
+    fullscreen: '⤢ Helskärm',
+    singAlong: 'Medsängsläge: Visa Sångtexter',
+    invalidYoutubeUrl: 'Ogiltig YouTube-URL',
+    youtubeBackground: 'Valfri YouTube-video som bakgrund',
+    activate: 'Ange',
+    active: 'Aktiv:',
+    remove: 'Ta bort',
+    noMatchingSongs: 'Inga låtar matchar dina filter. Prova olika inställningar eller importera några låtar.'
+  },
+};
