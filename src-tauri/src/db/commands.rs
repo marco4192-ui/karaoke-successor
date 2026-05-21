@@ -4,16 +4,17 @@
 //! via Tauri's IPC. All commands acquire the connection mutex briefly
 //! and return JSON-serializable results.
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use tauri::{AppHandle, Manager};
 
 use super::DbState;
+use crate::try_log;
 
 // ====================================================================
 // Shared result type for batch operations
 // ====================================================================
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Clone)]
 pub struct DbResult {
     pub success: bool,
     pub rows_affected: usize,
@@ -631,18 +632,6 @@ pub fn db_get_stats(app: AppHandle) -> Result<serde_json::Value, String> {
 // ====================================================================
 // Utility
 // ====================================================================
-
-/// Helper: try to convert a Result<T, E> into Option<T>, logging errors
-/// instead of silently discarding them via `.ok()`.
-fn try_log<T, E: std::fmt::Display>(result: Result<T, E>, context: &str) -> Option<T> {
-    match result {
-        Ok(v) => Some(v),
-        Err(e) => {
-            eprintln!("[db] {} failed: {}", context, e);
-            None
-        }
-    }
-}
 
 fn chrono_now_ms() -> u64 {
     std::time::SystemTime::now()

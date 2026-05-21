@@ -1,8 +1,8 @@
 use cpal::traits::{DeviceTrait, HostTrait};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// Serializable representation of an audio output device.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct AudioDeviceInfo {
     /// Unique identifier: "<host_id>:<device_index>"
     pub id: String,

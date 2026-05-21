@@ -9,11 +9,25 @@ use std::path::PathBuf;
 use std::fs;
 
 use tauri::Manager;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 mod audio;
 mod db;
 mod charts;
+
+/// Shared utility: try to convert a `Result<T, E>` into `Option<T>`, logging
+/// errors instead of silently discarding them via `.ok()`.
+/// Used by `db::commands` and `charts::commands` (and any future modules).
+#[allow(dead_code)]
+pub(crate) fn try_log<T, E: std::fmt::Display>(result: Result<T, E>, context: &str) -> Option<T> {
+    match result {
+        Ok(v) => Some(v),
+        Err(e) => {
+            eprintln!("[error] {}: {}", context, e);
+            None
+        }
+    }
+}
 
 /// Maximum allowed size for file read/write operations (200 MB).
 const MAX_FILE_SIZE: usize = 200 * 1024 * 1024;
@@ -236,7 +250,7 @@ fn native_file_exists(file_path: String) -> bool {
 }
 
 /// List directory contents
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Clone)]
 struct NativeDirEntry {
     name: String,
     is_directory: bool,

@@ -14,17 +14,7 @@ use tauri::{AppHandle, Manager};
 
 use super::sources::{self, ChartEntry};
 use crate::db::DbState;
-
-/// Log and discard a failed result instead of silently swallowing it.
-fn try_log<T, E: std::fmt::Display>(result: Result<T, E>, context: &str) -> Option<T> {
-    match result {
-        Ok(v) => Some(v),
-        Err(e) => {
-            eprintln!("[charts] {} failed: {}", context, e);
-            None
-        }
-    }
-}
+use crate::try_log;
 
 // ====================================================================
 // Response types

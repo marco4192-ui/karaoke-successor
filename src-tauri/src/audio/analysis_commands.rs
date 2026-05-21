@@ -145,7 +145,7 @@ pub struct BpmDetectionResult {
 // CREPE info command
 // ---------------------------------------------------------------------------
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Clone)]
 pub struct CrepeInfo {
     pub available: bool,
     pub info: String,

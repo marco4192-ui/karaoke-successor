@@ -31,7 +31,7 @@ export function NavBar({ screen, setScreen, queueLength, isMounted, isFullscreen
           </span>
         </button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
           <NavButton active={screen === 'library'} onClick={() => setScreen('library')}>
             <LibraryIcon className="w-5 h-5" /> {t('nav.library')}
           </NavButton>
@@ -104,7 +104,7 @@ function NavButton({ children, active, onClick }: { children: React.ReactNode; a
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 ${
         active
           ? 'bg-[#ff2d95]/20 text-[#ff2d95] retro-box-glow-pink'
           : 'text-[#b8b8d0] hover:text-[#00e5ff] hover:bg-white/10'
