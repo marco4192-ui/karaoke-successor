@@ -384,7 +384,7 @@ pub fn viral_match_library(
     // --- Phase 3: Re-acquire lock, write matched IDs back to SQLite ---
     if !matched_ids.is_empty() {
         let state = app.state::<DbState>();
-        let conn = state.conn.lock().map_err(|e| e.to_string())?;
+        let mut conn = state.conn.lock().map_err(|e| e.to_string())?;
         let tx = conn.transaction()
             .map_err(|e| format!("Transaction failed: {}", e))?;
 

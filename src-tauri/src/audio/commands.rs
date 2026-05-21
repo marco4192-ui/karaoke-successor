@@ -87,7 +87,7 @@ fn run_audio_thread(
     // Channels for streaming events to the frontend (set on each Play command).
     let mut time_update_ch: Option<Channel<u64>> = None;
     let mut ended_ch: Option<Channel<()>> = None;
-    let mut error_ch: Option<Channel<String>> = None;
+    let error_ch: &mut Option<Channel<String>> = &mut None;
 
     loop {
         match rx.recv_timeout(Duration::from_millis(50)) {
@@ -101,7 +101,7 @@ fn run_audio_thread(
                 ended_emitted = false;
                 time_update_ch = Some(on_time_update);
                 ended_ch = Some(on_ended);
-                error_ch = Some(on_error);
+                *error_ch = Some(on_error);
                 if let Err(e) = player.play_file(&file_path, &device_id) {
                     eprintln!("Play failed for '{}': {}", file_path, e);
                     if let Some(ch) = &error_ch {
@@ -127,7 +127,7 @@ fn run_audio_thread(
                 // Drop channels so stale callbacks cannot fire after stop
                 time_update_ch = None;
                 ended_ch = None;
-                error_ch = None;
+                *error_ch = None;
             }
             Ok(AudioCommand::Shutdown) => {
                 player.stop();
@@ -159,7 +159,7 @@ fn run_audio_thread(
                         let _ = ch.send(());
                     }
                     time_update_ch = None;
-                    error_ch = None;
+                    *error_ch = None;
                     ended_emitted = true;
                 }
             }
