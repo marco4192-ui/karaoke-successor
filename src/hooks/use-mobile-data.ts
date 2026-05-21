@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import type { MobileSong, MobileProfile, QueueItem, GameResults, JukeboxWishlistItem, GameMode } from '@/components/screens/mobile/mobile-types';
+import { incrementSongsQueued } from '@/lib/mobile-achievements';
 
 // F19: Opponent profile for duel/duet mode
 export interface OpponentProfile {
@@ -221,6 +222,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
       if (!response.ok) return;
       const data = await response.json();
       if (data.success) {
+        incrementSongsQueued();
         setQueue(prev => [...prev, {
           id: data.queueItem.id, songId: song.id, songTitle: song.title, songArtist: song.artist,
           addedBy: profile.name, status: 'pending', partnerId, partnerName, gameMode,
