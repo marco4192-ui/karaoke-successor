@@ -320,8 +320,10 @@ export function useMultiPitchDetector(options: UseMultiPitchDetectorOptions): Us
   useEffect(() => {
     return () => {
       if (managerRef.current) {
+        // Only stop — do NOT destroy the singleton.
+        // Destroying would break any other consumer of getPitchDetectorManager()
+        // (e.g., navigating away and back would leave a dead singleton).
         managerRef.current.stop();
-        try { managerRef.current.destroy(); } catch { /* ignore cleanup errors */ }
         managerRef.current = null;
         isInitializedRef.current = false;
       }
