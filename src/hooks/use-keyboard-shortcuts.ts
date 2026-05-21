@@ -25,7 +25,7 @@ export interface KeyboardShortcut {
 
 // ── Constants: Menu F-key mapping ─────────────────────────────────
 
-export const FKEY_SCREEN_MAP: Record<string, Screen> = {
+const FKEY_SCREEN_MAP: Record<string, Screen> = {
   f1: 'home',
   f2: 'library',
   f3: 'party',

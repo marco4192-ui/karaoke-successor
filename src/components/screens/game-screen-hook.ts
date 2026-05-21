@@ -48,7 +48,7 @@ import type { GameScreenProps, GameScreenHookReturn } from './game-screen-types'
 
 // ===================== MAIN HOOK =====================
 
-export function useGameScreenLogic({ onEnd, onBack, onPause: _onPause }: GameScreenProps): GameScreenHookReturn {
+export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScreenHookReturn {
   // CRITICAL: Use individual selectors to prevent re-rendering the entire component tree
   // when unrelated store state changes (e.g., volume, currentTime, etc.)
   const gameState = useGameStore(s => s.gameState);

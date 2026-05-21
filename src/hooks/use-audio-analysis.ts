@@ -9,7 +9,7 @@ import { invoke, Channel } from '@tauri-apps/api/core';
 
 export type ConfidenceLevel = 'High' | 'Medium' | 'Low' | 'VeryLow';
 
-export interface AnalysisFrame {
+interface AnalysisFrame {
   time_ms: number;
   frequency: number | null;
   midi_note: number | null;

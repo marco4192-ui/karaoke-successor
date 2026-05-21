@@ -36,7 +36,7 @@ export function WebcamSettingsPanel({ config, onConfigChange, compact = false }:
   // webcam background being rendered. Device list and permission state may
   // diverge from the active WebcamBackground. Consider passing these as props instead.
   const { t } = useTranslation();
-  const { devices, hasPermission: _hasPermission, refreshDevices } = useWebcamBackground();
+  const { devices, refreshDevices } = useWebcamBackground();
   
   const sizeOptions: { value: WebcamSizeMode; label: string; description: string }[] = [
     { value: 'fullscreen', label: t('webcamSettings.fullscreen'), description: t('webcamSettings.fullscreenDesc') },
@@ -228,7 +228,7 @@ interface WebcamQuickControlsProps {
 
 export function WebcamQuickControls({ config, onConfigChange }: WebcamQuickControlsProps) {
   const { t } = useTranslation();
-  const { devices, refreshDevices: _refreshDevices } = useWebcamBackground();
+  const { devices } = useWebcamBackground();
   
   return (
     <div className="flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-lg p-2 border border-white/10">
