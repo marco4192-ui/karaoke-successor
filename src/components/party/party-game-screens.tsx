@@ -21,11 +21,10 @@ import { CompetitiveSetupScreen, CompetitiveGameView } from '@/components/game/c
 import { RateMySongSetupScreen, RateMySongRatingScreen, RateMySongResultsScreen, RateMySongSeriesResultsScreen } from '@/components/game/rate-my-song-screen';
 import type { RateMySongResult, RateMySongRating } from '@/components/game/rate-my-song-screen';
 import { getRandomChallenge } from '@/lib/game/rate-my-song-ranking';
-import type { GameSetupResult } from '@/components/game/unified-party-setup';
-import { preparePtmNextSong } from '@/lib/game/ptm-next-song';
 import { toast } from '@/hooks/use-toast';
+import { preparePtmNextSong } from '@/lib/game/ptm-next-song';
 import type { Screen } from '@/types/screens';
-import { freqNumberToLabel, trimSongToShortMode, pickRandomVotingSongs, buildCompetitiveSetupResult } from './party-game-helpers';
+import { freqNumberToLabel, trimSongToShortMode, pickRandomVotingSongs, buildGameSetupResult } from './party-game-helpers';
 
 interface PartyGameScreensProps {
   screen: Screen;
@@ -168,17 +167,17 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       resetGame();
 
       // Store mic assignments in unifiedSetupResult for MicIndicator display
-      const setupResult: GameSetupResult = {
+      const p1IsCompanion = micOverlay.p1Mic === t('partyGameScreens.companion');
+      const p2IsCompanion = micOverlay.p2Mic === t('partyGameScreens.companion');
+      const setupResult = buildGameSetupResult({
         mode: 'tournament',
         players: [
-          { id: match.player1.id, name: match.player1.name, color: match.player1.color || '#FF6B6B', playerType: micOverlay.p1Mic === t('partyGameScreens.companion') ? 'companion' : 'microphone', micId: 'default', micName: micOverlay.p1Mic },
-          { id: match.player2.id, name: match.player2.name, color: match.player2.color || '#4ECDC4', playerType: micOverlay.p2Mic === t('partyGameScreens.companion') ? 'companion' : 'microphone', micId: 'default', micName: micOverlay.p2Mic },
+          { id: match.player1.id, name: match.player1.name, color: match.player1.color || '#FF6B6B', playerType: p1IsCompanion ? 'companion' : 'microphone', micName: micOverlay.p1Mic },
+          { id: match.player2.id, name: match.player2.name, color: match.player2.color || '#4ECDC4', playerType: p2IsCompanion ? 'companion' : 'microphone', micName: micOverlay.p2Mic },
         ],
-        settings: { difficulty: party.tournamentBracket?.settings?.difficulty ?? 'medium', filterGenre: 'all', filterLanguage: 'all', filterCombined: true },
-        songSelection: 'random',
         difficulty: party.tournamentBracket?.settings?.difficulty ?? 'medium',
-        inputMode: 'microphone',
-      };
+        settings: {},
+      });
       party.setUnifiedSetupResult(setupResult);
 
       // Add both players for the duel
@@ -740,7 +739,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             const p2Color = comp.players.find(p => p.id === p2Id)?.color || '#4ECDC4';
             addPlayer({ id: p1Id, name: p1Name, color: p1Color });
             addPlayer({ id: p2Id, name: p2Name, color: p2Color });
-            const setupResult = buildCompetitiveSetupResult({
+            const setupResult = buildGameSetupResult({
               mode: 'missing-words',
               players: [
                 { id: p1Id, name: p1Name, color: p1Color },
@@ -767,7 +766,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             setPlayers([]);
             const pColor = comp.players.find(p => p.id === pId)?.color || '#FF6B6B';
             addPlayer({ id: pId, name: pName, color: pColor });
-            const setupResult = buildCompetitiveSetupResult({
+            const setupResult = buildGameSetupResult({
               mode: 'missing-words',
               players: [{ id: pId, name: pName, color: pColor }],
               difficulty: comp.settings.difficulty,
@@ -821,7 +820,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             const p2Color = comp.players.find(p => p.id === p2Id)?.color || '#4ECDC4';
             addPlayer({ id: p1Id, name: p1Name, color: p1Color });
             addPlayer({ id: p2Id, name: p2Name, color: p2Color });
-            const setupResult = buildCompetitiveSetupResult({
+            const setupResult = buildGameSetupResult({
               mode: 'blind',
               players: [
                 { id: p1Id, name: p1Name, color: p1Color },
@@ -847,7 +846,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             setPlayers([]);
             const pColor = comp.players.find(p => p.id === pId)?.color || '#FF6B6B';
             addPlayer({ id: pId, name: pName, color: pColor });
-            const setupResult = buildCompetitiveSetupResult({
+            const setupResult = buildGameSetupResult({
               mode: 'blind',
               players: [{ id: pId, name: pName, color: pColor }],
               difficulty: comp.settings.difficulty,
@@ -928,7 +927,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
 
             // Add players
             setPlayers([]);
-            const setupResult: GameSetupResult = {
+            const setupResult = buildGameSetupResult({
               mode: 'rate-my-song',
               players: playerIds.map((id, i) => {
                 const p = profiles.find(pr => pr.id === id);
@@ -936,16 +935,14 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                   id,
                   name: p?.name || t('battleRoyale.player').replace('{n}', String(i + 1)),
                   color: p?.color || '#FF6B6B',
-                  playerType: 'microphone' as const,
-                  micId: 'default',
                   micName: t('partyGameScreens.microphone1').replace('1', String(i + 1)),
                 };
               }),
-              settings: { difficulty: 'medium', filterGenre: 'all', filterLanguage: 'all', filterCombined: true },
-              songSelection: 'library',
               difficulty: 'medium',
+              settings: {},
+              songSelection: 'library',
               inputMode: 'mixed',
-            };
+            });
             party.setUnifiedSetupResult(setupResult);
             playerIds.forEach((id, _i) => {
               const p = profiles.find(pr => pr.id === id);

@@ -3,9 +3,9 @@
  * These are stateless utilities that don't depend on React hooks or component state.
  */
 
-import type { Song, GameMode, Difficulty } from '@/types/game';
+import type { Song, Difficulty } from '@/types/game';
 import { getNonDuetSongs, filterSongs } from '@/lib/game/song-library';
-import type { GameSetupResult } from '@/components/game/unified-party-setup.types';
+import type { GameSetupResult, InputMode, SongSelectionOption } from '@/components/game/unified-party-setup.types';
 
 // ─── Frequency Label Converter ───────────────────────────────────────────────
 
@@ -19,33 +19,45 @@ export function freqNumberToLabel(freq: number): 'light' | 'normal' | 'hard' | '
 
 // ─── Competitive Setup Builder ──────────────────────────────────────────────
 
-interface CompetitivePlayerEntry {
+export interface SetupPlayerEntry {
   id: string;
   name: string;
   color: string;
+  playerType?: 'microphone' | 'companion';
+  micId?: string;
+  micName?: string;
 }
 
 /**
- * Build a GameSetupResult for competitive modes (missing-words / blind).
- * Consolidates the duplicated setup logic from the 4 onPlayMatch/onPlaySolo callbacks
- * in PartyGameScreens into a single reusable helper.
+ * Build a GameSetupResult for any game mode.
+ * Consolidates the duplicated setup logic from various callbacks in PartyGameScreens
+ * into a single reusable helper.
  */
-export function buildCompetitiveSetupResult(params: {
-  mode: 'missing-words' | 'blind';
-  players: CompetitivePlayerEntry[];
+export function buildGameSetupResult(params: {
+  mode: GameSetupResult['mode'];
+  players: SetupPlayerEntry[];
   difficulty: Difficulty;
   settings: Record<string, unknown>;
+  songSelection?: SongSelectionOption;
+  inputMode?: InputMode;
 }): GameSetupResult {
-  const { mode, players, difficulty, settings } = params;
+  const {
+    mode,
+    players,
+    difficulty,
+    settings,
+    songSelection = 'random',
+    inputMode = 'microphone',
+  } = params;
   return {
     mode,
     players: players.map((p, i) => ({
       id: p.id,
       name: p.name,
       color: p.color,
-      playerType: 'microphone' as const,
-      micId: 'default',
-      micName: `Mic ${i + 1}`,
+      playerType: p.playerType ?? 'microphone',
+      micId: p.micId ?? 'default',
+      micName: p.micName ?? `Mic ${i + 1}`,
     })),
     settings: {
       difficulty,
@@ -54,11 +66,14 @@ export function buildCompetitiveSetupResult(params: {
       filterCombined: true,
       ...settings,
     },
-    songSelection: 'random',
+    songSelection,
     difficulty,
-    inputMode: 'microphone',
+    inputMode,
   };
 }
+
+/** @deprecated Use buildGameSetupResult instead */
+export const buildCompetitiveSetupResult = buildGameSetupResult;
 
 // ─── Song Duration Helpers ────────────────────────────────────────────────────
 
