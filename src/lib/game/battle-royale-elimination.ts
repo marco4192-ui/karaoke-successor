@@ -165,7 +165,7 @@ export function endRoundAndEliminate(game: BattleRoyaleGame): BattleRoyaleGame {
   // Mark as eliminated
   const updatedPlayers = game.players.map(p =>
     p.id === lowestScorer.id
-      ? { ...p, eliminated: true, eliminationRound: game.currentRound, active: false }
+      ? { ...p, eliminated: true, eliminationRound: game.currentRound }
       : p
   );
 

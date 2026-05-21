@@ -18,8 +18,6 @@ export interface BattleRoyalePlayer extends TournamentPlayer {
   maxCombo: number;
   eliminated: boolean;
   eliminationRound: number | null;
-  // Note: 'active' is kept for compatibility but 'eliminated' is the authoritative field
-  active: boolean;
   playerType: PlayerType;
   microphoneId?: string;
   connectionCode?: string;

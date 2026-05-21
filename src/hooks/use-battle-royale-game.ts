@@ -391,6 +391,43 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
             return best;
           };
 
+          /** Shared scoring tick for a single player (mic or companion).
+           *  Returns [updatedGame, activeNote, tick] so callers can reuse evaluation results. */
+          const scorePlayerTick = (
+            playerId: string,
+            detectedNote: number,
+            currentGame: BattleRoyaleGame,
+          ): { game: BattleRoyaleGame; activeNote: Note; tick: { accuracy: number; hit: boolean } } => {
+            const activeNote = findClosestNote(detectedNote);
+            const tick = evaluateAndScoreTick(detectedNote, activeNote, difficultyRef.current, td.scoringMetadata);
+
+            let updatedGame: BattleRoyaleGame;
+            if (tick.hit) {
+              const bountyMult = getBountyMultiplier(currentGame, playerId);
+              const adjustedPoints = Math.round(tick.points * bountyMult);
+              updatedGame = updatePlayerScore(
+                currentGame,
+                playerId,
+                adjustedPoints,
+                tick.accuracy,
+                1, 0, 1,
+              );
+            } else {
+              const currentCombo = comboMap.get(playerId) || 0;
+              if (currentCombo > 0) {
+                updatedGame = updatePlayerScore(
+                  currentGame,
+                  playerId,
+                  0, 0, 0, 0,
+                  -currentCombo,
+                );
+              } else {
+                updatedGame = currentGame;
+              }
+            }
+            return { game: updatedGame, activeNote, tick };
+          };
+
           // Score all active MICROPHONE players — each with THEIR OWN pitch detector
           for (const player of micPlayers) {
             const playerPitch = multiPitchRef.current.getPlayerPitch(player.id);
@@ -398,32 +435,10 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
             if (playerPitch.isSinging === false) continue;
             if (playerPitch.note == null) continue;
 
-            const activeNote = findClosestNote(playerPitch.note);
-            const tick = evaluateAndScoreTick(playerPitch.note, activeNote, difficultyRef.current, td.scoringMetadata);
-
-            if (tick.hit) {
-              // #6 Bounty: Apply multiplier for non-bounty players
-              const bountyMult = getBountyMultiplier(batchedGame, player.id);
-              const adjustedPoints = Math.round(tick.points * bountyMult);
-              batchedGame = updatePlayerScore(
-                batchedGame,
-                player.id,
-                adjustedPoints,
-                tick.accuracy,
-                1, 0, 1
-              );
+            const { game: updatedGame, activeNote, tick } = scorePlayerTick(player.id, playerPitch.note, batchedGame);
+            if (updatedGame !== batchedGame) {
+              batchedGame = updatedGame;
               scoreChanged = true;
-            } else {
-              const currentCombo = comboMap.get(player.id) || 0;
-              if (currentCombo > 0) {
-                batchedGame = updatePlayerScore(
-                  batchedGame,
-                  player.id,
-                  0, 0, 0, 0,
-                  -currentCombo
-                );
-                scoreChanged = true;
-              }
             }
 
             // Record performance sample for note display styles
@@ -439,39 +454,17 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
             }
           }
 
-          // Score all active COMPANION players (unchanged — uses polling cache)
+          // Score all active COMPANION players (uses polling cache)
           for (const player of companionPlayers) {
             const cachedPitch = player.connectionCode
               ? companionPitchCacheRef.current.get(player.connectionCode)
               : null;
 
             if (cachedPitch && cachedPitch.note > 0 && cachedPitch.isSinging === true) {
-              const activeNote = findClosestNote(cachedPitch.note);
-              const tick = evaluateAndScoreTick(cachedPitch.note, activeNote, difficultyRef.current, td.scoringMetadata);
-
-              if (tick.hit) {
-                // #6 Bounty: Apply multiplier for non-bounty players
-                const bountyMult = getBountyMultiplier(batchedGame, player.id);
-                const adjustedPoints = Math.round(tick.points * bountyMult);
-                batchedGame = updatePlayerScore(
-                  batchedGame,
-                  player.id,
-                  adjustedPoints,
-                  tick.accuracy,
-                  1, 0, 1
-                );
+              const { game: updatedGame } = scorePlayerTick(player.id, cachedPitch.note, batchedGame);
+              if (updatedGame !== batchedGame) {
+                batchedGame = updatedGame;
                 scoreChanged = true;
-              } else {
-                const currentCombo = comboMap.get(player.id) || 0;
-                if (currentCombo > 0) {
-                  batchedGame = updatePlayerScore(
-                    batchedGame,
-                    player.id,
-                    0, 0, 0, 0,
-                    -currentCombo
-                  );
-                  scoreChanged = true;
-                }
               }
             }
           }

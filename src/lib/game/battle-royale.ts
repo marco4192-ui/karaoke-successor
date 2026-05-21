@@ -128,7 +128,6 @@ export function createBattleRoyale(
     currentCombo: 0,
     maxCombo: 0,
     eliminationRound: null,
-    active: true,
     playerType: p.playerType,
     microphoneId: p.microphoneId,
     connectionCode: p.connectionCode,
