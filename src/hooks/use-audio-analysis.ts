@@ -117,10 +117,16 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
 
   // Cleanup on unmount: mark as unmounted so Tauri channel callbacks
   // don't call setState on an unmounted component.
+  // Also neutralize each Channel's onmessage handler so that any late
+  // IPC callbacks arriving after unmount are no-ops (Channel has no
+  // public close()/destroy() method in @tauri-apps/api v2).
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      for (const ch of Object.values(channelsRef.current)) {
+        if (ch) ch.onmessage = () => {};
+      }
       channelsRef.current.progress = null;
       channelsRef.current.complete = null;
       channelsRef.current.bpmComplete = null;

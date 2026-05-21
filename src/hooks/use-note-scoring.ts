@@ -44,17 +44,15 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
 
 
   // Note performance tracking for visual display modes (P1)
-  // CRITICAL: Use a version counter instead of new Map() to trigger re-renders.
+  // CRITICAL: Reuse the SAME Map reference across state updates.
   // new Map() defeats React.memo on NoteBlock by creating a new object reference.
   const notePerformanceRef = useRef<Map<string, NotePerformanceSample[]>>(new Map());
   const [notePerformance, setNotePerformance] = useState<Map<string, NotePerformanceSample[]>>(new Map());
-  const notePerfVersionRef = useRef(0);
   const lastNotePerfSyncRef = useRef(0);
 
   // P2 note performance tracking — same pattern as P1
   const p2NotePerformanceRef = useRef<Map<string, NotePerformanceSample[]>>(new Map());
   const [p2NotePerformance, setP2NotePerformance] = useState<Map<string, NotePerformanceSample[]>>(new Map());
-  const p2NotePerfVersionRef = useRef(0);
   const lastP2NotePerfSyncRef = useRef(0);
 
   // Additional player states (P2, P3, P4) - P1 uses the main store
@@ -101,11 +99,9 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     setScoreEvents([]);
     setNotePerformance(new Map());
     notePerformanceRef.current = new Map();
-    notePerfVersionRef.current = 0;
     lastNotePerfSyncRef.current = 0;
     setP2NotePerformance(new Map());
     p2NotePerformanceRef.current = new Map();
-    p2NotePerfVersionRef.current = 0;
     lastP2NotePerfSyncRef.current = 0;
     setP2State({ ...DEFAULT_PLAYER_SCORING_STATE });
     p1ComboRef.current = 0;
@@ -174,13 +170,11 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         if (_playerIndex === 1) {
           if (now - lastP2NotePerfSyncRef.current >= 16) {
             lastP2NotePerfSyncRef.current = now;
-            p2NotePerfVersionRef.current++;
             setP2NotePerformance(p2NotePerformanceRef.current);
           }
         } else {
           if (now - lastNotePerfSyncRef.current >= 33) {
             lastNotePerfSyncRef.current = now;
-            notePerfVersionRef.current++;
             setNotePerformance(notePerformanceRef.current);
           }
         }
@@ -264,7 +258,6 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         const now = performance.now();
         if (now - lastNotePerfSyncRef.current >= 16) {
           lastNotePerfSyncRef.current = now;
-          notePerfVersionRef.current++;
           // Set the same ref object — shallow equality passes
           setNotePerformance(notePerformanceRef.current);
         }

@@ -192,6 +192,17 @@ fn native_read_file_text(file_path: String) -> Result<String, String> {
         // UTF-8 failed — likely a Latin-1 / Windows-1252 file.
         // Read as raw bytes and decode as Latin-1 (every byte is valid).
         if let Ok(bytes) = fs::read(path) {
+            // Binary-file heuristic: null bytes (0x00) are exceedingly rare in
+            // legitimate text files (Latin-1 or otherwise) but extremely common
+            // in binary formats (.mp3, .jpg, .exe, etc.).  If we see *any*
+            // null byte the content is almost certainly binary — bail out.
+            if bytes.contains(&0x00) {
+                println!(
+                    "[native_read_file_text] Null bytes detected — refusing to decode as text (likely a binary file)"
+                );
+                return None;
+            }
+
             let latin1: String = bytes.iter().map(|&b| b as char).collect();
             // Check if the content looks like it might actually be valid UTF-8
             // but failed for another reason (e.g., path issues). If most

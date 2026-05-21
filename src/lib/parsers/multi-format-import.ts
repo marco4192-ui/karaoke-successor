@@ -170,7 +170,6 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
     const ticksPerBeat = view.getUint16(12, false);
 
     const tracks: MIDIKaraokeData['tracks'] = [];
-    const _lyrics: MIDIKaraokeData['lyrics'] = [];
     const rawNotes: Array<{ tick: number; duration: number; pitch: number; velocity: number }> = [];
     const rawLyrics: Array<{ tick: number; text: string }> = [];
     let tempo = 120;
