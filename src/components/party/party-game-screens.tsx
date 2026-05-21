@@ -7,6 +7,7 @@ import { usePartyStore } from '@/lib/game/party-store';
 import { getAllSongs, getNonDuetSongs, filterSongs } from '@/lib/game/song-library';
 import { recordMatchResult, getEffectiveDifficulty, type CrowdVoteMatch } from '@/lib/game/tournament';
 import { useTranslation } from '@/lib/i18n/translations';
+import { shuffleArray } from '@/lib/utils';
 import { TournamentSetupScreen, TournamentBracketView, TournamentResultsScreen } from '@/components/game/tournament-screen';
 import { BattleRoyaleSetupScreen, BattleRoyaleGameView } from '@/components/game/battle-royale-screen';
 import { PassTheMicSetupScreen } from '@/components/game/pass-the-mic-screen';
@@ -443,7 +444,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                 return true;
               });
               if (pool.length >= 3) {
-                const shuffled = [...pool].sort(() => Math.random() - 0.5);
+                const shuffled = shuffleArray(pool).slice(0, 3);
                 party.setTournamentVotingSongs(shuffled.slice(0, 3));
                 party.setTournamentVotingMatch(match);
                 setTournamentVotingActive(true);

@@ -54,7 +54,7 @@ pub struct ViralStatus {
 /// Normalize a string for comparison: lowercase, strip diacritics,
 /// remove common suffixes like "(feat. ...)", "- Remastered", etc.
 fn normalize(s: &str) -> String {
-    let mut result = s.to_lowercase();
+    let mut result = s.trim().to_lowercase();
 
     // Strip common non-parenthesized suffixes (parenthesized versions are
     // handled by regex_removed below, so only hyphen-prefixed ones are needed)

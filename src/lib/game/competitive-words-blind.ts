@@ -24,6 +24,7 @@
  */
 
 import { Difficulty, PLAYER_COLORS } from '@/types/game';
+import { shuffleArray } from '@/lib/utils';
 
 // ===================== TYPES =====================
 
@@ -203,7 +204,7 @@ function getNextRoundPairing(game: CompetitiveGame): { player1Id: string; player
 
   if (game.rounds.length === 0) {
     // First round: random pairing
-    const shuffled = [...eligiblePlayers].sort(() => Math.random() - 0.5);
+    const shuffled = shuffleArray(eligiblePlayers);
     return { player1Id: shuffled[0].id, player2Id: shuffled[1].id };
   }
 

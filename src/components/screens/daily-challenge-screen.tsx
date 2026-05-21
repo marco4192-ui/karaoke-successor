@@ -35,6 +35,7 @@ import {
 import { getExtendedStats } from '@/lib/game/player-progression';
 import { Song } from '@/types/game';
 import { MicIcon } from '@/components/icons';
+import { shuffleArray } from '@/lib/utils';
 
 // ===================== DAILY CHALLENGE SCREEN =====================
 export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_song: Song) => void }) {
@@ -73,8 +74,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
   // Generate song choices when challenge is not completed
   useEffect(() => {
     const songs = getAllSongs();
-    const shuffled = [...songs].sort(() => Math.random() - 0.5);
-    setSongChoices(shuffled.slice(0, 3));
+    setSongChoices(shuffleArray(songs).slice(0, 3));
   }, [completedToday]);
   
   // Challenge descriptions
@@ -500,8 +500,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
                       // Select mode and generate song choices
                       setSelectedMode(mode);
                       const songs = getAllSongs();
-                      const shuffled = [...songs].sort(() => Math.random() - 0.5);
-                      setModeSongChoices(shuffled.slice(0, 3));
+                      setModeSongChoices(shuffleArray(songs).slice(0, 3));
                     }
                   }}
                 >

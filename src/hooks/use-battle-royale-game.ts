@@ -14,6 +14,7 @@ import {
 import { Song, Note, LyricLine, PitchDetectionResult } from '@/types/game';
 import { calculatePitchStats, getVisibleNotes, PitchStats, NOTE_WINDOW } from '@/lib/game/note-utils';
 import { useMultiPitchDetector, type PlayerPitchConfig } from '@/hooks/use-multi-pitch-detector';
+import { shuffleArray } from '@/lib/utils';
 import { calculateScoringMetadata } from '@/lib/game/scoring';
 import { evaluateAndScoreTick } from '@/lib/game/party-scoring';
 import { useBattleRoyaleSongMedia } from '@/hooks/use-battle-royale-song-media';
@@ -227,7 +228,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
       (s.audioUrl || s.relativeAudioPath || s.storedMedia) &&
       (!excludeIds || !excludeIds.includes(s.id))
     );
-    const shuffled = [...playableSongs].sort(() => Math.random() - 0.5);
+    const shuffled = shuffleArray(playableSongs);
     return shuffled.slice(0, count);
   }, [songs]);
 

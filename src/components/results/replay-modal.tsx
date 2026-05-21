@@ -189,7 +189,7 @@ export function ReplayModal({ isOpen, onClose, replay, originalAudioUrl, origina
 
   const formatDate = (timestamp: number): string => {
     const d = new Date(timestamp);
-    return d.toLocaleDateString('de-DE', {
+    return d.toLocaleDateString(navigator.language, {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',

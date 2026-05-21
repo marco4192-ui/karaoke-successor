@@ -5,6 +5,7 @@
 
 import type { Song, Difficulty } from '@/types/game';
 import { getNonDuetSongs, filterSongs } from '@/lib/game/song-library';
+import { shuffleArray } from '@/lib/utils';
 import type { GameSetupResult, InputMode, SongSelectionOption } from '@/components/game/unified-party-setup.types';
 
 // ─── Frequency Label Converter ───────────────────────────────────────────────
@@ -95,5 +96,5 @@ export function pickRandomVotingSongs(
 ): Song[] {
   const songs = getNonDuetSongs();
   const filtered = filterSongs(songs, filterGenre, filterLanguage, filterCombined);
-  return [...filtered].sort(() => Math.random() - 0.5).slice(0, count);
+  return shuffleArray(filtered).slice(0, count);
 }
