@@ -341,7 +341,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 } catch (err) {
                   // eslint-disable-next-line no-console
                   console.error('[PartySetup] Failed to create battle royale:', err);
-                  alert(t('partySetup.battleRoyaleStartError').replace('{error}', err instanceof Error ? err.message : String(err)));
+                  toast({ title: t('partySetup.battleRoyaleStartError').replace('{error}', err instanceof Error ? err.message : String(err)) });
                 }
                 break;
               }
