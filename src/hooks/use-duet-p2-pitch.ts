@@ -56,6 +56,10 @@ export function useDuetP2Pitch({
   // instead of relying solely on the mobile companion app for P2 pitch data.
   const p2DetectorRef = useRef<PitchDetector | null>(null);
   const p2DetectorInitRef = useRef(false);
+  // Use ref to read mobilePitch inside effect without adding it to deps
+  // (mobilePitch?.frequency changes ~20x/sec, which would re-init the detector constantly)
+  const mobilePitchRef = useRef(mobilePitch);
+  mobilePitchRef.current = mobilePitch;
 
   useEffect(() => {
     if (!isDuetMode || !song) return;
@@ -69,7 +73,7 @@ export function useDuetP2Pitch({
 
     // Only initialize P2 detector if no mobile pitch is coming in
     // (mobile companion takes priority for P2 pitch data)
-    if (mobilePitch?.frequency) return;
+    if (mobilePitchRef.current?.frequency) return;
 
     let destroyed = false;
     const detector = new PitchDetector();
@@ -105,7 +109,7 @@ export function useDuetP2Pitch({
       p2DetectorRef.current = null;
       p2DetectorInitRef.current = false;
     };
-  }, [isDuetMode, song, mobilePitch?.frequency, setP2DetectedPitch, setP2Volume, difficulty]);
+  }, [isDuetMode, song, setP2DetectedPitch, setP2Volume, difficulty]);
 
   // Stop P2 detector when game ends or component unmounts
   useEffect(() => {
