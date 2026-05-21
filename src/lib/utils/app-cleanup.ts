@@ -7,7 +7,7 @@
  * cancelling animation frames, revoking blob URLs).
  *
  * Usage:
- *   import { registerCleanup, runAllCleanup } from '@/lib/utils/app-cleanup';
+ *   import { registerCleanup } from '@/lib/utils/app-cleanup';
  *   registerCleanup('my-resource', () => { stream.getTracks().forEach(t => t.stop()); });
  *
  * Async cleanup (fire-and-forget, best-effort):
@@ -34,7 +34,7 @@ export function registerCleanup(key: string, fn: CleanupFn): void {
  * Run all registered cleanup callbacks synchronously.
  * Called automatically on beforeunload, but can also be called manually (e.g. in tests).
  */
-export function runAllCleanup(): void {
+function runAllCleanup(): void {
   for (const [, fn] of cleanupRegistry) {
     try {
       fn();

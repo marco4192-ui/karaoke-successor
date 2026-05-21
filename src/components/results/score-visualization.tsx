@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== SCORE VISUALIZATION COMPONENTS =====================
-export type VisualizationMode = 'table' | 'barometer' | 'speedometer' | 'radar' | 'comparison';
+type VisualizationMode = 'table' | 'barometer' | 'speedometer' | 'radar' | 'comparison';
 
 // Score Visualization Component with multiple display modes
 export function ScoreVisualization({ 

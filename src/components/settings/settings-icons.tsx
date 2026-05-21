@@ -7,8 +7,6 @@ export {
   MicIcon,
   PhoneIcon,
   SettingsIcon,
-  TrophyIcon,
-  EditIcon,
   WebcamIcon,
   FolderIcon,
   InfoIcon,

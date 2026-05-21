@@ -28,7 +28,7 @@ export interface Achievement {
   progress: (stats: UserStats) => number;
 }
 
-export interface GameResults {
+interface GameResults {
   songId: string;
   songTitle: string;
   songArtist: string;
@@ -210,11 +210,11 @@ export function getUnlockedAchievements(stats: UserStats): Achievement[] {
 // Track previously unlocked IDs so we can detect "new" unlocks
 const UNLOCKED_STORAGE_KEY = 'karaoke-mobile-unlocked-achievements';
 
-export function getPreviouslyUnlockedIds(): string[] {
+function getPreviouslyUnlockedIds(): string[] {
   return getJson<string[]>(UNLOCKED_STORAGE_KEY, []);
 }
 
-export function saveUnlockedIds(ids: string[]): void {
+function saveUnlockedIds(ids: string[]): void {
   setJson(UNLOCKED_STORAGE_KEY, ids);
 }
 

@@ -15,7 +15,7 @@ export interface MobileSong {
   coverImage?: string;
 }
 
-export type QueueItemStatus = 'pending' | 'playing' | 'completed';
+type QueueItemStatus = 'pending' | 'playing' | 'completed';
 
 export interface QueueItem {
   id: string;
@@ -50,7 +50,7 @@ export interface CompanionScoreEntry {
   score: number;
 }
 
-export interface SingalongTurn {
+interface SingalongTurn {
   profileId: string | null;
   nextProfileId: string | null;
   countdown: number | null; // 3, 2, 1 when switching, null when actively singing

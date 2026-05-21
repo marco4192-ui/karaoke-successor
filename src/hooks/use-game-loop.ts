@@ -10,11 +10,8 @@ import { computeGameElapsedMs, buildP2PitchResult, getEffectiveSongEnd } from '@
 
 // ── Re-exports ──
 export { useGameResults } from '@/hooks/use-game-results';
-export type { PlayerScoreSnapshot, P2ScoringSnapshot, UseGameResultsOptions } from '@/hooks/use-game-results';
 export { playSongMedia, scheduleMediaWatchdog } from '@/hooks/use-media-playback';
-export type { PlayMediaParams, MediaWatchdogParams } from '@/hooks/use-media-playback';
 export { computeGameElapsedMs, buildP2PitchResult, getEffectiveSongEnd } from '@/hooks/game-loop-utils';
-export type { ComputeElapsedParams, BuildP2PitchParams } from '@/hooks/game-loop-utils';
 
 interface UseGameLoopOptions {
   // Song / media
