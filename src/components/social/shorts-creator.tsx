@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
-import type { Song, HighscoreEntry, GameResult } from '@/types/game';
+import type { Song, HighscoreEntry } from '@/types/game';
 import type { VideoStyle, CameraPosition } from './shorts-types';
 import { useCanvasRenderer, ShortsCanvas } from './shorts-canvas';
 import {
@@ -16,9 +16,7 @@ import {
 interface ShortsCreatorProps {
   song: Song;
   score: HighscoreEntry;
-  gameResult?: GameResult;
   audioUrl?: string;
-  onClose?: () => void;
 }
 
 export function ShortsCreator({ song, score, audioUrl }: ShortsCreatorProps) {
