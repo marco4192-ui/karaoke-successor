@@ -25,7 +25,7 @@ import type { GameSetupResult } from '@/components/game/unified-party-setup';
 import { preparePtmNextSong } from '@/lib/game/ptm-next-song';
 import { toast } from '@/hooks/use-toast';
 import type { Screen } from '@/types/screens';
-import { freqNumberToLabel, trimSongToShortMode, pickRandomVotingSongs } from './party-game-helpers';
+import { freqNumberToLabel, trimSongToShortMode, pickRandomVotingSongs, buildCompetitiveSetupResult } from './party-game-helpers';
 
 interface PartyGameScreensProps {
   screen: Screen;
@@ -740,29 +740,22 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             const p2Color = comp.players.find(p => p.id === p2Id)?.color || '#4ECDC4';
             addPlayer({ id: p1Id, name: p1Name, color: p1Color });
             addPlayer({ id: p2Id, name: p2Name, color: p2Color });
-            const setupResult: GameSetupResult = {
+            const setupResult = buildCompetitiveSetupResult({
               mode: 'missing-words',
               players: [
-                { id: p1Id, name: p1Name, color: p1Color, playerType: 'microphone', micId: 'default', micName: t('partyGameScreens.microphone1') },
-                { id: p2Id, name: p2Name, color: p2Color, playerType: 'microphone', micId: 'default', micName: t('partyGameScreens.microphone2') },
+                { id: p1Id, name: p1Name, color: p1Color },
+                { id: p2Id, name: p2Name, color: p2Color },
               ],
+              difficulty: comp.settings.difficulty,
               settings: {
-                difficulty: comp.settings.difficulty,
-                filterGenre: 'all',
-                filterLanguage: 'all',
-                filterCombined: true,
                 missingWordFrequency: freqNumberToLabel(comp.settings.missingWordFrequency),
                 bestOf: comp.settings.bestOf,
                 granularity: comp.settings.missingWordsGranularity,
                 hardcoreMissingWords: comp.settings.hardcoreMissingWords,
                 escalating: comp.settings.escalating,
               },
-              songSelection: 'random',
-              difficulty: comp.settings.difficulty,
-              inputMode: 'microphone',
-            };
+            });
             party.setUnifiedSetupResult(setupResult);
-            // TODO: Add back navigation from competitive game view to setup screen
             setGameMode('missing-words');
             setSong(song);
             setScreen('game');
@@ -774,26 +767,18 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             setPlayers([]);
             const pColor = comp.players.find(p => p.id === pId)?.color || '#FF6B6B';
             addPlayer({ id: pId, name: pName, color: pColor });
-            const setupResult: GameSetupResult = {
+            const setupResult = buildCompetitiveSetupResult({
               mode: 'missing-words',
-              players: [
-                { id: pId, name: pName, color: pColor, playerType: 'microphone', micId: 'default', micName: t('partyGameScreens.microphone1') },
-              ],
+              players: [{ id: pId, name: pName, color: pColor }],
+              difficulty: comp.settings.difficulty,
               settings: {
-                difficulty: comp.settings.difficulty,
-                filterGenre: 'all',
-                filterLanguage: 'all',
-                filterCombined: true,
                 missingWordFrequency: freqNumberToLabel(comp.settings.missingWordFrequency),
                 bestOf: comp.settings.bestOf,
                 granularity: comp.settings.missingWordsGranularity,
                 hardcoreMissingWords: comp.settings.hardcoreMissingWords,
                 escalating: comp.settings.escalating,
               },
-              songSelection: 'random',
-              difficulty: comp.settings.difficulty,
-              inputMode: 'microphone',
-            };
+            });
             party.setUnifiedSetupResult(setupResult);
             setGameMode('missing-words');
             setSong(song);
@@ -836,28 +821,21 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             const p2Color = comp.players.find(p => p.id === p2Id)?.color || '#4ECDC4';
             addPlayer({ id: p1Id, name: p1Name, color: p1Color });
             addPlayer({ id: p2Id, name: p2Name, color: p2Color });
-            const setupResult: GameSetupResult = {
+            const setupResult = buildCompetitiveSetupResult({
               mode: 'blind',
               players: [
-                { id: p1Id, name: p1Name, color: p1Color, playerType: 'microphone', micId: 'default', micName: t('partyGameScreens.microphone1') },
-                { id: p2Id, name: p2Name, color: p2Color, playerType: 'microphone', micId: 'default', micName: t('partyGameScreens.microphone2') },
+                { id: p1Id, name: p1Name, color: p1Color },
+                { id: p2Id, name: p2Name, color: p2Color },
               ],
+              difficulty: comp.settings.difficulty,
               settings: {
-                difficulty: comp.settings.difficulty,
-                filterGenre: 'all',
-                filterLanguage: 'all',
-                filterCombined: true,
                 blindFrequency: freqNumberToLabel(comp.settings.blindFrequency),
                 bestOf: comp.settings.bestOf,
                 hardcore: comp.settings.hardcore,
                 escalating: comp.settings.escalating,
               },
-              songSelection: 'random',
-              difficulty: comp.settings.difficulty,
-              inputMode: 'microphone',
-            };
+            });
             party.setUnifiedSetupResult(setupResult);
-            // TODO: Add back navigation from competitive game view to setup screen
             setGameMode('blind');
             setSong(song);
             setScreen('game');
@@ -869,25 +847,17 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             setPlayers([]);
             const pColor = comp.players.find(p => p.id === pId)?.color || '#FF6B6B';
             addPlayer({ id: pId, name: pName, color: pColor });
-            const setupResult: GameSetupResult = {
+            const setupResult = buildCompetitiveSetupResult({
               mode: 'blind',
-              players: [
-                { id: pId, name: pName, color: pColor, playerType: 'microphone', micId: 'default', micName: t('partyGameScreens.microphone1') },
-              ],
+              players: [{ id: pId, name: pName, color: pColor }],
+              difficulty: comp.settings.difficulty,
               settings: {
-                difficulty: comp.settings.difficulty,
-                filterGenre: 'all',
-                filterLanguage: 'all',
-                filterCombined: true,
                 blindFrequency: freqNumberToLabel(comp.settings.blindFrequency),
                 bestOf: comp.settings.bestOf,
                 hardcore: comp.settings.hardcore,
                 escalating: comp.settings.escalating,
               },
-              songSelection: 'random',
-              difficulty: comp.settings.difficulty,
-              inputMode: 'microphone',
-            };
+            });
             party.setUnifiedSetupResult(setupResult);
             setGameMode('blind');
             setSong(song);

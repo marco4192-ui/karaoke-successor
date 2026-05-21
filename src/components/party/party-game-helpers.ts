@@ -3,8 +3,9 @@
  * These are stateless utilities that don't depend on React hooks or component state.
  */
 
-import type { Song } from '@/types/game';
+import type { Song, GameMode, Difficulty } from '@/types/game';
 import { getNonDuetSongs, filterSongs } from '@/lib/game/song-library';
+import type { GameSetupResult } from '@/components/game/unified-party-setup.types';
 
 // ─── Frequency Label Converter ───────────────────────────────────────────────
 
@@ -14,6 +15,49 @@ export function freqNumberToLabel(freq: number): 'light' | 'normal' | 'hard' | '
   if (freq >= 0.45) return 'hard';
   if (freq >= 0.20) return 'normal';
   return 'light';
+}
+
+// ─── Competitive Setup Builder ──────────────────────────────────────────────
+
+interface CompetitivePlayerEntry {
+  id: string;
+  name: string;
+  color: string;
+}
+
+/**
+ * Build a GameSetupResult for competitive modes (missing-words / blind).
+ * Consolidates the duplicated setup logic from the 4 onPlayMatch/onPlaySolo callbacks
+ * in PartyGameScreens into a single reusable helper.
+ */
+export function buildCompetitiveSetupResult(params: {
+  mode: 'missing-words' | 'blind';
+  players: CompetitivePlayerEntry[];
+  difficulty: Difficulty;
+  settings: Record<string, unknown>;
+}): GameSetupResult {
+  const { mode, players, difficulty, settings } = params;
+  return {
+    mode,
+    players: players.map((p, i) => ({
+      id: p.id,
+      name: p.name,
+      color: p.color,
+      playerType: 'microphone' as const,
+      micId: 'default',
+      micName: `Mic ${i + 1}`,
+    })),
+    settings: {
+      difficulty,
+      filterGenre: 'all',
+      filterLanguage: 'all',
+      filterCombined: true,
+      ...settings,
+    },
+    songSelection: 'random',
+    difficulty,
+    inputMode: 'microphone',
+  };
 }
 
 // ─── Song Duration Helpers ────────────────────────────────────────────────────
