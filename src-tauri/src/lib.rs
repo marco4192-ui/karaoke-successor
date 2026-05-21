@@ -260,17 +260,24 @@ struct NativeDirEntry {
 
 #[tauri::command]
 fn native_read_dir(dir_path: String) -> Result<Vec<NativeDirEntry>, String> {
-    validate_safe_path(&dir_path)?;
-    let path = PathBuf::from(&dir_path);
-    if !path.exists() {
-        return Err(format!("Directory not found: {}", dir_path));
+    let validated = validate_safe_path(&dir_path)?;
+    // Try the validated (canonicalized) path first
+    if validated.exists() && validated.is_dir() {
+        return read_dir_entries(&validated, &dir_path);
     }
-    if !path.is_dir() {
-        return Err(format!("Not a directory: {}", dir_path));
+    // Try remaining candidates (normalized separators, extended-length prefix, etc.)
+    for candidate in resolve_path_candidates(&dir_path, &validated).into_iter().skip(1) {
+        if candidate.is_dir() {
+            return read_dir_entries(&candidate, &dir_path);
+        }
     }
+    Err(format!("Directory not found: {}", dir_path))
+}
 
-    let entries = fs::read_dir(&path)
-        .map_err(|e| format!("Failed to read directory '{}': {}", dir_path, e))?;
+/// Helper: read directory entries from a concrete path
+fn read_dir_entries(dir: &std::path::Path, display_path: &str) -> Result<Vec<NativeDirEntry>, String> {
+    let entries = fs::read_dir(dir)
+        .map_err(|e| format!("Failed to read directory '{}': {}", display_path, e))?;
 
     let mut result = Vec::new();
     for entry in entries.flatten() {
