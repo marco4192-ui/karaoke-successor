@@ -91,7 +91,7 @@ export function getAllSongs(): Song[] {
 // Inline duet detection to avoid circular dependency with library/utils.ts
 export function getNonDuetSongs(): Song[] {
   return getAllSongs().filter(s => {
-    if ((s as any).isDuet === true) return false;
+    if (s.isDuet === true) return false;
     if (s.title && /\[\s*duet\s*\]/i.test(s.title)) return false;
     if (s.title && /\(\s*duet\s*\)/i.test(s.title)) return false;
     if (s.lyrics && s.lyrics.length > 0) {

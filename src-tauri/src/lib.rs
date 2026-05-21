@@ -31,6 +31,42 @@ const MAX_FILE_SIZE: usize = 200 * 1024 * 1024;
 // potential damage from injected or malicious frontend calls.
 // ============================================================
 
+/// Returns an ordered list of candidate paths to try when reading a file.
+/// Handles forward-slash → backslash normalization and Windows extended-length
+/// (`\\?\`) prefix. The caller should try each path in order and stop at the
+/// first success.
+fn resolve_path_candidates(file_path: &str, validated: &PathBuf) -> Vec<PathBuf> {
+    let mut candidates = Vec::new();
+
+    // Candidate 1: validated canonical path
+    candidates.push(validated.clone());
+
+    // Candidate 2: normalize separators to OS-native
+    let normalized = file_path.replace('/', &std::path::MAIN_SEPARATOR.to_string());
+    candidates.push(PathBuf::from(&normalized));
+
+    // Windows-specific candidates with extended-length prefix
+    #[cfg(target_os = "windows")]
+    {
+        let backslash_path = file_path.replace('/', r"\");
+        candidates.push(PathBuf::from(format!(r"\\?\{}", backslash_path)));
+        candidates.push(PathBuf::from(format!(r"\\?\{}", normalized)));
+
+        // Candidate 3c: canonicalize parent directory then re-join
+        if let Some(parent) = PathBuf::from(&backslash_path).parent() {
+            if let Ok(canonical_parent) = parent.canonicalize() {
+                if let Some(file_name) = PathBuf::from(&backslash_path).file_name() {
+                    let canonical_path = canonical_parent.join(file_name);
+                    candidates.push(canonical_path.clone());
+                    candidates.push(PathBuf::from(format!(r"\\?\{}", canonical_path.to_string_lossy())));
+                }
+            }
+        }
+    }
+
+    candidates
+}
+
 /// Check whether a resolved path points to a critical system directory
 /// or its parent. Returns Ok(canonical path) if safe, Err otherwise.
 fn validate_safe_path(raw_path: &str) -> Result<PathBuf, String> {
@@ -120,58 +156,14 @@ fn native_read_file_bytes(file_path: String) -> Result<String, String> {
         Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes))
     };
 
-    // Attempt 1: use the validated canonical path
-    if let Ok(bytes) = fs::read(&validated) {
-        return encode_bytes(bytes);
-    }
-
-    // Attempt 2: normalize separators to OS-native and retry.
-    // On Windows, forward slashes are generally fine but edge cases with
-    // special characters (like & in folder names) can sometimes cause
-    // PathBuf::from to produce a path that doesn't match the filesystem.
-    let normalized = file_path.replace('/', &std::path::MAIN_SEPARATOR.to_string());
-    let path2 = PathBuf::from(&normalized);
-    if let Ok(bytes) = fs::read(&path2) {
-        return encode_bytes(bytes);
-    }
-
-    // Attempt 3: On Windows, use the extended-length path prefix (\\?\)
-    // which bypasses MAX_PATH (260 chars) and handles certain special
-    // characters more reliably. The path MUST use backslashes.
-    #[cfg(target_os = "windows")]
-    {
-        let backslash_path = file_path.replace('/', r"\");
-        let verbatim = format!(r"\\?\{}", backslash_path);
-        if let Ok(bytes) = fs::read(&verbatim) {
+    for candidate in resolve_path_candidates(&file_path, &validated) {
+        if let Ok(bytes) = fs::read(&candidate) {
             return encode_bytes(bytes);
-        }
-        let verbatim_norm = format!(r"\\?\{}", normalized);
-        if let Ok(bytes) = fs::read(&verbatim_norm) {
-            return encode_bytes(bytes);
-        }
-        // Attempt 3c: Canonicalize the parent directory to resolve any
-        // symlinks, junctions, or case mismatches, then re-read the file.
-        if let Some(parent) = PathBuf::from(&backslash_path).parent() {
-            if let Ok(canonical_parent) = parent.canonicalize() {
-                if let Some(file_name) = PathBuf::from(&backslash_path).file_name() {
-                    let canonical_path = canonical_parent.join(file_name);
-                    if let Ok(bytes) = fs::read(&canonical_path) {
-                        println!("[native_read_file_bytes] Found via canonical parent: {:?}", canonical_path);
-                        return encode_bytes(bytes);
-                    }
-                    let canonical_verbatim = format!(r"\\?\{}", canonical_path.to_string_lossy());
-                    if let Ok(bytes) = fs::read(&canonical_verbatim) {
-                        println!("[native_read_file_bytes] Found via canonical+verbatim: {:?}", canonical_verbatim);
-                        return encode_bytes(bytes);
-                    }
-                }
-            }
         }
     }
 
     // All attempts failed — report the last actual OS error for debugging
-    let last_err = fs::read(&path).err().unwrap_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "unknown"));
-    Err(format!("File not found: {} ({})", file_path, last_err))
+    Err(format!("File not found: {}", file_path))
 }
 
 /// Read a file as text (for TXT, config files, etc.)
@@ -197,20 +189,10 @@ fn native_read_file_text(file_path: String) -> Result<String, String> {
             // in binary formats (.mp3, .jpg, .exe, etc.).  If we see *any*
             // null byte the content is almost certainly binary — bail out.
             if bytes.contains(&0x00) {
-                println!(
-                    "[native_read_file_text] Null bytes detected — refusing to decode as text (likely a binary file)"
-                );
                 return None;
             }
 
             let latin1: String = bytes.iter().map(|&b| b as char).collect();
-            // Check if the content looks like it might actually be valid UTF-8
-            // but failed for another reason (e.g., path issues). If most
-            // characters are ASCII (< 0x80), assume Latin-1 is correct.
-            let high_bytes = bytes.iter().filter(|&&b| b >= 0x80).count();
-            if high_bytes > 0 {
-                println!("[native_read_file_text] UTF-8 failed, decoded as Latin-1 ({} non-ASCII bytes)", high_bytes);
-            }
             return Some(latin1);
         }
         None
@@ -222,45 +204,15 @@ fn native_read_file_text(file_path: String) -> Result<String, String> {
         return Ok(content);
     }
 
-    // Attempt 2: normalize separators to OS-native and retry
-    let normalized = file_path.replace('/', &std::path::MAIN_SEPARATOR.to_string());
-    let path2 = PathBuf::from(&normalized);
-    if let Some(content) = try_read_text(&path2) {
-        return Ok(content);
-    }
-
-    // Attempt 3: Windows extended-length path prefix (see native_read_file_bytes)
-    #[cfg(target_os = "windows")]
-    {
-        let backslash_path = file_path.replace('/', r"\");
-        let verbatim = format!(r"\\?\{}", backslash_path);
-        let verbatim_path = PathBuf::from(&verbatim);
-        if let Some(content) = try_read_text(&verbatim_path) {
+    // Attempt 2+: try normalized / extended-length candidates
+    for candidate in resolve_path_candidates(&file_path, &validated).into_iter().skip(1) {
+        if let Some(content) = try_read_text(&candidate) {
             return Ok(content);
-        }
-        let verbatim_norm = format!(r"\\?\{}", normalized);
-        let verbatim_norm_path = PathBuf::from(&verbatim_norm);
-        if let Some(content) = try_read_text(&verbatim_norm_path) {
-            return Ok(content);
-        }
-        // Canonicalize parent directory
-        if let Some(parent) = PathBuf::from(&backslash_path).parent() {
-            if let Ok(canonical_parent) = parent.canonicalize() {
-                if let Some(file_name) = PathBuf::from(&backslash_path).file_name() {
-                    let canonical_path = canonical_parent.join(file_name);
-                    if let Some(content) = try_read_text(&canonical_path) {
-                        return Ok(content);
-                    }
-                }
-            }
         }
     }
 
     // All attempts failed
-    let last_err = fs::read(&path).err()
-        .map(|e| e.to_string())
-        .unwrap_or_else(|| "unknown error".to_string());
-    Err(format!("File not found: {} ({})", file_path, last_err))
+    Err(format!("File not found: {}", file_path))
 }
 
 /// Check if a file or directory exists
@@ -270,19 +222,13 @@ fn native_file_exists(file_path: String) -> bool {
         Ok(p) => p,
         Err(_) => return false,
     };
+    // Try the validated path first
     if validated.exists() {
         return true;
     }
-    // Fallback: try with OS-native separators
-    let normalized = file_path.replace('/', &std::path::MAIN_SEPARATOR.to_string());
-    if PathBuf::from(&normalized).exists() {
-        return true;
-    }
-    // Windows: try with extended-length path prefix
-    #[cfg(target_os = "windows")]
-    {
-        let verbatim = format!(r"\\?\{}", file_path.replace('/', r"\"));
-        if PathBuf::from(&verbatim).exists() {
+    // Try remaining candidates (normalized separators, extended-length prefix, etc.)
+    for candidate in resolve_path_candidates(&file_path, &validated).into_iter().skip(1) {
+        if candidate.exists() {
             return true;
         }
     }

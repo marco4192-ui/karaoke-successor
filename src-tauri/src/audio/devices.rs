@@ -21,25 +21,18 @@ pub fn list_output_devices() -> Result<Vec<AudioDeviceInfo>, String> {
     let mut result = Vec::new();
 
     let available_hosts = cpal::available_hosts();
-    println!("Available audio hosts: {:?}", available_hosts);
 
     for host_id in available_hosts {
         let host_name = format!("{:?}", host_id);
 
         let host = match cpal::host_from_id(host_id) {
             Ok(h) => h,
-            Err(e) => {
-                println!("Skipping host {:?}: {}", host_id, e);
-                continue;
-            }
+            Err(_) => continue,
         };
 
         let devices = match host.output_devices() {
             Ok(d) => d,
-            Err(e) => {
-                println!("Cannot list devices for {:?}: {}", host_id, e);
-                continue;
-            }
+            Err(_) => continue,
         };
 
         for (idx, device) in devices.enumerate() {

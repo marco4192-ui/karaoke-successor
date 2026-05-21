@@ -1,7 +1,15 @@
 // Daily Challenge Leaderboard System
 // Global rankings, XP system, streak rewards, weekly challenges, and quests
+//
+// TODO: This file is ~1280 lines. Consider splitting into modules:
+//   - daily-challenge-types.ts   (interfaces, constants, badge/quest definitions)
+//   - daily-challenge-core.ts    (daily challenge + co-op submission, best results)
+//   - weekly-challenge.ts       (weekly challenge system)
+//   - quest-system.ts           (quest progress, claiming rewards)
+//   - date-utils.ts             (todayISO, yesterdayISO, hashString, getISOWeek, etc.)
 
 import { getRankForXP } from './player-progression';
+import { PERFECT_ACCURACY } from './progression-levels';
 import { StorageKeys, getItem, getJson, setJson, setItem } from '@/lib/storage';
 
 // ---------------------------------------------------------------------------
@@ -644,9 +652,10 @@ export function submitChallengeResult(
       newBadges.push(badge);
     }
 
-    // Perfect challenge bonus: 100% accuracy on an accuracy challenge
-    // Use >= 99.5 to account for floating-point arithmetic (e.g. 99.999999999)
-    if (challenge.type === 'accuracy' && result.accuracy >= 99.5) {
+    // Perfect challenge bonus: 100% accuracy on an accuracy challenge.
+    // PERFECT_ACCURACY (99.5, not 100) accounts for floating-point arithmetic
+    // where tick-based scoring can produce values like 99.999999999.
+    if (challenge.type === 'accuracy' && result.accuracy >= PERFECT_ACCURACY) {
       xpEarned += XP_REWARDS.PERFECT_CHALLENGE;
     }
 
