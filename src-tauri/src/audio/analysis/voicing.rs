@@ -68,6 +68,9 @@ impl VoicingDetector {
     // ---- Internal helpers --------------------------------------------------
 
     fn rms(&self, samples: &[f64]) -> f64 {
+        if samples.is_empty() {
+            return 0.0;
+        }
         let sum: f64 = samples.iter().map(|s| s * s).sum();
         (sum / samples.len() as f64).sqrt()
     }
@@ -75,6 +78,9 @@ impl VoicingDetector {
     /// Compute the normalised autocorrelation peak (max of r(τ)/r(0) for τ > 0).
     /// Uses a limited range corresponding to the vocal pitch range (60-1200 Hz).
     fn autocorrelation_peak(&self, samples: &[f64]) -> f64 {
+        if samples.is_empty() {
+            return 0.0;
+        }
         // r(0) = mean of x[i]²
         let r0: f64 = samples.iter().map(|s| s * s).sum::<f64>() / samples.len() as f64;
         if r0 < 1e-10 {

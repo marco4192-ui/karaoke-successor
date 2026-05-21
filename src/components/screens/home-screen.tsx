@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useGameStore } from '@/lib/game/store';
@@ -42,11 +42,10 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
   
   const qrCodeSrc = useQRCode(localIP ? buildCompanionUrl(localIP) : '', 160);
   
-  // Get song count from library - only on client
-  const songCount = useMemo(() => {
-    if (typeof window === 'undefined') return 0;
-    return getAllSongs().length;
-  }, []);
+  // Get song count from library — recomputed every render so it stays
+  // in sync when songs are added/removed.  getAllSongs() is O(1) when
+  // cached (module-level in-memory cache), so this is effectively free.
+  const songCount = typeof window === 'undefined' ? 0 : getAllSongs().length;
   
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">

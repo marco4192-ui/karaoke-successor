@@ -172,6 +172,8 @@ export function useGameModes({
 
   // MISSING WORDS: Generate hidden indices ONCE when game starts
   const missingWordsGeneratedRef = useRef(false);
+  // Stores the hidden startTimes so the warning effect can check which passages are affected
+  const hiddenStartTimesRef = useRef<Set<number>>(new Set());
 
   // Track last values to avoid redundant state updates every frame
   const lastBlindPassageRef = useRef(-1);
@@ -338,6 +340,7 @@ export function useGameModes({
         }
       }
 
+      hiddenStartTimesRef.current = new Set(hiddenStartTimes);
       setMissingWordsIndices(hiddenStartTimes);
     }
   }, [gameMode, sortedLines, isGameActive, setMissingWordsIndices, missingWordFrequency, missingWordsGranularity, escalatingMultiplier]);
@@ -355,9 +358,10 @@ export function useGameModes({
         const passageStart = passage[0]?.startTime ?? 0;
         const passageEnd = passage[passage.length - 1]?.endTime ?? 0;
 
-        // Check if any line in this passage is in the hidden set
-        // We can't easily check the set here, so we just warn before every non-first passage
-        // The actual hiding is handled by the indices set above
+        // Only warn if this passage actually contains hidden words
+        const passageHasHidden = passage.some(line => hiddenStartTimesRef.current.has(line.startTime));
+        if (!passageHasHidden) continue;
+
         const timeUntilPassage = passageStart - currentTime;
         if (timeUntilPassage > 0 && timeUntilPassage <= WARNING_LEAD_MS) {
           const countdown = Math.ceil(timeUntilPassage / 1000);
@@ -380,6 +384,7 @@ export function useGameModes({
   useEffect(() => {
     blindPatternRef.current = null;
     missingWordsGeneratedRef.current = false;
+    hiddenStartTimesRef.current = new Set();
     lastBlindPassageRef.current = -1;
     lastMWWarningKeyRef.current = '';
   }, [songId]);
