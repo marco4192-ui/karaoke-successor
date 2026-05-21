@@ -268,7 +268,21 @@ export const coreTranslations = {
     activeLabel: 'Vidéo active : {id}',
     noSongsMatchFilters: 'Aucune chanson ne correspond à vos filtres. Essayez d\'autres paramètres ou importez des chansons.',
     songsInPlaylist: '{n} chansons dans la playlist',
-    youtubeRemove: 'YouTube'
+    youtubeRemove: 'YouTube',
+    lyricsToggle: 'Paroles',
+    lyricsShort: 'Paroles',
+    songsPlayed: 'jouées',
+    remaining: 'restantes',
+    requestedBy: 'Demandé par {name}',
+    maxSongs: 'Max chansons',
+    unlimited: 'illimité',
+    minutes: 'min',
+    noTimer: 'désactivé',
+    autoStopTimer: 'Minuterie auto-stop',
+    minDuration: 'Durée min.',
+    maxDuration: 'Durée max.',
+    recentlyPlayedExclude: 'Exclure récentes',
+    noExclusion: 'pas d\'exclusion',
   },
 
   errorBoundary: {

@@ -5,44 +5,106 @@ import { Song } from '@/types/game';
 import { getAllSongsAsync, getSongByIdWithLyrics } from '@/lib/game/song-library';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
 import { extractYouTubeId } from '@/components/game/youtube-player';
+import { getJsonOptional, setJson } from '@/lib/storage';
+import { StorageKeys } from '@/lib/storage';
 import { RepeatMode } from './jukebox-types';
+import type { UseJukeboxReturn } from './jukebox-types';
+
+/** Track recently played songs for F7 exclusion */
+interface RecentlyPlayedEntry {
+  songId: string;
+  playedAt: number;
+}
 
 export function useJukebox(refs?: {
   containerRef?: React.RefObject<HTMLDivElement | null>;
   videoRef?: React.RefObject<HTMLVideoElement | null>;
   audioRef?: React.RefObject<HTMLAudioElement | null>;
-}) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentSong, setCurrentSong] = useState<Song | null>(null);
-  const [customYoutubeId, setCustomYoutubeId] = useState<string | null>(null);
-  const [playlist, setPlaylist] = useState<Song[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  // Track which song IDs were manually added (via companion wishlist) vs random system picks
-  const manualIdsRef = useRef(new Set<string>());
-  // Track already-processed wishlist items to avoid re-inserting duplicates
-  const processedWishlistRef = useRef(new Set<string>());
+}): UseJukeboxReturn {
+  // ==================== STATE ====================
+
+  // --- Filter / Config State ---
   const [filterGenre, setFilterGenre] = useState<string>('all');
   const [filterArtist, setFilterArtist] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [shuffle, setShuffle] = useState(true);
   const [repeat, setRepeat] = useState<RepeatMode>('all');
+  // F11: Duration filter bounds (seconds)
+  const [minDuration, setMinDuration] = useState(0);
+  const [maxDuration, setMaxDuration] = useState(0);
+  // F10: Max songs in playlist (0 = unlimited)
+  const [maxSongs, setMaxSongs] = useState(0);
+  // N4: Auto-stop timer in minutes (0 = no timer)
+  const [timerMinutes, setTimerMinutes] = useState(0);
+  // F7: Recently played exclusion in minutes (0 = off)
+  const [recentlyPlayedMinutes, setRecentlyPlayedMinutes] = useState(30);
+
+  // --- Playback State ---
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentSong, setCurrentSong] = useState<Song | null>(null);
+  const [customYoutubeId, setCustomYoutubeId] = useState<string | null>(null);
+  const [playlist, setPlaylist] = useState<Song[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [youtubeTime, setYoutubeTime] = useState(0);
+  // #12: Tracked playback time & duration (seconds)
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [isAdPlaying, setIsAdPlaying] = useState(false);
   const [volume, setVolume] = useState(0.7);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  // F3: Mute state
+  const [isMuted, setIsMuted] = useState(false);
+  const [previousVolume, setPreviousVolume] = useState(0.7);
   const [hidePlaylist, setHidePlaylist] = useState(false);
   const [showLyrics, setShowLyrics] = useState(false);
   const [currentLyricIndex, setCurrentLyricIndex] = useState(0);
+  // #3: Loading state for song switching
+  const [isLoading, setIsLoading] = useState(false);
+  // N8: Wishlist song attribution
+  const [currentSongRequestedBy, setCurrentSongRequestedBy] = useState<string | null>(null);
+
+  // --- Song Library ---
   const [songs, setSongs] = useState<Song[]>([]);
-  // Default refs used when caller doesn't provide its own (defensive fallback)
+
+  // --- N4: Timer ---
+  const [timerRemaining, setTimerRemaining] = useState<number | null>(null);
+
+  // --- N9: Statistics ---
+  const [songsPlayed, setSongsPlayed] = useState(0);
+  const genreCountRef = useRef<Map<string, number>>(new Map());
+  const requesterCountRef = useRef<Map<string, number>>(new Map());
+
+  // ==================== REFS ====================
+
+  // Track manual vs random song IDs
+  const manualIdsRef = useRef(new Set<string>());
+  // Track already-processed wishlist items to avoid duplicates
+  const processedWishlistRef = useRef(new Set<string>());
+  // Map songId → requester name for N8 attribution
+  const songRequesterRef = useRef<Map<string, string>>(new Map());
+  // F7: Recently played history
+  const recentlyPlayedRef = useRef<RecentlyPlayedEntry[]>([]);
+  // Stable refs for use inside callbacks without re-triggering effects
   const defaultContainerRef = useRef<HTMLDivElement | null>(null);
   const defaultVideoRef = useRef<HTMLVideoElement | null>(null);
   const defaultAudioRef = useRef<HTMLAudioElement | null>(null);
   const containerRef = refs?.containerRef ?? defaultContainerRef;
   const videoRef = refs?.videoRef ?? defaultVideoRef;
   const audioRef = refs?.audioRef ?? defaultAudioRef;
+  // Refs for stable access inside callbacks
+  const songsRef = useRef(songs);
+  songsRef.current = songs;
+  const playlistRef = useRef(playlist);
+  playlistRef.current = playlist;
+  const currentIndexRef = useRef(currentIndex);
+  currentIndexRef.current = currentIndex;
+  const isPlayingRef = useRef(isPlaying);
+  isPlayingRef.current = isPlaying;
+  const currentSongRef = useRef(currentSong);
+  currentSongRef.current = currentSong;
 
-  // Load songs asynchronously
+  // ==================== LOAD SONGS ====================
+
   useEffect(() => {
     const loadSongs = async () => {
       const allSongs = await getAllSongsAsync();
@@ -51,7 +113,8 @@ export function useJukebox(refs?: {
     loadSongs();
   }, []);
 
-  // Unique genres and artists
+  // ==================== GENRES & ARTISTS ====================
+
   const genres = useMemo(() => {
     const genreSet = new Set<string>();
     songs.forEach(s => { if (s.genre) genreSet.add(s.genre); });
@@ -64,15 +127,27 @@ export function useJukebox(refs?: {
     return Array.from(artistSet).sort();
   }, [songs]);
 
-  // Filter songs
+  // ==================== FILTER SONGS ====================
+
   const filteredSongs = useMemo(() => {
     let filtered = songs;
+
+    // F8: If a saved playlist exists, filter to those IDs
+    const savedPlaylistIds = getJsonOptional<string[]>(StorageKeys.JUKEBOX_PLAYLIST);
+    if (savedPlaylistIds && savedPlaylistIds.length > 0) {
+      const idSet = new Set(savedPlaylistIds);
+      filtered = filtered.filter(s => idSet.has(s.id));
+    }
+
+    // Genre filter
     if (filterGenre !== 'all') {
       filtered = filtered.filter(s => s.genre?.toLowerCase().includes(filterGenre.toLowerCase()));
     }
+    // Artist filter
     if (filterArtist) {
       filtered = filtered.filter(s => s.artist === filterArtist);
     }
+    // Search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(s =>
@@ -81,20 +156,68 @@ export function useJukebox(refs?: {
         s.album?.toLowerCase().includes(query)
       );
     }
+    // F11: Duration filter
+    if (minDuration > 0) {
+      filtered = filtered.filter(s => (s.duration / 1000) >= minDuration);
+    }
+    if (maxDuration > 0) {
+      filtered = filtered.filter(s => (s.duration / 1000) <= maxDuration);
+    }
+    // F7: Recently played exclusion
+    if (recentlyPlayedMinutes > 0) {
+      const cutoff = Date.now() - recentlyPlayedMinutes * 60 * 1000;
+      recentlyPlayedRef.current = recentlyPlayedRef.current.filter(e => e.playedAt > cutoff - 60 * 60 * 1000);
+      const recentIds = new Set(
+        recentlyPlayedRef.current
+          .filter(e => e.playedAt > cutoff)
+          .map(e => e.songId)
+      );
+      if (recentIds.size > 0) {
+        filtered = filtered.filter(s => !recentIds.has(s.id));
+      }
+    }
     return filtered;
-  }, [songs, filterGenre, filterArtist, searchQuery]);
+  }, [songs, filterGenre, filterArtist, searchQuery, minDuration, maxDuration, recentlyPlayedMinutes]);
 
-  // Prepare a song for playback: restore URLs + load lyrics
+  // ==================== DERIVED STATE ====================
+
+  const upNext = useMemo(() => {
+    return playlist.slice(currentIndex + 1, currentIndex + 6);
+  }, [playlist, currentIndex]);
+
+  // N9: Top genres
+  const topGenres = useMemo(() => {
+    return Array.from(genreCountRef.current.entries())
+      .map(([genre, count]) => ({ genre, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- ref-based, update triggered by songsPlayed
+  }, [songsPlayed]);
+
+  // N9: Top requesters
+  const topRequesters = useMemo(() => {
+    return Array.from(requesterCountRef.current.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- ref-based
+  }, [songsPlayed]);
+
+  // ==================== PREPARE SONG ====================
+
   const prepareSong = useCallback(async (song: Song): Promise<Song> => {
-    // getSongByIdWithLyrics loads lyrics from IndexedDB/filesystem AND restores URLs
     const withLyrics = await getSongByIdWithLyrics(song.id);
     return withLyrics || await ensureSongUrls(song);
   }, []);
 
-  // Generate playlist
+  // ==================== GENERATE PLAYLIST ====================
+
   const generatePlaylist = useCallback(async () => {
-    if (filteredSongs.length === 0) return;
+    if (filteredSongs.length === 0) return false;
+
     let newPlaylist = [...filteredSongs];
+
+    // Shuffle if enabled
     if (shuffle) {
       for (let i = newPlaylist.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -102,58 +225,81 @@ export function useJukebox(refs?: {
       }
     }
 
-    // Fetch companion wishlist and insert those songs after the first random
-    // song but before the remaining random songs (user wishes before system picks)
-    try {
-      const res = await fetch('/api/mobile?action=getjukebox');
-      const data = await res.json();
-      if (data.success && Array.isArray(data.wishlist) && data.wishlist.length > 0) {
-        const wishlistSongIds = new Set<string>();
-        const wishlistSongs: Song[] = [];
-        for (const item of data.wishlist) {
-          const key = `${item.songId}-${item.addedBy}`;
-          processedWishlistRef.current.add(key);
-          if (!wishlistSongIds.has(item.songId)) {
-            wishlistSongIds.add(item.songId);
-            const fullSong = newPlaylist.find(s => s.id === item.songId);
-            if (fullSong) {
-              wishlistSongs.push(fullSong);
-              manualIdsRef.current.add(fullSong.id);
-            }
-          }
-        }
-        if (wishlistSongs.length > 0) {
-          // Remove wishlist songs from random pool to avoid duplicates
-          const randomPool = newPlaylist.filter(s => !wishlistSongIds.has(s.id));
-          // Place one random song first, then all wishlist songs, then remaining random
-          const firstRandom = newPlaylist[0] && !wishlistSongIds.has(newPlaylist[0].id)
-            ? [newPlaylist[0]]
-            : (randomPool.length > 0 ? [randomPool.shift() ?? randomPool[0]] : []);
-          newPlaylist = [...firstRandom, ...wishlistSongs, ...randomPool];
-        }
+    // #1 FIX: Mark ALL songs that are known wishlist items in manualIdsRef
+    // Use processedWishlistRef to know which are wishlist songs
+    for (const song of newPlaylist) {
+      if (processedWishlistRef.current.has(song.id)) {
+        manualIdsRef.current.add(song.id);
       }
-    } catch { /* ignore */ }
+    }
 
+    // N1: Interleave wishlist songs in round-robin order among random songs
+    // Collect wishlist songs that are in the pool and their requesters
+    const wishlistSongs: { song: Song; requester: string }[] = [];
+    const randomSongs: Song[] = [];
+
+    for (const song of newPlaylist) {
+      const requester = songRequesterRef.current.get(song.id);
+      if (requester && manualIdsRef.current.has(song.id)) {
+        wishlistSongs.push({ song, requester });
+      } else {
+        randomSongs.push(song);
+      }
+    }
+
+    // Interleave: one random, one wishlist, one random, ...
+    if (wishlistSongs.length > 0) {
+      const interleaved: Song[] = [];
+      const maxLen = Math.max(randomSongs.length, wishlistSongs.length);
+      for (let i = 0; i < maxLen; i++) {
+        if (i < randomSongs.length) interleaved.push(randomSongs[i]);
+        if (i < wishlistSongs.length) interleaved.push(wishlistSongs[i].song);
+      }
+      newPlaylist = interleaved;
+    }
+
+    // #15 FIX: No separate wishlist fetch here — polling effect handles live insertion
+
+    // F10: Limit playlist size
+    if (maxSongs > 0) {
+      newPlaylist = newPlaylist.slice(0, maxSongs);
+    }
+
+    // Prepare first song
     const firstSong = newPlaylist[0];
     if (firstSong) {
       const preparedSong = await prepareSong(firstSong);
       newPlaylist = [preparedSong, ...newPlaylist.slice(1)];
     }
+
     setPlaylist(newPlaylist);
     setCurrentIndex(0);
     setCurrentSong(newPlaylist[0] || null);
-  }, [filteredSongs, shuffle, prepareSong]);
+    setCurrentTime(0);
+    setDuration(newPlaylist[0]?.duration ? newPlaylist[0].duration / 1000 : 0);
+    return true;
+  }, [filteredSongs, shuffle, prepareSong, maxSongs]);
 
-  // Insert a manually-added song after the last manual song (or after current) but before the first random song
-  const insertManualSong = useCallback((song: Song) => {
-    // Don't insert duplicates already in the playlist
-    if (playlist.some(s => s.id === song.id)) return;
+  // ==================== INSERT MANUAL SONG ====================
+
+  const insertManualSongRef = useRef<(song: Song, requester?: string) => void>(() => {});
+
+  const insertManualSong = useCallback((song: Song, requester?: string) => {
+    // Don't insert duplicates
+    if (playlistRef.current.some(s => s.id === song.id)) return;
+
+    // Track requester
+    if (requester) {
+      songRequesterRef.current.set(song.id, requester);
+      requesterCountRef.current.set(requester, (requesterCountRef.current.get(requester) || 0) + 1);
+    }
+
     setPlaylist(prev => {
       const newPlaylist = [...prev];
-      // Find the first 'random' song after currentIndex
-      const insertIdx = newPlaylist.findIndex((s, idx) => idx > currentIndex && !manualIdsRef.current.has(s.id));
+      const ci = currentIndexRef.current;
+      // N1: Find the first 'random' song after currentIndex to insert before it
+      const insertIdx = newPlaylist.findIndex((s, idx) => idx > ci && !manualIdsRef.current.has(s.id));
       if (insertIdx === -1) {
-        // All songs after current are manual, or at end of list → append
         newPlaylist.push(song);
       } else {
         newPlaylist.splice(insertIdx, 0, song);
@@ -161,20 +307,14 @@ export function useJukebox(refs?: {
       manualIdsRef.current.add(song.id);
       return newPlaylist;
     });
-  }, [playlist, currentIndex]);
+  }, []);
 
-  // Poll companion jukebox wishlist and insert new manual songs into the playlist.
-  // Runs always (not only when playing) so wishlist items are ready before jukebox starts.
-  // Uses refs for values read inside the callback to avoid unnecessary effect restarts.
-  const songsRef = useRef(songs);
-  songsRef.current = songs;
-  const playlistLengthRef = useRef(playlist.length);
-  playlistLengthRef.current = playlist.length;
-  const insertManualSongRef = useRef(insertManualSong);
   insertManualSongRef.current = insertManualSong;
 
+  // ==================== WISHLIST POLLING ====================
+
   useEffect(() => {
-    if (songsRef.current.length === 0) return; // Need songs loaded to resolve wishlist items
+    if (songsRef.current.length === 0) return;
     let active = true;
     const pollWishlist = async () => {
       try {
@@ -185,32 +325,34 @@ export function useJukebox(refs?: {
           const key = `${item.songId}-${item.addedBy}`;
           if (processedWishlistRef.current.has(key)) continue;
           processedWishlistRef.current.add(key);
+          // Mark as manual
+          manualIdsRef.current.add(item.songId);
+          // Track requester for N8
+          songRequesterRef.current.set(item.songId, item.addedBy);
           // Resolve wishlist item to full Song object
           const fullSong = songsRef.current.find(s => s.id === item.songId);
-          if (fullSong) {
-            if (playlistLengthRef.current > 0) {
-              // Jukebox already running — insert after last manual song
-              insertManualSongRef.current(fullSong);
-            }
-            // If playlist is empty, the songs will be picked up when
-            // generatePlaylist creates the playlist (processedWishlistRef
-            // prevents duplicates).
+          if (fullSong && playlistRef.current.length > 0) {
+            insertManualSongRef.current(fullSong, item.addedBy);
           }
         }
-      } catch {
-        // Ignore polling errors
+      } catch (error) {
+        // #25 FIX: Log instead of ignoring
+        console.debug('[useJukebox] Wishlist poll failed:', error);
       }
     };
     pollWishlist();
     const interval = setInterval(pollWishlist, 5000);
     return () => { active = false; clearInterval(interval); };
-  }, [songs.length]);
+  // #2 FIX: Only run once when songs are first loaded
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Intentionally empty — songsRef is always current
 
-  // Play next song
+  // ==================== PLAY NEXT ====================
+
   const playNext = useCallback(async () => {
-    if (playlist.length === 0) return;
-    let nextIndex = currentIndex + 1;
-    if (nextIndex >= playlist.length) {
+    if (playlistRef.current.length === 0) return;
+    let nextIndex = currentIndexRef.current + 1;
+    if (nextIndex >= playlistRef.current.length) {
       if (repeat === 'all') {
         nextIndex = 0;
       } else {
@@ -218,55 +360,131 @@ export function useJukebox(refs?: {
         return;
       }
     }
-    const nextSong = playlist[nextIndex];
-    const preparedSong = await prepareSong(nextSong);
-    setCurrentIndex(nextIndex);
-    setCurrentSong(preparedSong);
+    setIsLoading(true);
+    try {
+      const nextSong = playlistRef.current[nextIndex];
+      const preparedSong = await prepareSong(nextSong);
+      // F7: Track as recently played
+      recentlyPlayedRef.current.push({ songId: nextSong.id, playedAt: Date.now() });
+      // N9: Update statistics
+      setSongsPlayed(prev => prev + 1);
+      if (nextSong.genre) {
+        genreCountRef.current.set(nextSong.genre, (genreCountRef.current.get(nextSong.genre) || 0) + 1);
+      }
+      // N8: Set requester attribution
+      const requester = songRequesterRef.current.get(nextSong.id) || null;
+      setCurrentSongRequestedBy(requester);
+      if (requester) {
+        requesterCountRef.current.set(requester, (requesterCountRef.current.get(requester) || 0) + 1);
+      }
+      setCurrentIndex(nextIndex);
+      setCurrentSong(preparedSong);
+      setCurrentTime(0);
+      setDuration(preparedSong.duration ? preparedSong.duration / 1000 : 0);
+    } catch (error) {
+      console.debug('[useJukebox] playNext failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
   }, [playlist, currentIndex, repeat, prepareSong]);
 
-  // Play previous song
-  const playPrevious = useCallback(async () => {
-    if (playlist.length === 0) return;
-    let prevIndex = currentIndex - 1;
-    if (prevIndex < 0) {
-      prevIndex = playlist.length - 1;
-    }
-    const prevSong = playlist[prevIndex];
-    const preparedSong = await prepareSong(prevSong);
-    setCurrentIndex(prevIndex);
-    setCurrentSong(preparedSong);
-  }, [playlist, currentIndex, prepareSong]);
+  // ==================== PLAY PREVIOUS ====================
 
-  // Handle media end
+  const playPrevious = useCallback(async () => {
+    if (playlistRef.current.length === 0) return;
+    // #10 FIX: At index 0, restart current song instead of wrapping
+    if (currentIndexRef.current === 0) {
+      // Restart current song
+      if (videoRef.current) videoRef.current.currentTime = 0;
+      if (audioRef.current) audioRef.current.currentTime = 0;
+      setCurrentTime(0);
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const prevIndex = currentIndexRef.current - 1;
+      const prevSong = playlistRef.current[prevIndex];
+      const preparedSong = await prepareSong(prevSong);
+      const requester = songRequesterRef.current.get(prevSong.id) || null;
+      setCurrentSongRequestedBy(requester);
+      setCurrentIndex(prevIndex);
+      setCurrentSong(preparedSong);
+      setCurrentTime(0);
+      setDuration(preparedSong.duration ? preparedSong.duration / 1000 : 0);
+    } catch (error) {
+      console.debug('[useJukebox] playPrevious failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [playlist, currentIndex, prepareSong, videoRef, audioRef]);
+
+  // ==================== HANDLE MEDIA END ====================
+
   const handleMediaEnd = useCallback(() => {
-    if (repeat === 'one' && currentSong) {
-      if (videoRef.current) {
+    if (repeat === 'one' && currentSongRef.current) {
+      const videoHasEmbeddedAudio = currentSongRef.current.hasEmbeddedAudio || !currentSongRef.current.audioUrl;
+      if (currentSongRef.current.videoBackground && videoRef.current) {
         videoRef.current.currentTime = 0;
-        videoRef.current.play();
+        videoRef.current.play().catch(() => {});
       }
-      if (audioRef.current) {
+      if (currentSongRef.current.audioUrl && !videoHasEmbeddedAudio && audioRef.current) {
         audioRef.current.currentTime = 0;
-        audioRef.current.play();
+        audioRef.current.play().catch(() => {});
       }
     } else {
       playNext();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- audioRef/videoRef are stable refs; phase guards prevent stale calls
-  }, [repeat, currentSong, playNext]);
+  }, [repeat, playNext]);
 
-  // Start / Stop jukebox
-  const startJukebox = async () => {
-    await generatePlaylist();
-    setIsPlaying(true);
-  };
+  // ==================== START / STOP JUKEBOX ====================
 
-  const stopJukebox = () => {
+  const startJukebox = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // #5 FIX: Catch errors from generatePlaylist
+      const success = await generatePlaylist();
+      if (success) {
+        setIsPlaying(true);
+        setSongsPlayed(0);
+        genreCountRef.current.clear();
+        requesterCountRef.current.clear();
+        // N4: Start timer if configured
+        if (timerMinutes > 0) {
+          setTimerRemaining(timerMinutes * 60);
+        }
+      }
+    } catch (error) {
+      console.debug('[useJukebox] startJukebox failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [generatePlaylist, timerMinutes]);
+
+  const stopJukebox = useCallback(() => {
     setIsPlaying(false);
     if (videoRef.current) videoRef.current.pause();
     if (audioRef.current) audioRef.current.pause();
-  };
+    setTimerRemaining(null);
+  }, [videoRef, audioRef]);
 
-  // Listen for external start signal (e.g., Ctrl+J from keyboard shortcuts)
+  // ==================== N4: TIMER ====================
+
+  useEffect(() => {
+    if (timerRemaining === null || timerRemaining <= 0) return;
+    const interval = setInterval(() => {
+      setTimerRemaining(prev => {
+        if (prev === null || prev <= 1) {
+          stopJukebox();
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timerRemaining, stopJukebox]);
+
+  // ==================== JUKEBOX START EVENT LISTENER ====================
+
   useEffect(() => {
     const handleStartSignal = () => {
       startJukebox();
@@ -275,95 +493,179 @@ export function useJukebox(refs?: {
     return () => window.removeEventListener('jukebox:start', handleStartSignal);
   }, [startJukebox]);
 
-  // Toggle fullscreen — specifically targets the jukebox container, not the entire document.
-  // When the app is already in app-level fullscreen (NavBar button), simply exit fullscreen
-  // instead of switching to the jukebox's own split layout fullscreen.
-  const toggleFullscreen = () => {
+  // ==================== FULLSCREEN ====================
+
+  const toggleFullscreen = useCallback(() => {
     if (document.fullscreenElement === containerRef.current) {
-      // We are in jukebox fullscreen → exit
       document.exitFullscreen();
     } else if (document.fullscreenElement) {
-      // App-level fullscreen is active (NavBar button) → exit fullscreen entirely.
-      // Do NOT switch to jukebox container fullscreen — the main menu fullscreen
-      // should only stretch the current view, not trigger jukebox half-fullscreen.
       document.exitFullscreen();
     } else {
-      // Not in any fullscreen → enter jukebox fullscreen
       containerRef.current?.requestFullscreen().catch(() => {});
     }
-  };
+  }, [containerRef]);
 
-  // Toggle play/pause
-  const togglePlayPause = () => {
-    if (videoRef.current) {
-      if (videoRef.current.paused) videoRef.current.play();
-      else videoRef.current.pause();
-    }
-    if (audioRef.current) {
-      if (audioRef.current.paused) audioRef.current.play();
-      else audioRef.current.pause();
-    }
-  };
-
-  // Fullscreen change listener — only respond when THIS container is the fullscreen element.
-  // The app-level NavBar fullscreen (documentElement) must NOT trigger jukebox fullscreen layout.
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(document.fullscreenElement === containerRef.current);
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- containerRef is a stable ref
-  }, []);
+  }, [containerRef]);
+
+  // ==================== PLAY / PAUSE ====================
+
+  const togglePlayPause = useCallback(() => {
+    // #18 FIX: Only play the correct media element
+    const song = currentSongRef.current;
+    if (!song) return;
+    const videoHasEmbeddedAudio = song.hasEmbeddedAudio || !song.audioUrl;
+
+    if (song.videoBackground && videoRef.current) {
+      if (videoRef.current.paused) videoRef.current.play().catch(() => {});
+      else videoRef.current.pause();
+    }
+    if (song.audioUrl && !videoHasEmbeddedAudio && audioRef.current) {
+      if (audioRef.current.paused) audioRef.current.play().catch(() => {});
+      else audioRef.current.pause();
+    }
+  }, [videoRef, audioRef]);
+
+  // ==================== F3: MUTE TOGGLE ====================
+
+  const toggleMute = useCallback(() => {
+    if (isMuted) {
+      // Unmute: restore previous volume
+      setVolume(previousVolume);
+      setIsMuted(false);
+    } else {
+      // Mute: save current volume and set to 0
+      setPreviousVolume(volume);
+      setVolume(0);
+      setIsMuted(true);
+    }
+  }, [isMuted, volume, previousVolume]);
+
+  // ==================== F1: SEEK TO ====================
+
+  const seekTo = useCallback((fraction: number) => {
+    const song = currentSongRef.current;
+    if (!song) return;
+    const songDuration = song.duration / 1000; // ms to seconds
+    const targetTime = Math.max(0, Math.min(fraction, 1)) * songDuration;
+
+    if (videoRef.current) {
+      videoRef.current.currentTime = targetTime;
+    }
+    if (audioRef.current) {
+      audioRef.current.currentTime = targetTime;
+    }
+    setCurrentTime(targetTime);
+  }, [videoRef, audioRef]);
+
+  // ==================== VOLUME ====================
+
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.volume = volume;
+    if (audioRef.current) audioRef.current.volume = volume;
+    // If user moves slider while muted, unmute
+    if (volume > 0 && isMuted) {
+      setIsMuted(false);
+    }
+  }, [volume, videoRef, audioRef, isMuted]);
+
+  // ==================== #4 FIX: ROBUST AUTO-PLAY ====================
+
+  useEffect(() => {
+    if (!isPlaying || !currentSong) return;
+    const videoHasEmbeddedAudio = currentSong.hasEmbeddedAudio || !currentSong.audioUrl;
+
+    let retries = 0;
+    const maxRetries = 15;
+
+    const attemptPlay = () => {
+      let played = false;
+      if (currentSong.videoBackground && videoRef.current) {
+        videoRef.current.currentTime = 0;
+        videoRef.current.play().catch(() => {});
+        played = true;
+      }
+      if (currentSong.audioUrl && !videoHasEmbeddedAudio && audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => {});
+        played = true;
+      }
+      return played;
+    };
+
+    // Try immediately, then retry if media not ready
+    const played = attemptPlay();
+    if (!played) {
+      const retryInterval = setInterval(() => {
+        const didPlay = attemptPlay();
+        retries++;
+        if (didPlay || retries >= maxRetries) {
+          clearInterval(retryInterval);
+        }
+      }, 100);
+      return () => clearInterval(retryInterval);
+    }
+  }, [isPlaying, currentSong, videoRef, audioRef]);
+
+  // ==================== #12: TIME TRACKING ====================
 
   useEffect(() => {
     const audioEl = audioRef.current;
     const videoEl = videoRef.current;
+    if (!audioEl && !videoEl) return;
+
+    const handleTimeUpdate = () => {
+      // Use audio/video time (YouTube uses youtubeTime)
+      const time = (audioEl?.currentTime || 0) || (videoEl?.currentTime || 0);
+      setCurrentTime(time);
+      if (audioEl?.duration) setDuration(audioEl.duration);
+      if (videoEl?.duration) setDuration(videoEl.duration);
+    };
+
+    const handleLoadedMetadata = () => {
+      if (audioEl?.duration) setDuration(audioEl.duration);
+      if (videoEl?.duration) setDuration(videoEl.duration);
+    };
+
+    audioEl?.addEventListener('timeupdate', handleTimeUpdate);
+    audioEl?.addEventListener('loadedmetadata', handleLoadedMetadata);
+    videoEl?.addEventListener('timeupdate', handleTimeUpdate);
+    videoEl?.addEventListener('loadedmetadata', handleLoadedMetadata);
+
     return () => {
-      if (audioEl) {
-        audioEl.pause();
-      }
-      if (videoEl) {
-        videoEl.pause();
-      }
-      setPlaylist([]);
-      setCurrentSong(null);
-      setCurrentIndex(0);
-      setIsPlaying(false);
-      manualIdsRef.current = new Set();
-      processedWishlistRef.current = new Set();
+      audioEl?.removeEventListener('timeupdate', handleTimeUpdate);
+      audioEl?.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      videoEl?.removeEventListener('timeupdate', handleTimeUpdate);
+      videoEl?.removeEventListener('loadedmetadata', handleLoadedMetadata);
     };
   }, [audioRef, videoRef]);
 
-  // Update volume
-  useEffect(() => {
-    if (videoRef.current) videoRef.current.volume = volume;
-    if (audioRef.current) audioRef.current.volume = volume;
-  }, [volume, videoRef, audioRef]);
+  // ==================== F5: ENERGY SAVING ====================
 
-  // Auto-play when song changes
   useEffect(() => {
-    if (isPlaying && currentSong) {
-      const playTimer = setTimeout(() => {
-        const videoHasEmbeddedAudio = currentSong.hasEmbeddedAudio || !currentSong.audioUrl;
-        if (currentSong.videoBackground && videoRef.current) {
-          videoRef.current.currentTime = 0;
-          videoRef.current.play().catch(() => {});
-        }
-        if (currentSong.audioUrl && !videoHasEmbeddedAudio && audioRef.current) {
-          audioRef.current.currentTime = 0;
-          audioRef.current.play().catch(() => {});
-        }
-      }, 100);
-      return () => clearTimeout(playTimer);
-    }
-  }, [isPlaying, currentSong, videoRef, audioRef]);
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Tab is hidden — we don't pause, but reduce processing
+        // The lyrics interval will still run but do less work
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
 
-  // Track current lyric line based on time
+  // ==================== LYRICS TRACKING ====================
+
   useEffect(() => {
+    // F5: Skip lyrics updates when tab is hidden
+    if (document.hidden) return;
     if (!showLyrics || !currentSong || !currentSong.lyrics?.length) return;
+
     const updateCurrentLyric = () => {
-      // Use YouTube time if available, otherwise fall back to audio/video element time
       const currentTimeMs = youtubeTime > 0
         ? youtubeTime
         : (audioRef.current?.currentTime || videoRef.current?.currentTime || 0) * 1000;
@@ -378,12 +680,57 @@ export function useJukebox(refs?: {
     return () => clearInterval(interval);
   }, [showLyrics, currentSong, youtubeTime, audioRef, videoRef]);
 
-  // Up next songs
-  const upNext = useMemo(() => {
-    return playlist.slice(currentIndex + 1, currentIndex + 6);
-  }, [playlist, currentIndex]);
+  // ==================== CLEANUP ON UNMOUNT ====================
 
-  // Handle custom YouTube URL input
+  useEffect(() => {
+    const audioEl = audioRef.current;
+    const videoEl = videoRef.current;
+    return () => {
+      if (audioEl) audioEl.pause();
+      if (videoEl) videoEl.pause();
+      setPlaylist([]);
+      setCurrentSong(null);
+      setCurrentIndex(0);
+      setIsPlaying(false);
+      setTimerRemaining(null);
+      manualIdsRef.current = new Set();
+      processedWishlistRef.current = new Set();
+      songRequesterRef.current.clear();
+      recentlyPlayedRef.current = [];
+      genreCountRef.current.clear();
+      requesterCountRef.current.clear();
+      // Clear saved playlist
+      try { setJson(StorageKeys.JUKEBOX_PLAYLIST, []); } catch { /* ignore */ }
+    };
+  }, [audioRef, videoRef]);
+
+  // ==================== #17: LIVE SHUFFLE TOGGLE ====================
+
+  const handleSetShuffle = useCallback((newShuffle: boolean) => {
+    setShuffle(newShuffle);
+    if (!newShuffle || !isPlayingRef.current) return;
+
+    // Reshuffle remaining songs (from currentIndex+1 onward) while keeping current song
+    setPlaylist(prev => {
+      const current = prev[currentIndexRef.current];
+      const alreadyPlayed = prev.slice(0, currentIndexRef.current + 1);
+      const remaining = prev.slice(currentIndexRef.current + 1);
+
+      if (remaining.length <= 1) return prev;
+
+      // Fisher-Yates shuffle on remaining
+      const shuffled = [...remaining];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+
+      return [...alreadyPlayed, ...shuffled];
+    });
+  }, []);
+
+  // ==================== YOUTUBE URL HANDLING ====================
+
   const handleYoutubeUrlSubmit = useCallback((url: string) => {
     const extractedId = extractYouTubeId(url);
     if (extractedId) {
@@ -391,23 +738,59 @@ export function useJukebox(refs?: {
     }
   }, []);
 
-  // Clear custom YouTube video
   const clearCustomYoutube = useCallback(() => {
     setCustomYoutubeId(null);
   }, []);
 
+  // ==================== N10: EXPORT PLAYLIST ====================
+
+  const exportPlaylist = useCallback(() => {
+    return JSON.stringify(playlistRef.current.map(s => ({
+      id: s.id,
+      title: s.title,
+      artist: s.artist,
+      duration: s.duration,
+    })), null, 2);
+  }, []);
+
+  // ==================== YOUTUBE TIME → STATE TIME ====================
+
+  useEffect(() => {
+    if (youtubeTime > 0 && currentSong) {
+      setCurrentTime(youtubeTime / 1000);
+      setDuration(currentSong.duration / 1000);
+    }
+  }, [youtubeTime, currentSong]);
+
+  // ==================== RETURN ====================
+
   return {
-    isPlaying, currentSong, customYoutubeId, playlist, currentIndex, songs,
+    // Filters
     filterGenre, filterArtist, searchQuery, shuffle, repeat,
-    youtubeTime, isAdPlaying,
-    volume, isFullscreen, hidePlaylist, showLyrics, currentLyricIndex,
-    genres, artists, filteredSongs, upNext,
-    setFilterGenre, setFilterArtist, setSearchQuery, setShuffle, setRepeat,
+    minDuration, maxDuration, maxSongs, timerMinutes, recentlyPlayedMinutes,
+    setFilterGenre, setFilterArtist, setSearchQuery,
+    setShuffle: handleSetShuffle, setRepeat,
+    setMinDuration, setMaxDuration, setMaxSongs, setTimerMinutes, setRecentlyPlayedMinutes,
+    // Playback
+    isPlaying, currentSong, customYoutubeId, playlist, currentIndex,
+    youtubeTime, currentTime, duration, isAdPlaying,
+    volume, isFullscreen, isMuted, previousVolume,
+    hidePlaylist, showLyrics, currentLyricIndex, isLoading,
+    currentSongRequestedBy,
     setVolume, setHidePlaylist, setShowLyrics,
     setCurrentLyricIndex, setCurrentSong, setCurrentIndex,
-    setIsAdPlaying, setYoutubeTime,
+    setIsAdPlaying, setYoutubeTime, setCurrentTime, setDuration,
+    // Derived
+    genres, artists, filteredSongs, upNext,
+    songsPlayed, topGenres, topRequesters, timerRemaining,
+    // YouTube
     handleYoutubeUrlSubmit, clearCustomYoutube,
+    // Actions
     startJukebox, stopJukebox, playNext, playPrevious,
     handleMediaEnd, toggleFullscreen, togglePlayPause,
+    toggleMute, seekTo,
+    exportPlaylist,
+    // Library
+    songs,
   };
 }

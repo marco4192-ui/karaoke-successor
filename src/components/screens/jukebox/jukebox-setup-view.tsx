@@ -9,6 +9,15 @@ import { extractYouTubeId } from '@/components/game/youtube-player';
 import { useTranslation } from '@/lib/i18n/translations';
 import type { UseJukeboxReturn } from './jukebox-types';
 
+/** Reusable chevron-down icon to replace inline SVGs (#21) */
+function ChevronDownIcon() {
+  return (
+    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
 export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [youtubeError, setYoutubeError] = useState('');
@@ -26,6 +35,15 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
     j.handleYoutubeUrlSubmit(youtubeUrl.trim());
   };
 
+  // Chevron-down background image style for native selects (#21)
+  const selectStyle = {
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+    backgroundRepeat: 'no-repeat' as const,
+    backgroundPosition: 'right 8px center',
+    backgroundSize: '16px',
+    paddingRight: '32px',
+  };
+
   return (
     <>
       {/* Header */}
@@ -34,9 +52,8 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
         <p className="text-white/60">{t('jukeboxPlayer.sitBackEnjoy')}</p>
       </div>
 
-      {/* Search and Filters */}
-      <div className="mb-6 space-y-4">
-        {/* Search */}
+      {/* Search */}
+      <div className="mb-6">
         <div className="relative">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="8" />
@@ -52,98 +69,88 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
             className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-white/40"
           />
         </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap gap-3">
-          <select
-            value={j.filterGenre}
-            onChange={(e) => j.setFilterGenre(e.target.value)}
-            className="bg-gray-800 border border-white/20 rounded-lg px-3 py-2 text-white appearance-none cursor-pointer hover:border-cyan-500/50"
-            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', backgroundSize: '16px', paddingRight: '32px' }}
-          >
-            {j.genres.map(g => (
-              <option key={g} value={g} className="bg-gray-800 text-white">{g === 'all' ? t('jukeboxPlayer.allGenres') : g}</option>
-            ))}
-          </select>
-
-          <select
-            value={j.filterArtist}
-            onChange={(e) => j.setFilterArtist(e.target.value)}
-            className="bg-gray-800 border border-white/20 rounded-lg px-3 py-2 text-white appearance-none cursor-pointer hover:border-cyan-500/50"
-            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', backgroundSize: '16px', paddingRight: '32px' }}
-          >
-            <option value="" className="bg-gray-800 text-white">{t('jukeboxPlayer.allArtists')}</option>
-            {j.artists.map(a => (
-              <option key={a} value={a} className="bg-gray-800 text-white">{a}</option>
-            ))}
-          </select>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => j.setShuffle(!j.shuffle)}
-              className={`p-2 rounded-lg transition-colors ${j.shuffle ? 'bg-cyan-500 text-white' : 'bg-white/5 text-white/60 hover:text-white'}`}
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Song count and start button */}
-        <div className="flex items-center justify-between">
-          <p className="text-white/60">{j.filteredSongs.length} {t('jukeboxPlayer.songsFound').replace('{n}', String(j.filteredSongs.length))}</p>
-          <Button
-            onClick={j.startJukebox}
-            disabled={j.filteredSongs.length === 0}
-            className="bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50"
-          >
-            <PlayIcon className="w-4 h-4 mr-2" /> {t('jukeboxPlayer.startJukebox')}
-          </Button>
-        </div>
       </div>
 
-      {/* Setup Screen */}
+      {/* Setup Screen — All settings in one unified Card (#7, #8 FIX: No duplicate controls) */}
       <div className="space-y-6">
-        {/* Playlist Settings */}
+        {/* Playlist Settings — Single source of truth for all filters */}
         <Card className="bg-white/5 border-white/10">
           <CardHeader>
             <CardTitle>{t('jukeboxPlayer.playlistSettings')}</CardTitle>
             <CardDescription>{t('jukeboxPlayer.customizeExperience')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Genre Filter */}
-            <div>
-              <label className="text-sm text-white/60 mb-2 block">{t('jukeboxPlayer.filterByGenre')}</label>
-              <select
-                value={j.filterGenre}
-                onChange={(e) => j.setFilterGenre(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white"
-              >
-                {j.genres.map(genre => (
-                  <option key={genre} value={genre}>
-                    {genre === 'all' ? t('jukeboxPlayer.allGenres') : genre}
-                  </option>
-                ))}
-              </select>
+            {/* Genre + Artist filters in a grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Genre Filter */}
+              <div>
+                <label className="text-sm text-white/60 mb-2 block">{t('jukeboxPlayer.filterByGenre')}</label>
+                <select
+                  value={j.filterGenre}
+                  onChange={(e) => j.setFilterGenre(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white appearance-none cursor-pointer hover:border-cyan-500/50"
+                  style={selectStyle}
+                >
+                  {j.genres.map(genre => (
+                    <option key={genre} value={genre} className="bg-gray-800 text-white">
+                      {genre === 'all' ? t('jukeboxPlayer.allGenres') : genre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Artist Filter */}
+              <div>
+                <label className="text-sm text-white/60 mb-2 block">{t('jukeboxPlayer.filterByArtist')}</label>
+                <select
+                  value={j.filterArtist}
+                  onChange={(e) => j.setFilterArtist(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white appearance-none cursor-pointer hover:border-cyan-500/50"
+                  style={selectStyle}
+                >
+                  <option value="" className="bg-gray-800 text-white">{t('jukeboxPlayer.allArtists')}</option>
+                  {j.artists.map(artist => (
+                    <option key={artist} value={artist} className="bg-gray-800 text-white">{artist}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            {/* Artist Filter */}
-            <div>
-              <label className="text-sm text-white/60 mb-2 block">{t('jukeboxPlayer.filterByArtist')}</label>
-              <select
-                value={j.filterArtist}
-                onChange={(e) => j.setFilterArtist(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white"
-              >
-                <option value="">{t('jukeboxPlayer.allArtists')}</option>
-                {j.artists.map(artist => (
-                  <option key={artist} value={artist}>{artist}</option>
-                ))}
-              </select>
+            {/* F11: Duration filter */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm text-white/60 mb-2 block">{t('jukeboxPlayer.minDuration')}</label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={30}
+                    value={j.minDuration || ''}
+                    onChange={(e) => j.setMinDuration(parseInt(e.target.value) || 0)}
+                    placeholder="0"
+                    className="w-24 bg-white/5 border-white/10 text-white"
+                  />
+                  <span className="text-white/40 text-sm">{t('jukeboxPlayer.minutes')}</span>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm text-white/60 mb-2 block">{t('jukeboxPlayer.maxDuration')}</label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={30}
+                    value={j.maxDuration || ''}
+                    onChange={(e) => j.setMaxDuration(parseInt(e.target.value) || 0)}
+                    placeholder="0"
+                    className="w-24 bg-white/5 border-white/10 text-white"
+                  />
+                  <span className="text-white/40 text-sm">{t('jukeboxPlayer.minutes')}</span>
+                </div>
+              </div>
             </div>
 
-            {/* Options */}
+            {/* Options row: Shuffle + Repeat */}
             <div className="flex flex-wrap gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={j.shuffle} onChange={(e) => j.setShuffle(e.target.checked)} className="w-4 h-4 accent-cyan-500" />
@@ -160,7 +167,58 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
               ))}
             </div>
 
-            {/* Song count */}
+            {/* F10: Max songs limit */}
+            <div>
+              <label className="text-sm text-white/60 mb-2 block">{t('jukeboxPlayer.maxSongs')}</label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={0}
+                  max={500}
+                  value={j.maxSongs || ''}
+                  onChange={(e) => j.setMaxSongs(parseInt(e.target.value) || 0)}
+                  placeholder="0 = {t('jukeboxPlayer.unlimited')}"
+                  className="w-32 bg-white/5 border-white/10 text-white"
+                />
+                <span className="text-white/40 text-sm">{t('jukeboxPlayer.unlimited')}</span>
+              </div>
+            </div>
+
+            {/* N4: Timer */}
+            <div>
+              <label className="text-sm text-white/60 mb-2 block">{t('jukeboxPlayer.autoStopTimer')}</label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={0}
+                  max={480}
+                  value={j.timerMinutes || ''}
+                  onChange={(e) => j.setTimerMinutes(parseInt(e.target.value) || 0)}
+                  placeholder="0"
+                  className="w-32 bg-white/5 border-white/10 text-white"
+                />
+                <span className="text-white/40 text-sm">{t('jukeboxPlayer.minutes')} (0 = {t('jukeboxPlayer.noTimer')})</span>
+              </div>
+            </div>
+
+            {/* F7: Recently played exclusion */}
+            <div>
+              <label className="text-sm text-white/60 mb-2 block">{t('jukeboxPlayer.recentlyPlayedExclude')}</label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={0}
+                  max={240}
+                  value={j.recentlyPlayedMinutes || ''}
+                  onChange={(e) => j.setRecentlyPlayedMinutes(parseInt(e.target.value) || 0)}
+                  placeholder="30"
+                  className="w-32 bg-white/5 border-white/10 text-white"
+                />
+                <span className="text-white/40 text-sm">{t('jukeboxPlayer.minutes')} (0 = {t('jukeboxPlayer.noExclusion')})</span>
+              </div>
+            </div>
+
+            {/* Song count summary */}
             <div className="text-center py-4 bg-white/5 rounded-lg">
               <p className="text-2xl font-bold text-cyan-400">{j.filteredSongs.length}</p>
               <p className="text-white/60 text-sm">{t('jukeboxPlayer.songsAvailable')}</p>
@@ -180,7 +238,7 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
                 type="text"
                 placeholder={t('jukeboxPlayer.youtubeUrlPlaceholder')}
                 value={youtubeUrl}
-                onChange={(e) => { setYoutubeUrl(e.target.value); setYoutubeError(''); }}
+                onChange={(e) => { setYoutubeError(''); setYoutubeUrl(e.target.value); }}
                 onKeyDown={(e) => e.key === 'Enter' && handleYoutubeSubmit()}
                 className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40"
               />
@@ -207,11 +265,11 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
           </CardContent>
         </Card>
 
-        {/* Start Button */}
+        {/* Start Button — #8 FIX: Only one start button */}
         <Button
           onClick={j.startJukebox}
           disabled={j.filteredSongs.length === 0}
-          className="w-full py-6 text-lg bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white"
+          className="w-full py-6 text-lg bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white disabled:opacity-50"
         >
           <PlayIcon className="w-6 h-6 mr-2" /> {t('jukeboxPlayer.startJukebox')}
         </Button>

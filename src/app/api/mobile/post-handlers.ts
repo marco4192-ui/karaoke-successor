@@ -477,7 +477,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         }
         
-        const jukeboxPayload = payload as { songId: string; songTitle: string; songArtist: string };
+        const jukeboxPayload = payload as { songId: string; songTitle: string; songArtist: string; coverImage?: string; duration?: number };
         const clientForJukebox = mobileClients.get(clientId);
         if (!clientForJukebox) return Response.json({ success: false, message: 'Not connected' }, { status: 400 });
         
@@ -513,12 +513,12 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
       case 'jukebox_wishlist_remove': {
         // Remove song from jukebox wishlist — only the creator (matching companionCode) can remove
         if (!clientId) {
-          return Response.json({ success: false, message: 'Not connected' }, { status: 401 });
+          return Response.json({ success: false, message: 'Not connected' }, { status: 403 });
         }
         const removeWishPayload = payload as { itemId: string };
         const requestingWishClient = mobileClients.get(clientId);
         if (!requestingWishClient) {
-          return Response.json({ success: false, message: 'Not connected' }, { status: 401 });
+          return Response.json({ success: false, message: 'Not connected' }, { status: 403 });
         }
         const wishIndex = mutableState.jukeboxWishlist.findIndex(q => q.id === removeWishPayload.itemId);
 

@@ -268,7 +268,21 @@ export const coreTranslations = {
     songsInPlaylist: '{n} sanger i spilleliste',
     youtubeRemove: 'YouTube',
     singAlongMode: 'Syng-med-modus',
-    sitBackEnjoy: 'Sett deg tilbake og nyt musikken!'
+    sitBackEnjoy: 'Sett deg tilbake og nyt musikken!',
+    lyricsToggle: 'Tekst',
+    lyricsShort: 'Tekst',
+    songsPlayed: 'spilt',
+    remaining: 'gjenstår',
+    requestedBy: 'Ønsket av {name}',
+    maxSongs: 'Maks sanger',
+    unlimited: 'ubegrenset',
+    minutes: 'min',
+    noTimer: 'av',
+    autoStopTimer: 'Auto-stop timer',
+    minDuration: 'Min. varighet',
+    maxDuration: 'Maks varighet',
+    recentlyPlayedExclude: 'Ekskluder nylig spilt',
+    noExclusion: 'ingen ekskludering',
   },
 
   errorBoundary: {

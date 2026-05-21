@@ -36,6 +36,10 @@ export interface JukeboxWishlistItem {
   songTitle: string;
   songArtist: string;
   addedBy: string;
+  addedAt?: number;
+  companionCode?: string;
+  coverImage?: string;
+  duration?: number;
 }
 
 export interface CompanionScoreEntry {

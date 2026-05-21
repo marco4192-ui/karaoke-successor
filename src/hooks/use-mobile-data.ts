@@ -357,7 +357,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'jukebox', clientId,
-          payload: { songId: song.id, songTitle: song.title, songArtist: song.artist },
+          payload: { songId: song.id, songTitle: song.title, songArtist: song.artist, coverImage: song.coverImage, duration: song.duration },
         }),
       });
       if (!response.ok) return;

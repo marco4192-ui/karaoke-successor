@@ -268,7 +268,21 @@ export const coreTranslations = {
     activeLabel: 'Активное видео: {id}',
     noSongsMatchFilters: 'Нет песен, соответствующих фильтрам. Попробуйте другие настройки или импортируйте песни.',
     songsInPlaylist: '{n} песен в плейлисте',
-    youtubeRemove: 'YouTube'
+    youtubeRemove: 'YouTube',
+    lyricsToggle: 'Текст',
+    lyricsShort: 'Текст',
+    songsPlayed: 'воспроизведено',
+    remaining: 'осталось',
+    requestedBy: 'По запросу {name}',
+    maxSongs: 'Макс. песен',
+    unlimited: 'безлимит',
+    minutes: 'мин',
+    noTimer: 'выкл',
+    autoStopTimer: 'Таймер автостопа',
+    minDuration: 'Мин. длительность',
+    maxDuration: 'Макс. длительность',
+    recentlyPlayedExclude: 'Исключить недавние',
+    noExclusion: 'без исключений',
   },
 
   errorBoundary: {

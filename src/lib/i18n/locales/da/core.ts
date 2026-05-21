@@ -268,7 +268,21 @@ export const coreTranslations = {
     activeLabel: 'Aktiv video: {id}',
     noSongsMatchFilters: 'Ingen sange matcher dine filtre. Prøv andre indstillinger eller importér nogle sange.',
     songsInPlaylist: '{n} sange i spilleliste',
-    youtubeRemove: 'YouTube'
+    youtubeRemove: 'YouTube',
+    lyricsToggle: 'Tekst',
+    lyricsShort: 'Tekst',
+    songsPlayed: 'spillet',
+    remaining: 'tilbage',
+    requestedBy: 'Ønsket af {name}',
+    maxSongs: 'Maks sange',
+    unlimited: 'ubegrænset',
+    minutes: 'min',
+    noTimer: 'fra',
+    autoStopTimer: 'Auto-stop timer',
+    minDuration: 'Min. varighed',
+    maxDuration: 'Maks varighed',
+    recentlyPlayedExclude: 'Ekskluder nyligt spillet',
+    noExclusion: 'ingen ekskludering',
   },
 
   errorBoundary: {

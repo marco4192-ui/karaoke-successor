@@ -268,7 +268,21 @@ export const coreTranslations = {
     activeLabel: '활성 영상: {id}',
     noSongsMatchFilters: '필터 조건에 맞는 곡이 없습니다. 다른 설정을 시도하거나 곡을 가져오세요.',
     songsInPlaylist: '{n}곡이 플레이리스트에 있음',
-    youtubeRemove: 'YouTube'
+    youtubeRemove: 'YouTube',
+    lyricsToggle: '가사',
+    lyricsShort: '가사',
+    songsPlayed: '재생됨',
+    remaining: '남은',
+    requestedBy: '{name}의 요청',
+    maxSongs: '최대 곡 수',
+    unlimited: '무제한',
+    minutes: '분',
+    noTimer: '끔',
+    autoStopTimer: '자동 중지 타이머',
+    minDuration: '최소 길이',
+    maxDuration: '최대 길이',
+    recentlyPlayedExclude: '최근 재생 제외',
+    noExclusion: '제외 없음',
   },
 
   errorBoundary: {
