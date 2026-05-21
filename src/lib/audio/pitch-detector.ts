@@ -295,7 +295,6 @@ export class PitchDetector {
       detectedNote,
       volume,
       this.frequencyBuffer as Float32Array<ArrayBuffer>,
-      this.audioContext?.sampleRate ?? 44100,
       performance.now()
     );
 

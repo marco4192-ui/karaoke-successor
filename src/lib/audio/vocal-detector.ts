@@ -164,14 +164,12 @@ export class VocalDetector {
    * @param pitch  — current detected MIDI note (null if no pitch)
    * @param volume — current RMS volume (0–1)
    * @param frequencyData — the frequency-domain buffer from AnalyserNode (optional, for spectral flatness)
-   * @param sampleRate — audio sample rate (needed for onset rate calculation)
    * @param currentTimeMs — timestamp in ms for onset tracking
    */
   public processFrame(
     pitch: number | null,
     volume: number,
     frequencyData: Float32Array | null = null,
-    _sampleRate: number = 44100,
     currentTimeMs: number = Date.now()
   ): VocalDetectionResult {
     const defaultResult: VocalDetectionResult = {

@@ -335,7 +335,6 @@ export function useMobilePitchDetection({
           note,
           volume,
           freqBuffer,
-          audioContextRef.current.sampleRate,
           performance.now()
         );
         const isSinging = vocalResult?.isSinging ?? true;
