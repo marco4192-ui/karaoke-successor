@@ -1114,16 +1114,15 @@ export function getQuestProgress(questId: string): QuestProgress {
  */
 export function updateQuestProgress(checkField: keyof PlayerQuestStats, amount: number): void {
   const questStats = getPlayerQuestStats();
-  const currentValue = questStats[checkField];
+  const newValue = questStats[checkField] + amount;
 
-  // Update stored quest stats
+  // Persist the updated field back to storage
   const stored = getJson<StoredQuestStats>(QUEST_STATS_KEY, DEFAULT_QUEST_STATS);
-  (stored as unknown as Record<string, unknown>)[checkField] = currentValue + amount;
+  stored[checkField] = newValue;
   setJson(QUEST_STATS_KEY, stored);
 
   // Update progress for any quests tracking this field
   const allProgress = getJson<Record<string, QuestProgress>>(QUEST_PROGRESS_KEY, {});
-  const newValue = currentValue + amount;
 
   for (const quest of DAILY_QUESTS) {
     if (quest.checkProgress === checkField) {
