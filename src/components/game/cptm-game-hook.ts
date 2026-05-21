@@ -93,7 +93,6 @@ export function useCptmGameLogic({
   onUpdateGame,
   onEndGame: _onEndGame,
   onNavigate,
-  onPause: _onPause,
 }: CptmGameHookProps): CptmGameHookReturn {
   const safeSettings: CptmSettings = settings ?? DEFAULT_CPTM_SETTINGS;
 
