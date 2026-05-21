@@ -18,7 +18,6 @@ mod charts;
 /// Shared utility: try to convert a `Result<T, E>` into `Option<T>`, logging
 /// errors instead of silently discarding them via `.ok()`.
 /// Used by `db::commands` and `charts::commands` (and any future modules).
-#[allow(dead_code)]
 pub(crate) fn try_log<T, E: std::fmt::Display>(result: Result<T, E>, context: &str) -> Option<T> {
     match result {
         Ok(v) => Some(v),
