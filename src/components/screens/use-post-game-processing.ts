@@ -217,10 +217,33 @@ export function usePostGameProcessing({
               // Clear the flag first to avoid double-submission
               removeItem(StorageKeys.DAILY_CHALLENGE_ACTIVE);
               // Submit the challenge result (async, fire-and-forget — it persists to localStorage internally)
-              import('@/lib/game/daily-challenge').then(({ submitChallengeResult }) => {
-                submitChallengeResult(
+              import('@/lib/game/daily-challenge').then(({ submitChallengeResult, submitCoopChallengeResult, submitWeeklyChallengeResult }) => {
+                // Co-op daily challenge: requires ≥2 player results
+                if (parsed.gameMode === 'coop' && player2Result) {
+                  const p2Profile = profiles.find(p => p.id === player2Result.playerId);
+                  submitCoopChallengeResult(
+                    [
+                      { id: profile.id, name: profile.name, avatar: profile.avatar, color: profile.color },
+                      { id: player2Result.playerId || 'p2', name: p2Profile?.name || 'P2', color: p2Profile?.color || '#4ECDC4' },
+                    ],
+                    [
+                      { score: playerResult.score, accuracy: playerResult.accuracy, combo: playerResult.maxCombo, perfectNotesCount: playerResult.perfectNotesCount },
+                      { score: player2Result.score, accuracy: player2Result.accuracy, combo: player2Result.maxCombo, perfectNotesCount: player2Result.perfectNotesCount },
+                    ],
+                  );
+                } else {
+                  submitChallengeResult(
+                    { id: profile.id, name: profile.name, avatar: profile.avatar, color: profile.color },
+                    { score: playerResult.score, accuracy: playerResult.accuracy, combo: playerResult.maxCombo, perfectNotesCount: playerResult.perfectNotesCount },
+                  );
+                }
+
+                // Also submit to weekly challenge if the metric type matches
+                // The weekly challenge tracks best scores across the week
+                submitWeeklyChallengeResult(
                   { id: profile.id, name: profile.name, avatar: profile.avatar, color: profile.color },
                   { score: playerResult.score, accuracy: playerResult.accuracy, combo: playerResult.maxCombo, perfectNotesCount: playerResult.perfectNotesCount },
+                  'score',
                 );
               }).catch(() => {});
             }

@@ -69,7 +69,7 @@ export interface PlayerBestResult {
 // ---------------------------------------------------------------------------
 
 /** A single entry in the weekly challenge leaderboard. */
-export interface WeeklyChallengeEntry {
+interface WeeklyChallengeEntry {
   playerId: string;
   playerName: string;
   playerAvatar?: string;

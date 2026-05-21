@@ -106,7 +106,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
     if (gameMode === 'single' && selectedPlayerIds[0]) {
       setActiveProfile(selectedPlayerIds[0]);
     }
-    setJson(StorageKeys.DAILY_CHALLENGE_ACTIVE, { active: true, startedAt: Date.now() });
+    setJson(StorageKeys.DAILY_CHALLENGE_ACTIVE, { active: true, startedAt: Date.now(), gameMode });
     onPlayChallenge(song);
   }, [gameMode, selectedPlayerIds, setActiveProfile, onPlayChallenge]);
   
