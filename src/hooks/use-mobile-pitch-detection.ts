@@ -3,58 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { PitchData } from '@/components/screens/mobile/mobile-types';
 import { VocalDetector } from '@/lib/audio/vocal-detector';
-
-// YIN pitch detection algorithm
-function yinPitchDetection(buffer: Float32Array, sampleRate: number): number | null {
-  const yinBuffer = new Float32Array(buffer.length / 2);
-  const yinThreshold = 0.15;
-  const yinBufferLength = buffer.length / 2;
-
-  for (let tau = 0; tau < yinBufferLength; tau++) {
-    yinBuffer[tau] = 0;
-    for (let i = 0; i < yinBufferLength; i++) {
-      const delta = buffer[i] - buffer[i + tau];
-      yinBuffer[tau] += delta * delta;
-    }
-  }
-
-  yinBuffer[0] = 1;
-  let runningSum = 0;
-  for (let tau = 1; tau < yinBufferLength; tau++) {
-    runningSum += yinBuffer[tau];
-    yinBuffer[tau] *= tau / runningSum;
-  }
-
-  let tauEstimate = -1;
-  for (let tau = 2; tau < yinBufferLength; tau++) {
-    if (yinBuffer[tau] < yinThreshold) {
-      while (tau + 1 < yinBufferLength && yinBuffer[tau + 1] < yinBuffer[tau]) {
-        tau++;
-      }
-      tauEstimate = tau;
-      break;
-    }
-  }
-
-  if (tauEstimate === -1) return null;
-
-  let betterTau: number;
-  const x0 = tauEstimate < 1 ? tauEstimate : tauEstimate - 1;
-  const x2 = tauEstimate + 1 < yinBufferLength ? tauEstimate + 1 : tauEstimate;
-
-  if (x0 === tauEstimate) {
-    betterTau = yinBuffer[tauEstimate] <= yinBuffer[x2] ? tauEstimate : x2;
-  } else if (x2 === tauEstimate) {
-    betterTau = yinBuffer[tauEstimate] <= yinBuffer[x0] ? tauEstimate : x0;
-  } else {
-    const s0 = yinBuffer[x0];
-    const s1 = yinBuffer[tauEstimate];
-    const s2 = yinBuffer[x2];
-    betterTau = tauEstimate + (s2 - s0) / (2 * (2 * s1 - s2 - s0));
-  }
-
-  return betterTau > 0 ? sampleRate / betterTau : 0;
-}
+import { yinPitchDetection } from '@/lib/audio/pitch-algorithm';
 
 interface UseMobilePitchDetectionOptions {
   clientId: string | null;
@@ -289,6 +238,8 @@ export function useMobilePitchDetection({
 
       const buffer = new Float32Array(analyserRef.current.fftSize);
       const freqBuffer = new Float32Array(analyserRef.current.frequencyBinCount);
+      // Pre-allocate YIN scratch buffer outside the RAF loop to avoid GC pressure
+      const yinBuffer = new Float32Array(Math.floor(buffer.length / 2));
       
       const detectPitch = () => {
         if (!analyserRef.current || !audioContextRef.current) return;
@@ -323,7 +274,7 @@ export function useMobilePitchDetection({
         const rms = Math.sqrt(sum / buffer.length);
         const volume = Math.min(1, rms * 5);
         
-        const frequency = yinPitchDetection(buffer, audioContextRef.current.sampleRate);
+        const frequency = yinPitchDetection(buffer, yinBuffer, audioContextRef.current.sampleRate);
         
         let note: number | null = null;
         if (frequency !== null && frequency >= 65 && frequency <= 1047) {
