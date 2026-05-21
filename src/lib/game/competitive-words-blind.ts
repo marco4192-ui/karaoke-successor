@@ -486,20 +486,6 @@ export function calculateBlindBonus(
   return { base, perfect, streak, comeback, total };
 }
 
-/** Legacy-compatible: calculate bonus for missing words (simple, flat) */
-export function calculateMissingWordsBonusLegacy(
-  notesHitOnMissingWords: number
-): number {
-  return notesHitOnMissingWords * MW_BASE_BONUS;
-}
-
-/** Legacy-compatible: calculate bonus for blind sections (simple, flat) */
-export function calculateBlindBonusLegacy(
-  notesHitInBlindSections: number
-): number {
-  return notesHitInBlindSections * BLIND_BASE_BONUS;
-}
-
 // ===================== HELPERS =====================
 
 /** Get players sorted by total score (descending) */

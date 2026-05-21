@@ -133,14 +133,6 @@ export const tournamentVoteRegistry: Set<string> = new Set();
 // Also export as tournamentVoteDedup alias for compatibility
 export { tournamentVoteRegistry as tournamentVoteDedup };
 
-export function hasVoted(clientId: string, matchId: string): boolean {
-  return tournamentVoteRegistry.has(`${clientId}:${matchId}`);
-}
-
-export function recordVote(clientId: string, matchId: string): void {
-  tournamentVoteRegistry.add(`${clientId}:${matchId}`);
-}
-
 // ===================== GLOBAL STATE =====================
 // Shared state for mobile clients (in-memory, resets on server restart)
 export const mobileClients = new Map<string, MobileClient>();

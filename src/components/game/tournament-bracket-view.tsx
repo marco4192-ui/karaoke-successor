@@ -12,6 +12,7 @@ import {
   getFanFavorites,
   getMatchesByBracketType,
   getLBRoundName,
+  isInLosersBracket,
   type TournamentBracket,
   type TournamentPlayer,
   type TournamentMatch,
@@ -280,6 +281,15 @@ function DoubleEliminationBracketView({
   const gfMatches = getMatchesByBracketType(bracket, 'grand_finals');
   const playableIds = new Set(playableMatches.map(m => m.id));
 
+  // Set of player IDs currently in the losers bracket (lossCount === 1, not eliminated)
+  const losersBracketPlayerIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const p of bracket.players) {
+      if (isInLosersBracket(p, bracket)) ids.add(p.id);
+    }
+    return ids;
+  }, [bracket.players, bracket.settings.tournamentType]);
+
   const wbRounds = bracket.totalRounds;
   const lbTotalRounds = bracket.losersTotalRounds;
 
@@ -316,6 +326,7 @@ function DoubleEliminationBracketView({
                   isPlayable={playableIds.has(m.id)}
                   onPlay={onPlayMatch}
                   isGF={false}
+                  losersBracketPlayerIds={losersBracketPlayerIds}
                   t={t}
                 />
               ))}
@@ -344,6 +355,7 @@ function DoubleEliminationBracketView({
                     isPlayable={playableIds.has(m.id)}
                     onPlay={onPlayMatch}
                     isGF={false}
+                    losersBracketPlayerIds={losersBracketPlayerIds}
                     t={t}
                   />
                 ))}
@@ -368,6 +380,7 @@ function DoubleEliminationBracketView({
                 isPlayable={playableIds.has(m.id)}
                 onPlay={onPlayMatch}
                 isGF
+                losersBracketPlayerIds={losersBracketPlayerIds}
                 t={t}
               />
             </div>
@@ -382,6 +395,7 @@ function DoubleEliminationBracketView({
                 onPlay={onPlayMatch}
                 isGF
                 isReset
+                losersBracketPlayerIds={losersBracketPlayerIds}
                 t={t}
               />
             </div>
@@ -394,7 +408,7 @@ function DoubleEliminationBracketView({
 
 // ─── DE Match Card (compact, for DE bracket view) ───────────────
 
-function DESmallPlayer({ player }: { player: TournamentPlayer | null }) {
+function DESmallPlayer({ player, isInLB }: { player: TournamentPlayer | null; isInLB?: boolean }) {
   if (!player) {
     return (
       <div className="flex items-center gap-1 text-[11px]">
@@ -420,6 +434,9 @@ function DESmallPlayer({ player }: { player: TournamentPlayer | null }) {
         </div>
       )}
       <span className="font-medium truncate min-w-0">{player.name}</span>
+      {isInLB && (
+        <span className="shrink-0 rounded bg-red-500/20 text-red-400 text-[8px] font-bold leading-none px-1 py-0.5">LB</span>
+      )}
     </div>
   );
 }
@@ -431,6 +448,7 @@ function DEMatchCard({
   onPlay,
   isGF = false,
   isReset = false,
+  losersBracketPlayerIds,
   t,
 }: {
   match: TournamentMatch;
@@ -439,6 +457,7 @@ function DEMatchCard({
   onPlay: (_m: TournamentMatch) => void;
   isGF?: boolean;
   isReset?: boolean;
+  losersBracketPlayerIds?: Set<string>;
   t: (_key: string) => string;
 }) {
   const clickable = isPlayable && !match.completed;
@@ -471,7 +490,7 @@ function DEMatchCard({
     >
       {/* Player 1 */}
       <div className={`flex items-center gap-1 p-0.5 rounded text-xs ${match.winner?.id === match.player1?.id ? 'bg-green-500/20' : ''}`}>
-        <DESmallPlayer player={match.player1} />
+        <DESmallPlayer player={match.player1} isInLB={losersBracketPlayerIds?.has(match.player1?.id ?? '')} />
         {match.completed && (
           <span className={`ml-auto text-xs font-bold ${match.winner?.id === match.player1?.id ? 'text-green-400' : 'text-white/60'}`}>
             {match.score1}
@@ -486,7 +505,7 @@ function DEMatchCard({
 
       {/* Player 2 */}
       <div className={`flex items-center gap-1 p-0.5 rounded text-xs ${match.winner?.id === match.player2?.id ? 'bg-green-500/20' : ''}`}>
-        <DESmallPlayer player={match.player2} />
+        <DESmallPlayer player={match.player2} isInLB={losersBracketPlayerIds?.has(match.player2?.id ?? '')} />
         {match.completed && (
           <span className={`ml-auto text-xs font-bold ${match.winner?.id === match.player2?.id ? 'text-green-400' : 'text-white/60'}`}>
             {match.score2}
