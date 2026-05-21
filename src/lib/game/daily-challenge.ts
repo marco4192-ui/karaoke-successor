@@ -289,6 +289,35 @@ const QUEST_STATS_KEY = 'karaoke_quest_stats';
 // Internal helpers
 // ---------------------------------------------------------------------------
 
+/** Returns yesterday's date as a locale-independent ISO string (YYYY-MM-DD). */
+function yesterdayISO(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * Advance the player's streak based on their last completion date.
+ * Returns the streak bonus XP to add on top of the base XP.
+ * Mutates `stats.currentStreak`, `stats.longestStreak`, and `stats.lastCompletedDate`.
+ */
+function advanceStreak(stats: PlayerDailyStats, baseXP: number): { xpAdjustment: number; streakBonusXP: number } {
+  if (stats.lastCompletedDate === yesterdayISO()) {
+    stats.currentStreak++;
+  } else {
+    let penalty = 0;
+    if (stats.currentStreak > 0 && stats.lastCompletedDate !== null) {
+      penalty = XP_REWARDS.STREAK_BREAK_PENALTY;
+    }
+    stats.currentStreak = 1;
+    return { xpAdjustment: -penalty, streakBonusXP: XP_REWARDS.STREAK_BONUS_BASE };
+  }
+  if (stats.currentStreak > stats.longestStreak) {
+    stats.longestStreak = stats.currentStreak;
+  }
+  return { xpAdjustment: 0, streakBonusXP: XP_REWARDS.STREAK_BONUS_BASE * stats.currentStreak };
+}
+
 /** Returns today's date as a locale-independent ISO string (YYYY-MM-DD). */
 function todayISO(): string {
   const now = new Date();
@@ -555,29 +584,10 @@ export function submitChallengeResult(
     // First completion today
     stats.totalCompleted++;
 
-    // Streak calculation
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayISO = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
-
-    if (stats.lastCompletedDate === yesterdayISO) {
-      stats.currentStreak++;
-    } else {
-      // (#3) Streak break penalty — subtract 25 XP if the player had an active streak
-      if (stats.currentStreak > 0 && stats.lastCompletedDate !== null) {
-        xpEarned = Math.max(0, xpEarned - XP_REWARDS.STREAK_BREAK_PENALTY);
-      }
-      stats.currentStreak = 1;
-    }
-
-    if (stats.currentStreak > stats.longestStreak) {
-      stats.longestStreak = stats.currentStreak;
-    }
-
+    // Streak calculation (shared helper)
+    const streak = advanceStreak(stats, xpEarned);
+    xpEarned = Math.max(0, xpEarned + streak.xpAdjustment + streak.streakBonusXP);
     stats.lastCompletedDate = today;
-
-    // Streak bonus
-    xpEarned += XP_REWARDS.STREAK_BONUS_BASE * stats.currentStreak;
 
     // Top 3 bonus
     if (playerRank <= 3 && playerRank >= 1) {
@@ -836,6 +846,10 @@ export function submitCoopChallengeResult(
   const targetMet = avgMetric() >= challenge.target;
   if (targetMet) {
     xpEarned = XP_REWARDS.CHALLENGE_COMPLETE;
+
+    // Streak calculation (shared helper)
+    const streak = advanceStreak(stats, xpEarned);
+    xpEarned = Math.max(0, xpEarned + streak.xpAdjustment + streak.streakBonusXP);
     stats.totalXP += xpEarned;
     stats.lastCompletedDate = today;
     stats.totalCompleted++;
@@ -1077,19 +1091,24 @@ export function getPlayerQuestStats(): PlayerQuestStats {
   const stored = getJson<StoredQuestStats>(QUEST_STATS_KEY, DEFAULT_QUEST_STATS);
   const stats = { ...stored };
 
+  let dirty = false;
+
   // Daily reset for dailyCompleted
   if (stats._lastDailyReset !== today) {
     stats.dailyCompleted = 0;
     stats._lastDailyReset = today;
+    dirty = true;
   }
 
   // Weekly reset for weeklyCompleted
   if (stats._lastWeeklyReset !== weekStart) {
     stats.weeklyCompleted = 0;
     stats._lastWeeklyReset = weekStart;
+    dirty = true;
   }
 
-  setJson(QUEST_STATS_KEY, stats);
+  // Only persist when a reset actually occurred
+  if (dirty) setJson(QUEST_STATS_KEY, stats);
 
   // Return clean PlayerQuestStats (strip internal fields)
   const { _lastDailyReset: _, _lastWeeklyReset: __, ...clean } = stats;
@@ -1116,29 +1135,31 @@ export function updateQuestProgress(checkField: keyof PlayerQuestStats, amount: 
   const questStats = getPlayerQuestStats();
   const newValue = questStats[checkField] + amount;
 
-  // Persist the updated field back to storage
+  // Persist the updated field back to storage (reuse the value already read by getPlayerQuestStats)
   const stored = getJson<StoredQuestStats>(QUEST_STATS_KEY, DEFAULT_QUEST_STATS);
   stored[checkField] = newValue;
   setJson(QUEST_STATS_KEY, stored);
 
   // Update progress for any quests tracking this field
   const allProgress = getJson<Record<string, QuestProgress>>(QUEST_PROGRESS_KEY, {});
+  let progressDirty = false;
 
   for (const quest of DAILY_QUESTS) {
     if (quest.checkProgress === checkField) {
       const existing = allProgress[quest.id] ?? { questId: quest.id, currentProgress: 0, completed: false };
       if (existing.completed) continue; // already completed — don't overwrite
 
-      const updated: QuestProgress = {
+      allProgress[quest.id] = {
         ...existing,
         currentProgress: Math.min(newValue, quest.target),
         completed: newValue >= quest.target,
       };
-      allProgress[quest.id] = updated;
+      progressDirty = true;
     }
   }
 
-  setJson(QUEST_PROGRESS_KEY, allProgress);
+  // Only write quest progress if something actually changed
+  if (progressDirty) setJson(QUEST_PROGRESS_KEY, allProgress);
 }
 
 /**
