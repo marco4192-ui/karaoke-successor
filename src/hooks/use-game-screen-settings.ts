@@ -44,6 +44,9 @@ export function useGameScreenSettings() {
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
 
   // Pitch shift modifier from the active challenge
+  // TODO: Apply this value to the audio playback engine so the song plays at a shifted pitch.
+  //       Currently the AudioEffectSettings.pitch section exists but no Web Audio pitch-shifter
+  //       node is wired up. Requires a granular synthesis or WSOLA implementation.
   const challengePitchShift = activeChallenge?.modifiers.find(m => m.type === 'pitch_shift')?.value ?? 0;
 
   // Derive challenge modifier flags for use throughout the component
