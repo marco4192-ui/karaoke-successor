@@ -2,6 +2,7 @@
 
 import { Difficulty, GameMode, Song } from '@/types/game';
 import { Playlist } from '@/lib/playlist-manager';
+import type { ViralMatchInfo } from '@/hooks/use-viral-charts';
 
 export type LibraryViewMode = 'grid' | 'folder' | 'playlists';
 export type LibraryGroupBy = 'none' | 'artist' | 'title' | 'genre' | 'language' | 'folder';
@@ -40,6 +41,8 @@ export interface SongCardProps {
   previewAudio?: HTMLAudioElement | null;
   /** Whether this song is matched as a viral/trending hit */
   isViralHit?: boolean;
+  /** Detailed viral chart match info (chart position, source, country) — best match first */
+  viralChartInfo?: ViralMatchInfo[] | null;
 }
 
 export interface SongStartModalProps {

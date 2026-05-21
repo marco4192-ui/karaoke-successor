@@ -9,7 +9,7 @@ import { Song } from '@/types/game';
 // Types
 // ============================================================================
 
-interface ViralMatchInfo {
+export interface ViralMatchInfo {
   title: string;
   artist: string;
   source: string;
