@@ -126,7 +126,8 @@ fn validate_safe_path(raw_path: &str) -> Result<PathBuf, String> {
             r"\windows\system32",
         ];
         for dir in &forbidden {
-            if path_str.starts_with(dir) {
+            let dir_lower = &dir.to_lowercase();
+            if path_str == *dir_lower || path_str.starts_with(&format!("{}/", dir_lower)) {
                 return Err(format!("Access denied: path '{}' is inside a system directory", raw_path));
             }
         }
@@ -136,7 +137,7 @@ fn validate_safe_path(raw_path: &str) -> Result<PathBuf, String> {
     {
         let forbidden = ["/etc", "/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/lib", "/boot", "/dev", "/proc", "/sys"];
         for dir in &forbidden {
-            if path_str.starts_with(dir) {
+            if path_str == *dir || path_str.starts_with(&format!("{}/", dir)) {
                 return Err(format!("Access denied: path '{}' is inside a system directory", raw_path));
             }
         }
@@ -402,10 +403,11 @@ fn native_write_file_bytes(file_path: String, data_base64: String) -> Result<(),
 fn native_write_file_text(file_path: String, content: String) -> Result<(), String> {
     let validated = validate_safe_path(&file_path)?;
 
-    if content.len() > MAX_FILE_SIZE {
+    let byte_len = content.as_bytes().len();
+    if byte_len > MAX_FILE_SIZE {
         return Err(format!(
             "Text content too large for writing ({} MB, max {} MB)",
-            content.len() / (1024 * 1024),
+            byte_len / (1024 * 1024),
             MAX_FILE_SIZE / (1024 * 1024)
         ));
     }
