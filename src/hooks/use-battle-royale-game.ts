@@ -12,7 +12,7 @@ import {
   BattleRoyalePlayer,
 } from '@/lib/game/battle-royale';
 import { Song, Note, LyricLine, PitchDetectionResult } from '@/types/game';
-import { calculatePitchStats, getVisibleNotes, PitchStats, NOTE_WINDOW, SING_LINE_POSITION } from '@/lib/game/note-utils';
+import { calculatePitchStats, getVisibleNotes, PitchStats, NOTE_WINDOW } from '@/lib/game/note-utils';
 import { useMultiPitchDetector, type PlayerPitchConfig } from '@/hooks/use-multi-pitch-detector';
 import { calculateScoringMetadata } from '@/lib/game/scoring';
 import { evaluateAndScoreTick } from '@/lib/game/party-scoring';
@@ -372,13 +372,24 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         let scoreChanged = false;
 
         const activeNotes = getActiveNotesAtTime(td.allNotes, currentAudioTime);
-        const activeNote = activeNotes.length > 0 ? activeNotes[0] : null;
 
-        if (activeNote) {
+        if (activeNotes.length > 0) {
           const micPlayers = activePlayersRef.current.filter(p => p.playerType === 'microphone');
           const companionPlayers = activePlayersRef.current.filter(p => p.playerType === 'companion');
 
           const comboMap = new Map(batchedGame.players.map(p => [p.id, p.currentCombo]));
+
+          /** Pick the active note closest to the player's detected pitch. */
+          const findClosestNote = (detectedNote: number) => {
+            if (activeNotes.length === 1) return activeNotes[0];
+            let best = activeNotes[0];
+            let bestDist = Math.abs(detectedNote - best.pitch);
+            for (let i = 1; i < activeNotes.length; i++) {
+              const dist = Math.abs(detectedNote - activeNotes[i].pitch);
+              if (dist < bestDist) { bestDist = dist; best = activeNotes[i]; }
+            }
+            return best;
+          };
 
           // Score all active MICROPHONE players — each with THEIR OWN pitch detector
           for (const player of micPlayers) {
@@ -387,6 +398,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
             if (playerPitch.isSinging === false) continue;
             if (playerPitch.note == null) continue;
 
+            const activeNote = findClosestNote(playerPitch.note);
             const tick = evaluateAndScoreTick(playerPitch.note, activeNote, difficultyRef.current, td.scoringMetadata);
 
             if (tick.hit) {
@@ -434,6 +446,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
               : null;
 
             if (cachedPitch && cachedPitch.note > 0 && cachedPitch.isSinging === true) {
+              const activeNote = findClosestNote(cachedPitch.note);
               const tick = evaluateAndScoreTick(cachedPitch.note, activeNote, difficultyRef.current, td.scoringMetadata);
 
               if (tick.hit) {
