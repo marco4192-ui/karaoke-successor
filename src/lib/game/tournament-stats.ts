@@ -257,10 +257,3 @@ export function getFanFavorites(
     }))
     .sort((a, b) => b.totalVotes - a.totalVotes);
 }
-
-export function isSpectator(
-  companionProfileId: string,
-  bracket: TournamentBracket
-): boolean {
-  return !bracket.players.some(p => p.id === companionProfileId);
-}

@@ -6,7 +6,7 @@ import type { Language } from '@/lib/i18n/translations';
 import { LibraryGroupBy } from './types';
 import { normalizeLanguage, splitGenres, normalizeGenreName } from '@/lib/parsers/meta-normalizer';
 
-export function getLetterGroup(name: string): string {
+function getLetterGroup(name: string): string {
   if (!name) return '#';
   const firstChar = name.trim().charAt(0).toUpperCase();
   

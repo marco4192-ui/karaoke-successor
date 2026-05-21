@@ -21,7 +21,6 @@ export {
   clearHallOfFame,
   getEffectiveDifficulty,
   getFanFavorites,
-  isSpectator,
 } from './tournament-stats';
 export type { HallOfFameEntry, CrowdVoteMatch } from './tournament-stats';
 

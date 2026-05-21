@@ -15,25 +15,6 @@ export const MOOD_CATEGORIES = [
 export type MoodId = (typeof MOOD_CATEGORIES)[number]['id'];
 
 /**
- * Find the first matching mood for a given genre string.
- * Returns null if no mood matches.
- */
-export function getMoodForGenre(genre: string): MoodId | null {
-  if (!genre) return null;
-  const normalizedGenre = genre.toLowerCase().trim();
-
-  for (const category of MOOD_CATEGORIES) {
-    for (const categoryGenre of category.genres) {
-      if (normalizedGenre === categoryGenre.toLowerCase()) {
-        return category.id;
-      }
-    }
-  }
-
-  return null;
-}
-
-/**
  * Filter songs by mood based on their genre.
  * If mood is null, returns all songs unchanged.
  */

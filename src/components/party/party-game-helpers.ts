@@ -20,7 +20,7 @@ export function freqNumberToLabel(freq: number): 'light' | 'normal' | 'hard' | '
 
 // ─── Competitive Setup Builder ──────────────────────────────────────────────
 
-export interface SetupPlayerEntry {
+interface SetupPlayerEntry {
   id: string;
   name: string;
   color: string;
@@ -73,8 +73,6 @@ export function buildGameSetupResult(params: {
   };
 }
 
-/** @deprecated Use buildGameSetupResult instead */
-export const buildCompetitiveSetupResult = buildGameSetupResult;
 
 // ─── Song Duration Helpers ────────────────────────────────────────────────────
 
