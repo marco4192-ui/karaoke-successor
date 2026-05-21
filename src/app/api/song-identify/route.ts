@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ZAI from 'z-ai-web-dev-sdk'; // NOTE: Uses ZAI SDK defaults (model, endpoint, etc.)
 import { isLocalRequest } from '@/app/api/lib/is-local-request';
+import { withRetry } from '@/app/api/lib/retry';
 
 // TypeScript types for song identification
 interface SongIdentifyRequest {
@@ -35,22 +36,6 @@ const LANGUAGE_FULL_NAMES: Record<string, string> = {
   ro: 'Română', hu: 'Magyar', uk: 'Українська', bg: 'Български',
   id: 'Bahasa Indonesia', ms: 'Bahasa Melayu', tl: 'Filipino',
 };
-
-// Retry helper: executes async function up to maxRetries+1 times with delay between attempts
-async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, delayMs = 1500): Promise<T> {
-  let lastError: Error | null = null;
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      return await fn();
-    } catch (err) {
-      lastError = err instanceof Error ? err : new Error(String(err));
-      if (attempt < maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, delayMs * (attempt + 1)));
-      }
-    }
-  }
-  throw lastError;
-}
 
 export async function POST(request: NextRequest): Promise<NextResponse<SongIdentifyResponse>> {
   if (!isLocalRequest(request)) {
