@@ -139,15 +139,6 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         return Response.json({ success: true, received: true, frameCount: batchPayload.frames.length });
       }
 
-      case 'volume':
-        if (clientId) {
-          const client = mobileClients.get(clientId);
-          if (!client) return Response.json({ success: true });
-          client.lastActivity = Date.now();
-          mobileClients.set(clientId, client);
-        }
-        return Response.json({ success: true });
-
       case 'command': {
         const cmdPayload = payload as { command: string; data?: unknown };
         return Response.json({ success: true, executed: cmdPayload.command });

@@ -50,7 +50,7 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
   lyricsSize,
 }: SinglePlayerLyricsProps) {
   // ── Find current and next lines ──
-  const { currentLine, nextLine, timeUntilSing, isSinging: _isSinging, isFlying } = useMemo(() => {
+  const { currentLine, nextLine, timeUntilSing, isFlying } = useMemo(() => {
     // Find current line
     let currentLine = sortedLines.find(line =>
       currentTime >= line.startTime && currentTime <= line.endTime

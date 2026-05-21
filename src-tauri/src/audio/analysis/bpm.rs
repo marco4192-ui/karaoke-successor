@@ -7,10 +7,6 @@ use rustfft::{FftPlanner, num_complex::Complex};
 
 /// Default BPM returned when detection fails (not enough data).
 pub const DEFAULT_BPM: f64 = 120.0;
-/// Default FFT size for BPM detection.
-const DEFAULT_FFT_SIZE: usize = 1024;
-/// Default hop size for BPM detection.
-const DEFAULT_HOP_SIZE: usize = 512;
 
 // ---------------------------------------------------------------------------
 // BpmDetector
