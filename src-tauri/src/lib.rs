@@ -101,7 +101,11 @@ fn validate_safe_path(raw_path: &str) -> Result<PathBuf, String> {
 /// with special characters (&, parentheses, Unicode) in folder names.
 #[tauri::command]
 fn native_read_file_bytes(file_path: String) -> Result<String, String> {
-    validate_safe_path(&file_path)?;
+    // validate_safe_path canonicalizes the path and checks against system dirs.
+    // We use the returned canonical path for the first read attempt so that
+    // symlink resolution is honored. The fallback attempts use the raw path
+    // with different strategies for Windows special-character edge cases.
+    let validated = validate_safe_path(&file_path)?;
 
     // Helper: enforce 200 MB size limit before base64-encoding.
     // Checked after every successful read so no path attempt bypasses the limit.
@@ -116,9 +120,8 @@ fn native_read_file_bytes(file_path: String) -> Result<String, String> {
         Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes))
     };
 
-    // Attempt 1: use the path exactly as received
-    let path = PathBuf::from(&file_path);
-    if let Ok(bytes) = fs::read(&path) {
+    // Attempt 1: use the validated canonical path
+    if let Ok(bytes) = fs::read(&validated) {
         return encode_bytes(bytes);
     }
 
@@ -177,7 +180,7 @@ fn native_read_file_bytes(file_path: String) -> Result<String, String> {
 /// with French/German/Spanish accented characters.
 #[tauri::command]
 fn native_read_file_text(file_path: String) -> Result<String, String> {
-    validate_safe_path(&file_path)?;
+    let validated = validate_safe_path(&file_path)?;
 
     // Helper: try to read a file as text with encoding fallback.
     // Returns Ok(content) or None if the file could not be read at all.
@@ -252,11 +255,11 @@ fn native_read_file_text(file_path: String) -> Result<String, String> {
 /// Check if a file or directory exists
 #[tauri::command]
 fn native_file_exists(file_path: String) -> bool {
-    if validate_safe_path(&file_path).is_err() {
-        return false;
-    }
-    let path = PathBuf::from(&file_path);
-    if path.exists() {
+    let validated = match validate_safe_path(&file_path) {
+        Ok(p) => p,
+        Err(_) => return false,
+    };
+    if validated.exists() {
         return true;
     }
     // Fallback: try with OS-native separators
