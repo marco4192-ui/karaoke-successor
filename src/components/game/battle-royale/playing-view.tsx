@@ -339,7 +339,7 @@ export function PlayingView({
             className="text-8xl font-black text-white drop-shadow-2xl"
             style={{ animation: 'countdownPop 0.3s ease-out' }}
           >
-            {t('battleRoyale.grandFinaleRound') ? 'LOS!' : 'GO!'}
+            {game.isGrandFinale ? 'LOS!' : 'GO!'}
           </div>
         </div>
       )}
