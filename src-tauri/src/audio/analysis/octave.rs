@@ -4,7 +4,7 @@
 //! This layer cross-checks the candidate frequency against the harmonic
 //! structure of the signal using FFT-based spectral analysis.
 
-use rustfft::{FftPlanner, num_complex::Complex};
+use rustfft::{Fft, FftPlanner, num_complex::Complex};
 
 // ---------------------------------------------------------------------------
 // OctaveCorrector
@@ -15,13 +15,18 @@ pub struct OctaveCorrector {
     harmonics: usize,
     /// FFT size (must be >= window size).
     fft_size: usize,
+    /// Pre-computed FFT plan (reused every frame).
+    fft: std::sync::Arc<dyn Fft<f64>>,
 }
 
 impl OctaveCorrector {
     pub fn new(harmonics: usize, fft_size: usize) -> Self {
+        let mut planner = FftPlanner::new();
+        let fft = planner.plan_fft_forward(fft_size);
         Self {
             harmonics: harmonics.max(2).min(8),
             fft_size,
+            fft,
         }
     }
 
@@ -91,10 +96,8 @@ impl OctaveCorrector {
             })
             .collect();
 
-        // FFT
-        let mut planner = FftPlanner::new();
-        let fft = planner.plan_fft_forward(n);
-        fft.process(&mut buffer);
+        // FFT (plan pre-computed in constructor)
+        self.fft.process(&mut buffer);
 
         // Magnitude spectrum (only first half is meaningful)
         buffer[0..n / 2]

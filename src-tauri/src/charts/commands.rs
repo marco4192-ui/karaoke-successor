@@ -309,33 +309,38 @@ pub fn viral_match_library(
     let songs: Vec<serde_json::Value> = serde_json::from_str(&songs_json)
         .map_err(|e| format!("Failed to parse songs JSON: {}", e))?;
 
-    let state = app.state::<DbState>();
-    let mut conn = state.conn.lock().map_err(|e| e.to_string())?;
+    // --- Phase 1: Acquire lock, read chart entries, release lock ---
+    let chart_entries: Vec<(String, String, String, String, String, i64, String)> = {
+        let state = app.state::<DbState>();
+        let conn = state.conn.lock().map_err(|e| e.to_string())?;
 
-    // Load all chart entries
-    let mut stmt = conn
-        .prepare(
-            "SELECT id, title, artist, source, playlist_name, chart_position, country
-             FROM viral_hits
-             ORDER BY chart_position ASC"
-        )
-        .map_err(|e| format!("Failed to query viral hits: {}", e))?;
+        let mut stmt = conn
+            .prepare(
+                "SELECT id, title, artist, source, playlist_name, chart_position, country
+                 FROM viral_hits
+                 ORDER BY chart_position ASC"
+            )
+            .map_err(|e| format!("Failed to query viral hits: {}", e))?;
 
-    let chart_entries: Vec<(String, String, String, String, String, i64, String)> = stmt
-        .query_map([], |row| {
-            Ok((
-                row.get::<_, String>(0)?, // id
-                row.get::<_, String>(1)?, // title
-                row.get::<_, String>(2)?, // artist
-                row.get::<_, String>(3)?, // source
-                row.get::<_, String>(4)?, // playlist_name
-                row.get::<_, i64>(5)?,   // chart_position
-                row.get::<_, String>(6)?, // country
-            ))
-        })
-        .map_err(|e| format!("query_map failed: {}", e))?
-        .filter_map(|r| try_log(r, "map viral hit"))
-        .collect();
+        let entries: Vec<(String, String, String, String, String, i64, String)> = stmt
+            .query_map([], |row| {
+                Ok((
+                    row.get::<_, String>(0)?, // id
+                    row.get::<_, String>(1)?, // title
+                    row.get::<_, String>(2)?, // artist
+                    row.get::<_, String>(3)?, // source
+                    row.get::<_, String>(4)?, // playlist_name
+                    row.get::<_, i64>(5)?,   // chart_position
+                    row.get::<_, String>(6)?, // country
+                ))
+            })
+            .map_err(|e| format!("query_map failed: {}", e))?
+            .filter_map(|r| try_log(r, "map viral hit"))
+            .collect();
+
+        // Lock is released here when `conn` and `stmt` go out of scope
+        entries
+    };
 
     if chart_entries.is_empty() {
         return Ok(Vec::new());
@@ -347,7 +352,7 @@ pub fn viral_match_library(
         songs.len()
     );
 
-    // Match each library song against chart entries
+    // --- Phase 2: Expensive fuzzy matching (NO DB lock held) ---
     let mut results: Vec<ViralMatchResult> = Vec::new();
     let mut matched_ids: Vec<(String, String)> = Vec::new(); // (chart_id, song_id)
 
@@ -386,9 +391,10 @@ pub fn viral_match_library(
         }
     }
 
-    // Update matched_song_id in SQLite for caching
+    // --- Phase 3: Re-acquire lock, write matched IDs back to SQLite ---
     if !matched_ids.is_empty() {
-        drop(stmt); // release immutable borrow on conn before mutable borrow
+        let state = app.state::<DbState>();
+        let conn = state.conn.lock().map_err(|e| e.to_string())?;
         let tx = conn.transaction()
             .map_err(|e| format!("Transaction failed: {}", e))?;
 
