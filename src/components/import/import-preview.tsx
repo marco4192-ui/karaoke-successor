@@ -39,7 +39,7 @@ export function ImportPreview({ progress, error, previewSong, audioUrl, videoUrl
       {previewSong && (
         <Card className="bg-white/5 border-white/10">
           <CardHeader>
-            <CardTitle>{t('settingsWebcam.preview')}</CardTitle>
+            <CardTitle>{t('library.song.preview')}</CardTitle>
           </CardHeader>
           <CardContent>
             <h3 className="text-xl font-bold">{previewSong.title}</h3>

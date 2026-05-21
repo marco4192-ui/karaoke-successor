@@ -56,7 +56,7 @@ export function ProfileSyncSection({ profile }: { profile: PlayerProfile }) {
     } catch (error: unknown) {
       // eslint-disable-next-line no-console
       console.error('Profile upload error:', error);
-      const errorMessage = error instanceof Error ? error.message : t('profileSync.downloadFailed');
+      const errorMessage = error instanceof Error ? error.message : t('profileSync.uploadFailed');
       setMessage({ type: 'error', text: errorMessage });
     } finally {
       setIsUploading(false);

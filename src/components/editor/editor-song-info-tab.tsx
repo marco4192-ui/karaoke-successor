@@ -200,8 +200,8 @@ export function EditorSongInfoTab({ song, allNotesCount, onSongChange, onSetUnsa
             </SelectContent>
           </Select>
           <Input
-            id="song-genre"
-            name="song-genre"
+            id="song-genre-custom"
+            name="song-genre-custom"
             value={song.genre || ''}
             onChange={(e) => {
               onSongChange(prev => ({ ...prev, genre: e.target.value || undefined }));
