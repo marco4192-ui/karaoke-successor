@@ -307,7 +307,7 @@ function hashString(str: string): number {
   for (let i = 0; i < str.length; i++) {
     hash = ((hash << 5) + hash) + str.charCodeAt(i);
   }
-  return Math.abs(hash);
+  return (hash >>> 0); // unsigned 32-bit — prevents Infinity/NaN on long strings
 }
 
 /** (#4) Returns the ISO 8601 week number for a given date. */
