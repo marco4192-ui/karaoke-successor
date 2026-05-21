@@ -180,6 +180,7 @@ export function useNativeAudio(): UseNativeAudioResult {
   }, []);
 
   const stop = useCallback(async () => {
+    ++playGenRef.current; // Invalidate any in-flight play() callbacks
     try {
       await stopAudio();
       setIsPlaying(false);
