@@ -197,6 +197,7 @@ function runScoringPass(
           lastEvaluatedTime: currentTime,
           isComplete: false,
           wasPerfect: false,
+          accumulatedPoints: 0,
         };
         noteProgressMap.set(noteId, noteProgress);
       }

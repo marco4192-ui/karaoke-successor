@@ -284,7 +284,6 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
       {screen === 'tournament' && (
         <TournamentSetupScreen
           profiles={profiles}
-          songs={getAllSongs()}
           onStartTournament={(bracket, songDuration) => {
             party.setTournamentBracket(bracket);
             party.setTournamentSongDuration(songDuration);

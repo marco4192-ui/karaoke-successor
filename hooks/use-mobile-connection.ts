@@ -19,6 +19,10 @@ interface RawGameState {
   queueLength?: number;
   isAdPlaying?: boolean;
   singalongTurn?: GameState['singalongTurn'];
+  gameMode?: GameState['gameMode'];
+  cptmTurn?: GameState['cptmTurn'];
+  tournamentMatchId?: GameState['tournamentMatchId'];
+  companionScores?: GameState['companionScores'];
 }
 
 function parseGameState(raw: RawGameState): GameState {
@@ -28,7 +32,11 @@ function parseGameState(raw: RawGameState): GameState {
     songEnded: raw.songEnded ?? false,
     queueLength: raw.queueLength ?? 0,
     isAdPlaying: raw.isAdPlaying ?? false,
+    gameMode: raw.gameMode ?? null,
     singalongTurn: raw.singalongTurn ?? null,
+    cptmTurn: raw.cptmTurn ?? null,
+    tournamentMatchId: raw.tournamentMatchId ?? null,
+    companionScores: raw.companionScores ?? null,
   };
 }
 
@@ -38,7 +46,11 @@ const INITIAL_GAME_STATE: GameState = {
   songEnded: false,
   queueLength: 0,
   isAdPlaying: false,
+  gameMode: null,
   singalongTurn: null,
+  cptmTurn: null,
+  tournamentMatchId: null,
+  companionScores: null,
 };
 
 export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {

@@ -89,6 +89,7 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
     const settings: CompetitiveSettings = {
       difficulty,
       modeType,
+      playMode: 'competitive' as const,
       bestOf,
       missingWordFrequency: modeType === 'missing-words'
         ? frequency === 'easy' ? 0.15 : frequency === 'hard' ? 0.40 : 0.25
@@ -96,6 +97,11 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
       blindFrequency: modeType === 'blind'
         ? frequency === 'rare' ? 0.10 : frequency === 'often' ? 0.40 : frequency === 'insane' ? 0.60 : 0.25
         : 0.25,
+      hardcore: false,
+      hardcoreMissingWords: false,
+      missingWordsGranularity: 'passage' as const,
+      escalating: false,
+      songSelection: 'smart' as const,
     };
 
     const playerObjs = selectedPlayers.map(id => profiles.find(p => p.id === id));

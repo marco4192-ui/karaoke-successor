@@ -146,6 +146,12 @@ export function useGameFlowHandlers(
       const score2 = results?.players?.[1]?.score || players?.[1]?.score || 0;
       const p1NotesHit = results?.players?.[0]?.notesHit || players?.[0]?.notesHit || 0;
       const p2NotesHit = results?.players?.[1]?.notesHit || players?.[1]?.notesHit || 0;
+      const p1NotesMissed = results?.players?.[0]?.notesMissed || players?.[0]?.notesMissed || 0;
+      const p2NotesMissed = results?.players?.[1]?.notesMissed || players?.[1]?.notesMissed || 0;
+      const p1Total = p1NotesHit + p1NotesMissed;
+      const p2Total = p2NotesHit + p2NotesMissed;
+      const p1Accuracy = p1Total > 0 ? p1NotesHit / p1Total : 0;
+      const p2Accuracy = p2Total > 0 ? p2NotesHit / p2Total : 0;
 
       // Estimate bonus points based on game mode and player accuracy:
       // - Missing Words: ~25% of words hidden, accuracy on hidden words ≈ overall accuracy
@@ -155,11 +161,11 @@ export function useGameFlowHandlers(
       let bonus1 = 0;
       let bonus2 = 0;
       if (gameState.gameMode === 'missing-words') {
-        bonus1 = calculateMissingWordsBonus(Math.round(p1NotesHit * 0.25));
-        bonus2 = calculateMissingWordsBonus(Math.round(p2NotesHit * 0.25));
+        bonus1 = calculateMissingWordsBonus(p1Accuracy > 0.95, Math.floor(p1NotesHit / 3), false).total;
+        bonus2 = calculateMissingWordsBonus(p2Accuracy > 0.95, Math.floor(p2NotesHit / 3), false).total;
       } else if (gameState.gameMode === 'blind') {
-        bonus1 = calculateBlindBonus(Math.round(p1NotesHit * 0.40));
-        bonus2 = calculateBlindBonus(Math.round(p2NotesHit * 0.40));
+        bonus1 = calculateBlindBonus(p1Accuracy > 0.95, Math.floor(p1NotesHit / 3), false).total;
+        bonus2 = calculateBlindBonus(p2Accuracy > 0.95, Math.floor(p2NotesHit / 3), false).total;
       }
 
       const updatedGame = finishCompetitiveRound(

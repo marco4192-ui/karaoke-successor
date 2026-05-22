@@ -70,15 +70,23 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
         avatar: profile?.avatar,
         color: profile?.color || PLAYER_COLORS[index % PLAYER_COLORS.length],
         eliminated: false,
+        lossCount: 0,
         seed: index + 1,
       };
     });
 
     const settings: TournamentSettings = {
       maxPlayers,
-      songDuration: shortMode ? 60 : 180, // 60s for short mode, 3 min for full
+      songDuration: shortMode ? 60 : 180,
       randomSongs: true,
       difficulty,
+      tournamentType: 'single',
+      tiebreakMode: 'accuracy',
+      dynamicDifficulty: false,
+      songSelectionMode: 'random',
+      seedingMode: 'random',
+      filterGenre: 'all',
+      filterLanguage: 'all',
     };
 
     try {

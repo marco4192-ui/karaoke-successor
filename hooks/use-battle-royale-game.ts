@@ -162,11 +162,21 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     return playableSongs[Math.floor(Math.random() * playableSongs.length)];
   }, [songs]);
 
+  // ── Random songs picker (plural) ─────────────────────────────────
+  const getRandomSongs = useCallback((_count: number, _excludeIds?: string[]): Song[] => {
+    const playableSongs = songs.filter(s =>
+      s.audioUrl || s.relativeAudioPath || s.storedMedia
+    );
+    const shuffled = [...playableSongs].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, _count);
+  }, [songs]);
+
   // ── Round Handlers (start/end/elimination) ────────────────────────
   const {
     handleRoundEnd,
     handleStartRound,
     handleRoundEndRef,
+    onSnippetEndRef,
     activePlayersRef,
     gameRef,
   } = useBattleRoyaleRoundHandlers({
@@ -178,6 +188,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     videoRef,
     audioHasPlayedRef,
     getRandomSong,
+    getRandomSongs,
     setShowElimination,
   });
 
@@ -187,6 +198,9 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     roundDuration: currentRound?.duration,
     gameCurrentRound: game.currentRound,
     handleRoundEndRef,
+    medleySnippetList: game.medleySnippetList,
+    currentSnippetIndex: game.currentSnippetIndex,
+    onSnippetEndRef,
   });
 
   // ── Game Initialization & Playback ─────────────────────────────────

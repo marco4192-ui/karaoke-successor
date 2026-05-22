@@ -76,7 +76,7 @@ export interface PtmGameHookReturn {
   showBackgroundVideo: boolean;
   useAnimatedBackground: boolean;
   noteDisplayStyle: string;
-  noteShapeStyle: 'rounded' | 'sharp' | 'pill' | 'diamond';
+  noteShapeStyle: string;
   safeSettings: PassTheMicSettings;
 
   // Transition

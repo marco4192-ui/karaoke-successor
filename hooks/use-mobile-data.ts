@@ -277,7 +277,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
         }),
       });
       if (!response.ok) return;
-      setJukeboxWishlist(prev => [...prev, { songId: song.id, songTitle: song.title, songArtist: song.artist, addedBy: profile.name }]);
+      setJukeboxWishlist(prev => [...prev, { id: crypto.randomUUID(), songId: song.id, songTitle: song.title, songArtist: song.artist, addedBy: profile.name }]);
     } catch (error) {
       // eslint-disable-next-line no-console
       console.debug('[useMobileData] addToJukeboxWishlist failed:', error);

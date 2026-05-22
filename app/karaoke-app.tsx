@@ -211,24 +211,20 @@ export default function KaraokeSuccessor() {
 
   // ── Global keyboard shortcuts ──
   useGlobalKeyboardShortcuts({
-    onSearch: () => navigateWithGuard('library'),
-    onFullscreen: toggleFullscreen,
-    onLibrary: () => navigateWithGuard('library'),
-    onSettings: () => navigateWithGuard('settings'),
-    onEscape: () => {
-      if (isFullscreen) {
-        document.exitFullscreen().catch(() => {});
-      } else if (screen === 'game') {
-        pauseGame();
-        party.setPauseDialogAction('song-pause');
-      } else if (isPartyModeActive && party.isSongPlaying) {
-        party.setPauseDialogAction('song-pause');
-      } else if (isPartyModeActive) {
-        party.setPauseDialogAction('party-leave');
-      } else {
-        setScreen('home');
-      }
-    },
+    screen,
+    isFullscreen,
+    isPartyModeActive,
+    isSongPlaying: party.isSongPlaying,
+    isPaused: party.pauseDialogAction !== null,
+    toggleFullscreen,
+    navigateTo: navigateWithGuard,
+    pauseGame,
+    resumeGame,
+    setPauseDialog: (action) => party.setPauseDialogAction(action),
+    focusLibrarySearch: () => navigateWithGuard('library'),
+    startRandomSong: (_mode) => { /* no-op: random song handled by library screen */ },
+    startQueueSong: () => { /* no-op: queue handled by queue screen */ },
+    navigateToJukebox: () => { /* no-op: jukebox handled by mobile */ },
   });
 
   // ── Global remote control from mobile companions ──

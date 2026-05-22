@@ -109,7 +109,7 @@ export function PtmHudControls({
       {/* Top-left: Beenden + Pause */}
       <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-auto">
         <Button
-          onClick={onEndSong}
+          onClick={_onEndSong}
           variant="ghost"
           size="sm"
           className="text-white/30 hover:text-red-400 hover:bg-white/10 h-8 rounded-md gap-1.5 px-3 text-xs"

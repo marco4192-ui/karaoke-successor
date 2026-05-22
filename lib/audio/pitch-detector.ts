@@ -231,6 +231,7 @@ export class PitchDetector {
         this.onPitchDetected?.({
           frequency: null,
           note: null,
+          rawNote: null,
           clarity: 0,
           volume,
           isSinging: false,
@@ -246,6 +247,7 @@ export class PitchDetector {
       this.onPitchDetected?.({
         frequency: null,
         note: null,
+        rawNote: null,
         clarity: 0,
         volume,
         isSinging: false,
@@ -286,6 +288,7 @@ export class PitchDetector {
         this.onPitchDetected?.({
           frequency,
           note: stablePitch,
+          rawNote: note,
           clarity,
           volume,
           isSinging: vocalIsSinging,
@@ -296,6 +299,7 @@ export class PitchDetector {
         this.onPitchDetected?.({
           frequency,
           note,
+          rawNote: note,
           clarity,
           volume,
           isSinging: vocalIsSinging,
@@ -306,6 +310,7 @@ export class PitchDetector {
       this.onPitchDetected?.({
         frequency: null,
         note: null,
+        rawNote: null,
         clarity: 0,
         volume,
         isSinging: false,
@@ -637,6 +642,7 @@ export class PitchDetectorManager {
             this.callbacks?.onPitchDetected(playerId, {
               frequency: pitchData.frequency,
               note: pitchData.note,
+              rawNote: pitchData.note,
               clarity: pitchData.clarity || 0,
               volume: pitchData.volume || 0,
               isSinging: pitchData.isSinging,

@@ -90,7 +90,7 @@ function generatePassTheMicSegments(song: Song, playerCount: number, explicitDur
 // ===================== PARTY SETUP + SONG VOTING SECTION =====================
 // ===================== HELPER: Convert SelectedPlayer to Medley/PassTheMic/Companion player =====================
 function toMedleyPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]): MedleyPlayerType[] {
-  return players.map((p, _i) => ({ ...p, team: null as unknown as number, inputType: (p.playerType === 'companion' ? 'mobile' : 'local') as 'local' | 'mobile', ...EMPTY_PLAYER_SCORE, snippetsSung: 0 }));
+  return players.map((p, _i) => ({ ...p, team: null as unknown as number, inputType: (p.playerType === 'companion' ? 'mobile' : 'local') as 'local' | 'mobile', ...EMPTY_PLAYER_SCORE, snippetsSung: 0, isEliminated: false }));
 }
 
 function toPassTheMicPlayers(players: { id: string; name: string; avatar?: string; color: string; micId?: string; micName?: string; playerType?: string }[]) {
@@ -206,6 +206,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   avatar: p.avatar,
                   color: p.color,
                   eliminated: false,
+                  lossCount: 0,
                   seed: i + 1,
                 }));
                 // Clamp to nearest valid tournament size: 2, 4, 8, 16, or 32
@@ -218,6 +219,13 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   songDuration: shortMode ? 60 : 180,
                   randomSongs: true,
                   difficulty: result.difficulty,
+                  tournamentType: 'single',
+                  tiebreakMode: 'accuracy',
+                  dynamicDifficulty: false,
+                  songSelectionMode: 'random',
+                  seedingMode: 'random',
+                  filterGenre: 'all',
+                  filterLanguage: 'all',
                 };
                 // Validate player count before creating tournament
                 const playerCount = tournamentPlayers.length;
@@ -275,6 +283,21 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   medleySnippets: 3,
                   difficulty: result.difficulty,
                   eliminationAnimation: true,
+                  songSelection: 'random',
+                  noRepeatProtection: false,
+                  noRepeatCount: 0,
+                  grandFinaleBestOf: 1,
+                  bountyEnabled: false,
+                  bountyMultiplier: 1.5,
+                  escalatingDifficulty: false,
+                  shrinkingTimer: false,
+                  shrinkFactor: 5,
+                  minRoundDuration: 15,
+                  noteShapeStyle: 'rounded',
+                  noteDisplayStyle: 'standard',
+                  showNoteHighway: true,
+                  showVideoBackground: true,
+                  countdownDuration: 3,
                 };
                 try {
                   const game = createBattleRoyale(mappedPlayers, brSettings, filteredSongs.map(s => s.id));
@@ -453,6 +476,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 const compSettings: CompetitiveSettings = {
                   difficulty: result.difficulty,
                   modeType,
+                  playMode: 'competitive' as const,
                   bestOf: ([1, 3, 5, 7].includes(s.bestOf as number) ? s.bestOf : 3) as 1 | 3 | 5 | 7,
                   missingWordFrequency: modeType === 'missing-words'
                     ? (mwFreqMap[freqSetting] ?? 0.25)
@@ -460,6 +484,11 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   blindFrequency: modeType === 'blind'
                     ? (blindFreqMap[freqSetting] ?? 0.25)
                     : 0.25,
+                  hardcore: false,
+                  hardcoreMissingWords: false,
+                  missingWordsGranularity: 'passage' as const,
+                  escalating: false,
+                  songSelection: 'smart' as const,
                 };
                 const compGame = createCompetitiveGame(
                   result.players.map(p => p.id),

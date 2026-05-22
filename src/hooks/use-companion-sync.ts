@@ -34,6 +34,7 @@ export function useCompanionSync(): {
   companionProfiles: CompanionProfile[];
   syncCompanionProfiles: () => Promise<void>;
   companionQueue: CompanionQueueItem[];
+  syncCompanionQueue: () => Promise<void>;
 } {
   const [companionProfiles, setCompanionProfiles] = useState<CompanionProfile[]>([]);
   const [companionQueue, setCompanionQueue] = useState<CompanionQueueItem[]>([]);
@@ -99,5 +100,6 @@ export function useCompanionSync(): {
     companionProfiles,
     syncCompanionProfiles,
     companionQueue,
+    syncCompanionQueue: fetchCompanionQueue,
   };
 }
