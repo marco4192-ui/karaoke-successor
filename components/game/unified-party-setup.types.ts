@@ -165,6 +165,13 @@ export interface StandardModeSettings extends BaseModeSettings {}
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- Intentional marker in discriminated union for future extension
 export interface DuetModeSettings extends BaseModeSettings {}
 
+/** Companion Pass-the-Mic */
+export interface CompanionPassTheMicSettings extends BaseModeSettings {
+  minTurnDuration?: number;
+  maxTurnDuration?: number;
+  blinkWarning?: number;
+}
+
 /** Online — no extra config settings */
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- Intentional marker in discriminated union for future extension
 export interface OnlineModeSettings extends BaseModeSettings {}
@@ -182,7 +189,8 @@ export type GameModeSettings =
   | DuelModeSettings
   | StandardModeSettings
   | DuetModeSettings
-  | OnlineModeSettings;
+  | OnlineModeSettings
+  | CompanionPassTheMicSettings;
 
 /** Discriminated union: maps each GameMode to its typed settings */
 export interface GameModeSettingsMap {
@@ -198,6 +206,7 @@ export interface GameModeSettingsMap {
   'duel': DuelModeSettings;
   'duet': DuetModeSettings;
   'online': OnlineModeSettings;
+  'companion-pass-the-mic': CompanionPassTheMicSettings;
 }
 
 // ===================== GAME SETUP RESULT =====================
