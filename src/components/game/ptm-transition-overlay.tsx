@@ -17,6 +17,8 @@ export interface PtmTransitionOverlayProps {
   visible: boolean;
   /** The next player who will sing */
   nextPlayer: PtmTransitionPlayer | null;
+  /** Called when the transition animation completes (auto-dismiss) */
+  onComplete?: () => void;
   /** Called when user clicks/presses Space to dismiss */
   onSkip?: () => void;
 }
@@ -31,6 +33,7 @@ const AUTO_DISMISS_MS = 5000; // Auto-hide 5s after typing finishes
 export function PtmTransitionOverlay({
   visible,
   nextPlayer,
+  onComplete,
   onSkip,
 }: PtmTransitionOverlayProps) {
   const { t } = useTranslation();
@@ -95,9 +98,10 @@ export function PtmTransitionOverlay({
       clearTimeout(autoDismissRef.current);
       autoDismissRef.current = null;
     }
-    if (visible && isTypingDone && onSkip) {
+    if (visible && isTypingDone) {
       autoDismissRef.current = setTimeout(() => {
-        onSkip();
+        onComplete?.();
+        onSkip?.();
       }, AUTO_DISMISS_MS);
     }
     return () => {
@@ -106,7 +110,7 @@ export function PtmTransitionOverlay({
         autoDismissRef.current = null;
       }
     };
-  }, [visible, isTypingDone, onSkip]);
+  }, [visible, isTypingDone, onComplete, onSkip]);
 
   // Space to dismiss
   useEffect(() => {
