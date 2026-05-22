@@ -288,6 +288,9 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         if (cancelled) return;
         if (ok) {
           multiPitch.start();
+        } else {
+          // eslint-disable-next-line no-console
+          console.warn('[BattleRoyale] Multi-pitch initialization failed – mic detection unavailable. Check microphone permissions and ensure at least one player has playerType="microphone".');
         }
 
         const audio = audioRef.current;

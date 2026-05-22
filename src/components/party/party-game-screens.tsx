@@ -522,6 +522,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           profiles={profiles}
           songs={getNonDuetSongs()}
           onStartGame={(game) => {
+            party.setIsSongPlaying(false);
             party.setBattleRoyaleGame(game);
             setScreen('battle-royale-game');
           }}

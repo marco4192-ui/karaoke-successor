@@ -173,7 +173,7 @@ export function useGameAudioEffects(options?: UseGameAudioEffectsOptions) {
     audioEffectsRef.current.applyPreset(preset);
     const presetSettings = AUDIO_PRESETS[preset];
     if (presetSettings.reverb) setReverbAmount(presetSettings.reverb.amount ?? 0);
-    if (presetSettings.delay) setEchoAmount((presetSettings.delay.mix ?? 0) * 100);
+    if (presetSettings.delay) setEchoAmount(presetSettings.delay.mix ?? 0);
   }, [audioEffectsRef]);
 
   return {

@@ -211,6 +211,7 @@ export const medleyTournamentTranslations = {
     hard: 'Schwer',
     // #4 Double Elimination
     tournamentType: 'Turnier-Typ',
+    type: 'Turnier-Typ',
     singleElimination: 'Einfache Elimination',
     doubleElimination: 'Doppelte Elimination',
     doubleEliminationShort: 'Double-Elim',
@@ -228,6 +229,7 @@ export const medleyTournamentTranslations = {
     droppedToLB: 'Abgestiegen in Verlierer-Bracket',
     // #3 Tiebreak
     tiebreakMode: 'Tiebreak-Regel',
+    tiebreak: 'Tiebreak-Regel',
     tiebreakCoinflip: 'Münzwurf',
     tiebreakCoinflipDesc: 'Bei Gleichstand entscheidet der Zufall',
     tiebreakAccuracy: 'Genauigkeit',
@@ -260,6 +262,7 @@ export const medleyTournamentTranslations = {
     newTournament: 'Neues Turnier',
     // #8 Song selection
     songSelectionMode: 'Song-Auswahl',
+    songSelection: 'Song-Auswahl',
     songRandom: '🎲 Zufällig',
     songVote: '🗳️ Abstimmung',
     songVoteDesc: 'Spieler wählen aus 3 vorgeschlagenen Songs vor jedem Match',
@@ -267,6 +270,7 @@ export const medleyTournamentTranslations = {
     songVoteSkip: 'Stattdessen zufällig wählen',
     // #9 Seeding
     seedingMode: 'Setzung',
+    seeding: 'Setzung',
     seedingRandom: '🎲 Zufällig',
     seedingStrength: '📊 Nach Stärke',
     seedingStrengthDesc: 'Spieler werden nach ihrer Statistik gesetzt (Hall of Fame, Level, Genauigkeit)',

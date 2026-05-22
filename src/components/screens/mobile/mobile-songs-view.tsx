@@ -263,7 +263,7 @@ export function MobileSongsView({
             
             {/* F19: Enhanced Opponent Selection (for duel/duet mode) */}
             {isBattleMode && (
-              <div>
+              <div className="max-h-[50vh] overflow-y-auto">
                 {/* Section header with VS battle visual */}
                 <div className="flex items-center gap-2 mb-3">
                   <div className="flex-1 h-px bg-white/20" />
@@ -294,7 +294,7 @@ export function MobileSongsView({
                           <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
                           {t('mobileViews.onlineNow')} ({opponents.length})
                         </p>
-                        <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                        <div className="space-y-1.5 max-h-24 overflow-y-auto">
                           {opponents.map((opponent) => (
                             <button
                               key={opponent.id}
@@ -336,7 +336,7 @@ export function MobileSongsView({
                         <p className="text-xs text-white/40 font-semibold uppercase tracking-wider mb-2">
                           {t('mobileViews.availableProfiles')} ({availableProfiles.length})
                         </p>
-                        <div className="space-y-1.5 max-h-28 overflow-y-auto">
+                        <div className="space-y-1.5 max-h-20 overflow-y-auto">
                           {availableProfiles.map((profile) => (
                             <button
                               key={profile.id}
@@ -375,7 +375,7 @@ export function MobileSongsView({
                     <p className="text-xs text-white/40 font-semibold uppercase tracking-wider mb-2">
                       {t('mobileViews.onlineNow')}
                     </p>
-                    <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                    <div className="space-y-1.5 max-h-24 overflow-y-auto">
                       {availablePartners.map((partner) => (
                         <button
                           key={partner.id}
