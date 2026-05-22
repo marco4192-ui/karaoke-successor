@@ -11,6 +11,8 @@ import { Song } from '@/types/game';
 
 interface ViralMatchResult {
   song_id: string;
+  song_title: string;
+  song_artist: string;
 }
 
 interface ViralStatus {
@@ -81,7 +83,6 @@ export function useViralCharts(): UseViralCharts {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<ViralStatus | null>(null);
-
   const mountedRef = useRef(true);
 
   // Load cached matched IDs on mount (fast, no network)
