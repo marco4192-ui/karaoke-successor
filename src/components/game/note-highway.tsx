@@ -313,6 +313,8 @@ export const NoteHighway = React.memo(function NoteHighway({
   visibleRange = 77,
   className = '',
   isBlindSection = false,
+  missingWordsIndices = [],
+  gameMode,
 }: NoteHighwayProps) {
   const { t } = useTranslation();
 
