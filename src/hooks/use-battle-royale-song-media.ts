@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Song } from '@/types/game';
 import { getSongMediaUrls, revokeSongMediaUrls } from '@/lib/db/media-db';
 import { getSongMediaUrl, isTauri } from '@/lib/tauri-file-storage';
+import { isYouTubeUrl, extractYouTubeId } from '@/components/game/youtube-player';
 
 interface UseBattleRoyaleSongMediaParams {
   currentRoundSongId: string | undefined;
@@ -21,6 +22,9 @@ interface UseBattleRoyaleSongMediaReturn {
   resolvedAudioUrlRef: React.RefObject<string | null>;
   resolvedVideoUrlRef: React.RefObject<string | null>;
   audioHasPlayedRef: React.RefObject<boolean>;
+  isYouTube: boolean;
+  youtubeVideoId: string | null;
+  hasLocalAudio: boolean;
 }
 
 /**
@@ -169,6 +173,11 @@ export function useBattleRoyaleSongMedia({
     return () => { revokeSongMediaUrls(lastMediaUrlsRef.current); };
   }, []);
 
+  // Determine if song uses YouTube (for video background rendering)
+  const youtubeUrl = currentSong?.youtubeUrl;
+  const isYouTube = !!youtubeUrl && isYouTubeUrl(youtubeUrl);
+  const youtubeVideoId = isYouTube ? extractYouTubeId(youtubeUrl) : null;
+
   return {
     currentSong,
     mediaLoaded,
@@ -177,5 +186,8 @@ export function useBattleRoyaleSongMedia({
     resolvedAudioUrlRef,
     resolvedVideoUrlRef,
     audioHasPlayedRef,
+    isYouTube,
+    youtubeVideoId,
+    hasLocalAudio: !!resolvedAudioUrlRef.current,
   };
 }

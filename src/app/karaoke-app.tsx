@@ -379,19 +379,28 @@ export default function KaraokeZERO() {
               setSong(song);
               if (currentMode === 'pass-the-mic') {
                 const playerCount = party.passTheMicPlayers?.length || 2;
+                // Always generate initial segments (may be time-based if lyrics lack notes)
                 const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration, song.lyrics);
                 party.setPassTheMicSegments(segments);
-                // Ensure URLs (and lyrics) are ready BEFORE navigating to PTM screen
-                // to avoid race condition where PTM renders without lyrics
+                // Ensure URLs AND lyrics (with notes) are ready BEFORE navigating to PTM screen.
+                // Always re-generate segments after lyrics load so score-based splitting is used.
                 (async () => {
                   try {
                     const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
-                    const songWithUrls = await ensureSongUrls(song);
-                    // Re-generate segments with loaded lyrics for score-based splitting
-                    if (songWithUrls.lyrics && songWithUrls.lyrics.length > 0 && (!song.lyrics || song.lyrics.length === 0)) {
-                      const scoreSegments = generatePtmSegments(songWithUrls.duration, playerCount, party.passTheMicSettings?.segmentDuration, songWithUrls.lyrics);
-                      party.setPassTheMicSegments(scoreSegments);
+                    let songWithUrls = await ensureSongUrls(song);
+                    // Also load lyrics from DB if the song has none or lyrics without notes
+                    if (!songWithUrls.lyrics?.length || songWithUrls.lyrics.every(l => l.notes.length === 0)) {
+                      try {
+                        const { getSongByIdWithLyrics } = await import('@/lib/game/song-library');
+                        const withLyrics = await getSongByIdWithLyrics(songWithUrls.id);
+                        if (withLyrics?.lyrics?.length) {
+                          songWithUrls = { ...songWithUrls, lyrics: withLyrics.lyrics };
+                        }
+                      } catch { /* non-critical */ }
                     }
+                    // Always regenerate segments with the best available lyrics for score-based splitting
+                    const scoreSegments = generatePtmSegments(songWithUrls.duration, playerCount, party.passTheMicSettings?.segmentDuration, songWithUrls.lyrics);
+                    party.setPassTheMicSegments(scoreSegments);
                     party.setPassTheMicSong(songWithUrls);
                   } catch {
                     party.setPassTheMicSong(song);
@@ -455,11 +464,34 @@ export default function KaraokeZERO() {
 
             if (activeMode === 'pass-the-mic' && party.passTheMicPlayers?.length > 0) {
               const playerCount = party.passTheMicPlayers.length || 2;
+              // Generate initial segments (may be time-based if lyrics lack notes)
               const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration, song.lyrics);
               party.setPassTheMicSegments(segments);
-              party.setPassTheMicSong(song);
-              setSong(song);
-              setScreen('pass-the-mic-game');
+              // Async: load lyrics with notes for score-based segment splitting
+              (async () => {
+                try {
+                  const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
+                  let songWithLyrics = song;
+                  if (!song.lyrics?.length || song.lyrics.every(l => l.notes.length === 0)) {
+                    try {
+                      const { getSongByIdWithLyrics } = await import('@/lib/game/song-library');
+                      const withLyrics = await getSongByIdWithLyrics(song.id);
+                      if (withLyrics?.lyrics?.length) {
+                        songWithLyrics = { ...song, lyrics: withLyrics.lyrics };
+                      }
+                    } catch { /* non-critical */ }
+                  }
+                  const finalSong = await ensureSongUrls(songWithLyrics);
+                  const scoreSegments = generatePtmSegments(finalSong.duration, playerCount, party.passTheMicSettings?.segmentDuration, finalSong.lyrics);
+                  party.setPassTheMicSegments(scoreSegments);
+                  party.setPassTheMicSong(finalSong);
+                  setSong(finalSong);
+                } catch {
+                  // Fallback: use whatever we already have
+                  party.setPassTheMicSong(song);
+                  setSong(song);
+                }
+              })();
               return;
             }
 

@@ -150,9 +150,22 @@ Return ONLY the JSON object. Focus only on real errors, not style.`,
         suggestions: validSuggestions,
         detectedLanguage,
       });
-    } catch (llmError) {
+    } catch (llmError: unknown) {
       // eslint-disable-next-line no-console
       console.error('[LyricsSuggestions] LLM error:', llmError);
+
+      // Detect 429 rate-limit errors from the AI SDK
+      const isRateLimit =
+        (llmError && typeof llmError === 'object' && 'status' in llmError && llmError.status === 429) ||
+        (llmError instanceof Error && /\b429\b/.test(llmError.message));
+
+      if (isRateLimit) {
+        return NextResponse.json(
+          { success: false, error: 'KI-Dienste sind momentan überlastet. Bitte versuche es später erneut.' },
+          { status: 429 }
+        );
+      }
+
       return NextResponse.json(
         { success: false, error: 'AI processing failed' },
         { status: 503 }

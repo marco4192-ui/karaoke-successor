@@ -127,23 +127,24 @@ function generateScoreBasedSegments(
 /**
  * Build an array of candidate break points at the END of each lyric line.
  * Each entry records the time (ms) and the cumulative score up to that point.
+ *
+ * Scoring model: each note represents one scoring opportunity.
+ * Golden notes are worth 5× a normal note because they award more points per tick.
+ * Longer notes do NOT get extra weight — the goal is equal NOTES per segment,
+ * so every player gets roughly the same number of singing opportunities.
  */
 function buildScoreTimeline(
   lyrics: LyricLine[],
-  notes: Note[],
+  _notes: Note[],
 ): Array<{ time: number; cumulativeScore: number; gapAfter: number }> {
-  // Map each note to its scoring weight (golden notes are worth 5x more)
   const GOLDEN_WEIGHT = 5;
   const NORMAL_WEIGHT = 1;
 
-  // Build note score map for quick lookup
+  // Build note score map for quick lookup by ID
   const noteScoreMap = new Map<string, number>();
-  for (const note of notes) {
-    // Score potential = duration-based ticks × weight
-    // Longer notes are worth more (more time to score points)
-    const ticks = Math.max(1, Math.round(note.duration / 500)); // ~120 BPM default
+  for (const note of _notes) {
     const weight = note.isGolden ? GOLDEN_WEIGHT : NORMAL_WEIGHT;
-    noteScoreMap.set(note.id, ticks * weight);
+    noteScoreMap.set(note.id, weight);
   }
 
   const timeline: Array<{ time: number; cumulativeScore: number; gapAfter: number }> = [];
@@ -175,13 +176,15 @@ function buildScoreTimeline(
  * Find the line break that is closest to the target cumulative score,
  * preferring breaks with larger gaps (more natural transition points).
  * Also ensures the break is after the previous segment's start.
+ *
+ * Safety: if no valid entry is found after minTime, picks the last entry.
  */
 function findBestBreakpoint(
   timeline: Array<{ time: number; cumulativeScore: number; gapAfter: number }>,
   targetScore: number,
   minTime: number,
 ): number {
-  let bestIdx = 0;
+  let bestIdx = -1;
   let bestDistance = Infinity;
 
   for (let i = 0; i < timeline.length; i++) {
@@ -199,6 +202,11 @@ function findBestBreakpoint(
       bestDistance = effectiveDist;
       bestIdx = i;
     }
+  }
+
+  // Safety: if no entry found after minTime, use the last timeline entry
+  if (bestIdx < 0) {
+    return timeline[timeline.length - 1].time;
   }
 
   return timeline[bestIdx].time;

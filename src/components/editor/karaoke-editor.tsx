@@ -538,7 +538,7 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
                   <Waves className="w-3 h-3" />
                 </TabsTrigger>
                 <TabsTrigger value="ai" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
-                  <Sparkles className="w-3 h-3" />
+                  <Sparkles className="w-3 h-3" /> KI
                 </TabsTrigger>
                 <TabsTrigger value="metadata" className="text-[10px] data-[state=active]:bg-slate-700 px-1">
                   <Settings className="w-3 h-3" />
