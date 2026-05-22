@@ -76,8 +76,16 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
         {/* Playlist Settings — Single source of truth for all filters */}
         <Card className="bg-white/5 border-white/10">
           <CardHeader>
-            <CardTitle>{t('jukeboxPlayer.playlistSettings')}</CardTitle>
-            <CardDescription>{t('jukeboxPlayer.customizeExperience')}</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>{t('jukeboxPlayer.playlistSettings')}</CardTitle>
+                <CardDescription>{t('jukeboxPlayer.customizeExperience')}</CardDescription>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold text-cyan-400">{j.filteredSongs.length}</p>
+                <p className="text-white/60 text-sm">{t('jukeboxPlayer.songsAvailable')}</p>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Genre + Artist filters in a grid */}
@@ -116,40 +124,6 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
               </div>
             </div>
 
-            {/* F11: Duration filter */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm text-white/60 mb-2 block">{t('jukeboxPlayer.minDuration')}</label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min={0}
-                    max={30}
-                    value={j.minDuration || ''}
-                    onChange={(e) => j.setMinDuration(parseInt(e.target.value) || 0)}
-                    placeholder="0"
-                    className="w-24 bg-white/5 border-white/10 text-white"
-                  />
-                  <span className="text-white/40 text-sm">{t('jukeboxPlayer.minutes')}</span>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm text-white/60 mb-2 block">{t('jukeboxPlayer.maxDuration')}</label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min={0}
-                    max={30}
-                    value={j.maxDuration || ''}
-                    onChange={(e) => j.setMaxDuration(parseInt(e.target.value) || 0)}
-                    placeholder="0"
-                    className="w-24 bg-white/5 border-white/10 text-white"
-                  />
-                  <span className="text-white/40 text-sm">{t('jukeboxPlayer.minutes')}</span>
-                </div>
-              </div>
-            </div>
-
             {/* Options row: Shuffle + Repeat */}
             <div className="flex flex-wrap gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -167,62 +141,6 @@ export function JukeboxSetupView({ j }: { j: UseJukeboxReturn }) {
               ))}
             </div>
 
-            {/* F10: Max songs limit */}
-            <div>
-              <label className="text-sm text-white/60 mb-2 block">{t('jukeboxPlayer.maxSongs')}</label>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min={0}
-                  max={500}
-                  value={j.maxSongs || ''}
-                  onChange={(e) => j.setMaxSongs(parseInt(e.target.value) || 0)}
-                  placeholder="0 = {t('jukeboxPlayer.unlimited')}"
-                  className="w-32 bg-white/5 border-white/10 text-white"
-                />
-                <span className="text-white/40 text-sm">{t('jukeboxPlayer.unlimited')}</span>
-              </div>
-            </div>
-
-            {/* N4: Timer */}
-            <div>
-              <label className="text-sm text-white/60 mb-2 block">{t('jukeboxPlayer.autoStopTimer')}</label>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min={0}
-                  max={480}
-                  value={j.timerMinutes || ''}
-                  onChange={(e) => j.setTimerMinutes(parseInt(e.target.value) || 0)}
-                  placeholder="0"
-                  className="w-32 bg-white/5 border-white/10 text-white"
-                />
-                <span className="text-white/40 text-sm">{t('jukeboxPlayer.minutes')} (0 = {t('jukeboxPlayer.noTimer')})</span>
-              </div>
-            </div>
-
-            {/* F7: Recently played exclusion */}
-            <div>
-              <label className="text-sm text-white/60 mb-2 block">{t('jukeboxPlayer.recentlyPlayedExclude')}</label>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min={0}
-                  max={240}
-                  value={j.recentlyPlayedMinutes || ''}
-                  onChange={(e) => j.setRecentlyPlayedMinutes(parseInt(e.target.value) || 0)}
-                  placeholder="30"
-                  className="w-32 bg-white/5 border-white/10 text-white"
-                />
-                <span className="text-white/40 text-sm">{t('jukeboxPlayer.minutes')} (0 = {t('jukeboxPlayer.noExclusion')})</span>
-              </div>
-            </div>
-
-            {/* Song count summary */}
-            <div className="text-center py-4 bg-white/5 rounded-lg">
-              <p className="text-2xl font-bold text-cyan-400">{j.filteredSongs.length}</p>
-              <p className="text-white/60 text-sm">{t('jukeboxPlayer.songsAvailable')}</p>
-            </div>
           </CardContent>
         </Card>
 

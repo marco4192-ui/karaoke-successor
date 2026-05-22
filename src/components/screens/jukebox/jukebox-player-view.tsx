@@ -337,7 +337,9 @@ function PlaylistSidebar({ j }: { j: UseJukeboxReturn }) {
   const { t } = useTranslation();
   const [loadingSongId, setLoadingSongId] = useState<string | null>(null);
 
-  if (j.upNext.length === 0 || j.hidePlaylist) return null;
+  // #4 FIX: Never return null in fullscreen — use CSS width transition instead
+  // to avoid React #300 (DOM mismatch when toggling playlist in fullscreen flex layout)
+  if (j.upNext.length === 0) return null;
 
   // #3 FIX: Song click with loading state and error handling
   const handleSongClick = useCallback(async (songId: string) => {
@@ -358,7 +360,7 @@ function PlaylistSidebar({ j }: { j: UseJukeboxReturn }) {
   }, [j, loadingSongId]);
 
   return (
-    <div className={`${j.isFullscreen ? 'w-[25%] h-full flex flex-col bg-black/80 pt-14' : ''}`}>
+    <div className={j.isFullscreen ? 'h-full flex flex-col bg-black/80 pt-14 transition-all duration-300' : ''} style={j.isFullscreen ? { width: j.hidePlaylist ? '0px' : '25%', overflow: 'hidden' } : undefined}>
       <Card className={`bg-white/5 border-white/10 ${j.isFullscreen ? 'flex-1 rounded-none border-0 flex flex-col' : ''}`}>
         <CardHeader className={j.isFullscreen ? 'pb-2 border-b border-white/10' : ''}>
           <CardTitle className="text-lg flex items-center justify-between">
