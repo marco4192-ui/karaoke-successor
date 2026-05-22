@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ZAI from 'z-ai-web-dev-sdk'; // NOTE: Uses ZAI SDK defaults (model, endpoint, etc.)
 import { isLocalRequest } from '@/app/api/lib/is-local-request';
-import { withRetry } from '@/app/api/lib/retry';
+import { withRetry, isRateLimitError } from '@/app/api/lib/retry';
 
 // TypeScript types for song identification
 interface SongIdentifyRequest {
@@ -194,6 +194,16 @@ Extract the song metadata and return ONLY the JSON object.`,
     } catch (llmError) {
       // eslint-disable-next-line no-console
       console.error('[SongIdentify] LLM error:', llmError);
+      const err = llmError instanceof Error ? llmError : new Error(String(llmError));
+
+      // Surface a specific error for rate-limit so the UI can show a helpful message
+      if (isRateLimitError(err)) {
+        return NextResponse.json(
+          { success: false, error: 'rate_limited' },
+          { status: 429 }
+        );
+      }
+
       return NextResponse.json(
         { success: false, error: 'AI processing failed' },
         { status: 503 }

@@ -61,9 +61,12 @@ export function GenreLanguageEditor({
   };
 
   // ── AI Genre/Language suggestion ──
+  const [aiError, setAiError] = useState<string | null>(null);
+
   const handleAiSuggest = useCallback(async () => {
     setIsAiLoading(true);
     setAiSuggestion(null);
+    setAiError(null);
     try {
       const input = `${song.artist} - ${song.title}`;
       const res = await fetch('/api/song-identify', {
@@ -72,19 +75,26 @@ export function GenreLanguageEditor({
         body: JSON.stringify({ input, type: 'filename' }),
       });
       const data = await res.json();
+      if (res.status === 429 || data.error === 'rate_limited') {
+        setAiError(t('editor.aiRateLimited'));
+        return;
+      }
       if (data.success && data.metadata) {
         setAiSuggestion({
           genre: data.metadata.genre,
           language: data.metadata.language,
         });
+      } else {
+        setAiError(data.error || t('editor.aiSuggestionFailed'));
       }
     } catch (e) {
       // eslint-disable-next-line no-console
       console.warn('[Editor] AI suggestion failed:', e);
+      setAiError(t('editor.aiSuggestionFailed'));
     } finally {
       setIsAiLoading(false);
     }
-  }, [song.artist, song.title]);
+  }, [song.artist, song.title, t]);
 
   const handleAcceptSuggestion = useCallback((field: 'genre' | 'language') => {
     if (!aiSuggestion) return;
@@ -159,6 +169,10 @@ export function GenreLanguageEditor({
           )}
           {isAiLoading ? t('editor.aiSuggestLoading') : t('editor.aiSuggestMetadata')}
         </button>
+        {/* AI error message */}
+        {aiError && (
+          <p className="text-xs text-amber-400/80 text-center">{aiError}</p>
+        )}
         {/* Genre Section */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-white/80">{t('editor.genre')}</label>

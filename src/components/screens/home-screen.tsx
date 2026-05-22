@@ -48,7 +48,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
   const songCount = typeof window === 'undefined' ? 0 : getAllSongs().length;
   
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+    <div className="w-full max-w-[1600px] mx-auto px-4 md:px-6 lg:px-8">
       {/* ═══ HERO SECTION — Retro Karaoke Vibe ═══ */}
       <div className="relative text-center py-16 retro-scanlines">
         {/* Animated rainbow bar behind title */}
@@ -98,7 +98,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
       </div>
 
       {/* ═══ QUICK STATS — Neon Card Style ═══ */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-12">
         <Card className="retro-gradient-card retro-border-cyan backdrop-blur-sm rounded-xl">
           <CardContent className="pt-6">
             <div className="text-3xl font-black text-[#00e5ff] retro-glow-cyan">{isMounted ? songCount : 0}</div>
@@ -137,7 +137,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
       </Card>
 
       {/* ═══ FEATURES — Retro Neon Cards ═══ */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-12">
         <Card className="bg-gradient-to-br from-[#00e5ff]/10 to-[#00ffff]/5 retro-border-cyan rounded-xl retro-box-glow-cyan">
           <CardHeader>
             <CardTitle className="text-[#00e5ff] flex items-center gap-2 font-bold">

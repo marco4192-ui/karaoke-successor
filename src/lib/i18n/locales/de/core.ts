@@ -89,7 +89,7 @@ export const coreTranslations = {
     pauseDesc: 'Möchtest du das Spiel fortsetzen oder abbrechen?',
     resume: 'Fortsetzen',
     rematch: '🔄 Game wiederholen',
-    setWinner: '🏆 Sieger automatisch festlegen',
+    setWinner: '🏆 Sieger manuell festlegen',
     abort: 'Abbrechen'
   },
 
