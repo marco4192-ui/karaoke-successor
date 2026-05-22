@@ -135,7 +135,7 @@ export interface GameScreenHookReturn {
   showPitchGuide: boolean;
   useAnimatedBackground: boolean;
   noteDisplayStyle: string;
-  noteShapeStyle: 'rounded' | 'sharp' | 'pill' | 'diamond';
+  noteShapeStyle: string;
   hasChallengeNoPitchGuide: boolean;
   activeChallenge: typeof CHALLENGE_MODES[0] | null;
 
