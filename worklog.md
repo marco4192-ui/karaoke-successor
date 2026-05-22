@@ -726,3 +726,23 @@ Stage Summary:
 - Content scrolls within the modal when it exceeds 85vh
 - Backdrop tap area provides natural dismissal UX
 - Build: ✅ 0 new TypeScript errors from modified files
+---
+Task ID: ptm-build-fix
+Agent: Main Agent
+Task: Fix persistent build error - onComplete prop not in PtmTransitionOverlayProps
+
+Work Log:
+- Analyzed build error: ptm-game-screen.tsx:230 passes onComplete to PtmTransitionOverlay but type does not accept it
+- Discovered root cause: tsconfig.json maps @/* to ./src/*, so the import resolves to src/components/game/ptm-transition-overlay.tsx, NOT components/game/ptm-transition-overlay.tsx
+- Previous fix modified the wrong file (components/game/ptm-transition-overlay.tsx)
+- Local commits had the correct fix for src/ version but were never pushed due to branch divergence (3 local vs 70 remote commits)
+- Created fix-ptm-transition branch from origin/main
+- Added onComplete?: () => void to PtmTransitionOverlayProps interface in src/components/game/ptm-transition-overlay.tsx
+- Added onComplete to component destructuring and auto-dismiss callback
+- Updated useEffect dependency array to include onComplete
+- Pushed as commit 07ca650 to origin/main
+
+Stage Summary:
+- Root cause: wrong file was fixed previously (@/ path alias resolves to src/, not project root)
+- File modified: src/components/game/ptm-transition-overlay.tsx (7 insertions, 3 deletions)
+- Build should now pass - onComplete prop properly defined in the correct file
