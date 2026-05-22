@@ -186,34 +186,35 @@ export function useGameModes({
     }
   }, [gameMode, hardcore, setBlindHardcore]);
 
-  // ── BLIND KARAOKE MODE — Passage-based ──
-  // Notes on the highway are hidden for entire musical passages.
-  // First passage is always fully visible.
+  // ── BLIND KARAOKE MODE — Generate pattern (once per song) ──
+  // Decoupled from isGameActive so the pattern is ready before playback starts.
   useEffect(() => {
-    if (gameMode === 'blind' && isGameActive && sortedLines && sortedLines.length > 0) {
-      // Generate passage-based blind pattern once per song
-      if (!blindPatternRef.current) {
-        const passages = groupIntoPassages(sortedLines);
-        const seeds = generateSeedSequence(passages.length);
+    if (gameMode === 'blind' && sortedLines && sortedLines.length > 0 && !blindPatternRef.current) {
+      const passages = groupIntoPassages(sortedLines);
+      const seeds = generateSeedSequence(passages.length);
 
-        // Apply escalating multiplier to frequency
-        const baseFreq = blindFrequency ?? 0.30;
-        const effectiveFreq = Math.min(0.95, baseFreq * (escalatingMultiplier ?? 1));
+      // Apply escalating multiplier to frequency
+      const baseFreq = blindFrequency ?? 0.30;
+      const effectiveFreq = Math.min(0.95, baseFreq * (escalatingMultiplier ?? 1));
 
-        const isBlind: boolean[] = passages.map((_, i) => {
-          if (i === 0) return false; // First passage always visible
-          return seeds[i] < effectiveFreq;
-        });
+      const isBlind: boolean[] = passages.map((_, i) => {
+        if (i === 0) return false; // First passage always visible
+        return seeds[i] < effectiveFreq;
+      });
 
-        blindPatternRef.current = {
-          isBlind,
-          passages: passages.map(p => ({
-            startTime: p[0]?.startTime ?? 0,
-            endTime: p[p.length - 1]?.endTime ?? 0,
-          })),
-        };
-      }
+      blindPatternRef.current = {
+        isBlind,
+        passages: passages.map(p => ({
+          startTime: p[0]?.startTime ?? 0,
+          endTime: p[p.length - 1]?.endTime ?? 0,
+        })),
+      };
+    }
+  }, [gameMode, sortedLines, blindFrequency, escalatingMultiplier]);
 
+  // ── BLIND KARAOKE MODE — Per-frame passage tracking ──
+  useEffect(() => {
+    if (gameMode === 'blind' && isGameActive && blindPatternRef.current) {
       const pattern = blindPatternRef.current;
 
       // Find current passage based on currentTime
@@ -267,16 +268,12 @@ export function useGameModes({
         setBlindSection(isBlind);
       }
     }
-  }, [gameMode, isGameActive, currentTime, sortedLines, setBlindSection, setBlindHardcore, blindFrequency, escalatingMultiplier, onBlindWarning]);
+  }, [gameMode, isGameActive, currentTime, sortedLines, setBlindSection, onBlindWarning]);
 
-  // ── MISSING WORDS MODE — Multi-granularity ──
-  // Supports three modes:
-  // - 'word': Every N-th note hidden (N depends on frequency)
-  // - 'passage': Entire passages hidden
-  // - 'both': Mix of passage hiding + scattered words
+  // ── MISSING WORDS MODE — Generate hidden pattern (once per song) ──
+  // Decoupled from isGameActive so the pattern is ready before playback starts.
   useEffect(() => {
-    if (gameMode === 'missing-words' && sortedLines && isGameActive) {
-      if (missingWordsGeneratedRef.current) return;
+    if (gameMode === 'missing-words' && sortedLines && sortedLines.length > 0 && !missingWordsGeneratedRef.current) {
       missingWordsGeneratedRef.current = true;
 
       const passages = groupIntoPassages(sortedLines);
@@ -343,7 +340,7 @@ export function useGameModes({
       hiddenStartTimesRef.current = new Set(hiddenStartTimes);
       setMissingWordsIndices(hiddenStartTimes);
     }
-  }, [gameMode, sortedLines, isGameActive, setMissingWordsIndices, missingWordFrequency, missingWordsGranularity, escalatingMultiplier]);
+  }, [gameMode, sortedLines, setMissingWordsIndices, missingWordFrequency, missingWordsGranularity, escalatingMultiplier]);
 
   // ── Missing Words Warning: signal before hidden passages approach ──
   useEffect(() => {

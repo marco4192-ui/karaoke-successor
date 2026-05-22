@@ -51,6 +51,8 @@ export interface NoteHighwayProps {
   className?: string;
   /** Blind mode: hide notes when in a blind section */
   isBlindSection?: boolean;
+  missingWordsIndices?: number[];
+  gameMode?: string;
 }
 
 // ===================== SUB-COMPONENTS =====================
@@ -336,8 +338,11 @@ export const NoteHighway = React.memo(function NoteHighway({
       {/* Sing line */}
       <SingLine position={singLinePosition} color={colorScheme} />
 
-      {/* Notes — hidden in blind sections */}
-      {!isBlindSection && visibleNotes.map((note) => (
+      {/* Notes — hidden in blind sections & missing-words notes */}
+      {!isBlindSection && visibleNotes.map((note) => {
+        const isHiddenNote = gameMode === 'missing-words' && missingWordsIndices?.includes(note.startTime);
+        if (isHiddenNote) return null;
+        return (
         <NoteBlock
           key={note.id || `note-${note.startTime}`}
           note={note}
@@ -352,7 +357,8 @@ export const NoteHighway = React.memo(function NoteHighway({
           noteDisplayStyle={noteDisplayStyle}
           notePerformance={notePerformance}
         />
-      ))}
+      );
+      })}
 
       {/* Pitch indicator — hidden in blind sections */}
       {!isBlindSection && <PitchIndicator

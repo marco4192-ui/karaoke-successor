@@ -261,6 +261,8 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
             visibleTop={VISIBLE_TOP}
             visibleRange={VISIBLE_RANGE}
             isBlindSection={g.gameState.isBlindSection}
+            missingWordsIndices={g.gameState.missingWordsIndices}
+            gameMode={g.gameState.gameMode}
           />
         )}
 
