@@ -294,7 +294,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   shrinkFactor: 5,
                   minRoundDuration: 15,
                   noteShapeStyle: 'rounded',
-                  noteDisplayStyle: 'standard',
+                  noteDisplayStyle: 'classic',
                   showNoteHighway: true,
                   showVideoBackground: true,
                   countdownDuration: 3,
