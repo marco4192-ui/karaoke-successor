@@ -778,3 +778,25 @@ Stage Summary:
 - TypeScript build passes (0 new errors, only pre-existing ptm-transition-overlay duplicates)
 - 686 lines added, 37 lines removed across 14 files
 - Keyboard navigation covers: Library (song grid), Party (mode selection), Party Setup (players/songs/mics), Queue, Song Modal, Screen switching
+---
+Task ID: 2
+Agent: Main Agent
+Task: Implement comprehensive remote control system for Companion App
+
+Work Log:
+- Analyzed entire Companion App codebase (50+ files, API routes, hooks, mobile UI)
+- Identified current capabilities and gaps in remote control
+- Overhauled remote-control-view.tsx with 28 command types
+- Enhanced use-global-remote-control.ts with 16 new command handlers
+- Enhanced use-remote-control.ts with 14 new in-game command handlers
+- Added currentScreen to game state sync (mobile-state.ts, mobile-types.ts, use-mobile-game-sync.ts)
+- Added screen sync effect in karaoke-app.tsx (polls every 2s)
+- Enhanced mobile-home-view.tsx with Desktop Status Banner
+
+Stage Summary:
+- All 9 files committed and pushed to origin/main (commit 97a5166)
+- TypeScript build passes (0 new errors)
+- 642 lines added, 226 lines removed across 9 files
+- Remote control now covers: all screens, transport controls, media controls,
+  fullscreen, escape/tab, party quick start, directional pad
+- Companion sees current desktop screen and game mode in real-time
