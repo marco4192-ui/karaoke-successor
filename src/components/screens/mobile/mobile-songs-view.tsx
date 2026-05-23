@@ -1,9 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MusicIcon } from '@/components/icons';
 import { useTranslation } from '@/lib/i18n/translations';
 import { MobilePullRefresh } from './mobile-pull-refresh';
@@ -41,6 +39,16 @@ interface SongsViewProps {
   /** Optional callback to resolve an audio URL for a song. When provided and returning a URL,
    *  a preview play button is shown next to the song item. */
   getAudioUrl?: (song: MobileSong) => string | undefined;
+  // Queue wizard props
+  difficulty?: 'easy' | 'normal' | 'hard';
+  onDifficultyChange: (d: 'easy' | 'normal' | 'hard') => void;
+  playerMicSource?: 'companion' | 'microphone';
+  onPlayerMicSourceChange: (s: 'companion' | 'microphone') => void;
+  partnerMicSource?: 'companion' | 'microphone';
+  onPartnerMicSourceChange: (s: 'companion' | 'microphone') => void;
+  duetPartsSwapped?: boolean;
+  onDuetPartsSwappedChange: (s: boolean) => void;
+  addedQueuePosition?: number;
 }
 
 export function MobileSongsView({
@@ -65,12 +73,47 @@ export function MobileSongsView({
   onRefresh,
   formatDuration,
   getAudioUrl,
+  difficulty = 'normal',
+  onDifficultyChange,
+  playerMicSource = 'companion',
+  onPlayerMicSourceChange,
+  partnerMicSource = 'companion',
+  onPartnerMicSourceChange,
+  duetPartsSwapped = false,
+  onDuetPartsSwappedChange,
+  addedQueuePosition = 0,
 }: SongsViewProps) {
   const { t } = useTranslation();
   const songListRef = useRef<HTMLDivElement>(null);
 
   // F12: Song preview hook (plays 15-second audio clips)
   const preview = useMobileSongPreview();
+
+  // Queue wizard step state: 0 = mode+difficulty, 1 = overview/mic, 2 = opponent, 3 = feedback
+  const [wizardStep, setWizardStep] = useState<0 | 1 | 2 | 3>(0);
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Reset wizard when song options change
+  useEffect(() => {
+    if (showSongOptions) {
+      setWizardStep(0);
+    }
+  }, [showSongOptions]);
+
+  // Auto-dismiss feedback after 2s
+  useEffect(() => {
+    if (wizardStep === 3) {
+      feedbackTimerRef.current = setTimeout(() => {
+        setWizardStep(0);
+        onShowSongOptions(null);
+      }, 2000);
+    }
+    return () => {
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    };
+  }, [wizardStep, onShowSongOptions]);
+
+  const isBattleMode = selectedGameMode === 'duel' || selectedGameMode === 'duet';
 
   // Helper to resolve audio URL for a song
   const resolveAudioUrl = useCallback((song: MobileSong): string | undefined => {
@@ -165,7 +208,22 @@ export function MobileSongsView({
 
   // F19: Determine if we have enhanced opponent data available
   const hasEnhancedOpponents = opponents.length > 0 || availableProfiles.length > 0;
-  const isBattleMode = selectedGameMode === 'duel' || selectedGameMode === 'duet';
+
+  // Helper to close wizard
+  const closeWizard = useCallback(() => {
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    setWizardStep(0);
+    onShowSongOptions(null);
+    onSelectPartner(null);
+    onSelectGameMode('single');
+  }, [onShowSongOptions, onSelectPartner, onSelectGameMode]);
+
+  // Helper to handle add to queue and show feedback
+  const handleAddToQueue = useCallback(() => {
+    if (!showSongOptions) return;
+    onAddToQueue(showSongOptions);
+    setWizardStep(3);
+  }, [showSongOptions, onAddToQueue]);
 
   return (
     <>
@@ -213,233 +271,407 @@ export function MobileSongsView({
         ))}
       </div>
 
-      {/* Song Options Modal */}
+      {/* ══════════════════════════════════════════════════════════
+          QUEUE WIZARD — Step-based modal for adding songs to queue
+          Step 0: Mode + Difficulty selection
+          Step 1: Single = Overview + Mic | Duel/Duet = Opponent selection
+          Step 2: Duel/Duet = Overview + Mic
+          Step 3: Feedback overlay (auto-dismiss)
+      ══════════════════════════════════════════════════════════ */}
       {showSongOptions && (
-        <Card className="bg-white/10 border-white/20 mb-4">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">{showSongOptions.title}</CardTitle>
-            <p className="text-sm text-white/40">{showSongOptions.artist}</p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Game Mode Selection */}
-            <div>
-              <label className="text-sm text-white/60 mb-2 block">{t('mobileViews.gameMode')}</label>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  onClick={() => onSelectGameMode('single')}
-                  className={`p-3 rounded-lg text-center transition-all ${
-                    selectedGameMode === 'single' 
-                      ? 'bg-cyan-500 text-white' 
-                      : 'bg-white/5 hover:bg-white/10'
-                  }`}
-                >
-                  <span className="text-2xl block mb-1">🎤</span>
-                  <span className="text-xs">{t('mobileViews.gameModeSingle')}</span>
-                </button>
-                <button
-                  onClick={() => onSelectGameMode('duel')}
-                  className={`p-3 rounded-lg text-center transition-all ${
-                    selectedGameMode === 'duel' 
-                      ? 'bg-red-500 text-white' 
-                      : 'bg-white/5 hover:bg-white/10'
-                  }`}
-                >
-                  <span className="text-2xl block mb-1">⚔️</span>
-                  <span className="text-xs">{t('mobileViews.gameModeDuel')}</span>
-                </button>
-                <button
-                  onClick={() => onSelectGameMode('duet')}
-                  className={`p-3 rounded-lg text-center transition-all ${
-                    selectedGameMode === 'duet' 
-                      ? 'bg-pink-500 text-white' 
-                      : 'bg-white/5 hover:bg-white/10'
-                  }`}
-                >
-                  <span className="text-2xl block mb-1">🎭</span>
-                  <span className="text-xs">{t('mobileViews.gameModeDuet')}</span>
-                </button>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={(e) => { if (e.target === e.currentTarget) closeWizard(); }}
+        >
+          <div
+            className="w-full max-w-sm mx-auto bg-gray-900/95 border border-white/15 rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden"
+            style={{ maxHeight: '75dvh', minHeight: 'auto' }}
+          >
+            {/* ── Step 3: Feedback ── */}
+            {wizardStep === 3 && (
+              <div className="p-6 text-center">
+                <div className="text-4xl mb-2">✓</div>
+                <p className="text-white font-bold text-sm">{t('mobileViews.songAddedToQueue')}</p>
+                {addedQueuePosition > 0 && (
+                  <p className="text-white/50 text-xs mt-1">{t('mobileViews.positionInQueue').replace('{n}', String(addedQueuePosition))}</p>
+                )}
               </div>
-            </div>
-            
-            {/* F19: Enhanced Opponent Selection (for duel/duet mode) */}
-            {isBattleMode && (
-              <div className="max-h-[50vh] overflow-y-auto">
-                {/* Section header with VS battle visual */}
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="flex-1 h-px bg-white/20" />
-                  <span className="text-xs font-bold text-white/60 uppercase tracking-wider flex items-center gap-1.5">
-                    {selectedGameMode === 'duel' ? '⚔️' : '🎭'}
-                    {t('mobileViews.selectOpponent')}
-                    {selectedGameMode === 'duel' ? '⚔️' : '🎭'}
-                  </span>
-                  <div className="flex-1 h-px bg-white/20" />
+            )}
+
+            {/* ── Step 0: Mode + Difficulty ── */}
+            {wizardStep === 0 && (
+              <div className="flex flex-col" style={{ maxHeight: '75dvh' }}>
+                {/* Header */}
+                <div className="flex-shrink-0 px-4 pt-3 pb-2">
+                  <p className="text-white font-bold text-sm truncate">{showSongOptions.title}</p>
+                  <p className="text-white/40 text-xs truncate">{showSongOptions.artist}</p>
                 </div>
 
-                {/* Random button (fun for parties) */}
-                {(opponents.length > 0 || availableProfiles.length > 0) && (
-                  <button
-                    onClick={handleRandomOpponent}
-                    className="w-full p-2.5 rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-300 text-sm font-medium hover:from-amber-500/30 hover:to-orange-500/30 transition-all mb-3"
-                  >
-                    🎲 {t('mobileViews.randomOpponent')}
-                  </button>
-                )}
-
-                {/* Online Now section - connected companions with profiles */}
-                {hasEnhancedOpponents ? (
-                  <>
-                    {opponents.length > 0 && (
-                      <div className="mb-3">
-                        <p className="text-xs text-green-400/80 font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-                          {t('mobileViews.onlineNow')} ({opponents.length})
-                        </p>
-                        <div className="space-y-1.5 max-h-24 overflow-y-auto">
-                          {opponents.map((opponent) => (
-                            <button
-                              key={opponent.id}
-                              onClick={() => onSelectPartner(
-                                selectedPartner?.id === (opponent.connectionCode || opponent.id) ? null : { id: opponent.connectionCode || opponent.id, name: opponent.name }
-                              )}
-                              className={`w-full p-2.5 rounded-lg flex items-center gap-3 transition-all ${
-                                selectedPartner?.id === (opponent.connectionCode || opponent.id)
-                                  ? 'bg-red-500/25 border border-red-500/40 shadow-lg shadow-red-500/10'
-                                  : 'bg-white/5 hover:bg-white/10 border border-transparent'
-                              }`}
-                            >
-                              {/* Avatar with color ring */}
-                              <div
-                                className="rounded-full p-0.5 flex-shrink-0"
-                                style={{ backgroundColor: selectedPartner?.id === (opponent.connectionCode || opponent.id) ? opponent.color : 'transparent' }}
-                              >
-                                {renderAvatar(opponent, 36)}
-                              </div>
-                              <div className="flex-1 min-w-0 text-left">
-                                <p className="font-medium text-sm truncate">{opponent.name}</p>
-                                <p className="text-[10px] text-white/30">#{opponent.connectionCode}</p>
-                              </div>
-                              {/* VS indicator when selected */}
-                              {selectedPartner?.id === (opponent.connectionCode || opponent.id) && (
-                                <span className="text-xs font-bold text-red-400 bg-red-500/20 px-2 py-0.5 rounded-full">
-                                  VS
-                                </span>
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Available Profiles section - host profiles not yet claimed */}
-                    {availableProfiles.length > 0 && (
-                      <div className="mb-2">
-                        <p className="text-xs text-white/40 font-semibold uppercase tracking-wider mb-2">
-                          {t('mobileViews.availableProfiles')} ({availableProfiles.length})
-                        </p>
-                        <div className="space-y-1.5 max-h-20 overflow-y-auto">
-                          {availableProfiles.map((profile) => (
-                            <button
-                              key={profile.id}
-                              onClick={() => onSelectPartner(
-                                selectedPartner?.id === profile.id ? null : { id: profile.id, name: profile.name }
-                              )}
-                              className={`w-full p-2 rounded-lg flex items-center gap-3 transition-all ${
-                                selectedPartner?.id === profile.id
-                                  ? 'bg-red-500/25 border border-red-500/40'
-                                  : 'bg-white/3 hover:bg-white/8 border border-transparent'
-                              }`}
-                            >
-                              <div
-                                className="rounded-full p-0.5 flex-shrink-0"
-                                style={{ backgroundColor: selectedPartner?.id === profile.id ? profile.color : 'transparent' }}
-                              >
-                                {renderAvatar(profile, 32)}
-                              </div>
-                              <div className="flex-1 min-w-0 text-left">
-                                <p className="text-sm text-white/70 truncate">{profile.name}</p>
-                              </div>
-                              {selectedPartner?.id === profile.id && (
-                                <span className="text-xs font-bold text-red-400 bg-red-500/20 px-2 py-0.5 rounded-full">
-                                  VS
-                                </span>
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : availablePartners.length > 0 ? (
-                  /* Fallback to old partner list if enhanced data hasn't loaded yet */
+                {/* Content - scrollable */}
+                <div className="flex-1 overflow-y-auto px-4 pb-3 space-y-3">
+                  {/* Game Mode */}
                   <div>
-                    <p className="text-xs text-white/40 font-semibold uppercase tracking-wider mb-2">
-                      {t('mobileViews.onlineNow')}
-                    </p>
-                    <div className="space-y-1.5 max-h-24 overflow-y-auto">
-                      {availablePartners.map((partner) => (
+                    <label className="text-[10px] text-white/50 uppercase tracking-wider font-medium">{t('mobileViews.gameMode')}</label>
+                    <div className="grid grid-cols-3 gap-1.5 mt-1.5">
+                      {(['single', 'duel', 'duet'] as const).map((mode) => {
+                        const icons = { single: '🎤', duel: '⚔️', duet: '🎭' };
+                        const labels = { single: 'mobileViews.gameModeSingle', duel: 'mobileViews.gameModeDuel', duet: 'mobileViews.gameModeDuet' };
+                        const isActive = selectedGameMode === mode;
+                        return (
+                          <button
+                            key={mode}
+                            onClick={() => onSelectGameMode(mode)}
+                            className={`px-2 py-2 rounded-lg text-center transition-all text-xs ${
+                              isActive
+                                ? mode === 'single' ? 'bg-cyan-500/30 text-white border border-cyan-500/50'
+                                  : mode === 'duel' ? 'bg-red-500/30 text-white border border-red-500/50'
+                                  : 'bg-pink-500/30 text-white border border-pink-500/50'
+                                : 'bg-white/5 text-white/60 hover:bg-white/10 border border-transparent'
+                            }`}
+                          >
+                            <span className="text-lg block mb-0.5">{icons[mode]}</span>
+                            <span className="text-[10px]">{t(labels[mode])}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Difficulty */}
+                  <div>
+                    <label className="text-[10px] text-white/50 uppercase tracking-wider font-medium">{t('mobileViews.difficulty')}</label>
+                    <div className="grid grid-cols-3 gap-1.5 mt-1.5">
+                      {(['easy', 'normal', 'hard'] as const).map((d) => (
                         <button
-                          key={partner.id}
-                          onClick={() => onSelectPartner(
-                            selectedPartner?.id === partner.id ? null : partner
-                          )}
-                          className={`w-full p-2.5 rounded-lg flex items-center gap-3 transition-all ${
-                            selectedPartner?.id === partner.id 
-                              ? 'bg-purple-500/30 border border-purple-500/50' 
-                              : 'bg-white/5 hover:bg-white/10'
+                          key={d}
+                          onClick={() => onDifficultyChange(d)}
+                          className={`px-2 py-1.5 rounded-lg text-center transition-all text-xs ${
+                            difficulty === d
+                              ? 'bg-purple-500/30 text-white border border-purple-500/50'
+                              : 'bg-white/5 text-white/60 hover:bg-white/10 border border-transparent'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold">
-                            {partner.name[0]}
-                          </div>
-                          <span className="flex-1 text-left">{partner.name}</span>
-                          <span className="text-xs text-white/40">#{partner.code}</span>
+                          <span className="text-[11px] font-medium">{t(`mobileViews.${d}`)}</span>
                         </button>
                       ))}
                     </div>
                   </div>
-                ) : (
-                  <p className="text-sm text-white/40 py-2 text-center">
-                    {t('mobileViews.noOpponents')}
-                  </p>
-                )}
+                </div>
 
-                {/* Selected opponent battle preview */}
-                {selectedPartner && isBattleMode && (
-                  <div className="mt-3 flex items-center justify-center gap-3 py-2 px-3 rounded-lg bg-white/5">
-                    <div className="text-center">
-                      <span className="text-xs text-white/40">{t('mobileViews.gameModeSingle')}</span>
-                    </div>
-                    <span className="text-lg font-black text-red-400 animate-pulse">VS</span>
-                    <div className="text-center">
-                      <span className="text-xs text-white/40">{selectedPartner.name}</span>
-                    </div>
-                  </div>
-                )}
+                {/* Footer */}
+                <div className="flex-shrink-0 flex gap-2 px-4 pb-4 pt-2 border-t border-white/10">
+                  <button onClick={closeWizard} className="flex-1 py-2 rounded-lg bg-white/5 text-white/60 text-xs font-medium">
+                    {t('mobileViews.cancel')}
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (isBattleMode) {
+                        onLoadOpponents();
+                        setWizardStep(2); // Go to opponent selection
+                      } else {
+                        setWizardStep(1); // Go to overview + mic (Single)
+                      }
+                    }}
+                    className="flex-1 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-xs font-bold disabled:opacity-40"
+                    disabled={false}
+                  >
+                    {t('mobileViews.next')} →
+                  </button>
+                </div>
               </div>
             )}
-            
-            {/* Action Buttons */}
-            <div className="flex gap-2 pt-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  onShowSongOptions(null);
-                  onSelectPartner(null);
-                  onSelectGameMode('single');
-                }}
-                className="flex-1 border-white/20"
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button
-                onClick={() => onAddToQueue(showSongOptions)}
-                className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500"
-              >
-                {t('song.addToQueue')}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+
+            {/* ── Step 1: Overview + Mic Selection (Single or Duel/Duet after opponent) ── */}
+            {wizardStep === 1 && (
+              <div className="flex flex-col" style={{ maxHeight: '75dvh' }}>
+                {/* Header */}
+                <div className="flex-shrink-0 px-4 pt-3 pb-1">
+                  <button onClick={() => setWizardStep(isBattleMode ? 2 : 0)} className="text-white/40 text-xs hover:text-white/70">
+                    ← {isBattleMode ? t('mobileViews.selectOpponent') : t('mobileViews.gameMode')}
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto px-4 pb-3 space-y-3">
+                  {/* Song Overview */}
+                  <div className="bg-white/5 rounded-lg p-3 space-y-1.5">
+                    <p className="text-white font-medium text-sm truncate">{showSongOptions.title}</p>
+                    <p className="text-white/40 text-xs truncate">{showSongOptions.artist}</p>
+                    <div className="flex gap-2 mt-1.5 flex-wrap">
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full border ${
+                        selectedGameMode === 'single' ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
+                        : selectedGameMode === 'duel' ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                        : 'bg-pink-500/20 text-pink-400 border-pink-500/30'
+                      }`}>
+                        {selectedGameMode === 'single' ? '🎤' : selectedGameMode === 'duel' ? '⚔️' : '🎭'} {t(`mobileViews.gameMode${selectedGameMode === 'single' ? 'Single' : selectedGameMode === 'duel' ? 'Duel' : 'Duet'}`)}
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30">{t(`mobileViews.${difficulty}`)}</span>
+                    </div>
+
+                    {/* Duel/Duet: Player + Opponent display */}
+                    {isBattleMode && selectedPartner && (
+                      <div className="flex items-center justify-center gap-3 mt-2 py-1.5 rounded-lg bg-white/5">
+                        <div className="text-center min-w-[60px]">
+                          <p className="text-[10px] text-white/40">{t('mobileViews.gameModeSingle')}</p>
+                        </div>
+                        <span className="text-sm font-black text-red-400">VS</span>
+                        <div className="text-center min-w-[60px]">
+                          <p className="text-xs text-white font-medium truncate max-w-[80px]">{selectedPartner.name}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Duett: P1/P2 indicator with switch */}
+                    {selectedGameMode === 'duet' && selectedPartner && (
+                      <div className="flex items-center justify-between mt-1 px-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 font-medium">{t('mobileViews.part1')}</span>
+                          <span className="text-[10px] text-white/30">•</span>
+                          <span className="text-[10px] text-white/40">{t('mobileViews.gameModeSingle')}</span>
+                        </div>
+                        <button
+                          onClick={() => onDuetPartsSwappedChange(!duetPartsSwapped)}
+                          className="text-[10px] px-2 py-1 rounded bg-white/10 text-white/60 hover:bg-white/20 border border-white/10"
+                        >
+                          🔄 {t('mobileViews.switchParts')}
+                        </button>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-white/40">{selectedPartner.name}</span>
+                          <span className="text-[10px] text-white/30">•</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-400 font-medium">{t('mobileViews.part2')}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Mic Selection - Player */}
+                  <div>
+                    <label className="text-[10px] text-white/50 uppercase tracking-wider font-medium">
+                      {t('mobileViews.micSelection')} — {isBattleMode && !duetPartsSwapped ? t('mobileViews.part1') : isBattleMode && duetPartsSwapped ? t('mobileViews.part2') : t('mobileViews.gameModeSingle')}
+                    </label>
+                    <div className="grid grid-cols-2 gap-1.5 mt-1.5">
+                      <button
+                        onClick={() => onPlayerMicSourceChange('companion')}
+                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] transition-all ${
+                          playerMicSource === 'companion'
+                            ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                            : 'bg-white/5 text-white/50 hover:bg-white/10 border border-transparent'
+                        }`}
+                      >
+                        <span className="text-sm">📱</span>
+                        <span>{t('mobileViews.singViaCompanion')}</span>
+                      </button>
+                      <button
+                        onClick={() => onPlayerMicSourceChange('microphone')}
+                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] transition-all ${
+                          playerMicSource === 'microphone'
+                            ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                            : 'bg-white/5 text-white/50 hover:bg-white/10 border border-transparent'
+                        }`}
+                      >
+                        <span className="text-sm">🎤</span>
+                        <span>{t('mobileViews.singViaMic')}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Mic Selection - Partner (Duel/Duet only) */}
+                  {isBattleMode && selectedPartner && (
+                    <div>
+                      <label className="text-[10px] text-white/50 uppercase tracking-wider font-medium">
+                        {t('mobileViews.micSelection')} — {selectedPartner.name}
+                      </label>
+                      <div className="grid grid-cols-2 gap-1.5 mt-1.5">
+                        <button
+                          onClick={() => onPartnerMicSourceChange('companion')}
+                          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] transition-all ${
+                            partnerMicSource === 'companion'
+                              ? 'bg-pink-500/20 text-pink-300 border border-pink-500/40'
+                              : 'bg-white/5 text-white/50 hover:bg-white/10 border border-transparent'
+                          }`}
+                        >
+                          <span className="text-sm">📱</span>
+                          <span>{t('mobileViews.singViaCompanion')}</span>
+                        </button>
+                        <button
+                          onClick={() => onPartnerMicSourceChange('microphone')}
+                          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] transition-all ${
+                            partnerMicSource === 'microphone'
+                              ? 'bg-pink-500/20 text-pink-300 border border-pink-500/40'
+                              : 'bg-white/5 text-white/50 hover:bg-white/10 border border-transparent'
+                          }`}
+                        >
+                          <span className="text-sm">🎤</span>
+                          <span>{t('mobileViews.singViaMic')}</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div className="flex-shrink-0 flex gap-2 px-4 pb-4 pt-2 border-t border-white/10">
+                  <button onClick={closeWizard} className="flex-1 py-2 rounded-lg bg-white/5 text-white/60 text-xs font-medium">
+                    {t('mobileViews.cancel')}
+                  </button>
+                  <button
+                    onClick={handleAddToQueue}
+                    className="flex-1 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-xs font-bold"
+                  >
+                    + {t('mobileViews.addToQueueBtn')}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── Step 2: Duel/Duet — Opponent Selection ── */}
+            {wizardStep === 2 && (
+              <div className="flex flex-col" style={{ maxHeight: '75dvh' }}>
+                {/* Header */}
+                <div className="flex-shrink-0 px-4 pt-3 pb-1 flex items-center justify-between">
+                  <button onClick={() => setWizardStep(0)} className="text-white/40 text-xs hover:text-white/70">← {t('mobileViews.gameMode')}</button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto px-4 pb-3 space-y-2.5">
+                  {/* Song info */}
+                  <div className="bg-white/5 rounded-lg p-2.5">
+                    <p className="text-white font-medium text-xs truncate">{showSongOptions.title}</p>
+                    <p className="text-white/40 text-[10px] truncate">{showSongOptions.artist}</p>
+                  </div>
+
+                  {/* Random button */}
+                  {hasEnhancedOpponents && (
+                    <button
+                      onClick={handleRandomOpponent}
+                      className="w-full py-2 rounded-lg bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/25 text-amber-300 text-xs font-medium"
+                    >
+                      🎲 {t('mobileViews.randomOpponent')}
+                    </button>
+                  )}
+
+                  {/* Opponents list */}
+                  {hasEnhancedOpponents ? (
+                    <div className="space-y-1">
+                      {opponents.length > 0 && (
+                        <p className="text-[10px] text-green-400/80 font-semibold uppercase tracking-wider mb-1 flex items-center gap-1">
+                          <span className="w-1 h-1 bg-green-400 rounded-full animate-pulse" />
+                          {t('mobileViews.onlineNow')} ({opponents.length})
+                        </p>
+                      )}
+                      <div className="space-y-1 max-h-[30vh] overflow-y-auto">
+                        {opponents.map((opp) => (
+                          <button
+                            key={opp.id}
+                            onClick={() => onSelectPartner(
+                              selectedPartner?.id === (opp.connectionCode || opp.id) ? null : { id: opp.connectionCode || opp.id, name: opp.name }
+                            )}
+                            className={`w-full p-2 rounded-lg flex items-center gap-2.5 transition-all ${
+                              selectedPartner?.id === (opp.connectionCode || opp.id)
+                                ? 'bg-red-500/20 border border-red-500/40'
+                                : 'bg-white/5 hover:bg-white/8 border border-transparent'
+                            }`}
+                          >
+                            <div className="rounded-full p-0.5 flex-shrink-0"
+                              style={{ backgroundColor: selectedPartner?.id === (opp.connectionCode || opp.id) ? opp.color : 'transparent' }}
+                            >
+                              {renderAvatar(opp, 28)}
+                            </div>
+                            <div className="flex-1 min-w-0 text-left">
+                              <p className="text-xs font-medium truncate text-white">{opp.name}</p>
+                            </div>
+                            {selectedPartner?.id === (opp.connectionCode || opp.id) && (
+                              <span className="text-[10px] font-bold text-red-400 bg-red-500/20 px-1.5 py-0.5 rounded-full">VS</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+
+                      {availableProfiles.length > 0 && (
+                        <p className="text-[10px] text-white/40 font-semibold uppercase tracking-wider mt-2 mb-1">
+                          {t('mobileViews.availableProfiles')} ({availableProfiles.length})
+                        </p>
+                      )}
+                      {availableProfiles.length > 0 && (
+                        <div className="space-y-1 max-h-[20vh] overflow-y-auto">
+                          {availableProfiles.map((prof) => (
+                            <button
+                              key={prof.id}
+                              onClick={() => onSelectPartner(
+                                selectedPartner?.id === prof.id ? null : { id: prof.id, name: prof.name }
+                              )}
+                              className={`w-full p-2 rounded-lg flex items-center gap-2.5 transition-all ${
+                                selectedPartner?.id === prof.id
+                                  ? 'bg-red-500/20 border border-red-500/40'
+                                  : 'bg-white/3 hover:bg-white/8 border border-transparent'
+                              }`}
+                            >
+                              <div className="rounded-full p-0.5 flex-shrink-0"
+                                style={{ backgroundColor: selectedPartner?.id === prof.id ? prof.color : 'transparent' }}
+                              >
+                                {renderAvatar(prof, 24)}
+                              </div>
+                              <div className="flex-1 min-w-0 text-left">
+                                <p className="text-[11px] text-white/70 truncate">{prof.name}</p>
+                              </div>
+                              {selectedPartner?.id === prof.id && (
+                                <span className="text-[10px] font-bold text-red-400 bg-red-500/20 px-1.5 py-0.5 rounded-full">VS</span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : availablePartners.length > 0 ? (
+                    <div className="space-y-1">
+                      <p className="text-[10px] text-white/40 font-semibold uppercase tracking-wider mb-1">{t('mobileViews.onlineNow')}</p>
+                      <div className="space-y-1 max-h-[30vh] overflow-y-auto">
+                        {availablePartners.map((partner) => (
+                          <button
+                            key={partner.id}
+                            onClick={() => onSelectPartner(selectedPartner?.id === partner.id ? null : partner)}
+                            className={`w-full p-2 rounded-lg flex items-center gap-2.5 transition-all ${
+                              selectedPartner?.id === partner.id
+                                ? 'bg-purple-500/20 border border-purple-500/40'
+                                : 'bg-white/5 hover:bg-white/10 border border-transparent'
+                            }`}
+                          >
+                            <div className="w-7 h-7 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold text-[11px]">
+                              {partner.name[0]}
+                            </div>
+                            <span className="flex-1 text-left text-xs">{partner.name}</span>
+                            <span className="text-[10px] text-white/30">#{partner.code}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-white/40 py-3 text-center">{t('mobileViews.noOpponents')}</p>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div className="flex-shrink-0 flex gap-2 px-4 pb-4 pt-2 border-t border-white/10">
+                  <button onClick={() => setWizardStep(0)} className="flex-1 py-2 rounded-lg bg-white/5 text-white/60 text-xs font-medium">
+                    {t('mobileViews.cancel')}
+                  </button>
+                  {selectedPartner ? (
+                    <button
+                      onClick={() => setWizardStep(1)}
+                      className="flex-1 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-xs font-bold"
+                    >
+                      {t('mobileViews.next')} →
+                    </button>
+                  ) : (
+                    <button
+                      disabled
+                      className="flex-1 py-2 rounded-lg bg-white/5 text-white/30 text-xs font-bold opacity-40"
+                    >
+                      {t('mobileViews.next')} →
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       )}
       
       {/* Error State */}

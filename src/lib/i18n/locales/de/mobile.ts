@@ -158,7 +158,25 @@ export const mobileTranslations = {
     playAgainSuccess: 'Song zur Warteschlange hinzugefügt!',
     playAgainError: 'Song konnte nicht hinzugefügt werden.',
     swipeToDelete: 'Wischen zum Löschen',
-    reorderHint: 'Gedrückt halten und ziehen zum Sortieren'
+    reorderHint: 'Gedrückt halten und ziehen zum Sortieren',
+    // Queue Wizard
+    difficulty: 'Schwierigkeit',
+    easy: 'Leicht',
+    normal: 'Normal',
+    hard: 'Schwer',
+    next: 'Weiter',
+    addToQueueBtn: 'Queue hinzufügen',
+    songAddedToQueue: 'Song zur Queue hinzugefügt',
+    positionInQueue: 'Position: {n}',
+    micSelection: 'Mikrofonauswahl',
+    singViaCompanion: 'Per Companion singen',
+    singViaMic: 'Per Mikrofon singen',
+    overview: 'Übersicht',
+    switchParts: 'Parts tauschen',
+    part1: 'Part 1',
+    part2: 'Part 2',
+    done: 'Fertig',
+    step: 'Schritt {n}'
   },
 
   mobileNav: {

@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import type { MobileSong, MobileProfile, QueueItem, GameResults, JukeboxWishlistItem, GameMode } from '@/components/screens/mobile/mobile-types';
-import { incrementSongsQueued } from '@/lib/mobile-achievements';
 
 // F19: Opponent profile for duel/duet mode
 export interface OpponentProfile {
@@ -94,6 +93,13 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
   const [selectedGameMode, setSelectedGameMode] = useState<GameMode>('single');
   const [availablePartners, setAvailablePartners] = useState<Array<{ id: string; name: string; code: string }>>([]);
   const [showSongOptions, setShowSongOptions] = useState<MobileSong | null>(null);
+
+  // Queue wizard: difficulty, mic source, duet parts
+  const [difficulty, setDifficulty] = useState<'easy' | 'normal' | 'hard'>('normal');
+  const [playerMicSource, setPlayerMicSource] = useState<'companion' | 'microphone'>('companion');
+  const [partnerMicSource, setPartnerMicSource] = useState<'companion' | 'microphone'>('companion');
+  const [duetPartsSwapped, setDuetPartsSwapped] = useState(false);
+  const [addedQueuePosition, setAddedQueuePosition] = useState<number>(0);
 
   // F19: Enhanced opponent list (with profiles)
   const [opponents, setOpponents] = useState<OpponentProfile[]>([]);
@@ -216,13 +222,15 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
         body: JSON.stringify({
           type: 'queue',
           clientId,
-          payload: { songId: song.id, songTitle: song.title, songArtist: song.artist, partnerId, partnerName, gameMode },
+          payload: { songId: song.id, songTitle: song.title, songArtist: song.artist, partnerId, partnerName, gameMode, difficulty, playerMicSource, partnerMicSource, duetPartsSwapped },
         }),
       });
       if (!response.ok) return;
       const data = await response.json();
       if (data.success) {
-        incrementSongsQueued();
+        // Calculate position in the full queue
+        const position = data.queue ? data.queue.findIndex((q: QueueItem) => q.id === data.queueItem.id) + 1 : queue.length + 1;
+        setAddedQueuePosition(position);
         setQueue(prev => [...prev, {
           id: data.queueItem.id, songId: song.id, songTitle: song.title, songArtist: song.artist,
           addedBy: profile.name, status: 'pending', partnerId, partnerName, gameMode,
@@ -231,6 +239,10 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
         setShowSongOptions(null);
         setSelectedPartner(null);
         setSelectedGameMode('single');
+        setDifficulty('normal');
+        setPlayerMicSource('companion');
+        setPartnerMicSource('companion');
+        setDuetPartsSwapped(false);
       } else if (data.queueFull) {
         setQueueError('Maximum 3 songs in queue!');
         setSlotsRemaining(0);
@@ -243,7 +255,7 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
       if (queueErrorTimerRef.current) clearTimeout(queueErrorTimerRef.current);
       queueErrorTimerRef.current = setTimeout(() => setQueueError(null), 3000);
     }
-  }, [profile, clientId, slotsRemaining, selectedGameMode, selectedPartner, onNavigateToProfile]);
+  }, [profile, clientId, slotsRemaining, selectedGameMode, selectedPartner, onNavigateToProfile, difficulty, playerMicSource, partnerMicSource, duetPartsSwapped, queue]);
 
   const reorderQueue = useCallback(async (orderedIds: string[]) => {
     if (!clientId) return;
@@ -443,6 +455,16 @@ export function useMobileData({ clientId, profile, onNavigateToProfile }: UseMob
     opponents,
     availableProfiles,
     loadOpponents,
+    // Queue wizard
+    difficulty,
+    setDifficulty,
+    playerMicSource,
+    setPlayerMicSource,
+    partnerMicSource,
+    setPartnerMicSource,
+    duetPartsSwapped,
+    setDuetPartsSwapped,
+    addedQueuePosition,
     // Results
     gameResults,
     loadGameResults,

@@ -28,6 +28,10 @@ export interface QueueItem {
   partnerId?: string;
   partnerName?: string;
   gameMode?: 'single' | 'duel' | 'duet';
+  difficulty?: 'easy' | 'normal' | 'hard';
+  playerMicSource?: 'companion' | 'microphone';
+  partnerMicSource?: 'companion' | 'microphone';
+  duetPartsSwapped?: boolean;
 }
 
 export interface JukeboxWishlistItem {

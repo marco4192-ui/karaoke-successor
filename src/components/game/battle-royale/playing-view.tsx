@@ -18,7 +18,7 @@ import {
   BattleRoyalePlayer,
   getCurrentMedleySnippet,
 } from '@/lib/game/battle-royale';
-import { LyricsDisplay } from './lyrics-display';
+import { LyricLineDisplay } from '@/components/game/lyric-line-display';
 import { usePartyStore } from '@/lib/game/party-store';
 import { useTranslation } from '@/lib/i18n/translations';
 
@@ -235,6 +235,35 @@ export function PlayingView({
   // #10 Elimination camera: dramatic effects in last 10 seconds
   const eliminationAnimationEnabled = game.settings.eliminationAnimation;
   const isEliminationCamera = eliminationAnimationEnabled && roundTimeLeft <= 10 && roundTimeLeft > 0;
+
+  // Standard lyrics display: find current and next lyric lines using LyricLineDisplay
+  const { currentLyricLine, nextLyricLine } = useMemo(() => {
+    if (!currentSong?.lyrics || currentSong.lyrics.length === 0) {
+      return { currentLyricLine: null, nextLyricLine: null };
+    }
+    const lyrics = currentSong.lyrics;
+    // Find active line (currently being sung)
+    const activeLine = lyrics.find(line =>
+      currentTime >= line.startTime && currentTime <= line.endTime
+    );
+    if (activeLine) {
+      const idx = lyrics.indexOf(activeLine);
+      return {
+        currentLyricLine: activeLine,
+        nextLyricLine: idx >= 0 && idx < lyrics.length - 1 ? lyrics[idx + 1] : null,
+      };
+    }
+    // No active line: show next upcoming line within 2s preview window
+    for (let i = 0; i < lyrics.length; i++) {
+      if (currentTime < lyrics[i].startTime && lyrics[i].startTime - currentTime < 2000) {
+        return {
+          currentLyricLine: lyrics[i],
+          nextLyricLine: i < lyrics.length - 1 ? lyrics[i + 1] : null,
+        };
+      }
+    }
+    return { currentLyricLine: null, nextLyricLine: null };
+  }, [currentSong, currentTime]);
 
   // V5: Multi-pitch mic status — count players whose pitch detector is initialized
   const activeMicPlayers = activePlayers.filter(p => p.playerType === 'microphone');
@@ -623,15 +652,30 @@ export function PlayingView({
         </div>
       )}
 
-      {/* ─────────── 5. LYRICS (bottom, ~80px) ─────────── */}
-      <div className="flex-shrink-0 px-4 pb-4 min-h-0 max-h-[80px]">
+      {/* ─────────── 5. LYRICS (bottom) — uses standard LyricLineDisplay ─────────── */}
+      <div className="flex-shrink-0 px-4 pb-4 min-h-0">
         {currentSong ? (
           <div className="w-full bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/10">
-            {currentSong.lyrics && currentSong.lyrics.length > 0 ? (
-              <LyricsDisplay
-                lyrics={currentSong.lyrics}
-                currentTime={currentTime}
-              />
+            {currentLyricLine ? (
+              <div className="text-center">
+                <LyricLineDisplay
+                  line={currentLyricLine}
+                  currentTime={currentTime}
+                  playerColor="#22d3ee"
+                  noteDisplayStyle={game.settings.noteDisplayStyle || 'classic'}
+                  notePerformance={notePerformance}
+                  lyricsSize="small"
+                />
+                {nextLyricLine && (
+                  <p className="text-white/30 text-xs mt-1 text-center">
+                    {nextLyricLine.notes.map(n => n.lyric).join('')}
+                  </p>
+                )}
+              </div>
+            ) : currentSong.lyrics && currentSong.lyrics.length > 0 ? (
+              <p className="text-white/40 text-center text-sm">
+                {currentSong.lyrics[0].notes.map(n => n.lyric).join('')}
+              </p>
             ) : (
               <p className="text-white/30 text-center text-sm">{t('battleRoyale.loadingLyrics')}</p>
             )}

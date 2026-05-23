@@ -386,6 +386,11 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
               onLoadPartners={data.loadAvailablePartners} onLoadOpponents={data.loadOpponents}
               onRefresh={data.loadSongs}
               formatDuration={data.formatDuration}
+              difficulty={data.difficulty} onDifficultyChange={data.setDifficulty}
+              playerMicSource={data.playerMicSource} onPlayerMicSourceChange={data.setPlayerMicSource}
+              partnerMicSource={data.partnerMicSource} onPartnerMicSourceChange={data.setPartnerMicSource}
+              duetPartsSwapped={data.duetPartsSwapped} onDuetPartsSwappedChange={data.setDuetPartsSwapped}
+              addedQueuePosition={data.addedQueuePosition}
             />
           )}
           {currentView === 'queue' && <MobileQueueView queue={data.queue} slotsRemaining={data.slotsRemaining} queueError={data.queueError} onRemoveFromQueue={data.removeFromQueue} onReorderQueue={data.reorderQueue} onNavigate={setCurrentView} clientId={clientId} />}

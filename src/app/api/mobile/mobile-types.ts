@@ -45,6 +45,13 @@ export interface QueueItem {
   partnerName?: string;
   // Game mode for this queue item
   gameMode?: 'single' | 'duel' | 'duet';
+  // Difficulty setting from companion
+  difficulty?: 'easy' | 'normal' | 'hard';
+  // Mic source preferences (companion = sing via phone, microphone = sing via main app mic)
+  playerMicSource?: 'companion' | 'microphone';
+  partnerMicSource?: 'companion' | 'microphone';
+  // Duet parts swapped flag
+  duetPartsSwapped?: boolean;
 }
 
 export interface RemoteCommand {

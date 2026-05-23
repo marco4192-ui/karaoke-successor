@@ -221,6 +221,10 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           partnerId?: string;
           partnerName?: string;
           gameMode?: 'single' | 'duel' | 'duet';
+          difficulty?: 'easy' | 'normal' | 'hard';
+          playerMicSource?: 'companion' | 'microphone';
+          partnerMicSource?: 'companion' | 'microphone';
+          duetPartsSwapped?: boolean;
         };
         // Input validation: songTitle and songArtist max 200 chars
         if (!queuePayload.songTitle || typeof queuePayload.songTitle !== 'string' || queuePayload.songTitle.length > 200) {
@@ -305,6 +309,10 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           partnerId: queuePayload.partnerId,
           partnerName: queuePayload.partnerName,
           gameMode: queuePayload.gameMode || 'single',
+          difficulty: queuePayload.difficulty,
+          playerMicSource: queuePayload.playerMicSource,
+          partnerMicSource: queuePayload.partnerMicSource,
+          duetPartsSwapped: queuePayload.duetPartsSwapped,
         };
         
         mutableState.songQueue.push(queueItem);
