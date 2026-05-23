@@ -310,8 +310,34 @@ export function useRemoteControl({
               case 'start_ptm':
               case 'start_br':
               case 'start_tournament':
+              case 'start_missing_words':
+              case 'start_blind':
+              case 'start_medley':
+              case 'start_rate_my_song':
+              case 'start_companion_singalong':
                 stopRef.current();
                 onBackRef.current();
+                break;
+
+              // --- Focus library search from game ---
+              case 'focus_search':
+                // No-op during gameplay (search not available)
+                break;
+
+              // --- Random song from game ---
+              case 'random_song':
+              case 'random_duel':
+                // No-op during gameplay (already in a song)
+                break;
+
+              // --- Queue shortcut ---
+              case 'play_queue':
+                // No-op during gameplay
+                break;
+
+              // --- Backspace: navigate back from sub-screens ---
+              case 'backspace':
+                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }));
                 break;
             }
           }

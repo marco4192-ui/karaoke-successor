@@ -265,6 +265,9 @@ export default function KaraokeZERO() {
     const screenMap: Record<string, Screen> = {
       'home': 'home', 'library': 'library', 'settings': 'settings',
       'queue': 'queue', 'party': 'party', 'profile': 'profile',
+      'highscores': 'highscores', 'achievements': 'achievements',
+      'jukebox': 'jukebox', 'editor': 'editor',
+      'dailyChallenge': 'dailyChallenge', 'online': 'online',
     };
     navigateWithGuard(screenMap[targetScreen] || 'home');
   }, [navigateWithGuard]);
@@ -273,6 +276,54 @@ export default function KaraokeZERO() {
     navigateToScreen: handleRemoteNavigation,
     isPlaying: screen === 'game',
   });
+
+  // ── Handle remote party-mode events dispatched by global remote control ──
+  useEffect(() => {
+    const handleRemotePartyMode = (e: Event) => {
+      const { mode } = (e as CustomEvent).detail || {};
+      if (!mode) return;
+      if (mode === 'online') {
+        setScreen('online');
+        return;
+      }
+      party.setSelectedGameMode(mode);
+      setScreen('party-setup');
+    };
+    window.addEventListener('remote-party-mode', handleRemotePartyMode);
+    return () => window.removeEventListener('remote-party-mode', handleRemotePartyMode);
+  }, [party, setScreen]);
+
+  // ── Handle remote random song events (mirror Ctrl+R / Ctrl+D) ──
+  useEffect(() => {
+    const handleRemoteRandomSong = (e: Event) => {
+      const { mode } = (e as CustomEvent).detail || {};
+      const songs = getAllSongs();
+      if (songs.length === 0) return;
+      const randomSong = songs[Math.floor(Math.random() * songs.length)];
+      resetGame();
+      if (mode === 'duel') {
+        setGameMode('duel');
+      } else {
+        setGameMode('standard');
+      }
+      setSong(randomSong);
+      setScreen('game');
+    };
+    window.addEventListener('remote-random-song', handleRemoteRandomSong);
+    return () => window.removeEventListener('remote-random-song', handleRemoteRandomSong);
+  }, [resetGame, setGameMode, setSong, setScreen]);
+
+  // ── Handle remote play-queue event (mirror Ctrl+Q) ──
+  useEffect(() => {
+    const handleRemotePlayQueue = () => {
+      const q = useGameStore.getState().queue;
+      if (q.length === 0) return;
+      setAutoPlayNext(true);
+      navigateWithGuard('queue');
+    };
+    window.addEventListener('remote-play-queue', handleRemotePlayQueue);
+    return () => window.removeEventListener('remote-play-queue', handleRemotePlayQueue);
+  }, [navigateWithGuard]);
 
   // ── Mobile client sync ──
   const { syncSongLibrary } = useMobileClient({

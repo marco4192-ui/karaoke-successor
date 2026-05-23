@@ -221,6 +221,34 @@ export function useGlobalRemoteControl({
         navigateToScreen('online');
         break;
 
+      // --- Library search focus (mirror Ctrl+L keyboard shortcut) ---
+      case 'focus_search':
+        navigateToScreen('library');
+        setTimeout(() => {
+          const searchInput = document.getElementById('song-search') as HTMLInputElement | null;
+          searchInput?.focus();
+        }, 200);
+        break;
+
+      // --- Random song (mirror Ctrl+R / Ctrl+D keyboard shortcuts) ---
+      case 'random_song':
+        window.dispatchEvent(new CustomEvent('remote-random-song', { detail: {} }));
+        break;
+
+      case 'random_duel':
+        window.dispatchEvent(new CustomEvent('remote-random-song', { detail: { mode: 'duel' } }));
+        break;
+
+      // --- Queue shortcut (mirror Ctrl+Q keyboard shortcut) ---
+      case 'play_queue':
+        window.dispatchEvent(new CustomEvent('remote-play-queue', { detail: {} }));
+        break;
+
+      // --- Backspace: navigate back from sub-screens ---
+      case 'backspace':
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }));
+        break;
+
       // --- Toggle fullscreen ---
       case 'fullscreen':
         window.dispatchEvent(new Event('toggle-fullscreen'));
@@ -272,6 +300,41 @@ export function useGlobalRemoteControl({
         navigateToScreen('party');
         setTimeout(() => {
           window.dispatchEvent(new CustomEvent('remote-party-mode', { detail: { mode: 'tournament' } }));
+        }, 300);
+        break;
+
+      case 'start_missing_words':
+        navigateToScreen('party');
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('remote-party-mode', { detail: { mode: 'missing-words' } }));
+        }, 300);
+        break;
+
+      case 'start_blind':
+        navigateToScreen('party');
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('remote-party-mode', { detail: { mode: 'blind' } }));
+        }, 300);
+        break;
+
+      case 'start_medley':
+        navigateToScreen('party');
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('remote-party-mode', { detail: { mode: 'medley' } }));
+        }, 300);
+        break;
+
+      case 'start_rate_my_song':
+        navigateToScreen('party');
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('remote-party-mode', { detail: { mode: 'rate-my-song' } }));
+        }, 300);
+        break;
+
+      case 'start_companion_singalong':
+        navigateToScreen('party');
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('remote-party-mode', { detail: { mode: 'companion-singalong' } }));
         }, 300);
         break;
 

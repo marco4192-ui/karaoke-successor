@@ -11,9 +11,12 @@ type RemoteCommandType =
   | 'home' | 'library' | 'settings' | 'queue' | 'party' | 'profile'
   | 'highscores' | 'achievements' | 'jukebox' | 'editor' | 'dailyChallenge' | 'online'
   | 'up' | 'down' | 'left' | 'right' | 'enter'
-  | 'fullscreen' | 'escape' | 'tab'
+  | 'fullscreen' | 'escape' | 'tab' | 'backspace'
   | 'volume_up' | 'volume_down' | 'seek_forward' | 'seek_backward'
-  | 'start_ptm' | 'start_br' | 'start_tournament';
+  | 'focus_search' | 'random_song' | 'random_duel' | 'play_queue'
+  | 'start_ptm' | 'start_br' | 'start_tournament'
+  | 'start_missing_words' | 'start_blind' | 'start_medley'
+  | 'start_rate_my_song' | 'start_companion_singalong';
 
 // ===================== SCREEN NAVIGATION CONFIG =====================
 const SCREEN_BUTTONS: { key: RemoteCommandType; icon: string; labelKey: string; fallback: string }[] = [
@@ -584,6 +587,7 @@ export function RemoteControlView({
                 <span>{'\u{1F389}'}</span>
                 <span className="text-sm font-medium">{tr(t, 'remoteControl.goToParty', 'Go to Party Screen')}</span>
               </Button>
+              {/* Row 1: Classic modes */}
               <div className="grid grid-cols-3 gap-2">
                 <Button
                   onClick={() => sendCommand('start_ptm')}
@@ -608,6 +612,114 @@ export function RemoteControlView({
                 >
                   <span className="text-base leading-none">{'\u{1F3C6}'}</span>
                   <span className="text-[10px] mt-0.5">{tr(t, 'remoteControl.tournament', 'Tournament')}</span>
+                </Button>
+              </div>
+              {/* Row 2: Challenge modes */}
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  onClick={() => sendCommand('start_missing_words')}
+                  variant="outline"
+                  className={`h-12 flex flex-col border-orange-500/30 min-h-[44px] ${getFlashClass('start_missing_words', commandSent)}`}
+                >
+                  <span className="text-base leading-none">{'\u{1F4DD}'}</span>
+                  <span className="text-[10px] mt-0.5">{tr(t, 'remoteControl.missingWords', 'Missing Words')}</span>
+                </Button>
+                <Button
+                  onClick={() => sendCommand('start_blind')}
+                  variant="outline"
+                  className={`h-12 flex flex-col border-green-500/30 min-h-[44px] ${getFlashClass('start_blind', commandSent)}`}
+                >
+                  <span className="text-base leading-none">{'\u{1F648}'}</span>
+                  <span className="text-[10px] mt-0.5">{tr(t, 'remoteControl.blindKaraoke', 'Blind Karaoke')}</span>
+                </Button>
+                <Button
+                  onClick={() => sendCommand('start_medley')}
+                  variant="outline"
+                  className={`h-12 flex flex-col border-purple-500/30 min-h-[44px] ${getFlashClass('start_medley', commandSent)}`}
+                >
+                  <span className="text-base leading-none">{'\u{1F3B5}'}</span>
+                  <span className="text-[10px] mt-0.5">{tr(t, 'remoteControl.medley', 'Medley')}</span>
+                </Button>
+              </div>
+              {/* Row 3: Special modes */}
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  onClick={() => sendCommand('start_rate_my_song')}
+                  variant="outline"
+                  className={`h-12 flex flex-col border-amber-500/30 min-h-[44px] ${getFlashClass('start_rate_my_song', commandSent)}`}
+                >
+                  <span className="text-base leading-none">{'\u2B50'}</span>
+                  <span className="text-[10px] mt-0.5">{tr(t, 'remoteControl.rateMySong', 'Rate My Song')}</span>
+                </Button>
+                <Button
+                  onClick={() => sendCommand('start_companion_singalong')}
+                  variant="outline"
+                  className={`h-12 flex flex-col border-emerald-500/30 min-h-[44px] ${getFlashClass('start_companion_singalong', commandSent)}`}
+                >
+                  <span className="text-base leading-none">{'\u{1F4F1}'}</span>
+                  <span className="text-[10px] mt-0.5">{tr(t, 'remoteControl.companionSingalong', 'Sing-Along')}</span>
+                </Button>
+                <Button
+                  onClick={() => sendCommand('online')}
+                  variant="outline"
+                  className={`h-12 flex flex-col border-cyan-500/30 min-h-[44px] ${getFlashClass('online', commandSent)}`}
+                >
+                  <span className="text-base leading-none">{'\u{1F310}'}</span>
+                  <span className="text-[10px] mt-0.5">{tr(t, 'remoteControl.online', 'Online')}</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ========== Section 7: Quick Shortcuts (mirror keyboard shortcuts) ========== */}
+          <Card className="bg-white/5 border-white/10">
+            <CardHeader className="pb-2 pt-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <span>{'\u2328\uFE0F'}</span>
+                {tr(t, 'remoteControl.quickShortcuts', 'Quick Shortcuts')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  onClick={() => sendCommand('focus_search')}
+                  variant="outline"
+                  className={`h-12 flex flex-col border-white/20 min-h-[44px] ${getFlashClass('focus_search', commandSent)}`}
+                >
+                  <span className="text-base leading-none">{'\u{1F50D}'}</span>
+                  <span className="text-[10px] mt-0.5">{tr(t, 'remoteControl.focusSearch', 'Search (Ctrl+L)')}</span>
+                </Button>
+                <Button
+                  onClick={() => sendCommand('random_song')}
+                  variant="outline"
+                  className={`h-12 flex flex-col border-white/20 min-h-[44px] ${getFlashClass('random_song', commandSent)}`}
+                >
+                  <span className="text-base leading-none">{'\u{1F3B2}'}</span>
+                  <span className="text-[10px] mt-0.5">{tr(t, 'remoteControl.randomSong', 'Random (Ctrl+R)')}</span>
+                </Button>
+                <Button
+                  onClick={() => sendCommand('random_duel')}
+                  variant="outline"
+                  className={`h-12 flex flex-col border-white/20 min-h-[44px] ${getFlashClass('random_duel', commandSent)}`}
+                >
+                  <span className="text-base leading-none">{'\u2694\uFE0F'}</span>
+                  <span className="text-[10px] mt-0.5">{tr(t, 'remoteControl.randomDuel', 'Duel (Ctrl+D)')}</span>
+                </Button>
+                <Button
+                  onClick={() => sendCommand('play_queue')}
+                  variant="outline"
+                  className={`h-12 flex flex-col border-white/20 min-h-[44px] ${getFlashClass('play_queue', commandSent)}`}
+                >
+                  <span className="text-base leading-none">{'\u{1F4CB}'}</span>
+                  <span className="text-[10px] mt-0.5">{tr(t, 'remoteControl.playQueue', 'Queue (Ctrl+Q)')}</span>
+                </Button>
+                <Button
+                  onClick={() => sendCommand('backspace')}
+                  variant="outline"
+                  className={`h-12 flex flex-col border-white/20 min-h-[44px] ${getFlashClass('backspace', commandSent)}`}
+                >
+                  <span className="text-base leading-none">{'\u232B'}</span>
+                  <span className="text-[10px] mt-0.5">{tr(t, 'remoteControl.backspace', 'Back (Bksp)')}</span>
                 </Button>
               </div>
             </CardContent>
