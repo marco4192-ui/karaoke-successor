@@ -48,6 +48,8 @@ function SettingsScreen() {
   // Audio/Game settings state
   const [previewVolume, setPreviewVolume] = useState(30);
   const [micSensitivity, setMicSensitivity] = useState(50);
+  const [masterVolume, setMasterVolume] = useState(100);
+  const [youtubeQuality, setYoutubeQuality] = useState('auto');
   const [defaultDifficulty, setDefaultDifficulty] = useState<Difficulty>('medium');
   const [showPitchGuide, setShowPitchGuide] = useState(true);
   const [currentThemeId, setCurrentThemeId] = useState<string>('neon-nights');
@@ -234,24 +236,14 @@ function SettingsScreen() {
 
       {activeTab === 'graphicsound' && (
         <GraphicSoundTab
-          bgVideo={bgVideo}
-          setBgVideo={setBgVideo}
-          useAnimatedBg={useAnimatedBg}
-          setUseAnimatedBg={setUseAnimatedBg}
-          currentThemeId={currentThemeId}
-          handleThemeChange={handleThemeChange}
-          noteDisplayStyle={noteDisplayStyle}
-          setNoteDisplayStyle={setNoteDisplayStyle}
-          noteShapeStyle={noteShapeStyle}
-          setNoteShapeStyle={setNoteShapeStyle}
           previewVolume={previewVolume}
           setPreviewVolume={setPreviewVolume}
           micSensitivity={micSensitivity}
           setMicSensitivity={setMicSensitivity}
-          lyricsStyle={lyricsStyle}
-          setLyricsStyle={setLyricsStyle}
-          performanceMode={performanceMode}
-          setPerformanceMode={setPerformanceMode}
+          masterVolume={masterVolume}
+          setMasterVolume={setMasterVolume}
+          youtubeQuality={youtubeQuality}
+          setYoutubeQuality={setYoutubeQuality}
           tx={tx}
           setHasChanges={setHasChanges}
         />
