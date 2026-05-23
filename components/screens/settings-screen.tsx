@@ -14,7 +14,6 @@ import { THEMES, applyTheme, getStoredTheme, Theme } from '@/lib/game/themes';
 import { StorageKeys, getItem, setItem, setBool, getNumber, getBool, getString } from '@/lib/storage';
 
 // Tab components
-import { EditorSettingsTab } from '@/components/settings/editor-settings-tab';
 import { MicrophoneSettingsPanel } from '@/components/settings/microphone-settings-panel';
 import { LibraryTab } from '@/components/settings/library-tab';
 import { WebcamTab } from '@/components/settings/webcam-tab';
@@ -75,12 +74,6 @@ function SettingsScreen() {
 
   // Active tab
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
-  // Track whether the editor is actively editing a song (to hide tab bar)
-  const [isEditorActive, setIsEditorActive] = useState(false);
-
-  const handleEditorActiveChange = useCallback((active: boolean) => {
-    setIsEditorActive(active);
-  }, []);
 
   // Helper to access nested translations with fallback
   const tx = useCallback((key: string): string => {
@@ -188,23 +181,19 @@ function SettingsScreen() {
   };
 
   return (
-    <div className={`theme-container w-full ${activeTab === 'editor' ? 'text-center' : 'max-w-7xl mx-auto px-4 md:px-6 lg:px-8'}`}>
-      {/* Header - hidden when editor is actively editing a song */}
-      {!isEditorActive && (
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 theme-adaptive-text">{tx('settings.title')}</h1>
-          <p className="theme-adaptive-text-muted">{tx('settings.subtitle')}</p>
-        </div>
-      )}
+    <div className="theme-container w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2 theme-adaptive-text">{tx('settings.title')}</h1>
+        <p className="theme-adaptive-text-muted">{tx('settings.subtitle')}</p>
+      </div>
 
-      {/* Tab Bar - hidden when editor is actively editing a song */}
-      {!isEditorActive && (
-        <div className="flex justify-center mb-6">
-          <div className="inline-flex">
-            <SettingsTabBar activeTab={activeTab} onTabChange={setActiveTab} tx={tx} />
-          </div>
+      {/* Tab Bar */}
+      <div className="flex justify-center mb-6">
+        <div className="inline-flex">
+          <SettingsTabBar activeTab={activeTab} onTabChange={setActiveTab} tx={tx} />
         </div>
-      )}
+      </div>
 
       {/* Tab Content */}
       {activeTab === 'library' && (
@@ -279,10 +268,6 @@ function SettingsScreen() {
           <CompanionListSection isVisible={activeTab === 'mobile'} />
           <MobileDeviceMicrophoneSection />
         </div>
-      )}
-
-      {activeTab === 'editor' && (
-        <EditorSettingsTab onEditorActiveChange={handleEditorActiveChange} />
       )}
 
       {activeTab === 'about' && (
