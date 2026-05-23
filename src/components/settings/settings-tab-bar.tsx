@@ -7,7 +7,7 @@ import {
 } from '@/components/settings/settings-icons';
 import { useTranslation } from '@/lib/i18n/translations';
 
-export type SettingsTab = 'general' | 'gameplay' | 'appearance' | 'graphicsound' | 'microphone' | 'mobile' | 'webcam' | 'library' | 'viral' | 'about';
+export type SettingsTab = 'general' | 'gameplay' | 'appearance' | 'graphicsound' | 'microphone' | 'mobile' | 'webcam' | 'library' | 'viral' | 'editor' | 'about';
 
 interface SettingsTabBarProps {
   activeTab: SettingsTab;
