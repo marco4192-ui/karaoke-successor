@@ -1,10 +1,12 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Song, PlayerProfile, GameMode } from '@/types/game';
 import { usePartySetup } from './unified-party-setup.hook';
 import { useTranslation } from '@/lib/i18n/translations';
 import { GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, InputModeSelector, MicAssignmentPanel, SingleMicSelector } from './unified-party-setup.components';
+import { useAutoFocus } from '@/hooks/use-roving-focus';
 
 // Re-export public API (only exports actually consumed by other modules)
 export { SongVotingModal } from './unified-party-setup.components';
@@ -34,6 +36,22 @@ export function UnifiedPartySetup({
   preSelectedSong, onStartWithPreselectedSong, onChangePreselectedSong,
 }: UnifiedPartySetupProps) {
   const { t } = useTranslation();
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-focus first interactive element when setup screen appears or gameMode changes
+  useAutoFocus(containerRef, gameMode);
+
+  // Also auto-focus on initial mount
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const timer = setTimeout(() => {
+      const btn = container.querySelector<HTMLElement>('button:not([disabled])');
+      btn?.focus();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   const {
     config, activeProfiles, selectedPlayers, settings, setSettings,
     error, difficulty, setDifficulty, togglePlayer, handleSongSelection,
@@ -49,13 +67,13 @@ export function UnifiedPartySetup({
     setSettings(prev => ({ ...prev, [key]: value }));
 
   return (
-    <div className="flex gap-4">
+    <div className="flex gap-4" data-focus-container="party-setup">
       <GameSidebar config={config} />
 
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0" ref={containerRef}>
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" onClick={onBack} className="text-white/60">{t('unifiedSetup.back')}</Button>
+          <Button variant="ghost" onClick={onBack} className="text-white/60 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none">{t('unifiedSetup.back')}</Button>
           <div>
             <h1 className="text-3xl font-bold">{config.icon} {config.title}</h1>
             <p className="text-white/60">{config.description}</p>
@@ -147,9 +165,10 @@ export function UnifiedPartySetup({
                 )}
                 {onStartWithPreselectedSong && (
                   <Button
+                    id="party-start-btn"
                     size="sm"
                     onClick={onStartWithPreselectedSong}
-                    className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold"
+                    className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none"
                   >
                     {t('unifiedSetup.startGame')}
                   </Button>

@@ -21,20 +21,37 @@ export function SongCard({
   onPreviewStop, 
   previewVideoRefs,
   isViralHit,
+  itemProps,
 }: SongCardProps) {
   const { t } = useTranslation();
   const isPreviewing = previewSong?.id === song.id;
   const songHasVideo = hasVideo(song);
+
+  // Extract itemProps so we can merge onKeyDown with our fallback handler
+  const { ref: itemRef, onKeyDown: itemOnKeyDown, ...restItemProps } = itemProps || {};
+
+  const handleKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
+    // If parent provided onKeyDown (via roving focus), delegate to it
+    itemOnKeyDown?.(e);
+    // Fallback activation when no parent keyboard handler is wired up
+    if (!itemOnKeyDown && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      onSongClick(song);
+    }
+  };
 
   const effectiveSong = isPreviewing && previewSong ? previewSong : song;
   const showBackgroundDuringPreview = isPreviewing && !songHasVideo && !!effectiveSong.backgroundImage;
 
   return (
     <div 
-      className="bg-white/5 rounded-xl overflow-hidden border border-white/10 hover:border-cyan-500/50 transition-all cursor-pointer group"
+      ref={itemRef as React.Ref<HTMLDivElement> | undefined}
+      {...restItemProps}
+      className="bg-white/5 rounded-xl overflow-hidden border border-white/10 hover:border-cyan-500/50 transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:outline-none"
       onClick={() => onSongClick(song)}
       onMouseEnter={() => onPreviewStart(song)}
       onMouseLeave={onPreviewStop}
+      onKeyDown={handleKeyDown}
     >
       <div className="relative aspect-square bg-gradient-to-br from-purple-600/50 to-blue-600/50 overflow-hidden">
         {effectiveSong.backgroundImage && (

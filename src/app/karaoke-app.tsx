@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { CHALLENGE_GAME_MODE_MAP } from '@/lib/game/player-progression';
@@ -19,6 +19,7 @@ import { IMMERSIVE_SCREENS } from '@/types/screens';
 import { useScreenNavigation } from '@/hooks/use-screen-navigation';
 import { useGameFlowHandlers } from '@/hooks/use-game-flow-handlers';
 import { useAppEffects } from '@/hooks/use-app-effects';
+import { useAutoFocus } from '@/hooks/use-roving-focus';
 
 // Extracted dialogs
 import { SongPauseDialog, PartyLeaveDialog, PartyExitConfirmDialog } from '@/components/dialogs';
@@ -285,6 +286,10 @@ export default function KaraokeZERO() {
     syncSongLibrary();
   }, [syncSongLibrary, screen]);
 
+  // ── Auto-focus management: focus first interactive element on screen change ──
+  const mainRef = useRef<HTMLElement>(null);
+  useAutoFocus(mainRef, screen);
+
   // ── Hydration guard for Tauri ──
   if (!isMounted) {
     return (
@@ -341,7 +346,7 @@ export default function KaraokeZERO() {
       {IMMERSIVE_SCREENS.has(screen) && <FullscreenToggleButton isFullscreen={isFullscreen} toggleFullscreen={toggleFullscreen} />}
 
       {/* Main Content */}
-      <main className={`${
+      <main ref={mainRef} className={`${
         IMMERSIVE_SCREENS.has(screen)
           ? 'pt-0 px-0 pb-0 w-full h-full'
           : 'px-4 pb-8 flex-1'

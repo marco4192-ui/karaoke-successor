@@ -329,7 +329,7 @@ export function QueueScreen({ onPlayFromQueue, autoPlayNext }: QueueScreenProps)
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-2 mb-6">
+        <div role="list" aria-label="Warteschlange" className="space-y-2 mb-6">
           {unifiedQueue.map((item, index) => (
             <QueueItemCard
               key={item.id}
@@ -355,14 +355,14 @@ export function QueueScreen({ onPlayFromQueue, autoPlayNext }: QueueScreenProps)
           <Button
             variant="outline"
             onClick={clearQueue}
-            className="border-white/20 text-white hover:bg-white/10"
+            className="border-white/20 text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none"
           >
             {t('queueScreen.clearAll')}
           </Button>
           {unifiedQueue[0] && (
             <Button
               onClick={() => playFromQueue(unifiedQueue[0])}
-              className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400"
+              className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none"
             >
               {t('queueScreen.playNextSong')}
             </Button>

@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { SongStartModalProps } from './types';
 import { MusicIcon, MicIcon, StarIcon, TrophyIcon, QueueIcon, PlayIcon } from '@/components/icons';
 import { isDuetSong } from './utils';
+import { useFocusTrap } from '@/hooks/use-roving-focus';
 import { StorageKeys, getItem } from '@/lib/storage';
 import { useTranslation } from '@/lib/i18n/translations';
 
@@ -164,6 +165,22 @@ export function SongStartModal({
 }: SongStartModalProps) {
   const { t } = useTranslation();
   const songIsDuet = isDuetSong(selectedSong);
+  const dialogContentRef = useRef<HTMLDivElement>(null);
+
+  // Trap Tab/Shift+Tab focus inside the dialog when it is open
+  useFocusTrap(dialogContentRef, showSongModal);
+
+  // Auto-focus the Start button when the modal opens
+  useEffect(() => {
+    if (!showSongModal) return;
+    const timer = setTimeout(() => {
+      const btn = document.getElementById('song-start-btn') as HTMLButtonElement | null;
+      if (btn && !btn.disabled) {
+        btn.focus();
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [showSongModal]);
 
   // Auto-fix mode mismatch: if current mode is duet/duel but song is not a duet, reset to single
   useEffect(() => {
@@ -231,7 +248,7 @@ export function SongStartModal({
 
   return (
     <Dialog open={showSongModal} onOpenChange={setShowSongModal}>
-      <DialogContent className="bg-gray-900 border-white/10 text-white max-w-xl max-h-[92vh] flex flex-col overflow-hidden">
+      <DialogContent ref={dialogContentRef} className="bg-gray-900 border-white/10 text-white max-w-xl max-h-[92vh] flex flex-col overflow-hidden">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-lg">{selectedSong.title}</DialogTitle>
           <DialogDescription className="text-white/60">{selectedSong.artist}</DialogDescription>
@@ -646,6 +663,7 @@ export function SongStartModal({
             {t('songStart.cancel')}
           </Button>
           <Button 
+            id="song-start-btn"
             onClick={onStartGame}
             disabled={
               (!startOptions.partyMode && startOptions.mode === 'single' && 

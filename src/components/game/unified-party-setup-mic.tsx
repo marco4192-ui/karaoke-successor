@@ -7,6 +7,7 @@ import type { InputMode } from './unified-party-setup.types';
 import { INPUT_MODE_CONFIG } from './unified-party-setup.types';
 import { StorageKeys, getJsonOptional } from '@/lib/storage';
 import { useTranslation } from '@/lib/i18n/translations';
+import { useRovingFocus } from '@/hooks/use-roving-focus';
 
 // ===================== SINGLE MIC SELECTOR =====================
 
@@ -132,13 +133,22 @@ export function InputModeSelector({
 }) {
   const { t } = useTranslation();
 
-  // If input mode is forced (e.g. companion-singalong requires companion-only),
-  // don't show the selector at all.
-  if (forceInputMode) return null;
-
   const modes: InputMode[] = supportsCompanionApp
     ? ['microphone', 'companion', 'mixed']
     : ['microphone'];
+
+  const { containerProps: modeContainerProps, getItemProps: getModeProps } = useRovingFocus({
+    itemCount: forceInputMode ? 0 : modes.length,
+    columns: modes.length <= 1 ? 1 : 3,
+    onSelect: (index) => !forceInputMode && onInputModeChange(modes[index]),
+    orientation: 'list',
+    role: 'listbox',
+    ariaLabel: t('unifiedSetup.inputMode'),
+  });
+
+  // If input mode is forced (e.g. companion-singalong requires companion-only),
+  // don't show the selector at all.
+  if (forceInputMode) return null;
 
   return (
     <Card className="bg-white/5 border-white/10 mb-6">
@@ -149,15 +159,16 @@ export function InputModeSelector({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {modes.map(mode => {
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3" {...modeContainerProps}>
+          {modes.map((mode, index) => {
             const modeConfig = INPUT_MODE_CONFIG[mode];
             const isActive = inputMode === mode;
             return (
               <button
                 key={mode}
+                {...getModeProps(index)}
                 onClick={() => onInputModeChange(mode)}
-                className={`p-4 rounded-xl text-left transition-all ${
+                className={`p-4 rounded-xl text-left transition-all focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none ${
                   isActive
                     ? `${modeConfig.color} text-white ring-2 ring-white/30`
                     : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'

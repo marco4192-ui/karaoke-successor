@@ -5,6 +5,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { Song } from '@/types/game';
 import { SongCardProps } from './types';
 import { SongCard } from './song-card';
+import { useRovingFocus } from '@/hooks/use-roving-focus';
 
 /**
  * VirtualizedSongGrid
@@ -62,10 +63,46 @@ interface VirtualizedSongGridProps {
   songCardProps: Omit<SongCardProps, 'song'>;
   /** Optional custom card renderer (e.g. playlist view with remove button overlay) */
   renderSongCard?: (_song: Song) => React.ReactNode;
+  /** Callback when a song is activated via keyboard (Enter/Space) */
+  onSongSelect?: (_index: number) => void;
 }
 
-export function VirtualizedSongGrid({ songs, songCardProps, renderSongCard }: VirtualizedSongGridProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+export function VirtualizedSongGrid({ songs, songCardProps, renderSongCard, onSongSelect }: VirtualizedSongGridProps) {
+  // Refs for stable callbacks passed to useRovingFocus.
+  // These bridge the hook call (which happens before columns/rowVirtualizer
+  // are computed) with the values that are only available later in the render.
+  const columnsRef = useRef(2);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rowVirtualizerRef = useRef<any>(null);
+  const onSongSelectRef = useRef(onSongSelect);
+  onSongSelectRef.current = onSongSelect;
+
+  // Stable callbacks that read from refs — avoids recreating the hook's
+  // internal effects on every render while always using the latest values.
+  const stableOnFocusChange = useCallback((index: number) => {
+    const rv = rowVirtualizerRef.current;
+    if (rv) {
+      const row = Math.floor(index / columnsRef.current);
+      rv.scrollToIndex(row, { align: 'auto' });
+    }
+  }, []);
+
+  const stableOnSelect = useCallback((index: number) => {
+    onSongSelectRef.current?.(index);
+  }, []);
+
+  // Set up roving-focus keyboard navigation early so its containerRef
+  // can be shared with the virtualizer and measurement logic below.
+  const { containerRef, containerProps, getItemProps } = useRovingFocus({
+    itemCount: songs.length,
+    columns: 0, // auto-compute from container width
+    onSelect: stableOnSelect,
+    onFocusChange: stableOnFocusChange,
+    loop: true,
+    orientation: 'grid',
+    ariaLabel: 'Song-Auswahl',
+  });
+
   const [containerWidth, setContainerWidth] = useState(1200);
   const [containerHeight, setContainerHeight] = useState(600);
 
@@ -100,6 +137,9 @@ export function VirtualizedSongGrid({ songs, songCardProps, renderSongCard }: Vi
   const columns = getColumnCount(effectiveWidth);
   const rowCount = Math.ceil(songs.length / columns);
 
+  // Keep ref in sync so the stable onFocusChange callback uses fresh values
+  columnsRef.current = columns;
+
   // Calculate row height: each card = square cover (width) + info section
   const columnWidth = (effectiveWidth - (columns - 1) * GAP) / columns;
   const cardHeight = columnWidth + INFO_SECTION_HEIGHT;
@@ -112,6 +152,9 @@ export function VirtualizedSongGrid({ songs, songCardProps, renderSongCard }: Vi
     estimateSize: useCallback(() => rowHeight, [rowHeight]),
     overscan: 3, // render 3 extra rows above and below for smooth scrolling
   });
+
+  // Keep ref in sync so the stable onFocusChange callback uses fresh virtualizer
+  rowVirtualizerRef.current = rowVirtualizer;
 
   const gridColsClass = getGridColsClass(columns);
 
@@ -130,7 +173,7 @@ export function VirtualizedSongGrid({ songs, songCardProps, renderSongCard }: Vi
 
   return (
     <div
-      ref={containerRef}
+      {...containerProps}
       className="overflow-y-auto"
       style={{
         height: containerHeight,
@@ -159,17 +202,19 @@ export function VirtualizedSongGrid({ songs, songCardProps, renderSongCard }: Vi
                 transform: `translateY(${virtualRow.start}px)`,
               }}
             >
-              {items.map((song) => (
-                renderSongCard ? (
+              {items.map((song, colIndex) => {
+                const songIndex = virtualRow.index * columns + colIndex;
+                return renderSongCard ? (
                   <React.Fragment key={song.id}>{renderSongCard(song)}</React.Fragment>
                 ) : (
                   <SongCard
                     key={song.id}
                     song={song}
                     {...songCardProps}
+                    itemProps={getItemProps(songIndex)}
                   />
-                )
-              ))}
+                );
+              })}
             </div>
           );
         })}

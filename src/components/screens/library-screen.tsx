@@ -321,7 +321,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
               <p className="text-white/40 text-sm">{t('library.noSongsHint')}</p>
             </div>
           ) : viewMode === 'grid' || (viewMode === 'folder' && currentFolder) ? (
-            <VirtualizedSongGrid songs={currentFolderSongs} songCardProps={songCardBaseProps} renderSongCard={renderViralSongCard} />
+            <VirtualizedSongGrid songs={currentFolderSongs} songCardProps={songCardBaseProps} renderSongCard={renderViralSongCard} onSongSelect={(index) => { const song = currentFolderSongs[index]; if (song) handleSongClick(song); }} />
           ) : (
             <FolderView
               groupedSongs={groupedSongs} groupBy={groupBy}

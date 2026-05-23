@@ -45,10 +45,48 @@ export function QueueItemCard({
   onDragOver,
   onDragEnd,
 }: QueueItemCardProps) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    switch (e.key) {
+      case 'Enter':
+        e.preventDefault();
+        onPlay(item);
+        break;
+      case 'Delete':
+      case 'Backspace':
+        e.preventDefault();
+        if (item.isFromCompanion) {
+          onRemoveCompanion(item.id);
+        } else {
+          onRemoveLocal(item.id);
+        }
+        break;
+      case 'ArrowDown': {
+        e.preventDefault();
+        const nextSibling = e.currentTarget.parentElement?.nextElementSibling;
+        if (nextSibling) {
+          const focusable = nextSibling.querySelector<HTMLElement>('[tabindex="0"]');
+          focusable?.focus();
+        }
+        break;
+      }
+      case 'ArrowUp': {
+        e.preventDefault();
+        const prevSibling = e.currentTarget.parentElement?.previousElementSibling;
+        if (prevSibling) {
+          const focusable = prevSibling.querySelector<HTMLElement>('[tabindex="0"]');
+          focusable?.focus();
+        }
+        break;
+      }
+    }
+  };
+
   return (
     <Card
       key={item.id}
-      className={`bg-white/5 border-white/10 cursor-pointer hover:bg-white/10 transition-colors ${
+      role="listitem"
+      tabIndex={0}
+      className={`bg-white/5 border-white/10 cursor-pointer hover:bg-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:outline-none ${
         draggedIndex === index ? 'opacity-50' : ''
       } ${item.isFromCompanion ? 'border-l-4 border-l-cyan-500' : ''}`}
       draggable={!item.isFromCompanion}
@@ -56,6 +94,7 @@ export function QueueItemCard({
       onDragOver={(e) => onDragOver(e, index)}
       onDragEnd={onDragEnd}
       onClick={() => onPlay(item)}
+      onKeyDown={handleKeyDown}
     >
       <CardContent className="p-4 flex items-center gap-4">
         {/* Position */}

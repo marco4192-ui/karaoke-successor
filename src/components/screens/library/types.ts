@@ -40,6 +40,14 @@ export interface SongCardProps {
   previewAudio?: HTMLAudioElement | null;
   /** Whether this song is matched as a viral/trending hit */
   isViralHit?: boolean;
+  /** Accessibility/focus props from a parent roving-focus manager */
+  itemProps?: {
+    tabIndex: number;
+    'aria-selected'?: boolean;
+    role?: string;
+    ref: React.RefCallback<HTMLElement>;
+    onKeyDown?: React.KeyboardEventHandler;
+  };
 }
 
 export interface SongStartModalProps {

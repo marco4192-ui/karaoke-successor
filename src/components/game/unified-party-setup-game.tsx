@@ -11,6 +11,7 @@ import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
 import type { Language } from '@/lib/i18n/translations';
 import { useTranslation } from '@/lib/i18n/translations';
 import { ConnectionStatusBadge } from './connection-status-badge';
+import { useRovingFocus } from '@/hooks/use-roving-focus';
 
 // ===================== PLAYER GRID =====================
 
@@ -29,6 +30,15 @@ export function PlayerGrid({
   // Check if any input mode involves companion app
   const showConnectionStatus = inputMode === 'companion' || inputMode === 'mixed';
 
+  const { containerProps: playerContainerProps, getItemProps: getPlayerProps } = useRovingFocus({
+    itemCount: activeProfiles.length,
+    columns: 4,
+    onSelect: (index) => togglePlayer(activeProfiles[index].id),
+    orientation: 'grid',
+    role: 'grid',
+    ariaLabel: t('unifiedSetup.playerSelection'),
+  });
+
   return (
     <Card className="bg-white/5 border-white/10 mb-6">
       <CardHeader>
@@ -43,8 +53,8 @@ export function PlayerGrid({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {activeProfiles.map((profile) => {
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3" {...playerContainerProps}>
+          {activeProfiles.map((profile, index) => {
             const isSelected = selectedPlayers.includes(profile.id);
             // In mixed mode, first half uses mic, second half uses companion.
             // Must use position in selectedPlayers (matches actual game logic in hook).
@@ -55,8 +65,9 @@ export function PlayerGrid({
             return (
               <div
                 key={profile.id}
+                {...getPlayerProps(index)}
                 onClick={() => togglePlayer(profile.id)}
-                className={`p-4 rounded-lg cursor-pointer transition-all ${
+                className={`p-4 rounded-lg cursor-pointer transition-all focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none ${
                   isSelected
                     ? `bg-gradient-to-br ${config.color} border-2 border-white/50`
                     : 'bg-white/5 border border-white/10 hover:bg-white/10'
@@ -262,22 +273,37 @@ export function SongSelectionGrid({
   onSongSelection: (_option: SongSelectionOption) => void;
 }) {
   const { t } = useTranslation();
+
+  const { containerProps: songContainerProps, getItemProps: getSongOptionProps } = useRovingFocus({
+    itemCount: config.songSelectionOptions.length,
+    columns: 4,
+    onSelect: (index) => {
+      if (selectedPlayerCount >= config.minPlayers) {
+        onSongSelection(config.songSelectionOptions[index]);
+      }
+    },
+    orientation: 'grid',
+    role: 'grid',
+    ariaLabel: t('unifiedSetup.songSelection'),
+  });
+
   return (
     <Card className="bg-white/5 border-white/10 mb-6">
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><span className="text-xl">🎵</span>{t('unifiedSetup.songSelection')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {config.songSelectionOptions.map(option => {
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4" {...songContainerProps}>
+          {config.songSelectionOptions.map((option, index) => {
             const optConfig = SONG_SELECTION_CONFIG[option];
             const enabled = selectedPlayerCount >= config.minPlayers;
             return (
               <button
                 key={option}
+                {...getSongOptionProps(index)}
                 onClick={() => onSongSelection(option)}
                 disabled={!enabled}
-                className={`p-4 rounded-xl text-center transition-all ${
+                className={`p-4 rounded-xl text-center transition-all focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none ${
                   enabled
                     ? `${optConfig.color} text-white hover:scale-105`
                     : 'bg-white/5 text-white/30 cursor-not-allowed'

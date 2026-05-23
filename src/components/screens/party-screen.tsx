@@ -3,6 +3,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/lib/i18n/translations';
+import { useRovingFocus } from '@/hooks/use-roving-focus';
 import type { GameMode } from '@/types/game';
 
 interface PartyGame {
@@ -101,6 +102,15 @@ export function PartyScreen({ onSelectMode }: PartyScreenProps) {
     },
   ];
 
+  const { containerProps, getItemProps } = useRovingFocus({
+    itemCount: partyGames.length,
+    columns: 3,
+    onSelect: (index) => onSelectMode(partyGames[index].mode),
+    loop: true,
+    orientation: 'grid',
+    ariaLabel: 'Party-Modi',
+  });
+
   return (
     <div className="w-full max-w-[1600px] mx-auto px-4 md:px-6 lg:px-8">
       <div className="mb-8">
@@ -108,12 +118,13 @@ export function PartyScreen({ onSelectMode }: PartyScreenProps) {
         <p className="text-white/60">{t('party.subtitle')}</p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
-        {partyGames.map((game) => (
+      <div {...containerProps} className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+        {partyGames.map((game, index) => (
           <Card 
             key={game.mode}
-            className={`party-tile bg-gradient-to-br ${game.color} border-0 cursor-pointer hover:scale-105 transition-transform relative`}
+            className={`party-tile bg-gradient-to-br ${game.color} border-0 cursor-pointer hover:scale-105 transition-transform relative focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:outline-none`}
             onClick={() => onSelectMode(game.mode)}
+            {...getItemProps(index)}
           >
             <CardContent className="pt-6">
               {game.isNew && (

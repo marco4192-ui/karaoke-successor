@@ -52,6 +52,8 @@ export function getShortcutReference(): Array<{ keys: string; label: string }> {
     { keys: 'Ctrl+Q', label: t('keyboardShortcuts.ctrlQ') },
     { keys: 'Ctrl+J', label: t('keyboardShortcuts.ctrlJ') },
     { keys: '↑↓←→', label: t('keyboardShortcuts.arrows') },
+    { keys: 'Backspace', label: 'Back' },
+    { keys: 'Tab', label: 'Navigate' },
   ];
 }
 
@@ -220,6 +222,27 @@ export function useGlobalKeyboardShortcuts(cb: GlobalShortcutCallbacks) {
     ctrl: true,
     label: 'Ctrl+J',
     action: () => cb.navigateToJukebox(),
+  });
+
+  // ── Escape: context-dependent for sub-screens ──
+  // Back from party-setup to party, from editor to library, etc.
+  // This is handled above for the global escape, but we also handle
+  // Backspace as an alternative "back" key for non-input contexts
+  shortcuts.push({
+    key: 'Backspace',
+    label: 'Backspace',
+    action: () => {
+      // Back from party-setup to party screen
+      if (cb.screen === 'party-setup') {
+        cb.navigateTo('party' as Screen);
+        return;
+      }
+      // Back from results to library
+      if (cb.screen === 'results') {
+        cb.navigateTo('library' as Screen);
+        return;
+      }
+    },
   });
 
   useKeyboardShortcuts(shortcuts);
