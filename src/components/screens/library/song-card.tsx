@@ -21,16 +21,10 @@ export function SongCard({
   onPreviewStop, 
   previewVideoRefs,
   isViralHit,
-  viralChartInfo,
 }: SongCardProps) {
   const { t } = useTranslation();
   const isPreviewing = previewSong?.id === song.id;
   const songHasVideo = hasVideo(song);
-
-  // Pick the best chart entry (lowest position = highest ranked)
-  const bestChart = viralChartInfo?.length
-    ? viralChartInfo.reduce((best, entry) => (!best || entry.chartPosition < best.chartPosition ? entry : best), viralChartInfo[0])
-    : null;
 
   const effectiveSong = isPreviewing && previewSong ? previewSong : song;
   const showBackgroundDuringPreview = isPreviewing && !songHasVideo && !!effectiveSong.backgroundImage;
@@ -129,8 +123,8 @@ export function SongCard({
         
         <div className="absolute top-2 right-2 flex gap-1">
           {isViralHit && (
-            <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-lg animate-pulse" title={bestChart ? `${bestChart.source} — ${bestChart.playlistName}` : undefined}>
-              <span className="text-sm">&#128293;</span>{bestChart ? `#${bestChart.chartPosition}` : t('songCard.viral')}
+            <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-lg animate-pulse">
+              <span className="text-sm">&#128293;</span>{t('songCard.viral')}
             </div>
           )}
           {(song.hasEmbeddedAudio || songHasVideo) && (

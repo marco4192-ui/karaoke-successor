@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import { LyricLine } from '@/types/game';
 
 // ===================== TYPES =====================
@@ -179,6 +179,23 @@ export function useGameModes({
   const lastBlindPassageRef = useRef(-1);
   const lastMWWarningKeyRef = useRef('');
 
+  // ── RESET: Clear all mode state when song or gameMode changes ──
+  // CRITICAL: This effect MUST be declared BEFORE the generation effects
+  // so that refs are properly reset before the generation effects check them.
+  // Without this ordering, React runs effects in declaration order and the
+  // reset could run after generation, causing the generation guard refs to
+  // be in an inconsistent state.
+  useEffect(() => {
+    blindPatternRef.current = null;
+    missingWordsGeneratedRef.current = false;
+    hiddenStartTimesRef.current = new Set();
+    lastBlindPassageRef.current = -1;
+    lastMWWarningKeyRef.current = '';
+    // Reset blind section state so it doesn't carry over to the next song
+    setBlindSection(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- songId and gameMode are the intentional triggers
+  }, [songId, gameMode, setBlindSection]);
+
   // Set hardcore mode on store when blind game starts
   useEffect(() => {
     if (gameMode === 'blind' && setBlindHardcore) {
@@ -188,6 +205,7 @@ export function useGameModes({
 
   // ── BLIND KARAOKE MODE — Generate pattern (once per song) ──
   // Decoupled from isGameActive so the pattern is ready before playback starts.
+  // songId is included to guarantee regeneration when a new song loads.
   useEffect(() => {
     if (gameMode === 'blind' && sortedLines && sortedLines.length > 0 && !blindPatternRef.current) {
       const passages = groupIntoPassages(sortedLines);
@@ -210,7 +228,7 @@ export function useGameModes({
         })),
       };
     }
-  }, [gameMode, sortedLines, blindFrequency, escalatingMultiplier]);
+  }, [gameMode, songId, sortedLines, blindFrequency, escalatingMultiplier]);
 
   // ── BLIND KARAOKE MODE — Per-frame passage tracking ──
   useEffect(() => {
@@ -272,6 +290,7 @@ export function useGameModes({
 
   // ── MISSING WORDS MODE — Generate hidden pattern (once per song) ──
   // Decoupled from isGameActive so the pattern is ready before playback starts.
+  // songId is included to guarantee regeneration when a new song loads.
   useEffect(() => {
     if (gameMode === 'missing-words' && sortedLines && sortedLines.length > 0 && !missingWordsGeneratedRef.current) {
       missingWordsGeneratedRef.current = true;
@@ -340,7 +359,7 @@ export function useGameModes({
       hiddenStartTimesRef.current = new Set(hiddenStartTimes);
       setMissingWordsIndices(hiddenStartTimes);
     }
-  }, [gameMode, sortedLines, setMissingWordsIndices, missingWordFrequency, missingWordsGranularity, escalatingMultiplier]);
+  }, [gameMode, songId, sortedLines, setMissingWordsIndices, missingWordFrequency, missingWordsGranularity, escalatingMultiplier]);
 
   // ── Missing Words Warning: signal before hidden passages approach ──
   useEffect(() => {
@@ -377,12 +396,4 @@ export function useGameModes({
     }
   }, [gameMode, isGameActive, currentTime, sortedLines, onMissingWordsWarning]);
 
-  // Reset both modes when song changes
-  useEffect(() => {
-    blindPatternRef.current = null;
-    missingWordsGeneratedRef.current = false;
-    hiddenStartTimesRef.current = new Set();
-    lastBlindPassageRef.current = -1;
-    lastMWWarningKeyRef.current = '';
-  }, [songId]);
 }

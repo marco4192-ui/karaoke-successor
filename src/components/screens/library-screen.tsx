@@ -255,8 +255,8 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
   const songCardBaseProps = useMemo<Omit<SongCardProps, 'song'>>(() => ({ previewSong, previewAudio, onSongClick: handleSongClick, onPreviewStart: handlePreviewStart, onPreviewStop: handlePreviewStop, previewVideoRefs }), [previewSong, previewAudio, handleSongClick, handlePreviewStart, handlePreviewStop, previewVideoRefs]);
 
   const renderViralSongCard = useCallback((song: Song) => (
-    <SongCard key={song.id} song={song} {...songCardBaseProps} isViralHit={viralCharts.viralSongIds.has(song.id)} viralChartInfo={viralCharts.getMatchInfo(song.id)} />
-  ), [songCardBaseProps, viralCharts.viralSongIds, viralCharts.getMatchInfo]);
+    <SongCard key={song.id} song={song} {...songCardBaseProps} isViralHit={viralCharts.viralSongIds.has(song.id)} />
+  ), [songCardBaseProps, viralCharts.viralSongIds]);
 
   // --- Render ---
   return (

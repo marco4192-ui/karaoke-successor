@@ -643,7 +643,11 @@ export function useJukebox(refs?: {
       videoEl?.removeEventListener('timeupdate', handleTimeUpdate);
       videoEl?.removeEventListener('loadedmetadata', handleLoadedMetadata);
     };
-  }, [audioRef, videoRef]);
+    // currentSong is needed because audioRef/videoRef are stable ref objects;
+    // the <audio>/<video> DOM elements only mount when a song is set, so
+    // we must re-run this effect each time currentSong changes to attach
+    // listeners to the newly mounted elements.
+  }, [audioRef, videoRef, currentSong]);
 
   // ==================== F5: ENERGY SAVING ====================
 

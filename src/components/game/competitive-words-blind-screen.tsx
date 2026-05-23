@@ -103,7 +103,9 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
       setError(t('competitiveWords.errorMinPlayersSolo'));
       return;
     }
-    if (playMode !== 'solo' && selectedPlayers.length < 2) {
+    // Auto-switch to solo mode when only 1 player is selected in competitive/coop
+    const effectivePlayMode = (playMode !== 'solo' && selectedPlayers.length === 1) ? 'solo' : playMode;
+    if (effectivePlayMode !== 'solo' && selectedPlayers.length < 2) {
       setError(t('competitiveWords.errorMinPlayers'));
       return;
     }
@@ -121,7 +123,7 @@ export function CompetitiveSetupScreen({ profiles, songs, modeType, onStartGame,
     const settings: CompetitiveSettings = {
       difficulty,
       modeType,
-      playMode,
+      playMode: effectivePlayMode,
       bestOf,
       missingWordFrequency: modeType === 'missing-words'
         ? freqMap[frequency] ?? 0.30

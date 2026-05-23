@@ -365,6 +365,7 @@ export default function KaraokeSuccessor() {
               }
             }}
             initialGameMode={gameState.gameMode}
+            onNavigateToEditor={() => setScreen('editor')}
           />
         )}
         {screen === 'game' && (

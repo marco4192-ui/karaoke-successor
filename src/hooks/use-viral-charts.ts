@@ -9,20 +9,8 @@ import { Song } from '@/types/game';
 // Types
 // ============================================================================
 
-export interface ViralMatchInfo {
-  title: string;
-  artist: string;
-  source: string;
-  playlistName: string;
-  chartPosition: number;
-  country: string;
-}
-
 interface ViralMatchResult {
   song_id: string;
-  song_title: string;
-  song_artist: string;
-  chart_entries: ViralMatchInfo[];
 }
 
 interface ViralStatus {
@@ -82,8 +70,6 @@ export interface UseViralCharts {
   refreshCharts: (country?: string) => Promise<void>;
   /** Manually trigger matching against library */
   matchLibrary: (songs: Song[]) => Promise<void>;
-  /** Get the match info for a specific song */
-  getMatchInfo: (songId: string) => ViralMatchInfo[] | null;
   /** Set the chart country */
   setCountry: (country: string) => Promise<void>;
   /** Clear all cached data */
@@ -95,11 +81,8 @@ export function useViralCharts(): UseViralCharts {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<ViralStatus | null>(null);
-  const [matchDetails, setMatchDetails] = useState<Map<string, ViralMatchInfo[]>>(new Map());
 
   const mountedRef = useRef(true);
-  const matchDetailsRef = useRef(matchDetails);
-  matchDetailsRef.current = matchDetails;
 
   // Load cached matched IDs on mount (fast, no network)
   const loadCachedMatches = useCallback(async () => {
@@ -147,7 +130,6 @@ export function useViralCharts(): UseViralCharts {
         await loadStatus();
         // Clear old matches since chart data changed
         setViralSongIds(new Set());
-        setMatchDetails(new Map());
       }
     } catch (e) {
       if (mountedRef.current) {
@@ -176,15 +158,12 @@ export function useViralCharts(): UseViralCharts {
 
       if (mountedRef.current) {
         const newIds = new Set<string>();
-        const newDetails = new Map<string, ViralMatchInfo[]>();
 
         for (const result of results) {
           newIds.add(result.song_id);
-          newDetails.set(result.song_id, result.chart_entries);
         }
 
         setViralSongIds(newIds);
-        setMatchDetails(newDetails);
         await loadStatus();
       }
     } catch (e) {
@@ -197,11 +176,6 @@ export function useViralCharts(): UseViralCharts {
       }
     }
   }, [loadStatus]);
-
-  // Get match info for a specific song
-  const getMatchInfo = useCallback((songId: string): ViralMatchInfo[] | null => {
-    return matchDetailsRef.current.get(songId) ?? null;
-  }, []);
 
   // Set country
   const setCountry = useCallback(async (country: string) => {
@@ -225,7 +199,6 @@ export function useViralCharts(): UseViralCharts {
       await viralClear();
       if (mountedRef.current) {
         setViralSongIds(new Set());
-        setMatchDetails(new Map());
         setStatus(null);
       }
     } catch (e) {
@@ -242,7 +215,6 @@ export function useViralCharts(): UseViralCharts {
     status,
     refreshCharts,
     matchLibrary,
-    getMatchInfo,
     setCountry,
     clearData,
   };

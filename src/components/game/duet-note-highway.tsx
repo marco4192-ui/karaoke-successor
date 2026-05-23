@@ -297,6 +297,8 @@ export function DuetNoteHighway({
           visibleTop={HALF_VISIBLE_TOP}
           visibleRange={HALF_VISIBLE_RANGE}
           isBlindSection={isBlindSection}
+          missingWordsIndices={missingWordsIndices}
+          gameMode={gameMode}
         />
 
         {/* P1 Lyrics Display */}
@@ -335,6 +337,8 @@ export function DuetNoteHighway({
           visibleTop={HALF_VISIBLE_TOP}
           visibleRange={HALF_VISIBLE_RANGE}
           isBlindSection={isBlindSection}
+          missingWordsIndices={missingWordsIndices}
+          gameMode={gameMode}
         />
 
         {/* P2 Lyrics Display */}

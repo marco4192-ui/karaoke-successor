@@ -342,7 +342,12 @@ export const NoteHighway = React.memo(function NoteHighway({
 
       {/* Notes — hidden in blind sections & missing-words notes */}
       {!isBlindSection && visibleNotes.map((note) => {
-        const isHiddenNote = gameMode === 'missing-words' && missingWordsIndices?.includes(note.startTime);
+        // Check both note.startTime (word mode) and note.line.startTime (passage mode)
+        // so that ALL notes in a hidden passage are removed from the highway.
+        const isHiddenNote = gameMode === 'missing-words' && missingWordsIndices != null && (
+          missingWordsIndices.includes(note.startTime) ||
+          missingWordsIndices.includes(note.line.startTime)
+        );
         if (isHiddenNote) return null;
         return (
         <NoteBlock
