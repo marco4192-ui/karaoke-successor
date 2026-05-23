@@ -21,8 +21,6 @@ export interface PtmTransitionOverlayProps {
   onComplete?: () => void;
   /** Called when user clicks/presses Space to dismiss */
   onSkip?: () => void;
-  /** Called when the transition animation completes (alias for onSkip) */
-  onComplete?: () => void;
   /** Extra props silently accepted for forward-compat (avoids stale-cache build failures) */
   [key: string]: unknown;
 }
