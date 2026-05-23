@@ -102,6 +102,8 @@ export interface MobileGameState {
   tournamentMatchId: string | null;
   // Live leaderboard: companion player scores during singalong
   companionScores: CompanionScoreEntry[] | null;
+  // Current screen name from the desktop app
+  currentScreen?: string;
 }
 
 export interface GameResults {

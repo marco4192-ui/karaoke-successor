@@ -242,6 +242,77 @@ export function useRemoteControl({
                 }
                 break;
               }
+
+              // --- Volume shortcuts (no data payload needed) ---
+              case 'volume_up':
+                if (audioRef.current) {
+                  audioRef.current.volume = Math.min(1, audioRef.current.volume + 0.1);
+                }
+                break;
+
+              case 'volume_down':
+                if (audioRef.current) {
+                  audioRef.current.volume = Math.max(0, audioRef.current.volume - 0.1);
+                }
+                break;
+
+              // --- Seek shortcuts (no data payload needed) ---
+              case 'seek_forward':
+                if (audioRef.current) {
+                  audioRef.current.currentTime = Math.min(
+                    audioRef.current.duration || 0,
+                    audioRef.current.currentTime + 10
+                  );
+                }
+                if (videoRef.current) {
+                  videoRef.current.currentTime = Math.min(
+                    videoRef.current.duration || 0,
+                    videoRef.current.currentTime + 10
+                  );
+                }
+                break;
+
+              case 'seek_backward':
+                if (audioRef.current) {
+                  audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 10);
+                }
+                if (videoRef.current) {
+                  videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 10);
+                }
+                break;
+
+              // --- Toggle fullscreen ---
+              case 'fullscreen':
+                window.dispatchEvent(new Event('toggle-fullscreen'));
+                break;
+
+              // --- Simulated keyboard keys ---
+              case 'escape':
+                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+                break;
+
+              case 'tab':
+                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+                break;
+
+              // --- Navigation commands that stop the game and go back ---
+              case 'highscores':
+              case 'achievements':
+              case 'jukebox':
+              case 'dailyChallenge':
+              case 'editor':
+              case 'online':
+                stopRef.current();
+                onBackRef.current();
+                break;
+
+              // --- Party mode launchers: stop current game and go back ---
+              case 'start_ptm':
+              case 'start_br':
+              case 'start_tournament':
+                stopRef.current();
+                onBackRef.current();
+                break;
             }
           }
         }

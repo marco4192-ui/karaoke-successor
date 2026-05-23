@@ -16,8 +16,49 @@ interface HomeViewProps {
 export function MobileHomeView({ gameState, queue, onNavigate, onOpenChat }: HomeViewProps) {
   const { t } = useTranslation();
 
+  // Map screen names to display labels
+  const screenLabel = gameState.currentScreen
+    ? {
+        home: '🏠 Home', library: '📚 Library', party: '🎉 Party', 'party-setup': '🎉 Party Setup',
+        queue: '📋 Queue', profile: '👤 Profile', highscores: '🏆 Highscores',
+        achievements: '⭐ Achievements', jukebox: '🎵 Jukebox', settings: '⚙️ Settings',
+        editor: '📝 Editor', game: '🎮 Game', 'dailyChallenge': '🎯 Challenge',
+        online: '🌐 Online', results: '📊 Results', 'tournament-game': '🏆 Tournament',
+        'battle-royale-game': '👑 Battle Royale', 'pass-the-mic-game': '🎤 Pass the Mic',
+        'medley-game': '🎵 Medley', 'missing-words-game': '📝 Missing Words',
+        'blind-game': '🙈 Blind Karaoke', 'companion-singalong-game': '📱 Sing-Along',
+      }[gameState.currentScreen] || `📱 ${gameState.currentScreen}`
+    : null;
+
+  const modeLabel = gameState.gameMode
+    ? {
+        standard: '🎤 Single', duel: '⚔️ Duel', duet: '🎭 Duet',
+        'pass-the-mic': '🎤 Pass the Mic', 'companion-singalong': '📱 Sing-Along',
+        'companion-pass-the-mic': '🎤 C-PTM', medley: '🎵 Medley',
+        'missing-words': '📝 Missing Words', blind: '🙈 Blind Karaoke',
+        tournament: '🏆 Tournament', 'battle-royale': '👑 Battle Royale',
+        'rate-my-song': '⭐ Rate My Song', online: '🌐 Online',
+      }[gameState.gameMode] || gameState.gameMode
+    : null;
+
   return (
     <div className="p-4 space-y-4">
+      {/* Desktop Status Banner */}
+      {gameState.currentScreen && (
+        <div className="bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-white/10">
+          <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-white/40">{t('mobileViews.desktopScreen') || 'Desktop'}</p>
+            <p className="text-sm font-medium truncate">{screenLabel}</p>
+          </div>
+          {modeLabel && (
+            <Badge className="bg-purple-500/30 text-purple-300 border border-purple-500/50 text-xs shrink-0">
+              {modeLabel}
+            </Badge>
+          )}
+        </div>
+      )}
+
       {/* Now Playing */}
       {gameState.currentSong ? (
         <Card className="bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border-cyan-500/30">

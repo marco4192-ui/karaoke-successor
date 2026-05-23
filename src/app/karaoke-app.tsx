@@ -286,6 +286,30 @@ export default function KaraokeZERO() {
     syncSongLibrary();
   }, [syncSongLibrary, screen]);
 
+  // ── Sync current screen to mobile companions (every 2s) ──
+  useEffect(() => {
+    const syncScreen = async () => {
+      try {
+        await fetch('/api/mobile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'gamestate',
+            payload: {
+              ...useGameStore.getState().gameState,
+              currentScreen: screen,
+            },
+          }),
+        });
+      } catch {
+        // Non-critical — screen sync failure doesn't affect the app
+      }
+    };
+    syncScreen();
+    const interval = setInterval(syncScreen, 2000);
+    return () => clearInterval(interval);
+  }, [screen]);
+
   // ── Auto-focus management: focus first interactive element on screen change ──
   const mainRef = useRef<HTMLElement>(null);
   useAutoFocus(mainRef, screen);

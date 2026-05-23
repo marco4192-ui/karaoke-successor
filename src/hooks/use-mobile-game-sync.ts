@@ -13,11 +13,13 @@ export function useMobileGameSync(
   gameMode: string,
   songEnded: boolean = false,
   tournamentMatchId?: string | null,
+  currentScreen?: string,
 ) {
   const isPlayingRef = useRef(isPlaying);
   const gameModeRef = useRef(gameMode);
   const songEndedRef = useRef(songEnded);
   const tournamentMatchIdRef = useRef(tournamentMatchId);
+  const currentScreenRef = useRef(currentScreen);
   const [lastSyncError, setLastSyncError] = useState<string | null>(null);
   const syncErrorTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -37,7 +39,8 @@ export function useMobileGameSync(
     gameModeRef.current = gameMode;
     songEndedRef.current = songEnded;
     tournamentMatchIdRef.current = tournamentMatchId;
-  }, [isPlaying, gameMode, songEnded, tournamentMatchId]);
+    currentScreenRef.current = currentScreen;
+  }, [isPlaying, gameMode, songEnded, tournamentMatchId, currentScreen]);
 
   useEffect(() => {
     if (!song) return;
@@ -56,6 +59,8 @@ export function useMobileGameSync(
               songEnded: songEndedRef.current,
               // #10 Broadcast tournament match ID for spectator voting
               tournamentMatchId: tournamentMatchIdRef.current || null,
+              // Current screen name for remote control UI
+              currentScreen: currentScreenRef.current || null,
             },
           }),
         });

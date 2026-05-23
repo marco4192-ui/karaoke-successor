@@ -196,6 +196,85 @@ export function useGlobalRemoteControl({
         dispatchDirectionalKey('Enter');
         break;
 
+      // --- New screen navigation commands ---
+      case 'highscores':
+        navigateToScreen('highscores');
+        break;
+
+      case 'achievements':
+        navigateToScreen('achievements');
+        break;
+
+      case 'jukebox':
+        navigateToScreen('jukebox');
+        break;
+
+      case 'editor':
+        navigateToScreen('editor');
+        break;
+
+      case 'dailyChallenge':
+        navigateToScreen('dailyChallenge');
+        break;
+
+      case 'online':
+        navigateToScreen('online');
+        break;
+
+      // --- Toggle fullscreen ---
+      case 'fullscreen':
+        window.dispatchEvent(new Event('toggle-fullscreen'));
+        break;
+
+      // --- Simulated keyboard keys ---
+      case 'escape':
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        break;
+
+      case 'tab':
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+        break;
+
+      // --- Volume control via custom events ---
+      case 'volume_up':
+        window.dispatchEvent(new CustomEvent('remote-volume', { detail: { direction: 'up' } }));
+        break;
+
+      case 'volume_down':
+        window.dispatchEvent(new CustomEvent('remote-volume', { detail: { direction: 'down' } }));
+        break;
+
+      // --- Seek control via custom events ---
+      case 'seek_forward':
+        window.dispatchEvent(new CustomEvent('remote-seek', { detail: { direction: 'forward' } }));
+        break;
+
+      case 'seek_backward':
+        window.dispatchEvent(new CustomEvent('remote-seek', { detail: { direction: 'backward' } }));
+        break;
+
+      // --- Party mode launchers ---
+      case 'start_ptm':
+        navigateToScreen('party');
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('remote-party-mode', { detail: { mode: 'pass-the-mic' } }));
+        }, 300);
+        break;
+
+      case 'start_br':
+        navigateToScreen('party');
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('remote-party-mode', { detail: { mode: 'battle-royale' } }));
+        }, 300);
+        break;
+
+      case 'start_tournament':
+        navigateToScreen('party');
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('remote-party-mode', { detail: { mode: 'tournament' } }));
+        }, 300);
+        break;
+
       default:
     }
   }, [navigateToScreen]);

@@ -1,16 +1,55 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslation } from '@/lib/i18n/translations';
 
+// ===================== TYPES =====================
+type RemoteCommandType =
+  | 'play' | 'pause' | 'stop' | 'next' | 'previous' | 'restart'
+  | 'home' | 'library' | 'settings' | 'queue' | 'party' | 'profile'
+  | 'highscores' | 'achievements' | 'jukebox' | 'editor' | 'dailyChallenge' | 'online'
+  | 'up' | 'down' | 'left' | 'right' | 'enter'
+  | 'fullscreen' | 'escape' | 'tab'
+  | 'volume_up' | 'volume_down' | 'seek_forward' | 'seek_backward'
+  | 'start_ptm' | 'start_br' | 'start_tournament';
+
+// ===================== SCREEN NAVIGATION CONFIG =====================
+const SCREEN_BUTTONS: { key: RemoteCommandType; icon: string; labelKey: string; fallback: string }[] = [
+  { key: 'home',         icon: '\u{1F3E0}', labelKey: 'remoteControl.home',         fallback: 'Home' },
+  { key: 'library',      icon: '\u{1F4DA}', labelKey: 'remoteControl.library',      fallback: 'Library' },
+  { key: 'party',        icon: '\u{1F389}', labelKey: 'remoteControl.party',        fallback: 'Party' },
+  { key: 'queue',        icon: '\u{1F4CB}', labelKey: 'remoteControl.queue',        fallback: 'Queue' },
+  { key: 'profile',      icon: '\u{1F464}', labelKey: 'remoteControl.profile',      fallback: 'Profile' },
+  { key: 'highscores',   icon: '\u{1F3C6}', labelKey: 'remoteControl.highscores',   fallback: 'Highscores' },
+  { key: 'achievements', icon: '\u2B50',     labelKey: 'remoteControl.achievements', fallback: 'Achieve' },
+  { key: 'jukebox',      icon: '\u{1F3B5}', labelKey: 'remoteControl.jukebox',     fallback: 'Jukebox' },
+  { key: 'settings',     icon: '\u2699\uFE0F', labelKey: 'remoteControl.settings', fallback: 'Settings' },
+  { key: 'editor',       icon: '\u{1F4DD}', labelKey: 'remoteControl.editor',       fallback: 'Editor' },
+  { key: 'dailyChallenge', icon: '\u{1F3AF}', labelKey: 'remoteControl.dailyChallenge', fallback: 'Daily' },
+  { key: 'online',       icon: '\u{1F310}', labelKey: 'remoteControl.online',       fallback: 'Online' },
+];
+
+// ===================== HAPTIC FEEDBACK =====================
+function vibrate(pattern: number | number[] = 10) {
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    navigator.vibrate(pattern);
+  }
+}
+
+// ===================== HELPER: RESOLVE TRANSLATION =====================
+function tr(t: (key: string) => string, key: string, fallback: string): string {
+  const result = t(key);
+  return result === key ? fallback : result;
+}
+
 // ===================== REMOTE CONTROL VIEW =====================
-export function RemoteControlView({ 
+export function RemoteControlView({
   clientId,
-  onBack 
-}: { 
-  clientId: string | null; 
+  onBack
+}: {
+  clientId: string | null;
   onBack: () => void;
 }) {
   const { t } = useTranslation();
@@ -27,8 +66,9 @@ export function RemoteControlView({
     isLoading: true,
     error: null,
   });
-  
+
   const [commandSent, setCommandSent] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   const isMountedRef = useRef(true);
 
   // Poll remote control state
@@ -47,6 +87,10 @@ export function RemoteControlView({
             lockedByName: data.remoteControl.lockedByName,
             isLoading: false,
           }));
+          // Derive playing state from gamestate if available
+          if (data.remoteControl.gameState?.isPlaying !== undefined) {
+            setIsPlaying(data.remoteControl.gameState.isPlaying);
+          }
         }
       } catch {
         if (isMountedRef.current) {
@@ -54,7 +98,7 @@ export function RemoteControlView({
         }
       }
     };
-    
+
     pollRemoteState();
     const interval = setInterval(pollRemoteState, 2000);
     return () => {
@@ -62,13 +106,13 @@ export function RemoteControlView({
       isMountedRef.current = false;
     };
   }, [clientId]);
-  
+
   // Acquire remote control
   const acquireControl = async () => {
     if (!clientId) return;
-    
+
     setRemoteState(prev => ({ ...prev, isLoading: true, error: null }));
-    
+
     try {
       const response = await fetch('/api/mobile', {
         method: 'POST',
@@ -78,10 +122,10 @@ export function RemoteControlView({
           clientId,
         }),
       });
-      
+
       if (!response.ok) throw new Error();
       const data = await response.json();
-      
+
       if (data.success) {
         setRemoteState(prev => ({
           ...prev,
@@ -94,24 +138,24 @@ export function RemoteControlView({
         setRemoteState(prev => ({
           ...prev,
           isLoading: false,
-          error: data.message || t('remoteControl.acquireFailed'),
+          error: data.message || tr(t, 'remoteControl.acquireFailed', 'Failed to acquire control'),
         }));
       }
     } catch {
       setRemoteState(prev => ({
         ...prev,
         isLoading: false,
-        error: t('remoteControl.connectionError'),
+        error: tr(t, 'remoteControl.connectionError', 'Connection error'),
       }));
     }
   };
-  
+
   // Release remote control
   const releaseControl = async () => {
     if (!clientId) return;
-    
+
     setRemoteState(prev => ({ ...prev, isLoading: true }));
-    
+
     try {
       const response = await fetch('/api/mobile', {
         method: 'POST',
@@ -121,10 +165,10 @@ export function RemoteControlView({
           clientId,
         }),
       });
-      
+
       if (!response.ok) return;
       const data = await response.json();
-      
+
       if (data.success) {
         setRemoteState(prev => ({
           ...prev,
@@ -138,10 +182,10 @@ export function RemoteControlView({
       setRemoteState(prev => ({ ...prev, isLoading: false }));
     }
   };
-  
+
   // Send command (with debounce to ignore rapid duplicate presses)
   const lastCommandRef = useRef<{ command: string; timestamp: number } | null>(null);
-  const sendCommand = async (command: 'play' | 'pause' | 'stop' | 'next' | 'previous' | 'restart' | 'home' | 'library' | 'settings' | 'up' | 'down' | 'left' | 'right' | 'enter') => {
+  const sendCommand = useCallback(async (command: RemoteCommandType) => {
     if (!clientId || !remoteState.hasControl) return;
 
     // Debounce: ignore same command within 300ms
@@ -150,6 +194,8 @@ export function RemoteControlView({
       return;
     }
     lastCommandRef.current = { command, timestamp: now };
+
+    vibrate();
 
     try {
       const response = await fetch('/api/mobile', {
@@ -161,29 +207,29 @@ export function RemoteControlView({
           payload: { command },
         }),
       });
-      
+
       if (!response.ok) throw new Error();
       const data = await response.json();
-      
+
       if (data.success) {
         setCommandSent(command);
         setRemoteState(prev => ({ ...prev, error: null }));
+        // Update local play/pause state for toggle button
+        if (command === 'play') setIsPlaying(true);
+        if (command === 'pause') setIsPlaying(false);
         setTimeout(() => setCommandSent(null), 1500);
       } else {
-        // Show error from server (e.g., "no active game")
         setRemoteState(prev => ({
           ...prev,
-          error: data.message || t('remoteControl.commandFailed'),
+          error: data.message || tr(t, 'remoteControl.commandFailed', 'Command failed'),
         }));
       }
     } catch {
-      // Connection lost — show clear error with reconnection hint
       setRemoteState(prev => ({
         ...prev,
-        error: t('remoteControl.connectionLost'),
-        hasControl: false, // Release control since we can't communicate
+        error: tr(t, 'remoteControl.connectionLost', 'Connection lost'),
+        hasControl: false,
       }));
-      // Re-poll after a delay to detect when connection is restored
       setTimeout(() => {
         fetch(`/api/mobile?action=remotecontrol&clientId=${clientId}`)
           .then(r => { if (!r.ok) throw new Error(); return r.json(); })
@@ -202,8 +248,22 @@ export function RemoteControlView({
           .catch(() => {});
       }, 3000);
     }
+  }, [clientId, remoteState.hasControl, t]);
+
+  // Toggle play/pause
+  const togglePlayPause = useCallback(() => {
+    sendCommand(isPlaying ? 'pause' : 'play');
+  }, [isPlaying, sendCommand]);
+
+  // Flash-color helper based on command type
+  const getFlashClass = (cmd: string, sentCmd: string | null): string => {
+    if (sentCmd !== cmd) return '';
+    if (cmd === 'play' || cmd === 'pause') return 'bg-green-500/30';
+    if (cmd === 'stop' || cmd === 'escape') return 'bg-red-500/30';
+    if (cmd === 'fullscreen' || cmd === 'tab') return 'bg-purple-500/30';
+    return 'bg-cyan-500/30';
   };
-  
+
   // Loading state
   if (remoteState.isLoading && !remoteState.lockedBy) {
     return (
@@ -212,225 +272,355 @@ export function RemoteControlView({
       </div>
     );
   }
-  
+
   return (
-    <div className="p-4 max-w-md mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="sm" onClick={onBack} className="text-white/60">
-          {t('remoteControl.back')}
-        </Button>
-        <h2 className="text-xl font-bold">{t('remoteControl.title')}</h2>
-      </div>
-      
-      {/* Status Card */}
-      <Card className={`mb-6 ${remoteState.hasControl ? 'bg-cyan-500/10 border-cyan-500/30' : 'bg-white/5 border-white/10'}`}>
-        <CardContent className="py-4">
-          {remoteState.hasControl ? (
-            <div className="text-center">
-              <div className="text-3xl mb-2">🎮</div>
-              <p className="font-semibold text-cyan-400">{t('remoteControl.youHaveControl')}</p>
-              <p className="text-sm text-white/40 mt-1">{t('remoteControl.canControl')}</p>
-              <Button 
-                onClick={releaseControl}
-                variant="outline"
-                className="mt-4 border-red-500/50 text-red-400 hover:bg-red-500/10"
-              >
-                {t('remoteControl.releaseControl')}
-              </Button>
-            </div>
-          ) : remoteState.lockedBy ? (
-            <div className="text-center">
-              <div className="text-3xl mb-2">🔒</div>
-              <p className="font-semibold text-orange-400">{t('remoteControl.controlLocked')}</p>
-              <p className="text-sm text-white/40 mt-1">
-                {remoteState.lockedByName} {t('remoteControl.isControlling')}
-              </p>
-              <p className="text-xs text-white/30 mt-2">
-                {t('remoteControl.waitForRelease')}
-              </p>
-            </div>
-          ) : (
-            <div className="text-center">
-              <div className="text-3xl mb-2">🔓</div>
-              <p className="font-semibold text-white/60">{t('remoteControl.remoteAvailable')}</p>
-              <Button 
-                onClick={acquireControl}
-                className="mt-4 bg-gradient-to-r from-cyan-500 to-purple-500"
-                disabled={remoteState.isLoading}
-              >
-                {remoteState.isLoading ? t('remoteControl.acquiring') : t('remoteControl.takeControl')}
-              </Button>
-              {remoteState.error && (
-                <p className="text-red-400 text-sm mt-2">{remoteState.error}</p>
+    <div className="pb-24 overflow-y-auto">
+      <div className="p-4 max-w-md mx-auto">
+
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-4">
+          <Button variant="ghost" size="sm" onClick={onBack} className="text-white/60">
+            {tr(t, 'remoteControl.back', '\u2190 Back')}
+          </Button>
+          <h2 className="text-xl font-bold">{tr(t, 'remoteControl.title', '\u{1F3AE} Remote Control')}</h2>
+        </div>
+
+        {/* ========== Section 1: Status Card ========== */}
+        <Card className={`mb-4 ${remoteState.hasControl ? 'bg-cyan-500/10 border-cyan-500/30' : 'bg-white/5 border-white/10'}`}>
+          <CardContent className="py-4">
+            {remoteState.hasControl ? (
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <div className="text-3xl">{'\u{1F3AE}'}</div>
+                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                </div>
+                <p className="font-semibold text-cyan-400">{tr(t, 'remoteControl.youHaveControl', 'You have control!')}</p>
+                <p className="text-sm text-white/40 mt-1">{tr(t, 'remoteControl.canControl', 'You can now control the main app')}</p>
+                <Button
+                  onClick={releaseControl}
+                  variant="outline"
+                  className="mt-3 border-red-500/50 text-red-400 hover:bg-red-500/10"
+                >
+                  {tr(t, 'remoteControl.releaseControl', 'Release Control')}
+                </Button>
+              </div>
+            ) : remoteState.lockedBy ? (
+              <div className="text-center">
+                <div className="text-3xl mb-2">{'\u{1F512}'}</div>
+                <p className="font-semibold text-orange-400">{tr(t, 'remoteControl.controlLocked', 'Control is locked')}</p>
+                <p className="text-sm text-white/40 mt-1">
+                  {remoteState.lockedByName} {tr(t, 'remoteControl.isControlling', 'is currently controlling the app')}
+                </p>
+                <p className="text-xs text-white/30 mt-2">
+                  {tr(t, 'remoteControl.waitForRelease', 'Wait for them to release control')}
+                </p>
+              </div>
+            ) : (
+              <div className="text-center">
+                <div className="text-3xl mb-2">{'\u{1F513}'}</div>
+                <p className="font-semibold text-white/60">{tr(t, 'remoteControl.remoteAvailable', 'Remote control available')}</p>
+                <Button
+                  onClick={acquireControl}
+                  className="mt-3 bg-gradient-to-r from-cyan-500 to-purple-500"
+                  disabled={remoteState.isLoading}
+                >
+                  {remoteState.isLoading ? tr(t, 'remoteControl.acquiring', 'Acquiring...') : tr(t, 'remoteControl.takeControl', 'Take Control')}
+                </Button>
+                {remoteState.error && (
+                  <p className="text-red-400 text-sm mt-2">{remoteState.error}</p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* ========== Remote Control Buttons ========== */}
+        <div className={`space-y-4 ${!remoteState.hasControl ? 'opacity-40 pointer-events-none' : ''}`}>
+
+          {/* Error Banner */}
+          {remoteState.error && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+              <p className="text-red-400 text-sm text-center">{remoteState.error}</p>
+              {!remoteState.hasControl && (
+                <Button
+                  onClick={acquireControl}
+                  className="mt-2 w-full bg-gradient-to-r from-cyan-500 to-purple-500 text-sm"
+                >
+                  {tr(t, 'remoteControl.reconnect', 'Reconnect')}
+                </Button>
               )}
             </div>
           )}
-        </CardContent>
-      </Card>
-      
-      {/* Remote Control Buttons */}
-      <div className={`space-y-4 ${!remoteState.hasControl ? 'opacity-40 pointer-events-none' : ''}`}>
-        {/* Error Banner */}
-        {remoteState.error && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-            <p className="text-red-400 text-sm text-center">{remoteState.error}</p>
-            {!remoteState.hasControl && (
-              <Button
-                onClick={acquireControl}
-                className="mt-2 w-full bg-gradient-to-r from-cyan-500 to-purple-500 text-sm"
-              >
-                {t('remoteControl.reconnect')}
-              </Button>
-            )}
-          </div>
-        )}
-        
-        {/* Transport Controls */}
-        <Card className="bg-white/5 border-white/10">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">{t('remoteControl.playbackControl')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-4 gap-2">
-              <Button
-                onClick={() => sendCommand('previous')}
-                variant="outline"
-                className={`h-16 flex flex-col border-white/20 ${commandSent === 'previous' ? 'bg-cyan-500/30' : ''}`}
-              >
-                <span className="text-xl">⏮️</span>
-                <span className="text-xs">{t('remoteControl.prev')}</span>
-              </Button>
-              <Button
-                onClick={() => sendCommand('play')}
-                variant="outline"
-                className={`h-16 flex flex-col border-white/20 ${commandSent === 'play' ? 'bg-green-500/30' : ''}`}
-              >
-                <span className="text-xl">▶️</span>
-                <span className="text-xs">{t('remoteControl.play')}</span>
-              </Button>
-              <Button
-                onClick={() => sendCommand('pause')}
-                variant="outline"
-                className={`h-16 flex flex-col border-white/20 ${commandSent === 'pause' ? 'bg-yellow-500/30' : ''}`}
-              >
-                <span className="text-xl">⏸️</span>
-                <span className="text-xs">{t('remoteControl.pause')}</span>
-              </Button>
-              <Button
-                onClick={() => sendCommand('next')}
-                variant="outline"
-                className={`h-16 flex flex-col border-white/20 ${commandSent === 'next' ? 'bg-cyan-500/30' : ''}`}
-              >
-                <span className="text-xl">⏭️</span>
-                <span className="text-xs">{t('remoteControl.next')}</span>
-              </Button>
-            </div>
-            
-            {/* Stop and Restart */}
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              <Button
-                onClick={() => sendCommand('stop')}
-                variant="outline"
-                className={`h-12 flex items-center gap-2 border-red-500/30 ${commandSent === 'stop' ? 'bg-red-500/30' : ''}`}
-              >
-                <span>⏹️</span>
-                <span>{t('remoteControl.stop')}</span>
-              </Button>
-              <Button
-                onClick={() => sendCommand('restart')}
-                variant="outline"
-                className={`h-12 flex items-center gap-2 border-purple-500/30 ${commandSent === 'restart' ? 'bg-purple-500/30' : ''}`}
-              >
-                <span>🔄</span>
-                <span>{t('remoteControl.restart')}</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Navigation Controls */}
-        <Card className="bg-white/5 border-white/10">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">{t('remoteControl.navigation')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-2 mb-2">
-              <Button
-                onClick={() => sendCommand('home')}
-                variant="outline"
-                className={`h-14 flex flex-col border-white/20 ${commandSent === 'home' ? 'bg-cyan-500/30' : ''}`}
-              >
-                <span className="text-xl">🏠</span>
-                <span className="text-xs">{t('remoteControl.home')}</span>
-              </Button>
-              <Button
-                onClick={() => sendCommand('library')}
-                variant="outline"
-                className={`h-14 flex flex-col border-white/20 ${commandSent === 'library' ? 'bg-cyan-500/30' : ''}`}
-              >
-                <span className="text-xl">📚</span>
-                <span className="text-xs">{t('remoteControl.library')}</span>
-              </Button>
-              <Button
-                onClick={() => sendCommand('settings')}
-                variant="outline"
-                className={`h-14 flex flex-col border-white/20 ${commandSent === 'settings' ? 'bg-cyan-500/30' : ''}`}
-              >
-                <span className="text-xl">⚙️</span>
-                <span className="text-xs">{t('remoteControl.settings')}</span>
-              </Button>
-            </div>
-            {/* Directional Controls */}
-            <div className="flex flex-col items-center gap-1 mt-2">
-              <Button
-                onClick={() => sendCommand('up')}
-                variant="outline"
-                className={`w-20 h-10 flex items-center justify-center border-white/20 ${commandSent === 'up' ? 'bg-cyan-500/30' : ''}`}
-              >
-                <span className="text-lg">⬆️</span>
-              </Button>
-              <div className="grid grid-cols-3 gap-1 w-36">
+
+          {/* ========== Section 2: Transport Controls ========== */}
+          <Card className="bg-white/5 border-white/10">
+            <CardHeader className="pb-2 pt-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <span>{'\u{1F3B5}'}</span>
+                {tr(t, 'remoteControl.playbackControl', 'Playback Control')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {/* Row 1: Previous, Play/Pause, Next */}
+              <div className="grid grid-cols-3 gap-2">
                 <Button
-                  onClick={() => sendCommand('left')}
+                  onClick={() => sendCommand('previous')}
                   variant="outline"
-                  className={`h-10 flex items-center justify-center border-white/20 ${commandSent === 'left' ? 'bg-cyan-500/30' : ''}`}
+                  className={`h-14 flex flex-col border-white/20 min-h-[44px] ${getFlashClass('previous', commandSent)}`}
                 >
-                  <span className="text-lg">⬅️</span>
+                  <span className="text-xl leading-none">{'\u23EE\uFE0F'}</span>
+                  <span className="text-[10px] mt-0.5">{tr(t, 'remoteControl.prev', 'Prev')}</span>
                 </Button>
                 <Button
-                  onClick={() => sendCommand('enter')}
+                  onClick={togglePlayPause}
                   variant="outline"
-                  className={`h-10 flex items-center justify-center border-green-500/50 bg-green-500/10 ${commandSent === 'enter' ? 'bg-green-500/30' : ''}`}
+                  className={`h-14 flex flex-col border-cyan-500/40 bg-cyan-500/5 min-h-[44px] ${
+                    commandSent === 'play' ? 'bg-green-500/30 border-green-500/50' :
+                    commandSent === 'pause' ? 'bg-yellow-500/30 border-yellow-500/50' : ''
+                  }`}
                 >
-                  <span className="text-lg">✓</span>
+                  <span className="text-2xl leading-none">{isPlaying ? '\u23F8\uFE0F' : '\u25B6\uFE0F'}</span>
+                  <span className="text-[10px] mt-0.5">{isPlaying ? tr(t, 'remoteControl.pause', 'Pause') : tr(t, 'remoteControl.play', 'Play')}</span>
                 </Button>
                 <Button
-                  onClick={() => sendCommand('right')}
+                  onClick={() => sendCommand('next')}
                   variant="outline"
-                  className={`h-10 flex items-center justify-center border-white/20 ${commandSent === 'right' ? 'bg-cyan-500/30' : ''}`}
+                  className={`h-14 flex flex-col border-white/20 min-h-[44px] ${getFlashClass('next', commandSent)}`}
                 >
-                  <span className="text-lg">➡️</span>
+                  <span className="text-xl leading-none">{'\u23ED\uFE0F'}</span>
+                  <span className="text-[10px] mt-0.5">{tr(t, 'remoteControl.next', 'Next')}</span>
                 </Button>
               </div>
-              <Button
-                onClick={() => sendCommand('down')}
-                variant="outline"
-                className={`w-20 h-10 flex items-center justify-center border-white/20 ${commandSent === 'down' ? 'bg-cyan-500/30' : ''}`}
-              >
-                <span className="text-lg">⬇️</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Info */}
-        <div className="text-center text-xs text-white/40 mt-4">
-          <p>{t('remoteControl.oneDevice')}</p>
-          <p>{t('remoteControl.instantCommands')}</p>
-        </div>
-      </div>
 
+              {/* Row 2: Stop, Restart */}
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  onClick={() => sendCommand('stop')}
+                  variant="outline"
+                  className={`h-11 flex items-center justify-center gap-2 border-red-500/30 min-h-[44px] ${getFlashClass('stop', commandSent)}`}
+                >
+                  <span>{'\u23F9\uFE0F'}</span>
+                  <span className="text-xs">{tr(t, 'remoteControl.stop', 'Stop')}</span>
+                </Button>
+                <Button
+                  onClick={() => sendCommand('restart')}
+                  variant="outline"
+                  className={`h-11 flex items-center justify-center gap-2 border-purple-500/30 min-h-[44px] ${getFlashClass('restart', commandSent)}`}
+                >
+                  <span>{'\u{1F504}'}</span>
+                  <span className="text-xs">{tr(t, 'remoteControl.restart', 'Restart')}</span>
+                </Button>
+              </div>
+
+              {/* Row 3: Seek Back, Volume Down, Volume Up, Seek Forward */}
+              <div className="grid grid-cols-4 gap-2">
+                <Button
+                  onClick={() => sendCommand('seek_backward')}
+                  variant="outline"
+                  className={`h-11 flex flex-col border-white/20 min-h-[44px] ${getFlashClass('seek_backward', commandSent)}`}
+                >
+                  <span className="text-base leading-none">{'\u23EA'}</span>
+                  <span className="text-[9px] mt-0.5">-10s</span>
+                </Button>
+                <Button
+                  onClick={() => sendCommand('volume_down')}
+                  variant="outline"
+                  className={`h-11 flex flex-col border-white/20 min-h-[44px] ${getFlashClass('volume_down', commandSent)}`}
+                >
+                  <span className="text-base leading-none">{'\u{1F508}'}</span>
+                  <span className="text-[9px] mt-0.5">Vol-</span>
+                </Button>
+                <Button
+                  onClick={() => sendCommand('volume_up')}
+                  variant="outline"
+                  className={`h-11 flex flex-col border-white/20 min-h-[44px] ${getFlashClass('volume_up', commandSent)}`}
+                >
+                  <span className="text-base leading-none">{'\u{1F50A}'}</span>
+                  <span className="text-[9px] mt-0.5">Vol+</span>
+                </Button>
+                <Button
+                  onClick={() => sendCommand('seek_forward')}
+                  variant="outline"
+                  className={`h-11 flex flex-col border-white/20 min-h-[44px] ${getFlashClass('seek_forward', commandSent)}`}
+                >
+                  <span className="text-base leading-none">{'\u23E9'}</span>
+                  <span className="text-[9px] mt-0.5">+10s</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ========== Section 3: Screen Navigation ========== */}
+          <Card className="bg-white/5 border-white/10">
+            <CardHeader className="pb-2 pt-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <span>{'\u{1F4F1}'}</span>
+                {tr(t, 'remoteControl.screenNavigation', 'Screen Navigation')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-1.5">
+                {SCREEN_BUTTONS.map(({ key, icon, labelKey, fallback }) => (
+                  <Button
+                    key={key}
+                    onClick={() => sendCommand(key)}
+                    variant="outline"
+                    className={`h-12 flex flex-col border-white/15 min-h-[44px] text-[10px] ${getFlashClass(key, commandSent)}`}
+                  >
+                    <span className="text-base leading-none">{icon}</span>
+                    <span className="mt-0.5 leading-none">{tr(t, labelKey, fallback)}</span>
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ========== Section 4: Quick Actions ========== */}
+          <Card className="bg-white/5 border-white/10">
+            <CardHeader className="pb-2 pt-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <span>{'\u26A1'}</span>
+                {tr(t, 'remoteControl.quickActions', 'Quick Actions')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  onClick={() => sendCommand('fullscreen')}
+                  variant="outline"
+                  className={`h-11 flex flex-col border-white/20 min-h-[44px] ${getFlashClass('fullscreen', commandSent)}`}
+                >
+                  <span className="text-base leading-none">{'\u{1F4FA}'}</span>
+                  <span className="text-[10px] mt-0.5">{tr(t, 'remoteControl.fullscreen', 'Fullscreen')}</span>
+                </Button>
+                <Button
+                  onClick={() => sendCommand('escape')}
+                  variant="outline"
+                  className={`h-11 flex flex-col border-red-500/30 min-h-[44px] ${getFlashClass('escape', commandSent)}`}
+                >
+                  <span className="text-base leading-none">{'\u{1F6AB}'}</span>
+                  <span className="text-[10px] mt-0.5">{tr(t, 'remoteControl.escape', 'Back / Esc')}</span>
+                </Button>
+                <Button
+                  onClick={() => sendCommand('tab')}
+                  variant="outline"
+                  className={`h-11 flex flex-col border-white/20 min-h-[44px] ${getFlashClass('tab', commandSent)}`}
+                >
+                  <span className="text-base leading-none">{'\u{1F4C2}'}</span>
+                  <span className="text-[10px] mt-0.5">{tr(t, 'remoteControl.tab', 'Tab')}</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ========== Section 5: Directional Pad ========== */}
+          <Card className="bg-white/5 border-white/10">
+            <CardHeader className="pb-2 pt-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <span>{'\u{1F5B1}'}</span>
+                {tr(t, 'remoteControl.elementNav', 'Element Navigation')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col items-center gap-1">
+                {/* Up */}
+                <Button
+                  onClick={() => sendCommand('up')}
+                  variant="outline"
+                  className={`w-20 h-11 flex items-center justify-center border-white/20 min-h-[44px] ${getFlashClass('up', commandSent)}`}
+                >
+                  <span className="text-lg">{'\u2B06\uFE0F'}</span>
+                </Button>
+                {/* Left, Enter, Right */}
+                <div className="grid grid-cols-3 gap-1">
+                  <Button
+                    onClick={() => sendCommand('left')}
+                    variant="outline"
+                    className={`h-11 flex items-center justify-center border-white/20 min-h-[44px] ${getFlashClass('left', commandSent)}`}
+                  >
+                    <span className="text-lg">{'\u2B05\uFE0F'}</span>
+                  </Button>
+                  <Button
+                    onClick={() => sendCommand('enter')}
+                    variant="outline"
+                    className={`h-11 flex items-center justify-center border-green-500/50 bg-green-500/10 min-h-[44px] ${commandSent === 'enter' ? 'bg-green-500/30' : ''}`}
+                  >
+                    <span className="text-lg font-bold">{'\u2714'}</span>
+                  </Button>
+                  <Button
+                    onClick={() => sendCommand('right')}
+                    variant="outline"
+                    className={`h-11 flex items-center justify-center border-white/20 min-h-[44px] ${getFlashClass('right', commandSent)}`}
+                  >
+                    <span className="text-lg">{'\u27A1\uFE0F'}</span>
+                  </Button>
+                </div>
+                {/* Down */}
+                <Button
+                  onClick={() => sendCommand('down')}
+                  variant="outline"
+                  className={`w-20 h-11 flex items-center justify-center border-white/20 min-h-[44px] ${getFlashClass('down', commandSent)}`}
+                >
+                  <span className="text-lg">{'\u2B07\uFE0F'}</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ========== Section 6: Party Quick Start ========== */}
+          <Card className="bg-white/5 border-white/10">
+            <CardHeader className="pb-2 pt-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <span>{'\u{1F389}'}</span>
+                {tr(t, 'remoteControl.partyQuickStart', 'Party Quick Start')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button
+                onClick={() => sendCommand('party')}
+                variant="outline"
+                className={`w-full h-11 flex items-center justify-center gap-2 border-white/20 min-h-[44px] ${getFlashClass('party', commandSent)}`}
+              >
+                <span>{'\u{1F389}'}</span>
+                <span className="text-sm font-medium">{tr(t, 'remoteControl.goToParty', 'Go to Party Screen')}</span>
+              </Button>
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  onClick={() => sendCommand('start_ptm')}
+                  variant="outline"
+                  className={`h-12 flex flex-col border-yellow-500/30 min-h-[44px] ${getFlashClass('start_ptm', commandSent)}`}
+                >
+                  <span className="text-base leading-none">{'\u{1F3A4}'}</span>
+                  <span className="text-[10px] mt-0.5">{tr(t, 'remoteControl.passTheMic', 'Pass the Mic')}</span>
+                </Button>
+                <Button
+                  onClick={() => sendCommand('start_br')}
+                  variant="outline"
+                  className={`h-12 flex flex-col border-red-500/30 min-h-[44px] ${getFlashClass('start_br', commandSent)}`}
+                >
+                  <span className="text-base leading-none">{'\u2694\uFE0F'}</span>
+                  <span className="text-[10px] mt-0.5">{tr(t, 'remoteControl.battleRoyale', 'Battle Royale')}</span>
+                </Button>
+                <Button
+                  onClick={() => sendCommand('start_tournament')}
+                  variant="outline"
+                  className={`h-12 flex flex-col border-purple-500/30 min-h-[44px] ${getFlashClass('start_tournament', commandSent)}`}
+                >
+                  <span className="text-base leading-none">{'\u{1F3C6}'}</span>
+                  <span className="text-[10px] mt-0.5">{tr(t, 'remoteControl.tournament', 'Tournament')}</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Info */}
+          <div className="text-center text-xs text-white/40 mt-4 pb-4">
+            <p>{tr(t, 'remoteControl.oneDevice', 'Only one device can control the app at a time.')}</p>
+            <p>{tr(t, 'remoteControl.instantCommands', 'Commands are sent to the main screen instantly.')}</p>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }
