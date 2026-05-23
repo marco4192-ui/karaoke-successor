@@ -746,3 +746,35 @@ Stage Summary:
 - Root cause: wrong file was fixed previously (@/ path alias resolves to src/, not project root)
 - File modified: src/components/game/ptm-transition-overlay.tsx (7 insertions, 3 deletions)
 - Build should now pass - onComplete prop properly defined in the correct file
+---
+Task ID: 1
+Agent: Main Agent
+Task: Implement comprehensive keyboard navigation system for Karaoke ZERO
+
+Work Log:
+- Explored entire codebase structure: screens, hooks, navigation, keyboard handlers
+- Created `/home/z/my-project/karaoke-successor/src/hooks/use-roving-focus.ts` with 3 hooks:
+  - `useRovingFocus`: 2D arrow-key navigation with roving tabindex for grids/lists
+  - `useFocusTrap`: Tab focus trapping for modals/dialogs
+  - `useAutoFocus`: Auto-focus first interactive element on trigger change
+- Enhanced `use-keyboard-shortcuts.ts` with Backspace navigation (party-setup → party, results → library)
+- Modified 13 files to add keyboard navigation:
+  1. `src/app/karaoke-app.tsx` — Auto-focus on screen change
+  2. `src/components/screens/party-screen.tsx` — 2D arrow-key nav for party game mode cards
+  3. `src/components/screens/library/song-card.tsx` — tabIndex + focus-visible + keyboard activation
+  4. `src/components/screens/library/types.ts` — Added itemProps to SongCardProps
+  5. `src/components/screens/library/virtualized-song-grid.tsx` — 2D roving focus with virtualized scroll
+  6. `src/components/screens/library/library-screen.tsx` — Wired onSongSelect callback
+  7. `src/components/screens/library/song-start-modal.tsx` — Focus trap + auto-focus Start button
+  8. `src/components/game/unified-party-setup.tsx` — Auto-focus on mount
+  9. `src/components/game/unified-party-setup-game.tsx` — Roving focus for PlayerGrid + SongSelectionGrid
+  10. `src/components/game/unified-party-setup-mic.tsx` — Roving focus for InputModeSelector
+  11. `src/components/screens/queue-screen.tsx` — ARIA list role + focus-visible styles
+  12. `src/components/screens/queue/queue-item-card.tsx` — Arrow key nav + Enter/Delete handlers
+  13. `src/hooks/use-keyboard-shortcuts.ts` — Backspace shortcut
+
+Stage Summary:
+- All 14 files committed and pushed to origin/main (commit 4133278)
+- TypeScript build passes (0 new errors, only pre-existing ptm-transition-overlay duplicates)
+- 686 lines added, 37 lines removed across 14 files
+- Keyboard navigation covers: Library (song grid), Party (mode selection), Party Setup (players/songs/mics), Queue, Song Modal, Screen switching
