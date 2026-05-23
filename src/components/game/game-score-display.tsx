@@ -4,6 +4,12 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 
 interface GameScoreDisplayProps {
+  /** Whether duet mode is active (accepted for compat, rendered elsewhere) */
+  isDuetMode?: boolean;
+  /** Current score (accepted for compat, rendered via ProminentScoreDisplay) */
+  score?: number;
+  /** Current combo (accepted for compat, rendered via ProminentScoreDisplay) */
+  combo?: number;
   difficulty: string;
   activeChallenge: {
     difficulty: string;
@@ -20,6 +26,9 @@ interface GameScoreDisplayProps {
  * Mini score/combo has been moved to ProminentScoreDisplay for single-player.
  */
 export const GameScoreDisplay = React.memo(function GameScoreDisplay({
+  isDuetMode: _isDuetMode,
+  score: _score,
+  combo: _combo,
   difficulty,
   activeChallenge,
   timeRemaining,
