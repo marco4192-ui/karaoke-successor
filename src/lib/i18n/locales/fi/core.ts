@@ -89,7 +89,7 @@ export const coreTranslations = {
     pauseDesc: 'Haluatko jatkaa vai keskeyttää?',
     resume: 'Jatka',
     rematch: '🔄 Uusintaottelu',
-    setWinner: '🏆 Aseta voittaja automaattisesti',
+    setWinner: '🏆 Aseta voittaja manuaalisesti',
     abort: 'Keskeytä'
   },
 

@@ -236,19 +236,21 @@ export function PlayingView({
   const eliminationAnimationEnabled = game.settings.eliminationAnimation;
   const isEliminationCamera = eliminationAnimationEnabled && roundTimeLeft <= 10 && roundTimeLeft > 0;
 
-  // V5: Multi-pitch mic status — count players with active pitch detection
+  // V5: Multi-pitch mic status — count players whose pitch detector is initialized
   const activeMicPlayers = activePlayers.filter(p => p.playerType === 'microphone');
-  const activePitchCount = activeMicPlayers.filter(p => {
-    const pitch = playerPitchMap.get(p.id);
-    return pitch && pitch.isSinging !== false;
-  }).length;
+  // Count mic players that have been initialized (present in pitch map) without errors.
+  // This reflects the number of working mics, not just those currently singing.
+  // Per-player singing indicators on the cards already show real-time singing status.
+  const activePitchCount = activeMicPlayers.filter(p =>
+    playerPitchMap.has(p.id) && !multiPitchErrors.has(p.id)
+  ).length;
   const hasPitchErrors = multiPitchErrors.size > 0;
 
   // V1: Note highway visibility
   const showNoteHighway = game.settings.showNoteHighway && pitchStats !== null && visibleNotes.length > 0;
 
   return (
-    <div className={`h-screen flex flex-col relative overflow-hidden ${isEliminationCamera ? 'elimination-camera-active' : ''}`}>
+    <div className={`fixed inset-0 z-40 flex flex-col overflow-hidden ${isEliminationCamera ? 'elimination-camera-active' : ''}`}>
       {/* Hidden Audio Element */}
       <audio
         ref={audioRef}
@@ -270,7 +272,7 @@ export function PlayingView({
       />
 
       {/* V2: GameBackground (replaces raw <video> and dark overlay) */}
-      <div className="fixed inset-0 -z-10">
+      <div className="absolute inset-0 overflow-hidden" style={{ zIndex: -10 }}>
         <GameBackground
           effectiveSong={currentSong}
           showBackgroundVideo={game.settings.showVideoBackground}
@@ -293,11 +295,11 @@ export function PlayingView({
       </div>
 
       {/* Dark overlay on top of background */}
-      <div className="fixed inset-0 bg-black/30 -z-[5] pointer-events-none" />
+      <div className="absolute inset-0 bg-black/30 pointer-events-none" style={{ zIndex: -5 }} />
 
       {/* #10 Elimination Camera: Red vignette overlay in last 10 seconds */}
       {isEliminationCamera && (
-        <div className="fixed inset-0 pointer-events-none z-30 transition-opacity duration-1000"
+        <div className="absolute inset-0 pointer-events-none z-30 transition-opacity duration-1000"
           style={{
             background: `radial-gradient(ellipse at center, transparent 40%, rgba(220, 38, 38, ${0.3 * (1 - roundTimeLeft / 10)}) 100%)`,
           }}
@@ -306,7 +308,7 @@ export function PlayingView({
 
       {/* #10 Elimination Camera: Pulsing border in last 5 seconds */}
       {eliminationAnimationEnabled && isDangerZone && (
-        <div className="fixed inset-0 border-4 border-red-500/0 animate-elimination-pulse pointer-events-none z-30" />
+        <div className="absolute inset-0 border-4 border-red-500/0 animate-elimination-pulse pointer-events-none z-30" />
       )}
 
       {/* ─────────── Pause + Fullscreen ─────────── */}
@@ -345,8 +347,8 @@ export function PlayingView({
       )}
 
       {/* ─────────── V5: Multi-Pitch Mic Status ─────────── */}
-      {activeMicPlayers.length >= 2 && (
-        <div className="absolute top-[72px] left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+      {activeMicPlayers.length >= 2 && countdown === 0 && (
+        <div className="absolute top-10 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
           <div className={`flex items-center gap-1.5 rounded-full px-3 py-1 backdrop-blur-sm ${
             hasPitchErrors
               ? 'bg-amber-500/20 border border-amber-500/40'
@@ -704,7 +706,7 @@ export function PlayingView({
 
       {/* Danger Warning Overlay */}
       {eliminationAnimationEnabled && isDangerZone && (
-        <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-red-500/20 to-transparent pointer-events-none transition-opacity duration-500" />
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-red-500/20 to-transparent pointer-events-none transition-opacity duration-500" />
       )}
 
       {/* #7 Difficulty indicator */}

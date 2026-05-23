@@ -33,7 +33,7 @@ import {
 } from '@/components/screens';
 
 // Extracted components
-import { NavBar, FullscreenExitButton } from '@/components/home/navbar';
+import { NavBar, FullscreenToggleButton } from '@/components/home/navbar';
 import { PartySetupSection } from '@/components/party/party-setup-section';
 import { PartyGameScreens } from '@/components/party/party-game-screens';
 import { OfflineBanner } from '@/components/ui/offline-banner';
@@ -176,25 +176,12 @@ export default function KaraokeSuccessor() {
     }
   }, [closeDialog, party, resetGame, addPlayer, setGameMode, setSong, setScreen]);
 
-  const handleTournamentAutoWinner = useCallback(() => {
+  const handleTournamentManualWinner = useCallback(() => {
     closeDialog();
-    if (!party.currentTournamentMatch || !party.tournamentBracket) return;
-
-    const match = party.currentTournamentMatch;
-    const results = gameState.results;
-    const players = gameState.players;
-
-    const score1 = results?.players?.[0]?.score || players?.[0]?.score || 0;
-    const score2 = results?.players?.[1]?.score || players?.[1]?.score || 0;
-
-    const updatedBracket = recordMatchResult(party.tournamentBracket, match.id, score1, score2);
-    party.setTournamentBracket(updatedBracket);
-    party.setCurrentTournamentMatch(null);
-    party.setTournamentMatchAborted(false);
-
+    party.setTournamentMatchAborted(true);
     resetGame();
-    setScreen('tournament-game');
-  }, [closeDialog, party, gameState.results, gameState.players, resetGame, setScreen]);
+    setScreen('tournament');
+  }, [closeDialog, party, resetGame, setScreen]);
 
   const handlePartyModeEnd = useCallback(() => {
     closeDialog();
@@ -306,7 +293,7 @@ export default function KaraokeSuccessor() {
       )}
 
       {/* Fullscreen Exit Button for immersive screens without NavBar */}
-      {isFullscreen && IMMERSIVE_SCREENS.has(screen) && <FullscreenExitButton />}
+      {IMMERSIVE_SCREENS.has(screen) && <FullscreenToggleButton isFullscreen={isFullscreen} toggleFullscreen={toggleFullscreen} />}
 
       {/* Main Content */}
       <main className={`${
@@ -452,7 +439,7 @@ export default function KaraokeSuccessor() {
           onResume={handleResumeGame}
           onAbort={handleSongAbort}
           onTournamentRepeat={handleTournamentRepeat}
-          onTournamentAutoWinner={handleTournamentAutoWinner}
+          onTournamentManualWinner={handleTournamentManualWinner}
         />
       )}
 

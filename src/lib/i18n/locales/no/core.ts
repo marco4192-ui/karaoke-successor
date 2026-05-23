@@ -89,7 +89,7 @@ export const coreTranslations = {
     pauseDesc: 'Vil du fortsette eller avbryte?',
     resume: 'Fortsett',
     rematch: '🔄 Omkamp',
-    setWinner: '🏆 Sett vinner automatisk',
+    setWinner: '🏆 Sett vinner manuelt',
     abort: 'Avbryt'
   },
 

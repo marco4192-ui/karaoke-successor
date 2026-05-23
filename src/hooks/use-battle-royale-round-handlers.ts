@@ -39,6 +39,9 @@ interface UseBattleRoyaleRoundHandlersReturn {
   onSnippetEndRef: React.RefObject<(() => void) | null>;
   activePlayersRef: React.RefObject<BattleRoyalePlayer[]>;
   gameRef: React.RefObject<BattleRoyaleGame>;
+  /** Guard ref: set to true synchronously when a round ends to prevent the game loop
+   *  from calling onUpdateGame with stale 'playing' state during the transition. */
+  roundEndingRef: React.RefObject<boolean>;
 }
 
 /**
@@ -60,6 +63,9 @@ export function useBattleRoyaleRoundHandlers({
   const activePlayersRef = useRef(activePlayers);
   const gameRef = useRef(game);
   const mountedRef = useRef(true);
+  /** Guard: true while handleRoundEnd is processing or during the elimination timeout.
+   *  The game loop checks this ref and skips all onUpdateGame calls when true. */
+  const roundEndingRef = useRef(false);
   useEffect(() => {
     activePlayersRef.current = activePlayers;
     gameRef.current = game;
@@ -101,6 +107,10 @@ export function useBattleRoyaleRoundHandlers({
   }, [handleSnippetEnd]);
 
   const handleRoundEnd = useCallback(() => {
+    // Guard: prevent double-fire from rapid state changes (e.g. game loop reverting status)
+    if (roundEndingRef.current) return;
+    roundEndingRef.current = true;
+
     if (audioRef.current) {
       audioRef.current.pause();
     }
@@ -110,7 +120,10 @@ export function useBattleRoyaleRoundHandlers({
     audioHasPlayedRef.current = false;
     stopPitch();
 
-    if (activePlayers.length <= 1) return;
+    if (activePlayers.length <= 1) {
+      roundEndingRef.current = false;
+      return;
+    }
 
     const updatedGame = endRoundAndEliminate(game);
 
@@ -133,6 +146,9 @@ export function useBattleRoyaleRoundHandlers({
         setShowElimination(false);
         const advanced = advanceToNextRound(withFinale);
         onUpdateGame(advanced);
+        // Clear guard AFTER the next round state is committed, so the game loop
+        // won't re-enter with stale data during this synchronous block.
+        roundEndingRef.current = false;
       }, 4000);
       return;
     }
@@ -150,6 +166,8 @@ export function useBattleRoyaleRoundHandlers({
       if (updatedGame.winner) return;
       const nextGame = advanceToNextRound(updatedGame);
       onUpdateGame(nextGame);
+      // Clear guard AFTER the next round state is committed.
+      roundEndingRef.current = false;
     }, 4000);
   }, [activePlayers.length, onUpdateGame, stopPitch, audioRef, videoRef, audioHasPlayedRef, setShowElimination, game]);
 
@@ -167,6 +185,9 @@ export function useBattleRoyaleRoundHandlers({
   }, []);
 
   const handleStartRound = useCallback(() => {
+    // Safety net: clear round-ending guard when a new round explicitly starts
+    roundEndingRef.current = false;
+
     if (game.status === 'grand-finale-intro') {
       const advanced = advanceToNextRound(game);
       onUpdateGame(advanced);
@@ -256,5 +277,6 @@ export function useBattleRoyaleRoundHandlers({
     onSnippetEndRef,
     activePlayersRef,
     gameRef,
+    roundEndingRef,
   };
 }

@@ -7,19 +7,19 @@ interface SongPauseDialogProps {
   onResume: () => void;
   onAbort: () => void;
   onTournamentRepeat?: () => void;
-  onTournamentAutoWinner?: () => void;
+  onTournamentManualWinner?: () => void;
 }
 
 /**
  * Modal dialog shown when the user pauses during gameplay (Escape key or pause button).
- * Tournament matches get extra options (repeat, auto-winner).
+ * Tournament matches get extra options (repeat, manual winner).
  */
 export function SongPauseDialog({
   isTournamentMatch,
   onResume,
   onAbort,
   onTournamentRepeat,
-  onTournamentAutoWinner,
+  onTournamentManualWinner,
 }: SongPauseDialogProps) {
   const { t } = useTranslation();
   return (
@@ -49,7 +49,7 @@ export function SongPauseDialog({
                 {t('dialogs.rematch')}
               </button>
               <button
-                onClick={() => onTournamentAutoWinner?.()}
+                onClick={() => onTournamentManualWinner?.()}
                 className="w-full py-3 rounded-lg font-medium bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 transition-all"
               >
                 {t('dialogs.setWinner')}

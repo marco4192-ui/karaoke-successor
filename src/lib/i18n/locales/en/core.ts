@@ -89,7 +89,7 @@ export const coreTranslations = {
     pauseDesc: 'Do you want to continue or abort?',
     resume: 'Resume',
     rematch: '🔄 Rematch',
-    setWinner: '🏆 Set winner automatically',
+    setWinner: '🏆 Set winner manually',
     abort: 'Abort'
   },
 

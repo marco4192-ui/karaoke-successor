@@ -155,6 +155,11 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   const [currentTime, setCurrentTime] = useState(0);
   const gameLoopRef = useRef<number | null>(null);
   const lastCurrentTimeUpdateRef = useRef(0);
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   // Note performance tracking for display styles (fill-level, color-feedback, etc.)
   const notePerformanceRef = useRef<Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>>(new Map());
@@ -243,6 +248,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     onSnippetEndRef,
     activePlayersRef,
     gameRef,
+    roundEndingRef,
   } = useBattleRoyaleRoundHandlers({
     game,
     activePlayers,
@@ -345,6 +351,10 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     let lastTickTime = performance.now();
 
     const gameLoop = (timestamp: number) => {
+      // Guard: if a round is ending, skip ALL scoring and state updates.
+      // This prevents the game loop from reverting game.status back to 'playing'
+      // after handleRoundEnd has already set it to 'elimination'.
+      if (roundEndingRef.current) return;
       if (gameRef.current.status !== 'playing') return;
       // Skip scoring ticks while paused (audio is paused, don't score silence)
       if (pausedRef.current) { gameLoopRef.current = requestAnimationFrame(gameLoop); return; }
@@ -481,7 +491,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
           setNotePerformance(notePerformanceRef.current);
         }
 
-        if (scoreChanged) {
+        if (scoreChanged && mountedRef.current) {
           onUpdateGameRef.current(batchedGame);
         }
       }

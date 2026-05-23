@@ -89,7 +89,7 @@ export const coreTranslations = {
     pauseDesc: '続行しますか、または中止しますか？',
     resume: '再開',
     rematch: '🔄 再戦',
-    setWinner: '🏆 勝者を自動設定',
+    setWinner: '🏆 勝者を手動設定',
     abort: '中止'
   },
 

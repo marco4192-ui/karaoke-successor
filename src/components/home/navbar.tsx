@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/lib/i18n/translations';
 import { MusicIcon, LibraryIcon, PartyIcon, UserIcon, QueueIcon, StarIcon, TrophyIcon, SettingsIcon } from '@/components/icons';
 import type { Screen } from '@/types/screens';
-import { exitFullscreen } from '@/hooks/use-app-effects';
+
 
 interface NavBarProps {
   screen: Screen;
@@ -84,17 +84,23 @@ export function NavBar({ screen, setScreen, queueLength, isMounted, isFullscreen
   );
 }
 
-// ===================== FULLSCREEN EXIT BUTTON =====================
-export function FullscreenExitButton() {
+// ===================== FULLSCREEN TOGGLE BUTTON (for immersive screens) =====================
+export function FullscreenToggleButton({ isFullscreen, toggleFullscreen }: { isFullscreen: boolean; toggleFullscreen: () => void }) {
   return (
     <button
-      onClick={() => exitFullscreen()}
+      onClick={toggleFullscreen}
       className="fixed top-4 right-4 z-50 p-3 rounded-full bg-black/50 backdrop-blur-sm border border-white/20 hover:bg-black/70 hover:border-white/40 transition-all group"
-      title="Exit Fullscreen (ESC)"
+      title={isFullscreen ? 'Exit Fullscreen (ESC)' : 'Enter Fullscreen'}
     >
-      <svg className="w-5 h-5 text-white/70 group-hover:text-white transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
-      </svg>
+      {isFullscreen ? (
+        <svg className="w-5 h-5 text-white/70 group-hover:text-white transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+        </svg>
+      ) : (
+        <svg className="w-5 h-5 text-white/70 group-hover:text-white transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+        </svg>
+      )}
     </button>
   );
 }
