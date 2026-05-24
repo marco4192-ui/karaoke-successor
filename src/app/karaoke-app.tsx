@@ -621,10 +621,10 @@ export default function KaraokeZERO() {
             <div className="space-y-3">
               {match.player1 && (
                 <button
-                  onClick={() => handleTournamentPickWinner(match.player1.id)}
+                  onClick={() => handleTournamentPickWinner(match.player1!.id)}
                   className="w-full py-4 text-sm bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl flex items-center gap-3 px-4 transition-all"
                 >
-                  {party.currentTournamentMatch.player1.avatar ? (
+                  {match.player1!.avatar ? (
                     <img src={match.player1.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
                   ) : (
                     <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{ backgroundColor: match.player1.color }}>
@@ -637,10 +637,10 @@ export default function KaraokeZERO() {
               )}
               {match.player2 && (
                 <button
-                  onClick={() => handleTournamentPickWinner(match.player2.id)}
+                  onClick={() => handleTournamentPickWinner(match.player2!.id)}
                   className="w-full py-4 text-sm bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl flex items-center gap-3 px-4 transition-all"
                 >
-                  {party.currentTournamentMatch.player2.avatar ? (
+                  {match.player2!.avatar ? (
                     <img src={match.player2.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
                   ) : (
                     <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{ backgroundColor: match.player2.color }}>
@@ -660,7 +660,8 @@ export default function KaraokeZERO() {
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Party Mode Leave Warning */}
       {activeDialog === 'party-leave' && (

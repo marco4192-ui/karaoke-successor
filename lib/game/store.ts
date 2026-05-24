@@ -148,6 +148,7 @@ const initialGameState: GameState = {
   detectedPitch: null,
   isBlindSection: false,
   blindHardcore: false,
+  hardcoreMissingWords: false,
   missingWordsIndices: [],
   currentLineIndex: 0,
   results: null,
