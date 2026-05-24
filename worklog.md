@@ -1,57 +1,118 @@
-# Worklog - Karaoke Successor Fix Session
+---
+Task ID: 1
+Agent: main
+Task: Fix 1 - Battle Royale crashes after first round (React error #185)
 
-## Session Start: 2026-05-26
+Work Log:
+- Analyzed React error #185 (Maximum update depth exceeded / cross-component setState during render)
+- Added `mountedRef` declaration to `use-battle-royale-game.ts` (was missing, referenced in game loop)
+- Added unmount guard in countdown timeout to prevent setState after unmount
+- Changed countdown condition from `||` to `&&` to prevent PlayingView rendering during state transitions
 
-### Kontext
-- Fortsetzung der vorherigen Code-Review-Session
-- 7 CRITICAL, 10 HIGH, 25+ MEDIUM, 15+ LOW Issues identifiziert
-- Root `app/` überschattet `src/app/` (Next.js lädt root `app/` zuerst)
-- Alle Fixes stehen noch aus
+Stage Summary:
+- 3 targeted changes across 2 files
+- Fixed the crash by preventing stale state updates during round transitions
+---
+Task ID: 2+3
+Agent: main
+Task: Fix 2 (microphones not active) + Fix 3 (mic badge position)
+
+Work Log:
+- Changed mic re-init guard from `managerRef.current && isInitializedRef.current` to `managerRef.current` in use-multi-pitch-detector.ts
+- Changed badge position from `top-3` to `top-0` in playing-view.tsx
+
+Stage Summary:
+- Fixed mic re-initialization after round transitions (singleton manager was in stale state)
+- Aligned mic status badge to top edge of screen
+---
+Task ID: 4
+Agent: main
+Task: Fix 4 - Tournament manual winner overlay
+
+Work Log:
+- Added `manualWinnerMatch` state to TournamentBracketView
+- Added "Set Winner Manually" button below "Start Next Match" in bracket view
+- Added manual winner dialog overlay matching MatchAbortDialog style
+- Fixed onManualWinner handler to look up match from bracket instead of currentTournamentMatch
+
+Stage Summary:
+- Manual winner selection now works from bracket view without redirecting to settings
+- Uses overlay dialog instead of navigation
+---
+Task ID: 5+6+7
+Agent: main
+Task: Fix 5 (Blind/MW lyrics logic), Fix 6 (hide notes in blind), Fix 7 (hardcore mode)
+
+Work Log:
+- Fixed next line preview to also hide for Blind mode (was only hiding for Missing Words)
+- Updated duet-note-highway.tsx PlayerLyrics to hide preview in blind sections
+- Removed incorrect `isHiddenNote` check from note-highway.tsx (notes hidden only in blind sections now)
+- Added `hardcoreMissingWords` parameter to useGameModes hook
+- Fixed Missing Words hardcore effect to use correct `hardcoreMissingWords` value (was using blind hardcore)
+- Added `hardcoreMissingWords` store selector in game-screen-hook.ts
+
+Stage Summary:
+- Blind Karaoke: text always visible, notes hidden during blind passages
+- Missing Words: notes always visible, text hidden for specific words
+- Hardcore mode for Missing Words now uses its own setting correctly
 
 ---
+Task ID: batch5
+Agent: Main Agent (4 parallel sub-agents)
+Task: 5 improvements — Console, testIds, editor covers, PTM pitch, party terminator
 
-## Task 1: Root app/ vs src/app/ Vergleich
-**Status: ✅ Abgeschlossen (keine Aktion nötig)**
-- Root `app/` wurde bereits in Commit `b5d366a7` gelöscht
-- `src/app/` ist eindeutig fortgeschrittener (i18n, Retry, Rate-Limit, Retro-Theme)
-- Zwei Dateien existieren NUR in `src/app/`: `api/lib/retry.ts`, `api/harmonize/route.ts`
+Work Log:
+- Analyzed project structure: 200+ files across components, lib, hooks, app
+- Identified all relevant files for 5 tasks via parallel exploration agent
 
-## Task 2: CRITICAL Issues — Überprüfung und Fixes
+Task 1 — Console aktivieren:
+- Added `compiler: { removeConsole: false }` to next.config.ts
+- Next.js 14+ strips console.log/error/warn in production by default
+- Now all console output is visible in DevTools for debugging
 
-### False Positives (bereits korrekt im Code)
-| Issue | Datei | Grund |
-|-------|-------|-------|
-| Daily Challenge "failed=completed" | `daily-challenge.ts:710` | `targetMet` wird korrekt berechnet, `completed: targetMet` |
-| Fullscreen Icon identisch | `fullscreen-button.tsx:72` | Beide SVGs sind unterschiedlich (shrink vs expand) |
-| playerColor ignoriert | `note-highway.tsx:308` | `playerColor ?? default` wird korrekt verwendet |
-| response.json() ohne try/catch | `cover-generator.ts`, `song-identifier.ts` | Beide haben bereits try/catch |
-| Pitch Detector Duplikat | `pitch-detector.ts:292/302` | `frequencyToMidi` nur einmal importiert |
-| Windows Pfad-Separator | `lib.rs:129` | Verwendet bereits `std::path::MAIN_SEPARATOR` |
+Task 2 — data-testid / aria-label:
+- Added ~60 unique data-testid attributes across 13 files
+- Editor: search, refresh, back, filters, select-mode, batch-suggest, song cards
+- Party: mode buttons (9 dynamic), setup back/start/change-song
+- Home: navigation buttons, profile buttons (dynamic)
+- Library: editor button
+- Settings: tab bar (9 dynamic), save button
+- Game HUD: pause, fullscreen, audio effects slider, reverb/echo sliders, presets
+- PTM: start, back, duration, difficulty, random-switches, player selection, song selection
 
-### Echte Fixes
-| # | Schwere | Datei | Fix |
-|---|---------|-------|-----|
-| 1 | CRITICAL | `src/lib/file-storage-media.ts` | **Delayed Revocation**: Blob-URLs werden bei Cache-Eviction nicht sofort revoked, sondern mit 30s Timeout. Verhindert Playback-Abbrüche bei aktiven `<audio>`-Elementen. |
-| 2 | CRITICAL | `src/lib/parsers/multi-format-import.ts` | **BPM-Parsing Robustheit**: Unterstützt jetzt sowohl `beat=bpm` als auch plain-Number-Format. Fallback auf `[120]` wenn Parsing leer. Filtert negative/unmögliche BPMs. |
-| 3 | HIGH | `src-tauri/src/audio/commands.rs` | **error_ch Reference Pattern**: `let error_ch: &mut Option<...> = &mut None` → `let mut error_ch: Option<...> = None`. Alle 3 Referenz-Stellen korrigiert. |
+Task 3 — Editor Cover-Bilder:
+- Added useEffect hook that calls ensureSongUrls() for all editor songs
+- Processes songs in batches of 20 for performance
+- Only updates state when cover URLs actually change (avoids infinite loops)
+- Safe for browser (ensureSongUrls is no-op) and Tauri (converts relative paths)
+- Error handling with console.warn on failures; fallback emoji always visible
 
-## Task 3: Zusätzliche Issues (Deep Scan)
+Task 4 — Pass-the-Mic Pitch:
+- Added debug logging to startGame(): logs mic ID, success/failure, retry attempts
+- Added retry mechanism: if switchMicrophone fails, wait 500ms and retry once
+- Added toast notification when pitch detection completely fails
+- Added logging to use-ptm-scoring.ts: logs when pitchResult is null, logs shouldSkipPitch reasons
+- Added logging to use-pitch-detector.ts: logs successful/failed device initialization with device ID
+- Mic handoff effect: added logging for player mic switches
 
-| # | Schwere | Datei | Fix |
-|---|---------|-------|-----|
-| 4 | HIGH | `src/components/game/medley/medley-game-hook.ts` | **i18n**: 3 hartcodierte deutsche Strings → `t('medley.noAudioAvailable')` / `t('medley.audioLoadFailed')`. Keys zu en/de locales hinzugefügt. |
-| 5 | MEDIUM | `src/components/screens/game-screen-hook.ts` | **Debug stubs**: `console.log` → `console.debug` + eslint-disable-Kommentare + TODO für echte UI-Warnings. |
+Task 5 — Party-Mode Terminator:
+- Rewrote handleSongAbort() in karaoke-app.tsx with two-tier approach:
+  - Tier 1 (preserve): Tournament match abort, competitive abort, medley abort, rate-my-song abort
+  - Tier 2 (nuclear): All other cases → party.resetPartyState() + resetGame() + setGameMode('standard')
+- Added console.log to resetPartyState() for debugging
+- Hardened computePartyModeActive() in use-screen-navigation.ts:
+  - Added checks for companionPlayers, cptmPlayers, selectedGameMode
+  - Relaxed PTM check (removed passTheMicSong requirement)
 
-## Task 4: Tauri Capabilities Review
-- `$HOME/**` Pattern gibt volles Lesezugriff auf Home-Verzeichnis
-- Für eine Karaoke-Desktop-App akzeptabel (Benutzer benötigen Zugriff auf Musik-Dateien überall)
-- Schreibzugriff auf `$HOME/**` ist bedenklicher, aber Tauri-spezifisch geregelt
-- **Beschluss: Akzeptiert** — Alternative wäre spezifischere Musik-Ordner-Pfade, die zu Restriktionen führen
+TypeScript check: 0 new errors (all errors pre-existing in unrelated files)
+Conflicts resolved during rebase (party-screen.tsx, unified-party-setup.tsx — merged both accessibility + test IDs)
 
----
-
-## Zusammenfassung
-- **3 echte Code-Fixes** angewendet (blob-cache, BPM-parsing, Rust error_ch)
-- **2 Qualitätsoptimierungen** (i18n, console.log→debug)
-- **8 False Positives** identifiziert und dokumentiert
-- Root `app/` Bereinigung bestätigt (bereits erledigt)
+Stage Summary:
+- 20 files changed, 243 insertions, 82 deletions
+- Commit: d0f0d1f8 pushed to main
+- All 5 tasks implemented:
+  1. Console: Console output now visible in production builds
+  2. Test IDs: ~60 data-testid + aria-label attributes added
+  3. Editor covers: URL restoration via ensureSongUrls()
+  4. PTM pitch: Robustness + debug logging + retry + toast
+  5. Party terminator: Nuclear resetPartyState() in handleSongAbort()
