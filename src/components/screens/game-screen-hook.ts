@@ -63,6 +63,7 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   const setMissingWordsIndices = useGameStore(s => s.setMissingWordsIndices);
   const setBlindSection = useGameStore(s => s.setBlindSection);
   const setBlindHardcore = useGameStore(s => s.setBlindHardcore);
+  const setHardcoreMissingWords = useGameStore(s => s.setHardcoreMissingWords);
   const blindFrequency = usePartyStore(s => s.competitiveGame?.settings?.blindFrequency);
   const missingWordFrequency = usePartyStore(s => s.competitiveGame?.settings?.missingWordFrequency);
   const blindHardcore = usePartyStore(s => s.competitiveGame?.settings?.hardcore);
@@ -324,6 +325,7 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     sortedLines: timingData?.sortedLines,
     setBlindSection,
     setBlindHardcore,
+    setHardcoreMissingWords,
     setMissingWordsIndices,
     onBlindWarning,
     onMissingWordsWarning,

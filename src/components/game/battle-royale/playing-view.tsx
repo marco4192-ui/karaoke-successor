@@ -376,8 +376,8 @@ export function PlayingView({
       )}
 
       {/* ─────────── V5: Multi-Pitch Mic Status ─────────── */}
-      {activeMicPlayers.length >= 2 && countdown === 0 && (
-        <div className="absolute top-10 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+      {activeMicPlayers.length >= 2 && (
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
           <div className={`flex items-center gap-1.5 rounded-full px-3 py-1 backdrop-blur-sm ${
             hasPitchErrors
               ? 'bg-amber-500/20 border border-amber-500/40'

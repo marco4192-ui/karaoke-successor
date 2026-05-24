@@ -17,6 +17,7 @@ interface UseGameModesParams {
   sortedLines?: LyricLine[];
   setBlindSection: (_isBlind: boolean) => void;
   setBlindHardcore?: (_isHardcore: boolean) => void;
+  setHardcoreMissingWords?: (_isHardcore: boolean) => void;
   setMissingWordsIndices: (_indices: number[]) => void;
   /** Callback when a blind section starts (for warning signals) */
   onBlindWarning?: (_countdown: number, _isActive: boolean) => void;
@@ -155,6 +156,7 @@ export function useGameModes({
   sortedLines,
   setBlindSection,
   setBlindHardcore,
+  setHardcoreMissingWords,
   setMissingWordsIndices,
   onBlindWarning,
   onMissingWordsWarning,
@@ -202,6 +204,13 @@ export function useGameModes({
       setBlindHardcore(hardcore ?? false);
     }
   }, [gameMode, hardcore, setBlindHardcore]);
+
+  // Set hardcore Missing Words mode on store when MW game starts
+  useEffect(() => {
+    if (gameMode === 'missing-words' && setHardcoreMissingWords) {
+      setHardcoreMissingWords(hardcore ?? false);
+    }
+  }, [gameMode, hardcore, setHardcoreMissingWords]);
 
   // ── BLIND KARAOKE MODE — Generate pattern (once per song) ──
   // Decoupled from isGameActive so the pattern is ready before playback starts.

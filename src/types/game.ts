@@ -206,6 +206,8 @@ export interface GameState {
   isBlindSection: boolean;
   /** Hardcore blind mode: text hidden when notes visible, and vice versa */
   blindHardcore: boolean;
+  /** Hardcore Missing Words mode: hidden words stay hidden until song ends */
+  hardcoreMissingWords: boolean;
   missingWordsIndices: number[];
   currentLineIndex: number;
   results: GameResult | null;

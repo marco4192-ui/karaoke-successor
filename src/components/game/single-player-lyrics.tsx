@@ -25,6 +25,8 @@ export interface SinglePlayerLyricsProps {
   isBlindSection?: boolean;
   /** Hardcore blind mode: text hidden when notes visible */
   isBlindHardcore?: boolean;
+  /** Hardcore Missing Words mode: hidden words stay hidden until song ends */
+  hardcoreMissingWords?: boolean;
   /** Preview time in milliseconds (how early to show next line) */
   previewTime?: number;
   /** Lyrics size setting: 'small', 'medium', or 'large' */
@@ -46,6 +48,7 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
   missingWordsIndices = [],
   isBlindSection = false,
   isBlindHardcore = false,
+  hardcoreMissingWords = false,
   previewTime = 2000,
   lyricsSize,
 }: SinglePlayerLyricsProps) {
@@ -129,6 +132,15 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
 
   if (!currentLine) return null;
 
+  // Check if the next line contains hidden words (for Missing Words mode preview)
+  const nextLineHasHiddenWords = useMemo(() => {
+    if (!nextLine || gameMode !== 'missing-words' || missingWordsIndices.length === 0) return false;
+    // Passage mode: entire line hidden
+    if (missingWordsIndices.includes(nextLine.startTime)) return true;
+    // Word/both mode: individual notes hidden
+    return nextLine.notes.some(n => missingWordsIndices.includes(n.startTime));
+  }, [nextLine, gameMode, missingWordsIndices]);
+
   // Calculate flying animation progress (0 = start, 1 = arrived at first note)
   const flyProgress = isFlying ? Math.max(0, Math.min(1, 1 - (timeUntilSing / previewTime))) : 0;
 
@@ -198,13 +210,14 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
             missingWordsIndices={missingWordsIndices}
             isBlindSection={isBlindSection}
             isBlindHardcore={isBlindHardcore}
+            hardcoreMissingWords={hardcoreMissingWords}
             firstNoteRef={firstNoteRefCallback}
             lyricsSize={lyricsSize}
           />
         </div>
 
-        {/* Next Line Preview */}
-        {nextLine && (
+        {/* Next Line Preview — hidden in Missing Words mode when next line contains hidden words */}
+        {nextLine && !nextLineHasHiddenWords && (
           <p className={`${lyricsSize === 'large' ? 'text-xl md:text-2xl' : lyricsSize === 'small' ? 'text-base md:text-lg' : 'text-base md:text-lg'} text-center text-white/40 mt-3`} style={{ whiteSpace: 'pre-wrap' }}>
             {nextLine.notes.map(n => n.lyric).join('')}
           </p>

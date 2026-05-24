@@ -10,6 +10,8 @@ import { useGlobalRemoteControl } from '@/hooks/use-global-remote-control';
 import { useMobileClient } from '@/hooks/use-mobile-client';
 import { getAllSongs } from '@/lib/game/song-library';
 import { generatePtmSegments } from '@/lib/game/ptm-segments';
+import { recordMatchResult } from '@/lib/game/tournament';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // Screen type & constants (canonical source)
 import type { Screen } from '@/types/screens';
@@ -43,6 +45,7 @@ export default function KaraokeZERO() {
   // ── Store hooks (must be called before any conditional returns) ──
   const { gameState, setSong, setGameMode, setChallengeMode, setActiveProfile, profiles, queue, resetGame, addPlayer, setResults, pauseGame, resumeGame } = useGameStore();
   const party = usePartyStore();
+  const { t } = useTranslation();
 
   // ── Screen navigation (screen state + party-mode guard) ──
   const { screen, setScreen, isPartyModeActive, navigateWithGuard, pendingNavigation, setPendingNavigation } = useScreenNavigation(party);
@@ -61,6 +64,9 @@ export default function KaraokeZERO() {
 
   // ── Ctrl-Q: flag to auto-play first queue item ──
   const [autoPlayNext, setAutoPlayNext] = useState(false);
+
+  // ── Tournament manual winner overlay ──
+  const [showTournamentWinnerOverlay, setShowTournamentWinnerOverlay] = useState(false);
 
   useEffect(() => {
     setActiveDialog(party.pauseDialogAction);
@@ -189,13 +195,34 @@ export default function KaraokeZERO() {
 
   const handleTournamentManualWinner = useCallback(() => {
     closeDialog();
-    if (!party.currentTournamentMatch || !party.tournamentBracket) return;
+    // Show overlay instead of auto-determining winner
+    setShowTournamentWinnerOverlay(true);
+  }, [closeDialog]);
 
-    // Navigate to bracket view with abort dialog showing so the user can manually pick a winner
-    party.setTournamentMatchAborted(true);
+  const handleTournamentPickWinner = useCallback((winnerId: string) => {
+    if (!party.currentTournamentMatch || !party.tournamentBracket) return;
+    const match = party.currentTournamentMatch;
+    const isP1Winner = winnerId === match.player1?.id;
+
+    // Use 100 for winner, 0 for loser
+    const updatedBracket = recordMatchResult(
+      party.tournamentBracket,
+      match.id,
+      isP1Winner ? 100 : 0,
+      isP1Winner ? 0 : 100,
+    );
+    party.setTournamentBracket(updatedBracket);
+    party.setCurrentTournamentMatch(null);
+    party.setTournamentMatchAborted(false);
+
+    setShowTournamentWinnerOverlay(false);
     resetGame();
     setScreen('tournament-game');
-  }, [closeDialog, party, resetGame, setScreen]);
+  }, [party, resetGame, setScreen]);
+
+  const handleTournamentCancelWinner = useCallback(() => {
+    setShowTournamentWinnerOverlay(false);
+  }, []);
 
   const handlePartyModeEnd = useCallback(() => {
     closeDialog();
@@ -603,6 +630,63 @@ export default function KaraokeZERO() {
           onTournamentRepeat={handleTournamentRepeat}
           onTournamentManualWinner={handleTournamentManualWinner}
         />
+      )}
+
+      {/* Tournament Manual Winner Overlay */}
+      {showTournamentWinnerOverlay && party.currentTournamentMatch && (() => {
+        const match = party.currentTournamentMatch;
+        return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="bg-zinc-900 border border-amber-500/30 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="text-4xl mb-2">🏆</div>
+              <h2 className="text-xl font-bold text-white">{t('matchAbort.selectWinner')}</h2>
+              <p className="text-sm text-white/50 mt-1">
+                {match.player1?.name} vs {match.player2?.name}
+              </p>
+            </div>
+            <div className="space-y-3">
+              {match.player1 && (
+                <button
+                  onClick={() => handleTournamentPickWinner(match.player1.id)}
+                  className="w-full py-4 text-sm bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl flex items-center gap-3 px-4 transition-all"
+                >
+                  {party.currentTournamentMatch.player1.avatar ? (
+                    <img src={match.player1.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{ backgroundColor: match.player1.color }}>
+                      {match.player1.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <span className="font-medium flex-1 text-left">{match.player1.name}</span>
+                  <span className="text-amber-400 font-bold">{t('matchAbort.asWinner')}</span>
+                </button>
+              )}
+              {match.player2 && (
+                <button
+                  onClick={() => handleTournamentPickWinner(match.player2.id)}
+                  className="w-full py-4 text-sm bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl flex items-center gap-3 px-4 transition-all"
+                >
+                  {party.currentTournamentMatch.player2.avatar ? (
+                    <img src={match.player2.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{ backgroundColor: match.player2.color }}>
+                      {match.player2.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <span className="font-medium flex-1 text-left">{match.player2.name}</span>
+                  <span className="text-amber-400 font-bold">{t('matchAbort.asWinner')}</span>
+                </button>
+              )}
+              <button
+                onClick={handleTournamentCancelWinner}
+                className="w-full py-2 text-sm text-white/40 hover:text-white/60"
+              >
+                {t('matchAbort.back')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Party Mode Leave Warning */}

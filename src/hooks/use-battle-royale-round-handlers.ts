@@ -39,8 +39,7 @@ interface UseBattleRoyaleRoundHandlersReturn {
   onSnippetEndRef: React.RefObject<(() => void) | null>;
   activePlayersRef: React.RefObject<BattleRoyalePlayer[]>;
   gameRef: React.RefObject<BattleRoyaleGame>;
-  /** Guard ref: set to true synchronously when a round ends to prevent the game loop
-   *  from calling onUpdateGame with stale 'playing' state during the transition. */
+  /** Set to true while round is ending to signal game loop to stop immediately */
   roundEndingRef: React.RefObject<boolean>;
 }
 
@@ -126,6 +125,7 @@ export function useBattleRoyaleRoundHandlers({
     }
 
     const updatedGame = endRoundAndEliminate(game);
+    gameRef.current = updatedGame; // Update ref immediately so game loop sees new status
 
     // Check if we just entered grand finale (2 players remain + bestOf > 1)
     if (
@@ -134,6 +134,7 @@ export function useBattleRoyaleRoundHandlers({
       updatedGame.settings.grandFinaleBestOf > 1
     ) {
       const withFinale = enterGrandFinale(updatedGame);
+      gameRef.current = withFinale; // Update ref immediately so game loop sees new status
       onUpdateGame(withFinale);
       setShowElimination(true);
 
@@ -185,9 +186,7 @@ export function useBattleRoyaleRoundHandlers({
   }, []);
 
   const handleStartRound = useCallback(() => {
-    // Safety net: clear round-ending guard when a new round explicitly starts
     roundEndingRef.current = false;
-
     if (game.status === 'grand-finale-intro') {
       const advanced = advanceToNextRound(game);
       onUpdateGame(advanced);

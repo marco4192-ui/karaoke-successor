@@ -351,10 +351,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     let lastTickTime = performance.now();
 
     const gameLoop = (timestamp: number) => {
-      // Guard: if a round is ending, skip ALL scoring and state updates.
-      // This prevents the game loop from reverting game.status back to 'playing'
-      // after handleRoundEnd has already set it to 'elimination'.
-      if (roundEndingRef.current) return;
+      if (roundEndingRef.current) return; // Stop immediately when round is ending
       if (gameRef.current.status !== 'playing') return;
       // Skip scoring ticks while paused (audio is paused, don't score silence)
       if (pausedRef.current) { gameLoopRef.current = requestAnimationFrame(gameLoop); return; }
@@ -491,7 +488,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
           setNotePerformance(notePerformanceRef.current);
         }
 
-        if (scoreChanged && mountedRef.current) {
+        if (scoreChanged && mountedRef.current && !roundEndingRef.current) {
           onUpdateGameRef.current(batchedGame);
         }
       }

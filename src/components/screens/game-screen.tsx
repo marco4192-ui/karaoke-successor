@@ -278,6 +278,7 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
             missingWordsIndices={g.gameState.missingWordsIndices}
             isBlindSection={g.gameState.isBlindSection}
             isBlindHardcore={g.gameState.blindHardcore}
+            hardcoreMissingWords={g.gameState.hardcoreMissingWords}
             lyricsSize={g.lyricsSize}
           />
         )}

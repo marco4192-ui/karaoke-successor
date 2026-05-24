@@ -23,6 +23,8 @@ interface LyricLineDisplayProps {
   isBlindSection?: boolean;
   /** Hardcore blind mode: text hidden when notes visible */
   isBlindHardcore?: boolean;
+  /** Hardcore Missing Words mode: hidden words stay hidden until song ends */
+  hardcoreMissingWords?: boolean;
   /** Callback ref attached to the first singable note span (for pointer targeting) */
   firstNoteRef?: (_node: HTMLSpanElement | null) => void;
   /** Lyrics size setting: 'small', 'medium', or 'large' */
@@ -53,6 +55,7 @@ export function LyricLineDisplay({
   missingWordsIndices = [],
   isBlindSection = false,
   isBlindHardcore = false,
+  hardcoreMissingWords = false,
   firstNoteRef,
   lyricsSize,
 }: LyricLineDisplayProps) {
@@ -245,9 +248,9 @@ export function LyricLineDisplay({
         if (shouldHideLyric) {
           // In blind mode, show underscores or blanks for the entire line
           renderedLyric = displayLyric.replace(/[^-\s]/g, '_');
-        } else if (isMissingWord && !isSung) {
+        } else if (isMissingWord && (!isSung || hardcoreMissingWords)) {
           // In missing-words mode, hide specific words until they're sung
-          // Show underscores for hidden words
+          // Hardcore MW: words stay hidden even after being sung
           renderedLyric = displayLyric.replace(/[^-\s]/g, '_');
         }
 
@@ -266,7 +269,7 @@ export function LyricLineDisplay({
           <span key={noteId} style={{ display: 'inline' }}>
             <span
               ref={isFirstSingableNote ? firstNoteRef : undefined}
-              className={`${fontClass} ${finalTextClass} transition-all duration-100 ${isMissingWord && !isSung ? 'tracking-wider' : ''}`}
+              className={`${fontClass} ${finalTextClass} transition-all duration-100 ${isMissingWord && (!isSung || hardcoreMissingWords) ? 'tracking-wider' : ''}`}
               style={{ ...finalShadowStyle, ...fillClipStyle, display: 'inline' }}
             >
               {renderedLyric}
