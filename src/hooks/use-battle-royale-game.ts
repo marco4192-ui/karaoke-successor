@@ -160,11 +160,6 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   const [currentTime, setCurrentTime] = useState(0);
   const gameLoopRef = useRef<number | null>(null);
   const lastCurrentTimeUpdateRef = useRef(0);
-  const mountedRef = useRef(true);
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => { mountedRef.current = false; };
-  }, []);
 
   // Note performance tracking for display styles (fill-level, color-feedback, etc.)
   const notePerformanceRef = useRef<Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>>(new Map());
