@@ -95,84 +95,57 @@ export default function KaraokeZERO() {
   const handleSongAbort = useCallback(() => {
     closeDialog();
 
-    if (screen === 'game') {
-      if (isTournamentMatch) {
-        party.setTournamentMatchAborted(true);
-        resetGame();
-        setScreen('tournament-game');
-        return;
-      }
-      if (party.competitiveGame) {
-        const cg = party.competitiveGame;
-        const cgRounds = [...cg.rounds];
-        if (cg.currentRoundIndex < cgRounds.length) {
-          cgRounds[cg.currentRoundIndex] = { ...cgRounds[cg.currentRoundIndex], completed: true, player1Score: 0, player1Bonus: 0, player2Score: 0, player2Bonus: 0 };
-        }
-        const cgAllDone = cgRounds.length >= cg.totalRounds && cgRounds.every(r => r.completed);
-        party.setCompetitiveGame({ ...cg, rounds: cgRounds, status: cgAllDone ? 'game-over' : 'round-end', winner: cgAllDone ? [...cg.players].sort((a, b) => b.totalScore - a.totalScore)[0] || null : null });
-        resetGame();
-        const modeScreen = gameState.gameMode === 'missing-words' ? 'missing-words-game' : 'blind-game';
-        setScreen(modeScreen as Screen);
-        return;
-      }
-      if (gameState.gameMode === 'medley' && party.medleySongs.length > 0) {
-        resetGame();
-        setScreen('medley-game');
-        return;
-      }
-      if (gameState.gameMode === 'rate-my-song') {
-        resetGame();
-        setScreen('rate-my-song-rating');
-        return;
-      }
-      if (gameState.gameMode === 'pass-the-mic' || gameState.gameMode === 'companion-singalong') {
-        if (gameState.gameMode === 'pass-the-mic') {
-          party.setPassTheMicSong(null);
-          party.setPassTheMicSegments([]);
-        } else {
-          party.setCompanionPlayers([]);
-          party.setCompanionSong(null);
-          party.setCompanionSettings(null);
-        }
-        resetGame();
-        setScreen('party-setup');
-        return;
-      }
+    // ── Tournament match abort: needs bracket + aborted flag for the match-abort dialog ──
+    if (screen === 'game' && isTournamentMatch) {
+      party.setTournamentMatchAborted(true);
       resetGame();
-      setGameMode('standard');
-      setScreen('library');
+      setScreen('tournament-game');
       return;
     }
 
-    // BR / PTM / Companion — their own screens
-    if (party.battleRoyaleGame) {
-      party.setBattleRoyaleGame(null);
+    // ── Competitive game abort: finalize skipped round, keep multi-round game running ──
+    if (screen === 'game' && party.competitiveGame) {
+      const cg = party.competitiveGame;
+      const cgRounds = [...cg.rounds];
+      if (cg.currentRoundIndex < cgRounds.length) {
+        cgRounds[cg.currentRoundIndex] = { ...cgRounds[cg.currentRoundIndex], completed: true, player1Score: 0, player1Bonus: 0, player2Score: 0, player2Bonus: 0 };
+      }
+      const cgAllDone = cgRounds.length >= cg.totalRounds && cgRounds.every(r => r.completed);
+      party.setCompetitiveGame({ ...cg, rounds: cgRounds, status: cgAllDone ? 'game-over' : 'round-end', winner: cgAllDone ? [...cg.players].sort((a, b) => b.totalScore - a.totalScore)[0] || null : null });
       resetGame();
-      setGameMode('standard');
-      setScreen('party');
-      return;
-    }
-    if (party.passTheMicPlayers?.length > 0) {
-      party.setPassTheMicSong(null);
-      party.setPassTheMicSegments([]);
-      party.setIsSongPlaying(false);
-      resetGame();
-      setScreen('party-setup');
-      return;
-    }
-    if (party.companionPlayers.length > 0) {
-      party.setCompanionPlayers([]);
-      party.setCompanionSong(null);
-      party.setCompanionSettings(null);
-      resetGame();
-      setGameMode('standard');
-      setScreen('party');
+      const modeScreen = gameState.gameMode === 'missing-words' ? 'missing-words-game' : 'blind-game';
+      setScreen(modeScreen as Screen);
       return;
     }
 
+    // ── Medley snippet abort: keep medley state, return to medley overview ──
+    if (screen === 'game' && gameState.gameMode === 'medley' && party.medleySongs.length > 0) {
+      resetGame();
+      setScreen('medley-game');
+      return;
+    }
+
+    // ── Rate-my-song abort: keep settings, go to rating screen ──
+    if (screen === 'game' && gameState.gameMode === 'rate-my-song') {
+      resetGame();
+      setScreen('rate-my-song-rating');
+      return;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ULTIMATE PARTY-MODE TERMINATOR
+    // All remaining cases get a full nuclear reset of party state.
+    // This covers: BR, PTM, Companion, CPTM (from game or their own
+    // screens), and any other party mode that isn't handled above.
+    // Previously these only did partial per-mode cleanup, leaving
+    // residual state like selectedGameMode, unifiedSetupResult,
+    // votingSongs, medleyPlayers, etc. to leak into the Library
+    // and other non-party screens.
+    // ═══════════════════════════════════════════════════════════════════
+    party.resetPartyState();
     resetGame();
     setGameMode('standard');
-    setScreen('library');
+    setScreen('party');
   }, [closeDialog, screen, isTournamentMatch, party, gameState.gameMode, resetGame, setScreen, setGameMode]);
 
   const handleTournamentRepeat = useCallback(() => {

@@ -282,8 +282,12 @@ export const usePartyStore = create<PartyStore>((set) => ({
   isSongPlaying: false,
   setIsSongPlaying: (isSongPlaying) => set({ isSongPlaying }),
 
-  // Reset all party state
-  resetPartyState: () => set({
+  // Reset all party state — "Ultimate Party-Mode Terminator"
+  // Logs every invocation for debugging stale-state issues.
+  resetPartyState: () => {
+    // eslint-disable-next-line no-console
+    console.log('[PartyTerminator] resetPartyState() called — clearing ALL party state');
+    set({
     tournamentBracket: null,
     tournamentSongDuration: 60,
     currentTournamentMatch: null,
@@ -328,5 +332,6 @@ export const usePartyStore = create<PartyStore>((set) => ({
     votingSongs: [],
     pauseDialogAction: null,
     isSongPlaying: false,
-  }),
+  });
+  },
 }));

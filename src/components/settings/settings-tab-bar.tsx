@@ -40,6 +40,7 @@ export function SettingsTabBar({ activeTab, onTabChange, tx }: SettingsTabBarPro
             ? `bg-${color}-500 text-white`
             : 'border-white/20 theme-adaptive-text'
           }
+          data-testid={`settings-tab-${id}`}
         >
           <Icon className="w-4 h-4 mr-2" /> {label}
         </Button>

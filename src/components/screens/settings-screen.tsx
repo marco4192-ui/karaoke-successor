@@ -303,6 +303,7 @@ function SettingsScreen() {
           <Button
             onClick={handleSaveSettings}
             className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white px-8 py-3 rounded-full shadow-lg shadow-cyan-500/30"
+            data-testid="settings-save-button"
           >
             💾 {tx('settings.savedSuccessfully').replace('✓ ', '')}
           </Button>

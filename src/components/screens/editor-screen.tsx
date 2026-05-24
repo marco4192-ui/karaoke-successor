@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getAllSongs, addSong, updateSong, getSongByIdWithLyrics, clearSongCache } from '@/lib/game/song-library';
@@ -62,6 +62,46 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   const [showBatchDialog, setShowBatchDialog] = useState(false);
   const [showBatchWarning, setShowBatchWarning] = useState(false);
   const batchAbortRef = useRef(false);
+
+  // ── Restore cover URLs for Tauri ──
+  // On Tauri, song.coverImage may be a relative path (e.g. "Covers/song.jpg") that
+  // doesn't resolve in the browser. ensureSongUrls() converts these to proper
+  // asset://localhost/ URLs. On browser, ensureSongUrls() returns immediately.
+  useEffect(() => {
+    if (songs.length === 0) return;
+    let cancelled = false;
+
+    const restoreCovers = async () => {
+      try {
+        const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
+        const BATCH_SIZE = 20;
+        const updates = new Map<string, Song>();
+
+        for (let i = 0; i < songs.length; i += BATCH_SIZE) {
+          if (cancelled) return;
+          const batch = songs.slice(i, i + BATCH_SIZE);
+          const results = await Promise.all(batch.map(song => ensureSongUrls(song)));
+
+          for (let j = 0; j < results.length; j++) {
+            // Only keep songs whose cover URL actually changed
+            if (results[j].coverImage !== batch[j].coverImage) {
+              updates.set(batch[j].id, results[j]);
+            }
+          }
+        }
+
+        if (cancelled || updates.size === 0) return;
+        setSongs(prev => prev.map(song => updates.get(song.id) ?? song));
+      } catch (err) {
+        // Non-critical — covers will just show the 🎵 fallback emoji
+        // eslint-disable-next-line no-console
+        console.warn('[EditorScreen] Failed to restore cover URLs:', err);
+      }
+    };
+
+    restoreCovers();
+    return () => { cancelled = true; };
+  }, [songs]);
 
   // Filter songs based on filter mode and search
   const filteredSongs = useMemo(() => {
@@ -306,6 +346,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 variant="outline"
                 onClick={() => { setShowBatchDialog(false); }}
                 className="flex-1 border-white/20 text-white/80 hover:bg-white/10 text-xs"
+                data-testid="editor-batch-close-button"
               >
                 {t('editor.aiBatchClose')}
               </Button>
@@ -313,6 +354,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 <Button
                   onClick={() => setShowBatchWarning(true)}
                   className="flex-1 bg-green-500 hover:bg-green-400 text-black font-semibold text-xs"
+                  data-testid="editor-batch-apply-button"
                 >
                   {t('editor.aiApplyAll')} ({batchSuggestions.length})
                 </Button>
@@ -355,12 +397,14 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 variant="outline"
                 onClick={() => setShowBatchWarning(false)}
                 className="flex-1 border-white/20 text-white/80 hover:bg-white/10 text-xs"
+                data-testid="editor-batch-warning-cancel-button"
               >
                 {t('editor.aiHarmonizeWarnCancel')}
               </Button>
               <Button
                 onClick={handleBatchApplyAll}
                 className="flex-1 bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs"
+                data-testid="editor-batch-warning-confirm-button"
               >
                 {t('editor.aiHarmonizeWarnConfirm')}
               </Button>
@@ -378,17 +422,18 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               <p className="text-white/60">{t('editor.subtitle')}</p>
             </div>
             <div className="flex gap-2">
-              <Button onClick={refreshSongs} variant="outline" className="border-white/20 hover:bg-white/10" title={t('editor.refreshTitle')}>
+              <Button onClick={refreshSongs} variant="outline" className="border-white/20 hover:bg-white/10" title={t('editor.refreshTitle')} data-testid="editor-refresh-button">
                 🔄 {t('editor.refreshBtn')}
               </Button>
               <Button
                 onClick={() => setSelectMode(!selectMode)}
                 variant={selectMode ? 'default' : 'outline'}
                 className={selectMode ? 'bg-violet-500 hover:bg-violet-400' : 'border-white/20 text-white'}
+                data-testid="editor-select-mode-toggle"
               >
                 {selectMode ? '✕' : '☑️'}
               </Button>
-              <Button onClick={onBack} variant="outline" className="border-white/20 hover:bg-white/10">
+              <Button onClick={onBack} variant="outline" className="border-white/20 hover:bg-white/10" data-testid="editor-back-button">
                 ← {t('editor.back')}
               </Button>
             </div>
@@ -403,6 +448,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="bg-white/5 border-white/10 text-white placeholder:text-white/40 pr-10"
+                data-testid="editor-search-input"
               />
               <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="8" />
@@ -417,6 +463,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 variant={filterMode === 'no-genre' ? 'default' : 'outline'}
                 className={filterMode === 'no-genre' ? 'bg-orange-500' : 'border-white/20 text-white'}
                 size="sm"
+                data-testid="editor-filter-nogenre"
               >
                 🎸 {t('editor.noGenre')} ({songsWithoutGenre})
               </Button>
@@ -425,6 +472,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 variant={filterMode === 'no-language' ? 'default' : 'outline'}
                 className={filterMode === 'no-language' ? 'bg-purple-500' : 'border-white/20 text-white'}
                 size="sm"
+                data-testid="editor-filter-nolanguage"
               >
                 🌐 {t('editor.noLanguage')} ({songsWithoutLanguage})
               </Button>
@@ -438,6 +486,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               <button
                 onClick={() => setShowNewSongDialog(true)}
                 className="border-2 border-dashed border-white/20 hover:border-cyan-500/50 rounded-lg overflow-hidden transition-all group flex flex-col items-center justify-center min-h-[60px] hover:bg-white/5"
+                data-testid="editor-new-song-button"
               >
                 <div className="w-8 h-8 rounded-full bg-cyan-500/10 flex items-center justify-center mb-1 group-hover:bg-cyan-500/20 transition-colors">
                   <svg className="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -451,6 +500,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               <button
                 key={song.id}
                 onClick={() => handleCardClick(song)}
+                data-testid={`editor-song-card-${song.id}`}
                 className={`theme-adaptive-bg hover:brightness-110 border rounded-lg overflow-hidden transition-all group relative ${
                   selectMode
                     ? selectedIds.has(song.id)
@@ -522,6 +572,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               onClick={() => setShowMetadataPanel(!showMetadataPanel)}
               className="absolute top-2 right-2 z-10 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors flex items-center gap-1.5 text-sm text-white/80"
               title={showMetadataPanel ? t('editor.hideMetadata') : t('editor.showMetadata')}
+              data-testid="editor-metadata-panel-toggle"
             >
               🏷️ {t('editor.metadataPanelBtn')}
             </button>
@@ -560,6 +611,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
             variant="outline"
             onClick={selectAllFiltered}
             className="border-white/20 text-white/80 hover:bg-white/10 text-xs h-8"
+            data-testid="editor-select-all-button"
           >
             {t('editor.aiBatchSelectAll')}
           </Button>
@@ -568,6 +620,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
             variant="outline"
             onClick={clearSelection}
             className="border-white/20 text-white/80 hover:bg-white/10 text-xs h-8"
+            data-testid="editor-clear-selection-button"
           >
             {t('editor.aiBatchClear')}
           </Button>
@@ -576,6 +629,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
             onClick={handleBatchSuggest}
             disabled={batchLoading}
             className="bg-violet-500 hover:bg-violet-400 text-white font-semibold text-xs h-8 gap-1.5"
+            data-testid="editor-batch-suggest-button"
           >
             {batchLoading ? (
               <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -599,7 +653,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
         <div className="fixed top-4 right-4 z-50 bg-red-500/90 backdrop-blur-sm text-white rounded-lg px-4 py-3 text-sm shadow-xl max-w-sm">
           <p className="font-medium">{t('editor.aiBatchError')}</p>
           <p className="text-white/80 text-xs mt-1">{batchError}</p>
-          <button onClick={() => setBatchError(null)} className="absolute top-2 right-2 text-white/60 hover:text-white">✕</button>
+          <button onClick={() => setBatchError(null)} className="absolute top-2 right-2 text-white/60 hover:text-white" data-testid="editor-batch-error-close-button" aria-label="Close error">✕</button>
         </div>
       )}
 

@@ -66,6 +66,8 @@ export function FullscreenButton({ className }: FullscreenButtonProps) {
       onClick={handleFullscreen}
       className={`text-white/80 hover:text-white hover:bg-white/10 rounded-lg w-10 h-10 p-0 text-sm ${className || ''}`}
       title={isFullscreen ? 'Exit Fullscreen' : t('webcamBackground.fullscreen')}
+      data-testid="game-fullscreen-button"
+      aria-label={isFullscreen ? 'Exit Fullscreen' : t('webcamBackground.fullscreen')}
     >
       {isFullscreen ? '⛶' : '⛶'}
     </Button>

@@ -115,6 +115,7 @@ export function PtmIntroScreen({
           onClick={startGame}
           disabled={!mediaLoaded}
           className="px-12 py-4 text-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 disabled:opacity-50"
+          data-testid="ptm-start-button"
         >
           {t('passTheMic.startSinging')}
         </Button>

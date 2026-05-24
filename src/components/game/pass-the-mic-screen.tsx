@@ -54,7 +54,7 @@ export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTh
   return (
     <div className="max-w-5xl mx-auto">
       <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" onClick={onBack} className="text-white/60">{t('passTheMic.back')}</Button>
+        <Button variant="ghost" onClick={onBack} className="text-white/60" data-testid="ptm-back-button">{t('passTheMic.back')}</Button>
         <div>
           <h1 className="text-3xl font-bold">{t('passTheMic.playingTitle')}</h1>
           <p className="text-white/60">{t('passTheMic.subtitle')}</p>
@@ -72,7 +72,8 @@ export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTh
               {[15, 30, 45, 60].map(dur => (
                 <Button key={dur} variant={settings.segmentDuration === dur ? 'default' : 'outline'}
                   onClick={() => setSettings(s => ({ ...s, segmentDuration: dur }))}
-                  className={settings.segmentDuration === dur ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}>
+                  className={settings.segmentDuration === dur ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}
+                  data-testid={`ptm-duration-${dur}`}>
                   {dur}s
                 </Button>
               ))}
@@ -89,7 +90,8 @@ export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTh
             <Button
               variant={settings.randomSwitches ? 'default' : 'outline'}
               onClick={() => setSettings(s => ({ ...s, randomSwitches: !s.randomSwitches }))}
-              className={settings.randomSwitches ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}>
+              className={settings.randomSwitches ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}
+              data-testid="ptm-random-switches-toggle">
               {settings.randomSwitches ? '✓ On' : 'Off'}
             </Button>
           </div>
@@ -101,7 +103,8 @@ export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTh
               {(['easy', 'medium', 'hard'] as Difficulty[]).map(diff => (
                 <Button key={diff} variant={globalDifficulty === diff ? 'default' : 'outline'}
                   onClick={() => setGlobalDifficulty(diff)}
-                  className={globalDifficulty === diff ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}>
+                  className={globalDifficulty === diff ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}
+                  data-testid={`ptm-difficulty-${diff}`}>
                   {diff.charAt(0).toUpperCase() + diff.slice(1)}
                 </Button>
               ))}
@@ -118,6 +121,7 @@ export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTh
               const isSelected = selectedPlayers.includes(profile.id);
               return (
                 <div key={profile.id} onClick={() => togglePlayer(profile.id)}
+                  data-testid={`ptm-player-${profile.id}`}
                   className={`p-4 rounded-lg cursor-pointer transition-all ${isSelected
                     ? 'bg-gradient-to-br from-cyan-500/30 to-blue-500/30 border-2 border-cyan-500'
                     : 'bg-white/5 border border-white/10 hover:bg-white/10'}`}>
@@ -157,7 +161,8 @@ export function PassTheMicSetupScreen({ profiles, onSelectSong, onBack }: PassTh
       </Card>
 
       <Button onClick={handleSelectSong} disabled={selectedPlayers.length < 2}
-        className="w-full py-6 text-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400">
+        className="w-full py-6 text-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400"
+        data-testid="ptm-select-song-button">
         {t('passTheMic.selectSong').replace('{n}', String(selectedPlayers.length))}
       </Button>
     </div>

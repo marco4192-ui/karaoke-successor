@@ -38,6 +38,8 @@ export function AudioEffectsButton({ onClick }: AudioEffectsButtonProps) {
       onClick={onClick}
       className="fixed bottom-36 right-4 z-30 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
       title={t('gameHud.audioEffects')}
+      data-testid="game-hud-audio-effects-button"
+      aria-label={t('gameHud.audioEffects')}
     >
       🎛️
     </button>
@@ -88,6 +90,8 @@ export function AudioEffectsPanel({
               audioEffects?.setReverb(val);
             }}
             className="w-full accent-purple-500"
+            data-testid="game-hud-reverb-slider"
+            aria-label="Reverb"
           />
         </div>
         <div>
@@ -103,6 +107,8 @@ export function AudioEffectsPanel({
               audioEffects?.setDelay(val * 0.5, val * 0.5);
             }}
             className="w-full accent-cyan-500"
+            data-testid="game-hud-echo-slider"
+            aria-label="Echo"
           />
         </div>
         <div>
@@ -113,6 +119,7 @@ export function AudioEffectsPanel({
                 key={key}
                 onClick={() => onApplyPreset(key)}
                 className="px-2 py-1 text-xs rounded-md bg-white/10 hover:bg-white/20 border border-white/10 hover:border-purple-500/50 transition-all text-white/80 hover:text-white"
+                data-testid={`game-hud-preset-${key}`}
               >
                 {PRESET_LABELS[key]}
               </button>

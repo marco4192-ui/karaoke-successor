@@ -39,9 +39,36 @@ export function usePtmScoring({
 }: UsePtmScoringOptions): void {
   const lastEvalTimeRef = useRef(0);
 
+  // Track how many consecutive frames had no pitchResult (for logging)
+  const noPitchLogCooldownRef = useRef(0);
+
   const scoreCurrentPlayer = useCallback(() => {
-    if (!pitchResult) return;
-    if (shouldSkipPitch(pitchResult, difficulty)) return;
+    if (!pitchResult) {
+      // Log at most once every ~2 seconds (250ms throttle * ~8 frames)
+      noPitchLogCooldownRef.current++;
+      if (noPitchLogCooldownRef.current <= 1) {
+        // eslint-disable-next-line no-console
+        console.warn('[PTM-Scoring] scoreCurrentPlayer() called but pitchResult is null — pitch detector may not be initialized');
+      }
+      return;
+    }
+    noPitchLogCooldownRef.current = 0;
+
+    if (shouldSkipPitch(pitchResult, difficulty)) {
+      // Log the skip reason (throttled: only once per sustained skip streak)
+      if (noPitchLogCooldownRef.current <= 0) {
+        // eslint-disable-next-line no-console
+        console.warn('[PTM-Scoring] shouldSkipPitch=true:',
+          !pitchResult.frequency || pitchResult.note === null ? 'no frequency/note' :
+          pitchResult.volume < (difficulty === 'easy' ? 0.02 : difficulty === 'medium' ? 0.04 : 0.06)
+            ? `volume too low (${pitchResult.volume?.toFixed(4)})` :
+          pitchResult.isSinging === false ? 'isSinging=false (vocal detector rejected)' :
+          'unknown');
+      }
+      noPitchLogCooldownRef.current = 1;
+      return;
+    }
+    noPitchLogCooldownRef.current = 0;
 
     const activeNote = findActiveNote(notesSource?.lyrics, currentTime);
     if (!activeNote) return;
@@ -68,6 +95,11 @@ export function usePtmScoring({
     playersRef.current![idx] = { ...p };
     forceRender();
   }, [currentTime, pitchResult, notesSource, difficulty, currentPlayerIndex, scoringMeta, forceRender]);
+
+  // Reset skip-log cooldown when scoring restarts (e.g., phase or isPlaying changes)
+  useEffect(() => {
+    noPitchLogCooldownRef.current = 0;
+  }, [phase, isPlaying]);
 
   // ── Game loop: score during playing ──
   useEffect(() => {

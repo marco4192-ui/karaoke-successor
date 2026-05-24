@@ -125,6 +125,7 @@ export function PartyScreen({ onSelectMode }: PartyScreenProps) {
             className={`party-tile bg-gradient-to-br ${game.color} border-0 cursor-pointer hover:scale-105 transition-transform relative focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:outline-none`}
             onClick={() => onSelectMode(game.mode)}
             {...getItemProps(index)}
+            data-testid={`party-mode-${game.mode}`}
           >
             <CardContent className="pt-6">
               {game.isNew && (

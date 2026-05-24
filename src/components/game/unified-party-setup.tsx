@@ -73,7 +73,7 @@ export function UnifiedPartySetup({
       <div className="flex-1 min-w-0" ref={containerRef}>
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" onClick={onBack} className="text-white/60 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none">{t('unifiedSetup.back')}</Button>
+          <Button variant="ghost" onClick={onBack} className="text-white/60 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none" data-testid="party-setup-back-button">{t('unifiedSetup.back')}</Button>
           <div>
             <h1 className="text-3xl font-bold">{config.icon} {config.title}</h1>
             <p className="text-white/60">{config.description}</p>
@@ -159,6 +159,7 @@ export function UnifiedPartySetup({
                     size="sm"
                     onClick={onChangePreselectedSong}
                     className="border-white/20 text-white/80 hover:bg-white/10"
+                    data-testid="party-setup-change-song-button"
                   >
                     {t('unifiedSetup.change')}
                   </Button>
@@ -169,6 +170,7 @@ export function UnifiedPartySetup({
                     size="sm"
                     onClick={onStartWithPreselectedSong}
                     className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none"
+                    data-testid="party-setup-start-button"
                   >
                     {t('unifiedSetup.startGame')}
                   </Button>

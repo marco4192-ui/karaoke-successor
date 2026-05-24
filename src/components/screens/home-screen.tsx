@@ -84,6 +84,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
             size="lg"
             className="retro-btn retro-btn-cyan px-10 py-6 text-lg rounded-lg"
             onClick={() => onNavigate('library')}
+            data-testid="home-nav-library"
           >
             <PlayIcon className="w-5 h-5 mr-2" /> {t('home.startSinging')}
           </Button>
@@ -91,6 +92,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
             size="lg"
             className="retro-btn retro-btn-pink px-10 py-6 text-lg rounded-lg"
             onClick={() => onNavigate('party')}
+            data-testid="home-nav-party"
           >
             <PartyIcon className="w-5 h-5 mr-2" /> {t('home.partyMode')}
           </Button>
@@ -205,6 +207,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                 <button
                   key={profile.id}
                   onClick={() => setActiveProfile(profile.id)}
+                  data-testid={`home-profile-${profile.id}`}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                     activeProfileId === profile.id
                       ? 'bg-gradient-to-r from-[#ff2d95] to-[#bf5af2] text-white retro-box-glow-pink'
@@ -227,6 +230,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
               <button
                 onClick={() => onNavigate('profile')}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-dashed border-white/20 hover:bg-white/10 transition-all"
+                data-testid="home-create-profile"
               >
                 <div className="w-10 h-10 rounded-full flex items-center justify-center text-white/60">
                   +

@@ -65,11 +65,18 @@ export function usePitchDetector() {
           setPitchResult(result);
         });
         setIsListening(true);
+        // eslint-disable-next-line no-console
+        console.log(`[PitchDetector] switchMicrophone succeeded with deviceId=${deviceId ?? 'default'}`);
         return true;
       }
+      // eslint-disable-next-line no-console
+      console.error(`[PitchDetector] switchMicrophone FAILED: initialize() returned false for deviceId=${deviceId ?? 'default'}`);
       return false;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      // eslint-disable-next-line no-console
+      console.error(`[PitchDetector] switchMicrophone threw error for deviceId=${deviceId ?? 'default'}:`, msg);
+      setError(msg);
       return false;
     }
   }, []);

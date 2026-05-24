@@ -22,12 +22,22 @@ const PARTY_SCREEN_WHITELIST: Screen[] = [
  * Returns true if any party game mode is currently active.
  * Used by the navigation guard to show a confirmation dialog
  * before leaving the party flow.
+ *
+ * Safety net: also checks `selectedGameMode` (set during party setup)
+ * and `companionPlayers`/`cptmPlayers` (previously unguarded modes).
+ * This prevents stale party state from bypassing the guard when a
+ * mode's primary state object (e.g., battleRoyaleGame) has been
+ * cleared but peripheral state (selectedGameMode, unifiedSetupResult,
+ * votingSongs, etc.) still lingers.
  */
 function computePartyModeActive(party: PartyStore): boolean {
   return !!(
+    party.selectedGameMode ||
     party.tournamentBracket ||
     party.battleRoyaleGame ||
-    (party.passTheMicPlayers && party.passTheMicPlayers.length > 0 && party.passTheMicSong) ||
+    (party.passTheMicPlayers && party.passTheMicPlayers.length > 0) ||
+    (party.companionPlayers && party.companionPlayers.length > 0) ||
+    (party.cptmPlayers && party.cptmPlayers.length > 0) ||
     (party.medleyPlayers && party.medleyPlayers.length > 0 && party.medleySongs && party.medleySongs.length > 0) ||
     party.competitiveGame ||
     party.rateMySongSettings

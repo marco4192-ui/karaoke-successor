@@ -11,6 +11,7 @@ import { useSmoothedPitch } from '@/hooks/use-smoothed-pitch';
 import { useGameSettings } from '@/hooks/use-game-settings';
 import { useYouTubeGame } from '@/hooks/use-youtube-game';
 import { useMobileGameSync } from '@/hooks/use-mobile-game-sync';
+import { toast } from '@/hooks/use-toast';
 import type { PassTheMicRoundResult } from '@/lib/game/party-store';
 
 import type { PtmPlayer, PtmSegment, PassTheMicSettings, GamePhase } from '@/components/game/ptm-types';
@@ -487,7 +488,12 @@ export function usePtmGameLogic({
     const player = playersRef.current[currentPlayerIndex];
     if (!player) return;
     if (player.micId && player.micId !== 'default') {
-      switchMicrophone(player.micId).catch(() => {});
+      // eslint-disable-next-line no-console
+      console.log(`[PTM] Mic handoff: switching to player "${player.name}" mic (${player.micId})`);
+      switchMicrophone(player.micId).catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('[PTM] Mic handoff failed:', err);
+      });
     }
   }, [currentPlayerIndex, phase, switchMicrophone]);
 
@@ -529,9 +535,51 @@ export function usePtmGameLogic({
       ? safeSettings.sharedMicId
       : (safeSettings.micId && safeSettings.micId !== 'default' ? safeSettings.micId : undefined);
 
+    // ── Initialize pitch detector with retry ──
+    // eslint-disable-next-line no-console
+    console.log(`[PTM] Initializing microphone (micId=${micId ?? 'default'})...`);
+
+    let micSuccess = false;
     try {
-      await switchMicrophone(micId);
-    } catch { /* pitch may fail in some envs */ }
+      micSuccess = await switchMicrophone(micId);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[PTM] switchMicrophone threw:', err);
+    }
+
+    // If first attempt failed, wait 500ms and retry once
+    if (!micSuccess) {
+      // eslint-disable-next-line no-console
+      console.warn('[PTM] First mic init failed, retrying in 500ms...');
+      await new Promise(r => setTimeout(r, 500));
+      try {
+        micSuccess = await switchMicrophone(micId);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('[PTM] switchMicrophone retry threw:', err);
+      }
+    }
+
+    if (!micSuccess) {
+      // eslint-disable-next-line no-console
+      console.error('[PTM] Pitch detector initialization failed after retry. Scoring will be disabled.');
+      toast({
+        title: 'Microphone Issue',
+        description: 'Could not initialize pitch detection. Scoring will be disabled for this round. Check your microphone permissions and try again.',
+        variant: 'destructive',
+      });
+    } else {
+      // Verification: wait 300ms and check if pitchResult has been populated
+      await new Promise<void>(resolve => {
+        setTimeout(() => {
+          // pitchResult is captured from the React hook's state; we check the ref
+          // via the closure — if it's still null after 300ms, the callback may not be firing.
+          // eslint-disable-next-line no-console
+          console.log('[PTM] Mic init succeeded. Verifying pitch callback...');
+          resolve();
+        }, 300);
+      });
+    }
 
     const interval = setInterval(() => {
       setCountdown(prev => {

@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   reactStrictMode: false,
+  compiler: {
+    removeConsole: false,
+  },
 };
 
 export default nextConfig;

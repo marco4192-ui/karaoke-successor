@@ -393,6 +393,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                 party.setTournamentVotingMatch(null);
               }}
               className="w-full text-white/40 hover:text-white/70"
+              data-testid="party-song-vote-skip-button"
             >
               {t('tournament.songVoteSkip')}
             </Button>
@@ -884,6 +885,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             <button
               onClick={() => setChallengeOverlayDismissed(true)}
               className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg text-white font-medium hover:from-purple-400 hover:to-pink-400 transition-all"
+              data-testid="party-rms-challenge-dismiss-button"
             >
               {t('rateMySong.letsGo')}
             </button>
