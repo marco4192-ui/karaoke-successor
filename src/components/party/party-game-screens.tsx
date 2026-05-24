@@ -459,8 +459,10 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             }
           }}
           onManualWinner={(matchId, winnerId) => {
-            if (!party.tournamentBracket || !party.currentTournamentMatch) return;
-            const match = party.currentTournamentMatch;
+            if (!party.tournamentBracket) return;
+            // Look up the match from the bracket (works for both abort dialog and manual selection)
+            const match = party.tournamentBracket.matches.find(m => m.id === matchId);
+            if (!match) return;
             const isP1Winner = winnerId === match.player1?.id;
             // Use 100 for winner, 0 for loser to clearly indicate the choice
             const updated = recordMatchResult(

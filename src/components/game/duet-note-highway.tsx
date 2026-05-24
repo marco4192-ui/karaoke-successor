@@ -188,8 +188,8 @@ const PlayerLyrics = React.memo(function PlayerLyrics({
   isBlindHardcore?: boolean;
 }) {
 
-  const { displayLine, nextLine } = useMemo(() => {
-    if (!lines) return { displayLine: null, nextLine: null };
+  const { displayLine, nextLine, shouldHidePreview } = useMemo(() => {
+    if (!lines) return { displayLine: null, nextLine: null, shouldHidePreview: false };
 
     // Find current line
     let currentLine = lines.find(line =>
@@ -206,14 +206,24 @@ const PlayerLyrics = React.memo(function PlayerLyrics({
       }
     }
 
-    if (!currentLine) return { displayLine: null, nextLine: null };
+    if (!currentLine) return { displayLine: null, nextLine: null, shouldHidePreview: false };
 
     // Find next line for preview
     const currentIndex = lines.findIndex(line => line === currentLine);
     const next = currentIndex >= 0 ? lines[currentIndex + 1] : null;
 
-    return { displayLine: currentLine, nextLine: next };
-  }, [lines, currentTime]);
+    // Determine if preview should be hidden
+    let hidePreview = false;
+    // Blind mode: hide preview when currently in a blind section
+    if (gameMode === 'blind' && isBlindSection) hidePreview = true;
+    // Missing Words mode: hide preview if next line has hidden words
+    if (gameMode === 'missing-words' && next && missingWordsIndices && missingWordsIndices.length > 0) {
+      if (missingWordsIndices.includes(next.startTime)) hidePreview = true;
+      else if (next.notes.some(n => missingWordsIndices.includes(n.startTime))) hidePreview = true;
+    }
+
+    return { displayLine: currentLine, nextLine: next, shouldHidePreview: hidePreview };
+  }, [lines, currentTime, gameMode, isBlindSection, missingWordsIndices]);
 
   if (!displayLine) return null;
 
@@ -232,8 +242,8 @@ const PlayerLyrics = React.memo(function PlayerLyrics({
           isBlindHardcore={isBlindHardcore}
         />
       </div>
-      {/* Next Line Preview — smaller, faded text for orientation */}
-      {nextLine && (
+      {/* Next Line Preview — hidden when next line contains hidden content */}
+      {nextLine && !shouldHidePreview && (
         <p className="text-xs text-center text-white/30 mt-0.5 truncate">
           {nextLine.notes.map(n => n.lyric).join('')}
         </p>

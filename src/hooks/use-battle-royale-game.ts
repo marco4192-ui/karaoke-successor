@@ -88,6 +88,12 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   const onUpdateGameRef = useRef(onUpdateGame);
   onUpdateGameRef.current = onUpdateGame;
 
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
   const [showElimination, setShowElimination] = useState(false);
   const stats = getBattleRoyaleStats(game);
 
@@ -181,6 +187,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   useEffect(() => {
     if (countdown <= 0 || game.status !== 'countdown') return;
     const timer = setTimeout(() => {
+      if (!mountedRef.current) return;
       const next = countdown - 1;
       if (next <= 0) {
         onUpdateGame({ ...gameRefRef.current.current, status: 'playing' });

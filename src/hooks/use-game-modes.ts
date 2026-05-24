@@ -29,6 +29,8 @@ interface UseGameModesParams {
   missingWordFrequency?: number;
   /** Hardcore blind mode: text hidden when notes visible, and vice versa */
   hardcore?: boolean;
+  /** Hardcore Missing Words mode: hidden words stay hidden until song ends */
+  hardcoreMissingWords?: boolean;
   /** Missing words granularity: 'word' | 'passage' | 'both' */
   missingWordsGranularity?: MissingWordsGranularity;
   /** Escalating mode: frequency multiplier that increases per round (1.0 = normal) */
@@ -163,6 +165,7 @@ export function useGameModes({
   blindFrequency,
   missingWordFrequency,
   hardcore,
+  hardcoreMissingWords,
   missingWordsGranularity,
   escalatingMultiplier,
 }: UseGameModesParams) {
@@ -208,9 +211,9 @@ export function useGameModes({
   // Set hardcore Missing Words mode on store when MW game starts
   useEffect(() => {
     if (gameMode === 'missing-words' && setHardcoreMissingWords) {
-      setHardcoreMissingWords(hardcore ?? false);
+      setHardcoreMissingWords(hardcoreMissingWords ?? false);
     }
-  }, [gameMode, hardcore, setHardcoreMissingWords]);
+  }, [gameMode, hardcoreMissingWords, setHardcoreMissingWords]);
 
   // ── BLIND KARAOKE MODE — Generate pattern (once per song) ──
   // Decoupled from isGameActive so the pattern is ready before playback starts.

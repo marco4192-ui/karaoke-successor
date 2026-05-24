@@ -67,6 +67,7 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   const blindFrequency = usePartyStore(s => s.competitiveGame?.settings?.blindFrequency);
   const missingWordFrequency = usePartyStore(s => s.competitiveGame?.settings?.missingWordFrequency);
   const blindHardcore = usePartyStore(s => s.competitiveGame?.settings?.hardcore);
+  const hardcoreMissingWords = usePartyStore(s => s.competitiveGame?.settings?.hardcoreMissingWords);
   const missingWordsGranularity = usePartyStore(s => s.competitiveGame?.settings?.missingWordsGranularity);
   const escalating = usePartyStore(s => s.competitiveGame?.settings?.escalating);
   const { pitchResult, initialize, start, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
@@ -332,6 +333,7 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     blindFrequency,
     missingWordFrequency,
     hardcore: blindHardcore,
+    hardcoreMissingWords,
     missingWordsGranularity,
     escalatingMultiplier: escalating ? (party.competitiveGame?.rounds[party.competitiveGame.currentRoundIndex]?.frequencyMultiplier ?? 1.0) : undefined,
   });

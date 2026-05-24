@@ -227,7 +227,6 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
       <PtmTransitionOverlay
         visible={g.transitionVisible}
         nextPlayer={g.transitionNextPlayer}
-        onComplete={g.completeTransition}
         onSkip={g.completeTransition}
       />
     </div>

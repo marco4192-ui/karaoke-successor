@@ -124,7 +124,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
   }
 
   // Countdown phase (V3)
-  if (game.status === 'countdown' || countdown > 0) {
+  if (game.status === 'countdown' && countdown > 0) {
     return (
       <PlayingView
         game={game}

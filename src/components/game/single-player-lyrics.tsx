@@ -132,14 +132,20 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
 
   if (!currentLine) return null;
 
-  // Check if the next line contains hidden words (for Missing Words mode preview)
-  const nextLineHasHiddenWords = useMemo(() => {
-    if (!nextLine || gameMode !== 'missing-words' || missingWordsIndices.length === 0) return false;
-    // Passage mode: entire line hidden
-    if (missingWordsIndices.includes(nextLine.startTime)) return true;
-    // Word/both mode: individual notes hidden
-    return nextLine.notes.some(n => missingWordsIndices.includes(n.startTime));
-  }, [nextLine, gameMode, missingWordsIndices]);
+  // Check if the next line contains hidden content (for preview hiding)
+  const nextLineHasHiddenContent = useMemo(() => {
+    if (!nextLine) return false;
+    // Blind mode: hide preview when currently in a blind section
+    if (gameMode === 'blind' && isBlindSection) return true;
+    // Missing Words mode: hide preview if next line has hidden words
+    if (gameMode === 'missing-words' && missingWordsIndices.length > 0) {
+      // Passage mode: entire line hidden
+      if (missingWordsIndices.includes(nextLine.startTime)) return true;
+      // Word/both mode: individual notes hidden
+      return nextLine.notes.some(n => missingWordsIndices.includes(n.startTime));
+    }
+    return false;
+  }, [nextLine, gameMode, missingWordsIndices, isBlindSection]);
 
   // Calculate flying animation progress (0 = start, 1 = arrived at first note)
   const flyProgress = isFlying ? Math.max(0, Math.min(1, 1 - (timeUntilSing / previewTime))) : 0;
@@ -216,8 +222,8 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
           />
         </div>
 
-        {/* Next Line Preview — hidden in Missing Words mode when next line contains hidden words */}
-        {nextLine && !nextLineHasHiddenWords && (
+        {/* Next Line Preview — hidden when next line contains hidden content (Missing Words or Blind mode) */}
+        {nextLine && !nextLineHasHiddenContent && (
           <p className={`${lyricsSize === 'large' ? 'text-xl md:text-2xl' : lyricsSize === 'small' ? 'text-base md:text-lg' : 'text-base md:text-lg'} text-center text-white/40 mt-3`} style={{ whiteSpace: 'pre-wrap' }}>
             {nextLine.notes.map(n => n.lyric).join('')}
           </p>

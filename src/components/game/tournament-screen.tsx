@@ -496,6 +496,9 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
   const bracketInnerRef = useRef<HTMLDivElement>(null);
   const [bracketScale, setBracketScale] = useState(1);
 
+  // Manual winner dialog state (for picking a winner without playing)
+  const [manualWinnerMatch, setManualWinnerMatch] = useState<TournamentMatch | null>(null);
+
   useEffect(() => {
     const updateScale = () => {
       const wrapper = bracketWrapperRef.current;
@@ -589,6 +592,15 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
           >
             {t('tournament.startNextMatch')}
           </Button>
+          {onManualWinner && nextMatch.player1 && nextMatch.player2 && (
+            <Button
+              onClick={() => setManualWinnerMatch(nextMatch)}
+              variant="ghost"
+              className="w-full py-1 text-xs text-white/40 hover:text-white/60 hover:bg-white/5"
+            >
+              {t('matchAbort.setWinner')}
+            </Button>
+          )}
         </div>
       )}
 
@@ -630,6 +642,57 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
                 <span className="text-rose-400/60 ml-1">{fav.totalVotes}{t('tournament.votes')}</span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Manual Winner Dialog — shown when user clicks "Set Winner Manually" from the bracket */}
+      {manualWinnerMatch && onManualWinner && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="bg-zinc-900 border border-white/15 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="text-center mb-6">
+              <h2 className="text-xl font-bold text-white">{t('matchAbort.selectWinner')}</h2>
+              <p className="text-sm text-white/50 mt-1">
+                {manualWinnerMatch.player1?.name} vs {manualWinnerMatch.player2?.name}
+              </p>
+            </div>
+            <div className="space-y-3">
+              {[manualWinnerMatch.player1, manualWinnerMatch.player2].map((player) => {
+                if (!player) return null;
+                return (
+                  <Button
+                    key={player.id}
+                    onClick={() => {
+                      onManualWinner(manualWinnerMatch.id, player.id);
+                      setManualWinnerMatch(null);
+                    }}
+                    className="w-full py-4 text-sm bg-white/5 hover:bg-white/10 border border-white/20"
+                  >
+                    <span className="flex items-center gap-3 w-full">
+                      {player.avatar ? (
+                        <img src={player.avatar} alt={player.name} className="w-10 h-10 rounded-full object-cover" />
+                      ) : (
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                          style={{ backgroundColor: player.color }}
+                        >
+                          {player.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="font-medium">{player.name}</span>
+                      <span className="ml-auto text-amber-400">{t('matchAbort.asWinner')}</span>
+                    </span>
+                  </Button>
+                );
+              })}
+            </div>
+            <Button
+              onClick={() => setManualWinnerMatch(null)}
+              variant="ghost"
+              className="w-full mt-3 py-2 text-sm text-white/40 hover:text-white/60"
+            >
+              {t('matchAbort.back')}
+            </Button>
           </div>
         </div>
       )}
