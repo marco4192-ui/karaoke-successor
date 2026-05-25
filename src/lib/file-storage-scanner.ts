@@ -31,7 +31,9 @@ async function collectAllFiles(
     const entries = await nativeReadDir(currentPath);
     
     for (const entry of entries) {
-      const fullPath = entry.path;
+      // Windows: Tauri/Rust may return paths with the \\?\ Extended-Length prefix.
+      // Strip it so paths match the basePath format (C:/Users/...).
+      const fullPath = entry.path.replace(/^\\\\\?\\/, '');
       
       // CRITICAL FIX: Normalize path separators for cross-platform support.
       // Rust fs::read_dir returns OS-native separators (\ on Windows, / on Unix).
