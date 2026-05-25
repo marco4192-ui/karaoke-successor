@@ -681,13 +681,10 @@ pub fn run() {
             app.manage(db::DbState::new(db_path)?);
             println!("SQLite database initialized at: {:?}", app.state::<db::DbState>().db_path);
 
-            // Get the main window and open DevTools in debug mode
-            #[cfg(debug_assertions)]
-            {
-                if let Some(window) = app.handle().get_webview_window("main") {
-                    // Open DevTools automatically in debug mode
-                    window.open_devtools();
-                }
+            // Get the main window and open DevTools
+            if let Some(window) = app.handle().get_webview_window("main") {
+                // Open DevTools automatically
+                let _ = window.open_devtools();
             }
             
             // Check if server is already running
@@ -696,7 +693,6 @@ pub fn run() {
                 if let Some(window) = app.handle().get_webview_window("main") {
                     let _ = window.eval("window.location.href = 'http://localhost:3000'");
                     // Re-open DevTools after navigation (redirect may close them)
-                    #[cfg(debug_assertions)]
                     let _ = window.open_devtools();
                 }
                 return Ok(());
@@ -832,7 +828,6 @@ pub fn run() {
                             if let Some(window) = handle.get_webview_window("main") {
                                 let _ = window.eval("window.location.href = 'http://localhost:3000'");
                                 // Re-open DevTools after navigation (redirect may close them)
-                                #[cfg(debug_assertions)]
                                 let _ = window.open_devtools();
                             }
                             return;
