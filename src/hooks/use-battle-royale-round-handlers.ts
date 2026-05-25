@@ -35,6 +35,7 @@ interface UseBattleRoyaleRoundHandlersReturn {
   handleStartRoundAfterVote: () => void;
   handleGrandFinaleIntroComplete: () => void;
   handleRoundEndRef: React.RefObject<() => void>;
+  handleStartRoundRef: React.RefObject<() => void>;
   /** Ref to medley snippet transition handler for use by round timer */
   onSnippetEndRef: React.RefObject<(() => void) | null>;
   activePlayersRef: React.RefObject<BattleRoyalePlayer[]>;
@@ -156,10 +157,14 @@ export function useBattleRoyaleRoundHandlers({
         if (!mountedRef.current) return;
         setShowElimination(false);
         const advanced = advanceToNextRound(withFinale);
+        gameRef.current = advanced;
         onUpdateGameRef.current(advanced);
-        // Clear guard AFTER the next round state is committed, so the game loop
-        // won't re-enter with stale data during this synchronous block.
         roundEndingRef.current = false;
+        // Auto-start grand finale round (will show GrandFinaleIntro then auto-advance)
+        setTimeout(() => {
+          if (!mountedRef.current) return;
+          handleStartRoundRef.current();
+        }, 300);
       }, 4000);
       return;
     }
@@ -175,10 +180,16 @@ export function useBattleRoyaleRoundHandlers({
       if (!mountedRef.current) return;
       setShowElimination(false);
       if (updatedGame.winner) return;
+      // Auto-advance to next round setup, then auto-start
       const nextGame = advanceToNextRound(updatedGame);
+      gameRef.current = nextGame;
       onUpdateGameRef.current(nextGame);
-      // Clear guard AFTER the next round state is committed.
       roundEndingRef.current = false;
+      // Auto-start next round after a brief pause for transition
+      setTimeout(() => {
+        if (!mountedRef.current) return;
+        handleStartRoundRef.current();
+      }, 300);
     }, 4000);
   // Stable deps: removed game, activePlayers.length, onUpdateGame — read from refs instead
   }, [stopPitch, audioRef, videoRef, audioHasPlayedRef, setShowElimination]);
@@ -186,6 +197,8 @@ export function useBattleRoyaleRoundHandlers({
   useEffect(() => {
     handleRoundEndRef.current = handleRoundEnd;
   }, [handleRoundEnd]);
+
+  const handleStartRoundRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     return () => {
@@ -250,6 +263,10 @@ export function useBattleRoyaleRoundHandlers({
   // Stable deps: removed game and onUpdateGame — read from refs instead
   }, [getRandomSong, getRandomSongs]);
 
+  useEffect(() => {
+    handleStartRoundRef.current = handleStartRound;
+  }, [handleStartRound]);
+
   const handleVoteSubmit = useCallback((playerId: string, songIndex: number) => {
     const currentGame = gameRef.current;
     if (currentGame.status !== 'voting') return;
@@ -292,6 +309,7 @@ export function useBattleRoyaleRoundHandlers({
     handleStartRoundAfterVote,
     handleGrandFinaleIntroComplete,
     handleRoundEndRef,
+    handleStartRoundRef,
     onSnippetEndRef,
     activePlayersRef,
     gameRef,

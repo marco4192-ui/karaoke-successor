@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { AlertTriangle } from 'lucide-react';
 import { PauseButton } from '@/components/game/hud/pause-button';
@@ -132,10 +131,6 @@ export function PlayingView({
 
   const currentSnippet = getCurrentMedleySnippet(game);
 
-  // V6: Round-end scoreboard state
-  const [showScoreboard, setShowScoreboard] = useState(false);
-  const scoreboardTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   // V3: "GO!" overlay state
   const [showGoOverlay, setShowGoOverlay] = useState(false);
 
@@ -158,6 +153,21 @@ export function PlayingView({
     }
   }, [pauseDialogAction, game.status, audioRef]);
 
+  // Audio fade-out in last 3 seconds of round
+  useEffect(() => {
+    if (roundTimeLeft > 3 || roundTimeLeft === 0 || game.status !== 'playing') {
+      // Reset volume when not in fade zone
+      if (audioRef.current && audioRef.current.volume < 1) {
+        audioRef.current.volume = 1;
+      }
+      return;
+    }
+    const volume = roundTimeLeft / 3;
+    if (audioRef.current) {
+      audioRef.current.volume = Math.max(0, volume);
+    }
+  }, [roundTimeLeft, game.status, audioRef]);
+
   // V3: Show "GO!" when countdown reaches 0
   useEffect(() => {
     if (countdown === 0 && game.status === 'playing') {
@@ -172,21 +182,15 @@ export function PlayingView({
     }
   }, [countdown, game.status]);
 
-  // V6: Show scoreboard when round timer hits 0
+  // Auto-end round when timer hits 0
   useEffect(() => {
-    if (roundTimeLeft === 0 && game.status === 'playing' && !showScoreboard) {
-      // Use queueMicrotask to avoid synchronous setState in effect
-      queueMicrotask(() => setShowScoreboard(true));
-      scoreboardTimeoutRef.current = setTimeout(() => {
-        setShowScoreboard(false);
-      }, 3000);
+    if (roundTimeLeft === 0 && game.status === 'playing') {
+      const timer = setTimeout(() => {
+        onRoundEnd();
+      }, 500); // Brief delay for last scoring tick
+      return () => clearTimeout(timer);
     }
-    return () => {
-      if (scoreboardTimeoutRef.current) {
-        clearTimeout(scoreboardTimeoutRef.current);
-      }
-    };
-  }, [roundTimeLeft, game.status, showScoreboard]);
+  }, [roundTimeLeft, game.status, onRoundEnd]);
 
   // #9 Trend: Calculate score deltas from previous round
   const scoreDeltas = useMemo(() => {
@@ -360,6 +364,16 @@ export function PlayingView({
         <FullscreenButton />
       </div>
 
+      {/* ─────────── Pause Overlay ─────────── */}
+      {pauseDialogAction === 'song-pause' && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md">
+          <div className="text-center animate-in fade-in duration-300">
+            <div className="text-8xl mb-4">⏸</div>
+            <h2 className="text-3xl font-bold text-white/90">PAUSED</h2>
+          </div>
+        </div>
+      )}
+
       {/* ─────────── V3: Countdown Overlay ─────────── */}
       {countdown > 0 && <GameCountdown countdown={countdown} />}
 
@@ -462,9 +476,9 @@ export function PlayingView({
         )}
       </div>
 
-      {/* ─────────── 2. PLAYER CARDS STRIP (horizontal scrollable) ─────────── */}
-      <div className="flex-shrink-0 px-3 pb-1 overflow-x-auto">
-        <div className="flex gap-1.5 min-w-max">
+      {/* ─────────── 2. PLAYER CARDS STRIP (flex-wrap) ─────────── */}
+      <div className="flex-shrink-0 px-3 pb-1 overflow-y-auto max-h-[140px]">
+        <div className="flex flex-wrap gap-1.5">
           {sortedPlayers.map((player) => {
             const danger = isDanger(player);
             const lowest = isLowest(player);
@@ -500,9 +514,7 @@ export function PlayingView({
                           : 'bg-gradient-to-br from-white/10 to-white/5 border border-white/10'
                   }
                 `}
-                style={{
-                  minWidth: `${Math.max(120, Math.min(160, 1200 / Math.max(activePlayers.length, 4)))}px`,
-                }}
+                style={{ minWidth: '100px', flex: '1 1 120px', maxWidth: '180px' }}
               >
                 {/* Avatar */}
                 <div className="relative flex-shrink-0">
@@ -686,67 +698,6 @@ export function PlayingView({
           </div>
         )}
       </div>
-
-      {/* ─────────── V6: Round End Scoreboard ─────────── */}
-      {showScoreboard && roundTimeLeft === 0 && game.status === 'playing' && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-black/80 border border-white/20 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl">
-            <h2 className="text-center text-white/60 text-sm font-medium mb-4 uppercase tracking-wider">
-              {t('battleRoyale.round')} {game.currentRound}
-            </h2>
-            <div className="space-y-2">
-              {[...activePlayers]
-                .sort((a, b) => b.score - a.score)
-                .map((player, index) => {
-                  const delta = scoreDeltas[player.id] ?? 0;
-                  return (
-                    <div
-                      key={player.id}
-                      className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-white/5"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className={`text-sm font-bold w-5 text-center ${
-                          index === 0 ? 'text-yellow-400' : index === 1 ? 'text-gray-300' : 'text-amber-600'
-                        }`}>
-                          {index + 1}
-                        </span>
-                        {player.avatar ? (
-                          <img src={player.avatar} alt={player.name} className="w-6 h-6 rounded-full object-cover" />
-                        ) : (
-                          <div
-                            className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-                            style={{ backgroundColor: player.color }}
-                          >
-                            {player.name.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <span className="text-sm text-white font-medium truncate">{player.name}</span>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className={`text-xs font-bold ${delta > 0 ? 'text-green-400' : 'text-white/40'}`}>
-                          {delta > 0 ? '+' : ''}{delta.toLocaleString()}
-                        </span>
-                        <span className="text-sm text-white font-bold">{player.score.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ─────────── Eliminate Button ─────────── */}
-      {roundTimeLeft === 0 && game.status === 'playing' && !showScoreboard && (
-        <div className="flex-shrink-0 pb-4 text-center">
-          <Button
-            onClick={onRoundEnd}
-            className="px-12 py-4 text-xl bg-gradient-to-r from-red-500 to-pink-500 animate-pulse"
-          >
-            {t('battleRoyale.eliminateLowest')}
-          </Button>
-        </div>
-      )}
 
       {/* Danger Warning Overlay */}
       {eliminationAnimationEnabled && isDangerZone && (

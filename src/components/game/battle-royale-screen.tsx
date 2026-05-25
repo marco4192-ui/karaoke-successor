@@ -81,6 +81,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
           bestOf={game.settings.grandFinaleBestOf}
           finalWins={game.finalWins}
           onComplete={handleGrandFinaleIntroComplete}
+          autoAdvance
         />
       );
     }
@@ -97,17 +98,19 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
     const bountyClaimedById = lastRound?.bountyClaimedById;
 
     return (
-      <EliminationView
-        eliminatedPlayer={eliminatedPlayer}
-        remainingPlayersCount={activePlayers.length - (eliminatedPlayer ? 1 : 0)}
-        bountyClaimed={bountyClaimed}
-        bountyClaimedById={bountyClaimedById}
-        players={game.players}
-        roundScoreDeltas={lastRound?.roundScoreDeltas ?? {}}
-        isGrandFinale={game.isGrandFinale}
-        grandFinaleWins={game.finalWins}
-        bestOf={game.settings.grandFinaleBestOf}
-      />
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm animate-[fadeIn_0.3s_ease-out_forwards]">
+        <EliminationView
+          eliminatedPlayer={eliminatedPlayer}
+          remainingPlayersCount={activePlayers.length - (eliminatedPlayer ? 1 : 0)}
+          bountyClaimed={bountyClaimed}
+          bountyClaimedById={bountyClaimedById}
+          players={game.players}
+          roundScoreDeltas={lastRound?.roundScoreDeltas ?? {}}
+          isGrandFinale={game.isGrandFinale}
+          grandFinaleWins={game.finalWins}
+          bestOf={game.settings.grandFinaleBestOf}
+        />
+      </div>
     );
   }
 

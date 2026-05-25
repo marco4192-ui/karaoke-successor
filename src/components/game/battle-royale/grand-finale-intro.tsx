@@ -11,6 +11,7 @@ interface GrandFinaleIntroProps {
   bestOf: number;
   finalWins: Record<string, number>;
   onComplete: () => void;
+  autoAdvance?: boolean;
 }
 
 /**
@@ -23,6 +24,7 @@ export function GrandFinaleIntro({
   bestOf,
   finalWins,
   onComplete,
+  autoAdvance,
 }: GrandFinaleIntroProps) {
   const { t } = useTranslation();
   const [phase, setPhase] = useState<'intro' | 'versus' | 'showdown'>('intro');
@@ -45,6 +47,15 @@ export function GrandFinaleIntro({
   });
 
   useEffect(() => {
+    if (!autoAdvance) return;
+    const timer = setTimeout(() => {
+      onComplete();
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [autoAdvance, onComplete]);
+
+  useEffect(() => {
+    if (autoAdvance) return;
     const timer1 = setTimeout(() => setPhase('versus'), 1500);
     const timer2 = setTimeout(() => setPhase('showdown'), 2500);
     const timer3 = setTimeout(onComplete, 5000);
@@ -53,7 +64,7 @@ export function GrandFinaleIntro({
       clearTimeout(timer2);
       clearTimeout(timer3);
     };
-  }, [onComplete]);
+  }, [onComplete, autoAdvance]);
 
   return (
     <>

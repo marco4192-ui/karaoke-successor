@@ -39,7 +39,7 @@ export function EliminationView({
     : null;
 
   return (
-    <div className="max-w-4xl mx-auto text-center">
+    <div className="max-w-4xl mx-auto text-center animate-[fadeInScale_0.5s_ease-out_forwards]">
       <div className={`border-2 rounded-xl p-12 ${
         isGrandFinaleRound
           ? 'bg-gradient-to-r from-amber-500/30 to-yellow-500/30 border-amber-500'
