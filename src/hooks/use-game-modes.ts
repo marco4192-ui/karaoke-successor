@@ -35,6 +35,8 @@ interface UseGameModesParams {
   missingWordsGranularity?: MissingWordsGranularity;
   /** Escalating mode: frequency multiplier that increases per round (1.0 = normal) */
   escalatingMultiplier?: number;
+  /** Current missing words indices from the store (for detecting external clearing by resetGame) */
+  currentMissingWordsIndices?: number[];
 }
 
 /** Stores a pre-computed blind passage pattern for the current song. */
@@ -160,6 +162,7 @@ export function useGameModes({
   setBlindHardcore,
   setHardcoreMissingWords,
   setMissingWordsIndices,
+  currentMissingWordsIndices,
   onBlindWarning,
   onMissingWordsWarning,
   blindFrequency,
@@ -179,6 +182,8 @@ export function useGameModes({
   const missingWordsGeneratedRef = useRef(false);
   // Stores the hidden startTimes so the warning effect can check which passages are affected
   const hiddenStartTimesRef = useRef<Set<number>>(new Set());
+  // Track length of last generated indices to detect external clearing (e.g., by resetGame)
+  const lastGeneratedLengthRef = useRef(0);
 
   // Track last values to avoid redundant state updates every frame
   const lastBlindPassageRef = useRef(-1);
@@ -196,10 +201,17 @@ export function useGameModes({
     hiddenStartTimesRef.current = new Set();
     lastBlindPassageRef.current = -1;
     lastMWWarningKeyRef.current = '';
+    lastGeneratedLengthRef.current = 0;
     // Reset blind section state so it doesn't carry over to the next song
     setBlindSection(false);
+    // Clear stale mode-specific store state to prevent cross-contamination
+    // between Blind and Missing Words modes (e.g., missingWordsIndices from
+    // a previous Missing Words game leaking into a Blind game).
+    setMissingWordsIndices([]);
+    setBlindHardcore?.(false);
+    setHardcoreMissingWords?.(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- songId and gameMode are the intentional triggers
-  }, [songId, gameMode, setBlindSection]);
+  }, [songId, gameMode, setBlindSection, setMissingWordsIndices, setBlindHardcore, setHardcoreMissingWords]);
 
   // Set hardcore mode on store when blind game starts
   useEffect(() => {
@@ -300,6 +312,21 @@ export function useGameModes({
     }
   }, [gameMode, isGameActive, currentTime, sortedLines, setBlindSection, onBlindWarning]);
 
+  // ── MISSING WORDS: Detect external clearing of indices ──
+  // When resetGame() clears missingWordsIndices to [] but songId/gameMode
+  // don't change (e.g., replaying same song), the generation guard ref stays
+  // true and prevents regeneration. This effect detects that mismatch and
+  // resets the guard so the generation effect can run again.
+  useEffect(() => {
+    if (missingWordsGeneratedRef.current &&
+        lastGeneratedLengthRef.current > 0 &&
+        currentMissingWordsIndices &&
+        currentMissingWordsIndices.length === 0) {
+      missingWordsGeneratedRef.current = false;
+      lastGeneratedLengthRef.current = 0;
+    }
+  }, [currentMissingWordsIndices]);
+
   // ── MISSING WORDS MODE — Generate hidden pattern (once per song) ──
   // Decoupled from isGameActive so the pattern is ready before playback starts.
   // songId is included to guarantee regeneration when a new song loads.
@@ -369,6 +396,7 @@ export function useGameModes({
       }
 
       hiddenStartTimesRef.current = new Set(hiddenStartTimes);
+      lastGeneratedLengthRef.current = hiddenStartTimes.length;
       setMissingWordsIndices(hiddenStartTimes);
     }
   }, [gameMode, songId, sortedLines, setMissingWordsIndices, missingWordFrequency, missingWordsGranularity, escalatingMultiplier]);

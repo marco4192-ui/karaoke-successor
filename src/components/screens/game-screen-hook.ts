@@ -328,6 +328,7 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     setBlindHardcore,
     setHardcoreMissingWords,
     setMissingWordsIndices,
+    currentMissingWordsIndices: gameState.missingWordsIndices,
     onBlindWarning,
     onMissingWordsWarning,
     blindFrequency,

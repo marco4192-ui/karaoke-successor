@@ -175,7 +175,7 @@ export function usePtmGameLogic({
   // ── Smoothed pitch (visual display only) ──
   // Uses rawNote (un-stabilized) for responsive pitch indicator.
   // Scoring uses pitchResult.note (stabilized) separately.
-  const { pitchResult, stop, switchMicrophone } = usePitchDetector();
+  const { pitchResult, stop, switchMicrophone, setDifficulty: setPitchDifficulty } = usePitchDetector();
   const smoothedPitch = useSmoothedPitch(pitchResult?.rawNote ?? null, 0.80, 0.08);
 
   // ── Player state (local, mutable for performance) ──
@@ -490,12 +490,27 @@ export function usePtmGameLogic({
     if (player.micId && player.micId !== 'default') {
       // eslint-disable-next-line no-console
       console.log(`[PTM] Mic handoff: switching to player "${player.name}" mic (${player.micId})`);
-      switchMicrophone(player.micId).catch((err) => {
+      switchMicrophone(player.micId).then((success) => {
+        // After switching mic, re-apply difficulty so the fresh
+        // PitchDetector instance uses the correct config.
+        if (success) {
+          setPitchDifficulty(safeSettings.difficulty);
+        }
+      }).catch((err) => {
         // eslint-disable-next-line no-console
         console.error('[PTM] Mic handoff failed:', err);
       });
     }
-  }, [currentPlayerIndex, phase, switchMicrophone]);
+  }, [currentPlayerIndex, phase, switchMicrophone, safeSettings.difficulty, setPitchDifficulty]);
+
+  // ── Sync pitch detector difficulty when settings change mid-game ──
+  // The HUD controls allow cycling difficulty during gameplay. The scoring
+  // sub-hook already reads safeSettings.difficulty on every tick, but the
+  // pitch detector's internal config (noise gate, volume threshold, etc.)
+  // also needs to be updated so that raw pitch detection matches.
+  useEffect(() => {
+    setPitchDifficulty(safeSettings.difficulty);
+  }, [safeSettings.difficulty, setPitchDifficulty]);
 
   // ── Series navigation (sub-hook) ──
   const { handleContinue, handleEndSeriesComplete, handleContinueWithPlayers } = usePtmSeriesNav({
@@ -569,6 +584,12 @@ export function usePtmGameLogic({
         variant: 'destructive',
       });
     } else {
+      // Set pitch detector difficulty to match game settings.
+      // Without this, the detector uses KARAOKE_DEFAULT_CONFIG (medium-like)
+      // which may not match the user-selected difficulty, causing pitch
+      // detection to be too strict/lenient and scoring to fail.
+      setPitchDifficulty(safeSettings.difficulty);
+
       // Verification: wait 300ms and check if pitchResult has been populated
       await new Promise<void>(resolve => {
         setTimeout(() => {

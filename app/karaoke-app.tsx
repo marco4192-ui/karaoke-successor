@@ -1,16 +1,17 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { CHALLENGE_GAME_MODE_MAP } from '@/lib/game/player-progression';
-import { StorageKeys, getItem } from '@/lib/storage';
+import { StorageKeys, getItem, removeItem } from '@/lib/storage';
 import { useGlobalKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useGlobalRemoteControl } from '@/hooks/use-global-remote-control';
 import { useMobileClient } from '@/hooks/use-mobile-client';
 import { getAllSongs } from '@/lib/game/song-library';
 import { generatePtmSegments } from '@/lib/game/ptm-segments';
 import { recordMatchResult } from '@/lib/game/tournament';
+import { useTranslation } from '@/lib/i18n/translations';
 
 // Screen type & constants (canonical source)
 import type { Screen } from '@/types/screens';
@@ -20,6 +21,7 @@ import { IMMERSIVE_SCREENS } from '@/types/screens';
 import { useScreenNavigation } from '@/hooks/use-screen-navigation';
 import { useGameFlowHandlers } from '@/hooks/use-game-flow-handlers';
 import { useAppEffects } from '@/hooks/use-app-effects';
+import { useAutoFocus } from '@/hooks/use-roving-focus';
 
 // Extracted dialogs
 import { SongPauseDialog, PartyLeaveDialog, PartyExitConfirmDialog } from '@/components/dialogs';
@@ -39,10 +41,11 @@ import { PartyGameScreens } from '@/components/party/party-game-screens';
 import { OfflineBanner } from '@/components/ui/offline-banner';
 
 // ===================== MAIN APP =====================
-export default function KaraokeSuccessor() {
+export default function KaraokeZERO() {
   // ── Store hooks (must be called before any conditional returns) ──
-  const { gameState, setSong, setGameMode, setChallengeMode, profiles, queue, resetGame, addPlayer, setResults, pauseGame, resumeGame } = useGameStore();
+  const { gameState, setSong, setGameMode, setChallengeMode, setActiveProfile, profiles, queue, resetGame, addPlayer, setResults, pauseGame, resumeGame } = useGameStore();
   const party = usePartyStore();
+  const { t } = useTranslation();
 
   // ── Screen navigation (screen state + party-mode guard) ──
   const { screen, setScreen, isPartyModeActive, navigateWithGuard, pendingNavigation, setPendingNavigation } = useScreenNavigation(party);
@@ -59,9 +62,22 @@ export default function KaraokeSuccessor() {
   type DialogAction = null | 'song-pause' | 'party-leave';
   const [activeDialog, setActiveDialog] = useState<DialogAction>(null);
 
+  // ── Ctrl-Q: flag to auto-play first queue item ──
+  const [autoPlayNext, setAutoPlayNext] = useState(false);
+
+  // ── Tournament manual winner overlay ──
+  const [showTournamentWinnerOverlay, setShowTournamentWinnerOverlay] = useState(false);
+
   useEffect(() => {
     setActiveDialog(party.pauseDialogAction);
   }, [party.pauseDialogAction]);
+
+  // Reset autoPlayNext when navigating away from queue screen
+  useEffect(() => {
+    if (screen !== 'queue') {
+      setAutoPlayNext(false);
+    }
+  }, [screen]);
 
   const isTournamentMatch = !!(party.currentTournamentMatch && party.tournamentBracket);
 
@@ -79,83 +95,57 @@ export default function KaraokeSuccessor() {
   const handleSongAbort = useCallback(() => {
     closeDialog();
 
-    if (screen === 'game') {
-      if (isTournamentMatch) {
-        party.setTournamentMatchAborted(true);
-        resetGame();
-        setScreen('tournament-game');
-        return;
-      }
-      if (party.competitiveGame) {
-        const cg = party.competitiveGame;
-        const cgRounds = [...cg.rounds];
-        if (cg.currentRoundIndex < cgRounds.length) {
-          cgRounds[cg.currentRoundIndex] = { ...cgRounds[cg.currentRoundIndex], completed: true, player1Score: 0, player1Bonus: 0, player2Score: 0, player2Bonus: 0 };
-        }
-        const cgAllDone = cgRounds.length >= cg.totalRounds && cgRounds.every(r => r.completed);
-        party.setCompetitiveGame({ ...cg, rounds: cgRounds, status: cgAllDone ? 'game-over' : 'round-end', winner: cgAllDone ? [...cg.players].sort((a, b) => b.totalScore - a.totalScore)[0] || null : null });
-        resetGame();
-        const modeScreen = gameState.gameMode === 'missing-words' ? 'missing-words-game' : 'blind-game';
-        setScreen(modeScreen as Screen);
-        return;
-      }
-      if (gameState.gameMode === 'medley' && party.medleySongs.length > 0) {
-        resetGame();
-        setScreen('medley-game');
-        return;
-      }
-      if (gameState.gameMode === 'rate-my-song') {
-        resetGame();
-        setScreen('rate-my-song-rating');
-        return;
-      }
-      if (gameState.gameMode === 'pass-the-mic' || gameState.gameMode === 'companion-singalong') {
-        if (gameState.gameMode === 'pass-the-mic') {
-          party.setPassTheMicSong(null);
-          party.setPassTheMicSegments([]);
-        } else {
-          party.setCompanionPlayers([]);
-          party.setCompanionSong(null);
-          party.setCompanionSettings(null);
-        }
-        resetGame();
-        setScreen('party-setup');
-        return;
-      }
+    // ── Tournament match abort: needs bracket + aborted flag for the match-abort dialog ──
+    if (screen === 'game' && isTournamentMatch) {
+      party.setTournamentMatchAborted(true);
       resetGame();
-      setGameMode('standard');
-      setScreen('library');
+      setScreen('tournament-game');
       return;
     }
 
-    // BR / PTM / Companion — their own screens
-    if (party.battleRoyaleGame) {
-      party.setBattleRoyaleGame(null);
+    // ── Competitive game abort: finalize skipped round, keep multi-round game running ──
+    if (screen === 'game' && party.competitiveGame) {
+      const cg = party.competitiveGame;
+      const cgRounds = [...cg.rounds];
+      if (cg.currentRoundIndex < cgRounds.length) {
+        cgRounds[cg.currentRoundIndex] = { ...cgRounds[cg.currentRoundIndex], completed: true, player1Score: 0, player1Bonus: 0, player2Score: 0, player2Bonus: 0 };
+      }
+      const cgAllDone = cgRounds.length >= cg.totalRounds && cgRounds.every(r => r.completed);
+      party.setCompetitiveGame({ ...cg, rounds: cgRounds, status: cgAllDone ? 'game-over' : 'round-end', winner: cgAllDone ? [...cg.players].sort((a, b) => b.totalScore - a.totalScore)[0] || null : null });
       resetGame();
-      setGameMode('standard');
-      setScreen('party');
-      return;
-    }
-    if (party.passTheMicPlayers?.length > 0) {
-      party.setPassTheMicSong(null);
-      party.setPassTheMicSegments([]);
-      resetGame();
-      setScreen('party-setup');
-      return;
-    }
-    if (party.companionPlayers.length > 0) {
-      party.setCompanionPlayers([]);
-      party.setCompanionSong(null);
-      party.setCompanionSettings(null);
-      resetGame();
-      setGameMode('standard');
-      setScreen('party');
+      const modeScreen = gameState.gameMode === 'missing-words' ? 'missing-words-game' : 'blind-game';
+      setScreen(modeScreen as Screen);
       return;
     }
 
+    // ── Medley snippet abort: keep medley state, return to medley overview ──
+    if (screen === 'game' && gameState.gameMode === 'medley' && party.medleySongs.length > 0) {
+      resetGame();
+      setScreen('medley-game');
+      return;
+    }
+
+    // ── Rate-my-song abort: keep settings, go to rating screen ──
+    if (screen === 'game' && gameState.gameMode === 'rate-my-song') {
+      resetGame();
+      setScreen('rate-my-song-rating');
+      return;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ULTIMATE PARTY-MODE TERMINATOR
+    // All remaining cases get a full nuclear reset of party state.
+    // This covers: BR, PTM, Companion, CPTM (from game or their own
+    // screens), and any other party mode that isn't handled above.
+    // Previously these only did partial per-mode cleanup, leaving
+    // residual state like selectedGameMode, unifiedSetupResult,
+    // votingSongs, medleyPlayers, etc. to leak into the Library
+    // and other non-party screens.
+    // ═══════════════════════════════════════════════════════════════════
+    party.resetPartyState();
     resetGame();
     setGameMode('standard');
-    setScreen('library');
+    setScreen('party');
   }, [closeDialog, screen, isTournamentMatch, party, gameState.gameMode, resetGame, setScreen, setGameMode]);
 
   const handleTournamentRepeat = useCallback(() => {
@@ -178,10 +168,34 @@ export default function KaraokeSuccessor() {
 
   const handleTournamentManualWinner = useCallback(() => {
     closeDialog();
-    party.setTournamentMatchAborted(true);
+    // Show overlay instead of auto-determining winner
+    setShowTournamentWinnerOverlay(true);
+  }, [closeDialog]);
+
+  const handleTournamentPickWinner = useCallback((winnerId: string) => {
+    if (!party.currentTournamentMatch || !party.tournamentBracket) return;
+    const match = party.currentTournamentMatch;
+    const isP1Winner = winnerId === match.player1?.id;
+
+    // Use 100 for winner, 0 for loser
+    const updatedBracket = recordMatchResult(
+      party.tournamentBracket,
+      match.id,
+      isP1Winner ? 100 : 0,
+      isP1Winner ? 0 : 100,
+    );
+    party.setTournamentBracket(updatedBracket);
+    party.setCurrentTournamentMatch(null);
+    party.setTournamentMatchAborted(false);
+
+    setShowTournamentWinnerOverlay(false);
     resetGame();
-    setScreen('tournament');
-  }, [closeDialog, party, resetGame, setScreen]);
+    setScreen('tournament-game');
+  }, [party, resetGame, setScreen]);
+
+  const handleTournamentCancelWinner = useCallback(() => {
+    setShowTournamentWinnerOverlay(false);
+  }, []);
 
   const handlePartyModeEnd = useCallback(() => {
     closeDialog();
@@ -197,21 +211,53 @@ export default function KaraokeSuccessor() {
   }, [closeDialog]);
 
   // ── Global keyboard shortcuts ──
+  const isPaused = activeDialog === 'song-pause';
+  const isSongPlaying = screen === 'game' || party.isSongPlaying;
+
   useGlobalKeyboardShortcuts({
-    screen,
+    screen: screen as Screen,
     isFullscreen,
     isPartyModeActive,
-    isSongPlaying: party.isSongPlaying,
-    isPaused: party.pauseDialogAction !== null,
+    isSongPlaying,
+    isPaused,
     toggleFullscreen,
-    navigateTo: navigateWithGuard,
+    navigateTo: (target) => navigateWithGuard(target),
     pauseGame,
     resumeGame,
     setPauseDialog: (action) => party.setPauseDialogAction(action),
-    focusLibrarySearch: () => navigateWithGuard('library'),
-    startRandomSong: (_mode) => { /* no-op: random song handled by library screen */ },
-    startQueueSong: () => { /* no-op: queue handled by queue screen */ },
-    navigateToJukebox: () => { /* no-op: jukebox handled by mobile */ },
+    focusLibrarySearch: () => {
+      navigateWithGuard('library');
+      // Focus search input after navigation (small delay for render)
+      setTimeout(() => {
+        const searchInput = document.getElementById('song-search') as HTMLInputElement | null;
+        searchInput?.focus();
+      }, 100);
+    },
+    startRandomSong: (mode) => {
+      const songs = getAllSongs();
+      if (songs.length === 0) return;
+      const randomSong = songs[Math.floor(Math.random() * songs.length)];
+      resetGame();
+      if (mode === 'duel') {
+        setGameMode('duel');
+      } else {
+        setGameMode('standard');
+      }
+      setSong(randomSong);
+      setScreen('game');
+    },
+    startQueueSong: () => {
+      // Trigger the first queue item if available
+      const q = useGameStore.getState().queue;
+      if (q.length === 0) return;
+      setAutoPlayNext(true);
+      navigateWithGuard('queue');
+    },
+    navigateToJukebox: () => {
+      navigateWithGuard('jukebox');
+      // Dispatch event to auto-start jukebox after screen mounts
+      setTimeout(() => window.dispatchEvent(new CustomEvent('jukebox:start')), 300);
+    },
   });
 
   // ── Global remote control from mobile companions ──
@@ -219,6 +265,9 @@ export default function KaraokeSuccessor() {
     const screenMap: Record<string, Screen> = {
       'home': 'home', 'library': 'library', 'settings': 'settings',
       'queue': 'queue', 'party': 'party', 'profile': 'profile',
+      'highscores': 'highscores', 'achievements': 'achievements',
+      'jukebox': 'jukebox', 'editor': 'editor',
+      'dailyChallenge': 'dailyChallenge', 'online': 'online',
     };
     navigateWithGuard(screenMap[targetScreen] || 'home');
   }, [navigateWithGuard]);
@@ -227,6 +276,54 @@ export default function KaraokeSuccessor() {
     navigateToScreen: handleRemoteNavigation,
     isPlaying: screen === 'game',
   });
+
+  // ── Handle remote party-mode events dispatched by global remote control ──
+  useEffect(() => {
+    const handleRemotePartyMode = (e: Event) => {
+      const { mode } = (e as CustomEvent).detail || {};
+      if (!mode) return;
+      if (mode === 'online') {
+        setScreen('online');
+        return;
+      }
+      party.setSelectedGameMode(mode);
+      setScreen('party-setup');
+    };
+    window.addEventListener('remote-party-mode', handleRemotePartyMode);
+    return () => window.removeEventListener('remote-party-mode', handleRemotePartyMode);
+  }, [party, setScreen]);
+
+  // ── Handle remote random song events (mirror Ctrl+R / Ctrl+D) ──
+  useEffect(() => {
+    const handleRemoteRandomSong = (e: Event) => {
+      const { mode } = (e as CustomEvent).detail || {};
+      const songs = getAllSongs();
+      if (songs.length === 0) return;
+      const randomSong = songs[Math.floor(Math.random() * songs.length)];
+      resetGame();
+      if (mode === 'duel') {
+        setGameMode('duel');
+      } else {
+        setGameMode('standard');
+      }
+      setSong(randomSong);
+      setScreen('game');
+    };
+    window.addEventListener('remote-random-song', handleRemoteRandomSong);
+    return () => window.removeEventListener('remote-random-song', handleRemoteRandomSong);
+  }, [resetGame, setGameMode, setSong, setScreen]);
+
+  // ── Handle remote play-queue event (mirror Ctrl+Q) ──
+  useEffect(() => {
+    const handleRemotePlayQueue = () => {
+      const q = useGameStore.getState().queue;
+      if (q.length === 0) return;
+      setAutoPlayNext(true);
+      navigateWithGuard('queue');
+    };
+    window.addEventListener('remote-play-queue', handleRemotePlayQueue);
+    return () => window.removeEventListener('remote-play-queue', handleRemotePlayQueue);
+  }, [navigateWithGuard]);
 
   // ── Mobile client sync ──
   const { syncSongLibrary } = useMobileClient({
@@ -239,6 +336,34 @@ export default function KaraokeSuccessor() {
   useEffect(() => {
     syncSongLibrary();
   }, [syncSongLibrary, screen]);
+
+  // ── Sync current screen to mobile companions (every 2s) ──
+  useEffect(() => {
+    const syncScreen = async () => {
+      try {
+        await fetch('/api/mobile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'gamestate',
+            payload: {
+              ...useGameStore.getState().gameState,
+              currentScreen: screen,
+            },
+          }),
+        });
+      } catch {
+        // Non-critical — screen sync failure doesn't affect the app
+      }
+    };
+    syncScreen();
+    const interval = setInterval(syncScreen, 2000);
+    return () => clearInterval(interval);
+  }, [screen]);
+
+  // ── Auto-focus management: focus first interactive element on screen change ──
+  const mainRef = useRef<HTMLElement>(null);
+  useAutoFocus(mainRef, screen);
 
   // ── Hydration guard for Tauri ──
   if (!isMounted) {
@@ -271,7 +396,7 @@ export default function KaraokeSuccessor() {
   // ===================== MAIN RENDER =====================
   return (
     <div
-      className={`${IMMERSIVE_SCREENS.has(screen) || screen === 'library' ? 'h-screen overflow-hidden' : 'min-h-screen'} w-full text-white theme-container`}
+      className={`${IMMERSIVE_SCREENS.has(screen) || screen === 'library' ? 'h-screen overflow-hidden' : 'min-h-screen'} flex flex-col w-full text-white theme-container`}
       style={{
         background: `linear-gradient(135deg, var(--theme-background, #0a0a1a) 0%, var(--theme-background-secondary, #1a1a2e) 50%, color-mix(in srgb, var(--theme-primary, #00ffff) 15%, transparent) 100%)`,
         color: 'var(--theme-text, #ffffff)',
@@ -292,16 +417,14 @@ export default function KaraokeSuccessor() {
         />
       )}
 
-      {/* Fullscreen Exit Button for immersive screens without NavBar */}
+      {/* Fullscreen Toggle Button for immersive screens without NavBar */}
       {IMMERSIVE_SCREENS.has(screen) && <FullscreenToggleButton isFullscreen={isFullscreen} toggleFullscreen={toggleFullscreen} />}
 
       {/* Main Content */}
-      <main className={`${
+      <main ref={mainRef} className={`${
         IMMERSIVE_SCREENS.has(screen)
           ? 'pt-0 px-0 pb-0 w-full h-full'
-          : isFullscreen
-            ? 'pt-4 px-4 pb-8 min-h-screen'
-            : 'pt-20 px-4 pb-8 min-h-screen'
+          : 'px-4 pb-8 flex-1'
       }`}>
         {screen === 'home' && <HomeScreen onNavigate={setScreen} />}
         {screen === 'library' && (
@@ -319,14 +442,28 @@ export default function KaraokeSuccessor() {
               setSong(song);
               if (currentMode === 'pass-the-mic') {
                 const playerCount = party.passTheMicPlayers?.length || 2;
-                const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration);
+                // Always generate initial segments (may be time-based if lyrics lack notes)
+                const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration, song.lyrics);
                 party.setPassTheMicSegments(segments);
-                // Ensure URLs (and lyrics) are ready BEFORE navigating to PTM screen
-                // to avoid race condition where PTM renders without lyrics
+                // Ensure URLs AND lyrics (with notes) are ready BEFORE navigating to PTM screen.
+                // Always re-generate segments after lyrics load so score-based splitting is used.
                 (async () => {
                   try {
                     const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
-                    const songWithUrls = await ensureSongUrls(song);
+                    let songWithUrls = await ensureSongUrls(song);
+                    // Also load lyrics from DB if the song has none or lyrics without notes
+                    if (!songWithUrls.lyrics?.length || songWithUrls.lyrics.every(l => l.notes.length === 0)) {
+                      try {
+                        const { getSongByIdWithLyrics } = await import('@/lib/game/song-library');
+                        const withLyrics = await getSongByIdWithLyrics(songWithUrls.id);
+                        if (withLyrics?.lyrics?.length) {
+                          songWithUrls = { ...songWithUrls, lyrics: withLyrics.lyrics };
+                        }
+                      } catch { /* non-critical */ }
+                    }
+                    // Always regenerate segments with the best available lyrics for score-based splitting
+                    const scoreSegments = generatePtmSegments(songWithUrls.duration, playerCount, party.passTheMicSettings?.segmentDuration, songWithUrls.lyrics);
+                    party.setPassTheMicSegments(scoreSegments);
                     party.setPassTheMicSong(songWithUrls);
                   } catch {
                     party.setPassTheMicSong(song);
@@ -383,17 +520,41 @@ export default function KaraokeSuccessor() {
 
         {screen === 'profile' && <CharacterScreen />}
         {screen === 'queue' && (
-          <QueueScreen onPlayFromQueue={(song, gameMode, players) => {
+          <QueueScreen autoPlayNext={autoPlayNext} onPlayFromQueue={(song, gameMode, players) => {
+            setAutoPlayNext(false);
             resetGame();
             const activeMode = gameState.gameMode;
 
             if (activeMode === 'pass-the-mic' && party.passTheMicPlayers?.length > 0) {
               const playerCount = party.passTheMicPlayers.length || 2;
-              const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration);
+              // Generate initial segments (may be time-based if lyrics lack notes)
+              const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration, song.lyrics);
               party.setPassTheMicSegments(segments);
-              party.setPassTheMicSong(song);
-              setSong(song);
-              setScreen('pass-the-mic-game');
+              // Async: load lyrics with notes for score-based segment splitting
+              (async () => {
+                try {
+                  const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
+                  let songWithLyrics = song;
+                  if (!song.lyrics?.length || song.lyrics.every(l => l.notes.length === 0)) {
+                    try {
+                      const { getSongByIdWithLyrics } = await import('@/lib/game/song-library');
+                      const withLyrics = await getSongByIdWithLyrics(song.id);
+                      if (withLyrics?.lyrics?.length) {
+                        songWithLyrics = { ...song, lyrics: withLyrics.lyrics };
+                      }
+                    } catch { /* non-critical */ }
+                  }
+                  const finalSong = await ensureSongUrls(songWithLyrics);
+                  const scoreSegments = generatePtmSegments(finalSong.duration, playerCount, party.passTheMicSettings?.segmentDuration, finalSong.lyrics);
+                  party.setPassTheMicSegments(scoreSegments);
+                  party.setPassTheMicSong(finalSong);
+                  setSong(finalSong);
+                } catch {
+                  // Fallback: use whatever we already have
+                  party.setPassTheMicSong(song);
+                  setSong(song);
+                }
+              })();
               return;
             }
 
@@ -422,6 +583,7 @@ export default function KaraokeSuccessor() {
         {screen === 'dailyChallenge' && <DailyChallengeScreen onPlayChallenge={(song) => {
           // Look up the stored challenge mode ID and map it to a built-in game mode
           const challengeId = getItem(StorageKeys.CHALLENGE_MODE);
+          if (challengeId) removeItem(StorageKeys.CHALLENGE_MODE); // Clear after reading
           const mappedMode = challengeId ? CHALLENGE_GAME_MODE_MAP[challengeId] : undefined;
           setGameMode(mappedMode || 'standard');
           setChallengeMode(challengeId || undefined);
@@ -442,6 +604,64 @@ export default function KaraokeSuccessor() {
           onTournamentManualWinner={handleTournamentManualWinner}
         />
       )}
+
+      {/* Tournament Manual Winner Overlay */}
+      {showTournamentWinnerOverlay && party.currentTournamentMatch && (() => {
+        const match = party.currentTournamentMatch;
+        return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="bg-zinc-900 border border-amber-500/30 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="text-4xl mb-2">🏆</div>
+              <h2 className="text-xl font-bold text-white">{t('matchAbort.selectWinner')}</h2>
+              <p className="text-sm text-white/50 mt-1">
+                {match.player1?.name} vs {match.player2?.name}
+              </p>
+            </div>
+            <div className="space-y-3">
+              {match.player1 && (
+                <button
+                  onClick={() => handleTournamentPickWinner(match.player1!.id)}
+                  className="w-full py-4 text-sm bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl flex items-center gap-3 px-4 transition-all"
+                >
+                  {match.player1!.avatar ? (
+                    <img src={match.player1.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{ backgroundColor: match.player1.color }}>
+                      {match.player1.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <span className="font-medium flex-1 text-left">{match.player1.name}</span>
+                  <span className="text-amber-400 font-bold">{t('matchAbort.asWinner')}</span>
+                </button>
+              )}
+              {match.player2 && (
+                <button
+                  onClick={() => handleTournamentPickWinner(match.player2!.id)}
+                  className="w-full py-4 text-sm bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl flex items-center gap-3 px-4 transition-all"
+                >
+                  {match.player2!.avatar ? (
+                    <img src={match.player2.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{ backgroundColor: match.player2.color }}>
+                      {match.player2.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <span className="font-medium flex-1 text-left">{match.player2.name}</span>
+                  <span className="text-amber-400 font-bold">{t('matchAbort.asWinner')}</span>
+                </button>
+              )}
+              <button
+                onClick={handleTournamentCancelWinner}
+                className="w-full py-2 text-sm text-white/40 hover:text-white/60"
+              >
+                {t('matchAbort.back')}
+              </button>
+            </div>
+          </div>
+        </div>
+        );
+      })()}
 
       {/* Party Mode Leave Warning */}
       {activeDialog === 'party-leave' && (

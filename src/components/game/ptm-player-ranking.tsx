@@ -55,16 +55,16 @@ export function PtmPlayerRanking({ players, currentPlayerIndex }: PtmPlayerRanki
               )}
               <div className="flex flex-col min-w-0">
                 <span className={`text-xs font-medium truncate max-w-[80px] ${isActive ? 'text-white' : 'text-white/50'}`}>
-                  {player.name}
+                  {player.name ?? ''}
                 </span>
                 <span className={`text-[10px] ${isActive ? 'text-cyan-400 font-semibold' : 'text-white/25'}`}>
-                  {player.score.toLocaleString()} pts
+                  {String(player.score ?? 0).toLocaleString()} pts
                 </span>
               </div>
               {/* Combo for active player */}
-              {isActive && player.combo > 1 && (
+              {isActive && (player.combo ?? 0) > 1 && (
                 <span className="text-[10px] text-amber-400 font-medium ml-auto">
-                  {player.combo}x
+                  {String(player.combo)}x
                 </span>
               )}
             </div>

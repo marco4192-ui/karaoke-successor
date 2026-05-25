@@ -132,20 +132,30 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
 
   if (!currentLine) return null;
 
-  // Check if the next line contains hidden content (for preview hiding)
+  // Check if the preview should be hidden (for any mode where lyrics are hidden)
   const nextLineHasHiddenContent = useMemo(() => {
     if (!nextLine) return false;
-    // Blind mode: hide preview when currently in a blind section
-    if (gameMode === 'blind' && isBlindSection) return true;
-    // Missing Words mode: hide preview if next line has hidden words
+    // Blind mode: hide preview in blind sections (notes hidden on highway)
+    // and in Blind Hardcore mode when text is hidden (not in blind section)
+    if (gameMode === 'blind') {
+      if (isBlindSection) return true;
+      if (isBlindHardcore) return true;
+    }
+    // Missing Words mode: hide preview if current or next line has hidden words
     if (gameMode === 'missing-words' && missingWordsIndices.length > 0) {
+      // Current line has hidden content → player is in a challenge state
+      if (currentLine && (
+        missingWordsIndices.includes(currentLine.startTime) ||
+        currentLine.notes.some(n => missingWordsIndices.includes(n.startTime))
+      )) return true;
+      // Next line has hidden content → would reveal what's hidden
       // Passage mode: entire line hidden
       if (missingWordsIndices.includes(nextLine.startTime)) return true;
       // Word/both mode: individual notes hidden
       return nextLine.notes.some(n => missingWordsIndices.includes(n.startTime));
     }
     return false;
-  }, [nextLine, gameMode, missingWordsIndices, isBlindSection]);
+  }, [nextLine, currentLine, gameMode, missingWordsIndices, isBlindSection, isBlindHardcore]);
 
   // Calculate flying animation progress (0 = start, 1 = arrived at first note)
   const flyProgress = isFlying ? Math.max(0, Math.min(1, 1 - (timeUntilSing / previewTime))) : 0;

@@ -61,8 +61,8 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
   if (g.phase === 'song-results') {
     return (
       <PtmSongResults
-        songTitle={g.isMedleyMode ? `Medley` : g.effectiveSong.title}
-        songArtist={g.isMedleyMode ? '' : g.effectiveSong.artist}
+        songTitle={g.isMedleyMode ? 'Medley' : String(g.effectiveSong?.title ?? '')}
+        songArtist={g.isMedleyMode ? '' : String(g.effectiveSong?.artist ?? '')}
         playerScores={g.players.map(p => ({
           id: p.id,
           name: p.name,

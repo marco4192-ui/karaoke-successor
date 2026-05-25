@@ -214,16 +214,28 @@ const PlayerLyrics = React.memo(function PlayerLyrics({
 
     // Determine if preview should be hidden
     let hidePreview = false;
-    // Blind mode: hide preview when currently in a blind section
-    if (gameMode === 'blind' && isBlindSection) hidePreview = true;
-    // Missing Words mode: hide preview if next line has hidden words
-    if (gameMode === 'missing-words' && next && missingWordsIndices && missingWordsIndices.length > 0) {
-      if (missingWordsIndices.includes(next.startTime)) hidePreview = true;
-      else if (next.notes.some(n => missingWordsIndices.includes(n.startTime))) hidePreview = true;
+    // Blind mode: hide preview in blind sections (notes hidden on highway)
+    // and in Blind Hardcore mode when text is hidden (not in blind section)
+    if (gameMode === 'blind') {
+      if (isBlindSection) hidePreview = true;
+      else if (isBlindHardcore) hidePreview = true;
+    }
+    // Missing Words mode: hide preview if current or next line has hidden words
+    if (gameMode === 'missing-words' && missingWordsIndices && missingWordsIndices.length > 0) {
+      // Current line has hidden content → player is in a challenge state
+      if (currentLine && (
+        missingWordsIndices.includes(currentLine.startTime) ||
+        currentLine.notes.some(n => missingWordsIndices.includes(n.startTime))
+      )) hidePreview = true;
+      // Next line has hidden content → would reveal what's hidden
+      if (next && !hidePreview) {
+        if (missingWordsIndices.includes(next.startTime)) hidePreview = true;
+        else if (next.notes.some(n => missingWordsIndices.includes(n.startTime))) hidePreview = true;
+      }
     }
 
     return { displayLine: currentLine, nextLine: next, shouldHidePreview: hidePreview };
-  }, [lines, currentTime, gameMode, isBlindSection, missingWordsIndices]);
+  }, [lines, currentTime, gameMode, isBlindSection, isBlindHardcore, missingWordsIndices]);
 
   if (!displayLine) return null;
 

@@ -32,14 +32,14 @@ export function PtmHudPlayerScore({ players, currentPlayer }: PtmHudPlayerScoreP
           </div>
         )}
         <div className="text-[10px] text-white/50 uppercase tracking-wider">{t('passTheMic.nowSinging')}</div>
-        <div className="text-base font-bold truncate" style={{ color: currentPlayer?.color }}>
-          {currentPlayer?.name}
+        <div className="text-base font-bold truncate" style={{ color: currentPlayer?.color ?? '#22d3ee' }}>
+          {currentPlayer?.name ?? ''}
         </div>
         <div className="text-2xl font-bold text-cyan-400 mt-1" style={{ textShadow: '0 0 12px rgba(34,211,238,0.4)' }}>
-          {currentPlayer?.score.toLocaleString()}
+          {(currentPlayer?.score ?? 0).toLocaleString()}
         </div>
         {currentPlayer && currentPlayer.combo > 0 && (
-          <div className="text-xs text-amber-400 font-medium">🔥 {currentPlayer.combo}x Combo</div>
+          <div className="text-xs text-amber-400 font-medium">🔥 {String(currentPlayer.combo)}x Combo</div>
         )}
       </div>
 

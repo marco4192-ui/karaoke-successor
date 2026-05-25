@@ -129,7 +129,10 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   });
 
   // ── Multi-Pitch Detection (one detector per local mic player) ─────
-  // Build player configs from active mic players, each with their own microphoneId
+  // Build player configs from active mic players, each with their own microphoneId.
+  // Use a stable key so this only recalculates when player IDs/types/devices change,
+  // NOT on every scoring tick (which changes game.players every ~100ms).
+  const playerConfigsKey = game.players.map(p => `${p.id}:${p.playerType}:${p.microphoneId ?? ''}`).join('|');
   const playerConfigs = useMemo<PlayerPitchConfig[]>(() =>
     game.players
       .filter(p => p.playerType === 'microphone')
@@ -138,7 +141,8 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         type: 'local' as const,
         deviceId: p.microphoneId,
       })),
-    [game.players],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [playerConfigsKey],
   );
 
   const multiPitch = useMultiPitchDetector({
@@ -524,11 +528,17 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   }, [game.players, multiPitch.playerPitches]);
 
   // ── Cleanup on unmount ─────────────────────────────────────────────
+  // Use empty deps + multiPitchRef to avoid re-firing every render.
+  // multiPitch is a new object every render (playerPitches Map changes ~50Hz),
+  // so [multiPitch] as dep would call stop() every render, which creates
+  // a new empty Map via setPlayerPitches(new Map()), triggering another
+  // render → infinite loop (React #185 "Maximum update depth exceeded").
   useEffect(() => {
     return () => {
-      multiPitch.stop();
+      multiPitchRef.current.stop();
     };
-  }, [multiPitch]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return {
     showElimination,

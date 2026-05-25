@@ -69,7 +69,7 @@ export function PtmIntroScreen({
         <p className="text-white/60 mb-8">
           {isMedleyMode
             ? t('passTheMic.medleyLabel').replace('{n}', String(medleySnippetCount))
-            : `${audioSong?.title} — ${audioSong?.artist}`}
+            : `${audioSong?.title ?? ''} — ${audioSong?.artist ?? ''}`}
         </p>
 
         <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-xl max-w-md w-full mb-6 p-8 text-center">

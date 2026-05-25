@@ -65,6 +65,9 @@ export function useBattleRoyaleRoundHandlers({
   /** Guard: true while handleRoundEnd is processing or during the elimination timeout.
    *  The game loop checks this ref and skips all onUpdateGame calls when true. */
   const roundEndingRef = useRef(false);
+  /** Ref for onUpdateGame so callbacks can read the latest without re-creating. */
+  const onUpdateGameRef = useRef(onUpdateGame);
+  onUpdateGameRef.current = onUpdateGame;
   useEffect(() => {
     activePlayersRef.current = activePlayers;
     gameRef.current = game;
@@ -97,9 +100,9 @@ export function useBattleRoyaleRoundHandlers({
         videoRef.current.currentTime = 0;
       }
       audioHasPlayedRef.current = false;
-      onUpdateGame(updated);
+      onUpdateGameRef.current(updated);
     }
-  }, [onUpdateGame, audioRef, videoRef, audioHasPlayedRef]);
+  }, [audioRef, videoRef, audioHasPlayedRef]);
 
   useEffect(() => {
     onSnippetEndRef.current = handleSnippetEnd;
@@ -110,6 +113,13 @@ export function useBattleRoyaleRoundHandlers({
     if (roundEndingRef.current) return;
     roundEndingRef.current = true;
 
+    // Read latest values from refs to avoid stale closures.
+    // Using game/activePlayers as deps would recreate this callback ~10x/sec
+    // during gameplay (every scoring tick), which can cause infinite re-render
+    // loops when combined with React effect chains during round transitions.
+    const currentGame = gameRef.current;
+    const currentActivePlayers = activePlayersRef.current;
+
     if (audioRef.current) {
       audioRef.current.pause();
     }
@@ -119,23 +129,23 @@ export function useBattleRoyaleRoundHandlers({
     audioHasPlayedRef.current = false;
     stopPitch();
 
-    if (activePlayers.length <= 1) {
+    if (currentActivePlayers.length <= 1) {
       roundEndingRef.current = false;
       return;
     }
 
-    const updatedGame = endRoundAndEliminate(game);
+    const updatedGame = endRoundAndEliminate(currentGame);
     gameRef.current = updatedGame; // Update ref immediately so game loop sees new status
 
     // Check if we just entered grand finale (2 players remain + bestOf > 1)
     if (
-      !game.isGrandFinale &&
+      !currentGame.isGrandFinale &&
       updatedGame.isGrandFinale &&
       updatedGame.settings.grandFinaleBestOf > 1
     ) {
       const withFinale = enterGrandFinale(updatedGame);
       gameRef.current = withFinale; // Update ref immediately so game loop sees new status
-      onUpdateGame(withFinale);
+      onUpdateGameRef.current(withFinale);
       setShowElimination(true);
 
       if (roundEndTimerRef.current !== null) {
@@ -146,7 +156,7 @@ export function useBattleRoyaleRoundHandlers({
         if (!mountedRef.current) return;
         setShowElimination(false);
         const advanced = advanceToNextRound(withFinale);
-        onUpdateGame(advanced);
+        onUpdateGameRef.current(advanced);
         // Clear guard AFTER the next round state is committed, so the game loop
         // won't re-enter with stale data during this synchronous block.
         roundEndingRef.current = false;
@@ -154,7 +164,7 @@ export function useBattleRoyaleRoundHandlers({
       return;
     }
 
-    onUpdateGame(updatedGame);
+    onUpdateGameRef.current(updatedGame);
     setShowElimination(true);
 
     if (roundEndTimerRef.current !== null) {
@@ -166,11 +176,12 @@ export function useBattleRoyaleRoundHandlers({
       setShowElimination(false);
       if (updatedGame.winner) return;
       const nextGame = advanceToNextRound(updatedGame);
-      onUpdateGame(nextGame);
+      onUpdateGameRef.current(nextGame);
       // Clear guard AFTER the next round state is committed.
       roundEndingRef.current = false;
     }, 4000);
-  }, [activePlayers.length, onUpdateGame, stopPitch, audioRef, videoRef, audioHasPlayedRef, setShowElimination, game]);
+  // Stable deps: removed game, activePlayers.length, onUpdateGame — read from refs instead
+  }, [stopPitch, audioRef, videoRef, audioHasPlayedRef, setShowElimination]);
 
   useEffect(() => {
     handleRoundEndRef.current = handleRoundEnd;
@@ -187,24 +198,29 @@ export function useBattleRoyaleRoundHandlers({
 
   const handleStartRound = useCallback(() => {
     roundEndingRef.current = false;
-    if (game.status === 'grand-finale-intro') {
-      const advanced = advanceToNextRound(game);
-      onUpdateGame(advanced);
+    // Read latest game from ref to avoid stale closure.
+    // game changes every scoring tick (~100ms), so using it as a dep
+    // would recreate this callback constantly.
+    const currentGame = gameRef.current;
+
+    if (currentGame.status === 'grand-finale-intro') {
+      const advanced = advanceToNextRound(currentGame);
+      onUpdateGameRef.current(advanced);
       return;
     }
 
     // Build exclusion list for no-repeat protection
-    const excludeIds = game.settings.noRepeatProtection
-      ? game.recentlyPlayedSongIds.slice(-game.settings.noRepeatCount)
+    const excludeIds = currentGame.settings.noRepeatProtection
+      ? currentGame.recentlyPlayedSongIds.slice(-currentGame.settings.noRepeatCount)
       : [];
 
     // #2 Song Voting: enter voting phase
-    if (game.settings.songSelection === 'vote') {
+    if (currentGame.settings.songSelection === 'vote') {
       const voteSongs = getRandomSongs(3, excludeIds);
       if (voteSongs.length >= 2) {
         const options = voteSongs.map(s => ({ songId: s.id, songName: s.title }));
-        const updatedGame = startVotingPhase(game, options);
-        onUpdateGame(updatedGame);
+        const updatedGame = startVotingPhase(currentGame, options);
+        onUpdateGameRef.current(updatedGame);
         return;
       }
       // Fall through to random if not enough songs for voting
@@ -218,53 +234,56 @@ export function useBattleRoyaleRoundHandlers({
     }
 
     // #1 Medley Mode: pick additional songs for snippets
-    if (game.settings.medleyMode && game.settings.medleySnippets > 1) {
+    if (currentGame.settings.medleyMode && currentGame.settings.medleySnippets > 1) {
       const medleyExcludes = [...excludeIds, song.id];
-      const medleySongs = getRandomSongs(game.settings.medleySnippets - 1, medleyExcludes).filter(s => s.lyrics && s.lyrics.length > 0);
+      const medleySongs = getRandomSongs(currentGame.settings.medleySnippets - 1, medleyExcludes).filter(s => s.lyrics && s.lyrics.length > 0);
       const allSnippets = [
         { songId: song.id, songName: song.title },
         ...medleySongs.map(s => ({ songId: s.id, songName: s.title })),
       ];
-      const updatedGame = startRound(game, song.id, song.title, allSnippets);
-      onUpdateGame(updatedGame);
+      const updatedGame = startRound(currentGame, song.id, song.title, allSnippets);
+      onUpdateGameRef.current(updatedGame);
     } else {
-      const updatedGame = startRound(game, song.id, song.title);
-      onUpdateGame(updatedGame);
+      const updatedGame = startRound(currentGame, song.id, song.title);
+      onUpdateGameRef.current(updatedGame);
     }
-  }, [game, onUpdateGame, getRandomSong, getRandomSongs]);
+  // Stable deps: removed game and onUpdateGame — read from refs instead
+  }, [getRandomSong, getRandomSongs]);
 
   const handleVoteSubmit = useCallback((playerId: string, songIndex: number) => {
-    if (game.status !== 'voting') return;
-    const updatedGame = submitVote(game, playerId, songIndex);
-    onUpdateGame(updatedGame);
-  }, [game, onUpdateGame]);
+    const currentGame = gameRef.current;
+    if (currentGame.status !== 'voting') return;
+    const updatedGame = submitVote(currentGame, playerId, songIndex);
+    onUpdateGameRef.current(updatedGame);
+  }, []);
 
   const handleStartRoundAfterVote = useCallback(() => {
-    const result = resolveVote(game);
+    const currentGame = gameRef.current;
+    const result = resolveVote(currentGame);
     if (!result) return;
     const { game: updatedGame, songId, songName } = result;
 
-    if (game.settings.medleyMode && game.settings.medleySnippets > 1) {
-      const excludeIds = game.settings.noRepeatProtection
-        ? [...game.recentlyPlayedSongIds.slice(-game.settings.noRepeatCount), songId]
+    if (currentGame.settings.medleyMode && currentGame.settings.medleySnippets > 1) {
+      const excludeIds = currentGame.settings.noRepeatProtection
+        ? [...currentGame.recentlyPlayedSongIds.slice(-currentGame.settings.noRepeatCount), songId]
         : [songId];
-      const medleySongs = getRandomSongs(game.settings.medleySnippets - 1, excludeIds).filter(s => s.lyrics && s.lyrics.length > 0);
+      const medleySongs = getRandomSongs(currentGame.settings.medleySnippets - 1, excludeIds).filter(s => s.lyrics && s.lyrics.length > 0);
       const allSnippets = [
         { songId, songName },
         ...medleySongs.map(s => ({ songId: s.id, songName: s.title })),
       ];
       const started = startRound(updatedGame, songId, songName, allSnippets);
-      onUpdateGame(started);
+      onUpdateGameRef.current(started);
     } else {
       const started = startRound(updatedGame, songId, songName);
-      onUpdateGame(started);
+      onUpdateGameRef.current(started);
     }
-  }, [game, onUpdateGame, getRandomSongs]);
+  }, [getRandomSongs]);
 
   const handleGrandFinaleIntroComplete = useCallback(() => {
-    const advanced = advanceToNextRound(game);
-    onUpdateGame(advanced);
-  }, [game, onUpdateGame]);
+    const advanced = advanceToNextRound(gameRef.current);
+    onUpdateGameRef.current(advanced);
+  }, []);
 
   return {
     handleRoundEnd,
