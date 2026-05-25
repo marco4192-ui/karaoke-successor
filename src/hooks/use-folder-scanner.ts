@@ -103,7 +103,15 @@ export function useFolderScanner(): UseFolderScannerReturn {
       }
 
       // Run the scan with the normalized path
+      // eslint-disable-next-line no-console
+      console.log('[FolderScanner] Starting scan:', normalizedFolder);
       const result = await scanSongsFolderTauri(normalizedFolder);
+      // eslint-disable-next-line no-console
+      console.log('[FolderScanner] Scan result:', result.songs.length, 'songs,', result.scannedFiles, 'files scanned,', result.errors.length, 'errors');
+      if (result.errors.length > 0) {
+        // eslint-disable-next-line no-console
+        console.warn('[FolderScanner] Scan errors:', result.errors);
+      }
 
       setScanProgress({
         stage: 'importing',
@@ -324,7 +332,10 @@ export function useFolderScanner(): UseFolderScannerReturn {
         // Note: blob URL cache was already cleared by clearCustomSongs() at scan start.
         // New blob URLs created during scan are still valid.
         invalidateSongCache();
-        setSongCount(getAllSongs().length);
+        const finalCount = getAllSongs().length;
+        // eslint-disable-next-line no-console
+        console.log('[FolderScanner] Scan complete. Final song count:', finalCount);
+        setSongCount(finalCount);
         setFolderSaveComplete(true);
         const totalImported = imported + additionalImported;
         setScanProgress({

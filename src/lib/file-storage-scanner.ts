@@ -37,12 +37,23 @@ async function collectAllFiles(
       // Rust fs::read_dir returns OS-native separators (\ on Windows, / on Unix).
       // We normalize to forward slashes so all downstream code works consistently.
       // Also strip trailing slashes to ensure correct prefix matching.
-      const normalizedBase = basePath.replace(/\\/g, '/').replace(/\/+$/, '');
-      const normalizedFull = fullPath.replace(/\\/g, '/').replace(/\/+$/, '');
+      // CRITICAL FIX 2: Normalize to NFC so that the startsWith comparison works
+      // on macOS where the OS may return NFD paths while basePath (from
+      // normalizeFilePath) is NFC. Without this, paths with accented chars fail.
+      const normalizedBase = basePath.replace(/\\/g, '/').replace(/\/+$/, '').normalize('NFC');
+      const normalizedFull = fullPath.replace(/\\/g, '/').replace(/\/+$/, '').normalize('NFC');
       
-      const relativePath = normalizedFull.startsWith(normalizedBase + '/')
-        ? normalizedFull.slice(normalizedBase.length + 1)
-        : normalizedFull;
+      let relativePath: string;
+      if (normalizedFull.startsWith(normalizedBase + '/')) {
+        relativePath = normalizedFull.slice(normalizedBase.length + 1);
+      } else if (normalizedFull === normalizedBase) {
+        // Current directory is the base itself (no trailing slash)
+        continue;
+      } else {
+        // eslint-disable-next-line no-console
+        console.warn('[TauriScanner] Path prefix mismatch:', { basePath, fullPath });
+        relativePath = normalizedFull;
+      }
       
       if (entry.is_directory) {
         const subFiles = await collectAllFiles(basePath, fullPath);
