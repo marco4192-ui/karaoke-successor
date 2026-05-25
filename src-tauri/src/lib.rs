@@ -682,8 +682,8 @@ pub fn run() {
             println!("SQLite database initialized at: {:?}", app.state::<db::DbState>().db_path);
 
             // Get the main window and open DevTools
+            #[cfg(feature = "devtools")]
             if let Some(window) = app.handle().get_webview_window("main") {
-                // Open DevTools automatically
                 let _ = window.open_devtools();
             }
             
@@ -693,6 +693,7 @@ pub fn run() {
                 if let Some(window) = app.handle().get_webview_window("main") {
                     let _ = window.eval("window.location.href = 'http://localhost:3000'");
                     // Re-open DevTools after navigation (redirect may close them)
+                    #[cfg(feature = "devtools")]
                     let _ = window.open_devtools();
                 }
                 return Ok(());
@@ -828,6 +829,7 @@ pub fn run() {
                             if let Some(window) = handle.get_webview_window("main") {
                                 let _ = window.eval("window.location.href = 'http://localhost:3000'");
                                 // Re-open DevTools after navigation (redirect may close them)
+                                #[cfg(feature = "devtools")]
                                 let _ = window.open_devtools();
                             }
                             return;
