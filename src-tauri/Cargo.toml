@@ -13,7 +13,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["devtools"] }
 tauri-plugin-shell = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-dialog = "2"
@@ -48,10 +48,8 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-feature
 rusqlite = { version = "0.31", features = ["bundled"] }
 
 [features]
-# Production defaults: CREPE pitch detection + DevTools.
-# DevTools are enabled by default so F12 / Ctrl+Shift+I works in all builds.
-default = ["crepe", "devtools"]
-devtools = ["tauri/devtools"]
+# Production defaults: CREPE pitch detection.
+default = ["crepe"]
 asio = ["cpal/asio"]
 crepe = ["ort", "ndarray"]
 
