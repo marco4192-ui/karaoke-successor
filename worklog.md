@@ -116,3 +116,27 @@ Stage Summary:
   3. Editor covers: URL restoration via ensureSongUrls()
   4. PTM pitch: Robustness + debug logging + retry + toast
   5. Party terminator: Nuclear resetPartyState() in handleSongAbort()
+
+---
+Task ID: 1
+Agent: main + 6 subagents
+Task: Fix 9 UX issues in karaoke-successor Tauri app
+
+Work Log:
+- Analyzed all 9 issues using 6 parallel Explore agents
+- Dispatched 6 parallel implementation agents (one per file group)
+- Resolved git rebase conflict (old file path deleted in remote)
+- All changes compile with zero TypeScript errors
+- Pushed to main as commit b32682a
+
+Stage Summary:
+- Fix 1: Added asyncPool concurrency limiter (20) for cover image loading in song-library.ts
+- Fix 2: Added audio fade-in (800ms), full media cleanup on BR transitions
+- Fix 3: Fixed library scrollability with flex layout + min-h-0 overflow container
+- Fix 4: Fixed hardcoreMissingWords hardcoded false, threaded through DuetNoteHighway
+- Fix 5: Added descriptive text to editor select mode toggle button (i18n EN+DE)
+- Fix 6: Moved FullscreenButton into editor header row next to back button
+- Fix 7: Added release year filter to all party modes (types, hook, UI, i18n, filterSongs)
+- Fix 8: Verified hover feedback already exists on all library buttons
+- Fix 9: Fixed BR pause to also stop video + pitch detection
+- 19 files changed, 184 insertions, 52 deletions
