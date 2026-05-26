@@ -36,7 +36,6 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
   const { t } = useTranslation();
   const [currentSong, setCurrentSong] = useState<Song>(initialSong);
   const [selectedNoteId, setSelectedNoteId] = useState<string | undefined>();
-  const [audioBuffer] = useState<AudioBuffer | undefined>();
   const [isSaving, setIsSaving] = useState(false);
   const [saveResult, setSaveResult] = useState<SaveResult | null>(null);
   const [showSidebar, setShowSidebar] = useState(true); // Sidebar visible by default
@@ -509,7 +508,6 @@ export function KaraokeEditor({ song: initialSong, onSave, onCancel }: KaraokeEd
             currentTime={currentTime}
             isPlaying={isPlaying}
             selectedNoteId={selectedNoteId}
-            audioBuffer={audioBuffer}
             playbackRate={playbackRate}
             onPlaybackRateChange={setPlaybackRate}
             onTimeChange={handleTimeChange}

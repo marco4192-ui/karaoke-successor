@@ -26,7 +26,6 @@ interface PlaylistViewProps {
   onShowCreatePlaylist: () => void;
   songCardProps: Omit<SongCardProps, 'song'>;
   activeProfileId: string | null;
-  playerQueueCount: number;
   addToQueue: (_song: Song, _playerId: string, _playerName: string) => void;
   activeProfileName: string;
 }
@@ -42,7 +41,6 @@ export function PlaylistView({
   onShowCreatePlaylist,
   songCardProps,
   activeProfileId,
-  playerQueueCount: _playerQueueCount,
   addToQueue,
   activeProfileName,
 }: PlaylistViewProps) {

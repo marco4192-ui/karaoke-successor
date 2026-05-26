@@ -1,8 +1,142 @@
+# Code Review — Fresh Review #8
+
+**Datum:** 2026-05-26
+**Repo:** karaoke-successor
+**Branch:** origin/main
+**Stand:** Commit a174b7e
+
+---
+
+## Zusammenfassung
+
+Komplette Neu-Analyse des Projekts mit 7 parallelen Agents. 330+ Dateien geprüft. Nur 1 echter Bug, 4 Dead-Code-Entfernungen, 1 Dead-State-Removal. Alle vorherigen Reviews (2-7) haben das Projekt massiv bereinigt — der Code ist jetzt sehr sauber.
+
+---
+
+## Gefundene & Gefixte Punkte
+
+### B1: Rust `*error_ch = None` — Dereferenzierung von `Option` (Compilation-Fehler)
+- **Datei:** `src-tauri/src/audio/commands.rs`, Zeile 162
+- **Beschreibung:** `error_ch` ist `Option<Channel<String>>` (owned, seit Review #1). In der Song-Ende-Erkennung steht aber `*error_ch = None` (mit Dereferenzierungs-Operator `*`). `Option<T>` implementiert nicht `DerefMut`, daher kompiliert dieser Ausdruck nicht. Wenn dieser Codepfad erreicht wird (Song Ende), crasht der Audio-Thread. Zeile 130 hat korrekt `error_ch = None` (ohne `*`).
+- **Fix:** `*error_ch = None` → `error_ch = None`
+
+### D1: 3 doppelte Tournament-Dateien (Dead Code, ~1100 Zeilen)
+- **Dateien:** `tournament-setup-screen.tsx`, `tournament-bracket-view.tsx`, `tournament-results-screen.tsx`
+- **Beschreibung:** Alle drei exportieren Komponenten die identisch in `tournament-screen.tsx` definiert sind. `party-game-screens.tsx` importiert ausschließlich aus `tournament-screen.tsx`. Keine der drei Dateien wird irgendwo importiert (grep-verifiziert).
+- **Vermutete Funktion:** Überbleibsel einer Refactorierung, bei der die Komponenten in `tournament-screen.tsx` konsolidiert wurden, aber die alten Dateien nicht gelöscht wurden.
+- **Fix:** Alle 3 Dateien gelöscht.
+
+### D2: `audioBuffer` State in karaoke-editor.tsx ist immer `undefined` (Dead State)
+- **Datei:** `src/components/editor/karaoke-editor.tsx`, Zeile 39
+- **Beschreibung:** `const [audioBuffer] = useState<AudioBuffer | undefined>()` — kein Initialwert, kein Setter. Wert ist immer `undefined`. Wird an `Timeline` → `Waveform` weitergegeben, wo der `providedBuffer`-Codepfad nie erreicht wird.
+- **Vermutete Funktion:** Geplant für vorgefertigte Audio-Puffer (z.B. offline dekodiertes Audio). Wurde nie implementiert — Audio wird immer per URL geladen.
+- **Fix:** State, Prop-Kette (Timeline → Waveform) und toten `providedBuffer`-Codepfad in waveform.tsx entfernt.
+
+### D3: `_profiles` ungenutzt in highscore-screen.tsx
+- **Datei:** `src/components/screens/highscore-screen.tsx`, Zeile 14
+- **Beschreibung:** `profiles: _profiles` destrukturiert aus `useGameStore()` aber nie verwendet.
+- **Fix:** Destrukturierung entfernt.
+
+### D4: `playerQueueCount` ungenutzt in playlist-view.tsx
+- **Datei:** `src/components/screens/library/playlist-view.tsx`, Zeile 29/45
+- **Beschreibung:** `playerQueueCount: _playerQueueCount` — im Interface und in der Destructuring deklariert, aber nie referenziert.
+- **Fix:** Aus Interface und Destructuring entfernt.
+
+---
+
+## Dokumentierte Dead-Code-Elemente (nicht gelöscht)
+
+### DC1: `GameModeType` und `NoteDisplayStyleType` Exporte — lyric-line-display.tsx
+- **Wahrscheinliche Funktion:** Type-Aliase für externen Konsum. Werden nur intern in der eigenen Datei verwendet (`GameModeType` in der Props-Definition). Externe Importe existieren nicht.
+
+### DC2: `medley/index.ts` Barrel-Export
+- **Wahrscheinliche Funktion:** Zentraler Import-Punkt für Medley-Module. **Wird tatsächlich importiert** von `party-game-screens.tsx`. Kein Dead Code.
+
+### DC3: Dialog UI Exports: `DialogClose`, `DialogOverlay`, `DialogPortal`, `DialogTrigger` — dialog.tsx
+- **Wahrscheinliche Funktion:** Für zukünftige Dialog-Varianten. Aktuell werden nur `Dialog`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogDescription` importiert.
+
+### DC4: `ToastAction`, `ToastActionElement`, `buttonVariants` — UI Components
+- **Wahrscheinliche Funktion:** Erweiterte Toast-Aktionen und Button-Varianten. Werden nirgends importiert.
+
+### DC5: 5 überflüssige `export default` in Editor-Komponenten
+- **Dateien:** karaoke-editor.tsx, timeline.tsx, note-block.tsx, lyric-track.tsx, waveform.tsx
+- **Beschreibung:** Alle werden über Named Exports importiert. Die Default-Exports sind überflüssig.
+
+### DC6: `_width`, `_height` Parameter in `TimelineGrid` — timeline.tsx
+- **Wahrscheinliche Funktion:** Für responsive Layout-Berechnung. Werden deklariert aber nie verwendet (Breite wird via `window.innerWidth` berechnet).
+
+### DC7: `onDoubleClick` Prop in `NoteBlock` — note-block.tsx
+- **Wahrscheinliche Funktion:** Für Note-Bearbeitung per Doppelklick. Prop ist definiert und intern behandelt, aber `Timeline` übergibt den Prop nie.
+
+### DC8: `onCancel` in `ImportScreenProps` — import-types.ts
+- **Wahrscheinliche Funktion:** Abbruch-Handler für den Import-Screen. Definiert im Interface aber nirgends destrukturiert oder verwendet.
+
+### DC9: `generateConnectionCode()`, `purgeCompletedQueueItems()`, `tournamentVoteRegistry` — mobile-state.ts
+- **Wahrscheinliche Funktion:** Hilfsfunktionen für Mobile-API. Werden nur intern aufgerufen, die Exporte sind überflüssig.
+
+### DC10: `type: 'command'` und `type: 'sync'` Handler — post-handlers.ts
+- **Wahrscheinliche Funktion:** Remote-Command-Bestätigung und Game-State-Sync. Werden vom Frontend nie als POST-Typ gesendet.
+
+### DC11: `setActiveProfile` Destructuring — karaoke-app.tsx
+- **Wahrscheinliche Funktion:** Profil-Wechsel im Karaoke-App-Root. Wird destrukturiert aber nie im File verwendet.
+
+---
+
+## Dokumentierte Verbesserungsvorschläge (nicht umgesetzt)
+
+### V1: UltraStar-Parser-Dreifach-Duplikation (file-storage-scanner, ultrastar-parser, song-lyrics-loader)
+- 3-4 unabhängige Parser für dasselbe TXT-Format. Konsolidierung empfohlen.
+
+### V2: `COVER_PATTERNS` doppelt definiert (file-storage-utils.ts und scan-types.ts)
+- Identische Konstante in zwei Dateien. Single Source of Truth empfohlen.
+
+### V3: `harmonize/route.ts` fehlt Retry und Rate-Limit-Behandlung
+- Andere AI-Routes haben `withRetry()`, diese Route nicht.
+
+### V4: `settings-screen.tsx` speichert nicht alle Einstellungen
+- `performanceMode`, `noteDisplayStyle`, `noteShapeStyle`, `useAnimatedBg`, `youtubeQuality` werden nur runtime gesetzt, nicht persisted.
+
+### V5: Hartcodierte Strings (deutsch/englisch) in mehreren Komponenten
+- `mic-indicator.tsx` ("Mikrofon aktiv"), `practice-panel.tsx` ("Playback Speed"), `fullscreen-button.tsx` ("Exit Fullscreen").
+
+### V6: `panic = "abort"` im Rust Release-Profil verhindert Drop-Ausführung
+- Audio-Thread-Shutdown und Server-Process-Cleanup werden nicht ausgeführt bei Panic.
+
+### V7: `native_read_file_text` skip(1) ist irreführend (aber kein Bug)
+- Der Roh-Pfad wird vorher probiert (Zeile 216), also ist `skip(1)` korrekt. Sollte aber kommentiert werden.
+
+### V8: ` SpectrogramDisplay` `_colorScheme` Prop wird ignoriert
+- Alle Farbentscheidungen sind hardcodiert, der Prop ist irreführend.
+
+---
+
+## Umsetzungs-Log
+
+### ✅ B1 — Rust `*error_ch` Dereferenzierung gefixt
+- **Datei:** `src-tauri/src/audio/commands.rs`
+- `*error_ch = None` → `error_ch = None`
+
+### ✅ D1 — 3 doppelte Tournament-Dateien gelöscht
+- **Dateien:** `tournament-setup-screen.tsx`, `tournament-bracket-view.tsx`, `tournament-results-screen.tsx`
+- ~1100 Zeilen Dead Code entfernt
+
+### ✅ D2 — Dead `audioBuffer` State entfernt
+- **Dateien:** `karaoke-editor.tsx`, `timeline.tsx`, `waveform.tsx`
+- State, Prop-Kette und toter Codepfad entfernt
+
+### ✅ D3 — `_profiles` Destructuring entfernt
+- **Datei:** `highscore-screen.tsx`
+
+### ✅ D4 — `playerQueueCount` aus Interface entfernt
+- **Datei:** `playlist-view.tsx`
+
+---
+
 # Code Review — Fresh Review #2
 
-**Datum:** 2026-04-30  
-**Repo:** karaoke-successor  
-**Branch:** origin/master  
+**Datum:** 2026-04-30
+**Repo:** karaoke-successor
+**Branch:** origin/master
 **Stand:** Commit 89a6a6f
 
 ---

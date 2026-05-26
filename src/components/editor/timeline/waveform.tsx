@@ -5,7 +5,6 @@ import type { Note } from '@/types/game';
 
 interface WaveformProps {
   audioUrl?: string;
-  audioBuffer?: AudioBuffer;
   width: number;
   height: number;
   zoom: number;
@@ -23,7 +22,6 @@ interface WaveformProps {
 
 export function Waveform({
   audioUrl,
-  audioBuffer: providedBuffer,
   width,
   height,
   zoom,
@@ -36,7 +34,7 @@ export function Waveform({
 }: WaveformProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const bufferRef = useRef<AudioBuffer | null>(providedBuffer || null);
+  const bufferRef = useRef<AudioBuffer | null>(null);
 
   // ── Derived: pixels-per-second and visible range ──
   const pixelsPerSecond = 100 * zoom;
@@ -202,14 +200,10 @@ export function Waveform({
 
   // ── Effects ──
   useEffect(() => {
-    if (providedBuffer) {
-      bufferRef.current = providedBuffer;
-      const canvas = canvasRef.current;
-      if (canvas) drawWaveform(providedBuffer, canvas);
-    } else if (audioUrl) {
+    if (audioUrl) {
       loadAudio(audioUrl);
     }
-  }, [audioUrl, providedBuffer, drawWaveform, loadAudio]);
+  }, [audioUrl, loadAudio]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

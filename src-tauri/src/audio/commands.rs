@@ -159,7 +159,7 @@ fn run_audio_thread(
                         let _ = ch.send(());
                     }
                     time_update_ch = None;
-                    *error_ch = None;
+                    error_ch = None;
                     ended_emitted = true;
                 }
             }

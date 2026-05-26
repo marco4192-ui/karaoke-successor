@@ -16,7 +16,6 @@ interface TimelineProps {
   currentTime: number;
   isPlaying: boolean;
   selectedNoteId?: string;
-  audioBuffer?: AudioBuffer;
   playbackRate?: number;
   onPlaybackRateChange?: (_rate: number) => void;
   onTimeChange: (_time: number) => void;
@@ -32,7 +31,6 @@ export function Timeline({
   currentTime,
   isPlaying,
   selectedNoteId,
-  audioBuffer,
   playbackRate = 1.0,
   onPlaybackRateChange,
   onTimeChange,
@@ -430,7 +428,6 @@ export function Timeline({
           <div className="absolute top-0 left-0 right-0 overflow-hidden" style={{ height: waveformHeight }}>
             <Waveform
               audioUrl={song.audioUrl}
-              audioBuffer={audioBuffer}
               width={totalWidth}
               height={waveformHeight}
               zoom={zoom}
