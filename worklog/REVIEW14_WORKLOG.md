@@ -240,8 +240,9 @@ Release/Produktion-Builds. Nutzer würden DevTools-Fenster sehen.
 ### Build & Push
 
 - [x] Build getestet `bun run next build --webpack` — **ERFOLGREICH** (12 Seiten)
-- [x] Git commit & push geplant
+- [x] Git commit: `fee9a18` — "fix: resolve 7 HIGH/MEDIUM bugs"
+- [x] Git push: `main -> main` erfolgreich
 
 ---
 
-*Worklog Fortsetzung — Fixes aus Review 15 bereit zum Push.*
+*Worklog abgeschlossen — Commit fee9a18 gepusht.*
