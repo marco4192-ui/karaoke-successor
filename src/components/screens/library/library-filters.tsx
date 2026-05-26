@@ -16,6 +16,7 @@ interface LibraryFiltersProps {
   groupBy: LibraryGroupBy;
   availableGenres: string[];
   availableLanguages: string[];
+  availableYears: string[];
   onSetViewMode: (_mode: LibraryViewMode) => void;
   onSetGroupBy: (_groupBy: LibraryGroupBy) => void;
   onClearFolder: () => void;
@@ -35,6 +36,7 @@ export function LibraryFilters({
   groupBy,
   availableGenres,
   availableLanguages,
+  availableYears,
   onSetViewMode,
   onSetGroupBy,
   onClearFolder,
@@ -125,6 +127,20 @@ export function LibraryFilters({
           </select>
         </div>
         
+        <div className="flex items-center gap-2">
+          <span className="text-white/40 text-sm">{t('library.yearFilter')}</span>
+          <select
+            value={settings.filterYear || 'all'}
+            onChange={(e) => setSettings(prev => ({ ...prev, filterYear: e.target.value }))}
+            className="bg-gray-800 border border-white/20 rounded-md px-3 py-1.5 text-white text-sm appearance-none cursor-pointer hover:border-cyan-500/50 focus:border-cyan-500 focus:outline-none"
+            style={smallSelectStyle}
+          >
+            {availableYears.map(y => (
+              <option key={y} value={y} className="bg-gray-800 text-white">{y === 'all' ? t('library.allYears') : y}</option>
+            ))}
+          </select>
+        </div>
+        
         <button
           onClick={() => {
             const newValue = !settings.filterDuet;
@@ -135,7 +151,7 @@ export function LibraryFilters({
           }}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
             settings.filterDuet || startMode === 'duet'
-              ? 'bg-pink-500/30 text-pink-300 border border-pink-500/50' 
+              ? 'bg-pink-500/30 text-pink-300 border border-pink-500/50 hover:bg-pink-500/40' 
               : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/10'
           }`}
         >
@@ -149,7 +165,7 @@ export function LibraryFilters({
           }}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
             settings.filterViral
-              ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50' 
+              ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50 hover:bg-orange-500/40' 
               : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/10'
           }`}
         >
@@ -157,10 +173,10 @@ export function LibraryFilters({
           <span>{t('libraryFilters.viralHits')}</span>
         </button>
         
-        {(settings.filterGenre !== 'all' || settings.filterLanguage !== 'all' || settings.filterDuet || settings.filterViral || startMode === 'duet') && (
+        {(settings.filterGenre !== 'all' || settings.filterLanguage !== 'all' || settings.filterYear !== 'all' || settings.filterDuet || settings.filterViral || startMode === 'duet') && (
           <button
             onClick={() => {
-              setSettings(prev => ({ ...prev, filterGenre: 'all', filterLanguage: 'all', filterDuet: false, filterViral: false }));
+              setSettings(prev => ({ ...prev, filterGenre: 'all', filterLanguage: 'all', filterYear: 'all', filterDuet: false, filterViral: false }));
               if (startMode === 'duet') {
                 onResetStartMode();
               }
@@ -177,7 +193,7 @@ export function LibraryFilters({
           <button
             onClick={() => { onClearFolder(); onSetViewMode('grid'); onSetGroupBy('none'); }}
             className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-              viewMode === 'grid' && groupBy === 'none' ? 'bg-cyan-500 text-white' : 'text-white/60 hover:text-white'
+              viewMode === 'grid' && groupBy === 'none' ? 'bg-cyan-500 text-white hover:bg-cyan-600' : 'text-white/60 hover:text-white'
             }`}
           >
             <div className="flex items-center gap-1.5">
@@ -193,7 +209,7 @@ export function LibraryFilters({
           <button
             onClick={() => onSetViewMode('playlists')}
             className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-              viewMode === 'playlists' ? 'bg-purple-500 text-white' : 'text-white/60 hover:text-white'
+              viewMode === 'playlists' ? 'bg-purple-500 text-white hover:bg-purple-600' : 'text-white/60 hover:text-white'
             }`}
           >
             <div className="flex items-center gap-1.5">
@@ -227,7 +243,7 @@ export function LibraryFilters({
               }}
               className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
                 groupBy === option.value && viewMode === 'folder' 
-                  ? 'bg-purple-500 text-white' 
+                  ? 'bg-purple-500 text-white hover:bg-purple-600' 
                   : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10'
               }`}
             >

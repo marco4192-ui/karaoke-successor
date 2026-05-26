@@ -105,13 +105,11 @@ export function useBattleRoyaleSongMedia({
     // Fully stop and clear old media to prevent audio bleeding into new song
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current.removeAttribute('src');
-      audioRef.current.load();
+      audioRef.current.src = '';
     }
     if (videoRef.current) {
       videoRef.current.pause();
-      videoRef.current.removeAttribute('src');
-      videoRef.current.load();
+      videoRef.current.src = '';
     }
 
     if (!currentSong) return;

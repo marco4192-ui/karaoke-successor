@@ -74,7 +74,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
   // Settings state with localStorage persistence
   const [settings, setSettings] = useState<LibrarySettings>({
     sortBy: 'title', sortOrder: 'asc', filterDifficulty: 'all',
-    filterGenre: 'all', filterLanguage: 'all', filterDuet: false, filterViral: false,
+    filterGenre: 'all', filterLanguage: 'all', filterYear: 'all', filterDuet: false, filterViral: false,
   });
   const [startOptions, setStartOptions] = useState<StartOptions>(() => {
     const isPartyMode = initialGameMode && initialGameMode !== 'standard' && initialGameMode !== 'duel' && initialGameMode !== 'duet';
@@ -168,7 +168,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
   }, []);
 
   // --- Computed values ---
-  const { filteredSongs, availableGenres, availableLanguages } = useLibraryFilters({
+  const { filteredSongs, availableGenres, availableLanguages, availableYears } = useLibraryFilters({
     loadedSongs, searchQuery, settings, startMode: startOptions.mode,
     viralSongIds: viralCharts.viralSongIds,
   });
@@ -294,7 +294,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
           searchQuery={searchQuery} setSearchQuery={setSearchQuery}
           settings={settings} setSettings={setSettings}
           viewMode={viewMode} groupBy={groupBy}
-          availableGenres={availableGenres} availableLanguages={availableLanguages}
+          availableGenres={availableGenres} availableLanguages={availableLanguages} availableYears={availableYears}
           onSetViewMode={(mode) => { if (mode !== 'folder') setSelectedPlaylist(null); setViewMode(mode); }}
           onSetGroupBy={setGroupBy} onClearFolder={handleClearFolder}
           folderBreadcrumb={folderBreadcrumb} onBreadcrumbClick={handleBreadcrumbClick}

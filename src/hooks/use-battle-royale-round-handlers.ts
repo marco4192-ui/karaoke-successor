@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   startRound,
   endRoundAndEliminate,
@@ -42,6 +42,8 @@ interface UseBattleRoyaleRoundHandlersReturn {
   gameRef: React.RefObject<BattleRoyaleGame>;
   /** Set to true while round is ending to signal game loop to stop immediately */
   roundEndingRef: React.RefObject<boolean>;
+  /** Current inline elimination animation phase */
+  eliminationPhase: null | 'eliminating' | 'survivor-flash';
 }
 
 /**
@@ -61,6 +63,7 @@ export function useBattleRoyaleRoundHandlers({
   setShowElimination,
 }: UseBattleRoyaleRoundHandlersParams): UseBattleRoyaleRoundHandlersReturn {
   const activePlayersRef = useRef(activePlayers);
+  const [eliminationPhase, setEliminationPhase] = useState<null | 'eliminating' | 'survivor-flash'>(null);
   const gameRef = useRef(game);
   const mountedRef = useRef(true);
   /** Guard: true while handleRoundEnd is processing or during the elimination timeout.
@@ -75,6 +78,7 @@ export function useBattleRoyaleRoundHandlers({
   }, [activePlayers, game]);
 
   const roundEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const survivorFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleRoundEndRef = useRef<() => void>(() => {});
   const onSnippetEndRef = useRef<(() => void) | null>(null);
 
@@ -94,13 +98,11 @@ export function useBattleRoyaleRoundHandlers({
       // Fully stop current media before switching snippet to prevent audio bleeding
       if (audioRef.current) {
         audioRef.current.pause();
-        audioRef.current.removeAttribute('src');
-        audioRef.current.load();
+        audioRef.current.src = '';
       }
       if (videoRef.current) {
         videoRef.current.pause();
-        videoRef.current.removeAttribute('src');
-        videoRef.current.load();
+        videoRef.current.src = '';
       }
       audioHasPlayedRef.current = false;
       onUpdateGameRef.current(updated);
@@ -125,13 +127,11 @@ export function useBattleRoyaleRoundHandlers({
 
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current.removeAttribute('src');
-      audioRef.current.load();
+      audioRef.current.src = '';
     }
     if (videoRef.current) {
       videoRef.current.pause();
-      videoRef.current.removeAttribute('src');
-      videoRef.current.load();
+      videoRef.current.src = '';
     }
     audioHasPlayedRef.current = false;
     stopPitch();
@@ -176,27 +176,39 @@ export function useBattleRoyaleRoundHandlers({
     }
 
     onUpdateGameRef.current(updatedGame);
+    // Inline elimination: show loser badge animation then survivor flash
+    setEliminationPhase('eliminating');
     setShowElimination(true);
 
     if (roundEndTimerRef.current !== null) {
       clearTimeout(roundEndTimerRef.current);
     }
+    if (survivorFlashTimerRef.current !== null) {
+      clearTimeout(survivorFlashTimerRef.current);
+    }
     roundEndTimerRef.current = setTimeout(() => {
       roundEndTimerRef.current = null;
       if (!mountedRef.current) return;
-      setShowElimination(false);
-      if (updatedGame.winner) return;
-      // Auto-advance to next round setup, then auto-start
-      const nextGame = advanceToNextRound(updatedGame);
-      gameRef.current = nextGame;
-      onUpdateGameRef.current(nextGame);
-      roundEndingRef.current = false;
-      // Auto-start next round after a brief pause for transition
-      setTimeout(() => {
+      setEliminationPhase('survivor-flash');
+      survivorFlashTimerRef.current = setTimeout(() => {
+        survivorFlashTimerRef.current = null;
         if (!mountedRef.current) return;
-        handleStartRoundRef.current();
-      }, 300);
-    }, 4000);
+        setEliminationPhase(null);
+        setShowElimination(false);
+        if (updatedGame.winner) return;
+        // Auto-advance to next round setup, then auto-start
+        const nextGame = advanceToNextRound(updatedGame);
+        gameRef.current = nextGame;
+        onUpdateGameRef.current(nextGame);
+        roundEndingRef.current = false;
+        // Clear pre-fetch (will be used by song media hook)
+        // Auto-start next round after a brief pause for transition
+        setTimeout(() => {
+          if (!mountedRef.current) return;
+          handleStartRoundRef.current();
+        }, 300);
+      }, 1000);
+    }, 1500);
   // Stable deps: removed game, activePlayers.length, onUpdateGame — read from refs instead
   }, [stopPitch, audioRef, videoRef, audioHasPlayedRef, setShowElimination]);
 
@@ -211,6 +223,10 @@ export function useBattleRoyaleRoundHandlers({
       if (roundEndTimerRef.current !== null) {
         clearTimeout(roundEndTimerRef.current);
         roundEndTimerRef.current = null;
+      }
+      if (survivorFlashTimerRef.current !== null) {
+        clearTimeout(survivorFlashTimerRef.current);
+        survivorFlashTimerRef.current = null;
       }
     };
   }, []);
@@ -320,5 +336,6 @@ export function useBattleRoyaleRoundHandlers({
     activePlayersRef,
     gameRef,
     roundEndingRef,
+    eliminationPhase,
   };
 }

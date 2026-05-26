@@ -5,6 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { Save, Undo, Redo, CheckCircle, AlertCircle } from 'lucide-react';
 import type { SaveResult } from '@/lib/editor/save-to-file';
 import { useTranslation } from '@/lib/i18n/translations';
+import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
 
 interface EditorHeaderProps {
   title: string;
@@ -138,6 +139,7 @@ export function EditorHeader({
             </>
           )}
         </Button>
+        <FullscreenButton />
       </div>
     </header>
   );

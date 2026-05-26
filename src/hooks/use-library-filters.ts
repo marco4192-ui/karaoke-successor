@@ -65,6 +65,14 @@ export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMod
       });
     }
     
+    // Year filter
+    if (settings.filterYear && settings.filterYear !== 'all') {
+      const yr = parseInt(settings.filterYear, 10);
+      if (!isNaN(yr)) {
+        songs = songs.filter(s => s.year === yr);
+      }
+    }
+    
     // Duet filter - show only duet songs when enabled
     if (settings.filterDuet) {
       songs = songs.filter(s => isDuetSong(s));
@@ -123,5 +131,12 @@ export function useLibraryFilters({ loadedSongs, searchQuery, settings, startMod
     return ['all', ...Array.from(langSet).sort()];
   }, [loadedSongs]);
   
-  return { filteredSongs, availableGenres, availableLanguages, isFilterStale };
+  // Get unique years from loaded songs
+  const availableYears = useMemo(() => {
+    const years = new Set<number>();
+    loadedSongs.forEach(s => { if (s.year) years.add(s.year); });
+    return ['all', ...Array.from(years).sort((a, b) => b - a).map(String)];
+  }, [loadedSongs]);
+  
+  return { filteredSongs, availableGenres, availableLanguages, availableYears, isFilterStale };
 }

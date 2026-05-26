@@ -82,6 +82,7 @@ interface UseBattleRoyaleGameReturn {
   songProgress: number; // 0-100
   countdown: number;
   notePerformance: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
+  eliminationPhase: null | 'eliminating' | 'survivor-flash';
 }
 
 export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoyaleGameParams): UseBattleRoyaleGameReturn {
@@ -255,6 +256,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     activePlayersRef,
     gameRef,
     roundEndingRef,
+    eliminationPhase,
   } = useBattleRoyaleRoundHandlers({
     game,
     activePlayers,
@@ -282,9 +284,14 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   useEffect(() => {
     if (pauseDialogAction === 'song-pause') {
       multiPitch.stop();
+    } else if (pauseDialogAction === null && gameRef.current.status === 'playing') {
+      // Restart pitch detection after unpause (game init effect won't re-fire)
+      if (!multiPitch.isRunning) {
+        multiPitch.start();
+      }
     }
-    // Pitch detection is restarted by the game init effect when unpausing
-  }, [pauseDialogAction, multiPitch]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- multiPitch is stable for .stop()/.start()
+  }, [pauseDialogAction]);
 
   // ── Round Timer ────────────────────────────────────────────────────
   const { roundTimeLeft, snippetTimeLeft } = useBattleRoyaleRoundTimer({
@@ -331,15 +338,17 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
         if (audio && resolvedAudioUrlRef.current) {
           if (audio.readyState >= 3) {
-            fadeInAudio();
-            audio.play()
+            if (!cancelled && !pausedRef.current) {
+              fadeInAudio();
+              audio.play()
               .then(() => { audioHasPlayedRef.current = true; })
               // eslint-disable-next-line no-console
               .catch(e => console.error('Audio play error:', e));
+            }
           } else {
             const onCanPlay = () => {
               audio.removeEventListener('canplay', onCanPlay);
-              if (!cancelled) {
+              if (!cancelled && !pausedRef.current) {
                 fadeInAudio();
                 audio.play()
                   .then(() => { audioHasPlayedRef.current = true; })
@@ -373,6 +382,69 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [game.status, mediaLoaded, currentSong]);
+
+  // ── Pre-fetch next song during last 5 seconds of round ──
+  const prefetchedSongRef = useRef<Song | null>(null);
+  const prefetchedMediaRef = useRef<{ audioUrl?: string; videoUrl?: string } | null>(null);
+
+  useEffect(() => {
+    if (
+      game.status !== 'playing' ||
+      roundTimeLeft > 5 ||
+      roundTimeLeft === 0 ||
+      game.settings.songSelection === 'vote' // can't pre-pick in voting mode
+    ) return;
+
+    // Only pre-fetch once per round
+    if (prefetchedSongRef.current) return;
+
+    const preFetch = async () => {
+      try {
+        // Pick a random song (same logic as handleStartRound)
+        const recentlyPlayed = game.recentlyPlayedSongIds || [];
+        const candidates = songs.filter(
+          s => s.audioUrl && !recentlyPlayed.includes(s.id)
+        );
+        if (candidates.length === 0) return;
+
+        const randomIndex = Math.floor(Math.random() * candidates.length);
+        const nextSong = candidates[randomIndex];
+
+        // Pre-resolve URLs
+        let preparedSong = nextSong;
+        try {
+          const { ensureSongUrls } = await import('@/lib/game/song-url-restore');
+          preparedSong = await ensureSongUrls(nextSong);
+        } catch { /* non-critical */ }
+
+        prefetchedSongRef.current = preparedSong;
+
+        // Pre-warm audio element
+        if (preparedSong.audioUrl && audioRef.current) {
+          const prefetchAudio = new Audio();
+          prefetchAudio.preload = 'auto';
+          prefetchAudio.src = preparedSong.audioUrl;
+          prefetchedMediaRef.current = { audioUrl: preparedSong.audioUrl };
+        }
+      } catch {
+        // eslint-disable-next-line no-console
+        console.warn('[BattleRoyale] Pre-fetch failed');
+      }
+    };
+
+    preFetch();
+
+    return () => {
+      // Clear pre-fetch when round ends (new game state)
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game.status, roundTimeLeft, songs, game.recentlyPlayedSongIds, game.settings.songSelection]);
+
+  // Clear prefetch ref when round changes
+  useEffect(() => {
+    prefetchedSongRef.current = null;
+    prefetchedMediaRef.current = null;
+  }, [game.currentRound]);
 
   // ── Game Loop for simultaneous per-player scoring ──────────────────
   const startGameLoopRef = useRef<() => void>(() => {});
@@ -598,5 +670,6 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
       : 0,
     countdown,
     notePerformance,
+    eliminationPhase,
   };
 }

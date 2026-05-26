@@ -48,7 +48,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
     }
     setSongs(getAllSongs());
   }, []);
-  const [filterMode, setFilterMode] = useState<'all' | 'no-genre' | 'no-language' | 'incomplete'>('all');
+  const [filterMode, setFilterMode] = useState<'all' | 'no-genre' | 'no-language' | 'no-year' | 'incomplete'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showMetadataPanel, setShowMetadataPanel] = useState(false); // Collapsible metadata panel
   const [isLoadingLyrics, setIsLoadingLyrics] = useState(false); // Loading state for lyrics
@@ -64,6 +64,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   const [showBatchDialog, setShowBatchDialog] = useState(false);
   const [showBatchWarning, setShowBatchWarning] = useState(false);
   const batchAbortRef = useRef(false);
+  const lastProcessedSongsRef = useRef<Song[]>([]);
 
   // ── Restore cover URLs for Tauri ──
   // On Tauri, song.coverImage may be a relative path (e.g. "Covers/song.jpg") that
@@ -71,6 +72,8 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   // asset://localhost/ URLs. On browser, ensureSongUrls() returns immediately.
   useEffect(() => {
     if (songs.length === 0) return;
+    if (songs === lastProcessedSongsRef.current) return;
+    lastProcessedSongsRef.current = songs;
     let cancelled = false;
 
     const restoreCovers = async () => {
@@ -120,6 +123,9 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
       case 'no-language':
         filtered = filtered.filter(s => !s.language);
         break;
+      case 'no-year':
+        filtered = filtered.filter(s => !s.year);
+        break;
       case 'incomplete':
         filtered = filtered.filter(s => !s.genre || !s.language);
         break;
@@ -137,8 +143,9 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   }, [songs, filterMode, searchQuery]);
 
   // Count songs without genre/language
-  const songsWithoutGenre = songs.filter(s => !s.genre).length;
-  const songsWithoutLanguage = songs.filter(s => !s.language).length;
+  const songsWithoutGenre = useMemo(() => songs.filter(s => !s.genre).length, [songs]);
+  const songsWithoutLanguage = useMemo(() => songs.filter(s => !s.language).length, [songs]);
+  const songsWithoutYear = useMemo(() => songs.filter(s => !s.year).length, [songs]);
 
   // ── Multi-select helpers ──
   const toggleSongSelection = useCallback((songId: string, e?: React.MouseEvent) => {
@@ -232,16 +239,8 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
     refreshSongs();
   }, [batchSuggestions, clearSelection, refreshSongs]);
 
-  const handleCardClick = useCallback((song: Song) => {
-    if (selectMode) {
-      toggleSongSelection(song.id);
-    } else {
-      handleSelectSong(song);
-    }
-  }, [selectMode, toggleSongSelection]);
-
   // Handle song selection - load lyrics from IndexedDB/filesystem if needed
-  const handleSelectSong = async (song: Song) => {
+  const handleSelectSong = useCallback(async (song: Song) => {
     // If song has no lyrics but can load them (IndexedDB cache or filesystem)
     const needsLyrics = !song.lyrics || song.lyrics.length === 0;
     const canLoadLyrics = song.storedTxt || !!song.relativeTxtPath;
@@ -268,7 +267,19 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
     } else {
       setSelectedSong(song);
     }
-  };
+  }, []);
+
+  const handleCardClick = useCallback((song: Song) => {
+    if (selectMode) {
+      toggleSongSelection(song.id);
+    } else {
+      handleSelectSong(song);
+    }
+  }, [selectMode, toggleSongSelection, handleSelectSong]);
+
+  const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    e.currentTarget.style.display = 'none';
+  }, []);
 
   const handleSave = (updatedSong: Song) => {
     updateSong(updatedSong.id, updatedSong);
@@ -448,10 +459,10 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               >
                 {selectMode ? '✕ ' + t('editor.exitSelectMode') : '☑️ ' + t('editor.selectMode')}
               </Button>
-              <FullscreenButton />
               <Button onClick={onBack} variant="outline" className="border-white/20 hover:bg-white/10" data-testid="editor-back-button">
                 ← {t('editor.back')}
               </Button>
+              <FullscreenButton />
             </div>
           </div>
 
@@ -491,6 +502,15 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 data-testid="editor-filter-nolanguage"
               >
                 🌐 {t('editor.noLanguage')} ({songsWithoutLanguage})
+              </Button>
+              <Button
+                onClick={() => setFilterMode(filterMode === 'no-year' ? 'all' : 'no-year')}
+                variant={filterMode === 'no-year' ? 'default' : 'outline'}
+                className={filterMode === 'no-year' ? 'bg-emerald-500 hover:bg-emerald-400' : 'border-white/20 text-white hover:bg-white/10'}
+                size="sm"
+                data-testid="editor-filter-noyear"
+              >
+                📅 {t('editor.noYear')} ({songsWithoutYear})
               </Button>
             </div>
           </div>
@@ -550,7 +570,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                       alt={song.title}
                       className="w-full h-full object-cover"
                       loading="lazy"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      onError={handleImageError}
                     />
                   ) : null}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -565,6 +585,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                     <span className="text-[8px] text-white/40">{song.bpm}</span>
                     {!song.genre && <span className="text-[8px] text-orange-400">🎸</span>}
                     {!song.language && <span className="text-[8px] text-purple-400">🌐</span>}
+                    {!song.year && <span className="text-[8px] text-emerald-400">📅</span>}
                   </div>
                 </div>
               </button>

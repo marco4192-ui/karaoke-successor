@@ -418,13 +418,13 @@ export default function KaraokeZERO() {
       )}
 
       {/* Fullscreen Toggle Button for immersive screens without NavBar */}
-      {IMMERSIVE_SCREENS.has(screen) && <FullscreenToggleButton isFullscreen={isFullscreen} toggleFullscreen={toggleFullscreen} />}
+      {IMMERSIVE_SCREENS.has(screen) && screen !== 'editor' && <FullscreenToggleButton isFullscreen={isFullscreen} toggleFullscreen={toggleFullscreen} />}
 
       {/* Main Content */}
       <main ref={mainRef} className={`${
         IMMERSIVE_SCREENS.has(screen)
           ? 'pt-0 px-0 pb-0 w-full h-full'
-          : 'px-4 pb-8 flex-1'
+          : 'px-4 pb-8 flex-1 min-h-0'
       }`}>
         {screen === 'home' && <HomeScreen onNavigate={setScreen} />}
         {screen === 'library' && (

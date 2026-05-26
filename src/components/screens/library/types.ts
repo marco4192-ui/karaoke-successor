@@ -12,6 +12,7 @@ export interface LibrarySettings {
   filterDifficulty: Difficulty | 'all';
   filterGenre: string;
   filterLanguage: string;
+  filterYear: string;
   filterDuet: boolean;
   filterViral: boolean;
 }
