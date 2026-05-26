@@ -313,7 +313,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
               onRemoveSongFromPlaylist={handleRemoveSongFromPlaylist} onSongClick={handleSongClick}
               onShowCreatePlaylist={() => setShowCreatePlaylistModal(true)}
               songCardProps={songCardBaseProps} activeProfileId={activeProfileId}
-              playerQueueCount={playerQueueCount} addToQueue={addToQueue}
+              addToQueue={addToQueue}
               activeProfileName={activeProfile?.name || 'Player'}
             />
           ) : filteredSongs.length === 0 ? (
