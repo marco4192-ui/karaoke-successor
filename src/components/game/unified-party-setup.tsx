@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Song, PlayerProfile, GameMode } from '@/types/game';
 import { usePartySetup } from './unified-party-setup.hook';
 import { useTranslation } from '@/lib/i18n/translations';
+import { getYears } from '@/lib/game/song-library';
 import { GameSidebar, MobileGameHeader, SettingsPanel, PlayerGrid, SongSelectionGrid, SongFilterSection, ReadySummary, InputModeSelector, MicAssignmentPanel, SingleMicSelector } from './unified-party-setup.components';
 import { useAutoFocus } from '@/hooks/use-roving-focus';
 
@@ -58,13 +59,16 @@ export function UnifiedPartySetup({
     inputMode, setInputMode,
     micAssignments, assignMic, removeMicAssignment,
     selectedMicId, setSelectedMicId, setSelectedMicName,
-    filterGenre, filterLanguage, filterCombined,
-    setFilterGenre, setFilterLanguage, setFilterCombined,
+    filterGenre, filterLanguage, filterCombined, filterReleaseYear,
+    setFilterGenre, setFilterLanguage, setFilterCombined, setFilterReleaseYear,
     availableGenres, availableLanguages, filteredSongs,
   } = usePartySetup({ gameMode, profiles, songs, onStartGame, onSelectLibrary, onVoteMode });
 
   const onSettingChange = (key: string, value: string | number | boolean) =>
     setSettings(prev => ({ ...prev, [key]: value }));
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const availableYears = useMemo(() => getYears(), [songs.length]);
 
   return (
     <div className="flex gap-4" data-focus-container="party-setup">
@@ -138,6 +142,9 @@ export function UnifiedPartySetup({
           onFilterGenreChange={setFilterGenre}
           onFilterLanguageChange={setFilterLanguage}
           onFilterCombinedChange={setFilterCombined}
+          filterReleaseYear={filterReleaseYear}
+          availableYears={availableYears}
+          onFilterReleaseYearChange={setFilterReleaseYear}
         />
 
         {/* Pre-selected Library Song Banner */}

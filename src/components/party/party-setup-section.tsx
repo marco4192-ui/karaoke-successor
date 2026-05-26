@@ -213,12 +213,13 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
             const songs = getNonDuetSongs();
 
             // Apply song filter — base settings (difficulty, filters) are shared across all modes
-            const baseSettings = result.settings as { filterGenre: string; filterLanguage: string; filterCombined: boolean };
+            const baseSettings = result.settings as { filterGenre: string; filterLanguage: string; filterCombined: boolean; filterReleaseYear: string };
             const filteredSongs = filterSongs(
               songs,
               baseSettings.filterGenre,
               baseSettings.filterLanguage,
-              baseSettings.filterCombined
+              baseSettings.filterCombined,
+              baseSettings.filterReleaseYear
             );
             // Store filters for next-round song selection in PTM
             if (party.selectedGameMode === 'pass-the-mic') {
@@ -556,7 +557,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                     ? (blindFreqMap[freqSetting] ?? 0.30)
                     : 0.30,
                   hardcore: !!(s.hardcore),
-                  hardcoreMissingWords: false,
+                  hardcoreMissingWords: !!(s.hardcoreMissingWords),
                   missingWordsGranularity: (s.granularity as 'word' | 'passage' | 'both') || 'passage',
                   escalating: !!(s.escalating),
                   songSelection: 'smart',

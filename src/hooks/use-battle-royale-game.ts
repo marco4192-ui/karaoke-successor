@@ -278,6 +278,14 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   const pausedRef = useRef(pauseDialogAction === 'song-pause');
   pausedRef.current = pauseDialogAction === 'song-pause';
 
+  // Stop pitch detection while paused (like standard game mode does)
+  useEffect(() => {
+    if (pauseDialogAction === 'song-pause') {
+      multiPitch.stop();
+    }
+    // Pitch detection is restarted by the game init effect when unpausing
+  }, [pauseDialogAction, multiPitch]);
+
   // ── Round Timer ────────────────────────────────────────────────────
   const { roundTimeLeft, snippetTimeLeft } = useBattleRoyaleRoundTimer({
     gameStatus: game.status,
@@ -306,8 +314,24 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         }
 
         const audio = audioRef.current;
+        const fadeInAudio = () => {
+          if (!audio) return;
+          audio.volume = 0;
+          const fadeStart = performance.now();
+          const FADE_DURATION = 800; // 800ms fade-in
+          const fadeIn = (now: number) => {
+            if (cancelled || !audio) return;
+            const elapsed = now - fadeStart;
+            const progress = Math.min(elapsed / FADE_DURATION, 1);
+            audio.volume = progress;
+            if (progress < 1) requestAnimationFrame(fadeIn);
+          };
+          requestAnimationFrame(fadeIn);
+        };
+
         if (audio && resolvedAudioUrlRef.current) {
           if (audio.readyState >= 3) {
+            fadeInAudio();
             audio.play()
               .then(() => { audioHasPlayedRef.current = true; })
               // eslint-disable-next-line no-console
@@ -316,6 +340,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
             const onCanPlay = () => {
               audio.removeEventListener('canplay', onCanPlay);
               if (!cancelled) {
+                fadeInAudio();
                 audio.play()
                   .then(() => { audioHasPlayedRef.current = true; })
                   // eslint-disable-next-line no-console

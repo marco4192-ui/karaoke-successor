@@ -374,6 +374,8 @@ export const partyTranslations = {
     allGenres: 'All Genres',
     language: '🌍 Language',
     allLanguages: 'All Languages',
+    releaseYear: '📅 Release Year',
+    allYears: 'All Years',
     filterLogic: '🔗 Filter Logic',
     combined: 'Combined (AND)',
     independent: 'Independent (OR)',

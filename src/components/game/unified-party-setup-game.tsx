@@ -144,6 +144,9 @@ interface SongFilterSectionProps {
   onFilterGenreChange: (_genre: string) => void;
   onFilterLanguageChange: (_language: string) => void;
   onFilterCombinedChange: (_combined: boolean) => void;
+  filterReleaseYear: string;
+  availableYears: number[];
+  onFilterReleaseYearChange: (_year: string) => void;
 }
 
 export function SongFilterSection({
@@ -157,9 +160,12 @@ export function SongFilterSection({
   onFilterGenreChange,
   onFilterLanguageChange,
   onFilterCombinedChange,
+  filterReleaseYear,
+  availableYears,
+  onFilterReleaseYearChange,
 }: SongFilterSectionProps) {
   const { t } = useTranslation();
-  const hasActiveFilter = filterGenre !== 'all' || filterLanguage !== 'all';
+  const hasActiveFilter = filterGenre !== 'all' || filterLanguage !== 'all' || filterReleaseYear !== 'all';
 
   return (
     <Card className="bg-white/5 border-white/10 mb-6">
@@ -205,6 +211,21 @@ export function SongFilterSection({
             </select>
           </div>
 
+          {/* Release Year Dropdown */}
+          <div className="flex-1 min-w-[180px]">
+            <label className="text-sm text-white/60 mb-1 block">{t('unifiedSetup.releaseYear')}</label>
+            <select
+              value={filterReleaseYear}
+              onChange={(e) => onFilterReleaseYearChange(e.target.value)}
+              className="w-full bg-gray-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+            >
+              <option value="all">{t('unifiedSetup.allYears')}</option>
+              {availableYears.map(y => (
+                <option key={y} value={String(y)}>{y}</option>
+              ))}
+            </select>
+          </div>
+
           {/* Combined Toggle */}
           <div className="min-w-[160px]">
             <label className="text-sm text-white/60 mb-1 block">{t('unifiedSetup.filterLogic')}</label>
@@ -238,6 +259,7 @@ export function SongFilterSection({
               onClick={() => {
                 onFilterGenreChange('all');
                 onFilterLanguageChange('all');
+                onFilterReleaseYearChange('all');
               }}
               className="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm text-white/60 hover:text-white transition-all"
               title={t('unifiedSetup.resetFilter')}

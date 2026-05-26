@@ -65,6 +65,7 @@ export function buildGameSetupResult(params: {
       filterGenre: 'all',
       filterLanguage: 'all',
       filterCombined: true,
+      filterReleaseYear: 'all',
       ...settings,
     },
     songSelection,

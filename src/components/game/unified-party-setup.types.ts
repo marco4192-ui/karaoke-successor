@@ -110,6 +110,7 @@ interface BaseModeSettings {
   filterGenre: string;
   filterLanguage: string;
   filterCombined: boolean;
+  filterReleaseYear: string;
 }
 
 /** Pass the Mic — no extra config settings, shared mic support */

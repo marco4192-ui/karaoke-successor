@@ -265,6 +265,8 @@ export const libraryTranslations = {
     title: 'Karaoke Editor',
     subtitle: 'Edit your songs',
     back: 'Back',
+    selectMode: 'Select',
+    exitSelectMode: 'Close',
     refreshTitle: 'Reload song list',
     refreshBtn: 'Reload',
     searchPlaceholder: 'Search songs...',

@@ -63,6 +63,8 @@ export interface DuetNoteHighwayProps {
   isBlindSection?: boolean;
   /** Hardcore blind mode */
   isBlindHardcore?: boolean;
+  /** Hardcore missing words mode */
+  hardcoreMissingWords?: boolean;
   /** P1 player name */
   p1PlayerName?: string;
   /** P2 player name */
@@ -176,6 +178,7 @@ const PlayerLyrics = React.memo(function PlayerLyrics({
   missingWordsIndices,
   isBlindSection,
   isBlindHardcore,
+  hardcoreMissingWords,
 }: {
   lines?: LyricLine[];
   currentTime: number;
@@ -186,6 +189,7 @@ const PlayerLyrics = React.memo(function PlayerLyrics({
   missingWordsIndices?: number[];
   isBlindSection?: boolean;
   isBlindHardcore?: boolean;
+  hardcoreMissingWords?: boolean;
 }) {
 
   const { displayLine, nextLine, shouldHidePreview } = useMemo(() => {
@@ -252,6 +256,7 @@ const PlayerLyrics = React.memo(function PlayerLyrics({
           missingWordsIndices={missingWordsIndices}
           isBlindSection={isBlindSection}
           isBlindHardcore={isBlindHardcore}
+          hardcoreMissingWords={hardcoreMissingWords}
         />
       </div>
       {/* Next Line Preview — hidden when next line contains hidden content */}
@@ -293,6 +298,7 @@ export function DuetNoteHighway({
   missingWordsIndices,
   isBlindSection,
   isBlindHardcore,
+  hardcoreMissingWords,
   p1PlayerName,
   p2PlayerName,
   p2Player,
@@ -334,6 +340,7 @@ export function DuetNoteHighway({
           missingWordsIndices={missingWordsIndices}
           isBlindSection={isBlindSection}
           isBlindHardcore={isBlindHardcore}
+          hardcoreMissingWords={hardcoreMissingWords}
         />
       </div>
 
@@ -374,6 +381,7 @@ export function DuetNoteHighway({
           missingWordsIndices={missingWordsIndices}
           isBlindSection={isBlindSection}
           isBlindHardcore={isBlindHardcore}
+          hardcoreMissingWords={hardcoreMissingWords}
         />
       </div>
     </div>

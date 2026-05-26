@@ -91,14 +91,16 @@ export function useBattleRoyaleRoundHandlers({
     if (currentGame.status !== 'playing' || currentGame.medleySnippetList.length <= 1) return;
     const updated = advanceToNextSnippet(currentGame);
     if (updated.currentSnippetIndex !== currentGame.currentSnippetIndex) {
-      // Pause current media before switching snippet
+      // Fully stop current media before switching snippet to prevent audio bleeding
       if (audioRef.current) {
         audioRef.current.pause();
-        audioRef.current.currentTime = 0;
+        audioRef.current.removeAttribute('src');
+        audioRef.current.load();
       }
       if (videoRef.current) {
         videoRef.current.pause();
-        videoRef.current.currentTime = 0;
+        videoRef.current.removeAttribute('src');
+        videoRef.current.load();
       }
       audioHasPlayedRef.current = false;
       onUpdateGameRef.current(updated);
@@ -123,9 +125,13 @@ export function useBattleRoyaleRoundHandlers({
 
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current.removeAttribute('src');
+      audioRef.current.load();
     }
     if (videoRef.current) {
       videoRef.current.pause();
+      videoRef.current.removeAttribute('src');
+      videoRef.current.load();
     }
     audioHasPlayedRef.current = false;
     stopPitch();

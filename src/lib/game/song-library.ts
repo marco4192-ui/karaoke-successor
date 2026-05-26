@@ -451,12 +451,25 @@ export function getLanguages(): string[] {
   return Array.from(languages).sort();
 }
 
+// Get unique release years (for filtering)
+export function getYears(): number[] {
+  const songs = getAllSongs();
+  const years = new Set<number>();
+  songs.forEach(song => {
+    if (song.year) {
+      years.add(song.year);
+    }
+  });
+  return Array.from(years).sort((a, b) => b - a); // Newest first
+}
+
 // Filter songs by genre and/or language (with normalization)
 export function filterSongs(
   songs: Song[],
   genre?: string,
   language?: string,
-  combined?: boolean
+  combined?: boolean,
+  releaseYear?: string
 ): Song[] {
   const hasGenre = genre && genre !== 'all';
   const hasLanguage = language && language !== 'all';
@@ -498,7 +511,25 @@ export function filterSongs(
     filtered = filtered.filter(s => songLanguageMatches(s, language!));
   }
 
+  // Year filter (applied in addition to genre/language)
+  if (releaseYear && releaseYear !== 'all') {
+    const year = parseInt(releaseYear, 10);
+    if (!isNaN(year)) {
+      filtered = filtered.filter(s => s.year === year);
+    }
+  }
+
   return filtered;
+}
+
+/** Run async tasks with a concurrency limit */
+async function asyncPool<T>(concurrency: number, items: T[], fn: (item: T, index: number) => Promise<void>): Promise<void> {
+  const results: Promise<void>[] = [];
+  for (let i = 0; i < items.length; i += concurrency) {
+    const batch = items.slice(i, i + concurrency);
+    results.push(...batch.map((item, j) => fn(item, i + j)));
+    await Promise.all(results.splice(0, results.length));
+  }
 }
 
 // Clear all custom songs
@@ -555,18 +586,17 @@ export async function getAllSongsAsync(): Promise<Song[]> {
       song.relativeCoverPath && !song.coverImage
     );
     const coverUrlMap = new Map<string, string>();
-    await Promise.all(
-      songsNeedingCover.map(async (song) => {
-        if (song.relativeCoverPath && song.baseFolder) {
-          try {
-            const url = await getSongMediaUrl(song.relativeCoverPath, song.baseFolder);
-            if (url) coverUrlMap.set(song.id, url);
-          } catch {
-            // Non-critical — cover just won't show
-          }
+    // Load covers in batches to avoid filesystem I/O spikes
+    await asyncPool(20, songsNeedingCover, async (song) => {
+      if (song.relativeCoverPath && song.baseFolder) {
+        try {
+          const url = await getSongMediaUrl(song.relativeCoverPath, song.baseFolder);
+          if (url) coverUrlMap.set(song.id, url);
+        } catch {
+          // Non-critical — cover just won't show
         }
-      })
-    );
+      }
+    });
     return songs.map(song => {
       const coverUrl = coverUrlMap.get(song.id);
       if (coverUrl) return { ...song, coverImage: coverUrl };
@@ -577,27 +607,26 @@ export async function getAllSongsAsync(): Promise<Song[]> {
   // In browser mode, restore URLs from IndexedDB for songs that have storedMedia flag.
   // CRITICAL: Revoke previous blob URLs before creating new ones to prevent memory leaks.
   revokeBrowserBlobUrls();
-  const restoredSongs = await Promise.all(
-    songs.map(async (song) => {
-      if (song.storedMedia) {
-        try {
-          const mediaUrls = await getSongMediaUrls(song.id);
-          lastBrowserBlobUrls.push(mediaUrls);
-          return {
-            ...song,
-            audioUrl: mediaUrls.audioUrl || song.audioUrl,
-            videoBackground: mediaUrls.videoUrl || song.videoBackground,
-            coverImage: mediaUrls.coverUrl || song.coverImage
-          };
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error(`Failed to restore media for song ${song.id}:`, error);
-          return song;
-        }
+  // Restore URLs in batches to avoid excessive IndexedDB reads
+  const restoredSongsCopy = [...songs];
+  await asyncPool(20, songs, async (song, index) => {
+    if (song.storedMedia) {
+      try {
+        const mediaUrls = await getSongMediaUrls(song.id);
+        lastBrowserBlobUrls.push(mediaUrls);
+        restoredSongsCopy[index] = {
+          ...song,
+          audioUrl: mediaUrls.audioUrl || song.audioUrl,
+          videoBackground: mediaUrls.videoUrl || song.videoBackground,
+          coverImage: mediaUrls.coverUrl || song.coverImage
+        };
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(`Failed to restore media for song ${song.id}:`, error);
       }
-      return song;
-    })
-  );
+    }
+  });
+  const restoredSongs = restoredSongsCopy;
 
   return restoredSongs;
 }

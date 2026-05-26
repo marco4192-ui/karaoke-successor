@@ -260,7 +260,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
 
   // --- Render ---
   return (
-    <div className="w-full px-4 md:px-6 lg:px-8">
+    <div className="w-full px-4 md:px-6 lg:px-8 flex flex-col min-h-0 flex-1">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-2">{t('library.title')}</h1>
@@ -305,7 +305,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
       )}
 
       {!songsLoading && (
-        <>
+        <div className="flex-1 min-h-0 overflow-y-auto">
           {viewMode === 'playlists' ? (
             <PlaylistView
               playlists={playlists} selectedPlaylist={selectedPlaylist} loadedSongs={loadedSongs}
@@ -330,7 +330,7 @@ export function LibraryScreen({ onSelectSong, initialGameMode, onNavigateToEdito
               getGroupDisplayName={(key) => getGroupDisplayName(key, groupBy)}
             />
           )}
-        </>
+        </div>
       )}
 
       {showSongModal && selectedSong && (

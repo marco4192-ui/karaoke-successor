@@ -74,6 +74,7 @@ export function usePartySetup({
   const [filterGenre, setFilterGenre] = useState('all');
   const [filterLanguage, setFilterLanguage] = useState('all');
   const [filterCombined, setFilterCombined] = useState(true);
+  const [filterReleaseYear, setFilterReleaseYear] = useState('all');
 
   // eslint-disable-next-line react-hooks/exhaustive-deps -- songs.length is a proxy for songs identity change; songs itself would cause infinite loop
   const availableGenres = useMemo(() => getGenres(), [songs.length]);
@@ -81,8 +82,8 @@ export function usePartySetup({
   const availableLanguages = useMemo(() => getLanguages(), [songs.length]);
 
   const filteredSongs = useMemo(() => {
-    return filterSongs(songs, filterGenre, filterLanguage, filterCombined);
-  }, [songs, filterGenre, filterLanguage, filterCombined]);
+    return filterSongs(songs, filterGenre, filterLanguage, filterCombined, filterReleaseYear);
+  }, [songs, filterGenre, filterLanguage, filterCombined, filterReleaseYear]);
 
   // Sync difficulty from global store
   useEffect(() => {
@@ -250,6 +251,7 @@ export function usePartySetup({
         filterGenre,
         filterLanguage,
         filterCombined,
+        filterReleaseYear,
         ...(config.sharedMic && selectedMicId ? { sharedMicId: selectedMicId, sharedMicName: selectedMicName } : {}),
       } as GameModeSettingsMap[typeof gameMode],
       songSelection: option,
@@ -273,7 +275,7 @@ export function usePartySetup({
         break;
       }
     }
-  }, [selectedPlayers, config.minPlayers, createPlayers, settings, difficulty, filteredSongs, filterGenre, filterLanguage, filterCombined, onSelectLibrary, onStartGame, onVoteMode, inputMode, config.sharedMic, selectedMicId, selectedMicName]);
+  }, [selectedPlayers, config.minPlayers, createPlayers, settings, difficulty, filteredSongs, filterGenre, filterLanguage, filterCombined, filterReleaseYear, onSelectLibrary, onStartGame, onVoteMode, inputMode, config.sharedMic, selectedMicId, selectedMicName]);
 
   return {
     config,
@@ -302,9 +304,11 @@ export function usePartySetup({
     filterGenre,
     filterLanguage,
     filterCombined,
+    filterReleaseYear,
     setFilterGenre,
     setFilterLanguage,
     setFilterCombined,
+    setFilterReleaseYear,
     availableGenres,
     availableLanguages,
     filteredSongs,

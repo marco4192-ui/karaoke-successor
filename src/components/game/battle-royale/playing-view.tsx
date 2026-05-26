@@ -140,18 +140,24 @@ export function PlayingView({
     return () => { setIsSongPlaying(false); };
   }, [setIsSongPlaying]);
 
-  // Pause / Resume
+  // Pause / Resume — pause BOTH audio AND video (video was missing before)
   useEffect(() => {
     if (pauseDialogAction === 'song-pause') {
       if (audioRef.current && !audioRef.current.paused) {
         audioRef.current.pause();
       }
+      if (videoRef.current && !videoRef.current.paused) {
+        videoRef.current.pause();
+      }
     } else if (pauseDialogAction === null) {
       if (audioRef.current && audioRef.current.paused && game.status === 'playing' && audioStartedRef.current) {
         audioRef.current.play().catch(() => {});
       }
+      if (videoRef.current && videoRef.current.paused && game.status === 'playing' && audioStartedRef.current) {
+        videoRef.current.play().catch(() => {});
+      }
     }
-  }, [pauseDialogAction, game.status, audioRef]);
+  }, [pauseDialogAction, game.status, audioRef, videoRef]);
 
   // Audio fade-out in last 3 seconds of round
   useEffect(() => {

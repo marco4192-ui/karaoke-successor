@@ -370,6 +370,8 @@ export const partyTranslations = {
     allGenres: 'Alle Genres',
     language: '🌍 Sprache',
     allLanguages: 'Alle Sprachen',
+    releaseYear: '📅 Veröffentlichungsjahr',
+    allYears: 'Alle Jahre',
     filterLogic: '🔗 Filter-Logik',
     combined: 'Kombiniert (UND)',
     independent: 'Unabhängig (ODER)',

@@ -11,6 +11,7 @@ import { AiHarmonizeCard } from '@/components/editor/ai-harmonize-card';
 import { Song } from '@/types/game';
 import { fuzzyMatch } from '@/lib/fuzzy-search';
 import { useTranslation } from '@/lib/i18n/translations';
+import { FullscreenButton } from '@/components/game/hud/fullscreen-button';
 
 // ── Types for batch AI suggestion ──
 interface BatchSuggestion {
@@ -445,8 +446,9 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 className={selectMode ? 'bg-violet-500 hover:bg-violet-400' : 'border-white/20 text-white'}
                 data-testid="editor-select-mode-toggle"
               >
-                {selectMode ? '✕' : '☑️'}
+                {selectMode ? '✕ ' + t('editor.exitSelectMode') : '☑️ ' + t('editor.selectMode')}
               </Button>
+              <FullscreenButton />
               <Button onClick={onBack} variant="outline" className="border-white/20 hover:bg-white/10" data-testid="editor-back-button">
                 ← {t('editor.back')}
               </Button>
