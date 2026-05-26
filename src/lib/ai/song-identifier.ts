@@ -44,8 +44,14 @@ export async function identifySong(
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      return { success: false, error: error.error || 'Failed to identify song' };
+      let error = 'Failed to identify song';
+      try {
+        const errorData = await response.json();
+        error = errorData.error || error;
+      } catch {
+        // Error body is not valid JSON
+      }
+      return { success: false, error };
     }
 
     const result = await response.json();

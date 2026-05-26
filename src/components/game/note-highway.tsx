@@ -6,6 +6,16 @@ import { getNoteShapeClasses, getNoteDisplayStyleClasses, NoteShapeStyle, NoteDi
 import { MicIcon } from '@/components/icons';
 import { useTranslation } from '@/lib/i18n/translations';
 
+// ===================== HELPERS =====================
+
+/** Convert a hex color to an rgba string with the given alpha (0-1). */
+function withAlpha(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 // ===================== TYPES =====================
 
 export interface NoteWithLine extends Note {
@@ -60,8 +70,8 @@ export interface NoteHighwayProps {
 /**
  * Pitch grid background lines
  */
-const PitchGrid = React.memo(function PitchGrid({ count = 7, color = 'cyan' }: { count?: number; color?: string }) {
-  const borderColor = color === 'pink' ? 'rgba(236, 72, 153, 0.1)' : 'rgba(6, 182, 212, 0.1)';
+const PitchGrid = React.memo(function PitchGrid({ count = 7, playerColor = '#22d3d3ee' }: { count?: number; playerColor?: string }) {
+  const borderColor = withAlpha(playerColor, 0.1);
   return (
     <div className="absolute inset-0 pointer-events-none">
       {Array.from({ length: count }).map((_, i) => (
@@ -80,24 +90,23 @@ const PitchGrid = React.memo(function PitchGrid({ count = 7, color = 'cyan' }: {
  */
 const SingLine = React.memo(function SingLine({
   position,
-  color = 'cyan'
+  playerColor = '#22d3d3ee'
 }: {
   position: number;
-  color?: 'cyan' | 'pink'
+  playerColor?: string;
 }) {
-  const colorClasses = {
-    cyan: 'from-transparent via-cyan-400 to-transparent shadow-cyan-400/50',
-    pink: 'from-transparent via-pink-400 to-transparent shadow-pink-400/50',
-  };
-
   return (
     <div
-      className={`absolute top-0 bottom-0 z-20 w-1 bg-gradient-to-b ${colorClasses[color]} shadow-lg`}
-      style={{ left: `${position}%` }}
+      className="absolute top-0 bottom-0 z-20 w-1 shadow-lg"
+      style={{
+        left: `${position}%`,
+        background: `linear-gradient(to bottom, transparent, ${playerColor}, transparent)`,
+        boxShadow: `0 0 8px ${withAlpha(playerColor, 0.5)}`,
+      }}
     >
       <div
         className="absolute -left-1 top-0 bottom-0 w-0.5"
-        style={{ backgroundColor: color === 'pink' ? 'rgba(236, 72, 153, 0.3)' : 'rgba(6, 182, 212, 0.3)' }}
+        style={{ backgroundColor: withAlpha(playerColor, 0.3) }}
       />
     </div>
   );
@@ -119,7 +128,7 @@ const NoteBlock = React.memo(function NoteBlock({
   visibleTop,
   visibleRange,
   noteWidthExtra = 20,
-  color = 'cyan',
+  playerColor = '#22d3d3ee',
   noteDisplayStyle = 'classic',
   notePerformance,
 }: {
@@ -132,7 +141,7 @@ const NoteBlock = React.memo(function NoteBlock({
   visibleTop: number;
   visibleRange: number;
   noteWidthExtra?: number;
-  color?: 'cyan' | 'pink';
+  playerColor?: string;
   noteDisplayStyle?: NoteDisplayStyle;
   notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
 }) {
@@ -157,24 +166,20 @@ const NoteBlock = React.memo(function NoteBlock({
   if (x > 120 || x < -30) return null;
 
   // Determine note styling based on type and player color
-  const getBackgroundClasses = () => {
-    // In fill-level and hit-fill modes, skip Tailwind gradient classes —
+  const getBackgroundStyle = (): React.CSSProperties => {
+    // In fill-level and hit-fill modes, skip gradient —
     // the display style manages its own background via inline styles.
-    if (noteDisplayStyle === 'fill-level' || noteDisplayStyle === 'hit-fill' || noteDisplayStyle === 'trail-effect' || noteDisplayStyle === 'retro-bars' || noteDisplayStyle === 'particle-fade') return '';
+    if (noteDisplayStyle === 'fill-level' || noteDisplayStyle === 'hit-fill' || noteDisplayStyle === 'trail-effect' || noteDisplayStyle === 'retro-bars' || noteDisplayStyle === 'particle-fade') return {};
     if (note.isGolden) {
-      return 'bg-gradient-to-r from-yellow-400 to-orange-500 shadow-lg shadow-yellow-500/50';
+      return { background: 'linear-gradient(to right, #facc15, #f97316)' };
     }
     if (note.isBonus) {
-      return color === 'cyan'
-        ? 'bg-gradient-to-r from-cyan-400 to-teal-500'
-        : 'bg-gradient-to-r from-pink-400 to-rose-500';
+      return { background: `linear-gradient(to right, ${playerColor}, ${withAlpha(playerColor, 0.7)})` };
     }
-    return color === 'cyan'
-      ? 'bg-gradient-to-r from-cyan-400 to-blue-500'
-      : 'bg-gradient-to-r from-pink-500 to-purple-500';
+    return { background: `linear-gradient(to right, ${playerColor}, ${withAlpha(playerColor, 0.6)})` };
   };
 
-  const glowColor = color === 'cyan' ? 'rgba(34, 211, 238, 0.8)' : 'rgba(236, 72, 153, 0.8)';
+  const glowColor = withAlpha(playerColor, 0.8);
 
   // Calculate accuracy for display style
   // Default is 0 so notes start empty/dim/red and fill/glow/shift-green as the player sings.
@@ -205,7 +210,7 @@ const NoteBlock = React.memo(function NoteBlock({
   return (
     <div
       key={note.id || `note-${note.startTime}`}
-      className={`absolute ${noteShape.baseClass} ${getBackgroundClasses()} ${displayStyle.additionalClasses} ${isActive ? noteShape.activeClass : ''} ${isPast ? (accuracy > 0.3 ? 'opacity-80' : 'opacity-30') : ''}`}
+      className={`absolute ${noteShape.baseClass} ${displayStyle.additionalClasses} ${isActive ? noteShape.activeClass : ''} ${isPast ? (accuracy > 0.3 ? 'opacity-80' : 'opacity-30') : ''}`}
       style={{
         left: `${x}%`,
         top: `${pitchY}%`,
@@ -216,6 +221,7 @@ const NoteBlock = React.memo(function NoteBlock({
         opacity: isPast ? (accuracy > 0.3 ? 0.8 : 0.3) : 1,
         ...noteShape.style,
         ...displayStyle.inlineStyle,
+        ...getBackgroundStyle(),
       }}
     >
       {displayStyle.overlayElement}
@@ -232,32 +238,31 @@ const PitchIndicator = React.memo(function PitchIndicator({
   singLinePosition,
   visibleTop,
   visibleRange,
-  color = 'cyan',
+  playerColor = '#22d3d3ee',
 }: {
   detectedPitch: number | null;
   pitchStats: PitchStats;
   singLinePosition: number;
   visibleTop: number;
   visibleRange: number;
-  color?: 'cyan' | 'pink';
+  playerColor?: string;
 }) {
   if (detectedPitch === null) return null;
 
   const pr = pitchStats.pitchRange || 1;
   const pitchY = visibleTop + visibleRange - ((detectedPitch - pitchStats.minPitch) / pr) * visibleRange;
 
-  const colorClasses = {
-    cyan: 'from-cyan-400 to-cyan-600 shadow-cyan-500/70 ring-cyan-300',
-    pink: 'from-pink-400 to-pink-600 shadow-pink-500/70 ring-pink-300',
-  };
-
   return (
     <div
-      className={`absolute z-30 w-8 h-8 rounded-full bg-gradient-to-r ${colorClasses[color]} shadow-lg flex items-center justify-center ring-2`}
+      className="absolute z-30 w-8 h-8 rounded-full shadow-lg flex items-center justify-center"
       style={{
         left: `${singLinePosition - 1.5}%`,
         top: `${pitchY}%`,
         transform: 'translateY(-50%)',
+        background: `linear-gradient(to right, ${playerColor}, ${withAlpha(playerColor, 0.7)})`,
+        boxShadow: `0 0 10px ${withAlpha(playerColor, 0.7)}`,
+        outline: '2px solid',
+        outlineColor: withAlpha(playerColor, 0.5),
       }}
     >
       <MicIcon className="w-4 h-4 text-white" />
@@ -271,23 +276,19 @@ const PitchIndicator = React.memo(function PitchIndicator({
 const PlayerLabel = React.memo(function PlayerLabel({
   playerName,
   playerNumber,
-  color = 'cyan',
+  playerColor = '#22d3d3ee',
 }: {
   playerName: string;
   playerNumber: number;
-  color?: 'cyan' | 'pink';
+  playerColor?: string;
 }) {
-  const bgColor = color === 'cyan' ? 'bg-cyan-500' : 'bg-pink-500';
-  const borderColor = color === 'cyan' ? 'border-cyan-500/30' : 'border-pink-500/30';
-  const textColor = color === 'cyan' ? 'text-cyan-300' : 'text-pink-300';
-
   return (
-    <div className={`absolute top-20 left-4 z-20 bg-black/50 backdrop-blur-sm rounded-lg px-2 py-1 border ${borderColor}`}>
+    <div className="absolute top-20 left-4 z-20 bg-black/50 backdrop-blur-sm rounded-lg px-2 py-1 border" style={{ borderColor: withAlpha(playerColor, 0.3) }}>
       <div className="flex items-center gap-2">
-        <div className={`w-6 h-6 rounded-full ${bgColor} flex items-center justify-center text-xs font-bold text-white`}>
+        <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: playerColor }}>
           P{playerNumber}
         </div>
-        <span className={`text-xs ${textColor}`}>{playerName}</span>
+        <span className="text-xs" style={{ color: withAlpha(playerColor, 0.7) }}>{playerName}</span>
       </div>
     </div>
   );
@@ -305,7 +306,7 @@ export const NoteHighway = React.memo(function NoteHighway({
   notePerformance,
   singLinePosition = 25,
   noteWindow = 4000,
-  playerColor: _playerColor = '#22d3ee',
+  playerColor,
   showPlayerLabel = false,
   playerName,
   playerNumber = 1,
@@ -321,24 +322,21 @@ export const NoteHighway = React.memo(function NoteHighway({
   // Get note shape classes from style
   const noteShape = useMemo(() => getNoteShapeClasses(noteShapeStyle), [noteShapeStyle]);
 
-  // Determine color scheme based on player number (P1=cyan, P2=pink for duet contrast)
-  const colorScheme = playerNumber === 2 ? 'pink' : 'cyan';
-  const bgGradientClass = playerNumber === 1
-    ? 'absolute inset-0 bg-gradient-to-b from-cyan-900/20 to-transparent pointer-events-none'
-    : 'absolute inset-0 bg-gradient-to-t from-pink-900/20 to-transparent pointer-events-none';
+  // Use playerColor if provided; otherwise derive from playerNumber (P1=cyan, P2=pink)
+  const effectiveColor = playerColor ?? (playerNumber === 2 ? '#ec4899' : '#22d3ee');
 
   const resolvedPlayerName = playerName || t('prominentScore.player1');
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${className}`}>
       {/* Background gradient */}
-      <div className={bgGradientClass} />
+      <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(${playerNumber === 1 ? 'to bottom' : 'to top'}, ${withAlpha(effectiveColor, 0.2)}, transparent)` }} />
 
       {/* Pitch grid lines */}
-      <PitchGrid count={7} color={colorScheme} />
+      <PitchGrid count={7} playerColor={effectiveColor} />
 
       {/* Sing line */}
-      <SingLine position={singLinePosition} color={colorScheme} />
+      <SingLine position={singLinePosition} playerColor={effectiveColor} />
 
       {/* Notes — hidden in blind sections only */}
       {/* Missing Words mode: notes always visible (text is hidden instead) */}
@@ -361,7 +359,7 @@ export const NoteHighway = React.memo(function NoteHighway({
           noteShape={noteShape}
           visibleTop={visibleTop}
           visibleRange={visibleRange}
-          color={colorScheme}
+          playerColor={effectiveColor}
           noteDisplayStyle={noteDisplayStyle}
           notePerformance={notePerformance}
         />
@@ -375,7 +373,7 @@ export const NoteHighway = React.memo(function NoteHighway({
         singLinePosition={singLinePosition}
         visibleTop={visibleTop}
         visibleRange={visibleRange}
-        color={colorScheme}
+        playerColor={effectiveColor}
       />}
       {/* Blind indicator — subtle pulse when in blind section */}
       {isBlindSection && (
@@ -392,7 +390,7 @@ export const NoteHighway = React.memo(function NoteHighway({
         <PlayerLabel
           playerName={resolvedPlayerName}
           playerNumber={playerNumber}
-          color={colorScheme}
+          playerColor={effectiveColor}
         />
       )}
     </div>

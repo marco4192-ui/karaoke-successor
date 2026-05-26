@@ -705,17 +705,19 @@ export function submitChallengeResult(
   saveDailyChallenge(challenge);
   savePlayerDailyStats(stats);
 
-  // Sync completion flag so isChallengeCompletedToday() returns true
+  // (#1) Compute target check before saving completion flag
+  const currentMetric = resultMetric();
+  const targetMet = currentMetric >= challenge.target;
+
+  // Sync completion flag — only mark completed if the target was actually met
   // (isChallengeCompletedToday reads from DAILY_CHALLENGE_KEY, not the leaderboard)
   setJson(DAILY_CHALLENGE_KEY, {
     date: today,
-    completed: true,
+    completed: targetMet,
     streak: stats.currentStreak,
   });
 
   // (#1) Save best result for this player today
-  const currentMetric = resultMetric();
-  const targetMet = currentMetric >= challenge.target;
   const existingBest = getPlayerBestResult(player.id);
   if (!existingBest || currentMetric > getBestMetric(existingBest, challenge.type)) {
     savePlayerBestResult(player.id, {
@@ -866,6 +868,23 @@ export function submitCoopChallengeResult(
 
   saveDailyChallenge(challenge);
   savePlayerDailyStats(stats);
+
+  // (#1) Save best results for each co-op player — only if better than existing best
+  const coopMetric = avgMetric();
+  for (let i = 0; i < players.length; i++) {
+    const existingBest = getPlayerBestResult(players[i].id);
+    if (!existingBest || coopMetric > getBestMetric(existingBest, challenge.type)) {
+      savePlayerBestResult(players[i].id, {
+        playerId: players[i].id,
+        score: avgScore,
+        accuracy: avgAccuracy,
+        combo: avgCombo,
+        perfectNotes: avgPerfectNotes,
+        completedAt: Date.now(),
+        targetMet,
+      });
+    }
+  }
 
   // Mark challenge completed if target met
   if (targetMet) {

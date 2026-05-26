@@ -386,7 +386,7 @@ export function parseStepMania(data: string): StepManiaData | null {
       else if (trimmed.startsWith('#ARTIST:')) result.artist = trimmed.endsWith(';') ? trimmed.slice(8, -1) : trimmed.slice(8);
       else if (trimmed.startsWith('#BPMS:')) {
         const bpmStr = trimmed.endsWith(';') ? trimmed.slice(6, -1) : trimmed.slice(6);
-        result.bpm = bpmStr.split(',').map(b => parseFloat(b.split('=')[1]));
+        result.bpm = bpmStr.split(',').map(b => parseFloat(b.split('=')[1])).filter(v => !isNaN(v));
       }
     }
 

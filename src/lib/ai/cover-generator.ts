@@ -31,8 +31,14 @@ export async function generateCoverArt(options: CoverGenOptions): Promise<CoverG
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      return { success: false, error: error.error || 'Failed to generate cover' };
+      let error = 'Failed to generate cover';
+      try {
+        const errorData = await response.json();
+        error = errorData.error || error;
+      } catch {
+        // Error body is not valid JSON
+      }
+      return { success: false, error };
     }
 
     const result = await response.json();

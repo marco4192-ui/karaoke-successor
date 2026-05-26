@@ -298,9 +298,9 @@ export class PitchDetector {
       performance.now()
     );
 
-    if (frequency !== null && frequency >= this.config.minFrequency && frequency <= this.config.maxFrequency) {
-      const note = frequencyToMidi(frequency);
-      const clarity = calculateClarity(this.buffer, frequency, sampleRate);
+    if (detectedNote !== null) {
+      const note = detectedNote;
+      const clarity = calculateClarity(this.buffer, frequency!, sampleRate);
 
       // Pitch stability check
       const stablePitch = this.pitchStabilizer.process(note);
