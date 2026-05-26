@@ -52,6 +52,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
   const [showMetadataPanel, setShowMetadataPanel] = useState(false); // Collapsible metadata panel
   const [isLoadingLyrics, setIsLoadingLyrics] = useState(false); // Loading state for lyrics
   const [showNewSongDialog, setShowNewSongDialog] = useState(false); // New song creation dialog
+  const [visibleCount, setVisibleCount] = useState(50); // Lazy loading for song grid
 
   // ── Multi-select state ──
   const [selectMode, setSelectMode] = useState(false);
@@ -102,6 +103,9 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
     restoreCovers();
     return () => { cancelled = true; };
   }, [songs]);
+
+  // Reset visibleCount when filters change
+  useEffect(() => { setVisibleCount(50); }, [filterMode, searchQuery]);
 
   // Filter songs based on filter mode and search
   const filteredSongs = useMemo(() => {
@@ -422,6 +426,16 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               <p className="text-white/60">{t('editor.subtitle')}</p>
             </div>
             <div className="flex gap-2">
+              {selectedSong && (
+                <Button
+                  onClick={() => setShowMetadataPanel(!showMetadataPanel)}
+                  variant={showMetadataPanel ? 'default' : 'outline'}
+                  className={showMetadataPanel ? 'bg-purple-500' : 'border-white/20 hover:bg-white/10'}
+                  size="sm"
+                >
+                  🏷️
+                </Button>
+              )}
               <Button onClick={refreshSongs} variant="outline" className="border-white/20 hover:bg-white/10" title={t('editor.refreshTitle')} data-testid="editor-refresh-button">
                 🔄 {t('editor.refreshBtn')}
               </Button>
@@ -496,7 +510,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 <span className="text-[10px] font-medium text-white/60 group-hover:text-white/80 transition-colors">{t('editor.newSong')}</span>
               </button>
             )}
-            {filteredSongs.map(song => (
+            {filteredSongs.slice(0, visibleCount).map(song => (
               <button
                 key={song.id}
                 onClick={() => handleCardClick(song)}
@@ -555,6 +569,18 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
             ))}
           </div>
 
+          {visibleCount < filteredSongs.length && (
+            <div className="flex justify-center py-6">
+              <Button
+                onClick={() => setVisibleCount(prev => prev + 50)}
+                variant="outline"
+                className="border-white/20 text-white/70 hover:bg-white/10"
+              >
+                Load More ({filteredSongs.length - visibleCount} remaining)
+              </Button>
+            </div>
+          )}
+
           {filteredSongs.length === 0 && (
             <div className="text-center py-12 text-white/40">
               <div className="text-4xl mb-2">📝</div>
@@ -567,15 +593,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
         <div className="flex h-full">
           {/* Editor - Full width */}
           <div className="flex-1 min-w-0 overflow-hidden relative">
-            {/* Toggle Metadata Panel Button */}
-            <button
-              onClick={() => setShowMetadataPanel(!showMetadataPanel)}
-              className="absolute top-2 right-2 z-10 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors flex items-center gap-1.5 text-sm text-white/80"
-              title={showMetadataPanel ? t('editor.hideMetadata') : t('editor.showMetadata')}
-              data-testid="editor-metadata-panel-toggle"
-            >
-              🏷️ {t('editor.metadataPanelBtn')}
-            </button>
+            {/* Metadata panel toggle is now in the header */}
             <KaraokeEditor
               song={selectedSong}
               onSave={handleSave}

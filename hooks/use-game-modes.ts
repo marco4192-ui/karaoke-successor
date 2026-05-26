@@ -1,172 +1,439 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { Note, LyricLine } from '@/types/game';
+import { LyricLine } from '@/types/game';
+
+// ===================== TYPES =====================
+
+export type MissingWordsGranularity = 'word' | 'passage' | 'both';
 
 interface UseGameModesParams {
   gameMode: string;
   status: string;
+  /** Whether the game is currently playing (audio/video active). More reliable than status === 'playing' */
+  isPlaying?: boolean;
   currentTime: number;
   songId?: string;
   sortedLines?: LyricLine[];
   setBlindSection: (_isBlind: boolean) => void;
+  setBlindHardcore?: (_isHardcore: boolean) => void;
+  setHardcoreMissingWords?: (_isHardcore: boolean) => void;
   setMissingWordsIndices: (_indices: number[]) => void;
-  /** Override blind frequency (0.10–0.60). Falls back to 0.4 if not set. */
+  /** Callback when a blind section starts (for warning signals) */
+  onBlindWarning?: (_countdown: number, _isActive: boolean) => void;
+  /** Callback when a missing-words passage is about to start */
+  onMissingWordsWarning?: (_countdown: number, _isActive: boolean) => void;
+  /** Override blind frequency (0.15–0.90). Falls back to 0.30 if not set. */
   blindFrequency?: number;
-  /** Override missing words percentage (0.15–0.50). Falls back to 0.25 if not set. */
+  /** Override missing words percentage (0.15–0.90). Falls back to 0.30 if not set. */
   missingWordFrequency?: number;
+  /** Hardcore blind mode: text hidden when notes visible, and vice versa */
+  hardcore?: boolean;
+  /** Hardcore Missing Words mode: hidden words stay hidden until song ends */
+  hardcoreMissingWords?: boolean;
+  /** Missing words granularity: 'word' | 'passage' | 'both' */
+  missingWordsGranularity?: MissingWordsGranularity;
+  /** Escalating mode: frequency multiplier that increases per round (1.0 = normal) */
+  escalatingMultiplier?: number;
+  /** Current missing words indices from the store (for detecting external clearing by resetGame) */
+  currentMissingWordsIndices?: number[];
+}
+
+/** Stores a pre-computed blind passage pattern for the current song. */
+interface BlindPassagePattern {
+  /** Each entry maps to a passage index (same order as groupIntoPassages output). */
+  isBlind: boolean[];
+  /** Start/end times per passage for warning look-ahead. */
+  passages: Array<{ startTime: number; endTime: number }>;
+}
+
+// ===================== HELPERS =====================
+
+/**
+ * Group lyric lines into "passages" — consecutive lines separated by a gap >4 seconds.
+ * A passage typically represents a verse, chorus, bridge, etc.
+ * Returns an array of passages, each containing the lines belonging to it.
+ */
+export function groupIntoPassages(lines: LyricLine[]): LyricLine[][] {
+  if (!lines || lines.length === 0) return [];
+
+  const passages: LyricLine[][] = [];
+  let currentPassage: LyricLine[] = [lines[0]];
+
+  for (let i = 1; i < lines.length; i++) {
+    const gap = lines[i].startTime - lines[i - 1].endTime;
+    if (gap > 4000) {
+      passages.push(currentPassage);
+      currentPassage = [lines[i]];
+    } else {
+      currentPassage.push(lines[i]);
+    }
+  }
+  passages.push(currentPassage);
+  return passages;
 }
 
 /**
- * Determine if a note is the end of a "word" (word boundary in UltraStar format).
- * A word ends where a note has trailing space or is the last note with lyrics.
+ * Generate a deterministic seed sequence (xorshift32).
  */
-function isWordEnd(notes: Note[], noteIdx: number): boolean {
-  const note = notes[noteIdx];
-  if (!note) return false;
-  const lyric = note.lyric || '';
-  if (lyric.endsWith(' ')) return true;
-
-  // Check if it's the last note with actual lyrics
-  for (let i = noteIdx + 1; i < notes.length; i++) {
-    const nextLyric = (notes[i].lyric || '').trim();
-    if (nextLyric && nextLyric !== '-') return false;
+function generateSeedSequence(maxValues: number): number[] {
+  const seedValues: number[] = [];
+  let state = Math.floor(Math.random() * 2147483647);
+  for (let i = 0; i < maxValues; i++) {
+    state = (state + 0x6D2B79F5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    seedValues.push(((t ^ (t >>> 14)) >>> 0) / 4294967296);
   }
-  return true;
+  return seedValues;
 }
+
+/**
+ * Fisher-Yates shuffle (in-place).
+ */
+function shuffleArray<T>(arr: T[]): T[] {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+/**
+ * Collect all note start times (in ms) from lines belonging to given passages.
+ * Used for word-level granularity hiding in Missing Words.
+ */
+function getNoteStartTimesFromPassages(passages: LyricLine[][]): number[] {
+  const times: number[] = [];
+  for (const passage of passages) {
+    for (const line of passage) {
+      for (const note of line.notes) {
+        times.push(note.startTime);
+      }
+    }
+  }
+  return times;
+}
+
+/**
+ * Hide every N-th note from a list of start times.
+ * Returns a subset of noteStartTimes to hide.
+ */
+function hideEveryNthNote(noteStartTimes: number[], n: number): number[] {
+  const hidden: number[] = [];
+  for (let i = 0; i < noteStartTimes.length; i++) {
+    if (i % n === n - 1) {
+      hidden.push(noteStartTimes[i]);
+    }
+  }
+  return hidden;
+}
+
+// ===================== HOOK =====================
 
 /**
  * Hook for managing special game modes: Blind Mode and Missing Words Mode.
- * - Blind Mode: Deterministic seed-based section hiding (no flickering)
- * - Missing Words Mode: Selects whole words to hide based on frequency.
- *   Stores note startTimes so the display can check by unique note identifier.
  *
- * Frequencies can be overridden via props (e.g. from competitive settings).
+ * BLIND KARAOKE — Passage-based hiding:
+ * - Notes on the highway are hidden for entire musical passages (verse/chorus/bridge)
+ * - First passage is ALWAYS fully visible (notes + text)
+ * - Hardcore mode: inverts visibility — text hidden when notes visible & vice versa
+ * - Frequencies: 15%, 30%, 60%, 90% (Insane)
+ * - Warning signal 1s before blind sections (via onBlindWarning callback)
+ *
+ * MISSING WORDS — Multi-granularity hiding:
+ * - 'word': Every N-th note hidden within ALL passages (except first)
+ * - 'passage': Entire passages hidden (original behavior)
+ * - 'both': Some passages fully hidden + scattered words in visible passages
+ * - First passage always visible
+ * - Hardcore MW: Hidden words stay hidden until song ends (not revealed after singing)
+ * - Frequencies: 15%, 30%, 60%, 90% (Insane)
+ * - Warning signal 1s before hidden passages (via onMissingWordsWarning callback)
  */
 export function useGameModes({
   gameMode,
   status,
+  isPlaying: isActivelyPlaying,
   currentTime,
   songId,
   sortedLines,
   setBlindSection,
+  setBlindHardcore,
+  setHardcoreMissingWords,
   setMissingWordsIndices,
+  currentMissingWordsIndices,
+  onBlindWarning,
+  onMissingWordsWarning,
   blindFrequency,
   missingWordFrequency,
+  hardcore,
+  hardcoreMissingWords,
+  missingWordsGranularity,
+  escalatingMultiplier,
 }: UseGameModesParams) {
-  // BLIND KARAOKE MODE: Set blind sections based on time
-  // Uses a deterministic seed generated once per song to avoid flickering
-  const blindSeedRef = useRef<number[]>([]);
+  // Use isActivelyPlaying (from game loop) as primary signal,
+  // fall back to status === 'playing' for store-based pause/resume.
+  const isGameActive = isActivelyPlaying === true || status === 'playing';
+  // BLIND KARAOKE: Pre-computed passage-based blind pattern
+  const blindPatternRef = useRef<BlindPassagePattern | null>(null);
 
-  // MISSING WORDS MODE: Generate hidden word note startTimes ONCE when game starts
+  // MISSING WORDS: Generate hidden indices ONCE when game starts
   const missingWordsGeneratedRef = useRef(false);
+  // Stores the hidden startTimes so the warning effect can check which passages are affected
+  const hiddenStartTimesRef = useRef<Set<number>>(new Set());
+  // Track length of last generated indices to detect external clearing (e.g., by resetGame)
+  const lastGeneratedLengthRef = useRef(0);
 
-  // Track last blind section to avoid redundant state updates every frame
-  const lastBlindSectionRef = useRef(-1);
+  // Track last values to avoid redundant state updates every frame
+  const lastBlindPassageRef = useRef(-1);
+  const lastMWWarningKeyRef = useRef('');
 
-  // Generate blind pattern when blind mode game starts
+  // ── RESET: Clear all mode state when song or gameMode changes ──
+  // CRITICAL: This effect MUST be declared BEFORE the generation effects
+  // so that refs are properly reset before the generation effects check them.
+  // Without this ordering, React runs effects in declaration order and the
+  // reset could run after generation, causing the generation guard refs to
+  // be in an inconsistent state.
   useEffect(() => {
-    if (gameMode === 'blind' && status === 'playing') {
-      // Generate a deterministic blind pattern when the song starts
-      // This ensures the same sections are blind every time, no flickering
-      if (blindSeedRef.current.length === 0) {
-        // Mulberry32 seeded PRNG — produces well-distributed values in [0, 1)
-        const maxSections = 100;
-        const seedValues: number[] = [];
-        let state = Math.floor(Math.random() * 2147483647); // Seed from Math.random()
-        for (let i = 0; i < maxSections; i++) {
-          state = (state + 0x6D2B79F5) | 0;
-          let t = Math.imul(state ^ (state >>> 15), 1 | state);
-          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-          seedValues.push(((t ^ (t >>> 14)) >>> 0) / 4294967296);
+    blindPatternRef.current = null;
+    missingWordsGeneratedRef.current = false;
+    hiddenStartTimesRef.current = new Set();
+    lastBlindPassageRef.current = -1;
+    lastMWWarningKeyRef.current = '';
+    lastGeneratedLengthRef.current = 0;
+    // Reset blind section state so it doesn't carry over to the next song
+    setBlindSection(false);
+    // Clear stale mode-specific store state to prevent cross-contamination
+    // between Blind and Missing Words modes (e.g., missingWordsIndices from
+    // a previous Missing Words game leaking into a Blind game).
+    setMissingWordsIndices([]);
+    setBlindHardcore?.(false);
+    setHardcoreMissingWords?.(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- songId and gameMode are the intentional triggers
+  }, [songId, gameMode, setBlindSection, setMissingWordsIndices, setBlindHardcore, setHardcoreMissingWords]);
+
+  // Set hardcore mode on store when blind game starts
+  useEffect(() => {
+    if (gameMode === 'blind' && setBlindHardcore) {
+      setBlindHardcore(hardcore ?? false);
+    }
+  }, [gameMode, hardcore, setBlindHardcore]);
+
+  // Set hardcore Missing Words mode on store when MW game starts
+  useEffect(() => {
+    if (gameMode === 'missing-words' && setHardcoreMissingWords) {
+      setHardcoreMissingWords(hardcoreMissingWords ?? false);
+    }
+  }, [gameMode, hardcoreMissingWords, setHardcoreMissingWords]);
+
+  // ── BLIND KARAOKE MODE — Generate pattern (once per song) ──
+  // Decoupled from isGameActive so the pattern is ready before playback starts.
+  // songId is included to guarantee regeneration when a new song loads.
+  useEffect(() => {
+    if (gameMode === 'blind' && sortedLines && sortedLines.length > 0 && !blindPatternRef.current) {
+      const passages = groupIntoPassages(sortedLines);
+      const seeds = generateSeedSequence(passages.length);
+
+      // Apply escalating multiplier to frequency
+      const baseFreq = blindFrequency ?? 0.30;
+      const effectiveFreq = Math.min(0.95, baseFreq * (escalatingMultiplier ?? 1));
+
+      const isBlind: boolean[] = passages.map((_, i) => {
+        if (i === 0) return false; // First passage always visible
+        return seeds[i] < effectiveFreq;
+      });
+
+      blindPatternRef.current = {
+        isBlind,
+        passages: passages.map(p => ({
+          startTime: p[0]?.startTime ?? 0,
+          endTime: p[p.length - 1]?.endTime ?? 0,
+        })),
+      };
+    }
+  }, [gameMode, songId, sortedLines, blindFrequency, escalatingMultiplier]);
+
+  // ── BLIND KARAOKE MODE — Per-frame passage tracking ──
+  useEffect(() => {
+    if (gameMode === 'blind' && isGameActive && blindPatternRef.current) {
+      const pattern = blindPatternRef.current;
+
+      // Find current passage based on currentTime
+      let currentPassageIndex = -1;
+      for (let i = 0; i < pattern.passages.length; i++) {
+        if (currentTime >= pattern.passages[i].startTime && currentTime < pattern.passages[i].endTime) {
+          currentPassageIndex = i;
+          break;
         }
-        blindSeedRef.current = seedValues;
       }
 
-      const sectionDuration = 12000; // 12 seconds per section (currentTime is in milliseconds)
-      const blindChance = blindFrequency ?? 0.4; // Use override or default 40%
+      // Look ahead for next blind passage (for warning signal)
+      if (onBlindWarning) {
+        const WARNING_LEAD_MS = 1000; // 1 second warning
+        let nextBlindPassageIndex = -1;
+        for (let i = 0; i < pattern.passages.length; i++) {
+          if (pattern.isBlind[i] && currentTime < pattern.passages[i].startTime) {
+            nextBlindPassageIndex = i;
+            break;
+          }
+        }
 
-      const sectionIndex = Math.floor(currentTime / sectionDuration);
+        if (nextBlindPassageIndex >= 0) {
+          const timeUntilBlind = pattern.passages[nextBlindPassageIndex].startTime - currentTime;
+          if (timeUntilBlind <= WARNING_LEAD_MS && timeUntilBlind > 0) {
+            const countdown = Math.ceil(timeUntilBlind / 1000);
+            if (lastMWWarningKeyRef.current !== String(nextBlindPassageIndex)) {
+              lastMWWarningKeyRef.current = String(nextBlindPassageIndex);
+              onBlindWarning(countdown, true);
+            }
+          } else if (currentPassageIndex === nextBlindPassageIndex) {
+            // We're now in the blind section
+            onBlindWarning(0, true);
+            lastMWWarningKeyRef.current = '';
+          } else if (timeUntilBlind > WARNING_LEAD_MS || currentPassageIndex >= 0 && !pattern.isBlind[currentPassageIndex]) {
+            // Not near a blind section
+            onBlindWarning(0, false);
+            lastMWWarningKeyRef.current = '';
+          }
+        } else {
+          // No upcoming blind passage
+          const isInBlind = currentPassageIndex >= 0 && pattern.isBlind[currentPassageIndex];
+          onBlindWarning(0, isInBlind);
+        }
+      }
 
-      // Only update state when section actually changes (avoids ~60 setBlindSection calls/sec)
-      if (sectionIndex === lastBlindSectionRef.current) return;
-      lastBlindSectionRef.current = sectionIndex;
-
-      const seedValue = blindSeedRef.current[sectionIndex % blindSeedRef.current.length] || 0;
-      const isBlind = sectionIndex > 0 && seedValue < blindChance;
-
-      setBlindSection(isBlind);
+      // Only update blind section state when passage actually changes
+      if (currentPassageIndex !== lastBlindPassageRef.current) {
+        lastBlindPassageRef.current = currentPassageIndex;
+        const isBlind = currentPassageIndex >= 0 ? pattern.isBlind[currentPassageIndex] : false;
+        setBlindSection(isBlind);
+      }
     }
-  }, [gameMode, status, currentTime, setBlindSection, blindFrequency]);
+  }, [gameMode, isGameActive, currentTime, sortedLines, setBlindSection, onBlindWarning]);
 
-  // Generate missing words note startTimes once when missing-words game starts
+  // ── MISSING WORDS: Detect external clearing of indices ──
+  // When resetGame() clears missingWordsIndices to [] but songId/gameMode
+  // don't change (e.g., replaying same song), the generation guard ref stays
+  // true and prevents regeneration. This effect detects that mismatch and
+  // resets the guard so the generation effect can run again.
   useEffect(() => {
-    if (gameMode === 'missing-words' && sortedLines && status === 'playing') {
-      // Only generate once per game — prevent flickering on re-renders
-      if (missingWordsGeneratedRef.current) return;
+    if (missingWordsGeneratedRef.current &&
+        lastGeneratedLengthRef.current > 0 &&
+        currentMissingWordsIndices &&
+        currentMissingWordsIndices.length === 0) {
+      missingWordsGeneratedRef.current = false;
+      lastGeneratedLengthRef.current = 0;
+    }
+  }, [currentMissingWordsIndices]);
+
+  // ── MISSING WORDS MODE — Generate hidden pattern (once per song) ──
+  // Decoupled from isGameActive so the pattern is ready before playback starts.
+  // songId is included to guarantee regeneration when a new song loads.
+  useEffect(() => {
+    if (gameMode === 'missing-words' && sortedLines && sortedLines.length > 0 && !missingWordsGeneratedRef.current) {
       missingWordsGeneratedRef.current = true;
 
-      // Collect words (each word = array of note startTimes for its syllables)
-      // A word ends where a note has trailing space or is the last note with lyrics.
-      const words: number[][] = []; // Each entry is an array of startTimes for one word's syllables
-
-      for (const line of sortedLines) {
-        if (!line.notes) continue;
-
-        let currentWord: number[] = [];
-        for (let noteIdx = 0; noteIdx < line.notes.length; noteIdx++) {
-          const note = line.notes[noteIdx];
-          const lyric = (note.lyric || '').trim();
-
-          if (!lyric || lyric === '-') {
-            // Hyphen-only or empty: finalize current word if any
-            if (currentWord.length > 0) {
-              words.push(currentWord);
-              currentWord = [];
-            }
-            continue;
-          }
-
-          currentWord.push(note.startTime);
-
-          if (isWordEnd(line.notes, noteIdx)) {
-            words.push(currentWord);
-            currentWord = [];
-          }
-        }
-        // Finalize last word in line
-        if (currentWord.length > 0) {
-          words.push(currentWord);
-        }
+      const passages = groupIntoPassages(sortedLines);
+      if (passages.length <= 1) {
+        setMissingWordsIndices([]);
+        return;
       }
 
-      if (words.length === 0) return;
+      const hideablePassages = passages.slice(1); // First passage always visible
 
-      const hidePercentage = missingWordFrequency ?? 0.25; // Use override or default 25%
-      const hideCount = Math.max(1, Math.floor(words.length * hidePercentage));
+      // Apply escalating multiplier to frequency
+      const baseFreq = missingWordFrequency ?? 0.30;
+      const effectiveFreq = Math.min(0.95, baseFreq * (escalatingMultiplier ?? 1));
 
-      // Fisher-Yates shuffle word indices
-      const wordIndices = Array.from({ length: words.length }, (_, i) => i);
-      for (let i = wordIndices.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [wordIndices[i], wordIndices[j]] = [wordIndices[j], wordIndices[i]];
-      }
-
-      // Collect all syllable startTimes from the selected hidden words
+      const granularity = missingWordsGranularity ?? 'passage';
       const hiddenStartTimes: number[] = [];
-      for (let i = 0; i < hideCount; i++) {
-        hiddenStartTimes.push(...words[wordIndices[i]]);
+
+      if (granularity === 'word') {
+        // WORD mode: hide every N-th note in all hideable passages
+        // Light (15%) → every 7th note, Normal (30%) → every 3rd, Hard (60%) → every 2nd, Insane (90%) → every note
+        const skipMap: Record<number, number> = { 0.15: 7, 0.30: 3, 0.45: 2, 0.60: 2, 0.75: 2, 0.90: 1 };
+        const n = skipMap[Math.round(effectiveFreq * 20) / 20] ?? Math.max(1, Math.round(1 / effectiveFreq));
+
+        const allNoteTimes = getNoteStartTimesFromPassages(hideablePassages);
+        hiddenStartTimes.push(...hideEveryNthNote(allNoteTimes, n));
+      } else if (granularity === 'both') {
+        // BOTH mode: hide some full passages + scattered words in visible ones
+        // Passages: use half the frequency for passage-level hiding
+        const passageFreq = effectiveFreq * 0.5;
+        const passageHideCount = Math.max(1, Math.round(hideablePassages.length * passageFreq));
+        const shuffledIndices = shuffleArray(Array.from({ length: hideablePassages.length }, (_, i) => i));
+
+        const hiddenPassageIndices = new Set<number>();
+        for (let i = 0; i < passageHideCount && i < shuffledIndices.length; i++) {
+          hiddenPassageIndices.add(shuffledIndices[i]);
+        }
+
+        // Add line startTimes from fully hidden passages
+        for (const idx of hiddenPassageIndices) {
+          for (const line of hideablePassages[idx]) {
+            hiddenStartTimes.push(line.startTime);
+          }
+        }
+
+        // Scatter words in visible passages
+        const visiblePassages = hideablePassages.filter((_, i) => !hiddenPassageIndices.has(i));
+        const visibleNoteTimes = getNoteStartTimesFromPassages(visiblePassages);
+        const wordSkipMap: Record<number, number> = { 0.15: 5, 0.30: 3, 0.45: 2, 0.60: 2, 0.75: 2, 0.90: 1 };
+        const wordN = wordSkipMap[Math.round(effectiveFreq * 20) / 20] ?? Math.max(1, Math.round(1 / effectiveFreq));
+        hiddenStartTimes.push(...hideEveryNthNote(visibleNoteTimes, wordN));
+      } else {
+        // PASSAGE mode (original): entire passages hidden
+        const hideCount = Math.max(1, Math.round(hideablePassages.length * effectiveFreq));
+        const shuffledIndices = shuffleArray(Array.from({ length: hideablePassages.length }, (_, i) => i));
+
+        for (let i = 0; i < hideCount && i < shuffledIndices.length; i++) {
+          const passage = hideablePassages[shuffledIndices[i]];
+          for (const line of passage) {
+            hiddenStartTimes.push(line.startTime);
+          }
+        }
       }
 
-      // Store startTimes of hidden words — the display will check by startTime
+      hiddenStartTimesRef.current = new Set(hiddenStartTimes);
+      lastGeneratedLengthRef.current = hiddenStartTimes.length;
       setMissingWordsIndices(hiddenStartTimes);
     }
-  }, [gameMode, sortedLines, status, setMissingWordsIndices, missingWordFrequency]);
+  }, [gameMode, songId, sortedLines, setMissingWordsIndices, missingWordFrequency, missingWordsGranularity, escalatingMultiplier]);
 
-  // Reset both modes when song changes
+  // ── Missing Words Warning: signal before hidden passages approach ──
   useEffect(() => {
-    blindSeedRef.current = [];
-    missingWordsGeneratedRef.current = false;
-    lastBlindSectionRef.current = -1;
-  }, [songId]);
+    if (gameMode === 'missing-words' && isGameActive && sortedLines && onMissingWordsWarning) {
+      const passages = groupIntoPassages(sortedLines);
+      if (passages.length <= 1) return;
+
+      // Check if current time is approaching a hidden passage (first hideable one)
+      const WARNING_LEAD_MS = 1500;
+      for (let i = 1; i < passages.length; i++) {
+        const passage = passages[i];
+        const passageStart = passage[0]?.startTime ?? 0;
+        const passageEnd = passage[passage.length - 1]?.endTime ?? 0;
+
+        // Only warn if this passage actually contains hidden words
+        const passageHasHidden = passage.some(line => hiddenStartTimesRef.current.has(line.startTime));
+        if (!passageHasHidden) continue;
+
+        const timeUntilPassage = passageStart - currentTime;
+        if (timeUntilPassage > 0 && timeUntilPassage <= WARNING_LEAD_MS) {
+          const countdown = Math.ceil(timeUntilPassage / 1000);
+          const warnKey = `mw-${i}`;
+          if (lastMWWarningKeyRef.current !== warnKey) {
+            lastMWWarningKeyRef.current = warnKey;
+            onMissingWordsWarning(countdown, true);
+          }
+          return;
+        }
+      }
+
+      // Not near any passage transition — clear warning
+      onMissingWordsWarning(0, false);
+      lastMWWarningKeyRef.current = '';
+    }
+  }, [gameMode, isGameActive, currentTime, sortedLines, onMissingWordsWarning]);
+
 }

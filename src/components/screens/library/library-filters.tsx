@@ -172,7 +172,7 @@ export function LibraryFilters({
         )}
       </div>
       
-      <div className="flex flex-wrap gap-2 items-center">
+      <div className="flex gap-2 items-center overflow-x-auto scrollbar-thin">
         <div className="flex bg-white/5 rounded-lg p-1">
           <button
             onClick={() => { onClearFolder(); onSetViewMode('grid'); onSetGroupBy('none'); }}
@@ -210,7 +210,7 @@ export function LibraryFilters({
         <span className="text-white/30">|</span>
         
         <span className="text-white/40 text-sm">{t('libraryFilters.groupBy')}</span>
-        <div className="flex flex-wrap gap-1">
+        <div className="flex gap-1 flex-shrink-0">
           {[
             { value: 'artist', label: t('libraryFilters.groupArtistAZ'), icon: '🎤' },
             { value: 'title', label: t('libraryFilters.groupTitleAZ'), icon: '🎵' },

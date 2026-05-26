@@ -7,6 +7,7 @@ import { MusicIcon, PlayIcon } from '@/components/icons';
 import { extractYouTubeId } from '@/components/game/youtube-player';
 import { WaveformBar } from './waveform-bar';
 import { useTranslation } from '@/lib/i18n/translations';
+import { isDuetSong } from './utils';
 
 function hasVideo(song: SongCardProps['song']): boolean {
   return !!(song.videoBackground || song.videoUrl || song.youtubeUrl || song.relativeVideoPath);
@@ -139,6 +140,11 @@ export function SongCard({
         </div>
         
         <div className="absolute top-2 right-2 flex gap-1">
+          {isDuetSong(song) && (
+            <div className="bg-gradient-to-r from-pink-500 to-purple-500 text-white text-xs font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-lg">
+              <span className="text-sm">🎭</span>Duet
+            </div>
+          )}
           {isViralHit && (
             <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-lg animate-pulse">
               <span className="text-sm">&#128293;</span>{t('songCard.viral')}
