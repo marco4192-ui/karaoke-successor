@@ -126,7 +126,7 @@ fn validate_safe_path(raw_path: &str) -> Result<PathBuf, String> {
         ];
         for dir in &forbidden {
             let dir_lower = &dir.to_lowercase();
-            if path_str == *dir_lower || path_str.starts_with(&format!("{}/", dir_lower)) {
+            if path_str == *dir_lower || path_str.starts_with(&format!("{}{}", dir_lower, std::path::MAIN_SEPARATOR)) {
                 return Err(format!("Access denied: path '{}' is inside a system directory", raw_path));
             }
         }
@@ -681,7 +681,8 @@ pub fn run() {
             app.manage(db::DbState::new(db_path)?);
             println!("SQLite database initialized at: {:?}", app.state::<db::DbState>().db_path);
 
-            // Get the main window and open DevTools
+            // Get the main window and open DevTools (debug builds only)
+            #[cfg(debug_assertions)]
             if let Some(window) = app.handle().get_webview_window("main") {
                 let _ = window.open_devtools();
             }
@@ -691,7 +692,8 @@ pub fn run() {
                 println!("Server already running on port 3000");
                 if let Some(window) = app.handle().get_webview_window("main") {
                     let _ = window.eval("window.location.href = 'http://localhost:3000'");
-                    // Re-open DevTools after navigation (redirect may close them)
+                    // Re-open DevTools after navigation (debug builds only; redirect may close them)
+                    #[cfg(debug_assertions)]
                     let _ = window.open_devtools();
                 }
                 return Ok(());
@@ -826,7 +828,8 @@ pub fn run() {
                             
                             if let Some(window) = handle.get_webview_window("main") {
                                 let _ = window.eval("window.location.href = 'http://localhost:3000'");
-                                // Re-open DevTools after navigation (redirect may close them)
+                                // Re-open DevTools after navigation (debug builds only)
+                                #[cfg(debug_assertions)]
                                 let _ = window.open_devtools();
                             }
                             return;

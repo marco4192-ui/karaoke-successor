@@ -115,7 +115,7 @@ export interface CompetitiveGame {
   /** Total songs needed */
   totalRounds: number;
   /** All song IDs already used in any round (for no-repeat) */
-  usedSongIds: Set<string>;
+  usedSongIds: string[];
 }
 
 // ===================== GAME CREATION =====================
@@ -171,7 +171,7 @@ export function createCompetitiveGame(
     status: 'setup',
     winner: null,
     totalRounds,
-    usedSongIds: new Set<string>(),
+    usedSongIds: [],
   };
 }
 
@@ -259,9 +259,9 @@ function getNextRoundPairing(game: CompetitiveGame): { player1Id: string; player
  */
 export function pickSmartSong(
   songs: { id: string; title: string }[],
-  usedSongIds: Set<string>
+  usedSongIds: string[]
 ): { id: string; title: string } | null {
-  const unplayed = songs.filter(s => !usedSongIds.has(s.id));
+  const unplayed = songs.filter(s => !usedSongIds.includes(s.id));
   if (unplayed.length === 0) return null;
   const pick = unplayed[Math.floor(Math.random() * unplayed.length)];
   return { id: pick.id, title: pick.title };
@@ -315,8 +315,7 @@ export function startCompetitiveRound(
   };
 
   // Track used songs and per-player played songs
-  const newUsedSongIds = new Set(game.usedSongIds);
-  newUsedSongIds.add(songId);
+  const newUsedSongIds = [...game.usedSongIds, songId];
 
   return {
     ...game,

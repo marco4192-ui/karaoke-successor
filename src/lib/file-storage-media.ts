@@ -41,6 +41,8 @@ function cacheBlobUrl(key: string, url: string) {
 
 // Load a file from the filesystem and return a blob URL
 // Uses native Tauri command to bypass plugin ACL restrictions.
+// NOTE: Does NOT cache the result — callers are responsible for caching
+// to prevent aliasing bugs (multiple keys pointing to the same blob URL).
 async function loadFileAsBlobUrl(fullPath: string): Promise<string | null> {
 
   
@@ -64,10 +66,6 @@ async function loadFileAsBlobUrl(fullPath: string): Promise<string | null> {
     const blob = new Blob([bytes], { type: mimeType });
     const blobUrl = URL.createObjectURL(blob);
     
-    // Cache the URL
-    cacheBlobUrl(fullPath, blobUrl);
-    
-
     return blobUrl;
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -216,7 +214,7 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
     // Load file and create blob URL
     const result = await loadFileAsBlobUrl(fullPath);
     if (result) {
-
+      cacheBlobUrl(fullPath, result);
       return result;
     }
     
@@ -229,8 +227,10 @@ export async function getSongMediaUrl(relativePath: string, baseFolder?: string)
 
       const fallback = await loadFileAsBlobUrl(backslashPath);
       if (fallback) {
-        // Cache under both paths so subsequent calls from either path hit the cache
-        cacheBlobUrl(backslashPath, fallback);
+        // Cache under the canonical forward-slash key only.
+        // Do NOT cache under backslashPath to prevent aliasing:
+        // if the cache evicts one key, URL.revokeObjectURL() would revoke
+        // the blob while the other key still references it.
         cacheBlobUrl(fullPath, fallback);
         return fallback;
       }

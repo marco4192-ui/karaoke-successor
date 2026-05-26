@@ -11,7 +11,8 @@ export const GENRES = [
 
 /** Language suggestions shown in editor and new-song dialog. */
 export const LANGUAGES = [
-  'Englisch', 'Deutsch', 'Spanisch', 'Französisch', 'Italienisch',
-  'Portugiesisch', 'Japanisch', 'Koreanisch', 'Chinesisch', 'Russisch',
-  'Niederländisch', 'Polnisch', 'Türkisch', 'Arabisch', 'Schwedisch', 'Latein',
+  'English', 'German', 'Spanish', 'French', 'Italian',
+  'Portuguese', 'Japanese', 'Korean', 'Chinese', 'Russian',
+  'Dutch', 'Polish', 'Turkish', 'Arabic', 'Swedish', 'Latin',
+  'Norwegian', 'Danish', 'Finnish', 'Hindi', 'Thai', 'Indonesian',
 ] as const;

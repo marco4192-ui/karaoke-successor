@@ -39,8 +39,7 @@
         { "path": "$MUSIC/**" },
         { "path": "$PICTURES/**" },
         { "path": "$VIDEO/**" },
-        { "path": "$CWD/**" },
-        { "path": "**" }
+        { "path": "$CWD/**" }
       ]
     },
     {
@@ -57,8 +56,7 @@
         { "path": "$MUSIC/**" },
         { "path": "$PICTURES/**" },
         { "path": "$VIDEO/**" },
-        { "path": "$CWD/**" },
-        { "path": "**" }
+        { "path": "$CWD/**" }
       ]
     },
     {
@@ -71,8 +69,7 @@
         { "path": "$DESKTOP/**" },
         { "path": "$DOCUMENTS/**" },
         { "path": "$DOWNLOAD/**" },
-        { "path": "$CWD/**" },
-        { "path": "**" }
+        { "path": "$CWD/**" }
       ]
     },
     {
@@ -85,8 +82,7 @@
         { "path": "$DESKTOP/**" },
         { "path": "$DOCUMENTS/**" },
         { "path": "$DOWNLOAD/**" },
-        { "path": "$CWD/**" },
-        { "path": "**" }
+        { "path": "$CWD/**" }
       ]
     },
     {
@@ -103,8 +99,7 @@
         { "path": "$MUSIC/**" },
         { "path": "$PICTURES/**" },
         { "path": "$VIDEO/**" },
-        { "path": "$CWD/**" },
-        { "path": "**" }
+        { "path": "$CWD/**" }
       ]
     },
     {
@@ -121,8 +116,7 @@
         { "path": "$MUSIC/**" },
         { "path": "$PICTURES/**" },
         { "path": "$VIDEO/**" },
-        { "path": "$CWD/**" },
-        { "path": "**" }
+        { "path": "$CWD/**" }
       ]
     },
     {
@@ -135,8 +129,7 @@
         { "path": "$DESKTOP/**" },
         { "path": "$DOCUMENTS/**" },
         { "path": "$DOWNLOAD/**" },
-        { "path": "$CWD/**" },
-        { "path": "**" }
+        { "path": "$CWD/**" }
       ]
     },
     {
@@ -149,8 +142,7 @@
         { "path": "$DESKTOP/**" },
         { "path": "$DOCUMENTS/**" },
         { "path": "$DOWNLOAD/**" },
-        { "path": "$CWD/**" },
-        { "path": "**" }
+        { "path": "$CWD/**" }
       ]
     },
     {
@@ -163,8 +155,7 @@
         { "path": "$DESKTOP/**" },
         { "path": "$DOCUMENTS/**" },
         { "path": "$DOWNLOAD/**" },
-        { "path": "$CWD/**" },
-        { "path": "**" }
+        { "path": "$CWD/**" }
       ]
     },
     {
@@ -177,8 +168,7 @@
         { "path": "$DESKTOP/**" },
         { "path": "$DOCUMENTS/**" },
         { "path": "$DOWNLOAD/**" },
-        { "path": "$CWD/**" },
-        { "path": "**" }
+        { "path": "$CWD/**" }
       ]
     },
     {
@@ -188,8 +178,7 @@
         { "path": "$RESOURCE/**" },
         { "path": "$APPDATA/**" },
         { "path": "$APPLOCALDATA/**" },
-        { "path": "$CWD/**" },
-        { "path": "**" }
+        { "path": "$CWD/**" }
       ]
     },
     "dialog:default",
