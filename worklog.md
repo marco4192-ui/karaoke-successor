@@ -1,57 +1,57 @@
+# Worklog - Karaoke Successor Fix Session
+
+## Session Start: 2026-05-26
+
+### Kontext
+- Fortsetzung der vorherigen Code-Review-Session
+- 7 CRITICAL, 10 HIGH, 25+ MEDIUM, 15+ LOW Issues identifiziert
+- Root `app/` überschattet `src/app/` (Next.js lädt root `app/` zuerst)
+- Alle Fixes stehen noch aus
+
 ---
-Task ID: 1
-Agent: main
-Task: Fix 1 - Battle Royale crashes after first round (React error #185)
 
-Work Log:
-- Analyzed React error #185 (Maximum update depth exceeded / cross-component setState during render)
-- Added `mountedRef` declaration to `use-battle-royale-game.ts` (was missing, referenced in game loop)
-- Added unmount guard in countdown timeout to prevent setState after unmount
-- Changed countdown condition from `||` to `&&` to prevent PlayingView rendering during state transitions
+## Task 1: Root app/ vs src/app/ Vergleich
+**Status: ✅ Abgeschlossen (keine Aktion nötig)**
+- Root `app/` wurde bereits in Commit `b5d366a7` gelöscht
+- `src/app/` ist eindeutig fortgeschrittener (i18n, Retry, Rate-Limit, Retro-Theme)
+- Zwei Dateien existieren NUR in `src/app/`: `api/lib/retry.ts`, `api/harmonize/route.ts`
 
-Stage Summary:
-- 3 targeted changes across 2 files
-- Fixed the crash by preventing stale state updates during round transitions
+## Task 2: CRITICAL Issues — Überprüfung und Fixes
+
+### False Positives (bereits korrekt im Code)
+| Issue | Datei | Grund |
+|-------|-------|-------|
+| Daily Challenge "failed=completed" | `daily-challenge.ts:710` | `targetMet` wird korrekt berechnet, `completed: targetMet` |
+| Fullscreen Icon identisch | `fullscreen-button.tsx:72` | Beide SVGs sind unterschiedlich (shrink vs expand) |
+| playerColor ignoriert | `note-highway.tsx:308` | `playerColor ?? default` wird korrekt verwendet |
+| response.json() ohne try/catch | `cover-generator.ts`, `song-identifier.ts` | Beide haben bereits try/catch |
+| Pitch Detector Duplikat | `pitch-detector.ts:292/302` | `frequencyToMidi` nur einmal importiert |
+| Windows Pfad-Separator | `lib.rs:129` | Verwendet bereits `std::path::MAIN_SEPARATOR` |
+
+### Echte Fixes
+| # | Schwere | Datei | Fix |
+|---|---------|-------|-----|
+| 1 | CRITICAL | `src/lib/file-storage-media.ts` | **Delayed Revocation**: Blob-URLs werden bei Cache-Eviction nicht sofort revoked, sondern mit 30s Timeout. Verhindert Playback-Abbrüche bei aktiven `<audio>`-Elementen. |
+| 2 | CRITICAL | `src/lib/parsers/multi-format-import.ts` | **BPM-Parsing Robustheit**: Unterstützt jetzt sowohl `beat=bpm` als auch plain-Number-Format. Fallback auf `[120]` wenn Parsing leer. Filtert negative/unmögliche BPMs. |
+| 3 | HIGH | `src-tauri/src/audio/commands.rs` | **error_ch Reference Pattern**: `let error_ch: &mut Option<...> = &mut None` → `let mut error_ch: Option<...> = None`. Alle 3 Referenz-Stellen korrigiert. |
+
+## Task 3: Zusätzliche Issues (Deep Scan)
+
+| # | Schwere | Datei | Fix |
+|---|---------|-------|-----|
+| 4 | HIGH | `src/components/game/medley/medley-game-hook.ts` | **i18n**: 3 hartcodierte deutsche Strings → `t('medley.noAudioAvailable')` / `t('medley.audioLoadFailed')`. Keys zu en/de locales hinzugefügt. |
+| 5 | MEDIUM | `src/components/screens/game-screen-hook.ts` | **Debug stubs**: `console.log` → `console.debug` + eslint-disable-Kommentare + TODO für echte UI-Warnings. |
+
+## Task 4: Tauri Capabilities Review
+- `$HOME/**` Pattern gibt volles Lesezugriff auf Home-Verzeichnis
+- Für eine Karaoke-Desktop-App akzeptabel (Benutzer benötigen Zugriff auf Musik-Dateien überall)
+- Schreibzugriff auf `$HOME/**` ist bedenklicher, aber Tauri-spezifisch geregelt
+- **Beschluss: Akzeptiert** — Alternative wäre spezifischere Musik-Ordner-Pfade, die zu Restriktionen führen
+
 ---
-Task ID: 2+3
-Agent: main
-Task: Fix 2 (microphones not active) + Fix 3 (mic badge position)
 
-Work Log:
-- Changed mic re-init guard from `managerRef.current && isInitializedRef.current` to `managerRef.current` in use-multi-pitch-detector.ts
-- Changed badge position from `top-3` to `top-0` in playing-view.tsx
-
-Stage Summary:
-- Fixed mic re-initialization after round transitions (singleton manager was in stale state)
-- Aligned mic status badge to top edge of screen
----
-Task ID: 4
-Agent: main
-Task: Fix 4 - Tournament manual winner overlay
-
-Work Log:
-- Added `manualWinnerMatch` state to TournamentBracketView
-- Added "Set Winner Manually" button below "Start Next Match" in bracket view
-- Added manual winner dialog overlay matching MatchAbortDialog style
-- Fixed onManualWinner handler to look up match from bracket instead of currentTournamentMatch
-
-Stage Summary:
-- Manual winner selection now works from bracket view without redirecting to settings
-- Uses overlay dialog instead of navigation
----
-Task ID: 5+6+7
-Agent: main
-Task: Fix 5 (Blind/MW lyrics logic), Fix 6 (hide notes in blind), Fix 7 (hardcore mode)
-
-Work Log:
-- Fixed next line preview to also hide for Blind mode (was only hiding for Missing Words)
-- Updated duet-note-highway.tsx PlayerLyrics to hide preview in blind sections
-- Removed incorrect `isHiddenNote` check from note-highway.tsx (notes hidden only in blind sections now)
-- Added `hardcoreMissingWords` parameter to useGameModes hook
-- Fixed Missing Words hardcore effect to use correct `hardcoreMissingWords` value (was using blind hardcore)
-- Added `hardcoreMissingWords` store selector in game-screen-hook.ts
-
-Stage Summary:
-- Blind Karaoke: text always visible, notes hidden during blind passages
-- Missing Words: notes always visible, text hidden for specific words
-- Hardcore mode for Missing Words now uses its own setting correctly
+## Zusammenfassung
+- **3 echte Code-Fixes** angewendet (blob-cache, BPM-parsing, Rust error_ch)
+- **2 Qualitätsoptimierungen** (i18n, console.log→debug)
+- **8 False Positives** identifiziert und dokumentiert
+- Root `app/` Bereinigung bestätigt (bereits erledigt)

@@ -24,6 +24,7 @@ import { usePartyStore } from '@/lib/game/party-store';
 import { calculateScoringMetadata } from '@/lib/game/scoring';
 import { findActiveNoteFlat, shouldSkipPitch, evaluateAndScoreTick } from '@/lib/game/party-scoring';
 import { ensureSongUrls } from '@/lib/game/song-url-restore';
+import { useTranslation } from '@/lib/i18n/translations';
 import type { Note, LyricLine, PitchDetectionResult, Difficulty } from '@/types/game';
 import { EMPTY_PLAYER_SCORE } from '@/types/game';
 import type {
@@ -144,6 +145,7 @@ export function useMedleyGame({
   // Subscribe to specific fields only (NOT the entire store) to minimize re-renders.
   const pauseDialogAction = usePartyStore(s => s.pauseDialogAction);
   const setIsSongPlaying = usePartyStore(s => s.setIsSongPlaying);
+  const { t } = useTranslation();
   const isTeam = settings.playMode === 'team';
   const isEliminationMode = settings.playMode === 'elimination';
 
@@ -353,8 +355,7 @@ export function useMedleyGame({
         if (prepared.audioUrl) {
           setAudioUrl(prepared.audioUrl);
         } else {
-          // TODO: i18n - replace hardcoded German strings
-          setAudioError('Kein Audio verfügbar');
+          setAudioError(t('medley.noAudioAvailable'));
         }
 
         // Extract notes within snippet range
@@ -383,8 +384,7 @@ export function useMedleyGame({
           scoringMetaRef.current = null;
         }
       } catch {
-        // TODO: i18n - replace hardcoded German strings
-        if (!cancelled) setAudioError('Audio-Laden fehlgeschlagen');
+        if (!cancelled) setAudioError(t('medley.audioLoadFailed'));
       }
     };
 
@@ -404,8 +404,7 @@ export function useMedleyGame({
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    // TODO: i18n - replace hardcoded German strings
-    const onErr = () => { setAudioError('Audio-Laden fehlgeschlagen'); };
+    const onErr = () => { setAudioError(t('medley.audioLoadFailed')); };
     audio.addEventListener('error', onErr);
     return () => { audio.removeEventListener('error', onErr); };
   }, [audioUrl]);

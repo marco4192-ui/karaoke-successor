@@ -20,21 +20,62 @@ import {
 const blobUrlCache = new Map<string, string>();
 const BLOB_CACHE_MAX = 2000;
 
-/** Revoke an old blob URL and remove it from the cache. */
+// Track blob URLs pending delayed revocation.
+// When a URL is evicted from cache, we don't revoke it immediately because it
+// may still be referenced by <audio>/<img> elements. Instead, we schedule a
+// delayed revoke (30 s). If the URL is re-cached before the timeout, the
+// revoke is cancelled. This prevents "stale blob URL" playback failures while
+// still releasing memory for truly unused blobs.
+const pendingRevokes = new Map<string, ReturnType<typeof setTimeout>>();
+
+/** Revoke a blob URL immediately (for explicit replacement, not cache eviction). */
+function revokeBlobUrl(url: string) {
+  // Cancel any pending delayed revoke first
+  const pending = pendingRevokes.get(url);
+  if (pending) {
+    clearTimeout(pending);
+    pendingRevokes.delete(url);
+  }
+  try { URL.revokeObjectURL(url); } catch { /* ignore if already revoked */ }
+}
+
+/** Evict the oldest entry from cache using DELAYED revocation. */
 function evictBlobUrl(key: string) {
   const url = blobUrlCache.get(key);
   if (url) {
-    try { URL.revokeObjectURL(url); } catch { /* ignore if already revoked */ }
     blobUrlCache.delete(key);
+    // Delayed revoke — gives active consumers (e.g. <audio src="...">) time
+    // to finish using the URL. If the same URL is re-cached before the
+    // timeout fires, the revoke is cancelled in cacheBlobUrl().
+    const existing = pendingRevokes.get(url);
+    if (existing) clearTimeout(existing);
+    pendingRevokes.set(url, setTimeout(() => {
+      try { URL.revokeObjectURL(url); } catch { /* already revoked or GC'd */ }
+      pendingRevokes.delete(url);
+    }, 30_000));
   }
 }
 
 /** Add a blob URL to the cache, evicting the oldest entry if full. */
 function cacheBlobUrl(key: string, url: string) {
+  // Cancel any pending delayed revoke — the URL is being actively re-cached.
+  const pendingRevoke = pendingRevokes.get(url);
+  if (pendingRevoke) {
+    clearTimeout(pendingRevoke);
+    pendingRevokes.delete(url);
+  }
+
+  // If this key already exists in cache, revoke the OLD URL immediately
+  // (it's being replaced by a fresh load of the same file).
+  const existingUrl = blobUrlCache.get(key);
+  if (existingUrl && existingUrl !== url) {
+    revokeBlobUrl(existingUrl);
+  }
+
   if (blobUrlCache.size >= BLOB_CACHE_MAX) {
     // Evict the oldest entry (first key in insertion order)
     const oldest = blobUrlCache.keys().next().value;
-    if (oldest !== undefined) evictBlobUrl(oldest);
+    if (oldest !== undefined && oldest !== key) evictBlobUrl(oldest);
   }
   blobUrlCache.set(key, url);
 }

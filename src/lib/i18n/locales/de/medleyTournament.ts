@@ -167,6 +167,9 @@ export const medleyTournamentTranslations = {
     // Feature #17: Additional
     ofSong: 'von: {title}',
     comboOnSong: 'auf: {title}',
+    // Audio errors
+    noAudioAvailable: 'Kein Audio verfügbar',
+    audioLoadFailed: 'Audio-Laden fehlgeschlagen',
   },
 
   tournament: {

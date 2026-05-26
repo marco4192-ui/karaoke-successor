@@ -309,11 +309,15 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   useMobileGameSync(song, isPlaying, gameState.gameMode, gameState.status === 'ended', tournamentMatchId);
 
   // Warning callbacks for blind / missing-words passages (stable refs for useEffect deps)
+  // TODO: Implement real UI warnings for blind passages and missing-words passages.
+  // These callbacks receive (countdown, isActive) and should trigger visual/audio cues.
   const onBlindWarning = useCallback((_countdown: number, _isActive: boolean) => {
-    console.log(`[blind-warning] countdown=${_countdown}, active=${_isActive}`);
+    // eslint-disable-next-line no-console
+    console.debug(`[blind-warning] countdown=${_countdown}, active=${_isActive}`);
   }, []);
   const onMissingWordsWarning = useCallback((_countdown: number, _isActive: boolean) => {
-    console.log(`[missing-words-warning] countdown=${_countdown}, active=${_isActive}`);
+    // eslint-disable-next-line no-console
+    console.debug(`[missing-words-warning] countdown=${_countdown}, active=${_isActive}`);
   }, []);
 
   // Special game modes (blind + missing words)
