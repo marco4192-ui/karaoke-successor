@@ -26,12 +26,12 @@ interface RoundSetupViewProps {
 
 export function RoundSetupView({ game, stats, activePlayers, onStartRound, onUpdateGame, onBack }: RoundSetupViewProps) {
   const { t } = useTranslation();
-  const party = usePartyStore();
+  const setPauseDialogAction = usePartyStore(s => s.setPauseDialogAction);
   const [showSpectatorPanel, setShowSpectatorPanel] = useState(false);
 
   const handleBack = () => {
     if (onBack) {
-      party.setPauseDialogAction('party-leave');
+      setPauseDialogAction('party-leave');
     }
   };
 

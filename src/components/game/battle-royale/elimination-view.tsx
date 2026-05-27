@@ -160,7 +160,7 @@ export function EliminationView({
                   <span className="text-sm font-semibold text-white/80 truncate max-w-[90px]">{player.name}</span>
                   <span className="text-xs text-white/50">{player.score?.toLocaleString() ?? 0}</span>
                   <Badge className="bg-emerald-500/20 text-emerald-400 text-[10px] px-1.5 py-0">
-                    {t('battleRoyaleGame.survived')}
+                    {t('battleRoyale.survived')}
                   </Badge>
                 </div>
               ))}

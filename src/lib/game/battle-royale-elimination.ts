@@ -211,15 +211,13 @@ export function endRoundAndEliminate(game: BattleRoyaleGame): BattleRoyaleGame {
       },
     });
 
-    return {
+    return enterGrandFinale({
       ...gameWithStats,
       players: updatedPlayers,
       rounds: updatedRounds,
-      status: 'elimination', // Will transition to grand-finale-intro after animation
-      isGrandFinale: true,
-      bountyPlayerId: null, // No bounty in grand finale
+      status: 'elimination',
       correctPredictions: updatedPredictions,
-    };
+    });
   }
 
   const isGameComplete = remainingPlayers.length === 1;
@@ -277,10 +275,11 @@ export function advanceToNextRound(game: BattleRoyaleGame): BattleRoyaleGame {
   }
 
   // If we just entered grand finale, show intro first
-  if (game.isGrandFinale && !game.grandFinaleIntroShown) {
+  if (game.isGrandFinale && !game.grandFinaleIntroShown && game.status !== 'grand-finale-intro') {
     return {
       ...game,
       status: 'grand-finale-intro',
+      grandFinaleIntroShown: true,
       spectatorPredictions: clearedPredictions,
     };
   }

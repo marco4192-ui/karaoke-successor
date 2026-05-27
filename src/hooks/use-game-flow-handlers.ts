@@ -145,6 +145,8 @@ export function useGameFlowHandlers(
   }, [party.tournamentBracket, party.currentTournamentMatch, party.setTournamentBracket, party.setCurrentTournamentMatch, gameState.results, gameState.players, gameState.currentSong, actions.setResults, setScreen]);
 
   const handleGameEnd = useCallback(() => {
+    // Battle Royale manages its own round lifecycle — not handled through standard game flow
+    if (gameState.gameMode === 'battle-royale') return;
     // Tournament match end — check FIRST to prevent medley/competitive hijacking
     if (party.currentTournamentMatch && party.tournamentBracket) {
       handleTournamentGameEnd();

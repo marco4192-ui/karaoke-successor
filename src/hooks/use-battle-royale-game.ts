@@ -90,7 +90,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   onUpdateGameRef.current = onUpdateGame;
 
   const [showElimination, setShowElimination] = useState(false);
-  const stats = getBattleRoyaleStats(game);
+  const stats = useMemo(() => getBattleRoyaleStats(game), [game]);
 
   const sortedPlayers = useMemo(() => getPlayersByScore(game), [game]);
   const activePlayers = useMemo(() => getActivePlayers(game), [game]);
@@ -168,6 +168,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
   // Note performance tracking for display styles (fill-level, color-feedback, etc.)
   const notePerformanceRef = useRef<Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>>(new Map());
+  const prefetchAudioRef = useRef<HTMLAudioElement | null>(null);
   const [notePerformance, setNotePerformance] = useState<Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>>(new Map());
   const lastNotePerfSyncRef = useRef(0);
 
@@ -421,9 +422,9 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
         // Pre-warm audio element
         if (preparedSong.audioUrl && audioRef.current) {
-          const prefetchAudio = new Audio();
-          prefetchAudio.preload = 'auto';
-          prefetchAudio.src = preparedSong.audioUrl;
+          prefetchAudioRef.current = new Audio();
+          prefetchAudioRef.current.preload = 'auto';
+          prefetchAudioRef.current.src = preparedSong.audioUrl;
           prefetchedMediaRef.current = { audioUrl: preparedSong.audioUrl };
         }
       } catch {
@@ -436,6 +437,11 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
 
     return () => {
       // Clear pre-fetch when round ends (new game state)
+      if (prefetchAudioRef.current) {
+        prefetchAudioRef.current.pause();
+        prefetchAudioRef.current.src = '';
+        prefetchAudioRef.current = null;
+      }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [game.status, roundTimeLeft, songs, game.recentlyPlayedSongIds, game.settings.songSelection]);
@@ -532,7 +538,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
                 updatedGame = updatePlayerScore(
                   currentGame,
                   playerId,
-                  0, 0, 0, 0,
+                  0, 0, 0, 1,
                   -currentCombo,
                 );
               } else {
@@ -588,7 +594,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
         const perfNow = performance.now();
         if (perfNow - lastNotePerfSyncRef.current >= 16) {
           lastNotePerfSyncRef.current = perfNow;
-          setNotePerformance(notePerformanceRef.current);
+          setNotePerformance(new Map(notePerformanceRef.current));
         }
 
         if (scoreChanged && mountedRef.current && !roundEndingRef.current) {

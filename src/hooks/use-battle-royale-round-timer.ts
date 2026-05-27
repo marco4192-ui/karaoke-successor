@@ -40,6 +40,7 @@ export function useBattleRoyaleRoundTimer({
   const [snippetTimeLeft, setSnippetTimeLeft] = useState<number | null>(null);
 
   const skipAutoElimRef = useRef(false);
+  const skipSnippetTransRef = useRef(false);
   // Track the last round number to detect new rounds vs pause toggles
   const lastRoundRef = useRef(gameCurrentRound);
   // Preserve remaining time across pause/unpause
@@ -139,9 +140,11 @@ export function useBattleRoyaleRoundTimer({
 
     // Restore snippet time from pause, or initialize to full duration
     if (preservedSnippetTimeRef.current !== null) {
+      skipSnippetTransRef.current = true;
       setSnippetTimeLeft(preservedSnippetTimeRef.current);
       preservedSnippetTimeRef.current = null;
     } else {
+      skipSnippetTransRef.current = true;
       setSnippetTimeLeft(snippetDuration);
     }
 
@@ -171,6 +174,10 @@ export function useBattleRoyaleRoundTimer({
 
   // Trigger snippet transition when snippet timer reaches zero
   useEffect(() => {
+    if (skipSnippetTransRef.current) {
+      skipSnippetTransRef.current = false;
+      return;
+    }
     if (
       gameStatus === 'playing' &&
       isMedley &&

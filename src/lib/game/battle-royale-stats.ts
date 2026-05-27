@@ -53,10 +53,13 @@ export function getSpectators(game: BattleRoyaleGame): BattleRoyalePlayer[] {
 
 export function getEliminationOrder(game: BattleRoyaleGame): BattleRoyalePlayer[] {
   return [...game.players]
-    .filter(p => p.eliminated || p.id === game.winner?.id)
+    .filter(p => p.eliminated || p.id === game.winner?.id || (game.status === 'completed' && !p.eliminated))
     .sort((a, b) => {
       if (a.id === game.winner?.id) return 1;
       if (b.id === game.winner?.id) return -1;
+      // Runner-up (non-eliminated in completed game) sorts after all eliminated players
+      if (!a.eliminated && game.status === 'completed') return 1;
+      if (!b.eliminated && game.status === 'completed') return -1;
       return (a.eliminationRound || 0) - (b.eliminationRound || 0);
     });
 }

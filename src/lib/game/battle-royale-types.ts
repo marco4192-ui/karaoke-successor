@@ -1,7 +1,7 @@
 // Battle Royale – shared types, interfaces, and constants
 
 import { TournamentPlayer } from './tournament';
-import { Difficulty } from '@/types/game';
+import type { Difficulty } from '@/types/game';
 import type { NoteShapeStyle, NoteDisplayStyle } from '@/lib/game/note-utils';
 
 // ==================== TYPES ====================

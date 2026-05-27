@@ -540,6 +540,9 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           onUpdateGame={(game) => party.setBattleRoyaleGame(game)}
           onEndGame={() => {
             party.setBattleRoyaleGame(null);
+            party.setUnifiedSetupResult(null);
+            party.setSelectedGameMode(null);
+            party.setIsSongPlaying(false);
             setScreen('home');
           }}
           onBack={() => {

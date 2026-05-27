@@ -9,7 +9,8 @@
  * These are pure functions — no React hooks, no side effects.
  */
 
-import { Note, LyricLine, Difficulty, DIFFICULTY_SETTINGS } from '@/types/game';
+import type { Note, LyricLine, Difficulty } from '@/types/game';
+import { DIFFICULTY_SETTINGS } from '@/types/game';
 import {
   evaluateTick,
   calculateTickPoints,
@@ -101,6 +102,7 @@ export function shouldSkipPitch(
 ): boolean {
   if (!pitch.frequency || pitch.note === null) return true;
   const diffSettings = DIFFICULTY_SETTINGS[difficulty];
+  if (!diffSettings) return true;
   if (pitch.volume < diffSettings.volumeThreshold) return true;
   if (pitch.isSinging === false) return true; // humming / noise detected
   return false;

@@ -14,7 +14,10 @@ export function getHallOfFame(): HallOfFameEntry[] {
     if (!stored) return [];
     const parsed = JSON.parse(stored);
     if (!Array.isArray(parsed)) return [];
-    return parsed as HallOfFameEntry[];
+    return parsed.filter((e: unknown): e is HallOfFameEntry =>
+      typeof e === 'object' && e !== null &&
+      'playerId' in e && 'playerName' in e && 'wins' in e
+    );
   } catch {
     return [];
   }
@@ -79,7 +82,7 @@ export function recordHallOfFame(game: BattleRoyaleGame): void {
       entry.totalGames += 1;
       // Update average survival
       const playerSurvival = game.players.find(p => p.id === entry.playerId);
-      const rounds = playerSurvival?.eliminationRound ?? 0;
+      const rounds = playerSurvival?.eliminationRound ?? game.currentRound;
       entry.averageSurvivalRounds = Math.round(
         (entry.averageSurvivalRounds * (entry.totalGames - 1) + rounds) / entry.totalGames
       );

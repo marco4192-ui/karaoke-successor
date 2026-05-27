@@ -79,6 +79,7 @@ export function useBattleRoyaleRoundHandlers({
 
   const roundEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const survivorFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoStartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleRoundEndRef = useRef<() => void>(() => {});
   const onSnippetEndRef = useRef<(() => void) | null>(null);
 
@@ -136,10 +137,9 @@ export function useBattleRoyaleRoundHandlers({
     audioHasPlayedRef.current = false;
     stopPitch();
 
-    if (currentActivePlayers.length <= 1) {
-      roundEndingRef.current = false;
-      return;
-    }
+    // Do NOT early-return when activePlayers <= 1; let endRoundAndEliminate
+    // handle it gracefully (returns game unchanged) and advanceToNextRound
+    // transition the game to its next state (e.g. declare winner).
 
     const updatedGame = endRoundAndEliminate(currentGame);
     gameRef.current = updatedGame; // Update ref immediately so game loop sees new status
@@ -167,7 +167,8 @@ export function useBattleRoyaleRoundHandlers({
         onUpdateGameRef.current(advanced);
         roundEndingRef.current = false;
         // Auto-start grand finale round (will show GrandFinaleIntro then auto-advance)
-        setTimeout(() => {
+        autoStartTimerRef.current = setTimeout(() => {
+          autoStartTimerRef.current = null;
           if (!mountedRef.current) return;
           handleStartRoundRef.current();
         }, 300);
@@ -203,7 +204,8 @@ export function useBattleRoyaleRoundHandlers({
         roundEndingRef.current = false;
         // Clear pre-fetch (will be used by song media hook)
         // Auto-start next round after a brief pause for transition
-        setTimeout(() => {
+        autoStartTimerRef.current = setTimeout(() => {
+          autoStartTimerRef.current = null;
           if (!mountedRef.current) return;
           handleStartRoundRef.current();
         }, 300);
@@ -227,6 +229,10 @@ export function useBattleRoyaleRoundHandlers({
       if (survivorFlashTimerRef.current !== null) {
         clearTimeout(survivorFlashTimerRef.current);
         survivorFlashTimerRef.current = null;
+      }
+      if (autoStartTimerRef.current) {
+        clearTimeout(autoStartTimerRef.current);
+        autoStartTimerRef.current = null;
       }
     };
   }, []);

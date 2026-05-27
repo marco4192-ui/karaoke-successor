@@ -1,6 +1,6 @@
 'use client';
 
-import { Song } from '@/types/game';
+import type { Song } from '@/types/game';
 import {
   BattleRoyaleGame,
   getEliminationOrder,
@@ -94,7 +94,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
     const eliminatedPlayer = (lastRound?.eliminatedPlayerId
       ? game.players.find(p => p.id === lastRound.eliminatedPlayerId)
           || sortedPlayers.find(p => p.id === lastRound.eliminatedPlayerId)
-      : null) || sortedPlayers.find(p => p.eliminated);
+      : null) ?? undefined;
     const bountyClaimed = lastRound?.bountyClaimed ?? false;
     const bountyClaimedById = lastRound?.bountyClaimedById;
 
@@ -102,7 +102,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm animate-[fadeIn_0.3s_ease-out_forwards]">
         <EliminationView
           eliminatedPlayer={eliminatedPlayer}
-          remainingPlayersCount={activePlayers.length - (eliminatedPlayer ? 1 : 0)}
+          remainingPlayersCount={activePlayers.length}
           bountyClaimed={bountyClaimed}
           bountyClaimedById={bountyClaimedById}
           players={game.players}
