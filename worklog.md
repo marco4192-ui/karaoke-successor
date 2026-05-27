@@ -70,3 +70,21 @@ Stage Summary:
 - Works for both single player and duet/duel modes
 - No new TypeScript regressions
 
+
+---
+Task ID: fix-game-screen-hook-ts-errors
+Agent: Main Agent
+Task: Fix 6 TypeScript errors in game-screen-hook.ts
+
+Work Log:
+- Identified 6 TS2339 errors caused by accessing mode-specific properties on the GameModeSettings union type (13 variants)
+- Root cause: s.unifiedSetupResult?.settings is typed as GameModeSettingsMap[GameMode] which resolves to the full union
+- Properties like blindFrequency (BlindModeSettings only), missingWordFrequency (MissingWordsModeSettings only) cannot be narrowed without a discriminant
+- Fix: Cast s.unifiedSetupResult?.settings to Record<string, unknown> | undefined before accessing mode-specific properties
+- The primary path (s.competitiveGame?.settings) uses CompetitiveSettings which has all 6 properties — left unchanged
+- Verified: 0 TypeScript errors after fix (down from 6 + 28 pre-existing .next/types errors)
+
+Stage Summary:
+- Commit de58f3c pushed to main
+- 1 file changed, 6 insertions, 6 deletions
+- Clean TypeScript build achieved
