@@ -64,7 +64,15 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   const setBlindSection = useGameStore(s => s.setBlindSection);
   const setBlindHardcore = useGameStore(s => s.setBlindHardcore);
   const setHardcoreMissingWords = useGameStore(s => s.setHardcoreMissingWords);
-  const blindFrequency = usePartyStore(s => s.competitiveGame?.settings?.blindFrequency);
+  const blindFrequency = usePartyStore(s => {
+    // Primary: competitive game (party flow) stores numeric frequency (0.15, 0.30, etc.)
+    const comp = s.competitiveGame?.settings?.blindFrequency;
+    if (typeof comp === 'number') return comp;
+    // Fallback: unified setup result (library quick-start) stores label ('light', 'normal', etc.)
+    const label = s.unifiedSetupResult?.settings?.blindFrequency as string | undefined;
+    const freqMap: Record<string, number> = { light: 0.15, normal: 0.30, hard: 0.60, insane: 0.90 };
+    return freqMap[label || 'normal'];
+  });
   const missingWordFrequency = usePartyStore(s => {
     // Primary: competitive game (party flow) stores numeric frequency (0.15, 0.30, etc.)
     const comp = s.competitiveGame?.settings?.missingWordFrequency;
@@ -74,7 +82,9 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     const freqMap: Record<string, number> = { light: 0.15, easy: 0.15, normal: 0.30, hard: 0.60, insane: 0.90 };
     return freqMap[label || 'normal'];
   });
-  const blindHardcore = usePartyStore(s => s.competitiveGame?.settings?.hardcore);
+  const blindHardcore = usePartyStore(s =>
+    s.competitiveGame?.settings?.hardcore ?? !!(s.unifiedSetupResult?.settings?.hardcore)
+  );
   const hardcoreMissingWords = usePartyStore(s =>
     s.competitiveGame?.settings?.hardcoreMissingWords ?? !!(s.unifiedSetupResult?.settings?.hardcoreMissingWords)
   );

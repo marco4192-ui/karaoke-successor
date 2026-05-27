@@ -41,6 +41,12 @@ interface NoteLaneProps {
   detectedPitch: number | null;
   scrollSpeed?: number;
   windowHeight?: number;
+  /** Blind mode: hide notes when in a blind section */
+  isBlindSection?: boolean;
+  /** Game mode (needed for blind detection) */
+  gameMode?: string;
+  /** Hardcore blind mode: hide text when notes are visible */
+  isBlindHardcore?: boolean;
 }
 
 // ===================== SUB-COMPONENTS =====================
@@ -161,14 +167,19 @@ interface CurrentLyricsProps {
   currentLine: LyricLine | null;
 }
 
-const CurrentLyrics = React.memo(function CurrentLyrics({ currentLine }: CurrentLyricsProps) {
+const CurrentLyrics = React.memo(function CurrentLyrics({ currentLine, isBlindHardcore }: CurrentLyricsProps & { isBlindHardcore?: boolean }) {
   if (!currentLine) return null;
+
+  // Hardcore blind mode: hide text when notes are visible
+  const displayText = isBlindHardcore
+    ? currentLine.text.replace(/[^-\s]/g, '_')
+    : currentLine.text;
   
   return (
     <div className="absolute bottom-4 left-0 right-0 text-center">
       <div className="inline-block px-6 py-3 bg-black/50 backdrop-blur-sm rounded-xl">
-        <p className="text-2xl font-bold text-white drop-shadow-lg" style={{ whiteSpace: 'pre' }}>
-          {currentLine.text}
+        <p className={`text-2xl font-bold text-white drop-shadow-lg ${isBlindHardcore ? 'tracking-wider' : ''}`} style={{ whiteSpace: 'pre' }}>
+          {displayText}
         </p>
       </div>
     </div>
@@ -184,6 +195,9 @@ export function NoteLane({
   detectedPitch,
   scrollSpeed = 3,
   windowHeight = 400,
+  isBlindSection = false,
+  gameMode,
+  isBlindHardcore = false,
 }: NoteLaneProps) {
   const settings = DIFFICULTY_SETTINGS[difficulty];
 
@@ -315,8 +329,8 @@ export function NoteLane({
       {/* Target line - Vertical on left side */}
       <TargetLine />
 
-      {/* Notes - Moving Right to Left */}
-      {notesWithPositions.map((noteData) => (
+      {/* Notes - Moving Right to Left (hidden in blind sections) */}
+      {!isBlindSection && notesWithPositions.map((noteData) => (
         <NoteBlock
           key={noteData.noteId}
           data={noteData}
@@ -325,11 +339,20 @@ export function NoteLane({
         />
       ))}
 
-      {/* Current pitch indicator */}
-      <PitchIndicator pitchY={currentPitchY} windowHeight={windowHeight} />
+      {/* Blind indicator shown when notes are hidden */}
+      {isBlindSection && (
+        <div className="absolute inset-0 flex items-center justify-center z-10">
+          <div className="text-6xl animate-pulse select-none" aria-label="Blind section - sing by feel!">
+            🙈
+          </div>
+        </div>
+      )}
 
-      {/* Current lyrics display */}
-      <CurrentLyrics currentLine={currentLine} />
+      {/* Current pitch indicator (hidden in blind sections) */}
+      {!isBlindSection && <PitchIndicator pitchY={currentPitchY} windowHeight={windowHeight} />}
+
+      {/* Current lyrics display (hardcore blind: text hidden when notes visible) */}
+      <CurrentLyrics currentLine={currentLine} isBlindHardcore={gameMode === 'blind' && isBlindHardcore && !isBlindSection} />
     </div>
   );
 }

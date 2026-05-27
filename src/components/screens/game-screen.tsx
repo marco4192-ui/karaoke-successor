@@ -217,6 +217,9 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
             currentTime={g.gameState.currentTime}
             difficulty={g.gameState.difficulty}
             detectedPitch={g.pitchResult?.frequency ?? null}
+            isBlindSection={g.gameState.isBlindSection}
+            gameMode={g.gameState.gameMode}
+            isBlindHardcore={g.gameState.blindHardcore}
           />
         ) : g.isDuetMode ? (
           <DuetNoteHighway

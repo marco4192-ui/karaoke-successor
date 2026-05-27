@@ -187,6 +187,7 @@ export function useGameModes({
 
   // Track last values to avoid redundant state updates every frame
   const lastBlindPassageRef = useRef(-1);
+  const lastBlindWarningKeyRef = useRef('');
   const lastMWWarningKeyRef = useRef('');
 
   // ── RESET: Clear all mode state when song or gameMode changes ──
@@ -200,6 +201,7 @@ export function useGameModes({
     missingWordsGeneratedRef.current = false;
     hiddenStartTimesRef.current = new Set();
     lastBlindPassageRef.current = -1;
+    lastBlindWarningKeyRef.current = '';
     lastMWWarningKeyRef.current = '';
     lastGeneratedLengthRef.current = 0;
     // Reset blind section state so it doesn't carry over to the next song
@@ -283,18 +285,18 @@ export function useGameModes({
           const timeUntilBlind = pattern.passages[nextBlindPassageIndex].startTime - currentTime;
           if (timeUntilBlind <= WARNING_LEAD_MS && timeUntilBlind > 0) {
             const countdown = Math.ceil(timeUntilBlind / 1000);
-            if (lastMWWarningKeyRef.current !== String(nextBlindPassageIndex)) {
-              lastMWWarningKeyRef.current = String(nextBlindPassageIndex);
+            if (lastBlindWarningKeyRef.current !== String(nextBlindPassageIndex)) {
+              lastBlindWarningKeyRef.current = String(nextBlindPassageIndex);
               onBlindWarning(countdown, true);
             }
           } else if (currentPassageIndex === nextBlindPassageIndex) {
             // We're now in the blind section
             onBlindWarning(0, true);
-            lastMWWarningKeyRef.current = '';
+            lastBlindWarningKeyRef.current = '';
           } else if (timeUntilBlind > WARNING_LEAD_MS || currentPassageIndex >= 0 && !pattern.isBlind[currentPassageIndex]) {
             // Not near a blind section
             onBlindWarning(0, false);
-            lastMWWarningKeyRef.current = '';
+            lastBlindWarningKeyRef.current = '';
           }
         } else {
           // No upcoming blind passage
