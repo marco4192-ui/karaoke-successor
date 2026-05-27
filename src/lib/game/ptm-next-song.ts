@@ -14,9 +14,9 @@ import { generateMedleySnippets } from '@/components/game/medley/medley-snippet-
 function getFilteredSongs(): Song[] {
   const allSongs = getNonDuetSongs();
   // Read filter settings from storage (same way unified-party-setup stores them)
-  const filters = getJson<{filterGenre?: string; filterLanguage?: string; filterCombined?: string}>(StorageKeys.PTM_SONG_FILTERS, {});
-  if (filters.filterGenre || filters.filterLanguage || filters.filterCombined) {
-    return filterSongs(allSongs, filters.filterGenre, filters.filterLanguage, filters.filterCombined === 'true');
+  const filters = getJson<{filterGenre?: string; filterLanguage?: string; filterCombined?: string; filterReleaseYear?: string}>(StorageKeys.PTM_SONG_FILTERS, {});
+  if (filters.filterGenre || filters.filterLanguage || filters.filterCombined || filters.filterReleaseYear) {
+    return filterSongs(allSongs, filters.filterGenre, filters.filterLanguage, filters.filterCombined === 'true', filters.filterReleaseYear);
   }
   return allSongs;
 }
@@ -168,6 +168,6 @@ export async function preparePtmNextSong(
 }
 
 // Store/retrieve song filters for next-round song selection
-export function storeSongFilters(filters: { filterGenre?: string; filterLanguage?: string; filterCombined?: string }) {
+export function storeSongFilters(filters: { filterGenre?: string; filterLanguage?: string; filterCombined?: string; filterReleaseYear?: string }) {
   setJson(StorageKeys.PTM_SONG_FILTERS, filters);
 }

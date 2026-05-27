@@ -120,7 +120,7 @@ function findBestSnippetStart(
     // Skip first 10 seconds (intro)
     if (t < 10000) continue;
 
-    const score = scoreSnippetStart(t, t + snippetMs, notes, song.duration);
+    let score = scoreSnippetStart(t, t + snippetMs, notes, song.duration);
 
     // Bonus if near chorus — score the position higher rather than short-circuiting
     if (chorusStart >= 0) {
