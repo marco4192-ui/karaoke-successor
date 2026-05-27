@@ -83,7 +83,12 @@ export async function POST(request: NextRequest) {
       `${i + 1}. "${s.artist}" - "${s.title}" [Genre: ${s.genre || '(none)'}, Language: ${s.language || '(none)'}]`
     ).join('\n');
 
-    const zai = await ZAI.create();
+    let zai;
+    try {
+      zai = await ZAI.create();
+    } catch {
+      return NextResponse.json({ success: false, error: 'Failed to initialize AI service' }, { status: 500 });
+    }
     const completion = await zai.chat.completions.create({
       messages: [
         {

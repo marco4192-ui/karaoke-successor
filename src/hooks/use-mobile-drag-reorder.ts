@@ -111,7 +111,7 @@ export function useMobileDragReorder<T>({
         setOverIndex(newIndex);
       }
     },
-    [items.length, dragOffsetY]
+    [items.length]
   );
 
   const handleTouchEnd = useCallback(() => {

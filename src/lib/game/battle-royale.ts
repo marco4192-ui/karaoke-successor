@@ -262,6 +262,7 @@ export function getBountyMultiplier(game: BattleRoyaleGame, playerId: string): n
 
 /** Add a song ID to the recent plays list */
 export function addToRecentPlays(game: BattleRoyaleGame, songId: string): string[] {
+  if (!game.settings.noRepeatProtection) return game.recentlyPlayedSongIds;
   const updated = [...game.recentlyPlayedSongIds, songId];
   // Keep only the last noRepeatCount entries
   return updated.slice(-game.settings.noRepeatCount);

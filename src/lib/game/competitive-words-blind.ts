@@ -502,7 +502,7 @@ export function getCurrentRound(game: CompetitiveGame): CompetitiveRound | null 
 function isPlayerFinished(game: CompetitiveGame, playerId: string): boolean {
   const player = game.players.find(p => p.id === playerId);
   if (!player) return true;
-  return player.roundsPlayed >= game.settings.bestOf;
+  return player.roundsPlayed > game.settings.bestOf;
 }
 
 // ===================== DEFAULT SETTINGS =====================

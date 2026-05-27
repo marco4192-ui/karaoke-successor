@@ -146,7 +146,7 @@ function getCustomSongs(): Song[] {
         // eslint-disable-next-line no-console
         }).catch(error => { console.debug('[SongLibrary] Background migration to IndexedDB failed:', error); });
       }
-      return customSongsCache || [];
+      return customSongsCache!;
     }
   } catch (e) {
     // eslint-disable-next-line no-console

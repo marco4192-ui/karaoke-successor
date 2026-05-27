@@ -10,7 +10,7 @@
 
 import { getRankForXP } from './player-progression';
 import { PERFECT_ACCURACY } from './progression-levels';
-import { StorageKeys, getItem, getJson, setJson, setItem } from '@/lib/storage';
+import { StorageKeys, getItem, getJson, setJson } from '@/lib/storage';
 
 // ---------------------------------------------------------------------------
 // Interfaces — Daily Challenge
@@ -864,6 +864,21 @@ export function submitCoopChallengeResult(
     stats.totalXP += xpEarned;
     stats.lastCompletedDate = today;
     stats.totalCompleted++;
+
+    // Update weekly progress — reset at week boundary
+    const coopNow = new Date();
+    const coopWeekStartISO = getMondayISO(coopNow);
+
+    if (stats.lastWeekStart !== coopWeekStartISO) {
+      stats.weeklyProgress = [0, 0, 0, 0, 0, 0, 0];
+      stats.lastWeekStart = coopWeekStartISO;
+    }
+    // Convert JS day (0=Sun) to Monday-based index (0=Mon, 6=Sun)
+    const coopWeekIndex = getMondayIndex(coopNow);
+    stats.weeklyProgress[coopWeekIndex] = 1;
+
+    // (#5) Update quest stats for daily challenge completion
+    updateQuestProgress('dailyCompleted', 1);
   }
 
   saveDailyChallenge(challenge);

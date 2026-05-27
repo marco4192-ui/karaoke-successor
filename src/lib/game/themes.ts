@@ -319,6 +319,7 @@ export function applyTheme(theme: Theme): void {
   // Old values (0.4-0.8) produced nearly invisible text when textSecondary was already
   // a muted colour blended towards a near-black background.
   const cText80 = blendColor(cTextMain, 0.85);
+  const cText90 = blendColor(cTextMain, 0.93);
   const cText70 = blendColor(cTextMain, 0.75);
   const cText60 = blendColor(cTextSec, 0.75);
   const cText50 = blendColor(cTextSec, 0.65);
@@ -341,7 +342,7 @@ export function applyTheme(theme: Theme): void {
     .text-white\\/60 { color: ${cText60} !important; }
     .text-white\\/70 { color: ${cText70} !important; }
     .text-white\\/80 { color: ${cText80} !important; }
-    .text-white\\/90 { color: ${cText80} !important; }
+    .text-white\\/90 { color: ${cText90} !important; }
     .text-white\\/95 { color: ${cTextMain} !important; }
 
     /* === THEME ADAPTIVE UTILITY CLASSES === */

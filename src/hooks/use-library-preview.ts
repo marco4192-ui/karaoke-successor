@@ -87,7 +87,11 @@ export function useLibraryPreview() {
         audio.src = songToPlay.audioUrl;
         activeAudioRef.current = audio;
 
+        let hasStartedPlayback = false;
+
         audio.addEventListener('loadedmetadata', () => {
+          if (hasStartedPlayback) return;
+          hasStartedPlayback = true;
           if (startTime > 0 && audio.duration >= startTime) {
             audio.currentTime = startTime;
           }
@@ -95,6 +99,8 @@ export function useLibraryPreview() {
         }, { once: true });
 
         audio.addEventListener('canplaythrough', () => {
+          if (hasStartedPlayback) return;
+          hasStartedPlayback = true;
           if (audio.paused) {
             if (startTime > 0 && audio.duration >= startTime) {
               audio.currentTime = startTime;

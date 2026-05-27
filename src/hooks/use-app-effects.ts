@@ -144,10 +144,13 @@ export function useAppEffects() {
 
     // Tauri fullscreen change (if available) — use v2 API via dynamic import
     let tauriUnlisten: (() => void) | null = null;
+    let aborted = false;
     if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
       import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+        if (aborted) return;
         getCurrentWindow().onResized(() => {
           getCurrentWindow().isFullscreen().then((isFs: boolean) => {
+            if (aborted) return;
             setIsFullscreen(isFs);
           }).catch(() => {});
         }).then((unlisten: () => void) => {
@@ -157,6 +160,7 @@ export function useAppEffects() {
     }
 
     return () => {
+      aborted = true;
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       tauriUnlisten?.();
     };

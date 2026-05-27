@@ -7,7 +7,6 @@ import {
   persistentProfileByIp,
   latestPitchData,
   mutableState,
-  getClientIp,
   getUniqueConnectionCode,
   cleanupInactiveClients,
   getQueueByCompanion,
@@ -15,6 +14,7 @@ import {
   removeClient,
   requireAuth,
 } from './mobile-state';
+import { getClientIp } from '@/lib/rate-limiter';
 
 // ===================== GET HANDLER =====================
 

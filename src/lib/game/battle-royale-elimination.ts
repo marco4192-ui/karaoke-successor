@@ -100,13 +100,7 @@ export function endRoundAndEliminate(game: BattleRoyaleGame): BattleRoyaleGame {
       });
       recordHallOfFame(gameWithStats);
 
-      return {
-        ...gameWithStats,
-        rounds: updatedRounds,
-        finalWins: updatedFinalWins,
-        winner: roundWinner,
-        status: 'completed',
-      };
+      return gameWithStats;
     }
 
     // Update round (no elimination in grand finale)

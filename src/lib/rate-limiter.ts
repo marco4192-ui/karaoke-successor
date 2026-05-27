@@ -53,5 +53,5 @@ export function getClientIp(request: Request): string {
   const headers = request instanceof Headers ? request : (request as { headers: Headers }).headers;
   return headers.get('x-forwarded-for')?.split(',')[0]?.trim()
     || headers.get('x-real-ip')
-    || 'unknown';
+    || '127.0.0.1';
 }

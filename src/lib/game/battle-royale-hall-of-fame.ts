@@ -79,7 +79,7 @@ export function recordHallOfFame(game: BattleRoyaleGame): void {
       entry.totalGames += 1;
       // Update average survival
       const playerSurvival = game.players.find(p => p.id === entry.playerId);
-      const rounds = playerSurvival?.eliminationRound ?? survivalRounds;
+      const rounds = playerSurvival?.eliminationRound ?? 0;
       entry.averageSurvivalRounds = Math.round(
         (entry.averageSurvivalRounds * (entry.totalGames - 1) + rounds) / entry.totalGames
       );

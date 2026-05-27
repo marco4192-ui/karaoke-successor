@@ -58,8 +58,10 @@ export function useMobileSongPreview(options: UseMobileSongPreviewOptions = {}):
 
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current.removeEventListener('timeupdate', timeUpdateHandlerRef.current!);
-      audioRef.current.removeEventListener('ended', timeUpdateHandlerRef.current!);
+      if (timeUpdateHandlerRef.current) {
+        audioRef.current.removeEventListener('timeupdate', timeUpdateHandlerRef.current);
+        audioRef.current.removeEventListener('ended', timeUpdateHandlerRef.current);
+      }
       audioRef.current.removeAttribute('src');
       audioRef.current.load();
       audioRef.current = null;
@@ -141,8 +143,10 @@ export function useMobileSongPreview(options: UseMobileSongPreviewOptions = {}):
       }
       if (audioRef.current) {
         audioRef.current.pause();
-        audioRef.current.removeEventListener('timeupdate', timeUpdateHandlerRef.current!);
-        audioRef.current.removeEventListener('ended', timeUpdateHandlerRef.current!);
+        if (timeUpdateHandlerRef.current) {
+          audioRef.current.removeEventListener('timeupdate', timeUpdateHandlerRef.current);
+          audioRef.current.removeEventListener('ended', timeUpdateHandlerRef.current);
+        }
         audioRef.current.removeAttribute('src');
         audioRef.current.load();
       }

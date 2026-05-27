@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { generateCode, COMPANION_CODE_CHARS } from '@/lib/utils';
+import { getClientIp } from '@/lib/rate-limiter';
 import type { MobileClient, PitchData, MobileProfile, QueueItem, RemoteControlState, MobileGameState, GameResults, SongSummary, HostProfile } from './mobile-types';
 
 // ===================== ADMIN PIN AUTH =====================
@@ -36,7 +37,7 @@ function isIpBlocked(ip: string): boolean {
 
   // Check if there are more than MAX_PIN_FAILURES in the rolling window
   const recentCount = active.filter(t => now - t < PIN_FAILURE_WINDOW_MS).length;
-  return recentCount > MAX_PIN_FAILURES;
+  return recentCount >= MAX_PIN_FAILURES;
 }
 
 function recordFailedPinAttempt(ip: string): void {
@@ -47,18 +48,6 @@ function recordFailedPinAttempt(ip: string): void {
 
 function clearFailedPinAttempts(ip: string): void {
   failedPinAttempts.delete(ip);
-}
-
-// ===================== HELPER FUNCTIONS =====================
-// Extract client IP from request headers (works with proxies and Tauri)
-export function getClientIp(request: NextRequest): string {
-  const forwarded = request.headers.get('x-forwarded-for');
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
-  }
-  const realIp = request.headers.get('x-real-ip');
-  if (realIp) return realIp;
-  return '127.0.0.1'; // Default for Tauri/localhost
 }
 
 /**

@@ -148,7 +148,7 @@ export function useGlobalKeyboardShortcuts(cb: GlobalShortcutCallbacks) {
         return;
       }
       // 6. On home screen → exit (try Tauri, fallback to nothing in browser)
-      if (window.__TAURI__) {
+      if ((window as any).__TAURI__) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (window as any).__TAURI__?.window?.appWindow?.close?.().catch(() => {});
       }

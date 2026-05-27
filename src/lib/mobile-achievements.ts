@@ -1,6 +1,6 @@
 // Mobile Companion Achievements — track and display user milestones
 
-import { getJson, setJson, getItem, setItem } from '@/lib/storage';
+import { getJson, setJson, getItem, setItem, StorageKeys } from '@/lib/storage';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -44,7 +44,7 @@ interface GameResults {
 // Constants
 // ---------------------------------------------------------------------------
 
-const STATS_STORAGE_KEY = 'karaoke-mobile-user-stats';
+const STATS_STORAGE_KEY = StorageKeys.MOBILE_USER_STATS;
 
 const DEFAULT_STATS: UserStats = {
   songsSung: 0,
@@ -208,7 +208,7 @@ export function getUnlockedAchievements(stats: UserStats): Achievement[] {
 }
 
 // Track previously unlocked IDs so we can detect "new" unlocks
-const UNLOCKED_STORAGE_KEY = 'karaoke-mobile-unlocked-achievements';
+const UNLOCKED_STORAGE_KEY = StorageKeys.MOBILE_UNLOCKED_ACHIEVEMENTS;
 
 function getPreviouslyUnlockedIds(): string[] {
   return getJson<string[]>(UNLOCKED_STORAGE_KEY, []);

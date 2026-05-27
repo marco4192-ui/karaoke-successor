@@ -89,6 +89,8 @@ export const StorageKeys = {
   MOBILE_PROFILE: 'karaoke-mobile-profile',
   CONNECTION_CODE: 'karaoke-connection-code',
   HOST_PROFILES: 'karaoke-host-profiles',
+  MOBILE_USER_STATS: 'karaoke-mobile-user-stats',
+  MOBILE_UNLOCKED_ACHIEVEMENTS: 'karaoke-mobile-unlocked-achievements',
 } as const;
 
 // ---------------------------------------------------------------------------

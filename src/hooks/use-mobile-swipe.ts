@@ -19,7 +19,7 @@ interface UseMobileSwipeReturn {
   /** Whether the user is currently touching / swiping */
   isSwipeActive: boolean;
   /** Ref to attach to the swipeable container element */
-  itemRef: React.RefObject<HTMLDivElement>;
+  itemRef: React.RefObject<HTMLDivElement | null>;
   /** Touch handlers to spread onto the element */
   handlers: {
     onTouchStart: (e: React.TouchEvent) => void;
@@ -43,7 +43,7 @@ export function useMobileSwipe({
   onSwipeRight,
   disabled = false,
 }: UseMobileSwipeOptions = {}): UseMobileSwipeReturn {
-  const itemRef = useRef<HTMLDivElement>(null!);
+  const itemRef = useRef<HTMLDivElement>(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isSwipeActive, setIsSwipeActive] = useState(false);
 

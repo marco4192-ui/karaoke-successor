@@ -187,6 +187,8 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
       // Bounds check before reading track header (4 bytes) + length (4 bytes)
       if (offset + 8 > arrayBuffer.byteLength) break;
 
+      activeNotes.clear(); // Prevent cross-track note leaks on malformed files
+
       let trackEnd = offset; // default: skip to current position if parsing fails before trackEnd is set
       try {
         const trackHeader = String.fromCharCode(view.getUint8(offset), view.getUint8(offset + 1), view.getUint8(offset + 2), view.getUint8(offset + 3));
