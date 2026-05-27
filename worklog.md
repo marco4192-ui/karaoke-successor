@@ -150,3 +150,24 @@ Stage Summary:
 - HIGH: NaN pitch counted as hit (scoring corruption), duet duplicate lyrics, song ID collisions, missing status guards, missing Array.isArray validation, metadata 0-value loss, untrimmed duet prefix lines
 - All 17 fixes verified with zero TypeScript errors
 - 45 MEDIUM and 42 LOW issues documented but not yet fixed (architectural/design concerns, minor code quality)
+---
+Task ID: 3
+Agent: Main Agent
+Task: Fix verified MEDIUM and LOW library-code bugs
+
+Work Log:
+- Verified all 45 MEDIUM issues: 12 real bugs, 18 intentional/false alarms, 15 N/A (files deleted)
+- Verified all 42 LOW issues: fixed 7 real bugs, skipped 35 (intentional/false alarms/too minor)
+- Applied 19 fixes across 20 files
+- Fixed import error in get-handlers.ts (getClientIp moved to rate-limiter)
+- TypeScript build: 0 source errors
+- Pushed as commit 0c9510e
+
+Stage Summary:
+- MEDIUM fixes: Hall of Fame fallback, unused import, competitive-words threshold,
+  theme color duplication, co-op weekly/quest tracking, MIDI cross-track leaks,
+  drag performance, null assertions, PIN off-by-one, getClientIp consolidation,
+  ZAI error handling, storage key centralization
+- LOW fixes: Dead code removal, type safety, event listener leaks, race conditions
+- Skipped intentional: fuzzyMatch empty=true, medley ranking formula, singleton pattern,
+  pitch stabilizer reset, sanitizeFileName purposes, resolveVote zero votes, etc.
