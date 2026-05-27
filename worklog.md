@@ -40,3 +40,33 @@ Stage Summary:
 - Fix 2 (game-screen-hook.ts): Added fallback for blindHardcore reading from unifiedSetupResult.settings.hardcore.
 - Fix 3 (note-lane.tsx + game-screen.tsx): Added isBlindSection, gameMode, isBlindHardcore props to NoteLane. Notes hidden when blind section active, 🙈 indicator shown, pitch indicator hidden. Hardcore mode: lyrics replaced with underscores when notes visible. Passed props from game-screen.tsx.
 - Fix 4 (use-game-modes.ts): Split lastMWWarningKeyRef into separate lastBlindWarningKeyRef and lastMWWarningKeyRef refs. Updated all references in blind warning effect and reset effect.
+---
+Task ID: blind-bonus-points
+Agent: Main Agent
+Task: Wire Blind Karaoke bonus points into real-time scoring system
+
+Work Log:
+- Analyzed existing scoring architecture (tick-based, 10K max normalization)
+- Verified Blind Karaoke bonus calculation already existed in competitive-words-blind.ts (base 30 + perfect/streak/comeback)
+- Identified that bonus was estimated at game-end instead of tracked in real-time
+- Added BlindScoringState interface to run-scoring-pass.ts with isBlindSection, streak ref, lastWasMiss ref
+- Tagged each NoteProgress with isBlindNote at note creation time based on isBlindSection
+- At note completion: calculate blind bonus via calculateBlindBonus(), emit ScoreEvent with isBlindBonus flag
+- Built BlindScoringState in use-note-scoring.ts from isBlindSection prop + tracking refs (P1 + P2)
+- Accumulated blindBonusDelta in player state updates for both P1 and P2
+- Passed isBlindSection from game-screen-hook.ts to useNoteScoring
+- Refactored use-game-flow-handlers.ts to use real-time blindBonusPoints instead of estimates
+- Subtracted blind bonus from base score in finishCompetitiveRound to avoid double-counting
+- Added blindBonusPoints to Player, PlayerScoringState, GameResult, NoteProgress, ScoreEvent types
+- Added blindBonusPoints: 0 to addPlayer() and resetGame() in store.ts
+- Added blindBonusPoints to p2ScoringState in game-results-generator.ts
+- Verified: no new TypeScript errors introduced (6 pre-existing errors in game-screen-hook.ts)
+
+Stage Summary:
+- Commit 0c86cbf pushed to main
+- 9 files changed, +144/-22 lines
+- Blind Karaoke bonus points now tracked in real-time per-note
+- Bonus system: base 30 + 30 perfect + 15 streak (every 3rd) + 15 comeback = max 90 per note
+- Works for both single player and duet/duel modes
+- No new TypeScript regressions
+
