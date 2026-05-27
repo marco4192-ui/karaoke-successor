@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 import type { Screen } from '@/types/screens';
 import type { GameResult, GameState, Player } from '@/types/game';
 import type { PartyStore } from '@/lib/game/party-store';
+import { useGameStore } from '@/lib/game/store';
 import { accuracyToRating } from '@/lib/game/rating-utils';
 import { recordMatchResult } from '@/lib/game/tournament';
 import { finishCompetitiveRound, calculateMissingWordsBonus } from '@/lib/game/competitive-words-blind';
@@ -77,7 +78,7 @@ export function useGameFlowHandlers(
         return;
       }
 
-      const gameResult = buildGameResultFromState(players, gameState.currentSong, gameState.currentTime);
+      const gameResult = buildGameResultFromState(players, gameState.currentSong, useGameStore.getState().gameState.currentTime);
       if (!gameResult) {
         setScreen('results');
         return;
@@ -110,6 +111,7 @@ export function useGameFlowHandlers(
 
     party.setTournamentBracket(updatedBracket);
     const matchId = party.currentTournamentMatch?.id;
+    const bracketId = party.tournamentBracket?.id;
     party.setCurrentTournamentMatch(null);
 
     // #10 Poll crowd votes from companion spectators and store in party store
@@ -120,6 +122,8 @@ export function useGameFlowHandlers(
           const data = await res.json();
           const allVotes: Array<{ matchId: string; playerSide: 1 | 2 }> = data.votes || [];
           const matchVotes = allVotes.filter((v: { matchId: string }) => v.matchId === matchId);
+          // Verify tournament hasn't been reset while we were fetching
+          if (party.tournamentBracket?.id !== bracketId) return;
           if (matchVotes.length > 0) {
             const p1Votes = matchVotes.filter((v: { playerSide: number }) => v.playerSide === 1).length;
             const p2Votes = matchVotes.filter((v: { playerSide: number }) => v.playerSide === 2).length;
@@ -138,11 +142,15 @@ export function useGameFlowHandlers(
 
     setScreen('tournament-game');
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [party.tournamentBracket, party.currentTournamentMatch, party.setTournamentBracket, party.setCurrentTournamentMatch, gameState.results, gameState.players, gameState.currentSong, gameState.currentTime, actions.setResults, setScreen]);
+  }, [party.tournamentBracket, party.currentTournamentMatch, party.setTournamentBracket, party.setCurrentTournamentMatch, gameState.results, gameState.players, gameState.currentSong, actions.setResults, setScreen]);
 
   const handleGameEnd = useCallback(() => {
+    // Tournament match end — check FIRST to prevent medley/competitive hijacking
+    if (party.currentTournamentMatch && party.tournamentBracket) {
+      handleTournamentGameEnd();
+    }
     // Medley / Duel snippet end — accumulate scores and return to medley flow
-    if ((gameState.gameMode === 'medley' || gameState.gameMode === 'duel') && party.medleySongs.length > 0 && party.medleySettings) {
+    else if ((gameState.gameMode === 'medley' || gameState.gameMode === 'duel') && party.medleySongs.length > 0 && party.medleySettings) {
       const results = gameState.results;
       const players = gameState.players;
 
@@ -169,7 +177,6 @@ export function useGameFlowHandlers(
       setScreen('medley-game');
       return;
     }
-
     // Competitive Missing Words / Blind match end
     if (party.competitiveGame && (gameState.gameMode === 'missing-words' || gameState.gameMode === 'blind')) {
       const results = gameState.results;
@@ -221,11 +228,7 @@ export function useGameFlowHandlers(
       setScreen(modeScreen as Screen);
       return;
     }
-
-    // Tournament match end
-    if (party.currentTournamentMatch && party.tournamentBracket) {
-      handleTournamentGameEnd();
-    } else if (gameState.gameMode === 'pass-the-mic' || gameState.gameMode === 'companion-singalong') {
+    if (gameState.gameMode === 'pass-the-mic' || gameState.gameMode === 'companion-singalong') {
       if (gameState.gameMode === 'pass-the-mic') {
         party.setPassTheMicSong(null);
         party.setPassTheMicSegments([]);
@@ -239,7 +242,7 @@ export function useGameFlowHandlers(
     } else {
       setScreen('results');
     }
-  }, [party, gameState, actions, handleTournamentGameEnd, setScreen]);
+  }, [party, gameState.gameMode, gameState.results, gameState.players, actions, handleTournamentGameEnd, setScreen]);
 
   return {
     handleTournamentGameEnd,

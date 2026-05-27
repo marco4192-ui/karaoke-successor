@@ -21,7 +21,7 @@ import {
   type TournamentMatch,
   type TournamentSettings,
 } from '@/lib/game/tournament';
-import { PlayerProfile, PLAYER_COLORS, Difficulty } from '@/types/game';
+import { PlayerProfile, PLAYER_COLORS } from '@/types/game';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { useTranslation } from '@/lib/i18n/translations';
@@ -194,11 +194,9 @@ export function TournamentSetupScreen({ profiles, onStartTournament, onBack }: T
                 </CardContent>
               </Card>
             ))}
-            {hallOfFameEntries.length > 0 && (
-              <Button variant="ghost" onClick={clearHallOfFame} className="text-red-400/60 hover:text-red-400 mx-auto block mt-4">
-                {t('tournament.clearHallOfFame')}
-              </Button>
-            )}
+            <Button variant="ghost" onClick={clearHallOfFame} className="text-red-400/60 hover:text-red-400 mx-auto block mt-4">
+              {t('tournament.clearHallOfFame')}
+            </Button>
           </div>
         )}
       </div>
@@ -467,7 +465,7 @@ interface TournamentBracketViewProps {
 export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onManualWinner, onRepeatMatch, matchAborted, onAbortHandled, shortMode, showResults, onShowResults }: TournamentBracketViewProps) {
   const { t } = useTranslation();
   const stats = getTournamentStats(bracket);
-  const party = usePartyStore();
+  const tournamentCrowdVotes = usePartyStore(s => s.tournamentCrowdVotes);
 
   // Get next match to play
   const playableMatches = getPlayableMatches(bracket);
@@ -487,9 +485,9 @@ export function TournamentBracketView({ bracket, currentMatch, onPlayMatch, onMa
 
   // #10 Fan favorites from crowd votes
   const fanFavorites = useMemo(() => {
-    if (party.tournamentCrowdVotes.length === 0) return [];
-    return getFanFavorites(bracket, party.tournamentCrowdVotes);
-  }, [bracket, party.tournamentCrowdVotes]);
+    if (tournamentCrowdVotes.length === 0) return [];
+    return getFanFavorites(bracket, tournamentCrowdVotes);
+  }, [bracket, tournamentCrowdVotes]);
 
   // Auto-scale bracket to fit available viewport height
   const bracketWrapperRef = useRef<HTMLDivElement>(null);
@@ -728,13 +726,13 @@ interface TournamentResultsProps {
 export function TournamentResultsScreen({ bracket, onBack, onNewTournament }: TournamentResultsProps) {
   const { t } = useTranslation();
   const placements = useMemo(() => getPlayerPlacements(bracket), [bracket]);
-  const party = usePartyStore();
+  const tournamentCrowdVotes = usePartyStore(s => s.tournamentCrowdVotes);
 
   // #10 Fan favorites from crowd votes
   const fanFavorites = useMemo(() => {
-    if (party.tournamentCrowdVotes.length === 0) return [];
-    return getFanFavorites(bracket, party.tournamentCrowdVotes);
-  }, [bracket, party.tournamentCrowdVotes]);
+    if (tournamentCrowdVotes.length === 0) return [];
+    return getFanFavorites(bracket, tournamentCrowdVotes);
+  }, [bracket, tournamentCrowdVotes]);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
@@ -1068,11 +1066,12 @@ function DoubleEliminationBracketView({
 // ─── DE Match Card (compact, for DE bracket view) ───────────────
 
 function DESmallPlayer({ player }: { player: TournamentPlayer | null }) {
+  const { t } = useTranslation();
   if (!player) {
     return (
       <div className="flex items-center gap-1 text-[11px]">
         <div className="w-5 h-5 rounded-full bg-white/10 shrink-0" />
-        <span className="text-white/30">TBD</span>
+        <span className="text-white/30">{t('tournament.tbd')}</span>
       </div>
     );
   }

@@ -119,8 +119,6 @@ if (typeof globalThis !== 'undefined') {
 // Tracks "clientId:matchId" pairs to prevent duplicate tournament votes
 export const tournamentVoteRegistry: Set<string> = new Set();
 
-// Also export as tournamentVoteDedup alias for compatibility
-export { tournamentVoteRegistry as tournamentVoteDedup };
 
 // ===================== GLOBAL STATE =====================
 // Shared state for mobile clients (in-memory, resets on server restart)

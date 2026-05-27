@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useGameStore } from '@/lib/game/store';
 import { usePartyStore } from '@/lib/game/party-store';
 import { getAllSongs, getNonDuetSongs, filterSongs } from '@/lib/game/song-library';
-import { recordMatchResult, getEffectiveDifficulty, type CrowdVoteMatch } from '@/lib/game/tournament';
+import { recordMatchResult, getEffectiveDifficulty } from '@/lib/game/tournament';
 import { useTranslation } from '@/lib/i18n/translations';
 import { shuffleArray } from '@/lib/utils';
 import { TournamentSetupScreen, TournamentBracketView, TournamentResultsScreen } from '@/components/game/tournament-screen';
@@ -20,7 +20,7 @@ import type { MedleyPlayer, MedleySettings, MedleySong, SnippetMatchup} from '@/
 import { addMedleyEntry, addDailyMedleyEntry } from '@/lib/game/medley-ranking';
 import { CompetitiveSetupScreen, CompetitiveGameView } from '@/components/game/competitive-words-blind-screen';
 import { RateMySongSetupScreen, RateMySongRatingScreen, RateMySongResultsScreen, RateMySongSeriesResultsScreen } from '@/components/game/rate-my-song-screen';
-import type { RateMySongResult, RateMySongRating } from '@/components/game/rate-my-song-screen';
+import type { RateMySongResult } from '@/components/game/rate-my-song-screen';
 import { getRandomChallenge } from '@/lib/game/rate-my-song-ranking';
 import { toast } from '@/hooks/use-toast';
 import { preparePtmNextSong } from '@/lib/game/ptm-next-song';
@@ -366,12 +366,11 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                   key={song.id}
                   onClick={() => {
                     // Mark as voted and proceed to mic overlay
-                    const voted = song;
                     setTournamentVotingActive(false);
                     party.setTournamentVotingSongs([]);
-                    party.setTournamentVotedSong(voted);
+                    party.setTournamentVotedSong(song);
                     party.addTournamentUsedSongId(song.id);
-                    startMatchWithMicOverlay(party.tournamentVotingMatch!, voted);
+                    startMatchWithMicOverlay(party.tournamentVotingMatch!, song);
                   }}
                   className="bg-white/5 hover:bg-white/15 border border-white/10 hover:border-pink-500/50 rounded-xl p-3 cursor-pointer transition-all hover:scale-[1.02]"
                 >

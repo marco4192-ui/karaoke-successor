@@ -329,8 +329,8 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   });
 
   // Mobile companion sync - periodic game state updates
-  const party = usePartyStore();
-  const tournamentMatchId = party.currentTournamentMatch?.id || null;
+  const tournamentMatchId = usePartyStore(s => s.currentTournamentMatch?.id || null);
+  const competitiveGame = usePartyStore(s => s.competitiveGame);
   useMobileGameSync(song, isPlaying, gameState.gameMode, gameState.status === 'ended', tournamentMatchId);
 
   // Warning callbacks for blind / missing-words passages (stable refs for useEffect deps)
@@ -365,7 +365,7 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     hardcore: blindHardcore,
     hardcoreMissingWords,
     missingWordsGranularity,
-    escalatingMultiplier: escalating ? (party.competitiveGame?.rounds[party.competitiveGame.currentRoundIndex]?.frequencyMultiplier ?? 1.0) : undefined,
+    escalatingMultiplier: escalating ? (competitiveGame?.rounds[competitiveGame.currentRoundIndex]?.frequencyMultiplier ?? 1.0) : undefined,
   });
 
   // ── Replay Recorder: mic + webcam during gameplay ──

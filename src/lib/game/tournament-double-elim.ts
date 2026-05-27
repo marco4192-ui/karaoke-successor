@@ -133,7 +133,7 @@ function dropToLosersBracket(
   }
 
   if (targetLBMatch) {
-    const idx = updated.findIndex(m => m.id === targetLBMatch!.id);
+    const idx = updated.findIndex(m => m.id === targetLBMatch.id);
     if (idx !== -1) {
       updated[idx] = { ...updated[idx], [assignAs]: loser };
     }
@@ -163,10 +163,9 @@ function advanceInLosersBracket(
 
   // Check if this is the last LB round -> advance to Grand Finals
   if (lbMatch.round >= losersTotalRounds) {
-    const gf1 = updated.find(m => m.id === 'GF1');
-    if (gf1) {
-      const idx = updated.findIndex(m => m.id === 'GF1');
-      updated[idx] = { ...gf1, player2: winner };
+    const gf1Idx = updated.findIndex(m => m.id === 'GF1');
+    if (gf1Idx !== -1) {
+      updated[gf1Idx] = { ...updated[gf1Idx], player2: winner };
     }
     return updated;
   }
@@ -191,7 +190,7 @@ function advanceInLosersBracket(
     m => m.round === nextRound && m.position === nextPosition && m.bracketType === 'losers'
   );
   if (nextMatch) {
-    const idx = updated.findIndex(m => m.id === nextMatch!.id);
+    const idx = updated.findIndex(m => m.id === nextMatch.id);
     if (idx !== -1) {
       updated[idx] = { ...updated[idx], [assignAs]: winner };
     }
@@ -216,7 +215,7 @@ function handleGrandFinalsResult(
   if (gfMatch.isReset) {
     // GF2 (reset match): whoever wins is champion, loser is eliminated
     updatedPlayers = updatedPlayers.map(p =>
-      p.id === loser.id ? { ...p, eliminated: true, lossCount: (p.lossCount || 0) + 1 } : p
+      p.id === loser.id ? { ...p, eliminated: true, lossCount: p.lossCount + 1 } : p
     );
     return {
       matches: updated,
@@ -229,11 +228,14 @@ function handleGrandFinalsResult(
 
   // GF1
   // Check if the WB champion (lossCount === 0) won
-  const winnerLossCount = players.find(p => p.id === winner.id)?.lossCount || 0;
-  const loserLossCount = players.find(p => p.id === loser.id)?.lossCount || 0;
+  const winnerLossCount = players.find(p => p.id === winner.id)?.lossCount ?? 0;
+  const loserLossCount = players.find(p => p.id === loser.id)?.lossCount ?? 0;
 
   if (winnerLossCount === 0) {
-    // WB champion won GF1 -> tournament over
+    // WB champion won GF1 -> tournament over, eliminate LB champion (2nd loss)
+    updatedPlayers = updatedPlayers.map(p =>
+      p.id === loser.id ? { ...p, eliminated: true, lossCount: p.lossCount + 1 } : p
+    );
     return {
       matches: updated,
       players: updatedPlayers,
@@ -245,7 +247,7 @@ function handleGrandFinalsResult(
 
   // LB champion (1 loss) won GF1 -> WB champion gets first loss -> need reset
   updatedPlayers = updatedPlayers.map(p =>
-    p.id === loser.id ? { ...p, lossCount: (p.lossCount || 0) + 1 } : p
+    p.id === loser.id ? { ...p, lossCount: p.lossCount + 1 } : p
   );
 
   // Set up GF2 with the same two players
@@ -284,7 +286,7 @@ export function recordDoubleEliminationResult(
     // Advance winner in WB (same as single elimination)
     const nextMatch = findWBNextMatch(updatedMatches, match);
     if (nextMatch) {
-      const nextMatchIndex = updatedMatches.findIndex(m => m.id === nextMatch!.id);
+      const nextMatchIndex = updatedMatches.findIndex(m => m.id === nextMatch.id);
       if (match.position % 2 === 0) {
         updatedMatches[nextMatchIndex] = { ...updatedMatches[nextMatchIndex], player1: winner };
       } else {
@@ -300,7 +302,7 @@ export function recordDoubleEliminationResult(
 
     // Drop loser to losers bracket (first loss)
     updatedPlayers = updatedPlayers.map(p =>
-      p.id === loser.id ? { ...p, lossCount: (p.lossCount || 0) + 1 } : p
+      p.id === loser.id ? { ...p, lossCount: p.lossCount + 1 } : p
     );
     updatedMatches = dropToLosersBracket(updatedMatches, match, loser);
 
@@ -329,7 +331,7 @@ export function recordDoubleEliminationResult(
 
     // Eliminate loser (second loss)
     updatedPlayers = updatedPlayers.map(p =>
-      p.id === loser.id ? { ...p, eliminated: true, lossCount: (p.lossCount || 0) + 1 } : p
+      p.id === loser.id ? { ...p, eliminated: true, lossCount: p.lossCount + 1 } : p
     );
 
     return {
@@ -385,7 +387,7 @@ export function getPlayableMatchesDoubleElim(bracket: TournamentBracket): Tourna
     }
 
     if (m.bracketType === 'losers') {
-      return isLBMatchPlayable(m, matchMap, wbRounds);
+      return isLBMatchPlayable(m, matchMap);
     }
 
     if (m.bracketType === 'grand_finals') {
@@ -411,7 +413,6 @@ export function getPlayableMatchesDoubleElim(bracket: TournamentBracket): Tourna
 function isLBMatchPlayable(
   lbMatch: TournamentMatch,
   matchMap: Map<string, TournamentMatch>,
-  wbRounds: number
 ): boolean {
   const lbRound = lbMatch.round;
 

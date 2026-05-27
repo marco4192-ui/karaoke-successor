@@ -6,7 +6,7 @@ import type { TournamentPlayer, TournamentBracket, TournamentMatch } from './tou
 // ─── Tournament Statistics ────────────────────────────────────────
 
 export function getTournamentStats(bracket: TournamentBracket) {
-  const completedMatches = bracket.matches.filter(m => m.completed && !m.isBye);
+  const completedMatches = bracket.matches.filter(m => m.completed && !m.isBye && !m.isReset);
   const totalNonByeMatches = bracket.matches.filter(m => !m.isBye && !m.isReset).length;
   const isDouble = bracket.settings.tournamentType === 'double';
 
@@ -109,7 +109,7 @@ export function getPlayerPlacements(bracket: TournamentBracket): Array<{
     }
 
     if (bracket.champion?.id === player.id) {
-      survivalScore = 999; // Highest possible
+      survivalScore = Infinity;
     }
 
     placements.push({
@@ -161,7 +161,11 @@ export function getHallOfFame(): HallOfFameEntry[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed;
+    return parsed.filter((e: unknown): e is HallOfFameEntry =>
+      typeof e === 'object' && e !== null &&
+      'id' in e && 'champion' in e && 'runnerUp' in e &&
+      'tournamentType' in e
+    );
   } catch {
     return [];
   }

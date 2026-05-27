@@ -13,7 +13,7 @@ import {
   requireAuthOrRemoteHolder,
   MAX_JUKEBOX_PER_CLIENT,
   MAX_TOURNAMENT_VOTES,
-  tournamentVoteDedup,
+  tournamentVoteRegistry,
 } from './mobile-state';
 
 // ===================== POST HANDLER =====================
@@ -159,9 +159,9 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
         const gsPayload = payload as typeof mutableState.gameState;
         // Clear tournament vote dedup when matchId changes
         if (gsPayload.tournamentMatchId !== mutableState.gameState.tournamentMatchId) {
-          tournamentVoteDedup.clear();
+          tournamentVoteRegistry.clear();
         }
-        mutableState.gameState = { ...gsPayload };
+        mutableState.gameState = { ...mutableState.gameState, ...gsPayload };
         
         // If song ended, notify all clients and clear pitch data
         if (gsPayload.songEnded) {
@@ -862,12 +862,12 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
       // #10 Tournament crowd vote — companion spectators vote on match results
       case 'tournament_crowd_vote': {
         const votePayload = payload as { matchId: string; playerSide: 1 | 2 };
-        if (!clientId || !votePayload.matchId || !votePayload.playerSide) {
+        if (!clientId || !votePayload.matchId || (votePayload.playerSide !== 1 && votePayload.playerSide !== 2)) {
           return Response.json({ success: false, message: 'Invalid vote payload' }, { status: 400 });
         }
         // Deduplication: check if this clientId already voted for this matchId
         const voteKey = `${clientId}:${votePayload.matchId}`;
-        if (tournamentVoteDedup.has(voteKey)) {
+        if (tournamentVoteRegistry.has(voteKey)) {
           return Response.json({ success: false, message: 'Already voted for this match' });
         }
         // Enforce max 500 total votes (prune oldest)
@@ -875,9 +875,6 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           mutableState.tournamentCrowdVotes = mutableState.tournamentCrowdVotes.slice(-MAX_TOURNAMENT_VOTES + 1);
         }
         // Store vote in mutable state for the main app to pick up
-        if (!mutableState.tournamentCrowdVotes) {
-          mutableState.tournamentCrowdVotes = [];
-        }
         const client = mobileClients.get(clientId);
         mutableState.tournamentCrowdVotes.push({
           clientId,
@@ -887,7 +884,7 @@ export async function handlePostRequest(request: NextRequest): Promise<Response>
           playerSide: votePayload.playerSide,
           timestamp: Date.now(),
         });
-        tournamentVoteDedup.add(voteKey);
+        tournamentVoteRegistry.add(voteKey);
         return Response.json({ success: true, message: 'Vote recorded' });
       }
 

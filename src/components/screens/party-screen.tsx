@@ -69,7 +69,7 @@ export function PartyScreen({ onSelectMode }: PartyScreenProps) {
       titleKey: 'party.tournamentMode',
       descKey: 'party.tournamentModeDesc',
       icon: '🏆',
-      players: '4-32',
+      players: '2-32',
       color: 'from-amber-500 to-yellow-500',
       isNew: true,
     },

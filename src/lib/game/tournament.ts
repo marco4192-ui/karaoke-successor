@@ -66,9 +66,9 @@ export function createTournament(
   const totalRounds = calculateRounds(players.length);
   const byesNeeded = calculateByes(players.length);
 
-  // #4 Double Elimination requires exact power-of-2 players (no BYEs)
-  if (settings.tournamentType === 'double' && byesNeeded > 0) {
-    throw new Error('Double Elimination requires exactly 2, 4, 8, 16, or 32 players');
+  // #4 Double Elimination requires at least 4 players and exact power-of-2
+  if (settings.tournamentType === 'double' && (players.length < 4 || byesNeeded > 0)) {
+    throw new Error('Double Elimination requires exactly 4, 8, 16, or 32 players');
   }
 
   // #9 Seed players: random shuffle or by strength
@@ -231,7 +231,7 @@ export function getPlayableMatches(bracket: TournamentBracket): TournamentMatch[
   const lookup = buildMatchMap(bracket.matches);
   return bracket.matches.filter(
     m => {
-      if (m.completed || !m.player1 || !m.player2 || m.isBye) return false;
+      if (m.completed || !m.player1 || !m.player2) return false;
       if (m.round === 1) return true;
       // Match IDs use 1-based position (generateMatchId uses pos + 1 in generation)
       // but position field is 0-based, so we need +1 offset
@@ -321,7 +321,7 @@ export function recordMatchResult(
   // Advance winner in WB
   const nextMatch = findWBNextMatch(updatedMatches, match);
   if (nextMatch) {
-    const nextMatchIndex = updatedMatches.findIndex(m => m.id === nextMatch!.id);
+    const nextMatchIndex = updatedMatches.findIndex(m => m.id === nextMatch.id);
     if (match.position % 2 === 0) {
       updatedMatches[nextMatchIndex] = { ...updatedMatches[nextMatchIndex], player1: winner };
     } else {
