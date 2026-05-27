@@ -105,6 +105,8 @@ export interface Player {
   notesMissed: number;
   goldenNotesHit: number;
   accuracy: number;
+  /** Accumulated blind karaoke bonus points for this game */
+  blindBonusPoints: number;
   notes?: Note[]; // Optional notes array for detailed display
   totalNotes?: number; // Total notes count for display
 }
@@ -115,6 +117,7 @@ export const EMPTY_PLAYER_SCORE = {
   notesHit: 0,
   notesMissed: 0,
   goldenNotesHit: 0,
+  blindBonusPoints: 0,
   combo: 0,
   maxCombo: 0,
 } as const;
@@ -227,6 +230,8 @@ export interface GameResult {
     perfectNotesCount: number;
     goldenNotesCount: number;
     rating: 'perfect' | 'excellent' | 'good' | 'okay' | 'poor';
+    /** Blind karaoke bonus points earned */
+    blindBonusPoints?: number;
   }[];
   playedAt: number;
   duration: number;

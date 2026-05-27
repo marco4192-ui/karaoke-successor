@@ -203,6 +203,7 @@ export const useGameStore = create<GameStore>()(
             notesMissed: 0,
             goldenNotesHit: 0,
             accuracy: 0,
+            blindBonusPoints: 0,
           };
 
           if (existingIndex >= 0) {
@@ -313,6 +314,7 @@ export const useGameStore = create<GameStore>()(
               notesMissed: 0,
               goldenNotesHit: 0,
               accuracy: 0,
+              blindBonusPoints: 0,
             })),
           },
         })),

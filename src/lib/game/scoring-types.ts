@@ -17,6 +17,8 @@ export interface ScoreEvent {
   points: number;
   time: number;
   player?: 'P1' | 'P2';
+  /** Whether this event represents a blind karaoke bonus award */
+  isBlindBonus?: boolean;
 }
 
 /** Note performance sample for visual display modes */
@@ -39,6 +41,8 @@ export interface PlayerScoringState {
   notesMissed: number;
   perfectNotesCount: number;
   goldenNotesHit: number;
+  /** Accumulated blind karaoke bonus points */
+  blindBonusPoints: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -73,6 +77,8 @@ export interface ScoringPassResult {
   goldenNotesDelta: number;
   hasUpdates: boolean;
   pendingEvents: ScoreEvent[];
+  /** Accumulated blind karaoke bonus points this pass */
+  blindBonusDelta: number;
   /** P1 visual tracking: the active note's ID and last tick result for performance samples */
   activeNoteId: string | undefined;
   activeNoteIsGolden: boolean;
@@ -95,6 +101,8 @@ export interface UseNoteScoringOptions {
   timingData: TimingDataForScoring | null;
   isDuetMode: boolean;
   beatDuration: number; // Kept for interface compat; actual value from timingData
+  /** Whether the current game section is a blind karaoke section */
+  isBlindSection?: boolean;
   updatePlayer: (_playerId: string, _updates: Partial<Player>) => void;
   /** Challenge modifiers (e.g. perfect_only, golden_only from challenge modes) */
   challengeModifiers?: ChallengeModifier[];
@@ -152,4 +160,5 @@ export const DEFAULT_PLAYER_SCORING_STATE: PlayerScoringState = {
   notesMissed: 0,
   perfectNotesCount: 0,
   goldenNotesHit: 0,
+  blindBonusPoints: 0,
 };

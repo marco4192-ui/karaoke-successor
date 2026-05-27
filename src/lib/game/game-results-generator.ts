@@ -14,6 +14,7 @@ interface GenerateResultsParams {
     combo: number;
     maxCombo: number;
     goldenNotesHit?: number;
+    blindBonusPoints?: number;
   }>;
   p2ScoringState?: {
     score: number;
@@ -22,6 +23,7 @@ interface GenerateResultsParams {
     maxCombo: number;
     perfectNotesCount?: number;
     goldenNotesHit?: number;
+    blindBonusPoints?: number;
   } | null;
   p1PerfectNotesCount: number;
   hadComeback: boolean;
@@ -78,6 +80,7 @@ export function generateGameResults(params: GenerateResultsParams): GameResult |
     maxCombo: activePlayer.maxCombo,
     perfectNotesCount: p1PerfectNotesCount || 0,
     goldenNotesCount: activePlayer.goldenNotesHit || 0,
+    blindBonusPoints: activePlayer.blindBonusPoints || 0,
     rating: accuracyToRating(p1Accuracy),
   }];
 
@@ -104,6 +107,7 @@ export function generateGameResults(params: GenerateResultsParams): GameResult |
       maxCombo: p2.maxCombo,
       perfectNotesCount: p2.perfectNotesCount || 0,
       goldenNotesCount: p2.goldenNotesHit || 0,
+      blindBonusPoints: p2.blindBonusPoints || 0,
       rating: accuracyToRating(p2Accuracy),
     });
   }

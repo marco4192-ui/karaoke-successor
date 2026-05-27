@@ -16,7 +16,22 @@ import {
   NoteProgress,
   ScoringMetadata,
 } from '@/lib/game/scoring';
+import { calculateBlindBonus } from '@/lib/game/competitive-words-blind';
 import type { ScoreEvent, ScoringPassResult } from '@/lib/game/scoring-types';
+
+// ---------------------------------------------------------------------------
+// Blind state passed from the hook layer
+// ---------------------------------------------------------------------------
+
+/** Mutable blind karaoke tracking state (persists across scoring passes). */
+export interface BlindScoringState {
+  /** Whether the current passage is a blind section. */
+  isBlindSection: boolean;
+  /** Running count of consecutive blind notes hit (reset on miss). */
+  blindStreakRef: { current: number };
+  /** Whether the previous blind note was missed (for comeback bonus). */
+  blindLastWasMissRef: { current: boolean };
+}
 
 // ---------------------------------------------------------------------------
 // Shared scoring pass
@@ -36,6 +51,7 @@ export function runScoringPass(
   hasGoldenOnly: boolean,
   comboRef: { current: number },
   maxComboRef: { current: number },
+  blindState?: BlindScoringState,
 ): ScoringPassResult {
   // Batch accumulator
   let scoreDelta = 0;
@@ -47,6 +63,7 @@ export function runScoringPass(
   let goldenNotesDelta = 0;
   let hasUpdates = false;
   const pendingEvents: ScoreEvent[] = [];
+  let blindBonusDelta = 0;
 
   // P1 visual tracking — filled during tick evaluation inside the loop
   let activeNoteId: string | undefined;
@@ -80,6 +97,7 @@ export function runScoringPass(
           ticksHit: 0,
           ticksEvaluated: 0,
           isGolden: note.isGolden,
+          isBlindNote: blindState?.isBlindSection ?? false,
           lastEvaluatedTime: currentTime,
           isComplete: false,
           wasPerfect: false,
@@ -187,6 +205,42 @@ export function runScoringPass(
           }
         }
 
+        // Blind karaoke bonus: correctly sung hidden notes give extra points
+        if (progress.isBlindNote && blindState) {
+          if (progress.ticksHit > 0) {
+            // Note was hit — calculate blind bonus
+            const isPerfect = progress.wasPerfect;
+            const bonusResult = calculateBlindBonus(
+              isPerfect,
+              blindState.blindStreakRef.current,
+              blindState.blindLastWasMissRef.current,
+            );
+
+            if (bonusResult.total > 0) {
+              blindBonusDelta += bonusResult.total;
+              scoreDelta += bonusResult.total;
+              progress.accumulatedPoints += bonusResult.total;
+              hasUpdates = true;
+
+              // Emit a separate blind bonus score event for visual feedback
+              pendingEvents.push({
+                displayType: isPerfect ? 'Perfect' : 'Great',
+                points: bonusResult.total,
+                time: noteEnd,
+                isBlindBonus: true,
+              });
+            }
+
+            // Update blind streak tracking
+            blindState.blindStreakRef.current++;
+            blindState.blindLastWasMissRef.current = false;
+          } else if (progress.ticksEvaluated > 0) {
+            // Blind note was missed — reset streak, mark for comeback
+            blindState.blindStreakRef.current = 0;
+            blindState.blindLastWasMissRef.current = true;
+          }
+        }
+
         // Determine aggregated displayType based on hit ratio across all ticks
         const hitRatio = progress.ticksEvaluated > 0
           ? progress.ticksHit / progress.ticksEvaluated
@@ -223,6 +277,7 @@ export function runScoringPass(
     goldenNotesDelta,
     hasUpdates,
     pendingEvents,
+    blindBonusDelta,
     activeNoteId,
     activeNoteIsGolden,
     lastTickAccuracy,

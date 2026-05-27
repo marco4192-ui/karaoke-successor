@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DIFFICULTY_SETTINGS, Note, LyricLine, Player } from '@/types/game';
 import { NoteProgress, ScoringMetadata } from '@/lib/game/scoring';
-import { runScoringPass } from '@/lib/game/run-scoring-pass';
+import { runScoringPass, BlindScoringState } from '@/lib/game/run-scoring-pass';
 import {
   MAX_SAMPLES_PER_NOTE,
   DEFAULT_PLAYER_SCORING_STATE,
@@ -28,6 +28,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     timingData,
     isDuetMode,
     // beatDuration is unused — actual value read from timingData.beatDuration
+    isBlindSection = false,
     updatePlayer,
     challengeModifiers = [],
     onPerfectHit,
@@ -60,7 +61,6 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
 
 
 
-
   // Ref for P1 combo to avoid stale closure when batched updates delay React re-render.
   // Without this, two ticks firing before a re-render both read the same old combo value.
   const p1ComboRef = useRef(0);
@@ -75,6 +75,16 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   const p2ComboRef = useRef(0);
   const p2MaxComboRef = useRef(0);
 
+  // Blind karaoke tracking refs (P1)
+  const p1BlindStreakRef = useRef(0);
+  const p1BlindLastWasMissRef = useRef(false);
+  // Blind karaoke tracking refs (P2)
+  const p2BlindStreakRef = useRef(0);
+  const p2BlindLastWasMissRef = useRef(false);
+
+  // Ref for isBlindSection to avoid stale closure in requestAnimationFrame
+  const isBlindSectionRef = useRef(isBlindSection);
+  useEffect(() => { isBlindSectionRef.current = isBlindSection; }, [isBlindSection]);
 
   // Detected pitches for P2-P4
   const [p2DetectedPitch, setP2DetectedPitch] = useState<number | null>(null);
@@ -115,6 +125,11 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
     lastProcessedNoteP2Ref.current = 0;
     p2ComboRef.current = 0;
     p2MaxComboRef.current = 0;
+    // Reset blind tracking
+    p1BlindStreakRef.current = 0;
+    p1BlindLastWasMissRef.current = false;
+    p2BlindStreakRef.current = 0;
+    p2BlindLastWasMissRef.current = false;
   }, []);
 
   // Generic function to check note hits for any player (P2, P3, P4)
@@ -130,7 +145,8 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       noteProgressMap: React.MutableRefObject<Map<string, NoteProgress>>,
       setPlayerState: React.Dispatch<React.SetStateAction<PlayerScoringState>>,
       setScoreEventsState: React.Dispatch<React.SetStateAction<ScoreEvent[]>>,
-      noteIdPrefix: string
+      noteIdPrefix: string,
+      blindState: BlindScoringState | undefined,
     ) => {
       const difficultySettings = DIFFICULTY_SETTINGS[difficulty];
       if (!song || !pitch.frequency || pitch.note === null || pitch.volume < difficultySettings.volumeThreshold) return;
@@ -148,7 +164,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
       const result = runScoringPass(
         currentTime, pitch.note!, notesToCheck, scoringMeta, beatDurationMs, difficulty,
         noteProgressMap.current, searchStartRef, noteIdPrefix,
-        hasPerfectOnly, hasGoldenOnly, comboRef, maxComboRef,
+        hasPerfectOnly, hasGoldenOnly, comboRef, maxComboRef, blindState,
       );
 
       // Record performance samples for visual display modes (same pattern as P1)
@@ -191,6 +207,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
           if (result.notesMissedDelta > 0) next.notesMissed = prev.notesMissed + result.notesMissedDelta;
           if (result.perfectNotesDelta > 0) next.perfectNotesCount = prev.perfectNotesCount + result.perfectNotesDelta;
           if (result.goldenNotesDelta > 0) next.goldenNotesHit = (prev.goldenNotesHit || 0) + result.goldenNotesDelta;
+          if (result.blindBonusDelta > 0) next.blindBonusPoints = (prev.blindBonusPoints || 0) + result.blindBonusDelta;
           return next;
         });
 
@@ -230,10 +247,19 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
 
       const beatDurationMs = timingData?.beatDuration || 500;
 
+      // Build blind state for P1 if in blind karaoke mode
+      const blindState: BlindScoringState | undefined = isBlindSectionRef.current
+        ? {
+            isBlindSection: isBlindSectionRef.current,
+            blindStreakRef: p1BlindStreakRef,
+            blindLastWasMissRef: p1BlindLastWasMissRef,
+          }
+        : undefined;
+
       const result = runScoringPass(
         currentTime, pitch.note!, notesToCheck, scoringMeta, beatDurationMs, difficulty,
         noteProgressRef.current, lastProcessedNoteRef, 'note',
-        hasPerfectOnly, hasGoldenOnly, p1ComboRef, p1MaxComboRef,
+        hasPerfectOnly, hasGoldenOnly, p1ComboRef, p1MaxComboRef, blindState,
       );
 
       // P1-specific: record note performance samples for visual display modes
@@ -292,6 +318,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         if (result.notesHitDelta > 0) updates.notesHit = activePlayer.notesHit + result.notesHitDelta;
         if (result.notesMissedDelta > 0) updates.notesMissed = activePlayer.notesMissed + result.notesMissedDelta;
         if (result.goldenNotesDelta > 0) updates.goldenNotesHit = (activePlayer.goldenNotesHit || 0) + result.goldenNotesDelta;
+        if (result.blindBonusDelta > 0) updates.blindBonusPoints = (activePlayer.blindBonusPoints || 0) + result.blindBonusDelta;
         // Update live accuracy whenever hit/miss counts change
         if (result.notesHitDelta > 0 || result.notesMissedDelta > 0) {
           const totalNotes = (activePlayer.notesHit + result.notesHitDelta) + (activePlayer.notesMissed + result.notesMissedDelta);
@@ -323,6 +350,16 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
   const checkP2NoteHits = useCallback(
     (currentTime: number, pitch: { frequency: number | null; note: number | null; clarity: number; volume: number; isSinging?: boolean }) => {
       if (!isDuetMode) return;
+
+      // Build blind state for P2
+      const blindState: BlindScoringState | undefined = isBlindSectionRef.current
+        ? {
+            isBlindSection: isBlindSectionRef.current,
+            blindStreakRef: p2BlindStreakRef,
+            blindLastWasMissRef: p2BlindLastWasMissRef,
+          }
+        : undefined;
+
       checkPlayerNoteHits(
         currentTime,
         pitch,
@@ -332,7 +369,8 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         p2NoteProgressRef,
         setP2State,
         setScoreEvents,
-        'p2-note'
+        'p2-note',
+        blindState,
       );
     },
     [isDuetMode, timingData, checkPlayerNoteHits]

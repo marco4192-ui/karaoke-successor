@@ -38,6 +38,8 @@ export interface NoteProgress {
   ticksHit: number;
   ticksEvaluated: number;
   isGolden: boolean;
+  /** Whether this note was in a blind section when it started. */
+  isBlindNote: boolean;
   lastEvaluatedTime: number;
   isComplete: boolean;
   wasPerfect: boolean;

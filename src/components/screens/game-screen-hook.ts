@@ -311,6 +311,7 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     timingData: timingData as any,
     isDuetMode,
     beatDuration,
+    isBlindSection: gameState.isBlindSection,
     updatePlayer,
     challengeModifiers,
     onPerfectHit: emitPerfectHit,
