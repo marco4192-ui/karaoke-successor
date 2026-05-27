@@ -158,7 +158,10 @@ export function getHallOfFame(): HallOfFameEntry[] {
   if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(HOF_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed;
   } catch {
     return [];
   }

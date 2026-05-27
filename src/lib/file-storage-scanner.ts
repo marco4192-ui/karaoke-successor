@@ -395,8 +395,8 @@ function parseLyricsFromTxt(content: string, bpm: number, gap: number): LyricLin
       continue;
     }
 
-    const duetPrefixMatch = line.match(/^(P1|P2):\s*(.*)$/);
-    let noteLine = line;
+    const duetPrefixMatch = trimmedLine.match(/^(P1|P2):\s*(.*)$/);
+    let noteLine = trimmedLine;
     let notePlayer: 'P1' | 'P2' | undefined = currentPlayer;
     if (duetPrefixMatch) {
       notePlayer = duetPrefixMatch[1] as 'P1' | 'P2';

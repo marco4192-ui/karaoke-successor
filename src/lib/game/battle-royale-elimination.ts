@@ -16,6 +16,8 @@ export function endRoundAndEliminate(game: BattleRoyaleGame): BattleRoyaleGame {
     return game;
   }
 
+  if (game.rounds.length === 0) return game;
+
   // Calculate score deltas for this round (#9, #12)
   const roundScoreDeltas: Record<string, number> = {};
   for (const player of game.players) {
@@ -131,7 +133,7 @@ export function endRoundAndEliminate(game: BattleRoyaleGame): BattleRoyaleGame {
       bountyClaimedById,
     };
 
-    return {
+    return updateGameStats({
       ...game,
       rounds: updatedRounds,
       finalWins: updatedFinalWins,
@@ -140,7 +142,7 @@ export function endRoundAndEliminate(game: BattleRoyaleGame): BattleRoyaleGame {
         ...game.gameStats,
         roundHighlights: [...game.gameStats.roundHighlights, roundHighlight],
       },
-    };
+    });
   }
 
   // ---- Normal elimination logic ----
@@ -267,6 +269,10 @@ export function enterGrandFinale(game: BattleRoyaleGame): BattleRoyaleGame {
 
 export function advanceToNextRound(game: BattleRoyaleGame): BattleRoyaleGame {
   if (game.status === 'completed' || game.winner) {
+    return game;
+  }
+
+  if (game.status !== 'elimination' && game.status !== 'grand-finale-intro') {
     return game;
   }
 

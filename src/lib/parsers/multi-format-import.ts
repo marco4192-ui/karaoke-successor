@@ -184,111 +184,120 @@ export function parseMIDIKaraoke(arrayBuffer: ArrayBuffer): MIDIKaraokeData | nu
 
     let offset = 14;
     for (let t = 0; t < numTracks; t++) {
-      const trackHeader = String.fromCharCode(view.getUint8(offset), view.getUint8(offset + 1), view.getUint8(offset + 2), view.getUint8(offset + 3));
-      if (trackHeader !== 'MTrk') break;
+      // Bounds check before reading track header (4 bytes) + length (4 bytes)
+      if (offset + 8 > arrayBuffer.byteLength) break;
 
-      const trackLength = view.getUint32(offset + 4, false);
-      offset += 8;
+      let trackEnd = offset; // default: skip to current position if parsing fails before trackEnd is set
+      try {
+        const trackHeader = String.fromCharCode(view.getUint8(offset), view.getUint8(offset + 1), view.getUint8(offset + 2), view.getUint8(offset + 3));
+        if (trackHeader !== 'MTrk') break;
 
-      const events: MIDIKaraokeData['tracks'][0]['events'] = [];
-      const trackEnd = offset + trackLength;
-      let absoluteTick = 0;
-      let runningStatus = 0;
+        const trackLength = view.getUint32(offset + 4, false);
+        offset += 8;
 
-      while (offset < trackEnd) {
-        // Variable-length delta time
-        let delta = 0;
-        let byte: number;
-        do {
-          byte = view.getUint8(offset++);
-          delta = (delta << 7) | (byte & 0x7f);
-        } while (byte & 0x80);
+        const events: MIDIKaraokeData['tracks'][0]['events'] = [];
+        trackEnd = offset + trackLength;
+        let absoluteTick = 0;
+        let runningStatus = 0;
 
-        absoluteTick += delta;
-
-        let eventType = view.getUint8(offset++);
-
-        // Running Status handling
-        if (eventType < 0x80) {
-          if (runningStatus === 0) break; // malformed data — no valid running status yet
-          offset--;
-          eventType = runningStatus;
-        } else if (eventType >= 0x80 && eventType < 0xf0) {
-          runningStatus = eventType;
-        }
-
-        if (eventType === 0xff) {
-          // Meta event
-          const metaType = view.getUint8(offset++);
-          // Decode VLQ (Variable-Length Quantity) for meta event length
-          let length = 0;
+        while (offset < trackEnd) {
+          // Variable-length delta time
+          let delta = 0;
+          let byte: number;
           do {
             byte = view.getUint8(offset++);
-            length = (length << 7) | (byte & 0x7f);
-          } while (byte & 0x80 && offset < trackEnd);
+            delta = (delta << 7) | (byte & 0x7f);
+          } while (byte & 0x80);
 
-          if (metaType === 0x01 || metaType === 0x05) {
-            // Text / Lyrics meta event
-            const textBytes = Array.from({ length }, (_, i) => view.getUint8(offset + i));
-            const text = new TextDecoder('latin1').decode(new Uint8Array(textBytes));
-            rawLyrics.push({ tick: absoluteTick, text: text.replace(/[\r\n]/g, ' ').trim() });
-          } else if (metaType === 0x51) {
-            // Tempo
-            const microseconds = (view.getUint8(offset) << 16) | (view.getUint8(offset + 1) << 8) | view.getUint8(offset + 2);
-            tempo = 60000000 / microseconds;
-            tempoMap.push({ tick: absoluteTick, microsPerBeat: microseconds });
-          } else if (metaType === 0x03) {
-            // Track name
-            const textBytes = Array.from({ length }, (_, i) => view.getUint8(offset + i));
-            const name = new TextDecoder('latin1').decode(new Uint8Array(textBytes));
-            tracks[t] = { ...tracks[t], name };
+          absoluteTick += delta;
+
+          let eventType = view.getUint8(offset++);
+
+          // Running Status handling
+          if (eventType < 0x80) {
+            if (runningStatus === 0) break; // malformed data — no valid running status yet
+            offset--;
+            eventType = runningStatus;
+          } else if (eventType >= 0x80 && eventType < 0xf0) {
+            runningStatus = eventType;
           }
 
-          offset += length;
-        } else if (eventType === 0xf0 || eventType === 0xf7) {
-          // SysEx
-          do { byte = view.getUint8(offset++); } while (byte !== 0xf7 && offset < trackEnd);
-        } else {
-          // Channel message
-          const channel = eventType & 0x0f;
-          const status = eventType & 0xf0;
+          if (eventType === 0xff) {
+            // Meta event
+            const metaType = view.getUint8(offset++);
+            // Decode VLQ (Variable-Length Quantity) for meta event length
+            let length = 0;
+            do {
+              byte = view.getUint8(offset++);
+              length = (length << 7) | (byte & 0x7f);
+            } while (byte & 0x80 && offset < trackEnd);
 
-          switch (status) {
-            case 0x80: { // Note Off
-              const note = view.getUint8(offset++);
-              view.getUint8(offset++); // velocity
-              const noteKey = `${channel}-${note}`;
-              const activeNote = activeNotes.get(noteKey);
-              if (activeNote) {
-                rawNotes.push({ tick: activeNote.startTick, duration: absoluteTick - activeNote.startTick, pitch: note, velocity: activeNote.velocity });
-                activeNotes.delete(noteKey);
-              }
-              break;
+            if (metaType === 0x01 || metaType === 0x05) {
+              // Text / Lyrics meta event
+              const textBytes = Array.from({ length }, (_, i) => view.getUint8(offset + i));
+              const text = new TextDecoder('latin1').decode(new Uint8Array(textBytes));
+              rawLyrics.push({ tick: absoluteTick, text: text.replace(/[\r\n]/g, ' ').trim() });
+            } else if (metaType === 0x51) {
+              // Tempo
+              const microseconds = (view.getUint8(offset) << 16) | (view.getUint8(offset + 1) << 8) | view.getUint8(offset + 2);
+              tempo = 60000000 / microseconds;
+              tempoMap.push({ tick: absoluteTick, microsPerBeat: microseconds });
+            } else if (metaType === 0x03) {
+              // Track name
+              const textBytes = Array.from({ length }, (_, i) => view.getUint8(offset + i));
+              const name = new TextDecoder('latin1').decode(new Uint8Array(textBytes));
+              tracks[t] = { ...tracks[t], name };
             }
-            case 0x90: { // Note On
-              const note = view.getUint8(offset++);
-              const velocity = view.getUint8(offset++);
-              const noteKey = `${channel}-${note}`;
-              if (velocity === 0) {
+
+            offset += length;
+          } else if (eventType === 0xf0 || eventType === 0xf7) {
+            // SysEx
+            do { byte = view.getUint8(offset++); } while (byte !== 0xf7 && offset < trackEnd);
+          } else {
+            // Channel message
+            const channel = eventType & 0x0f;
+            const status = eventType & 0xf0;
+
+            switch (status) {
+              case 0x80: { // Note Off
+                const note = view.getUint8(offset++);
+                view.getUint8(offset++); // velocity
+                const noteKey = `${channel}-${note}`;
                 const activeNote = activeNotes.get(noteKey);
                 if (activeNote) {
                   rawNotes.push({ tick: activeNote.startTick, duration: absoluteTick - activeNote.startTick, pitch: note, velocity: activeNote.velocity });
                   activeNotes.delete(noteKey);
                 }
-              } else {
-                activeNotes.set(noteKey, { startTick: absoluteTick, pitch: note, velocity });
+                break;
               }
-              break;
+              case 0x90: { // Note On
+                const note = view.getUint8(offset++);
+                const velocity = view.getUint8(offset++);
+                const noteKey = `${channel}-${note}`;
+                if (velocity === 0) {
+                  const activeNote = activeNotes.get(noteKey);
+                  if (activeNote) {
+                    rawNotes.push({ tick: activeNote.startTick, duration: absoluteTick - activeNote.startTick, pitch: note, velocity: activeNote.velocity });
+                    activeNotes.delete(noteKey);
+                  }
+                } else {
+                  activeNotes.set(noteKey, { startTick: absoluteTick, pitch: note, velocity });
+                }
+                break;
+              }
+              case 0xa0: case 0xb0: offset += 2; break;
+              case 0xc0: case 0xd0: offset += 1; break;
+              case 0xe0: offset += 2; break;
+              default: break;
             }
-            case 0xa0: case 0xb0: offset += 2; break;
-            case 0xc0: case 0xd0: offset += 1; break;
-            case 0xe0: offset += 2; break;
-            default: break;
           }
         }
-      }
 
-      tracks.push({ name: tracks[t]?.name || `Track ${t + 1}`, events });
+        tracks.push({ name: tracks[t]?.name || `Track ${t + 1}`, events });
+      } catch {
+        // Malformed track data — skip this track and continue with next
+        offset = trackEnd;
+      }
     }
 
     // Convert tick positions to milliseconds using the tempo map.

@@ -187,6 +187,11 @@ export function evaluateTick(
   targetNote: number,
   difficulty: Difficulty
 ): TickEvaluation {
+  // Guard against NaN/Infinity pitch values — treat as a miss
+  if (!Number.isFinite(sungNote)) {
+    return { accuracy: 0, isHit: false, displayType: 'Miss' };
+  }
+
   const settings = DIFFICULTY_SETTINGS[difficulty];
   const relativeDiff = getRelativePitchDiff(sungNote, targetNote);
   const effectiveTolerance = settings.pitchTolerance;

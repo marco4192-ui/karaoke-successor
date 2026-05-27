@@ -62,7 +62,7 @@ export async function convertScannedSongToSong(scanned: ScannedSong): Promise<So
   } : undefined;
 
   // Generate song ID
-  const songId = `scanned-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+  const songId = `scanned-${crypto.randomUUID()}`;
 
   // =====================================================
   // STORAGE STRATEGY FOR TAURI WITH LARGE LIBRARIES:

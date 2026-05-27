@@ -345,7 +345,7 @@ export function convertUltraStarToSong(
   }
 
   return {
-    id: `imported-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+    id: `imported-${crypto.randomUUID()}`,
     title: ultraStar.title,
     artist: ultraStar.artist,
     album: ultraStar.edition,

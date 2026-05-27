@@ -66,8 +66,10 @@ export function convertNotesToLyricLines(
 
   // Duet mode: build separate lines for P1 and P2, then merge into one array.
   // Each player's lines contain only their own text, preventing duplication.
+  // Notes without explicit player assignment go to P1 (first player).
+  // 'both' notes are assigned to P1 only to prevent duplicate lyric lines.
   const p1Notes = notes.filter(n => n.player === 'P1' || n.player === 'both' || !n.player);
-  const p2Notes = notes.filter(n => n.player === 'P2' || n.player === 'both' || !n.player);
+  const p2Notes = notes.filter(n => n.player === 'P2');
 
   const p1Lines = buildLinesFromNotes(p1Notes, lineBreakBeats, beatDuration, MIDI_BASE_OFFSET, gap, 'P1');
   const p2Lines = buildLinesFromNotes(p2Notes, lineBreakBeats, beatDuration, MIDI_BASE_OFFSET, gap, 'P2');

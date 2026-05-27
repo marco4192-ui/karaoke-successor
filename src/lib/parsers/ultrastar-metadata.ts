@@ -40,9 +40,11 @@ export function parseUltraStarMetadata(content: string): {
     } else if (trimmed.startsWith('#GAP:')) {
       gap = parseInt(trimmed.substring(5)) || 0;
     } else if (trimmed.startsWith('#PREVIEWSTART:')) {
-      previewStart = parseFloat(trimmed.substring(13)) || undefined;
+      const parsedPreviewStart = parseFloat(trimmed.substring(13));
+      previewStart = isNaN(parsedPreviewStart) ? undefined : parsedPreviewStart;
     } else if (trimmed.startsWith('#PREVIEWDURATION:')) {
-      previewDuration = parseFloat(trimmed.substring(16)) || undefined;
+      const parsedPreviewDuration = parseFloat(trimmed.substring(16));
+      previewDuration = isNaN(parsedPreviewDuration) ? undefined : parsedPreviewDuration;
     } else if (trimmed.startsWith('#GENRE:')) {
       genre = trimmed.substring(7).trim();
     } else if (trimmed.startsWith('#LANGUAGE:')) {

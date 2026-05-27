@@ -47,7 +47,7 @@ export function generateGameResults(params: GenerateResultsParams): GameResult |
   } = params;
 
   const activePlayer = players[0];
-  if (!activePlayer || !song) return null;
+  if (!activePlayer || !song || !song.lyrics) return null;
 
   // Count total notes for each player.
   // In duet mode with P1/P2 assignment, each player only sings their assigned

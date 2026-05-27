@@ -356,6 +356,7 @@ export function advanceToNextSnippet(game: BattleRoyaleGame): BattleRoyaleGame {
 
 /** Calculate snippet duration from total round duration and number of snippets */
 export function calculateSnippetDuration(totalDuration: number, snippetCount: number): number {
+  if (snippetCount <= 0) return totalDuration;
   return Math.floor(totalDuration / snippetCount);
 }
 
@@ -367,6 +368,8 @@ export function startRound(
   songName: string,
   medleySnippets?: Array<{ songId: string; songName: string }>
 ): BattleRoyaleGame {
+  if (game.status !== 'setup') return game;
+
   const activePlayers = getActivePlayers(game);
   if (activePlayers.length < 2) return game;
 
@@ -413,12 +416,6 @@ export function startRound(
   // Calculate bounty target (#6)
   const bountyPlayerId = calculateBountyTarget(game);
 
-  // Snapshot current scores for trend tracking (#9)
-  const previousRoundScores: Record<string, number> = {};
-  for (const player of game.players) {
-    previousRoundScores[player.id] = player.score;
-  }
-
   // For grand finale rounds, reset active players' scores for fair per-round comparison
   const resetScores = isGrandFinaleRound;
   const updatedPlayers = game.players.map(p => {
@@ -433,6 +430,14 @@ export function startRound(
     }
     return p;
   });
+
+  // Snapshot current scores for trend tracking (#9)
+  // IMPORTANT: Snapshot AFTER score reset so deltas reflect round earnings, not accumulated totals.
+  // In grand finale rounds, scores are reset to 0, so prevScore=0 and delta = roundScore.
+  const previousRoundScores: Record<string, number> = {};
+  for (const player of updatedPlayers) {
+    previousRoundScores[player.id] = player.score;
+  }
 
   // Track the played song for no-repeat protection (#3)
   const updatedRecentSongs = addToRecentPlays(game, songId);
