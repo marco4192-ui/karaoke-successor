@@ -130,7 +130,11 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
     };
   }, [currentLine]);
 
-  if (!currentLine) return null;
+  // ── IMPORTANT: All hooks MUST be called before the early return below. ──
+  // Moving any hook after `if (!currentLine) return null` violates the
+  // Rules of Hooks (React error #310) because the hook count would differ
+  // between renders where currentLine is null vs non-null.
+  // DO NOT move the useMemo calls below after the early return.
 
   // Check if preview should be entirely hidden (blind mode only)
   const shouldHidePreview = useMemo(() => {
@@ -173,6 +177,8 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
     // Default: show full preview text
     return nextLine.notes.map(n => n.lyric).join('');
   }, [nextLine, gameMode, missingWordsIndices]);
+
+  if (!currentLine) return null;
 
   // Calculate flying animation progress (0 = start, 1 = arrived at first note)
   const flyProgress = isFlying ? Math.max(0, Math.min(1, 1 - (timeUntilSing / previewTime))) : 0;
