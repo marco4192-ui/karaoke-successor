@@ -220,6 +220,8 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
             isBlindSection={g.gameState.isBlindSection}
             gameMode={g.gameState.gameMode}
             isBlindHardcore={g.gameState.blindHardcore}
+            missingWordsIndices={g.gameState.missingWordsIndices}
+            hardcoreMissingWords={g.gameState.hardcoreMissingWords}
           />
         ) : g.isDuetMode ? (
           <DuetNoteHighway
@@ -265,8 +267,6 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
             visibleTop={VISIBLE_TOP}
             visibleRange={VISIBLE_RANGE}
             isBlindSection={g.gameState.isBlindSection}
-            missingWordsIndices={g.gameState.missingWordsIndices}
-            gameMode={g.gameState.gameMode}
           />
         )}
 

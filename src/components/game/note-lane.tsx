@@ -43,10 +43,14 @@ interface NoteLaneProps {
   windowHeight?: number;
   /** Blind mode: hide notes when in a blind section */
   isBlindSection?: boolean;
-  /** Game mode (needed for blind detection) */
+  /** Game mode (needed for blind/missing-words detection) */
   gameMode?: string;
   /** Hardcore blind mode: hide text when notes are visible */
   isBlindHardcore?: boolean;
+  /** Missing words indices for missing-words mode */
+  missingWordsIndices?: number[];
+  /** Hardcore missing words mode */
+  hardcoreMissingWords?: boolean;
 }
 
 // ===================== SUB-COMPONENTS =====================
@@ -163,22 +167,50 @@ const PitchIndicator = React.memo(function PitchIndicator({ pitchY, windowHeight
 /**
  * Current lyrics display at the bottom
  */
-interface CurrentLyricsProps {
+const CurrentLyrics = React.memo(function CurrentLyrics({
+  currentLine,
+  isBlindHardcore,
+  gameMode,
+  missingWordsIndices,
+  hardcoreMissingWords,
+}: {
   currentLine: LyricLine | null;
-}
-
-const CurrentLyrics = React.memo(function CurrentLyrics({ currentLine, isBlindHardcore }: CurrentLyricsProps & { isBlindHardcore?: boolean }) {
+  isBlindHardcore?: boolean;
+  gameMode?: string;
+  missingWordsIndices?: number[];
+  hardcoreMissingWords?: boolean;
+}) {
   if (!currentLine) return null;
 
-  // Hardcore blind mode: hide text when notes are visible
-  const displayText = isBlindHardcore
-    ? currentLine.text.replace(/[^-\s]/g, '_')
-    : currentLine.text;
+  // Missing-words mode: replace hidden words with underscores
+  const isMissingWords = gameMode === 'missing-words' && missingWordsIndices && missingWordsIndices.length > 0;
+  const isHardcoreMW = isMissingWords && hardcoreMissingWords;
+  // Entire line is a hidden passage → show fully blanked
+  const isLineHidden = isMissingWords && missingWordsIndices!.includes(currentLine.startTime);
+
+  let displayText: string;
+  if (isLineHidden) {
+    // Full passage hidden — replace all visible chars with underscores
+    displayText = currentLine.text.replace(/[^-\s]/g, '_');
+  } else if (isMissingWords) {
+    // Individual words hidden — replace only matching notes
+    displayText = currentLine.notes.map(n => {
+      if (missingWordsIndices!.includes(n.startTime)) {
+        return n.lyric.replace(/[^-\s]/g, '_');
+      }
+      return n.lyric;
+    }).join('');
+  } else if (isBlindHardcore) {
+    // Hardcore blind mode: hide text when notes are visible
+    displayText = currentLine.text.replace(/[^-\s]/g, '_');
+  } else {
+    displayText = currentLine.text;
+  }
   
   return (
     <div className="absolute bottom-4 left-0 right-0 text-center">
       <div className="inline-block px-6 py-3 bg-black/50 backdrop-blur-sm rounded-xl">
-        <p className={`text-2xl font-bold text-white drop-shadow-lg ${isBlindHardcore ? 'tracking-wider' : ''}`} style={{ whiteSpace: 'pre' }}>
+        <p className={`text-2xl font-bold text-white drop-shadow-lg ${(isBlindHardcore || isHardcoreMW || isLineHidden) ? 'tracking-wider' : ''}`} style={{ whiteSpace: 'pre' }}>
           {displayText}
         </p>
       </div>
@@ -198,6 +230,8 @@ export function NoteLane({
   isBlindSection = false,
   gameMode,
   isBlindHardcore = false,
+  missingWordsIndices,
+  hardcoreMissingWords,
 }: NoteLaneProps) {
   const settings = DIFFICULTY_SETTINGS[difficulty];
 
@@ -352,7 +386,13 @@ export function NoteLane({
       {!isBlindSection && <PitchIndicator pitchY={currentPitchY} windowHeight={windowHeight} />}
 
       {/* Current lyrics display (hardcore blind: text hidden when notes visible) */}
-      <CurrentLyrics currentLine={currentLine} isBlindHardcore={gameMode === 'blind' && isBlindHardcore && !isBlindSection} />
+      <CurrentLyrics
+        currentLine={currentLine}
+        isBlindHardcore={gameMode === 'blind' && isBlindHardcore && !isBlindSection}
+        gameMode={gameMode}
+        missingWordsIndices={missingWordsIndices}
+        hardcoreMissingWords={hardcoreMissingWords}
+      />
     </div>
   );
 }

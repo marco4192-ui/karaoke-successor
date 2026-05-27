@@ -61,8 +61,6 @@ export interface NoteHighwayProps {
   className?: string;
   /** Blind mode: hide notes when in a blind section */
   isBlindSection?: boolean;
-  missingWordsIndices?: number[];
-  gameMode?: string;
 }
 
 // ===================== SUB-COMPONENTS =====================
@@ -209,8 +207,7 @@ const NoteBlock = React.memo(function NoteBlock({
 
   return (
     <div
-      key={note.id || `note-${note.startTime}`}
-      className={`absolute ${noteShape.baseClass} ${displayStyle.additionalClasses} ${isActive ? noteShape.activeClass : ''} ${isPast ? (accuracy > 0.3 ? 'opacity-80' : 'opacity-30') : ''}`}
+      className={`absolute ${noteShape.baseClass} ${displayStyle.additionalClasses} ${isActive ? noteShape.activeClass : ''}`}
       style={{
         left: `${x}%`,
         top: `${pitchY}%`,
@@ -314,8 +311,6 @@ export const NoteHighway = React.memo(function NoteHighway({
   visibleRange = 77,
   className = '',
   isBlindSection = false,
-  missingWordsIndices = [],
-  gameMode,
 }: NoteHighwayProps) {
   const { t } = useTranslation();
 

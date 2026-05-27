@@ -95,9 +95,9 @@ const CenterScoreBar = React.memo(function CenterScoreBar({
   const resolvedP1Name = p1Name || t('prominentScore.player1');
   const resolvedP2Name = p2Name || t('prominentScore.player2');
 
-  const p1Avatar = (p1State as Player)?.avatar;
+  const p1Avatar = p1State.avatar;
   const p2Avatar = p2Player?.avatar;
-  const p1Color = (p1State as Player)?.color || '#22d3ee';
+  const p1Color = p1State.color || '#22d3ee';
   const p2Color = p2Player?.color || '#ec4899';
 
   return (
@@ -337,8 +337,6 @@ export function DuetNoteHighway({
           visibleTop={HALF_VISIBLE_TOP}
           visibleRange={HALF_VISIBLE_RANGE}
           isBlindSection={isBlindSection}
-          missingWordsIndices={missingWordsIndices}
-          gameMode={gameMode}
         />
 
         {/* P1 Lyrics Display */}
@@ -378,8 +376,6 @@ export function DuetNoteHighway({
           visibleTop={HALF_VISIBLE_TOP}
           visibleRange={HALF_VISIBLE_RANGE}
           isBlindSection={isBlindSection}
-          missingWordsIndices={missingWordsIndices}
-          gameMode={gameMode}
         />
 
         {/* P2 Lyrics Display */}
