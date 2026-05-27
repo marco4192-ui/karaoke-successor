@@ -836,15 +836,11 @@ export function useMedleyGame({
     setFinalFaceOff(false);
     setCurrentTimeMs(0);
 
-    // Initialize multi-pitch detection IN PARALLEL with countdown.
-    try {
-      const ok = await multiPitch.initialize();
-      if (ok) multiPitch.start();
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.warn('[Medley] Multi-pitch init failed:', e);
-    }
-
+    // IMPORTANT: Start the countdown interval BEFORE awaiting pitch initialization.
+    // multiPitch.initialize() may block indefinitely (e.g. no mic permission, getUserMedia hangs).
+    // If we await first, the countdown never begins and the UI freezes on "countdown" phase.
+    // By starting the interval synchronously here, the countdown runs truly in parallel
+    // with pitch init, ensuring the game proceeds even if audio setup fails.
     const interval = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
@@ -868,6 +864,16 @@ export function useMedleyGame({
       });
     }, 1000);
     countdownIntervalRef.current = interval;
+
+    // Initialize multi-pitch detection IN PARALLEL with countdown (non-blocking).
+    // Even if this fails or hangs, the countdown above is already ticking.
+    try {
+      const ok = await multiPitch.initialize();
+      if (ok) multiPitch.start();
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('[Medley] Multi-pitch init failed:', e);
+    }
   }, [multiPitch]);
 
   // ── Feature #18: Compute MVP (delegates to pure function) ──

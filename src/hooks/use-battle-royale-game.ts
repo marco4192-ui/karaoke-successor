@@ -307,9 +307,19 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   });
 
   // ── Game Initialization & Playback ─────────────────────────────────
+  // Track which round last triggered a fade-in so we can skip the fade on
+  // snippet transitions within the same round (Bug #3: audible volume dips).
+  const lastFadeInRoundRef = useRef<number>(-1);
+
   useEffect(() => {
     if (game.status === 'playing' && mediaLoaded && currentSong) {
       let cancelled = false;
+      const currentRoundNum = game.currentRound;
+      const isNewRound = currentRoundNum !== lastFadeInRoundRef.current;
+      // IMPORTANT: Don't fade in during snippet transitions within the same round.
+      // Only fade in when a new round starts — snippet transitions should be seamless.
+      // Do NOT remove this check — fading on every snippet causes audible volume dips.
+
       const initGame = async () => {
         // Initialize multi-pitch detector (one per local mic player)
         const ok = await multiPitch.initialize();
@@ -331,34 +341,42 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
             if (cancelled || !audio) return;
             const elapsed = now - fadeStart;
             const progress = Math.min(elapsed / FADE_DURATION, 1);
-            audio.volume = progress;
+            audio.volume = Math.max(0, Math.min(1, progress));
             if (progress < 1) requestAnimationFrame(fadeIn);
           };
           requestAnimationFrame(fadeIn);
         };
 
-        if (audio && resolvedAudioUrlRef.current) {
+        const startPlayback = (onReady: () => void) => {
+          if (!audio || !resolvedAudioUrlRef.current) return;
           if (audio.readyState >= 3) {
-            if (!cancelled && !pausedRef.current) {
-              fadeInAudio();
-              audio.play()
-              .then(() => { audioHasPlayedRef.current = true; })
-              // eslint-disable-next-line no-console
-              .catch(e => console.error('Audio play error:', e));
-            }
+            onReady();
           } else {
             const onCanPlay = () => {
               audio.removeEventListener('canplay', onCanPlay);
-              if (!cancelled && !pausedRef.current) {
-                fadeInAudio();
-                audio.play()
-                  .then(() => { audioHasPlayedRef.current = true; })
-                  // eslint-disable-next-line no-console
-                  .catch(e => console.error('Audio play error:', e));
-              }
+              onReady();
             };
             audio.addEventListener('canplay', onCanPlay);
           }
+        };
+
+        if (audio && resolvedAudioUrlRef.current) {
+          startPlayback(() => {
+            if (cancelled || pausedRef.current) return;
+            if (isNewRound) {
+              // New round: smooth 800ms fade-in from silence
+              fadeInAudio();
+              lastFadeInRoundRef.current = currentRoundNum;
+            } else {
+              // Snippet transition within same round: set volume to full immediately
+              // so there's no audible dip between snippets.
+              audio.volume = 1;
+            }
+            audio.play()
+              .then(() => { audioHasPlayedRef.current = true; })
+              // eslint-disable-next-line no-console
+              .catch(e => console.error('Audio play error:', e));
+          });
         } else {
           // eslint-disable-next-line no-console
           console.warn('[BattleRoyale] No audio URL resolved');

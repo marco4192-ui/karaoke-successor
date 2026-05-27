@@ -12,6 +12,21 @@ import {
   COVER_PATTERNS,
 } from '@/lib/file-storage-utils';
 
+/**
+ * Convert a forward-slash path to the OS-native separator on Windows.
+ * IMPORTANT: On Windows, the Tauri Rust backend requires native backslash
+ * separators. The normalizeFilePath function converts everything to forward
+ * slashes for internal consistency, but the Rust resolve_path_candidates /
+ * validate_safe_path functions may fail with forward slashes in certain
+ * edge cases (e.g., folder names with parentheses).
+ * Do NOT remove this conversion — it fixes TauriFS "File not found" errors.
+ */
+function toNativePath(path: string): string {
+  return typeof window !== 'undefined' && navigator.userAgent.includes('Win')
+    ? path.replace(/\//g, '\\')
+    : path;
+}
+
 // In-memory cache for blob URLs to avoid recreating them.
 // Eviction: capped at 2000 entries — oldest entries are removed when full.
 // NOTE: Was 200, but eviction of in-use URLs caused playback failures during
@@ -89,7 +104,8 @@ async function loadFileAsBlobUrl(fullPath: string): Promise<string | null> {
   
   try {
     // Use native command — returns base64-encoded bytes (bypass ACL)
-    const base64Data = await nativeReadFileBytes(fullPath);
+    const osPath = toNativePath(fullPath);
+    const base64Data = await nativeReadFileBytes(osPath);
     
     // Decode base64 to binary
     const binaryString = atob(base64Data);
@@ -153,7 +169,7 @@ async function findFileByScanningParentFolder(
     // Try to list the directory
     let entries: Awaited<ReturnType<typeof nativeReadDir>>;
     try {
-      entries = await nativeReadDir(parentDir);
+      entries = await nativeReadDir(toNativePath(parentDir));
     } catch {
       // Directory itself might not be readable — try with backslashes
       try {
