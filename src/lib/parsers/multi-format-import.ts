@@ -535,7 +535,7 @@ export function convertToSong(
       for (let i = 0; i < ss.notes.length; i++) {
         const note = ss.notes[i];
         if (!currentLine) {
-          currentLine = { id: `line-${lyrics.length}`, text: note.text, startTime: note.startTime, endTime: note.startTime + note.duration, notes: [] };
+          currentLine = { id: `line-${lyrics.length}`, text: '', startTime: note.startTime, endTime: note.startTime + note.duration, notes: [] };
         }
 
         currentLine.notes.push({
@@ -546,7 +546,8 @@ export function convertToSong(
           lyric: note.text, isBonus: false, isGolden: false,
         });
 
-        currentLine.text += ' ' + note.text;
+        if (currentLine.text) currentLine.text += ' ';
+        currentLine.text += note.text;
         currentLine.endTime = note.startTime + note.duration;
 
         const nextNote = ss.notes[i + 1];

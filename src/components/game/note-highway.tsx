@@ -23,9 +23,6 @@ export interface NoteWithLine extends Note {
   line: LyricLine;
 }
 
-// PitchStats is imported from @/lib/game/note-utils (re-exported for backward compatibility)
-export type { PitchStats } from '@/lib/game/note-utils';
-
 export interface NoteHighwayProps {
   /** All visible notes to render */
   visibleNotes: NoteWithLine[];

@@ -24,7 +24,7 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
     songs: medleySongs,
     settings,
     matchups,
-    seriesHistory,
+    _seriesHistory: seriesHistory = [],
     onRoundComplete,
     onEndGame,
   } = props;
@@ -34,7 +34,7 @@ export function MedleyGameScreen(props: MedleyGameScreenProps) {
     songs: medleySongs,
     settings,
     matchups,
-    seriesHistory,
+    _seriesHistory: seriesHistory,
     onRoundComplete,
     onEndGame,
   });

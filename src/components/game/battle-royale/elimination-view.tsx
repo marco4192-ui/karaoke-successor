@@ -113,7 +113,11 @@ export function EliminationView({
               </div>
 
               <p className="text-white/40 text-lg">
-                {t('battleRoyale.roundScore').replace('{n}', String(roundWinner?.score?.toLocaleString() ?? (roundScoreDeltas[roundWinner?.id ?? ''] ?? 0).toLocaleString()))}
+                {(() => {
+                  const displayPlayer = roundWinner ?? eliminatedPlayer;
+                  const score = displayPlayer ? (roundScoreDeltas[displayPlayer.id] ?? 0) : 0;
+                  return t('battleRoyale.roundScore').replace('{n}', score.toLocaleString());
+                })()}
               </p>
 
               {eliminatedPlayer?.eliminationRound && (
@@ -158,7 +162,7 @@ export function EliminationView({
                     </div>
                   </div>
                   <span className="text-sm font-semibold text-white/80 truncate max-w-[90px]">{player.name}</span>
-                  <span className="text-xs text-white/50">{player.score?.toLocaleString() ?? 0}</span>
+                  <span className="text-xs text-white/50">{player.score.toLocaleString()}</span>
                   <Badge className="bg-emerald-500/20 text-emerald-400 text-[10px] px-1.5 py-0">
                     {t('battleRoyale.survived')}
                   </Badge>

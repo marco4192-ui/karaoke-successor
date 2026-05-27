@@ -4,7 +4,7 @@ import { useCallback } from 'react';
 import type { Song, GameMode } from '@/types/game';
 import { EMPTY_PLAYER_SCORE } from '@/types/game';
 import { usePartyStore } from '@/lib/game/party-store';
-import type { CptmPlayer, CptmRoundResult, GamePhase } from './cptm-types';
+import type { CptmPlayer, CptmSegment, CptmSettings, CptmRoundResult, GamePhase } from './cptm-types';
 import { sendCompanionTurnSignal } from './cptm-turn-management';
 
 // ===================== HOOK PARAMS =====================
@@ -17,8 +17,8 @@ export interface CptmSeriesParams {
   setCptmSeriesHistory: (h: CptmRoundResult[]) => void;
   setCptmPlayers: (p: CptmPlayer[]) => void;
   setCptmSong: (s: Song | null) => void;
-  setCptmSegments: (s: any[]) => void;
-  setCptmSettings: (s: any | null) => void;
+  setCptmSegments: (s: CptmSegment[]) => void;
+  setCptmSettings: (s: CptmSettings | null) => void;
   cptmSongSelection: string | null;
   setGameMode: (m: GameMode) => void;
   resetGame: () => void;

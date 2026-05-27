@@ -12,8 +12,16 @@ interface VolumeMeterProps {
 }
 
 export function VolumeMeter({ volume }: VolumeMeterProps) {
+  const { t } = useTranslation();
   return (
-    <div className="absolute top-16 right-4 z-20">
+    <div
+      className="absolute top-16 right-4 z-20"
+      role="meter"
+      aria-label={t('gameHud.volumeMeter')}
+      aria-valuenow={Math.round(volume * 100)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+    >
       <div className="w-3 h-24 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm">
         <div
           className="w-full bg-gradient-to-t from-green-500 via-yellow-500 to-red-500 transition-all duration-75"
@@ -144,7 +152,7 @@ export function AdIndicator({ isAdPlaying, adCountdown }: AdIndicatorProps) {
   if (!isAdPlaying) return null;
 
   return (
-    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40">
+    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40" role="alert">
       <div className="bg-black/80 backdrop-blur-sm px-6 py-3 rounded-full border border-yellow-500/50 flex items-center gap-3">
         <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" />
         <span className="text-yellow-400 font-medium">{t('gameHud.adPlaying')}</span>
@@ -171,10 +179,16 @@ interface GameProgressBarProps {
 export function GameProgressBar({ currentTime, duration }: GameProgressBarProps) {
   const safeDuration = duration || 1;
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-20 h-1 bg-white/10">
+    <div
+      className="absolute bottom-0 left-0 right-0 z-20 h-1 bg-white/10"
+      role="progressbar"
+      aria-valuenow={Math.round(Math.max(0, (currentTime / safeDuration) * 100))}
+      aria-valuemin={0}
+      aria-valuemax={100}
+    >
       <div
         className="h-full bg-gradient-to-r from-cyan-500 to-purple-500"
-        style={{ width: `${(currentTime / safeDuration) * 100}%` }}
+        style={{ width: `${Math.max(0, (currentTime / safeDuration) * 100)}%` }}
       />
     </div>
   );

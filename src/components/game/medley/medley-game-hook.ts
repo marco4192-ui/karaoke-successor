@@ -47,8 +47,8 @@ export interface MedleyGameScreenProps {
   songs: MedleySong[];
   settings: MedleySettings;
   matchups: SnippetMatchup[];
-  /** Cumulative series history (from previous rounds) */
-  seriesHistory: MedleyRoundResult[];
+  /** @deprecated Pass for forward-compat; currently unused by hook */
+  _seriesHistory?: MedleyRoundResult[];
   onRoundComplete: (_result: MedleyRoundResult, _updatedPlayers: MedleyPlayer[]) => void;
   onEndGame: () => void;
 }
@@ -535,7 +535,7 @@ export function useMedleyGame({
     const pIdx = playersRef.current.findIndex(p => p.id === result.toEliminateId);
     if (pIdx !== -1) {
       playersRef.current[pIdx] = { ...playersRef.current[pIdx], isEliminated: true };
-      eliminationOrderRef.current = [...eliminationOrderRef.current, result.toEliminateId!];
+      eliminationOrderRef.current = [...eliminationOrderRef.current, result.toEliminateId];
       setEliminationOrder([...eliminationOrderRef.current]);
     }
 

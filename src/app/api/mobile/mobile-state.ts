@@ -316,6 +316,14 @@ export function cleanupInactiveClients() {
     if (item.status !== 'completed') return true;
     return (now - item.addedAt) < (10 * 60 * 1000);
   });
+
+  // Clean up stale failed PIN attempts
+  const staleNow = Date.now();
+  for (const [ip, attempts] of failedPinAttempts) {
+    if (attempts.every(t => staleNow - t > PIN_BLOCK_DURATION_MS)) {
+      failedPinAttempts.delete(ip);
+    }
+  }
 }
 
 // ===================== HELPER =====================

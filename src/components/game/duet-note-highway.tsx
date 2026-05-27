@@ -2,9 +2,9 @@
 
 import React, { useMemo } from 'react';
 import { LyricLine, Player, type GameMode } from '@/types/game';
-import { NoteHighway, NoteWithLine, PitchStats } from './note-highway';
+import { NoteHighway, NoteWithLine } from './note-highway';
 import { LyricLineDisplay } from './lyric-line-display';
-import { NoteShapeStyle, NoteDisplayStyle } from '@/lib/game/note-utils';
+import { NoteShapeStyle, NoteDisplayStyle, type PitchStats } from '@/lib/game/note-utils';
 import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== TYPES =====================
@@ -289,7 +289,7 @@ const HALF_VISIBLE_RANGE = 42;
 
 // ===================== MAIN COMPONENT =====================
 
-export function DuetNoteHighway({
+export const DuetNoteHighway = React.memo(function DuetNoteHighway({
   p1VisibleNotes,
   p2VisibleNotes,
   p1PitchStats,
@@ -394,6 +394,6 @@ export function DuetNoteHighway({
       </div>
     </div>
   );
-}
+});
 
 export default DuetNoteHighway;

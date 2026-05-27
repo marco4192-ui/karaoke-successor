@@ -8,7 +8,7 @@ import { useGameMedia } from '@/hooks/use-game-media';
 import { useGameSettings } from '@/hooks/use-game-settings';
 import { useMobileGameSync } from '@/hooks/use-mobile-game-sync';
 import { calculateScoringMetadata } from '@/lib/game/scoring';
-import { calculatePitchStats, PitchStats, getVisibleNotes, NOTE_WINDOW } from '@/lib/game/note-utils';
+import { getVisibleNotes, NOTE_WINDOW } from '@/lib/game/note-utils';
 import type { CptmPlayer, CptmSegment, CptmSettings, CptmRoundResult, GamePhase } from './cptm-types';
 import { DEFAULT_CPTM_SETTINGS } from './cptm-types';
 
@@ -33,7 +33,6 @@ interface CptmGameHookProps {
   onUpdateGame: (_players: CptmPlayer[], _segments: CptmSegment[]) => void;
   onEndGame: () => void;
   onNavigate?: (_screen: string) => void;
-  onPause?: () => void;
 }
 
 interface CptmGameHookReturn {
@@ -266,7 +265,7 @@ export function useCptmGameLogic({
   // ── Pre-compute note data for highway ──
   const { allNotes, sortedLines, scoringMeta } = useMemo(() => {
     if (!notesSource?.lyrics?.length) {
-      return { allNotes: [], sortedLines: [], pitchStats: { minPitch: 40, maxPitch: 80, pitchRange: 40 } as PitchStats, scoringMeta: null };
+      return { allNotes: [], sortedLines: [], scoringMeta: null };
     }
 
     const notes: Array<Note & { lineIndex: number; line: LyricLine }> = [];
@@ -280,10 +279,9 @@ export function useCptmGameLogic({
     notes.sort((a, b) => a.startTime - b.startTime);
 
     const bd = notesSource.bpm ? 15000 / notesSource.bpm : 500;
-    const ps = calculatePitchStats(notes);
     const meta = calculateScoringMetadata(notes, bd);
 
-    return { allNotes: notes, sortedLines: lines, pitchStats: ps, scoringMeta: meta };
+    return { allNotes: notes, sortedLines: lines, scoringMeta: meta };
   }, [notesSource]);
 
   const visibleNotes = useMemo(

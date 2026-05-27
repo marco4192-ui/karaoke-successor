@@ -1178,8 +1178,10 @@ export function updateQuestProgress(checkField: keyof PlayerQuestStats, amount: 
   const questStats = getPlayerQuestStats();
   const newValue = questStats[checkField] + amount;
 
-  // Persist the updated field back to storage (reuse the value already read by getPlayerQuestStats)
-  const stored = getJson<StoredQuestStats>(QUEST_STATS_KEY, DEFAULT_QUEST_STATS);
+  // Use questStats directly — avoid a redundant second read that could race with a daily/weekly reset
+  const today = todayISO();
+  const weekStart = getMondayISO(new Date());
+  const stored: StoredQuestStats = { ...DEFAULT_QUEST_STATS, ...questStats, _lastDailyReset: today, _lastWeeklyReset: weekStart };
   stored[checkField] = newValue;
   setJson(QUEST_STATS_KEY, stored);
 

@@ -64,6 +64,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
   const [gameState, setGameState] = useState<GameState>(INITIAL_GAME_STATE);
 
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isConnectingRef = useRef(false); // True while a connect attempt is in progress
   const gameStateRef = useRef(gameState);
   gameStateRef.current = gameState;
@@ -244,7 +245,8 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
       // If too many missed heartbeats, try reconnecting
       if (missedHeartbeats >= MAX_MISSED) {
         setIsConnected(false);
-        setTimeout(() => {
+        if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = setTimeout(() => {
           if (isConnectedRef.current === false) {
             reconnectInternal(true).catch(() => {});
           }
@@ -259,6 +261,7 @@ export function useMobileConnection(callbacks: UseMobileConnectionCallbacks) {
       if (heartbeatIntervalRef.current) {
         clearInterval(heartbeatIntervalRef.current);
       }
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
     };
   }, [isConnected, clientId, reconnectInternal]);
 

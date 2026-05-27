@@ -166,11 +166,12 @@ export function updateStatsFromResults(stats: UserStats, results: GameResults): 
   updated.differentGenres = updated.genres.length;
 
   // Streak tracking
-  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   if (updated.lastPlayDate) {
     const last = new Date(updated.lastPlayDate + 'T00:00:00');
-    const now = new Date(today + 'T00:00:00');
-    const diffDays = Math.round((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
+    const todayDate = new Date(today + 'T00:00:00');
+    const diffDays = Math.round((todayDate.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
     if (diffDays === 1) {
       // Consecutive day
       updated.longestStreak += 1;

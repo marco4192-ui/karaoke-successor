@@ -54,6 +54,9 @@ export function useMobileDragReorder<T>({
       touchCurrentY.current = touch.clientY;
       isLongPressed.current = false;
 
+      // Capture currentTarget synchronously — React nullifies it after handler returns
+      const currentTarget = e.currentTarget as HTMLElement;
+
       longPressTimer.current = setTimeout(() => {
         isLongPressed.current = true;
         setIsDragging(true);
@@ -61,9 +64,8 @@ export function useMobileDragReorder<T>({
         setOverIndex(index);
 
         // Measure item height
-        const target = e.currentTarget as HTMLElement;
-        draggedElRef.current = target;
-        itemHeightRef.current = target.offsetHeight;
+        draggedElRef.current = currentTarget;
+        itemHeightRef.current = currentTarget.offsetHeight;
 
         // Haptic feedback if available
         if (navigator.vibrate) {

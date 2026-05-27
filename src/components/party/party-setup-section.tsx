@@ -20,7 +20,7 @@ import { generatePtmSegments } from '@/lib/game/ptm-segments';
 import { toast } from '@/hooks/use-toast';
 import type { PassTheMicSettings } from '@/components/game/ptm-types';
 import type { CompanionSingAlongSettings } from '@/components/game/companion-singalong-screen';
-import type { CptmPlayer, CptmSegment, CptmSettings } from '@/components/game/cptm-types';
+import type { CptmSettings } from '@/components/game/cptm-types';
 
 interface PartySetupSectionProps {
   screen: Screen;

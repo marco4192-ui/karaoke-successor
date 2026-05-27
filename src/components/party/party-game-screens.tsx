@@ -445,7 +445,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               });
               if (pool.length >= 3) {
                 const shuffled = shuffleArray(pool).slice(0, 3);
-                party.setTournamentVotingSongs(shuffled.slice(0, 3));
+                party.setTournamentVotingSongs(shuffled);
                 party.setTournamentVotingMatch(match);
                 setTournamentVotingActive(true);
               } else if (pool.length > 0) {
@@ -630,6 +630,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
                   setScreen('library');
                 }
               } catch (err) {
+                // eslint-disable-next-line no-console
                 console.error('[CPtM] Failed to prepare next song:', err);
                 toast({ title: t('common.error') || 'Error', description: t('partyGameScreens.nextSongFailedDesc') || 'Could not load next song.', variant: 'destructive' });
                 setScreen('library');
@@ -643,13 +644,10 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
               setScreen(targetScreen as Screen);
             }
           }}
-          onPause={() => {
-            party.setPauseDialogAction('song-pause');
-          }}
         />
       )}
 
-            {/* Medley Contest Setup Screen (redesigned: FFA + Team modes) */}
+      {/* Medley Contest Setup Screen (redesigned: FFA + Team modes) */}
       {screen === 'medley' && (
         <MedleySetupScreen
           profiles={profiles}
@@ -674,7 +672,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
           songs={party.medleySongs}
           settings={party.medleySettings}
           matchups={party.medleyMatches}
-          seriesHistory={party.medleySeriesHistory}
+          _seriesHistory={party.medleySeriesHistory}
           onRoundComplete={(result, updatedPlayers) => {
             party.setMedleyPlayers(updatedPlayers);
             party.setMedleySeriesHistory([...party.medleySeriesHistory, result]);

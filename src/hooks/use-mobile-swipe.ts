@@ -51,6 +51,7 @@ export function useMobileSwipe({
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const isSwiping = useRef(false);
+  const swipeOffsetRef = useRef(0);
 
   const onTouchStart = useCallback((e: React.TouchEvent) => {
     if (disabled) return;
@@ -95,6 +96,7 @@ export function useMobileSwipe({
       offset = Math.min(dx, 0);
     }
 
+    swipeOffsetRef.current = offset;
     setSwipeOffset(offset);
   }, [disabled, threshold]);
 
@@ -106,15 +108,16 @@ export function useMobileSwipe({
       return;
     }
 
-    if (swipeOffset <= -threshold && onSwipeLeft) {
+    if (swipeOffsetRef.current <= -threshold && onSwipeLeft) {
       onSwipeLeft();
-    } else if (swipeOffset >= threshold && onSwipeRight) {
+    } else if (swipeOffsetRef.current >= threshold && onSwipeRight) {
       onSwipeRight();
     }
 
+    swipeOffsetRef.current = 0;
     setSwipeOffset(0);
     isSwiping.current = false;
-  }, [swipeOffset, threshold, onSwipeLeft, onSwipeRight]);
+  }, [threshold, onSwipeLeft, onSwipeRight]);
 
   return {
     swipeOffset,

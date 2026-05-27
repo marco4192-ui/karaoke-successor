@@ -70,6 +70,7 @@ export function clearSongCache(): void {
 export function invalidateSongCache(): void {
   songCache = null;
   songCacheTimestamp = 0;
+  revokeBrowserBlobUrls();
 }
 
 // Get all songs (custom/imported)

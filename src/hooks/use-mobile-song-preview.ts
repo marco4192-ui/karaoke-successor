@@ -29,6 +29,7 @@ export function useMobileSongPreview(options: UseMobileSongPreviewOptions = {}):
   const startTimestampRef = useRef<number>(0);
   const progressRAFRef = useRef<number | null>(null);
   const autoStopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stopPreviewRef = useRef<(() => void) | null>(null);
 
   // Progress animation loop — updates every animation frame for smooth ring
   const updateProgressLoop = useCallback(() => {
@@ -60,7 +61,9 @@ export function useMobileSongPreview(options: UseMobileSongPreviewOptions = {}):
       audioRef.current.pause();
       if (timeUpdateHandlerRef.current) {
         audioRef.current.removeEventListener('timeupdate', timeUpdateHandlerRef.current);
-        audioRef.current.removeEventListener('ended', timeUpdateHandlerRef.current);
+      }
+      if (stopPreviewRef.current) {
+        audioRef.current.removeEventListener('ended', stopPreviewRef.current);
       }
       audioRef.current.removeAttribute('src');
       audioRef.current.load();
@@ -96,6 +99,7 @@ export function useMobileSongPreview(options: UseMobileSongPreviewOptions = {}):
 
     timeUpdateHandlerRef.current = handleTimeUpdate;
     audio.addEventListener('timeupdate', handleTimeUpdate);
+    stopPreviewRef.current = stopPreview;
     audio.addEventListener('ended', stopPreview);
 
     audioRef.current = audio;
@@ -145,7 +149,9 @@ export function useMobileSongPreview(options: UseMobileSongPreviewOptions = {}):
         audioRef.current.pause();
         if (timeUpdateHandlerRef.current) {
           audioRef.current.removeEventListener('timeupdate', timeUpdateHandlerRef.current);
-          audioRef.current.removeEventListener('ended', timeUpdateHandlerRef.current);
+        }
+        if (stopPreviewRef.current) {
+          audioRef.current.removeEventListener('ended', stopPreviewRef.current);
         }
         audioRef.current.removeAttribute('src');
         audioRef.current.load();
