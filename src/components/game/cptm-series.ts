@@ -98,7 +98,7 @@ export function useCptmSeries(params: CptmSeriesParams): CptmSeriesReturn {
     const sel = cptmSongSelection || 'library';
     const targetScreen = sel === 'random' ? 'ptm-next-random'
       : sel === 'vote' ? 'song-voting'
-      : sel === 'medley' ? 'ptm-next-medley'
+      : sel === 'medley' ? 'cptm-next-medley'
       : 'library';
     setTimeout(() => onNavigate?.(targetScreen), 0);
   }, [cptmSongSelection, setCptmPlayers, setCptmSong, setCptmSegments, setGameMode, onNavigate, setIsSongPlaying, lastIsSongPlayingRef, playersRef]);

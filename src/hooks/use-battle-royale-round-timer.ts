@@ -90,25 +90,6 @@ export function useBattleRoyaleRoundTimer({
         });
       }, 1000);
 
-      // Also restore snippet timer
-      if (isMedley && preservedSnippetTimeRef.current !== null) {
-        const restoredSnippetTime = preservedSnippetTimeRef.current;
-        preservedSnippetTimeRef.current = null;
-        const snippetInterval = setInterval(() => {
-          setSnippetTimeLeft(prev => {
-            if (prev === null || prev <= 1) {
-              clearInterval(snippetInterval);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-        return () => {
-          clearInterval(interval);
-          clearInterval(snippetInterval);
-        };
-      }
-
       return () => clearInterval(interval);
     }
 
@@ -156,10 +137,13 @@ export function useBattleRoyaleRoundTimer({
 
     if (!timerStartedRef.current) return;
 
-    // Only set snippet time if it hasn't been restored from pause
-    if (preservedSnippetTimeRef.current !== null) return;
-
-    setSnippetTimeLeft(snippetDuration);
+    // Restore snippet time from pause, or initialize to full duration
+    if (preservedSnippetTimeRef.current !== null) {
+      setSnippetTimeLeft(preservedSnippetTimeRef.current);
+      preservedSnippetTimeRef.current = null;
+    } else {
+      setSnippetTimeLeft(snippetDuration);
+    }
 
     const interval = setInterval(() => {
       setSnippetTimeLeft(prev => {

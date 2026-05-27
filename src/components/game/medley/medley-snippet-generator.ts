@@ -122,9 +122,12 @@ function findBestSnippetStart(
 
     const score = scoreSnippetStart(t, t + snippetMs, notes, song.duration);
 
-    // Bonus if near chorus
-    if (chorusStart >= 0 && Math.abs(t - chorusStart) < snippetMs) {
-      return chorusStart; // Just use the chorus start directly
+    // Bonus if near chorus — score the position higher rather than short-circuiting
+    if (chorusStart >= 0) {
+      const dist = Math.abs(t - chorusStart);
+      if (dist < snippetMs) {
+        score += 0.2 * (1 - dist / snippetMs); // Up to +0.2 bonus
+      }
     }
 
     if (score > bestScore) {

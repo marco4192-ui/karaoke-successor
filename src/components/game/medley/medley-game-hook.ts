@@ -663,6 +663,27 @@ export function useMedleyGame({
             if (fallbackTimer) clearInterval(fallbackTimer);
             fallbackTimer = null;
             setIsPlaying(false);
+
+            // Post-snippet processing (same as normal game loop end path)
+            const activeIds = getActivePlayerIds();
+            activeIds.forEach(id => {
+              const p = playersRef.current.find(p => p.id === id);
+              if (p) p.snippetsSung++;
+            });
+            buildSnippetHighlight(currentSnippetIdx);
+            checkSynergy();
+            finalizeComeback();
+            syncTeamBonusResult();
+            if (isEliminationMode) {
+              eliminateLowestScorer();
+              const remainingAfterElim = playersRef.current.filter(p => !p.isEliminated);
+              if (remainingAfterElim.length <= 1) {
+                setPhase('round-results');
+                return;
+              }
+            }
+            forceRender();
+
             // Move to next snippet or round-results
             if (currentSnippetIdx < medleySongs.length - 1) {
               setPhase('transition');
@@ -939,10 +960,10 @@ export function useMedleyGame({
 
   // ── Helpers ──
   const snippetProgress = currentSnippet
-    ? (currentTimeMs / currentSnippet.duration) * 100
+    ? Math.min((currentTimeMs / currentSnippet.duration) * 100, 100)
     : 0;
   const totalProgress = medleySongs.length > 0
-    ? (currentSnippetIdx / medleySongs.length) * 100
+    ? ((currentSnippetIdx + 1) / medleySongs.length) * 100
     : 0;
 
   // Current matchup (team mode)

@@ -7,7 +7,7 @@
  */
 
 import type {
-  MedleyPlayer, MedleySong, SnippetMatchup, TeamBonusResult,
+  MedleyPlayer, SnippetMatchup, TeamBonusResult,
 } from './medley-types';
 
 // ── Synergy ──

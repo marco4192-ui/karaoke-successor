@@ -97,6 +97,11 @@ export function useBattleRoyaleSongMedia({
     if (key === lastHandledRef.current) return;
     lastHandledRef.current = key;
 
+    // Don't load media if the song hasn't been resolved for this snippet yet
+    // (currentSong still belongs to the previous snippet during async loading)
+    const expectedSongId = currentRoundSongId ?? '';
+    if (songId && expectedSongId && songId !== expectedSongId) return;
+
     audioHasPlayedRef.current = false;
     setMediaLoaded(false);
     resolvedAudioUrlRef.current = null;

@@ -36,7 +36,6 @@ interface PtmGameScreenProps {
   onUpdateGame: (_players: PtmPlayer[], _segments: PtmSegment[]) => void;
   onEndGame: () => void;
   onNavigate?: (_screen: string) => void;
-  onPause?: () => void;
 }
 
 interface PtmGameHookReturn {
@@ -452,7 +451,9 @@ export function usePtmGameLogic({
           transitionHideTimerRef.current = null;
         }, 1500);
       } else {
-        // Song finished
+        // Song finished — guard against double recordRound
+        if (roundRecordedRef.current) return;
+        roundRecordedRef.current = true;
         setIsPlaying(false);
         setTransitionVisible(false);
         recordRound();

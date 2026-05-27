@@ -378,6 +378,7 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
           setIsPlaying(true);
           startTimeRef.current = Date.now();
           playMedia();
+          scheduleWatchdog(false);
           return;
         }
 

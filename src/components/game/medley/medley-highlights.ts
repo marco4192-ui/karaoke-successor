@@ -55,8 +55,11 @@ export function buildSnippetHighlight(input: HighlightBuildInput): MedleyHighlig
       worstPlayerScore = snippetScore;
       worstPlayerId = pid;
     }
-    if (player.maxCombo > highestComboValue) {
-      highestComboValue = player.maxCombo;
+    // Compute per-snippet max combo (not cumulative) using snapshots
+    const comboAtStart = start?.combo ?? 0;
+    const snippetMaxCombo = player.maxCombo - comboAtStart;
+    if (snippetMaxCombo > highestComboValue) {
+      highestComboValue = snippetMaxCombo;
       highestComboPlayerId = pid;
     }
   }

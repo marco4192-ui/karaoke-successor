@@ -165,10 +165,10 @@ export function MedleyRoundResults({
           <div>
             <div className="text-white/50 text-xs">{t('medley.accuracy')}</div>
             <div className="font-bold text-white">{(() => {
-              const t = sorted.reduce((s, p) => s + p.notesHit, 0);
-              const m = sorted.reduce((s, p) => s + p.notesMissed, 0);
-              const total = t + m;
-              return total > 0 ? Math.round((t / total) * 100) : 0;
+              const totalHits = sorted.reduce((s, p) => s + p.notesHit, 0);
+              const totalMisses = sorted.reduce((s, p) => s + p.notesMissed, 0);
+              const total = totalHits + totalMisses;
+              return total > 0 ? Math.round((totalHits / total) * 100) : 0;
             })()}%</div>
           </div>
           <div>

@@ -160,8 +160,10 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
       setError(null);
       return [...prev, id];
     });
-    // Auto-assign to teams in team mode
-    if (isTeam) {
+    // Auto-assign to teams in team mode (only if player was actually added)
+    // Note: We use a ref-based approach to check if the player was added,
+    // since setSelectedProfileIds updater is async
+    if (isTeam && selectedProfileIds.length < maxPlayers) {
       setTeamAIds(ta => {
         if (ta.length < teamSize) return [...ta, id];
         setTeamBIds(tb => [...tb, id]);
@@ -252,18 +254,18 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
       const [id1, id2] = swapSelection;
       const id1InA = teamAIds.includes(id1);
       const id2InA = teamAIds.includes(id2);
-      // If both in same team, swap them between teams
+      // If both in same team, move both to the opposite team atomically
       if (id1InA === id2InA) {
+        const sourceIds = id1InA ? teamAIds : teamBIds;
+        const targetIds = id1InA ? teamBIds : teamAIds;
+        const newSource = sourceIds.filter(x => x !== id1 && x !== id2);
+        const newTarget = [...targetIds, id1, id2];
         if (id1InA) {
-          setTeamAIds(prev => prev.filter(x => x !== id1));
-          setTeamBIds(prev => [...prev, id1]);
-          setTeamBIds(prev => prev.filter(x => x !== id2));
-          setTeamAIds(prev => [...prev, id2]);
+          setTeamAIds(newSource);
+          setTeamBIds(newTarget);
         } else {
-          setTeamBIds(prev => prev.filter(x => x !== id1));
-          setTeamAIds(prev => [...prev, id1]);
-          setTeamAIds(prev => prev.filter(x => x !== id2));
-          setTeamBIds(prev => [...prev, id2]);
+          setTeamBIds(newSource);
+          setTeamAIds(newTarget);
         }
       } else {
         if (id1InA) {
@@ -390,7 +392,7 @@ export function MedleySetup({ profiles, onStartGame, onBack }: MedleySetupProps)
 
     onStartGame(players, songs, finalSettings, matchups);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playMode, teamSize, selectedProfileIds, teamAIds, teamBIds, profiles, globalDifficulty, filterGenre, filterLanguage, allSongs, snippetCount, onStartGame, playerInputModes, playerMobileClientIds, settings]);
+  }, [playMode, teamSize, selectedProfileIds, teamAIds, teamBIds, profiles, globalDifficulty, filterGenre, filterLanguage, allSongs, onStartGame, playerInputModes, playerMobileClientIds, settings]);
 
   // ── Render ──
   const selectStyle = {

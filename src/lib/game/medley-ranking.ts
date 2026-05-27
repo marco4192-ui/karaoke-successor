@@ -101,10 +101,10 @@ export function addDailyMedleyEntry(entry: Omit<MedleyHistoryEntry, 'id' | 'time
   addMedleyEntry(entry);
 }
 
-/** Get top N daily entries sorted by raw score */
+/** Get top N daily entries sorted by weighted score (consistent with all-time ranking) */
 export function getDailyMedleyTopN(n: number): MedleyHistoryEntry[] {
   return getDailyHistory()
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => weightedScore(b) - weightedScore(a))
     .slice(0, n);
 }
 

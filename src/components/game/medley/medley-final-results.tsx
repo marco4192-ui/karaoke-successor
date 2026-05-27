@@ -122,7 +122,7 @@ export function MedleyFinalResults({
                   <span>👑</span>
                   <span style={{ color: survivor.color }}>{survivor.name}</span>
                   <span className="text-white/40 text-xs">({survivor.score} Pkt)</span>
-                  <span className="ml-auto font-bold">SIEGER</span>
+                  <span className="ml-auto font-bold">{t('medley.winner')}</span>
                 </div>
               );
             })()}
