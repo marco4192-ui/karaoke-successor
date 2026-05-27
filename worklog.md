@@ -88,3 +88,25 @@ Stage Summary:
 - Commit de58f3c pushed to main
 - 1 file changed, 6 insertions, 6 deletions
 - Clean TypeScript build achieved
+
+---
+Task ID: fix-note-highways
+Agent: Main Agent
+Task: Investigate and fix bugs in note-highway, duet-note-highway, and note-lane
+
+Work Log:
+- Deep code review of 5 files: note-highway.tsx, duet-note-highway.tsx, note-lane.tsx, single-player-lyrics.tsx, lyric-line-display.tsx
+- Found 16 issues (2 HIGH, 4 MEDIUM, 10 LOW)
+- Fixed all HIGH and MEDIUM issues, cherry-picked LOW fixes with clear value
+- note-highway.tsx: removed 2 dead props, 1 duplicate opacity, 1 redundant key
+- duet-note-highway.tsx: removed 2 redundant type casts, 2 dead prop passes
+- note-lane.tsx: added full missing-words support (passage + per-word hiding), added hardcoreMissingWords prop
+- game-screen.tsx: wired new props to NoteLane, removed dead props from NoteHighway
+- Verified: 0 TypeScript errors after all changes
+
+Stage Summary:
+- Commit 48b126f pushed to main
+- 4 files changed, +56/-25 lines
+- Missing Words mode now works correctly in low-performance mode
+- Clean API surface on NoteHighway (no misleading dead props)
+- 9 remaining LOW-severity issues documented but not fixed (font-size redundancy, hardcoded colors, i18n string, etc.)
