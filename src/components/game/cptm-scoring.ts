@@ -51,7 +51,14 @@ export function useCptmScoring(params: CptmScoringParams): void {
 
   const lastEvalTimeRef = useRef(0);
 
+  // Read currentTime from a ref inside the callback to avoid recreating
+  // the RAF loop ~40 times/sec (currentTime changes every frame).
+  const currentTimeRef = useRef(currentTime);
+  currentTimeRef.current = currentTime;
+
   const scoreCurrentPlayer = useCallback(() => {
+    const time = currentTimeRef.current;
+
     const player = playersRef.current[currentPlayerIndex];
     if (!player) return;
 
@@ -70,11 +77,11 @@ export function useCptmScoring(params: CptmScoringParams): void {
 
     if (shouldSkipPitch(pitchResult, difficulty)) return;
 
-    const activeNote = findActiveNote(notesSource?.lyrics, currentTime);
+    const activeNote = findActiveNote(notesSource?.lyrics, time);
     if (!activeNote) return;
 
-    if (currentTime - lastEvalTimeRef.current < SCORING_THROTTLE_MS) return;
-    lastEvalTimeRef.current = currentTime;
+    if (time - lastEvalTimeRef.current < SCORING_THROTTLE_MS) return;
+    lastEvalTimeRef.current = time;
 
     const note = pitchResult.note;
     if (note == null) return;
@@ -94,7 +101,7 @@ export function useCptmScoring(params: CptmScoringParams): void {
 
     playersRef.current[idx] = { ...p };
     forceRender();
-  }, [currentTime, notesSource, difficulty, currentPlayerIndex, scoringMeta, forceRender, playersRef, companionPitchCacheRef]);
+  }, [notesSource, difficulty, currentPlayerIndex, scoringMeta, forceRender, playersRef, companionPitchCacheRef]);
 
   useEffect(() => {
     if (phase !== 'playing' || !isPlaying) return;

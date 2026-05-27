@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from '@/lib/i18n/translations';
 
 // ===================== TYPES =====================
@@ -102,8 +102,7 @@ export function PtmTransitionOverlay({
     }
     if (visible && isTypingDone) {
       autoDismissRef.current = setTimeout(() => {
-        onComplete?.();
-        onSkip?.();
+        onComplete ?? onSkip?.();
       }, AUTO_DISMISS_MS);
     }
     return () => {

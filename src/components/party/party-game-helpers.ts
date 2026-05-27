@@ -86,14 +86,15 @@ export function trimSongToShortMode(song: Song): Song {
 
 // ─── Voting Song Picker ──────────────────────────────────────────────────────
 
-/** Pick random songs from the non-duet pool for voting, applying optional genre/language/combined filters */
+/** Pick random songs from the non-duet pool for voting, applying optional genre/language/combined/releaseYear filters */
 export function pickRandomVotingSongs(
   filterGenre: string = 'all',
   filterLanguage: string = 'all',
   filterCombined: boolean = true,
+  filterReleaseYear: string = 'all',
   count: number = 3,
 ): Song[] {
   const songs = getNonDuetSongs();
-  const filtered = filterSongs(songs, filterGenre, filterLanguage, filterCombined);
+  const filtered = filterSongs(songs, filterGenre, filterLanguage, filterCombined, filterReleaseYear);
   return shuffleArray(filtered).slice(0, count);
 }

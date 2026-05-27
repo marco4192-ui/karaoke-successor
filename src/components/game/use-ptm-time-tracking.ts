@@ -30,6 +30,8 @@ export function usePtmTimeTracking({
   currentTimeRef: React.RefObject<number>;
 } {
   const [currentTime, setCurrentTime] = useState(0);
+  const youtubeTimeRef = useRef(youtubeTime);
+  youtubeTimeRef.current = youtubeTime;
   const currentTimeRef = useRef(currentTime);
   currentTimeRef.current = currentTime;
   const lastCurrentTimeUpdateRef = useRef(0);
@@ -42,8 +44,8 @@ export function usePtmTimeTracking({
     const timeLoop = () => {
       let elapsedMs: number;
 
-      if (isYouTube && youtubeTime > 0) {
-        elapsedMs = youtubeTime * 1000;
+      if (isYouTube && youtubeTimeRef.current > 0) {
+        elapsedMs = youtubeTimeRef.current * 1000;
       } else if (audioRef.current && !audioRef.current.paused && audioRef.current.readyState >= 2) {
         elapsedMs = audioRef.current.currentTime * 1000;
       } else if (videoRef.current && !videoRef.current.paused && videoRef.current.readyState >= 2 && !isYouTube) {
@@ -65,14 +67,14 @@ export function usePtmTimeTracking({
 
     rafId = requestAnimationFrame(timeLoop);
     return () => cancelAnimationFrame(rafId);
-  }, [phase, isPlaying, isYouTube, youtubeTime, audioRef, videoRef]);
+  }, [phase, isPlaying, isYouTube, audioRef, videoRef]);
 
   // ── Legacy timeupdate fallback (non-playing phases: intro, countdown) ──
   useEffect(() => {
     if (phase === 'playing') return; // handled by RAF loop above
 
-    if (isYouTube && youtubeTime > 0) {
-      setCurrentTime(youtubeTime * 1000);
+    if (isYouTube && youtubeTimeRef.current > 0) {
+      setCurrentTime(youtubeTimeRef.current * 1000);
       return;
     }
 
@@ -89,7 +91,7 @@ export function usePtmTimeTracking({
       video.addEventListener('timeupdate', handleTimeUpdate);
       return () => video.removeEventListener('timeupdate', handleTimeUpdate);
     }
-  }, [audioRef, videoRef, isYouTube, youtubeTime, audioSong, phase]);
+  }, [audioRef, videoRef, isYouTube, phase]);
 
   return { currentTime, setCurrentTime, currentTimeRef };
 }

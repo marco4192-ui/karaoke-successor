@@ -75,8 +75,8 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
           maxCombo: p.maxCombo,
           segmentsSung: p.segmentsSung,
         }))}
-        seriesHistory={g.passTheMicSeriesHistory}
-        roundNumber={g.passTheMicSeriesHistory.length + 1}
+        seriesHistory={g.passTheMicSeriesHistory.slice(0, -1)}
+        roundNumber={g.passTheMicSeriesHistory.length}
         onNextSong={g.handleContinue}
         onEndSeries={g.handleEndSeries}
       />
@@ -212,7 +212,6 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
           safeSettings={g.safeSettings}
           isPlaying={g.isPlaying}
           onTogglePause={g.togglePause}
-          activeWebcamStreamsRef={g.activeWebcamStreamsRef}
         />
       )}
 

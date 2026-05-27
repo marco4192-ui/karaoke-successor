@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { CptmPlayer, CptmSegment, GamePhase } from './cptm-types';
 
 // ===================== TYPES =====================
@@ -261,7 +261,11 @@ export function useCptmTurnManagement(
         }
 
       } else {
-        // Song finished
+        // Song finished — count the last segment for the current player
+        const lastEntry = schedule[currentSegmentIndex];
+        if (lastEntry) {
+          playersRef.current[lastEntry.playerIndex].segmentsSung++;
+        }
         setIsPlaying(false);
         recordRound();
         setPhase('song-results');

@@ -82,6 +82,10 @@ export function usePtmSeriesNav({
   // ── Continue with same players (after winner ceremony) ──
   const handleContinueWithPlayers = useCallback(() => {
     try { stop(); } catch { /* ignore */ }
+    const resetPlayers = playersRef.current!.map(p => ({
+      ...p, ...EMPTY_PLAYER_SCORE, segmentsSung: 0,
+    }));
+    setPassTheMicPlayers(resetPlayers);
     setPassTheMicSeriesHistory([]);
     setPassTheMicSegments([]);
     setGameMode('pass-the-mic');
@@ -89,7 +93,7 @@ export function usePtmSeriesNav({
     lastIsSongPlayingRef.current = false;
     const targetScreen = getTargetScreen(false);
     setTimeout(() => onNavigate?.(targetScreen), 0);
-  }, [ptmSongSelection, setPassTheMicSeriesHistory, setPassTheMicSegments, setGameMode, onNavigate, setIsSongPlaying, stop, lastIsSongPlayingRef, getTargetScreen]);
+  }, [ptmSongSelection, setPassTheMicPlayers, setPassTheMicSeriesHistory, setPassTheMicSegments, setGameMode, onNavigate, setIsSongPlaying, stop, lastIsSongPlayingRef, getTargetScreen]);
 
   return { handleContinue, handleEndSeriesComplete, handleContinueWithPlayers };
 }

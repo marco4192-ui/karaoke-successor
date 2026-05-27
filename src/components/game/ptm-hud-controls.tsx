@@ -16,7 +16,6 @@ interface PtmHudControlsProps {
   isPlaying: boolean;
   /** Legacy toggle — NOT used for the PauseButton anymore. Kept for backward compat. */
   onTogglePause: () => void;
-  activeWebcamStreamsRef: React.MutableRefObject<MediaStream[]>;
 }
 
 /**
@@ -29,7 +28,6 @@ export function PtmHudControls({
   safeSettings,
   isPlaying,
   onTogglePause,
-  activeWebcamStreamsRef: _activeWebcamStreamsRef,
 }: PtmHudControlsProps) {
   const [difficulty, setDifficulty] = useState<Difficulty>(safeSettings.difficulty);
   const pauseDialogAction = usePartyStore(s => s.pauseDialogAction);

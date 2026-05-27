@@ -74,7 +74,7 @@ function generateScoreBasedSegments(
   segCount = Math.ceil(segCount / playerCount) * playerCount; // Round to multiple of player count
   segCount = Math.min(segCount, playerCount * 5); // Cap at 5 rounds
 
-  if (segCount <= playerCount) {
+  if (segCount < playerCount) {
     return [{ startTime: 0, endTime: Math.round(songDurationMs), playerId: null }];
   }
 
@@ -135,14 +135,14 @@ function generateScoreBasedSegments(
  */
 function buildScoreTimeline(
   lyrics: LyricLine[],
-  _notes: Note[],
+  notes: Note[],
 ): Array<{ time: number; cumulativeScore: number; gapAfter: number }> {
   const GOLDEN_WEIGHT = 5;
   const NORMAL_WEIGHT = 1;
 
   // Build note score map for quick lookup by ID
   const noteScoreMap = new Map<string, number>();
-  for (const note of _notes) {
+  for (const note of notes) {
     const weight = note.isGolden ? GOLDEN_WEIGHT : NORMAL_WEIGHT;
     noteScoreMap.set(note.id, weight);
   }
@@ -205,8 +205,9 @@ function findBestBreakpoint(
   }
 
   // Safety: if no entry found after minTime, use the last timeline entry
+  // but guarantee forward progress past minTime
   if (bestIdx < 0) {
-    return timeline[timeline.length - 1].time;
+    return Math.max(minTime + 1000, timeline[timeline.length - 1].time);
   }
 
   return timeline[bestIdx].time;

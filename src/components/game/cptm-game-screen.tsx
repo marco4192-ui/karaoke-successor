@@ -1,6 +1,5 @@
 'use client';
 
-import { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/lib/i18n/translations';
 import { PLAYER_COLORS } from '@/types/game';
@@ -49,9 +48,6 @@ function toPtmPlayers(players: Parameters<typeof useCptmGameLogic>[0]['players']
 export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
   const { t } = useTranslation();
   const g = useCptmGameLogic(props);
-
-  // Ref to track video loaded state (used by GameBackground callback)
-  const videoLoadedRef = useRef(false);
 
   // ── Guard: no effective song ──
   if (!g.effectiveSong) {
@@ -239,8 +235,7 @@ export function CptmGameScreen(props: Parameters<typeof useCptmGameLogic>[0]) {
           onAdStart={() => {}}
           onAdEnd={() => {}}
           onVideoEnded={g.handleMediaEnded}
-          // eslint-disable-next-line react-hooks/immutability -- event callback: set ref flag for imperative tracking
-          onVideoCanPlay={() => { videoLoadedRef.current = true; }}
+          onVideoCanPlay={() => {}}
           onYoutubeError={() => {}}
         />
 

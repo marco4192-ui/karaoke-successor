@@ -42,7 +42,14 @@ export function usePtmScoring({
   // Track how many consecutive frames had no pitchResult (for logging)
   const noPitchLogCooldownRef = useRef(0);
 
+  // Read currentTime from a ref inside the callback to avoid recreating
+  // the RAF loop ~40 times/sec (currentTime changes every frame).
+  const currentTimeRef = useRef(currentTime);
+  currentTimeRef.current = currentTime;
+
   const scoreCurrentPlayer = useCallback(() => {
+    const time = currentTimeRef.current;
+
     if (!pitchResult) {
       // Log at most once every ~2 seconds (250ms throttle * ~8 frames)
       noPitchLogCooldownRef.current++;
@@ -70,16 +77,17 @@ export function usePtmScoring({
     }
     noPitchLogCooldownRef.current = 0;
 
-    const activeNote = findActiveNote(notesSource?.lyrics, currentTime);
+    const activeNote = findActiveNote(notesSource?.lyrics, time);
     if (!activeNote) return;
 
-    if (currentTime - lastEvalTimeRef.current < SCORING_THROTTLE_MS) return;
-    lastEvalTimeRef.current = currentTime;
+    if (time - lastEvalTimeRef.current < SCORING_THROTTLE_MS) return;
+    lastEvalTimeRef.current = time;
 
     const note = pitchResult.note;
     if (note == null) return;
     const tick = evaluateAndScoreTick(note, activeNote, difficulty, scoringMeta);
-    const p = playersRef.current![currentPlayerIndex];
+    const p = playersRef.current?.[currentPlayerIndex];
+    if (!p) return;
     const idx = currentPlayerIndex;
 
     if (tick.hit) {
@@ -92,9 +100,9 @@ export function usePtmScoring({
       p.notesMissed++;
     }
 
-    playersRef.current![idx] = { ...p };
+    playersRef.current[idx] = { ...p };
     forceRender();
-  }, [currentTime, pitchResult, notesSource, difficulty, currentPlayerIndex, scoringMeta, forceRender]);
+  }, [pitchResult, notesSource, difficulty, currentPlayerIndex, scoringMeta, forceRender, playersRef]);
 
   // Reset skip-log cooldown when scoring restarts (e.g., phase or isPlaying changes)
   useEffect(() => {

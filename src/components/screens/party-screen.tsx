@@ -45,7 +45,7 @@ export function PartyScreen({ onSelectMode }: PartyScreenProps) {
       titleKey: 'party.medleyContest',
       descKey: 'party.medleyContestDesc',
       icon: '🎵',
-      players: '1-4',
+      players: '2-4',
       color: 'from-purple-500 to-pink-500',
     },
     {

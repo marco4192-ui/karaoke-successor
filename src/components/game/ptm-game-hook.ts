@@ -127,7 +127,6 @@ export function usePtmGameLogic({
   const passTheMicSeriesHistory = usePartyStore(s => s.passTheMicSeriesHistory);
   const setPassTheMicSeriesHistory = usePartyStore(s => s.setPassTheMicSeriesHistory);
   const ptmMedleySnippets = usePartyStore(s => s.ptmMedleySnippets);
-  const { setGameMode } = useGameStore();
   const lastIsSongPlayingRef = useRef(false);
   const activeWebcamStreamsRef = useRef<MediaStream[]>([]);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -407,9 +406,9 @@ export function usePtmGameLogic({
         maxCombo: p.maxCombo,
       };
     }
-    setPassTheMicSeriesHistory([...passTheMicSeriesHistory, round]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- isMedleyMode/ptmMedleySnippets.length excluded; recordRound uses refs
-  }, [effectiveSong, song, passTheMicSeriesHistory, setPassTheMicSeriesHistory]);
+    setPassTheMicSeriesHistory([...usePartyStore.getState().passTheMicSeriesHistory, round]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- reads from store at call-time via getState()
+  }, [effectiveSong, song, setPassTheMicSeriesHistory]);
 
   // ── Segment switching (deterministic, using pre-computed schedule) ──
   const TRANSITION_LEAD_TIME = 2000;
@@ -652,6 +651,10 @@ export function usePtmGameLogic({
   // ── Cleanup on unmount ──
   useEffect(() => {
     return () => {
+      if (transitionHideTimerRef.current) {
+        clearTimeout(transitionHideTimerRef.current);
+        transitionHideTimerRef.current = null;
+      }
       try { stop(); } catch { /* already stopped */ }
       activeWebcamStreamsRef.current.forEach(stream => {
         stream.getTracks().forEach(t => t.stop());
@@ -677,16 +680,25 @@ export function usePtmGameLogic({
     }
   }, [isPlaying, phase, audioRef, videoRef, isYouTube, setIsSongPlaying]);
 
+  // ── Round-recorded guard to prevent double recordRound() ──
+  const roundRecordedRef = useRef(false);
+
   // ── Handle ending the song early ──
   const handleEndSong = useCallback(() => {
+    audioRef.current?.pause();
+    videoRef.current?.pause();
+    if (roundRecordedRef.current) return;
+    roundRecordedRef.current = true;
     setIsPlaying(false);
     recordRound();
     setPhase('song-results');
-  }, [recordRound]);
+  }, [recordRound, audioRef, videoRef]);
 
   // ── Shared handler for audio/video/background end ──
   const handleMediaEnded = useCallback(() => {
     if (phase === 'playing') {
+      if (roundRecordedRef.current) return;
+      roundRecordedRef.current = true;
       setIsPlaying(false);
       recordRound();
       setPhase('song-results');

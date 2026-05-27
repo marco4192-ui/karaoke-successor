@@ -91,7 +91,7 @@ export function useCptmGameLogic({
   segments: initialSegments,
   settings,
   onUpdateGame,
-  onEndGame: _onEndGame,
+  onEndGame,
   onNavigate,
 }: CptmGameHookProps): CptmGameHookReturn {
   const safeSettings: CptmSettings = settings ?? DEFAULT_CPTM_SETTINGS;
@@ -147,7 +147,7 @@ export function useCptmGameLogic({
   const fallbackLyricsRef = useRef<LyricLine[] | null>(null);
 
   // ── Blink lead time from settings (default 3s) ──
-  const blinkLeadTime = (safeSettings as unknown as Record<string, unknown>).blinkWarning as number | undefined ?? DEFAULT_BLINK_LEAD_TIME;
+  const blinkLeadTime = safeSettings.blinkWarning ?? DEFAULT_BLINK_LEAD_TIME;
 
   // ═══════════════════════════════════════════════════════
   // ── SUB-HOOK: Series management ──
@@ -264,7 +264,7 @@ export function useCptmGameLogic({
   }, [effectiveSong, fallbackRef.current]);
 
   // ── Pre-compute note data for highway ──
-  const { allNotes, sortedLines, pitchStats: _pitchStats, scoringMeta } = useMemo(() => {
+  const { allNotes, sortedLines, scoringMeta } = useMemo(() => {
     if (!notesSource?.lyrics?.length) {
       return { allNotes: [], sortedLines: [], pitchStats: { minPitch: 40, maxPitch: 80, pitchRange: 40 } as PitchStats, scoringMeta: null };
     }
@@ -475,17 +475,26 @@ export function useCptmGameLogic({
     }
   }, [isPlaying, phase, audioRef, videoRef, setIsSongPlaying]);
 
+  // ── Round-recorded guard to prevent double recordRound() ──
+  const roundRecordedRef = useRef(false);
+
   // ── Handle ending the song early ──
   const handleEndSong = useCallback(() => {
+    audioRef.current?.pause();
+    videoRef.current?.pause();
+    if (roundRecordedRef.current) return;
+    roundRecordedRef.current = true;
     setIsPlaying(false);
     recordRound();
     setPhase('song-results');
     sendCompanionTurnSignal(null, null, null, false);
-  }, [recordRound]);
+  }, [recordRound, audioRef, videoRef]);
 
   // ── Shared handler for audio/video end ──
   const handleMediaEnded = useCallback(() => {
     if (phase === 'playing') {
+      if (roundRecordedRef.current) return;
+      roundRecordedRef.current = true;
       setIsPlaying(false);
       recordRound();
       setPhase('song-results');
@@ -538,6 +547,6 @@ export function useCptmGameLogic({
     handleContinue,
     handleEndSeries,
     handleEndSeriesComplete,
-    onEndGame: _onEndGame,
+    onEndGame,
   };
 }

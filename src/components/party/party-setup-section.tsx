@@ -227,6 +227,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                 filterGenre: baseSettings.filterGenre,
                 filterLanguage: baseSettings.filterLanguage,
                 filterCombined: String(baseSettings.filterCombined),
+                filterReleaseYear: baseSettings.filterReleaseYear,
               });
             }
 

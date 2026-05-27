@@ -3,6 +3,7 @@
 import { useCallback } from 'react';
 import type { Song, GameMode } from '@/types/game';
 import { EMPTY_PLAYER_SCORE } from '@/types/game';
+import { usePartyStore } from '@/lib/game/party-store';
 import type { CptmPlayer, CptmRoundResult, GamePhase } from './cptm-types';
 import { sendCompanionTurnSignal } from './cptm-turn-management';
 
@@ -77,8 +78,8 @@ export function useCptmSeries(params: CptmSeriesParams): CptmSeriesReturn {
         segmentsSung: p.segmentsSung,
       };
     }
-    setCptmSeriesHistory([...cptmSeriesHistory, round]);
-  }, [effectiveSong, song, cptmSeriesHistory, setCptmSeriesHistory, playersRef]);
+    setCptmSeriesHistory([...usePartyStore.getState().cptmSeriesHistory, round]);
+  }, [effectiveSong, song, setCptmSeriesHistory, playersRef]);
 
   // ── Continue series: reset per-song scores, pick next song ──
   const handleContinue = useCallback(() => {

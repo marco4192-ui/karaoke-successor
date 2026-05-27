@@ -57,6 +57,7 @@ export function usePtmMedley({
 } {
   const ptmMedleySnippets = usePartyStore(s => s.ptmMedleySnippets);
   const [isRetryingSnippet, setIsRetryingSnippet] = useState(false);
+  const isRetryingRef = useRef(false);
 
   // ── Medley mode support ──
   const isMedleyMode = ptmMedleySnippets.length > 1;
@@ -99,6 +100,7 @@ export function usePtmMedley({
   // ── Medley mode: seek to snippet start when segment changes ──
   const medleyRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const medleyCanplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const canplayHandlerRef = useRef<{ handler: () => void; media: HTMLMediaElement } | null>(null);
 
   useEffect(() => {
     if (!isMedleyMode || !currentSnippet || phase !== 'playing') return;
@@ -148,6 +150,8 @@ export function usePtmMedley({
         medleyCanplayTimerRef.current = setTimeout(() => {
           media.removeEventListener('canplay', onCanPlay);
         }, 5000);
+        // Store cleanup ref so the effect cleanup can remove the listener
+        canplayHandlerRef.current = { handler: onCanPlay, media };
       }
     });
 
@@ -155,14 +159,19 @@ export function usePtmMedley({
       cancelAnimationFrame(rafId);
       if (medleyRetryTimerRef.current) { clearTimeout(medleyRetryTimerRef.current); medleyRetryTimerRef.current = null; }
       if (medleyCanplayTimerRef.current) { clearTimeout(medleyCanplayTimerRef.current); medleyCanplayTimerRef.current = null; }
+      // Clean up orphaned canplay listener
+      if (canplayHandlerRef.current) {
+        canplayHandlerRef.current.media.removeEventListener('canplay', canplayHandlerRef.current.handler);
+        canplayHandlerRef.current = null;
+      }
     };
   }, [currentSegmentIndex, isMedleyMode, currentSnippet, phase, isPlaying, audioRef, videoRef, isYouTube, unmountGuardRef]);
 
   // ── Handle media error — in medley mode, retry with a different song ──
   const handleMediaError = useCallback(() => {
     if (!isMedleyMode || phase !== 'playing') return;
-    if (isRetryingSnippet) return;
-
+    if (isRetryingRef.current) return;
+    isRetryingRef.current = true;
     setIsRetryingSnippet(true);
     setIsPlaying(false);
 
@@ -176,6 +185,7 @@ export function usePtmMedley({
         const snippets = generateMedleySnippets(songs, 1, 30);
         if (snippets.length === 0) {
           setIsRetryingSnippet(false);
+          isRetryingRef.current = false;
           recordRound();
           setPhase('song-results');
           return;
@@ -193,7 +203,8 @@ export function usePtmMedley({
         const newSnippet = { ...snippets[0], song: prepared };
 
         const setPtmMedleySnippets = usePartyStore.getState().setPtmMedleySnippets;
-        const updatedSnippets = [...ptmMedleySnippets];
+        const currentSnippets = usePartyStore.getState().ptmMedleySnippets;
+        const updatedSnippets = [...currentSnippets];
         if (currentSegmentIndex < updatedSnippets.length) {
           updatedSnippets[currentSegmentIndex] = newSnippet;
           setPtmMedleySnippets(updatedSnippets);
@@ -202,6 +213,7 @@ export function usePtmMedley({
         segmentSwitchHandledRef.current = false;
         fallbackLyricsRef.current = null;
         setIsRetryingSnippet(false);
+        isRetryingRef.current = false;
 
         setTimeout(() => {
           if (!unmountGuardRef.current) {
@@ -210,11 +222,12 @@ export function usePtmMedley({
         }, 500);
       } catch {
         setIsRetryingSnippet(false);
+        isRetryingRef.current = false;
         recordRound();
         setPhase('song-results');
       }
     })();
-  }, [isMedleyMode, phase, isRetryingSnippet, currentSegmentIndex, ptmMedleySnippets, recordRound, setIsPlaying, setPhase, segmentSwitchHandledRef, fallbackLyricsRef, unmountGuardRef]);
+  }, [isMedleyMode, phase, currentSegmentIndex, recordRound, setIsPlaying, setPhase, segmentSwitchHandledRef, fallbackLyricsRef, unmountGuardRef]);
 
   return { isMedleyMode, currentSnippet, audioSong, handleMediaError, isRetryingSnippet };
 }
