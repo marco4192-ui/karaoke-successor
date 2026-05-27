@@ -132,30 +132,47 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
 
   if (!currentLine) return null;
 
-  // Check if the preview should be hidden (for any mode where lyrics are hidden)
-  const nextLineHasHiddenContent = useMemo(() => {
+  // Check if preview should be entirely hidden (blind mode only)
+  const shouldHidePreview = useMemo(() => {
     if (!nextLine) return false;
-    // Blind mode: hide preview in blind sections (notes hidden on highway)
-    // and in Blind Hardcore mode when text is hidden (not in blind section)
+    // Blind mode: hide preview entirely — no text cues allowed
     if (gameMode === 'blind') {
       if (isBlindSection) return true;
       if (isBlindHardcore) return true;
     }
-    // Missing Words mode: hide preview if current or next line has hidden words
-    if (gameMode === 'missing-words' && missingWordsIndices.length > 0) {
-      // Current line has hidden content → player is in a challenge state
-      if (currentLine && (
-        missingWordsIndices.includes(currentLine.startTime) ||
-        currentLine.notes.some(n => missingWordsIndices.includes(n.startTime))
-      )) return true;
-      // Next line has hidden content → would reveal what's hidden
-      // Passage mode: entire line hidden
-      if (missingWordsIndices.includes(nextLine.startTime)) return true;
-      // Word/both mode: individual notes hidden
-      return nextLine.notes.some(n => missingWordsIndices.includes(n.startTime));
-    }
     return false;
-  }, [nextLine, currentLine, gameMode, missingWordsIndices, isBlindSection, isBlindHardcore]);
+  }, [nextLine, gameMode, isBlindSection, isBlindHardcore]);
+
+  // Compute preview text with missing-words replacement applied.
+  // Returns null if the entire next line is hidden (passage mode),
+  // or the text with hidden words replaced by underscores (word/both mode).
+  const previewText = useMemo(() => {
+    if (!nextLine) return null;
+
+    if (gameMode === 'missing-words' && missingWordsIndices.length > 0) {
+      // Entire next line is a hidden passage → don't show preview (all underscores = useless)
+      if (missingWordsIndices.includes(nextLine.startTime)) return null;
+
+      // Check if any words in the next line are individually hidden
+      const hasHiddenWords = nextLine.notes.some(n => missingWordsIndices.includes(n.startTime));
+
+      if (!hasHiddenWords) {
+        // No hidden words in next line → show full preview text
+        return nextLine.notes.map(n => n.lyric).join('');
+      }
+
+      // Some words hidden → replace only hidden words with underscores
+      return nextLine.notes.map(n => {
+        if (missingWordsIndices.includes(n.startTime)) {
+          return n.lyric.replace(/[^-\s]/g, '_');
+        }
+        return n.lyric;
+      }).join('');
+    }
+
+    // Default: show full preview text
+    return nextLine.notes.map(n => n.lyric).join('');
+  }, [nextLine, gameMode, missingWordsIndices]);
 
   // Calculate flying animation progress (0 = start, 1 = arrived at first note)
   const flyProgress = isFlying ? Math.max(0, Math.min(1, 1 - (timeUntilSing / previewTime))) : 0;
@@ -232,10 +249,10 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
           />
         </div>
 
-        {/* Next Line Preview — hidden when next line contains hidden content (Missing Words or Blind mode) */}
-        {nextLine && !nextLineHasHiddenContent && (
+        {/* Next Line Preview — hidden in blind mode; in missing-words mode, hidden words shown as underscores */}
+        {nextLine && !shouldHidePreview && previewText && (
           <p className={`${lyricsSize === 'large' ? 'text-xl md:text-2xl' : lyricsSize === 'small' ? 'text-base md:text-lg' : 'text-base md:text-lg'} text-center text-white/40 mt-3`} style={{ whiteSpace: 'pre-wrap' }}>
-            {nextLine.notes.map(n => n.lyric).join('')}
+            {previewText}
           </p>
         )}
       </div>

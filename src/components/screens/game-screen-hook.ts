@@ -65,11 +65,25 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
   const setBlindHardcore = useGameStore(s => s.setBlindHardcore);
   const setHardcoreMissingWords = useGameStore(s => s.setHardcoreMissingWords);
   const blindFrequency = usePartyStore(s => s.competitiveGame?.settings?.blindFrequency);
-  const missingWordFrequency = usePartyStore(s => s.competitiveGame?.settings?.missingWordFrequency);
+  const missingWordFrequency = usePartyStore(s => {
+    // Primary: competitive game (party flow) stores numeric frequency (0.15, 0.30, etc.)
+    const comp = s.competitiveGame?.settings?.missingWordFrequency;
+    if (typeof comp === 'number') return comp;
+    // Fallback: unified setup result (library quick-start) stores label ('light', 'normal', etc.)
+    const label = s.unifiedSetupResult?.settings?.missingWordFrequency as string | undefined;
+    const freqMap: Record<string, number> = { light: 0.15, easy: 0.15, normal: 0.30, hard: 0.60, insane: 0.90 };
+    return freqMap[label || 'normal'];
+  });
   const blindHardcore = usePartyStore(s => s.competitiveGame?.settings?.hardcore);
-  const hardcoreMissingWords = usePartyStore(s => s.competitiveGame?.settings?.hardcoreMissingWords);
-  const missingWordsGranularity = usePartyStore(s => s.competitiveGame?.settings?.missingWordsGranularity);
-  const escalating = usePartyStore(s => s.competitiveGame?.settings?.escalating);
+  const hardcoreMissingWords = usePartyStore(s =>
+    s.competitiveGame?.settings?.hardcoreMissingWords ?? !!(s.unifiedSetupResult?.settings?.hardcoreMissingWords)
+  );
+  const missingWordsGranularity = usePartyStore(s =>
+    (s.competitiveGame?.settings?.missingWordsGranularity ?? s.unifiedSetupResult?.settings?.granularity) as 'word' | 'passage' | 'both' | undefined
+  );
+  const escalating = usePartyStore(s =>
+    s.competitiveGame?.settings?.escalating ?? !!(s.unifiedSetupResult?.settings?.escalating)
+  );
   const { pitchResult, initialize, start, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
 
   // Smoothed pitch for visual display (prevents flickering/jitter).

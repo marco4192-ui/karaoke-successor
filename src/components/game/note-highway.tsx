@@ -339,15 +339,8 @@ export const NoteHighway = React.memo(function NoteHighway({
       <SingLine position={singLinePosition} playerColor={effectiveColor} />
 
       {/* Notes — hidden in blind sections only */}
-      {/* Missing Words mode: notes always visible (text is hidden instead) */}
+      {/* Missing Words mode: notes always visible on highway (only lyrics text is hidden) */}
       {!isBlindSection && visibleNotes.map((note) => {
-        // Check both note.startTime (word mode) and note.line.startTime (passage mode)
-        // so that ALL notes in a hidden passage are removed from the highway.
-        const isHiddenNote = gameMode === 'missing-words' && missingWordsIndices != null && (
-          missingWordsIndices.includes(note.startTime) ||
-          missingWordsIndices.includes(note.line.startTime)
-        );
-        if (isHiddenNote) return null;
         return (
         <NoteBlock
           key={note.id || `note-${note.startTime}`}

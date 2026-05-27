@@ -241,6 +241,7 @@ function GameScreen(props: Parameters<typeof useGameScreenLogic>[0]) {
             missingWordsIndices={g.gameState.missingWordsIndices}
             isBlindSection={g.gameState.isBlindSection}
             isBlindHardcore={g.gameState.blindHardcore}
+            hardcoreMissingWords={g.gameState.hardcoreMissingWords}
             p1PlayerName={g.song?.duetPlayerNames?.[0] || g.gameState.players[0]?.name || t('prominentScore.player1')}
             p2PlayerName={g.song?.duetPlayerNames?.[1] || g.gameState.players[1]?.name || t('prominentScore.player2')}
             noteDisplayStyle={g.noteDisplayStyle as 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity'}
