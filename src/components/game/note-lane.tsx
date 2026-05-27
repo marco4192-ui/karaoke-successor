@@ -23,6 +23,7 @@ import { LyricLine, DIFFICULTY_SETTINGS, frequencyToMidi } from '@/types/game';
 import { getStoredTheme } from '@/lib/game/themes';
 import { parseNoteShape } from '@/hooks/use-game-settings';
 import { StorageKeys, getItem } from '@/lib/storage';
+import { useTranslation } from '@/lib/i18n/translations';
 import {
   NOTE_HEIGHT,
   PITCH_RANGE,
@@ -72,13 +73,14 @@ const PitchGrid = React.memo(function PitchGrid({ pitchRange }: { pitchRange: nu
 });
 
 const TargetLine = React.memo(function TargetLine() {
+  const { t } = useTranslation();
   return (
     <div
       className="absolute top-0 bottom-0 w-1 bg-gradient-to-b from-transparent via-cyan-400 to-transparent z-10"
       style={{ left: '8%' }}
     >
       <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xs text-cyan-400 font-bold whitespace-nowrap">
-        SING HERE →
+        {t('game.noteLane.singHere')} →
       </div>
     </div>
   );
@@ -220,7 +222,7 @@ const CurrentLyrics = React.memo(function CurrentLyrics({
 
 // ===================== MAIN COMPONENT =====================
 
-export function NoteLane({
+export const NoteLane = React.memo(function NoteLane({
   lyrics,
   currentTime,
   difficulty,
@@ -395,5 +397,5 @@ export function NoteLane({
       />
     </div>
   );
-}
+});
 

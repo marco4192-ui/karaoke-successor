@@ -116,14 +116,14 @@ const CenterScoreBar = React.memo(function CenterScoreBar({
           </div>
         )}
         <div className="flex flex-col">
-          <span className="text-xs font-medium text-cyan-300/80 leading-tight truncate max-w-[80px]">
+          <span className="text-xs font-medium leading-tight truncate max-w-[80px]" style={{ color: p1Color }}>
             {resolvedP1Name}
           </span>
           <div className="flex items-baseline gap-1.5">
-            <span className="text-xl font-bold text-cyan-400 leading-tight" suppressHydrationWarning>
+            <span className="text-xl font-bold leading-tight" style={{ color: p1Color }} suppressHydrationWarning>
               {p1State?.score?.toLocaleString?.() ?? 0}
             </span>
-            <span className="text-xs text-cyan-300/60" suppressHydrationWarning>
+            <span className="text-xs" style={{ color: `${p1Color}99` }} suppressHydrationWarning>
               {p1State?.combo ?? 0}x
             </span>
           </div>
@@ -138,14 +138,14 @@ const CenterScoreBar = React.memo(function CenterScoreBar({
       {/* P2 Score - Right */}
       <div className="relative flex items-center gap-2 px-4 py-1">
         <div className="flex flex-col items-end">
-          <span className="text-xs font-medium text-pink-300/80 leading-tight truncate max-w-[80px]">
+          <span className="text-xs font-medium leading-tight truncate max-w-[80px]" style={{ color: p2Color }}>
             {resolvedP2Name}
           </span>
           <div className="flex items-baseline gap-1.5">
-            <span className="text-xs text-pink-300/60" suppressHydrationWarning>
+            <span className="text-xs" style={{ color: `${p2Color}99` }} suppressHydrationWarning>
               {p2State?.combo ?? 0}x
             </span>
-            <span className="text-xl font-bold text-pink-400 leading-tight" suppressHydrationWarning>
+            <span className="text-xl font-bold leading-tight" style={{ color: p2Color }} suppressHydrationWarning>
               {p2State?.score?.toLocaleString?.() ?? 0}
             </span>
           </div>

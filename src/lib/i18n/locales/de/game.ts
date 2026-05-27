@@ -63,6 +63,10 @@ export const gameTranslations = {
     comboMultiplied: '{n}x COMBO!'
   },
 
+  noteLane: {
+    singHere: 'SING HIER',
+  },
+
   practicePanel: {
     title: 'Übungsmodus',
     enable: 'Übungsmodus aktivieren',

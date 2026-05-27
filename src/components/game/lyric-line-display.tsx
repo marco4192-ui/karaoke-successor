@@ -84,21 +84,10 @@ export function LyricLineDisplay({
   }, []);
 
   // Calculate note fill level based on performance (for fill-level mode)
-  const getNoteFillLevel = (noteId: string, isActive: boolean): number => {
-    if (!isActive) {
-      // Past notes: calculate from recorded samples instead of showing full
-      const samples = notePerformance.get(noteId) || [];
-      if (samples.length === 0) return 0;
-      const hitRate = samples.filter(s => s.hit).length / samples.length;
-      return hitRate;
-    }
-    // Active note: calculate based on recent samples
+  const getNoteFillLevel = (noteId: string): number => {
     const samples = notePerformance.get(noteId) || [];
     if (samples.length === 0) return 0;
-    // Calculate fill based on recent hits
-    const recentSamples = samples.slice(-5);
-    const hitRate = recentSamples.filter(s => s.hit).length / recentSamples.length;
-    return hitRate;
+    return samples.filter(s => s.hit).length / samples.length;
   };
 
   // Style configurations - each word can be: sung, active, or upcoming
@@ -189,7 +178,7 @@ export function LyricLineDisplay({
         // This shows performance feedback after the note was sung
         if (noteDisplayStyle === 'fill-level' && isSung) {
           // Fill-level mode: Show how much of the note was hit correctly
-          const fillLevel = getNoteFillLevel(noteId, false);
+          const fillLevel = getNoteFillLevel(noteId);
           if (fillLevel < 1) {
             fillClipStyle = {
               background: `linear-gradient(90deg, ${playerColor} ${fillLevel * 100}%, rgba(255,255,255,0.3) ${fillLevel * 100}%)`,

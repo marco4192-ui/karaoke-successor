@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState, useCallback, useLayoutEffect, memo } from 'react';
 import { LyricLine, type GameMode } from '@/types/game';
 import { LyricLineDisplay } from './lyric-line-display';
+import { NoteDisplayStyle } from '@/lib/game/note-utils';
 
 // ===================== TYPES =====================
 
@@ -14,7 +15,7 @@ export interface SinglePlayerLyricsProps {
   /** Player color for styling */
   playerColor?: string;
   /** Note display style from settings */
-  noteDisplayStyle?: 'classic' | 'fill-level' | 'color-feedback' | 'glow-intensity';
+  noteDisplayStyle?: NoteDisplayStyle;
   /** Note performance for visual feedback */
   notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
   /** Game mode */
@@ -70,19 +71,18 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
     }
 
     if (!currentLine) {
-      return { currentLine: null, nextLine: null, timeUntilSing: 0, isSinging: false, isFlying: false };
+      return { currentLine: null, nextLine: null, timeUntilSing: 0, isFlying: false };
     }
 
     // Calculate timing
     const timeUntilSing = currentLine.startTime - currentTime;
-    const isSinging = currentTime >= currentLine.startTime;
-    const isFlying = !isSinging && timeUntilSing > 0 && timeUntilSing < previewTime;
+    const isFlying = currentTime < currentLine.startTime && timeUntilSing > 0 && timeUntilSing < previewTime;
 
     // Find next line
     const currentLineIndex = sortedLines.findIndex(line => line === currentLine);
     const nextLine = currentLineIndex >= 0 ? sortedLines[currentLineIndex + 1] : null;
 
-    return { currentLine, nextLine, timeUntilSing, isSinging, isFlying };
+    return { currentLine, nextLine, timeUntilSing, isFlying };
   }, [sortedLines, currentTime, previewTime]);
 
   // ── Refs for measuring first note position ──
@@ -191,7 +191,7 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
   return (
     <div className="absolute bottom-0 left-0 right-0 z-20">
       <div className="bg-gradient-to-t from-black/80 to-transparent p-6">
-        <div ref={containerRef} className={`${lyricsSize === 'large' ? 'text-3xl md:text-4xl' : lyricsSize === 'small' ? 'text-xl md:text-2xl' : 'text-2xl md:text-3xl'} font-bold text-center drop-shadow-lg relative w-full`}>
+        <div ref={containerRef} className="font-bold text-center drop-shadow-lg relative w-full">
           {/* Flying Pointer — flies from off-screen left to the first singable note.
               Disappears immediately when singing starts (no lingering indicator). */}
           {isFlying && (
