@@ -69,7 +69,7 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     const comp = s.competitiveGame?.settings?.blindFrequency;
     if (typeof comp === 'number') return comp;
     // Fallback: unified setup result (library quick-start) stores label ('light', 'normal', etc.)
-    const label = s.unifiedSetupResult?.settings?.blindFrequency as string | undefined;
+    const label = (s.unifiedSetupResult?.settings as Record<string, unknown> | undefined)?.blindFrequency as string | undefined;
     const freqMap: Record<string, number> = { light: 0.15, normal: 0.30, hard: 0.60, insane: 0.90 };
     return freqMap[label || 'normal'];
   });
@@ -78,21 +78,21 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     const comp = s.competitiveGame?.settings?.missingWordFrequency;
     if (typeof comp === 'number') return comp;
     // Fallback: unified setup result (library quick-start) stores label ('light', 'normal', etc.)
-    const label = s.unifiedSetupResult?.settings?.missingWordFrequency as string | undefined;
+    const label = (s.unifiedSetupResult?.settings as Record<string, unknown> | undefined)?.missingWordFrequency as string | undefined;
     const freqMap: Record<string, number> = { light: 0.15, easy: 0.15, normal: 0.30, hard: 0.60, insane: 0.90 };
     return freqMap[label || 'normal'];
   });
   const blindHardcore = usePartyStore(s =>
-    s.competitiveGame?.settings?.hardcore ?? !!(s.unifiedSetupResult?.settings?.hardcore)
+    s.competitiveGame?.settings?.hardcore ?? !!(s.unifiedSetupResult?.settings as Record<string, unknown> | undefined)?.hardcore
   );
   const hardcoreMissingWords = usePartyStore(s =>
-    s.competitiveGame?.settings?.hardcoreMissingWords ?? !!(s.unifiedSetupResult?.settings?.hardcoreMissingWords)
+    s.competitiveGame?.settings?.hardcoreMissingWords ?? !!(s.unifiedSetupResult?.settings as Record<string, unknown> | undefined)?.hardcoreMissingWords
   );
   const missingWordsGranularity = usePartyStore(s =>
-    (s.competitiveGame?.settings?.missingWordsGranularity ?? s.unifiedSetupResult?.settings?.granularity) as 'word' | 'passage' | 'both' | undefined
+    (s.competitiveGame?.settings?.missingWordsGranularity ?? (s.unifiedSetupResult?.settings as Record<string, unknown> | undefined)?.granularity) as 'word' | 'passage' | 'both' | undefined
   );
   const escalating = usePartyStore(s =>
-    s.competitiveGame?.settings?.escalating ?? !!(s.unifiedSetupResult?.settings?.escalating)
+    s.competitiveGame?.settings?.escalating ?? !!(s.unifiedSetupResult?.settings as Record<string, unknown> | undefined)?.escalating
   );
   const { pitchResult, initialize, start, stop, setDifficulty: setPitchDifficulty } = usePitchDetector();
 
