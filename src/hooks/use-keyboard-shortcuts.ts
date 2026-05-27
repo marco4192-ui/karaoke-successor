@@ -147,12 +147,8 @@ export function useGlobalKeyboardShortcuts(cb: GlobalShortcutCallbacks) {
         cb.navigateTo('home');
         return;
       }
-      // 6. On home screen → exit (try Tauri, fallback to nothing in browser)
-      if ('__TAURI_INTERNALS__' in window) {
-        import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
-          getCurrentWindow().close().catch(() => {});
-        }).catch(() => {});
-      }
+      // 6. On home screen → do nothing (Escape should never close the app,
+      //    only navigate back through menus up to the start screen)
     },
   });
 

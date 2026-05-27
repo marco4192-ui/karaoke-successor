@@ -10,6 +10,7 @@ import { checkRateLimit, getClientIp } from '@/lib/rate-limiter';
 const GET_RATE_LIMITS: Record<string, number> = {
   connect: 10,    // new companion connections — keep existing limit
   getpitch: 60,   // polled by main app at ~1 Hz
+  getcommands: 300, // polled by main app at ~2-5 Hz for remote control commands
   status: 30,
   clients: 30,
 };
