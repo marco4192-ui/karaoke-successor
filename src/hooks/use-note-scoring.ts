@@ -184,7 +184,7 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
         // Throttled state sync: flush to React state at ~30Hz (33ms)
         const now = performance.now();
         if (_playerIndex === 1) {
-          if (now - lastP2NotePerfSyncRef.current >= 16) {
+          if (now - lastP2NotePerfSyncRef.current >= 33) {
             lastP2NotePerfSyncRef.current = now;
             setP2NotePerformance(p2NotePerformanceRef.current);
           }
@@ -277,12 +277,12 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
           perfRef.set(result.activeNoteId, samples);
         }
 
-        // Throttled state sync: flush to React state at ~60Hz (16ms)
-        // Previously 33ms (~30Hz), reduced for faster note coloring response.
+        // Throttled state sync: flush to React state at ~30Hz (33ms).
+        // 60Hz (16ms) is overkill — visually identical at 30Hz but halves React re-renders.
         // CRITICAL: Reuse the SAME Map reference and increment a version counter.
         // This prevents React.memo on NoteBlock from detecting a new prop reference.
         const now = performance.now();
-        if (now - lastNotePerfSyncRef.current >= 16) {
+        if (now - lastNotePerfSyncRef.current >= 33) {
           lastNotePerfSyncRef.current = now;
           // Set the same ref object — shallow equality passes
           setNotePerformance(notePerformanceRef.current);

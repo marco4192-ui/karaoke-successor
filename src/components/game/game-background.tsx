@@ -65,7 +65,11 @@ export function GameBackground({
     } else {
       video.pause();
     }
-  }, [isPlaying, videoRef]);
+  // DO-NOT-CHANGE: videoRef?.current (not videoRef) ensures this re-fires when the
+  // <video> DOM element is recreated (e.g., song/round change). videoRef is a stable
+  // ref object whose identity never changes, so depending on it would miss element swaps.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying, videoRef?.current]);
 
   // YouTube video (visible + audio)
   if (showBackgroundVideo && isYouTube && youtubeVideoId) {

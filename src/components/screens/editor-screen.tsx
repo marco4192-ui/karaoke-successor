@@ -82,9 +82,14 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
         const BATCH_SIZE = 20;
         const updates = new Map<string, Song>();
 
-        for (let i = 0; i < songs.length; i += BATCH_SIZE) {
+        // DO-NOT-CHANGE: Only restore cover URLs for the first 100 songs.
+        // Processing ALL songs (even invisible ones) causes thousands of filesystem
+        // I/O calls on Tauri that freeze the editor UI for several seconds.
+        // 100 songs is enough for the initial viewport + a generous scroll buffer.
+        const songsToProcess = songs.slice(0, 100);
+        for (let i = 0; i < songsToProcess.length; i += BATCH_SIZE) {
           if (cancelled) return;
-          const batch = songs.slice(i, i + BATCH_SIZE);
+          const batch = songsToProcess.slice(i, i + BATCH_SIZE);
           const results = await Promise.all(batch.map(song => ensureSongUrls(song)));
 
           for (let j = 0; j < results.length; j++) {
@@ -569,7 +574,6 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                       src={song.coverImage}
                       alt={song.title}
                       className="w-full h-full object-cover"
-                      loading="lazy"
                       onError={handleImageError}
                     />
                   ) : null}

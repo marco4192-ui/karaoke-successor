@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect } from 'react';
 import type { Song } from '@/types/game';
+import { usePartyStore } from '@/lib/game/party-store';
 import {
   BattleRoyaleGame,
   getEliminationOrder,
@@ -58,6 +60,17 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
     notePerformance,
     eliminationPhase,
   } = useBattleRoyaleGame({ game, songs, onUpdateGame });
+
+  // DO-NOT-CHANGE: Clear pause state on round transitions to prevent the pause overlay
+  // from leaking into the next round's PlayingView. Without this, if a user paused during
+  // a round and the round ended (timer expired), the pause overlay would flash on the
+  // next round because pauseDialogAction is never cleared by the round transition logic.
+  const setPauseDialogAction = usePartyStore(s => s.setPauseDialogAction);
+  useEffect(() => {
+    if (game.status === 'setup' || game.status === 'countdown') {
+      setPauseDialogAction(null);
+    }
+  }, [game.status, setPauseDialogAction]);
 
   // Winner celebration
   if (game.status === 'completed' && game.winner) {

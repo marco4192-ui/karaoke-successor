@@ -97,11 +97,10 @@ export function useBattleRoyaleSongMedia({
     if (key === lastHandledRef.current) return;
     lastHandledRef.current = key;
 
-    // Don't load media if the song hasn't been resolved for this snippet yet
-    // (currentSong still belongs to the previous snippet during async loading)
-    const expectedSongId = currentRoundSongId ?? '';
-    if (songId && expectedSongId && songId !== expectedSongId) return;
-
+    // DO-NOT-CHANGE: Always reset media state when song/round/snippet changes, BEFORE
+    // any early returns. If we don't do this, the game init effect sees stale mediaLoaded=true
+    // and resolvedUrls from the previous round and tries to play() on fresh (empty) DOM
+    // elements, causing "ERR_FILE_NOT_FOUND" blob URL errors and "no supported sources".
     audioHasPlayedRef.current = false;
     setMediaLoaded(false);
     resolvedAudioUrlRef.current = null;
@@ -116,6 +115,11 @@ export function useBattleRoyaleSongMedia({
       videoRef.current.pause();
       videoRef.current.src = '';
     }
+
+    // Don't load media if the song hasn't been resolved for this snippet yet
+    // (currentSong still belongs to the previous snippet during async loading)
+    const expectedSongId = currentRoundSongId ?? '';
+    if (songId && expectedSongId && songId !== expectedSongId) return;
 
     if (!currentSong) return;
 

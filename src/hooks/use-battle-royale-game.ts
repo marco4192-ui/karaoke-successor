@@ -173,17 +173,16 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
   const lastNotePerfSyncRef = useRef(0);
 
   // ── Countdown state (V3) ───────────────────────────────────────────
-  const [countdown, setCountdown] = useState(0);
+  // DO-NOT-CHANGE: countdown is derived synchronously from game.status to avoid
+  // a one-frame gap where game.status='countdown' but countdown=0 (from stale useState).
+  // This gap caused the raw PlayingView (with pause overlay) to flash briefly during
+  // round transitions before the countdown overlay could cover it.
+  const targetCountdown = game.status === 'countdown' ? game.settings.countdownDuration : 0;
+  const [countdown, setCountdown] = useState(targetCountdown);
+  useEffect(() => { setCountdown(targetCountdown); }, [targetCountdown]);
   const gameRefRef = useRef<{ current: BattleRoyaleGame }>({ current: game } as { current: BattleRoyaleGame });
   // gameRef is provided by round handlers below, but we need a placeholder here
 
-  useEffect(() => {
-    if (game.status === 'countdown') {
-      setCountdown(game.settings.countdownDuration);
-    } else {
-      setCountdown(0);
-    }
-  }, [game.status, game.settings.countdownDuration]);
   useEffect(() => {
     if (countdown <= 0 || game.status !== 'countdown') return;
     const timer = setTimeout(() => {
@@ -381,7 +380,7 @@ export function useBattleRoyaleGame({ game, songs, onUpdateGame }: UseBattleRoya
           // eslint-disable-next-line no-console
           console.warn('[BattleRoyale] No audio URL resolved');
         }
-        if (videoRef.current && resolvedVideoUrlRef.current) {
+        if (videoRef.current && resolvedVideoUrlRef.current && !pausedRef.current) {
           videoRef.current.play().catch(e => console.error('Video play error:', e));
         }
 
