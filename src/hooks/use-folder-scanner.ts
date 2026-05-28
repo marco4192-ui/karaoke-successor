@@ -426,7 +426,7 @@ export function useFolderScanner(): UseFolderScannerReturn {
 
   // Reset library without deleting highscores
   const handleResetLibrary = useCallback(async () => {
-    if (!safeConfirm('Are you sure you want to reset the song library? This will remove all imported songs, but your highscores will be preserved.')) {
+    if (!(await safeConfirm('Are you sure you want to reset the song library? This will remove all imported songs, but your highscores will be preserved.'))) {
       return;
     }
 
@@ -481,11 +481,11 @@ export function useFolderScanner(): UseFolderScannerReturn {
 
   // Clear all data including highscores
   const handleClearAllData = useCallback(async () => {
-    if (!safeConfirm('⚠️ WARNING: This will delete ALL data including highscores, profiles, and settings. This cannot be undone!\n\nType "DELETE" to confirm.')) {
+    if (!(await safeConfirm('⚠️ WARNING: This will delete ALL data including highscores, profiles, and settings. This cannot be undone!\n\nType "DELETE" to confirm.'))) {
       return;
     }
 
-    const confirmation = safePrompt('Type "DELETE" to confirm complete data reset:');
+    const confirmation = await safePrompt('Type "DELETE" to confirm complete data reset:');
     if (confirmation !== 'DELETE') {
       return;
     }

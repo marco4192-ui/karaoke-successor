@@ -169,9 +169,9 @@ export function PlaylistView({
                         </svg>
                       </button>
                       <button
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.stopPropagation();
-                          if (safeConfirm(t('libraryPlaylist.deleteConfirm').replace('{name}', playlist.name))) {
+                          if (await safeConfirm(t('libraryPlaylist.deleteConfirm').replace('{name}', playlist.name))) {
                             onPlaylistDelete(playlist.id);
                           }
                         }}

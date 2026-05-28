@@ -382,7 +382,12 @@ function parseLyricsFromTxt(content: string, bpm: number, gap: number): LyricLin
   let currentPlayer: 'P1' | 'P2' | undefined = undefined;
 
   for (const line of lines) {
-    const trimmedLine = line.trim();
+    // IMPORTANT: Use trimStart() — NOT trim() — to preserve trailing spaces on note lyrics.
+    // A trailing space in the lyric (e.g., "the ") means this is a complete word.
+    // No trailing space (e.g., "whis") means it's a syllable continuation.
+    // Do NOT change this to trim() — that would break syllable parsing.
+    // (Same rule as in ultrastar-metadata.ts and song-lyrics-loader.ts — keep all in sync.)
+    const trimmedLine = line.trimStart();
 
     if (trimmedLine === 'P1' || trimmedLine === 'P1:') { currentPlayer = 'P1'; continue; }
     if (trimmedLine === 'P2' || trimmedLine === 'P2:') { currentPlayer = 'P2'; continue; }
@@ -406,6 +411,8 @@ function parseLyricsFromTxt(content: string, bpm: number, gap: number): LyricLin
     const noteMatch = noteLine.match(/^\s*([:*FGR])\s*(-?\d+)\s+(\d+)\s+(-?\d+)\s*(.*)$/);
     if (noteMatch) {
       const [, type, startStr, durationStr, pitchStr, lyric] = noteMatch;
+      // DON'T trim - preserve trailing spaces for syllable detection
+      // A trailing space means this is a complete word, no space means it's a syllable
       notes.push({ type, startBeat: parseInt(startStr), duration: parseInt(durationStr), pitch: parseInt(pitchStr), lyric, player: notePlayer });
       continue;
     }
