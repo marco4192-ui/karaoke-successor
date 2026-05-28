@@ -181,15 +181,16 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
           perfRef.current.set(result.activeNoteId, samples);
         }
 
-        // Throttled state sync: flush to React state at ~30Hz (33ms)
+        // Throttled state sync: flush to React state at ~60Hz (16ms) for smooth
+        // note coloring. DO-NOT-CHANGE: Lower values cause visible stuttering.
         const now = performance.now();
         if (_playerIndex === 1) {
-          if (now - lastP2NotePerfSyncRef.current >= 33) {
+          if (now - lastP2NotePerfSyncRef.current >= 16) {
             lastP2NotePerfSyncRef.current = now;
             setP2NotePerformance(p2NotePerformanceRef.current);
           }
         } else {
-          if (now - lastNotePerfSyncRef.current >= 33) {
+          if (now - lastNotePerfSyncRef.current >= 16) {
             lastNotePerfSyncRef.current = now;
             setNotePerformance(notePerformanceRef.current);
           }
@@ -277,12 +278,13 @@ export function useNoteScoring(options: UseNoteScoringOptions): UseNoteScoringRe
           perfRef.set(result.activeNoteId, samples);
         }
 
-        // Throttled state sync: flush to React state at ~30Hz (33ms).
-        // 60Hz (16ms) is overkill — visually identical at 30Hz but halves React re-renders.
+        // Throttled state sync: flush to React state at ~60Hz (16ms) for smooth
+        // note coloring. DO-NOT-CHANGE: Lower values (e.g., 33ms/30Hz) cause visible
+        // stuttering of note highlight feedback even when the game loop runs at 60fps.
         // CRITICAL: Reuse the SAME Map reference and increment a version counter.
         // This prevents React.memo on NoteBlock from detecting a new prop reference.
         const now = performance.now();
-        if (now - lastNotePerfSyncRef.current >= 33) {
+        if (now - lastNotePerfSyncRef.current >= 16) {
           lastNotePerfSyncRef.current = now;
           // Set the same ref object — shallow equality passes
           setNotePerformance(notePerformanceRef.current);
