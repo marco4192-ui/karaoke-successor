@@ -7,9 +7,11 @@ import { checkRateLimit, getClientIp } from '@/lib/rate-limiter';
 
 // Per-action GET rate limits (requests per minute, per IP).
 // Each action gets its own sliding-window bucket via compound key `${ip}:${action}`.
+// IMPORTANT: BR companion polling runs at 200ms intervals (5 Hz = 300/min).
+// Do NOT lower this below 300 — that would cause constant 429 errors during BR gameplay.
 const GET_RATE_LIMITS: Record<string, number> = {
   connect: 10,    // new companion connections — keep existing limit
-  getpitch: 60,   // polled by main app at ~1 Hz
+  getpitch: 300,   // BR companion polls at 5 Hz = 300/min
   getcommands: 300, // polled by main app at ~2-5 Hz for remote control commands
   status: 30,
   clients: 30,

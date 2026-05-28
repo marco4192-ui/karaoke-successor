@@ -65,11 +65,15 @@ export function useCptmScoring(params: CptmScoringParams): void {
     const cachedPitch = companionPitchCacheRef.current.get(player.id);
     if (!cachedPitch || cachedPitch.note == null) return;
 
-    // Build a fake pitchResult from cached data
+    // Build a fake pitchResult from cached data.
+    // IMPORTANT: Use null (not 0) as the frequency fallback so that
+    // shouldSkipPitch can distinguish "no frequency data" from a valid
+    // but unexpectedly-zero frequency. Using 0 would make !frequency
+    // truthy and incorrectly skip scoring even when note is present.
     const pitchResult = {
       note: cachedPitch.note,
       rawNote: cachedPitch.note, // Companion pitch is not stabilized
-      frequency: cachedPitch.frequency ?? 0,
+      frequency: cachedPitch.frequency ?? null,
       clarity: cachedPitch.clarity,
       volume: cachedPitch.volume,
       isSinging: cachedPitch.isSinging,

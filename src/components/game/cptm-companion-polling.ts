@@ -59,7 +59,9 @@ export function useCompanionPitchPolling(
         if (!res.ok) return;
         const data = await res.json();
 
-        const pitchEntries = Array.isArray(data) ? data : [];
+        // IMPORTANT: The getpitch API returns { success, pitches, clients }, not a raw array.
+        // Do NOT change this to `Array.isArray(data)` — that would always be false.
+        const pitchEntries = Array.isArray(data?.pitches) ? data.pitches : [];
         const now = Date.now();
         const activeProfileIds = new Set<string>();
 

@@ -139,9 +139,11 @@ export class PitchDetector {
 
       return true;
     } catch (error) {
+      const errorName = error instanceof DOMException ? error.name : '';
+
       // If OverconstrainedError and a specific deviceId was requested,
       // retry without the exact constraint (system picks the closest device).
-      if (error instanceof DOMException && error.name === 'OverconstrainedError' && deviceId) {
+      if (errorName === 'OverconstrainedError' && deviceId) {
         // eslint-disable-next-line no-console
         console.warn(`[PitchDetector] OverconstrainedError for deviceId=${deviceId}, retrying without exact constraint…`);
         try {
@@ -179,6 +181,49 @@ export class PitchDetector {
           console.error('[PitchDetector] Retry also failed:', retryError);
         }
       }
+
+      // If NotFoundError and a specific deviceId was requested, the device
+      // was disconnected (e.g. USB mic unplugged during PTM). Retry with no
+      // deviceId so the system falls back to the default microphone.
+      if (errorName === 'NotFoundError' && deviceId) {
+        // eslint-disable-next-line no-console
+        console.warn(`[PitchDetector] NotFoundError for deviceId=${deviceId}, retrying with default mic…`);
+        try {
+          this.mediaStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: false,
+            },
+          });
+
+          this.audioContext = new AudioContext();
+          if (this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
+          }
+          const source = this.audioContext.createMediaStreamSource(this.mediaStream);
+          this.analyser = this.audioContext.createAnalyser();
+          this.analyser.fftSize = this.bufferSize;
+          this.analyser.smoothingTimeConstant = 0.5;
+          if (stereoChannel !== undefined && stereoChannel >= 0) {
+            const splitter = this.audioContext.createChannelSplitter(2);
+            source.connect(splitter);
+            splitter.connect(this.analyser, stereoChannel);
+          } else {
+            source.connect(this.analyser);
+          }
+          this.buffer = new Float32Array(this.analyser.fftSize);
+          this.frequencyBuffer = new Float32Array(this.analyser.frequencyBinCount);
+          this.yinBuffer = new Float32Array(Math.floor(this.analyser.fftSize / 2));
+          // eslint-disable-next-line no-console
+          console.log('[PitchDetector] Retry with default mic succeeded');
+          return true;
+        } catch (retryError) {
+          // eslint-disable-next-line no-console
+          console.error('[PitchDetector] NotFoundError retry also failed:', retryError);
+        }
+      }
+
       // eslint-disable-next-line no-console
       console.error('Failed to initialize pitch detector:', error);
       return false;

@@ -148,7 +148,12 @@ function parseUltraStarTxtContent(content: string, gap: number, bpm: number): Ly
   let noteLineCount = 0;
 
   for (const line of lines) {
-    const trimmedLine = line.trim();
+    // IMPORTANT: Use trimStart() — NOT trim() — to preserve trailing spaces on note lyrics.
+    // A trailing space in the lyric (e.g., "the ") means this is a complete word.
+    // No trailing space (e.g., "whis") means it's a syllable continuation.
+    // Do NOT change this to trim() — that would break syllable parsing.
+    // (Same rule as in ultrastar-metadata.ts — keep both in sync.)
+    const trimmedLine = line.trimStart();
 
     if (trimmedLine === 'P1' || trimmedLine === 'P1:' || trimmedLine === 'P 1') { currentPlayer = 'P1'; continue; }
     if (trimmedLine === 'P2' || trimmedLine === 'P2:' || trimmedLine === 'P 2') { currentPlayer = 'P2'; continue; }

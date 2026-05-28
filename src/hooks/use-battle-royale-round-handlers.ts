@@ -194,18 +194,24 @@ export function useBattleRoyaleRoundHandlers({
       survivorFlashTimerRef.current = setTimeout(() => {
         survivorFlashTimerRef.current = null;
         if (!mountedRef.current) return;
-        setEliminationPhase(null);
-        setShowElimination(false);
-        if (updatedGame.winner) return;
-        // Auto-advance to next round setup, then auto-start
+        if (updatedGame.winner) {
+          setEliminationPhase(null);
+          setShowElimination(false);
+          return;
+        }
+        // IMPORTANT: Update game status FIRST (before hiding overlay) to prevent
+        // a brief flash of the old pause/setup screen during segment transitions.
+        // Do NOT reorder this — the status must change in the same render batch
+        // as the overlay hide, not after it.
         const nextGame = advanceToNextRound(updatedGame);
         gameRef.current = nextGame;
         onUpdateGameRef.current(nextGame);
+
+        setEliminationPhase(null);
+        setShowElimination(false);
         roundEndingRef.current = false;
-        // Clear pre-fetch (will be used by song media hook)
-        // Auto-start next round after a brief pause for transition
-        autoStartTimerRef.current = setTimeout(() => {
-          autoStartTimerRef.current = null;
+
+        setTimeout(() => {
           if (!mountedRef.current) return;
           handleStartRoundRef.current();
         }, 300);

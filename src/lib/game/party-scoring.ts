@@ -100,7 +100,10 @@ export function shouldSkipPitch(
   pitch: PitchInput,
   difficulty: Difficulty,
 ): boolean {
-  if (!pitch.frequency || pitch.note === null) return true;
+  // No note at all → nothing to score
+  if (pitch.note === null) return true;
+  // Frequency is present but invalid (0 Hz or NaN) → skip
+  if (pitch.frequency !== null && pitch.frequency !== undefined && !pitch.frequency) return true;
   const diffSettings = DIFFICULTY_SETTINGS[difficulty];
   if (!diffSettings) return true;
   if (pitch.volume < diffSettings.volumeThreshold) return true;

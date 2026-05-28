@@ -39,8 +39,13 @@ export function usePtmScoring({
 }: UsePtmScoringOptions): void {
   const lastEvalTimeRef = useRef(0);
 
-  // Track how many consecutive frames had no pitchResult (for logging)
+  // Separate throttle counters for different log messages.
+  // Previously a single ref was shared between null-pitch and skip-pitch
+  // paths; the reset on line "noPitchLogCooldownRef.current = 0" (executed
+  // every frame when pitchResult is non-null) clobbered the skip-pitch
+  // throttle, causing the shouldSkipPitch log to fire ~60x/sec.
   const noPitchLogCooldownRef = useRef(0);
+  const skipPitchLogCooldownRef = useRef(0);
 
   // Read currentTime from a ref inside the callback to avoid recreating
   // the RAF loop ~40 times/sec (currentTime changes every frame).
@@ -51,7 +56,7 @@ export function usePtmScoring({
     const time = currentTimeRef.current;
 
     if (!pitchResult) {
-      // Log at most once every ~2 seconds (250ms throttle * ~8 frames)
+      // Log at most once per sustained null streak
       noPitchLogCooldownRef.current++;
       if (noPitchLogCooldownRef.current <= 1) {
         // eslint-disable-next-line no-console
@@ -63,7 +68,7 @@ export function usePtmScoring({
 
     if (shouldSkipPitch(pitchResult, difficulty)) {
       // Log the skip reason (throttled: only once per sustained skip streak)
-      if (noPitchLogCooldownRef.current <= 0) {
+      if (skipPitchLogCooldownRef.current <= 0) {
         // eslint-disable-next-line no-console
         console.warn('[PTM-Scoring] shouldSkipPitch=true:',
           !pitchResult.frequency || pitchResult.note === null ? 'no frequency/note' :
@@ -72,10 +77,10 @@ export function usePtmScoring({
           pitchResult.isSinging === false ? 'isSinging=false (vocal detector rejected)' :
           'unknown');
       }
-      noPitchLogCooldownRef.current = 1;
+      skipPitchLogCooldownRef.current = 1;
       return;
     }
-    noPitchLogCooldownRef.current = 0;
+    skipPitchLogCooldownRef.current = 0;
 
     const activeNote = findActiveNote(notesSource?.lyrics, time);
     if (!activeNote) return;
@@ -104,9 +109,10 @@ export function usePtmScoring({
     forceRender();
   }, [pitchResult, notesSource, difficulty, currentPlayerIndex, scoringMeta, forceRender, playersRef]);
 
-  // Reset skip-log cooldown when scoring restarts (e.g., phase or isPlaying changes)
+  // Reset log cooldowns when scoring restarts (e.g., phase or isPlaying changes)
   useEffect(() => {
     noPitchLogCooldownRef.current = 0;
+    skipPitchLogCooldownRef.current = 0;
   }, [phase, isPlaying]);
 
   // ── Game loop: score during playing ──
