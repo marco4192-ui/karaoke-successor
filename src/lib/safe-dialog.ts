@@ -2,6 +2,7 @@
 // In Tauri v2, the dialog plugin injects JavaScript that overrides window.alert/confirm/prompt.
 // On Windows WebView2, these overrides return Promise<boolean> instead of synchronous boolean,
 // which breaks try/catch (can't catch async rejections) and makes confirm() always truthy.
+// The IPC layer may also fail with "Headers is not a constructor" if the runtime context is broken.
 //
 // DO-NOT-CHANGE: The iframe technique captures the ORIGINAL browser dialog functions BEFORE
 // Tauri's dialog plugin overrides them. Without this, we'd get "plugin:dialog|confirm not
@@ -52,12 +53,12 @@ export function safeAlert(message: string): void {
  */
 export async function safeConfirm(message: string): Promise<boolean> {
   try {
-    const result = confirm(message) as boolean | Promise<boolean>;
+    const result: unknown = confirm(message);
     // Tauri override returns Promise<boolean> — if result is a Promise, await it
     if (result instanceof Promise) {
       return await result;
     }
-    return result;
+    return result as boolean;
   } catch {
     // Tauri ACL error or plugin failure — fall back to original native dialog
     if (_originalConfirm) {
@@ -73,11 +74,11 @@ export async function safeConfirm(message: string): Promise<boolean> {
  */
 export async function safePrompt(message: string, defaultText?: string): Promise<string | null> {
   try {
-    const result = prompt(message, defaultText) as (string | null) | Promise<string | null>;
+    const result: unknown = prompt(message, defaultText);
     if (result instanceof Promise) {
       return await result;
     }
-    return result;
+    return result as string | null;
   } catch {
     if (_originalPrompt) {
       return _originalPrompt(message, defaultText);

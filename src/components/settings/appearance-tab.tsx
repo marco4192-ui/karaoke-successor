@@ -280,7 +280,7 @@ export function AppearanceTab({
                 <button
                   key={style.id}
                   type="button"
-                  onClick={() => setLyricsStyle(style.id)}
+                  onClick={() => { setLyricsStyle(style.id); saveSetting(StorageKeys.LYRICS_STYLE, style.id); }}
                   className={`px-3 py-2 rounded-lg border-2 transition-all text-sm cursor-pointer ${
                     lyricsStyle === style.id
                       ? 'border-purple-500 bg-purple-500/20 text-purple-300'

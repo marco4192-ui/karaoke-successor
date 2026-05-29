@@ -4,9 +4,14 @@
 
 import { invoke } from '@tauri-apps/api/core';
 
+// DO-NOT-CHANGE: Use a regex that only matches `..` as a standalone path segment
+// (preceded/followed by a path separator or string boundary). A naive `path.includes('..')`
+// would falsely reject valid filenames containing `...` (e.g., "...Baby One More Time").
+const PATH_TRAVERSAL_RE = /(^|[\\/])\.\.([\\/]|$)/;
+
 /** Reject paths containing directory traversal sequences (`..`) or null bytes. */
 function validatePath(path: string): void {
-  if (path.includes('..') || path.includes('\0')) {
+  if (PATH_TRAVERSAL_RE.test(path) || path.includes('\0')) {
     throw new Error(`[NativeFS] Path traversal or null byte detected — rejecting path: ${path}`);
   }
 }

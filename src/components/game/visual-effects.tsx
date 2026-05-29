@@ -407,14 +407,12 @@ export function AnimatedBackground({
     let frameCount = 0;
 
     const animate = () => {
-      // Throttle to ~30fps (every 2nd frame) — background effects don't need 60fps
+      // DO-NOT-CHANGE: Running at 60fps (no frame skip) to avoid visual desynchronization
+    // with other 60fps animation loops. Previously throttled to 30fps (frameCount % 2)
+    // which caused visible jitter when combined with 60fps note highway and particles.
       frameCount++;
-      if (frameCount % 2 !== 0) {
-        animationRef.current = requestAnimationFrame(animate);
-        return;
-      }
 
-      timeRef.current += 0.032; // ~30fps → double time step to maintain animation speed
+      timeRef.current += 0.016; // 60fps time step
       const time = timeRef.current;
       const energy = songEnergyRef.current;
       const playing = isPlayingRef.current;
@@ -572,7 +570,8 @@ export function useSongEnergy(audioRef?: React.RefObject<HTMLAudioElement | null
 
     let cancelled = false;
     let analyser: AnalyserNode | null = null;
-    let interval: ReturnType<typeof setInterval> | undefined;
+    let rafId: number | undefined;
+    let lastEnergyTime = 0;
 
     const init = async () => {
       try {
@@ -591,22 +590,32 @@ export function useSongEnergy(audioRef?: React.RefObject<HTMLAudioElement | null
 
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
-        const updateEnergy = () => {
-          if (!analyserRef.current) return;
-          analyserRef.current.getByteFrequencyData(dataArray);
+        const updateEnergy = (timestamp: number) => {
+          if (cancelled) return;
+          // DO-NOT-CHANGE: Using rAF instead of setInterval(100) to synchronize with
+          // the display refresh rate. setInterval fires at arbitrary points within a frame,
+          // causing visual jitter when the energy value updates mid-frame. ~10fps (100ms
+          // throttle) is sufficient for background reactivity — no need for higher rate.
+          if (timestamp - lastEnergyTime >= 100) {
+            lastEnergyTime = timestamp;
+            if (analyserRef.current) {
+              analyserRef.current.getByteFrequencyData(dataArray);
 
-          // Calculate average energy in bass frequencies (first 1/4 of spectrum)
-          let bassEnergy = 0;
-          const bassRange = Math.floor(dataArray.length / 4);
-          for (let i = 0; i < bassRange; i++) {
-            bassEnergy += dataArray[i];
+              // Calculate average energy in bass frequencies (first 1/4 of spectrum)
+              let bassEnergy = 0;
+              const bassRange = Math.floor(dataArray.length / 4);
+              for (let i = 0; i < bassRange; i++) {
+                bassEnergy += dataArray[i];
+              }
+              bassEnergy /= bassRange * 255;
+
+              setEnergy((prev) => prev * 0.9 + bassEnergy * 0.1); // Smooth transition
+            }
           }
-          bassEnergy /= bassRange * 255;
-
-          setEnergy((prev) => prev * 0.9 + bassEnergy * 0.1); // Smooth transition
+          rafId = requestAnimationFrame(updateEnergy);
         };
 
-        interval = setInterval(updateEnergy, 100);
+        rafId = requestAnimationFrame(updateEnergy);
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error('[useSongEnergy] Failed to initialize:', error);
@@ -617,7 +626,7 @@ export function useSongEnergy(audioRef?: React.RefObject<HTMLAudioElement | null
 
     return () => {
       cancelled = true;
-      if (interval) clearInterval(interval);
+      if (rafId !== undefined) cancelAnimationFrame(rafId);
       // Disconnect old analyser to prevent AudioNode leak.
       // Do NOT close the shared AudioContext — other consumers may still use it.
       if (analyser) {

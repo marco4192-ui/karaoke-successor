@@ -12,7 +12,7 @@ import { StorageKeys, getJsonOptional, setJson, setItem } from '@/lib/storage';
 import { getAllSongs } from '@/lib/game/song-library';
 import { isTauri, normalizeFilePath } from '@/lib/tauri-file-storage';
 import { nativePickFolder } from '@/lib/native-fs';
-import { safeAlert } from '@/lib/safe-dialog';
+import { safeAlert, safePrompt } from '@/lib/safe-dialog';
 
 interface LibraryTabProps {
   songsFolder: string;
@@ -65,8 +65,8 @@ export function LibraryTab({
     setJson(StorageKeys.ADDITIONAL_SONG_FOLDERS, folders);
   }, []);
 
-  const handleAddFolderPath = useCallback(() => {
-    const path = prompt(t('settingsLibrary.enterFolderPath'));
+  const handleAddFolderPath = useCallback(async () => {
+    const path = await safePrompt(t('settingsLibrary.enterFolderPath'));
     if (path && path.trim()) {
       const normalized = normalizeFilePath(path.trim());
       if (normalized === songsFolder || additionalFolders.includes(normalized)) {
