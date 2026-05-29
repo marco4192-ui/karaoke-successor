@@ -49,49 +49,14 @@ import type { GameScreenProps, GameScreenHookReturn } from './game-screen-types'
 // ===================== MAIN HOOK =====================
 
 export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScreenHookReturn {
-  // CRITICAL: Individual selectors — prevents re-render cascade on every store tick.
-  // Selecting `s.gameState` as a whole creates a new object ref whenever ANY field
-  // changes (setCurrentTime @40fps, setDetectedPitch @60fps), which re-renders the
-  // entire component tree and causes Note Highway stuttering.
-  const gsStatus = useGameStore(s => s.gameState.status);
-  const gsCurrentSong = useGameStore(s => s.gameState.currentSong);
-  const gsPlayers = useGameStore(s => s.gameState.players);
-  const gsDifficulty = useGameStore(s => s.gameState.difficulty);
-  const gsGameMode = useGameStore(s => s.gameState.gameMode);
-  const gsChallengeMode = useGameStore(s => s.gameState.challengeMode);
-  const gsCurrentTime = useGameStore(s => s.gameState.currentTime);
-  const gsIsMicActive = useGameStore(s => s.gameState.isMicActive);
-  const gsDetectedPitch = useGameStore(s => s.gameState.detectedPitch);
-  const gsIsBlindSection = useGameStore(s => s.gameState.isBlindSection);
-  const gsBlindHardcore = useGameStore(s => s.gameState.blindHardcore);
-  const gsHardcoreMissingWords = useGameStore(s => s.gameState.hardcoreMissingWords);
-  const gsMissingWordsIndices = useGameStore(s => s.gameState.missingWordsIndices);
-  const gsCurrentLineIndex = useGameStore(s => s.gameState.currentLineIndex);
-  const gsResults = useGameStore(s => s.gameState.results);
-
-  // Stable combined reference — only creates a new object when an individual field changes.
-  // Downstream consumers receive `gameState` as type GameState without cascading re-renders.
-  const gameState = useMemo(() => ({
-    status: gsStatus,
-    currentSong: gsCurrentSong,
-    players: gsPlayers,
-    difficulty: gsDifficulty,
-    gameMode: gsGameMode,
-    challengeMode: gsChallengeMode,
-    currentTime: gsCurrentTime,
-    isMicActive: gsIsMicActive,
-    detectedPitch: gsDetectedPitch,
-    isBlindSection: gsIsBlindSection,
-    blindHardcore: gsBlindHardcore,
-    hardcoreMissingWords: gsHardcoreMissingWords,
-    missingWordsIndices: gsMissingWordsIndices,
-    currentLineIndex: gsCurrentLineIndex,
-    results: gsResults,
-  }), [
-    gsStatus, gsCurrentSong, gsPlayers, gsDifficulty, gsGameMode, gsChallengeMode,
-    gsCurrentTime, gsIsMicActive, gsDetectedPitch, gsIsBlindSection, gsBlindHardcore,
-    gsHardcoreMissingWords, gsMissingWordsIndices, gsCurrentLineIndex, gsResults,
-  ]);
+  // DO-NOT-CHANGE: Single selector for gameState. Previous attempt to split into 15
+  // individual selectors + useMemo did NOT help because currentTime (40fps) and
+  // detectedPitch (60fps) are included in the combined object — they force useMemo
+  // to create a new object at the same rate. The split only added overhead (15 Zustand
+  // subscription checks instead of 1). To actually reduce re-renders, currentTime and
+  // detectedPitch would need to be removed from this object and passed separately — but
+  // that requires refactoring all downstream consumers.
+  const gameState = useGameStore(s => s.gameState);
   const setCurrentTime = useGameStore(s => s.setCurrentTime);
   const setDetectedPitch = useGameStore(s => s.setDetectedPitch);
   const updatePlayer = useGameStore(s => s.updatePlayer);

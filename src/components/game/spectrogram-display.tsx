@@ -119,17 +119,18 @@ export function SpectrogramDisplay({
   }, [isActive, audioElement, audioStream]);
 
   // Draw visualization — uses drawRef for self-scheduling to avoid forward reference.
-  // Throttled to ~30fps (every 2nd rAF frame) — previously 15fps (% 4) which caused
-  // visible choppiness. 60fps is unnecessary for frequency bars but 30fps is smooth enough.
-  // DO-NOT-CHANGE: Using % 2 instead of % 4 to eliminate the 15fps choppiness.
+  // Throttled to ~15fps (every 4th rAF frame) to reduce CPU usage.
+  // DO-NOT-CHANGE: Frequency bars are a background decoration — 15fps is plenty smooth.
+  // The canvas draw call is expensive (multiple fillRect + gradients). Raising to 30fps
+  // or 60fps doubles/quadruples this work with no perceptible quality improvement.
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     const analyser = analyserRef.current;
     if (!canvas || !analyser || !isActive) return;
 
-    // Frame-skip throttling: only draw every 2nd rAF callback (~30fps at 60Hz)
+    // Frame-skip throttling: only draw every 4th rAF callback (~15fps at 60Hz)
     frameSkipRef.current++;
-    if (frameSkipRef.current % 2 !== 0) {
+    if (frameSkipRef.current % 4 !== 0) {
       animationRef.current = requestAnimationFrame(() => drawRef.current());
       return;
     }

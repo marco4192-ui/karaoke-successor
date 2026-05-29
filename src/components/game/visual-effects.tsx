@@ -407,12 +407,19 @@ export function AnimatedBackground({
     let frameCount = 0;
 
     const animate = () => {
-      // DO-NOT-CHANGE: Running at 60fps (no frame skip) to avoid visual desynchronization
-    // with other 60fps animation loops. Previously throttled to 30fps (frameCount % 2)
-    // which caused visible jitter when combined with 60fps note highway and particles.
+      // Throttle to ~30fps (every 2nd frame) — background effects don't need 60fps.
+    // DO-NOT-CHANGE: Canvas animations are the heaviest per-frame work in the game loop.
+    // Running at 60fps here doubles CPU usage vs 30fps with no visible quality
+    // difference (particles are blurred/faded by design). If you increase this, you
+    // MUST profile — the combined rAF loops (game loop + pitch + particles + this)
+    // can easily exceed the 16ms frame budget.
       frameCount++;
+      if (frameCount % 2 !== 0) {
+        animationRef.current = requestAnimationFrame(animate);
+        return;
+      }
 
-      timeRef.current += 0.016; // 60fps time step
+      timeRef.current += 0.032; // ~30fps → double time step to maintain animation speed
       const time = timeRef.current;
       const energy = songEnergyRef.current;
       const playing = isPlayingRef.current;
