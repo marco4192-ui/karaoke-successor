@@ -329,7 +329,19 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
   }, [audioRef, videoRef, setIsPlaying, nativeAudioResume]);
 
   // ── Initialize and start game - countdown + media playback ──
+  // DO-NOT-CHANGE: Dependencies use `effectiveSong?.id` instead of `effectiveSong`.
+  // When lyrics load async from IndexedDB, effectiveSong gets a new object reference
+  // but the song ID stays the same. Using the full effectiveSong as a dependency
+  // would re-run this effect, calling stop() on the pitch detector and causing
+  // pitch detection to stop mid-game. Using the song ID (a stable string) prevents
+  // this while still correctly re-initializing when the song actually changes.
+  const effectiveSongIdRef = useRef(effectiveSong?.id ?? null);
   useEffect(() => {
+    const currentSongId = effectiveSong?.id ?? null;
+    if (currentSongId !== effectiveSongIdRef.current) {
+      effectiveSongIdRef.current = currentSongId;
+    }
+
     if (!effectiveSong || !mediaLoaded) return;
 
     isMountedRef.current = true;
@@ -447,8 +459,8 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
       setIsPlaying(false);
       setCountdown(3);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- gameMode read from options but not needed as dep for init effect
-  }, [effectiveSong, mediaLoaded, initialize, start, stop, setPitchDifficulty, difficulty, resetScoring, audioRef, videoRef, isYouTube, youtubeVideoId, setIsPlaying, nativeAudioPlay, nativeAudioSeek]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- gameMode read from options but not needed as dep for init effect; effectiveSong?.id used instead of effectiveSong to prevent re-init on lyrics load
+  }, [effectiveSong?.id, mediaLoaded, initialize, start, stop, setPitchDifficulty, difficulty, resetScoring, audioRef, videoRef, isYouTube, youtubeVideoId, setIsPlaying, nativeAudioPlay, nativeAudioSeek]);
 
   // ── CRITICAL: Cleanup on unmount ──
   const audioEffectsRef = useRef(audioEffects);
@@ -682,8 +694,8 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- isNativeAudio read from options but not needed as dep for game loop (read via ref)
-  }, [isPlaying, effectiveSong, setCurrentTime, setDetectedPitch, isYouTube, timingOffset, isDuetMode, setP2Volume, audioRef, videoRef]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- isNativeAudio read from options but not needed as dep for game loop (read via ref); effectiveSong?.id used instead of effectiveSong to prevent rAF restart on lyrics load
+  }, [isPlaying, effectiveSong?.id, setCurrentTime, setDetectedPitch, isYouTube, timingOffset, isDuetMode, setP2Volume, audioRef, videoRef]);
 
   // ── Abort: immediately stop game loop without saving results ──
   const abortGameLoop = useCallback(() => {

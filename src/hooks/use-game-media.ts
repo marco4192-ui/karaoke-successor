@@ -163,9 +163,13 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
   const [mediaLoaded, setMediaLoaded] = useState(false);
 
   // Initialize media elements on mount
-  // Uses effectiveSong which has restored URLs for Tauri
+  // DO-NOT-CHANGE: Uses effectiveSongBase (not effectiveSong) as dependency.
+  // effectiveSong changes when lyrics load async from IndexedDB, but media
+  // URLs (audioUrl, videoBackground) remain the same. Re-triggering media
+  // loading on lyrics change would reset mediaLoaded→false, causing the
+  // game init effect to stop pitch detection mid-game.
   useEffect(() => {
-    if (!effectiveSong) return;
+    if (!effectiveSongBase) return;
 
     // Reset media loaded state
     setMediaLoaded(false);
@@ -211,7 +215,7 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
       let anyMedia = false;
 
       // For songs with audioUrl, wait for audio element to be canplay
-      if (effectiveSong.audioUrl && audioRef.current) {
+      if (effectiveSongBase.audioUrl && audioRef.current) {
         anyMedia = true;
         audioReady = await waitForMediaEvent(audioRef.current, 'canplay', 5000);
         audioLoadedRef.current = audioReady;
@@ -223,7 +227,7 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
       }
 
       // For songs with embedded audio (video), wait for video element
-      if (effectiveSong.hasEmbeddedAudio && effectiveSong.videoBackground && !effectiveSong.audioUrl) {
+      if (effectiveSongBase.hasEmbeddedAudio && effectiveSongBase.videoBackground && !effectiveSongBase.audioUrl) {
         anyMedia = true;
         if (videoRef.current) {
           videoReady = await waitForMediaEvent(videoRef.current, 'canplay', 5000);
@@ -237,7 +241,7 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
       }
 
       // For YouTube videos, just need a small delay for iframe to initialize
-      if (effectiveSong.youtubeUrl) {
+      if (effectiveSongBase.youtubeUrl) {
         anyMedia = true;
         await new Promise(resolve => setTimeout(resolve, 500));
       }
@@ -257,7 +261,7 @@ export function useGameMedia(song: Song | null): UseGameMediaResult {
     loadMedia();
 
     return () => { cancelled = true; };
-  }, [effectiveSong]);
+  }, [effectiveSongBase]);
 
   return {
     restoredSong,

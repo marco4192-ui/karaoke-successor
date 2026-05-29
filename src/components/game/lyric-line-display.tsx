@@ -131,6 +131,61 @@ export function LyricLineDisplay({
           fontClass: 'font-medium text-2xl md:text-3xl',
           shadowStyle: {}
         };
+      case 'sunset':
+        // Sunset style: Warm sunset colors (orange → pink gradient feel)
+        return {
+          textClass: isSung ? 'text-orange-400' : isActive ? 'text-amber-300' : 'text-orange-800',
+          fontClass: 'font-bold text-2xl md:text-3xl',
+          shadowStyle: isSung
+            ? { textShadow: `0 0 25px rgba(251,146,60,0.9), 0 0 50px rgba(249,115,22,0.5)` }
+            : isActive
+              ? { textShadow: '0 0 15px rgba(251,191,36,0.6)' }
+              : {}
+        };
+      case 'ocean':
+        // Ocean style: Cool ocean blue/teal theme
+        return {
+          textClass: isSung ? 'text-teal-400' : isActive ? 'text-sky-300' : 'text-sky-900',
+          fontClass: 'font-semibold text-2xl md:text-3xl',
+          shadowStyle: isSung
+            ? { textShadow: `0 0 20px rgba(45,212,191,0.8), 0 0 40px rgba(34,211,238,0.4)` }
+            : isActive
+              ? { textShadow: '0 0 15px rgba(56,189,248,0.6)' }
+              : {}
+        };
+      case 'fire':
+        // Fire style: Fiery red/orange with intense glow
+        return {
+          textClass: isSung ? 'text-red-400' : isActive ? 'text-orange-300' : 'text-red-900',
+          fontClass: 'font-black text-3xl md:text-4xl',
+          shadowStyle: isSung
+            ? { textShadow: `0 0 30px rgba(248,113,113,0.9), 0 0 60px rgba(239,68,68,0.6)` }
+            : isActive
+              ? { textShadow: '0 0 20px rgba(251,146,60,0.8)' }
+              : {}
+        };
+      case 'disco':
+        // Disco style: Vibrant purple/magenta with color-changing feel
+        return {
+          textClass: isSung ? 'text-purple-400' : isActive ? 'text-fuchsia-300' : 'text-purple-900',
+          fontClass: 'font-bold text-2xl md:text-3xl',
+          shadowStyle: isSung
+            ? { textShadow: `0 0 25px rgba(192,132,252,0.9), 0 0 50px rgba(168,85,247,0.5)` }
+            : isActive
+              ? { textShadow: '0 0 20px rgba(217,70,239,0.7)' }
+              : {}
+        };
+      case 'synthwave':
+        // Synthwave style: Retro 80s aesthetic with hot pink and cyan
+        return {
+          textClass: isSung ? 'text-fuchsia-400' : isActive ? 'text-cyan-300' : 'text-fuchsia-900',
+          fontClass: 'font-extrabold text-2xl md:text-3xl',
+          shadowStyle: isSung
+            ? { textShadow: `0 0 25px rgba(232,121,249,0.9), 0 0 50px rgba(217,70,239,0.5), 0 0 80px rgba(6,182,212,0.3)` }
+            : isActive
+              ? { textShadow: '0 0 20px rgba(34,211,238,0.7)' }
+              : {}
+        };
       case 'classic':
       default:
         // Classic style: Original karaoke look

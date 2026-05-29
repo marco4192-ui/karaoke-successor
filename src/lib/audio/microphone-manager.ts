@@ -345,6 +345,10 @@ export class MultiMicrophoneManager {
   private micInstances: Map<string, MicrophoneInstance> = new Map();
   private onDevicesChange: ((_devices: MicrophoneDevice[]) => void) | null = null;
   private onAssignedMicsChange: ((_mics: AssignedMicrophone[]) => void) | null = null;
+  // Parsed mic configs loaded from localStorage, consumed by restoreMics().
+  // DO-NOT-CHANGE: This is intentionally populated in the synchronous loadConfig()
+  // so the async restoreMics() can reference it after construction.
+  private savedMicConfigs: Array<{id: string; deviceId: string; deviceName: string; customName: string; playerIndex: number; config: ExtendedMicConfig; stereoPartnerId?: string}> = [];
 
   constructor() {
     this.loadConfig();
@@ -917,9 +921,77 @@ export class MultiMicrophoneManager {
             setJson(StorageKeys.MULTI_MIC_CONFIG, config);
           }
         }
+
+        // Store parsed configs for later restoration by restoreMics()
+        if (config?.assignedMics && Array.isArray(config.assignedMics)) {
+          this.savedMicConfigs = config.assignedMics;
+        }
       }
     } catch {
       // Non-critical: config will reset to defaults
+    }
+  }
+
+  // Restore microphones from saved config (call after constructor)
+  // This must be async because it needs to enumerate devices and connect streams.
+  // DO-NOT-CHANGE: The restore flow intentionally skips device enumeration
+  // if no saved configs exist, avoiding an unnecessary permission prompt.
+  async restoreMics(): Promise<void> {
+    if (this.savedMicConfigs.length === 0) return;
+
+    try {
+      // Enumerate available devices to check which saved mics still exist
+      await this.getMicrophones();
+
+      for (const saved of this.savedMicConfigs) {
+        // Skip if already assigned
+        if (this.assignedMics.has(saved.id)) continue;
+
+        // Skip if device no longer exists
+        const deviceExists = this.devices.some(d => d.deviceId === saved.deviceId);
+        if (!deviceExists) continue;
+
+        // Reconnect the microphone
+        try {
+          const device = this.devices.find(d => d.deviceId === saved.deviceId);
+          const deviceName = device?.label || saved.deviceName || 'Unknown';
+
+          const instance = new MicrophoneInstance(saved.config, deviceName);
+          const connected = await instance.connect();
+
+          if (connected) {
+            const assigned: AssignedMicrophone = {
+              id: saved.id,
+              deviceId: saved.deviceId,
+              deviceName,
+              customName: saved.customName || `Mikrofon ${saved.playerIndex + 1}`,
+              playerIndex: saved.playerIndex,
+              config: saved.config,
+              stereoPartnerId: saved.stereoPartnerId,
+              status: {
+                isConnected: true,
+                isMuted: false,
+                volume: 0,
+                peak: 0,
+                deviceName,
+              },
+            };
+            this.assignedMics.set(assigned.id, assigned);
+            this.micInstances.set(assigned.id, instance);
+          }
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.warn(`[MicManager] Failed to restore mic ${saved.customName || saved.deviceId}:`, e);
+        }
+      }
+
+      // Notify listeners
+      if (this.onAssignedMicsChange) {
+        this.onAssignedMicsChange(Array.from(this.assignedMics.values()));
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('[MicManager] Failed to restore microphones:', e);
     }
   }
 

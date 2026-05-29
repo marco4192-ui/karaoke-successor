@@ -22,10 +22,16 @@ export function useMicrophoneSettings(onSettingsChange?: MicrophoneSettingsPanel
 
   const micManager = getMultiMicrophoneManager();
 
-  // Load available devices
+  // Load available devices + restore saved microphones from localStorage
   useEffect(() => {
     micManager.getMicrophones().then(setDevices);
     micManager.onDevices(setDevices);
+    // DO-NOT-CHANGE: Restore saved microphones on mount.
+    // loadConfig() reads localStorage synchronously in the constructor but
+    // cannot reconnect devices (async). restoreMics() handles the async
+    // reconnection and must be called before the assigned mics subscription
+    // below picks up the restored state.
+    micManager.restoreMics().catch(() => {});
     return () => {};
   }, [micManager]);
 

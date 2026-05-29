@@ -276,6 +276,11 @@ export function AppearanceTab({
                 { id: 'retro', name: tx('settingsGraphicSound.lyricsRetro') },
                 { id: 'neon', name: tx('settingsGraphicSound.lyricsNeon') },
                 { id: 'minimal', name: tx('settingsGraphicSound.lyricsMinimal') },
+                { id: 'sunset', name: tx('settingsGraphicSound.lyricsSunset') },
+                { id: 'ocean', name: tx('settingsGraphicSound.lyricsOcean') },
+                { id: 'fire', name: tx('settingsGraphicSound.lyricsFire') },
+                { id: 'disco', name: tx('settingsGraphicSound.lyricsDisco') },
+                { id: 'synthwave', name: tx('settingsGraphicSound.lyricsSynthwave') },
               ].map((style) => (
                 <button
                   key={style.id}

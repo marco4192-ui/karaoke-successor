@@ -44,7 +44,7 @@ const NOTE_SHAPE_CONFIGS: Record<NoteShapeStyle, NoteShapeConfig> = {
   },
   'music-note': {
     style: {
-      clipPath: 'polygon(0% 25%, 8% 0%, 25% 0%, 25% 22%, 100% 22%, 100% 78%, 25% 78%, 25% 100%, 8% 100%, 0% 75%)',
+      clipPath: 'polygon(0% 35%, 5% 15%, 15% 0%, 25% 0%, 30% 15%, 30% 35%, 100% 20%, 100% 35%, 30% 50%, 30% 65%, 25% 100%, 15% 100%, 5% 85%, 0% 65%)',
       transition: 'clip-path 0.3s ease',
     },
     activeClass: 'brightness-110',
@@ -52,7 +52,7 @@ const NOTE_SHAPE_CONFIGS: Record<NoteShapeStyle, NoteShapeConfig> = {
   },
   star: {
     style: {
-      clipPath: 'polygon(0% 40%, 10% 40%, 15% 15%, 20% 40%, 45% 40%, 50% 5%, 55% 40%, 80% 40%, 85% 15%, 90% 40%, 100% 40%, 100% 60%, 90% 60%, 85% 85%, 80% 60%, 55% 60%, 50% 95%, 45% 60%, 20% 60%, 15% 85%, 10% 60%, 0% 60%)',
+      clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)',
       transition: 'clip-path 0.3s ease',
       filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.5)) drop-shadow(0 1px 0 rgba(255,255,255,0.08))',
     },
@@ -61,17 +61,16 @@ const NOTE_SHAPE_CONFIGS: Record<NoteShapeStyle, NoteShapeConfig> = {
   },
   circle: {
     style: {
-      borderRadius: '50%',
-      border: '1.5px solid rgba(255,255,255,0.2)',
-      transition: 'border-radius 0.3s ease',
+      clipPath: 'polygon(25% 0%, 75% 0%, 100% 25%, 100% 75%, 75% 100%, 25% 100%, 0% 75%, 0% 25%)',
+      transition: 'clip-path 0.3s ease',
+      filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.15))',
     },
     activeClass: 'ring-2 ring-white/70 brightness-110',
     laneActiveClass: 'ring-4 ring-white ring-offset-2 ring-offset-transparent brightness-110',
-    laneBorderRadius: '50%',
   },
   hexagon: {
     style: {
-      clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
+      clipPath: 'polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%)',
       transition: 'clip-path 0.3s ease',
     },
     activeClass: 'ring-2 ring-white/80 brightness-110',

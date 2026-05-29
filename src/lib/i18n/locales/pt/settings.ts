@@ -160,7 +160,12 @@ export const settingsTranslations = {
     lyricsConcert: 'Concerto',
     lyricsRetro: 'Retrô',
     lyricsNeon: 'Neon',
-    lyricsMinimal: 'Minimalista'
+    lyricsMinimal: 'Minimalista',
+    lyricsSunset: 'Sunset',
+    lyricsOcean: 'Ocean',
+    lyricsFire: 'Fire',
+    lyricsDisco: 'Disco',
+    lyricsSynthwave: 'Synthwave'
   },
 
   settingsMicrophoneCard: {

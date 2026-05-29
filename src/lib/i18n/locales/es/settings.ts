@@ -175,7 +175,12 @@ export const settingsTranslations = {
     lyricsConcert: 'Concierto',
     lyricsRetro: 'Retro',
     lyricsNeon: 'Neón',
-    lyricsMinimal: 'Mínimo'
+    lyricsMinimal: 'Mínimo',
+    lyricsSunset: 'Sunset',
+    lyricsOcean: 'Ocean',
+    lyricsFire: 'Fire',
+    lyricsDisco: 'Disco',
+    lyricsSynthwave: 'Synthwave'
   },
 
   settingsMicrophoneCard: {

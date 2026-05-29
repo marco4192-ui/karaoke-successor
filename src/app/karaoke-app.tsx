@@ -132,6 +132,16 @@ export default function KaraokeZERO() {
       return;
     }
 
+    // ── Non-party game abort: go to Library ──
+    // If no party mode is active, this was a standard single/duel/duet game
+    // started from the Library. Send the user back there.
+    if (!isPartyModeActive) {
+      resetGame();
+      setGameMode('standard');
+      setScreen('library');
+      return;
+    }
+
     // ═══════════════════════════════════════════════════════════════════
     // ULTIMATE PARTY-MODE TERMINATOR
     // All remaining cases get a full nuclear reset of party state.
@@ -146,7 +156,7 @@ export default function KaraokeZERO() {
     resetGame();
     setGameMode('standard');
     setScreen('party');
-  }, [closeDialog, screen, isTournamentMatch, party, gameState.gameMode, resetGame, setScreen, setGameMode]);
+  }, [closeDialog, screen, isTournamentMatch, isPartyModeActive, party, gameState.gameMode, resetGame, setScreen, setGameMode]);
 
   const handleTournamentRepeat = useCallback(() => {
     closeDialog();
