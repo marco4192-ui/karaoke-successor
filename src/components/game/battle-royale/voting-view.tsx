@@ -86,7 +86,7 @@ export function VotingView({
 
       {/* Timer & Progress */}
       <div className="flex items-center justify-center gap-4 mb-6">
-        <Badge className={`font-mono text-lg ${timeLeft <= 5 ? 'bg-red-500 text-white animate-pulse' : 'bg-purple-500/20 text-purple-400'}`}>
+        <Badge className={`font-mono text-lg ${timeLeft <= 5 ? 'bg-[#FC6B48] text-black font-bold animate-pulse' : 'bg-[#6B2E77] text-[#FDFEFD]'}`}>
           {timeLeft}s
         </Badge>
         <div className="text-white/60">
@@ -107,12 +107,12 @@ export function VotingView({
               className={`
                 transition-all duration-300 cursor-pointer
                 ${phase === 'result' && isWinner
-                  ? 'bg-gradient-to-br from-amber-500/30 to-yellow-500/30 border-2 border-amber-500 scale-105'
+                  ? 'bg-[#FDE601]/25 border-[3px] border-[#FDE601] scale-105'
                   : phase === 'result'
-                    ? 'bg-white/5 border border-white/10 opacity-50'
+                    ? 'bg-[#2a1a3e] border-[3px] border-black opacity-50'
                     : isLeading
-                      ? 'bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border-2 border-purple-500'
-                      : 'bg-white/5 border border-white/10 hover:bg-white/10'
+                      ? 'bg-[#BA279D]/15 border-[3px] border-[#BA279D]'
+                      : 'bg-[#2a1a3e] border-[3px] border-black hover:bg-[#2a1a3e]/80'
                 }
               `}
               onClick={() => {
@@ -129,12 +129,12 @@ export function VotingView({
                   <span className="text-white/60 text-sm">{t('battleRoyale.votes')}</span>
                 </div>
                 {isWinner && (
-                  <div className="mt-2 text-amber-400 font-bold animate-bounce">
+                  <div className="mt-2 text-[#FDE601] font-bold animate-bounce">
                     {t('battleRoyale.winningSong')} 🎵
                   </div>
                 )}
                 {isLeading && phase === 'voting' && (
-                  <Badge className="mt-2 bg-purple-500/20 text-purple-400">
+                  <Badge className="mt-2 bg-[#BA279D]/20 text-[#BA279D] border-[2px] border-[#BA279D]">
                     {t('battleRoyale.leading')}
                   </Badge>
                 )}

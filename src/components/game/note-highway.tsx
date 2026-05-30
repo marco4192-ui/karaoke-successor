@@ -65,7 +65,7 @@ export interface NoteHighwayProps {
 /**
  * Pitch grid background lines
  */
-const PitchGrid = React.memo(function PitchGrid({ count = 7, playerColor = '#22d3d3ee' }: { count?: number; playerColor?: string }) {
+const PitchGrid = React.memo(function PitchGrid({ count = 7, playerColor = '#00F3B2cc' }: { count?: number; playerColor?: string }) {
   const borderColor = withAlpha(playerColor, 0.1);
   return (
     <div className="absolute inset-0 pointer-events-none">
@@ -85,25 +85,20 @@ const PitchGrid = React.memo(function PitchGrid({ count = 7, playerColor = '#22d
  */
 const SingLine = React.memo(function SingLine({
   position,
-  playerColor = '#22d3d3ee'
+  playerColor = '#00F3B2cc'
 }: {
   position: number;
   playerColor?: string;
 }) {
   return (
     <div
-      className="absolute top-0 bottom-0 z-20 w-1 shadow-lg"
+      className="absolute top-0 bottom-0 z-20 w-1"
       style={{
         left: `${position}%`,
-        background: `linear-gradient(to bottom, transparent, ${playerColor}, transparent)`,
-        boxShadow: `0 0 8px ${withAlpha(playerColor, 0.5)}`,
+        background: playerColor,
+        boxShadow: `3px 0 0px #000000`,
       }}
-    >
-      <div
-        className="absolute -left-1 top-0 bottom-0 w-0.5"
-        style={{ backgroundColor: withAlpha(playerColor, 0.3) }}
-      />
-    </div>
+    />
   );
 });
 
@@ -123,7 +118,7 @@ const NoteBlock = React.memo(function NoteBlock({
   visibleTop,
   visibleRange,
   noteWidthExtra = 20,
-  playerColor = '#22d3d3ee',
+  playerColor = '#00F3B2cc',
   noteDisplayStyle = 'classic',
   notePerformance,
 }: {
@@ -166,12 +161,12 @@ const NoteBlock = React.memo(function NoteBlock({
     // the display style manages its own background via inline styles.
     if (noteDisplayStyle === 'fill-level' || noteDisplayStyle === 'hit-fill' || noteDisplayStyle === 'trail-effect' || noteDisplayStyle === 'retro-bars' || noteDisplayStyle === 'particle-fade') return {};
     if (note.isGolden) {
-      return { background: 'linear-gradient(to right, #facc15, #f97316)' };
+      return { background: '#FDE601', boxShadow: '3px 3px 0px #000000' };
     }
     if (note.isBonus) {
-      return { background: `linear-gradient(to right, ${playerColor}, ${withAlpha(playerColor, 0.7)})` };
+      return { background: '#BA279D', boxShadow: '3px 3px 0px #000000' };
     }
-    return { background: `linear-gradient(to right, ${playerColor}, ${withAlpha(playerColor, 0.6)})` };
+    return { background: playerColor, boxShadow: '3px 3px 0px #000000' };
   };
 
   const glowColor = withAlpha(playerColor, 0.8);
@@ -211,7 +206,7 @@ const NoteBlock = React.memo(function NoteBlock({
         width: `${noteWidthPercent}%`,
         height: `${noteHeight}px`,
         transform: 'translateY(-50%)',
-        boxShadow: isActive ? `0 0 15px ${glowColor}` : 'none',
+        boxShadow: isActive ? '4px 4px 0px #000000' : '2px 2px 0px #000000',
         opacity: isPast ? (accuracy > 0.3 ? 0.8 : 0.3) : 1,
         ...noteShape.style,
         ...displayStyle.inlineStyle,
@@ -232,7 +227,7 @@ const PitchIndicator = React.memo(function PitchIndicator({
   singLinePosition,
   visibleTop,
   visibleRange,
-  playerColor = '#22d3d3ee',
+  playerColor = '#00F3B2cc',
 }: {
   detectedPitch: number | null;
   pitchStats: PitchStats;
@@ -248,15 +243,13 @@ const PitchIndicator = React.memo(function PitchIndicator({
 
   return (
     <div
-      className="absolute z-30 w-8 h-8 rounded-full shadow-lg flex items-center justify-center"
+      className="absolute z-30 w-8 h-8 rounded-full flex items-center justify-center border-2 border-black"
       style={{
         left: `${singLinePosition - 1.5}%`,
         top: `${pitchY}%`,
         transform: 'translateY(-50%)',
-        background: `linear-gradient(to right, ${playerColor}, ${withAlpha(playerColor, 0.7)})`,
-        boxShadow: `0 0 10px ${withAlpha(playerColor, 0.7)}`,
-        outline: '2px solid',
-        outlineColor: withAlpha(playerColor, 0.5),
+        background: playerColor,
+        boxShadow: '4px 4px 0px #000000',
       }}
     >
       <MicIcon className="w-4 h-4 text-white" />
@@ -270,14 +263,14 @@ const PitchIndicator = React.memo(function PitchIndicator({
 const PlayerLabel = React.memo(function PlayerLabel({
   playerName,
   playerNumber,
-  playerColor = '#22d3d3ee',
+  playerColor = '#00F3B2cc',
 }: {
   playerName: string;
   playerNumber: number;
   playerColor?: string;
 }) {
   return (
-    <div className="absolute top-20 left-4 z-20 bg-black/50 backdrop-blur-sm rounded-lg px-2 py-1 border" style={{ borderColor: withAlpha(playerColor, 0.3) }}>
+    <div className="absolute top-20 left-4 z-20 bg-black/50 backdrop-blur-sm rounded-lg px-2 py-1 border-2 border-black" style={{ boxShadow: '3px 3px 0px #000000' }}>
       <div className="flex items-center gap-2">
         <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: playerColor }}>
           P{playerNumber}
@@ -315,14 +308,14 @@ export const NoteHighway = React.memo(function NoteHighway({
   const noteShape = useMemo(() => getNoteShapeClasses(noteShapeStyle), [noteShapeStyle]);
 
   // Use playerColor if provided; otherwise derive from playerNumber (P1=cyan, P2=pink)
-  const effectiveColor = playerColor ?? (playerNumber === 2 ? '#ec4899' : '#22d3ee');
+  const effectiveColor = playerColor ?? (playerNumber === 2 ? '#F939A3' : '#00F3B2');
 
   const resolvedPlayerName = playerName || t('prominentScore.player1');
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${className}`}>
-      {/* Background gradient */}
-      <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(${playerNumber === 1 ? 'to bottom' : 'to top'}, ${withAlpha(effectiveColor, 0.2)}, transparent)` }} />
+      {/* Background solid fill */}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: `${withAlpha(effectiveColor, 0.08)}` }} />
 
       {/* Pitch grid lines */}
       <PitchGrid count={7} playerColor={effectiveColor} />

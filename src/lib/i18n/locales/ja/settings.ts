@@ -73,7 +73,7 @@ export const settingsTranslations = {
     installAppDesc: 'オフラインアクセス用にインストール',
     appInstalled: 'アプリはインストール済みです',
     version: 'バージョン',
-    aboutDesc: 'Karaoke ZEROは、リアルタイム音程検出、パーティーモードなどを備えたモダンなカラオケアプリケーションです。',
+    aboutDesc: 'Karaoke Elevenは、リアルタイム音程検出、パーティーモードなどを備えたモダンなカラオケアプリケーションです。',
     feature1: 'YINアルゴリズムによるリアルタイム音程検出',
     feature2: '複数のパーティゲームモード',
     feature3: 'リモコン機能のモバイルアプリ連携',
@@ -362,7 +362,7 @@ export const settingsTranslations = {
   settingsLibrary: {
     title: '曲ベースフォルダー',
     desc: 'すべての曲はこのフォルダーからインポートされます。各サブフォルダーに1曲ずつ含まれます。',
-    placeholder: 'C:/Karaoke ZERO/Songs',
+    placeholder: 'C:/Karaoke Eleven/Songs',
     scan: 'スキャン',
     browse: '参照',
     help: '曲のフォルダーパスを入力して「スキャン」をクリックしてインポートするか、「参照」でフォルダーを選択してください。',

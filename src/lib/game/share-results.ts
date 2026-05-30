@@ -42,7 +42,7 @@ ${card.rankTitle}
 🎮 Mode: ${card.gameMode.toUpperCase()}
 💬 Difficulty: ${card.difficulty.toUpperCase()}
 
-Play Karaoke ZERO and try to beat my score!`;
+Play Karaoke Eleven and try to beat my score!`;
 }
 
 // Generate shareable image (returns canvas)
@@ -76,7 +76,7 @@ function generateShareImage(card: ShareableScoreCard): HTMLCanvasElement {
   ctx.fillStyle = '#00ffff';
   ctx.font = 'bold 32px Inter, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('Karaoke ZERO', 300, 50);
+  ctx.fillText('Karaoke Eleven', 300, 50);
   
   // Song info
   ctx.fillStyle = '#ffffff';
@@ -183,7 +183,7 @@ export async function shareScoreCard(card: ShareableScoreCard): Promise<boolean>
     const file = new File([blob], 'score-card.png', { type: 'image/png' });
     
     await navigator.share({
-      title: 'Karaoke ZERO Score',
+      title: 'Karaoke Eleven Score',
       text,
       files: [file],
     });
@@ -192,7 +192,7 @@ export async function shareScoreCard(card: ShareableScoreCard): Promise<boolean>
     // Fallback to text only
     try {
       await navigator.share({
-        title: 'Karaoke ZERO Score',
+        title: 'Karaoke Eleven Score',
         text,
       });
       return true;

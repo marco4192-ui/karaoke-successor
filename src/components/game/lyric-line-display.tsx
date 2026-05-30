@@ -94,14 +94,14 @@ export function LyricLineDisplay({
   const getStyleClasses = (isSung: boolean, isActive: boolean) => {
     switch (lyricsStyle) {
       case 'concert':
-        // Concert style: Big bold with dramatic glow
+        // Concert style: Big bold with comic offset shadow
         return {
           textClass: isSung ? 'text-yellow-400' : isActive ? 'text-white' : 'text-white/40',
           fontClass: isSung || isActive ? 'font-black text-3xl md:text-4xl' : 'font-bold text-2xl md:text-3xl',
           shadowStyle: isSung
-            ? { textShadow: `0 0 30px rgba(255, 200, 0, 0.9), 0 0 60px rgba(255, 200, 0, 0.5)` }
+            ? { textShadow: '3px 3px 0px #FDE601, 6px 6px 0px #000000' }
             : isActive
-              ? { textShadow: '0 0 20px rgba(255, 255, 255, 0.8)' }
+              ? { textShadow: '2px 2px 0px #000000' }
               : {}
         };
       case 'retro':
@@ -114,14 +114,14 @@ export function LyricLineDisplay({
             : {}
         };
       case 'neon':
-        // Neon style: Pink and cyan alternating glow
+        // Neon style: Pink and teal comic pop
         return {
-          textClass: isSung ? 'text-pink-400' : isActive ? 'text-cyan-400' : 'text-white/40',
+          textClass: isSung ? 'text-pink-400' : isActive ? 'text-teal-300' : 'text-white/40',
           fontClass: 'font-bold text-2xl md:text-3xl',
           shadowStyle: isSung
-            ? { textShadow: `0 0 20px rgba(236, 72, 153, 0.9), 0 0 40px rgba(236, 72, 153, 0.6)` }
+            ? { textShadow: '3px 3px 0px #F939A3, 6px 6px 0px #000000' }
             : isActive
-              ? { textShadow: '0 0 20px rgba(34, 211, 238, 0.8)' }
+              ? { textShadow: '3px 3px 0px #00F3B2, 6px 6px 0px #000000' }
               : {}
         };
       case 'minimal':
@@ -132,70 +132,70 @@ export function LyricLineDisplay({
           shadowStyle: {}
         };
       case 'sunset':
-        // Sunset style: Warm sunset colors (orange → pink gradient feel)
+        // Sunset style: Warm sunset colors with comic shadow
         return {
           textClass: isSung ? 'text-orange-400' : isActive ? 'text-amber-300' : 'text-orange-800',
           fontClass: 'font-bold text-2xl md:text-3xl',
           shadowStyle: isSung
-            ? { textShadow: `0 0 25px rgba(251,146,60,0.9), 0 0 50px rgba(249,115,22,0.5)` }
+            ? { textShadow: '3px 3px 0px #FC6B48, 6px 6px 0px #000000' }
             : isActive
-              ? { textShadow: '0 0 15px rgba(251,191,36,0.6)' }
+              ? { textShadow: '2px 2px 0px #FDE601' }
               : {}
         };
       case 'ocean':
-        // Ocean style: Cool ocean blue/teal theme
+        // Ocean style: Cool teal with comic shadow
         return {
           textClass: isSung ? 'text-teal-400' : isActive ? 'text-sky-300' : 'text-sky-900',
           fontClass: 'font-semibold text-2xl md:text-3xl',
           shadowStyle: isSung
-            ? { textShadow: `0 0 20px rgba(45,212,191,0.8), 0 0 40px rgba(34,211,238,0.4)` }
+            ? { textShadow: '3px 3px 0px #00F3B2, 6px 6px 0px #000000' }
             : isActive
-              ? { textShadow: '0 0 15px rgba(56,189,248,0.6)' }
+              ? { textShadow: '2px 2px 0px #00F3B2' }
               : {}
         };
       case 'fire':
-        // Fire style: Fiery red/orange with intense glow
+        // Fire style: Fiery red/coral with comic shadow
         return {
           textClass: isSung ? 'text-red-400' : isActive ? 'text-orange-300' : 'text-red-900',
           fontClass: 'font-black text-3xl md:text-4xl',
           shadowStyle: isSung
-            ? { textShadow: `0 0 30px rgba(248,113,113,0.9), 0 0 60px rgba(239,68,68,0.6)` }
+            ? { textShadow: '3px 3px 0px #FC6B48, 6px 6px 0px #000000' }
             : isActive
-              ? { textShadow: '0 0 20px rgba(251,146,60,0.8)' }
+              ? { textShadow: '2px 2px 0px #FC6B48' }
               : {}
         };
       case 'disco':
-        // Disco style: Vibrant purple/magenta with color-changing feel
+        // Disco style: Vibrant magenta with comic shadow
         return {
-          textClass: isSung ? 'text-purple-400' : isActive ? 'text-fuchsia-300' : 'text-purple-900',
+          textClass: isSung ? 'text-fuchsia-400' : isActive ? 'text-pink-300' : 'text-purple-900',
           fontClass: 'font-bold text-2xl md:text-3xl',
           shadowStyle: isSung
-            ? { textShadow: `0 0 25px rgba(192,132,252,0.9), 0 0 50px rgba(168,85,247,0.5)` }
+            ? { textShadow: '3px 3px 0px #BA279D, 6px 6px 0px #000000' }
             : isActive
-              ? { textShadow: '0 0 20px rgba(217,70,239,0.7)' }
+              ? { textShadow: '2px 2px 0px #BA279D' }
               : {}
         };
       case 'synthwave':
-        // Synthwave style: Retro 80s aesthetic with hot pink and cyan
+        // Synthwave style: Retro 80s with hot pink and teal comic pop
         return {
-          textClass: isSung ? 'text-fuchsia-400' : isActive ? 'text-cyan-300' : 'text-fuchsia-900',
+          textClass: isSung ? 'text-fuchsia-400' : isActive ? 'text-teal-300' : 'text-fuchsia-900',
           fontClass: 'font-extrabold text-2xl md:text-3xl',
           shadowStyle: isSung
-            ? { textShadow: `0 0 25px rgba(232,121,249,0.9), 0 0 50px rgba(217,70,239,0.5), 0 0 80px rgba(6,182,212,0.3)` }
+            ? { textShadow: '3px 3px 0px #F939A3, 6px 6px 0px #000000' }
             : isActive
-              ? { textShadow: '0 0 20px rgba(34,211,238,0.7)' }
+              ? { textShadow: '3px 3px 0px #00F3B2, 6px 6px 0px #000000' }
               : {}
         };
       case 'classic':
       default:
-        // Classic style: Original karaoke look
+        // Classic style: Comic karaoke look with offset shadow
         return {
           textClass: isSung ? '' : isActive ? 'text-white' : 'text-white/50',
           fontClass: isSung || isActive ? 'font-bold text-2xl md:text-3xl' : 'font-normal text-2xl md:text-3xl',
           shadowStyle: isSung
-            ? { color: playerColor, textShadow: `0 0 15px ${playerColor}80` }
+            ? { color: playerColor, textShadow: `3px 3px 0px ${playerColor}, 6px 6px 0px #000000` }
             : isActive
-              ? { textShadow: '0 0 10px rgba(255,255,255,0.5)' }
+              ? { textShadow: '2px 2px 0px #000000' }
               : {}
         };
     }
@@ -236,10 +236,9 @@ export function LyricLineDisplay({
           const fillLevel = getNoteFillLevel(noteId);
           if (fillLevel < 1) {
             fillClipStyle = {
-              background: `linear-gradient(90deg, ${playerColor} ${fillLevel * 100}%, rgba(255,255,255,0.3) ${fillLevel * 100}%)`,
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              color: 'transparent',
+              background: fillLevel >= 1 ? playerColor : 'transparent',
+              color: fillLevel >= 1 ? '#000000' : undefined,
+              WebkitTextStroke: fillLevel < 1 ? `1px ${playerColor}` : undefined,
             };
           }
         } else if (noteDisplayStyle === 'color-feedback' && isSung) {

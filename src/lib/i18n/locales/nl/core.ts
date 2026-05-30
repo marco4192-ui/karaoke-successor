@@ -17,7 +17,7 @@ export const coreTranslations = {
   },
 
   home: {
-    title: 'Karaoke ZERO',
+    title: 'Karaoke Eleven',
     subtitle: 'De ultieme karaoke-ervaring. Zing je hart uit met realtime toonherkenning, wedijver met vrienden en geniet van partygames!',
     startSinging: 'Begin met zingen',
     partyMode: 'Party Modus',
@@ -140,7 +140,7 @@ export const coreTranslations = {
   },
 
   scoreCardSocial: {
-    branding: 'Karaoke ZERO',
+    branding: 'Karaoke Eleven',
     accuracyLabel: 'Nauwkeurigheid:',
     maxComboLabel: 'Max Combo:',
     difficultyLabel: 'Moeilijkheid:',

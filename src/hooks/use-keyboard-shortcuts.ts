@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Unified keyboard shortcut system for Karaoke ZERO
+ * Unified keyboard shortcut system for Karaoke Eleven
  *
  * All global shortcuts are defined here as a single source of truth.
  * Editor shortcuts remain in use-editor-keyboard-shortcuts.ts.

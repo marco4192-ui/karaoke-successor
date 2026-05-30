@@ -73,7 +73,7 @@ export const settingsTranslations = {
     installAppDesc: 'Installer pour un accès hors ligne',
     appInstalled: 'L\'app est installée',
     version: 'Version',
-    aboutDesc: 'Karaoke ZERO est une application karaoké moderne avec détection de ton en temps réel, modes de fête et plus.',
+    aboutDesc: 'Karaoke Eleven est une application karaoké moderne avec détection de ton en temps réel, modes de fête et plus.',
     feature1: 'Détection de ton en temps réel avec l\'algorithme YIN',
     feature2: 'Plusieurs modes de jeux de fête',
     feature3: 'Intégration d\'application mobile pour contrôle à distance',
@@ -377,7 +377,7 @@ export const settingsTranslations = {
   settingsLibrary: {
     title: 'Dossier de Base des Chansons',
     desc: 'Toutes les chansons sont importées depuis ce dossier. Chaque sous-dossier contient une chanson.',
-    placeholder: 'C:/Karaoke ZERO/Chansons',
+    placeholder: 'C:/Karaoke Eleven/Chansons',
     scan: 'Scanner',
     browse: 'Parcourir',
     help: 'Entrez le chemin de votre dossier de chansons et cliquez sur "Scanner" pour importer.',

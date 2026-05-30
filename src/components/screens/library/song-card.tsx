@@ -48,13 +48,14 @@ export function SongCard({
     <div 
       ref={itemRef as React.Ref<HTMLDivElement> | undefined}
       {...restItemProps}
-      className="bg-white/5 rounded-xl overflow-hidden border border-white/10 hover:border-cyan-500/50 transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:outline-none"
+      className="rounded-xl overflow-hidden border-[3px] border-black transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-[#FDE601] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:outline-none"
+      style={{ background: '#2a1a3e', boxShadow: '4px 4px 0px #000000' }}
       onClick={() => onSongClick(song)}
       onMouseEnter={() => onPreviewStart(song)}
       onMouseLeave={onPreviewStop}
       onKeyDown={handleKeyDown}
     >
-      <div className="relative aspect-square bg-gradient-to-br from-purple-600/50 to-blue-600/50 overflow-hidden">
+      <div className="relative aspect-square bg-[#6B2E77] overflow-hidden">
         {effectiveSong.backgroundImage && (
           <img 
             src={effectiveSong.backgroundImage} 
@@ -134,24 +135,24 @@ export function SongCard({
           isPreviewing && songHasVideo ? 'opacity-0' : 
           isPreviewing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
         }`}>
-          <div className="w-14 h-14 rounded-full bg-cyan-500/80 flex items-center justify-center">
+          <div className="w-14 h-14 rounded-full bg-[#00F3B2] border-2 border-black flex items-center justify-center" style={{ boxShadow: '3px 3px 0px #000000' }}>
             <PlayIcon className="w-7 h-7 text-white ml-1" />
           </div>
         </div>
         
         <div className="absolute top-2 right-2 flex gap-1">
           {isDuetSong(song) && (
-            <div className="bg-gradient-to-r from-pink-500 to-purple-500 text-white text-xs font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-lg">
+            <div className="bg-[#BA279D] text-white text-xs font-bold px-2 py-0.5 rounded-md flex items-center gap-1 border-2 border-black" style={{ boxShadow: '2px 2px 0px #000000' }}>
               <span className="text-sm">🎭</span>Duet
             </div>
           )}
           {isViralHit && (
-            <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-lg animate-pulse">
+            <div className="bg-[#FC6B48] text-white text-xs font-bold px-2 py-0.5 rounded-md flex items-center gap-1 border-2 border-black animate-pulse" style={{ boxShadow: '2px 2px 0px #000000' }}>
               <span className="text-sm">&#128293;</span>{t('songCard.viral')}
             </div>
           )}
           {(song.hasEmbeddedAudio || songHasVideo) && (
-            <Badge className="bg-purple-500/80 text-xs">{t('songCard.video')}</Badge>
+            <Badge className="bg-[#6B2E77] text-xs border border-black">{t('songCard.video')}</Badge>
           )}
         </div>
         

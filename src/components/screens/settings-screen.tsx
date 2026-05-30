@@ -190,7 +190,7 @@ function SettingsScreen() {
     <div className="theme-container w-full px-4 md:px-6 lg:px-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8 text-left">
-        <h1 className="text-3xl font-bold mb-2 theme-adaptive-text">{tx('settings.title')}</h1>
+        <h1 className="text-3xl font-bold mb-2 theme-adaptive-text" style={{ WebkitTextStroke: '1px #000', paintOrder: 'stroke fill' }}>{tx('settings.title')}</h1>
         <p className="theme-adaptive-text-muted">{tx('settings.subtitle')}</p>
       </div>
 
@@ -302,7 +302,8 @@ function SettingsScreen() {
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
           <Button
             onClick={handleSaveSettings}
-            className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white px-8 py-3 rounded-full shadow-lg shadow-cyan-500/30"
+            className="bg-[#F939A3] hover:bg-[#FC6B48] text-white px-8 py-3 rounded-xl border-[3px] border-black font-bold"
+            style={{ boxShadow: '4px 4px 0px #FDE601' }}
             data-testid="settings-save-button"
           >
             💾 {tx('settings.savedSuccessfully').replace('✓ ', '')}
@@ -312,7 +313,7 @@ function SettingsScreen() {
 
       {/* Success notification */}
       {folderScanner.folderSaveComplete && (
-        <div className="fixed top-4 right-4 z-50 bg-green-500/90 text-white px-4 py-2 rounded-lg shadow-lg">
+        <div className="fixed top-4 right-4 z-50 bg-[#00F3B2] text-black px-4 py-2 rounded-lg border-[3px] border-black font-bold" style={{ boxShadow: '4px 4px 0px #6B2E77' }}>
           {tx('settings.savedSuccessfully')}
         </div>
       )}

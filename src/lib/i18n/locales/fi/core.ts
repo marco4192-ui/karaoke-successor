@@ -17,7 +17,7 @@ export const coreTranslations = {
   },
 
   home: {
-    title: 'Karaoke ZERO',
+    title: 'Karaoke Eleven',
     subtitle: 'Ultimatiivinen karaokekokemus. Laula sydämesi kyllyydestä reaaliaikaisella sävelkorkeudentunnistuksella, kilpaile ystävien kanssa ja nauti juhlapeleistä!',
     startSinging: 'Aloita laulaminen',
     partyMode: 'Juhlatila',
@@ -140,7 +140,7 @@ export const coreTranslations = {
   },
 
   scoreCardSocial: {
-    branding: 'Karaoke ZERO',
+    branding: 'Karaoke Eleven',
     accuracyLabel: 'Tarkkuus:',
     maxComboLabel: 'Max Combo:',
     difficultyLabel: 'Vaikeustaso:',

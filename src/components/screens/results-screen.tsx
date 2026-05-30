@@ -77,7 +77,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
     return (
       <div className="max-w-4xl mx-auto text-center py-20">
         <p className="text-white/60 mb-4">{t('resultsScreen.noResults')}</p>
-        <Button onClick={onHome} className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white">{t('results.backToHome')}</Button>
+        <Button onClick={onHome} className="bg-[#F939A3] text-white border-2 border-black" style={{ boxShadow: '3px 3px 0px #000000' }}>{t('results.backToHome')}</Button>
       </div>
     );
   }
@@ -160,7 +160,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
           activeProfileId={activeProfileId}
           playerName={activeProfile?.name || t('resultsScreen.player')}
           playerAvatar={activeProfile?.avatar}
-          playerColor={activeProfile?.color || '#FF6B6B'}
+          playerColor={activeProfile?.color || '#FC6B48'}
           difficulty={gameState.difficulty}
           gameMode={gameState.gameMode}
         />

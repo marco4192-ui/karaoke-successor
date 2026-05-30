@@ -35,29 +35,32 @@ export const GameScoreDisplay = React.memo(function GameScoreDisplay({
 }: GameScoreDisplayProps) {
   return (
     <div className="flex items-center gap-3">
-      <Badge variant="outline" className="border-white/20 text-white/80">
+      <Badge variant="outline" className="border-[3px] border-black text-[#FDFEFD] bg-[#2a1a3e]" style={{ boxShadow: '3px 3px 0px #BA279D' }}>
         {difficulty.toUpperCase()}
       </Badge>
 
       {/* Active Challenge Mode Indicator */}
       {activeChallenge && (
         <Badge
-          className={`px-3 py-1 text-sm font-bold ${
-            activeChallenge.difficulty === 'extreme' ? 'bg-red-500/30 text-red-300 border border-red-500/50' :
-            activeChallenge.difficulty === 'hard' ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50' :
-            activeChallenge.difficulty === 'medium' ? 'bg-yellow-500/30 text-yellow-300 border border-yellow-500/50' :
-            'bg-green-500/30 text-green-300 border border-green-500/50'
+          className={`px-3 py-1 text-sm font-bold border-[3px] border-black ${
+            activeChallenge.difficulty === 'extreme' ? 'bg-[#F939A3] text-white' :
+            activeChallenge.difficulty === 'hard' ? 'bg-[#FC6B48] text-black' :
+            activeChallenge.difficulty === 'medium' ? 'bg-[#FDE601] text-black' :
+            'bg-[#00F3B2] text-black'
           }`}
+          style={{ boxShadow: '3px 3px 0px #6B2E77' }}
         >
           {activeChallenge.icon} {activeChallenge.name} (+{activeChallenge.xpReward} XP)
         </Badge>
       )}
       {timeRemaining !== null && timeRemaining !== undefined && timeRemaining > 0 && (
-        <Badge className={`px-3 py-1 text-sm font-bold animate-pulse ${
-          timeRemaining <= 30 ? 'bg-red-500/30 text-red-300 border border-red-500/50' :
-          timeRemaining <= 60 ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50' :
-          'bg-cyan-500/30 text-cyan-300 border border-cyan-500/50'
-        }`}>
+        <Badge className={`px-3 py-1 text-sm font-bold animate-pulse border-[3px] border-black ${
+          timeRemaining <= 30 ? 'bg-[#F939A3] text-white' :
+          timeRemaining <= 60 ? 'bg-[#FC6B48] text-black' :
+          'bg-[#00F3B2] text-black'
+        }`}
+          style={{ boxShadow: '3px 3px 0px #BA279D' }}
+        >
           ⏱️ {Math.floor(timeRemaining / 60)}:{String(timeRemaining % 60).padStart(2, '0')}
         </Badge>
       )}

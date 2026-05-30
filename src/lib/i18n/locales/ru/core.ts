@@ -17,7 +17,7 @@ export const coreTranslations = {
   },
 
   home: {
-    title: 'Karaoke ZERO',
+    title: 'Karaoke Eleven',
     subtitle: 'Непревзойдённый караоке-опыт. Пойте с определением тона в реальном времени, соревнуйтесь с друзьями и наслаждайтесь играми для вечеринок!',
     startSinging: 'Начать петь',
     partyMode: 'Режим вечеринки',
@@ -140,7 +140,7 @@ export const coreTranslations = {
   },
 
   scoreCardSocial: {
-    branding: 'Karaoke ZERO',
+    branding: 'Karaoke Eleven',
     accuracyLabel: 'Точность:',
     maxComboLabel: 'Макс. комбо:',
     difficultyLabel: 'Сложность:',

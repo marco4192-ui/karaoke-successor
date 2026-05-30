@@ -72,19 +72,18 @@ export function PtmIntroScreen({
             : `${audioSong?.title ?? ''} — ${audioSong?.artist ?? ''}`}
         </p>
 
-        <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-xl max-w-md w-full mb-6 p-8 text-center">
+        <div className="bg-[#00F3B2]/10 border-[3px] border-black rounded-xl max-w-md w-full mb-6 p-8 text-center" style={{ boxShadow: '5px 5px 0px #00F3B2' }}>
           <div className="text-sm text-white/60 mb-2">{t('passTheMic.startPlayer')}</div>
           <div className="flex items-center justify-center gap-4 mb-4">
             {currentPlayer?.avatar ? (
               <img
                 src={currentPlayer.avatar}
                 alt={currentPlayer.name}
-                className="w-20 h-20 rounded-full object-cover border-4 border-cyan-500"
+                className="w-20 h-20 rounded-full object-cover border-[3px] border-black" style={{ boxShadow: '4px 4px 0px #00F3B2' }}
               />
             ) : (
               <div
-                className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold border-4 border-cyan-500 text-white"
-                style={{ backgroundColor: currentPlayer?.color }}
+                className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold border-[3px] border-black text-white" style={{ boxShadow: '4px 4px 0px #00F3B2', backgroundColor: currentPlayer?.color }}
               >
                 {currentPlayer?.name?.charAt(0).toUpperCase()}
               </div>
@@ -107,14 +106,14 @@ export function PtmIntroScreen({
 
         {!mediaLoaded && (
           <div className="mb-4 text-center">
-            <div className="animate-spin inline-block w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full" />
+            <div className="animate-spin inline-block w-6 h-6 border-2 border-[#00F3B2] border-t-transparent rounded-full" />
             <p className="text-white/40 text-sm mt-2">{t('passTheMic.loadingSong')}</p>
           </div>
         )}
         <Button
           onClick={startGame}
           disabled={!mediaLoaded}
-          className="px-12 py-4 text-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 disabled:opacity-50"
+          className="px-12 py-4 text-xl bg-[#00F3B2] hover:bg-[#00F3B2]/80 text-black font-bold border-[3px] border-black disabled:opacity-50" style={{ boxShadow: '4px 4px 0px #000000' }}
           data-testid="ptm-start-button"
         >
           {t('passTheMic.startSinging')}

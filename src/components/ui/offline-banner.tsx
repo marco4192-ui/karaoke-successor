@@ -43,7 +43,7 @@ export function OfflineBanner() {
       : t('offlineBanner.localData');
 
     return (
-      <div className="fixed top-0 left-0 right-0 z-[100] bg-orange-600/95 text-white text-center text-xs py-1.5 px-4">
+      <div className="fixed top-0 left-0 right-0 z-[100] bg-[#FC6B48] text-black text-center text-xs py-1.5 px-4 font-bold border-b-[3px] border-black">
         <div className="flex items-center justify-center gap-2">
           <WifiOff className="w-3.5 h-3.5 flex-shrink-0" />
           <span>{t('offlineBanner.offline')}</span>
@@ -57,7 +57,7 @@ export function OfflineBanner() {
   // Online but server unreachable
   if (isServerReachable === false) {
     return (
-      <div className="fixed top-0 left-0 right-0 z-[100] bg-yellow-600/90 text-white text-center text-xs py-1.5 px-4 flex items-center justify-center gap-2">
+      <div className="fixed top-0 left-0 right-0 z-[100] bg-[#FDE601] text-black text-center text-xs py-1.5 px-4 flex items-center justify-center gap-2 font-bold border-b-[3px] border-black">
         <Wifi className="w-3.5 h-3.5 flex-shrink-0" />
         <span>{t('offlineBanner.serverUnreachable')}</span>
       </div>

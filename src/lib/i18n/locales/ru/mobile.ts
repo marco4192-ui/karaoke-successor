@@ -384,7 +384,7 @@ export const mobileTranslations = {
     cameraPositionNone: 'Без камеры',
     cameraConnectFailed: 'Не удалось подключиться к мобильной камере',
     cameraAccessDenied: 'Доступ к камере запрещён',
-    branding: 'Karaoke ZERO',
+    branding: 'Karaoke Eleven',
     camera: '📹 Камера',
     active: 'Активна',
     mobileConnected: 'Мобильное подключено',
@@ -452,7 +452,7 @@ export const mobileTranslations = {
   },
 
   mobileOnboarding: {
-    welcome: 'Добро пожаловать в Karaoke ZERO',
+    welcome: 'Добро пожаловать в Karaoke Eleven',
     subtitle: 'Ваше мобильное приложение-компаньон для караоке',
     next: 'Далее',
     back: 'Назад',

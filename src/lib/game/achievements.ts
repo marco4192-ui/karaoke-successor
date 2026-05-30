@@ -1,4 +1,4 @@
-// Achievement System for Karaoke ZERO
+// Achievement System for Karaoke Eleven
 
 interface AchievementDefinition {
   id: string;

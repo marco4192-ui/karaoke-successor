@@ -1,17 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Bangers, Press_Start_2P } from "next/font/google";
 import "./globals.css";
 import { ToasterClient } from "@/components/ui/toaster-client";
 import { ErrorBoundary } from "@/components/error-boundary";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const bangers = Bangers({
+  variable: "--font-bangers",
   subsets: ["latin"],
+  weight: "400",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const pressStart2P = Press_Start_2P({
+  variable: "--font-press-start-2p",
   subsets: ["latin"],
+  weight: "400",
 });
 
 export const viewport: Viewport = {
@@ -20,16 +22,26 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#00ffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a1a" },
+    { media: "(prefers-color-scheme: light)", color: "#F939A3" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a0a2e" },
   ],
 };
 
 export const metadata: Metadata = {
-  title: "Karaoke ZERO - The Ultimate Karaoke Experience",
-  description: "Sing your heart out with real-time pitch detection, compete with friends, and enjoy party games! The ultimate karaoke experience.",
-  keywords: ["karaoke", "singing", "pitch detection", "party games", "music", "microphone", "karaoke game"],
-  authors: [{ name: "Karaoke ZERO Team" }],
+  title: "Karaoke Eleven - The Ultimate Karaoke Experience",
+  description:
+    "Sing your heart out with real-time pitch detection, compete with friends, and enjoy party games! The ultimate karaoke experience brought to you by Karaoke Eleven.",
+  keywords: [
+    "karaoke",
+    "singing",
+    "pitch detection",
+    "party games",
+    "music",
+    "microphone",
+    "karaoke game",
+    "Karaoke Eleven",
+  ],
+  authors: [{ name: "Karaoke Eleven Team" }],
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
@@ -47,22 +59,24 @@ export const metadata: Metadata = {
     telephone: false,
   },
   openGraph: {
-    title: "Karaoke ZERO",
-    description: "The ultimate karaoke experience with real-time pitch detection",
+    title: "Karaoke Eleven",
+    description:
+      "The ultimate karaoke experience with real-time pitch detection",
     type: "website",
     images: [
       {
         url: "/screenshots/gameplay.png",
         width: 1280,
         height: 720,
-        alt: "Karaoke ZERO Gameplay",
+        alt: "Karaoke Eleven Gameplay",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Karaoke ZERO",
-    description: "The ultimate karaoke experience with real-time pitch detection",
+    title: "Karaoke Eleven",
+    description:
+      "The ultimate karaoke experience with real-time pitch detection",
     images: ["/screenshots/gameplay.png"],
   },
 };
@@ -78,7 +92,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        className={`${bangers.variable} ${pressStart2P.variable} antialiased bg-background text-foreground`}
         suppressHydrationWarning
       >
         <ErrorBoundary>

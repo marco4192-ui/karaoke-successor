@@ -103,7 +103,7 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
   // ===================== FULLSCREEN GAMEPLAY =====================
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col bg-black">
+    <div className="fixed inset-0 z-40 flex flex-col bg-[#1a0a2e]">
       {/* Audio Element */}
       {g.audioSong?.audioUrl && (
         <audio
@@ -157,7 +157,7 @@ export function PtmGameScreen(props: Parameters<typeof usePtmGameLogic>[0]) {
         />
 
         {/* Dark Overlay for visibility */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50 z-5" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1a0a2e]/30 via-transparent to-[#1a0a2e]/50 z-5" />
 
         {/* Countdown */}
         {g.phase === 'countdown' && (

@@ -18,32 +18,32 @@ export interface ScoreEventsDisplayProps {
 
 const SCORE_STYLES: Record<ScoreEvent['displayType'], { className: string; boxShadow: string; icon: string; iconSize: string }> = {
   Perfect: {
-    className: 'bg-gradient-to-r from-yellow-300 via-yellow-400 to-orange-400 text-black ring-2 ring-yellow-200/60',
-    boxShadow: '0 0 20px rgba(255, 200, 0, 0.6), 0 0 40px rgba(255, 150, 0, 0.3)',
+    className: 'bg-[#FDE601] text-black border-[3px] border-black',
+    boxShadow: '4px 4px 0px #FC6B48',
     icon: '⭐',
     iconSize: 'text-lg animate-bounce',
   },
   Great: {
-    className: 'bg-gradient-to-r from-green-400 to-emerald-500 text-white ring-1 ring-green-300/40',
-    boxShadow: '0 0 15px rgba(34, 197, 94, 0.5), 0 0 30px rgba(34, 197, 94, 0.2)',
+    className: 'bg-[#00F3B2] text-black border-[3px] border-black',
+    boxShadow: '4px 4px 0px #6B2E77',
     icon: '✨',
     iconSize: 'text-base',
   },
   Good: {
-    className: 'bg-gradient-to-r from-blue-400 to-cyan-500 text-white ring-1 ring-blue-300/30',
-    boxShadow: '0 0 10px rgba(59, 130, 246, 0.4)',
+    className: 'bg-[#F939A3] text-black border-[3px] border-black',
+    boxShadow: '4px 4px 0px #BA279D',
     icon: '🎵',
     iconSize: 'text-sm',
   },
   Okay: {
-    className: 'bg-gradient-to-r from-orange-400 to-amber-500 text-white ring-1 ring-orange-300/30',
-    boxShadow: '0 0 10px rgba(249, 115, 22, 0.4)',
+    className: 'bg-[#FC6B48] text-black border-[3px] border-black',
+    boxShadow: '4px 4px 0px #F939A3',
     icon: '🎶',
     iconSize: 'text-sm',
   },
   Miss: {
-    className: 'bg-gradient-to-r from-gray-500 to-gray-700 text-white ring-1 ring-gray-400/30',
-    boxShadow: '0 0 10px rgba(107, 114, 128, 0.4)',
+    className: 'bg-[#6B2E77] text-white border-[3px] border-black',
+    boxShadow: '4px 4px 0px #000000',
     icon: '❌',
     iconSize: 'text-sm',
   },
@@ -55,7 +55,7 @@ function ScoreEventCard({ event, index, compact }: { event: ScoreEvent; index: n
   return (
     <div
       key={`${event.time}-${event.player || 'p1'}-${index}`}
-      className={`${compact ? 'px-2 py-1' : 'px-4 py-2'} rounded-xl font-bold shadow-2xl transform ${style.className}`}
+      className={`${compact ? 'px-2 py-1' : 'px-4 py-2'} rounded-xl font-bold transform ${style.className}`}
       style={{
         animation: 'scorePopIn 0.4s ease-out, fadeOut 1.5s ease-in-out forwards',
         animationDelay: `${index * 0.05}s`,

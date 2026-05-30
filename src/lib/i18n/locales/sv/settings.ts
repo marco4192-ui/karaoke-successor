@@ -73,7 +73,7 @@ export const settingsTranslations = {
     installAppDesc: 'Installera för offlineanvändning',
     appInstalled: 'Appen är installerad',
     version: 'Version',
-    aboutDesc: 'Karaoke ZERO är en modern karaokeapplikation med Realtidstonhöjdsavkänning, festlägen och mer.',
+    aboutDesc: 'Karaoke Eleven är en modern karaokeapplikation med Realtidstonhöjdsavkänning, festlägen och mer.',
     feature1: 'Realtidstonhöjdsavkänning med YIN-algoritm',
     feature2: 'Flera festspellägen',
     feature3: 'Mobilappintegration för fjärrstyrning',
@@ -342,7 +342,7 @@ export const settingsTranslations = {
   settingsLibrary: {
     title: 'Låtbas-mapp',
     desc: 'Alla låtar importeras från denna mapp. Varje undermapp innehåller en låt.',
-    placeholder: 'C:/Karaoke ZERO/Songs',
+    placeholder: 'C:/Karaoke Eleven/Songs',
     scan: 'Skanna',
     browse: 'Bläddra',
     help: 'Ange sökvägen till din låtmapp och klicka på "Skanna" för att importera, eller använd "Bläddra" för att välja en mapp.',

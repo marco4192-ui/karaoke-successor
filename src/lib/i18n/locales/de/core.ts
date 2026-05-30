@@ -17,7 +17,7 @@ export const coreTranslations = {
   },
 
   home: {
-    title: 'Karaoke ZERO',
+    title: 'Karaoke Eleven',
     subtitle: 'Das ultimative Karaoke-Erlebnis. Singe dein Herz aus mit Echtzeit-Pitch-Erkennung, tritt gegen Freunde an und genieße Party-Spiele!',
     startSinging: 'Singen Starten',
     partyMode: 'Party-Modus',
@@ -140,7 +140,7 @@ export const coreTranslations = {
   },
 
   scoreCardSocial: {
-    branding: 'Karaoke ZERO',
+    branding: 'Karaoke Eleven',
     accuracyLabel: 'Genauigkeit:',
     maxComboLabel: 'Beste Combo:',
     difficultyLabel: 'Schwierigkeit:',

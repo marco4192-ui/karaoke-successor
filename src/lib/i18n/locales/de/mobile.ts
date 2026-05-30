@@ -403,7 +403,7 @@ export const mobileTranslations = {
     cameraPositionNone: 'Keine Kamera',
     cameraConnectFailed: 'Verbindung zur Mobilkamera fehlgeschlagen',
     cameraAccessDenied: 'Kamerazugriff verweigert',
-    branding: 'Karaoke ZERO',
+    branding: 'Karaoke Eleven',
     camera: '📹 Kamera',
     active: 'Aktiv',
     mobileConnected: 'Mobil verbunden',
@@ -471,7 +471,7 @@ export const mobileTranslations = {
   },
 
   mobileOnboarding: {
-    welcome: 'Willkommen bei Karaoke ZERO',
+    welcome: 'Willkommen bei Karaoke Eleven',
     subtitle: 'Deine mobile Karaoke-Begleit-App',
     next: 'Weiter',
     back: 'Zurück',

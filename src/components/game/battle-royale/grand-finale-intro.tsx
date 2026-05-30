@@ -35,7 +35,7 @@ export function GrandFinaleIntro({
     const seed = i * 2654435761; // Knuth multiplicative hash for deterministic pseudo-random
     const rand = (offset: number) => ((seed + offset) * 2654435761 >>> 0) % 1000 / 1000;
     const sizes = [1, 2, 3] as const;
-    const colors = ['bg-amber-400/30', 'bg-yellow-300/25', 'bg-red-500/30'] as const;
+    const colors = ['bg-[#FDE601]/30', 'bg-[#FDE601]/25', 'bg-[#FC6B48]/30'] as const;
     return {
       left: rand(0) * 100,
       top: rand(1) * 100,
@@ -70,7 +70,7 @@ export function GrandFinaleIntro({
     <>
     <div className="h-screen flex flex-col items-center justify-center relative overflow-hidden">
       {/* Background effects */}
-      <div className="fixed inset-0 bg-gradient-to-b from-amber-500/10 via-black to-red-500/10" />
+      <div className="fixed inset-0 bg-[#1a0a2e]" />
       <div className="fixed inset-0 bg-black/50" />
 
       {/* Radial gradient pulse expanding from center */}
@@ -78,8 +78,8 @@ export function GrandFinaleIntro({
         className="fixed inset-0 pointer-events-none"
         style={{
           background: phase !== 'showdown'
-            ? 'radial-gradient(circle at 50% 50%, rgba(245,158,11,0.25) 0%, rgba(239,68,68,0.1) 40%, transparent 70%)'
-            : 'radial-gradient(circle at 50% 50%, rgba(245,158,11,0.05) 0%, transparent 60%)',
+            ? 'radial-gradient(circle at 50% 50%, rgba(253,230,1,0.25) 0%, rgba(252,107,72,0.1) 40%, transparent 70%)'
+            : 'radial-gradient(circle at 50% 50%, rgba(253,230,1,0.05) 0%, transparent 60%)',
           animation: phase === 'versus'
             ? 'radialPulse 1s ease-out forwards'
             : phase === 'intro'
@@ -110,10 +110,10 @@ export function GrandFinaleIntro({
         {/* Phase 1: Intro — Title + "THE FINAL TWO" */}
         {phase === 'intro' && (
           <div className="animate-fade-in">
-            <p className="text-lg tracking-[0.5em] text-amber-400/70 uppercase mb-4 animate-pulse">
+            <p className="text-lg tracking-[0.5em] text-[#FDE601] uppercase mb-4 animate-pulse" style={{ textShadow: '2px 2px 0px #000000' }}>
               The Final Two
             </p>
-            <h1 className="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 mb-4">
+            <h1 className="text-6xl md:text-8xl font-black text-[#FDE601] mb-4" style={{ textShadow: '4px 4px 0px #000000, -2px -2px 0px #6B2E77' }}>
               {t('battleRoyale.grandFinale')}
             </h1>
             <p className="text-2xl text-white/60 mb-8">
@@ -128,7 +128,7 @@ export function GrandFinaleIntro({
             className="flex flex-col items-center justify-center"
             style={{ animation: 'vsZoomIn 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' }}
           >
-            <span className="text-8xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 via-amber-400 to-red-500 drop-shadow-[0_0_30px_rgba(245,158,11,0.6)]">
+            <span className="text-8xl md:text-9xl font-black text-[#F939A3]" style={{ textShadow: '4px 4px 0px #000000, -2px -2px 0px #6B2E77' }}>
               VERSUS
             </span>
           </div>
@@ -143,12 +143,13 @@ export function GrandFinaleIntro({
                 <img
                   src={player1.avatar}
                   alt={player1.name}
-                  className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-amber-500 animate-pulse"
+                  className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-[3px] border-black animate-pulse"
+                  style={{ boxShadow: '4px 4px 0px #FDE601' }}
                 />
               ) : (
                 <div
-                  className="w-24 h-24 md:w-32 md:h-32 rounded-full flex items-center justify-center text-white text-4xl font-bold border-4 border-amber-500"
-                  style={{ backgroundColor: player1.color }}
+                  className="w-24 h-24 md:w-32 md:h-32 rounded-full flex items-center justify-center text-white text-4xl font-bold border-[3px] border-black"
+                  style={{ boxShadow: '4px 4px 0px #FDE601', backgroundColor: player1.color }}
                 >
                   {player1.name.charAt(0)}
                 </div>
@@ -156,7 +157,7 @@ export function GrandFinaleIntro({
               <p className="mt-3 text-xl font-bold">{player1.name}</p>
               <div className="flex gap-1 mt-1">
                 {Array.from({ length: winsNeeded }).map((_, i) => (
-                  <span key={i} className={`text-xl ${i < (finalWins[player1.id] || 0) ? 'text-amber-400' : 'text-white/20'}`}>
+                  <span key={i} className={`text-xl ${i < (finalWins[player1.id] || 0) ? 'text-[#FDE601]' : 'text-white/20'}`}>
                     ★
                   </span>
                 ))}
@@ -168,8 +169,8 @@ export function GrandFinaleIntro({
 
             {/* VS — scale bounce */}
             <div
-              className="text-5xl md:text-7xl font-black text-red-500"
-              style={{ animation: 'vsBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' }}
+              className="text-5xl md:text-7xl font-black text-[#FC6B48]"
+              style={{ animation: 'vsBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards', textShadow: '3px 3px 0px #000000' }}
             >
               VS
             </div>
@@ -180,12 +181,13 @@ export function GrandFinaleIntro({
                 <img
                   src={player2.avatar}
                   alt={player2.name}
-                  className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-red-500 animate-pulse"
+                  className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-[3px] border-black animate-pulse"
+                  style={{ boxShadow: '4px 4px 0px #FC6B48' }}
                 />
               ) : (
                 <div
-                  className="w-24 h-24 md:w-32 md:h-32 rounded-full flex items-center justify-center text-white text-4xl font-bold border-4 border-red-500"
-                  style={{ backgroundColor: player2.color }}
+                  className="w-24 h-24 md:w-32 md:h-32 rounded-full flex items-center justify-center text-white text-4xl font-bold border-[3px] border-black"
+                  style={{ boxShadow: '4px 4px 0px #FC6B48', backgroundColor: player2.color }}
                 >
                   {player2.name.charAt(0)}
                 </div>
@@ -193,7 +195,7 @@ export function GrandFinaleIntro({
               <p className="mt-3 text-xl font-bold">{player2.name}</p>
               <div className="flex gap-1 mt-1">
                 {Array.from({ length: winsNeeded }).map((_, i) => (
-                  <span key={i} className={`text-xl ${i < (finalWins[player2.id] || 0) ? 'text-red-400' : 'text-white/20'}`}>
+                  <span key={i} className={`text-xl ${i < (finalWins[player2.id] || 0) ? 'text-[#FC6B48]' : 'text-white/20'}`}>
                     ★
                   </span>
                 ))}

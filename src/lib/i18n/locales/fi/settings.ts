@@ -73,7 +73,7 @@ export const settingsTranslations = {
     installAppDesc: 'Asenna offline-käyttöä varten',
     appInstalled: 'Sovellus on asennettu',
     version: 'Versio',
-    aboutDesc: 'Karaoke ZERO on moderni karaoke-sovellus reaaliaikaisella sävelkorkeudentunnistuksella, juhlatiloilla ja paljon muuta.',
+    aboutDesc: 'Karaoke Eleven on moderni karaoke-sovellus reaaliaikaisella sävelkorkeudentunnistuksella, juhlatiloilla ja paljon muuta.',
     feature1: 'Reaaliaikainen sävelkorkeudentunnistus YIN-algoritmilla',
     feature2: 'Useita juhlapelitiloja',
     feature3: 'Mobiilisovellusintegraatio etähallintaan',
@@ -374,7 +374,7 @@ export const settingsTranslations = {
   settingsLibrary: {
     title: 'Kappaleiden peruskansio',
     desc: 'Kaikki kappaleet tuodaan tästä kansiosta. Jokainen alikansio sisältää yhden kappaleen.',
-    placeholder: 'C:/Karaoke ZERO/Kappaleet',
+    placeholder: 'C:/Karaoke Eleven/Kappaleet',
     scan: 'Skannaa',
     browse: 'Selaa',
     help: 'Syötä polku kappalekansioosi ja napsauta "Skannaa" tuodaksesi, tai käytä "Selaa" valitaksesi kansion.',

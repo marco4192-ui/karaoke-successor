@@ -43,73 +43,81 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ═══════════════════════════════════════════════════════
+   KARAOKE ELEVEN — LIGHT MODE ROOT (Comic Pop-Art)
+   Bright cream background, bold outlines, flat fills
+   ═══════════════════════════════════════════════════════ */
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --background: #EAECDA;
+  --foreground: #000000;
+  --card: #FDFEFD;
+  --card-foreground: #000000;
+  --popover: #FDFEFD;
+  --popover-foreground: #000000;
+  --primary: #F939A3;
+  --primary-foreground: #000000;
+  --secondary: #00F3B2;
+  --secondary-foreground: #000000;
+  --muted: #FDFEFD;
+  --muted-foreground: #6B2E77;
+  --accent: #FDE601;
+  --accent-foreground: #000000;
+  --destructive: #FC6B48;
+  --border: #000000;
+  --input: #000000;
+  --ring: #000000;
+  --chart-1: #F939A3;
+  --chart-2: #00F3B2;
+  --chart-3: #6B2E77;
+  --chart-4: #FDE601;
+  --chart-5: #FC6B48;
+  --sidebar: #FDFEFD;
+  --sidebar-foreground: #000000;
+  --sidebar-primary: #F939A3;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #FDE601;
+  --sidebar-accent-foreground: #000000;
+  --sidebar-border: #000000;
+  --sidebar-ring: #000000;
 }
 
+/* ═══════════════════════════════════════════════════════
+   KARAOKE ELEVEN — DARK MODE (Psychedelic Comic)
+   Deep purple-black base, vibrant pop-art accents
+   ═══════════════════════════════════════════════════════ */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #1a0a2e;
+  --foreground: #FDFEFD;
+  --card: #2a1a3e;
+  --card-foreground: #FDFEFD;
+  --popover: #2a1a3e;
+  --popover-foreground: #FDFEFD;
+  --primary: #F939A3;
+  --primary-foreground: #000000;
+  --secondary: #00F3B2;
+  --secondary-foreground: #000000;
+  --muted: #3a2a4e;
+  --muted-foreground: #EAECDA;
+  --accent: #FDE601;
+  --accent-foreground: #000000;
+  --destructive: #FC6B48;
+  --border: #000000;
+  --input: #000000;
+  --ring: #FDE601;
+  --chart-1: #F939A3;
+  --chart-2: #00F3B2;
+  --chart-3: #6B2E77;
+  --chart-4: #FDE601;
+  --chart-5: #FC6B48;
+  --sidebar: #2a1a3e;
+  --sidebar-foreground: #FDFEFD;
+  --sidebar-primary: #F939A3;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #FDE601;
+  --sidebar-accent-foreground: #000000;
+  --sidebar-border: #000000;
+  --sidebar-ring: #FDE601;
 }
 
 @layer base {
@@ -121,82 +129,85 @@
   }
 }
 
-/* Theme-aware text colors - these adapt to the selected theme */
+/* ═══════════════════════════════════════════════════════
+   THEME-AWARE UTILITY CLASSES
+   These adapt to the selected theme via CSS custom vars.
+   applyTheme() in themes.ts injects these variables.
+   ═══════════════════════════════════════════════════════ */
 @layer utilities {
+  /* Text colors from theme */
   .text-theme-primary {
-    color: var(--theme-primary, #00ffff);
+    color: var(--theme-primary, #F939A3);
   }
   .text-theme-secondary {
-    color: var(--theme-secondary, #ff00ff);
+    color: var(--theme-secondary, #00F3B2);
   }
   .text-theme-text {
-    color: var(--theme-text, #ffffff);
+    color: var(--theme-text, #FDFEFD);
   }
   .text-theme-text-secondary {
-    color: var(--theme-text-secondary, #8888aa);
+    color: var(--theme-text-secondary, #BA279D);
   }
   .text-theme-text-muted {
-    color: var(--theme-text-secondary, #8888aa);
+    color: var(--theme-text-secondary, #BA279D);
     opacity: 0.6;
   }
   .text-theme-accent {
-    color: var(--theme-accent, #ffff00);
+    color: var(--theme-accent, #FDE601);
   }
   .text-theme-success {
-    color: var(--theme-success, #00ff88);
+    color: var(--theme-success, #00F3B2);
   }
   .text-theme-warning {
-    color: var(--theme-warning, #ffaa00);
+    color: var(--theme-warning, #FDE601);
   }
   .text-theme-error {
-    color: var(--theme-error, #ff4466);
+    color: var(--theme-error, #FC6B48);
   }
-  
+
   /* Background colors from theme */
   .bg-theme-background {
-    background-color: var(--theme-background, #0a0a1a);
+    background-color: var(--theme-background, #1a0a2e);
   }
   .bg-theme-background-secondary {
-    background-color: var(--theme-background-secondary, #1a1a2e);
+    background-color: var(--theme-background-secondary, #2a1a3e);
   }
-  
+
   /* Border colors from theme */
   .border-theme-primary {
-    border-color: var(--theme-primary, #00ffff);
+    border-color: var(--theme-primary, #F939A3);
   }
   .border-theme-secondary {
-    border-color: var(--theme-secondary, #ff00ff);
+    border-color: var(--theme-secondary, #00F3B2);
   }
 }
 
-/*
- * Dynamic Theme Adaptation 
- * These styles automatically adapt text colors based on the applied theme.
- * The applyTheme() function in themes.ts injects these variables.
- */
+/* ═══════════════════════════════════════════════════════
+   DYNAMIC THEME ADAPTATION CLASSES
+   Automatically adapt text/bg colors based on the applied theme.
+   ═══════════════════════════════════════════════════════ */
 .theme-adaptive-text {
-  color: var(--theme-text, #ffffff) !important;
+  color: var(--theme-text, #FDFEFD) !important;
 }
 
 .theme-adaptive-text-secondary {
-  color: var(--theme-text-secondary, #8888aa) !important;
+  color: var(--theme-text-secondary, #BA279D) !important;
 }
 
 .theme-adaptive-text-muted {
-  color: var(--theme-text-secondary, #8888aa) !important;
+  color: var(--theme-text-secondary, #BA279D) !important;
   opacity: 0.6;
 }
 
 .theme-adaptive-bg {
-  background-color: var(--theme-background, #0a0a1a) !important;
+  background-color: var(--theme-background, #1a0a2e) !important;
 }
 
 .theme-adaptive-bg-secondary {
-  background-color: var(--theme-background-secondary, #1a1a2e) !important;
+  background-color: var(--theme-background-secondary, #2a1a3e) !important;
 }
 
 /* Theme-aware overrides for hardcoded Tailwind classes */
-/* These are dynamically updated by applyTheme() in themes.ts */
 .theme-force-text {
   color: var(--theme-text) !important;
 }
@@ -209,7 +220,9 @@
   border-color: var(--theme-primary) !important;
 }
 
-/* Settings panel specific theme overrides */
+/* ═══════════════════════════════════════════════════════
+   SETTINGS PANEL THEME OVERRIDES
+   ═══════════════════════════════════════════════════════ */
 .settings-theme-container {
   background-color: var(--theme-background) !important;
   color: var(--theme-text) !important;
@@ -260,154 +273,417 @@
 }
 
 /* ═══════════════════════════════════════════════════════
-   KARAOKE ZERO — 90s/2000s RETRO KARAOKE THEME
-   Neon glow, chunky borders, star particles, MTV vibes
+   KARAOKE ELEVEN — COMIC-BOOK POP-ART THEME
+   Jackbox Games × 1960s Psychedelic Poster Art
+   Bold outlines, flat fills, halftone dots, action words
    ═══════════════════════════════════════════════════════ */
 
-/* Retro neon text glow */
-.retro-glow-pink {
-  text-shadow: 0 0 7px #ff2d95, 0 0 20px #ff2d95, 0 0 42px #ff00ff;
+/* ── Comic Text Stroke Classes ──
+   Thick black outline with colored fill via -webkit-text-stroke */
+.comic-stroke-yellow {
+  color: #FDE601;
+  -webkit-text-stroke: 3px #000000;
+  paint-order: stroke fill;
+  text-shadow: 3px 3px 0 #000000;
 }
-.retro-glow-cyan {
-  text-shadow: 0 0 7px #00ffff, 0 0 20px #00ffff, 0 0 42px #00e5ff;
+.comic-stroke-pink {
+  color: #F939A3;
+  -webkit-text-stroke: 3px #000000;
+  paint-order: stroke fill;
+  text-shadow: 3px 3px 0 #000000;
 }
-.retro-glow-gold {
-  text-shadow: 0 0 7px #ffd60a, 0 0 20px #ffcc00, 0 0 42px #ffaa00;
+.comic-stroke-teal {
+  color: #00F3B2;
+  -webkit-text-stroke: 3px #000000;
+  paint-order: stroke fill;
+  text-shadow: 3px 3px 0 #000000;
 }
-.retro-glow-purple {
-  text-shadow: 0 0 7px #bf5af2, 0 0 20px #bf5af2, 0 0 42px #9b59b6;
-}
-
-/* Retro box glow */
-.retro-box-glow-pink {
-  box-shadow: 0 0 8px rgba(255, 45, 149, 0.5), 0 0 24px rgba(255, 45, 149, 0.25), inset 0 0 8px rgba(255, 45, 149, 0.08);
-}
-.retro-box-glow-cyan {
-  box-shadow: 0 0 8px rgba(0, 255, 255, 0.5), 0 0 24px rgba(0, 255, 255, 0.25), inset 0 0 8px rgba(0, 255, 255, 0.08);
-}
-.retro-box-glow-gold {
-  box-shadow: 0 0 8px rgba(255, 214, 10, 0.5), 0 0 24px rgba(255, 214, 10, 0.25), inset 0 0 8px rgba(255, 214, 10, 0.08);
-}
-.retro-box-glow-purple {
-  box-shadow: 0 0 8px rgba(191, 90, 242, 0.5), 0 0 24px rgba(191, 90, 242, 0.25), inset 0 0 8px rgba(191, 90, 242, 0.08);
-}
-
-/* Retro gradient backgrounds */
-.retro-gradient-hero {
-  background: linear-gradient(180deg, #0a0a1a 0%, #1a0a2e 40%, #0d0d2b 70%, #0a0a1a 100%);
-}
-.retro-gradient-card {
-  background: linear-gradient(135deg, rgba(191, 90, 242, 0.08) 0%, rgba(255, 45, 149, 0.08) 100%);
-}
-.retro-gradient-pink {
-  background: linear-gradient(135deg, #ff2d95, #ff00ff);
-}
-.retro-gradient-cyan {
-  background: linear-gradient(135deg, #00e5ff, #00ffff);
-}
-.retro-gradient-gold {
-  background: linear-gradient(135deg, #ffd60a, #ffaa00);
-}
-.retro-gradient-rainbow {
-  background: linear-gradient(90deg, #ff2d95, #ff00ff, #bf5af2, #00e5ff, #00ff88, #ffd60a, #ff2d95);
-  background-size: 200% 100%;
-  animation: retro-rainbow-slide 6s linear infinite;
+.comic-stroke-purple {
+  color: #BA279D;
+  -webkit-text-stroke: 3px #000000;
+  paint-order: stroke fill;
+  text-shadow: 3px 3px 0 #000000;
 }
 
-/* Star particle decorations */
-.retro-star {
-  position: relative;
+/* ── Comic Offset Shadow Classes ──
+   Solid offset drop shadows like in comic books */
+.comic-shadow {
+  box-shadow: 3px 3px 0 #000000;
 }
-.retro-star::before,
-.retro-star::after {
-  content: '\2726';
-  position: absolute;
-  color: #ffd60a;
-  font-size: 0.7rem;
-  opacity: 0.7;
-  animation: retro-star-twinkle 2s ease-in-out infinite;
+.comic-shadow-pink {
+  box-shadow: 3px 3px 0 #F939A3;
 }
-.retro-star::before { top: -8px; left: 10%; animation-delay: 0s; }
-.retro-star::after { bottom: -8px; right: 10%; animation-delay: 1s; }
-
-/* Retro chunky border */
-.retro-border {
-  border: 2px solid;
-  border-image: linear-gradient(135deg, #ff2d95, #bf5af2, #00e5ff) 1;
+.comic-shadow-teal {
+  box-shadow: 3px 3px 0 #00F3B2;
 }
-.retro-border-pink {
-  border: 2px solid rgba(255, 45, 149, 0.4);
+.comic-shadow-yellow {
+  box-shadow: 3px 3px 0 #FDE601;
 }
-.retro-border-cyan {
-  border: 2px solid rgba(0, 229, 255, 0.4);
+.comic-shadow-purple {
+  box-shadow: 3px 3px 0 #6B2E77;
 }
-.retro-border-gold {
-  border: 2px solid rgba(255, 214, 10, 0.4);
+.comic-shadow-coral {
+  box-shadow: 3px 3px 0 #FC6B48;
 }
 
-/* Retro button style */
-.retro-btn {
+/* ── Comic Solid Fill Classes ──
+   Flat solid color fills with thick black border */
+.comic-fill-yellow {
+  background-color: #FDE601;
+  border: 3px solid #000000;
+}
+.comic-fill-pink {
+  background-color: #F939A3;
+  border: 3px solid #000000;
+}
+.comic-fill-teal {
+  background-color: #00F3B2;
+  border: 3px solid #000000;
+}
+.comic-fill-purple {
+  background-color: #6B2E77;
+  border: 3px solid #000000;
+}
+.comic-fill-magenta {
+  background-color: #BA279D;
+  border: 3px solid #000000;
+}
+.comic-fill-coral {
+  background-color: #FC6B48;
+  border: 3px solid #000000;
+}
+.comic-fill-black {
+  background-color: #000000;
+  border: 3px solid #000000;
+}
+.comic-fill-cream {
+  background-color: #FDFEFD;
+  border: 3px solid #000000;
+}
+
+/* ── Comic Button Classes ──
+   Bold uppercase buttons with thick outlines and offset shadows */
+.comic-btn {
   position: relative;
   padding: 12px 28px;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border: 2px solid;
-  transition: all 0.2s;
+  border: 3px solid #000000;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  box-shadow: 4px 4px 0 #000000;
 }
-.retro-btn:hover {
-  transform: translateY(-1px);
+.comic-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #000000;
 }
-.retro-btn-pink {
-  background: linear-gradient(135deg, #ff2d95, #cc0077);
-  border-color: #ff2d95;
-  color: #fff;
-  box-shadow: 0 0 12px rgba(255, 45, 149, 0.5);
+.comic-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #000000;
 }
-.retro-btn-pink:hover {
-  box-shadow: 0 0 24px rgba(255, 45, 149, 0.7), 0 4px 16px rgba(0,0,0,0.3);
+.comic-btn-yellow {
+  background-color: #FDE601;
+  color: #000000;
+  border-color: #000000;
 }
-.retro-btn-cyan {
-  background: linear-gradient(135deg, #00e5ff, #00b8d4);
-  border-color: #00e5ff;
-  color: #0a0a1a;
-  box-shadow: 0 0 12px rgba(0, 229, 255, 0.5);
+.comic-btn-pink {
+  background-color: #F939A3;
+  color: #000000;
+  border-color: #000000;
 }
-.retro-btn-cyan:hover {
-  box-shadow: 0 0 24px rgba(0, 229, 255, 0.7), 0 4px 16px rgba(0,0,0,0.3);
+.comic-btn-teal {
+  background-color: #00F3B2;
+  color: #000000;
+  border-color: #000000;
+}
+.comic-btn-purple {
+  background-color: #6B2E77;
+  color: #FDFEFD;
+  border-color: #000000;
 }
 
-/* Retro scanline overlay (subtle) */
-.retro-scanlines::after {
+/* ── Comic Border Classes ──
+   Thick black borders with color accents */
+.comic-border {
+  border: 3px solid #000000;
+}
+.comic-border-dashed {
+  border: 3px dashed #000000;
+}
+.comic-border-pink {
+  border: 3px solid #000000;
+  outline: 2px solid #F939A3;
+  outline-offset: -5px;
+}
+.comic-border-teal {
+  border: 3px solid #000000;
+  outline: 2px solid #00F3B2;
+  outline-offset: -5px;
+}
+.comic-border-yellow {
+  border: 3px solid #000000;
+  outline: 2px solid #FDE601;
+  outline-offset: -5px;
+}
+.comic-border-purple {
+  border: 3px solid #000000;
+  outline: 2px solid #6B2E77;
+  outline-offset: -5px;
+}
+
+/* ── Comic Card Classes ──
+   Card style with thick border, offset shadow, solid fill */
+.comic-card {
+  border: 3px solid #000000;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 4px 4px 0 #000000;
+  background-color: var(--card, #FDFEFD);
+  color: var(--card-foreground, #000000);
+}
+.comic-card-yellow {
+  border: 3px solid #000000;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 4px 4px 0 #000000;
+  background-color: #FDE601;
+  color: #000000;
+}
+.comic-card-pink {
+  border: 3px solid #000000;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 4px 4px 0 #000000;
+  background-color: #F939A3;
+  color: #000000;
+}
+.comic-card-teal {
+  border: 3px solid #000000;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 4px 4px 0 #000000;
+  background-color: #00F3B2;
+  color: #000000;
+}
+.comic-card-purple {
+  border: 3px solid #000000;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 4px 4px 0 #000000;
+  background-color: #6B2E77;
+  color: #FDFEFD;
+}
+.comic-card-cream {
+  border: 3px solid #000000;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 4px 4px 0 #000000;
+  background-color: #FDFEFD;
+  color: #000000;
+}
+
+/* ── Comic Halftone Pattern ──
+   Ben-Day dot pattern overlay (like Roy Lichtenstein) */
+.comic-halftone::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.03) 2px,
-    rgba(0, 0, 0, 0.03) 4px
-  );
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.08) 1px, transparent 1px);
+  background-size: 6px 6px;
   pointer-events: none;
+  z-index: 1;
 }
 
-/* Retro keyframe animations */
-@keyframes retro-rainbow-slide {
+/* ── Comic Starburst / Explosion Decoration ──
+   Starburst pseudo-element for action-word emphasis */
+.comic-burst {
+  position: relative;
+}
+.comic-burst::before {
+  content: '★';
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  font-size: 1.5rem;
+  color: #FDE601;
+  -webkit-text-stroke: 2px #000000;
+  paint-order: stroke fill;
+  z-index: 2;
+  animation: comic-burst-pop 2s ease-in-out infinite;
+}
+.comic-burst::after {
+  content: '★';
+  position: absolute;
+  bottom: -12px;
+  left: -12px;
+  font-size: 1rem;
+  color: #F939A3;
+  -webkit-text-stroke: 2px #000000;
+  paint-order: stroke fill;
+  z-index: 2;
+  animation: comic-burst-pop 2s ease-in-out infinite 1s;
+}
+
+/* ── Comic Speech Bubble ──
+   Speech bubble with tail pointer */
+.comic-speech-bubble {
+  position: relative;
+  background-color: #FDFEFD;
+  border: 3px solid #000000;
+  border-radius: 16px;
+  padding: 16px 20px;
+  box-shadow: 4px 4px 0 #000000;
+}
+.comic-speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -16px;
+  left: 24px;
+  width: 0;
+  height: 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-top: 16px solid #000000;
+}
+.comic-speech-bubble::before {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  left: 26px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 14px solid #FDFEFD;
+  z-index: 1;
+}
+
+/* ── Comic Zigzag Border ──
+   Zigzag edge pattern using CSS gradients */
+.comic-zigzag {
+  background-image:
+    linear-gradient(135deg, #F939A3 25%, transparent 25%),
+    linear-gradient(225deg, #F939A3 25%, transparent 25%),
+    linear-gradient(45deg, #F939A3 25%, transparent 25%),
+    linear-gradient(315deg, #F939A3 25%, transparent 25%);
+  background-position: 8px 0, 8px 0, 0 0, 0 0;
+  background-size: 16px 8px;
+  background-repeat: repeat-x;
+}
+
+/* ── Comic Diagonal Stripe Pattern ──
+   Bold diagonal stripes for hazard/warning feel */
+.comic-stripe {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 8px,
+    #F939A3 8px,
+    #F939A3 16px
+  );
+}
+
+/* ── Comic Polka Dot Pattern ──
+   Polka dot background pattern */
+.comic-dot-pattern {
+  background-image: radial-gradient(circle, #FDE601 8px, transparent 8px);
+  background-size: 32px 32px;
+  background-position: 0 0, 16px 16px;
+}
+
+/* ── Comic Crosshatch Pattern ──
+   Crosshatch shading pattern */
+.comic-crosshatch {
+  background-image:
+    linear-gradient(45deg, rgba(0, 0, 0, 0.08) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.08) 75%),
+    linear-gradient(45deg, rgba(0, 0, 0, 0.08) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.08) 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 4px 4px;
+}
+
+/* ── Comic Tilt Transforms ──
+   Slight rotation for a playful, off-kilter feel */
+.comic-tilt-left {
+  transform: rotate(-3deg);
+}
+.comic-tilt-right {
+  transform: rotate(3deg);
+}
+
+/* ── Comic Background Gradients ──
+   Subtle background gradients (only for page/hero backgrounds, not UI) */
+.comic-fill-hero {
+  background: linear-gradient(180deg, #1a0a2e 0%, #2a1a3e 40%, #1a0a2e 70%, #0d0520 100%);
+}
+.comic-fill-card-gradient {
+  background: radial-gradient(circle at 50% 50%, rgba(249, 57, 163, 0.06) 0%, transparent 70%);
+}
+
+/* ── Comic Rainbow Fill ──
+   Animated rainbow solid-stripe background */
+.comic-fill-rainbow {
+  background: repeating-linear-gradient(
+    90deg,
+    #F939A3 0px, #F939A3 40px,
+    #BA279D 40px, #BA279D 80px,
+    #6B2E77 80px, #6B2E77 120px,
+    #00F3B2 120px, #00F3B2 160px,
+    #FDE601 160px, #FDE601 200px,
+    #FC6B48 200px, #FC6B48 240px
+  );
+  background-size: 240px 100%;
+  animation: comic-rainbow-slide 4s linear infinite;
+}
+
+/* ═══════════════════════════════════════════════════════
+   COMIC KEYFRAME ANIMATIONS
+   Replacing retro neon animations with comic-book equivalents
+   ═══════════════════════════════════════════════════════ */
+
+@keyframes comic-rainbow-slide {
   0% { background-position: 0% 50%; }
-  100% { background-position: 200% 50%; }
-}
-@keyframes retro-star-twinkle {
-  0%, 100% { opacity: 0.3; transform: scale(0.8); }
-  50% { opacity: 1; transform: scale(1.2); }
-}
-@keyframes retro-pulse-border {
-  0%, 100% { border-color: rgba(255, 45, 149, 0.4); }
-  33% { border-color: rgba(191, 90, 242, 0.4); }
-  66% { border-color: rgba(0, 229, 255, 0.4); }
+  100% { background-position: 240px 50%; }
 }
 
-/* Karaoke game animations */
+@keyframes comic-burst-pop {
+  0%, 100% { opacity: 0.6; transform: scale(0.8) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.3) rotate(15deg); }
+}
+
+@keyframes comic-pulse-border {
+  0%, 100% { border-color: #F939A3; }
+  33% { border-color: #FDE601; }
+  66% { border-color: #00F3B2; }
+}
+
+@keyframes comic-wobble {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-2deg); }
+  75% { transform: rotate(2deg); }
+}
+
+@keyframes comic-bounce-in {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.15); opacity: 1; }
+  70% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+@keyframes comic-shake {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-4px); }
+  20% { transform: translateX(4px); }
+  30% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  50% { transform: translateX(0); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   KARAOKE GAME ANIMATIONS
+   Core gameplay animations — preserved and updated for comic style
+   ═══════════════════════════════════════════════════════ */
+
 @keyframes scorePopIn {
   0% {
     transform: scale(0.5) translateY(20px);
@@ -436,10 +712,11 @@
 
 @keyframes comboGlow {
   0%, 100% {
-    filter: brightness(1) drop-shadow(0 0 10px currentColor);
+    filter: brightness(1) drop-shadow(3px 3px 0 #000000);
   }
   50% {
-    filter: brightness(1.3) drop-shadow(0 0 30px currentColor);
+    filter: brightness(1.3) drop-shadow(3px 3px 0 #000000);
+    transform: scale(1.05);
   }
 }
 
@@ -502,13 +779,15 @@
 
 @keyframes pulseGlow {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
+    box-shadow: 3px 3px 0 rgba(0, 243, 178, 0.6);
   }
   50% {
-    box-shadow: 0 0 40px rgba(34, 211, 238, 0.6), 0 0 60px rgba(34, 211, 238, 0.3);
+    box-shadow: 5px 5px 0 rgba(0, 243, 178, 0.8);
+    transform: scale(1.03);
   }
 }
 
+/* ── Game Animate Classes ── */
 .animate-score-pop {
   animation: scorePopIn 0.3s ease-out, fadeOut 2s ease-in-out forwards;
 }
@@ -525,7 +804,10 @@
   animation: perfectSparkle 0.5s ease-in-out infinite;
 }
 
-/* Pass-the-Mic transition animations */
+/* ═══════════════════════════════════════════════════════
+   PASS-THE-MIC TRANSITION ANIMATIONS
+   ═══════════════════════════════════════════════════════ */
+
 @keyframes ptm-pulse {
   0%, 100% { opacity: 0.85; }
   50% { opacity: 1; }
@@ -540,6 +822,10 @@
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
 }
+
+/* ═══════════════════════════════════════════════════════
+   COUNTDOWN & FADE ANIMATIONS
+   ═══════════════════════════════════════════════════════ */
 
 @keyframes countdownPop {
   0% { transform: scale(0.3); opacity: 0; }
@@ -556,7 +842,10 @@
   animation: fade-in 0.5s ease-out;
 }
 
-/* Battle Royale Elimination Camera animations */
+/* ═══════════════════════════════════════════════════════
+   BATTLE ROYALE ELIMINATION CAMERA ANIMATIONS
+   ═══════════════════════════════════════════════════════ */
+
 @keyframes elimination-pulse {
   0%, 100% {
     border-color: rgba(239, 68, 68, 0);
@@ -576,12 +865,15 @@
   content: '';
   position: fixed;
   inset: 0;
-  background: radial-gradient(ellipse at center, transparent 50%, rgba(239, 68, 68, 0.3) 100%);
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(252, 107, 72, 0.3) 100%);
   pointer-events: none;
   z-index: 25;
 }
 
-/* Rate my Song animations */
+/* ═══════════════════════════════════════════════════════
+   RATE MY SONG ANIMATIONS
+   ═══════════════════════════════════════════════════════ */
+
 @keyframes rms-confetti-fall {
   0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
   100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
@@ -599,8 +891,8 @@
 }
 
 @keyframes rms-hype-pulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 165, 0, 0.3); }
-  50% { transform: scale(1.05); box-shadow: 0 0 40px rgba(255, 165, 0, 0.6); }
+  0%, 100% { transform: scale(1); box-shadow: 4px 4px 0 rgba(253, 230, 1, 0.5); }
+  50% { transform: scale(1.05); box-shadow: 6px 6px 0 rgba(253, 230, 1, 0.8); }
 }
 
 @keyframes rms-achievement-pop {
@@ -619,7 +911,10 @@
   animation: rms-confetti-fall 3s ease-in forwards;
 }
 
-/* Typewriter cursor blink */
+/* ═══════════════════════════════════════════════════════
+   TYPEWRITER CURSOR ANIMATION
+   ═══════════════════════════════════════════════════════ */
+
 @keyframes typewriter-cursor {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }

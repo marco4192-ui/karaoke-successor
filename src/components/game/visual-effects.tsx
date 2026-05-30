@@ -83,9 +83,9 @@ export const ParticleSystem = React.memo(function ParticleSystem({ particles }: 
           case 'golden': {
             // Star shape
             drawStar(ctx, 0, 0, 5, p.size * 0.5, p.size * 0.25);
-            ctx.fillStyle = '#FFD700';
+            ctx.fillStyle = '#FDE601';
             ctx.shadowBlur = 6;
-            ctx.shadowColor = 'gold';
+            ctx.shadowColor = '#FDE601';
             ctx.fill();
             ctx.shadowBlur = 0;
             break;
@@ -216,20 +216,20 @@ export function useParticleEmitter() {
   }, []);
 
   const emitPerfectHit = useCallback((x: number, y: number) => {
-    emitParticles(x, y, 'spark', 14, { color: '#22D3EE', speed: 1.8 });
-    emitParticles(x, y, 'star', 5, { color: '#FFD700', size: 14, life: 50 });
-    emitParticles(x, y, 'golden', 4, { color: '#A78BFA', speed: 1.2, size: 8 });
+    emitParticles(x, y, 'spark', 14, { color: '#00F3B2', speed: 1.8 });
+    emitParticles(x, y, 'star', 5, { color: '#FDE601', size: 14, life: 50 });
+    emitParticles(x, y, 'golden', 4, { color: '#6B2E77', speed: 1.2, size: 8 });
   }, [emitParticles]);
 
   const emitGoldenNote = useCallback((x: number, y: number) => {
-    emitParticles(x, y, 'golden', 18, { color: '#FFD700', speed: 2.2, size: 12 });
-    emitParticles(x, y, 'spark', 10, { color: '#FFA500', speed: 1.8 });
-    emitParticles(x, y, 'firework', 6, { color: '#FFD700', speed: 1.5, size: 6, life: 45 });
+    emitParticles(x, y, 'golden', 18, { color: '#FDE601', speed: 2.2, size: 12 });
+    emitParticles(x, y, 'spark', 10, { color: '#FC6B48', speed: 1.8 });
+    emitParticles(x, y, 'firework', 6, { color: '#FDE601', speed: 1.5, size: 6, life: 45 });
   }, [emitParticles]);
 
   const emitComboFirework = useCallback((x: number, y: number, combo: number) => {
     const intensity = Math.min(combo / 10, 3);
-    const colors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#F38181'];
+    const colors = ['#F939A3', '#00F3B2', '#FDE601', '#BA279D', '#FC6B48'];
 
     for (let burst = 0; burst < Math.ceil(intensity); burst++) {
       const id = setTimeout(() => {
@@ -255,7 +255,7 @@ export function useParticleEmitter() {
   }, [emitParticles]);
 
   const emitConfetti = useCallback((_x: number, _y: number) => {
-    const colors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#AA96DA', '#FF9F43'];
+    const colors = ['#F939A3', '#00F3B2', '#FDE601', '#BA279D', '#6B2E77', '#FC6B48'];
     for (let i = 0; i < 50; i++) {
       const id = setTimeout(() => {
         pendingTimersRef.current = pendingTimersRef.current.filter(t => t !== id);
@@ -333,17 +333,17 @@ export function useParticleEmitter() {
 function getDefaultColor(type: Particle['type']): string {
   switch (type) {
     case 'spark':
-      return '#22D3EE';
+      return '#00F3B2';
     case 'golden':
-      return '#FFD700';
+      return '#FDE601';
     case 'firework':
-      return '#FF6B6B';
+      return '#F939A3';
     case 'star':
-      return '#FFD700';
+      return '#FDE601';
     case 'confetti':
-      return '#4ECDC4';
+      return '#00F3B2';
     default:
-      return '#FFFFFF';
+      return '#FDFEFD';
   }
 }
 
@@ -443,13 +443,14 @@ export function AnimatedBackground({
         const y = canvas.height / 2 + Math.sin(angle) * 100;
         const radius = 150 + energy * 100;
 
-        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-        const hue = (i * 80 + time * 30) % 360;
-        gradient.addColorStop(0, `hsla(${hue}, 100%, 50%, ${0.1 + energy * 0.1})`);
-        gradient.addColorStop(1, 'transparent');
-
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const comicColors = ['#F939A3', '#00F3B2', '#FDE601', '#BA279D', '#FC6B48'];
+        const comicAlpha = 0.1 + energy * 0.1;
+        ctx.fillStyle = comicColors[i % comicColors.length];
+        ctx.globalAlpha = comicAlpha;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
       }
 
       // Floating particles (only while playing, 4 per frame)
@@ -458,12 +459,13 @@ export function AnimatedBackground({
           const px = Math.random() * canvas.width;
           const py = canvas.height + 10;
           const size = 2 + Math.random() * 4;
-          const hue = Math.random() * 360;
-
+          const comicParticleColors = ['#F939A3', '#00F3B2', '#FDE601', '#BA279D', '#FC6B48', '#6B2E77'];
           ctx.beginPath();
           ctx.arc(px, py, size, 0, Math.PI * 2);
-          ctx.fillStyle = `hsla(${hue}, 100%, 70%, 0.5)`;
+          ctx.fillStyle = comicParticleColors[Math.floor(Math.random() * comicParticleColors.length)];
+          ctx.globalAlpha = 0.6;
           ctx.fill();
+          ctx.globalAlpha = 1;
         }
       }
 
@@ -478,8 +480,11 @@ export function AnimatedBackground({
 
         ctx.beginPath();
         ctx.arc(px, py, size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(100, 200, 255, ${alpha})`;
+        const risingColors = ['#F939A3', '#00F3B2', '#FDE601', '#BA279D', '#FC6B48'];
+        ctx.fillStyle = risingColors[i % risingColors.length];
+        ctx.globalAlpha = alpha;
         ctx.fill();
+        ctx.globalAlpha = 1;
       }
 
       // Pulsing circles from center (3 rings)
@@ -488,9 +493,12 @@ export function AnimatedBackground({
         const alpha = (1 - pulseRadius / 510) * (1 - r * 0.3);
         ctx.beginPath();
         ctx.arc(canvas.width / 2, canvas.height / 2, pulseRadius, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(150, 100, 255, ${alpha})`;
-        ctx.lineWidth = 2;
+        const ringColors = ['#F939A3', '#00F3B2', '#BA279D'];
+        ctx.strokeStyle = ringColors[r % ringColors.length];
+        ctx.lineWidth = 3;
+        ctx.globalAlpha = alpha;
         ctx.stroke();
+        ctx.globalAlpha = 1;
       }
 
       animationRef.current = requestAnimationFrame(animate);
@@ -514,7 +522,7 @@ export function AnimatedBackground({
     <canvas
       ref={canvasRef}
       className="absolute inset-0 w-full h-full"
-      style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)' }}
+      style={{ background: '#1a0a2e' }}
     />
   );
 }
@@ -539,8 +547,8 @@ export function ComboFireEffect({ combo, isLarge = false }: ComboFireEffectProps
         width: size,
         height: size,
         background: `radial-gradient(circle,
-          rgba(255, 100, 50, ${intensity * 0.3}) 0%,
-          rgba(255, 50, 0, ${intensity * 0.2}) 30%,
+          rgba(249, 57, 163, ${intensity * 0.3}) 0%,
+          rgba(186, 39, 157, ${intensity * 0.2}) 30%,
           transparent 70%)`,
         filter: `blur(${10 + intensity * 20}px)`,
         animation: 'pulse 0.5s ease-in-out infinite',

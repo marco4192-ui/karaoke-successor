@@ -22,9 +22,9 @@ export function VolumeMeter({ volume }: VolumeMeterProps) {
       aria-valuemin={0}
       aria-valuemax={100}
     >
-      <div className="w-3 h-24 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm">
+      <div className="w-3 h-24 bg-[#2a1a3e] rounded-full overflow-hidden border-[3px] border-black">
         <div
-          className="w-full bg-gradient-to-t from-green-500 via-yellow-500 to-red-500 transition-all duration-75"
+          className="w-full bg-[#00F3B2] transition-all duration-75"
           style={{ height: `${Math.min(volume, 1) * 100}%`, marginTop: `${(1 - Math.min(volume, 1)) * 100}%` }}
         />
       </div>
@@ -44,7 +44,7 @@ export function AudioEffectsButton({ onClick }: AudioEffectsButtonProps) {
   return (
     <button
       onClick={onClick}
-      className="fixed bottom-36 right-4 z-30 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
+      className="fixed bottom-36 right-4 z-30 w-12 h-12 rounded-full bg-[#FDE601] hover:bg-[#F939A3] flex items-center justify-center transition-all border-[3px] border-black"
       title={t('gameHud.audioEffects')}
       data-testid="game-hud-audio-effects-button"
       aria-label={t('gameHud.audioEffects')}
@@ -82,8 +82,8 @@ export function AudioEffectsPanel({
   if (!show) return null;
 
   return (
-    <div className="fixed bottom-52 right-4 z-30 w-72 bg-gray-800/95 rounded-xl p-4 border border-white/20">
-      <h4 className="font-semibold mb-3">{t('gameHud.audioEffects')}</h4>
+    <div className="fixed bottom-52 right-4 z-30 w-72 bg-[#2a1a3e] rounded-xl p-4 border-[3px] border-black" style={{ boxShadow: '4px 4px 0px #F939A3' }}>
+      <h4 className="font-semibold mb-3 text-[#FDE601]" style={{ WebkitTextStroke: '1px #000', paintOrder: 'stroke fill' }}>{t('gameHud.audioEffects')}</h4>
       <div className="space-y-3">
         <div>
           <span className="text-xs text-white/60">{t('gameHud.reverb').replace('{n}', String(Math.round(reverbAmount * 100)))}</span>
@@ -97,7 +97,7 @@ export function AudioEffectsPanel({
               onReverbChange(val);
               audioEffects?.setReverb(val);
             }}
-            className="w-full accent-purple-500"
+            className="w-full accent-[#BA279D]"
             data-testid="game-hud-reverb-slider"
             aria-label="Reverb"
           />
@@ -114,7 +114,7 @@ export function AudioEffectsPanel({
               onEchoChange(val);
               audioEffects?.setDelay(val * 0.5, val * 0.5);
             }}
-            className="w-full accent-cyan-500"
+            className="w-full accent-[#00F3B2]"
             data-testid="game-hud-echo-slider"
             aria-label="Echo"
           />
@@ -126,7 +126,7 @@ export function AudioEffectsPanel({
               <button
                 key={key}
                 onClick={() => onApplyPreset(key)}
-                className="px-2 py-1 text-xs rounded-md bg-white/10 hover:bg-white/20 border border-white/10 hover:border-purple-500/50 transition-all text-white/80 hover:text-white"
+                className="px-2 py-1 text-xs rounded-md bg-[#FDE601] hover:bg-[#F939A3] border-[3px] border-black transition-all text-black hover:text-black"
                 data-testid={`game-hud-preset-${key}`}
               >
                 {PRESET_LABELS[key]}
@@ -153,15 +153,15 @@ export function AdIndicator({ isAdPlaying, adCountdown }: AdIndicatorProps) {
 
   return (
     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40" role="alert">
-      <div className="bg-black/80 backdrop-blur-sm px-6 py-3 rounded-full border border-yellow-500/50 flex items-center gap-3">
-        <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" />
-        <span className="text-yellow-400 font-medium">{t('gameHud.adPlaying')}</span>
+      <div className="bg-[#2a1a3e] px-6 py-3 rounded-full border-[3px] border-black flex items-center gap-3" style={{ boxShadow: '4px 4px 0px #FC6B48' }}>
+        <div className="w-3 h-3 bg-[#FDE601] rounded-full animate-pulse" />
+        <span className="text-[#FDE601] font-medium" style={{ WebkitTextStroke: '1px #000', paintOrder: 'stroke fill' }}>{t('gameHud.adPlaying')}</span>
         <span className="text-white/60">-</span>
         <span className="text-white/80">{t('gameHud.gamePaused')}</span>
         {adCountdown > 0 && (
           <>
             <span className="text-white/60">-</span>
-            <span className="text-cyan-400 font-bold">{adCountdown}s</span>
+            <span className="text-[#00F3B2] font-bold" style={{ WebkitTextStroke: '1px #000', paintOrder: 'stroke fill' }}>{adCountdown}s</span>
           </>
         )}
       </div>
@@ -180,14 +180,14 @@ export function GameProgressBar({ currentTime, duration }: GameProgressBarProps)
   const safeDuration = duration || 1;
   return (
     <div
-      className="absolute bottom-0 left-0 right-0 z-20 h-1 bg-white/10"
+      className="absolute bottom-0 left-0 right-0 z-20 h-2 bg-[#2a1a3e] border-t-[3px] border-black"
       role="progressbar"
       aria-valuenow={Math.round(Math.max(0, (currentTime / safeDuration) * 100))}
       aria-valuemin={0}
       aria-valuemax={100}
     >
       <div
-        className="h-full bg-gradient-to-r from-cyan-500 to-purple-500"
+        className="h-full bg-[#00F3B2]"
         style={{ width: `${Math.max(0, (currentTime / safeDuration) * 100)}%` }}
       />
     </div>
@@ -210,7 +210,7 @@ export function TimeDisplay({ currentTime, duration }: TimeDisplayProps) {
   };
 
   return (
-    <div className="absolute bottom-2 right-4 z-20 text-white/60 text-sm font-mono">
+    <div className="absolute bottom-2 right-4 z-20 text-[#c0b8d0] text-sm font-mono" style={{ WebkitTextStroke: '0.5px #000', paintOrder: 'stroke fill' }}>
       {formatTime(currentTime)} / {formatTime(duration || 0)}
     </div>
   );

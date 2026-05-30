@@ -97,8 +97,8 @@ const CenterScoreBar = React.memo(function CenterScoreBar({
 
   const p1Avatar = p1State.avatar;
   const p2Avatar = p2Player?.avatar;
-  const p1Color = p1State.color || '#22d3ee';
-  const p2Color = p2Player?.color || '#ec4899';
+  const p1Color = p1State.color || '#00F3B2';
+  const p2Color = p2Player?.color || '#F939A3';
 
   return (
     <div className="relative flex items-center justify-center z-30" style={{ height: '8%' }}>
@@ -131,7 +131,7 @@ const CenterScoreBar = React.memo(function CenterScoreBar({
       </div>
 
       {/* VS Badge */}
-      <div className="relative mx-3 bg-gradient-to-r from-cyan-500 via-white to-pink-500 text-black font-black px-5 py-1.5 rounded-xl text-lg shadow-lg ring-2 ring-white/30">
+      <div className="relative mx-3 bg-yellow-400 text-black font-black px-5 py-1.5 rounded-xl text-lg border-2 border-black" style={{ boxShadow: '4px 4px 0px #000000' }}>
         VS
       </div>
 
@@ -330,7 +330,7 @@ export const DuetNoteHighway = React.memo(function DuetNoteHighway({
           notePerformance={notePerformance}
           singLinePosition={singLinePosition}
           noteWindow={noteWindow}
-          playerColor="#22d3ee"
+          playerColor="#00F3B2"
           showPlayerLabel={true}
           playerName={p1PlayerName}
           playerNumber={1}
@@ -343,7 +343,7 @@ export const DuetNoteHighway = React.memo(function DuetNoteHighway({
         <PlayerLyrics
           lines={p1Lines}
           currentTime={currentTime}
-          playerColor="#22d3ee"
+          playerColor="#00F3B2"
           noteDisplayStyle={noteDisplayStyle}
           notePerformance={notePerformance}
           gameMode={gameMode}
@@ -369,7 +369,7 @@ export const DuetNoteHighway = React.memo(function DuetNoteHighway({
           notePerformance={p2NotePerformance}
           singLinePosition={singLinePosition}
           noteWindow={noteWindow}
-          playerColor="#ec4899"
+          playerColor="#F939A3"
           showPlayerLabel={true}
           playerName={p2PlayerName}
           playerNumber={2}
@@ -382,7 +382,7 @@ export const DuetNoteHighway = React.memo(function DuetNoteHighway({
         <PlayerLyrics
           lines={p2Lines}
           currentTime={currentTime}
-          playerColor="#ec4899"
+          playerColor="#F939A3"
           noteDisplayStyle={noteDisplayStyle}
           notePerformance={p2NotePerformance}
           gameMode={gameMode}

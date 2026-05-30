@@ -20,6 +20,9 @@ interface PartyScreenProps {
   onSelectMode: (_mode: GameMode) => void;
 }
 
+// Deterministic slight rotations for comic-book feel (one per tile, -2deg to 2deg)
+const TILE_ROTATIONS = [-1.8, 1.4, -0.6, 2.0, -1.5, 0.8, -1.2, 1.7, -0.4];
+
 export function PartyScreen({ onSelectMode }: PartyScreenProps) {
   const { t } = useTranslation();
 
@@ -30,7 +33,7 @@ export function PartyScreen({ onSelectMode }: PartyScreenProps) {
       descKey: 'party.passTheMicDesc',
       icon: '🎤',
       players: '2-8',
-      color: 'from-cyan-500 to-blue-500',
+      color: '#00F3B2',
     },
     {
       mode: 'companion-singalong',
@@ -38,7 +41,7 @@ export function PartyScreen({ onSelectMode }: PartyScreenProps) {
       descKey: 'party.companionSingalongDesc',
       icon: '📱',
       players: '2-8',
-      color: 'from-emerald-500 to-teal-500',
+      color: '#FDE601',
     },
     {
       mode: 'medley',
@@ -46,7 +49,7 @@ export function PartyScreen({ onSelectMode }: PartyScreenProps) {
       descKey: 'party.medleyContestDesc',
       icon: '🎵',
       players: '2-4',
-      color: 'from-purple-500 to-pink-500',
+      color: '#6B2E77',
     },
     {
       mode: 'missing-words',
@@ -54,7 +57,7 @@ export function PartyScreen({ onSelectMode }: PartyScreenProps) {
       descKey: 'party.missingWordsDesc',
       icon: '📝',
       players: '1-4',
-      color: 'from-orange-500 to-red-500',
+      color: '#FC6B48',
     },
     {
       mode: 'blind',
@@ -62,7 +65,7 @@ export function PartyScreen({ onSelectMode }: PartyScreenProps) {
       descKey: 'party.blindKaraokeDesc',
       icon: '🙈',
       players: '1-4',
-      color: 'from-green-500 to-teal-500',
+      color: '#BA279D',
     },
     {
       mode: 'tournament',
@@ -70,7 +73,7 @@ export function PartyScreen({ onSelectMode }: PartyScreenProps) {
       descKey: 'party.tournamentModeDesc',
       icon: '🏆',
       players: '2-32',
-      color: 'from-amber-500 to-yellow-500',
+      color: '#FDE601',
       isNew: true,
     },
     {
@@ -79,7 +82,7 @@ export function PartyScreen({ onSelectMode }: PartyScreenProps) {
       descKey: 'party.battleRoyaleDesc',
       icon: '👑',
       players: '2-24',
-      color: 'from-red-600 to-pink-600',
+      color: '#F939A3',
       isNew: true,
     },
     {
@@ -88,7 +91,7 @@ export function PartyScreen({ onSelectMode }: PartyScreenProps) {
       descKey: 'party.rateMySongDesc',
       icon: '⭐',
       players: '1-2',
-      color: 'from-amber-500 to-orange-500',
+      color: '#FC6B48',
       isNew: true,
     },
     {
@@ -97,7 +100,7 @@ export function PartyScreen({ onSelectMode }: PartyScreenProps) {
       descKey: 'party.onlineMultiplayerDesc',
       icon: '🌐',
       players: '2-8',
-      color: 'from-cyan-500 to-purple-600',
+      color: '#00F3B2',
       isNew: true,
     },
   ];
@@ -113,31 +116,49 @@ export function PartyScreen({ onSelectMode }: PartyScreenProps) {
 
   return (
     <div className="w-full max-w-[1600px] mx-auto px-4 md:px-6 lg:px-8">
+      {/* Comic-book header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">{t('party.title')}</h1>
-        <p className="text-white/60">{t('party.subtitle')}</p>
+        <h1
+          className="text-4xl md:text-5xl font-black mb-2 text-[#FDE601]"
+          style={{
+            WebkitTextStroke: '2px #000000',
+            paintOrder: 'stroke fill',
+            textShadow: '3px 3px 0px #000000',
+          }}
+        >
+          {t('party.title')}
+        </h1>
+        <p className="text-[#FDFEFD]/60 text-lg">{t('party.subtitle')}</p>
       </div>
 
       <div {...containerProps} className="grid grid-cols-2 lg:grid-cols-3 gap-6">
         {partyGames.map((game, index) => (
-          <Card 
+          <Card
             key={game.mode}
-            className={`party-tile bg-gradient-to-br ${game.color} border-0 cursor-pointer hover:scale-105 transition-transform relative focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:outline-none`}
+            className={`party-tile border-3 border-black cursor-pointer hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all duration-150 relative focus-visible:ring-2 focus-visible:ring-[#F939A3] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:outline-none`}
+            style={{
+              backgroundColor: game.color,
+              boxShadow: '4px 4px 0px #000000',
+              transform: `rotate(${TILE_ROTATIONS[index]}deg)`,
+            }}
             onClick={() => onSelectMode(game.mode)}
             {...getItemProps(index)}
             data-testid={`party-mode-${game.mode}`}
           >
             <CardContent className="pt-6">
               {game.isNew && (
-                <div className="absolute top-2 right-2 bg-white/90 text-black text-xs font-bold px-2 py-1 rounded-full animate-pulse">
+                <div className="absolute top-2 right-2 bg-[#F939A3] text-black text-xs font-black px-2 py-1 rounded-sm border-2 border-black animate-pulse">
                   ✨ NEW
                 </div>
               )}
-              <div className="text-5xl mb-4">{game.icon}</div>
-              <h3 className="tile-text-white text-2xl font-bold text-white mb-2">{t(game.titleKey)}</h3>
-              <p className="tile-text-white text-white/80 mb-4">{t(game.descKey)}</p>
+              <div className="text-6xl mb-4 drop-shadow-sm">{game.icon}</div>
+              <h3 className="text-2xl font-black text-black mb-2">{t(game.titleKey)}</h3>
+              <p className="text-black/80 mb-4 leading-snug">{t(game.descKey)}</p>
               <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="tile-text-white bg-white/20 text-white">
+                <Badge
+                  variant="secondary"
+                  className="bg-black text-white font-bold border border-black"
+                >
                   {game.players} {t('party.players')}
                 </Badge>
               </div>

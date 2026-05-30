@@ -27,23 +27,24 @@ function ErrorFallback({
   const stack = error.stack || '';
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="bg-gray-900/95 backdrop-blur-lg rounded-2xl border border-red-500/30 p-8 max-w-2xl w-full text-center shadow-2xl">
+      <div className="bg-[#1a0a2e] backdrop-blur-lg rounded-2xl border-[3px] border-black p-8 max-w-2xl w-full text-center" style={{ boxShadow: '6px 6px 0px #FC6B48' }}>
         <div className="text-6xl mb-4">💥</div>
-        <h2 className="text-xl font-bold text-white mb-2">{t('errorBoundary.title')}</h2>
-        <p className="text-gray-400 text-sm mb-4">
+        <h2 className="text-xl font-bold text-[#FC6B48] mb-2" style={{ WebkitTextStroke: '1px #000', paintOrder: 'stroke fill' }}>{t('errorBoundary.title')}</h2>
+        <p className="text-[#c0b8d0] text-sm mb-4">
           {t('errorBoundary.description')}
         </p>
-        <p className="text-red-400 text-xs mb-2 font-mono break-all">
+        <p className="text-[#FC6B48] text-xs mb-2 font-mono break-all">
           {error.message}
         </p>
         {stack && (
-          <pre className="text-left text-gray-500 text-[10px] mb-6 font-mono bg-black/30 rounded-lg p-3 overflow-auto max-h-96 whitespace-pre-wrap break-all">
+          <pre className="text-left text-[#c0b8d0] text-[10px] mb-6 font-mono bg-black/50 rounded-lg border-[2px] border-black p-3 overflow-auto max-h-96 whitespace-pre-wrap break-all">
             {stack}
           </pre>
         )}
         <button
           onClick={reset}
-          className="bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
+          className="bg-[#00F3B2] hover:bg-[#F939A3] text-black px-6 py-2.5 rounded-xl border-[3px] border-black font-bold transition-colors"
+          style={{ boxShadow: '4px 4px 0px #6B2E77' }}
         >
           {t('errorBoundary.tryAgain')}
         </button>

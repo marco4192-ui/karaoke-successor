@@ -278,33 +278,33 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       </div>
 
       {/* Player Limits Info */}
-      <div className="bg-gradient-to-r from-red-500/20 to-pink-500/20 border border-red-500/30 rounded-lg p-4 mb-6">
+      <div className="bg-[#FC6B48]/15 border-[3px] border-black rounded-lg p-4 mb-6" style={{ boxShadow: '3px 3px 0px #FC6B48' }}>
         <div className="flex flex-wrap gap-6 text-center justify-center">
           <div>
-            <div className="text-3xl font-bold text-red-400">{micPlayers.length}/{MAX_LOCAL_MIC_PLAYERS}</div>
+            <div className="text-3xl font-bold text-[#FC6B48]">{micPlayers.length}/{MAX_LOCAL_MIC_PLAYERS}</div>
             <div className="text-sm text-white/60">{t('battleRoyale.localMics')}</div>
           </div>
           <div className="text-white/20 text-4xl">+</div>
           <div>
-            <div className="text-3xl font-bold text-purple-400">{companionPlayers.length}/{MAX_COMPANION_PLAYERS}</div>
+            <div className="text-3xl font-bold text-[#BA279D]">{companionPlayers.length}/{MAX_COMPANION_PLAYERS}</div>
             <div className="text-sm text-white/60">{t('battleRoyale.companions')}</div>
           </div>
           <div className="text-white/20 text-4xl">=</div>
           <div>
-            <div className="text-3xl font-bold text-amber-400">{totalPlayers}/{MAX_BATTLE_ROYALE_PLAYERS}</div>
+            <div className="text-3xl font-bold text-[#FDE601]">{totalPlayers}/{MAX_BATTLE_ROYALE_PLAYERS}</div>
             <div className="text-sm text-white/60">{t('battleRoyale.total')}</div>
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4 mb-6 text-red-400">
+        <div className="bg-[#FC6B48]/15 border-[3px] border-black rounded-lg p-4 mb-6 text-[#FC6B48]">
           {error}
         </div>
       )}
 
       {/* ── Core Game Settings ── */}
-      <Card className="bg-white/5 border-white/10 mb-4">
+      <Card className="bg-[#2a1a3e] border-[3px] border-black mb-4">
         <CardHeader>
           <CardTitle>{t('battleRoyale.gameSettings')}</CardTitle>
         </CardHeader>
@@ -348,14 +348,14 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
               <Button
                 variant={songSelection === 'random' ? 'default' : 'outline'}
                 onClick={() => setSongSelection('random')}
-                className={songSelection === 'random' ? 'bg-purple-500 hover:bg-purple-600' : 'border-white/20'}
+                className={songSelection === 'random' ? 'bg-[#BA279D] hover:bg-[#BA279D]/80 text-white' : 'border-[3px] border-black text-[#c0b8d0]'}
               >
                 🎲 {t('battleRoyale.songSelectionRandom')}
               </Button>
               <Button
                 variant={songSelection === 'vote' ? 'default' : 'outline'}
                 onClick={() => setSongSelection('vote')}
-                className={songSelection === 'vote' ? 'bg-amber-500 hover:bg-amber-600' : 'border-white/20'}
+                className={songSelection === 'vote' ? 'bg-[#FDE601] hover:bg-[#FDE601]/80 text-black font-bold' : 'border-[3px] border-black text-[#c0b8d0]'}
               >
                 🗳️ {t('battleRoyale.songSelectionVote')}
               </Button>
@@ -371,7 +371,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
             <Button
               variant={medleyMode ? 'default' : 'outline'}
               onClick={() => setMedleyMode(!medleyMode)}
-              className={medleyMode ? 'bg-purple-500 hover:bg-purple-600' : 'border-white/20'}
+              className={medleyMode ? 'bg-[#BA279D] hover:bg-[#BA279D]/80 text-white' : 'border-[3px] border-black text-[#c0b8d0]'}
             >
               {medleyMode ? t('battleRoyale.on') : t('battleRoyale.off')}
             </Button>
@@ -400,7 +400,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
                   key={diff}
                   variant={difficulty === diff ? 'default' : 'outline'}
                   onClick={() => setGlobalDifficulty(diff)}
-                  className={difficulty === diff ? 'bg-red-500 hover:bg-red-600' : 'border-white/20'}
+                  className={difficulty === diff ? 'bg-[#FC6B48] hover:bg-[#FC6B48]/80 text-white font-bold' : 'border-[3px] border-black text-[#c0b8d0]'}
                 >
                   {{ easy: t('song.easy'), medium: t('song.medium'), hard: t('song.hard') }[diff] as string}
                 </Button>
@@ -411,7 +411,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       </Card>
 
       {/* ── Advanced Settings ── */}
-      <Card className="bg-white/5 border-white/10 mb-4">
+      <Card className="bg-[#2a1a3e] border-[3px] border-black mb-4">
         <CardHeader>
           <CardTitle>{t('battleRoyale.advancedSettings')}</CardTitle>
         </CardHeader>
@@ -425,7 +425,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
             <Button
               variant={noRepeatProtection ? 'default' : 'outline'}
               onClick={() => setNoRepeatProtection(!noRepeatProtection)}
-              className={noRepeatProtection ? 'bg-green-500 hover:bg-green-600' : 'border-white/20'}
+              className={noRepeatProtection ? 'bg-[#00F3B2] hover:bg-[#00F3B2]/80 text-black font-bold' : 'border-[3px] border-black text-[#c0b8d0]'}
             >
               {noRepeatProtection ? t('battleRoyale.on') : t('battleRoyale.off')}
             </Button>
@@ -454,7 +454,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
                   key={bo}
                   variant={grandFinaleBestOf === bo ? 'default' : 'outline'}
                   onClick={() => setGrandFinaleBestOf(bo)}
-                  className={grandFinaleBestOf === bo ? 'bg-amber-500 hover:bg-amber-600' : 'border-white/20'}
+                  className={grandFinaleBestOf === bo ? 'bg-[#FDE601] hover:bg-[#FDE601]/80 text-black font-bold' : 'border-[3px] border-black text-[#c0b8d0]'}
                 >
                   {bo === 1
                     ? t('battleRoyale.normalFinal')
@@ -474,7 +474,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
             <Button
               variant={bountyEnabled ? 'default' : 'outline'}
               onClick={() => setBountyEnabled(!bountyEnabled)}
-              className={bountyEnabled ? 'bg-amber-500 hover:bg-amber-600' : 'border-white/20'}
+              className={bountyEnabled ? 'bg-[#FDE601] hover:bg-[#FDE601]/80 text-black font-bold' : 'border-[3px] border-black text-[#c0b8d0]'}
             >
               {bountyEnabled ? t('battleRoyale.on') : t('battleRoyale.off')}
             </Button>
@@ -503,7 +503,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
             <Button
               variant={escalatingDifficulty ? 'default' : 'outline'}
               onClick={() => setEscalatingDifficulty(!escalatingDifficulty)}
-              className={escalatingDifficulty ? 'bg-green-500 hover:bg-green-600' : 'border-white/20'}
+              className={escalatingDifficulty ? 'bg-[#00F3B2] hover:bg-[#00F3B2]/80 text-black font-bold' : 'border-[3px] border-black text-[#c0b8d0]'}
             >
               {escalatingDifficulty ? t('battleRoyale.on') : t('battleRoyale.off')}
             </Button>
@@ -518,7 +518,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
             <Button
               variant={shrinkingTimer ? 'default' : 'outline'}
               onClick={() => setShrinkingTimer(!shrinkingTimer)}
-              className={shrinkingTimer ? 'bg-orange-500 hover:bg-orange-600' : 'border-white/20'}
+              className={shrinkingTimer ? 'bg-[#FC6B48] hover:bg-[#FC6B48]/80 text-white font-bold' : 'border-[3px] border-black text-[#c0b8d0]'}
             >
               {shrinkingTimer ? t('battleRoyale.on') : t('battleRoyale.off')}
             </Button>
@@ -555,7 +555,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       </Card>
 
       {/* ── V13 Visual Settings ── */}
-      <Card className="bg-white/5 border-white/10 mb-4">
+      <Card className="bg-[#2a1a3e] border-[3px] border-black mb-4">
         <CardHeader>
           <CardTitle>{t('battleRoyale.visualSettings')}</CardTitle>
         </CardHeader>
@@ -569,7 +569,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
             <Button
               variant={showNoteHighway ? 'default' : 'outline'}
               onClick={() => setShowNoteHighway(!showNoteHighway)}
-              className={showNoteHighway ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}
+              className={showNoteHighway ? 'bg-[#00F3B2] hover:bg-[#00F3B2]/80 text-black font-bold' : 'border-[3px] border-black text-[#c0b8d0]'}
             >
               {showNoteHighway ? t('battleRoyale.on') : t('battleRoyale.off')}
             </Button>
@@ -594,7 +594,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
                   variant={noteShapeStyle === id ? 'default' : 'outline'}
                   onClick={() => setNoteShapeStyle(id)}
                   size="sm"
-                  className={`text-xs ${noteShapeStyle === id ? 'bg-cyan-500 hover:bg-cyan-600' : 'border-white/20'}`}
+                  className={`text-xs ${noteShapeStyle === id ? 'bg-[#00F3B2] hover:bg-[#00F3B2]/80 text-black font-bold' : 'border-[3px] border-black text-[#c0b8d0]'}`}
                 >
                   {icon} {id}
                 </Button>
@@ -621,7 +621,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
                   variant={noteDisplayStyle === id ? 'default' : 'outline'}
                   onClick={() => setNoteDisplayStyle(id)}
                   size="sm"
-                  className={`text-xs ${noteDisplayStyle === id ? 'bg-indigo-500 hover:bg-indigo-600' : 'border-white/20'}`}
+                  className={`text-xs ${noteDisplayStyle === id ? 'bg-[#BA279D] hover:bg-[#BA279D]/80 text-white' : 'border-[3px] border-black text-[#c0b8d0]'}`}
                 >
                   {label}
                 </Button>
@@ -638,7 +638,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
             <Button
               variant={showVideoBackground ? 'default' : 'outline'}
               onClick={() => setShowVideoBackground(!showVideoBackground)}
-              className={showVideoBackground ? 'bg-purple-500 hover:bg-purple-600' : 'border-white/20'}
+              className={showVideoBackground ? 'bg-[#BA279D] hover:bg-[#BA279D]/80 text-white' : 'border-[3px] border-black text-[#c0b8d0]'}
             >
               {showVideoBackground ? t('battleRoyale.on') : t('battleRoyale.off')}
             </Button>
@@ -663,12 +663,12 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       {/* Player Selection */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {/* Local Microphone Players */}
-        <Card className="bg-white/5 border-white/10">
+        <Card className="bg-[#2a1a3e] border-[3px] border-black">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <span className="text-2xl">🎤</span>
               {t('battleRoyale.localMicrophone')}
-              <Badge variant="outline" className="border-red-500 text-red-400">
+              <Badge variant="outline" className="border-[#FC6B48] text-[#FC6B48]">
                 {micPlayers.length}/{MAX_LOCAL_MIC_PLAYERS}
               </Badge>
             </CardTitle>
@@ -687,8 +687,8 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
                       isCompanion
                         ? 'opacity-30 cursor-not-allowed'
                         : isSelected
-                          ? 'bg-gradient-to-br from-red-500/30 to-pink-500/30 border-2 border-red-500'
-                          : 'bg-white/5 border border-white/10 hover:bg-white/10'
+                          ? 'bg-[#FC6B48]/25 border-[3px] border-[#FC6B48]'
+                          : 'bg-[#2a1a3e] border-[3px] border-black hover:bg-[#2a1a3e]/80'
                     }`}
                     title={isCompanion ? t('battleRoyale.companionNotAssignable') : undefined}
                   >
@@ -704,14 +704,14 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
                         </div>
                       )}
                       <span className="font-medium truncate text-sm">{profile.name}</span>
-                      {isSelected && <span className="ml-auto text-red-400 text-lg">🎤</span>}
+                      {isSelected && <span className="ml-auto text-[#FC6B48] text-lg">🎤</span>}
                     </div>
                     {isSelected && availableMics.length > 0 && (
                       <div className="mt-1.5" onClick={(e) => e.stopPropagation()}>
                         <select
                           value={playerMicDevices[profile.id] || ''}
                           onChange={(e) => setPlayerMicDevices(prev => ({ ...prev, [profile.id]: e.target.value }))}
-                          className="w-full text-[10px] bg-white/10 border border-white/20 rounded px-1.5 py-1 text-white/80 focus:outline-none focus:border-purple-400"
+                          className="w-full text-[10px] bg-[#1a0a2e] border-[2px] border-black rounded px-1.5 py-1 text-white/80 focus:outline-none focus:border-[#BA279D]"
                         >
                           <option value="" className="bg-gray-900">
                             {t('battleRoyale.defaultMicrophone')}
@@ -732,12 +732,12 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
         </Card>
 
         {/* Companion Players */}
-        <Card className="bg-white/5 border-white/10">
+        <Card className="bg-[#2a1a3e] border-[3px] border-black">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <span className="text-2xl">📱</span>
               {t('battleRoyale.companionApp')}
-              <Badge variant="outline" className="border-purple-500 text-purple-400">
+              <Badge variant="outline" className="border-[#BA279D] text-[#BA279D]">
                 {companionPlayers.length}/{MAX_COMPANION_PLAYERS}
               </Badge>
             </CardTitle>
@@ -759,10 +759,10 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
                       isMic
                         ? 'opacity-30 cursor-not-allowed'
                         : isAutoCompanion
-                          ? 'bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-2 border-green-500 cursor-default'
+                          ? 'bg-[#00F3B2]/15 border-[3px] border-[#00F3B2] cursor-default'
                           : isSelected
-                            ? 'bg-gradient-to-br from-purple-500/30 to-indigo-500/30 border-2 border-purple-500 cursor-pointer'
-                            : 'bg-white/5 border border-white/10 hover:bg-white/10 cursor-pointer'
+                            ? 'bg-[#BA279D]/25 border-[3px] border-[#BA279D] cursor-pointer'
+                            : 'bg-[#2a1a3e] border-[3px] border-black hover:bg-[#2a1a3e]/80 cursor-pointer'
                     }`}
                     title={isMic ? t('battleRoyale.companionNotAssignable') : undefined}
                   >
@@ -779,15 +779,15 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
                       )}
                       <span className="font-medium truncate text-sm">{profile.name}</span>
                       {isAutoCompanion && (
-                        <Badge variant="outline" className="ml-auto border-green-500 text-green-400 text-[10px] px-1.5 py-0">
+                        <Badge variant="outline" className="ml-auto border-[#00F3B2] text-[#00F3B2] text-[10px] px-1.5 py-0">
                           {t('battleRoyale.companionConnectedBadge')}
                         </Badge>
                       )}
-                      {!isAutoCompanion && isSelected && <span className="ml-auto text-purple-400 text-lg">📱</span>}
+                      {!isAutoCompanion && isSelected && <span className="ml-auto text-[#BA279D] text-lg">📱</span>}
                     </div>
                     {isAutoCompanion && companionClient && (
                       <div className="mt-1.5 flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                        <span className="w-2 h-2 rounded-full bg-[#00F3B2] animate-pulse" />
                         <span className="text-[10px] text-white/50">
                           {t('battleRoyale.companionCodeLabel').replace('{code}', companionClient.connectionCode)}
                         </span>
@@ -805,7 +805,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       </div>
 
       {/* Summary */}
-      <Card className="bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-500/30 mb-6">
+      <Card className="bg-[#FDE601]/10 border-[3px] border-black mb-6" style={{ boxShadow: '4px 4px 0px #FDE601' }}>
         <CardContent className="py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -815,7 +815,7 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
               </p>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold text-amber-400">{totalPlayers}</div>
+              <div className="text-2xl font-bold text-[#FDE601]">{totalPlayers}</div>
               <div className="text-xs text-white/40">{t('battleRoyale.playersSelected')}</div>
             </div>
           </div>
@@ -826,7 +826,8 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
       <Button
         onClick={handleStartGame}
         disabled={totalPlayers < 2}
-        className="w-full py-6 text-xl bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-400 hover:to-pink-400"
+        className="w-full py-6 text-xl bg-[#FC6B48] hover:bg-[#FC6B48]/80 text-white font-bold border-[3px] border-black"
+        style={{ boxShadow: '4px 4px 0px #000000' }}
       >
         {t('battleRoyale.startBattle').replace('{n}', String(totalPlayers))}
       </Button>

@@ -384,7 +384,7 @@ export const mobileTranslations = {
     cameraPositionNone: '카메라 없음',
     cameraConnectFailed: '모바일 카메라 연결 실패',
     cameraAccessDenied: '카메라 접근이 거부되었습니다',
-    branding: 'Karaoke ZERO',
+    branding: 'Karaoke Eleven',
     camera: '📹 카메라',
     active: '활성',
     mobileConnected: '모바일 연결됨',
@@ -452,7 +452,7 @@ export const mobileTranslations = {
   },
 
   mobileOnboarding: {
-    welcome: 'Karaoke ZERO에 오신 것을 환영합니다',
+    welcome: 'Karaoke Eleven에 오신 것을 환영합니다',
     subtitle: '모바일 카라오키 동반 앱',
     next: '다음',
     back: '뒤로',

@@ -336,7 +336,7 @@ export function PlayingView({
       </div>
 
       {/* Dark overlay on top of background */}
-      <div className="absolute inset-0 bg-black/30 pointer-events-none" style={{ zIndex: -5 }} />
+      <div className="absolute inset-0 bg-[#1a0a2e]/50 pointer-events-none" style={{ zIndex: -5 }} />
 
       {/* #10 Elimination Camera: Red vignette overlay in last 10 seconds */}
       {isEliminationCamera && (
@@ -349,7 +349,7 @@ export function PlayingView({
 
       {/* #10 Elimination Camera: Pulsing border in last 5 seconds */}
       {eliminationAnimationEnabled && isDangerZone && (
-        <div className="absolute inset-0 border-4 border-red-500/0 animate-elimination-pulse pointer-events-none z-30" />
+        <div className="absolute inset-0 border-[3px] border-[#FC6B48]/0 animate-elimination-pulse pointer-events-none z-30" />
       )}
 
       {/* ─────────── Pause + Fullscreen ─────────── */}
@@ -386,10 +386,10 @@ export function PlayingView({
             return (
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center animate-in fade-in zoom-in duration-300">
-                  <div className="w-24 h-24 rounded-full bg-red-500/20 border-4 border-red-500 flex items-center justify-center mx-auto mb-3">
+                  <div className="w-24 h-24 rounded-full bg-[#FC6B48]/20 border-[3px] border-black flex items-center justify-center mx-auto mb-3" style={{ boxShadow: '4px 4px 0px #FC6B48' }}>
                     <span className="text-5xl">✕</span>
                   </div>
-                  <p className="text-red-400 font-bold text-lg">
+                  <p className="text-[#FC6B48] font-bold text-lg">
                     {sortedPlayers.find(p => p.id === eliminatedPlayerId)?.name || 'Player'}
                   </p>
                   <p className="text-white/50 text-sm mt-1">Eliminated</p>
@@ -410,14 +410,15 @@ export function PlayingView({
                     .map(player => (
                       <div
                         key={player.id}
-                        className="flex-shrink-0 px-3 py-2 rounded-lg bg-green-500/20 border-2 border-green-400 animate-in fade-in slide-in-from-bottom duration-300"
+                        className="flex-shrink-0 px-3 py-2 rounded-lg bg-[#00F3B2]/20 border-[3px] border-black animate-in fade-in slide-in-from-bottom duration-300"
+                        style={{ boxShadow: '3px 3px 0px #00F3B2' }}
                       >
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-green-500/30 flex items-center justify-center text-green-400 text-xs font-bold">
+                          <div className="w-8 h-8 rounded-full bg-[#00F3B2]/30 flex items-center justify-center text-[#00F3B2] text-xs font-bold">
                             {player.name.charAt(0).toUpperCase()}
                           </div>
-                          <span className="text-green-300 text-sm font-medium whitespace-nowrap">{player.name}</span>
-                          <span className="text-green-400 text-xs">✓</span>
+                          <span className="text-[#00F3B2] text-sm font-medium whitespace-nowrap">{player.name}</span>
+                          <span className="text-[#00F3B2] text-xs">✓</span>
                         </div>
                       </div>
                     ))}
@@ -456,18 +457,18 @@ export function PlayingView({
       {/* ─────────── V5: Multi-Pitch Mic Status ─────────── */}
       {activeMicPlayers.length >= 2 && (
         <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-          <div className={`flex items-center gap-1.5 rounded-full px-3 py-1 backdrop-blur-sm ${
+          <div className={`flex items-center gap-1.5 rounded-full px-3 py-1 backdrop-blur-sm border-[2px] ${
             hasPitchErrors
-              ? 'bg-amber-500/20 border border-amber-500/40'
-              : 'bg-green-500/20 border border-green-500/40'
+              ? 'bg-[#FDE601]/20 border-[#FDE601]'
+              : 'bg-[#00F3B2]/20 border-[#00F3B2]'
           }`}>
             {hasPitchErrors ? (
-              <AlertTriangle className="w-3 h-3 text-amber-400" />
+              <AlertTriangle className="w-3 h-3 text-[#FDE601]" />
             ) : (
-              <span className="text-[10px] text-green-400">●</span>
+              <span className="text-[10px] text-[#00F3B2]">●</span>
             )}
             <span className={`text-[10px] font-medium whitespace-nowrap ${
-              hasPitchErrors ? 'text-amber-300' : 'text-green-300'
+              hasPitchErrors ? 'text-[#FDE601]' : 'text-[#00F3B2]'
             }`}>
               {activePitchCount}/{activeMicPlayers.length} {t('battleRoyale.multiPitchActive')}
             </span>
@@ -501,15 +502,15 @@ export function PlayingView({
           <div className="flex items-center gap-2">
             {/* #1 Medley snippet indicator */}
             {totalSnippets > 1 && (
-              <Badge variant="outline" className="border-purple-500 text-purple-400 text-[10px] px-1.5 py-0">
+              <Badge variant="outline" className="border-[#BA279D] text-[#BA279D] text-[10px] px-1.5 py-0">
                 🎵 {currentSnippetIndex + 1}/{totalSnippets}
                 {snippetTimeLeft !== null && ` (${snippetTimeLeft}s)`}
               </Badge>
             )}
-            <Badge variant="outline" className="border-red-500 text-red-400 text-[10px] px-1.5 py-0">
+            <Badge variant="outline" className="border-[#FC6B48] text-[#FC6B48] text-[10px] px-1.5 py-0">
               {t('battleRoyale.playersLeft').replace('{n}', String(activePlayers.length))}
             </Badge>
-            <Badge className={`font-mono text-sm ${roundTimeLeft <= 5 ? 'bg-red-500 text-white animate-pulse' : 'bg-purple-500/20 text-purple-400'}`}>
+            <Badge className={`font-mono text-sm ${roundTimeLeft <= 5 ? 'bg-[#FC6B48] text-black font-bold animate-pulse' : 'bg-[#6B2E77] text-[#FDFEFD]'}`}>
               {roundTimeLeft}s
             </Badge>
           </div>
@@ -518,7 +519,7 @@ export function PlayingView({
         {/* Timer Progress Bar */}
         <Progress
           value={(roundTimeLeft / (currentRound?.duration || 60)) * 100}
-          className="h-1.5 bg-white/10"
+          className="h-2 bg-[#2a1a3e] border border-black"
         />
 
         {/* #1 Medley: Snippet progress bar */}
@@ -529,9 +530,9 @@ export function PlayingView({
                 key={i}
                 className={`h-0.5 flex-1 rounded-full transition-all ${
                   i < currentSnippetIndex
-                    ? 'bg-purple-500/40'
+                    ? 'bg-[#BA279D]/50'
                     : i === currentSnippetIndex
-                      ? 'bg-purple-400 animate-pulse'
+                      ? 'bg-[#F939A3] animate-pulse'
                       : 'bg-white/10'
                 }`}
               />
@@ -557,8 +558,8 @@ export function PlayingView({
             let trendArrow: string | null = null;
             let trendColor = 'text-white/40';
             if (prevRank !== undefined && curRank !== undefined && !eliminated) {
-              if (curRank < prevRank) { trendArrow = '▲'; trendColor = 'text-green-400'; }
-              else if (curRank > prevRank) { trendArrow = '▼'; trendColor = 'text-red-400'; }
+              if (curRank < prevRank) { trendArrow = '▲'; trendColor = 'text-[#00F3B2]'; }
+              else if (curRank > prevRank) { trendArrow = '▼'; trendColor = 'text-[#FC6B48]'; }
               else { trendArrow = '●'; trendColor = 'text-white/40'; }
             }
 
@@ -568,17 +569,17 @@ export function PlayingView({
                 className={`
                   relative flex items-center gap-1.5 rounded-lg p-1.5 transition-all duration-500
                   ${eliminated
-                    ? 'bg-white/5 grayscale opacity-30 scale-90 pointer-events-none'
+                    ? 'bg-[#2a1a3e] grayscale opacity-30 scale-90 pointer-events-none'
                     : danger
-                      ? 'bg-red-500/20 border-2 border-red-500 animate-pulse scale-105 shadow-lg shadow-red-500/30'
+                      ? 'bg-[#FC6B48]/20 border-[3px] border-black animate-pulse scale-105'
                       : lowest
-                        ? 'bg-gradient-to-br from-red-500/15 to-pink-500/15 border border-red-500/40'
+                        ? 'bg-[#FC6B48]/15 border-[3px] border-[#FC6B48]'
                         : isBounty
-                          ? 'bg-gradient-to-br from-amber-500/20 to-yellow-500/20 border-2 border-amber-500/60 shadow-lg shadow-amber-500/20'
-                          : 'bg-gradient-to-br from-white/10 to-white/5 border border-white/10'
+                          ? 'bg-[#FDE601]/20 border-[3px] border-black'
+                          : 'bg-[#2a1a3e] border-[3px] border-black'
                   }
                 `}
-                style={{ minWidth: '100px', flex: '1 1 120px', maxWidth: '180px' }}
+                style={{ minWidth: '100px', flex: '1 1 120px', maxWidth: '180px', boxShadow: danger ? '4px 4px 0px #FC6B48' : isBounty ? '4px 4px 0px #FDE601' : '3px 3px 0px rgba(0,0,0,0.5)' }}
               >
                 {/* Avatar */}
                 <div className="relative flex-shrink-0">
@@ -586,15 +587,15 @@ export function PlayingView({
                     <img
                       src={player.avatar}
                       alt={player.name}
-                      className={`rounded-full object-cover border-2 ${
-                        isBounty ? 'border-amber-400' : lowest ? 'border-red-400' : eliminated ? 'border-white/10' : 'border-white/20'
+                      className={`rounded-full object-cover border-[3px] ${
+                        isBounty ? 'border-[#FDE601]' : lowest ? 'border-[#FC6B48]' : eliminated ? 'border-white/10' : 'border-black'
                       }`}
                       style={{ width: '32px', height: '32px' }}
                     />
                   ) : (
                     <div
-                      className={`rounded-full flex items-center justify-center text-white font-bold border-2 ${
-                        isBounty ? 'border-amber-400' : lowest ? 'border-red-400' : eliminated ? 'border-white/10' : 'border-white/20'
+                      className={`rounded-full flex items-center justify-center text-white font-bold border-[3px] ${
+                        isBounty ? 'border-[#FDE601]' : lowest ? 'border-[#FC6B48]' : eliminated ? 'border-white/10' : 'border-black'
                       }`}
                       style={{
                         width: '32px',
@@ -634,7 +635,7 @@ export function PlayingView({
                           ? 'text-red-300'
                           : 'text-white'
                     }`}
-                    style={isLeader && !isBounty ? { textShadow: '0 0 10px rgba(250,204,21,0.5)' } : undefined}
+                    style={isLeader && !isBounty ? { textShadow: '0 0 10px rgba(253,230,1,0.5)' } : undefined}
                     >
                       <AnimatedNumber value={player.score} />
                       {isLeader && !isBounty && <span className="ml-0.5 text-yellow-400 text-[9px]">👑</span>}
@@ -651,20 +652,20 @@ export function PlayingView({
                   <div className="flex items-center gap-1">
                     {/* #9 Score delta this round */}
                     {delta > 0 && !eliminated && (
-                      <span className="text-[8px] text-green-400">+{delta.toLocaleString()}</span>
+                      <span className="text-[8px] text-[#00F3B2]">+{delta.toLocaleString()}</span>
                     )}
 
                     {/* #6 Bounty multiplier indicator */}
                     {isBounty && !eliminated && (
-                      <span className="text-[8px] text-amber-400">🎯 BOUNTY</span>
+                      <span className="text-[8px] text-[#FDE601]">🎯 BOUNTY</span>
                     )}
                     {!isBounty && !eliminated && bountyPlayerId && (
-                      <span className="text-[8px] text-amber-400/60">×{bountyMultiplier}</span>
+                      <span className="text-[8px] text-[#FDE601]/60">×{bountyMultiplier}</span>
                     )}
 
                     {/* Combo indicator */}
                     {!eliminated && player.currentCombo > 2 && (
-                      <span className="text-[8px] text-amber-400">
+                      <span className="text-[8px] text-[#FC6B48]">
                         🔥{player.currentCombo}
                       </span>
                     )}
@@ -673,9 +674,9 @@ export function PlayingView({
                     {!eliminated && player.playerType === 'microphone' && activeMicPlayers.length >= 2 && (() => {
                       const pp = playerPitchMap.get(player.id);
                       const hasError = multiPitchErrors.has(player.id);
-                      if (hasError) return <span className="text-[8px] text-red-400">⚠ Mic</span>;
-                      if (pp && pp.isSinging && pp.note != null) return <span className="text-[8px] text-green-400">🎤●</span>;
-                      if (pp && pp.volume > 0.01) return <span className="text-[8px] text-yellow-400">🎤○</span>;
+                      if (hasError) return <span className="text-[8px] text-[#FC6B48]">⚠ Mic</span>;
+                      if (pp && pp.isSinging && pp.note != null) return <span className="text-[8px] text-[#00F3B2]">🎤●</span>;
+                      if (pp && pp.volume > 0.01) return <span className="text-[8px] text-[#FDE601]">🎤○</span>;
                       return <span className="text-[8px] text-white/20">🎤</span>;
                     })()}
                   </div>
@@ -684,7 +685,7 @@ export function PlayingView({
                 {/* Eliminated overlay */}
                 {eliminated && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-xl text-red-500/60">✕</div>
+                    <div className="text-xl text-[#FC6B48]/60">✕</div>
                   </div>
                 )}
               </div>
@@ -731,13 +732,13 @@ export function PlayingView({
       {/* ─────────── 5. LYRICS (bottom) — uses standard LyricLineDisplay ─────────── */}
       <div className="flex-shrink-0 px-4 pb-4 min-h-0">
         {currentSong ? (
-          <div className="w-full bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/10">
+          <div className="w-full bg-[#1a0a2e]/60 backdrop-blur-sm rounded-xl px-4 py-2 border-[3px] border-black" style={{ boxShadow: '4px 4px 0px #6B2E77' }}>
             {currentLyricLine ? (
               <div className="text-center">
                 <LyricLineDisplay
                   line={currentLyricLine}
                   currentTime={currentTime}
-                  playerColor="#22d3ee"
+                  playerColor="#00F3B2"
                   noteDisplayStyle={game.settings.noteDisplayStyle || 'classic'}
                   notePerformance={notePerformance}
                   lyricsSize="small"
@@ -757,7 +758,7 @@ export function PlayingView({
             )}
           </div>
         ) : (
-          <div className="w-full bg-black/30 rounded-xl px-4 py-2 border border-white/10 text-center">
+          <div className="w-full bg-[#1a0a2e]/40 rounded-xl px-4 py-2 border-[3px] border-black text-center">
             <p className="text-white/30 text-sm">{t('battleRoyale.loadingSong')}</p>
           </div>
         )}
@@ -765,13 +766,13 @@ export function PlayingView({
 
       {/* Danger Warning Overlay */}
       {eliminationAnimationEnabled && isDangerZone && (
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-red-500/20 to-transparent pointer-events-none transition-opacity duration-500" />
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#FC6B48]/20 to-transparent pointer-events-none transition-opacity duration-500" />
       )}
 
       {/* #7 Difficulty indicator */}
       {game.settings.escalatingDifficulty && (
         <div className="absolute bottom-3 left-3 z-20 pointer-events-none">
-          <Badge variant="outline" className="border-white/20 text-white/40 text-xs">
+          <Badge variant="outline" className="border-[3px] border-black text-[#c0b8d0] text-xs" style={{ boxShadow: '2px 2px 0px #6B2E77' }}>
             {t('battleRoyale.difficulty').toLowerCase()}: {game.effectiveDifficulty.toUpperCase()}
           </Badge>
         </div>

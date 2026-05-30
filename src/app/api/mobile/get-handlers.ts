@@ -138,7 +138,7 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
           success: true, 
           clientId: newClientId,
           connectionCode,
-          message: 'Connected to Karaoke ZERO',
+          message: 'Connected to Karaoke Eleven',
           gameState: mutableState.gameState,
           profile: persistedProfile || undefined,
           ipReconnected: !!persistedProfile,
@@ -475,7 +475,7 @@ export async function handleGetRequest(request: NextRequest): Promise<Response> 
     default:
       return Response.json({
         success: true,
-        message: 'Karaoke ZERO Mobile API',
+        message: 'Karaoke Eleven Mobile API',
         endpoints: {
           connect: '/api/mobile?action=connect',
           status: '/api/mobile?action=status',

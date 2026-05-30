@@ -248,7 +248,7 @@ export function SongStartModal({
 
   return (
     <Dialog open={showSongModal} onOpenChange={setShowSongModal}>
-      <DialogContent ref={dialogContentRef} className="bg-gray-900 border-white/10 text-white max-w-xl max-h-[92vh] flex flex-col overflow-hidden">
+      <DialogContent ref={dialogContentRef} className="text-white max-w-xl max-h-[92vh] flex flex-col overflow-hidden" style={{ background: '#2a1a3e', border: '3px solid #000000', boxShadow: '8px 8px 0px #000000' }}>
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-lg">{selectedSong.title}</DialogTitle>
           <DialogDescription className="text-white/60">{selectedSong.artist}</DialogDescription>
@@ -256,7 +256,7 @@ export function SongStartModal({
         
         {/* Cover + info row */}
         <div className="flex items-center gap-4 flex-shrink-0">
-          <div className="w-28 h-20 rounded-lg overflow-hidden bg-gradient-to-br from-purple-600/30 to-blue-600/30 flex-shrink-0">
+          <div className="w-28 h-20 rounded-lg overflow-hidden bg-[#6B2E77] flex-shrink-0 border-2 border-black" style={{ boxShadow: '3px 3px 0px #000000' }}>
             {selectedSong.coverImage ? (
               <img src={selectedSong.coverImage} alt={selectedSong.title} className="w-full h-full object-cover" />
             ) : (
@@ -280,7 +280,7 @@ export function SongStartModal({
                   onClick={() => { setHighscoreSong(selectedSong); setShowHighscoreModal(true); }}
                 >
                   <TrophyIcon className="w-4 h-4 text-yellow-400" />
-                  <span className="text-base font-bold text-cyan-400">{topScore.score.toLocaleString()}</span>
+                  <span className="text-base font-bold text-[#00F3B2]">{topScore.score.toLocaleString()}</span>
                   <span className="text-xs text-white/40">{topScore.accuracy.toFixed(1)}%</span>
                 </button>
               );
@@ -302,9 +302,9 @@ export function SongStartModal({
                     onClick={() => setStartOptions(prev => ({ ...prev, difficulty: diff }))}
                     className={`py-1.5 rounded-md text-xs font-medium transition-all ${
                       startOptions.difficulty === diff 
-                        ? diff === 'easy' ? 'bg-green-500 text-white' 
-                          : diff === 'medium' ? 'bg-yellow-500 text-black'
-                          : 'bg-red-500 text-white'
+                        ? diff === 'easy' ? 'bg-[#00F3B2] text-black border-2 border-black' 
+                          : diff === 'medium' ? 'bg-[#FDE601] text-black border-2 border-black'
+                          : 'bg-[#FC6B48] text-white border-2 border-black'
                         : 'bg-white/10 text-white hover:bg-white/20'
                     }`}
                   >
@@ -318,7 +318,7 @@ export function SongStartModal({
             <div>
               <label className="text-xs text-white/60 mb-1 block">{t('songStart.mode')}</label>
               {startOptions.partyMode ? (
-                <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-md p-2">
+                <div className="bg-[#6B2E77]/20 border-2 border-[#6B2E77] rounded-md p-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-xl">
@@ -352,9 +352,9 @@ export function SongStartModal({
                   {songIsDuet ? (
                     <button
                       onClick={() => setStartOptions(prev => ({ ...prev, mode: 'duet' }))}
-                      className={`py-1.5 rounded-md text-xs font-medium transition-all ${
+                      className={`py-1.5 rounded-md text-xs font-medium transition-all border-2 border-black ${
                         startOptions.mode === 'duet' 
-                          ? 'bg-pink-500 text-white' 
+                          ? 'bg-[#F939A3] text-white' 
                           : 'bg-white/10 text-white hover:bg-white/20'
                       }`}
                     >
@@ -364,9 +364,9 @@ export function SongStartModal({
                     <>
                       <button
                         onClick={() => setStartOptions(prev => ({ ...prev, mode: 'single' }))}
-                        className={`py-1.5 rounded-md text-xs font-medium transition-all ${
+                        className={`py-1.5 rounded-md text-xs font-medium transition-all border-2 border-black ${
                           startOptions.mode === 'single' 
-                            ? 'bg-cyan-500 text-white' 
+                            ? 'bg-[#00F3B2] text-black' 
                             : 'bg-white/10 text-white hover:bg-white/20'
                         }`}
                       >
@@ -374,9 +374,9 @@ export function SongStartModal({
                       </button>
                       <button
                         onClick={() => setStartOptions(prev => ({ ...prev, mode: 'duel' }))}
-                        className={`py-1.5 rounded-md text-xs font-medium transition-all ${
+                        className={`py-1.5 rounded-md text-xs font-medium transition-all border-2 border-black ${
                           startOptions.mode === 'duel' 
-                            ? 'bg-purple-500 text-white' 
+                            ? 'bg-[#6B2E77] text-white' 
                             : 'bg-white/10 text-white hover:bg-white/20'
                         }`}
                       >
@@ -400,9 +400,9 @@ export function SongStartModal({
                     <button
                       key={profile.id}
                       onClick={() => setStartOptions(prev => ({ ...prev, players: [profile.id] }))}
-                      className={`flex items-center gap-2 p-1.5 rounded-md transition-all ${
+                      className={`flex items-center gap-2 p-1.5 rounded-md transition-all border-2 border-black ${
                         startOptions.players[0] === profile.id 
-                          ? 'bg-cyan-500 text-white' 
+                          ? 'bg-[#00F3B2] text-black' 
                           : 'bg-white/10 text-white hover:bg-white/20'
                       }`}
                     >
@@ -439,9 +439,9 @@ export function SongStartModal({
                             : startOptions.players;
                         setStartOptions(prev => ({ ...prev, players }));
                       }}
-                      className={`flex items-center gap-2 p-1.5 rounded-md transition-all ${
+                      className={`flex items-center gap-2 p-1.5 rounded-md transition-all border-2 border-black ${
                         startOptions.players.includes(profile.id) 
-                          ? 'bg-purple-500 text-white' 
+                          ? 'bg-[#6B2E77] text-white' 
                           : 'bg-white/10 text-white hover:bg-white/20'
                       }`}
                     >
@@ -479,9 +479,9 @@ export function SongStartModal({
                           : [...startOptions.players, profile.id];
                         setStartOptions(prev => ({ ...prev, players }));
                       }}
-                      className={`flex items-center gap-2 p-1.5 rounded-md transition-all ${
+                      className={`flex items-center gap-2 p-1.5 rounded-md transition-all border-2 border-black ${
                         startOptions.players.includes(profile.id) 
-                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' 
+                          ? 'bg-[#BA279D] text-white' 
                           : 'bg-white/10 text-white hover:bg-white/20'
                       }`}
                     >
@@ -543,11 +543,11 @@ export function SongStartModal({
                               : startOptions.players;
                           setStartOptions(prev => ({ ...prev, players }));
                         }}
-                        className={`flex items-center gap-2 p-1.5 rounded-md transition-all ${
+                        className={`flex items-center gap-2 p-1.5 rounded-md transition-all border-2 border-black ${
                           isP1
-                            ? 'bg-pink-500 text-white ring-1 ring-pink-300'
+                            ? 'bg-[#F939A3] text-white'
                             : isP2
-                              ? 'bg-purple-500 text-white ring-1 ring-purple-300'
+                              ? 'bg-[#BA279D] text-white'
                               : 'bg-white/10 text-white hover:bg-white/20'
                         }`}
                       >
@@ -616,13 +616,13 @@ export function SongStartModal({
         </div>
         
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-2 flex-shrink-0 pt-2 border-t border-white/10">
+        <div className="flex flex-wrap gap-2 flex-shrink-0 pt-2 border-t-2 border-black">
           <Button 
             variant="outline" 
             onClick={handleFavorite}
             className={favoriteSongIds.has(selectedSong.id) 
-              ? "bg-yellow-500/20 border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/30 h-10 px-3" 
-              : "border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 h-10 px-3"
+              ? "bg-[#FDE601]/20 border-[#FDE601] text-[#FDE601] hover:bg-[#FDE601]/30 h-10 px-3" 
+              : "border-[#FDE601] text-[#FDE601] hover:bg-[#FDE601]/10 h-10 px-3"
             }
           >
             <StarIcon className="w-4 h-4 mr-1.5" filled={favoriteSongIds.has(selectedSong.id)} />
@@ -631,7 +631,7 @@ export function SongStartModal({
           <Button 
             variant="outline" 
             onClick={() => { setHighscoreSong(selectedSong); setShowHighscoreModal(true); }}
-            className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 h-10 px-3"
+            className="border-[#FDE601] text-[#FDE601] hover:bg-[#FDE601]/10 h-10 px-3"
           >
             <TrophyIcon className="w-4 h-4 mr-1.5" /> {t('songStart.scores')}
           </Button>
@@ -639,14 +639,14 @@ export function SongStartModal({
             variant="outline" 
             onClick={handleAddToQueue}
             disabled={!(startOptions.players[0] || activeProfileId)}
-            className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10 disabled:opacity-50 disabled:cursor-not-allowed h-10 px-3"
+            className="border-[#6B2E77] text-[#BA279D] hover:bg-[#6B2E77]/10 disabled:opacity-50 disabled:cursor-not-allowed h-10 px-3"
           >
             <QueueIcon className="w-4 h-4 mr-1.5" /> {t('songStart.queue')}
           </Button>
           <Button 
             variant="outline" 
             onClick={() => { setSongToAddToPlaylist(selectedSong); setShowAddToPlaylistModal(true); }}
-            className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 h-10 px-3"
+            className="border-[#00F3B2] text-[#00F3B2] hover:bg-[#00F3B2]/10 h-10 px-3"
           >
             <svg className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M9 18V5l12-2v13" />
@@ -672,7 +672,7 @@ export function SongStartModal({
               (startOptions.mode === 'duet' && startOptions.players.length < 2) ||
               (startOptions.mode === 'duel' && startOptions.players.length < 2)
             }
-            className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 disabled:opacity-50 disabled:cursor-not-allowed h-10"
+            className="flex-1 bg-[#F939A3] text-white hover:bg-[#F939A3]/90 disabled:opacity-50 disabled:cursor-not-allowed h-10 border-2 border-black" style={{ boxShadow: '3px 3px 0px #000000' }}
           >
             <PlayIcon className="w-4 h-4 mr-1.5" /> {t('songStart.start')}
           </Button>

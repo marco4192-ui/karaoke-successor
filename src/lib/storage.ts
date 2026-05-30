@@ -1,5 +1,5 @@
 /**
- * Centralized localStorage wrapper for the Karaoke ZERO app.
+ * Centralized localStorage wrapper for the Karaoke Eleven app.
  *
  * All localStorage access should go through this module to ensure:
  * - Single source of truth for storage key names (no magic strings)

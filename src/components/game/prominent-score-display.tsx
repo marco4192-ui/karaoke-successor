@@ -55,27 +55,27 @@ export const ProminentScoreDisplay = React.memo(function ProminentScoreDisplay({
       {/* Total Score Display — top center, below header */}
       <div className="fixed top-14 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
         <div
-          className="bg-black/60 backdrop-blur-md px-8 py-4 rounded-2xl border-2 border-white/20 shadow-xl"
-          style={{ boxShadow: '0 0 40px rgba(34, 211, 238, 0.2)' }}
+          className="bg-[#2a1a3e] px-8 py-4 rounded-2xl border-[3px] border-black"
+          style={{ boxShadow: '4px 4px 0px #F939A3' }}
         >
           <div className="flex flex-col items-center gap-1">
             {/* Main Score */}
             <div className="flex items-baseline gap-3">
-              <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400">
+              <span className="text-5xl font-black text-[#FDE601]" style={{ WebkitTextStroke: '1px #000', paintOrder: 'stroke fill' }}>
                 {score.toLocaleString()}
               </span>
-              <span className="text-white/40 text-sm">/ {MAX_POINTS_PER_SONG.toLocaleString()}</span>
+              <span className="text-[#c0b8d0] text-sm" style={{ WebkitTextStroke: '0.5px #000', paintOrder: 'stroke fill' }}>/ {MAX_POINTS_PER_SONG.toLocaleString()}</span>
             </div>
 
             {/* Combo */}
             {showCombo !== false && combo >= 1 && (
               <div className="flex items-center gap-2">
-                <span className="text-yellow-400 font-bold text-lg">
+                <span className="text-[#FDE601] font-bold text-lg" style={{ WebkitTextStroke: '1px #000', paintOrder: 'stroke fill' }}>
                   {combo}x
                 </span>
-                <span className="text-white/60 text-sm">{t('prominentScore.combo')}</span>
+                <span className="text-[#c0b8d0] text-sm" style={{ WebkitTextStroke: '0.5px #000', paintOrder: 'stroke fill' }}>{t('prominentScore.combo')}</span>
                 {combo >= 5 && (
-                  <span className="text-green-400 font-semibold text-xs">
+                  <span className="text-[#00F3B2] font-semibold text-xs" style={{ WebkitTextStroke: '1px #000', paintOrder: 'stroke fill' }}>
                     (+{Math.round(Math.min(0.5, combo * 0.02) * 100)}%)
                   </span>
                 )}
@@ -91,9 +91,11 @@ export const ProminentScoreDisplay = React.memo(function ProminentScoreDisplay({
           <div
             className="text-2xl font-black animate-pulse"
             style={{
-              color: combo >= 20 ? '#FFD700' :
-                     combo >= 10 ? '#FF6B6B' : '#4ECDC4',
-              textShadow: '0 0 20px currentColor, 0 0 40px currentColor, 0 0 60px currentColor',
+              color: combo >= 20 ? '#FDE601' :
+                     combo >= 10 ? '#F939A3' : '#00F3B2',
+              WebkitTextStroke: '2px #000',
+              paintOrder: 'stroke fill',
+              textShadow: '4px 4px 0px #6B2E77',
             }}
           >
             {t('prominentScore.comboMultiplied').replace('{n}', String(combo))}

@@ -380,7 +380,7 @@ export default function KaraokeZERO() {
     return (
       <div
         className="h-screen w-full"
-        style={{ background: 'linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #0a0a2a 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #1a0a2e 0%, #2a1a3e 50%, #1a0a2e 100%)' }}
         suppressHydrationWarning
       />
     );
@@ -408,7 +408,7 @@ export default function KaraokeZERO() {
     <div
       className={`${IMMERSIVE_SCREENS.has(screen) || screen === 'library' ? 'h-screen overflow-hidden' : 'min-h-screen'} flex flex-col w-full text-white theme-container`}
       style={{
-        background: `linear-gradient(135deg, var(--theme-background, #0a0a1a) 0%, var(--theme-background-secondary, #1a1a2e) 50%, color-mix(in srgb, var(--theme-primary, #00ffff) 15%, transparent) 100%)`,
+        background: `linear-gradient(135deg, var(--theme-background, #1a0a2e) 0%, var(--theme-background-secondary, #2a1a3e) 50%, color-mix(in srgb, var(--theme-primary, #F939A3) 10%, #1a0a2e) 100%)`,
         color: 'var(--theme-text, #ffffff)',
         fontFamily: 'var(--theme-font, Inter, sans-serif)',
       }}
@@ -620,11 +620,16 @@ export default function KaraokeZERO() {
         const match = party.currentTournamentMatch;
         return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="bg-zinc-900 border border-amber-500/30 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+          <div
+            className="bg-[#2a1a3e] border-3 border-black rounded-2xl p-6 max-w-md w-full mx-4"
+            style={{ boxShadow: '6px 6px 0px #000000' }}
+          >
             <div className="text-center mb-6">
-              <div className="text-4xl mb-2">🏆</div>
-              <h2 className="text-xl font-bold text-white">{t('matchAbort.selectWinner')}</h2>
-              <p className="text-sm text-white/50 mt-1">
+              <div className="text-5xl mb-2">🏆</div>
+              <h2 className="text-2xl font-black text-[#FDE601]" style={{ WebkitTextStroke: '1px #000000', paintOrder: 'stroke fill', textShadow: '2px 2px 0px #000000' }}>
+                {t('matchAbort.selectWinner')}
+              </h2>
+              <p className="text-sm text-[#FDFEFD]/50 mt-1">
                 {match.player1?.name} vs {match.player2?.name}
               </p>
             </div>
@@ -632,40 +637,42 @@ export default function KaraokeZERO() {
               {match.player1 && (
                 <button
                   onClick={() => handleTournamentPickWinner(match.player1!.id)}
-                  className="w-full py-4 text-sm bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl flex items-center gap-3 px-4 transition-all"
+                  className="w-full py-4 text-sm bg-[#F939A3] hover:bg-[#e02e93] border-3 border-black rounded-xl flex items-center gap-3 px-4 transition-all font-bold text-black hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
+                  style={{ boxShadow: '3px 3px 0px #000000' }}
                 >
                   {match.player1!.avatar ? (
-                    <img src={match.player1.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
+                    <img src={match.player1.avatar} alt="" className="w-10 h-10 rounded-full object-cover border-2 border-black" />
                   ) : (
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{ backgroundColor: match.player1.color }}>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold border-2 border-black" style={{ backgroundColor: match.player1.color }}>
                       {match.player1.name.charAt(0).toUpperCase()}
                     </div>
                   )}
-                  <span className="font-medium flex-1 text-left">{match.player1.name}</span>
-                  <span className="text-amber-400 font-bold">{t('matchAbort.asWinner')}</span>
+                  <span className="font-bold flex-1 text-left">{match.player1.name}</span>
+                  <span className="bg-black text-[#FDE601] font-black px-2 py-0.5 rounded text-xs">{t('matchAbort.asWinner')}</span>
                 </button>
               )}
               {match.player2 && (
                 <button
                   onClick={() => handleTournamentPickWinner(match.player2!.id)}
-                  className="w-full py-4 text-sm bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl flex items-center gap-3 px-4 transition-all"
+                  className="w-full py-4 text-sm bg-[#00F3B2] hover:bg-[#00daa0] border-3 border-black rounded-xl flex items-center gap-3 px-4 transition-all font-bold text-black hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
+                  style={{ boxShadow: '3px 3px 0px #000000' }}
                 >
                   {match.player2!.avatar ? (
-                    <img src={match.player2.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
+                    <img src={match.player2.avatar} alt="" className="w-10 h-10 rounded-full object-cover border-2 border-black" />
                   ) : (
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{ backgroundColor: match.player2.color }}>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold border-2 border-black" style={{ backgroundColor: match.player2.color }}>
                       {match.player2.name.charAt(0).toUpperCase()}
                     </div>
                   )}
-                  <span className="font-medium flex-1 text-left">{match.player2.name}</span>
-                  <span className="text-amber-400 font-bold">{t('matchAbort.asWinner')}</span>
+                  <span className="font-bold flex-1 text-left">{match.player2.name}</span>
+                  <span className="bg-black text-[#FDE601] font-black px-2 py-0.5 rounded text-xs">{t('matchAbort.asWinner')}</span>
                 </button>
               )}
               <button
                 onClick={handleTournamentCancelWinner}
-                className="w-full py-2 text-sm text-white/40 hover:text-white/60"
+                className="w-full py-3 text-sm text-[#FDFEFD]/40 hover:text-[#FDFEFD]/70 font-bold transition-colors"
               >
-                {t('matchAbort.back')}
+                ← {t('matchAbort.back')}
               </button>
             </div>
           </div>

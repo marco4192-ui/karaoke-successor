@@ -112,7 +112,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
     const bountyClaimedById = lastRound?.bountyClaimedById;
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm animate-[fadeIn_0.3s_ease-out_forwards]">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1a0a2e]/95 backdrop-blur-sm animate-[fadeIn_0.3s_ease-out_forwards]">
         <EliminationView
           eliminatedPlayer={eliminatedPlayer}
           remainingPlayersCount={activePlayers.length}

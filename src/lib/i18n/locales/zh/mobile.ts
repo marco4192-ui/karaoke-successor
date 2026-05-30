@@ -384,7 +384,7 @@ export const mobileTranslations = {
     cameraPositionNone: '无摄像头',
     cameraConnectFailed: '连接移动摄像头失败',
     cameraAccessDenied: '摄像头访问被拒绝',
-    branding: 'Karaoke ZERO',
+    branding: 'Karaoke Eleven',
     camera: '📹 摄像头',
     active: '激活',
     mobileConnected: '移动端已连接',
@@ -452,7 +452,7 @@ export const mobileTranslations = {
   },
 
   mobileOnboarding: {
-    welcome: '欢迎使用 Karaoke ZERO',
+    welcome: '欢迎使用 Karaoke Eleven',
     subtitle: '你的移动端卡拉OK伴侣应用',
     next: '下一步',
     back: '返回',

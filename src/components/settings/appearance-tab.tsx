@@ -62,7 +62,7 @@ export function AppearanceTab({
   return (
     <div className="space-y-6">
       {/* Performance Mode */}
-      <Card className={`bg-white/5 border-white/10 ${isLowPerf ? 'border-orange-500/50' : ''}`}>
+      <Card className={`bg-[#2a1a3e] border-[3px] border-black ${isLowPerf ? 'border-[#FC6B48]' : ''}`} style={{ boxShadow: '4px 4px 0px #6B2E77' }}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <span className="text-lg">⚡</span>
@@ -71,10 +71,10 @@ export function AppearanceTab({
           <CardDescription>{tx('settingsGraphicSound.performanceModeDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-[#1a0a2e] rounded-lg border-[2px] border-black">
             <div>
-              <h4 className="font-medium">{tx('settingsGraphicSound.lowPerfMode')}</h4>
-              <p className="text-sm text-white/60">{tx('settingsGraphicSound.lowPerfModeDesc')}</p>
+              <h4 className="font-medium text-[#FDE601]" style={{ WebkitTextStroke: '0.5px #000', paintOrder: 'stroke fill' }}>{tx('settingsGraphicSound.lowPerfMode')}</h4>
+              <p className="text-sm text-[#c0b8d0]">{tx('settingsGraphicSound.lowPerfModeDesc')}</p>
             </div>
             <button
               type="button"
@@ -85,17 +85,17 @@ export function AppearanceTab({
                 window.dispatchEvent(new CustomEvent('settingsChange', { detail: { performanceMode: newValue } }));
                 setHasChanges(true);
               }}
-              className={`relative w-14 h-7 rounded-full transition-colors cursor-pointer ${
-                isLowPerf ? 'bg-orange-500' : 'bg-white/20'
+              className={`relative w-14 h-7 rounded-full transition-colors cursor-pointer border-[2px] border-black ${
+                isLowPerf ? 'bg-[#FC6B48]' : 'bg-[#c0b8d0]'
               }`}
             >
               <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${isLowPerf ? 'left-8' : 'left-1'}`} />
             </button>
           </div>
           {isLowPerf && (
-            <div className="p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg text-sm space-y-1">
-              <p className="font-medium text-orange-300">{tx('settingsGraphicSound.lowPerfFeatures')}</p>
-              <ul className="text-white/60 space-y-0.5 ml-4 list-disc">
+            <div className="p-3 bg-[#FC6B48]/10 border-[2px] border-[#FC6B48] rounded-lg text-sm space-y-1">
+              <p className="font-medium text-[#FC6B48]">{tx('settingsGraphicSound.lowPerfFeatures')}</p>
+              <ul className="text-[#c0b8d0] space-y-0.5 ml-4 list-disc">
                 <li>{tx('settingsGraphicSound.featureSplitScreen')}</li>
                 <li>{tx('settingsGraphicSound.featureNoteStyles')}</li>
                 <li>{tx('settingsGraphicSound.featureAccuracy')}</li>
@@ -109,7 +109,7 @@ export function AppearanceTab({
                 <li>{tx('settingsGraphicSound.featureEnergyViz')}</li>
               </ul>
               <p className="text-white/80 mt-2 font-medium">{tx('settingsGraphicSound.remainAvailable')}</p>
-              <ul className="text-green-400/80 space-y-0.5 ml-4 list-disc">
+              <ul className="text-[#00F3B2] space-y-0.5 ml-4 list-disc">
                 <li>{tx('settingsGraphicSound.remainCore')}</li>
                 <li>{tx('settingsGraphicSound.remainPitch')}</li>
                 <li>{tx('settingsGraphicSound.remainLyrics')}</li>
@@ -122,10 +122,10 @@ export function AppearanceTab({
       </Card>
 
       {/* Video Settings */}
-      <Card className="bg-white/5 border-white/10">
+      <Card className="bg-[#2a1a3e] border-[3px] border-black" style={{ boxShadow: '4px 4px 0px #00F3B2' }}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <CardTitle className="flex items-center gap-2 text-[#FDFEFD]" style={{ WebkitTextStroke: '0.5px #000', paintOrder: 'stroke fill' }}>
+            <svg className="w-5 h-5 text-[#00F3B2]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" /><line x1="7" y1="2" x2="7" y2="22" /><line x1="17" y1="2" x2="17" y2="22" /><line x1="2" y1="12" x2="22" y2="12" /><line x1="2" y1="7" x2="7" y2="7" /><line x1="2" y1="17" x2="7" y2="17" /><line x1="17" y1="17" x2="22" y2="17" /><line x1="17" y1="7" x2="22" y2="7" />
             </svg>
             {tx('settingsGraphicSound.videoSettings')}
@@ -133,40 +133,40 @@ export function AppearanceTab({
           <CardDescription>{tx('settingsGraphicSound.videoSettingsDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-[#1a0a2e] rounded-lg border-[2px] border-black">
             <div>
-              <h4 className="font-medium">{tx('settings.backgroundVideo')}</h4>
-              <p className="text-sm text-white/60">{tx('settings.backgroundVideoDesc')}</p>
+              <h4 className="font-medium text-[#FDFEFD]">{tx('settings.backgroundVideo')}</h4>
+              <p className="text-sm text-[#c0b8d0]">{tx('settings.backgroundVideoDesc')}</p>
             </div>
             <button
               type="button"
               onClick={() => { setBgVideo(!bgVideo); saveSetting(StorageKeys.BG_VIDEO, !bgVideo); }}
-              className={`relative w-14 h-7 rounded-full transition-colors cursor-pointer ${bgVideo ? 'bg-cyan-500' : 'bg-white/20'}`}
+              className={`relative w-14 h-7 rounded-full transition-colors cursor-pointer border-[2px] border-black ${bgVideo ? 'bg-[#00F3B2]' : 'bg-[#c0b8d0]'}`}
             >
-              <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${bgVideo ? 'left-8' : 'left-1'}`} />
+              <span className={`absolute top-1 w-5 h-5 rounded-full bg-white border-[1px] border-black transition-all ${bgVideo ? 'left-8' : 'left-1'}`} />
             </button>
           </div>
-          <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-[#1a0a2e] rounded-lg border-[2px] border-black">
             <div>
-              <h4 className="font-medium">{tx('settingsGraphicSound.animatedBackground')}</h4>
-              <p className="text-sm text-white/60">{tx('settingsGraphicSound.animatedBackgroundDesc')}</p>
+              <h4 className="font-medium text-[#FDFEFD]">{tx('settingsGraphicSound.animatedBackground')}</h4>
+              <p className="text-sm text-[#c0b8d0]">{tx('settingsGraphicSound.animatedBackgroundDesc')}</p>
             </div>
             <button
               type="button"
               onClick={() => { const v = !useAnimatedBg; setUseAnimatedBg(v); saveSetting(StorageKeys.ANIMATED_BG, v); }}
-              className={`relative w-14 h-7 rounded-full transition-colors cursor-pointer ${useAnimatedBg ? 'bg-purple-500' : 'bg-white/20'}`}
+              className={`relative w-14 h-7 rounded-full transition-colors cursor-pointer border-[2px] border-black ${useAnimatedBg ? 'bg-[#6B2E77]' : 'bg-[#c0b8d0]'}`}
             >
-              <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${useAnimatedBg ? 'left-8' : 'left-1'}`} />
+              <span className={`absolute top-1 w-5 h-5 rounded-full bg-white border-[1px] border-black transition-all ${useAnimatedBg ? 'left-8' : 'left-1'}`} />
             </button>
           </div>
         </CardContent>
       </Card>
 
       {/* Theme Settings */}
-      <Card className="bg-white/5 border-white/10">
+      <Card className="bg-[#2a1a3e] border-[3px] border-black" style={{ boxShadow: '4px 4px 0px #F939A3' }}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 theme-adaptive-text">
-            <PaletteIcon className="w-5 h-5 text-purple-400" />
+          <CardTitle className="flex items-center gap-2 theme-adaptive-text" style={{ WebkitTextStroke: '0.5px #000', paintOrder: 'stroke fill' }}>
+            <PaletteIcon className="w-5 h-5 text-[#6B2E77]" />
             {tx('settings.themeSettings')}
           </CardTitle>
           <CardDescription className="theme-adaptive-text-secondary">{tx('settings.themeSettingsDesc')}</CardDescription>
@@ -180,13 +180,14 @@ export function AppearanceTab({
                   key={theme.id}
                   type="button"
                   onClick={() => handleThemeChange(theme)}
-                  className={`p-3 rounded-xl border-2 transition-all hover:scale-105 cursor-pointer ${
+                  className={`p-3 rounded-xl border-[3px] border-black transition-all hover:scale-105 cursor-pointer ${
                     currentThemeId === theme.id
-                      ? 'border-cyan-500 bg-cyan-500/10 ring-2 ring-cyan-500/50'
-                      : 'border-white/10 bg-white/5 hover:border-white/30'
+                      ? 'bg-[#00F3B2]/20 ring-2 ring-[#00F3B2]/50'
+                      : 'bg-[#1a0a2e] hover:border-[#c0b8d0]'
                   }`}
+                  style={{ boxShadow: currentThemeId === theme.id ? '3px 3px 0px #00F3B2' : '3px 3px 0px #6B2E77' }}
                 >
-                  <div className="w-full h-8 rounded-lg mb-2" style={{ background: `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.secondary})` }} />
+                  <div className="w-full h-8 rounded-lg mb-2 border-[2px] border-black" style={{ background: theme.colors.primary }} />
                   <span className="text-sm font-medium theme-adaptive-text">{theme.name}</span>
                   <p className="text-xs theme-adaptive-text-secondary truncate">{theme.description}</p>
                 </button>
@@ -212,11 +213,12 @@ export function AppearanceTab({
                   key={style.id}
                   type="button"
                   onClick={() => { setNoteDisplayStyle(style.id); saveSetting(StorageKeys.NOTE_STYLE, style.id); }}
-                  className={`p-3 rounded-lg border-2 transition-all text-sm cursor-pointer flex flex-col items-center gap-1 ${
+                  className={`p-3 rounded-lg border-[3px] border-black transition-all text-sm cursor-pointer flex flex-col items-center gap-1 ${
                     noteDisplayStyle === style.id
-                      ? 'border-cyan-500 bg-cyan-500/20 text-cyan-300'
-                      : 'border-white/10 bg-white/5 hover:border-white/30 theme-adaptive-text'
+                      ? 'border-[#00F3B2] bg-[#00F3B2]/20 text-[#00F3B2]'
+                      : 'bg-[#1a0a2e] hover:border-[#c0b8d0] theme-adaptive-text'
                   }`}
+                  style={{ boxShadow: noteDisplayStyle === style.id ? '3px 3px 0px #00F3B2' : '3px 3px 0px #6B2E77' }}
                 >
                   <span className="text-lg">{style.icon}</span>
                   <span className="font-medium">{style.name}</span>
@@ -244,11 +246,12 @@ export function AppearanceTab({
                   key={shape.id}
                   type="button"
                   onClick={() => { setNoteShapeStyle(shape.id); saveSetting(StorageKeys.NOTE_SHAPE, shape.id); }}
-                  className={`p-3 rounded-lg border-2 transition-all text-sm cursor-pointer flex flex-col items-center gap-1 ${
+                  className={`p-3 rounded-lg border-[3px] border-black transition-all text-sm cursor-pointer flex flex-col items-center gap-1 ${
                     noteShapeStyle === shape.id
-                      ? 'border-purple-500 bg-purple-500/20 text-purple-300'
-                      : 'border-white/10 bg-white/5 hover:border-white/30 theme-adaptive-text'
+                      ? 'border-[#6B2E77] bg-[#6B2E77]/20 text-[#BA279D]'
+                      : 'bg-[#1a0a2e] hover:border-[#c0b8d0] theme-adaptive-text'
                   }`}
+                  style={{ boxShadow: noteShapeStyle === shape.id ? '3px 3px 0px #6B2E77' : '3px 3px 0px #F939A3' }}
                 >
                   <span className="text-lg">{shape.icon}</span>
                   <span className="font-medium">{shape.name}</span>
@@ -261,9 +264,9 @@ export function AppearanceTab({
       </Card>
 
       {/* Lyrics Display Settings */}
-      <Card className="bg-white/5 border-white/10">
+      <Card className="bg-[#2a1a3e] border-[3px] border-black" style={{ boxShadow: '4px 4px 0px #FDE601' }}>
         <CardHeader>
-          <CardTitle>{tx('settingsGraphicSound.lyricsDisplay')}</CardTitle>
+          <CardTitle className="text-[#FDFEFD]" style={{ WebkitTextStroke: '0.5px #000', paintOrder: 'stroke fill' }}>{tx('settingsGraphicSound.lyricsDisplay')}</CardTitle>
           <CardDescription>{tx('settingsGraphicSound.lyricsDisplayDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -286,10 +289,10 @@ export function AppearanceTab({
                   key={style.id}
                   type="button"
                   onClick={() => { setLyricsStyle(style.id); saveSetting(StorageKeys.LYRICS_STYLE, style.id); }}
-                  className={`px-3 py-2 rounded-lg border-2 transition-all text-sm cursor-pointer ${
+                  className={`px-3 py-2 rounded-lg border-[3px] border-black transition-all text-sm cursor-pointer ${
                     lyricsStyle === style.id
-                      ? 'border-purple-500 bg-purple-500/20 text-purple-300'
-                      : 'border-white/10 bg-white/5 hover:border-white/30 text-white'
+                      ? 'border-[#6B2E77] bg-[#6B2E77]/20 text-[#BA279D]'
+                      : 'bg-[#1a0a2e] hover:border-[#c0b8d0] text-white'
                   }`}
                 >
                   {style.name}
@@ -309,17 +312,17 @@ export function AppearanceTab({
                   key={size.id}
                   type="button"
                   onClick={() => { setLyricsSize(size.id); saveSetting(StorageKeys.LYRICS_SIZE, size.id); }}
-                  className={`px-3 py-2 rounded-lg border-2 transition-all text-sm cursor-pointer ${
+                  className={`px-3 py-2 rounded-lg border-[3px] border-black transition-all text-sm cursor-pointer ${
                     lyricsSize === size.id
-                      ? 'border-cyan-500 bg-cyan-500/20 text-cyan-300'
-                      : 'border-white/10 bg-white/5 hover:border-white/30 text-white'
+                      ? 'border-[#00F3B2] bg-[#00F3B2]/20 text-[#00F3B2]'
+                      : 'bg-[#1a0a2e] hover:border-[#c0b8d0] text-white'
                   }`}
                 >
                   {size.name}
                 </button>
               ))}
             </div>
-            <p className="text-xs text-white/40">{tx('settingsGraphicSound.lyricsSizeDesc')}</p>
+            <p className="text-xs text-[#c0b8d0]">{tx('settingsGraphicSound.lyricsSizeDesc')}</p>
           </div>
         </CardContent>
       </Card>

@@ -73,7 +73,7 @@ export const settingsTranslations = {
     installAppDesc: 'Für Offline-Zugriff installieren',
     appInstalled: 'App ist installiert',
     version: 'Version',
-    aboutDesc: 'Karaoke ZERO ist eine moderne Karaoke-Anwendung mit Echtzeit-Pitch-Erkennung, Party-Modi und mehr.',
+    aboutDesc: 'Karaoke Eleven ist eine moderne Karaoke-Anwendung mit Echtzeit-Pitch-Erkennung, Party-Modi und mehr.',
     feature1: 'Echtzeit-Pitch-Erkennung mit YIN-Algorithmus',
     feature2: 'Mehrere Party-Spielmodi',
     feature3: 'Mobile-App-Integration zur Fernsteuerung',
@@ -376,7 +376,7 @@ export const settingsTranslations = {
   settingsLibrary: {
     title: 'Songs-Basisordner',
     desc: 'Alle Songs werden aus diesem Ordner importiert. Jeder Unterordner enthält einen Song.',
-    placeholder: 'C:/Karaoke ZERO/Songs',
+    placeholder: 'C:/Karaoke Eleven/Songs',
     scan: 'Scannen',
     browse: 'Durchsuchen',
     help: 'Gib den Pfad zu deinem Songs-Ordner ein und klicke auf "Scannen" zum Importieren, oder nutze "Durchsuchen" zur Ordnerauswahl.',

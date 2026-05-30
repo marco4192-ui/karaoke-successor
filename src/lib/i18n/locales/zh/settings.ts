@@ -73,7 +73,7 @@ export const settingsTranslations = {
     installAppDesc: '安装以支持离线访问',
     appInstalled: '应用已安装',
     version: '版本',
-    aboutDesc: 'Karaoke ZERO是一款现代化的卡拉OK应用，具备实时音高检测、派对模式等功能。',
+    aboutDesc: 'Karaoke Eleven是一款现代化的卡拉OK应用，具备实时音高检测、派对模式等功能。',
     feature1: '基于YIN算法的实时音高检测',
     feature2: '多种派对游戏模式',
     feature3: '移动端应用集成远程控制',
@@ -372,7 +372,7 @@ export const settingsTranslations = {
   settingsLibrary: {
     title: '歌曲基础文件夹',
     desc: '所有歌曲从此文件夹导入。每个子文件夹包含一首歌曲。',
-    placeholder: 'C:/Karaoke ZERO/Songs',
+    placeholder: 'C:/Karaoke Eleven/Songs',
     scan: '扫描',
     browse: '浏览',
     help: '输入歌曲文件夹路径并点击"扫描"来导入，或使用"浏览"选择文件夹。',

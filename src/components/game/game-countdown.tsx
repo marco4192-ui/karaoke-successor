@@ -13,11 +13,13 @@ export function GameCountdown({ countdown }: GameCountdownProps) {
   if (countdown <= 0) return null;
 
   return (
-    <div key={countdown} className="absolute inset-0 flex items-center justify-center bg-black/60 z-30">
+    <div key={countdown} className="absolute inset-0 flex items-center justify-center bg-[#1a0a2e]/80 z-30">
       <div
-        className="text-9xl font-black text-white drop-shadow-2xl"
+        className="text-9xl font-black text-[#FDE601] border-[4px] border-black rounded-2xl px-8 py-4"
         style={{
-          // Note: "countdownPop" animation is defined in the global CSS (index.css / globals.css)
+          WebkitTextStroke: '3px #000',
+          paintOrder: 'stroke fill',
+          boxShadow: '6px 6px 0px #F939A3',
           animation: 'countdownPop 0.3s ease-out'
         }}
       >

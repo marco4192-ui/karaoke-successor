@@ -53,10 +53,10 @@ export function RoundSetupView({ game, stats, activePlayers, onStartRound, onUpd
       {/* Round Title */}
       {isGrandFinale ? (
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-amber-400 mb-2">
+          <h1 className="text-3xl font-bold text-[#FDE601] mb-2" style={{ textShadow: '3px 3px 0px #000000' }}>
             🏆 {t('battleRoyale.grandFinaleRound').replace('{n}', String(game.currentRound + 1))}
           </h1>
-          <p className="text-amber-400/60">
+          <p className="text-[#FDE601]/60">
             {t('battleRoyale.bestOf').replace('{n}', String(game.settings.grandFinaleBestOf))} — {t('battleRoyale.firstTo').replace('{n}', String(winsNeeded))}
           </p>
           {/* Final wins display */}
@@ -64,16 +64,16 @@ export function RoundSetupView({ game, stats, activePlayers, onStartRound, onUpd
             {activePlayers.map(p => (
               <div key={p.id} className="flex flex-col items-center gap-1">
                 {p.avatar ? (
-                  <img src={p.avatar} alt={p.name} className="w-12 h-12 rounded-full object-cover border-2 border-amber-500" />
+                  <img src={p.avatar} alt={p.name} className="w-12 h-12 rounded-full object-cover border-[3px] border-black" style={{ boxShadow: '3px 3px 0px #FDE601' }} />
                 ) : (
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold border-2 border-amber-500" style={{ backgroundColor: p.color }}>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold border-[3px] border-black" style={{ boxShadow: '3px 3px 0px #FDE601', backgroundColor: p.color }}>
                     {p.name.charAt(0)}
                   </div>
                 )}
                 <span className="font-bold text-sm">{p.name}</span>
                 <div className="flex gap-1">
                   {Array.from({ length: winsNeeded }).map((_, i) => (
-                    <span key={i} className={`text-xl ${i < (game.finalWins[p.id] || 0) ? 'text-amber-400' : 'text-white/20'}`}>
+                    <span key={i} className={`text-xl ${i < (game.finalWins[p.id] || 0) ? 'text-[#FDE601]' : 'text-white/20'}`}>
                       ★
                     </span>
                   ))}
@@ -95,17 +95,17 @@ export function RoundSetupView({ game, stats, activePlayers, onStartRound, onUpd
       {/* #7 Difficulty & #8 Shrinking Timer info */}
       <div className="flex justify-center gap-3 mb-4">
         {game.settings.escalatingDifficulty && (
-          <Badge variant="outline" className="border-green-500/40 text-green-400 text-xs">
+          <Badge variant="outline" className="border-[#00F3B2]/60 text-[#00F3B2] text-xs">
             📈 {t('battleRoyale.escalatingDifficulty')}: {stats.effectiveDifficulty.toUpperCase()}
           </Badge>
         )}
         {game.settings.shrinkingTimer && (
-          <Badge variant="outline" className="border-orange-500/40 text-orange-400 text-xs">
+          <Badge variant="outline" className="border-[#FC6B48]/60 text-[#FC6B48] text-xs">
             ⏱️ {t('battleRoyale.shrinkingTimer')}
           </Badge>
         )}
         {game.settings.bountyEnabled && !isGrandFinale && stats.bountyPlayerId && (
-          <Badge variant="outline" className="border-amber-500/40 text-amber-400 text-xs">
+          <Badge variant="outline" className="border-[#FDE601]/60 text-[#FDE601] text-xs">
             🎯 {t('battleRoyale.bountyActive')}
           </Badge>
         )}
@@ -114,7 +114,7 @@ export function RoundSetupView({ game, stats, activePlayers, onStartRound, onUpd
       {/* Player Grid - Split by Type */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Mic Players */}
-        <Card className="bg-white/5 border-white/10">
+        <Card className="bg-[#2a1a3e] border-[3px] border-black">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
               <span>🎤</span> {t('battleRoyale.localMicrophone')} ({stats.activeMicPlayers})
@@ -128,7 +128,7 @@ export function RoundSetupView({ game, stats, activePlayers, onStartRound, onUpd
                   className={`p-3 rounded-xl transition-all ${
                     player.eliminated
                       ? 'grayscale opacity-30 scale-75'
-                      : 'bg-gradient-to-br from-red-500/20 to-pink-500/20'
+                      : 'bg-[#FC6B48]/15 border-[3px] border-[#FC6B48]'
                   }`}
                 >
                   {player.avatar ? (
@@ -143,7 +143,7 @@ export function RoundSetupView({ game, stats, activePlayers, onStartRound, onUpd
                   )}
                   <div className="font-bold text-sm">{player.name}</div>
                   {player.eliminated ? (
-                    <div className="text-xs text-red-400">{t('battleRoyale.eliminatedRound').replace('{n}', String(player.eliminationRound))}</div>
+                    <div className="text-xs text-[#FC6B48]">{t('battleRoyale.eliminatedRound').replace('{n}', String(player.eliminationRound))}</div>
                   ) : (
                     <div className="text-xs text-white/60">{player.score.toLocaleString()} {t('game.pts')}</div>
                   )}
@@ -154,7 +154,7 @@ export function RoundSetupView({ game, stats, activePlayers, onStartRound, onUpd
         </Card>
 
         {/* Companion Players */}
-        <Card className="bg-white/5 border-white/10">
+        <Card className="bg-[#2a1a3e] border-[3px] border-black">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
               <span>📱</span> {t('battleRoyale.companionApp')} ({stats.activeCompanionPlayers})
@@ -169,7 +169,7 @@ export function RoundSetupView({ game, stats, activePlayers, onStartRound, onUpd
                     className={`p-2 rounded-lg transition-all ${
                       player.eliminated
                         ? 'grayscale opacity-30 scale-90'
-                        : 'bg-gradient-to-br from-purple-500/20 to-indigo-500/20'
+                        : 'bg-[#BA279D]/15 border-[3px] border-[#BA279D]'
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -186,7 +186,7 @@ export function RoundSetupView({ game, stats, activePlayers, onStartRound, onUpd
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm truncate">{player.name}</div>
                         {player.eliminated ? (
-                          <div className="text-xs text-red-400">{t('battleRoyale.out')}</div>
+                          <div className="text-xs text-[#FC6B48]">{t('battleRoyale.out')}</div>
                         ) : (
                           <div className="text-xs text-white/40">{player.score.toLocaleString()}</div>
                         )}
@@ -202,7 +202,7 @@ export function RoundSetupView({ game, stats, activePlayers, onStartRound, onUpd
 
       {/* #11 Spectator Prediction Panel */}
       {hasSpectators && (
-        <Card className="bg-white/5 border-white/10 mb-6">
+        <Card className="bg-[#2a1a3e] border-[3px] border-black mb-6">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2 cursor-pointer" onClick={() => setShowSpectatorPanel(!showSpectatorPanel)}>
               <span>👁️</span> {t('battleRoyale.spectatorLounge')} ({spectators.length})
@@ -232,11 +232,12 @@ export function RoundSetupView({ game, stats, activePlayers, onStartRound, onUpd
       {/* Start Button */}
       <Button
         onClick={onStartRound}
-        className={`px-12 py-6 text-xl ${
+        className={`px-12 py-6 text-xl font-bold border-[3px] border-black ${
           isGrandFinale
-            ? 'bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400'
-            : 'bg-gradient-to-r from-red-500 to-pink-500'
+            ? 'bg-[#FDE601] text-black'
+            : 'bg-[#FC6B48] text-white'
         }`}
+        style={{ boxShadow: '4px 4px 0px #000000' }}
       >
         {isGrandFinale
           ? t('battleRoyale.startFinalRound').replace('{n}', String(game.currentRound + 1))
@@ -274,7 +275,7 @@ function SpectatorPredictionCard({
   };
 
   return (
-    <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+    <div className="p-3 rounded-lg bg-[#2a1a3e] border-[2px] border-black">
       <div className="flex items-center gap-2 mb-2">
         {spectator.avatar ? (
           <img src={spectator.avatar} alt={spectator.name} className="w-6 h-6 rounded-full object-cover grayscale" />
@@ -288,7 +289,7 @@ function SpectatorPredictionCard({
         )}
         <span className="text-sm text-white/50">{spectator.name}</span>
         {correctPredictions > 0 && (
-          <Badge className="bg-green-500/20 text-green-400 text-xs ml-auto">{correctPredictions} ✓</Badge>
+          <Badge className="bg-[#00F3B2]/20 text-[#00F3B2] text-xs ml-auto border-[2px] border-black">{correctPredictions} ✓</Badge>
         )}
       </div>
       <div className="flex flex-wrap gap-1">
@@ -298,8 +299,8 @@ function SpectatorPredictionCard({
             onClick={() => handlePredict(p.id)}
             className={`px-2 py-0.5 text-xs rounded transition-all ${
               prediction === p.id
-                ? 'bg-red-500/30 text-red-300 border border-red-500/50'
-                : 'bg-white/5 text-white/40 border border-white/10 hover:bg-white/10'
+                ? 'bg-[#FC6B48]/25 text-[#FC6B48] border-[2px] border-[#FC6B48]'
+                : 'bg-[#2a1a3e] text-[#c0b8d0] border-[2px] border-black hover:bg-[#2a1a3e]/80'
             }`}
           >
             {p.name}
