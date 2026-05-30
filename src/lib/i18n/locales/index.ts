@@ -1,4 +1,4 @@
-// Translation data for Karaoke ZERO
+// Translation data for Karaoke Eleven
 // Each language has its own directory with domain-based sub-files:
 //   locales/en/index.ts   (barrel file — imports and merges sub-files)
 //   locales/en/core.ts    (nav, home, common, queue, jukebox, ...)

@@ -28,7 +28,7 @@ export function AboutTab({
             <div>
               <div className="text-xl font-black">
                 <span className="text-[#ff2d95]">Karaoke</span>{' '}
-                <span className="text-[#00e5ff]">ZERO</span>
+                <span className="text-[#00e5ff]">Eleven</span>
               </div>
               <div className="text-sm text-white/60">{tx('settings.version')} 1.0.0</div>
             </div>
@@ -63,26 +63,26 @@ export function AboutTab({
         </CardContent>
       </Card>
       
-      <Card className="bg-white/5 border-white/10">
+      <Card className="bg-[#0a0014]/60 border-[#bf5af2]/20 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle>{t('settingsAbout.technologyStack')}</CardTitle>
+          <CardTitle className="text-[#00e5ff]">{t('settingsAbout.technologyStack')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white/5 rounded-lg p-3 text-center">
-              <div className="text-cyan-400 font-medium">Next.js 15</div>
+            <div className="bg-[#0a0014]/80 rounded-lg p-3 text-center border border-white/5">
+              <div className="text-[#00e5ff] font-medium">Next.js 15</div>
               <div className="text-xs text-white/40">{tx('settings.framework')}</div>
             </div>
-            <div className="bg-white/5 rounded-lg p-3 text-center">
-              <div className="text-purple-400 font-medium">React</div>
+            <div className="bg-[#0a0014]/80 rounded-lg p-3 text-center border border-white/5">
+              <div className="text-[#bf5af2] font-medium">React</div>
               <div className="text-xs text-white/40">{tx('settings.uiLibrary')}</div>
             </div>
-            <div className="bg-white/5 rounded-lg p-3 text-center">
-              <div className="text-pink-400 font-medium">Zustand</div>
+            <div className="bg-[#0a0014]/80 rounded-lg p-3 text-center border border-white/5">
+              <div className="text-[#ff2d95] font-medium">Zustand</div>
               <div className="text-xs text-white/40">{tx('settings.stateManagement')}</div>
             </div>
-            <div className="bg-white/5 rounded-lg p-3 text-center">
-              <div className="text-yellow-400 font-medium">Tailwind CSS</div>
+            <div className="bg-[#0a0014]/80 rounded-lg p-3 text-center border border-white/5">
+              <div className="text-[#ffd60a] font-medium">Tailwind CSS</div>
               <div className="text-xs text-white/40">{tx('settings.styling')}</div>
             </div>
           </div>
@@ -90,11 +90,11 @@ export function AboutTab({
       </Card>
 
       {/* Leaderboard Status */}
-      <Card className="bg-white/5 border-white/10">
+      <Card className="bg-[#0a0014]/60 border-[#bf5af2]/20 backdrop-blur-sm">
         <CardContent className="py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="font-medium">{t('settingsAbout.onlineLeaderboard')}</h4>
+              <h4 className="font-medium text-[#00e5ff]">{t('settingsAbout.onlineLeaderboard')}</h4>
               <p className="text-sm text-white/60">{t('settingsAbout.onlineLeaderboardDesc')}</p>
             </div>
             <Button
@@ -103,7 +103,7 @@ export function AboutTab({
                 const connected = await leaderboardService.testConnection();
                 safeAlert(connected ? t('settingsAbout.connected') : t('settingsAbout.notConnected'));
               }}
-              className="border-cyan-500/50 text-cyan-400"
+              className="border-[#00e5ff]/50 text-[#00e5ff] hover:bg-[#00e5ff]/10 hover:shadow-[0_0_12px_rgba(0,229,255,0.2)] transition-shadow"
             >
               {t('settingsAbout.testConnection')}
             </Button>

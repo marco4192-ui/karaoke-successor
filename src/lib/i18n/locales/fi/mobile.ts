@@ -151,7 +151,7 @@ export const mobileTranslations = {
     accuracy: 'Tarkkuus',
     saveScoreCardSoon: 'Tuloskortti tallennettu kuvagalleriaasi! (Ominaisuus tulossa pian)',
     addSongsToWishlistBtn: '+ Lisää kappaleita toivelistalle',
-    shareHashtag: '#KaraokeZERO',
+    shareHashtag: '#KaraokeEleven',
     copyFailed: 'Kopiointi leikepöydälle epäonnistui.',
     playAgain: 'Soita uudelleen',
     playAgainSuccess: 'Kappale lisätty jonoon!',
@@ -384,7 +384,7 @@ export const mobileTranslations = {
     cameraPositionNone: 'Ei kameraa',
     cameraConnectFailed: 'Yhdistäminen mobiilikameraan epäonnistui',
     cameraAccessDenied: 'Kameran käyttöoikeus evätty',
-    branding: 'Karaoke ZERO',
+    branding: 'Karaoke Eleven',
     camera: '📹 Kamera',
     active: 'Aktiivinen',
     mobileConnected: 'Mobiili yhdistetty',
@@ -452,7 +452,7 @@ export const mobileTranslations = {
   },
 
   mobileOnboarding: {
-    welcome: 'Tervetuloa Karaoke ZERO -sovellukseen',
+    welcome: 'Tervetuloa Karaoke Eleven -sovellukseen',
     subtitle: 'Mobiili karaoke-seurasovelluksesi',
     next: 'Seuraava',
     back: 'Takaisin',

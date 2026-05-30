@@ -155,7 +155,7 @@ export function GameBackground({
         }}
       >
         {/* Dark overlay for better note visibility */}
-        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute inset-0" style={{ backgroundColor: 'rgba(10, 0, 20, 0.4)' }} />
       </div>
     );
   }

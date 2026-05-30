@@ -49,86 +49,168 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
   
   return (
     <div className="w-full max-w-[1600px] mx-auto px-4 md:px-6 lg:px-8">
-      {/* ═══ HERO SECTION — Retro Karaoke Vibe ═══ */}
-      <div className="relative text-center py-16 retro-scanlines">
-        {/* Animated rainbow bar behind title */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-1 retro-gradient-rainbow rounded-full" />
-        
-        {/* Logo icon — neon pink glow ring */}
-        <div className="inline-flex items-center justify-center w-28 h-28 rounded-2xl bg-gradient-to-br from-[#ff2d95] via-[#bf5af2] to-[#00e5ff] mb-6 retro-box-glow-pink relative">
-          <MusicIcon className="w-16 h-16 text-white drop-shadow-lg" />
-          {/* Corner sparkles */}
-          <span className="absolute -top-2 -right-2 text-[#ffd60a] text-xs animate-pulse">&#10022;</span>
-          <span className="absolute -bottom-2 -left-2 text-[#00e5ff] text-xs animate-pulse" style={{ animationDelay: '0.5s' }}>&#10022;</span>
+      {/* ═══ HERO SECTION — Karaoke Eleven Brand ═══ */}
+      <div
+        className="relative text-center py-16 rounded-2xl mb-10 overflow-hidden eleven-stars"
+        style={{
+          background: 'linear-gradient(180deg, #0a0014 0%, #140028 40%, #1a0033 70%, #0a0014 100%)',
+          border: '1px solid rgba(191, 90, 242, 0.15)',
+        }}
+      >
+        {/* Animated gradient bar at top */}
+        <div
+          className="absolute top-0 left-0 right-0 h-[2px]"
+          style={{
+            background: 'linear-gradient(90deg, #00e5ff, #bf5af2, #ff2d95, #00e5ff)',
+            backgroundSize: '300% 100%',
+            animation: 'eleven-gradient-border 4s ease-in-out infinite',
+          }}
+        />
+
+        {/* Logo — large, with pulsing glow */}
+        <div
+          className="mb-6 inline-block"
+          style={{
+            animation: 'eleven-logo-pulse 3s ease-in-out infinite',
+          }}
+        >
+          <img
+            src="/logo-retro.png"
+            alt="Karaoke Eleven"
+            className="h-[200px] w-auto"
+          />
         </div>
 
-        {/* Title — retro neon glow */}
-        <h1 className="text-6xl font-black mb-3 tracking-tight">
-          <span className="bg-gradient-to-r from-[#ff2d95] via-[#ff00ff] to-[#bf5af2] bg-clip-text text-transparent">
-            Karaoke
-          </span>{' '}
-          <span className="bg-gradient-to-r from-[#00e5ff] via-[#00ffff] to-[#00ff88] bg-clip-text text-transparent">
-            ZERO
-          </span>
+        {/* Title — neon cyan glow */}
+        <h1
+          className="text-5xl md:text-6xl font-black tracking-tight mb-3"
+          style={{
+            color: '#00e5ff',
+            textShadow: '0 0 7px #00e5ff, 0 0 20px #00e5ff, 0 0 42px rgba(0,229,255,0.6)',
+          }}
+        >
+          Karaoke Eleven
         </h1>
 
-        {/* Rainbow divider line */}
-        <div className="mx-auto w-48 h-0.5 retro-gradient-rainbow rounded-full mb-4" />
-
-        <p className="text-lg text-[#b8b8d0] mb-10 max-w-2xl mx-auto leading-relaxed">
-          {t('home.subtitle')}
+        {/* Subtitle — pink with subtle glow */}
+        <p
+          className="text-xl md:text-2xl font-bold mb-10 tracking-wide"
+          style={{
+            color: '#ff2d95',
+            textShadow: '0 0 10px rgba(255,45,149,0.4), 0 0 20px rgba(255,45,149,0.2)',
+          }}
+        >
+          Sing. Compete. Shine.
         </p>
 
-        <div className="flex items-center justify-center gap-4">
+        {/* Quick-start buttons — glass-morphism with gradient border */}
+        <div className="flex flex-wrap items-center justify-center gap-4">
           <Button
             size="lg"
-            className="retro-btn retro-btn-cyan px-10 py-6 text-lg rounded-lg"
+            className="group relative px-10 py-6 text-lg font-bold rounded-xl transition-all duration-300 hover:scale-[1.03]"
             onClick={() => onNavigate('library')}
             data-testid="home-nav-library"
+            style={{
+              background: 'rgba(10, 0, 20, 0.6)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              border: '2px solid transparent',
+              borderImage: 'linear-gradient(135deg, #00e5ff, #bf5af2) 1',
+              color: '#00e5ff',
+              boxShadow: '0 0 12px rgba(0,229,255,0.3), inset 0 0 12px rgba(0,229,255,0.05)',
+            }}
           >
-            <PlayIcon className="w-5 h-5 mr-2" /> {t('home.startSinging')}
+            <PlayIcon className="w-5 h-5 mr-2" />
+            <span>{t('home.startSinging')}</span>
           </Button>
           <Button
             size="lg"
-            className="retro-btn retro-btn-pink px-10 py-6 text-lg rounded-lg"
+            className="group relative px-10 py-6 text-lg font-bold rounded-xl transition-all duration-300 hover:scale-[1.03]"
             onClick={() => onNavigate('party')}
             data-testid="home-nav-party"
+            style={{
+              background: 'rgba(10, 0, 20, 0.6)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              border: '2px solid transparent',
+              borderImage: 'linear-gradient(135deg, #ff2d95, #bf5af2) 1',
+              color: '#ff2d95',
+              boxShadow: '0 0 12px rgba(255,45,149,0.3), inset 0 0 12px rgba(255,45,149,0.05)',
+            }}
           >
-            <PartyIcon className="w-5 h-5 mr-2" /> {t('home.partyMode')}
+            <PartyIcon className="w-5 h-5 mr-2" />
+            <span>{t('home.partyMode')}</span>
           </Button>
         </div>
+
+        {/* Animated gradient bar at bottom */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-[2px]"
+          style={{
+            background: 'linear-gradient(90deg, #ff2d95, #bf5af2, #00e5ff, #ff2d95)',
+            backgroundSize: '300% 100%',
+            animation: 'eleven-gradient-border 4s ease-in-out infinite',
+            animationDelay: '-2s',
+          }}
+        />
       </div>
 
-      {/* ═══ QUICK STATS — Neon Card Style ═══ */}
+      {/* ═══ QUICK STATS — Eleven Glass Cards ═══ */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-12">
-        <Card className="retro-gradient-card retro-border-cyan backdrop-blur-sm rounded-xl">
+        <Card
+          className="eleven-glass rounded-xl transition-all duration-300 hover:scale-[1.02] eleven-box-glow"
+        >
           <CardContent className="pt-6">
-            <div className="text-3xl font-black text-[#00e5ff] retro-glow-cyan">{isMounted ? songCount : 0}</div>
-            <div className="text-[#b8b8d0] text-sm mt-1">{t('home.songsAvailable')}</div>
+            <div className="text-3xl font-black retro-glow-cyan">{isMounted ? songCount : 0}</div>
+            <div className="text-white/60 text-sm mt-1">{t('home.songsAvailable')}</div>
           </CardContent>
         </Card>
-        <Card className="retro-gradient-card retro-border-pink backdrop-blur-sm rounded-xl">
+        <Card
+          className="rounded-xl transition-all duration-300 hover:scale-[1.02]"
+          style={{
+            background: 'rgba(10, 0, 20, 0.6)',
+            backdropFilter: 'blur(16px)',
+            border: '2px solid rgba(255, 45, 149, 0.4)',
+            boxShadow: '0 0 8px rgba(255,45,149,0.3), 0 0 24px rgba(255,45,149,0.15)',
+          }}
+        >
           <CardContent className="pt-6">
-            <div className="text-3xl font-black text-[#ff2d95] retro-glow-pink">{isMounted ? profiles.length : 0}</div>
-            <div className="text-[#b8b8d0] text-sm mt-1">{t('home.profilesCreated')}</div>
+            <div className="text-3xl font-black retro-glow-pink">{isMounted ? profiles.length : 0}</div>
+            <div className="text-white/60 text-sm mt-1">{t('home.profilesCreated')}</div>
           </CardContent>
         </Card>
-        <Card className="retro-gradient-card backdrop-blur-sm rounded-xl" style={{ border: '2px solid rgba(191,90,242,0.4)' }}>
+        <Card
+          className="rounded-xl transition-all duration-300 hover:scale-[1.02]"
+          style={{
+            background: 'rgba(10, 0, 20, 0.6)',
+            backdropFilter: 'blur(16px)',
+            border: '2px solid rgba(191, 90, 242, 0.4)',
+            boxShadow: '0 0 8px rgba(191,90,242,0.3), 0 0 24px rgba(191,90,242,0.15)',
+          }}
+        >
           <CardContent className="pt-6">
-            <div className="text-3xl font-black text-[#bf5af2] retro-glow-purple">{PARTY_GAME_COUNT}</div>
-            <div className="text-[#b8b8d0] text-sm mt-1">{t('home.partyGames')}</div>
+            <div className="text-3xl font-black retro-glow-purple">{PARTY_GAME_COUNT}</div>
+            <div className="text-white/60 text-sm mt-1">{t('home.partyGames')}</div>
           </CardContent>
         </Card>
-        <Card className="retro-gradient-card retro-border-gold backdrop-blur-sm rounded-xl">
+        <Card
+          className="rounded-xl transition-all duration-300 hover:scale-[1.02]"
+          style={{
+            background: 'rgba(10, 0, 20, 0.6)',
+            backdropFilter: 'blur(16px)',
+            border: '2px solid rgba(255, 214, 10, 0.4)',
+            boxShadow: '0 0 8px rgba(255,214,10,0.3), 0 0 24px rgba(255,214,10,0.15)',
+          }}
+        >
           <CardContent className="pt-6">
-            <div className="text-3xl font-black text-[#ffd60a] retro-glow-gold">{DIFFICULTY_LEVELS}</div>
-            <div className="text-[#b8b8d0] text-sm mt-1">{t('home.difficultyLevels')}</div>
+            <div className="text-3xl font-black retro-glow-gold">{DIFFICULTY_LEVELS}</div>
+            <div className="text-white/60 text-sm mt-1">{t('home.difficultyLevels')}</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Performance Stats */}
-      <Card className="retro-gradient-card retro-border-cyan mb-8 rounded-xl">
+      <Card className="eleven-glass rounded-xl mb-8">
         <CardContent className="pt-6">
           {isMounted ? (
             <PerformanceDisplay />
@@ -138,42 +220,65 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
         </CardContent>
       </Card>
 
-      {/* ═══ FEATURES — Retro Neon Cards ═══ */}
+      {/* ═══ FEATURES — Eleven Glass Cards ═══ */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-12">
-        <Card className="bg-gradient-to-br from-[#00e5ff]/10 to-[#00ffff]/5 retro-border-cyan rounded-xl retro-box-glow-cyan">
+        <Card
+          className="rounded-xl transition-all duration-300 hover:scale-[1.02] eleven-box-glow"
+          style={{
+            background: 'rgba(10, 0, 20, 0.6)',
+            backdropFilter: 'blur(16px)',
+            border: '2px solid rgba(0, 229, 255, 0.35)',
+          }}
+        >
           <CardHeader>
-            <CardTitle className="text-[#00e5ff] flex items-center gap-2 font-bold">
+            <CardTitle className="flex items-center gap-2 font-bold" style={{ color: '#00e5ff' }}>
               <MicIcon className="w-6 h-6" /> {t('homeScreen.realTimePitch')}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-[#b8b8d0]/80">
+            <p className="text-white/60">
               {t('homeScreen.realTimePitchDesc')}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-[#bf5af2]/10 to-[#ff00ff]/5 rounded-xl retro-box-glow-purple" style={{ border: '2px solid rgba(191,90,242,0.4)' }}>
+        <Card
+          className="rounded-xl transition-all duration-300 hover:scale-[1.02]"
+          style={{
+            background: 'rgba(10, 0, 20, 0.6)',
+            backdropFilter: 'blur(16px)',
+            border: '2px solid rgba(191, 90, 242, 0.35)',
+            boxShadow: '0 0 8px rgba(191,90,242,0.3), 0 0 24px rgba(191,90,242,0.15)',
+          }}
+        >
           <CardHeader>
-            <CardTitle className="text-[#bf5af2] flex items-center gap-2 font-bold">
+            <CardTitle className="flex items-center gap-2 font-bold" style={{ color: '#bf5af2' }}>
               <PartyIcon className="w-6 h-6" /> {t('homeScreen.partyGamesFeature')}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-[#b8b8d0]/80">
+            <p className="text-white/60">
               {t('homeScreen.partyGamesFeatureDesc')}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-[#ffd60a]/10 to-[#ffaa00]/5 retro-border-gold rounded-xl retro-box-glow-gold">
+        <Card
+          className="rounded-xl transition-all duration-300 hover:scale-[1.02]"
+          style={{
+            background: 'rgba(10, 0, 20, 0.6)',
+            backdropFilter: 'blur(16px)',
+            border: '2px solid rgba(255, 214, 10, 0.35)',
+            boxShadow: '0 0 8px rgba(255,214,10,0.3), 0 0 24px rgba(255,214,10,0.15)',
+          }}
+        >
           <CardHeader>
-            <CardTitle className="text-[#ffd60a] flex items-center gap-2 font-bold">
+            <CardTitle className="flex items-center gap-2 font-bold" style={{ color: '#ffd60a' }}>
               <PhoneIcon className="w-6 h-6" /> {t('homeScreen.mobileCompanion')}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-white/70 mb-4">
+            <p className="text-white/60 mb-4">
               {t('homeScreen.mobileCompanionDesc')}
             </p>
             {localIP ? (
@@ -185,7 +290,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                   <p>{t('homeScreen.wifiStep1')}</p>
                   <p>{t('homeScreen.wifiStep2')}</p>
                   <p>{t('homeScreen.wifiStep3')}</p>
-                  <p className="font-mono mt-2 break-all text-orange-400/70">{buildCompanionUrl(localIP)}</p>
+                  <p className="font-mono mt-2 break-all" style={{ color: 'rgba(255,214,10,0.7)' }}>{buildCompanionUrl(localIP)}</p>
                 </div>
               </div>
             ) : (
@@ -197,9 +302,11 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
 
       {/* Select Profile */}
       {isMounted && profiles.length > 0 && (
-        <Card className="retro-gradient-card retro-border-pink backdrop-blur-sm rounded-xl">
+        <Card
+          className="eleven-glass rounded-xl"
+        >
           <CardHeader>
-            <CardTitle>{t('homeScreen.selectCharacter')}</CardTitle>
+            <CardTitle className="text-white">{t('homeScreen.selectCharacter')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-3">
@@ -208,11 +315,19 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                   key={profile.id}
                   onClick={() => setActiveProfile(profile.id)}
                   data-testid={`home-profile-${profile.id}`}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
                     activeProfileId === profile.id
-                      ? 'bg-gradient-to-r from-[#ff2d95] to-[#bf5af2] text-white retro-box-glow-pink'
-                      : 'bg-white/10 hover:bg-white/20'
+                      ? 'retro-box-glow-pink'
+                      : 'hover:bg-white/10'
                   }`}
+                  style={{
+                    background: activeProfileId === profile.id
+                      ? 'linear-gradient(135deg, rgba(255,45,149,0.3), rgba(191,90,242,0.3))'
+                      : 'rgba(255,255,255,0.05)',
+                    border: activeProfileId === profile.id
+                      ? '2px solid rgba(255,45,149,0.5)'
+                      : '2px solid rgba(255,255,255,0.1)',
+                  }}
                 >
                   <div 
                     className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
@@ -224,13 +339,17 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
                       (profile.name?.[0] || '?').toUpperCase()
                     )}
                   </div>
-                  <span className="font-medium">{profile.name}</span>
+                  <span className="font-medium text-white">{profile.name}</span>
                 </button>
               ))}
               <button
                 onClick={() => onNavigate('profile')}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-dashed border-white/20 hover:bg-white/10 transition-all"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 hover:bg-white/10"
                 data-testid="home-create-profile"
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '2px dashed rgba(255,255,255,0.2)',
+                }}
               >
                 <div className="w-10 h-10 rounded-full flex items-center justify-center text-white/60">
                   +

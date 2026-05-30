@@ -35,7 +35,7 @@ export function ResultsActions({
       <Button
         variant="outline"
         onClick={onShowHighscores}
-        className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 px-4"
+        className="border-[#ffd60a]/50 text-[#ffd60a] hover:bg-[#ffd60a]/10 hover:shadow-[0_0_12px_rgba(255,214,10,0.2)] px-4 transition-shadow"
       >
         <TrophyIcon className="w-4 h-4 mr-2" /> {scoresLabel}
       </Button>
@@ -43,7 +43,7 @@ export function ResultsActions({
         <Button
           variant="outline"
           onClick={onShowReplay}
-          className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 px-4"
+          className="border-[#00e5ff]/50 text-[#00e5ff] hover:bg-[#00e5ff]/10 hover:shadow-[0_0_12px_rgba(0,229,255,0.2)] px-4 transition-shadow"
         >
           <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
             <path d="M8 5v14l11-7z" />
@@ -51,10 +51,10 @@ export function ResultsActions({
           {replayLabel}
         </Button>
       )}
-      <Button onClick={onPlayAgain} className="bg-gradient-to-r from-cyan-500 to-purple-500 px-8">
+      <Button onClick={onPlayAgain} className="bg-gradient-to-r from-[#00e5ff] to-[#bf5af2] px-8 shadow-[0_0_20px_rgba(0,229,255,0.3)] hover:shadow-[0_0_30px_rgba(0,229,255,0.5)] transition-shadow text-white font-bold">
         {playAgainLabel}
       </Button>
-      <Button variant="outline" onClick={onHome} className="border-white/20 text-white px-8">
+      <Button variant="outline" onClick={onHome} className="border-[#00e5ff]/30 text-[#00e5ff] px-8 hover:bg-[#00e5ff]/10 hover:shadow-[0_0_15px_rgba(0,229,255,0.2)] transition-shadow">
         {backToHomeLabel}
       </Button>
     </div>

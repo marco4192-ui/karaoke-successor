@@ -1,6 +1,6 @@
 # Karaoke Leaderboard API
 
-A simple PHP/MySQL API for the Karaoke Successor leaderboard system.
+A simple PHP/MySQL API for the Karaoke Eleven leaderboard system.
 
 ## Installation on Shared Hosting (netcup)
 

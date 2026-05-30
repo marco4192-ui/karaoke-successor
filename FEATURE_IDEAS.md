@@ -1,4 +1,4 @@
-# Karaoke Successor - Feature Ideas
+# Karaoke Eleven - Feature Ideas
 
 ## ✅ COMPLETED Features
 

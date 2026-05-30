@@ -49,7 +49,7 @@ function SettingsScreen() {
   const [micSensitivity, setMicSensitivity] = useState(50);
   const [defaultDifficulty, setDefaultDifficulty] = useState<Difficulty>('medium');
   const [showPitchGuide, setShowPitchGuide] = useState(true);
-  const [currentThemeId, setCurrentThemeId] = useState<string>('neon-nights');
+  const [currentThemeId, setCurrentThemeId] = useState<string>('karaoke-eleven');
   const [lyricsStyle, setLyricsStyle] = useState<string>('classic');
   const [lyricsSize, setLyricsSize] = useState<string>('medium');
   const [noteDisplayStyle, setNoteDisplayStyle] = useState<string>('classic');

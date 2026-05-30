@@ -453,7 +453,7 @@ export function getNoteBackgroundClasses(isGolden: boolean, isBonus: boolean): s
   if (isBonus) {
     return 'bg-gradient-to-r from-pink-500 to-purple-500';
   }
-  return 'bg-gradient-to-r from-cyan-500 to-blue-500';
+  return 'bg-gradient-to-r from-cyan-400 to-pink-500';
 }
 
 /**
@@ -464,7 +464,7 @@ export function getNoteBoxShadow(isActive: boolean, isGolden: boolean): string {
   if (isGolden) {
     return '0 0 30px rgba(251, 191, 36, 0.7)';
   }
-  return '0 0 25px rgba(34, 211, 238, 0.7)';
+  return '0 0 25px rgba(0, 229, 255, 0.7)';
 }
 
 /**

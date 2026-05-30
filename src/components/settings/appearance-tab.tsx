@@ -180,13 +180,18 @@ export function AppearanceTab({
                   key={theme.id}
                   type="button"
                   onClick={() => handleThemeChange(theme)}
-                  className={`p-3 rounded-xl border-2 transition-all hover:scale-105 cursor-pointer ${
+                  className={`relative p-3 rounded-xl border-2 transition-all hover:scale-105 cursor-pointer ${
                     currentThemeId === theme.id
-                      ? 'border-cyan-500 bg-cyan-500/10 ring-2 ring-cyan-500/50'
+                      ? 'border-[#00e5ff] bg-[#00e5ff]/10 ring-2 ring-[#00e5ff]/50 shadow-[0_0_15px_rgba(0,229,255,0.15)]'
                       : 'border-white/10 bg-white/5 hover:border-white/30'
                   }`}
                 >
-                  <div className="w-full h-8 rounded-lg mb-2" style={{ background: `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.secondary})` }} />
+                  {theme.id === 'karaoke-eleven' && (
+                    <span className="absolute -top-2 -right-2 bg-gradient-to-r from-[#ff2d95] to-[#bf5af2] text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-[0_0_8px_rgba(255,45,149,0.3)]">
+                      Default
+                    </span>
+                  )}
+                  <div className="w-full h-8 rounded-lg mb-2" style={{ background: `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.accent}, ${theme.colors.secondary})` }} />
                   <span className="text-sm font-medium theme-adaptive-text">{theme.name}</span>
                   <p className="text-xs theme-adaptive-text-secondary truncate">{theme.description}</p>
                 </button>

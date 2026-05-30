@@ -73,7 +73,7 @@ export const settingsTranslations = {
     installAppDesc: 'Installér til offline brug',
     appInstalled: 'App er installeret',
     version: 'Version',
-    aboutDesc: 'Karaoke ZERO er en moderne karaokeapplikation med realtids-tonegenkendelse, festtilstande og meget mere.',
+    aboutDesc: 'Karaoke Eleven er en moderne karaokeapplikation med realtids-tonegenkendelse, festtilstande og meget mere.',
     feature1: 'Realtids-tonegenkendelse med YIN-algoritme',
     feature2: 'Flere selskabsspiltilstande',
     feature3: 'Mobilapp-integration til fjernbetjening',
@@ -370,7 +370,7 @@ export const settingsTranslations = {
   settingsLibrary: {
     title: 'Sangens basismappe',
     desc: 'Alle sange importeres fra denne mappe. Hver undermappe indeholder én sang.',
-    placeholder: 'C:/Karaoke ZERO/Sange',
+    placeholder: 'C:/Karaoke Eleven/Sange',
     scan: 'Scan',
     browse: 'Gennemse',
     help: 'Indtast stien til din sangmappe og klik på "Scan" for at importere, eller brug "Gennemse" for at vælge en mappe.',

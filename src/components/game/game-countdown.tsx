@@ -13,11 +13,12 @@ export function GameCountdown({ countdown }: GameCountdownProps) {
   if (countdown <= 0) return null;
 
   return (
-    <div key={countdown} className="absolute inset-0 flex items-center justify-center bg-black/60 z-30">
+    <div key={countdown} className="absolute inset-0 flex items-center justify-center z-30" style={{ backgroundColor: 'rgba(10, 0, 20, 0.7)' }}>
       <div
-        className="text-9xl font-black text-white drop-shadow-2xl"
+        className="text-9xl font-black animate-pulse"
         style={{
-          // Note: "countdownPop" animation is defined in the global CSS (index.css / globals.css)
+          color: '#00e5ff',
+          textShadow: '0 0 20px rgba(0, 229, 255, 0.8), 0 0 40px rgba(0, 229, 255, 0.6), 0 0 80px rgba(0, 229, 255, 0.4), 0 0 120px rgba(0, 229, 255, 0.2)',
           animation: 'countdownPop 0.3s ease-out'
         }}
       >

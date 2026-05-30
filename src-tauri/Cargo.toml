@@ -1,8 +1,8 @@
 [package]
 name = "karaoke-successor"
 version = "1.0.0"
-description = "Karaoke Successor - The ultimate karaoke experience"
-authors = ["Karaoke Successor Team"]
+description = "Karaoke Eleven - The ultimate karaoke experience"
+authors = ["Karaoke Eleven Team"]
 edition = "2021"
 
 [lib]

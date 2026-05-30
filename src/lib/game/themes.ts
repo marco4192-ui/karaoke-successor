@@ -36,6 +36,34 @@ export interface Theme {
 
 export const THEMES: Theme[] = [
   {
+    id: 'karaoke-eleven',
+    name: 'Karaoke Eleven',
+    description: 'The default Karaoke Eleven experience with retro synthwave neon aesthetics',
+    colors: {
+      primary: '#00e5ff',
+      secondary: '#ff2d95',
+      accent: '#bf5af2',
+      background: '#0a0014',
+      backgroundSecondary: '#140028',
+      text: '#ffffff',
+      textSecondary: 'rgba(255,255,255,0.6)',
+      success: '#39ff14',
+      warning: '#ffd60a',
+      error: '#ff453a',
+      noteDefault: '#00e5ff',
+      noteGolden: '#ffd60a',
+      noteBonus: '#ff2d95',
+      pitchIndicator: '#00e5ff',
+      combo: '#bf5af2',
+    },
+    noteStyle: 'rounded',
+    fontFamily: "'Inter', sans-serif",
+    borderRadius: 8,
+    mood: 'energetic',
+    particleEffect: 'sparkle',
+    backgroundAnimation: 'stars',
+  },
+  {
     id: 'neon-nights',
     name: 'Neon Nights',
     description: 'Vibrant neon colors on dark background',
@@ -439,7 +467,7 @@ export function applyTheme(theme: Theme): void {
   }
 }
 
-export function getStoredTheme(): Theme | null {
+export function getStoredTheme(): Theme {
   const storedId = getItem(StorageKeys.THEME);
-  return THEMES.find(t => t.id === storedId) || null;
+  return THEMES.find(t => t.id === storedId) || THEMES[0];
 }

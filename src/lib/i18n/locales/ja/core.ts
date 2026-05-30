@@ -17,7 +17,7 @@ export const coreTranslations = {
   },
 
   home: {
-    title: 'Karaoke ZERO',
+    title: 'Karaoke Eleven',
     subtitle: '究極のカラオケ体験。リアルタイム音程検出で歌い、友人と競い、パーティーゲームを楽しもう！',
     startSinging: '歌い始める',
     partyMode: 'パーティーモード',
@@ -140,12 +140,12 @@ export const coreTranslations = {
   },
 
   scoreCardSocial: {
-    branding: 'Karaoke ZERO',
+    branding: 'Karaoke Eleven',
     accuracyLabel: '正確さ:',
     maxComboLabel: '最大コンボ:',
     difficultyLabel: '難易度:',
     playerLabel: '🎤 {name}',
-    hashtags: '#KaraokeZERO #Karaoke #Singing',
+    hashtags: '#KaraokeEleven #Karaoke #Singing',
     shareTitle: '私のカラオケスコア！',
     shareText: '私は{artist}の"{title}"で{n}ポイントを獲得しました！',
     points: 'ポイント',

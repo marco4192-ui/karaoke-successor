@@ -28,11 +28,13 @@ export const RATING_HEX_COLORS: Record<string, string> = {
   poor: '#ff4444',
 };
 
-/** Tailwind gradient class per rating level — consumed by HTML/Tailwind components. */
+/** Tailwind gradient class per rating level — consumed by HTML/Tailwind components.
+ *  Uses Karaoke Eleven synthwave neon palette:
+ *  Gold #ffd60a, Cyan #00e5ff, Purple #bf5af2, Pink #ff2d95 */
 export const RATING_TAILWIND_CLASSES: Record<string, string> = {
-  perfect: 'from-yellow-400 to-orange-500',
-  excellent: 'from-green-400 to-cyan-500',
-  good: 'from-blue-400 to-purple-500',
-  okay: 'from-gray-400 to-gray-500',
-  poor: 'from-red-400 to-red-600',
+  perfect: 'from-[#ffd60a] to-[#ff9500]',
+  excellent: 'from-[#00e5ff] to-[#39ff14]',
+  good: 'from-[#bf5af2] to-[#00e5ff]',
+  okay: 'from-[#8e8e93] to-[#636366]',
+  poor: 'from-[#ff2d95] to-[#ff453a]',
 };

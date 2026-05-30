@@ -26,10 +26,10 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Karaoke ZERO - The Ultimate Karaoke Experience",
+  title: "Karaoke Eleven - The Ultimate Karaoke Experience",
   description: "Sing your heart out with real-time pitch detection, compete with friends, and enjoy party games! The ultimate karaoke experience.",
   keywords: ["karaoke", "singing", "pitch detection", "party games", "music", "microphone", "karaoke game"],
-  authors: [{ name: "Karaoke ZERO Team" }],
+  authors: [{ name: "Karaoke Eleven Team" }],
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     telephone: false,
   },
   openGraph: {
-    title: "Karaoke ZERO",
+    title: "Karaoke Eleven",
     description: "The ultimate karaoke experience with real-time pitch detection",
     type: "website",
     images: [
@@ -55,13 +55,13 @@ export const metadata: Metadata = {
         url: "/screenshots/gameplay.png",
         width: 1280,
         height: 720,
-        alt: "Karaoke ZERO Gameplay",
+        alt: "Karaoke Eleven Gameplay",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Karaoke ZERO",
+    title: "Karaoke Eleven",
     description: "The ultimate karaoke experience with real-time pitch detection",
     images: ["/screenshots/gameplay.png"],
   },

@@ -18,14 +18,44 @@ import { useState, useEffect, Suspense } from 'react';
 function LoadingScreen() {
   return (
     <div
-      className="h-screen w-full flex items-center justify-center"
+      className="h-screen w-full flex flex-col items-center justify-center relative overflow-hidden"
       style={{
-        background: 'linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 40%, #0d0d2b 100%)',
+        background: 'linear-gradient(135deg, #0a0014 0%, #140028 50%, #0a0014 100%)',
       }}
     >
+      {/* Animated gradient border at bottom */}
+      <div className="eleven-animated-border-bottom" />
+
       <div className="text-center">
-        <div className="text-5xl mb-4 animate-pulse">&#127925;</div>
-        <p className="text-[#ff2d95] text-sm font-bold tracking-widest uppercase">Loading Karaoke ZERO...</p>
+        {/* Logo with pulsing glow */}
+        <div
+          className="mb-8"
+          style={{
+            animation: 'eleven-logo-pulse 2.5s ease-in-out infinite',
+          }}
+        >
+          <img
+            src="/logo-retro.png"
+            alt="Karaoke Eleven"
+            className="h-[120px] w-auto"
+          />
+        </div>
+
+        {/* Title — neon cyan glow */}
+        <h1
+          className="text-4xl md:text-5xl font-black tracking-tight mb-3"
+          style={{
+            color: '#00e5ff',
+            textShadow: '0 0 7px #00e5ff, 0 0 20px #00e5ff, 0 0 42px rgba(0,229,255,0.6)',
+          }}
+        >
+          Karaoke Eleven
+        </h1>
+
+        {/* Subtitle */}
+        <p className="text-white/60 text-sm font-medium tracking-widest uppercase">
+          Loading...
+        </p>
       </div>
     </div>
   );
@@ -68,7 +98,7 @@ export default function Page() {
       <div
         className="h-screen w-full flex items-center justify-center"
         style={{
-          background: 'linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 40%, #0d0d2b 100%)',
+          background: 'linear-gradient(135deg, #0a0014 0%, #140028 50%, #0a0014 100%)',
         }}
       >
         <div className="text-center max-w-md p-6">

@@ -1,4 +1,4 @@
-// Core game types for Karaoke ZERO
+// Core game types for Karaoke Eleven
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 

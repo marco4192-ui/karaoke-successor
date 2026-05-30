@@ -17,7 +17,7 @@ export const coreTranslations = {
   },
 
   home: {
-    title: 'Karaoke ZERO',
+    title: 'Karaoke Eleven',
     subtitle: '终极卡拉OK体验。实时音高检测，与朋友竞技，享受派对游戏！',
     startSinging: '开始唱歌',
     partyMode: '派对模式',
@@ -140,12 +140,12 @@ export const coreTranslations = {
   },
 
   scoreCardSocial: {
-    branding: 'Karaoke ZERO',
+    branding: 'Karaoke Eleven',
     accuracyLabel: '准确率：',
     maxComboLabel: '最大连击：',
     difficultyLabel: '难度：',
     playerLabel: '🎤 {name}',
-    hashtags: '#KaraokeZERO #Karaoke #Singing',
+    hashtags: '#KaraokeEleven #Karaoke #Singing',
     shareTitle: '我的卡拉OK分数！',
     shareText: '我在 {artist} 的《{title}》中获得了 {n} 分！',
     points: '分',

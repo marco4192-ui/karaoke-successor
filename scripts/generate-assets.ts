@@ -63,7 +63,7 @@ async function generateAudio(zai: any, text: string, filename: string, voice: st
 }
 
 async function main() {
-  console.log('🚀 Starting asset generation for Karaoke Successor...\n');
+  console.log('🚀 Starting asset generation for Karaoke Eleven...\n');
   
   const zai = await ZAI.create();
   
@@ -165,7 +165,7 @@ async function main() {
     { text: 'Perfect Score!', file: 'perfect-score.wav' },
     { text: 'Achievement Unlocked!', file: 'achievement.wav' },
     { text: 'Game Over', file: 'game-over.wav' },
-    { text: 'Welcome to Karaoke Successor!', file: 'welcome.wav' },
+    { text: 'Welcome to Karaoke Eleven!', file: 'welcome.wav' },
     { text: 'Get ready to sing!', file: 'get-ready.wav' },
     { text: 'Amazing performance!', file: 'amazing.wav' },
     { text: 'You are a Star!', file: 'star.wav' },

@@ -77,7 +77,7 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
     return (
       <div className="max-w-4xl mx-auto text-center py-20">
         <p className="text-white/60 mb-4">{t('resultsScreen.noResults')}</p>
-        <Button onClick={onHome} className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white">{t('results.backToHome')}</Button>
+        <Button onClick={onHome} className="bg-gradient-to-r from-[#00e5ff] to-[#bf5af2] hover:from-[#00e5ff]/80 hover:to-[#bf5af2]/80 text-white shadow-[0_0_20px_rgba(0,229,255,0.3)]">{t('results.backToHome')}</Button>
       </div>
     );
   }
@@ -93,8 +93,8 @@ export function ResultsScreen({ onPlayAgain, onHome }: { onPlayAgain: () => void
     <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
       {/* Song title */}
       <div className="text-center mb-4">
-        <h2 className="text-2xl font-bold text-white">{song.title}</h2>
-        <p className="text-white/60">{song.artist}</p>
+        <h2 className="text-2xl font-bold text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">{song.title}</h2>
+        <p className="text-[#bf5af2]">{song.artist}</p>
       </div>
 
       {/* Rating header — single or multiplayer */}

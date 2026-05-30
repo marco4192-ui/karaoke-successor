@@ -73,7 +73,7 @@ export const settingsTranslations = {
     installAppDesc: 'Install for offline access',
     appInstalled: 'App is installed',
     version: 'Version',
-    aboutDesc: 'Karaoke ZERO is a modern karaoke application with real-time pitch detection, party modes, and more.',
+    aboutDesc: 'Karaoke Eleven is a modern karaoke application with real-time pitch detection, party modes, and more.',
     feature1: 'Real-time pitch detection with YIN algorithm',
     feature2: 'Multiple party game modes',
     feature3: 'Mobile app integration for remote control',
@@ -371,7 +371,7 @@ export const settingsTranslations = {
   settingsLibrary: {
     title: 'Songs Base Folder',
     desc: 'All songs are imported from this folder. Each subfolder contains one song.',
-    placeholder: 'C:/Karaoke ZERO/Songs',
+    placeholder: 'C:/Karaoke Eleven/Songs',
     scan: 'Scan',
     browse: 'Browse',
     help: 'Enter the path to your songs folder and click "Scan" to import, or use "Browse" to select a folder.',

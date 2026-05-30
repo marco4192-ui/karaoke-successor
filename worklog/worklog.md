@@ -1,4 +1,4 @@
-# Karaoke Successor — Worklog
+# Karaoke Eleven — Worklog
 
 ## Session: 2026-05-06 (Code Review #8 — Fresh Implementation)
 

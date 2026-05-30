@@ -216,20 +216,20 @@ export function useParticleEmitter() {
   }, []);
 
   const emitPerfectHit = useCallback((x: number, y: number) => {
-    emitParticles(x, y, 'spark', 14, { color: '#22D3EE', speed: 1.8 });
-    emitParticles(x, y, 'star', 5, { color: '#FFD700', size: 14, life: 50 });
-    emitParticles(x, y, 'golden', 4, { color: '#A78BFA', speed: 1.2, size: 8 });
+    emitParticles(x, y, 'spark', 14, { color: '#00e5ff', speed: 1.8 });
+    emitParticles(x, y, 'star', 5, { color: '#ffd60a', size: 14, life: 50 });
+    emitParticles(x, y, 'golden', 4, { color: '#ff2d95', speed: 1.2, size: 8 });
   }, [emitParticles]);
 
   const emitGoldenNote = useCallback((x: number, y: number) => {
-    emitParticles(x, y, 'golden', 18, { color: '#FFD700', speed: 2.2, size: 12 });
+    emitParticles(x, y, 'golden', 18, { color: '#ffd60a', speed: 2.2, size: 12 });
     emitParticles(x, y, 'spark', 10, { color: '#FFA500', speed: 1.8 });
-    emitParticles(x, y, 'firework', 6, { color: '#FFD700', speed: 1.5, size: 6, life: 45 });
+    emitParticles(x, y, 'firework', 6, { color: '#ffd60a', speed: 1.5, size: 6, life: 45 });
   }, [emitParticles]);
 
   const emitComboFirework = useCallback((x: number, y: number, combo: number) => {
     const intensity = Math.min(combo / 10, 3);
-    const colors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#F38181'];
+    const colors = ['#00e5ff', '#ff2d95', '#ffd60a', '#bf5af2', '#ff2d95'];
 
     for (let burst = 0; burst < Math.ceil(intensity); burst++) {
       const id = setTimeout(() => {
@@ -255,7 +255,7 @@ export function useParticleEmitter() {
   }, [emitParticles]);
 
   const emitConfetti = useCallback((_x: number, _y: number) => {
-    const colors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#AA96DA', '#FF9F43'];
+    const colors = ['#00e5ff', '#ff2d95', '#ffd60a', '#bf5af2', '#ff2d95', '#00e5ff'];
     for (let i = 0; i < 50; i++) {
       const id = setTimeout(() => {
         pendingTimersRef.current = pendingTimersRef.current.filter(t => t !== id);
@@ -333,15 +333,15 @@ export function useParticleEmitter() {
 function getDefaultColor(type: Particle['type']): string {
   switch (type) {
     case 'spark':
-      return '#22D3EE';
+      return '#00e5ff';
     case 'golden':
-      return '#FFD700';
+      return '#ffd60a';
     case 'firework':
-      return '#FF6B6B';
+      return '#ff2d95';
     case 'star':
-      return '#FFD700';
+      return '#ffd60a';
     case 'confetti':
-      return '#4ECDC4';
+      return '#00e5ff';
     default:
       return '#FFFFFF';
   }

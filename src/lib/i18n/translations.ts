@@ -1,4 +1,4 @@
-// i18n hook for Karaoke ZERO
+// i18n hook for Karaoke Eleven
 // Translation DATA lives in ./locales/index.ts to keep this module small.
 // All translations are accessed via getTranslations() (lazy function call),
 // which completely eliminates TDZ risk from webpack code-splitting.

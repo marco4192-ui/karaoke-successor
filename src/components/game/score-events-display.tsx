@@ -18,8 +18,8 @@ export interface ScoreEventsDisplayProps {
 
 const SCORE_STYLES: Record<ScoreEvent['displayType'], { className: string; boxShadow: string; icon: string; iconSize: string }> = {
   Perfect: {
-    className: 'bg-gradient-to-r from-yellow-300 via-yellow-400 to-orange-400 text-black ring-2 ring-yellow-200/60',
-    boxShadow: '0 0 20px rgba(255, 200, 0, 0.6), 0 0 40px rgba(255, 150, 0, 0.3)',
+    className: 'bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 text-black ring-2 ring-yellow-200/60',
+    boxShadow: '0 0 20px rgba(255, 214, 10, 0.6), 0 0 40px rgba(255, 214, 10, 0.3)',
     icon: '⭐',
     iconSize: 'text-lg animate-bounce',
   },
@@ -30,20 +30,20 @@ const SCORE_STYLES: Record<ScoreEvent['displayType'], { className: string; boxSh
     iconSize: 'text-base',
   },
   Good: {
-    className: 'bg-gradient-to-r from-blue-400 to-cyan-500 text-white ring-1 ring-blue-300/30',
-    boxShadow: '0 0 10px rgba(59, 130, 246, 0.4)',
+    className: 'bg-gradient-to-r from-cyan-400 to-cyan-500 text-white ring-1 ring-cyan-300/30',
+    boxShadow: '0 0 10px rgba(0, 229, 255, 0.4)',
     icon: '🎵',
     iconSize: 'text-sm',
   },
   Okay: {
-    className: 'bg-gradient-to-r from-orange-400 to-amber-500 text-white ring-1 ring-orange-300/30',
-    boxShadow: '0 0 10px rgba(249, 115, 22, 0.4)',
+    className: 'bg-gradient-to-r from-purple-400 to-purple-500 text-white ring-1 ring-purple-300/30',
+    boxShadow: '0 0 10px rgba(191, 90, 242, 0.4)',
     icon: '🎶',
     iconSize: 'text-sm',
   },
   Miss: {
-    className: 'bg-gradient-to-r from-gray-500 to-gray-700 text-white ring-1 ring-gray-400/30',
-    boxShadow: '0 0 10px rgba(107, 114, 128, 0.4)',
+    className: 'bg-gradient-to-r from-red-800 to-red-900 text-white/70 ring-1 ring-red-700/30',
+    boxShadow: '0 0 10px rgba(153, 27, 27, 0.4)',
     icon: '❌',
     iconSize: 'text-sm',
   },

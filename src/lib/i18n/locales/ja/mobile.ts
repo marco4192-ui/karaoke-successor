@@ -152,7 +152,7 @@ export const mobileTranslations = {
     accuracy: '正確さ',
     saveScoreCardSoon: 'スコアカードが写真に保存されました！（機能は近日公開）',
     addSongsToWishlistBtn: '+ 曲をウィッシュリストに追加',
-    shareHashtag: '#KaraokeZERO',
+    shareHashtag: '#KaraokeEleven',
     copyFailed: 'クリップボードへのコピーに失敗しました。',
     playAgain: 'もう一度再生',
     playAgainSuccess: '曲がキューに追加されました！',
@@ -385,7 +385,7 @@ export const mobileTranslations = {
     cameraPositionNone: 'カメラなし',
     cameraConnectFailed: 'モバイルカメラへの接続に失敗しました',
     cameraAccessDenied: 'カメラへのアクセスが拒否されました',
-    branding: 'Karaoke ZERO',
+    branding: 'Karaoke Eleven',
     camera: '📹 カメラ',
     active: 'アクティブ',
     mobileConnected: 'モバイル接続済み',
@@ -453,7 +453,7 @@ export const mobileTranslations = {
   },
 
   mobileOnboarding: {
-    welcome: 'Karaoke ZEROへようこそ',
+    welcome: 'Karaoke Elevenへようこそ',
     subtitle: 'あなたのモバイルカラオケコンパニオンアプリ',
     next: '次へ',
     back: '戻る',

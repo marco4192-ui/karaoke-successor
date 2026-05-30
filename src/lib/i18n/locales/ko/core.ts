@@ -17,7 +17,7 @@ export const coreTranslations = {
   },
 
   home: {
-    title: 'Karaoke ZERO',
+    title: 'Karaoke Eleven',
     subtitle: '최고의 노래방 경험. 실시간 음정 감지로 노래하고 친구들과 경쟁하며 파티 게임을 즐기세요!',
     startSinging: '노래 시작',
     partyMode: '파티 모드',
@@ -140,12 +140,12 @@ export const coreTranslations = {
   },
 
   scoreCardSocial: {
-    branding: 'Karaoke ZERO',
+    branding: 'Karaoke Eleven',
     accuracyLabel: '정확도:',
     maxComboLabel: 'Max Combo:',
     difficultyLabel: '난이도:',
     playerLabel: '🎤 {name}',
-    hashtags: '#KaraokeZERO #Karaoke #Singing',
+    hashtags: '#KaraokeEleven #Karaoke #Singing',
     shareTitle: '나의 노래방 점수!',
     shareText: '{artist}의 "{title}"에서 {n}점을 획득했습니다!',
     points: '점',

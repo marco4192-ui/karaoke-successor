@@ -35,7 +35,7 @@ export const GameScoreDisplay = React.memo(function GameScoreDisplay({
 }: GameScoreDisplayProps) {
   return (
     <div className="flex items-center gap-3">
-      <Badge variant="outline" className="border-white/20 text-white/80">
+      <Badge variant="outline" className="text-white/80" style={{ borderColor: 'rgba(0, 229, 255, 0.4)' }}>
         {difficulty.toUpperCase()}
       </Badge>
 
@@ -43,21 +43,42 @@ export const GameScoreDisplay = React.memo(function GameScoreDisplay({
       {activeChallenge && (
         <Badge
           className={`px-3 py-1 text-sm font-bold ${
-            activeChallenge.difficulty === 'extreme' ? 'bg-red-500/30 text-red-300 border border-red-500/50' :
-            activeChallenge.difficulty === 'hard' ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50' :
-            activeChallenge.difficulty === 'medium' ? 'bg-yellow-500/30 text-yellow-300 border border-yellow-500/50' :
-            'bg-green-500/30 text-green-300 border border-green-500/50'
+            activeChallenge.difficulty === 'extreme' ? 'border' :
+            activeChallenge.difficulty === 'hard' ? 'border' :
+            activeChallenge.difficulty === 'medium' ? 'border' :
+            'border'
           }`}
+          style={{
+            backgroundColor: activeChallenge.difficulty === 'extreme' ? 'rgba(255, 45, 149, 0.2)' :
+              activeChallenge.difficulty === 'hard' ? 'rgba(255, 45, 149, 0.15)' :
+              activeChallenge.difficulty === 'medium' ? 'rgba(255, 214, 10, 0.15)' :
+              'rgba(57, 255, 20, 0.15)',
+            color: activeChallenge.difficulty === 'extreme' ? '#ff2d95' :
+              activeChallenge.difficulty === 'hard' ? '#ff2d95' :
+              activeChallenge.difficulty === 'medium' ? '#ffd60a' :
+              '#39ff14',
+            borderColor: activeChallenge.difficulty === 'extreme' ? 'rgba(255, 45, 149, 0.4)' :
+              activeChallenge.difficulty === 'hard' ? 'rgba(255, 45, 149, 0.3)' :
+              activeChallenge.difficulty === 'medium' ? 'rgba(255, 214, 10, 0.3)' :
+              'rgba(57, 255, 20, 0.3)',
+          }}
         >
           {activeChallenge.icon} {activeChallenge.name} (+{activeChallenge.xpReward} XP)
         </Badge>
       )}
       {timeRemaining !== null && timeRemaining !== undefined && timeRemaining > 0 && (
-        <Badge className={`px-3 py-1 text-sm font-bold animate-pulse ${
-          timeRemaining <= 30 ? 'bg-red-500/30 text-red-300 border border-red-500/50' :
-          timeRemaining <= 60 ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50' :
-          'bg-cyan-500/30 text-cyan-300 border border-cyan-500/50'
-        }`}>
+        <Badge className={`px-3 py-1 text-sm font-bold animate-pulse border`}
+          style={{
+            backgroundColor: timeRemaining <= 30 ? 'rgba(255, 45, 149, 0.2)' :
+              timeRemaining <= 60 ? 'rgba(255, 45, 149, 0.15)' :
+              'rgba(0, 229, 255, 0.15)',
+            color: timeRemaining <= 30 ? '#ff2d95' :
+              timeRemaining <= 60 ? '#ff2d95' :
+              '#00e5ff',
+            borderColor: timeRemaining <= 30 ? 'rgba(255, 45, 149, 0.4)' :
+              timeRemaining <= 60 ? 'rgba(255, 45, 149, 0.3)' :
+              'rgba(0, 229, 255, 0.3)',
+          }}>
           ⏱️ {Math.floor(timeRemaining / 60)}:{String(timeRemaining % 60).padStart(2, '0')}
         </Badge>
       )}

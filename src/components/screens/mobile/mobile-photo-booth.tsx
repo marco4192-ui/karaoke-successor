@@ -198,11 +198,11 @@ export function MobilePhotoBooth({ gameResults, onClose }: MobilePhotoBoothProps
       ctx.textAlign = 'right';
       ctx.fillText(stars, canvas.width - padding, cardY + padding * 2);
 
-      // #KaraokeZERO watermark
+      // #KaraokeEleven watermark
       ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
       ctx.font = `bold ${Math.round(canvas.width * 0.03)}px Arial, sans-serif`;
       ctx.textAlign = 'right';
-      ctx.fillText('#KaraokeZERO', canvas.width - padding, cardY + padding * 7.5);
+      ctx.fillText('#KaraokeEleven', canvas.width - padding, cardY + padding * 7.5);
 
       ctx.textAlign = 'left';
     }
@@ -243,8 +243,8 @@ export function MobilePhotoBooth({ gameResults, onClose }: MobilePhotoBoothProps
             ? `${t('mobilePhotoBooth.title')} — ${gameResults.songTitle}`
             : t('mobilePhotoBooth.title'),
           text: gameResults
-            ? `🎤 I scored ${gameResults.score.toLocaleString()} points on "${gameResults.songTitle}"! #KaraokeZERO`
-            : '#KaraokeZERO',
+            ? `🎤 I scored ${gameResults.score.toLocaleString()} points on "${gameResults.songTitle}"! #KaraokeEleven`
+            : '#KaraokeEleven',
           files: [file],
         });
       } else {
@@ -389,7 +389,7 @@ export function MobilePhotoBooth({ gameResults, onClose }: MobilePhotoBoothProps
                   </span>
                   <span>⚡ {gameResults.maxCombo}x</span>
                   <span className="ml-auto text-white/30 text-[10px]">
-                    #KaraokeZERO
+                    #KaraokeEleven
                   </span>
                 </div>
               </div>

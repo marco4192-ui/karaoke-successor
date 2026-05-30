@@ -73,7 +73,7 @@ export const settingsTranslations = {
     installAppDesc: 'Installa per accesso offline',
     appInstalled: 'L\'app è installata',
     version: 'Versione',
-    aboutDesc: 'Karaoke ZERO è un\'applicazione karaoke moderna con rilevamento del tono in tempo reale, modalità festa e altro.',
+    aboutDesc: 'Karaoke Eleven è un\'applicazione karaoke moderna con rilevamento del tono in tempo reale, modalità festa e altro.',
     feature1: 'Rilevamento del tono in tempo reale con algoritmo YIN',
     feature2: 'Diverse modalità di giochi di festa',
     feature3: 'Integrazione app mobile per controllo remoto',
@@ -372,7 +372,7 @@ export const settingsTranslations = {
   settingsLibrary: {
     title: 'Cartella Base Canzoni',
     desc: 'Tutte le canzoni vengono importate da questa cartella. Ogni sottocartella contiene una canzone.',
-    placeholder: 'C:/Karaoke ZERO/Canzoni',
+    placeholder: 'C:/Karaoke Eleven/Canzoni',
     scan: 'Scansiona',
     browse: 'Sfoglia',
     help: 'Inserisci il percorso della tua cartella canzoni e clicca "Scansiona" per importare.',

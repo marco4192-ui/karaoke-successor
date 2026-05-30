@@ -65,7 +65,7 @@ export interface NoteHighwayProps {
 /**
  * Pitch grid background lines
  */
-const PitchGrid = React.memo(function PitchGrid({ count = 7, playerColor = '#22d3d3ee' }: { count?: number; playerColor?: string }) {
+const PitchGrid = React.memo(function PitchGrid({ count = 7, playerColor = '#00e5ffee' }: { count?: number; playerColor?: string }) {
   const borderColor = withAlpha(playerColor, 0.1);
   return (
     <div className="absolute inset-0 pointer-events-none">
@@ -85,7 +85,7 @@ const PitchGrid = React.memo(function PitchGrid({ count = 7, playerColor = '#22d
  */
 const SingLine = React.memo(function SingLine({
   position,
-  playerColor = '#22d3d3ee'
+  playerColor = '#00e5ffee'
 }: {
   position: number;
   playerColor?: string;
@@ -123,7 +123,7 @@ const NoteBlock = React.memo(function NoteBlock({
   visibleTop,
   visibleRange,
   noteWidthExtra = 20,
-  playerColor = '#22d3d3ee',
+  playerColor = '#00e5ffee',
   noteDisplayStyle = 'classic',
   notePerformance,
 }: {
@@ -232,7 +232,7 @@ const PitchIndicator = React.memo(function PitchIndicator({
   singLinePosition,
   visibleTop,
   visibleRange,
-  playerColor = '#22d3d3ee',
+  playerColor = '#00e5ffee',
 }: {
   detectedPitch: number | null;
   pitchStats: PitchStats;
@@ -270,7 +270,7 @@ const PitchIndicator = React.memo(function PitchIndicator({
 const PlayerLabel = React.memo(function PlayerLabel({
   playerName,
   playerNumber,
-  playerColor = '#22d3d3ee',
+  playerColor = '#00e5ffee',
 }: {
   playerName: string;
   playerNumber: number;
@@ -315,7 +315,7 @@ export const NoteHighway = React.memo(function NoteHighway({
   const noteShape = useMemo(() => getNoteShapeClasses(noteShapeStyle), [noteShapeStyle]);
 
   // Use playerColor if provided; otherwise derive from playerNumber (P1=cyan, P2=pink)
-  const effectiveColor = playerColor ?? (playerNumber === 2 ? '#ec4899' : '#22d3ee');
+  const effectiveColor = playerColor ?? (playerNumber === 2 ? '#ff2d95' : '#00e5ff');
 
   const resolvedPlayerName = playerName || t('prominentScore.player1');
 

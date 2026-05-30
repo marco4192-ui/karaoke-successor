@@ -44,6 +44,23 @@
 }
 
 :root {
+  /* Karaoke Eleven Synthwave Palette */
+  --eleven-bg: #0a0014;
+  --eleven-bg-secondary: #140028;
+  --eleven-primary: #00e5ff;
+  --eleven-secondary: #ff2d95;
+  --eleven-accent: #bf5af2;
+  --eleven-text: #ffffff;
+  --eleven-text-secondary: rgba(255,255,255,0.6);
+  --eleven-success: #39ff14;
+  --eleven-warning: #ffd60a;
+  --eleven-error: #ff453a;
+  --eleven-combo: #bf5af2;
+  --eleven-glow-cyan: 0 0 7px #00e5ff, 0 0 20px #00e5ff, 0 0 42px rgba(0,229,255,0.6);
+  --eleven-glow-pink: 0 0 7px #ff2d95, 0 0 20px #ff2d95, 0 0 42px rgba(255,45,149,0.6);
+  --eleven-glow-purple: 0 0 7px #bf5af2, 0 0 20px #bf5af2, 0 0 42px rgba(191,90,242,0.6);
+  --eleven-gradient: linear-gradient(135deg, #00e5ff, #ff2d95);
+
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -260,7 +277,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════
-   KARAOKE ZERO — 90s/2000s RETRO KARAOKE THEME
+   KARAOKE ELEVEN — 90s/2000s RETRO KARAOKE THEME
    Neon glow, chunky borders, star particles, MTV vibes
    ═══════════════════════════════════════════════════════ */
 
@@ -269,7 +286,7 @@
   text-shadow: 0 0 7px #ff2d95, 0 0 20px #ff2d95, 0 0 42px #ff00ff;
 }
 .retro-glow-cyan {
-  text-shadow: 0 0 7px #00ffff, 0 0 20px #00ffff, 0 0 42px #00e5ff;
+  text-shadow: 0 0 7px #00e5ff, 0 0 20px #00e5ff, 0 0 42px rgba(0,229,255,0.6);
 }
 .retro-glow-gold {
   text-shadow: 0 0 7px #ffd60a, 0 0 20px #ffcc00, 0 0 42px #ffaa00;
@@ -283,7 +300,7 @@
   box-shadow: 0 0 8px rgba(255, 45, 149, 0.5), 0 0 24px rgba(255, 45, 149, 0.25), inset 0 0 8px rgba(255, 45, 149, 0.08);
 }
 .retro-box-glow-cyan {
-  box-shadow: 0 0 8px rgba(0, 255, 255, 0.5), 0 0 24px rgba(0, 255, 255, 0.25), inset 0 0 8px rgba(0, 255, 255, 0.08);
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.5), 0 0 24px rgba(0, 229, 255, 0.25), inset 0 0 8px rgba(0, 229, 255, 0.08);
 }
 .retro-box-glow-gold {
   box-shadow: 0 0 8px rgba(255, 214, 10, 0.5), 0 0 24px rgba(255, 214, 10, 0.25), inset 0 0 8px rgba(255, 214, 10, 0.08);
@@ -294,22 +311,22 @@
 
 /* Retro gradient backgrounds */
 .retro-gradient-hero {
-  background: linear-gradient(180deg, #0a0a1a 0%, #1a0a2e 40%, #0d0d2b 70%, #0a0a1a 100%);
+  background: linear-gradient(180deg, #0a0014 0%, #140028 40%, #1a0033 70%, #0a0014 100%);
 }
 .retro-gradient-card {
   background: linear-gradient(135deg, rgba(191, 90, 242, 0.08) 0%, rgba(255, 45, 149, 0.08) 100%);
 }
 .retro-gradient-pink {
-  background: linear-gradient(135deg, #ff2d95, #ff00ff);
+  background: linear-gradient(135deg, #ff2d95, #bf5af2);
 }
 .retro-gradient-cyan {
-  background: linear-gradient(135deg, #00e5ff, #00ffff);
+  background: linear-gradient(135deg, #00e5ff, #00b8d4);
 }
 .retro-gradient-gold {
   background: linear-gradient(135deg, #ffd60a, #ffaa00);
 }
 .retro-gradient-rainbow {
-  background: linear-gradient(90deg, #ff2d95, #ff00ff, #bf5af2, #00e5ff, #00ff88, #ffd60a, #ff2d95);
+  background: linear-gradient(90deg, #ff2d95, #bf5af2, #00e5ff, #39ff14, #ffd60a, #ff2d95);
   background-size: 200% 100%;
   animation: retro-rainbow-slide 6s linear infinite;
 }
@@ -370,7 +387,7 @@
 .retro-btn-cyan {
   background: linear-gradient(135deg, #00e5ff, #00b8d4);
   border-color: #00e5ff;
-  color: #0a0a1a;
+  color: #0a0014;
   box-shadow: 0 0 12px rgba(0, 229, 255, 0.5);
 }
 .retro-btn-cyan:hover {
@@ -392,6 +409,34 @@
   pointer-events: none;
 }
 
+/* Karaoke Eleven signature glow */
+.eleven-glow {
+  text-shadow:
+    0 0 7px var(--eleven-primary),
+    0 0 20px var(--eleven-primary),
+    0 0 42px var(--eleven-secondary);
+}
+.eleven-glow-subtle {
+  text-shadow: 0 0 10px rgba(0,229,255,0.4), 0 0 20px rgba(191,90,242,0.3);
+}
+.eleven-box-glow {
+  box-shadow:
+    0 0 12px rgba(0,229,255,0.35),
+    0 0 30px rgba(191,90,242,0.2),
+    0 0 60px rgba(255,45,149,0.1),
+    inset 0 0 12px rgba(0,229,255,0.05);
+}
+.eleven-border-gradient {
+  border: 2px solid transparent;
+  border-image: linear-gradient(135deg, #00e5ff, #bf5af2, #ff2d95) 1;
+}
+.eleven-glass {
+  background: rgba(20, 0, 40, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(191, 90, 242, 0.15);
+}
+
 /* Retro keyframe animations */
 @keyframes retro-rainbow-slide {
   0% { background-position: 0% 50%; }
@@ -405,6 +450,86 @@
   0%, 100% { border-color: rgba(255, 45, 149, 0.4); }
   33% { border-color: rgba(191, 90, 242, 0.4); }
   66% { border-color: rgba(0, 229, 255, 0.4); }
+}
+
+/* Karaoke Eleven — Loading screen & home screen animations */
+@keyframes eleven-logo-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 12px rgba(0,229,255,0.5)) brightness(1);
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 28px rgba(0,229,255,0.8)) drop-shadow(0 0 56px rgba(191,90,242,0.4)) brightness(1.1);
+    transform: scale(1.04);
+  }
+}
+
+@keyframes eleven-gradient-border {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.eleven-animated-border-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #00e5ff, #bf5af2, #ff2d95, #00e5ff);
+  background-size: 300% 100%;
+  animation: eleven-gradient-border 4s ease-in-out infinite;
+}
+
+/* CSS-only animated star particles for hero backgrounds */
+@keyframes eleven-star-drift {
+  0%   { opacity: 0; transform: translateY(0) scale(0.5); }
+  20%  { opacity: 1; }
+  80%  { opacity: 0.6; }
+  100% { opacity: 0; transform: translateY(-60px) scale(1.2); }
+}
+
+.eleven-stars::before,
+.eleven-stars::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.eleven-stars::before {
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, rgba(0,229,255,0.7) 50%, transparent 50%),
+    radial-gradient(1px 1px at 25% 60%, rgba(255,45,149,0.6) 50%, transparent 50%),
+    radial-gradient(1.5px 1.5px at 40% 15%, rgba(191,90,242,0.8) 50%, transparent 50%),
+    radial-gradient(1px 1px at 55% 75%, rgba(255,214,10,0.5) 50%, transparent 50%),
+    radial-gradient(1px 1px at 70% 35%, rgba(0,229,255,0.6) 50%, transparent 50%),
+    radial-gradient(1.5px 1.5px at 85% 55%, rgba(255,45,149,0.7) 50%, transparent 50%),
+    radial-gradient(1px 1px at 95% 10%, rgba(191,90,242,0.5) 50%, transparent 50%),
+    radial-gradient(1px 1px at 15% 90%, rgba(0,229,255,0.6) 50%, transparent 50%),
+    radial-gradient(1.5px 1.5px at 50% 45%, rgba(255,214,10,0.7) 50%, transparent 50%),
+    radial-gradient(1px 1px at 80% 80%, rgba(255,45,149,0.5) 50%, transparent 50%),
+    radial-gradient(1px 1px at 35% 30%, rgba(0,229,255,0.4) 50%, transparent 50%),
+    radial-gradient(1px 1px at 60% 65%, rgba(191,90,242,0.6) 50%, transparent 50%);
+  animation: eleven-star-drift 6s ease-in-out infinite;
+}
+
+.eleven-stars::after {
+  background-image:
+    radial-gradient(1px 1px at 5% 40%, rgba(255,45,149,0.5) 50%, transparent 50%),
+    radial-gradient(1.5px 1.5px at 20% 80%, rgba(0,229,255,0.7) 50%, transparent 50%),
+    radial-gradient(1px 1px at 45% 10%, rgba(191,90,242,0.6) 50%, transparent 50%),
+    radial-gradient(1px 1px at 65% 50%, rgba(255,214,10,0.5) 50%, transparent 50%),
+    radial-gradient(1.5px 1.5px at 75% 90%, rgba(0,229,255,0.8) 50%, transparent 50%),
+    radial-gradient(1px 1px at 90% 25%, rgba(255,45,149,0.6) 50%, transparent 50%),
+    radial-gradient(1px 1px at 30% 55%, rgba(191,90,242,0.4) 50%, transparent 50%),
+    radial-gradient(1px 1px at 55% 85%, rgba(0,229,255,0.5) 50%, transparent 50%),
+    radial-gradient(1.5px 1.5px at 8% 70%, rgba(255,45,149,0.7) 50%, transparent 50%),
+    radial-gradient(1px 1px at 42% 38%, rgba(255,214,10,0.6) 50%, transparent 50%);
+  animation: eleven-star-drift 8s ease-in-out infinite;
+  animation-delay: -3s;
 }
 
 /* Karaoke game animations */

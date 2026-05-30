@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Code Review Report Generator - Karaoke Successor"""
+"""Code Review Report Generator - Karaoke Eleven"""
 
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'skills', 'pdf', 'scripts'))
@@ -61,7 +61,7 @@ AW = W - LM - RM
 doc = SimpleDocTemplate(
     '/home/z/my-project/download/karaoke-code-review-report.pdf',
     pagesize=A4, leftMargin=LM, rightMargin=RM, topMargin=2*cm, bottomMargin=2*cm,
-    title='Karaoke Successor - Code Review Report',
+    title='Karaoke Eleven - Code Review Report',
     author='Z.ai', creator='Z.ai', subject='Comprehensive Code Review'
 )
 
@@ -122,7 +122,7 @@ def issue_table(issues):
 
 # ━━ COVER PAGE ━━
 story.append(Spacer(1, 120))
-story.append(Paragraph('<b>Karaoke Successor</b>', title_style))
+story.append(Paragraph('<b>Karaoke Eleven</b>', title_style))
 story.append(Paragraph('Comprehensive Code Review Report', subtitle_style))
 story.append(Spacer(1, 24))
 story.append(HRFlowable(width='40%', thickness=2, color=ACCENT, spaceAfter=18))
@@ -137,7 +137,7 @@ story.append(PageBreak())
 # ━━ EXECUTIVE SUMMARY ━━
 story.append(Paragraph('<b>Executive Summary</b>', h1_style))
 story.append(Paragraph(
-    'This report presents the results of a comprehensive code review of the Karaoke Successor project, '
+    'This report presents the results of a comprehensive code review of the Karaoke Eleven project, '
     'a Next.js 16.1.3 + Tauri v2 desktop karaoke application. The review covers all 283 source files across '
     'the TypeScript frontend, React components, Zustand state management, custom hooks, audio processing '
     'libraries, AI integrations, and Rust backend. The codebase was analyzed for logic errors, type safety '

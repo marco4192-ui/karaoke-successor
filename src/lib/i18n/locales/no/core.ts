@@ -17,7 +17,7 @@ export const coreTranslations = {
   },
 
   home: {
-    title: 'Karaoke ZERO',
+    title: 'Karaoke Eleven',
     subtitle: 'Den ultimate karaokeopplevelsen. Syng hjertet ut med sanntids tonegjenkjenning, konkurrer med venner, og nyt festleker!',
     startSinging: 'Start å synge',
     partyMode: 'Festmodus',
@@ -140,12 +140,12 @@ export const coreTranslations = {
   },
 
   scoreCardSocial: {
-    branding: 'Karaoke ZERO',
+    branding: 'Karaoke Eleven',
     accuracyLabel: 'Presisjon:',
     maxComboLabel: 'Maks Combo:',
     difficultyLabel: 'Vanskelighetsgrad:',
     playerLabel: '🎤 {name}',
-    hashtags: '#KaraokeZERO #Karaoke #Singing',
+    hashtags: '#KaraokeEleven #Karaoke #Singing',
     shareTitle: 'Min karaoke-poengsum!',
     shareText: 'Jeg fikk {n} poeng på «{title}» av {artist}!',
     points: 'poeng',

@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-// Karaoke Successor - Service Worker
+// Karaoke Eleven - Service Worker
 const STATIC_CACHE = 'karaoke-static-v1';
 const DYNAMIC_CACHE = 'karaoke-dynamic-v1';
 
@@ -188,7 +188,7 @@ self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {};
   
   const options = {
-    body: data.body || 'New notification from Karaoke Successor',
+    body: data.body || 'New notification from Karaoke Eleven',
     icon: '/icons/icon-192x192.png',
     badge: '/icons/icon-192x192.png',
     vibrate: [100, 50, 100],
@@ -198,7 +198,7 @@ self.addEventListener('push', (event) => {
   };
   
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Karaoke Successor', options)
+    self.registration.showNotification(data.title || 'Karaoke Eleven', options)
   );
 });
 

@@ -152,7 +152,7 @@ export const mobileTranslations = {
     accuracy: 'Presisjon',
     saveScoreCardSoon: 'Poengkort lagret i bildene dine! (Funksjon kommer snart)',
     addSongsToWishlistBtn: '+ Legg sanger til ønskeliste',
-    shareHashtag: '#KaraokeZERO',
+    shareHashtag: '#KaraokeEleven',
     copyFailed: 'Kunne ikke kopiere til utklippstavle.',
     playAgain: 'Spill igjen',
     playAgainSuccess: 'Sang lagt til i køen!',
@@ -385,7 +385,7 @@ export const mobileTranslations = {
     cameraPositionNone: 'Ingen kamera',
     cameraConnectFailed: 'Kunne ikke koble til mobilkamera',
     cameraAccessDenied: 'Kameratilgang nektet',
-    branding: 'Karaoke ZERO',
+    branding: 'Karaoke Eleven',
     camera: '📹 Kamera',
     active: 'Aktiv',
     mobileConnected: 'Mobil tilkoblet',
@@ -453,7 +453,7 @@ export const mobileTranslations = {
   },
 
   mobileOnboarding: {
-    welcome: 'Velkommen til Karaoke ZERO',
+    welcome: 'Velkommen til Karaoke Eleven',
     subtitle: 'Din mobile karaoke-companion-app',
     next: 'Neste',
     back: 'Tilbake',

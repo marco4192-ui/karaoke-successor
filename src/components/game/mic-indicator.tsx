@@ -128,25 +128,25 @@ export function MicIndicator({
         transitionDuration: `${FADE_DURATION}ms`,
       }}
     >
-      <div className="bg-black/60 backdrop-blur-md rounded-xl px-4 py-2.5 border border-white/10 shadow-lg">
+      <div className="backdrop-blur-md rounded-xl px-4 py-2.5 border shadow-lg" style={{ backgroundColor: 'rgba(10, 0, 20, 0.7)', borderColor: 'rgba(0, 229, 255, 0.2)', boxShadow: '0 0 20px rgba(0, 229, 255, 0.1)' }}>
         {/* Single player mic indicator */}
         {!isDuetMode && activePlayer && (
           <div className="flex items-center gap-2.5">
             {/* Mic pulse dot */}
             <div className="relative flex-shrink-0">
-              <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(0, 229, 255, 0.15)' }}>
                 <span className="text-base">🎤</span>
               </div>
               {isPlaying && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-black/60 animate-pulse" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 animate-pulse" style={{ backgroundColor: '#39ff14', borderColor: 'rgba(10, 0, 20, 0.6)', boxShadow: '0 0 8px rgba(57, 255, 20, 0.6)' }} />
               )}
             </div>
             <div>
-              <p className="text-white text-sm font-semibold leading-tight">
+              <p className="text-sm font-semibold leading-tight" style={{ color: '#00e5ff', textShadow: '0 0 8px rgba(0, 229, 255, 0.4)' }}>
                 {buildLabel(activePlayer)}
               </p>
               {activePlayer.micName && (
-                <p className="text-white/40 text-xs mt-0.5">
+                <p className="text-xs mt-0.5" style={{ color: 'rgba(255, 255, 255, 0.4)' }}>
                   Mikrofon aktiv
                 </p>
               )}
@@ -159,10 +159,10 @@ export function MicIndicator({
           <div className="space-y-1.5">
             {micPlayers.slice(0, 2).map((player, i) => (
               <div key={player.id} className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-xs">
+                <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs" style={{ backgroundColor: 'rgba(0, 229, 255, 0.1)' }}>
                   {'🎤'}
                 </div>
-                <span className="text-white/80 text-xs font-medium">
+                <span className="text-xs font-medium" style={{ color: 'rgba(0, 229, 255, 0.8)' }}>
                   P{i + 1}: {player.micName || player.name}
                 </span>
               </div>
@@ -172,7 +172,7 @@ export function MicIndicator({
 
         {/* Mixed mode: show companion count */}
         {companionPlayers.length > 0 && (
-          <div className="mt-1.5 pt-1.5 border-t border-white/10">
+          <div className="mt-1.5 pt-1.5 border-t" style={{ borderColor: 'rgba(0, 229, 255, 0.15)' }}>
             <div className="flex items-center gap-1.5">
               <span className="text-xs">📱</span>
               <span className="text-white/50 text-xs">

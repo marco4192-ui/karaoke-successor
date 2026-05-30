@@ -152,7 +152,7 @@ export const mobileTranslations = {
     accuracy: 'Précision',
     saveScoreCardSoon: 'Carte de score sauvegardée dans vos photos ! (Fonctionnalité à venir)',
     addSongsToWishlistBtn: '+ Ajouter des Chansons à la Liste',
-    shareHashtag: '#KaraokeZERO',
+    shareHashtag: '#KaraokeEleven',
     copyFailed: 'Échec de la copie dans le presse-papiers.',
     playAgain: 'Rejouer',
     playAgainSuccess: 'Chanson ajoutée à la file d\'attente !',
@@ -385,7 +385,7 @@ export const mobileTranslations = {
     cameraPositionNone: 'Pas de Caméra',
     cameraConnectFailed: 'Échec de la connexion à la caméra mobile',
     cameraAccessDenied: 'Accès à la caméra refusé',
-    branding: 'Karaoke ZERO',
+    branding: 'Karaoke Eleven',
     camera: '📹 Caméra',
     active: 'Actif',
     mobileConnected: 'Mobile Connecté',
@@ -453,7 +453,7 @@ export const mobileTranslations = {
   },
 
   mobileOnboarding: {
-    welcome: 'Bienvenue sur Karaoke ZERO',
+    welcome: 'Bienvenue sur Karaoke Eleven',
     subtitle: 'Votre application karaoké mobile',
     next: 'Suivant',
     back: 'Retour',
