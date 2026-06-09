@@ -11,7 +11,6 @@ import {
 import { useBattleRoyaleGame } from '@/hooks/use-battle-royale-game';
 import { BattleRoyaleSetupScreen } from './battle-royale/setup-screen';
 import { WinnerView } from './battle-royale/winner-view';
-import { EliminationView } from './battle-royale/elimination-view';
 import { RoundSetupView } from './battle-royale/round-setup-view';
 import { PlayingView } from './battle-royale/playing-view';
 import { VotingView } from './battle-royale/voting-view';
@@ -101,29 +100,29 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
     }
   }
 
-  // Elimination animation
+  // DO-NOT-CHANGE: Lightweight elimination overlay replacing the previous
+  // full-screen EliminationView. Shows only the eliminated player name + red X
+  // for 2 seconds, then transitions to the next round countdown.
+  // The old full-screen view (EliminationView component) was removed because it
+  // showed too much information (survivors, bounty, score details) and made
+  // the segment transition feel cluttered and slow.
   if (showElimination) {
     const lastRound = game.rounds[game.rounds.length - 1];
-    const eliminatedPlayer = (lastRound?.eliminatedPlayerId
+    const eliminatedPlayer = lastRound?.eliminatedPlayerId
       ? game.players.find(p => p.id === lastRound.eliminatedPlayerId)
-          || sortedPlayers.find(p => p.id === lastRound.eliminatedPlayerId)
-      : null) ?? undefined;
-    const bountyClaimed = lastRound?.bountyClaimed ?? false;
-    const bountyClaimedById = lastRound?.bountyClaimedById;
+      : null;
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm animate-[fadeIn_0.3s_ease-out_forwards]">
-        <EliminationView
-          eliminatedPlayer={eliminatedPlayer}
-          remainingPlayersCount={activePlayers.length}
-          bountyClaimed={bountyClaimed}
-          bountyClaimedById={bountyClaimedById}
-          players={game.players}
-          roundScoreDeltas={lastRound?.roundScoreDeltas ?? {}}
-          isGrandFinale={game.isGrandFinale}
-          grandFinaleWins={game.finalWins}
-          bestOf={game.settings.grandFinaleBestOf}
-        />
+        <div className="text-center animate-[fadeInScale_0.4s_ease-out_forwards]">
+          <div className="w-28 h-28 rounded-full bg-red-500/20 border-4 border-red-500 flex items-center justify-center mx-auto mb-4 shadow-[0_0_40px_rgba(239,68,68,0.3)]">
+            <span className="text-6xl text-red-500">✕</span>
+          </div>
+          <p className="text-red-400 font-bold text-2xl">
+            {eliminatedPlayer?.name || 'Player'}
+          </p>
+          <p className="text-white/40 text-sm mt-2">Eliminated</p>
+        </div>
       </div>
     );
   }

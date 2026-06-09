@@ -464,7 +464,12 @@ export function startRound(
     players: updatedPlayers,
     rounds: [...game.rounds, round],
     currentRound: game.currentRound + 1,
-    status: 'playing',
+    // DO-NOT-CHANGE: Start in 'countdown' status instead of 'playing' to give
+    // the media loading hook time to buffer audio/video. The countdown timer in
+    // use-battle-royale-game.ts will auto-transition to 'playing' when it
+    // reaches 0. Without this, background videos start delayed because the
+    // browser hasn't had time to buffer enough frames before play() is called.
+    status: 'countdown',
     effectiveDifficulty,
     bountyPlayerId,
 

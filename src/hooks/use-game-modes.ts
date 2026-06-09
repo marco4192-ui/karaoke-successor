@@ -50,7 +50,7 @@ interface BlindPassagePattern {
 // ===================== HELPERS =====================
 
 /**
- * Group lyric lines into "passages" — consecutive lines separated by a gap >4 seconds.
+ * Group lyric lines into "passages" — consecutive lines separated by a gap >1.5 seconds.
  * A passage typically represents a verse, chorus, bridge, etc.
  * Returns an array of passages, each containing the lines belonging to it.
  */
@@ -62,7 +62,7 @@ export function groupIntoPassages(lines: LyricLine[]): LyricLine[][] {
 
   for (let i = 1; i < lines.length; i++) {
     const gap = lines[i].startTime - lines[i - 1].endTime;
-    if (gap > 4000) {
+    if (gap > 1500) {
       passages.push(currentPassage);
       currentPassage = [lines[i]];
     } else {
@@ -234,7 +234,18 @@ export function useGameModes({
   // songId is included to guarantee regeneration when a new song loads.
   useEffect(() => {
     if (gameMode === 'blind' && sortedLines && sortedLines.length > 0 && !blindPatternRef.current) {
-      const passages = groupIntoPassages(sortedLines);
+      let passages = groupIntoPassages(sortedLines);
+      // DO-NOT-CHANGE: Fallback for songs without natural passage breaks.
+      // Many karaoke songs flow continuously with gaps < 1.5s, producing only
+      // one passage. Without multiple passages, no blind sections can be created.
+      // Splitting into equal chunks of ~8-15 lines guarantees blind passages.
+      if (passages.length <= 1 && sortedLines.length > 8) {
+        const chunkSize = Math.max(4, Math.ceil(sortedLines.length / Math.max(3, Math.ceil(sortedLines.length / 10))));
+        passages = [];
+        for (let i = 0; i < sortedLines.length; i += chunkSize) {
+          passages.push(sortedLines.slice(i, i + chunkSize));
+        }
+      }
       const seeds = generateSeedSequence(passages.length);
 
       // Apply escalating multiplier to frequency
@@ -336,7 +347,18 @@ export function useGameModes({
     if (gameMode === 'missing-words' && sortedLines && sortedLines.length > 0 && !missingWordsGeneratedRef.current) {
       missingWordsGeneratedRef.current = true;
 
-      const passages = groupIntoPassages(sortedLines);
+      let passages = groupIntoPassages(sortedLines);
+      // DO-NOT-CHANGE: Fallback for songs without natural passage breaks.
+      // Many karaoke songs flow continuously with gaps < 1.5s, producing only
+      // one passage. Without multiple passages, no missing-word sections can be created.
+      // Splitting into equal chunks of ~8-15 lines guarantees hideable passages.
+      if (passages.length <= 1 && sortedLines.length > 8) {
+        const chunkSize = Math.max(4, Math.ceil(sortedLines.length / Math.max(3, Math.ceil(sortedLines.length / 10))));
+        passages = [];
+        for (let i = 0; i < sortedLines.length; i += chunkSize) {
+          passages.push(sortedLines.slice(i, i + chunkSize));
+        }
+      }
       if (passages.length <= 1) {
         setMissingWordsIndices([]);
         return;

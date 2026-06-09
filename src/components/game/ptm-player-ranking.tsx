@@ -9,11 +9,17 @@ interface PtmPlayerRankingProps {
 }
 
 export function PtmPlayerRanking({ players, currentPlayerIndex }: PtmPlayerRankingProps) {
+  // DO-NOT-CHANGE: Dependency must be score-based, not the players array reference.
+  // playersRef.current is a stable ref — the array reference never changes even when
+  // individual player scores are updated via { ...p } spread. Using [players] as
+  // the dependency causes useMemo to compute once and never re-sort, showing stale
+  // scores (always 0). Deriving a score string forces re-computation when any score changes.
   const ranked = useMemo(() =>
     [...players]
       .map((p, i) => ({ ...p, originalIndex: i }))
       .sort((a, b) => b.score - a.score),
-    [players],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    players.map(p => p.score),
   );
 
   return (

@@ -233,7 +233,11 @@ export const DEFAULT_BATTLE_ROYALE_SETTINGS: BattleRoyaleSettings = {
   noteDisplayStyle: 'classic' as NoteDisplayStyle,
   showNoteHighway: true,
   showVideoBackground: true,
-  countdownDuration: 3,
+  // DO-NOT-CHANGE: 5 seconds to give audio/video time to buffer before playing.
+  // Battle Royale uses external media files (Tauri filesystem/IndexedDB) that
+  // need more buffering time than in-memory assets. Reducing below 5 may
+  // cause visible video delay at round start.
+  countdownDuration: 5,
 };
 
 export const DIFFICULTY_ORDER: Difficulty[] = ['easy', 'medium', 'hard'];

@@ -177,8 +177,10 @@ export function useBattleRoyaleRoundHandlers({
     }
 
     onUpdateGameRef.current(updatedGame);
-    // Inline elimination: show loser badge animation then survivor flash
-    setEliminationPhase('eliminating');
+    // DO-NOT-CHANGE: Simplified elimination: show lightweight overlay (red X + player name)
+    // for 2.5 seconds, then advance to next round. The old two-phase animation
+    // (eliminating → survivor-flash) was replaced by a single screen-level overlay
+    // in battle-royale-screen.tsx. eliminationPhase state is no longer used.
     setShowElimination(true);
 
     if (roundEndTimerRef.current !== null) {
@@ -190,33 +192,26 @@ export function useBattleRoyaleRoundHandlers({
     roundEndTimerRef.current = setTimeout(() => {
       roundEndTimerRef.current = null;
       if (!mountedRef.current) return;
-      setEliminationPhase('survivor-flash');
-      survivorFlashTimerRef.current = setTimeout(() => {
-        survivorFlashTimerRef.current = null;
-        if (!mountedRef.current) return;
-        if (updatedGame.winner) {
-          setEliminationPhase(null);
-          setShowElimination(false);
-          return;
-        }
-        // IMPORTANT: Update game status FIRST (before hiding overlay) to prevent
-        // a brief flash of the old pause/setup screen during segment transitions.
-        // Do NOT reorder this — the status must change in the same render batch
-        // as the overlay hide, not after it.
-        const nextGame = advanceToNextRound(updatedGame);
-        gameRef.current = nextGame;
-        onUpdateGameRef.current(nextGame);
-
-        setEliminationPhase(null);
+      if (updatedGame.winner) {
         setShowElimination(false);
-        roundEndingRef.current = false;
+        return;
+      }
+      // IMPORTANT: Update game status FIRST (before hiding overlay) to prevent
+      // a brief flash of the old pause/setup screen during segment transitions.
+      // Do NOT reorder this — the status must change in the same render batch
+      // as the overlay hide, not after it.
+      const nextGame = advanceToNextRound(updatedGame);
+      gameRef.current = nextGame;
+      onUpdateGameRef.current(nextGame);
 
-        setTimeout(() => {
-          if (!mountedRef.current) return;
-          handleStartRoundRef.current();
-        }, 300);
-      }, 1000);
-    }, 1500);
+      setShowElimination(false);
+      roundEndingRef.current = false;
+
+      setTimeout(() => {
+        if (!mountedRef.current) return;
+        handleStartRoundRef.current();
+      }, 300);
+    }, 2500);
   // Stable deps: removed game, activePlayers.length, onUpdateGame — read from refs instead
   }, [stopPitch, audioRef, videoRef, audioHasPlayedRef, setShowElimination]);
 
