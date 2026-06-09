@@ -626,9 +626,15 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
 
       const adjustedTime = elapsed + timingOffset;
 
-      // Throttled: only update React state at ~40fps (25ms)
+      // Throttled: update React state at ~60fps (16ms).
+      // DO-NOT-CHANGE: Previously 40fps (25ms) but this caused visible stuttering
+      // in Single/Duet modes because the two store updates (currentTime at 40fps
+      // and detectedPitch at 60fps) had unsynchronized, irregular timing that
+      // produced uneven render cadence. Syncing both to 60fps eliminates the
+      // stutter while keeping note scrolling smooth. Party modes (BR, PTM) were
+      // unaffected because they use local state/refs instead of the store.
       const now = performance.now();
-      if (now - lastCurrentTimeUpdateRef.current >= 25) {
+      if (now - lastCurrentTimeUpdateRef.current >= 16) {
         setCurrentTime(adjustedTime);
         lastCurrentTimeUpdateRef.current = now;
       }

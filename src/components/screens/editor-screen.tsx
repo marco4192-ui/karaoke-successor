@@ -453,7 +453,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                   🏷️
                 </Button>
               )}
-              <Button onClick={refreshSongs} variant="outline" className="border-white/20 hover:bg-white/10" title={t('editor.refreshTitle')} data-testid="editor-refresh-button">
+              <Button onClick={refreshSongs} variant="outline" className="border-white/20" title={t('editor.refreshTitle')} data-testid="editor-refresh-button">
                 🔄 {t('editor.refreshBtn')}
               </Button>
               <Button
@@ -462,9 +462,9 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
                 className={selectMode ? 'bg-violet-500 hover:bg-violet-400' : 'border-white/20 text-white'}
                 data-testid="editor-select-mode-toggle"
               >
-                {selectMode ? '✕ ' + t('editor.exitSelectMode') : '☑️ ' + t('editor.selectMode')}
+                {selectMode ? '✕ ' + t('editor.exitSelectMode') : '☑️ AI Support'}
               </Button>
-              <Button onClick={onBack} variant="outline" className="border-white/20 hover:bg-white/10" data-testid="editor-back-button">
+              <Button onClick={onBack} variant="outline" className="border-white/20" data-testid="editor-back-button">
                 ← {t('editor.back')}
               </Button>
               <FullscreenButton />
@@ -511,7 +511,7 @@ export function EditorScreen({ onBack }: { onBack: () => void }) {
               <Button
                 onClick={() => setFilterMode(filterMode === 'no-year' ? 'all' : 'no-year')}
                 variant={filterMode === 'no-year' ? 'default' : 'outline'}
-                className={filterMode === 'no-year' ? 'bg-emerald-500 hover:bg-emerald-400' : 'border-white/20 text-white hover:bg-white/10'}
+                className={filterMode === 'no-year' ? 'bg-emerald-500 hover:bg-emerald-400' : 'border-white/20 text-white'}
                 size="sm"
                 data-testid="editor-filter-noyear"
               >

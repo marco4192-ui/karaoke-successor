@@ -199,7 +199,7 @@ export function LibraryTab({
                 variant="ghost"
                 size="sm"
                 onClick={() => handleRemoveAdditionalFolder(index)}
-                className="text-red-400/60 hover:text-red-400 hover:bg-red-500/10 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="text-red-400/60 hover:text-red-400 hover:bg-red-500/10 shrink-0 opacity-50 group-hover:opacity-100 transition-opacity"
                 title={t('settingsLibrary.removeFolder')}
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

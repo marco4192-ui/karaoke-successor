@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LibrarySettings, LibraryViewMode, LibraryGroupBy } from './types';
 import { LANGUAGE_NAMES } from '@/lib/i18n/translations';
 import type { Language } from '@/lib/i18n/translations';
@@ -55,14 +56,6 @@ export function LibraryFilters({
     paddingRight: '32px',
   };
 
-  const smallSelectStyle = {
-    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-    backgroundRepeat: 'no-repeat' as const,
-    backgroundPosition: 'right 6px center',
-    backgroundSize: '14px',
-    paddingRight: '28px',
-  };
-
   return (
     <div className="space-y-4 mb-6">
       <div className="flex flex-col sm:flex-row gap-4">
@@ -101,44 +94,53 @@ export function LibraryFilters({
       <div className="flex flex-wrap gap-3 items-center">
         <div className="flex items-center gap-2">
           <span className="text-white/40 text-sm">{t('libraryFilters.genreLabel')}</span>
-          <select
+          <Select
             value={settings.filterGenre || 'all'}
-            onChange={(e) => setSettings(prev => ({ ...prev, filterGenre: e.target.value }))}
-            className="bg-gray-800 border border-white/20 rounded-md px-3 py-1.5 text-white text-sm appearance-none cursor-pointer hover:border-purple-500/50 focus:border-purple-500 focus:outline-none"
-            style={smallSelectStyle}
+            onValueChange={(value) => setSettings(prev => ({ ...prev, filterGenre: value }))}
           >
-            {availableGenres.map(g => (
-              <option key={g} value={g} className="bg-gray-800 text-white">{g === 'all' ? t('libraryFilters.allGenres') : g}</option>
-            ))}
-          </select>
+            <SelectTrigger className="w-[140px] h-8 bg-gray-800 border-white/20 text-white text-sm hover:border-purple-500/50 focus:border-purple-500 focus:ring-purple-500">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {availableGenres.map(g => (
+                <SelectItem key={g} value={g}>{g === 'all' ? t('libraryFilters.allGenres') : g}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
         <div className="flex items-center gap-2">
           <span className="text-white/40 text-sm">{t('libraryFilters.languageLabel')}</span>
-          <select
+          <Select
             value={settings.filterLanguage || 'all'}
-            onChange={(e) => setSettings(prev => ({ ...prev, filterLanguage: e.target.value }))}
-            className="bg-gray-800 border border-white/20 rounded-md px-3 py-1.5 text-white text-sm appearance-none cursor-pointer hover:border-cyan-500/50 focus:border-cyan-500 focus:outline-none"
-            style={smallSelectStyle}
+            onValueChange={(value) => setSettings(prev => ({ ...prev, filterLanguage: value }))}
           >
-            {availableLanguages.map(l => (
-              <option key={l} value={l} className="bg-gray-800 text-white">{l === 'all' ? t('libraryFilters.allLanguages') : (LANGUAGE_NAMES[l as Language] || l)}</option>
-            ))}
-          </select>
+            <SelectTrigger className="w-[140px] h-8 bg-gray-800 border-white/20 text-white text-sm hover:border-cyan-500/50 focus:border-cyan-500 focus:ring-cyan-500">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {availableLanguages.map(l => (
+                <SelectItem key={l} value={l}>{l === 'all' ? t('libraryFilters.allLanguages') : (LANGUAGE_NAMES[l as Language] || l)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
         <div className="flex items-center gap-2">
           <span className="text-white/40 text-sm">{t('library.yearFilter')}</span>
-          <select
+          <Select
             value={settings.filterYear || 'all'}
-            onChange={(e) => setSettings(prev => ({ ...prev, filterYear: e.target.value }))}
-            className="bg-gray-800 border border-white/20 rounded-md px-3 py-1.5 text-white text-sm appearance-none cursor-pointer hover:border-cyan-500/50 focus:border-cyan-500 focus:outline-none"
-            style={smallSelectStyle}
+            onValueChange={(value) => setSettings(prev => ({ ...prev, filterYear: value }))}
           >
-            {availableYears.map(y => (
-              <option key={y} value={y} className="bg-gray-800 text-white">{y === 'all' ? t('library.allYears') : y}</option>
-            ))}
-          </select>
+            <SelectTrigger className="w-[120px] h-8 bg-gray-800 border-white/20 text-white text-sm hover:border-cyan-500/50 focus:border-cyan-500 focus:ring-cyan-500">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {availableYears.map(y => (
+                <SelectItem key={y} value={y}>{y === 'all' ? t('library.allYears') : y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
         <button
