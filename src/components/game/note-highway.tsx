@@ -147,14 +147,19 @@ const NoteBlock = React.memo(function NoteBlock({
 
   // Calculate horizontal position (distance from sing line)
   const distanceFromSingLine = (timeUntilNote / noteWindow) * (100 - singLinePosition + noteWidthExtra);
-  const x = singLinePosition + distanceFromSingLine;
+  // DO-NOT-CHANGE: Positions are rounded to 2 decimal places to eliminate
+  // sub-pixel blur. Floating-point percentages like 47.38271% cause the
+  // browser to anti-alias note edges differently each frame, producing a
+  // shimmering/blurry effect. Rounding to 0.01% snaps notes to consistent
+  // sub-pixel boundaries without perceptible jitter.
+  const x = Math.round((singLinePosition + distanceFromSingLine) * 100) / 100;
 
   // Calculate vertical position based on pitch
   const pr = pitchStats.pitchRange || 1;
-  const pitchY = visibleTop + visibleRange - ((note.pitch - pitchStats.minPitch) / pr) * visibleRange;
+  const pitchY = Math.round((visibleTop + visibleRange - ((note.pitch - pitchStats.minPitch) / pr) * visibleRange) * 100) / 100;
 
   // Calculate note dimensions
-  const noteWidthPercent = (note.duration / noteWindow) * (100 - singLinePosition + noteWidthExtra);
+  const noteWidthPercent = Math.round(((note.duration / noteWindow) * (100 - singLinePosition + noteWidthExtra)) * 100) / 100;
   const noteHeight = 24;
 
   // Skip notes that are too far off-screen
@@ -210,7 +215,11 @@ const NoteBlock = React.memo(function NoteBlock({
         top: `${pitchY}%`,
         width: `${noteWidthPercent}%`,
         height: `${noteHeight}px`,
-        transform: 'translateY(-50%)',
+        transform: 'translateY(-50%) translateZ(0)',
+        // DO-NOT-CHANGE: will-change promotes the note to its own GPU
+        // compositing layer, avoiding repaints on sibling note position
+        // changes. translateZ(0) acts as a fallback GPU acceleration hint.
+        willChange: 'left, top, width, opacity',
         boxShadow: isActive ? `0 0 15px ${glowColor}` : 'none',
         opacity: isPast ? (accuracy > 0.3 ? 0.8 : 0.3) : 1,
         ...noteShape.style,
@@ -244,7 +253,9 @@ const PitchIndicator = React.memo(function PitchIndicator({
   if (detectedPitch === null) return null;
 
   const pr = pitchStats.pitchRange || 1;
-  const pitchY = visibleTop + visibleRange - ((detectedPitch - pitchStats.minPitch) / pr) * visibleRange;
+  // DO-NOT-CHANGE: Round pitchY to 2 decimal places for same sub-pixel
+  // stability reason as NoteBlock positions (see NoteBlock comment).
+  const pitchY = Math.round((visibleTop + visibleRange - ((detectedPitch - pitchStats.minPitch) / pr) * visibleRange) * 100) / 100;
 
   return (
     <div
@@ -252,7 +263,9 @@ const PitchIndicator = React.memo(function PitchIndicator({
       style={{
         left: `${singLinePosition - 1.5}%`,
         top: `${pitchY}%`,
-        transform: 'translateY(-50%)',
+        transform: 'translateY(-50%) translateZ(0)',
+        // DO-NOT-CHANGE: GPU compositing hints for smooth pitch indicator movement.
+        willChange: 'top',
         background: `linear-gradient(to right, ${playerColor}, ${withAlpha(playerColor, 0.7)})`,
         boxShadow: `0 0 10px ${withAlpha(playerColor, 0.7)}`,
         outline: '2px solid',
@@ -320,7 +333,10 @@ export const NoteHighway = React.memo(function NoteHighway({
   const resolvedPlayerName = playerName || t('prominentScore.player1');
 
   return (
-    <div className={`relative w-full h-full overflow-hidden ${className}`}>
+    // DO-NOT-CHANGE: CSS contain: 'content' tells the browser this element's
+    // layout is independent of its parent, allowing the compositor to skip
+    // recalculating parent layout when notes move. This reduces paint work.
+    <div className={`relative w-full h-full overflow-hidden ${className}`} style={{ contain: 'content' }}>
       {/* Background gradient */}
       <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(${playerNumber === 1 ? 'to bottom' : 'to top'}, ${withAlpha(effectiveColor, 0.2)}, transparent)` }} />
 

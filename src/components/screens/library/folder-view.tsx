@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useState, useEffect } from 'react';
 import { Song } from '@/types/game';
 import { LibraryGroupBy } from './types';
 import { getSortedFolderKeys } from './utils';
@@ -80,8 +81,40 @@ export function FolderView({
   const isLanguageGroup = groupBy === 'language';
   const isGenreGroup = groupBy === 'genre';
 
+  // DO-NOT-CHANGE: ResizeObserver scrollability pattern.
+  // Measures the parent's constrained height (from the flex chain) and applies it
+  // explicitly to this container so that overflow-y-auto works reliably in Tauri
+  // webviews, where the flex min-h-0 chain can silently fail to constrain height.
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerHeight, setContainerHeight] = useState(0);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const parent = el.parentElement;
+      if (parent && parent.clientHeight > 0) {
+        setContainerHeight(parent.clientHeight);
+      }
+    };
+
+    measure();
+
+    const observer = new ResizeObserver(measure);
+    if (el.parentElement) {
+      observer.observe(el.parentElement);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="pr-1">
+    <div
+      ref={containerRef}
+      className="pr-1 overflow-y-auto"
+      style={{ height: containerHeight > 0 ? `${containerHeight}px` : undefined, minHeight: '200px' }}
+    >
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4 pb-4">
       {getSortedFolderKeys(groupedSongs, groupBy).map((folderKey) => {
         const songs = groupedSongs.get(folderKey) || [];

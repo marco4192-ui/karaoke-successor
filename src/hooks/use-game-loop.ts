@@ -205,15 +205,16 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     checkNoteHitsRef.current = checkNoteHits;
     checkP2NoteHitsRef.current = checkP2NoteHits;
   }, [pitchResult, p2DetectedPitch, p2Volume, p2IsSinging, youtubeTime, nativeAudioTime, checkNoteHits, checkP2NoteHits]);
-  // Throttle detectedPitch store updates to ~30fps.
-  // Pitch visualization doesn't need 60fps — scoring reads pitch directly
-  // from the ref, not from the store, so accuracy is unaffected.
-  const lastPitchStoreUpdateRef = useRef(0);
-  // Throttle setCurrentTime state updates to ~40fps (25ms).
-  // The game loop runs at 60fps via requestAnimationFrame.
-  // Note highway, lyrics highlighting and progress bar benefit from higher
-  // update rate for smoother visual scrolling. Scoring uses adjustedTime
-  // directly, not the state value, so throttling has zero impact on accuracy.
+  // DO-NOT-CHANGE: lastPitchStoreUpdateRef was removed to eliminate a
+  // separate throttle gate for setDetectedPitch. Previously, setCurrentTime
+  // and setDetectedPitch fired on alternating rAF frames (two independent
+  // 16ms gates), creating ~120 Zustand gameState objects/sec. Now both are
+  // called in the same rAF callback inside a single 16ms gate, so React 18
+  // automatic batching produces ~60 gameState objects/sec instead.
+  // Single throttle gate for BOTH setCurrentTime and setDetectedPitch store writes.
+  // DO-NOT-CHANGE: This 16ms gate (~60fps) is the sole timing gate for all
+  // Zustand store writes in the game loop. The two writes happen inside the
+  // same if-block so React 18 automatic batching merges them into one render.
   const lastCurrentTimeUpdateRef = useRef(0);
   // When the game is paused mid-song we must remember where the song was so
   // that resume picks up from that exact wall-clock offset instead of from 0.
@@ -626,36 +627,40 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
 
       const adjustedTime = elapsed + timingOffset;
 
-      // Throttled: update React state at ~60fps (16ms).
-      // DO-NOT-CHANGE: Previously 40fps (25ms) but this caused visible stuttering
-      // in Single/Duet modes because the two store updates (currentTime at 40fps
-      // and detectedPitch at 60fps) had unsynchronized, irregular timing that
-      // produced uneven render cadence. Syncing both to 60fps eliminates the
-      // stutter while keeping note scrolling smooth. Party modes (BR, PTM) were
-      // unaffected because they use local state/refs instead of the store.
+      // Throttled: batch both Zustand store writes into a single rAF callback
+      // at ~60fps (16ms). React 18 automatic batching merges state updates from
+      // the same callback into one re-render, so calling setCurrentTime and
+      // setDetectedPitch here produces ONE gameState object (~60/sec) instead
+      // of TWO on alternating frames (~120/sec).
+      // DO-NOT-CHANGE: Do NOT separate these two store writes into independent
+      // throttle gates — that was the root cause of Single/Duet stuttering.
+      // Party modes (BR, PTM) were unaffected because they use local useState
+      // instead of the Zustand store. Scoring (checkNoteHits) runs at full rAF
+      // rate outside this throttle for maximum accuracy.
       const now = performance.now();
+      // Read pitch from ref (not closure) to avoid stale values
+      const currentPitch = pitchResultRef.current;
       if (now - lastCurrentTimeUpdateRef.current >= 16) {
         setCurrentTime(adjustedTime);
         lastCurrentTimeUpdateRef.current = now;
+        // DO-NOT-CHANGE: setDetectedPitch MUST stay inside this if-block so
+        // React 18 batches it with setCurrentTime in the same rAF callback.
+        if (currentPitch) {
+          setDetectedPitch(currentPitch.rawNote ?? currentPitch.note ?? null);
+        }
       }
 
-      // Read pitch from ref (not closure) to avoid stale values
-      const currentPitch = pitchResultRef.current;
       if (currentPitch) {
         const pitchNow = performance.now();
         // Throttle volume update to ~60fps (16ms) for responsive volume meter.
+        // Volume is a local useState (not Zustand), so this doesn't cause
+        // extra re-renders of other components.
         if (pitchNow - lastVolumeUpdateRef.current >= 16) {
           setVolume(currentPitch.volume);
           lastVolumeUpdateRef.current = pitchNow;
         }
-        // Throttle detectedPitch store update to ~60fps (16ms).
-        // Scoring uses currentPitch directly (not the store), so accuracy is unaffected.
-        // Store rawNote (MIDI note) instead of frequency (Hz) for consistency —
-        // the store's detectedPitch is read as a MIDI note by components.
-        if (pitchNow - lastPitchStoreUpdateRef.current >= 16) {
-          setDetectedPitch(currentPitch.rawNote ?? currentPitch.note ?? null);
-          lastPitchStoreUpdateRef.current = pitchNow;
-        }
+        // DO-NOT-CHANGE: setDetectedPitch was removed from here and batched
+        // with setCurrentTime above to halve Zustand store churn (~60 vs ~120/sec).
         checkNoteHitsRef.current(adjustedTime, currentPitch);
 
         // Comeback detection for achievement: current combo >= 50 after missing >= 10 notes
