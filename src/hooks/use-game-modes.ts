@@ -53,6 +53,12 @@ interface BlindPassagePattern {
  * Group lyric lines into "passages" — consecutive lines separated by a gap >1.5 seconds.
  * A passage typically represents a verse, chorus, bridge, etc.
  * Returns an array of passages, each containing the lines belonging to it.
+ *
+ * DO-NOT-CHANGE: The 1500ms threshold and minimum passage count are carefully tuned.
+ * - 1500ms catches verse/chorus/bridge boundaries (typical inter-line gaps are 0.5-1.2s,
+ *   inter-section gaps are 1.5-4s) while keeping lines within a section grouped.
+ * - Fallback to 3+ equal-sized passages ensures blind/missing-words modes work even
+ *   on songs with no natural breaks (e.g., continuous dance tracks).
  */
 export function groupIntoPassages(lines: LyricLine[]): LyricLine[][] {
   if (!lines || lines.length === 0) return [];
@@ -70,6 +76,22 @@ export function groupIntoPassages(lines: LyricLine[]): LyricLine[][] {
     }
   }
   passages.push(currentPassage);
+
+  // Fallback: if gap-based grouping produces too few passages (< 3),
+  // split into equal-sized groups so blind/missing-words modes have
+  // multiple passages to work with. Without this, songs with no natural
+  // breaks (e.g., continuous dance/pop tracks) would have only 1 passage,
+  // and since the first is always visible, no notes would ever be hidden.
+  if (passages.length < 3 && lines.length >= 6) {
+    const targetCount = Math.min(8, Math.max(3, Math.ceil(lines.length / 3)));
+    const linesPerGroup = Math.ceil(lines.length / targetCount);
+    const groups: LyricLine[][] = [];
+    for (let i = 0; i < lines.length; i += linesPerGroup) {
+      groups.push(lines.slice(i, i + linesPerGroup));
+    }
+    return groups;
+  }
+
   return passages;
 }
 

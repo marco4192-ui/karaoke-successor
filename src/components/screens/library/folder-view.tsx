@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Song } from '@/types/game';
 import { LibraryGroupBy } from './types';
 import { getSortedFolderKeys } from './utils';
@@ -77,6 +77,7 @@ export function FolderView({
   getGroupDisplayName,
 }: FolderViewProps) {
   const { t } = useTranslation();
+
   const isLetterGroup = groupBy === 'artist' || groupBy === 'title';
   const isLanguageGroup = groupBy === 'language';
   const isGenreGroup = groupBy === 'genre';

@@ -147,11 +147,6 @@ const NoteBlock = React.memo(function NoteBlock({
 
   // Calculate horizontal position (distance from sing line)
   const distanceFromSingLine = (timeUntilNote / noteWindow) * (100 - singLinePosition + noteWidthExtra);
-  // DO-NOT-CHANGE: Positions are rounded to 2 decimal places to eliminate
-  // sub-pixel blur. Floating-point percentages like 47.38271% cause the
-  // browser to anti-alias note edges differently each frame, producing a
-  // shimmering/blurry effect. Rounding to 0.01% snaps notes to consistent
-  // sub-pixel boundaries without perceptible jitter.
   const x = Math.round((singLinePosition + distanceFromSingLine) * 100) / 100;
 
   // Calculate vertical position based on pitch
@@ -216,9 +211,6 @@ const NoteBlock = React.memo(function NoteBlock({
         width: `${noteWidthPercent}%`,
         height: `${noteHeight}px`,
         transform: 'translateY(-50%) translateZ(0)',
-        // DO-NOT-CHANGE: will-change promotes the note to its own GPU
-        // compositing layer, avoiding repaints on sibling note position
-        // changes. translateZ(0) acts as a fallback GPU acceleration hint.
         willChange: 'left, top, width, opacity',
         boxShadow: isActive ? `0 0 15px ${glowColor}` : 'none',
         opacity: isPast ? (accuracy > 0.3 ? 0.8 : 0.3) : 1,
@@ -333,9 +325,6 @@ export const NoteHighway = React.memo(function NoteHighway({
   const resolvedPlayerName = playerName || t('prominentScore.player1');
 
   return (
-    // DO-NOT-CHANGE: CSS contain: 'content' tells the browser this element's
-    // layout is independent of its parent, allowing the compositor to skip
-    // recalculating parent layout when notes move. This reduces paint work.
     <div className={`relative w-full h-full overflow-hidden ${className}`} style={{ contain: 'content' }}>
       {/* Background gradient */}
       <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(${playerNumber === 1 ? 'to bottom' : 'to top'}, ${withAlpha(effectiveColor, 0.2)}, transparent)` }} />

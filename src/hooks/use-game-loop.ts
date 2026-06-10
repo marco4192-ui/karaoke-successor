@@ -7,6 +7,9 @@ import { useGameStore } from '@/lib/game/store';
 import { useGameResults } from '@/hooks/use-game-results';
 import { playSongMedia, scheduleMediaWatchdog } from '@/hooks/use-media-playback';
 import { computeGameElapsedMs, buildP2PitchResult, getEffectiveSongEnd } from '@/hooks/game-loop-utils';
+import { getVisibleNotes, NOTE_WINDOW } from '@/lib/game/note-utils';
+import type { TimingData } from '@/components/screens/game-screen-types';
+import type { Note, LyricLine } from '@/types/game';
 
 // ── Re-exports ──
 export { useGameResults } from '@/hooks/use-game-results';
@@ -72,6 +75,12 @@ interface UseGameLoopOptions {
   nativeAudioResume?: () => Promise<void>;
   nativeAudioStop?: () => Promise<void>;
   nativeAudioSeek?: (_positionMs: number) => Promise<void>;
+  // Refs for direct visible-notes updates (BR-pattern: ref updated every rAF frame,
+  // component reads latest on render for smooth scrolling).
+  timingDataRef?: React.RefObject<TimingData | null>;
+  visibleNotesRef?: React.MutableRefObject<Array<Note & { lineIndex: number; line: LyricLine }>>;
+  p1VisibleNotesRef?: React.MutableRefObject<Array<Note & { lineIndex: number; line: LyricLine }>>;
+  p2VisibleNotesRef?: React.MutableRefObject<Array<Note & { lineIndex: number; line: LyricLine }>>;
 }
 
 interface UseGameLoopResult {
@@ -139,6 +148,10 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
     nativeAudioResume,
     nativeAudioStop,
     nativeAudioSeek,
+    timingDataRef,
+    visibleNotesRef,
+    p1VisibleNotesRef,
+    p2VisibleNotesRef,
   } = options;
 
   // Subscribe to the store's game status so the Escape-key pause dialog
@@ -627,20 +640,36 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
 
       const adjustedTime = elapsed + timingOffset;
 
+      // Update visible notes refs every frame (BR-pattern).
+      // This gives NoteHighway frame-accurate note positions without
+      // going through the Zustand store. The component re-renders at
+      // ~40fps from the batched store writes below, and reads these refs
+      // for the latest frame data.
+      if (timingDataRef?.current) {
+        const td = timingDataRef.current;
+        if (visibleNotesRef) {
+          visibleNotesRef.current = getVisibleNotes(td.allNotes, adjustedTime, NOTE_WINDOW);
+        }
+        if (p1VisibleNotesRef) {
+          p1VisibleNotesRef.current = getVisibleNotes(td.p1Notes, adjustedTime, NOTE_WINDOW);
+        }
+        if (p2VisibleNotesRef) {
+          p2VisibleNotesRef.current = getVisibleNotes(td.p2Notes, adjustedTime, NOTE_WINDOW);
+        }
+      }
+
       // Throttled: batch both Zustand store writes into a single rAF callback
-      // at ~60fps (16ms). React 18 automatic batching merges state updates from
-      // the same callback into one re-render, so calling setCurrentTime and
-      // setDetectedPitch here produces ONE gameState object (~60/sec) instead
-      // of TWO on alternating frames (~120/sec).
-      // DO-NOT-CHANGE: Do NOT separate these two store writes into independent
-      // throttle gates — that was the root cause of Single/Duet stuttering.
-      // Party modes (BR, PTM) were unaffected because they use local useState
-      // instead of the Zustand store. Scoring (checkNoteHits) runs at full rAF
-      // rate outside this throttle for maximum accuracy.
+      // at ~40fps (25ms), matching BR's approach. React 18 automatic batching
+      // merges state updates from the same callback into one re-render, so
+      // calling setCurrentTime and setDetectedPitch here produces ONE gameState
+      // object (~40/sec) instead of two on alternating frames.
+      // Previous 60fps caused excessive Zustand store writes that triggered
+      // cascading re-renders across 13+ subscribers in game-screen-hook.ts.
+      // Scoring (checkNoteHits) runs at full rAF rate outside this throttle.
       const now = performance.now();
       // Read pitch from ref (not closure) to avoid stale values
       const currentPitch = pitchResultRef.current;
-      if (now - lastCurrentTimeUpdateRef.current >= 16) {
+      if (now - lastCurrentTimeUpdateRef.current >= 25) {
         setCurrentTime(adjustedTime);
         lastCurrentTimeUpdateRef.current = now;
         // DO-NOT-CHANGE: setDetectedPitch MUST stay inside this if-block so
@@ -659,8 +688,6 @@ export function useGameLoop(options: UseGameLoopOptions): UseGameLoopResult {
           setVolume(currentPitch.volume);
           lastVolumeUpdateRef.current = pitchNow;
         }
-        // DO-NOT-CHANGE: setDetectedPitch was removed from here and batched
-        // with setCurrentTime above to halve Zustand store churn (~60 vs ~120/sec).
         checkNoteHitsRef.current(adjustedTime, currentPitch);
 
         // Comeback detection for achievement: current combo >= 50 after missing >= 10 notes

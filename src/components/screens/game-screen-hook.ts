@@ -289,6 +289,10 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     visibleNotes,
     p1VisibleNotes,
     p2VisibleNotes,
+    visibleNotesRef,
+    p1VisibleNotesRef,
+    p2VisibleNotesRef,
+    timingDataRef,
   } = useGameTimingData({
     effectiveSong,
     isDuetMode,
@@ -478,6 +482,11 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     nativeAudioResume: nativeAudio.resume,
     nativeAudioStop: nativeAudio.stop,
     nativeAudioSeek: nativeAudio.seek,
+    // BR-pattern: pass refs for per-frame visible notes updates
+    timingDataRef,
+    visibleNotesRef,
+    p1VisibleNotesRef,
+    p2VisibleNotesRef,
   });
 
   // ── Challenge Time Limit: countdown timer that ends the game when expired ──
@@ -582,11 +591,11 @@ export function useGameScreenLogic({ onEnd, onBack }: GameScreenProps): GameScre
     p2State,
     p2DetectedPitch,
 
-    // Timing
+    // Timing — read from refs so the game loop's frame-accurate data is used
     timingData,
-    visibleNotes,
-    p1VisibleNotes,
-    p2VisibleNotes,
+    visibleNotes: visibleNotesRef.current,
+    p1VisibleNotes: p1VisibleNotesRef.current,
+    p2VisibleNotes: p2VisibleNotesRef.current,
     pitchStats,
     p1PitchStats,
     p2PitchStats,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import type { Song, Difficulty, LyricLine, Note } from '@/types/game';
 import { calculateScoringMetadata } from '@/lib/game/scoring';
 import {
@@ -27,6 +27,14 @@ interface GameTimingDataResult {
   visibleNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
   p1VisibleNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
   p2VisibleNotes: Array<Note & { lineIndex: number; line: LyricLine }>;
+  /** Ref updated by the game loop every rAF frame with frame-accurate visible notes. */
+  visibleNotesRef: React.MutableRefObject<Array<Note & { lineIndex: number; line: LyricLine }>>;
+  /** Ref for P1 visible notes (duet mode). */
+  p1VisibleNotesRef: React.MutableRefObject<Array<Note & { lineIndex: number; line: LyricLine }>>;
+  /** Ref for P2 visible notes (duet mode). */
+  p2VisibleNotesRef: React.MutableRefObject<Array<Note & { lineIndex: number; line: LyricLine }>>;
+  /** Ref to latest timingData, read by the game loop for per-frame note computation. */
+  timingDataRef: React.MutableRefObject<TimingData | null>;
 }
 
 /**
@@ -133,6 +141,17 @@ export function useGameTimingData({
     };
   }, [songForTiming, isDuetMode, difficulty]);
 
+  // ── Refs for direct game-loop access (BR-pattern) ──
+  // The game loop updates visibleNotesRef every rAF frame with frame-accurate data.
+  // Components read from these refs on each render for smooth scrolling.
+  // The useMemo below also updates the refs as a fallback for when the game
+  // loop hasn't started yet (pre-gameplay renders).
+  const visibleNotesRef = useRef<Array<Note & { lineIndex: number; line: LyricLine }>>([]);
+  const p1VisibleNotesRef = useRef<Array<Note & { lineIndex: number; line: LyricLine }>>([]);
+  const p2VisibleNotesRef = useRef<Array<Note & { lineIndex: number; line: LyricLine }>>([]);
+  const timingDataRef = useRef(timingData);
+  timingDataRef.current = timingData;
+
   const beatDuration = timingData?.beatDuration || (effectiveSong?.bpm ? 15000 / effectiveSong.bpm : 500);
 
   // Calculate pitch ranges
@@ -152,21 +171,25 @@ export function useGameTimingData({
     return calculatePitchStats(notes);
   }, [timingData, pitchStats]);
 
-  // Get visible notes using shared utility
-  const visibleNotes = useMemo(() =>
-    getVisibleNotes(timingData?.allNotes, currentTime, NOTE_WINDOW),
-    [currentTime, timingData]
-  );
+  // Get visible notes using shared utility.
+  // Also store in refs so the game loop can override with frame-accurate data.
+  const visibleNotes = useMemo(() => {
+    const notes = getVisibleNotes(timingData?.allNotes, currentTime, NOTE_WINDOW);
+    visibleNotesRef.current = notes;
+    return notes;
+  }, [currentTime, timingData]);
 
-  const p1VisibleNotes = useMemo(() =>
-    getVisibleNotes(timingData?.p1Notes, currentTime, NOTE_WINDOW),
-    [currentTime, timingData]
-  );
+  const p1VisibleNotes = useMemo(() => {
+    const notes = getVisibleNotes(timingData?.p1Notes, currentTime, NOTE_WINDOW);
+    p1VisibleNotesRef.current = notes;
+    return notes;
+  }, [currentTime, timingData]);
 
-  const p2VisibleNotes = useMemo(() =>
-    getVisibleNotes(timingData?.p2Notes, currentTime, NOTE_WINDOW),
-    [currentTime, timingData]
-  );
+  const p2VisibleNotes = useMemo(() => {
+    const notes = getVisibleNotes(timingData?.p2Notes, currentTime, NOTE_WINDOW);
+    p2VisibleNotesRef.current = notes;
+    return notes;
+  }, [currentTime, timingData]);
 
   return {
     timingData,
@@ -177,5 +200,9 @@ export function useGameTimingData({
     visibleNotes,
     p1VisibleNotes,
     p2VisibleNotes,
+    visibleNotesRef,
+    p1VisibleNotesRef,
+    p2VisibleNotesRef,
+    timingDataRef,
   };
 }

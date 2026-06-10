@@ -164,14 +164,10 @@ export function useBattleRoyaleRoundHandlers({
         setShowElimination(false);
         const advanced = advanceToNextRound(withFinale);
         gameRef.current = advanced;
-        onUpdateGameRef.current(advanced);
+        // DO-NOT-CHANGE: Skip intermediate 'setup' status — same fix as normal flow.
+        // handleStartRound sets status directly to 'countdown'.
         roundEndingRef.current = false;
-        // Auto-start grand finale round (will show GrandFinaleIntro then auto-advance)
-        autoStartTimerRef.current = setTimeout(() => {
-          autoStartTimerRef.current = null;
-          if (!mountedRef.current) return;
-          handleStartRoundRef.current();
-        }, 300);
+        handleStartRoundRef.current();
       }, 4000);
       return;
     }
@@ -196,21 +192,15 @@ export function useBattleRoyaleRoundHandlers({
         setShowElimination(false);
         return;
       }
-      // IMPORTANT: Update game status FIRST (before hiding overlay) to prevent
-      // a brief flash of the old pause/setup screen during segment transitions.
-      // Do NOT reorder this — the status must change in the same render batch
-      // as the overlay hide, not after it.
       const nextGame = advanceToNextRound(updatedGame);
       gameRef.current = nextGame;
-      onUpdateGameRef.current(nextGame);
-
+      // DO-NOT-CHANGE: Do NOT call onUpdateGameRef here. handleStartRound
+      // sets status directly to 'countdown', skipping the intermediate
+      // 'setup' status that would cause RoundSetupView to flash.
+      // React 18 batches the state updates, so only 'countdown' renders.
       setShowElimination(false);
       roundEndingRef.current = false;
-
-      setTimeout(() => {
-        if (!mountedRef.current) return;
-        handleStartRoundRef.current();
-      }, 300);
+      handleStartRoundRef.current();
     }, 2500);
   // Stable deps: removed game, activePlayers.length, onUpdateGame — read from refs instead
   }, [stopPitch, audioRef, videoRef, audioHasPlayedRef, setShowElimination]);
