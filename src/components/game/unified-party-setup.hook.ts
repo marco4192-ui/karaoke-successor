@@ -4,7 +4,7 @@ import { PARTY_GAME_CONFIGS } from './unified-party-setup.config';
 import type { SongSelectionOption, SelectedPlayer, GameSetupResult, InputMode, GameModeSettingsMap } from './unified-party-setup.types';
 import { getGenres, getLanguages, filterSongs } from '@/lib/game/song-library';
 import { useGameStore } from '@/lib/game/store';
-import { StorageKeys, getItem, setItem, removeItem, setJson, getJson, getJsonOptional, getString } from '@/lib/storage';
+import { StorageKeys, getItem, setItem, removeItem, setJson, getJsonOptional, getString } from '@/lib/storage';
 
 interface UsePartySetupArgs {
   gameMode: GameMode;
@@ -48,9 +48,10 @@ export function usePartySetup({
   );
 
   // ── Mic-to-Player assignment (micId → profileId) ──
-  const [micAssignments, setMicAssignments] = useState<Record<string, string>>(() => {
-    return getJson<Record<string, string>>(StorageKeys.PLAYER_MIC_PREFERENCES, {}) || {};
-  });
+  // Start with an empty map — we only restore preferences when a player is
+  // explicitly toggled ON.  This prevents stale assignments from a previous
+  // game / round from blocking mic dropdowns for the current session.
+  const [micAssignments, setMicAssignments] = useState<Record<string, string>>({});
 
   // ── Shared single mic (for modes like pass-the-mic) ──
   const [selectedMicId, setSelectedMicId] = useState<string | null>(() => {
@@ -108,6 +109,7 @@ export function usePartySetup({
           for (const [mic, pid] of Object.entries(updated)) {
             if (pid === playerId) delete updated[mic];
           }
+          persistMicAssignments(updated);
           return updated;
         });
         return prev.filter(id => id !== playerId);
@@ -118,7 +120,8 @@ export function usePartySetup({
       }
       setError(null);
       // Auto-restore this player's last mic assignment from localStorage
-      // (only if the mic still exists in saved mic configs)
+      // (only if the mic still exists in saved mic configs AND is not already
+      // assigned to another player in the current session)
       try {
         const preferences = getJsonOptional<Record<string, string>>(StorageKeys.PLAYER_MIC_PREFERENCES);
         if (preferences) {
@@ -132,7 +135,8 @@ export function usePartySetup({
               if (micExists) {
                 setMicAssignments(prevMic => {
                   const updated = { ...prevMic };
-                  // Don't overwrite if this mic is already taken by another selected player
+                  // Only restore if this mic is not already taken by another
+                  // player in the current session
                   if (!updated[preferredMicId]) {
                     updated[preferredMicId] = playerId;
                     persistMicAssignments(updated);

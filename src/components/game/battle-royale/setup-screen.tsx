@@ -716,11 +716,19 @@ export function BattleRoyaleSetupScreen({ profiles, songs, onStartGame, onBack }
                           <option value="" className="bg-gray-900">
                             {t('battleRoyale.defaultMicrophone')}
                           </option>
-                          {availableMics.map(mic => (
-                            <option key={mic.deviceId} value={mic.deviceId} className="bg-gray-900">
-                              {mic.label}
-                            </option>
-                          ))}
+                          {availableMics
+                            .filter(mic => {
+                              // Only show mics not already selected by another player
+                              const otherAssignment = Object.entries(playerMicDevices)
+                                .find(([pid, deviceId]) => pid !== profile.id && deviceId === mic.deviceId);
+                              return !otherAssignment;
+                            })
+                            .map(mic => (
+                              <option key={mic.deviceId} value={mic.deviceId} className="bg-gray-900">
+                                {mic.label}
+                              </option>
+                            ))
+                          }
                         </select>
                       </div>
                     )}
