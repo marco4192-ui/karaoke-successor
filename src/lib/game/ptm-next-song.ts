@@ -81,7 +81,7 @@ export async function preparePtmNextSong(
         }
       } catch { /* non-critical */ }
 
-      const segments = generatePtmSegments(songWithUrls.duration, playerCount, explicitSegmentDuration, songWithUrls.lyrics);
+      const segments = generatePtmSegments(songWithUrls.duration, playerCount, explicitSegmentDuration, songWithUrls.lyrics, songWithUrls.bpm);
       if (segments.length === 0) {
         // Song too short — retry with another random song (up to MAX_RETRIES)
         if (_retryCount < MAX_RETRIES) {
@@ -144,6 +144,7 @@ export async function preparePtmNextSong(
         startTime: snippet.startTime,
         endTime: snippet.endTime,
         playerId: null,
+        totalTicks: 0,
       }));
 
       return {

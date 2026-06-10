@@ -12,6 +12,9 @@ import { getVisibleNotes, NOTE_WINDOW } from '@/lib/game/note-utils';
 import type { CptmPlayer, CptmSegment, CptmSettings, CptmRoundResult, GamePhase } from './cptm-types';
 import { DEFAULT_CPTM_SETTINGS } from './cptm-types';
 
+/** Maximum points per segment — matches the constant in cptm-scoring.ts */
+const PTM_MAX_SEGMENT_POINTS = 2000;
+
 // ── Sub-hooks ──
 import { useCompanionPitchPolling } from './cptm-companion-polling';
 import { useCptmScoring } from './cptm-scoring';
@@ -289,6 +292,13 @@ export function useCptmGameLogic({
     [currentTime, allNotes]
   );
 
+  // ── Compute per-segment points per tick for normalized scoring ──
+  const segmentPointsPerTick = useMemo(() => {
+    const seg = initialSegments[currentSegmentIndex];
+    if (!seg || !seg.totalTicks || seg.totalTicks <= 0) return 0;
+    return PTM_MAX_SEGMENT_POINTS / seg.totalTicks;
+  }, [initialSegments, currentSegmentIndex]);
+
   // ═══════════════════════════════════════════════════════
   // ── SUB-HOOK: Scoring ──
   // ═══════════════════════════════════════════════════════
@@ -301,7 +311,7 @@ export function useCptmGameLogic({
     notesSource,
     currentTime,
     difficulty: safeSettings.difficulty,
-    scoringMeta,
+    segmentPointsPerTick,
     forceRender,
   });
 

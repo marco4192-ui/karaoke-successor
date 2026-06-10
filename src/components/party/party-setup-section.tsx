@@ -88,6 +88,7 @@ function generatePassTheMicSegments(song: Song, playerCount: number, explicitDur
       startTime: Math.round(i * adjustedDurMs),
       endTime: Math.round((i + 1) * adjustedDurMs),
       playerId: null,
+      totalTicks: 0,
     });
   }
   return segments;
@@ -174,7 +175,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               return;
             } else if (mode === 'companion-pass-the-mic') {
               const cptmPlayers = party.cptmPlayers;
-              const segments = generatePtmSegments(song.duration, cptmPlayers.length || 2, undefined, song.lyrics);
+              const segments = generatePtmSegments(song.duration, cptmPlayers.length || 2, undefined, song.lyrics, song.bpm);
               if (segments.length > 0) {
                 party.setCptmSegments(segments);
                 party.setCptmSong(song);
@@ -420,6 +421,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                     startTime: snippet.startTime,
                     endTime: snippet.endTime,
                     playerId: null,
+                    totalTicks: 0,
                   }));
 
                   const ptmPlayers = toPassTheMicPlayers(result.players);
@@ -521,7 +523,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
                   } catch { /* non-critical */ }
 
                   const playerCount = result.players.length || 2;
-                  const segments = generatePtmSegments(songWithUrls.duration, playerCount, undefined, songWithUrls.lyrics);
+                  const segments = generatePtmSegments(songWithUrls.duration, playerCount, undefined, songWithUrls.lyrics, songWithUrls.bpm);
                   if (segments.length === 0) {
                     toast({ title: t('partySetup.songTooShort'), description: t('partySetup.songTooShortCptm'), variant: 'destructive' });
                     break;
@@ -758,7 +760,7 @@ export function PartySetupSection({ screen, setScreen }: PartySetupSectionProps)
               setScreen('companion-singalong-game');
             } else if (party.selectedGameMode === 'companion-pass-the-mic') {
               const cptmPlayers = toCptmPlayers(party.unifiedSetupResult?.players || []);
-              const segments = generatePtmSegments(songWithUrls.duration, cptmPlayers.length || 2, undefined, songWithUrls.lyrics);
+              const segments = generatePtmSegments(songWithUrls.duration, cptmPlayers.length || 2, undefined, songWithUrls.lyrics, songWithUrls.bpm);
               if (segments.length > 0) {
                 party.setCptmPlayers(cptmPlayers);
                 party.setCptmSegments(segments);

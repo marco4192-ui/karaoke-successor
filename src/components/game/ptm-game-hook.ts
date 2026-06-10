@@ -17,6 +17,9 @@ import type { PassTheMicRoundResult } from '@/lib/game/party-store';
 import type { PtmPlayer, PtmSegment, PassTheMicSettings, GamePhase } from '@/components/game/ptm-types';
 import { DEFAULT_SETTINGS } from '@/components/game/ptm-types';
 
+/** Maximum points per segment — matches the constant in use-ptm-scoring.ts */
+const PTM_MAX_SEGMENT_POINTS = 2000;
+
 // Sub-hooks
 import { buildPlayerSchedule, type PtmScheduleEntry } from './ptm-schedule';
 import { usePtmNoteData } from './use-ptm-note-data';
@@ -267,6 +270,16 @@ export function usePtmGameLogic({
     currentTimeRef,
   });
 
+  // ── Compute per-segment points per tick for PTM normalized scoring ──
+  // Each segment is worth PTM_MAX_SEGMENT_POINTS max. Points per tick
+  // = maxPoints / totalTicks. Falls back to 0 (legacy scoring) when
+  // totalTicks is not available (e.g. no BPM in song data).
+  const segmentPointsPerTick = useMemo(() => {
+    const seg = initialSegments[currentSegmentIndex];
+    if (!seg || !seg.totalTicks || seg.totalTicks <= 0) return 0;
+    return PTM_MAX_SEGMENT_POINTS / seg.totalTicks;
+  }, [initialSegments, currentSegmentIndex]);
+
   // ── Scoring (sub-hook) ──
   usePtmScoring({
     phase,
@@ -276,7 +289,7 @@ export function usePtmGameLogic({
     currentTime,
     difficulty: safeSettings.difficulty,
     currentPlayerIndex,
-    scoringMeta,
+    segmentPointsPerTick,
     playersRef,
     forceRender,
   });

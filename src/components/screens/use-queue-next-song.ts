@@ -145,6 +145,7 @@ export function useQueueNextSong(onPlayAgain: () => void) {
           startTime: i * segmentDuration * 1000,
           endTime: Math.min((i + 1) * segmentDuration * 1000, fullSong.duration),
           playerId: null,
+          totalTicks: 0,
         });
       }
       party.setPassTheMicSegments(segments);

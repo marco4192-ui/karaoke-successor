@@ -453,7 +453,7 @@ export default function KaraokeZERO() {
               if (currentMode === 'pass-the-mic') {
                 const playerCount = party.passTheMicPlayers?.length || 2;
                 // Always generate initial segments (may be time-based if lyrics lack notes)
-                const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration, song.lyrics);
+                const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration, song.lyrics, song.bpm);
                 party.setPassTheMicSegments(segments);
                 // Ensure URLs AND lyrics (with notes) are ready BEFORE navigating to PTM screen.
                 // Always re-generate segments after lyrics load so score-based splitting is used.
@@ -472,7 +472,7 @@ export default function KaraokeZERO() {
                       } catch { /* non-critical */ }
                     }
                     // Always regenerate segments with the best available lyrics for score-based splitting
-                    const scoreSegments = generatePtmSegments(songWithUrls.duration, playerCount, party.passTheMicSettings?.segmentDuration, songWithUrls.lyrics);
+                    const scoreSegments = generatePtmSegments(songWithUrls.duration, playerCount, party.passTheMicSettings?.segmentDuration, songWithUrls.lyrics, songWithUrls.bpm);
                     party.setPassTheMicSegments(scoreSegments);
                     party.setPassTheMicSong(songWithUrls);
                   } catch {
@@ -538,7 +538,7 @@ export default function KaraokeZERO() {
             if (activeMode === 'pass-the-mic' && party.passTheMicPlayers?.length > 0) {
               const playerCount = party.passTheMicPlayers.length || 2;
               // Generate initial segments (may be time-based if lyrics lack notes)
-              const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration, song.lyrics);
+              const segments = generatePtmSegments(song.duration, playerCount, party.passTheMicSettings?.segmentDuration, song.lyrics, song.bpm);
               party.setPassTheMicSegments(segments);
               // Async: load lyrics with notes for score-based segment splitting
               (async () => {
@@ -555,7 +555,7 @@ export default function KaraokeZERO() {
                     } catch { /* non-critical */ }
                   }
                   const finalSong = await ensureSongUrls(songWithLyrics);
-                  const scoreSegments = generatePtmSegments(finalSong.duration, playerCount, party.passTheMicSettings?.segmentDuration, finalSong.lyrics);
+                  const scoreSegments = generatePtmSegments(finalSong.duration, playerCount, party.passTheMicSettings?.segmentDuration, finalSong.lyrics, finalSong.bpm);
                   party.setPassTheMicSegments(scoreSegments);
                   party.setPassTheMicSong(finalSong);
                   setSong(finalSong);
