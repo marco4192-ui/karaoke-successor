@@ -1,22 +1,18 @@
 ---
 Task ID: 1
-Agent: Super Z (Main Agent)
-Task: Complete Jackbox/Comic-Book Pop-Art redesign of Karaoke Eleven
+Agent: main
+Task: Fix 4 gameplay issues — highway smoothness, library scroll, blind karaoke, BR overlay
 
 Work Log:
-- Analyzed uploaded logo image (VLM + pixel analysis): retro psychedelic pop-art style with hot pink, yellow, teal, deep purple palette, thick black outlines, halftone dots
-- Created jackbox-design branch from origin/main
-- Analyzed entire codebase structure (~248 files with UI code)
-- Designed and implemented new CSS design system (globals.css): 56 new .comic-* classes replacing all .retro-* classes
-- Redesigned theme engine (themes.ts): 6 new comic-themed themes with Jackbox palette
-- Changed fonts from Geist to Bangers (display) + Press Start 2P (mono)
-- Updated metadata/rebranding: Karaoke ZERO -> Karaoke Eleven across 59 files
-- Redesigned all major UI components: navbar, home screen, party screen, library, settings, game components
-- Updated 16 i18n locales with new branding
-- Pushed to origin/jackbox-design (98 files changed, 1504 insertions, 1037 deletions)
+- Analyzed all 4 issues in parallel using Explore subagents
+- Fix 1 (Note Highway): Applied BR-pattern — visibleNotes via refs updated every rAF frame, combined store writes at 40fps (25ms), pixel rounding for sub-pixel blur, GPU compositing hints
+- Fix 2 (Library Scroll): Confirmed FolderView already had ResizeObserver on remote (shared by all group-by modes)
+- Fix 3 (Blind Karaoke): Lowered groupIntoPassages gap threshold from 4000ms to 1500ms, added fallback equal-size splitting for songs with < 3 natural passages
+- Fix 4 (BR Overlay): Removed 300ms setTimeout before handleStartRound, skipped intermediate 'setup' status update (React 18 batching prevents RoundSetupView flash)
+- Resolved merge conflicts with remote (which had its own versions of some fixes)
+- Force-pushed correct commit f8972d3 to origin/main
 
 Stage Summary:
-- Branch jackbox-design pushed successfully to origin
-- 98 files modified with zero TypeScript errors
-- Complete visual overhaul from retro neon to Jackbox/Comic-Book Pop-Art style
-- Logo (logo.png) added to public directory for in-game use
+- Commit f8972d3 pushed to origin/main
+- 7 files changed: use-game-loop.ts, use-game-timing-data.ts, game-screen-hook.ts, note-highway.tsx, folder-view.tsx, use-game-modes.ts, use-battle-royale-round-handlers.ts
+- All TypeScript checks pass (zero src/ errors)
