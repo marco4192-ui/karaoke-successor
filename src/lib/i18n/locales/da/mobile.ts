@@ -158,7 +158,9 @@ export const mobileTranslations = {
     playAgainSuccess: 'Sang tilføjet til køen!',
     playAgainError: 'Kunne ikke tilføje sang til køen.',
     swipeToDelete: 'Stryg for at slette',
-    reorderHint: 'Hold nede og træk for at ændre rækkefølge'
+    reorderHint: 'Hold nede og træk for at ændre rækkefølge',
+    jukeboxBtn: 'Jukebox',
+    addedToJukebox: 'Tilføjet til Jukebox',
   },
 
   mobileNav: {
@@ -471,13 +473,6 @@ export const mobileTranslations = {
     connectHint: 'Sørg for at du er på samme WiFi som hoved-appen',
     scanHint: 'Scan QR-koden på hovedskærmen',
     letsGo: 'Kom igang!',
-  },
-  mobileChat: {
-    title: 'Chat',
-    placeholder: 'Skriv en besked...',
-    send: 'Send',
-    noMessages: 'Ingen beskeder endnu',
-    host: 'Vært',
   },
 
   mobilePreview: {

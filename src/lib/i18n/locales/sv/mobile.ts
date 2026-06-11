@@ -158,7 +158,9 @@ export const mobileTranslations = {
     playAgainSuccess: 'Låten tillagd i kön!',
     playAgainError: 'Kunde inte lägga till låten i kön.',
     swipeToDelete: 'Dra för att radera',
-    reorderHint: 'Håll ner och dra för att ändra ordning'
+    reorderHint: 'Håll ner och dra för att ändra ordning',
+    jukeboxBtn: 'Jukebox',
+    addedToJukebox: 'Tillagd i Jukebox',
   },
 
   mobileNav: {
@@ -471,13 +473,6 @@ export const mobileTranslations = {
     connectHint: 'Se till att du är på samma WiFi som huvudappen',
     scanHint: 'Skanna QR-koden på huvudskärmen',
     letsGo: 'Kör!',
-  },
-  mobileChat: {
-    title: 'Chatt',
-    placeholder: 'Skriv ett meddelande...',
-    send: 'Skicka',
-    noMessages: 'Inga meddelanden ännu',
-    host: 'Värd',
   },
 
   mobilePreview: {

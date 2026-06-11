@@ -157,7 +157,9 @@ export const mobileTranslations = {
     playAgainSuccess: 'Piosenka dodana do kolejki!',
     playAgainError: 'Nie udało się dodać piosenki do kolejki.',
     swipeToDelete: 'Przesuń, aby usunąć',
-    reorderHint: 'Przytrzymaj i przeciągnij, aby zmienić kolejność'
+    reorderHint: 'Przytrzymaj i przeciągnij, aby zmienić kolejność',
+    jukeboxBtn: 'Jukebox',
+    addedToJukebox: 'Dodano do Jukebox',
   },
 
   mobileNav: {
@@ -470,13 +472,6 @@ export const mobileTranslations = {
     connectHint: 'Upewnij się, że jesteś w tej samej WiFi co główna aplikacja',
     scanHint: 'Zeskanuj kod QR na głównym ekranie',
     letsGo: 'Zaczynamy!',
-  },
-  mobileChat: {
-    title: 'Czat',
-    placeholder: 'Wpisz wiadomość...',
-    send: 'Wyślij',
-    noMessages: 'Brak wiadomości',
-    host: 'Host',
   },
 
   mobilePreview: {

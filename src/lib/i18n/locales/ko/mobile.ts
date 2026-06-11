@@ -157,7 +157,9 @@ export const mobileTranslations = {
     playAgainSuccess: '곡이 대기열에 추가되었습니다!',
     playAgainError: '곡을 대기열에 추가할 수 없습니다.',
     swipeToDelete: '삭제하려면 스와이프',
-    reorderHint: '길게 누른 후 드래그하여 순서 변경'
+    reorderHint: '길게 누른 후 드래그하여 순서 변경',
+    jukeboxBtn: 'Jukebox',
+    addedToJukebox: '주크박스에 추가됨',
   },
 
   mobileNav: {
@@ -470,13 +472,6 @@ export const mobileTranslations = {
     connectHint: '메인 앱과 동일한 WiFi에 연결되어 있는지 확인하세요',
     scanHint: '메인 화면의 QR 코드를 스캔하여 연결',
     letsGo: '시작!',
-  },
-  mobileChat: {
-    title: '채팅',
-    placeholder: '메시지를 입력하세요...',
-    send: '보내기',
-    noMessages: '아직 메시지가 없습니다',
-    host: '호스트',
   },
 
   mobilePreview: {

@@ -176,7 +176,9 @@ export const mobileTranslations = {
     part1: 'Part 1',
     part2: 'Part 2',
     done: 'Fertig',
-    step: 'Schritt {n}'
+    step: 'Schritt {n}',
+    jukeboxBtn: 'Jukebox',
+    addedToJukebox: 'Song zur Jukebox hinzugefügt',
   },
 
   mobileNav: {
@@ -489,13 +491,6 @@ export const mobileTranslations = {
     connectHint: 'Stelle sicher, dass du im selben WiFi wie die Haupt-App bist',
     scanHint: 'Scanne den QR-Code auf dem Hauptbildschirm',
     letsGo: 'Los geht\'s!',
-  },
-  mobileChat: {
-    title: 'Chat',
-    placeholder: 'Nachricht eingeben...',
-    send: 'Senden',
-    noMessages: 'Noch keine Nachrichten',
-    host: 'Host',
   },
 
   mobilePreview: {

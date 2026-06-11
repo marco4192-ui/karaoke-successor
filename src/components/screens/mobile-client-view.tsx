@@ -8,7 +8,6 @@ import { useTranslation } from '@/lib/i18n/translations';
 
 // Types & constants
 import type { MobileView, MobileProfile } from './mobile/mobile-types';
-import { MobileChat } from './mobile/mobile-chat';
 import { PROFILE_COLORS } from './mobile/mobile-types';
 
 // View components
@@ -50,7 +49,6 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
   const [error, setError] = useState<string | null>(null);
   // #10 Tournament spectator vote state
   const [votedMatchIds, setVotedMatchIds] = useState<Set<string>>(new Set());
-  const [showChat, setShowChat] = useState(false);
   const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -368,7 +366,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
         />
       ) : (
         <div className="pb-20">
-          {currentView === 'home' && <MobileHomeView gameState={gameState} queue={data.queue} onNavigate={setCurrentView} onOpenChat={() => setShowChat(true)} />}
+          {currentView === 'home' && <MobileHomeView gameState={gameState} queue={data.queue} onNavigate={setCurrentView} />}
           {currentView === 'mic' && (
             <MobileMicView gameState={gameState} clientId={clientId} currentPitch={currentPitch}
               isListening={isListening} micPermissionDenied={micPermissionDenied} onStartMic={startMicrophone} onStopMic={stopMicrophone}
@@ -383,6 +381,7 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
               opponents={data.opponents} availableProfiles={data.availableProfiles}
               onShowSongOptions={data.setShowSongOptions} onSelectGameMode={data.setSelectedGameMode}
               onSelectPartner={data.setSelectedPartner} onAddToQueue={data.addToQueue}
+              onAddToJukebox={data.addToJukeboxWishlist}
               onLoadPartners={data.loadAvailablePartners} onLoadOpponents={data.loadOpponents}
               onRefresh={data.loadSongs}
               formatDuration={data.formatDuration}
@@ -411,13 +410,6 @@ export function MobileClientView({ profileId }: MobileClientViewProps) {
       )}
 
       {isConnected && profile && <MobileBottomNav currentView={currentView} onNavigate={setCurrentView} />}
-
-      {/* F4: Chat overlay */}
-      {showChat && clientId && (
-        <div className="fixed inset-0 z-50 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white">
-          <MobileChat clientId={clientId} onClose={() => setShowChat(false)} />
-        </div>
-      )}
 
       {/* ── Companion Sing-A-Long overlay ── */}
       {isConnected && profile && gameState.singalongTurn?.isActive && gameState.singalongTurn.profileId === profile.id && (

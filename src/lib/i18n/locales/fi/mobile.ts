@@ -157,7 +157,9 @@ export const mobileTranslations = {
     playAgainSuccess: 'Kappale lisätty jonoon!',
     playAgainError: 'Kappaletta ei voitu lisätä jonoon.',
     swipeToDelete: 'Pyyhki poistaaksesi',
-    reorderHint: 'Paina pitkään ja vedä uudelleenjärjestääksesi'
+    reorderHint: 'Paina pitkään ja vedä uudelleenjärjestääksesi',
+    jukeboxBtn: 'Jukebox',
+    addedToJukebox: 'Lisätty Jukeboxiin',
   },
 
   mobileNav: {
@@ -470,13 +472,6 @@ export const mobileTranslations = {
     connectHint: 'Varmista, että olet samassa WiFi-verkossa kuin pääsovellus',
     scanHint: 'Skannaa QR-koodi pääruudulta',
     letsGo: 'Mennään!',
-  },
-  mobileChat: {
-    title: 'Chat',
-    placeholder: 'Kirjoita viesti...',
-    send: 'Lähetä',
-    noMessages: 'Ei vielä viestejä',
-    host: 'Isäntä',
   },
 
   mobilePreview: {

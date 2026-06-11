@@ -157,7 +157,9 @@ export const mobileTranslations = {
     playAgainSuccess: 'Песня добавлена в очередь!',
     playAgainError: 'Не удалось добавить песню в очередь.',
     swipeToDelete: 'Свайп для удаления',
-    reorderHint: 'Удерживайте и перетаскивайте для изменения порядка'
+    reorderHint: 'Удерживайте и перетаскивайте для изменения порядка',
+    jukeboxBtn: 'Jukebox',
+    addedToJukebox: 'Добавлено в Jukebox',
   },
 
   mobileNav: {
@@ -470,13 +472,6 @@ export const mobileTranslations = {
     connectHint: 'Убедитесь, что вы в том же WiFi, что и основное приложение',
     scanHint: 'Отсканируйте QR-код на главном экране',
     letsGo: 'Поехали!',
-  },
-  mobileChat: {
-    title: 'Чат',
-    placeholder: 'Введите сообщение...',
-    send: 'Отправить',
-    noMessages: 'Пока нет сообщений',
-    host: 'Хост',
   },
 
   mobilePreview: {

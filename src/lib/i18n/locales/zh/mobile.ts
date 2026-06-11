@@ -157,7 +157,9 @@ export const mobileTranslations = {
     playAgainSuccess: '歌曲已添加到队列！',
     playAgainError: '无法将歌曲添加到队列。',
     swipeToDelete: '滑动删除',
-    reorderHint: '长按并拖动以重新排序'
+    reorderHint: '长按并拖动以重新排序',
+    jukeboxBtn: 'Jukebox',
+    addedToJukebox: '已添加到点播',
   },
 
   mobileNav: {
@@ -470,13 +472,6 @@ export const mobileTranslations = {
     connectHint: '确保与主应用连接到同一WiFi',
     scanHint: '扫描主屏幕上的二维码进行连接',
     letsGo: '开始吧！',
-  },
-  mobileChat: {
-    title: '聊天',
-    placeholder: '输入消息...',
-    send: '发送',
-    noMessages: '暂无消息',
-    host: '主机',
   },
 
   mobilePreview: {

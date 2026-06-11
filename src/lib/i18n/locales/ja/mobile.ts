@@ -158,7 +158,9 @@ export const mobileTranslations = {
     playAgainSuccess: '曲がキューに追加されました！',
     playAgainError: '曲をキューに追加できませんでした。',
     swipeToDelete: 'スワイプして削除',
-    reorderHint: '長押ししてドラッグで並び替え'
+    reorderHint: '長押ししてドラッグで並び替え',
+    jukeboxBtn: 'Jukebox',
+    addedToJukebox: 'ジュークボックスに追加',
   },
 
   mobileNav: {
@@ -471,13 +473,6 @@ export const mobileTranslations = {
     connectHint: 'メインアプリと同じWiFiに接続してください',
     scanHint: 'メイン画面のQRコードをスキャンして接続',
     letsGo: 'スタート！',
-  },
-  mobileChat: {
-    title: 'チャット',
-    placeholder: 'メッセージを入力...',
-    send: '送信',
-    noMessages: 'メッセージはまだありません',
-    host: 'ホスト',
   },
 
   mobilePreview: {

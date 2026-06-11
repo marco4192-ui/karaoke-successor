@@ -125,6 +125,7 @@ export interface SongSummary {
   genre?: string;
   language?: string;
   coverImage?: string;
+  isDuet?: boolean;
 }
 
 export interface HostProfile {

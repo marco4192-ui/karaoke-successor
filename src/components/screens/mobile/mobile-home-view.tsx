@@ -10,10 +10,9 @@ interface HomeViewProps {
   gameState: GameState;
   queue: QueueItem[];
   onNavigate: (_view: MobileView) => void;
-  onOpenChat: () => void;
 }
 
-export function MobileHomeView({ gameState, queue, onNavigate, onOpenChat }: HomeViewProps) {
+export function MobileHomeView({ gameState, queue, onNavigate }: HomeViewProps) {
   const { t } = useTranslation();
 
   // Map screen names to display labels
@@ -121,13 +120,6 @@ export function MobileHomeView({ gameState, queue, onNavigate, onOpenChat }: Hom
         >
           <span className="text-3xl mb-2 block">📻</span>
           <span className="text-sm">{t('mobileViews.jukebox')}</span>
-        </button>
-        <button
-          onClick={onOpenChat}
-          className="bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-xl p-4 text-center hover:from-cyan-500/30 hover:to-blue-500/30 transition-colors border border-cyan-500/30"
-        >
-          <span className="text-3xl mb-2 block">💬</span>
-          <span className="text-sm font-medium">{t('mobileChat.title')}</span>
         </button>
       </div>
       

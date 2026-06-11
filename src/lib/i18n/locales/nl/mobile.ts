@@ -158,7 +158,9 @@ export const mobileTranslations = {
     playAgainSuccess: 'Nummer toegevoegd aan de wachtrij!',
     playAgainError: 'Kon nummer niet toevoegen aan de wachtrij.',
     swipeToDelete: 'Veeg om te verwijderen',
-    reorderHint: 'Lang indrukken en slepen om te herschikken'
+    reorderHint: 'Lang indrukken en slepen om te herschikken',
+    jukeboxBtn: 'Jukebox',
+    addedToJukebox: 'Toegevoegd aan Jukebox',
   },
 
   mobileNav: {
@@ -471,13 +473,6 @@ export const mobileTranslations = {
     connectHint: 'Zorg dat je op hetzelfde WiFi zit als de hoofdapp',
     scanHint: 'Scan de QR-code op het hoofdscherm',
     letsGo: 'Let\'s Go!',
-  },
-  mobileChat: {
-    title: 'Chat',
-    placeholder: 'Typ een bericht...',
-    send: 'Verstuur',
-    noMessages: 'Nog geen berichten',
-    host: 'Host',
   },
 
   mobilePreview: {
