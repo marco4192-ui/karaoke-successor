@@ -376,13 +376,19 @@ export default function KaraokeZERO() {
   useAutoFocus(mainRef, screen);
 
   // ── Hydration guard for Tauri ──
+  // Renders a structural skeleton matching the main app layout (NavBar + content)
+  // to prevent CLS when the app hydrates and the real NavBar + content appear.
   if (!isMounted) {
     return (
       <div
-        className="h-screen w-full"
+        className="h-screen overflow-hidden flex flex-col w-full"
         style={{ background: 'linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #0a0a2a 100%)' }}
         suppressHydrationWarning
-      />
+      >
+        {/* Skeleton NavBar — reserves vertical space to prevent CLS */}
+        <nav className="h-14 flex-shrink-0 bg-black/30 backdrop-blur-sm border-b border-white/5" aria-hidden="true" />
+        <main className="flex-1 min-h-0" />
+      </div>
     );
   }
 
