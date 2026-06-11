@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState, useCallback, useEffect, useLayoutEffect, memo } from 'react';
+import { useMemo, useRef, useState, useCallback, useEffect, memo } from 'react';
 import { LyricLine, type GameMode } from '@/types/game';
 import { LyricLineDisplay } from './lyric-line-display';
 import { NoteDisplayStyle } from '@/lib/game/note-utils';
@@ -96,28 +96,35 @@ export const SinglePlayerLyrics = memo(function SinglePlayerLyrics({
   }, []);
 
   // Measure first note position relative to container when the current line changes.
-  // Uses useLayoutEffect to measure BEFORE the browser paints — this prevents the
-  // pointer from flashing to the center (50% fallback) for even a single frame.
+  // DO-NOT-CHANGE: Deferred measurement via useEffect + requestAnimationFrame.
+  // Previous useLayoutEffect blocked the browser paint for 12-15ms per line change
+  // (2× getBoundingClientRect forced sync reflow + setState triggered 2nd render).
+  // Deferring to rAF lets the browser paint the new lyrics FIRST, then measures
+  // in the next frame. The flying pointer uses its fallback position for one frame,
+  // which is imperceptible but eliminates the line-change stutter entirely.
 
-  useLayoutEffect(() => {
-    const container = containerRef.current;
-    const noteEl = firstNoteNodeRef.current;
-    if (!container || !noteEl) {
-      setFirstNoteXPercent(null);
-      return;
-    }
+  useEffect(() => {
+    const rafId = requestAnimationFrame(() => {
+      const container = containerRef.current;
+      const noteEl = firstNoteNodeRef.current;
+      if (!container || !noteEl) {
+        setFirstNoteXPercent(null);
+        return;
+      }
 
-    const containerRect = container.getBoundingClientRect();
-    const noteRect = noteEl.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const noteRect = noteEl.getBoundingClientRect();
 
-    if (containerRect.width === 0) {
-      setFirstNoteXPercent(null);
-      return;
-    }
+      if (containerRect.width === 0) {
+        setFirstNoteXPercent(null);
+        return;
+      }
 
-    // X position of first note's left edge as percentage of container width
-    const relativeX = ((noteRect.left - containerRect.left) / containerRect.width) * 100;
-    setFirstNoteXPercent(Math.max(0, Math.min(100, relativeX)));
+      // X position of first note's left edge as percentage of container width
+      const relativeX = ((noteRect.left - containerRect.left) / containerRect.width) * 100;
+      setFirstNoteXPercent(Math.max(0, Math.min(100, relativeX)));
+    });
+    return () => cancelAnimationFrame(rafId);
   }, [currentLine]);
 
   // Stable resize handler — registered once, not on every line change
