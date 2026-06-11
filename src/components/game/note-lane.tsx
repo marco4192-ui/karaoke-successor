@@ -105,7 +105,7 @@ const NoteBlock = React.memo(function NoteBlock({ data, noteShape, windowHeight 
   
   return (
     <div
-      className={`absolute ${noteShape.baseClass} transition-all duration-75 ${
+      className={`absolute ${noteShape.baseClass} ${
         data.isPast
           ? 'opacity-30'
           : data.isActive

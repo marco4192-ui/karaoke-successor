@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import { Note, LyricLine } from '@/types/game';
 import { getNoteShapeClasses, getNoteDisplayStyleClasses, NoteShapeStyle, NoteDisplayStyle, PitchStats } from '@/lib/game/note-utils';
 import { MicIcon } from '@/components/icons';
@@ -112,6 +112,11 @@ const SingLine = React.memo(function SingLine({
  * Wrapped in React.memo because this is rendered in a .map() at ~60fps
  * during gameplay — without memoization every game frame re-renders all
  * visible notes even when their props haven't changed.
+ *
+ * PERFORMANCE NOTE: Positioning uses transform: translate() instead of
+ * left/top to avoid layout recalculation per frame. The container's pixel
+ * dimensions are passed down so percentage-based positions can be
+ * converted to pixel values for the GPU-only compositing path.
  */
 const NoteBlock = React.memo(function NoteBlock({
   note,
@@ -126,6 +131,8 @@ const NoteBlock = React.memo(function NoteBlock({
   playerColor = '#22d3d3ee',
   noteDisplayStyle = 'classic',
   notePerformance,
+  highwayW,
+  highwayH,
 }: {
   note: NoteWithLine;
   currentTime: number;
@@ -139,26 +146,33 @@ const NoteBlock = React.memo(function NoteBlock({
   playerColor?: string;
   noteDisplayStyle?: NoteDisplayStyle;
   notePerformance?: Map<string, Array<{ time: number; accuracy: number; hit: boolean }>>;
+  highwayW: number;
+  highwayH: number;
 }) {
   const timeUntilNote = note.startTime - currentTime;
   const noteEnd = note.startTime + note.duration;
   const isActive = currentTime >= note.startTime && currentTime <= noteEnd;
   const isPast = currentTime > noteEnd;
 
-  // Calculate horizontal position (distance from sing line)
+  // Calculate horizontal position as percentage
   const distanceFromSingLine = (timeUntilNote / noteWindow) * (100 - singLinePosition + noteWidthExtra);
-  const x = Math.round((singLinePosition + distanceFromSingLine) * 100) / 100;
+  const xPercent = Math.round((singLinePosition + distanceFromSingLine) * 100) / 100;
 
-  // Calculate vertical position based on pitch
+  // Calculate vertical position as percentage
   const pr = pitchStats.pitchRange || 1;
-  const pitchY = Math.round((visibleTop + visibleRange - ((note.pitch - pitchStats.minPitch) / pr) * visibleRange) * 100) / 100;
+  const pitchYPercent = Math.round((visibleTop + visibleRange - ((note.pitch - pitchStats.minPitch) / pr) * visibleRange) * 100) / 100;
 
   // Calculate note dimensions
   const noteWidthPercent = Math.round(((note.duration / noteWindow) * (100 - singLinePosition + noteWidthExtra)) * 100) / 100;
   const noteHeight = 24;
 
   // Skip notes that are too far off-screen
-  if (x > 120 || x < -30) return null;
+  if (xPercent > 120 || xPercent < -30) return null;
+
+  // Convert percentage positions to pixel values for transform-based positioning.
+  // This avoids layout recalculation that left/top would trigger every frame.
+  const xPx = (xPercent / 100) * highwayW;
+  const yPx = (pitchYPercent / 100) * highwayH - noteHeight / 2;
 
   // Determine note styling based on type and player color
   const getBackgroundStyle = (): React.CSSProperties => {
@@ -206,12 +220,12 @@ const NoteBlock = React.memo(function NoteBlock({
     <div
       className={`absolute ${noteShape.baseClass} ${displayStyle.additionalClasses} ${isActive ? noteShape.activeClass : ''}`}
       style={{
-        left: `${x}%`,
-        top: `${pitchY}%`,
+        left: 0,
+        top: 0,
         width: `${noteWidthPercent}%`,
         height: `${noteHeight}px`,
-        transform: 'translateY(-50%) translateZ(0)',
-        willChange: 'left, top, width, opacity',
+        transform: `translate(${xPx}px, ${yPx}px)`,
+        willChange: 'transform, opacity',
         boxShadow: isActive ? `0 0 15px ${glowColor}` : 'none',
         opacity: isPast ? (accuracy > 0.3 ? 0.8 : 0.3) : 1,
         ...noteShape.style,
@@ -225,7 +239,8 @@ const NoteBlock = React.memo(function NoteBlock({
 });
 
 /**
- * Pitch indicator showing singer's current pitch
+ * Pitch indicator showing singer's current pitch.
+ * Uses transform-based positioning for GPU compositing (same path as NoteBlock).
  */
 const PitchIndicator = React.memo(function PitchIndicator({
   detectedPitch,
@@ -234,6 +249,8 @@ const PitchIndicator = React.memo(function PitchIndicator({
   visibleTop,
   visibleRange,
   playerColor = '#22d3d3ee',
+  highwayW,
+  highwayH,
 }: {
   detectedPitch: number | null;
   pitchStats: PitchStats;
@@ -241,23 +258,24 @@ const PitchIndicator = React.memo(function PitchIndicator({
   visibleTop: number;
   visibleRange: number;
   playerColor?: string;
+  highwayW: number;
+  highwayH: number;
 }) {
   if (detectedPitch === null) return null;
 
   const pr = pitchStats.pitchRange || 1;
-  // DO-NOT-CHANGE: Round pitchY to 2 decimal places for same sub-pixel
-  // stability reason as NoteBlock positions (see NoteBlock comment).
-  const pitchY = Math.round((visibleTop + visibleRange - ((detectedPitch - pitchStats.minPitch) / pr) * visibleRange) * 100) / 100;
+  const pitchYPercent = Math.round((visibleTop + visibleRange - ((detectedPitch - pitchStats.minPitch) / pr) * visibleRange) * 100) / 100;
+  const xPx = ((singLinePosition - 1.5) / 100) * highwayW;
+  const yPx = (pitchYPercent / 100) * highwayH - 16; // 16 = half of 32px (w-8 h-8)
 
   return (
     <div
       className="absolute z-30 w-8 h-8 rounded-full shadow-lg flex items-center justify-center"
       style={{
-        left: `${singLinePosition - 1.5}%`,
-        top: `${pitchY}%`,
-        transform: 'translateY(-50%) translateZ(0)',
-        // DO-NOT-CHANGE: GPU compositing hints for smooth pitch indicator movement.
-        willChange: 'top',
+        left: 0,
+        top: 0,
+        transform: `translate(${xPx}px, ${yPx}px)`,
+        willChange: 'transform',
         background: `linear-gradient(to right, ${playerColor}, ${withAlpha(playerColor, 0.7)})`,
         boxShadow: `0 0 10px ${withAlpha(playerColor, 0.7)}`,
         outline: '2px solid',
@@ -293,6 +311,31 @@ const PlayerLabel = React.memo(function PlayerLabel({
   );
 });
 
+// ===================== HOOK: Measure container dimensions =====================
+
+function useHighwayDimensions() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [dims, setDims] = useState({ w: 0, h: 0 });
+
+  const measure = useCallback(() => {
+    const el = ref.current;
+    if (el && el.offsetWidth > 0 && el.offsetHeight > 0) {
+      setDims({ w: el.offsetWidth, h: el.offsetHeight });
+    }
+  }, []);
+
+  useEffect(() => {
+    measure();
+    const el = ref.current;
+    if (!el) return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [measure]);
+
+  return { ref, w: dims.w, h: dims.h };
+}
+
 // ===================== MAIN COMPONENT =====================
 
 export const NoteHighway = React.memo(function NoteHighway({
@@ -324,8 +367,15 @@ export const NoteHighway = React.memo(function NoteHighway({
 
   const resolvedPlayerName = playerName || t('prominentScore.player1');
 
+  // Measure container pixel dimensions for transform-based note positioning
+  const { ref: highwayRef, w: highwayW, h: highwayH } = useHighwayDimensions();
+
   return (
-    <div className={`relative w-full h-full overflow-hidden ${className}`} style={{ contain: 'content' }}>
+    <div
+      ref={highwayRef}
+      className={`relative w-full h-full overflow-hidden ${className}`}
+      style={{ contain: 'content' }}
+    >
       {/* Background gradient */}
       <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(${playerNumber === 1 ? 'to bottom' : 'to top'}, ${withAlpha(effectiveColor, 0.2)}, transparent)` }} />
 
@@ -352,6 +402,8 @@ export const NoteHighway = React.memo(function NoteHighway({
           playerColor={effectiveColor}
           noteDisplayStyle={noteDisplayStyle}
           notePerformance={notePerformance}
+          highwayW={highwayW}
+          highwayH={highwayH}
         />
       );
       })}
@@ -364,6 +416,8 @@ export const NoteHighway = React.memo(function NoteHighway({
         visibleTop={visibleTop}
         visibleRange={visibleRange}
         playerColor={effectiveColor}
+        highwayW={highwayW}
+        highwayH={highwayH}
       />}
       {/* Blind indicator — subtle pulse when in blind section */}
       {isBlindSection && (

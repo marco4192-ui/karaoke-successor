@@ -113,7 +113,7 @@ export function FolderView({
   return (
     <div
       ref={containerRef}
-      className="pr-1 overflow-y-auto"
+      className={`pr-1 ${containerHeight > 0 ? 'overflow-y-auto' : ''}`}
       style={{ height: containerHeight > 0 ? `${containerHeight}px` : undefined, minHeight: '200px' }}
     >
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4 pb-4">
