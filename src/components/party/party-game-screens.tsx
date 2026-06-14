@@ -576,6 +576,7 @@ export function PartyGameScreens({ screen, setScreen }: PartyGameScreensProps) {
             party.setCompanionSettings(null);
             setScreen('home');
           }}
+          onNavigate={setScreen}
         />
       )}
 
