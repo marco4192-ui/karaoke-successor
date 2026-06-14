@@ -390,9 +390,9 @@ export function PlayingView({
                     <span className="text-5xl">✕</span>
                   </div>
                   <p className="text-red-400 font-bold text-lg">
-                    {sortedPlayers.find(p => p.id === eliminatedPlayerId)?.name || 'Player'}
+                    {sortedPlayers.find(p => p.id === eliminatedPlayerId)?.name || t('battleRoyale.playerFallback')}
                   </p>
-                  <p className="text-white/50 text-sm mt-1">Eliminated</p>
+                  <p className="text-white/50 text-sm mt-1">{t('battleRoyale.eliminatedLabel')}</p>
                 </div>
               </div>
             );

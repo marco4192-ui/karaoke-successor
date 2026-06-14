@@ -57,7 +57,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, EBState> {
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex items-center justify-center p-8">
           <div className="text-center max-w-md">
             <p className="text-red-400 text-lg font-semibold mb-2">{t('mobilePage.failedToLoad')}</p>
-            <p className="text-white/50 text-sm mb-4">{this.state.error?.message || 'Unknown error'}</p>
+            <p className="text-white/50 text-sm mb-4">{this.state.error?.message || t('mobilePage.unknownError')}</p>
             <button
               onClick={() => window.location.reload()}
               className="px-4 py-2 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-sm"

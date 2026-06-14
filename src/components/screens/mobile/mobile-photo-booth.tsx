@@ -263,7 +263,7 @@ export function MobilePhotoBooth({ gameResults, onClose }: MobilePhotoBoothProps
       <button
         onClick={handleClose}
         className="absolute top-4 left-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-black/50 text-white text-xl backdrop-blur-sm"
-        aria-label="Close"
+        aria-label={t('mobilePhotoBooth.ariaClose')}
       >
         ✕
       </button>
@@ -293,7 +293,7 @@ export function MobilePhotoBooth({ gameResults, onClose }: MobilePhotoBoothProps
               {t('mobilePhotoBooth.cameraError')}
             </p>
             <p className="text-sm mt-2">
-              Please allow camera access in your browser settings and try again.
+              {t('mobilePhotoBooth.cameraDeniedHelp')}
             </p>
             <button
               onClick={handleClose}
@@ -313,7 +313,7 @@ export function MobilePhotoBooth({ gameResults, onClose }: MobilePhotoBoothProps
               {t('mobilePhotoBooth.cameraUnavailable')}
             </p>
             <p className="text-sm mt-2">
-              Your device doesn&apos;t support camera access.
+              {t('mobilePhotoBooth.cameraUnsupportedHelp')}
             </p>
             <button
               onClick={handleClose}
@@ -329,7 +329,7 @@ export function MobilePhotoBooth({ gameResults, onClose }: MobilePhotoBoothProps
         <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/80">
           <div className="text-center text-white/60">
             <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4" />
-            <p>Starting camera...</p>
+            <p>{t('mobilePhotoBooth.startingCamera')}</p>
           </div>
         </div>
       )}
@@ -420,7 +420,7 @@ export function MobilePhotoBooth({ gameResults, onClose }: MobilePhotoBoothProps
         <>
           <img
             src={capturedDataUrl}
-            alt="Selfie with score"
+            alt={t('mobilePhotoBooth.selfieAlt')}
             className="absolute inset-0 w-full h-full object-cover"
           />
 

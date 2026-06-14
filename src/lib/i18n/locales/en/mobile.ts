@@ -381,6 +381,7 @@ export const mobileTranslations = {
     bestResult: 'Your best attempt today',
     quests: '📋 Quests',
     claimReward: 'Claim Reward',
+    dayMon: 'Mon', dayTue: 'Tue', dayWed: 'Wed', dayThu: 'Thu', dayFri: 'Fri', daySat: 'Sat', daySun: 'Sun',
     challengeMixer: '🔧 Challenge Mixer',
     challengeMixerDesc: 'Combine modifiers to create your own custom challenge!',
     coop: '🤝 Co-op',
@@ -437,6 +438,12 @@ export const mobileTranslations = {
     currentSinger: 'Now singing',
     score: 'Score',
     noPlayers: 'No players yet',
+    medalGold: 'Gold',
+    medalSilver: 'Silver',
+    medalBronze: 'Bronze',
+    trendUp: 'Up',
+    trendDown: 'Down',
+    trendSame: 'Same',
   },
 
   mobileErrorBoundary: {
@@ -516,5 +523,15 @@ export const mobileTranslations = {
     cameraUnavailable: 'Camera not available',
     retake: 'Retake',
     noResults: 'No results to show',
+    cameraDeniedHelp: 'Please allow camera access in your browser settings and try again.',
+    cameraUnsupportedHelp: 'Your device doesn\'t support camera access.',
+    startingCamera: 'Starting camera...',
+    ariaClose: 'Close',
+    selfieAlt: 'Selfie with score',
+  },
+
+  mobilePitchVisualizer: {
+    startSinging: 'Start singing...',
+    ariaPitchHistory: 'Pitch history visualization',
   },
 };

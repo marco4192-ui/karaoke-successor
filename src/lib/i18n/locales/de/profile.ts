@@ -78,7 +78,8 @@ export const profileTranslations = {
     bestCombo: 'Beste Combo',
     totalScore: 'Gesamtpunktzahl',
     achievementsTitle: 'Erfolge',
-    more: '+{n} weitere'
+    more: '+{n} weitere',
+    beginner: 'Anfänger'
   },
 
   achievements: {

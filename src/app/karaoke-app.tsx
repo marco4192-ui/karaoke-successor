@@ -631,7 +631,7 @@ export default function KaraokeZERO() {
               <div className="text-4xl mb-2">🏆</div>
               <h2 className="text-xl font-bold text-white">{t('matchAbort.selectWinner')}</h2>
               <p className="text-sm text-white/50 mt-1">
-                {match.player1?.name} vs {match.player2?.name}
+                {match.player1?.name}{' ' + t('matchAbort.vs') + ' '}{match.player2?.name}
               </p>
             </div>
             <div className="space-y-3">

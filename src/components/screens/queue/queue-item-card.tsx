@@ -108,7 +108,7 @@ export function QueueItemCard({
             <h3 className="font-semibold truncate">{item.song.title}</h3>
             {item.isFromCompanion && (
               <Badge variant="outline" className="text-xs border-cyan-500/50 text-cyan-400">
-                📱 Companion
+                {t('queueScreen.companion')}
               </Badge>
             )}
           </div>

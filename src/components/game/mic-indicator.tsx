@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { usePartyStore } from '@/lib/game/party-store';
+import { useTranslation } from '@/lib/i18n/translations';
 import type { SelectedPlayer, InputMode } from './unified-party-setup.types';
 
 // ===================== MIC INDICATOR =====================
@@ -32,6 +33,7 @@ export function MicIndicator({
   isDuetMode = false,
   gameMode = '',
 }: MicIndicatorProps) {
+  const { t } = useTranslation();
   const unifiedSetupResult = usePartyStore((s) => s.unifiedSetupResult);
   const passTheMicPlayers = usePartyStore((s) => s.passTheMicPlayers);
 
@@ -115,9 +117,9 @@ export function MicIndicator({
   // Build label
   const buildLabel = (player: SelectedPlayer) => {
     if (player.micName) {
-      return `${player.micName} — ${player.name} singt`;
+      return t('micIndicator.singsWithMic').replace('{mic}', player.micName || '').replace('{name}', player.name);
     }
-    return `${player.name} singt`;
+    return t('micIndicator.sings').replace('{name}', player.name);
   };
 
   return (
@@ -147,7 +149,7 @@ export function MicIndicator({
               </p>
               {activePlayer.micName && (
                 <p className="text-white/40 text-xs mt-0.5">
-                  Mikrofon aktiv
+                  {t('micIndicator.micActive')}
                 </p>
               )}
             </div>
@@ -163,7 +165,7 @@ export function MicIndicator({
                   {'🎤'}
                 </div>
                 <span className="text-white/80 text-xs font-medium">
-                  P{i + 1}: {player.micName || player.name}
+                  {t('micIndicator.playerPrefix').replace('{n}', String(i + 1))}{player.micName || player.name}
                 </span>
               </div>
             ))}
@@ -176,7 +178,7 @@ export function MicIndicator({
             <div className="flex items-center gap-1.5">
               <span className="text-xs">📱</span>
               <span className="text-white/50 text-xs">
-                {companionPlayers.length} Companion-Spieler
+                {companionPlayers.length} {t('micIndicator.companionPlayers')}
               </span>
             </div>
           </div>

@@ -108,6 +108,7 @@ export const libraryTranslations = {
   },
 
   songCard: {
+    duet: 'Duet',
     viral: 'Viral',
     video: 'Video'
   },

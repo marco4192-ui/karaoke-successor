@@ -17,11 +17,17 @@ function getActiveSingerId(gameState: GameState): string | null {
   return null;
 }
 
-/** Rank medal data */
-const MEDAL: Record<number, { emoji: string; label: string; ring: string; bg: string }> = {
-  1: { emoji: '\u{1F947}', label: 'Gold', ring: 'ring-amber-400', bg: 'bg-gradient-to-r from-amber-500/15 to-yellow-500/5' },
-  2: { emoji: '\u{1F948}', label: 'Silver', ring: 'ring-gray-300', bg: 'bg-gradient-to-r from-gray-400/10 to-gray-300/5' },
-  3: { emoji: '\u{1F949}', label: 'Bronze', ring: 'ring-amber-700', bg: 'bg-gradient-to-r from-amber-800/10 to-amber-700/5' },
+/** Rank medal data (labels are set dynamically via i18n) */
+const MEDAL: Record<number, { emoji: string; ring: string; bg: string }> = {
+  1: { emoji: '\u{1F947}', ring: 'ring-amber-400', bg: 'bg-gradient-to-r from-amber-500/15 to-yellow-500/5' },
+  2: { emoji: '\u{1F948}', ring: 'ring-gray-300', bg: 'bg-gradient-to-r from-gray-400/10 to-gray-300/5' },
+  3: { emoji: '\u{1F949}', ring: 'ring-amber-700', bg: 'bg-gradient-to-r from-amber-800/10 to-amber-700/5' },
+};
+
+const MEDAL_LABELS: Record<number, string> = {
+  1: 'mobileLeaderboard.medalGold',
+  2: 'mobileLeaderboard.medalSilver',
+  3: 'mobileLeaderboard.medalBronze',
 };
 
 export function MobileLeaderboard({ gameState }: MobileLeaderboardProps) {
@@ -109,7 +115,7 @@ export function MobileLeaderboard({ gameState }: MobileLeaderboardProps) {
                   {/* Rank */}
                   <div className="w-7 flex-shrink-0 text-center">
                     {medal ? (
-                      <span className="text-lg" title={medal.label}>{medal.emoji}</span>
+                      <span className="text-lg" title={t(MEDAL_LABELS[rank] ?? '')}>{medal.emoji}</span>
                     ) : (
                       <span className="text-sm font-bold text-white/40">#{rank}</span>
                     )}
@@ -143,7 +149,7 @@ export function MobileLeaderboard({ gameState }: MobileLeaderboardProps) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="font-medium text-sm truncate">{player.name}</span>
-                      <TrendIcon trend={trend} />
+                      <TrendIcon trend={trend} t={t} />
                     </div>
                     {isActiveSinger && (
                       <span className="text-[10px] text-emerald-400/70">{t('mobileLeaderboard.currentSinger')}</span>
@@ -167,18 +173,18 @@ export function MobileLeaderboard({ gameState }: MobileLeaderboardProps) {
   );
 }
 
-function TrendIcon({ trend }: { trend: 'up' | 'down' | 'same' }) {
+function TrendIcon({ trend, t }: { trend: 'up' | 'down' | 'same'; t: (key: string) => string }) {
   if (trend === 'up') {
     return (
-      <span className="text-emerald-400 text-xs leading-none" title="Up">&#x2191;</span>
+      <span className="text-emerald-400 text-xs leading-none" title={t('mobileLeaderboard.trendUp')}>&#x2191;</span>
     );
   }
   if (trend === 'down') {
     return (
-      <span className="text-red-400 text-xs leading-none" title="Down">&#x2193;</span>
+      <span className="text-red-400 text-xs leading-none" title={t('mobileLeaderboard.trendDown')}>&#x2193;</span>
     );
   }
   return (
-    <span className="text-white/20 text-xs leading-none" title="Same">&mdash;</span>
+    <span className="text-white/20 text-xs leading-none" title={t('mobileLeaderboard.trendSame')}>&mdash;</span>
   );
 }

@@ -9,6 +9,7 @@ import {
   getActivePlayers,
 } from '@/lib/game/battle-royale';
 import { useBattleRoyaleGame } from '@/hooks/use-battle-royale-game';
+import { useTranslation } from '@/lib/i18n/translations';
 import { BattleRoyaleSetupScreen } from './battle-royale/setup-screen';
 import { WinnerView } from './battle-royale/winner-view';
 import { RoundSetupView } from './battle-royale/round-setup-view';
@@ -59,6 +60,7 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
     notePerformance,
     eliminationPhase,
   } = useBattleRoyaleGame({ game, songs, onUpdateGame });
+  const { t } = useTranslation();
 
   // DO-NOT-CHANGE: Clear pause state on round transitions to prevent the pause overlay
   // from leaking into the next round's PlayingView. Without this, if a user paused during
@@ -119,9 +121,9 @@ export function BattleRoyaleGameView({ game, songs, onUpdateGame, onEndGame, onB
             <span className="text-6xl text-red-500">✕</span>
           </div>
           <p className="text-red-400 font-bold text-2xl">
-            {eliminatedPlayer?.name || 'Player'}
+            {eliminatedPlayer?.name || t('battleRoyale.playerFallback')}
           </p>
-          <p className="text-white/40 text-sm mt-2">Eliminated</p>
+          <p className="text-white/40 text-sm mt-2">{t('battleRoyale.eliminatedLabel')}</p>
         </div>
       </div>
     );

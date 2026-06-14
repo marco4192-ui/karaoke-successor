@@ -54,6 +54,7 @@ export const partyTranslations = {
     mic2: 'Microphone 2',
     mic: 'Microphone {n}',
     songTooShortCptm: 'Song too short for Companion Pass-the-Mic.',
+    defaultMicName: 'Default',
   },
 
   partyGameScreens: {
@@ -264,6 +265,7 @@ export const partyTranslations = {
     eliminationOrder: 'Elimination Order',
     noLyrics: 'No lyrics',
     player: 'Player {n}',
+    playerFallback: 'Player',
     // #2 Song Voting
     voteTitle: '🗳️ Vote for the Next Song!',
     voteSubtitle: 'All players choose which song to sing',
@@ -281,7 +283,11 @@ export const partyTranslations = {
     noRepeatCount: 'Remember last {n} songs',
     // #4 Grand Finale
     grandFinale: 'THE FINAL TWO',
+    grandFinaleSubtitle: 'The Final Two',
     grandFinaleLabel: 'Grand Finale Format',
+    versus: 'VERSUS',
+    vsText: 'VS',
+    eliminatedLabel: 'Eliminated',
     grandFinaleRound: 'Final Round {n}',
     bestOf: 'Best of {n}',
     firstTo: 'First to {n}',

@@ -45,7 +45,7 @@ export function PlayerProgressionCard({ profile, onToggleActive }: PlayerProgres
               <div>
                 <div className="text-xl font-bold">{profile.name}</div>
                 <div className="text-sm text-white/60">
-                  {playerRank?.name || 'Beginner'} • Level {playerLevel?.level || 1} • {profileXP.toLocaleString()} XP
+                  {playerRank?.name || t('playerProgression.beginner')} • Level {playerLevel?.level || 1} • {profileXP.toLocaleString()} XP
                 </div>
               </div>
             </div>

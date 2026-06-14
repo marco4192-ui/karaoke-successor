@@ -99,7 +99,7 @@ export function AudioEffectsPanel({
             }}
             className="w-full accent-purple-500"
             data-testid="game-hud-reverb-slider"
-            aria-label="Reverb"
+            aria-label={t('gameHud.reverbAriaLabel')}
           />
         </div>
         <div>
@@ -116,7 +116,7 @@ export function AudioEffectsPanel({
             }}
             className="w-full accent-cyan-500"
             data-testid="game-hud-echo-slider"
-            aria-label="Echo"
+            aria-label={t('gameHud.echoAriaLabel')}
           />
         </div>
         <div>

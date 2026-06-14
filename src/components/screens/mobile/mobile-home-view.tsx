@@ -18,25 +18,25 @@ export function MobileHomeView({ gameState, queue, onNavigate }: HomeViewProps) 
   // Map screen names to display labels
   const screenLabel = gameState.currentScreen
     ? {
-        home: '🏠 Home', library: '📚 Library', party: '🎉 Party', 'party-setup': '🎉 Party Setup',
-        queue: '📋 Queue', profile: '👤 Profile', highscores: '🏆 Highscores',
-        achievements: '⭐ Achievements', jukebox: '🎵 Jukebox', settings: '⚙️ Settings',
-        editor: '📝 Editor', game: '🎮 Game', 'dailyChallenge': '🎯 Challenge',
-        online: '🌐 Online', results: '📊 Results', 'tournament-game': '🏆 Tournament',
-        'battle-royale-game': '👑 Battle Royale', 'pass-the-mic-game': '🎤 Pass the Mic',
-        'medley-game': '🎵 Medley', 'missing-words-game': '📝 Missing Words',
-        'blind-game': '🙈 Blind Karaoke', 'companion-singalong-game': '📱 Sing-Along',
+        home: t('mobileViews.screenHome'), library: t('mobileViews.screenLibrary'), party: t('mobileViews.screenParty'), 'party-setup': t('mobileViews.screenPartySetup'),
+        queue: t('mobileViews.screenQueue'), profile: t('mobileViews.screenProfile'), highscores: t('mobileViews.screenHighscores'),
+        achievements: t('mobileViews.screenAchievements'), jukebox: t('mobileViews.screenJukebox'), settings: t('mobileViews.screenSettings'),
+        editor: t('mobileViews.screenEditor'), game: t('mobileViews.screenGame'), 'dailyChallenge': t('mobileViews.screenChallenge'),
+        online: t('mobileViews.screenOnline'), results: t('mobileViews.screenResults'), 'tournament-game': t('mobileViews.screenTournament'),
+        'battle-royale-game': t('mobileViews.screenBattleRoyale'), 'pass-the-mic-game': t('mobileViews.screenPassTheMic'),
+        'medley-game': t('mobileViews.screenMedley'), 'missing-words-game': t('mobileViews.screenMissingWords'),
+        'blind-game': t('mobileViews.screenBlindKaraoke'), 'companion-singalong-game': t('mobileViews.screenSingAlong'),
       }[gameState.currentScreen] || `📱 ${gameState.currentScreen}`
     : null;
 
   const modeLabel = gameState.gameMode
     ? {
-        standard: '🎤 Single', duel: '⚔️ Duel', duet: '🎭 Duet',
-        'pass-the-mic': '🎤 Pass the Mic', 'companion-singalong': '📱 Sing-Along',
-        'companion-pass-the-mic': '🎤 C-PTM', medley: '🎵 Medley',
-        'missing-words': '📝 Missing Words', blind: '🙈 Blind Karaoke',
-        tournament: '🏆 Tournament', 'battle-royale': '👑 Battle Royale',
-        'rate-my-song': '⭐ Rate My Song', online: '🌐 Online',
+        standard: t('mobileViews.modeSingle'), duel: t('mobileViews.modeDuel'), duet: t('mobileViews.modeDuet'),
+        'pass-the-mic': t('mobileViews.modePassTheMic'), 'companion-singalong': t('mobileViews.modeSingAlong'),
+        'companion-pass-the-mic': t('mobileViews.modeCPTM'), medley: t('mobileViews.modeMedley'),
+        'missing-words': t('mobileViews.modeMissingWords'), blind: t('mobileViews.modeBlindKaraoke'),
+        tournament: t('mobileViews.modeTournament'), 'battle-royale': t('mobileViews.modeBattleRoyale'),
+        'rate-my-song': t('mobileViews.modeRateMySong'), online: t('mobileViews.modeOnline'),
       }[gameState.gameMode] || gameState.gameMode
     : null;
 

@@ -43,7 +43,9 @@ export const gameTranslations = {
     echo: 'Echo: {n}%',
     presets: 'Presets',
     adPlaying: 'Ad playing',
-    gamePaused: 'Game Paused'
+    gamePaused: 'Game Paused',
+    reverbAriaLabel: 'Reverb',
+    echoAriaLabel: 'Echo',
   },
 
   gameEnhancements: {
@@ -65,13 +67,27 @@ export const gameTranslations = {
 
   noteLane: {
     singHere: 'SING HERE',
+    blindAriaLabel: 'Blind section - sing by feel!',
+  },
+
+  noteHighway: {
+    blindLabel: 'BLIND',
+  },
+
+  micIndicator: {
+    singsWithMic: '{mic} — {name} is singing',
+    sings: '{name} is singing',
+    micActive: 'Microphone active',
+    playerPrefix: 'P{n}:',
+    companionPlayers: 'Companion Players',
   },
 
   practicePanel: {
     title: 'Practice Mode',
     enable: 'Enable Practice Mode',
     pitchGuide: 'Pitch Guide',
-    autoPlayNotes: 'Auto-Play Notes'
+    autoPlayNotes: 'Auto-Play Notes',
+    playbackSpeed: 'Playback Speed: {n}%',
   },
 
   mic: {
@@ -217,7 +233,11 @@ export const gameTranslations = {
     noAll: 'No highscores yet. Be the first to sing!',
     accuracyLabel: '{n}% accuracy',
     maxComboLabel: '{n}x max combo',
-    totalPoints: 'total points'
+    totalPoints: 'total points',
+    cannotConnect: 'Cannot connect to leaderboard server. Please check your internet connection.',
+    loadFailed: 'Failed to load global leaderboard',
+    serverError500: 'Server error (HTTP 500). The leaderboard service is temporarily unavailable. Please try again later.',
+    networkError: 'Network error. Please check your internet connection.',
   },
 
   keyboardShortcuts: {
@@ -258,5 +278,36 @@ export const gameTranslations = {
     loadingCompanion: 'Loading companion app…',
     failedToLoad: 'Failed to load companion app',
     retry: 'Retry',
+    unknownError: 'An unknown error occurred',
+  },
+
+  youtube: {
+    errorInvalidParam: 'The request parameter contains an invalid value.',
+    errorHtml5: 'An HTML5-specific error has occurred.',
+    errorVideoNotFound: 'The video was not found. It may have been deleted or marked as private.',
+    errorEmbed: 'The video cannot be embedded.',
+    errorUnknown: 'Unknown YouTube error (Code: {n})',
+  },
+
+  editor: {
+    noSongsFolder: 'No songs folder configured. Please scan a folder first.',
+    saveCancelled: 'Save cancelled',
+    noFilePath: 'No file path determined',
+    fileSaved: 'File saved!',
+    saveError: 'Error saving: {error}',
+    saveDialogTitle: 'Save TXT file',
+    saveDialogFilter: 'UltraStar TXT',
+    networkError: 'Network error',
+  },
+
+  common: {
+    unknown: 'Unknown',
+    unknownArtist: 'Unknown Artist',
+    defaultPlayerName: 'Player',
+  },
+
+  page: {
+    loading: 'Loading Karaoke ZERO...',
+    reload: 'Reload',
   },
 };

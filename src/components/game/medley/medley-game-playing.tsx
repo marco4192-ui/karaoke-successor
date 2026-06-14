@@ -436,20 +436,22 @@ function MiniNoteHighway({
 // ===================== FEATURE #5: COMBO DISPLAY =====================
 
 function ComboDisplay({ combo }: { combo: number }) {
+  const { t } = useTranslation();
+
   if (combo < 3) return null;
 
   if (combo >= 10) {
     return (
       <span className="text-xs font-bold text-red-400 animate-pulse"
         style={{ textShadow: '0 0 8px rgba(248, 113, 113, 0.6)' }}>
-        {combo}x MEGA COMBO!
+        {t('medley.megaCombo').replace('{combo}', String(combo))}
       </span>
     );
   }
   if (combo >= 5) {
     return (
       <span className="text-xs font-bold text-orange-400 animate-pulse">
-        {combo}x COMBO!
+        {t('medley.combo').replace('{combo}', String(combo))}
       </span>
     );
   }

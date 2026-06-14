@@ -189,7 +189,8 @@ export const coreTranslations = {
     rule3: '• You can remove your own songs from the queue',
     rule4: '• Select a character before adding to queue',
     rule5: '• Companion app requests appear with a cyan border',
-    rule6: '• Click a song to play it immediately'
+    rule6: '• Click a song to play it immediately',
+    companion: '📱 Companion'
   },
 
   queueNextSong: {

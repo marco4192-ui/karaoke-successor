@@ -73,7 +73,8 @@ export const coreTranslations = {
     search: 'Suchen',
     filter: 'Filter',
     sort: 'Sortieren',
-    refresh: 'Aktualisieren'
+    refresh: 'Aktualisieren',
+    exitFullscreen: 'Vollbild beenden'
   },
 
   dialogs: {
@@ -161,7 +162,8 @@ export const coreTranslations = {
     clearQueue: 'Warteschlange leeren',
     upNext: 'Als nächstes',
     nowPlaying: 'Jetzt läuft',
-    startQueue: 'Warteschlange starten'
+    startQueue: 'Warteschlange starten',
+    ariaQueue: 'Warteschlange'
   },
 
   queueScreen: {
@@ -189,7 +191,8 @@ export const coreTranslations = {
     rule3: '• Du kannst deine eigenen Songs aus der Warteschlange entfernen',
     rule4: '• Wähle einen Charakter vor dem Hinzufügen',
     rule5: '• Companion-App-Anfragen erscheinen mit einem Cyan-Rand',
-    rule6: '• Klicke auf einen Song, um ihn sofort abzuspielen'
+    rule6: '• Klicke auf einen Song, um ihn sofort abzuspielen',
+    companion: '📱 Companion'
   },
 
   queueNextSong: {
@@ -197,6 +200,10 @@ export const coreTranslations = {
     duel: '⚔️ Duell',
     duet: '🎭 Duett',
     playNext: '▶ Nächsten Song spielen'
+  },
+
+  library: {
+    ariaSongSelection: 'Song-Auswahl',
   },
 
   jukebox: {
@@ -283,6 +290,12 @@ export const coreTranslations = {
     maxDuration: 'Max. Dauer',
     recentlyPlayedExclude: 'Kürzlich gespielt ausschließen',
     noExclusion: 'kein Ausschluss',
+    ariaSongProgress: 'Songfortschritt',
+    ariaUnmute: 'Stummschalten aufheben',
+    ariaMute: 'Stummschalten',
+    ariaVolume: 'Lautstärke',
+    ariaShuffle: 'Zufallswiedergabe',
+    ariaRepeat: 'Wiederholung',
   },
 
   errorBoundary: {

@@ -67,7 +67,7 @@ export function InputModeToggle({
     return (
       <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
         <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400">
-          📱 {cp?.name || 'Companion'}
+          📱 {cp?.name || t('medley.companionMode')}
         </span>
         <button
           onClick={() => { onToggle(); setShowCompanionPicker(false); }}

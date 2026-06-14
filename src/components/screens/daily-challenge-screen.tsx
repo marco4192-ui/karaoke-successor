@@ -177,7 +177,7 @@ export function DailyChallengeScreen({ onPlayChallenge }: { onPlayChallenge: (_s
           {playerStats.weeklyProgress && playerStats.weeklyProgress.length === 7 && (
             <div className="mt-4">
               <div className="flex justify-between gap-1">
-                {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((day, idx) => (
+                {[t('dailyChallengeScreen.dayMon'), t('dailyChallengeScreen.dayTue'), t('dailyChallengeScreen.dayWed'), t('dailyChallengeScreen.dayThu'), t('dailyChallengeScreen.dayFri'), t('dailyChallengeScreen.daySat'), t('dailyChallengeScreen.daySun')].map((day, idx) => (
                   <div key={day} className="text-center">
                     <div className="text-xs text-white/40 mb-1">{day}</div>
                     <div className={`w-6 h-6 mx-auto rounded-full flex items-center justify-center text-xs ${

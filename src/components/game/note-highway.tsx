@@ -425,7 +425,7 @@ export const NoteHighway = React.memo(function NoteHighway({
           <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center" style={{ animation: 'ptm-cursor-blink 1.5s ease-in-out infinite' }}>
             <span className="text-3xl">🙈</span>
           </div>
-          <span className="text-xs text-white/30 font-medium">BLIND</span>
+          <span className="text-xs text-white/30 font-medium">{t('noteHighway.blindLabel')}</span>
         </div>
       )}
 

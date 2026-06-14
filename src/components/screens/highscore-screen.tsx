@@ -28,7 +28,7 @@ export function HighscoreScreen() {
         leaderboardService.testConnection()
           .then(isConnected => {
             if (!isConnected) {
-              throw new Error('Cannot connect to leaderboard server. Please check your internet connection.');
+              throw new Error(t('highscoreScreen.cannotConnect'));
             }
             return leaderboardService.getGlobalLeaderboard(50);
           })
@@ -55,11 +55,11 @@ export function HighscoreScreen() {
             setGlobalLeaderboard(entries);
           })
           .catch(err => {
-            const errorMsg = err.message || 'Failed to load global leaderboard';
+            const errorMsg = err.message || t('highscoreScreen.loadFailed');
             if (errorMsg.includes('HTTP 500') || errorMsg.includes('500')) {
-              setGlobalError('Server error (HTTP 500). The leaderboard service is temporarily unavailable. Please try again later.');
+              setGlobalError(t('highscoreScreen.serverError500'));
             } else if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError')) {
-              setGlobalError('Network error. Please check your internet connection.');
+              setGlobalError(t('highscoreScreen.networkError'));
             } else {
               setGlobalError(errorMsg);
             }

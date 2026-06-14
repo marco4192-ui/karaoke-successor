@@ -43,7 +43,9 @@ export const gameTranslations = {
     echo: 'Echo: {n}%',
     presets: 'Presets',
     adPlaying: 'Werbung läuft',
-    gamePaused: 'Spiel pausiert'
+    gamePaused: 'Spiel pausiert',
+    reverbAriaLabel: 'Hall',
+    echoAriaLabel: 'Echo'
   },
 
   gameEnhancements: {
@@ -65,13 +67,27 @@ export const gameTranslations = {
 
   noteLane: {
     singHere: 'SING HIER',
+    blindAriaLabel: 'Blinder Abschnitt — singe nach Gefühl!',
+  },
+
+  noteHighway: {
+    blindLabel: 'BLIND',
+  },
+
+  micIndicator: {
+    singsWithMic: '{mic} — {name} singt',
+    sings: '{name} singt',
+    micActive: 'Mikrofon aktiv',
+    playerPrefix: 'S{n}:',
+    companionPlayers: 'Companion-Spieler',
   },
 
   practicePanel: {
     title: 'Übungsmodus',
     enable: 'Übungsmodus aktivieren',
     pitchGuide: 'Tonhöhenführung',
-    autoPlayNotes: 'Noten automatisch abspielen'
+    autoPlayNotes: 'Noten automatisch abspielen',
+    playbackSpeed: 'Wiedergabegeschwindigkeit: {n}%'
   },
 
   mic: {
@@ -217,7 +233,11 @@ export const gameTranslations = {
     noAll: 'Noch keine Highscores. Sei der Erste, der singt!',
     accuracyLabel: '{n}% Genauigkeit',
     maxComboLabel: '{n}x beste Combo',
-    totalPoints: 'Gesamtpunkte'
+    totalPoints: 'Gesamtpunkte',
+    cannotConnect: 'Verbindung zum Leaderboard-Server fehlgeschlagen. Bitte Internetverbindung prüfen.',
+    loadFailed: 'Globales Leaderboard konnte nicht geladen werden',
+    serverError500: 'Serverfehler (HTTP 500). Der Leaderboard-Dienst ist vorübergehend nicht verfügbar. Bitte später erneut versuchen.',
+    networkError: 'Netzwerkfehler. Bitte Internetverbindung prüfen.'
   },
 
   keyboardShortcuts: {
@@ -258,5 +278,36 @@ export const gameTranslations = {
     loadingCompanion: 'Lade Companion-App…',
     failedToLoad: 'Companion-App konnte nicht geladen werden',
     retry: 'Erneut versuchen',
+    unknownError: 'Ein unbekannter Fehler ist aufgetreten',
+  },
+
+  youtube: {
+    errorInvalidParam: 'Der Anfrage-Parameter enthält einen ungültigen Wert.',
+    errorHtml5: 'Ein HTML5-spezifischer Fehler ist aufgetreten.',
+    errorVideoNotFound: 'Das Video wurde nicht gefunden. Möglicherweise wurde es gelöscht oder als privat markiert.',
+    errorEmbed: 'Das Video kann nicht eingebettet werden.',
+    errorUnknown: 'Unbekannter YouTube-Fehler (Code: {n})',
+  },
+
+  editor: {
+    noSongsFolder: 'Kein Songs-Ordner konfiguriert. Bitte erst einen Ordner scannen.',
+    saveCancelled: 'Speichern abgebrochen',
+    noFilePath: 'Kein Dateipfad ermittelt',
+    fileSaved: 'Datei gespeichert!',
+    saveError: 'Fehler beim Speichern: {error}',
+    saveDialogTitle: 'TXT-Datei speichern',
+    saveDialogFilter: 'UltraStar TXT',
+    networkError: 'Netzwerkfehler',
+  },
+
+  common: {
+    unknown: 'Unbekannt',
+    unknownArtist: 'Unbekannter Künstler',
+    defaultPlayerName: 'Spieler',
+  },
+
+  page: {
+    loading: 'Karaoke ZERO wird geladen...',
+    reload: 'Neu laden',
   },
 };
